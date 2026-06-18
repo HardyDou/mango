@@ -1,75 +1,68 @@
 package io.mango.job.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.core.env.MapPropertySource;
 
-import java.nio.file.Path;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = {
-        DataSourceAutoConfiguration.class,
-        JdbcTemplateAutoConfiguration.class,
-        TransactionAutoConfiguration.class,
-        MybatisPlusAutoConfiguration.class,
-        PersistenceMybatisPlusAutoConfiguration.class,
-        MangoJobDefinitionResourceHandlerIntegrationTest.TestConfig.class
-})
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:job_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false"
-})
 class MangoJobDefinitionResourceHandlerIntegrationTest {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Autowired
+    private AnnotationConfigApplicationContext context;
+    private DataSource dataSource;
     private MangoJobDefinitionResourceHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
+        context = new AnnotationConfigApplicationContext();
+        context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("test", Map.of(
+                "spring.datasource.url", "jdbc:h2:mem:job_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+                "spring.datasource.username", "sa",
+                "spring.datasource.password", "",
+                "spring.datasource.driver-class-name", "org.h2.Driver",
+                "spring.flyway.enabled", "false",
+                "mango.persistence.mybatis-plus.tenant.enabled", "false"
+        )));
+        context.register(TestConfig.class);
+        context.refresh();
+        dataSource = context.getBean(DataSource.class);
+        handler = context.getBean(MangoJobDefinitionResourceHandler.class);
         rebuildTable();
     }
 
-    @Test
-    void jobYamlCreatesDefaultSampleDefinitions() throws Exception {
-        List<ResourceDeclaration> declarations = loadDeclarations(
-                "../mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definition.yml");
-
-        for (ResourceDeclaration declaration : declarations) {
-            handler.upsert(declaration);
+    @AfterEach
+    void tearDown() {
+        if (context != null) {
+            context.close();
         }
+    }
 
-        assertThat(declarations).hasSize(2);
+    @Test
+    void upsertCreatesDefaultSampleDefinitions() throws Exception {
+        handler.upsert(defaultSampleManualJob());
+        handler.upsert(defaultSampleCronJob());
+
         assertThat(count()).isEqualTo(2);
         assertThat(stringValue("job_name", "id = 2951100000000000001"))
                 .isEqualTo("默认示例 手动 Probe 任务");
@@ -82,15 +75,9 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
     }
 
     @Test
-    void paymentYamlCreatesBillFetchDefinition() throws Exception {
-        List<ResourceDeclaration> declarations = loadDeclarations(
-                "../../mango-payment/mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-job.yml");
+    void upsertCreatesPaymentBillFetchDefinition() throws Exception {
+        handler.upsert(paymentBillFetchJob());
 
-        for (ResourceDeclaration declaration : declarations) {
-            handler.upsert(declaration);
-        }
-
-        assertThat(declarations).hasSize(1);
         assertThat(count()).isOne();
         assertThat(stringValue("module_code", "id = 2951200000000000001")).isEqualTo("mango-payment");
         assertThat(stringValue("job_code", "id = 2951200000000000001"))
@@ -101,10 +88,10 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
     }
 
     @Test
-    void upsertUpdatesDefinitionButKeepsNonDraftStatus() {
+    void upsertUpdatesDefinitionButKeepsNonDraftStatus() throws Exception {
         ResourceDeclaration declaration = declaration();
         handler.upsert(declaration);
-        jdbcTemplate.update("update mango_job_definition set status = 'ENABLED' where id = 100");
+        execute("update mango_job_definition set status = 'ENABLED' where id = 100");
 
         declaration.getFields().get("jobName").setValue("更新后的任务");
         declaration.getFields().get("status").setValue("DISABLED");
@@ -116,7 +103,7 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
     }
 
     @Test
-    void disableAndDeleteMarkDefinitionStatus() {
+    void disableAndDeleteMarkDefinitionStatus() throws Exception {
         ResourceDeclaration declaration = declaration();
         handler.upsert(declaration);
 
@@ -131,33 +118,64 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
         assertThat(intValue("deleted", "id = 100")).isOne();
     }
 
-    @SuppressWarnings("unchecked")
-    private List<ResourceDeclaration> loadDeclarations(String filePath) throws Exception {
-        Path path = Path.of(filePath);
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        MapNode root = objectMapper.readValue(path.toFile(), MapNode.class);
-        ResourceNode resource = root.mango().resource();
-        List<ResourceDeclaration> declarations =
-                ((List<ResourceDeclaration>) resource.declarations().get(ResourceTypes.JOB_DEFINITION));
-        for (ResourceDeclaration declaration : declarations) {
-            declaration.setResourceType(ResourceTypes.JOB_DEFINITION);
-            declaration.setModuleCode(resource.moduleCode());
-            declaration.setModuleName(resource.moduleName());
-            declaration.setSource(path.toString());
-        }
-        return declarations;
+    private ResourceDeclaration defaultSampleManualJob() {
+        ResourceDeclaration declaration = declaration("2951100000000000001", "job.default.sample.manual",
+                "默认示例 手动 Probe 任务", "job");
+        field(declaration, "jobId", ResourceFieldType.LONG, 2951100000000000001L);
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+        field(declaration, "appCode", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "ownerService", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "workerGroup", ResourceFieldType.STRING, "default");
+        field(declaration, "moduleCode", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "jobCode", ResourceFieldType.STRING, "default_sample_manual_probe");
+        field(declaration, "jobName", ResourceFieldType.STRING, "默认示例 手动 Probe 任务");
+        field(declaration, "scheduleType", ResourceFieldType.STRING, "MANUAL");
+        field(declaration, "handlerName", ResourceFieldType.STRING, "defaultSampleProbeJobHandler");
+        field(declaration, "paramValue", ResourceFieldType.JSON, "{\"source\":\"default-sample\",\"kind\":\"manual\"}");
+        field(declaration, "status", ResourceFieldType.STRING, "DISABLED");
+        return declaration;
+    }
+
+    private ResourceDeclaration defaultSampleCronJob() {
+        ResourceDeclaration declaration = declaration("2951100000000000002", "job.default.sample.cron",
+                "默认示例 定时 Probe 任务", "job");
+        field(declaration, "jobId", ResourceFieldType.LONG, 2951100000000000002L);
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+        field(declaration, "appCode", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "ownerService", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "workerGroup", ResourceFieldType.STRING, "default");
+        field(declaration, "moduleCode", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "jobCode", ResourceFieldType.STRING, "default_sample_cron_probe");
+        field(declaration, "jobName", ResourceFieldType.STRING, "默认示例 定时 Probe 任务");
+        field(declaration, "scheduleType", ResourceFieldType.STRING, "CRON");
+        field(declaration, "scheduleExpression", ResourceFieldType.STRING, "0 */5 * * * ?");
+        field(declaration, "handlerName", ResourceFieldType.STRING, "defaultSampleProbeJobHandler");
+        field(declaration, "paramValue", ResourceFieldType.JSON, "{\"source\":\"default-sample\",\"kind\":\"cron\"}");
+        field(declaration, "status", ResourceFieldType.STRING, "DISABLED");
+        return declaration;
+    }
+
+    private ResourceDeclaration paymentBillFetchJob() {
+        ResourceDeclaration declaration = declaration("2951200000000000001",
+                "payment.job.channel-bill-fetch-yesterday", "支付渠道昨日账单拉取任务", "payment");
+        field(declaration, "jobId", ResourceFieldType.LONG, 2951200000000000001L);
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+        field(declaration, "appCode", ResourceFieldType.STRING, "mango-payment");
+        field(declaration, "ownerService", ResourceFieldType.STRING, "mango-payment");
+        field(declaration, "workerGroup", ResourceFieldType.STRING, "payment");
+        field(declaration, "moduleCode", ResourceFieldType.STRING, "mango-payment");
+        field(declaration, "jobCode", ResourceFieldType.STRING, "payment_channel_bill_fetch_yesterday");
+        field(declaration, "jobName", ResourceFieldType.STRING, "支付渠道昨日账单拉取任务");
+        field(declaration, "scheduleType", ResourceFieldType.STRING, "CRON");
+        field(declaration, "scheduleExpression", ResourceFieldType.STRING, "0 10 1 * * ?");
+        field(declaration, "handlerName", ResourceFieldType.STRING, "paymentChannelBillFetchJobHandler");
+        field(declaration, "timeoutSeconds", ResourceFieldType.INT, 1800);
+        field(declaration, "status", ResourceFieldType.STRING, "DISABLED");
+        return declaration;
     }
 
     private ResourceDeclaration declaration() {
-        ResourceDeclaration declaration = new ResourceDeclaration();
-        declaration.setId("100");
-        declaration.setVersion(1);
-        declaration.setResourceType(ResourceTypes.JOB_DEFINITION);
-        declaration.setModuleCode("order");
-        declaration.setBizKey("order.job.timeout-close");
-        declaration.setName("订单超时关闭");
-        declaration.setTargetModule("job");
-        declaration.setFields(new LinkedHashMap<>());
+        ResourceDeclaration declaration = declaration("100", "order.job.timeout-close", "订单超时关闭", "order");
         field(declaration, "jobId", ResourceFieldType.LONG, 100L);
         field(declaration, "tenantId", ResourceFieldType.STRING, "1");
         field(declaration, "appCode", ResourceFieldType.STRING, "order");
@@ -174,6 +192,19 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
         return declaration;
     }
 
+    private ResourceDeclaration declaration(String id, String bizKey, String name, String moduleCode) {
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setId(id);
+        declaration.setVersion(1);
+        declaration.setResourceType(ResourceTypes.JOB_DEFINITION);
+        declaration.setModuleCode(moduleCode);
+        declaration.setBizKey(bizKey);
+        declaration.setName(name);
+        declaration.setTargetModule("job");
+        declaration.setFields(new LinkedHashMap<>());
+        return declaration;
+    }
+
     private void field(ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {
         ResourceField field = new ResourceField();
         field.setType(type);
@@ -181,9 +212,9 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
         declaration.getFields().put(name, field);
     }
 
-    private void rebuildTable() {
-        jdbcTemplate.execute("drop table if exists mango_job_definition");
-        jdbcTemplate.execute("""
+    private void rebuildTable() throws Exception {
+        execute("drop table if exists mango_job_definition");
+        execute("""
                 create table mango_job_definition (
                     id bigint not null,
                     tenant_id varchar(64) not null,
@@ -225,38 +256,51 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
                 """);
     }
 
-    private long count() {
-        return jdbcTemplate.queryForObject("select count(*) from mango_job_definition", Long.class);
+    private void execute(String sql) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
     }
 
-    private String stringValue(String columnName, String whereClause) {
-        return jdbcTemplate.queryForObject("select " + columnName + " from mango_job_definition where " + whereClause,
-                String.class);
+    private long count() throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("select count(*) from mango_job_definition")) {
+            resultSet.next();
+            return resultSet.getLong(1);
+        }
     }
 
-    private int intValue(String columnName, String whereClause) {
-        Integer value = jdbcTemplate.queryForObject(
-                "select " + columnName + " from mango_job_definition where " + whereClause, Integer.class);
-        return value == null ? 0 : value;
+    private String stringValue(String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from mango_job_definition where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getString(1);
+        }
+    }
+
+    private int intValue(String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from mango_job_definition where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getInt(1);
+        }
     }
 
     @Configuration
-    @Import(MangoJobDefinitionResourceHandler.class)
+    @Import({
+            DataSourceAutoConfiguration.class,
+            TransactionAutoConfiguration.class,
+            MybatisPlusAutoConfiguration.class,
+            PersistenceMybatisPlusAutoConfiguration.class,
+            MangoJobDefinitionResourceHandler.class
+    })
     @MapperScan(basePackageClasses = MangoJobDefinitionMapper.class)
     static class TestConfig {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record MapNode(MangoNode mango) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record MangoNode(ResourceNode resource) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record ResourceNode(@JsonAlias("module-code") String moduleCode,
-                        @JsonAlias("module-name") String moduleName,
-                        Map<String, List<ResourceDeclaration>> declarations) {
     }
 }

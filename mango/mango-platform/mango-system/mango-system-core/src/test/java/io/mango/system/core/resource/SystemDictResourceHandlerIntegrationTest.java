@@ -13,14 +13,16 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
-        JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
@@ -46,18 +47,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SystemDictResourceHandlerIntegrationTest {
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @Autowired
     private SystemDictResourceHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         rebuildTables();
     }
 
     @Test
-    void upsertCreatesSystemDictAndItems() {
+    void upsertCreatesSystemDictAndItems() throws Exception {
         handler.upsert(dictDeclaration("授权角色类型", List.of(
                 item(100L, "系统角色", "1", 1, 1),
                 item(101L, "业务角色", "2", 2, 1)
@@ -72,7 +73,7 @@ class SystemDictResourceHandlerIntegrationTest {
     }
 
     @Test
-    void upsertUpdatesDictAndDisablesRemovedItems() {
+    void upsertUpdatesDictAndDisablesRemovedItems() throws Exception {
         handler.upsert(dictDeclaration("授权角色类型", List.of(
                 item(100L, "系统角色", "1", 1, 1),
                 item(101L, "业务角色", "2", 2, 1)
@@ -88,7 +89,7 @@ class SystemDictResourceHandlerIntegrationTest {
     }
 
     @Test
-    void disableMarksDictAndItemsDisabled() {
+    void disableMarksDictAndItemsDisabled() throws Exception {
         ResourceDeclaration declaration = dictDeclaration("授权角色类型", List.of(
                 item(100L, "系统角色", "1", 1, 1)
         ));
@@ -101,7 +102,7 @@ class SystemDictResourceHandlerIntegrationTest {
     }
 
     @Test
-    void deletePhysicallyDeletesDictAndItems() {
+    void deletePhysicallyDeletesDictAndItems() throws Exception {
         ResourceDeclaration declaration = dictDeclaration("授权角色类型", List.of(
                 item(100L, "系统角色", "1", 1, 1)
         ));
@@ -149,10 +150,10 @@ class SystemDictResourceHandlerIntegrationTest {
         );
     }
 
-    private void rebuildTables() {
-        jdbcTemplate.execute("drop table if exists sys_dict_data");
-        jdbcTemplate.execute("drop table if exists sys_dict_type");
-        jdbcTemplate.execute("""
+    private void rebuildTables() throws Exception {
+        execute("drop table if exists sys_dict_data");
+        execute("drop table if exists sys_dict_type");
+        execute("""
                 create table sys_dict_type (
                     id bigint primary key,
                     dict_type varchar(50) not null,
@@ -167,7 +168,7 @@ class SystemDictResourceHandlerIntegrationTest {
                     unique key uk_sys_dict_type (dict_type)
                 )
                 """);
-        jdbcTemplate.execute("""
+        execute("""
                 create table sys_dict_data (
                     id bigint primary key,
                     dict_type varchar(50) not null,
@@ -184,19 +185,40 @@ class SystemDictResourceHandlerIntegrationTest {
                 """);
     }
 
-    private long count(String tableName) {
-        return jdbcTemplate.queryForObject("select count(*) from " + tableName, Long.class);
+    private void execute(String sql) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
     }
 
-    private String stringValue(String tableName, String columnName, String whereClause) {
-        return jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                String.class);
+    private long count(String tableName) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+            resultSet.next();
+            return resultSet.getLong(1);
+        }
     }
 
-    private int intValue(String tableName, String columnName, String whereClause) {
-        Integer value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                Integer.class);
-        return value == null ? 0 : value;
+    private String stringValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getString(1);
+        }
+    }
+
+    private int intValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getInt(1);
+        }
     }
 
     @Configuration

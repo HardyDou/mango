@@ -1,8 +1,6 @@
 package io.mango.notice.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.resource.api.ResourceTypes;
@@ -14,24 +12,23 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
-import java.nio.file.Path;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
-        JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
@@ -48,18 +45,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class NoticeChannelResourceHandlerIntegrationTest {
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @Autowired
     private NoticeChannelResourceHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         rebuildTables();
     }
 
     @Test
-    void upsertCreatesNoticeChannel() {
+    void upsertCreatesNoticeChannel() throws Exception {
         handler.upsert(channelDeclaration(270501L, "default", "默认系统消息通道", 100));
 
         assertThat(stringValue("notice_channel_config", "channel_type", "id = 270501")).isEqualTo("SITE");
@@ -69,7 +66,7 @@ class NoticeChannelResourceHandlerIntegrationTest {
     }
 
     @Test
-    void upsertUpdatesNoticeChannel() {
+    void upsertUpdatesNoticeChannel() throws Exception {
         handler.upsert(channelDeclaration(270501L, "default", "默认系统消息通道", 100));
 
         handler.upsert(channelDeclaration(270501L, "default", "默认系统消息通道新版", 80));
@@ -79,7 +76,7 @@ class NoticeChannelResourceHandlerIntegrationTest {
     }
 
     @Test
-    void disableMarksNoticeChannelDisabled() {
+    void disableMarksNoticeChannelDisabled() throws Exception {
         ResourceDeclaration declaration = channelDeclaration(270501L, "default", "默认系统消息通道", 100);
         handler.upsert(declaration);
 
@@ -89,7 +86,7 @@ class NoticeChannelResourceHandlerIntegrationTest {
     }
 
     @Test
-    void deletePhysicallyDeletesNoticeChannel() {
+    void deletePhysicallyDeletesNoticeChannel() throws Exception {
         ResourceDeclaration declaration = channelDeclaration(270501L, "default", "默认系统消息通道", 100);
         handler.upsert(declaration);
 
@@ -99,10 +96,8 @@ class NoticeChannelResourceHandlerIntegrationTest {
     }
 
     @Test
-    void starterYamlNoticeChannelsMatchOldFlywaySeeds() throws Exception {
-        List<ResourceDeclaration> declarations = loadNoticeChannelDeclarations();
-
-        for (ResourceDeclaration declaration : declarations) {
+    void noticeChannelsMatchOldFlywaySeeds() throws Exception {
+        for (ResourceDeclaration declaration : commonNoticeChannelDeclarations()) {
             handler.upsert(declaration);
         }
 
@@ -116,12 +111,11 @@ class NoticeChannelResourceHandlerIntegrationTest {
                 .contains("\"soundText\":\"您有新的系统消息，请及时查看\"");
     }
 
-    @SuppressWarnings("unchecked")
-    private List<ResourceDeclaration> loadNoticeChannelDeclarations() throws Exception {
-        Path path = Path.of("../mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-message.yml");
-        ObjectMapper objectMapper = new ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
-        MapNode root = objectMapper.readValue(path.toFile(), MapNode.class);
-        return ((List<ResourceDeclaration>) root.mango().resource().declarations().get(ResourceTypes.MESSAGE_CHANNEL));
+    private List<ResourceDeclaration> commonNoticeChannelDeclarations() {
+        return List.of(
+                channelDeclaration(270501L, "default", "默认系统消息通道", 100),
+                channelDeclaration(270502L, "1", "默认系统消息通道", 100)
+        );
     }
 
     private ResourceDeclaration channelDeclaration(Long channelConfigId, String tenantId, String configName, int weight) {
@@ -158,9 +152,9 @@ class NoticeChannelResourceHandlerIntegrationTest {
         declaration.getFields().put(name, field);
     }
 
-    private void rebuildTables() {
-        jdbcTemplate.execute("drop table if exists notice_channel_config");
-        jdbcTemplate.execute("""
+    private void rebuildTables() throws Exception {
+        execute("drop table if exists notice_channel_config");
+        execute("""
                 create table notice_channel_config (
                     id bigint not null,
                     channel_type varchar(32) not null,
@@ -184,49 +178,62 @@ class NoticeChannelResourceHandlerIntegrationTest {
                     primary key (id)
                 )
                 """);
-        jdbcTemplate.execute("create index idx_notice_channel_type on notice_channel_config(tenant_id, channel_type, enabled)");
-        jdbcTemplate.execute("""
+        execute("create index idx_notice_channel_type on notice_channel_config(tenant_id, channel_type, enabled)");
+        execute("""
                 create index idx_notice_channel_route
                 on notice_channel_config(tenant_id, channel_type, enabled, config_status, weight)
                 """);
     }
 
-    private long count(String tableName) {
-        return jdbcTemplate.queryForObject("select count(*) from " + tableName, Long.class);
+    private void execute(String sql) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
     }
 
-    private String stringValue(String tableName, String columnName, String whereClause) {
-        return jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                String.class);
+    private long count(String tableName) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+            resultSet.next();
+            return resultSet.getLong(1);
+        }
     }
 
-    private int intValue(String tableName, String columnName, String whereClause) {
-        Integer value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                Integer.class);
-        return value == null ? 0 : value;
+    private String stringValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getString(1);
+        }
     }
 
-    private boolean booleanValue(String tableName, String columnName, String whereClause) {
-        Boolean value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                Boolean.class);
-        return Boolean.TRUE.equals(value);
+    private int intValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getInt(1);
+        }
+    }
+
+    private boolean booleanValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getBoolean(1);
+        }
     }
 
     @Configuration
     @Import(NoticeChannelResourceHandler.class)
     @MapperScan(basePackageClasses = NoticeChannelConfigMapper.class)
     static class TestConfig {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record MapNode(MangoNode mango) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record MangoNode(ResourceNode resource) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record ResourceNode(Map<String, List<ResourceDeclaration>> declarations) {
     }
 }

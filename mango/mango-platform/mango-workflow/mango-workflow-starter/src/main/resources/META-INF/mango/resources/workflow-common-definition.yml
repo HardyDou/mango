@@ -1,0 +1,226 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: workflow
+    module-name: 工作流
+    declarations:
+      WORKFLOW_CATEGORY:
+        - id: "2951300000000000001"
+          version: 1
+          biz-key: workflow.category.common
+          name: 通用流程分类
+          target-module: workflow
+          fields:
+            categoryId: { type: LONG, value: 1 }
+            tenantId: { type: LONG, value: 1 }
+            categoryCode: { type: STRING, value: COMMON }
+            categoryName: { type: STRING, value: 通用流程 }
+            domainCode: { type: STRING, value: COMMON }
+            sort: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            remark: { type: STRING, value: 系统默认通用流程分类 }
+      WORKFLOW_TEMPLATE_CATEGORY:
+        - id: "2951300000000000101"
+          version: 1
+          biz-key: workflow.template-category.common
+          name: 通用流程模板分类
+          target-module: workflow
+          fields:
+            categoryId: { type: LONG, value: 1 }
+            tenantId: { type: LONG, value: 1 }
+            categoryCode: { type: STRING, value: COMMON_TEMPLATE }
+            categoryName: { type: STRING, value: 通用模板 }
+            icon: { type: STRING, value: CollectionTag }
+            sort: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            remark: { type: STRING, value: 系统默认通用流程模板分类 }
+      WORKFLOW_NODE_DEFINITION:
+        - id: "2951300000000001001"
+          version: 1
+          biz-key: workflow.node.root
+          name: 发起人
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000001 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: ROOT }
+            nodeType: { type: STRING, value: ROOT }
+            nodeName: { type: STRING, value: 发起人 }
+            categoryCode: { type: STRING, value: BASIC }
+            categoryName: { type: STRING, value: 基础节点 }
+            description: { type: STRING, value: 流程发起节点，由系统自动创建 }
+            bpmnType: { type: STRING, value: startEvent }
+            executionType: { type: STRING, value: NONE }
+            color: { type: STRING, value: "#64748b" }
+            icon: { type: STRING, value: User }
+            defaultProperties: { type: JSON, value: "{}" }
+            sort: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001002"
+          version: 1
+          biz-key: workflow.node.approval
+          name: 审批节点
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000002 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: APPROVAL }
+            nodeType: { type: STRING, value: APPROVAL }
+            nodeName: { type: STRING, value: 审批节点 }
+            categoryCode: { type: STRING, value: BASIC }
+            categoryName: { type: STRING, value: 基础节点 }
+            description: { type: STRING, value: 人工审批、会签、或签等人工处理节点 }
+            bpmnType: { type: STRING, value: userTask }
+            executionType: { type: STRING, value: USER_TASK }
+            color: { type: STRING, value: "#2563eb" }
+            icon: { type: STRING, value: Stamp }
+            defaultProperties: { type: JSON, value: '{"assigneeType":"USER"}' }
+            sort: { type: INT, value: 10 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001003"
+          version: 1
+          biz-key: workflow.node.cc
+          name: 抄送节点
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000003 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: CC }
+            nodeType: { type: STRING, value: CC }
+            nodeName: { type: STRING, value: 抄送节点 }
+            categoryCode: { type: STRING, value: BASIC }
+            categoryName: { type: STRING, value: 基础节点 }
+            description: { type: STRING, value: 流程流转到此处时通知相关人员 }
+            bpmnType: { type: STRING, value: serviceTask }
+            executionType: { type: STRING, value: EVENT_PUBLISH }
+            color: { type: STRING, value: "#7c3aed" }
+            icon: { type: STRING, value: Send }
+            defaultProperties: { type: JSON, value: '{"eventName":"workflow.cc"}' }
+            sort: { type: INT, value: 20 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001004"
+          version: 1
+          biz-key: workflow.node.exclusive-gateway
+          name: 条件分支
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000004 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: EXCLUSIVE_GATEWAY }
+            nodeType: { type: STRING, value: EXCLUSIVE_GATEWAY }
+            nodeName: { type: STRING, value: 条件分支 }
+            categoryCode: { type: STRING, value: BASIC }
+            categoryName: { type: STRING, value: 基础节点 }
+            description: { type: STRING, value: 按条件选择一个分支继续流转 }
+            bpmnType: { type: STRING, value: exclusiveGateway }
+            executionType: { type: STRING, value: NONE }
+            color: { type: STRING, value: "#f59e0b" }
+            icon: { type: STRING, value: GitBranch }
+            defaultProperties: { type: JSON, value: "{}" }
+            sort: { type: INT, value: 30 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001005"
+          version: 1
+          biz-key: workflow.node.parallel-gateway
+          name: 并行分支
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000005 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: PARALLEL_GATEWAY }
+            nodeType: { type: STRING, value: PARALLEL_GATEWAY }
+            nodeName: { type: STRING, value: 并行分支 }
+            categoryCode: { type: STRING, value: BASIC }
+            categoryName: { type: STRING, value: 基础节点 }
+            description: { type: STRING, value: 多个分支同时流转并在结束后合并 }
+            bpmnType: { type: STRING, value: parallelGateway }
+            executionType: { type: STRING, value: NONE }
+            color: { type: STRING, value: "#0f766e" }
+            icon: { type: STRING, value: GitFork }
+            defaultProperties: { type: JSON, value: "{}" }
+            sort: { type: INT, value: 40 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001006"
+          version: 1
+          biz-key: workflow.node.service-bean
+          name: Bean服务任务
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000006 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: SERVICE_BEAN }
+            nodeType: { type: STRING, value: SERVICE }
+            nodeName: { type: STRING, value: Bean服务任务 }
+            categoryCode: { type: STRING, value: SERVICE }
+            categoryName: { type: STRING, value: 服务节点 }
+            description: { type: STRING, value: 调用白名单 Spring Bean 执行业务动作 }
+            bpmnType: { type: STRING, value: serviceTask }
+            executionType: { type: STRING, value: SPRING_BEAN }
+            color: { type: STRING, value: "#0891b2" }
+            icon: { type: STRING, value: Box }
+            defaultProperties: { type: JSON, value: '{"beanName":"","methodName":""}' }
+            sort: { type: INT, value: 50 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001007"
+          version: 1
+          biz-key: workflow.node.service-http
+          name: HTTP服务任务
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000007 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: SERVICE_HTTP }
+            nodeType: { type: STRING, value: SERVICE }
+            nodeName: { type: STRING, value: HTTP服务任务 }
+            categoryCode: { type: STRING, value: SERVICE }
+            categoryName: { type: STRING, value: 服务节点 }
+            description: { type: STRING, value: 调用受控 HTTP URL 执行业务动作 }
+            bpmnType: { type: STRING, value: serviceTask }
+            executionType: { type: STRING, value: HTTP_URL }
+            color: { type: STRING, value: "#dc2626" }
+            icon: { type: STRING, value: Webhook }
+            defaultProperties: { type: JSON, value: '{"url":"","method":"POST","timeoutMillis":5000}' }
+            sort: { type: INT, value: 60 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001008"
+          version: 1
+          biz-key: workflow.node.service-remote
+          name: 远程服务任务
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000008 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: SERVICE_REMOTE }
+            nodeType: { type: STRING, value: SERVICE }
+            nodeName: { type: STRING, value: 远程服务任务 }
+            categoryCode: { type: STRING, value: SERVICE }
+            categoryName: { type: STRING, value: 服务节点 }
+            description: { type: STRING, value: 调用受控远程服务执行微服务动作 }
+            bpmnType: { type: STRING, value: serviceTask }
+            executionType: { type: STRING, value: REMOTE_SERVICE }
+            color: { type: STRING, value: "#ea580c" }
+            icon: { type: STRING, value: Cloud }
+            defaultProperties: { type: JSON, value: '{"serviceName":"","operation":""}' }
+            sort: { type: INT, value: 70 }
+            status: { type: INT, value: 1 }
+        - id: "2951300000000001009"
+          version: 1
+          biz-key: workflow.node.event-publish
+          name: 事件发布任务
+          target-module: workflow
+          fields:
+            nodeDefinitionId: { type: LONG, value: 360000009 }
+            tenantId: { type: LONG, value: 1 }
+            nodeDefinitionCode: { type: STRING, value: EVENT_PUBLISH }
+            nodeType: { type: STRING, value: SERVICE }
+            nodeName: { type: STRING, value: 事件发布任务 }
+            categoryCode: { type: STRING, value: SERVICE }
+            categoryName: { type: STRING, value: 服务节点 }
+            description: { type: STRING, value: 发布流程事件，支持单体事件和后续消息总线扩展 }
+            bpmnType: { type: STRING, value: serviceTask }
+            executionType: { type: STRING, value: EVENT_PUBLISH }
+            color: { type: STRING, value: "#16a34a" }
+            icon: { type: STRING, value: Radio }
+            defaultProperties: { type: JSON, value: '{"eventName":""}' }
+            sort: { type: INT, value: 80 }
+            status: { type: INT, value: 1 }

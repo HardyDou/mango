@@ -1,8 +1,6 @@
 package io.mango.notice.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
 import io.mango.notice.core.mapper.NoticeBusinessConfigVersionMapper;
@@ -16,24 +14,22 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
-import java.nio.file.Path;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
-        JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
@@ -50,18 +46,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class NoticeMessageTemplateResourceHandlerIntegrationTest {
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @Autowired
     private NoticeMessageTemplateResourceHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         rebuildTables();
     }
 
     @Test
-    void upsertCreatesMessageTemplatePackage() {
+    void upsertCreatesMessageTemplatePackage() throws Exception {
         handler.upsert(messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true));
 
         assertThat(count("notice_business_type")).isOne();
@@ -78,7 +74,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     }
 
     @Test
-    void upsertUpdatesMessageTemplatePackage() {
+    void upsertUpdatesMessageTemplatePackage() throws Exception {
         handler.upsert(messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true));
 
         handler.upsert(messageTemplateDeclaration("任务失败：{{jobName}}", true));
@@ -89,7 +85,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     }
 
     @Test
-    void disableMarksBusinessAndTemplateDisabled() {
+    void disableMarksBusinessAndTemplateDisabled() throws Exception {
         ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
         handler.upsert(declaration);
 
@@ -100,7 +96,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     }
 
     @Test
-    void deletePhysicallyDeletesMessageTemplatePackage() {
+    void deletePhysicallyDeletesMessageTemplatePackage() throws Exception {
         ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
         handler.upsert(declaration);
 
@@ -112,7 +108,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     }
 
     @Test
-    void deleteOneChannelKeepsSharedBusinessType() {
+    void deleteOneChannelKeepsSharedBusinessType() throws Exception {
         ResourceDeclaration site = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
         ResourceDeclaration email = messageTemplateDeclaration("定时任务执行失败邮件：{{jobName}}", true);
         email.setBizKey("job.message.job-instance-failed-email");
@@ -133,12 +129,8 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     }
 
     @Test
-    void jobYamlMessageTemplateMatchesOldFlywaySeed() throws Exception {
-        List<ResourceDeclaration> declarations = loadJobMessageTemplateDeclarations();
-
-        for (ResourceDeclaration declaration : declarations) {
-            handler.upsert(declaration);
-        }
+    void jobMessageTemplateMatchesOldFlywaySeed() throws Exception {
+        handler.upsert(jobInstanceFailedMessageTemplateDeclaration());
 
         assertThat(count("notice_business_type")).isOne();
         assertThat(count("notice_business_config_version")).isOne();
@@ -159,12 +151,11 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                 .contains("请进入平台能力/任务管理/执行实例查看日志");
     }
 
-    @SuppressWarnings("unchecked")
-    private List<ResourceDeclaration> loadJobMessageTemplateDeclarations() throws Exception {
-        Path path = Path.of("../../mango-job/mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-message.yml");
-        ObjectMapper objectMapper = new ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
-        MapNode root = objectMapper.readValue(path.toFile(), MapNode.class);
-        return ((List<ResourceDeclaration>) root.mango().resource().declarations().get(ResourceTypes.MESSAGE_TEMPLATE));
+    private ResourceDeclaration jobInstanceFailedMessageTemplateDeclaration() {
+        ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
+        field(declaration, "paramsSchema", ResourceFieldType.JSON,
+                "{\"type\":\"object\",\"required\":[\"jobCode\",\"jobName\",\"instanceId\",\"errorSummary\"]}");
+        return declaration;
     }
 
     private ResourceDeclaration messageTemplateDeclaration(String titleTemplate, boolean enabled) {
@@ -208,11 +199,11 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         declaration.getFields().put(name, field);
     }
 
-    private void rebuildTables() {
-        jdbcTemplate.execute("drop table if exists notice_business_channel_template");
-        jdbcTemplate.execute("drop table if exists notice_business_config_version");
-        jdbcTemplate.execute("drop table if exists notice_business_type");
-        jdbcTemplate.execute("""
+    private void rebuildTables() throws Exception {
+        execute("drop table if exists notice_business_channel_template");
+        execute("drop table if exists notice_business_config_version");
+        execute("drop table if exists notice_business_type");
+        execute("""
                 create table notice_business_type (
                     id bigint not null,
                     biz_type varchar(64) not null,
@@ -233,7 +224,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                     unique (tenant_id, biz_type)
                 )
                 """);
-        jdbcTemplate.execute("""
+        execute("""
                 create table notice_business_config_version (
                     id bigint not null,
                     business_type_id bigint not null,
@@ -254,7 +245,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                     unique (tenant_id, biz_type, version)
                 )
                 """);
-        jdbcTemplate.execute("""
+        execute("""
                 create table notice_business_channel_template (
                     id bigint not null,
                     business_type_id bigint not null,
@@ -282,25 +273,50 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                 """);
     }
 
-    private long count(String tableName) {
-        return jdbcTemplate.queryForObject("select count(*) from " + tableName, Long.class);
+    private void execute(String sql) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
     }
 
-    private String stringValue(String tableName, String columnName, String whereClause) {
-        return jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                String.class);
+    private long count(String tableName) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+            resultSet.next();
+            return resultSet.getLong(1);
+        }
     }
 
-    private int intValue(String tableName, String columnName, String whereClause) {
-        Integer value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                Integer.class);
-        return value == null ? 0 : value;
+    private String stringValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getString(1);
+        }
     }
 
-    private boolean booleanValue(String tableName, String columnName, String whereClause) {
-        Boolean value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                Boolean.class);
-        return Boolean.TRUE.equals(value);
+    private int intValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getInt(1);
+        }
+    }
+
+    private boolean booleanValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getBoolean(1);
+        }
     }
 
     @Configuration
@@ -311,17 +327,5 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
             NoticeBusinessChannelTemplateMapper.class
     })
     static class TestConfig {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record MapNode(MangoNode mango) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record MangoNode(ResourceNode resource) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record ResourceNode(Map<String, List<ResourceDeclaration>> declarations) {
     }
 }

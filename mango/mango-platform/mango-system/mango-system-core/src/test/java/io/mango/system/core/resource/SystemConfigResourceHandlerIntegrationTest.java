@@ -12,21 +12,22 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.LinkedHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
-        JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
@@ -43,18 +44,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SystemConfigResourceHandlerIntegrationTest {
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @Autowired
     private SystemConfigResourceHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         rebuildTables();
     }
 
     @Test
-    void upsertCreatesConfig() {
+    void upsertCreatesConfig() throws Exception {
         handler.upsert(configDeclaration("skin-blue", 1));
 
         assertThat(stringValue("sys_config", "config_value", "id = 1")).isEqualTo("skin-blue");
@@ -63,7 +64,7 @@ class SystemConfigResourceHandlerIntegrationTest {
     }
 
     @Test
-    void upsertUpdatesConfig() {
+    void upsertUpdatesConfig() throws Exception {
         handler.upsert(configDeclaration("skin-blue", 1));
 
         handler.upsert(configDeclaration("skin-green", 2));
@@ -73,7 +74,7 @@ class SystemConfigResourceHandlerIntegrationTest {
     }
 
     @Test
-    void disableMarksConfigDisabled() {
+    void disableMarksConfigDisabled() throws Exception {
         ResourceDeclaration declaration = configDeclaration("skin-blue", 1);
         handler.upsert(declaration);
 
@@ -83,7 +84,7 @@ class SystemConfigResourceHandlerIntegrationTest {
     }
 
     @Test
-    void deletePhysicallyDeletesConfig() {
+    void deletePhysicallyDeletesConfig() throws Exception {
         ResourceDeclaration declaration = configDeclaration("skin-blue", 1);
         handler.upsert(declaration);
 
@@ -120,9 +121,9 @@ class SystemConfigResourceHandlerIntegrationTest {
         declaration.getFields().put(name, field);
     }
 
-    private void rebuildTables() {
-        jdbcTemplate.execute("drop table if exists sys_config");
-        jdbcTemplate.execute("""
+    private void rebuildTables() throws Exception {
+        execute("drop table if exists sys_config");
+        execute("""
                 create table sys_config (
                     id bigint not null,
                     config_key varchar(100) not null,
@@ -143,19 +144,40 @@ class SystemConfigResourceHandlerIntegrationTest {
                 """);
     }
 
-    private long count(String tableName) {
-        return jdbcTemplate.queryForObject("select count(*) from " + tableName, Long.class);
+    private void execute(String sql) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
     }
 
-    private String stringValue(String tableName, String columnName, String whereClause) {
-        return jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                String.class);
+    private long count(String tableName) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
+            resultSet.next();
+            return resultSet.getLong(1);
+        }
     }
 
-    private int intValue(String tableName, String columnName, String whereClause) {
-        Integer value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " where " + whereClause,
-                Integer.class);
-        return value == null ? 0 : value;
+    private String stringValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getString(1);
+        }
+    }
+
+    private int intValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getInt(1);
+        }
     }
 
     @Configuration

@@ -12,6 +12,9 @@ public final class ResourceTypes {
     public static final String MESSAGE_EVENT = "MESSAGE_EVENT";
     public static final String MESSAGE_CHANNEL = "MESSAGE_CHANNEL";
     public static final String MESSAGE_TEMPLATE = "MESSAGE_TEMPLATE";
+    public static final String WORKFLOW_CATEGORY = "WORKFLOW_CATEGORY";
+    public static final String WORKFLOW_TEMPLATE_CATEGORY = "WORKFLOW_TEMPLATE_CATEGORY";
+    public static final String WORKFLOW_NODE_DEFINITION = "WORKFLOW_NODE_DEFINITION";
     public static final String WORKFLOW_DEFINITION = "WORKFLOW_DEFINITION";
     public static final String SEQUENCE_RULE = "SEQUENCE_RULE";
     public static final String PRINT_TEMPLATE = "PRINT_TEMPLATE";

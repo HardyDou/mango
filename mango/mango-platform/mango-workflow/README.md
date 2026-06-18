@@ -210,7 +210,93 @@ registerMangoWorkflowAdminPages();
 | `/workflow/task/detail` | `workflow/task/detail/index` | `workflow:task:detail` |
 | `/workflow/custom-apply` | `workflow/custom-apply/index` | `workflow:custom-apply` |
 
-## 5. 数据权限
+## 5. 资源注入
+
+工作流默认分类、模板分类和设计器节点定义通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。资源文件放在：
+
+```text
+mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-definition.yml
+```
+
+`workflow` 作为资源消费者提供以下处理器：
+
+| 资源类型 | 落库表 | 合并键 |
+|----------|--------|--------|
+| `WORKFLOW_CATEGORY` | `workflow_category` | `tenantId + categoryCode` |
+| `WORKFLOW_TEMPLATE_CATEGORY` | `workflow_template_category` | `tenantId + categoryCode` |
+| `WORKFLOW_NODE_DEFINITION` | `workflow_node_definition` | `tenantId + nodeDefinitionCode` |
+
+通用约束：
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `workflow.node.approval`。 |
+| `target-module` | `STRING` | 是 | 固定为 `workflow`。 |
+
+删除规则：
+
+| 操作 | 行为 |
+|------|------|
+| `disable` | 将目标资源 `status` 更新为 `0`。 |
+| `delete` | 物理删除目标资源行。 |
+
+### 5.1 WORKFLOW_CATEGORY
+
+`WORKFLOW_CATEGORY` 用于初始化流程分类。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `categoryId` | `LONG` | 否 | 流程分类稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
+| `categoryCode` | `STRING` | 是 | 分类编码，租户内唯一。 |
+| `categoryName` | `STRING` | 是 | 分类名称。 |
+| `domainCode` | `STRING` | 否 | 业务域编码，默认 `COMMON`。 |
+| `sort` | `INT` | 否 | 排序号，默认 `0`。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
+| `remark` | `STRING` | 否 | 备注。 |
+
+### 5.2 WORKFLOW_TEMPLATE_CATEGORY
+
+`WORKFLOW_TEMPLATE_CATEGORY` 用于初始化流程模板分类。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `categoryId` | `LONG` | 否 | 模板分类稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
+| `parentId` | `LONG` | 否 | 父分类 ID。 |
+| `categoryCode` | `STRING` | 是 | 模板分类编码，租户内唯一。 |
+| `categoryName` | `STRING` | 是 | 模板分类名称。 |
+| `icon` | `STRING` | 否 | 前端图标标识。 |
+| `sort` | `INT` | 否 | 排序号，默认 `0`。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
+| `remark` | `STRING` | 否 | 备注。 |
+
+### 5.3 WORKFLOW_NODE_DEFINITION
+
+`WORKFLOW_NODE_DEFINITION` 用于初始化流程设计器可选节点定义。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `nodeDefinitionId` | `LONG` | 否 | 节点定义稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
+| `nodeDefinitionCode` | `STRING` | 是 | 节点定义编码，租户内唯一。 |
+| `nodeType` | `STRING` | 是 | 节点类型，例如 `APPROVAL`、`SERVICE`。 |
+| `nodeName` | `STRING` | 是 | 节点名称。 |
+| `categoryCode` | `STRING` | 是 | 节点分类编码。 |
+| `categoryName` | `STRING` | 是 | 节点分类名称。 |
+| `description` | `STRING` | 否 | 节点说明。 |
+| `bpmnType` | `STRING` | 是 | BPMN 节点类型。 |
+| `executionType` | `STRING` | 是 | 执行类型。 |
+| `color` | `STRING` | 否 | 前端展示颜色。 |
+| `icon` | `STRING` | 否 | 前端图标标识。 |
+| `propertySchema` | `JSON` | 否 | 节点属性 Schema。 |
+| `defaultProperties` | `JSON` | 否 | 节点默认属性。 |
+| `sort` | `INT` | 否 | 排序号，默认 `0`。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
+
+## 6. 数据权限
 
 流程定义管理已接入角色数据权限。分页、已发布分页、详情、发布版本列表、发布版本详情，以及依赖详情读取的编辑、删除、状态调整、撤回和发布操作，都会按 `workflow:definition:list` 解析当前角色的数据范围。
 
@@ -225,7 +311,7 @@ registerMangoWorkflowAdminPages();
 
 未安装授权数据权限能力时，workflow 保持原查询行为；安装后由 `DataScopeApplier` 追加本人、指定组织、本人主部门或本人主部门及下级范围条件，并校验 `workflow_definition` 存在当前规则需要的映射字段。租户隔离仍由 persistence 租户插件处理。
 
-## 6. 快速开始
+## 7. 快速开始
 
 1. 业务后端引入 `mango-workflow-api`；部署 workflow 能力的应用引入 `mango-workflow-starter`。
 2. 管理后台安装 `@mango/workflow`，注册 workflow 页面。
