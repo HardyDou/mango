@@ -3,11 +3,11 @@ package io.mango.infra.persistence.starter;
 import io.mango.infra.persistence.api.scope.DataScopeApplier;
 import io.mango.infra.persistence.api.scope.DataScopeProvider;
 import io.mango.infra.persistence.starter.scope.MybatisPlusDataScopeApplier;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -21,7 +21,7 @@ import java.util.Optional;
  * MyBatis-Plus 插件和 Repository 契约等。业务模块只依赖本 starter，
  * 不直接感知底层持久化组件组合。
  */
-@AutoConfiguration
+@AutoConfiguration(afterName = "io.mango.authorization.starter.AuthorizationAutoConfiguration")
 @EnableTransactionManagement
 @EnableConfigurationProperties(PersistenceProperties.class)
 public class PersistenceAutoConfiguration {
