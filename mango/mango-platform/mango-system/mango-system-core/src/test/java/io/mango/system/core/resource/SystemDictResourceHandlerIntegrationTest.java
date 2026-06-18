@@ -159,6 +159,44 @@ class SystemDictResourceHandlerIntegrationTest {
                 .isEqualTo("org");
     }
 
+    @Test
+    void forceSyncRebuildsDictWhenTargetTablesAreCleared() {
+        syncService.sync();
+        jdbcTemplate.update("delete from sys_dict_data");
+        jdbcTemplate.update("delete from sys_dict_type");
+
+        syncService.sync();
+
+        assertThat(count("sys_dict_type")).isZero();
+        assertThat(count("sys_dict_data")).isZero();
+
+        syncService.sync(true);
+
+        assertThat(stringValue("sys_dict_type", "dict_name", "dict_type = 'authorization_role_type'"))
+                .isEqualTo("授权角色类型");
+        assertThat(stringValue("sys_dict_data", "dict_label", "id = 100"))
+                .isEqualTo("系统角色");
+        assertThat(count("resource_registry")).isEqualTo(1);
+    }
+
+    @Test
+    void deleteResourcePhysicallyDeletesSystemDictAndKeepsRegistryRemoved() {
+        syncService.sync();
+
+        syncService.deleteResource("2026061800100000001", true);
+
+        assertThat(count("sys_dict_type")).isZero();
+        assertThat(count("sys_dict_data")).isZero();
+        assertThat(stringValue("resource_registry", "status", "resource_id = '2026061800100000001'"))
+                .isEqualTo("REMOVED");
+        assertThat(jdbcTemplate.queryForObject(
+                "select sync_type from resource_sync_log order by created_at desc limit 1", String.class))
+                .isEqualTo("DELETE");
+        assertThat(jdbcTemplate.queryForObject(
+                "select change_type from resource_change_log order by created_at desc limit 1", String.class))
+                .isEqualTo("DELETE");
+    }
+
     private ResourceDeclaration dictDeclaration(int version, String dictName, List<Map<String, Object>> items) {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId("2026061800100000001");

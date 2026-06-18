@@ -18,10 +18,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -47,6 +49,23 @@ public class ResourceAdminController implements ResourceRegistryApi {
     @Operation(summary = "分页查询注册资源")
     public R<PageResult<ResourceRegistryVO>> pageRegistries(@ParameterObject ResourceRegistryPageQuery query) {
         return R.ok(resourceAdminService.pageRegistries(query));
+    }
+
+    @PostMapping("/sync/force")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:resource:sync:force")
+    @Operation(summary = "强制同步资源")
+    public R<Boolean> forceSync() {
+        resourceAdminService.forceSync();
+        return R.ok(Boolean.TRUE);
+    }
+
+    @DeleteMapping("/registries")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:resource:registry:delete")
+    @Operation(summary = "删除注册资源")
+    public R<Boolean> deleteResource(@RequestParam String resourceId,
+                                     @RequestParam(defaultValue = "false") boolean physical) {
+        resourceAdminService.deleteResource(resourceId, physical);
+        return R.ok(Boolean.TRUE);
     }
 
     @GetMapping("/sync-logs/page")

@@ -40,6 +40,10 @@ public class ResourceRegistrySyncService {
     private final ObjectMapper objectMapper;
 
     public void sync() {
+        sync(false);
+    }
+
+    public void sync(boolean force) {
         if (!properties.isEnabled()) {
             log.info("Mango resource registry sync disabled");
             return;
@@ -50,7 +54,7 @@ public class ResourceRegistrySyncService {
             return;
         }
         try {
-            doSync();
+            doSync(force);
         } finally {
             lock.unlock(owner);
         }
@@ -67,37 +71,55 @@ public class ResourceRegistrySyncService {
             return;
         }
         try {
-            doSync(declarations);
+            doSync(declarations, false);
         } finally {
             lock.unlock(owner);
         }
     }
 
-    private void doSync() {
-        Map<String, ResourceHandler> handlerMap = loadHandlers();
-        List<ResourceDeclaration> declarations = collector.collect();
-        doSync(declarations, handlerMap, collector.managedModuleCodes(declarations));
+    public void deleteResource(String resourceId, boolean physical) {
+        requireText(resourceId, "Resource id is required");
+        if (!properties.isEnabled()) {
+            log.info("Mango resource registry delete skipped: registry disabled, resourceId={}", resourceId);
+            return;
+        }
+        String owner = resolveOwner();
+        if (!lock.tryLock(owner, properties.getLockTtlSeconds())) {
+            log.info("Mango resource registry delete skipped: lock is held by another instance");
+            return;
+        }
+        try {
+            doDeleteResource(resourceId, physical);
+        } finally {
+            lock.unlock(owner);
+        }
     }
 
-    private void doSync(List<ResourceDeclaration> declarations) {
+    private void doSync(boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
-        doSync(declarations, handlerMap, declarationModuleCodes(declarations));
+        List<ResourceDeclaration> declarations = collector.collect();
+        doSync(declarations, handlerMap, collector.managedModuleCodes(declarations), force);
+    }
+
+    private void doSync(List<ResourceDeclaration> declarations, boolean force) {
+        Map<String, ResourceHandler> handlerMap = loadHandlers();
+        doSync(declarations, handlerMap, declarationModuleCodes(declarations), force);
     }
 
     private void doSync(List<ResourceDeclaration> declarations, Map<String, ResourceHandler> handlerMap,
-                        Set<String> managedModuleCodes) {
+                        Set<String> managedModuleCodes, boolean force) {
         validateConflicts(declarations);
         Set<String> seenResourceIds = new HashSet<>();
         List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
         for (ResourceDeclaration declaration : declarations) {
             seenResourceIds.add(declaration.getId());
             if (isDisabled(declaration)) {
-                syncOne(declaration, handlerMap);
+                syncOne(declaration, handlerMap, force);
             } else {
                 activeDeclarations.add(declaration);
             }
         }
-        syncActiveBatch(activeDeclarations, handlerMap);
+        syncActiveBatch(activeDeclarations, handlerMap, force);
         disableMissing(managedModuleCodes, seenResourceIds, handlerMap);
         log.info("Mango resource registry sync complete: declarations={}", declarations.size());
     }
@@ -161,7 +183,7 @@ public class ResourceRegistrySyncService {
         log.warn(message);
     }
 
-    private void syncOne(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap) {
+    private void syncOne(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap, boolean force) {
         ResourceHandler handler = handlerMap.get(declaration.getResourceType());
         if (handler == null) {
             throw new IllegalStateException("No resource handler found: " + declaration.getResourceType());
@@ -172,7 +194,7 @@ public class ResourceRegistrySyncService {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
             return;
         }
-        if (row != null && hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
+        if (!force && row != null && hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource declaration is unchanged");
             return;
         }
@@ -190,7 +212,8 @@ public class ResourceRegistrySyncService {
         }
     }
 
-    private void syncActiveBatch(List<ResourceDeclaration> declarations, Map<String, ResourceHandler> handlerMap) {
+    private void syncActiveBatch(List<ResourceDeclaration> declarations, Map<String, ResourceHandler> handlerMap,
+                                 boolean force) {
         Map<String, List<ResourceDeclaration>> allDeclarationsByType = new HashMap<>();
         Map<String, List<ResourceDeclaration>> declarationsByType = new HashMap<>();
         for (ResourceDeclaration declaration : declarations) {
@@ -205,7 +228,7 @@ public class ResourceRegistrySyncService {
                 repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
                 continue;
             }
-            if (row != null && hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
+            if (!force && row != null && hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
                 repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource declaration is unchanged");
                 continue;
             }
@@ -228,6 +251,23 @@ public class ResourceRegistrySyncService {
                 saveActiveSyncResult(declaration, result);
             }
         }
+    }
+
+    private void doDeleteResource(String resourceId, boolean physical) {
+        ResourceRegistryRow row = repository.findByResourceId(resourceId);
+        if (row == null) {
+            throw new IllegalStateException("Resource registry not found: " + resourceId);
+        }
+        ResourceHandler handler = loadHandlers().get(row.getResourceType());
+        if (handler == null) {
+            throw new IllegalStateException("No resource handler found: " + row.getResourceType());
+        }
+        ResourceDeclaration declaration = fromRow(row);
+        ResourceSyncResult result = physical ? handler.delete(declaration) : handler.disable(declaration);
+        repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
+        String changeType = physical ? "DELETE" : "DISABLE";
+        repository.insertSyncLog(row.getId(), changeType, "SUCCESS", result.getMessage());
+        repository.insertChangeLog(row.getId(), changeType, toJson(row), toJson(declaration));
     }
 
     private void saveActiveSyncResult(ResourceDeclaration declaration, ResourceSyncResult result) {

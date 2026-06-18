@@ -138,6 +138,41 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(intValue("message_template", "enabled")).isZero();
     }
 
+    @Test
+    void forceSyncRebuildsTargetWhenRegistryIsUnchanged() {
+        syncService.sync();
+        jdbcTemplate.update("delete from message_template");
+
+        syncService.sync();
+
+        assertThat(count("message_template")).isZero();
+
+        syncService.sync(true);
+
+        assertThat(count("message_template")).isEqualTo(1);
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(count("resource_registry")).isEqualTo(1);
+    }
+
+    @Test
+    void deleteResourcePhysicallyDeletesTargetAndKeepsRegistryRemoved() {
+        syncService.sync();
+
+        syncService.deleteResource("1900000000000000001", true);
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getStatus()).isEqualTo("REMOVED");
+        assertThat(count("message_template")).isZero();
+        assertThat(count("resource_sync_log")).isEqualTo(2);
+        assertThat(count("resource_change_log")).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject(
+                "select sync_type from resource_sync_log order by created_at desc limit 1", String.class))
+                .isEqualTo("DELETE");
+        assertThat(jdbcTemplate.queryForObject(
+                "select change_type from resource_change_log order by created_at desc limit 1", String.class))
+                .isEqualTo("DELETE");
+    }
+
     private ResourceDeclaration activeDeclaration(int version, String titleValue) {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId("1900000000000000001");
@@ -359,6 +394,12 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 messageTemplateMapper.updateById(entity);
             }
             return ResourceSyncResult.of(91001L, "message_template", "disabled");
+        }
+
+        @Override
+        public ResourceSyncResult delete(ResourceDeclaration resource) {
+            messageTemplateMapper.deleteById(91001L);
+            return ResourceSyncResult.of(91001L, "message_template", "deleted");
         }
     }
 }

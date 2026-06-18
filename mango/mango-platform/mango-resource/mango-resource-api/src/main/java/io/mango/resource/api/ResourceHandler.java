@@ -74,4 +74,16 @@ public interface ResourceHandler {
      * @return 同步结果。
      */
     ResourceSyncResult disable(ResourceDeclaration resource);
+
+    /**
+     * 物理删除目标资源。
+     * <p>
+     * 默认降级为逻辑禁用，目标模块如果支持物理删除，应自行覆盖该方法。
+     *
+     * @param resource 资源声明。
+     * @return 同步结果。
+     */
+    default ResourceSyncResult delete(ResourceDeclaration resource) {
+        return disable(resource);
+    }
 }

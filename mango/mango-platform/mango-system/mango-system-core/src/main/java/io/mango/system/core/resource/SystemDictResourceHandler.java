@@ -114,6 +114,19 @@ public class SystemDictResourceHandler implements ResourceHandler {
         return ResourceSyncResult.of(type.getId(), TARGET_TABLE, "System dict disabled: " + dictType);
     }
 
+    @Override
+    public ResourceSyncResult delete(ResourceDeclaration resource) {
+        String dictType = fieldText(resource, "dictType", false);
+        DictType type = StringUtils.hasText(dictType) ? findType(dictType) : findTypeByTargetId(resource);
+        if (type == null) {
+            return ResourceSyncResult.of(null, TARGET_TABLE, "System dict not found: " + dictType);
+        }
+        dictType = type.getDictType();
+        dictDataMapper.delete(new LambdaQueryWrapper<DictData>().eq(DictData::getDictType, dictType));
+        dictTypeMapper.deleteById(type.getId());
+        return ResourceSyncResult.of(type.getId(), TARGET_TABLE, "System dict deleted: " + dictType);
+    }
+
     private void applyType(DictType type, DictPayload payload) {
         LocalDateTime now = LocalDateTime.now();
         type.setDictName(payload.dictName());

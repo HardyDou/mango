@@ -47,6 +47,15 @@ public class ResourceAdminService {
                 command.getAppCode(), command.getServiceCode(), command.getDeclarations().size());
     }
 
+    public void forceSync() {
+        syncService.sync(true);
+    }
+
+    public void deleteResource(String resourceId, boolean physical) {
+        Require.notBlank(resourceId, "资源ID不能为空");
+        syncService.deleteResource(resourceId, physical);
+    }
+
     public PageResult<ResourceRegistryVO> pageRegistries(ResourceRegistryPageQuery query) {
         Page<ResourceRegistryEntity> page = registryMapper.selectPage(
                 Page.of(query.getPage(), query.getSize()),
