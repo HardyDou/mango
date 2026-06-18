@@ -128,17 +128,25 @@ function assertFullEntry(module) {
 }
 
 function assertAdminDependency(module) {
-  const hasDependency = Boolean(
-    adminPackageJson.dependencies?.[module.packageName] ||
-      adminPackageJson.peerDependencies?.[module.packageName] ||
-      adminPackageJson.optionalDependencies?.[module.packageName] ||
-      adminPackageJson.devDependencies?.[module.packageName],
+  const inDefaultStyle = adminManifest.packages.some((item) => item.name === module.packageName);
+  const hasDirectDependency = Boolean(adminPackageJson.dependencies?.[module.packageName]);
+  const hasOptionalPeer = Boolean(
+    adminPackageJson.peerDependencies?.[module.packageName] &&
+      adminPackageJson.peerDependenciesMeta?.[module.packageName]?.optional,
   );
-  if (!hasDependency) {
-    failures.push(`@mango/admin package.json must declare ${module.packageName}`);
+
+  if (inDefaultStyle) {
+    if (!hasDirectDependency) {
+      failures.push(`@mango/admin dependencies must include default style package ${module.packageName}`);
+    }
+    if (adminPackageJson.peerDependencies?.[module.packageName]) {
+      failures.push(`@mango/admin peerDependencies must not duplicate default style package ${module.packageName}`);
+    }
+    return;
   }
-  if (!adminPackageJson.peerDependenciesMeta?.[module.packageName]?.optional) {
-    failures.push(`@mango/admin peerDependenciesMeta must mark ${module.packageName} optional`);
+
+  if (!hasOptionalPeer) {
+    failures.push(`@mango/admin peerDependenciesMeta must mark full-only package ${module.packageName} optional`);
   }
 }
 

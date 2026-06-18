@@ -1,5 +1,30 @@
 # Mango Changelog
 
+## v2026.06.18-admin-style-dependency-fix - 2026-06-18
+
+### Fixed
+
+- Fixed `@mango/admin/style.css` package consumption by moving the packages it imports by default from optional peers to direct dependencies.
+- Prevented Vite/PostCSS failures where consumers without optional admin modules installed saw unresolved `@mango/grid-layout/style.css`, `@mango/job/style.css`, or `@mango/payment/style.css` imports.
+
+### Published Packages
+
+- `@mango/admin@1.0.21`
+
+### Upgrade Notes
+
+- Frontend consumers affected by `@mango/admin/style.css` resolution errors should upgrade `@mango/admin` to `1.0.21`.
+- No API or import-path migration is required; continue using `import '@mango/admin/style.css'`.
+
+### Verification
+
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm -F @mango/admin build`
+- `.runtime/admin-style-consumer: pnpm install --lockfile=false --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ && pnpm build`
+- `pnpm publish:pkg admin --dry-run --release-tag=v2026.06.18-admin-style-dependency-fix`
+- `npm pack @mango/admin@1.0.20 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/ --pack-destination .runtime/npm-pack-check`
+
 ## v2026.06.18-role-data-scope - 2026-06-18
 
 ### New
