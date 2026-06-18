@@ -1687,6 +1687,118 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkPersistenceCrudBaseline_withBypassPatterns_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service;
+
+                import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+                import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+                import io.mango.demo.core.entity.DemoEntity;
+                import io.mango.demo.core.mapper.DemoMapper;
+
+                public class DemoServiceImpl extends ServiceImpl<DemoMapper, DemoEntity> {
+                    public Object page(Long tenantId) {
+                        DemoEntity entity = new DemoEntity();
+                        entity.setTenantId(String.valueOf(tenantId));
+                        query().eq("created_by", 1001L);
+                        return baseMapper.selectPage(new Page<DemoEntity>(1, 10), null);
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-crud-baseline");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceCrudBaseline_withMangoCrudService_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core.service;
+
+                import io.mango.demo.core.entity.DemoEntity;
+                import io.mango.demo.core.mapper.DemoMapper;
+                import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
+
+                public class DemoService extends MangoCrudServiceImpl<DemoMapper, DemoEntity> {
+                    @Override
+                    protected Class<DemoEntity> entityType() {
+                        return DemoEntity.class;
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-crud-baseline");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceCrudBaseline_withDataScopeApplier_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core.service;
+
+                import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+                import io.mango.demo.core.entity.DemoEntity;
+                import io.mango.demo.core.mapper.DemoMapper;
+                import io.mango.infra.persistence.api.scope.DataScopeApplier;
+                import io.mango.infra.persistence.api.scope.DataScopeMapping;
+                import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
+
+                public class DemoService extends MangoCrudServiceImpl<DemoMapper, DemoEntity> {
+                    private final DataScopeApplier dataScopeApplier;
+
+                    public DemoService(DataScopeApplier dataScopeApplier) {
+                        this.dataScopeApplier = dataScopeApplier;
+                    }
+
+                    @Override
+                    protected void applyDataScope(QueryWrapper<DemoEntity> wrapper, Object query) {
+                        dataScopeApplier.apply(wrapper, "demo:list", DataScopeMapping.builder()
+                                .tableName("demo")
+                                .selfField("created_by")
+                                .orgField("org_id")
+                                .tenantField("tenant_id")
+                                .build());
+                    }
+
+                    @Override
+                    protected Class<DemoEntity> entityType() {
+                        return DemoEntity.class;
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-crud-baseline");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkServiceContract_withExpandedBusinessParams_reportsIssue() throws Exception {
         // given
         Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");

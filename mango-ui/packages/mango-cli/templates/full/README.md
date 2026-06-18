@@ -42,6 +42,8 @@
 ## 5. 接入方式
 生成后进入项目：
 
+业务开发前先确认本次会用到的 Mango 能力说明。在线阅读走 Mango 文档站和能力地图；离线开发使用与依赖版本匹配的文档快照。业务模块生成后，模块根 `README.md` 会登记 Persistence、Authorization、Admin Pages 和 PMO baseline 等常用入口。
+
 ```bash
 cd {{projectKebab}}
 scripts/dev-workspace.sh init

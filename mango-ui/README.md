@@ -218,6 +218,15 @@ node mango-pmo/tools/audit-module-readmes.mjs
 node mango-pmo/tools/audit-readme-source-facts.mjs
 ```
 
+发布包文档检查：
+
+```bash
+pnpm -C mango-ui --filter @mango/common pack --pack-destination /tmp/mango-pack
+tar -tf /tmp/mango-pack/mango-common-*.tgz | grep 'package/README.md'
+```
+
+所有 `mango-ui/packages/*/package.json` 的 `files` 都应显式包含 `README.md`。业务只拿到 npm 包时，可从包根目录的 `README.md` 阅读页面注册、接口、样式和依赖说明。
+
 ## 11. 快速开始
 1. 后端模块初始化菜单、权限和 API 资源。
 2. 前端业务包实现页面并调用 `registerModulePages`。

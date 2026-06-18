@@ -34,6 +34,7 @@
     "generated-package-styles.css",
     "style-full.css",
     "style.css",
+    "README.md",
     "package.json"
   ],
   "dependencies": {

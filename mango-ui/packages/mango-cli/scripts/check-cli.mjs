@@ -418,6 +418,7 @@ try {
     throw new Error(`module add command failed:\n${moduleAddResult.stdout}\n${moduleAddResult.stderr}`);
   }
   for (const file of [
+    'backend/modules/contract/README.md',
     'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/command/UpdateSealCommand.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/entity/SealEntity.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/mapper/SealMapper.java',
@@ -435,6 +436,18 @@ try {
   const moduleApplicationYml = readFileSync(join(customRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
   if (!modulePom.includes('<module>modules/contract</module>')) {
     throw new Error('module add did not register backend module');
+  }
+  const moduleReadme = readFileSync(join(customRoot, 'backend/modules/contract/README.md'), 'utf8');
+  for (const expected of [
+    'Mango 能力入口',
+    'Persistence 持久化',
+    'Authorization 授权资源',
+    'Admin Pages 页面注册',
+    'Mango 文档站 -> 能力地图',
+  ]) {
+    if (!moduleReadme.includes(expected)) {
+      throw new Error(`module add README missing capability documentation entry: ${expected}`);
+    }
   }
   if (!modulePom.includes('<artifactId>mango-infra-persistence-starter</artifactId>')
     || !modulePom.includes('<artifactId>mango-infra-feign-starter</artifactId>')
