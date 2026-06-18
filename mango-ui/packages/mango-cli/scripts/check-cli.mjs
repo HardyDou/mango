@@ -460,6 +460,25 @@ try {
   if (!moduleApplicationYml.includes('        contract:\n          enabled: true')) {
     throw new Error('module add did not enable business Flyway migration');
   }
+  const moduleServiceInterface = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/ISealService.java'),
+    'utf8',
+  );
+  if (!moduleServiceInterface.includes('extends MangoCrudService<SealEntity>')) {
+    throw new Error('module add did not generate typed Mango CRUD service interface');
+  }
+  const moduleService = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/impl/SealService.java'),
+    'utf8',
+  );
+  if (!moduleService.includes('extends MangoCrudServiceImpl<SealMapper, SealEntity>')
+    || moduleService.includes('com.baomidou.mybatisplus.extension.service.impl.ServiceImpl')
+    || moduleService.includes('extends ServiceImpl<')
+    || moduleService.includes('selectPage')
+    || moduleService.includes('new Page<')
+    || moduleService.includes('setTenantId')) {
+    throw new Error('module add did not generate Mango persistence baseline service implementation');
+  }
   const moduleController = readFileSync(
     join(customRoot, 'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java'),
     'utf8',

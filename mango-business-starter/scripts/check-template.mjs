@@ -85,6 +85,14 @@ const contentChecks = [
     patterns: ['R<Object>', 'R<PersistencePageResult<?>>', '@ParameterObject', '@Validated', '/create', '/update', '/delete', '/page', '/detail', '{{aggregateName}}'],
   },
   {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java',
+    patterns: ['extends MangoCrudService<{{aggregatePascal}}Entity>'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java',
+    patterns: ['extends MangoCrudServiceImpl<{{aggregatePascal}}Mapper, {{aggregatePascal}}Entity>', 'toVO({{aggregatePascal}}Entity entity)'],
+  },
+  {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
     patterns: ['extends BaseCrudController', 'I{{aggregatePascal}}Service', '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")'],
   },
