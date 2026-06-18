@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS `sys_config` (
   `config_value` text NOT NULL COMMENT '配置值',
   `config_name` varchar(100) NOT NULL COMMENT '配置名称',
   `type` varchar(20) NOT NULL COMMENT '类型: SYSTEM/BUSINESS/SECURITY/FEATURE',
+  `domain_code` varchar(64) NOT NULL DEFAULT 'COMMON' COMMENT '业务域编码',
   `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-禁用 1-启用',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
@@ -88,13 +89,13 @@ CREATE TABLE IF NOT EXISTS `sys_config` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `config_key` (`config_key`),
   KEY `idx_sys_config_key` (`config_key`),
-  KEY `idx_sys_config_type` (`type`)
+  KEY `idx_sys_config_type` (`type`),
+  KEY `idx_sys_config_domain` (`tenant_id`, `domain_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统配置表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 LOCK TABLES `sys_config` WRITE;
 /*!40000 ALTER TABLE `sys_config` DISABLE KEYS */;
-INSERT INTO `sys_config` (`id`, `config_key`, `config_value`, `config_name`, `type`, `sort`, `status`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`) VALUES (1,'sys.index.skinName','skin-blue','皮肤名称','SYSTEM',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(2,'sys.account.captchaEnabled','true','验证码开关','SECURITY',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(3,'sys.account.registerEnabled','false','注册开关','SECURITY',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(4,'sys.login.lockCount','5','登录锁定次数','SECURITY',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default');
 /*!40000 ALTER TABLE `sys_config` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

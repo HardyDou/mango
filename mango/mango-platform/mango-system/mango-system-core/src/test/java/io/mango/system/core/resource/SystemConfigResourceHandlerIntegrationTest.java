@@ -1,12 +1,12 @@
-package io.mango.domain.core.resource;
+package io.mango.system.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
-import io.mango.domain.core.mapper.DomainMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
+import io.mango.system.core.mapper.SysConfigMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -30,24 +30,23 @@ import static org.assertj.core.api.Assertions.assertThat;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        DomainResourceHandlerIntegrationTest.TestConfig.class
+        SystemConfigResourceHandlerIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:domain_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+        "spring.datasource.url=jdbc:h2:mem:system_config_resource;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false",
-        "mybatis-plus.mapper-locations=classpath:/mapper/domain/*.xml"
+        "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-class DomainResourceHandlerIntegrationTest {
+class SystemConfigResourceHandlerIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private DomainResourceHandler handler;
+    private SystemConfigResourceHandler handler;
 
     @BeforeEach
     void setUp() {
@@ -55,63 +54,62 @@ class DomainResourceHandlerIntegrationTest {
     }
 
     @Test
-    void upsertCreatesBusinessDomain() {
-        handler.upsert(domainDeclaration("工作流域", 1));
+    void upsertCreatesConfig() {
+        handler.upsert(configDeclaration("skin-blue", 1));
 
-        assertThat(stringValue("biz_domain", "domain_name", "id = 110")).isEqualTo("工作流域");
-        assertThat(stringValue("biz_domain", "domain_code", "id = 110")).isEqualTo("WORKFLOW");
-        assertThat(stringValue("biz_domain", "domain_short_code", "id = 110")).isEqualTo("WF");
+        assertThat(stringValue("sys_config", "config_value", "id = 1")).isEqualTo("skin-blue");
+        assertThat(stringValue("sys_config", "type", "id = 1")).isEqualTo("SYSTEM");
+        assertThat(stringValue("sys_config", "domain_code", "id = 1")).isEqualTo("COMMON");
     }
 
     @Test
-    void upsertUpdatesBusinessDomain() {
-        handler.upsert(domainDeclaration("工作流域", 1));
+    void upsertUpdatesConfig() {
+        handler.upsert(configDeclaration("skin-blue", 1));
 
-        handler.upsert(domainDeclaration("工作流审批域", 2));
+        handler.upsert(configDeclaration("skin-green", 2));
 
-        assertThat(stringValue("biz_domain", "domain_name", "id = 110")).isEqualTo("工作流审批域");
-        assertThat(intValue("biz_domain", "sort", "id = 110")).isEqualTo(2);
+        assertThat(stringValue("sys_config", "config_value", "id = 1")).isEqualTo("skin-green");
+        assertThat(intValue("sys_config", "sort", "id = 1")).isEqualTo(2);
     }
 
     @Test
-    void disableMarksDomainDisabled() {
-        ResourceDeclaration declaration = domainDeclaration("工作流域", 1);
+    void disableMarksConfigDisabled() {
+        ResourceDeclaration declaration = configDeclaration("skin-blue", 1);
         handler.upsert(declaration);
 
         handler.disable(declaration);
 
-        assertThat(intValue("biz_domain", "status", "id = 110")).isZero();
+        assertThat(intValue("sys_config", "status", "id = 1")).isZero();
     }
 
     @Test
-    void deletePhysicallyDeletesDomain() {
-        ResourceDeclaration declaration = domainDeclaration("工作流域", 1);
+    void deletePhysicallyDeletesConfig() {
+        ResourceDeclaration declaration = configDeclaration("skin-blue", 1);
         handler.upsert(declaration);
 
         handler.delete(declaration);
 
-        assertThat(count("biz_domain")).isZero();
+        assertThat(count("sys_config")).isZero();
     }
 
-    private ResourceDeclaration domainDeclaration(String domainName, int sort) {
+    private ResourceDeclaration configDeclaration(String value, int sort) {
         ResourceDeclaration declaration = new ResourceDeclaration();
-        declaration.setId("2026061800200000110");
+        declaration.setId("2026061800500100001");
         declaration.setVersion(1);
-        declaration.setResourceType(ResourceTypes.BUSINESS_DOMAIN);
-        declaration.setModuleCode("workflow");
-        declaration.setBizKey("workflow.domain.workflow");
-        declaration.setName(domainName);
-        declaration.setTargetModule("domain");
+        declaration.setResourceType(ResourceTypes.SYSTEM_CONFIG);
+        declaration.setModuleCode("system");
+        declaration.setBizKey("system.config.index-skin-name");
+        declaration.setName("皮肤名称");
+        declaration.setTargetModule("system");
         declaration.setFields(new LinkedHashMap<>());
-        field(declaration, "domainId", ResourceFieldType.LONG, 110L);
-        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
-        field(declaration, "domainCode", ResourceFieldType.STRING, "WORKFLOW");
-        field(declaration, "domainShortCode", ResourceFieldType.STRING, "WF");
-        field(declaration, "domainName", ResourceFieldType.STRING, domainName);
-        field(declaration, "parentId", ResourceFieldType.LONG, 0L);
+        field(declaration, "configId", ResourceFieldType.LONG, 1L);
+        field(declaration, "configKey", ResourceFieldType.STRING, "sys.index.skinName");
+        field(declaration, "configValue", ResourceFieldType.STRING, value);
+        field(declaration, "configName", ResourceFieldType.STRING, "皮肤名称");
+        field(declaration, "type", ResourceFieldType.STRING, "SYSTEM");
+        field(declaration, "domainCode", ResourceFieldType.STRING, "COMMON");
         field(declaration, "sort", ResourceFieldType.INT, sort);
         field(declaration, "status", ResourceFieldType.INT, 1);
-        field(declaration, "remark", ResourceFieldType.STRING, "工作流与审批业务域");
         return declaration;
     }
 
@@ -123,30 +121,26 @@ class DomainResourceHandlerIntegrationTest {
     }
 
     private void rebuildTables() {
-        jdbcTemplate.execute("drop table if exists biz_domain");
+        jdbcTemplate.execute("drop table if exists sys_config");
         jdbcTemplate.execute("""
-                create table biz_domain (
-                    id bigint primary key,
-                    tenant_id varchar(64) not null default '1',
-                    org_id bigint,
-                    domain_code varchar(64) not null,
-                    domain_short_code varchar(64) not null,
-                    domain_name varchar(128) not null,
-                    parent_id bigint not null default 0,
+                create table sys_config (
+                    id bigint not null,
+                    config_key varchar(100) not null,
+                    config_value clob not null,
+                    config_name varchar(100) not null,
+                    type varchar(20) not null,
+                    domain_code varchar(64) not null default 'COMMON',
                     sort int not null default 0,
                     status tinyint not null default 1,
-                    remark varchar(512) not null default '',
+                    remark varchar(500),
+                    create_by varchar(64),
+                    update_by varchar(64),
                     create_time timestamp not null default current_timestamp,
                     update_time timestamp not null default current_timestamp,
-                    created_by bigint,
-                    created_at timestamp not null default current_timestamp,
-                    updated_by bigint,
-                    updated_at timestamp not null default current_timestamp,
-                    deleted tinyint not null default 0
+                    primary key (id),
+                    unique key config_key (config_key)
                 )
                 """);
-        jdbcTemplate.execute("create unique index uk_biz_domain_tenant_code on biz_domain(tenant_id, domain_code)");
-        jdbcTemplate.execute("create unique index uk_biz_domain_tenant_short_code on biz_domain(tenant_id, domain_short_code)");
     }
 
     private long count(String tableName) {
@@ -165,8 +159,8 @@ class DomainResourceHandlerIntegrationTest {
     }
 
     @Configuration
-    @Import(DomainResourceHandler.class)
-    @MapperScan(basePackageClasses = DomainMapper.class)
+    @Import(SystemConfigResourceHandler.class)
+    @MapperScan(basePackageClasses = SysConfigMapper.class)
     static class TestConfig {
     }
 }

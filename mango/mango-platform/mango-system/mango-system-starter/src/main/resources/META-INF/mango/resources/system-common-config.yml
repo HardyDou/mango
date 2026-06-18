@@ -1,0 +1,127 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: system
+    module-name: 系统
+    declarations:
+      SYSTEM_CONFIG:
+        - id: "2026061800500100001"
+          version: 1
+          biz-key: system.config.index-skin-name
+          name: 皮肤名称
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 1
+            configKey:
+              type: STRING
+              value: sys.index.skinName
+            configValue:
+              type: STRING
+              value: skin-blue
+            configName:
+              type: STRING
+              value: 皮肤名称
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            sort:
+              type: INT
+              value: 1
+            status:
+              type: INT
+              value: 1
+        - id: "2026061800500100002"
+          version: 1
+          biz-key: system.config.account-captcha-enabled
+          name: 验证码开关
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2
+            configKey:
+              type: STRING
+              value: sys.account.captchaEnabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 验证码开关
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: COMMON
+            sort:
+              type: INT
+              value: 1
+            status:
+              type: INT
+              value: 1
+        - id: "2026061800500100003"
+          version: 1
+          biz-key: system.config.account-register-enabled
+          name: 注册开关
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 3
+            configKey:
+              type: STRING
+              value: sys.account.registerEnabled
+            configValue:
+              type: STRING
+              value: "false"
+            configName:
+              type: STRING
+              value: 注册开关
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: COMMON
+            sort:
+              type: INT
+              value: 2
+            status:
+              type: INT
+              value: 1
+        - id: "2026061800500100004"
+          version: 1
+          biz-key: system.config.login-lock-count
+          name: 登录锁定次数
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 4
+            configKey:
+              type: STRING
+              value: sys.login.lockCount
+            configValue:
+              type: STRING
+              value: "5"
+            configName:
+              type: STRING
+              value: 登录锁定次数
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: COMMON
+            sort:
+              type: INT
+              value: 3
+            status:
+              type: INT
+              value: 1
