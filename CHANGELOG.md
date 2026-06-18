@@ -1,5 +1,71 @@
 # Mango Changelog
 
+## v2026.06.18-role-data-scope - 2026-06-18
+
+### New
+
+- Added role data scope support across Authorization, Persistence, RBAC, and Workflow, including role data scope APIs, persistence `DataScopeApplier`, Flyway migrations, role-page configuration, and workflow definition list integration.
+- Added role authorization button-node visibility in the RBAC authorization dialog so operators can verify assignable button permissions from the role page.
+- Added the shared `MangoDialog` component in `@mango/common` and migrated the app management dialog to the shared shell.
+- Updated business integration guides and capability docs with role data scope impact notes and acceptance evidence.
+
+### Fixed
+
+- Compacted the role data scope selector interaction on the RBAC role page.
+- Tightened worktree reuse guidance for PR gate and CI rework.
+
+### Published Packages
+
+- `@mango/common@1.0.9`
+- `@mango/rbac@1.0.7`
+- `@mango/admin-shell@1.0.19`
+- `@mango/admin@1.0.20`
+- `@mango/admin-pages@1.0.9`
+- `@mango/auth@1.0.7`
+- `@mango/calendar@1.0.10`
+- `@mango/file@1.0.10`
+- `@mango/grid-layout@1.0.1`
+- `@mango/job@1.0.2`
+- `@mango/notice@1.0.10`
+- `@mango/numgen@1.0.10`
+- `@mango/payment@1.0.1`
+- `@mango/system@1.0.8`
+- `@mango/template@1.0.10`
+- `@mango/workflow@1.0.10`
+- `@mango/workflow-business-example@1.0.10`
+- `@mango/cli@1.0.33`
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.infra.persistence:mango-infra-persistence-api`
+  - `io.mango.infra.persistence:mango-infra-persistence-starter`
+  - `io.mango.platform.authorization:mango-authorization-api`
+  - `io.mango.platform.authorization:mango-authorization-core`
+  - `io.mango.platform.authorization:mango-authorization-starter`
+  - `io.mango.platform.workflow:mango-workflow-core`
+
+### Upgrade Notes
+
+- Existing business projects should refresh backend Mango `1.0.0-SNAPSHOT` dependencies from the Maven repository and run the new authorization, domain, and job Flyway migrations before enabling role data scope.
+- Frontend consumers should upgrade `@mango/admin@1.0.20`, `@mango/admin-shell@1.0.19`, `@mango/common@1.0.9`, `@mango/rbac@1.0.7`, and the dependent `@mango/*` packages listed in Published Packages together.
+- Upgrade `@mango/cli` to `1.0.33` before creating new business projects so generated dependency locks include the role data scope package set.
+- Business queries only receive data scope filtering after they explicitly integrate `DataScopeApplier`; XML, JOIN, and statistical SQL paths should pass alias-aware field mappings and keep fail-fast validation.
+
+### Verification
+
+- `node mango-pmo/tools/acceptance-evidence-check.mjs --evidence mango-docs/evidence/2026-06-17-role-data-scope/acceptance-evidence.md`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `mvn -pl mango-platform/mango-authorization/mango-authorization-api,mango-platform/mango-authorization/mango-authorization-core,mango-platform/mango-authorization/mango-authorization-starter -am -Dtest=RoleDataScopeServiceImplTest,AuthorizationDataScopeProviderTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-infra/mango-infra-persistence/mango-infra-persistence-starter -Dtest=MybatisPlusDataScopeApplierTest test`
+- `mvn -pl mango-platform/mango-workflow/mango-workflow-core -Dtest=WorkflowDefinitionServiceImplTest test`
+- `pnpm -F @mango/common exec vitest run components/MangoDialog/__tests__/MangoDialog.spec.ts`
+- `pnpm -F @mango/common build`
+- `pnpm -F @mango/rbac build`
+- `pnpm -F @mango/admin-shell build`
+- `pnpm -F @mango/admin build`
+- `pnpm -F @mango/cli test`
+- `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -F mango-admin exec playwright test --config playwright.config.ts e2e/specs/role-data-scope.spec.ts --project=chromium --reporter=list`
+
 ## v2026.06.17-grid-layout-workbench - 2026-06-17
 
 ### New

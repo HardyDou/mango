@@ -1,5 +1,37 @@
 # @mango/cli Changelog
 
+## 1.0.33 - 2026-06-18
+
+### New
+
+- Updated generated admin project release locks for the role data scope release:
+  - @mango/admin@1.0.20
+  - @mango/admin-pages@1.0.9
+  - @mango/admin-shell@1.0.19
+  - @mango/auth@1.0.7
+  - @mango/calendar@1.0.10
+  - @mango/common@1.0.9
+  - @mango/file@1.0.10
+  - @mango/grid-layout@1.0.1
+  - @mango/job@1.0.2
+  - @mango/notice@1.0.10
+  - @mango/numgen@1.0.10
+  - @mango/rbac@1.0.7
+  - @mango/system@1.0.8
+  - @mango/template@1.0.10
+  - @mango/workflow@1.0.10
+  - @mango/workflow-business-example@1.0.10
+- New generated admin projects now consume the role data scope RBAC UI and the shared `MangoDialog` package update.
+
+### Upgrade Notes
+
+- Upgrade CLI before creating new business admin projects so generated dependency locks include role data scope support.
+- Existing business projects should upgrade `@mango/admin`, `@mango/admin-shell`, `@mango/common`, and `@mango/rbac` together.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+
 ## 1.0.32 - 2026-06-17
 
 ### New

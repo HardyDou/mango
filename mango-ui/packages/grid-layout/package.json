@@ -1,6 +1,6 @@
 {
   "name": "@mango/grid-layout",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/common": "1.0.8"
+    "@mango/common": "1.0.9"
   },
   "peerDependencies": {
     "element-plus": "2.14.1",
