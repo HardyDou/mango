@@ -23,9 +23,33 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-core</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-starter</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.module</groupId>
             <artifactId>mango-infra-module-api</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-api</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-starter</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -62,6 +86,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

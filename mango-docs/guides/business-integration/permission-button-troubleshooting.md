@@ -68,6 +68,7 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #193 新增 `mango-resource` 注册中心并将授权接口资源迁移为资源声明同步；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、页面和按钮权限排障步骤。排查按钮资源缺失时，需要同时确认 `API_RESOURCE` 声明是否已由资源同步链路写入授权资源表。
 - PR #181 将授权数据权限提供者改为由 `AuthorizationAutoConfiguration` 显式注册，修复业务同时引入授权与持久化 starter 时 `DataScopeApplier` 未创建导致的启动失败；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、授权 API、配置项、页面和本场景排障步骤。业务只需要刷新后端 Maven `1.0.0-SNAPSHOT` 依赖，不需要升级 npm 包。
 - PR #179 修复持久化 starter 与授权 starter 组合使用时 `DataScopeApplier` 自动配置顺序，并补齐授权 core 服务泛型契约；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、授权 API、配置、页面、启动方式和本场景排障步骤。
 - PR #176 新增按钮展示规则配置，按钮可能在拥有权限后继续按 `displayRule` 判断显隐；不改变按钮权限码、角色按钮授权关系、接口鉴权和租户边界。排查“有权限但不可见”时，需要同时确认登录态 `buttonRules`、按钮 `menuCode` 与 `v-auth` 的 `code` 是否一致。

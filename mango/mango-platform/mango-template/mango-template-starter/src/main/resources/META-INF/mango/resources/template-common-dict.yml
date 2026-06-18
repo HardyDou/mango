@@ -1,0 +1,149 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: template
+    module-name: 模板
+    declarations:
+      SYSTEM_DICT:
+        - id: "2026061800300000001"
+          version: 1
+          biz-key: template.dict.source-format
+          name: 模板源格式字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 330
+            dictType:
+              type: STRING
+              value: template_source_format
+            dictName:
+              type: STRING
+              value: 模板源格式
+            domainCode:
+              type: STRING
+              value: TEMPLATE
+            remark:
+              type: STRING
+              value: 模板服务源文件格式
+            items:
+              type: LIST
+              value:
+                - id: 3300
+                  label: 纯文本
+                  value: TEXT
+                  sort: 1
+                  status: 1
+                - id: 3301
+                  label: 富文本 HTML
+                  value: HTML
+                  sort: 2
+                  status: 1
+                - id: 3302
+                  label: Word DOCX
+                  value: DOCX
+                  sort: 3
+                  status: 1
+                - id: 3303
+                  label: Excel XLSX
+                  value: XLSX
+                  sort: 4
+                  status: 1
+        - id: "2026061800300000002"
+          version: 1
+          biz-key: template.dict.output-format
+          name: 模板输出格式字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 331
+            dictType:
+              type: STRING
+              value: template_output_format
+            dictName:
+              type: STRING
+              value: 模板输出格式
+            domainCode:
+              type: STRING
+              value: TEMPLATE
+            remark:
+              type: STRING
+              value: 模板服务输出格式
+            items:
+              type: LIST
+              value:
+                - id: 3310
+                  label: 纯文本
+                  value: TEXT
+                  sort: 1
+                  status: 1
+                - id: 3311
+                  label: HTML
+                  value: HTML
+                  sort: 2
+                  status: 1
+                - id: 3312
+                  label: Word DOCX
+                  value: DOCX
+                  sort: 3
+                  status: 1
+                - id: 3313
+                  label: Excel XLSX
+                  value: XLSX
+                  sort: 4
+                  status: 1
+                - id: 3314
+                  label: PDF
+                  value: PDF
+                  sort: 5
+                  status: 1
+                - id: 3315
+                  label: OFD
+                  value: OFD
+                  sort: 6
+                  status: 1
+        - id: "2026061800300000003"
+          version: 1
+          biz-key: template.dict.render-status
+          name: 模板渲染状态字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 332
+            dictType:
+              type: STRING
+              value: template_render_status
+            dictName:
+              type: STRING
+              value: 模板渲染状态
+            domainCode:
+              type: STRING
+              value: TEMPLATE
+            remark:
+              type: STRING
+              value: 模板渲染任务状态
+            items:
+              type: LIST
+              value:
+                - id: 3320
+                  label: 待处理
+                  value: PENDING
+                  sort: 1
+                  status: 1
+                - id: 3321
+                  label: 处理中
+                  value: RUNNING
+                  sort: 2
+                  status: 1
+                - id: 3322
+                  label: 成功
+                  value: SUCCESS
+                  sort: 3
+                  status: 1
+                - id: 3323
+                  label: 失败
+                  value: FAILED
+                  sort: 4
+                  status: 1

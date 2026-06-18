@@ -1,0 +1,105 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: auth
+    module-name: 认证
+    declarations:
+      SYSTEM_DICT:
+        - id: "2026061800200000001"
+          version: 1
+          biz-key: auth.dict.realm
+          name: 认证登录域字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 20
+            dictType:
+              type: STRING
+              value: auth_realm
+            dictName:
+              type: STRING
+              value: 认证登录域
+            domainCode:
+              type: STRING
+              value: AUTH
+            remark:
+              type: STRING
+              value: 认证授权上下文登录域
+            items:
+              type: LIST
+              value:
+                - id: 200
+                  label: 内部
+                  value: INTERNAL
+                  sort: 1
+                  status: 1
+                - id: 201
+                  label: 租户
+                  value: TENANT
+                  sort: 2
+                  status: 1
+                - id: 202
+                  label: 客户
+                  value: CUSTOMER
+                  sort: 3
+                  status: 1
+                - id: 203
+                  label: 合作方
+                  value: PARTNER
+                  sort: 4
+                  status: 1
+                - id: 204
+                  label: 金融机构
+                  value: FINANCIAL
+                  sort: 5
+                  status: 1
+        - id: "2026061800200000002"
+          version: 1
+          biz-key: auth.dict.actor-type
+          name: 认证操作者类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 21
+            dictType:
+              type: STRING
+              value: auth_actor_type
+            dictName:
+              type: STRING
+              value: 认证操作者类型
+            domainCode:
+              type: STRING
+              value: AUTH
+            remark:
+              type: STRING
+              value: 认证授权上下文操作者类型
+            items:
+              type: LIST
+              value:
+                - id: 210
+                  label: 内部用户
+                  value: INTERNAL_USER
+                  sort: 1
+                  status: 1
+                - id: 211
+                  label: 租户用户
+                  value: TENANT_USER
+                  sort: 2
+                  status: 1
+                - id: 212
+                  label: 客户用户
+                  value: CUSTOMER_USER
+                  sort: 3
+                  status: 1
+                - id: 213
+                  label: 合作方用户
+                  value: PARTNER_USER
+                  sort: 4
+                  status: 1
+                - id: 214
+                  label: 金融机构用户
+                  value: FINANCIAL_USER
+                  sort: 5
+                  status: 1

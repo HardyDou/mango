@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: job
+    module-name: 定时任务
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000170"
+          version: 1
+          biz-key: job.domain.job
+          name: 定时任务域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 170
+            domainCode:
+              type: STRING
+              value: JOB
+            domainShortCode:
+              type: STRING
+              value: JOB
+            domainName:
+              type: STRING
+              value: 定时任务
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 8
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 定时任务业务域

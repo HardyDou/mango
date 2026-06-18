@@ -17,6 +17,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-annotation</artifactId>
         </dependency>

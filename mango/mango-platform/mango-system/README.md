@@ -123,7 +123,75 @@ import '@mango/system/style.css';
 
 系统配置支持按 `domainCode` 归类。字典类型也支持 `domainCode`，用于把公共字典、文件、模板、通知、编号、日历等配置分到不同业务域。
 
-## 7. API 与扩展
+## 7. 资源注入
+
+系统默认字典、系统默认配置和默认国际化文案通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。字典和配置支持资源文件，国际化默认文案由 `SystemI18nMessageResourceProvider` 声明。
+
+资源文件放在：
+
+```text
+mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-dict.yml
+mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-config.yml
+```
+
+### 7.1 SYSTEM_DICT
+
+`SYSTEM_DICT` 落库到 `sys_dict_type` 和 `sys_dict_data`，按 `dictType` 合并更新。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `system.dict.authorization-role-type`。 |
+| `target-module` | `STRING` | 是 | 固定为 `system`。 |
+| `typeId` | `LONG` | 否 | 字典类型稳定 ID，不填时使用资源 ID。 |
+| `dictType` | `STRING` | 是 | 字典类型编码，全局唯一。 |
+| `dictName` | `STRING` | 是 | 字典类型名称。 |
+| `domainCode` | `STRING` | 否 | 业务域编码，默认 `COMMON`。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
+| `remark` | `STRING` | 否 | 备注。 |
+| `items` | `OBJECT[]` | 是 | 字典项列表，每项支持 `id`、`label`、`value`、`sort`、`status`、`remark`。 |
+
+### 7.2 SYSTEM_CONFIG
+
+`SYSTEM_CONFIG` 落库到 `sys_config`，按 `configKey` 合并更新。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `system.config.account-captcha-enabled`。 |
+| `target-module` | `STRING` | 是 | 固定为 `system`。 |
+| `configId` | `LONG` | 否 | 系统参数稳定 ID，不填时使用资源 ID。 |
+| `configKey` | `STRING` | 是 | 系统参数 Key，全局唯一。 |
+| `configValue` | `STRING` | 是 | 系统参数值。 |
+| `configName` | `STRING` | 是 | 系统参数名称。 |
+| `type` | `STRING` | 否 | `SYSTEM`、`BUSINESS`、`SECURITY`、`FEATURE`，默认 `SYSTEM`。 |
+| `domainCode` | `STRING` | 否 | 业务域编码，默认 `COMMON`。 |
+| `sort` | `INT` | 否 | 排序号，默认 `0`。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
+| `remark` | `STRING` | 否 | 备注。 |
+
+### 7.3 I18N_MESSAGE
+
+`I18N_MESSAGE` 落库到 `sys_i18n`，按 `name` 合并更新。业务模块需要注入国际化文案时，只依赖 `mango-system-api` 和 `mango-resource-api`，使用 `I18nMessageResourceDeclarations.message(...)` 在本模块 starter 中实现 `ResourceProvider`。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `system.i18n.common.submit`。 |
+| `target-module` | `STRING` | 是 | 固定为 `system`。 |
+| `i18nId` | `LONG` | 否 | 国际化条目稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `STRING` | 否 | 当前 `sys_i18n` 未按租户隔离，默认 `1`，仅用于资源声明兼容。 |
+| `name` | `STRING` | 是 | 国际化 Key，全局唯一。 |
+| `zhCn` | `STRING` | 是 | 中文文案。 |
+| `en` | `STRING` | 是 | 英文文案。 |
+| `description` | `STRING` | 否 | 文案说明。 |
+
+`sys_i18n` 当前没有 `status` 字段，资源禁用时会退化为物理删除；如果后续需要后台人工禁用，应先给 `sys_i18n` 增加状态字段。
+
+## 8. API 与扩展
 
 常用 HTTP 接口：
 
@@ -194,7 +262,7 @@ import '@mango/system/style.css';
 | `SysLoginLogPo` | 记录时按调用方传入 | `id`、`tenantId`、`userId`、`username`、`loginType`、`ip`、`location`、`browser`、`os`、`status`、`msg`、`loginTime` |
 | `SysOperationLogPo` | 记录时按调用方传入 | `id`、`tenantId`、`userId`、`username`、`module`、`operation`、`method`、`url`、`status`、`errorMsg`、`duration`、`operateTime` |
 
-## 8. 数据与初始化
+## 9. 数据与初始化
 
 Flyway 路径：`mango-system-core/src/main/resources/db/migration/system`。
 
@@ -214,12 +282,14 @@ Flyway 路径：`mango-system-core/src/main/resources/db/migration/system`。
 
 初始化内容：
 
-- `V1__init_system.sql` 创建系统基础表，并初始化系统字典、系统配置、默认机构、行政区划和国际化表。
+- `V1__init_system.sql` 创建系统基础表，并初始化默认机构、行政区划和国际化表。
 - `V5__personal_config.sql` 创建 `sys_personal_config`。
 - `V6__retire_route_management.sql` 删除历史 `system_route_type` 字典并移除 `sys_route_conf`。
 - `V7__dict_domain.sql` 给 `sys_dict_type` 增加 `domain_code`。
 - `V8__config_domain.sql` 给 `sys_config` 增加 `domain_code`。
 - `V9__dict_domain_seed_classification.sql` 按字典编码前缀给模板、文件、流程、通知、编号、日历等字典补充业务域。
+
+系统默认字典和系统默认配置通过 `mango-resource` 注入，资源文件是 `system-common-dict.yml` 和 `system-common-config.yml`。
 
 菜单、按钮和 API 权限不是在 `mango-system` 自己的 SQL 中维护，统一由 `mango-authorization` 的资源采集和 manifest 入库能力维护。`mango-system-starter` 的 `module.properties` 只登记模块扫描信息：
 
@@ -230,7 +300,7 @@ module-path=/system
 
 机构初始化发生在新增机构接口成功写入 `sys_tenant` 后。系统模块会设置当前机构上下文，然后调用所有已注册的 `TenantProvisioner`；删除机构前会调用所有 `TenantDependencyChecker`，任一模块返回阻断原因都会禁止删除。
 
-## 9. 管理入口
+## 10. 管理入口
 
 后端权限码：
 
@@ -260,7 +330,7 @@ module-path=/system
 
 `PublicPathView`、`DomainView`、`SystemEventView` 使用的是其他后端能力的接口封装，接入这些页面时要同时确认对应后端模块已启用。
 
-## 10. 问题排查
+## 11. 问题排查
 
 - 字典选项为空：先查 `sys_dict_type` 是否存在对应 `dict_type`，再查 `sys_dict_data` 是否有启用数据；如果按业务域过滤，还要确认 `domain_code`。
 - 系统配置读不到：确认 `sys_config.config_key` 是否存在且状态启用；业务侧读取时不要把 YAML 配置和数据库运行时配置混用。
@@ -271,7 +341,7 @@ module-path=/system
 - 行政区划树层级不对：检查 `GET /system/area/tree` 的 `type` 参数，默认只返回省级。
 - 个人配置串用户：个人配置按当前租户和当前用户保存，排查请求头里的租户上下文和登录态。
 
-## 11. 相关文档
+## 12. 相关文档
 
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

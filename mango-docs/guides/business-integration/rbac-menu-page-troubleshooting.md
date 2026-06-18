@@ -74,6 +74,7 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #193 新增 `mango-resource` 注册中心并将授权接口资源迁移为资源声明同步；不改变菜单页面 component key、前端页面注册、角色授权、按钮权限、租户绑定和菜单运行时加载。排查菜单不存在时，除原有 migration/resource manifest 外，还需要确认 `API_RESOURCE` 声明是否已同步到授权资源表。
 - PR #181 将授权数据权限提供者改为由 `AuthorizationAutoConfiguration` 显式注册，修复业务同时引入授权与持久化 starter 时 `DataScopeApplier` 未创建导致的启动失败；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、授权 API、配置项和本场景排障步骤。业务只需要刷新后端 Maven `1.0.0-SNAPSHOT` 依赖，不需要升级 npm 包。
 - PR #179 修复持久化 starter 与授权 starter 组合使用时 `DataScopeApplier` 自动配置顺序，并补齐授权 core 服务泛型契约；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、授权 API、配置、启动方式和本场景排障步骤。
 - PR #176 新增按钮展示规则配置和登录态 `buttonRules` 返回；不改变菜单页面 component key、页面注册、菜单运行时加载、租户绑定和菜单页面排障路径。排查菜单可见但按钮显示异常时，可转到按钮权限排障并同时确认按钮展示规则。

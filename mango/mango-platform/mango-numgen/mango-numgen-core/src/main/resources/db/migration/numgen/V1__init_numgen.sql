@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS `numgen_generator` (
   `id` bigint NOT NULL COMMENT '主键',
   `gen_key` varchar(128) NOT NULL COMMENT '业务Key',
   `gen_name` varchar(128) NOT NULL COMMENT '名称',
+  `domain_code` varchar(64) NOT NULL DEFAULT 'NUMGEN' COMMENT '业务域编码',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：0-停用，1-启用',
   `current_rule_version` int DEFAULT NULL COMMENT '当前规则版本',
   `current_publish_status` tinyint NOT NULL DEFAULT '0' COMMENT '当前发布状态',
@@ -18,7 +19,8 @@ CREATE TABLE IF NOT EXISTS `numgen_generator` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `del_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标记：0-正常，1-已删除',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_numgen_generator_tenant_key` (`tenant_id`, `gen_key`, `del_flag`)
+  UNIQUE KEY `uk_numgen_generator_tenant_key` (`tenant_id`, `gen_key`, `del_flag`),
+  KEY `idx_numgen_generator_tenant_domain` (`tenant_id`, `domain_code`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编号生成器';
 
 CREATE TABLE IF NOT EXISTS `numgen_rule` (

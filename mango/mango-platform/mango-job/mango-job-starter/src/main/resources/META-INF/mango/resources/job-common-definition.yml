@@ -1,0 +1,73 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: job
+    module-name: 定时任务
+    declarations:
+      JOB_DEFINITION:
+        - id: "2951100000000000001"
+          version: 1
+          biz-key: job.definition.default-sample-manual-probe
+          name: 默认示例手动 Probe 任务
+          target-module: job
+          fields:
+            jobId: { type: LONG, value: 2951100000000000001 }
+            tenantId: { type: STRING, value: "1" }
+            appCode: { type: STRING, value: mango-monolith-app }
+            ownerService: { type: STRING, value: mango-monolith-app }
+            workerGroup: { type: STRING, value: mango-monolith-app }
+            moduleCode: { type: STRING, value: mango-job }
+            jobCode: { type: STRING, value: mango_job_default_sample_manual_probe }
+            jobName: { type: STRING, value: 默认示例 手动 Probe 任务 }
+            jobType: { type: STRING, value: BUILTIN }
+            scheduleType: { type: STRING, value: MANUAL }
+            handlerName: { type: STRING, value: mangoJobRuntimeProbeHandler }
+            paramSchema:
+              type: JSON
+              value: '{"type":"object","properties":{"source":{"type":"string","title":"来源"},"kind":{"type":"string","title":"类型"}},"required":["source"]}'
+            paramValue:
+              type: JSON
+              value: '{"source":"default-sample","kind":"manual"}'
+            misfireStrategy: { type: STRING, value: IGNORE }
+            concurrencyPolicy: { type: STRING, value: SERIAL }
+            timeoutSeconds: { type: INT, value: 180 }
+            retryPolicy:
+              type: JSON
+              value: '{"maxRetryTimes":1}'
+            timezone: { type: STRING, value: Asia/Shanghai }
+            maxRetryCount: { type: INT, value: 1 }
+            definitionVersion: { type: INT, value: 0 }
+            status: { type: STRING, value: DISABLED }
+            engineType: { type: STRING, value: MANGO_NATIVE }
+        - id: "2951100000000000002"
+          version: 1
+          biz-key: job.definition.default-sample-cron-probe
+          name: 默认示例 Cron Probe 任务
+          target-module: job
+          fields:
+            jobId: { type: LONG, value: 2951100000000000002 }
+            tenantId: { type: STRING, value: "1" }
+            appCode: { type: STRING, value: mango-monolith-app }
+            ownerService: { type: STRING, value: mango-monolith-app }
+            workerGroup: { type: STRING, value: mango-monolith-app }
+            moduleCode: { type: STRING, value: mango-job }
+            jobCode: { type: STRING, value: mango_job_default_sample_cron_probe }
+            jobName: { type: STRING, value: 默认示例 Cron Probe 任务 }
+            jobType: { type: STRING, value: BUILTIN }
+            scheduleType: { type: STRING, value: CRON }
+            scheduleExpression: { type: STRING, value: "0 */5 * * * ?" }
+            handlerName: { type: STRING, value: mangoJobRuntimeProbeHandler }
+            paramValue:
+              type: JSON
+              value: '{"source":"default-sample","kind":"cron"}'
+            misfireStrategy: { type: STRING, value: FIRE_ONCE }
+            concurrencyPolicy: { type: STRING, value: SERIAL }
+            timeoutSeconds: { type: INT, value: 300 }
+            retryPolicy:
+              type: JSON
+              value: '{"maxRetryTimes":2}'
+            timezone: { type: STRING, value: Asia/Shanghai }
+            maxRetryCount: { type: INT, value: 2 }
+            definitionVersion: { type: INT, value: 0 }
+            status: { type: STRING, value: DISABLED }
+            engineType: { type: STRING, value: MANGO_NATIVE }

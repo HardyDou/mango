@@ -27,7 +27,8 @@ import io.mango.job.support.nativeengine.MangoNativeJobProperties;
         "io.mango.job.core.service",
         "io.mango.job.support.service",
         "io.mango.job.support.nativeengine",
-        "io.mango.job.starter.controller"
+        "io.mango.job.starter.controller",
+        "io.mango.job.starter.resource"
 })
 public class JobAutoConfiguration {
 

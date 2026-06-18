@@ -37,6 +37,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.notice</groupId>
+            <artifactId>mango-notice-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.job</groupId>
             <artifactId>mango-job-api</artifactId>
             <version>${project.version}</version>

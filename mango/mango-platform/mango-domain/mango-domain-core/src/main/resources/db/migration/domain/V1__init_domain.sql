@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS `biz_domain` (
   `id` bigint NOT NULL COMMENT '主键ID',
   `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户标识',
+  `org_id` bigint DEFAULT NULL COMMENT '所属组织ID',
   `domain_code` varchar(64) NOT NULL COMMENT '业务域编码（租户内唯一）',
   `domain_short_code` varchar(64) NOT NULL COMMENT '业务域编码简写（租户内唯一）',
   `domain_name` varchar(128) NOT NULL COMMENT '业务域名称',
@@ -24,24 +25,3 @@ CREATE TABLE IF NOT EXISTS `biz_domain` (
   KEY `idx_biz_domain_status` (`tenant_id`, `status`),
   KEY `idx_biz_domain_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务域管理表';
-
-INSERT INTO `biz_domain`
-  (`id`, `tenant_id`, `domain_code`, `domain_short_code`, `domain_name`, `parent_id`, `sort`, `status`, `remark`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `deleted`)
-VALUES
-  (100, '1', 'COMMON', 'COM', '通用域', 0, 1, 1, '跨模块通用业务域', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, 0),
-  (110, '1', 'WORKFLOW', 'WF', '工作流域', 0, 2, 1, '工作流与审批业务域', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, 0),
-  (120, '1', 'NOTICE', 'NTC', '通知域', 0, 3, 1, '通知中心业务域', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, 0),
-  (130, '1', 'CALENDAR', 'CAL', '日历域', 0, 4, 1, '日历能力业务域', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, 0),
-  (140, '1', 'NUMGEN', 'NUM', '编号域', 0, 5, 1, '编号规则业务域', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, 0),
-  (150, '1', 'FILE', 'FIL', '文件域', 0, 6, 1, '文件能力业务域', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, 0),
-  (160, '1', 'TEMPLATE', 'TPL', '模板域', 0, 7, 1, '模板能力业务域', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP, 0)
-ON DUPLICATE KEY UPDATE
-  `domain_short_code` = VALUES(`domain_short_code`),
-  `domain_name` = VALUES(`domain_name`),
-  `parent_id` = VALUES(`parent_id`),
-  `sort` = VALUES(`sort`),
-  `status` = VALUES(`status`),
-  `remark` = VALUES(`remark`),
-  `deleted` = 0,
-  `update_time` = CURRENT_TIMESTAMP,
-  `updated_at` = CURRENT_TIMESTAMP;

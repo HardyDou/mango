@@ -21,7 +21,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @MapperScan("io.mango.payment.core.mapper")
 @ComponentScan({
         "io.mango.payment.core.service",
+        "io.mango.payment.starter.notice",
         "io.mango.payment.starter.controller",
+        "io.mango.payment.starter.resource",
         "io.mango.payment.starter.workflow"
 })
 public class PaymentAutoConfiguration {

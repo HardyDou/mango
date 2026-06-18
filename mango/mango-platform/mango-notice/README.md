@@ -163,9 +163,90 @@ mango:
 | `mango.notice.outbox.initial-delay-millis` | `1000` | worker 启动后第一次执行延迟。 |
 | `mango.notice.outbox.fixed-delay-millis` | `1000` | worker 两次执行之间的固定延迟。 |
 
-## 8. 运行时配置字段
+## 8. 资源注入
 
-### 8.1 发送通知字段
+通知中心内置站内信渠道通过 `mango-resource` 注入。通知模块也会声明自己的业务域，业务模块可用同一资源协议向通知中心注入消息模板。资源文件放在：
+
+```text
+mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-message.yml
+mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-domain.yml
+```
+
+业务模块声明通知模板时，推荐在业务模块自己的 starter 中实现 `ResourceProvider`，并通过 `NoticeMessageTemplateResourceDeclarations.fourChannels(...)` 生成站内信、邮件、企业微信、短信四类模板声明。业务代码只依赖 `mango-notice-api` 和 `mango-resource-api`，不依赖 `mango-resource` 的 core/starter。
+
+### 8.1 MESSAGE_CHANNEL
+
+`MESSAGE_CHANNEL` 落库到 `notice_channel_config`，按 `tenantId + channelType + providerCode` 合并更新。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| 顶层 `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `notice.channel.site-internal-default`。 |
+| `target-module` | `STRING` | 是 | 固定为 `notice`。 |
+| `channelConfigId` | `LONG` | 否 | 通知渠道配置稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `STRING` | 否 | 租户 ID，默认 `1`。 |
+| `channelType` | `STRING` | 是 | `SITE`、`SMS`、`EMAIL`、`WECHAT_OFFICIAL`、`WECOM`、`DINGTALK`。 |
+| `providerCode` | `STRING` | 是 | 渠道服务商编码，同一租户同一渠道内唯一。 |
+| `configName` | `STRING` | 是 | 渠道配置名称。 |
+| `configJson` | `STRING` | 否 | 渠道配置 JSON。 |
+| `rateLimitConfig` | `STRING` | 否 | 限流配置 JSON。 |
+| `enabled` | `BOOLEAN` | 否 | 是否启用，默认 `true`。 |
+| `priority` | `INT` | 否 | 优先级，默认 `0`。 |
+| `weight` | `INT` | 否 | 权重，默认 `100`。 |
+| `configStatus` | `STRING` | 否 | 配置状态，默认 `COMPLETE`。 |
+| `lastSendStatus` | `STRING` | 否 | 最近发送状态，默认 `NONE`。 |
+
+### 8.2 MESSAGE_TEMPLATE
+
+`MESSAGE_TEMPLATE` 落库到 `notice_business_type`、`notice_business_config_version` 和 `notice_business_channel_template`，按 `tenantId + bizType + channelType + version` 合并更新。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| 顶层 `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `job.notice.execution-failed.site`。 |
+| `target-module` | `STRING` | 是 | 固定为 `notice`。 |
+| `businessTypeId` | `LONG` | 否 | 通知业务类型稳定 ID，不填时使用资源 ID。 |
+| `configVersionId` | `LONG` | 是 | 通知业务配置版本稳定 ID。 |
+| `channelTemplateId` | `LONG` | 是 | 通知业务渠道模板稳定 ID。 |
+| `tenantId` | `STRING` | 否 | 租户 ID，默认 `1`。 |
+| `bizType` | `STRING` | 是 | 通知业务类型编码，同一租户内唯一。 |
+| `bizName` | `STRING` | 是 | 通知业务类型名称。 |
+| `bizGroup` | `STRING` | 否 | 通知业务分组。 |
+| `domainCode` | `STRING` | 否 | 业务域编码，默认 `COMMON`。 |
+| `description` | `STRING` | 否 | 通知业务类型说明。 |
+| `paramsSchema` | `STRING` | 否 | 通知参数 JSON Schema。 |
+| `defaultPriority` | `STRING` | 否 | `LOW`、`NORMAL`、`HIGH`、`URGENT`，默认 `NORMAL`。 |
+| `idempotentStrategy` | `STRING` | 否 | 幂等策略。 |
+| 字段 `version` | `INT` | 否 | 模板业务版本号，默认顶层资源 `version`。 |
+| `versionStatus` | `STRING` | 否 | `DRAFT`、`ACTIVE`、`HISTORY`，默认 `ACTIVE`。 |
+| `channelType` | `STRING` | 是 | 通知渠道类型。 |
+| `templateName` | `STRING` | 是 | 渠道模板名称。 |
+| `titleTemplate` | `STRING` | 是 | 标题模板。 |
+| `contentTemplate` | `STRING` | 是 | 内容模板。 |
+| `externalTemplateId` | `STRING` | 否 | 第三方渠道模板 ID。 |
+| `variableMapping` | `STRING` | 否 | 变量映射 JSON。 |
+| `enabled` | `BOOLEAN` | 否 | 是否启用，默认 `true`。 |
+| `channelConfigId` | `LONG` | 否 | 绑定渠道配置 ID，空表示自动选择。 |
+
+已接入的默认模板 Provider：
+
+| 模块 | Provider | 主要 `bizType` |
+|------|----------|----------------|
+| `mango-auth` | `AuthMessageTemplateResourceProvider` | `auth.login.locked`、`auth.login.success` |
+| `mango-identity` | `IdentityMessageTemplateResourceProvider` | `identity.user.created`、`identity.password.reset`、`auth.wecom.login.bound`、`auth.wecom.login.unbound` |
+| `mango-workflow` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.task.claimable`、`workflow.task.cc`、`workflow.task.rejected`、`workflow.process.completed`、`workflow.process.rejected`、`workflow.process.ended`、`workflow.task.empty-assignee` |
+| `mango-payment` | `PaymentMessageTemplateResourceProvider` | `payment.order.success`、`payment.order.failed`、`payment.refund.success`、`payment.refund.failed`、`payment.refund.approval.created`、`payment.exception.order.created`、`payment.reconciliation.difference`、`payment.settlement.unresolved` |
+| `mango-job` | `JobMessageTemplateResourceProvider` | `job.instance.failed`、`job.worker.offline` |
+
+### 8.3 BUSINESS_DOMAIN
+
+`notice-common-domain.yml` 通过 `BUSINESS_DOMAIN` 向业务域模块声明 `NOTICE` 业务域。字段契约以 `mango-domain` 的资源注入说明为准。
+
+## 9. 运行时配置字段
+
+### 9.1 发送通知字段
 
 | 字段 | 含义 |
 |------|------|
@@ -184,7 +265,9 @@ mango:
 | `scheduledTime` | 定时发送时间。 |
 | `idempotentKey` | 幂等键。 |
 
-### 8.2 接收人字段
+业务模块不希望通知失败影响主流程时，可发布 `NoticeSendEvent`。本地通知中心由 `mango-notice-starter` 监听事件并调用 `NoticeApi`；微服务调用方由 `mango-notice-starter-remote` 监听事件并远程调用通知中心。事件监听器会记录发送失败日志，但不向上抛出异常阻断业务事务。
+
+### 9.2 接收人字段
 
 | 字段 | 含义 |
 |------|------|
@@ -197,7 +280,7 @@ mango:
 | `dingtalkUserId` | 钉钉用户 ID。 |
 | `externalId` | 外部联系人标识。 |
 
-### 8.3 渠道与模板
+### 9.3 渠道与模板
 
 | 配置 | 含义 |
 |------|------|
@@ -208,7 +291,7 @@ mango:
 | 接收账户 | 用户手机号、邮箱、企微 ID、钉钉 ID 等接收地址。 |
 | 接收偏好 | 用户或范围级渠道开关。 |
 
-## 9. 请求与返回字段
+## 10. 请求与返回字段
 
 HTTP 根路径：`/notice`。
 
@@ -244,7 +327,7 @@ HTTP 根路径：`/notice`。
 | `NoticeRecipientAccountVO` | 接收账户。 |
 | `NoticeReceivePreferenceVO` | 接收偏好。 |
 
-## 10. 管理入口
+## 11. 管理入口
 
 通知中心接口使用 `@ApiAccess` 绑定权限码，菜单和角色授权至少覆盖以下能力：
 
@@ -276,7 +359,7 @@ notice:site:delete
 
 前端页面由 `@mango/notice/admin-pages` 注册。菜单 component 需要映射到对应页面 key，例如 `notice/business-config/index`、`notice/channel/index`、`notice/record/index`、`notice/site-message/index`。
 
-## 11. 数据与初始化
+## 12. 数据与初始化
 
 Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
 
@@ -286,22 +369,22 @@ Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
 | `V2__notice_business_config_version.sql` | 增加业务配置版本。 |
 | `V3__notice_send_record_biz_context.sql` | 补充发送记录业务上下文字段。 |
 | `V4__notice_definition_channel_route.sql` | 增加定义和渠道路由相关字段。 |
-| `V5__notice_builtin_site_channel.sql` | 初始化内置站内信渠道。 |
+| `V5__notice_builtin_site_channel.sql` | 内置站内信渠道已迁移到 `mango-resource`。 |
 | `V6__notice_site_channel_sound_text.sql` | 补充站内信声音文本。 |
 | `V7__notice_task_recipient_targets_snapshot.sql` | 增加接收目标快照。 |
-| `V8__notice_builtin_site_channel_default_tenant.sql` | 为默认租户补内置站内信渠道。 |
+| `V8__notice_builtin_site_channel_default_tenant.sql` | 默认租户站内信渠道已迁移到 `mango-resource`。 |
 | `V9__notice_receive_preference.sql` | 初始化接收偏好表。 |
 | `V10__seed_admin_recipient_account.sql` | 初始化管理员接收账户。 |
 | `V11__seed_email_rich_templates.sql` | 初始化邮件富文本模板。 |
 | `V12__notice_wecom_sync_mapping.sql` | 初始化企微同步映射表。 |
 | `V13__notice_business_domain.sql` | 通知业务类型接入业务域。 |
-| `V14__seed_job_site_message.sql` | 初始化定时任务站内信业务类型、配置版本和渠道模板。 |
+| `V14__seed_job_site_message.sql` | 定时任务站内信模板已迁移到 `mango-job` 的 `job-common-message.yml`。 |
 
 核心表包括 `notice_business_type`、`notice_business_config_version`、`notice_business_channel_template`、`notice_channel_config`、`notice_task`、`notice_recipient`、`notice_send_record`、`notice_site_message`、`notice_retry_log`、`notice_callback_log`、`notice_setting`、`notice_recipient_account`、`notice_receive_preference`、`notice_wecom_sync_mapping`。
 
 通知异步分发依赖 `mango-infra-kv` outbox。部署时要确认 outbox 存储可用，否则任务可能创建成功但不会被后台 worker 分发。
 
-## 12. 问题排查
+## 13. 问题排查
 
 | 问题 | 优先检查 |
 |------|----------|
@@ -313,7 +396,7 @@ Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
 | 管理页面 403 | 角色是否有对应 `notice:*` 权限。 |
 | 铃铛未显示或未读数不变 | 前端是否注册 `@mango/notice/admin-shell`，站内信接口是否可访问。 |
 
-## 13. 相关文档
+## 14. 相关文档
 
 - [前端通知包](../../../mango-ui/packages/notice/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

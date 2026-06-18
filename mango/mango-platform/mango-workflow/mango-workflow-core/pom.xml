@@ -22,6 +22,10 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.persistence</groupId>
             <artifactId>mango-infra-persistence-starter</artifactId>
             <version>${project.version}</version>

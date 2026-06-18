@@ -68,6 +68,11 @@
             <artifactId>mango-org-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- OpenAPI 注解仅用于 starter 控制器文档展示 -->
         <dependency>

@@ -1,0 +1,91 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: notice
+    module-name: 通知中心
+    declarations:
+      MESSAGE_CHANNEL:
+        - id: "202606180070270501"
+          version: 1
+          biz-key: notice.channel.site-internal-default
+          name: 默认系统消息通道
+          target-module: notice
+          fields:
+            channelConfigId:
+              type: LONG
+              value: 270501
+            tenantId:
+              type: STRING
+              value: default
+            channelType:
+              type: STRING
+              value: SITE
+            providerCode:
+              type: STRING
+              value: INTERNAL
+            configName:
+              type: STRING
+              value: 默认系统消息通道
+            configJson:
+              type: STRING
+              value: '{"senderName":"系统通知","retentionDays":180,"realtimeEnabled":true,"popupEnabled":true,"soundEnabled":true,"desktopNotificationEnabled":true,"unreadCountEnabled":true,"soundText":"您有新的系统消息，请及时查看"}'
+            enabled:
+              type: BOOLEAN
+              value: true
+            priority:
+              type: INT
+              value: 0
+            weight:
+              type: INT
+              value: 100
+            configStatus:
+              type: STRING
+              value: COMPLETE
+            lastSendStatus:
+              type: STRING
+              value: NONE
+            rateLimitConfig:
+              type: STRING
+              value: '{"maxPerMinute":0,"timeoutSeconds":10,"concurrentLimit":0}'
+        - id: "202606180070270502"
+          version: 1
+          biz-key: notice.channel.site-internal-tenant-1
+          name: 默认系统消息通道
+          target-module: notice
+          fields:
+            channelConfigId:
+              type: LONG
+              value: 270502
+            tenantId:
+              type: STRING
+              value: "1"
+            channelType:
+              type: STRING
+              value: SITE
+            providerCode:
+              type: STRING
+              value: INTERNAL
+            configName:
+              type: STRING
+              value: 默认系统消息通道
+            configJson:
+              type: STRING
+              value: '{"senderName":"系统通知","retentionDays":180,"realtimeEnabled":true,"popupEnabled":true,"soundEnabled":true,"desktopNotificationEnabled":true,"unreadCountEnabled":true,"soundText":"您有新的系统消息，请及时查看"}'
+            enabled:
+              type: BOOLEAN
+              value: true
+            priority:
+              type: INT
+              value: 0
+            weight:
+              type: INT
+              value: 100
+            configStatus:
+              type: STRING
+              value: COMPLETE
+            lastSendStatus:
+              type: STRING
+              value: NONE
+            rateLimitConfig:
+              type: STRING
+              value: '{"maxPerMinute":0,"timeoutSeconds":10,"concurrentLimit":0}'

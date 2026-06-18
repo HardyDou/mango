@@ -200,6 +200,14 @@ mango-identity-core/src/main/resources/db/migration/identity
 
 `IdentityTenantProvisioner` 还会查找当前租户 `internal-admin + ROLE_ADMIN` 角色。角色存在时，会把创建者成员绑定到该角色，授权上下文为 `INTERNAL / INTERNAL_USER / INTERNAL_ORG / partyId=tenantId`。
 
+资源注入：
+
+| 资源类型 | 目标模块 | 声明入口 | 内容 |
+|----------|----------|----------|------|
+| `MESSAGE_TEMPLATE` | `notice` | `IdentityMessageTemplateResourceProvider` | `identity.user.created`、`identity.password.reset`、`auth.wecom.login.bound`、`auth.wecom.login.unbound` |
+
+通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。创建账号、重置密码和企业微信绑定变更只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败只记录日志，不阻断 identity 主流程。
+
 ## 11. 租户边界
 
 | 操作 | 租户行为 |

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.numgen.core.mapper.NumgenRuleMapper">
+
+    <select id="selectVersionIncludingDeleted" resultType="io.mango.numgen.core.entity.NumgenRule">
+        select *
+        from numgen_rule
+        where tenant_id = #{tenantId}
+          and gen_key = #{genKey}
+          and version = #{version}
+        order by del_flag asc, id asc
+        limit 1
+    </select>
+
+    <delete id="physicalDeleteById">
+        delete from numgen_rule
+        where id = #{id}
+    </delete>
+</mapper>

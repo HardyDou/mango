@@ -25,6 +25,7 @@ import java.util.concurrent.Executor;
 @ConditionalOnProperty(prefix = "mango.template", name = "enabled", havingValue = "true", matchIfMissing = true)
 @MapperScan("io.mango.template.core.mapper")
 @ComponentScan({
+    "io.mango.template.core.resource",
     "io.mango.template.core.service",
     "io.mango.template.starter"
 })

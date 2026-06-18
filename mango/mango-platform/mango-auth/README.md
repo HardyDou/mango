@@ -287,6 +287,14 @@ R<LoginVO> response = authApi.login(command);
 
 token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyId`、`memberId`、`tenantId`、`tenantCode`、`tenantName`、`appCode`。后续 `mango-access` 和业务服务依赖这些 claim 建立请求上下文。
 
+资源注入：
+
+| 资源类型 | 目标模块 | 声明入口 | 内容 |
+|----------|----------|----------|------|
+| `MESSAGE_TEMPLATE` | `notice` | `AuthMessageTemplateResourceProvider` | `auth.login.locked`、`auth.login.success` |
+
+通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。业务节点只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败只记录日志，不阻断登录主流程。
+
 ## 12. 问题排查
 
 | 现象 | 排查点 |

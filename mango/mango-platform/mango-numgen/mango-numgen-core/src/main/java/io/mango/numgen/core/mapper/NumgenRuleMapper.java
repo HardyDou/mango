@@ -46,4 +46,10 @@ public interface NumgenRuleMapper extends BaseMapper<NumgenRule> {
             ORDER BY version DESC
             """)
     List<NumgenRule> selectVersionsByGenKey(@Param("genKey") String genKey, @Param("tenantId") Long tenantId);
+
+    NumgenRule selectVersionIncludingDeleted(@Param("tenantId") Long tenantId,
+                                             @Param("genKey") String genKey,
+                                             @Param("version") Integer version);
+
+    int physicalDeleteById(@Param("id") Long id);
 }

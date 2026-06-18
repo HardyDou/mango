@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan({
         "io.mango.system.core",
         "io.mango.system.starter.controller",
+        "io.mango.system.starter.resource",
         "io.mango.area.core",
         "io.mango.i18n.core",
         "io.mango.i18n.starter.controller"

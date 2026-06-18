@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: template
+    module-name: 模板
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000160"
+          version: 1
+          biz-key: template.domain.template
+          name: 模板域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 160
+            domainCode:
+              type: STRING
+              value: TEMPLATE
+            domainShortCode:
+              type: STRING
+              value: TPL
+            domainName:
+              type: STRING
+              value: 模板域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 7
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 模板能力业务域

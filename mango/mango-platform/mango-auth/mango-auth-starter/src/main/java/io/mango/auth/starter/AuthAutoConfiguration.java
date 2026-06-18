@@ -36,6 +36,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         "io.mango.auth.core.anti",
         "io.mango.auth.core.init",
         "io.mango.auth.starter.controller",
+        "io.mango.auth.starter.notice",
+        "io.mango.auth.starter.resource",
         "io.mango.auth.starter.web"
 })
 @Import(AuthSecurityConfig.class)

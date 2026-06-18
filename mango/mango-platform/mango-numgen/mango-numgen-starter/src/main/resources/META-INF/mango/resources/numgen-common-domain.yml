@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: numgen
+    module-name: 编号
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000140"
+          version: 1
+          biz-key: numgen.domain.numgen
+          name: 编号域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 140
+            domainCode:
+              type: STRING
+              value: NUMGEN
+            domainShortCode:
+              type: STRING
+              value: NUM
+            domainName:
+              type: STRING
+              value: 编号域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 5
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 编号规则业务域

@@ -140,11 +140,89 @@ mango:
 | `mango.numgen.kv.rule-cache-ttl-seconds` | `300` | 生效规则缓存秒数。规则发布后如果短时间内仍看到旧格式，先看这个 TTL。 |
 | `mango.numgen.kv.allocation-lock-ttl-seconds` | `10` | 序列分配锁 TTL。高并发取号时需要确保 KV 后端可用。 |
 
-## 8. 运行时配置字段
+## 8. 资源注入
+
+业务模块需要内置编号规则时，优先通过 `mango-resource` 声明 `SEQUENCE_RULE` 资源，不直接在 Flyway 里写入 `numgen_generator`、`numgen_rule`、`numgen_rule_segment`。
+
+资源文件放在业务模块 starter：
+
+```text
+src/main/resources/META-INF/mango/resources/{module}-common-numgen.yml
+```
+
+`numgen` 作为资源消费者提供 `SEQUENCE_RULE` 处理器，落库到编号生成器、规则版本和规则片段表。业务模块开发期只需要依赖 `mango-resource-api` 提供声明模型，部署期由应用选择本地 starter 或 remote starter。
+
+### 8.1 SEQUENCE_RULE 字段
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `payment.numgen.pay-order-no`。 |
+| `target-module` | `STRING` | 是 | 固定为 `numgen`。 |
+| `generatorId` | `LONG` | 否 | 生成器稳定 ID，不填时使用资源 ID。 |
+| `ruleId` | `LONG` | 否 | 规则版本稳定 ID，不填时使用 `generatorId + 10000`。 |
+| `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
+| `genKey` | `STRING` | 是 | 业务取号 Key，租户内唯一。 |
+| `genName` | `STRING` | 是 | 编号生成器名称。 |
+| `domainCode` | `STRING` | 否 | 业务域编码，不填时使用资源模块编码。 |
+| `ruleName` | `STRING` | 是 | 规则名称。 |
+| `ruleVersion` | `INT` | 否 | 编号规则版本，不填时使用资源版本。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 停用，默认 `1`。 |
+| `publishStatus` | `INT` | 否 | `1` 生效，`0` 未生效；`ACTIVE` 默认生效。 |
+| `versionState` | `STRING` | 否 | `ACTIVE`、`DRAFT`、`HISTORY`，默认 `ACTIVE`。 |
+| `segments` | `LIST` | 是 | 规则片段列表。 |
+
+`segments` 每一项支持：
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `LONG` | 是 | 片段稳定 ID。 |
+| `sortOrder` | `INT` | 是 | 片段顺序。 |
+| `segmentType` | `STRING` | 是 | `TEXT`、`DATE`、`PARAM`、`SEQ`、`EXPR`。 |
+| `segmentName` | `STRING` | 是 | 片段名称。 |
+| `literalValue` | `STRING` | 否 | 固定文本或表达式文本。 |
+| `variableKey` | `STRING` | 否 | 参数片段读取的参数 key。 |
+| `dateFormat` | `STRING` | 否 | 日期格式。 |
+| `seqWidth` | `INT` | 否 | 流水位数。 |
+| `padChar` | `STRING` | 否 | 补位字符，默认 `0`。 |
+| `sequenceScope` | `INT` | 否 | `1` 参与流水分组，`0` 不参与。 |
+
+示例：
+
+```yaml
+mango:
+  resource:
+    schema-version: 1
+    module-code: payment
+    module-name: 支付
+    declarations:
+      SEQUENCE_RULE:
+        - id: "2026061800600000002"
+          version: 1
+          biz-key: payment.numgen.pay-order-no
+          name: 支付订单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000002 }
+            ruleId: { type: LONG, value: 900000010002 }
+            genKey: { type: STRING, value: PAY_ORDER_NO }
+            genName: { type: STRING, value: 支付订单号 }
+            domainCode: { type: STRING, value: PAYMENT }
+            ruleName: { type: STRING, value: 支付订单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020021, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: PO, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020022, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020023, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+```
+
+## 9. 运行时配置字段
 
 运行时规则在编号规则页面维护，核心字段如下。
 
-### 8.1 生成器字段
+### 9.1 生成器字段
 
 | 字段 | 含义 | 约束 |
 |------|------|------|
@@ -153,7 +231,7 @@ mango:
 | `domainCode` | 业务域编码，例如 `PAYMENT` | 必填，最长 64 字符 |
 | `status` | 生成器状态 | `1` 启用，`0` 停用 |
 
-### 8.2 规则字段
+### 9.2 规则字段
 
 | 字段 | 含义 | 约束 |
 |------|------|------|
@@ -163,7 +241,7 @@ mango:
 | `status` | 规则状态 | `1` 启用，`0` 停用 |
 | `publishStatus` | 发布状态 | `1` 生效中，`0` 未生效 |
 
-### 8.3 规则片段字段
+### 9.3 规则片段字段
 
 | 字段 | 含义 | 约束 |
 |------|------|------|
@@ -188,9 +266,9 @@ mango:
 | `SEQ` | `seqWidth`、`padChar` | 流水号，例如 8 位补零。 |
 | `EXPR` | `literalValue` | 表达式文本，支持参数占位符。 |
 
-## 9. 请求与返回字段
+## 10. 请求与返回字段
 
-### 9.1 业务取号
+### 10.1 业务取号
 
 | 方法 | 路径 | 入参 | 返回 |
 |------|------|------|------|
@@ -200,7 +278,7 @@ mango:
 
 `params` 是动态参数 Map，`PARAM` 片段和带占位符的文本片段会读取这里的值。
 
-### 9.2 管理接口
+### 10.2 管理接口
 
 | 能力 | 路径 |
 |------|------|
@@ -210,7 +288,7 @@ mango:
 | 序列分页查询 | `/numgen/sequences/page` |
 | 历史分页查询 | `/numgen/histories/page` |
 
-### 9.3 常用返回字段
+### 10.3 常用返回字段
 
 | 返回对象 | 字段 | 含义 |
 |----------|------|------|

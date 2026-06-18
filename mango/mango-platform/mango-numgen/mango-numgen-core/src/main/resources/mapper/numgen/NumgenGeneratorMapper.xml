@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.numgen.core.mapper.NumgenGeneratorMapper">
+
+    <select id="selectByIdIncludingDeleted" resultType="io.mango.numgen.core.entity.NumgenGenerator">
+        select *
+        from numgen_generator
+        where id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectByTenantAndGenKeyIncludingDeleted" resultType="io.mango.numgen.core.entity.NumgenGenerator">
+        select *
+        from numgen_generator
+        where tenant_id = #{tenantId}
+          and gen_key = #{genKey}
+        order by del_flag asc, id asc
+        limit 1
+    </select>
+
+    <delete id="physicalDeleteById">
+        delete from numgen_generator
+        where id = #{id}
+    </delete>
+</mapper>

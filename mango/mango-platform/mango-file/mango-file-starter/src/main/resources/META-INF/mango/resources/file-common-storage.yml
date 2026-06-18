@@ -1,0 +1,179 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: file
+    module-name: 文件
+    declarations:
+      FILE_STORAGE_CONFIG:
+        - id: "2026061801000000001"
+          version: 1
+          biz-key: file.storage.local-default
+          name: 本地默认存储
+          target-module: file
+          fields:
+            storageConfigId:
+              type: LONG
+              value: 1
+            tenantId:
+              type: LONG
+              value: 1
+            configName:
+              type: STRING
+              value: 本地默认存储
+            storageType:
+              type: STRING
+              value: LOCAL
+            bucketName:
+              type: STRING
+              value: local
+            storagePath:
+              type: STRING
+              value: mango-file
+            pathStyleAccess:
+              type: INT
+              value: 0
+            sslEnabled:
+              type: INT
+              value: 0
+            active:
+              type: INT
+              value: 1
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 系统默认本地文件存储
+        - id: "2026061801000000002"
+          version: 1
+          biz-key: file.storage.minio-local-dev
+          name: MinIO 本地联调
+          target-module: file
+          fields:
+            storageConfigId:
+              type: LONG
+              value: 2
+            tenantId:
+              type: LONG
+              value: 1
+            configName:
+              type: STRING
+              value: MinIO 本地联调
+            storageType:
+              type: STRING
+              value: MINIO
+            endpoint:
+              type: STRING
+              value: http://127.0.0.1:9000
+            publicEndpoint:
+              type: STRING
+              value: http://file.mango.io:9000
+            region:
+              type: STRING
+              value: us-east-1
+            bucketName:
+              type: STRING
+              value: mango-file
+            storagePath:
+              type: STRING
+              value: mango-file
+            accessKey:
+              type: STRING
+              value: minioadmin
+            secretKey:
+              type: STRING
+              value: minioadmin
+            pathStyleAccess:
+              type: INT
+              value: 1
+            sslEnabled:
+              type: INT
+              value: 0
+            active:
+              type: INT
+              value: 0
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 本地 Docker Compose MinIO 示例配置。启动 mango-file/docker-compose.yml 后可设为默认验证对象存储。
+      FILE_SETTINGS:
+        - id: "2026061801000000101"
+          version: 1
+          biz-key: file.settings.default
+          name: 文件中心默认配置
+          target-module: file
+          fields:
+            settingsId:
+              type: LONG
+              value: 1
+            tenantId:
+              type: LONG
+              value: 1
+            maxSize:
+              type: LONG
+              value: 104857600
+            blockedExtensions:
+              type: STRING
+              value: exe,bat,cmd,sh,jar
+            defaultAccessLevel:
+              type: STRING
+              value: PRIVATE
+            duplicateNameStrategy:
+              type: STRING
+              value: REJECT
+            duplicateCheckDirectoryScoped:
+              type: INT
+              value: 1
+            objectNameStrategy:
+              type: STRING
+              value: DATE_UUID
+            instantUploadEnabled:
+              type: INT
+              value: 1
+            instantUploadScope:
+              type: STRING
+              value: TENANT
+            contentTypeCheckEnabled:
+              type: INT
+              value: 1
+            blockedContentTypes:
+              type: STRING
+              value: application/x-msdownload,application/x-sh
+            directUploadEnabled:
+              type: INT
+              value: 0
+            directUploadExpireSeconds:
+              type: LONG
+              value: 900
+            accessTokenEnabled:
+              type: INT
+              value: 0
+            publicReadRequiresToken:
+              type: INT
+              value: 0
+            accessMode:
+              type: STRING
+              value: PROXY
+            accessTokenExpireSeconds:
+              type: LONG
+              value: 600
+            previewExpireSeconds:
+              type: LONG
+              value: 600
+            previewExternalExtensions:
+              type: STRING
+              value: doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg
+            archiveRetainEnabled:
+              type: INT
+              value: 1
+            archiveRetainDays:
+              type: INT
+              value: 180
+            archiveRestoreEnabled:
+              type: INT
+              value: 0
+            physicalDeleteEnabled:
+              type: INT
+              value: 0

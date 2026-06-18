@@ -1213,26 +1213,9 @@ CREATE TABLE IF NOT EXISTS `workflow_definition_version` (
   KEY `idx_workflow_version_deployment` (`deployment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程定义发布版本表';
 
-INSERT INTO `workflow_category` (`id`, `tenant_id`, `category_name`, `category_code`, `sort`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
-VALUES (1,1,'通用流程','COMMON',1,1,'系统默认通用流程分类',NULL,NOW(),NOW(),NULL,NOW(),NOW())
-ON DUPLICATE KEY UPDATE `category_name` = VALUES(`category_name`);
-
-INSERT INTO `workflow_template_category` (`id`, `tenant_id`, `parent_id`, `category_name`, `category_code`, `icon`, `sort`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
-VALUES (1,1,NULL,'通用模板','COMMON_TEMPLATE','CollectionTag',1,1,'系统默认通用流程模板分类',NULL,NOW(),NOW(),NULL,NOW(),NOW())
-ON DUPLICATE KEY UPDATE `category_name` = VALUES(`category_name`);
-
-INSERT INTO `workflow_node_definition` (`id`, `tenant_id`, `node_definition_code`, `node_type`, `node_name`, `category_code`, `category_name`, `description`, `bpmn_type`, `execution_type`, `color`, `icon`, `property_schema`, `default_properties`, `sort`, `status`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
-VALUES
-(360000001,1,'ROOT','ROOT','发起人','BASIC','基础节点','流程发起节点，由系统自动创建','startEvent','NONE','#64748b','User',NULL,JSON_OBJECT(),1,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-(360000002,1,'APPROVAL','APPROVAL','审批节点','BASIC','基础节点','人工审批、会签、或签等人工处理节点','userTask','USER_TASK','#2563eb','Stamp',NULL,JSON_OBJECT('assigneeType','USER'),10,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-(360000003,1,'CC','CC','抄送节点','BASIC','基础节点','流程流转到此处时通知相关人员','serviceTask','EVENT_PUBLISH','#7c3aed','Send',NULL,JSON_OBJECT('eventName','workflow.cc'),20,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-(360000004,1,'EXCLUSIVE_GATEWAY','EXCLUSIVE_GATEWAY','条件分支','BASIC','基础节点','按条件选择一个分支继续流转','exclusiveGateway','NONE','#f59e0b','GitBranch',NULL,JSON_OBJECT(),30,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-(360000005,1,'PARALLEL_GATEWAY','PARALLEL_GATEWAY','并行分支','BASIC','基础节点','多个分支同时流转并在结束后合并','parallelGateway','NONE','#0f766e','GitFork',NULL,JSON_OBJECT(),40,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-(360000006,1,'SERVICE_BEAN','SERVICE','Bean服务任务','SERVICE','服务节点','调用白名单 Spring Bean 执行业务动作','serviceTask','SPRING_BEAN','#0891b2','Box',NULL,JSON_OBJECT('beanName','','methodName',''),50,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-(360000007,1,'SERVICE_HTTP','SERVICE','HTTP服务任务','SERVICE','服务节点','调用受控 HTTP URL 执行业务动作','serviceTask','HTTP_URL','#dc2626','Webhook',NULL,JSON_OBJECT('url','','method','POST','timeoutMillis',5000),60,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-  (360000008,1,'SERVICE_REMOTE','SERVICE','远程服务任务','SERVICE','服务节点','调用受控远程服务执行微服务动作','serviceTask','REMOTE_SERVICE','#ea580c','Cloud',NULL,JSON_OBJECT('serviceName','','operation',''),70,1,NULL,NOW(),NOW(),NULL,NOW(),NOW()),
-  (360000009,1,'EVENT_PUBLISH','SERVICE','事件发布任务','SERVICE','服务节点','发布流程事件，支持单体事件和后续消息总线扩展','serviceTask','EVENT_PUBLISH','#16a34a','Radio',NULL,JSON_OBJECT('eventName',''),80,1,NULL,NOW(),NOW(),NULL,NOW(),NOW())
-ON DUPLICATE KEY UPDATE `node_name` = VALUES(`node_name`), `category_code` = VALUES(`category_code`), `category_name` = VALUES(`category_name`), `description` = VALUES(`description`), `bpmn_type` = VALUES(`bpmn_type`), `execution_type` = VALUES(`execution_type`), `color` = VALUES(`color`), `icon` = VALUES(`icon`), `default_properties` = VALUES(`default_properties`), `sort` = VALUES(`sort`), `status` = VALUES(`status`);
+-- Workflow built-in categories and node definitions are declared through
+-- META-INF/mango/resources/workflow-common-definition.yml and synced by
+-- mango-resource. Flyway keeps the table structure only.
 
 -- -----------------------------------------------------------------------------
 -- Folded from V2__workflow_process_start_permission.sql

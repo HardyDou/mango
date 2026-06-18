@@ -15,7 +15,7 @@
 | 按编码查询 | 业务运行时校验 `domainCode` 是否存在 | `DomainApi.detailByCode` / `GET /domain/domains/code` |
 | 分页查询 | 管理端列表查询业务域 | `DomainApi.page` / `GET /domain/domains/page` |
 | 业务域维护 | 新增、修改、启停、逻辑删除业务域 | 管理接口 |
-| 内置业务域 | 初始化 `COMMON`、`WORKFLOW`、`NOTICE`、`CALENDAR`、`NUMGEN`、`FILE`、`TEMPLATE`、`JOB`、`PAYMENT` | Flyway migration |
+| 内置业务域 | 初始化 `COMMON`、`WORKFLOW`、`NOTICE`、`CALENDAR`、`NUMGEN`、`FILE`、`TEMPLATE`、`JOB`、`PAYMENT` | `mango-resource` 的 `BUSINESS_DOMAIN` |
 
 ## 3. 后端接入
 
@@ -85,7 +85,7 @@ mango:
 
 1. 为业务模块确定稳定编码，例如 `ORDER`、`CONTRACT`。
 2. 部署应用启用 `mango-domain-starter`，执行 domain migration。
-3. 通过 migration 或管理接口写入 `biz_domain`。
+3. 通过 `mango-resource` 的 `BUSINESS_DOMAIN` 声明或管理接口写入 `biz_domain`。
 4. 在编号规则、通知类型、任务配置、流程定义等表中引用 `domain_code`。
 5. 业务运行时用 `DomainApi.detailByCode` 校验业务域存在且可用。
 6. 新租户初始化时同步需要的业务域数据。
@@ -194,31 +194,71 @@ HTTP 根路径：`/domain/domains`。
 
 当前 README 未登记默认菜单入口；如果业务域管理页接入后台菜单，需要在 authorization migration 或菜单管理中补齐菜单、角色授权和前端页面注册。
 
-## 11. 数据与初始化
+## 11. 资源注入
+
+业务域默认数据通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。资源文件放在：
+
+```text
+mango-domain-starter/src/main/resources/META-INF/mango/resources/domain-common-domain.yml
+```
+
+其它模块需要登记业务域时，也在自己的 starter 中放资源声明文件，例如：
+
+```text
+mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-domain.yml
+mango-numgen-starter/src/main/resources/META-INF/mango/resources/numgen-common-domain.yml
+mango-template-starter/src/main/resources/META-INF/mango/resources/template-common-domain.yml
+```
+
+`BUSINESS_DOMAIN` 落库到 `biz_domain`，按 `tenantId + domainCode` 合并更新。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `domain.notice`。 |
+| `target-module` | `STRING` | 是 | 固定为 `domain`。 |
+| `domainId` | `LONG` | 否 | 业务域稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `LONG` | 否 | 租户标识，默认 `1`。 |
+| `orgId` | `LONG` | 否 | 所属组织 ID。 |
+| `domainCode` | `STRING` | 是 | 业务域完整编码，租户内唯一。 |
+| `domainShortCode` | `STRING` | 是 | 业务域短编码，租户内唯一。 |
+| `domainName` | `STRING` | 是 | 业务域名称。 |
+| `parentId` | `LONG` | 否 | 父业务域 ID，默认 `0`。 |
+| `sort` | `INT` | 否 | 排序号，默认 `0`。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 停用，默认 `1`。 |
+| `remark` | `STRING` | 否 | 备注。 |
+
+删除规则：
+
+| 操作 | 行为 |
+|------|------|
+| `disable` | 将 `biz_domain.status` 更新为 `0`。 |
+| `delete` | 将 `deleted` 更新为 `1`，不物理删除历史业务域。 |
+
+## 12. 数据与初始化
 
 Flyway 路径：`mango-domain-core/src/main/resources/db/migration/domain`。
 
 | 脚本 | 内容 |
 |------|------|
-| `V1__init_domain.sql` | 创建 `biz_domain`，初始化 `COMMON`、`WORKFLOW`、`NOTICE`、`CALENDAR`、`NUMGEN`、`FILE`、`TEMPLATE`。 |
-| `V2__seed_job_domain.sql` | 初始化 `JOB` 定时任务业务域。 |
-| `V3__seed_payment_domain.sql` | 初始化 `PAYMENT` 支付业务域。 |
+| `V1__init_domain.sql` | 创建 `biz_domain`。 |
 
-内置业务域默认写入租户 `1`。SQL 使用 `ON DUPLICATE KEY UPDATE`，重复执行会更新短编码、名称、排序、状态、备注，并恢复 `deleted = 0`。
+内置业务域默认通过资源声明写入租户 `1`。资源重复同步会更新短编码、名称、排序、状态、备注，并恢复 `deleted = 0`。
 
 新租户如果也需要这些业务域，需要通过租户初始化流程复制或重新插入。不要假设租户 `1` 的业务域对其他租户自动可见。
 
-## 12. 问题排查
+## 13. 问题排查
 
 | 问题 | 优先检查 |
 |------|----------|
-| 业务域树为空 | 当前租户、`deleted`、`status`、domain migration 是否执行。 |
+| 业务域树为空 | 当前租户、`deleted`、`status`、domain migration 和 `mango-resource` 同步是否执行。 |
 | 按编码查不到 | `domainCode` 是否是完整编码，是否在当前租户下，是否被逻辑删除。 |
 | 新增提示编码冲突 | `domain_code` 和 `domain_short_code` 都要求租户内唯一。 |
 | 停用后历史配置仍能使用 | 停用只影响业务域是否可选；已保存配置是否拦截由调用方决定。 |
-| 新租户缺少内置域 | 默认种子只写租户 `1`，需要接入租户初始化。 |
+| 新租户缺少内置域 | 默认资源声明只写租户 `1`，需要接入租户初始化。 |
 | 前端没有管理入口 | 当前仓库未登记独立前端包和默认菜单，需要补菜单与页面注册。 |
 
-## 13. 相关文档
+## 14. 相关文档
 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

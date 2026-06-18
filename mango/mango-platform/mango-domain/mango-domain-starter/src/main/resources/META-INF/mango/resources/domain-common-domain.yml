@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: domain
+    module-name: 业务域
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000100"
+          version: 1
+          biz-key: domain.common
+          name: 通用域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 100
+            domainCode:
+              type: STRING
+              value: COMMON
+            domainShortCode:
+              type: STRING
+              value: COM
+            domainName:
+              type: STRING
+              value: 通用域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 1
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 跨模块通用业务域

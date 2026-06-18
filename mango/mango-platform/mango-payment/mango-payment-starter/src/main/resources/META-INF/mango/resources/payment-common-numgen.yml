@@ -1,0 +1,393 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: payment
+    module-name: 支付
+    declarations:
+      SEQUENCE_RULE:
+        - id: "2026061800600000001"
+          version: 1
+          biz-key: payment.numgen.pay-biz-order-no
+          name: 支付业务订单号
+          target-module: numgen
+          fields:
+            generatorId:
+              type: LONG
+              value: 900000000001
+            ruleId:
+              type: LONG
+              value: 900000010001
+            tenantId:
+              type: LONG
+              value: 1
+            genKey:
+              type: STRING
+              value: PAY_BIZ_ORDER_NO
+            genName:
+              type: STRING
+              value: 支付业务订单号
+            domainCode:
+              type: STRING
+              value: PAYMENT
+            ruleName:
+              type: STRING
+              value: 支付业务订单号默认规则
+            ruleVersion:
+              type: INT
+              value: 1
+            status:
+              type: INT
+              value: 1
+            publishStatus:
+              type: INT
+              value: 1
+            versionState:
+              type: STRING
+              value: ACTIVE
+            segments:
+              type: LIST
+              value:
+                - id: 900000020011
+                  sortOrder: 1
+                  segmentType: TEXT
+                  segmentName: 业务前缀
+                  literalValue: BO
+                  padChar: "0"
+                  sequenceScope: 0
+                - id: 900000020012
+                  sortOrder: 2
+                  segmentType: DATE
+                  segmentName: 日期
+                  dateFormat: yyyyMMdd
+                  padChar: "0"
+                  sequenceScope: 1
+                - id: 900000020013
+                  sortOrder: 3
+                  segmentType: SEQ
+                  segmentName: 日内序号
+                  seqWidth: 8
+                  padChar: "0"
+                  sequenceScope: 0
+        - id: "2026061800600000002"
+          version: 1
+          biz-key: payment.numgen.pay-order-no
+          name: 支付订单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000002 }
+            ruleId: { type: LONG, value: 900000010002 }
+            genKey: { type: STRING, value: PAY_ORDER_NO }
+            genName: { type: STRING, value: 支付订单号 }
+            ruleName: { type: STRING, value: 支付订单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020021, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: PO, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020022, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020023, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000003"
+          version: 1
+          biz-key: payment.numgen.pay-refund-order-no
+          name: 支付退款订单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000003 }
+            ruleId: { type: LONG, value: 900000010003 }
+            genKey: { type: STRING, value: PAY_REFUND_ORDER_NO }
+            genName: { type: STRING, value: 支付退款订单号 }
+            ruleName: { type: STRING, value: 支付退款订单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020031, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: RO, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020032, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020033, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000004"
+          version: 1
+          biz-key: payment.numgen.pay-biz-refund-no
+          name: 支付业务退款号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000004 }
+            ruleId: { type: LONG, value: 900000010004 }
+            genKey: { type: STRING, value: PAY_BIZ_REFUND_NO }
+            genName: { type: STRING, value: 支付业务退款号 }
+            ruleName: { type: STRING, value: 支付业务退款号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020041, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: BR, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020042, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020043, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000005"
+          version: 1
+          biz-key: payment.numgen.pay-refund-approval-no
+          name: 支付退款审批号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000005 }
+            ruleId: { type: LONG, value: 900000010005 }
+            genKey: { type: STRING, value: PAY_REFUND_APPROVAL_NO }
+            genName: { type: STRING, value: 支付退款审批号 }
+            ruleName: { type: STRING, value: 支付退款审批号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020051, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: RA, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020052, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020053, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000006"
+          version: 1
+          biz-key: payment.numgen.pay-flow-no
+          name: 支付流水号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000006 }
+            ruleId: { type: LONG, value: 900000010006 }
+            genKey: { type: STRING, value: PAY_FLOW_NO }
+            genName: { type: STRING, value: 支付流水号 }
+            ruleName: { type: STRING, value: 支付流水号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020061, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: PF, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020062, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020063, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000007"
+          version: 1
+          biz-key: payment.numgen.pay-refund-flow-no
+          name: 支付退款流水号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000007 }
+            ruleId: { type: LONG, value: 900000010007 }
+            genKey: { type: STRING, value: PAY_REFUND_FLOW_NO }
+            genName: { type: STRING, value: 支付退款流水号 }
+            ruleName: { type: STRING, value: 支付退款流水号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020071, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: RF, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020072, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020073, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000008"
+          version: 1
+          biz-key: payment.numgen.pay-fee-flow-no
+          name: 支付手续费流水号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000008 }
+            ruleId: { type: LONG, value: 900000010008 }
+            genKey: { type: STRING, value: PAY_FEE_FLOW_NO }
+            genName: { type: STRING, value: 支付手续费流水号 }
+            ruleName: { type: STRING, value: 支付手续费流水号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020081, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: FF, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020082, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020083, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000009"
+          version: 1
+          biz-key: payment.numgen.pay-adjust-flow-no
+          name: 支付调账流水号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000009 }
+            ruleId: { type: LONG, value: 900000010009 }
+            genKey: { type: STRING, value: PAY_ADJUST_FLOW_NO }
+            genName: { type: STRING, value: 支付调账流水号 }
+            ruleName: { type: STRING, value: 支付调账流水号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020091, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: AF, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020092, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020093, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000010"
+          version: 1
+          biz-key: payment.numgen.pay-notify-no
+          name: 支付通知记录号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000010 }
+            ruleId: { type: LONG, value: 900000010010 }
+            genKey: { type: STRING, value: PAY_NOTIFY_NO }
+            genName: { type: STRING, value: 支付通知记录号 }
+            ruleName: { type: STRING, value: 支付通知记录号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020101, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: NT, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020102, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020103, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000011"
+          version: 1
+          biz-key: payment.numgen.pay-recon-batch-no
+          name: 支付对账批次号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000011 }
+            ruleId: { type: LONG, value: 900000010011 }
+            genKey: { type: STRING, value: PAY_RECON_BATCH_NO }
+            genName: { type: STRING, value: 支付对账批次号 }
+            ruleName: { type: STRING, value: 支付对账批次号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020111, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: RC, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020112, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020113, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000012"
+          version: 1
+          biz-key: payment.numgen.pay-diff-no
+          name: 支付对账差异号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000012 }
+            ruleId: { type: LONG, value: 900000010012 }
+            genKey: { type: STRING, value: PAY_DIFF_NO }
+            genName: { type: STRING, value: 支付对账差异号 }
+            ruleName: { type: STRING, value: 支付对账差异号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020121, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: DF, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020122, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020123, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000013"
+          version: 1
+          biz-key: payment.numgen.pay-query-no
+          name: 支付查单记录号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000013 }
+            ruleId: { type: LONG, value: 900000010013 }
+            genKey: { type: STRING, value: PAY_QUERY_NO }
+            genName: { type: STRING, value: 支付查单记录号 }
+            ruleName: { type: STRING, value: 支付查单记录号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020131, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: PQ, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020132, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020133, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000014"
+          version: 1
+          biz-key: payment.numgen.pay-refund-query-no
+          name: 支付退款查单记录号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000014 }
+            ruleId: { type: LONG, value: 900000010014 }
+            genKey: { type: STRING, value: PAY_REFUND_QUERY_NO }
+            genName: { type: STRING, value: 支付退款查单记录号 }
+            ruleName: { type: STRING, value: 支付退款查单记录号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020141, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: RQ, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020142, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020143, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000015"
+          version: 1
+          biz-key: payment.numgen.pay-exception-no
+          name: 支付异常订单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000015 }
+            ruleId: { type: LONG, value: 900000010015 }
+            genKey: { type: STRING, value: PAY_EXCEPTION_NO }
+            genName: { type: STRING, value: 支付异常订单号 }
+            ruleName: { type: STRING, value: 支付异常订单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020151, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: EX, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020152, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020153, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000016"
+          version: 1
+          biz-key: payment.numgen.pay-offline-collection-no
+          name: 线下收款单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000016 }
+            ruleId: { type: LONG, value: 900000010016 }
+            genKey: { type: STRING, value: PAY_OFFLINE_COLLECTION_NO }
+            genName: { type: STRING, value: 线下收款单号 }
+            ruleName: { type: STRING, value: 线下收款单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020161, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: OC, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020162, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020163, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000017"
+          version: 1
+          biz-key: payment.numgen.pay-offline-refund-no
+          name: 线下退款单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000017 }
+            ruleId: { type: LONG, value: 900000010017 }
+            genKey: { type: STRING, value: PAY_OFFLINE_REFUND_NO }
+            genName: { type: STRING, value: 线下退款单号 }
+            ruleName: { type: STRING, value: 线下退款单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020171, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: OF, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020172, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020173, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000018"
+          version: 1
+          biz-key: payment.numgen.pay-offline-bank-batch-no
+          name: 线下银行流水导入批次号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000018 }
+            ruleId: { type: LONG, value: 900000010018 }
+            genKey: { type: STRING, value: PAY_OFFLINE_BANK_BATCH_NO }
+            genName: { type: STRING, value: 线下银行流水导入批次号 }
+            ruleName: { type: STRING, value: 线下银行流水导入批次号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020181, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: OB, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020182, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020183, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000019"
+          version: 1
+          biz-key: payment.numgen.pay-mango-virtual-no
+          name: 芒果支付虚拟付款单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000019 }
+            ruleId: { type: LONG, value: 900000010019 }
+            genKey: { type: STRING, value: PAY_MANGO_VIRTUAL_NO }
+            genName: { type: STRING, value: 芒果支付虚拟付款单号 }
+            ruleName: { type: STRING, value: 芒果支付虚拟付款单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020191, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: MP, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020192, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020193, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
+        - id: "2026061800600000020"
+          version: 1
+          biz-key: payment.numgen.pay-mango-scenario-no
+          name: 芒果支付场景控制单号
+          target-module: numgen
+          fields:
+            generatorId: { type: LONG, value: 900000000020 }
+            ruleId: { type: LONG, value: 900000010020 }
+            genKey: { type: STRING, value: PAY_MANGO_SCENARIO_NO }
+            genName: { type: STRING, value: 芒果支付场景控制单号 }
+            ruleName: { type: STRING, value: 芒果支付场景控制单号默认规则 }
+            segments:
+              type: LIST
+              value:
+                - { id: 900000020201, sortOrder: 1, segmentType: TEXT, segmentName: 业务前缀, literalValue: SC, padChar: "0", sequenceScope: 0 }
+                - { id: 900000020202, sortOrder: 2, segmentType: DATE, segmentName: 日期, dateFormat: yyyyMMdd, padChar: "0", sequenceScope: 1 }
+                - { id: 900000020203, sortOrder: 3, segmentType: SEQ, segmentName: 日内序号, seqWidth: 8, padChar: "0", sequenceScope: 0 }
