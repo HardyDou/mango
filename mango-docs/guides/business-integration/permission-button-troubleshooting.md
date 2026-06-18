@@ -68,9 +68,12 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #181 将授权数据权限提供者改为由 `AuthorizationAutoConfiguration` 显式注册，修复业务同时引入授权与持久化 starter 时 `DataScopeApplier` 未创建导致的启动失败；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、授权 API、配置项、页面和本场景排障步骤。业务只需要刷新后端 Maven `1.0.0-SNAPSHOT` 依赖，不需要升级 npm 包。
+- PR #179 修复持久化 starter 与授权 starter 组合使用时 `DataScopeApplier` 自动配置顺序，并补齐授权 core 服务泛型契约；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、授权 API、配置、页面、启动方式和本场景排障步骤。
 - PR #176 新增按钮展示规则配置，按钮可能在拥有权限后继续按 `displayRule` 判断显隐；不改变按钮权限码、角色按钮授权关系、接口鉴权和租户边界。排查“有权限但不可见”时，需要同时确认登录态 `buttonRules`、按钮 `menuCode` 与 `v-auth` 的 `code` 是否一致。
 - PR #171 新增角色数据权限配置入口，数据权限只影响接入 `DataScopeApplier` 的业务查询范围；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权和租户边界。
 - PR #170 新增 `@mango/common` 的 `MangoDialog` 并在应用管理页面替换新增/编辑弹框外壳，只影响弹框布局和内容滚动体验；不改变按钮权限码、登录态权限集合、角色授权关系、接口鉴权、租户边界和按钮权限排障路径。
 - PR #169 角色授权弹框改为展示后端可分配菜单树中的按钮节点，业务排障时可直接在角色管理中确认按钮权限是否可被勾选；不改变按钮权限码、登录态权限集合、接口鉴权和租户边界。
 - PR #166 工作台自定义布局新增 `@mango/grid-layout` 和 `mango-grid-layout`，布局组件不接管按钮权限判断；不改变按钮权限的公开 API、配置、权限码、租户、页面和运行时行为。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变按钮权限的公开 API、配置、权限、租户、页面和运行时行为。
+- PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、页面和本场景排障步骤。

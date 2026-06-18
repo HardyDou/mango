@@ -11,6 +11,27 @@
 - [文档资产归档边界](../mango-pmo/rules/06-document-assets.md)：说明哪些文档放 PMO、哪些放模块 README、哪些放 evidence。
 - [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)：模块 README 的验收门禁。
 
+## 1.1 模块使用文档交付
+
+业务开发时看不到模块使用文档，按下面方式解决：
+
+1. 在线阅读统一走 Mango 文档站，入口是 [Mango 能力地图](./capabilities/README.md)。
+2. 离线或本地开发时，拉取与依赖版本匹配的 Mango 源码或文档快照，直接阅读模块 README。
+3. 本地预览文档站：
+
+```bash
+npm --prefix mango-docs install
+npm --prefix mango-docs run docs:dev
+```
+
+4. 静态构建文档站：
+
+```bash
+npm --prefix mango-docs run docs:build
+```
+
+后端 Maven 运行时 jar 不承载 README；jar 只包含运行所需类和资源。前端 npm 包继续保留包根 `README.md`，这是 npm 生态的标准文档入口。
+
 ## 2. 示例场景
 
 - [文件上传表单接入](./guides/business-integration/file-upload-form.md)

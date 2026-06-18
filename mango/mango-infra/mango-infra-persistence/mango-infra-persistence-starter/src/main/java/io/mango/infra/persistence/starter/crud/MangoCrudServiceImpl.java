@@ -23,7 +23,7 @@ import java.util.Objects;
  */
 public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
         extends ServiceImpl<M, E>
-        implements MangoCrudService {
+        implements MangoCrudService<E> {
 
     private final QueryWrapperBuilder queryWrapperBuilder = new QueryWrapperBuilder();
 

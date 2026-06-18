@@ -332,7 +332,7 @@ class BaseCrudControllerTest {
     }
 
     @Service
-    static class RecordingCrudService implements MangoCrudService {
+    static class RecordingCrudService implements MangoCrudService<Object> {
 
         private UserCreateCommand lastCreateCommand;
 

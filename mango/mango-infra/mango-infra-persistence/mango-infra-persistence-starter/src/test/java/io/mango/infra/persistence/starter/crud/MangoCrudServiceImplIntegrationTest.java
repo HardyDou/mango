@@ -159,7 +159,7 @@ class MangoCrudServiceImplIntegrationTest {
     interface UserMapper extends BaseMapper<UserEntity> {
     }
 
-    interface UserCrudService extends MangoCrudService {
+    interface UserCrudService extends MangoCrudService<UserEntity> {
     }
 
     @Service

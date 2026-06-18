@@ -18,6 +18,7 @@
   "files": [
     "dist",
     "src",
+    "README.md",
     "package.json"
   ],
   "dependencies": {

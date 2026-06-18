@@ -418,6 +418,7 @@ try {
     throw new Error(`module add command failed:\n${moduleAddResult.stdout}\n${moduleAddResult.stderr}`);
   }
   for (const file of [
+    'backend/modules/contract/README.md',
     'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/command/UpdateSealCommand.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/entity/SealEntity.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/mapper/SealMapper.java',
@@ -436,6 +437,20 @@ try {
   if (!modulePom.includes('<module>modules/contract</module>')) {
     throw new Error('module add did not register backend module');
   }
+  const moduleReadme = readFileSync(join(customRoot, 'backend/modules/contract/README.md'), 'utf8');
+  for (const expected of [
+    'Mango 能力入口',
+    'Persistence 持久化',
+    'Authorization 授权资源',
+    'Admin Pages 页面注册',
+    'mango-docs/capabilities/README.md',
+    'mango/mango-infra/mango-infra-persistence/README.md',
+    'business-pmo/mango-baseline/rules/backend/07-persistence.md',
+  ]) {
+    if (!moduleReadme.includes(expected)) {
+      throw new Error(`module add README missing capability documentation entry: ${expected}`);
+    }
+  }
   if (!modulePom.includes('<artifactId>mango-infra-persistence-starter</artifactId>')
     || !modulePom.includes('<artifactId>mango-infra-feign-starter</artifactId>')
     || !modulePom.includes('<artifactId>swagger-annotations</artifactId>')) {
@@ -447,12 +462,40 @@ try {
   if (!moduleApplicationYml.includes('        contract:\n          enabled: true')) {
     throw new Error('module add did not enable business Flyway migration');
   }
+  const moduleServiceInterface = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/ISealService.java'),
+    'utf8',
+  );
+  if (!moduleServiceInterface.includes('extends MangoCrudService<SealEntity>')) {
+    throw new Error('module add did not generate typed Mango CRUD service interface');
+  }
+  const moduleService = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/impl/SealService.java'),
+    'utf8',
+  );
+  if (!moduleService.includes('extends MangoCrudServiceImpl<SealMapper, SealEntity>')
+    || moduleService.includes('com.baomidou.mybatisplus.extension.service.impl.ServiceImpl')
+    || moduleService.includes('extends ServiceImpl<')
+    || moduleService.includes('selectPage')
+    || moduleService.includes('new Page<')
+    || moduleService.includes('setTenantId')) {
+    throw new Error('module add did not generate Mango persistence baseline service implementation');
+  }
   const moduleController = readFileSync(
     join(customRoot, 'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java'),
     'utf8',
   );
   if (!moduleController.includes('extends BaseCrudController') || !moduleController.includes('@RequestMapping("/contract/seals")')) {
     throw new Error('module add did not generate standard CRUD controller');
+  }
+  const moduleMigration = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-core/src/main/resources/db/migration/contract/V1__init_contract.sql'),
+    'utf8',
+  );
+  for (const expected of ['tenant_id', 'org_id', 'created_by', 'created_at', 'updated_by', 'updated_at']) {
+    if (!moduleMigration.includes(expected)) {
+      throw new Error(`module add migration missing persistence baseline field: ${expected}`);
+    }
   }
   const moduleApi = readFileSync(join(customRoot, 'frontend/packages/contract-api/src/api.ts'), 'utf8');
   if (moduleApi.includes('@mango/common/utils/request')) {

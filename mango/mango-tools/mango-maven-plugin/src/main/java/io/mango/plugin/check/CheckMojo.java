@@ -90,6 +90,18 @@ public class CheckMojo extends AbstractMojo {
     private static final Pattern MAPPER_SQL_ANNOTATION_PATTERN = Pattern.compile(
             "@(?:org\\.apache\\.ibatis\\.annotations\\.)?"
                     + "(Select|Insert|Update|Delete|SelectProvider|InsertProvider|UpdateProvider|DeleteProvider)\\b");
+    private static final Pattern DIRECT_MYBATIS_SERVICE_IMPL_PATTERN = Pattern.compile(
+            "\\bextends\\s+(?:com\\.baomidou\\.mybatisplus\\.extension\\.service\\.impl\\.)?ServiceImpl\\b");
+    private static final Pattern MYBATIS_SELECT_PAGE_PATTERN = Pattern.compile("\\.selectPage\\s*\\(");
+    private static final Pattern MYBATIS_NEW_PAGE_PATTERN = Pattern.compile(
+            "\\bnew\\s+(?:com\\.baomidou\\.mybatisplus\\.extension\\.plugins\\.pagination\\.)?Page\\s*<");
+    private static final Pattern TENANT_CONDITION_PATTERN = Pattern.compile(
+            "(?:\\.eq\\s*\\([^;\\n]*(?:TenantId\\b|\"tenant_id\"|'tenant_id')|\\btenant_id\\b\\s*=)",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern DATA_SCOPE_CONDITION_PATTERN = Pattern.compile(
+            "(?:\\.eq\\s*\\([^;\\n]*(?:CreatedBy|OrgId)\\b|\\.(?:in|eq)\\s*\\([^;\\n]*(?:\"(?:created_by|org_id)\"|'(?:created_by|org_id)')|\\b(?:created_by|org_id)\\b\\s*(?:=|in\\b))",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern SET_TENANT_ID_PATTERN = Pattern.compile("\\.setTenantId\\s*\\(");
     private static final Pattern TYPE_DECLARATION_PATTERN = Pattern.compile(
             "\\b(?:public\\s+)?(?:sealed\\s+)?(?:abstract\\s+)?(?:class|interface|record|enum)\\s+([A-Za-z0-9_]+)");
     private static final Pattern API_FIELD_PATTERN = Pattern.compile(
@@ -113,7 +125,7 @@ public class CheckMojo extends AbstractMojo {
     /**
      * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
      * api-contract, path-param, permission-param, kv-key, test-fixture, persistence-schema,
-     * persistence-access, mapper-sql-style, service-contract.
+     * persistence-access, mapper-sql-style, persistence-crud-baseline, service-contract.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -225,6 +237,7 @@ public class CheckMojo extends AbstractMojo {
             case "persistence-schema" -> checkPersistenceSchema();
             case "persistence-access" -> checkPersistenceAccess();
             case "mapper-sql-style" -> checkMapperSqlStyle();
+            case "persistence-crud-baseline" -> checkPersistenceCrudBaseline();
             case "service-contract" -> checkServiceContract();
             case "test-fixture" -> checkTestFixture();
             case "web-boundary" -> checkWebBoundary();
@@ -242,10 +255,12 @@ public class CheckMojo extends AbstractMojo {
                 if (isBusinessProject(resolveBasePath())) {
                     checkPersistenceAccess();
                     checkMapperSqlStyle();
+                    checkPersistenceCrudBaseline();
                     checkServiceContract();
                 } else {
                     getLog().info("Skip business backend style checks in mango:check all; run "
-                            + "-Drule=persistence-access, mapper-sql-style or service-contract explicitly for governance scans.");
+                            + "-Drule=persistence-access, mapper-sql-style, persistence-crud-baseline "
+                            + "or service-contract explicitly for governance scans.");
                 }
                 checkTestFixture();
                 checkWebBoundary();
@@ -1718,6 +1733,11 @@ public class CheckMojo extends AbstractMojo {
         return normalized.contains("/mango-tools/mango-maven-plugin/src/main/java/");
     }
 
+    private boolean isMangoPersistenceFrameworkFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("/mango-infra/mango-infra-persistence/");
+    }
+
     private boolean isAllowedInfrastructureApi(String typeName) {
         return "ModuleInfoRegistry".equals(typeName);
     }
@@ -2149,6 +2169,77 @@ public class CheckMojo extends AbstractMojo {
         } catch (IOException e) {
             issues.add(new PersistenceStyleIssue("MAJOR", file.toString(), 0,
                     "持久化访问检查失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Rules:
+     * 1. Business CRUD services use MangoCrudServiceImpl instead of direct MyBatis-Plus ServiceImpl.
+     * 2. Business code does not hand-roll ordinary pagination or tenant filling/filtering.
+     */
+    private void checkPersistenceCrudBaseline() {
+        getLog().info("Checking persistence CRUD baseline...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<PersistenceStyleIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainJavaFile(file) && !isMangoToolingFile(file) && !isMangoPersistenceFrameworkFile(file)) {
+                        analyzePersistenceCrudBaseline(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (PersistenceStyleIssue issue : issues) {
+                result.addIssue("PERSISTENCE_CRUD_BASELINE", issue.severity, issue.file, issue.line,
+                        issue.description, "PERSISTENCE_CRUD_BASELINE", DOC_PERSISTENCE_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description
+                        + " at " + issue.file + ":" + issue.line);
+            }
+            getLog().warn("Found " + issues.size() + " persistence CRUD baseline violation(s)");
+        } else {
+            getLog().info("All persistence CRUD baseline checks passed");
+        }
+    }
+
+    private void analyzePersistenceCrudBaseline(Path file, List<PersistenceStyleIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            String code = stripStringLiterals(content);
+            addPatternIssue(file, content, code, DIRECT_MYBATIS_SERVICE_IMPL_PATTERN, issues,
+                    "普通 CRUD Service 禁止直接继承 MyBatis-Plus ServiceImpl，请继承 MangoCrudServiceImpl");
+            addPatternIssue(file, content, code, MYBATIS_SELECT_PAGE_PATTERN, issues,
+                    "普通分页查询禁止手写 mapper.selectPage，请复用 MangoCrudServiceImpl.pageByQuery 或标准查询入口");
+            addPatternIssue(file, content, code, MYBATIS_NEW_PAGE_PATTERN, issues,
+                    "普通分页查询禁止手写 MyBatis-Plus Page，请复用 MangoCrudServiceImpl.pageByQuery 或标准查询入口");
+            addPatternIssue(file, content, content, TENANT_CONDITION_PATTERN, issues,
+                    "普通租户表查询禁止手写 tenant_id 条件，请依赖租户拦截器或显式建模例外场景");
+            addPatternIssue(file, content, content, DATA_SCOPE_CONDITION_PATTERN, issues,
+                    "普通数据权限查询禁止手写 created_by/org_id 条件，请通过 DataScopeApplier 统一追加数据范围");
+            addPatternIssue(file, content, code, SET_TENANT_ID_PATTERN, issues,
+                    "插入普通租户实体禁止手工 setTenantId，请依赖 PersistenceAuditMetaObjectHandler 自动填充");
+        } catch (IOException e) {
+            issues.add(new PersistenceStyleIssue("MAJOR", file.toString(), 0,
+                    "持久化 CRUD 基线检查失败: " + e.getMessage()));
+        }
+    }
+
+    private void addPatternIssue(Path file, String content, String code, Pattern pattern,
+                                 List<PersistenceStyleIssue> issues, String description) {
+        Matcher matcher = pattern.matcher(code);
+        if (matcher.find()) {
+            issues.add(new PersistenceStyleIssue("CRITICAL", file.toString(),
+                    lineNumber(content, matcher.start()), description));
         }
     }
 

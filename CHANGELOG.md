@@ -1,5 +1,109 @@
 # Mango Changelog
 
+## v2026.06.19-datascope-provider-autoconfig - 2026-06-19
+
+### Fixed
+
+- Fixed the authorization data-scope provider registration so `DataScopeProvider` is declared by
+  `AuthorizationAutoConfiguration` as an explicit auto-configuration bean instead of relying on
+  component scanning.
+- Fixed the business startup failure where `mango-infra-persistence-starter` could evaluate
+  `@ConditionalOnBean(DataScopeProvider.class)` before the authorization provider bean definition
+  was visible, preventing `DataScopeApplier` from being created.
+- Confirmed this is not caused by business MyBatis-Plus usage and does not require a business-side
+  fallback `DataScopeApplier` bean.
+
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.platform.authorization:mango-authorization-core`
+  - `io.mango.platform.authorization:mango-authorization-starter`
+- No npm package publish is required for this backend-only hotfix.
+
+### Upgrade Notes
+
+- Business backends should refresh Mango backend `1.0.0-SNAPSHOT` dependencies after the release,
+  especially `mango-authorization-starter`.
+- No database migration, HTTP API change, frontend package upgrade, or business code workaround is
+  required.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl :mango-authorization-starter -am test checkstyle:check`
+- `mvn -f mango/pom.xml -pl :mango-infra-persistence-starter -am test checkstyle:check`
+
+## v2026.06.18-data-scope-applier - 2026-06-18
+
+### Fixed
+
+- Fixed the startup failure where business applications that import both Mango persistence and authorization starters could not inject `DataScopeApplier`.
+- Ordered persistence auto-configuration after the authorization starter without adding a direct module dependency, so authorization-provided `DataScopeProvider` beans are visible when the persistence starter creates `DataScopeApplier`.
+- Kept `DataScopeApplier` conditional on an available `DataScopeProvider`, preserving applications that do not enable data-scope integration.
+- Fixed the authorization app service generic CRUD contract so the authorization starter aggregation compiles with the typed Mango persistence API.
+
+### Documentation
+
+- Added the Issue 178 delivery contract, verification ledger, and business integration impact notes for permission button and RBAC menu troubleshooting guides.
+
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.infra.persistence:mango-infra-persistence-starter`
+  - `io.mango.platform.authorization:mango-authorization-core`
+  - `io.mango.platform.authorization:mango-authorization-starter`
+
+### Upgrade Notes
+
+- Refresh Mango backend `1.0.0-SNAPSHOT` dependencies after the release before starting business applications that combine persistence data-scope and authorization modules.
+- No database migration, HTTP API, frontend package, menu, or permission-code change is required for this fix.
+
+### Verification
+
+- `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-06-18-issue-178-data-scope-applier.md --ledger mango-docs/plans/2026-06-18-issue-178-data-scope-applier.md --mode verify`
+- `git diff --check origin/main...HEAD`
+- `mvn -f mango/pom.xml -pl :mango-infra-persistence-starter -am test checkstyle:check`
+- `mvn -f mango/pom.xml -pl :mango-authorization-starter -am test`
+
+## v2026.06.18-persistence-baseline-docs - 2026-06-18
+
+### Fixed
+
+- Enforced the Mango persistence baseline for generated business modules: generated services now extend typed `MangoCrudService<SealEntity>` and `MangoCrudServiceImpl<SealMapper, SealEntity>` instead of falling back to raw or MyBatis-Plus service contracts.
+- Added Mango check coverage for common business persistence violations, including direct JDBC access, annotation SQL, raw MyBatis-Plus pagination, manual tenant assignment, and ad hoc data-scope conditions.
+- Fixed the public `MangoCrudService` API contract to be entity-generic so generated business services compile against the published persistence API.
+
+### Documentation
+
+- Added the Persistence README examples for tenant isolation, data permission, standard pagination, and Mapper XML join queries.
+- Added business module README templates that point developers to Mango capability docs, module README files, PMO baseline rules, and troubleshooting entries.
+- Clarified that Maven runtime jars do not carry module README documentation; business teams should use the Mango docs site or a version-matched documentation snapshot. npm packages continue to include package-root README files.
+- Updated Mango docs staging so package README files can be exposed through the documentation site.
+- Tightened the capability documentation governance rule so PR authors must align template README links, PMO rule index updates, business integration impact notes, and PR body evidence before publishing a PR.
+
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.infra.persistence:mango-infra-persistence-api`
+  - `io.mango.infra.persistence:mango-infra-persistence-starter`
+  - `io.mango.infra.persistence:mango-infra-persistence-web-starter`
+  - `io.mango.tools.maven.plugin:mango-maven-plugin`
+- Frontend package metadata was prepared so published npm packages include `README.md`, including `@mango/admin`, `@mango/admin-pages`, `@mango/api-schema`, `@mango/app-runtime`, and existing module packages.
+- `@mango/cli` templates were updated for generated business module README and persistence baseline checks.
+
+### Upgrade Notes
+
+- Refresh Mango backend `1.0.0-SNAPSHOT` dependencies before generating or compiling new business CRUD modules that use typed `MangoCrudService<E>`.
+- Upgrade business starter or `@mango/cli` before creating new modules so generated migrations contain `tenant_id`, `org_id`, and audit fields, and generated services stay on the Mango CRUD baseline.
+- Business developers should read the Mango capability map and module README before using persistence, authorization, admin pages, or frontend package capabilities. For offline development, distribute a documentation snapshot that matches the dependency version.
+
+### Verification
+
+- `mvn -f backend/pom.xml -pl modules/contract/contract-core -am -Dtest=ContractPersistenceRuntimeAcceptanceTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -Dtest=GenCrudMojoTest,CheckMojoTest test`
+- `mvn -f mango/pom.xml -pl mango-infra/mango-infra-persistence/mango-infra-persistence-starter,mango-infra/mango-infra-persistence/mango-infra-persistence-web-starter -am test`
+- `node mango-business-starter/scripts/check-template.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+
 ## v2026.06.18-admin-style-config-fix - 2026-06-18
 
 ### Fixed

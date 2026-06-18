@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "src/index.d.ts",
+    "README.md",
     "package.json"
   ],
   "scripts": {

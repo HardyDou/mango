@@ -166,8 +166,9 @@ class GenCrudMojoTest {
         Path controllerFile = tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java");
         String content = Files.readString(controllerFile);
         assertTrue(content.contains("@RequestMapping(\"/user\")"), "Controller should have @RequestMapping");
-        assertTrue(content.contains("@GetMapping(\"/page\")"), "Controller should have page endpoint");
-        assertTrue(content.contains("@PostMapping"), "Controller should have POST endpoint");
+        assertTrue(content.contains("extends BaseCrudController<"), "Controller should reuse standard CRUD controller");
+        assertTrue(content.contains("protected Class<UserPageQuery> queryType()"));
+        assertFalse(content.contains("selectPage("), "Controller should not hand-roll pagination");
     }
 
     @Test
@@ -232,9 +233,71 @@ class GenCrudMojoTest {
                 "mango-user/mango-user-api/src/main/java/io/mango/user/api/UserApi.java"));
         String controllerContent = Files.readString(tempDir.resolve(
                 "mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java"));
-        assertTrue(apiContent.contains("R<Void> update(UpdateUserCommand command);"));
+        String feignContent = Files.readString(tempDir.resolve(
+                "mango-user/mango-user-starter-remote/src/main/java/io/mango/user/starter/remote/UserFeignClient.java"));
+        assertTrue(apiContent.contains("R<Boolean> update(@Valid UpdateUserCommand command);"));
         assertFalse(apiContent.contains("R<Void> update(Long id, UpdateUserCommand command);"));
-        assertTrue(controllerContent.contains("public R<Void> update(@RequestBody UpdateUserCommand command)"));
+        assertTrue(controllerContent.contains("extends BaseCrudController<"));
+        assertTrue(feignContent.contains("@PostMapping(\"/update\")"));
+        assertTrue(feignContent.contains("R<Boolean> update(@RequestBody UpdateUserCommand command);"));
+    }
+
+    @Test
+    void execute_generatesMangoPersistenceBaseline() throws Exception {
+        // given
+        createModuleStructure();
+
+        GenCrudMojo mojo = new GenCrudMojo();
+        setField(mojo, "module", "user");
+        setField(mojo, "entity", "User");
+        setField(mojo, "table", "sys_user");
+        setField(mojo, "baseDir", tempDir.toString());
+
+        // when
+        mojo.execute();
+
+        // then
+        String serviceContent = Files.readString(tempDir.resolve(
+                "mango-user/mango-user-core/src/main/java/io/mango/user/core/service/IUserService.java"));
+        String implContent = Files.readString(tempDir.resolve(
+                "mango-user/mango-user-core/src/main/java/io/mango/user/core/service/impl/UserServiceImpl.java"));
+        String controllerContent = Files.readString(tempDir.resolve(
+                "mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java"));
+        assertTrue(serviceContent.contains("extends MangoCrudService"));
+        assertTrue(implContent.contains("extends MangoCrudServiceImpl<UserMapper, UserEntity>"));
+        assertTrue(controllerContent.contains("extends BaseCrudController<"));
+        assertFalse(implContent.contains("extends ServiceImpl"));
+        assertFalse(implContent.contains("selectPage("));
+        assertFalse(implContent.contains("new Page<"));
+        assertFalse(implContent.contains("setTenantId("));
+    }
+
+    @Test
+    void execute_withDataScopeResource_generatesDataScopeHook() throws Exception {
+        // given
+        createModuleStructure();
+
+        GenCrudMojo mojo = new GenCrudMojo();
+        setField(mojo, "module", "user");
+        setField(mojo, "entity", "User");
+        setField(mojo, "table", "sys_user");
+        setField(mojo, "dataScopeResource", "user:list");
+        setField(mojo, "baseDir", tempDir.toString());
+
+        // when
+        mojo.execute();
+
+        // then
+        String implContent = Files.readString(tempDir.resolve(
+                "mango-user/mango-user-core/src/main/java/io/mango/user/core/service/impl/UserServiceImpl.java"));
+        assertTrue(implContent.contains("private final DataScopeApplier dataScopeApplier;"));
+        assertTrue(implContent.contains("protected void applyDataScope(QueryWrapper<UserEntity> wrapper, Object query)"));
+        assertTrue(implContent.contains("dataScopeApplier.apply("));
+        assertTrue(implContent.contains("\"user:list\""));
+        assertTrue(implContent.contains(".tableName(\"sys_user\")"));
+        assertTrue(implContent.contains(".selfField(\"created_by\")"));
+        assertTrue(implContent.contains(".orgField(\"org_id\")"));
+        assertTrue(implContent.contains(".tenantField(\"tenant_id\")"));
     }
 
     /**
