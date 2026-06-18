@@ -3,18 +3,14 @@ package io.mango.authorization.resource.sync;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.resource.api.ResourceProvider;
 import io.mango.resource.api.ResourceTypes;
-import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.builder.ResourceDeclarationBuilder;
 import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
 import lombok.RequiredArgsConstructor;
-import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 将 Spring MVC API 访问声明提供给 mango-resource。
@@ -40,41 +36,23 @@ public class ApiAccessResourceProvider implements ResourceProvider {
     }
 
     private ResourceDeclaration toDeclaration(ApiResourceRegisterCommand command) {
-        ResourceDeclaration declaration = new ResourceDeclaration();
-        declaration.setId(stableResourceId(command));
-        declaration.setVersion(1);
-        declaration.setResourceType(ResourceTypes.API_RESOURCE);
-        declaration.setModuleCode(properties.getProviderModuleCode());
-        declaration.setModuleName(command.getModuleName());
-        declaration.setBizKey(bizKey(command));
-        declaration.setName(command.getDescription());
-        declaration.setTargetModule(TARGET_MODULE);
-        declaration.setFields(fields(command));
-        return declaration;
-    }
-
-    private Map<String, ResourceField> fields(ApiResourceRegisterCommand command) {
-        Map<String, ResourceField> fields = new LinkedHashMap<>();
-        put(fields, "moduleName", command.getModuleName());
-        put(fields, "httpMethod", command.getHttpMethod());
-        put(fields, "pathPattern", command.getPathPattern());
-        put(fields, "resourceCode", command.getResourceCode());
-        put(fields, "permissionCode", command.getPermissionCode());
-        put(fields, "accessMode", command.getAccessMode() == null ? null : command.getAccessMode().name());
-        put(fields, "handlerClass", command.getHandlerClass());
-        put(fields, "handlerMethod", command.getHandlerMethod());
-        put(fields, "description", command.getDescription());
-        return fields;
-    }
-
-    private void put(Map<String, ResourceField> fields, String name, String value) {
-        if (!StringUtils.hasText(value)) {
-            return;
-        }
-        ResourceField field = new ResourceField();
-        field.setType(ResourceFieldType.STRING);
-        field.setValue(value);
-        fields.put(name, field);
+        return ResourceDeclarationBuilder.create(ResourceTypes.API_RESOURCE)
+                .id(stableResourceId(command))
+                .version(1)
+                .module(properties.getProviderModuleCode(), command.getModuleName())
+                .bizKey(bizKey(command))
+                .name(command.getDescription())
+                .targetModule(TARGET_MODULE)
+                .string("moduleName", command.getModuleName())
+                .string("httpMethod", command.getHttpMethod())
+                .string("pathPattern", command.getPathPattern())
+                .string("resourceCode", command.getResourceCode())
+                .string("permissionCode", command.getPermissionCode())
+                .string("accessMode", command.getAccessMode() == null ? null : command.getAccessMode().name())
+                .string("handlerClass", command.getHandlerClass())
+                .string("handlerMethod", command.getHandlerMethod())
+                .string("description", command.getDescription())
+                .build();
     }
 
     private String bizKey(ApiResourceRegisterCommand command) {
