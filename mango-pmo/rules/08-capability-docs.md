@@ -44,8 +44,27 @@
 - 前端关键入口 README 是否更新；未更新时说明原因。
 - 能力地图是否更新；未更新时说明原因。
 - PMO 规则是否更新；新增或修改规则时必须同步 `rules/index.json`。
+- PR body 必须填写 PMO / Scope、Capability Docs、Validation 和 PMO Exceptions，不得保留模板占位。
 
-## 5.1 README 验收门禁
+## 5.1 发布前能力文档门禁
+
+正式提交 PR 前必须完成以下检查：
+
+- 改 `mango-pmo/rules/**` 时，必须同步 `mango-pmo/rules/index.json`，即使只是调整已有规则含义。
+- 改 CLI、starter、模板、package 发布清单或业务接入方式时，必须判断相关业务集成指南是否受影响；无运行时影响也必须在对应指南写明公开 API、配置、菜单、权限、租户、页面、启动、验收或运行时行为不变。
+- 模板 README 中指向生成后项目内文件的路径，优先写成代码路径；只有检查器能在模板源码位置解析到目标文件时才写 Markdown 相对链接。
+- npm 包需要业务开发者离线阅读包能力说明时，必须把 package 根 `README.md` 纳入发布物料；Maven 运行时 jar 不作为 README 阅读入口，业务开发文档入口应落到文档站、版本匹配文档快照或生成模块 README。
+- PR body 中的能力文档说明必须覆盖受影响能力、模块 README、能力地图、业务指南、PMO 规则和 `mango-pmo/rules/index.json`。
+
+发布前必须执行：
+
+```bash
+node mango-pmo/tools/audit-module-readmes.mjs
+node mango-pmo/tools/audit-readme-source-facts.mjs
+PR_BODY_FILE=/path/to/pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD
+```
+
+## 5.2 README 验收门禁
 
 模块 README 必须让业务开发者能直接判断：
 

@@ -54,6 +54,6 @@
 | migration 没执行 | `application.yml` Flyway 模块开关和 Flyway history |
 
 ## 8. 相关文档
-- [业务 PMO baseline](../../../business-pmo/mango-baseline/README.md)
-- [单体拓扑说明](../../../topologies/monolith/README.md)
-- [微服务拓扑说明](../../../topologies/microservice/README.md)
+- 业务 PMO baseline：`business-pmo/mango-baseline/README.md`
+- 单体拓扑说明：`topologies/monolith/README.md`
+- 微服务拓扑说明：`topologies/microservice/README.md`
