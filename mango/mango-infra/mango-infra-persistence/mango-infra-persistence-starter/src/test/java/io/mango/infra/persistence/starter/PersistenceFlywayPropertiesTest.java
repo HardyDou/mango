@@ -68,6 +68,18 @@ class PersistenceFlywayPropertiesTest {
     }
 
     @Test
+    void moduleConfig_outOfOrder_shouldKeepUnsetStateUntilConfigured() {
+        PersistenceFlywayProperties.ModuleConfig config = new PersistenceFlywayProperties.ModuleConfig();
+
+        assertThat(config.getOutOfOrder()).isNull();
+        assertThat(config.isOutOfOrder()).isFalse();
+
+        config.setOutOfOrder(true);
+        assertThat(config.getOutOfOrder()).isTrue();
+        assertThat(config.isOutOfOrder()).isTrue();
+    }
+
+    @Test
     void moduleConfig_shouldAcceptHistoryTableAndDatasource() {
         PersistenceFlywayProperties.ModuleConfig config = new PersistenceFlywayProperties.ModuleConfig();
         config.setHistoryTable("flyway_schema_history_identity");

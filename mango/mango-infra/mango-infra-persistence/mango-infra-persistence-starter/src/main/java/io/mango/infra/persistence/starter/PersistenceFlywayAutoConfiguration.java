@@ -59,6 +59,15 @@ public class PersistenceFlywayAutoConfiguration {
     private static final String MIGRATION_SCAN_PATTERN = "classpath*:db/migration/*/V*.sql";
     private static final String NOOP_LOCATION = "classpath:db/migration/_noop";
     private static final String HISTORY_TABLE_PREFIX = "flyway_schema_history_";
+    private static final Set<String> MANGO_NON_LINEAR_PUBLISHED_MODULES = Set.of(
+            "authorization",
+            "domain",
+            "mango-job",
+            "notice",
+            "numgen",
+            "payment",
+            "system"
+    );
 
     @Bean
     @DependsOn("dataSource")
@@ -92,7 +101,7 @@ public class PersistenceFlywayAutoConfiguration {
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
                     ResolvedDataSource resolvedDataSource = null;
                     String historyTable = "<unresolved>";
-                    boolean outOfOrder = module.config().isOutOfOrder();
+                    boolean outOfOrder = resolveOutOfOrder(module);
                     boolean validateOnMigrate = module.config().isValidateOnMigrate();
                     String datasource = resolveDataSourceDescription(module, resolver);
                     try {
@@ -188,6 +197,14 @@ public class PersistenceFlywayAutoConfiguration {
 
     private String sanitizeModuleName(String moduleName) {
         return moduleName.replaceAll("[^A-Za-z0-9_]", "_");
+    }
+
+    private boolean resolveOutOfOrder(ModuleMigration module) {
+        Boolean configured = module.config().getOutOfOrder();
+        if (configured != null) {
+            return configured;
+        }
+        return MANGO_NON_LINEAR_PUBLISHED_MODULES.contains(module.name());
     }
 
     private String resolveHistoryTable(ModuleMigration module) {
