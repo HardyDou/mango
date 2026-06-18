@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
         webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @TestPropertySource(properties = {
         "spring.application.name=resource-sync-test",
+        "mango.persistence.flyway.enabled=false",
         "mango.authorization.resource-sync.module-name=mango-resource-sync-test",
         "mango.authorization.resource-sync.include-packages=io.mango.authorization.resource.sync",
         "mango.authorization.resource-sync.exclude-paths=/error",
@@ -45,7 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
         "mango.authorization.resource-sync.resources[0].description=Swagger UI",
         "spring.autoconfigure.exclude="
                 + "org.springframework.cloud.gateway.config.GatewayAutoConfiguration,"
-                + "org.springframework.cloud.gateway.config.GatewayClassPathWarningAutoConfiguration"
+                + "org.springframework.cloud.gateway.config.GatewayClassPathWarningAutoConfiguration,"
+                + "io.mango.authorization.starter.AuthorizationAutoConfiguration,"
+                + "io.mango.authorization.support.autoconfigure.TokenAutoConfiguration,"
+                + "io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration"
 })
 @DisplayName("API resource sync runner tests")
 class ApiResourceSyncRunnerTest {

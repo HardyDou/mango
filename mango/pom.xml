@@ -288,6 +288,36 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.resource</groupId>
+                <artifactId>mango-resource-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.resource</groupId>
+                <artifactId>mango-resource-support</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.resource</groupId>
+                <artifactId>mango-resource-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.resource</groupId>
+                <artifactId>mango-resource-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.resource</groupId>
+                <artifactId>mango-resource-sync-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.resource</groupId>
+                <artifactId>mango-resource-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.system</groupId>
                 <artifactId>mango-system-api</artifactId>
                 <version>${project.version}</version>

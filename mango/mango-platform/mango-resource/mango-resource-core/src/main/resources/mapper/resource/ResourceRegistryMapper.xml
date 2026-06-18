@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.resource.core.mapper.ResourceRegistryMapper">
+
+    <select id="selectByResourceId" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
+        select *
+        from resource_registry
+        where resource_id = #{resourceId}
+        limit 1
+    </select>
+
+    <select id="selectByTypeAndBizKey" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
+        select *
+        from resource_registry
+        where resource_type = #{resourceType}
+          and biz_key = #{bizKey}
+        limit 1
+    </select>
+
+    <select id="selectByModule" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
+        select *
+        from resource_registry
+        where module_code = #{moduleCode}
+    </select>
+</mapper>

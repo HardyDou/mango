@@ -1,0 +1,26 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "finance",
+      "moduleName": "财务",
+      "declarations": {
+        "SEQUENCE_RULE": [
+          {
+            "id": "1900000000000000002",
+            "version": 2,
+            "bizKey": "finance.payment.no",
+            "name": "付款单号",
+            "targetModule": "numgen",
+            "fields": {
+              "prefix": {
+                "type": "STRING",
+                "value": "PAY"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

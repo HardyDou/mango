@@ -1,0 +1,46 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: file
+    module-name: 文件
+    declarations:
+      SYSTEM_DICT:
+        - id: "2026061800400000001"
+          version: 1
+          biz-key: file.dict.access-level
+          name: 文件访问级别字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 340
+            dictType:
+              type: STRING
+              value: file_access_level
+            dictName:
+              type: STRING
+              value: 文件访问级别
+            domainCode:
+              type: STRING
+              value: FILE
+            remark:
+              type: STRING
+              value: 文件中心访问级别
+            items:
+              type: LIST
+              value:
+                - id: 3400
+                  label: 机构私有
+                  value: PRIVATE
+                  sort: 1
+                  status: 1
+                - id: 3401
+                  label: 公开读取
+                  value: PUBLIC_READ
+                  sort: 2
+                  status: 1
+                - id: 3402
+                  label: 内部文件
+                  value: INTERNAL
+                  sort: 3
+                  status: 1

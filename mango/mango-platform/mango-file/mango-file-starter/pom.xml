@@ -21,6 +21,10 @@
             <artifactId>mango-authorization-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.web</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
             <version>${project.version}</version>

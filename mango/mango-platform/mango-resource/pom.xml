@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <groupId>io.mango.platform.resource</groupId>
+    <artifactId>mango-resource</artifactId>
+    <packaging>pom</packaging>
+    <name>Mango Resource</name>
+    <description>Mango Resource Registry</description>
+
+    <modules>
+        <module>mango-resource-api</module>
+        <module>mango-resource-support</module>
+        <module>mango-resource-core</module>
+        <module>mango-resource-starter</module>
+        <module>mango-resource-sync-starter</module>
+        <module>mango-resource-starter-remote</module>
+    </modules>
+</project>

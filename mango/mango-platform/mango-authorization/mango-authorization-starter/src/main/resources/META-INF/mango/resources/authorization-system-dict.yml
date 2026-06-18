@@ -1,0 +1,80 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: authorization
+    module-name: 授权
+    declarations:
+      SYSTEM_DICT:
+        - id: "2026061800100000001"
+          version: 1
+          biz-key: authorization.dict.role-type
+          name: 授权角色类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 10
+            dictType:
+              type: STRING
+              value: authorization_role_type
+            dictName:
+              type: STRING
+              value: 授权角色类型
+            domainCode:
+              type: STRING
+              value: AUTHORIZATION
+            remark:
+              type: STRING
+              value: 授权模块角色类型
+            items:
+              type: LIST
+              value:
+                - id: 100
+                  label: 系统角色
+                  value: "1"
+                  sort: 1
+                  status: 1
+                - id: 101
+                  label: 业务角色
+                  value: "2"
+                  sort: 2
+                  status: 1
+        - id: "2026061800100000002"
+          version: 1
+          biz-key: authorization.dict.menu-type
+          name: 授权菜单类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 11
+            dictType:
+              type: STRING
+              value: authorization_menu_type
+            dictName:
+              type: STRING
+              value: 授权菜单类型
+            domainCode:
+              type: STRING
+              value: AUTHORIZATION
+            remark:
+              type: STRING
+              value: 授权模块菜单节点类型
+            items:
+              type: LIST
+              value:
+                - id: 110
+                  label: 目录
+                  value: "1"
+                  sort: 1
+                  status: 1
+                - id: 111
+                  label: 菜单
+                  value: "2"
+                  sort: 2
+                  status: 1
+                - id: 112
+                  label: 按钮
+                  value: "3"
+                  sort: 3
+                  status: 1

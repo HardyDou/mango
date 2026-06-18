@@ -1,0 +1,20 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: guarantee
+    module-name: 担保
+    declarations:
+      MESSAGE_TEMPLATE:
+        - id: "1900000000000000001"
+          version: 1
+          biz-key: guarantee.apply.submit
+          name: 提交申请通知
+          target-module: notice
+          fields:
+            title:
+              type: STRING
+              value: 提交申请
+            body:
+              type: FILE
+              location: classpath:templates/guarantee-submit.txt
+              encoding: UTF-8
