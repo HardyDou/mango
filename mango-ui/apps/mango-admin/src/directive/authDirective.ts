@@ -11,13 +11,13 @@
  * This prevents race conditions where the directive checks permissions before the data arrives.
  */
 
-import type { Directive, DirectiveBinding, App, Ref } from 'vue';
+import type { Directive, DirectiveBinding, App } from 'vue';
 import { nextTick, watch } from 'vue';
 import { useUserInfo } from '@/stores/userInfo';
-import { auth, auths, authAll } from '@mango/common';
+import { auth, auths, authAll, canShowButton, type AuthRuleBindingValue } from '@mango/common';
 
 interface AuthDirectiveBinding extends DirectiveBinding {
-  value?: string | string[];
+  value?: string | string[] | AuthRuleBindingValue;
   modifiers?: {
     all?: boolean;
     some?: boolean;
@@ -38,11 +38,24 @@ interface AuthDirectiveBinding extends DirectiveBinding {
 /**
  * Check if element should be visible based on auth directive
  */
+function isAuthRuleBindingValue(value: unknown): value is AuthRuleBindingValue {
+  return Boolean(value)
+    && typeof value === 'object'
+    && !Array.isArray(value)
+    && typeof (value as AuthRuleBindingValue).code === 'string';
+}
+
 function checkAuth(binding: AuthDirectiveBinding, authBtnList: string[]): boolean {
   const { value, modifiers } = binding;
 
   // No value means show element (no restriction)
   if (!value) return true;
+
+  // 对象写法用于按钮展示规则：v-auth="{ code, row, pageState, query, selectedRows }"。
+  // 这里只控制 UI 展示，接口安全仍必须由后端权限校验兜底。
+  if (isAuthRuleBindingValue(value)) {
+    return canShowButton(value);
+  }
 
   // If authBtnList is empty, don't hide (waiting for data to load)
   if (!authBtnList || authBtnList.length === 0) return true;
@@ -61,14 +74,8 @@ function checkAuth(binding: AuthDirectiveBinding, authBtnList: string[]): boolea
   return auth(value as string);
 }
 
-/**
- * Remove element from DOM
- */
-function removeElement(el: HTMLElement): void {
-  const parent = el.parentNode;
-  if (parent) {
-    parent.removeChild(el);
-  }
+function applyVisible(el: HTMLElement, visible: boolean): void {
+  el.style.display = visible ? '' : 'none';
 }
 
 /**
@@ -84,9 +91,6 @@ function createAuthDirective(): Directive {
     mounted(el: HTMLElement, binding: AuthDirectiveBinding) {
       const userInfoStore = useUserInfo();
 
-      // Get the authBtnList as a reactive reference
-      const authBtnListRef = userInfoStore.userInfos.authBtnList;
-
       // Initial check (may show element if data not loaded yet)
       const initialCheck = () => {
         updateAndCheck();
@@ -96,11 +100,10 @@ function createAuthDirective(): Directive {
       const updateAndCheck = () => {
         try {
           const authBtnList = userInfoStore.userInfos.authBtnList || [];
-          if (!checkAuth(binding, authBtnList)) {
-            removeElement(el);
-          }
+          applyVisible(el, checkAuth(binding, authBtnList));
         } catch {
           // Store not available yet, show element
+          applyVisible(el, true);
         }
       };
 
@@ -144,11 +147,10 @@ function createAuthDirective(): Directive {
         try {
           const userInfoStore = useUserInfo();
           const authBtnList = userInfoStore.userInfos.authBtnList || [];
-          if (!checkAuth(binding, authBtnList)) {
-            removeElement(el);
-          }
+          applyVisible(el, checkAuth(binding, authBtnList));
         } catch {
           // Store not available
+          applyVisible(el, true);
         }
       });
     },
@@ -176,11 +178,10 @@ const vAuths: Directive = {
           ? binding.value
           : [binding.value as string];
 
-        if (!auths(permissions)) {
-          removeElement(el);
-        }
+        applyVisible(el, auths(permissions));
       } catch {
         // Store not available
+        applyVisible(el, true);
       }
     };
 
@@ -209,9 +210,7 @@ const vAuths: Directive = {
         ? binding.value
         : [binding.value as string];
 
-      if (!auths(permissions)) {
-        removeElement(el);
-      }
+      applyVisible(el, auths(permissions));
     });
   },
 };
@@ -232,11 +231,10 @@ const vAuthAll: Directive = {
           ? binding.value
           : [binding.value as string];
 
-        if (!authAll(permissions)) {
-          removeElement(el);
-        }
+        applyVisible(el, authAll(permissions));
       } catch {
         // Store not available
+        applyVisible(el, true);
       }
     };
 
@@ -265,9 +263,7 @@ const vAuthAll: Directive = {
         ? binding.value
         : [binding.value as string];
 
-      if (!authAll(permissions)) {
-        removeElement(el);
-      }
+      applyVisible(el, authAll(permissions));
     });
   },
 };

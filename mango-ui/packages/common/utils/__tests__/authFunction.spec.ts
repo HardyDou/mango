@@ -21,6 +21,9 @@ import {
   hasAnyPermission,
   hasAllPermissions,
   getPermissions,
+  getButtonRules,
+  evaluateButtonDisplayRule,
+  canShowButton,
   isLoggedIn,
   getUserInfo,
   getUsername,
@@ -96,6 +99,81 @@ describe('权限函数', () => {
     it('应该返回空数组当 permissions 为 undefined', () => {
       vi.mocked(Session.get).mockReturnValue({});
       expect(getPermissions()).toEqual([]);
+    });
+  });
+
+  describe('getButtonRules', () => {
+    it('returns button display rules from userInfo', () => {
+      const buttonRules = [{ code: 'test:edit', displayRule: 'row.status == 1' }];
+      vi.mocked(Session.get).mockReturnValue({ permissions: [], buttonRules });
+      expect(getButtonRules()).toEqual(buttonRules);
+    });
+
+    it('returns empty array without button rules', () => {
+      vi.mocked(Session.get).mockReturnValue({ permissions: [] });
+      expect(getButtonRules()).toEqual([]);
+    });
+  });
+
+  describe('evaluateButtonDisplayRule', () => {
+    it('returns true for empty rule', () => {
+      expect(evaluateButtonDisplayRule('')).toBe(true);
+      expect(evaluateButtonDisplayRule('   ')).toBe(true);
+    });
+
+    it('supports row comparison and && expressions', () => {
+      const context = { row: { status: 1, age: 18, type: 'A' } };
+      expect(evaluateButtonDisplayRule('row.status == 1 && row.age === 18', context)).toBe(true);
+      expect(evaluateButtonDisplayRule('row.type != "B"', context)).toBe(true);
+    });
+
+    it('supports pageState query selectedRows and || expressions', () => {
+      const context = {
+        pageState: { locked: false },
+        query: { keyword: 'demo' },
+        selectedRows: [{ id: 1 }],
+      };
+      expect(evaluateButtonDisplayRule('!pageState.locked && (query.keyword === "demo" || selectedRows.length > 0)', context)).toBe(true);
+    });
+
+    it('returns false when rule throws', () => {
+      expect(evaluateButtonDisplayRule('row.missing.value === 1', { row: {} })).toBe(false);
+    });
+  });
+
+  describe('canShowButton', () => {
+    it('keeps string permission compatibility', () => {
+      vi.mocked(Session.get).mockReturnValue({ permissions: ['test:add'] });
+      expect(canShowButton('test:add')).toBe(true);
+    });
+
+    it('hides when permission is missing', () => {
+      vi.mocked(Session.get).mockReturnValue({ permissions: ['test:add'] });
+      expect(canShowButton({ code: 'test:delete', displayRule: '' })).toBe(false);
+    });
+
+    it('supports inline displayRule', () => {
+      vi.mocked(Session.get).mockReturnValue({ permissions: ['test:edit'] });
+      expect(canShowButton({
+        code: 'test:edit',
+        displayRule: 'row.status == 1 && row.age == 18',
+        row: { status: 1, age: 18 },
+      })).toBe(true);
+    });
+
+    it('matches displayRule from buttonRules by code', () => {
+      vi.mocked(Session.get).mockReturnValue({
+        permissions: ['test:submit'],
+        buttonRules: [{ code: 'test:submit', displayRule: 'pageState.status === "draft"' }],
+      });
+      expect(canShowButton({
+        code: 'test:submit',
+        pageState: { status: 'draft' },
+      })).toBe(true);
+      expect(canShowButton({
+        code: 'test:submit',
+        pageState: { status: 'done' },
+      })).toBe(false);
     });
   });
 

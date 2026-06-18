@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service;
 
 import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.vo.ButtonDisplayRuleVO;
 
 import java.util.List;
 
@@ -36,4 +37,6 @@ public interface ISubjectAuthorityService {
     }
 
     List<String> listSubjectPermissions(AuthorizationQuery query);
+
+    List<ButtonDisplayRuleVO> listSubjectButtonRules(AuthorizationQuery query);
 }

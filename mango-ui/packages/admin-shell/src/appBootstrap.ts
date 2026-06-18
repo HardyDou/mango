@@ -3,7 +3,7 @@ import { createPinia, type Pinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { createI18n, type I18n } from 'vue-i18n';
-import { auth, authAll, auths } from '@mango/common/utils/authFunction';
+import { authAll, auths, canShowButton, type AuthRuleBindingValue } from '@mango/common/utils/authFunction';
 import { mangoMessage } from '@mango/common/utils/message';
 import { installMangoAuth } from '@mango/auth';
 import type { MangoAdminShellOptions } from './config';
@@ -114,25 +114,42 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
 }
 
 function installAuthDirectives(app: VueApp) {
+  const applyVisible = (el: HTMLElement, visible: boolean) => {
+    el.style.display = visible ? '' : 'none';
+  };
+
+  const resolveAuthVisible = (value: unknown) => {
+    if (!value) {
+      return true;
+    }
+    if (Array.isArray(value)) {
+      return auths(value);
+    }
+    return canShowButton(value as string | AuthRuleBindingValue);
+  };
+
   app.directive('auth', {
     mounted(el, binding) {
-      if (!auth(binding.value)) {
-        el.parentNode?.removeChild(el);
-      }
+      applyVisible(el, resolveAuthVisible(binding.value));
+    },
+    updated(el, binding) {
+      applyVisible(el, resolveAuthVisible(binding.value));
     },
   });
   app.directive('auths', {
     mounted(el, binding) {
-      if (!auths(Array.isArray(binding.value) ? binding.value : [])) {
-        el.parentNode?.removeChild(el);
-      }
+      applyVisible(el, auths(Array.isArray(binding.value) ? binding.value : []));
+    },
+    updated(el, binding) {
+      applyVisible(el, auths(Array.isArray(binding.value) ? binding.value : []));
     },
   });
   app.directive('auth-all', {
     mounted(el, binding) {
-      if (!authAll(Array.isArray(binding.value) ? binding.value : [])) {
-        el.parentNode?.removeChild(el);
-      }
+      applyVisible(el, authAll(Array.isArray(binding.value) ? binding.value : []));
+    },
+    updated(el, binding) {
+      applyVisible(el, authAll(Array.isArray(binding.value) ? binding.value : []));
     },
   });
 }

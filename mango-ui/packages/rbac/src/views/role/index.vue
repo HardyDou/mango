@@ -254,7 +254,21 @@
         show-checkbox
         default-expand-all
         :props="{ label: 'menuName', children: 'children' }"
-      />
+      >
+        <template #default="{ data }">
+          <span class="assign-tree-node">
+            <span>{{ data.menuName }}</span>
+            <el-tag
+              v-if="shouldShowButtonType(data)"
+              size="small"
+              type="info"
+              effect="plain"
+            >
+              {{ buttonTypeLabel(data.buttonType) }}
+            </el-tag>
+          </span>
+        </template>
+      </el-tree>
       <template #footer>
         <el-button @click="assignDialogVisible = false">
           取消
@@ -500,6 +514,11 @@ interface DataScopeEditRow {
 
 type DataScopeTableRow = RoleDataScopeVO | DataScopeEditRow;
 
+const buttonTypeOptions = [
+  { label: '表格按钮', value: 'TABLE' },
+  { label: '非表格按钮', value: 'NON_TABLE' },
+];
+
 const { options: roleTypeOptions } = useDict('authorization_role_type');
 const { options: statusOptions } = useDict('sys_normal_disable');
 const { getLabel: getRealmLabel } = useDict('auth_realm');
@@ -541,6 +560,16 @@ const dataScopeModeOptions = [
   { label: '本人部门及下级', value: 'SELF_ORG_AND_CHILDREN' },
   { label: '指定组织', value: 'ORG' },
 ];
+
+function buttonTypeLabel(type?: string) {
+  return buttonTypeOptions.find((item) => item.value === type)?.label || type || '-';
+}
+
+function shouldShowButtonType(menu: SysMenuVO) {
+  return menu.menuType === 3
+    && Boolean(menu.buttonType)
+    && !menu.menuName?.includes('列表');
+}
 
 const form = reactive<RoleVO>({
   roleId: undefined,
@@ -1068,4 +1097,9 @@ onMounted(() => {
   line-height: 1.4;
 }
 
+.assign-tree-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 </style>

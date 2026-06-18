@@ -196,7 +196,7 @@
           </template>
         </el-table-column>
         <el-table-column
-          label="权限标识"
+          label="接口标识"
           min-width="200"
         >
           <template #default="{ row }">
@@ -209,6 +209,32 @@
               {{ perm }}
             </el-tag>
             <span v-if="!row.permissions">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="按钮规则"
+          min-width="180"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">
+            <template v-if="row.menuType === 3">
+              <el-tag
+                v-if="row.buttonType"
+                size="small"
+                type="info"
+                effect="plain"
+              >
+                {{ buttonTypeLabel(row.buttonType) }}
+              </el-tag>
+              <span
+                v-if="row.buttonDisplayRule"
+                class="rule-preview"
+              >
+                {{ row.buttonDisplayRule }}
+              </span>
+              <span v-if="!row.buttonType && !row.buttonDisplayRule">-</span>
+            </template>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column
@@ -415,7 +441,7 @@
             placeholder="Element Plus 图标名"
           />
         </el-form-item>
-        <el-form-item label="权限标识">
+        <el-form-item label="接口标识">
           <div class="permissions-tags">
             <el-tag
               v-for="perm in permissionList"
@@ -432,7 +458,7 @@
               v-model="inputPermissionValue"
               size="small"
               class="permission-input"
-              placeholder="输入权限码"
+              placeholder="输入接口标识"
               @keyup.enter="handleInputPermission"
               @blur="handleInputPermission"
             />
@@ -442,10 +468,39 @@
               class="add-permission-btn"
               @click="showPermissionInput"
             >
-              + 添加权限
+              + 添加接口标识
             </el-button>
           </div>
         </el-form-item>
+        <template v-if="form.menuType === 3">
+          <el-form-item label="按钮类型">
+            <el-select
+              v-model="form.buttonType"
+              clearable
+              placeholder="请选择按钮类型"
+            >
+              <el-option
+                v-for="item in buttonTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item
+            label="按钮展示规则"
+            prop="buttonDisplayRule"
+          >
+            <el-input
+              v-model="form.buttonDisplayRule"
+              type="textarea"
+              :rows="3"
+              maxlength="1000"
+              show-word-limit
+              placeholder="例如：row.status === 'DRAFT' && selectedRows.length > 0；为空默认显示"
+            />
+          </el-form-item>
+        </template>
         <el-form-item
           label="排序"
           prop="sort"
@@ -511,18 +566,27 @@ const moduleOptions = [
   { label: '审批中心模块', value: 'mango-workflow' },
 ];
 
+const buttonTypeOptions = [
+  { label: '表格按钮', value: 'TABLE' },
+  { label: '非表格按钮', value: 'NON_TABLE' },
+];
+
 function getMenuTypeTagType(type?: number) {
   if (type === 2) return 'success';
   if (type === 3) return 'warning';
   return '';
 }
 
-// ==================== 权限标识 Tag 相关 ====================
+function buttonTypeLabel(type?: string) {
+  return buttonTypeOptions.find((item) => item.value === type)?.label || type || '-';
+}
+
+// ==================== 接口标识 Tag 相关 ====================
 const permissionInputRef = ref<HTMLInputElement>();
 const inputPermissionVisible = ref(false);
 const inputPermissionValue = ref('');
 
-// 权限标识字符串转数组
+// 接口标识字符串转数组
 const permissionList = computed({
   get: () => {
     if (!form.permissions) return [];
@@ -629,6 +693,8 @@ const form = reactive<SysMenuVO & { groupCode?: string }>({
   status: 1,
   visible: 1,
   permissions: '',
+  buttonType: '',
+  buttonDisplayRule: '',
   groupCode: 'internal-admin',
 });
 
@@ -641,6 +707,18 @@ const rules = computed<FormRules>(() => ({
     ? [{ required: true, message: '请输入访问地址', trigger: 'blur' }]
     : [],
   menuType: [{ required: true, message: '请选择菜单类型', trigger: 'change' }],
+  buttonDisplayRule: [
+    {
+      validator: (_rule, value, callback) => {
+        if (typeof value === 'string' && value.length > 0 && value.trim().length === 0) {
+          callback(new Error('按钮展示规则不能只输入空格'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'blur',
+    },
+  ],
 }));
 
 const menuTree = computed(() => {
@@ -730,6 +808,8 @@ function handleAdd() {
   form.status = 1;
   form.visible = 1;
   form.permissions = '';
+  form.buttonType = '';
+  form.buttonDisplayRule = '';
   form.groupCode = activeGroup.value;
   dialogVisible.value = true;
 }
@@ -750,6 +830,8 @@ function handleAddChild(row: SysMenuVO) {
   form.status = 1;
   form.visible = 1;
   form.permissions = '';
+  form.buttonType = '';
+  form.buttonDisplayRule = '';
   form.groupCode = activeGroup.value;
   dialogVisible.value = true;
 }
@@ -771,6 +853,8 @@ function handleEdit(row: SysMenuVO) {
     status: row.status,
     visible: row.visible,
     permissions: row.permissions,
+    buttonType: row.buttonType || '',
+    buttonDisplayRule: row.buttonDisplayRule || '',
     groupCode: activeGroup.value,
   });
   dialogVisible.value = true;
@@ -804,6 +888,8 @@ async function handleSubmit() {
       embedded: form.menuType !== 3 && form.pageType === 'IFRAME' ? 1 : 0,
       component: form.pageType === 'LOCAL_ROUTE' ? form.component : '',
       externalUrl: form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK' ? form.externalUrl : '',
+      buttonType: form.menuType === 3 ? form.buttonType || '' : '',
+      buttonDisplayRule: form.menuType === 3 ? (form.buttonDisplayRule || '').trim() : '',
     };
     if (form.menuId) {
       await menuApi.updateMenu(payload);

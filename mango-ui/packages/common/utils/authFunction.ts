@@ -10,9 +10,30 @@ export interface UserInfo {
   time: number;
   roles: string[];
   permissions: string[];
+  buttonRules?: ButtonDisplayRule[];
   authBtnList: string[];
   tenantId: string;
   tenantName: string;
+}
+
+export interface ButtonRuleContext {
+  row?: unknown;
+  pageState?: unknown;
+  query?: unknown;
+  selectedRows?: unknown[];
+}
+
+export interface ButtonDisplayRule {
+  code: string;
+  displayRule?: string;
+  buttonType?: 'TABLE' | 'NON_TABLE' | string;
+}
+
+export interface AuthRuleBindingValue extends ButtonRuleContext {
+  code: string;
+  permissions?: string[];
+  buttonRules?: ButtonDisplayRule[];
+  displayRule?: string;
 }
 
 /**
@@ -58,6 +79,86 @@ export function hasAllPermissions(permissionList: string[]): boolean {
 export function getPermissions(): string[] {
   const userInfo = Session.get('userInfo') as UserInfo | null;
   return userInfo?.permissions || [];
+}
+
+/**
+ * 获取当前登录人的按钮展示规则。
+ */
+export function getButtonRules(): ButtonDisplayRule[] {
+  const userInfo = Session.get('userInfo') as UserInfo | null;
+  return Array.isArray(userInfo?.buttonRules) ? userInfo.buttonRules : [];
+}
+
+/**
+ * 解析按钮展示表达式。
+ *
+ * 注意：这里仅用于前端 UI 显示控制，不是安全边界；真实权限仍必须由后端接口校验。
+ * 空规则默认显示，表达式异常时隐藏，避免错误配置把不该展示的按钮暴露出来。
+ */
+export function evaluateButtonDisplayRule(rule?: string, context: ButtonRuleContext = {}): boolean {
+  const expression = (rule || '').trim();
+  if (!expression) {
+    return true;
+  }
+
+  try {
+    const runner = new Function(
+      'row',
+      'pageState',
+      'query',
+      'selectedRows',
+      `return Boolean(${expression});`,
+    );
+    return Boolean(runner(
+      context.row,
+      context.pageState,
+      context.query,
+      context.selectedRows || [],
+    ));
+  } catch {
+    return false;
+  }
+}
+
+function isRuleBindingValue(value: unknown): value is AuthRuleBindingValue {
+  return Boolean(value)
+    && typeof value === 'object'
+    && !Array.isArray(value)
+    && typeof (value as AuthRuleBindingValue).code === 'string';
+}
+
+function resolveButtonRule(value: AuthRuleBindingValue): string {
+  if (typeof value.displayRule === 'string') {
+    return value.displayRule;
+  }
+
+  const rules = Array.isArray(value.buttonRules) ? value.buttonRules : getButtonRules();
+  return rules.find(item => item.code === value.code)?.displayRule || '';
+}
+
+/**
+ * 按钮是否展示：先校验权限码，再校验展示规则。
+ */
+export function canShowButton(value: string | AuthRuleBindingValue): boolean {
+  if (typeof value === 'string') {
+    return hasPermission(value);
+  }
+  if (!isRuleBindingValue(value)) {
+    return false;
+  }
+
+  const permissions = Array.isArray(value.permissions) ? value.permissions : getPermissions();
+  const hasCodePermission = permissions.includes(value.code);
+  if (!hasCodePermission) {
+    return false;
+  }
+
+  return evaluateButtonDisplayRule(resolveButtonRule(value), {
+    row: value.row,
+    pageState: value.pageState,
+    query: value.query,
+    selectedRows: value.selectedRows,
+  });
 }
 
 /**

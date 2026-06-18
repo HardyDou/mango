@@ -12,6 +12,7 @@ export enum MenuTypeEnum {
 }
 
 export type MenuFormat = 'list' | 'tree';
+export type ButtonType = 'TABLE' | 'NON_TABLE' | string;
 
 /**
  * 验证码配置
@@ -58,6 +59,8 @@ export interface SysMenuVO {
   embedded?: number;
   redirect?: string;
   permissions?: string;
+  buttonType?: ButtonType;
+  buttonDisplayRule?: string;
   meta?: MenuMeta;
   children?: SysMenuVO[];
 }
@@ -101,6 +104,8 @@ type MenuPayload = Pick<
   | 'embedded'
   | 'redirect'
   | 'permissions'
+  | 'buttonType'
+  | 'buttonDisplayRule'
   | 'component'
 > & {
   appCode?: string;
@@ -127,6 +132,8 @@ function toBackendPayload(data: Partial<SysMenuVO> & { appCode?: string }): Part
     embedded: data.embedded ?? 0,
     redirect: data.redirect,
     permissions: data.permissions,
+    buttonType: data.buttonType,
+    buttonDisplayRule: data.buttonDisplayRule,
     component: data.component,
     externalUrl: data.externalUrl,
   };

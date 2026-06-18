@@ -2,6 +2,7 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.vo.ButtonDisplayRuleVO;
 import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.core.entity.Role;
 import io.mango.authorization.core.entity.RoleMenu;
@@ -49,17 +50,7 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
 
     @Override
     public List<String> listSubjectPermissions(AuthorizationQuery query) {
-        List<Long> roleIds = listSubjectRoleIds(query);
-        if (roleIds.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        LambdaQueryWrapper<RoleMenu> roleMenuWrapper = new LambdaQueryWrapper<>();
-        roleMenuWrapper.in(RoleMenu::getRoleId, roleIds);
-        List<Long> menuIds = roleMenuMapper.selectList(roleMenuWrapper)
-                .stream()
-                .map(RoleMenu::getMenuId)
-                .collect(Collectors.toList());
+        List<Long> menuIds = listSubjectMenuIds(query);
         if (menuIds.isEmpty()) {
             return new ArrayList<>();
         }
@@ -74,6 +65,48 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
                 .map(Menu::getMenuCode)
                 .filter(code -> code != null && !code.isBlank())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ButtonDisplayRuleVO> listSubjectButtonRules(AuthorizationQuery query) {
+        List<Long> menuIds = listSubjectMenuIds(query);
+        if (menuIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        LambdaQueryWrapper<Menu> menuWrapper = new LambdaQueryWrapper<>();
+        menuWrapper.in(Menu::getMenuId, menuIds)
+                .eq(StringUtils.hasText(query.systemCode()), Menu::getAppCode, query.systemCode())
+                .eq(Menu::getMenuType, 3)
+                .eq(Menu::getStatus, 1);
+        return menuMapper.selectList(menuWrapper)
+                .stream()
+                .filter(menu -> StringUtils.hasText(menu.getMenuCode()))
+                .map(this::toButtonDisplayRule)
+                .collect(Collectors.toList());
+    }
+
+    private List<Long> listSubjectMenuIds(AuthorizationQuery query) {
+        List<Long> roleIds = listSubjectRoleIds(query);
+        if (roleIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        LambdaQueryWrapper<RoleMenu> roleMenuWrapper = new LambdaQueryWrapper<>();
+        roleMenuWrapper.in(RoleMenu::getRoleId, roleIds);
+        return roleMenuMapper.selectList(roleMenuWrapper)
+                .stream()
+                .map(RoleMenu::getMenuId)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private ButtonDisplayRuleVO toButtonDisplayRule(Menu menu) {
+        ButtonDisplayRuleVO rule = new ButtonDisplayRuleVO();
+        rule.setCode(menu.getMenuCode());
+        rule.setButtonType(menu.getButtonType());
+        rule.setDisplayRule(menu.getButtonDisplayRule());
+        return rule;
     }
 
     private List<Long> listSubjectRoleIds(AuthorizationQuery query) {
