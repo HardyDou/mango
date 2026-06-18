@@ -8,8 +8,13 @@ import java.util.Set;
  *
  * @param mode 范围模式。
  * @param values 范围值。
+ * @param selfIncluded 是否包含当前主体自己的数据。
  */
-public record DataScopeRule(Mode mode, Set<String> values) {
+public record DataScopeRule(Mode mode, Set<String> values, boolean selfIncluded) {
+
+    public DataScopeRule(Mode mode, Set<String> values) {
+        this(mode, values, mode == Mode.SELF);
+    }
 
     public DataScopeRule {
         values = values == null ? Collections.emptySet() : Set.copyOf(values);

@@ -59,11 +59,12 @@ class MangoCrudServiceImplIntegrationTest {
                     created_by BIGINT,
                     created_at TIMESTAMP,
                     updated_by BIGINT,
-                    updated_at TIMESTAMP
+                    updated_at TIMESTAMP,
+                    org_id BIGINT
                 )
                 """);
         MangoContextHolder.set(MangoContextSnapshot.empty()
-                .withSecurity(1001L, "tenant-a", "tester", "default", "USER", "USER", 1001L, "test"));
+                .withSecurity(1001L, "tenant-a", "tester", "default", "USER", "org", 3003L, "test"));
     }
 
     @AfterEach
@@ -112,14 +113,14 @@ class MangoCrudServiceImplIntegrationTest {
 
     private void insertOtherTenantUser() {
         jdbcTemplate.update("""
-                INSERT INTO demo_user (id, username, nickname, status, tenant_id, created_by, created_at, updated_by, updated_at)
-                VALUES (20001, 'mallory', 'Mallory', 1, 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+                INSERT INTO demo_user (id, username, nickname, status, tenant_id, created_by, created_at, updated_by, updated_at, org_id)
+                VALUES (20001, 'mallory', 'Mallory', 1, 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 9009)
                 """);
     }
 
     private void assertAuditFieldsFilledOnCreate(Long id) {
         Map<String, Object> row = jdbcTemplate.queryForMap("""
-                SELECT tenant_id, created_by, created_at, updated_by, updated_at
+                SELECT tenant_id, created_by, created_at, updated_by, updated_at, org_id
                 FROM demo_user
                 WHERE id = ?
                 """, id);
@@ -128,11 +129,12 @@ class MangoCrudServiceImplIntegrationTest {
         assertThat(row.get("CREATED_AT")).isNotNull();
         assertThat(row.get("UPDATED_BY")).isEqualTo(1001L);
         assertThat(row.get("UPDATED_AT")).isNotNull();
+        assertThat(row.get("ORG_ID")).isEqualTo(3003L);
     }
 
     private void assertAuditFieldsFilledOnUpdate(Long id) {
         Map<String, Object> row = jdbcTemplate.queryForMap("""
-                SELECT tenant_id, created_by, created_at, updated_by, updated_at
+                SELECT tenant_id, created_by, created_at, updated_by, updated_at, org_id
                 FROM demo_user
                 WHERE id = ?
                 """, id);
@@ -141,6 +143,7 @@ class MangoCrudServiceImplIntegrationTest {
         assertThat(row.get("CREATED_AT")).isNotNull();
         assertThat(row.get("UPDATED_BY")).isEqualTo(1001L);
         assertThat(row.get("UPDATED_AT")).isNotNull();
+        assertThat(row.get("ORG_ID")).isEqualTo(3003L);
     }
 
     @SpringBootApplication

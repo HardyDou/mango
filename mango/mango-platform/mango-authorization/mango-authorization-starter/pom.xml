@@ -51,6 +51,24 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.mango.platform.identity</groupId>
+            <artifactId>mango-identity-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.mango.platform.org</groupId>
+            <artifactId>mango-org-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- OpenAPI 注解仅用于 starter 控制器文档展示 -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

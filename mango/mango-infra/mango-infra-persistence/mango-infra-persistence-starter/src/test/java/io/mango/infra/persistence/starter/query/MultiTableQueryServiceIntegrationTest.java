@@ -54,7 +54,8 @@ class MultiTableQueryServiceIntegrationTest {
                     created_by BIGINT,
                     created_at TIMESTAMP,
                     updated_by BIGINT,
-                    updated_at TIMESTAMP
+                    updated_at TIMESTAMP,
+                    org_id BIGINT
                 )
                 """);
         jdbcTemplate.execute("""
@@ -67,23 +68,24 @@ class MultiTableQueryServiceIntegrationTest {
                     created_by BIGINT,
                     created_at TIMESTAMP,
                     updated_by BIGINT,
-                    updated_at TIMESTAMP
+                    updated_at TIMESTAMP,
+                    org_id BIGINT
                 )
                 """);
         jdbcTemplate.update("""
-                INSERT INTO demo_dept (id, name, tenant_id, created_by, created_at, updated_by, updated_at)
+                INSERT INTO demo_dept (id, name, tenant_id, created_by, created_at, updated_by, updated_at, org_id)
                 VALUES
-                  (10, 'Engineering', 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP),
-                  (11, 'Finance', 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP),
-                  (20, 'Engineering', 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+                  (10, 'Engineering', 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 3003),
+                  (11, 'Finance', 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 3003),
+                  (20, 'Engineering', 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 9009)
                 """);
         jdbcTemplate.update("""
-                INSERT INTO demo_user (id, dept_id, username, status, tenant_id, created_by, created_at, updated_by, updated_at)
+                INSERT INTO demo_user (id, dept_id, username, status, tenant_id, created_by, created_at, updated_by, updated_at, org_id)
                 VALUES
-                  (10001, 10, 'alice', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP),
-                  (10002, 10, 'alex', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP),
-                  (10003, 11, 'bob', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP),
-                  (20001, 20, 'alice', 1, 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+                  (10001, 10, 'alice', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 3003),
+                  (10002, 10, 'alex', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 3003),
+                  (10003, 11, 'bob', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 3003),
+                  (20001, 20, 'alice', 1, 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 9009)
                 """);
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "tenant-a", "tester", "default", "USER", "USER", 1001L, "test"));

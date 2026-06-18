@@ -24,7 +24,15 @@ public class MangoContextPersistenceContextProvider implements PersistenceContex
                 snapshot.actorType(),
                 snapshot.partyType(),
                 snapshot.partyId(),
+                resolveOrgId(snapshot),
                 snapshot.appCode()
         );
+    }
+
+    private Long resolveOrgId(MangoContextSnapshot snapshot) {
+        if (snapshot.partyId() == null || snapshot.partyType() == null) {
+            return null;
+        }
+        return "org".equalsIgnoreCase(snapshot.partyType()) ? snapshot.partyId() : null;
     }
 }

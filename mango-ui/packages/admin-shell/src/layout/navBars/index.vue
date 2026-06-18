@@ -93,6 +93,7 @@ import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, Close } from '@element-plus/icons-vue';
 import { Session } from '@mango/common/utils/storage';
+import { hasPermission } from '@mango/common/utils/authFunction';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
 import { getMangoNoticeBellProvider, type MangoNoticeBellRuntimeConfig } from '@mango/admin-pages/notice';
@@ -114,7 +115,9 @@ const topMenus = computed(() => routesList.value.filter(item => !item.meta?.isHi
 const showTopSystems = computed(() => layoutStore.layout === 'classic' || layoutStore.layout === 'transverse');
 const noticeBellProvider = computed(() => getMangoNoticeBellProvider());
 const noticeClientEnabled = computed(() =>
-  resolveMangoAdminFeatures(getMangoAdminShellOptions().features).has('notice') && Boolean(noticeBellProvider.value),
+  resolveMangoAdminFeatures(getMangoAdminShellOptions().features).has('notice') &&
+  Boolean(noticeBellProvider.value) &&
+  hasPermission('notice:site:view'),
 );
 const noticeBellComponent = computed(() => noticeBellProvider.value?.component || resolveDynamicComponent('span'));
 const headerAsideExpanded = computed(() => {

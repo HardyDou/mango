@@ -1,6 +1,7 @@
 package io.mango.workflow.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,6 +13,8 @@ import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
 import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.persistence.api.scope.DataScopeApplier;
+import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
@@ -38,6 +41,7 @@ import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -58,6 +62,13 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
 
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
     };
+    private static final String DEFINITION_LIST_RESOURCE_CODE = "workflow:definition:list";
+    private static final DataScopeMapping DEFINITION_DATA_SCOPE_MAPPING = DataScopeMapping.builder()
+            .tableName("workflow_definition")
+            .selfField("created_by")
+            .orgField("org_id")
+            .tenantField("tenant_id")
+            .build();
 
     private final WorkflowDefinitionMapper mapper;
     private final WorkflowCategoryMapper categoryMapper;
@@ -67,6 +78,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     private final RepositoryService repositoryService;
     private final WorkflowDesignerBpmnConverter bpmnConverter;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<DataScopeApplier> dataScopeApplierProvider;
 
     @Override
     public R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query) {
@@ -314,6 +326,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         Require.notNull(id, WorkflowCode.DEFINITION_INVALID.getCode(), "发布版本ID不能为空");
         WorkflowDefinitionVersion version = versionMapper.selectById(id);
         Require.notNull(version, WorkflowCode.VERSION_NOT_FOUND);
+        selectRequired(version.getDefinitionId());
         return R.ok(toVersionVO(version));
     }
 
@@ -330,41 +343,54 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         return R.ok(nodes);
     }
 
-    private LambdaQueryWrapper<WorkflowDefinition> wrapper(WorkflowDefinitionPageQuery query) {
+    private QueryWrapper<WorkflowDefinition> wrapper(WorkflowDefinitionPageQuery query) {
         String keyword = trimToNull(query.getKeyword());
-        return new LambdaQueryWrapper<WorkflowDefinition>()
+        QueryWrapper<WorkflowDefinition> wrapper = new QueryWrapper<WorkflowDefinition>()
                 .and(StringUtils.hasText(keyword), nested -> nested
-                        .like(WorkflowDefinition::getDefinitionName, keyword)
+                        .like("definition_name", keyword)
                         .or()
-                        .like(WorkflowDefinition::getDefinitionKey, keyword))
-                .eq(query.getCategoryId() != null, WorkflowDefinition::getCategoryId, query.getCategoryId())
-                .eq(StringUtils.hasText(query.getDomainCode()), WorkflowDefinition::getDomainCode, trimToNull(query.getDomainCode()))
-                .eq(query.getOrgId() != null, WorkflowDefinition::getOrgId, query.getOrgId())
-                .eq(StringUtils.hasText(query.getStatus()), WorkflowDefinition::getStatus, query.getStatus())
-                .orderByDesc(WorkflowDefinition::getUpdatedTime);
+                        .like("definition_key", keyword))
+                .eq(query.getCategoryId() != null, "category_id", query.getCategoryId())
+                .eq(StringUtils.hasText(query.getDomainCode()), "domain_code", trimToNull(query.getDomainCode()))
+                .eq(query.getOrgId() != null, "org_id", query.getOrgId())
+                .eq(StringUtils.hasText(query.getStatus()), "status", query.getStatus())
+                .orderByDesc("updated_time");
+        return applyDefinitionDataScope(wrapper);
     }
 
-    private LambdaQueryWrapper<WorkflowDefinition> publishedWrapper(WorkflowDefinitionPageQuery query) {
+    private QueryWrapper<WorkflowDefinition> publishedWrapper(WorkflowDefinitionPageQuery query) {
         String keyword = trimToNull(query.getKeyword());
-        return new LambdaQueryWrapper<WorkflowDefinition>()
+        QueryWrapper<WorkflowDefinition> wrapper = new QueryWrapper<WorkflowDefinition>()
                 .and(StringUtils.hasText(keyword), nested -> nested
-                        .like(WorkflowDefinition::getDefinitionName, keyword)
+                        .like("definition_name", keyword)
                         .or()
-                        .like(WorkflowDefinition::getDefinitionKey, keyword))
-                .eq(query.getCategoryId() != null, WorkflowDefinition::getCategoryId, query.getCategoryId())
-                .eq(StringUtils.hasText(query.getDomainCode()), WorkflowDefinition::getDomainCode, trimToNull(query.getDomainCode()))
-                .eq(query.getOrgId() != null, WorkflowDefinition::getOrgId, query.getOrgId())
-                .eq(WorkflowDefinition::getStatus, WorkflowDefinitionStatus.PUBLISHED.name())
-                .isNotNull(WorkflowDefinition::getPublishedVersionNo)
-                .isNotNull(WorkflowDefinition::getProcessDefinitionId)
-                .orderByDesc(WorkflowDefinition::getLastDeployTime);
+                        .like("definition_key", keyword))
+                .eq(query.getCategoryId() != null, "category_id", query.getCategoryId())
+                .eq(StringUtils.hasText(query.getDomainCode()), "domain_code", trimToNull(query.getDomainCode()))
+                .eq(query.getOrgId() != null, "org_id", query.getOrgId())
+                .eq("status", WorkflowDefinitionStatus.PUBLISHED.name())
+                .isNotNull("published_version_no")
+                .isNotNull("process_definition_id")
+                .orderByDesc("last_deploy_time");
+        return applyDefinitionDataScope(wrapper);
     }
 
     private WorkflowDefinition selectRequired(Long id) {
         Require.notNull(id, WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
-        WorkflowDefinition entity = mapper.selectById(id);
+        QueryWrapper<WorkflowDefinition> wrapper = applyDefinitionDataScope(new QueryWrapper<WorkflowDefinition>()
+                .eq("id", id)
+                .last("limit 1"));
+        WorkflowDefinition entity = mapper.selectOne(wrapper);
         Require.notNull(entity, WorkflowCode.DEFINITION_NOT_FOUND);
         return entity;
+    }
+
+    private QueryWrapper<WorkflowDefinition> applyDefinitionDataScope(QueryWrapper<WorkflowDefinition> wrapper) {
+        DataScopeApplier dataScopeApplier = dataScopeApplierProvider.getIfAvailable();
+        if (dataScopeApplier != null) {
+            dataScopeApplier.apply(wrapper, DEFINITION_LIST_RESOURCE_CODE, DEFINITION_DATA_SCOPE_MAPPING);
+        }
+        return wrapper;
     }
 
     private void validate(SaveWorkflowDefinitionCommand command, boolean update) {

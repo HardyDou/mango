@@ -42,6 +42,7 @@ class PersistenceAuditAutoConfigurationTest {
             assertThat(entity.getCreatedBy()).isEqualTo(1001L);
             assertThat(entity.getUpdatedBy()).isEqualTo(1001L);
             assertThat(entity.getTenantId()).isEqualTo("2002");
+            assertThat(entity.getOrgId()).isEqualTo(3003L);
             assertThat(entity.getCreatedAt()).isNotNull();
             assertThat(entity.getUpdatedAt()).isNotNull();
             assertThat(entity.getCreateTime()).isNotNull();
@@ -63,6 +64,23 @@ class PersistenceAuditAutoConfigurationTest {
             handler.insertFill(metaObject);
 
             assertThat(entity.getTenantId()).isEqualTo("2002");
+        });
+    }
+
+    @Test
+    void auditHandler_shouldKeepBusinessOrgIdWhenAlreadySet() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "2002", "admin", "platform", "employee", "org", 3003L, "admin-app"));
+
+        contextRunner.run(ctx -> {
+            MetaObjectHandler handler = ctx.getBean(MetaObjectHandler.class);
+            TestEntity entity = new TestEntity();
+            entity.setOrgId(9009L);
+            MetaObject metaObject = SystemMetaObject.forObject(entity);
+
+            handler.insertFill(metaObject);
+
+            assertThat(entity.getOrgId()).isEqualTo(9009L);
         });
     }
 
@@ -97,6 +115,7 @@ class PersistenceAuditAutoConfigurationTest {
         private LocalDateTime updatedAt;
         private LocalDateTime updateTime;
         private String tenantId;
+        private Long orgId;
 
         public Long getCreatedBy() {
             return createdBy;
@@ -152,6 +171,14 @@ class PersistenceAuditAutoConfigurationTest {
 
         public void setTenantId(String tenantId) {
             this.tenantId = tenantId;
+        }
+
+        public Long getOrgId() {
+            return orgId;
+        }
+
+        public void setOrgId(Long orgId) {
+            this.orgId = orgId;
         }
     }
 }

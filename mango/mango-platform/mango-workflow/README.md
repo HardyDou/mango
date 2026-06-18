@@ -210,7 +210,22 @@ registerMangoWorkflowAdminPages();
 | `/workflow/task/detail` | `workflow/task/detail/index` | `workflow:task:detail` |
 | `/workflow/custom-apply` | `workflow/custom-apply/index` | `workflow:custom-apply` |
 
-## 5. 快速开始
+## 5. 数据权限
+
+流程定义管理已接入角色数据权限。分页、已发布分页、详情、发布版本列表、发布版本详情，以及依赖详情读取的编辑、删除、状态调整、撤回和发布操作，都会按 `workflow:definition:list` 解析当前角色的数据范围。
+
+字段映射：
+
+| 数据权限语义 | workflow 映射 |
+|--------------|---------------|
+| 表名 | `workflow_definition` |
+| 本人 | `created_by` |
+| 组织、本人成员主部门、本人主部门及下级 | `org_id` |
+| 租户 | `tenant_id` |
+
+未安装授权数据权限能力时，workflow 保持原查询行为；安装后由 `DataScopeApplier` 追加本人、指定组织、本人主部门或本人主部门及下级范围条件，并校验 `workflow_definition` 存在当前规则需要的映射字段。租户隔离仍由 persistence 租户插件处理。
+
+## 6. 快速开始
 
 1. 业务后端引入 `mango-workflow-api`；部署 workflow 能力的应用引入 `mango-workflow-starter`。
 2. 管理后台安装 `@mango/workflow`，注册 workflow 页面。
@@ -223,7 +238,7 @@ registerMangoWorkflowAdminPages();
 9. 业务列表用 `WorkflowBusinessProcessApi.latestByBusinessKeys(businessType, keys)` 批量补充审批状态。
 10. 审批页面用任务详情接口拿表单、变量、字段权限和当前节点配置，再调用任务处理接口。
 
-## 6. 配置说明
+## 7. 配置说明
 
 配置写在应用的 `application.yml` 或对应环境配置文件中。
 
@@ -252,7 +267,7 @@ mango:
       category-name: 通用流程
 ```
 
-## 7. YAML 配置字段
+## 8. YAML 配置字段
 
 | 配置 | 默认值 | 含义 |
 |------|--------|------|
@@ -263,7 +278,7 @@ mango:
 | `mango.workflow.samples.category-name` | `通用流程` | 示例流程分类名称。 |
 | `mango.workflow.samples.domain-code` | `COMMON` | 示例流程业务域编码。 |
 
-## 8. 返回字段
+## 9. 返回字段
 
 常用返回对象：
 
@@ -278,7 +293,7 @@ mango:
 | `WorkflowDefinitionVO` | 流程定义 ID、编码、名称、分类、业务域、状态、发布版本和流程管理员。 | 流程定义管理和业务选择流程。 |
 | `WorkflowDeployVO` | 部署 ID、流程定义 ID、流程定义 key、版本和发布结果。 | 发布流程或确保流程已发布后的结果。 |
 
-## 9. API 与扩展
+## 10. API 与扩展
 
 业务申请接口：
 
@@ -392,7 +407,7 @@ public class OrderApprovalCallback implements WorkflowNodeExecutable {
 }
 ```
 
-## 10. 数据与初始化
+## 11. 数据与初始化
 
 Flyway migration 路径：
 
@@ -433,7 +448,7 @@ workflow_business_apply_status_log
 
 启动期示例流程由 `WorkflowSampleDefinitionInitializer` 写入，配置来源是 `mango.workflow.samples.*`。默认会写入租户 `1`、分类 `COMMON`、业务域 `COMMON` 下的示例流程；不需要示例流程时关闭 `mango.workflow.samples.enabled`。
 
-## 11. 管理入口
+## 12. 管理入口
 
 菜单由 `V1__init_workflow.sql` 写入 `authorization_menu`，应用编码是 `internal-admin`。
 
@@ -477,7 +492,7 @@ workflow:template:create-definition
 workflow:template:push
 ```
 
-## 12. 问题排查
+## 13. 问题排查
 
 **引入 API 后没有 HTTP 接口**
 
@@ -507,7 +522,7 @@ workflow:template:push
 
 确认管理后台已经注册 `@mango/workflow` 的 `admin-pages` 子入口，并且菜单里的组件路径能映射到 `workflow/template/index` 或 `workflow/definition/index` 页面 key。
 
-## 13. 相关文档
+## 14. 相关文档
 
 - [前端 workflow 包](../../../mango-ui/packages/workflow/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

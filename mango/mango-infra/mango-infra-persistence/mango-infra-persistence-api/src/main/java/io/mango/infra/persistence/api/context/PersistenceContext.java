@@ -13,10 +13,11 @@ public record PersistenceContext(
         String actorType,
         String partyType,
         Long partyId,
+        Long orgId,
         String appCode
 ) {
 
     public static PersistenceContext empty() {
-        return new PersistenceContext(null, null, null, null, null, null, null, null);
+        return new PersistenceContext(null, null, null, null, null, null, null, null, null);
     }
 }

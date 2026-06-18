@@ -774,6 +774,13 @@
           {{ currentUser.username }}
         </el-tag>
       </div>
+      <el-alert
+        class="assign-data-scope-tip"
+        type="info"
+        show-icon
+        :closable="false"
+        title="角色如配置“本人部门”类数据权限，将按该成员主部门动态生效。"
+      />
       <el-checkbox-group v-model="selectedRoleIds">
         <div
           v-for="role in roleOptions"
@@ -1356,7 +1363,7 @@ async function handleAddOrgMember() {
     relationId: undefined,
     memberId: undefined,
     postId: defaultPostId(),
-    primaryFlag: false,
+    primaryFlag: true,
     leaderFlag: false,
   });
   candidateUsers.value = [];

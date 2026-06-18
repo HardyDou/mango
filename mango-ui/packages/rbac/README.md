@@ -21,7 +21,7 @@
 | 应用模块绑定和运行策略 | `appModuleApi` | `mango-authorization`、`@mango/app-runtime` |
 | 菜单和按钮资源 | `MenuView`、`menuApi` | `mango-authorization` |
 | 菜单包 | `MenuPackageView`、`menuPackageApi` | `mango-authorization` |
-| 角色和菜单/按钮授权 | `RoleView`、`roleApi` | `mango-authorization` |
+| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi` | `mango-authorization` |
 | 用户管理 | `UserView`、`userApi` | `mango-identity` |
 | 组织和成员 | `OrgView`、`orgApi` | `mango-org` |
 | 岗位管理 | `PostView`、`postApi` | `mango-org` |
@@ -59,6 +59,12 @@ import { menuApi, roleApi, userApi } from '@mango/rbac';
 
 const menus = await menuApi.tree({ appCode: 'internal-admin' });
 await roleApi.assignMenus(roleId, menuIds);
+await roleApi.saveDataScope({
+  roleId,
+  resourceCode: 'payment:order:list',
+  scopeMode: 'SELF_ORG',
+  status: 1,
+});
 const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 ```
 
@@ -99,7 +105,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | `appModuleApi` | `/authorization/app-modules` | 应用模块绑定、同步菜单、运行策略。 |
 | `menuApi` | `/authorization/menus` | 用户菜单、菜单树、详情、创建、更新、删除。 |
 | `menuPackageApi` | `/authorization/menu-packages` | 菜单包 CRUD。 |
-| `roleApi` | `/authorization/roles` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定。 |
+| `roleApi` | `/authorization/roles`、`/authorization/data-scopes` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、角色数据权限。 |
 | `userApi` | `/identity/users/page` | 用户分页、详情、创建、更新、删除、重置密码、企微同步、外部身份绑定。 |
 | `orgApi` | `/org/tree` | 组织树、子节点、详情、成员、负责人。 |
 | `postApi` | `/post/page` | 岗位分页、详情、创建、更新、删除。 |
@@ -115,6 +121,18 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | 组织 | `id`、`name`、`parentId`、`sort`、`children` |
 | 岗位 | `id`、`postCode`、`postName`、`sort`、`status` |
 
+角色数据权限页面行为：
+
+| 操作 | 说明 |
+|------|------|
+| 入口 | 角色管理列表行操作“数据权限” |
+| 新增/编辑 | 在弹窗表格内直接新增、编辑、保存或删除 |
+| 数据资源 | 使用树形选择器，只展示 list 类资源，通常对应业务查询权限码 |
+| 范围模式 | 支持 `ALL`、`SELF`、`SELF_ORG`、`SELF_ORG_AND_CHILDREN`、`ORG` |
+| 用户生效 | “本人部门”类范围按成员管理里的主部门动态生效 |
+
+给部门管理员配置数据权限时，不需要为每个部门创建不同角色。维护一个部门管理员角色，数据范围选“本人部门”或“本人部门及下级”；再到成员管理给用户设置主部门并分配这个角色即可。
+
 ## 6. 数据与初始化
 
 `@mango/rbac` 不包含 migration。接入前要确认：
@@ -124,7 +142,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | 应用 | `mango-authorization` | 应用管理、登录授权边界。 |
 | 菜单和按钮 | authorization resource manifest 或初始化脚本 | 菜单管理、Shell 菜单、按钮权限。 |
 | 菜单包 | `mango-authorization` | 租户授权和菜单套餐。 |
-| 角色和授权 | `mango-authorization` | 角色管理、角色菜单、主体角色。 |
+| 角色和授权 | `mango-authorization` | 角色管理、角色菜单、主体角色、角色数据权限。 |
 | 用户和身份 | `mango-identity` | 用户管理、登录、外部身份绑定。 |
 | 组织和岗位 | `mango-org` | 组织管理、岗位管理、用户组织关系。 |
 

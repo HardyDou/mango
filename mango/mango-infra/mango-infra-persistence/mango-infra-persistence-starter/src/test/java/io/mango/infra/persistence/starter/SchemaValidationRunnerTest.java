@@ -21,7 +21,8 @@ class SchemaValidationRunnerTest {
                     created_at TIMESTAMP,
                     updated_by BIGINT,
                     updated_at TIMESTAMP,
-                    tenant_id VARCHAR(64)
+                    tenant_id VARCHAR(64),
+                    org_id BIGINT
                 )
                 """);
 
@@ -61,7 +62,8 @@ class SchemaValidationRunnerTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("demo_user")
                 .hasMessageContaining("created_by")
-                .hasMessageContaining("tenant_id");
+                .hasMessageContaining("tenant_id")
+                .hasMessageContaining("org_id");
     }
 
     @Test
@@ -74,7 +76,8 @@ class SchemaValidationRunnerTest {
                     created_at TIMESTAMP,
                     updated_by BIGINT,
                     updated_at TIMESTAMP,
-                    tenant_id VARCHAR(64)
+                    tenant_id VARCHAR(64),
+                    org_id BIGINT
                 )
                 """);
 
@@ -96,7 +99,8 @@ class SchemaValidationRunnerTest {
                     created_at TIMESTAMP,
                     updated_by BIGINT,
                     updated_at TIMESTAMP,
-                    tenant_id VARCHAR(64)
+                    tenant_id VARCHAR(64),
+                    org_id BIGINT
                 )
                 """);
 
@@ -119,7 +123,8 @@ class SchemaValidationRunnerTest {
                     created_at TIMESTAMP,
                     updated_by BIGINT,
                     updated_at TIMESTAMP,
-                    tenant_id VARCHAR(64)
+                    tenant_id VARCHAR(64),
+                    org_id BIGINT
                 )
                 """);
 
