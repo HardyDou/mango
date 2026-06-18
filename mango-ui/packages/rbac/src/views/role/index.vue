@@ -333,14 +333,23 @@
         <el-table-column
           prop="scopeMode"
           label="范围"
-          width="360"
+          width="170"
         >
           <template #default="{ row }">
-            <el-segmented
+            <el-select
               v-if="isEditingDataScope(row)"
               v-model="dataScopeEditRow.scopeMode"
-              :options="dataScopeModeOptions"
-            />
+              class="form-select"
+              placeholder="请选择范围"
+              data-test="data-scope-mode-select"
+            >
+              <el-option
+                v-for="option in dataScopeModeOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
+            </el-select>
             <span v-else>
               {{ dataScopeModeLabel(row.scopeMode) }}
             </span>
@@ -349,7 +358,7 @@
         <el-table-column
           prop="scopeValues"
           label="范围值"
-          min-width="170"
+          min-width="220"
         >
           <template #default="{ row }">
             <el-tree-select
@@ -369,7 +378,7 @@
               -
             </span>
             <span v-else>
-              {{ row.scopeValues?.join(', ') || '-' }}
+              {{ dataScopeValueLabel(row) }}
             </span>
           </template>
         </el-table-column>
@@ -987,6 +996,34 @@ function dataScopeModeLabel(mode: DataScopeMode) {
   return dataScopeModeOptions.find((item) => item.value === mode)?.label || mode;
 }
 
+function dataScopeValueLabel(row: RoleDataScopeVO) {
+  if (row.scopeMode === 'SELF_ORG') {
+    return '成员主部门';
+  }
+  if (row.scopeMode === 'SELF_ORG_AND_CHILDREN') {
+    return '成员主部门及下级';
+  }
+  if (row.scopeMode !== 'ORG' || !row.scopeValues?.length) {
+    return '-';
+  }
+  const orgNameMap = buildOrgNameMap(orgTreeData.value);
+  return row.scopeValues
+    .map((value) => orgNameMap.get(String(value)) || String(value))
+    .join(', ');
+}
+
+function buildOrgNameMap(orgs: SysOrg[]) {
+  const nameMap = new Map<string, string>();
+  const visit = (items: SysOrg[]) => {
+    items.forEach((item) => {
+      nameMap.set(String(item.id), item.orgName);
+      visit(item.children || []);
+    });
+  };
+  visit(orgs);
+  return nameMap;
+}
+
 onMounted(() => {
   loadData();
 });
@@ -1022,10 +1059,6 @@ onMounted(() => {
 
 .data-scope-table {
   width: 100%;
-}
-
-.data-scope-table :deep(.el-segmented) {
-  width: 330px;
 }
 
 .data-resource-cell {

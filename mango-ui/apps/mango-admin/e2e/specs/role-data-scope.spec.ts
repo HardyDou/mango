@@ -219,7 +219,8 @@ test.describe('角色数据权限管理', () => {
         .last()
         .click();
       await page.keyboard.press('Escape');
-      await dialog.locator('.el-segmented__item').filter({ hasText: /^本人部门$/ }).click();
+      await dialog.locator('[data-test="data-scope-mode-select"]').click();
+      await page.getByRole('option', { name: '本人部门', exact: true }).click();
       const editingSaveButton = dialog
         .locator('[data-test="data-scope-row-save"]:visible')
         .first();
@@ -245,13 +246,13 @@ test.describe('角色数据权限管理', () => {
       await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE })).toBeVisible({ timeout: 10000 });
       await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText(DATA_SCOPE_RESOURCE_NAME)).toBeVisible();
       await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText('本人部门')).toBeVisible();
-      await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText('-')).toBeVisible();
+      await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText('成员主部门')).toBeVisible();
       await expect(page.getByText('保存成功')).toHaveCount(0, { timeout: 10000 });
 
       const dataScopeRow = dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).first();
       await dataScopeRow.getByRole('button', { name: '编辑' }).click();
       await expect(dataScopeRow.getByRole('button', { name: '保存' })).toBeVisible();
-      await expect(dataScopeRow.locator('.el-segmented__item').filter({ hasText: /^本人部门$/ })).toBeVisible();
+      await expect(dataScopeRow.locator('[data-test="data-scope-mode-select"]')).toContainText('本人部门');
 
       const editSaveResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/authorization/data-scopes/roles') &&
