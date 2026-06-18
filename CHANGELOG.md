@@ -1,5 +1,101 @@
 # Mango Changelog
 
+## v2026.06.19-resource-registry - 2026-06-19
+
+### New
+
+- Added the Mango resource registry backend capability on the `1.0.0-SNAPSHOT` line, including
+  resource API, support, core, starter, remote starter, sync starter, admin query endpoints,
+  change logs, sync logs, file-based declaration loading, content hashing, force sync, and
+  physical delete support.
+- Migrated platform seed data to resource declarations for system dictionaries and config,
+  domains, file storage settings, job definitions, notice channels and message templates, numgen
+  sequence rules, payment rules, auth/identity/payment/job message templates, i18n messages, and
+  API access resources.
+- Added resource-backed notice and i18n registration so starters can publish reusable default
+  platform resources through `META-INF/mango/resources`.
+- Added button display rule support across backend authorization/auth contracts and frontend RBAC
+  pages, including authorization snapshot output and RBAC role/menu UI integration (by
+  @chengkuankuan).
+- Added a frontend package consumer type gate with `pnpm package-consumer:typecheck` so published
+  `@mango/*` packages are checked in a generated business consumer before npm publish.
+
+### Fixed
+
+- Fixed Mango Flyway upgrade compatibility for legacy business databases that already contain
+  later-versioned module migrations.
+- Tightened RBAC button display rule evaluation so hidden buttons are consistently filtered by the
+  shared frontend authorization utility.
+- Synchronized `@mango/cli` release locks with the current admin package set so newly generated
+  projects consume the released frontend package versions.
+
+### Documentation
+
+- Added the resource registry design, delivery contract, module README coverage, capability map
+  entry, and business integration impact notes.
+- Updated business integration guides for permission button display rules, file upload forms,
+  RBAC troubleshooting, tenant dict/config initialization, and workflow approval impacts.
+
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including the new resource
+  modules and updated platform starters:
+  - `io.mango.platform.resource:mango-resource-api`
+  - `io.mango.platform.resource:mango-resource-support`
+  - `io.mango.platform.resource:mango-resource-core`
+  - `io.mango.platform.resource:mango-resource-starter`
+  - `io.mango.platform.resource:mango-resource-starter-remote`
+  - `io.mango.platform.resource:mango-resource-sync-starter`
+  - `io.mango.platform.authorization:mango-authorization-resource-sync-starter`
+  - Updated auth, authorization, system, domain, file, job, notice, numgen, payment, identity,
+    workflow, template, and persistence modules on the same SNAPSHOT line.
+- Frontend npm packages:
+  - `@mango/admin@1.0.23`
+  - `@mango/admin-pages@1.0.10`
+  - `@mango/admin-shell@1.0.20`
+  - `@mango/auth@1.0.8`
+  - `@mango/calendar@1.0.11`
+  - `@mango/common@1.0.10`
+  - `@mango/file@1.0.11`
+  - `@mango/grid-layout@1.0.2`
+  - `@mango/job@1.0.3`
+  - `@mango/notice@1.0.11`
+  - `@mango/numgen@1.0.11`
+  - `@mango/payment@1.0.2`
+  - `@mango/rbac@1.0.8`
+  - `@mango/system@1.0.9`
+  - `@mango/template@1.0.11`
+  - `@mango/workflow@1.0.11`
+  - `@mango/workflow-business-example@1.0.11`
+  - `@mango/cli@1.0.34`
+
+### Upgrade Notes
+
+- Business backends should refresh Mango backend `1.0.0-SNAPSHOT` dependencies and run the new
+  Flyway migrations before starting applications that consume resource-backed default data.
+- Applications that rely on platform default dictionaries, domains, file storage, jobs, notices,
+  numgen, payment, auth templates, or i18n resources should keep the corresponding starters enabled
+  so `META-INF/mango/resources` declarations can be synced.
+- Existing databases keep their historical records; resource declarations become the managed
+  source for default data and support sync/change logging through the resource registry tables.
+- Frontend consumers should upgrade the published `@mango/*` package set together, especially
+  `@mango/admin`, `@mango/admin-shell`, `@mango/common`, `@mango/auth`, and `@mango/rbac`.
+- Upgrade `@mango/cli` to `1.0.34` before generating new business projects so generated dependency
+  locks and backend resource sync configuration match this release.
+
+### Verification
+
+- `git diff --check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `PR_BODY_FILE=.runtime/pr-193-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `mvn -pl mango-platform/mango-resource/... -am test`
+- `mvn -pl mango-platform/mango-system/mango-system-core,...,mango-workflow-core -am test`
+- `mvn -f mango/pom.xml -pl :mango-infra-persistence-starter -am test`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm package-consumer:typecheck`
+- `pnpm --filter @mango/cli test`
+
 ## v2026.06.19-datascope-provider-autoconfig - 2026-06-19
 
 ### Fixed

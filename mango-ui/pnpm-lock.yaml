@@ -479,55 +479,55 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: 1.0.19
+        specifier: 1.0.20
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: 1.0.2
         version: link:../app-runtime
       '@mango/auth':
-        specifier: 1.0.7
+        specifier: 1.0.8
         version: link:../auth
       '@mango/calendar':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../calendar
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/file':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../file
       '@mango/grid-layout':
-        specifier: 1.0.1
+        specifier: 1.0.2
         version: link:../grid-layout
       '@mango/job':
-        specifier: 1.0.2
+        specifier: 1.0.3
         version: link:../job
       '@mango/notice':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../notice
       '@mango/numgen':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../numgen
       '@mango/payment':
-        specifier: 1.0.1
+        specifier: 1.0.2
         version: link:../payment
       '@mango/rbac':
-        specifier: 1.0.7
+        specifier: 1.0.8
         version: link:../rbac
       '@mango/system':
-        specifier: 1.0.8
+        specifier: 1.0.9
         version: link:../system
       '@mango/template':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../template
       '@mango/workflow':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
@@ -558,16 +558,16 @@ importers:
   packages/admin-pages:
     dependencies:
       '@mango/auth':
-        specifier: 1.0.7
+        specifier: 1.0.8
         version: link:../auth
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/rbac':
-        specifier: 1.0.7
+        specifier: 1.0.8
         version: link:../rbac
       '@mango/system':
-        specifier: 1.0.8
+        specifier: 1.0.9
         version: link:../system
       vue:
         specifier: 3.5.13
@@ -586,31 +586,31 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/app-runtime':
         specifier: 1.0.2
         version: link:../app-runtime
       '@mango/auth':
-        specifier: 1.0.7
+        specifier: 1.0.8
         version: link:../auth
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/file':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../file
       '@mango/grid-layout':
-        specifier: 1.0.1
+        specifier: 1.0.2
         version: link:../grid-layout
       '@mango/notice':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../notice
       '@mango/rbac':
-        specifier: 1.0.7
+        specifier: 1.0.8
         version: link:../rbac
       '@mango/workflow':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -668,7 +668,7 @@ importers:
         specifier: 1.0.2
         version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       element-plus:
         specifier: 2.14.1
@@ -699,13 +699,13 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: 1.0.2
         version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       element-plus:
         specifier: 2.14.1
@@ -821,10 +821,10 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       element-plus:
         specifier: 2.14.1
@@ -849,7 +849,7 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       element-plus:
         specifier: 2.14.1
@@ -874,10 +874,10 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       element-plus:
         specifier: 2.14.1
@@ -904,13 +904,13 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/system':
-        specifier: 1.0.8
+        specifier: 1.0.9
         version: link:../system
       element-plus:
         specifier: 2.14.1
@@ -938,13 +938,13 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: 1.0.2
         version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       element-plus:
         specifier: 2.14.1
@@ -969,16 +969,16 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: 1.0.2
         version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/file':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../file
       element-plus:
         specifier: 2.14.1
@@ -1018,7 +1018,7 @@ importers:
         specifier: 1.0.2
         version: link:../app-runtime
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       element-plus:
         specifier: 2.14.1
@@ -1052,10 +1052,10 @@ importers:
         specifier: 1.0.2
         version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/rbac':
-        specifier: 1.0.7
+        specifier: 1.0.8
         version: link:../rbac
       element-plus:
         specifier: 2.14.1
@@ -1086,13 +1086,13 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/file':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../file
       element-plus:
         specifier: 2.14.1
@@ -1123,16 +1123,16 @@ importers:
         specifier: 3.2.16
         version: 3.2.16(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/api-schema':
         specifier: 1.0.2
         version: link:../api-schema
       '@mango/common':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../common
       '@mango/file':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../file
       element-plus:
         specifier: 2.14.1
@@ -1160,10 +1160,10 @@ importers:
   packages/workflow-business-example:
     dependencies:
       '@mango/admin-pages':
-        specifier: 1.0.9
+        specifier: 1.0.10
         version: link:../admin-pages
       '@mango/workflow':
-        specifier: 1.0.10
+        specifier: 1.0.11
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
