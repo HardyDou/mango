@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { AliasOptions } from 'vite';
 
@@ -24,7 +24,23 @@ type PackageEntry = {
   entries: Record<string, string>;
 };
 
-const PACKAGE_ENTRIES: PackageEntry[] = [
+type AdminModuleRegistrar = {
+  import?: string;
+};
+
+type AdminModuleEntry = {
+  packageName?: string;
+  name?: string;
+  style?: string;
+  registrars?: AdminModuleRegistrar[];
+};
+
+type AdminModulesManifest = {
+  defaultPackages?: AdminModuleEntry[];
+  fullPackages?: AdminModuleEntry[];
+};
+
+const BASE_PACKAGE_ENTRIES: PackageEntry[] = [
   {
     name: 'admin',
     entries: {
@@ -65,107 +81,6 @@ const PACKAGE_ENTRIES: PackageEntry[] = [
       '.': 'src/index.ts',
     },
   },
-  {
-    name: 'auth',
-    entries: {
-      '.': 'src/index.ts',
-    },
-  },
-  {
-    name: 'rbac',
-    entries: {
-      '.': 'src/index.ts',
-    },
-  },
-  {
-    name: 'system',
-    entries: {
-      '.': 'src/index.ts',
-    },
-  },
-  {
-    name: 'calendar',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-  {
-    name: 'file',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-  {
-    name: 'job',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-  {
-    name: 'notice',
-    entries: {
-      '.': 'src/index.ts',
-      admin: 'src/admin.ts',
-      'admin-pages': 'src/admin-pages.ts',
-      'admin-shell': 'src/admin-shell.ts',
-      client: 'src/client.ts',
-      realtime: 'src/realtime.ts',
-    },
-  },
-  {
-    name: 'numgen',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-  {
-    name: 'payment',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-  {
-    name: 'template',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-  {
-    name: 'workflow',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-  {
-    name: 'workflow-business-example',
-    entries: {
-      '.': 'src/index.ts',
-      'admin-pages': 'src/admin-pages.ts',
-    },
-  },
-];
-
-const STYLE_PACKAGES = [
-  'common',
-  'auth',
-  'rbac',
-  'system',
-  'workflow',
-  'workflow-business-example',
-  'file',
-  'job',
-  'calendar',
-  'numgen',
-  'payment',
-  'template',
-  'notice',
 ];
 
 export function resolveMangoFrontendMode(value = process.env.MANGO_FRONTEND_MODE): MangoFrontendMode {
@@ -196,10 +111,9 @@ export function createMangoWorkspaceAliases(options: MangoWorkspaceAliasOptions)
     aliases.push(
       { find: '@mango/admin/style.css', replacement: resolve(repoRoot, 'packages/admin/style.css') },
       { find: '@mango/admin/style-full.css', replacement: resolve(repoRoot, 'packages/admin/style-full.css') },
-      { find: '@mango/admin-shell/style.css', replacement: resolve(repoRoot, 'build-config/source-package-style.css') },
     );
 
-    for (const packageName of STYLE_PACKAGES) {
+    for (const packageName of getConfiguredStylePackages(repoRoot)) {
       aliases.push({
         find: `@mango/${packageName}/style.css`,
         replacement: resolveSourceStylePath(repoRoot, packageName),
@@ -214,7 +128,7 @@ export function createMangoWorkspaceAliases(options: MangoWorkspaceAliasOptions)
     { find: /^@mango\/common$/, replacement: resolve(repoRoot, 'packages/common/index.ts') },
   );
 
-  for (const packageEntry of PACKAGE_ENTRIES) {
+  for (const packageEntry of getSourcePackageEntries(repoRoot)) {
     const packageRoot = resolve(repoRoot, 'packages', packageEntry.name);
     for (const [entryName, entryPath] of Object.entries(packageEntry.entries)) {
       aliases.push({
@@ -237,12 +151,13 @@ export function assertMangoPackageModeDist(appDir: string, options: MangoPackage
   }
 
   const repoRoot = resolve(appDir, '../..');
-  const distPackages = PACKAGE_ENTRIES
+  const stylePackages = getConfiguredStylePackages(repoRoot);
+  const distPackages = getSourcePackageEntries(repoRoot)
     .map(packageEntry => packageEntry.name)
     .filter(packageName => packageName !== 'app-runtime');
   const missing = [
     ...distPackages.map(packageName => resolve(repoRoot, 'packages', packageName, 'dist/index.js')),
-    ...STYLE_PACKAGES.map(packageName => resolve(repoRoot, 'packages', packageName, 'dist/style.css')),
+    ...stylePackages.map(packageName => resolve(repoRoot, 'packages', packageName, 'dist/style.css')),
   ].filter(path => !existsSync(path));
 
   if (missing.length > 0) {
@@ -268,5 +183,89 @@ function resolveSourceStylePath(repoRoot: string, packageName: string): string {
   if (packageName === 'common') {
     return resolve(repoRoot, 'packages/common/theme/index.css');
   }
+  const packageStylePath = resolve(repoRoot, 'packages', packageName, 'style.css');
+  if (existsSync(packageStylePath)) {
+    return packageStylePath;
+  }
   return resolve(repoRoot, 'build-config/source-package-style.css');
+}
+
+function getConfiguredStylePackages(repoRoot: string): string[] {
+  const manifest = readAdminModulesManifest(repoRoot);
+  const modules = [...(manifest.defaultPackages || []), ...(manifest.fullPackages || [])];
+  const packages: string[] = [];
+  const seen = new Set<string>();
+
+  for (const module of modules) {
+    const packageName = module.packageName || module.name;
+    const style = module.style;
+    if (!packageName || !style) {
+      continue;
+    }
+    const expectedStyle = `${packageName}/style.css`;
+    if (style !== expectedStyle || !packageName.startsWith('@mango/')) {
+      continue;
+    }
+    const packageFolder = packageName.slice('@mango/'.length);
+    if (!seen.has(packageFolder)) {
+      packages.push(packageFolder);
+      seen.add(packageFolder);
+    }
+  }
+
+  return packages;
+}
+
+function getSourcePackageEntries(repoRoot: string): PackageEntry[] {
+  const entries = new Map<string, Record<string, string>>();
+
+  for (const packageEntry of BASE_PACKAGE_ENTRIES) {
+    entries.set(packageEntry.name, { ...packageEntry.entries });
+  }
+
+  for (const module of getConfiguredAdminModules(repoRoot)) {
+    const packageName = module.packageName || module.name;
+    if (!packageName?.startsWith('@mango/')) {
+      continue;
+    }
+    const packageFolder = packageName.slice('@mango/'.length);
+    if (packageFolder === 'common' || entries.has(packageFolder)) {
+      continue;
+    }
+
+    const moduleEntries: Record<string, string> = {};
+    const packageRoot = resolve(repoRoot, 'packages', packageFolder);
+    if (existsSync(resolve(packageRoot, 'src/index.ts'))) {
+      moduleEntries['.'] = 'src/index.ts';
+    }
+
+    for (const registrar of module.registrars || []) {
+      const importPath = registrar.import || '';
+      const subpathPrefix = `${packageName}/`;
+      if (!importPath.startsWith(subpathPrefix)) {
+        continue;
+      }
+      const subpath = importPath.slice(subpathPrefix.length);
+      const sourcePath = `src/${subpath}.ts`;
+      if (existsSync(resolve(packageRoot, sourcePath))) {
+        moduleEntries[subpath] = sourcePath;
+      }
+    }
+
+    if (Object.keys(moduleEntries).length > 0) {
+      entries.set(packageFolder, moduleEntries);
+    }
+  }
+
+  return Array.from(entries, ([name, packageEntries]) => ({ name, entries: packageEntries }));
+}
+
+function getConfiguredAdminModules(repoRoot: string): AdminModuleEntry[] {
+  const manifest = readAdminModulesManifest(repoRoot);
+  return [...(manifest.defaultPackages || []), ...(manifest.fullPackages || [])];
+}
+
+function readAdminModulesManifest(repoRoot: string): AdminModulesManifest {
+  const manifestPath = resolve(repoRoot, 'packages/admin/admin-modules.json');
+  return JSON.parse(readFileSync(manifestPath, 'utf8')) as AdminModulesManifest;
 }

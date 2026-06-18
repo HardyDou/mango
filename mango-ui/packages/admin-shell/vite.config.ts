@@ -32,6 +32,7 @@ const externalPackages = [
 export default defineConfig({
   plugins: [vue()],
   build: {
+    minify: false,
     lib: {
       entry: {
         index: 'src/index.ts',

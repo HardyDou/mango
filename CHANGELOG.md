@@ -1,11 +1,40 @@
 # Mango Changelog
 
+## v2026.06.18-admin-style-config-fix - 2026-06-18
+
+### Fixed
+
+- Fixed the `@mango/admin@1.0.21` regression where `@mango/payment/style.css` was pulled into the default `@mango/admin/style.css` aggregation and compressed non-payment search/select controls.
+- Moved admin module style aggregation to `admin-modules.json` as the single source for default packages, full packages, registrars, and CLI governance checks.
+- Regenerated `admin-packages.json`, `generated-package-styles.css`, `style-full.css`, and `@mango/admin/full` from the same module manifest.
+- Scoped `@mango/payment/style.css` selectors so payment toolbar/table/form rules do not leak into unrelated admin pages.
+
+### Published Packages
+
+- `@mango/admin@1.0.22`
+
+### Upgrade Notes
+
+- Do not use `@mango/admin@1.0.21`; upgrade to `@mango/admin@1.0.22`.
+- Consumers using the default admin preset should keep `import '@mango/admin/style.css'`; payment styles are no longer loaded unless using `@mango/admin/style-full.css` or importing `@mango/payment/style.css` explicitly.
+- Full preset consumers should keep installing the optional full packages they enable, including `@mango/payment` when payment pages are registered.
+
+### Verification
+
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm -F @mango/admin build`
+- `pnpm -F @mango/payment build`
+- `pnpm -F mango-admin build`
+- Mango Admin browser verification on `http://127.0.0.1:7795/`
+
 ## v2026.06.18-admin-style-dependency-fix - 2026-06-18
 
 ### Fixed
 
 - Fixed `@mango/admin/style.css` package consumption by moving the packages it imports by default from optional peers to direct dependencies.
 - Prevented Vite/PostCSS failures where consumers without optional admin modules installed saw unresolved `@mango/grid-layout/style.css`, `@mango/job/style.css`, or `@mango/payment/style.css` imports.
+- Superseded by `@mango/admin@1.0.22`; `1.0.21` must not be used because it loaded payment styles in the default admin preset and caused admin UI regressions.
 
 ### Published Packages
 

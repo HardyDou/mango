@@ -107,6 +107,6 @@ function handleChange(value: string | number | Array<string | number> | undefine
 
 <style scoped>
 .dict-select {
-  min-width: 128px;
+  min-width: 180px;
 }
 </style>

@@ -5,95 +5,39 @@ import { resolve } from 'node:path';
 const root = resolve(new URL('..', import.meta.url).pathname);
 const failures = [];
 
-const officialModules = [
-  {
-    code: 'job',
-    packageName: '@mango/job',
-    style: '@mango/job/style.css',
-    registrar: 'registerMangoJobAdminPages',
-    registrarImport: '@mango/job/admin-pages',
-    cliVersionKey: 'mangoJob',
-    cliOptional: false,
-  },
-  {
-    code: 'payment',
-    packageName: '@mango/payment',
-    style: '@mango/payment/style.css',
-    registrar: 'registerMangoPaymentAdminPages',
-    registrarImport: '@mango/payment/admin-pages',
-    cliVersionKey: 'mangoPayment',
-  },
-  {
-    code: 'workflow',
-    packageName: '@mango/workflow',
-    style: '@mango/workflow/style.css',
-    registrar: 'registerMangoWorkflowAdminPages',
-    registrarImport: '@mango/workflow/admin-pages',
-    cliVersionKey: 'mangoWorkflow',
-  },
-  {
-    code: 'workflow-example',
-    packageName: '@mango/workflow-business-example',
-    style: '@mango/workflow-business-example/style.css',
-    registrar: 'registerMangoWorkflowBusinessExampleAdminPages',
-    registrarImport: '@mango/workflow-business-example/admin-pages',
-    cliVersionKey: 'mangoWorkflowBusinessExample',
-  },
-  {
-    code: 'file',
-    packageName: '@mango/file',
-    style: '@mango/file/style.css',
-    registrar: 'registerMangoFileAdminPages',
-    registrarImport: '@mango/file/admin-pages',
-    cliVersionKey: 'mangoFile',
-  },
-  {
-    code: 'template',
-    packageName: '@mango/template',
-    style: '@mango/template/style.css',
-    registrar: 'registerMangoTemplateAdminPages',
-    registrarImport: '@mango/template/admin-pages',
-    cliVersionKey: 'mangoTemplate',
-  },
-  {
-    code: 'notice',
-    packageName: '@mango/notice',
-    style: '@mango/notice/style.css',
-    registrar: 'registerMangoNoticeAdminPages',
-    registrarImport: '@mango/notice/admin-pages',
-    cliVersionKey: 'mangoNotice',
-  },
-  {
-    code: 'numgen',
-    packageName: '@mango/numgen',
-    style: '@mango/numgen/style.css',
-    registrar: 'registerMangoNumgenAdminPages',
-    registrarImport: '@mango/numgen/admin-pages',
-    cliVersionKey: 'mangoNumgen',
-  },
-  {
-    code: 'calendar',
-    packageName: '@mango/calendar',
-    style: '@mango/calendar/style.css',
-    registrar: 'registerMangoCalendarAdminPages',
-    registrarImport: '@mango/calendar/admin-pages',
-    cliVersionKey: 'mangoCalendar',
-  },
-];
-
 const adminPackageJson = readJson('packages/admin/package.json');
+const adminModules = readJson('packages/admin/admin-modules.json');
 const adminManifest = readJson('packages/admin/admin-packages.json');
+const adminBuildStyleDeps = readText('packages/admin/build-style-deps.mjs');
 const generatedStyles = readText('packages/admin/generated-package-styles.css');
 const styleFull = readText('packages/admin/style-full.css');
 const fullEntry = readText('packages/admin/src/full.ts');
+const fullTypes = readText('packages/admin/src/full.d.ts');
 const cliSource = readText('packages/mango-cli/src/index.mjs');
+const paymentStyle = readText('packages/payment/style.css');
+const mangoAliases = readText('build-config/mangoAliases.ts');
+
+const defaultModules = normalizeModules(adminModules.defaultPackages);
+const fullModules = normalizeModules(adminModules.fullPackages);
+const officialModules = [...defaultModules, ...fullModules].filter((module) => module.registrars.length > 0);
+
+assertNoDuplicateModules([...defaultModules, ...fullModules]);
+assertGeneratedDefaultManifest(defaultModules);
+assertFullStyleIncludesDefaultEntry();
+assertPaymentIsFullOnly();
+assertPaymentStyleScoped();
+assertWorkspaceAliasesUseAdminModules();
+assertBuildStyleDepsGenerated();
+
+for (const module of [...defaultModules, ...fullModules]) {
+  assertPackageStyleExport(module);
+  assertAdminDependency(module);
+  assertStyleAggregation(module);
+}
 
 for (const module of officialModules) {
-  assertPackageStyleExport(module);
   assertFullEntry(module);
-  assertAdminDependency(module);
   assertCliModule(module);
-  assertStyleAggregation(module);
 }
 
 if (failures.length > 0) {
@@ -102,6 +46,135 @@ if (failures.length > 0) {
 }
 
 console.log(`Admin module style governance check passed: ${officialModules.length} official modules.`);
+
+function normalizeModules(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  return items.map((item) => ({
+    ...item,
+    packageName: item.packageName || item.name,
+    registrars: item.registrars || [],
+  }));
+}
+
+function assertNoDuplicateModules(modules) {
+  const seen = new Set();
+  for (const module of modules) {
+    if (!module.packageName || !module.style) {
+      failures.push('admin-modules.json module entries must include packageName and style');
+      continue;
+    }
+    if (seen.has(module.packageName)) {
+      failures.push(`admin-modules.json must not declare ${module.packageName} more than once`);
+    }
+    seen.add(module.packageName);
+  }
+}
+
+function assertGeneratedDefaultManifest(defaultModules) {
+  const expectedPackages = defaultModules.map((module) => ({
+    name: module.packageName,
+    style: module.style,
+  }));
+  if (JSON.stringify(adminManifest.packages) !== JSON.stringify(expectedPackages)) {
+    failures.push('admin-packages.json must be generated from admin-modules.json defaultPackages');
+  }
+}
+
+function assertFullStyleIncludesDefaultEntry() {
+  if (!styleFull.includes("@import './style.css';")) {
+    failures.push("style-full.css must import './style.css' for default admin styles");
+  }
+}
+
+function assertPaymentIsFullOnly() {
+  if (defaultModules.some((module) => module.packageName === '@mango/payment')) {
+    failures.push('@mango/payment must stay out of default @mango/admin/style.css aggregation');
+  }
+}
+
+function assertPaymentStyleScoped() {
+  const forbiddenPatterns = [
+    "body [class^='payment-']",
+    'body .payment-',
+    "[class^='payment-'][class$='__toolbar'] .el-form-item .el-select",
+  ];
+  for (const pattern of forbiddenPatterns) {
+    if (paymentStyle.includes(pattern)) {
+      failures.push(`@mango/payment style must not use cross-page selector: ${pattern}`);
+    }
+  }
+}
+
+function assertWorkspaceAliasesUseAdminModules() {
+  const requiredFragments = [
+    'packages/admin/admin-modules.json',
+    'getConfiguredStylePackages(repoRoot)',
+    'getSourcePackageEntries(repoRoot)',
+    'readAdminModulesManifest',
+  ];
+  for (const fragment of requiredFragments) {
+    if (!mangoAliases.includes(fragment)) {
+      failures.push(`mangoAliases.ts package style aliases must be derived from admin-modules.json: missing ${fragment}`);
+    }
+  }
+
+  const forbiddenFragments = [
+    'const STYLE_PACKAGES',
+    'const PACKAGE_ENTRIES',
+    "'@mango/admin-shell/style.css'",
+    '"@mango/admin-shell/style.css"',
+  ];
+  for (const fragment of forbiddenFragments) {
+    if (mangoAliases.includes(fragment)) {
+      failures.push(`mangoAliases.ts must not hardcode package style alias list or package style exceptions: ${fragment}`);
+    }
+  }
+
+  for (const module of [...defaultModules, ...fullModules]) {
+    const styleAlias = `${module.packageName}/style.css`;
+    if (styleAlias !== '@mango/admin/style.css' && mangoAliases.includes(`find: '${styleAlias}'`)) {
+      failures.push(`mangoAliases.ts must not hardcode style alias ${styleAlias}; edit admin-modules.json instead`);
+    }
+
+    for (const registrar of module.registrars) {
+      const entryName = registrar.import.replace(`${module.packageName}/`, '');
+      if (mangoAliases.includes(`'${entryName}': 'src/${entryName}.ts'`)) {
+        failures.push(`mangoAliases.ts must not hardcode official module entry ${registrar.import}; edit admin-modules.json instead`);
+      }
+    }
+  }
+}
+
+function assertBuildStyleDepsGenerated() {
+  if (!adminBuildStyleDeps.includes('Generated from packages/admin/admin-modules.json')) {
+    failures.push('packages/admin/build-style-deps.mjs must be generated from admin-modules.json');
+  }
+  if (adminPackageJson.scripts?.['build:style-deps'] !== 'node ./build-style-deps.mjs') {
+    failures.push('@mango/admin build:style-deps must call the generated build-style-deps.mjs script');
+  }
+  if (!adminPackageJson.scripts?.['generate:styles']?.includes('--build-deps-script-out')) {
+    failures.push('@mango/admin generate:styles must regenerate build-style-deps.mjs');
+  }
+  if (!adminPackageJson.scripts?.['check:styles']?.includes('--build-deps-script-out')) {
+    failures.push('@mango/admin check:styles must verify build-style-deps.mjs');
+  }
+  for (const module of [...defaultModules, ...fullModules]) {
+    if (!adminBuildStyleDeps.includes(`'${module.packageName}'`)) {
+      failures.push(`build-style-deps.mjs must build ${module.packageName}`);
+    }
+  }
+  for (const dependencyName of Object.keys(adminPackageJson.dependencies || {})) {
+    if (
+      dependencyName.startsWith('@mango/') &&
+      hasWorkspaceBuildScript(dependencyName) &&
+      !adminBuildStyleDeps.includes(`'${dependencyName}'`)
+    ) {
+      failures.push(`build-style-deps.mjs must build admin dependency ${dependencyName}`);
+    }
+  }
+}
 
 function assertPackageStyleExport(module) {
   const packageJson = readJson(`packages/${packageFolder(module.packageName)}/package.json`);
@@ -119,16 +192,22 @@ function assertPackageStyleExport(module) {
 }
 
 function assertFullEntry(module) {
-  if (!fullEntry.includes(`from '${module.registrarImport}'`)) {
-    failures.push(`@mango/admin/full must import/export ${module.registrarImport}`);
-  }
-  if (!fullEntry.includes(module.registrar)) {
-    failures.push(`@mango/admin/full must register ${module.registrar}`);
+  for (const registrar of module.registrars) {
+    if (!fullEntry.includes(`from '${registrar.import}'`)) {
+      failures.push(`@mango/admin/full must import/export ${registrar.import}`);
+    }
+    if (!fullTypes.includes(`from '${registrar.import}'`)) {
+      failures.push(`@mango/admin/full types must export ${registrar.import}`);
+    }
+    if (!fullEntry.includes(registrar.name)) {
+      failures.push(`@mango/admin/full must register ${registrar.name}`);
+    }
   }
 }
 
 function assertAdminDependency(module) {
   const inDefaultStyle = adminManifest.packages.some((item) => item.name === module.packageName);
+  const inFullOnly = fullModules.some((item) => item.packageName === module.packageName);
   const hasDirectDependency = Boolean(adminPackageJson.dependencies?.[module.packageName]);
   const hasOptionalPeer = Boolean(
     adminPackageJson.peerDependencies?.[module.packageName] &&
@@ -145,7 +224,11 @@ function assertAdminDependency(module) {
     return;
   }
 
-  if (!hasOptionalPeer) {
+  if (inFullOnly && hasDirectDependency) {
+    failures.push(`@mango/admin dependencies must not include full-only package ${module.packageName}`);
+  }
+
+  if (inFullOnly && !hasOptionalPeer) {
     failures.push(`@mango/admin peerDependenciesMeta must mark full-only package ${module.packageName} optional`);
   }
 }
@@ -157,8 +240,14 @@ function assertCliModule(module) {
   if (!cliSource.includes(`code: '${module.code}'`)) {
     failures.push(`mango-cli optional modules must include ${module.code}`);
   }
-  for (const expected of [module.packageName, module.style, module.registrar, module.registrarImport, module.cliVersionKey]) {
-    if (!cliSource.includes(expected)) {
+  const expectedValues = [
+    module.packageName,
+    module.style,
+    module.cliVersionKey,
+    ...module.registrars.flatMap((registrar) => [registrar.name, registrar.import]),
+  ];
+  for (const expected of expectedValues) {
+    if (expected && !cliSource.includes(expected)) {
       failures.push(`mango-cli optional module ${module.code} must include ${expected}`);
     }
   }
@@ -168,19 +257,38 @@ function assertStyleAggregation(module) {
   const manifestItem = adminManifest.packages.find((item) => item.name === module.packageName);
   const inGeneratedStyles = generatedStyles.includes(`@import '${module.style}';`);
   const inStyleFull = styleFull.includes(`@import '${module.style}';`);
+  const inDefault = defaultModules.some((item) => item.packageName === module.packageName);
+  const inFullOnly = fullModules.some((item) => item.packageName === module.packageName);
   if (manifestItem && manifestItem.style !== module.style) {
     failures.push(`admin-packages.json ${module.packageName} style must be ${module.style}`);
   }
-  if (!manifestItem && !inStyleFull) {
-    failures.push(`${module.packageName} must appear in admin-packages.json or style-full.css`);
+  if (inDefault && !manifestItem) {
+    failures.push(`${module.packageName} must appear in admin-packages.json`);
   }
-  if (manifestItem && !inGeneratedStyles) {
+  if (inFullOnly && manifestItem) {
+    failures.push(`${module.packageName} must not appear in default admin-packages.json`);
+  }
+  if (inFullOnly && inGeneratedStyles) {
+    failures.push(`${module.packageName} must not appear in generated-package-styles.css`);
+  }
+  if (inFullOnly && !inStyleFull) {
+    failures.push(`${module.packageName} must appear in style-full.css`);
+  }
+  if (inDefault && !inGeneratedStyles) {
     failures.push(`generated-package-styles.css must include ${module.style}`);
   }
 }
 
 function packageFolder(packageName) {
   return packageName.replace('@mango/', '');
+}
+
+function hasWorkspaceBuildScript(packageName) {
+  const packageJsonPath = `packages/${packageFolder(packageName)}/package.json`;
+  if (!existsSync(resolve(root, packageJsonPath))) {
+    return false;
+  }
+  return Boolean(readJson(packageJsonPath).scripts?.build);
 }
 
 function readJson(path) {

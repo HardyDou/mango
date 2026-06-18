@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -21,14 +21,15 @@
   "scripts": {
     "prepack": "pnpm run build",
     "build": "pnpm run build:style-deps && pnpm run generate:styles && vite build",
-    "build:style-deps": "pnpm --dir ../.. -F @mango/common build && pnpm --dir ../.. -F @mango/grid-layout build && pnpm --dir ../.. -F @mango/admin-shell build && pnpm --dir ../.. -F @mango/auth build && pnpm --dir ../.. -F @mango/rbac build && pnpm --dir ../.. -F @mango/system build && pnpm --dir ../.. -F @mango/job build && pnpm --dir ../.. -F @mango/payment build",
-    "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
-    "generate:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css"
+    "build:style-deps": "node ./build-style-deps.mjs",
+    "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs --check",
+    "generate:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs"
   },
   "files": [
     "dist",
     "src/index.d.ts",
     "src/full.d.ts",
+    "admin-modules.json",
     "admin-packages.json",
     "generated-package-styles.css",
     "style-full.css",
@@ -44,7 +45,6 @@
     "@mango/common": "1.0.9",
     "@mango/grid-layout": "1.0.1",
     "@mango/job": "1.0.2",
-    "@mango/payment": "1.0.1",
     "@mango/rbac": "1.0.7",
     "@mango/system": "1.0.8",
     "element-plus": "2.14.1"
@@ -54,6 +54,7 @@
     "@mango/file": "1.0.10",
     "@mango/notice": "1.0.10",
     "@mango/numgen": "1.0.10",
+    "@mango/payment": "1.0.1",
     "@mango/template": "1.0.10",
     "@mango/workflow": "1.0.10",
     "@mango/workflow-business-example": "1.0.10",
@@ -73,6 +74,9 @@
       "optional": true
     },
     "@mango/numgen": {
+      "optional": true
+    },
+    "@mango/payment": {
       "optional": true
     },
     "@mango/template": {
