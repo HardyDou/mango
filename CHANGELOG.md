@@ -1,5 +1,37 @@
 # Mango Changelog
 
+## v2026.06.19-datascope-provider-autoconfig - 2026-06-19
+
+### Fixed
+
+- Fixed the authorization data-scope provider registration so `DataScopeProvider` is declared by
+  `AuthorizationAutoConfiguration` as an explicit auto-configuration bean instead of relying on
+  component scanning.
+- Fixed the business startup failure where `mango-infra-persistence-starter` could evaluate
+  `@ConditionalOnBean(DataScopeProvider.class)` before the authorization provider bean definition
+  was visible, preventing `DataScopeApplier` from being created.
+- Confirmed this is not caused by business MyBatis-Plus usage and does not require a business-side
+  fallback `DataScopeApplier` bean.
+
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.platform.authorization:mango-authorization-core`
+  - `io.mango.platform.authorization:mango-authorization-starter`
+- No npm package publish is required for this backend-only hotfix.
+
+### Upgrade Notes
+
+- Business backends should refresh Mango backend `1.0.0-SNAPSHOT` dependencies after the release,
+  especially `mango-authorization-starter`.
+- No database migration, HTTP API change, frontend package upgrade, or business code workaround is
+  required.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl :mango-authorization-starter -am test checkstyle:check`
+- `mvn -f mango/pom.xml -pl :mango-infra-persistence-starter -am test checkstyle:check`
+
 ## v2026.06.18-data-scope-applier - 2026-06-18
 
 ### Fixed

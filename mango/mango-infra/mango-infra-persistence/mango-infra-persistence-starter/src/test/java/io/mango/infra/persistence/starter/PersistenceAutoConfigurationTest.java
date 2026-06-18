@@ -5,6 +5,7 @@ import io.mango.infra.persistence.api.scope.DataScopeProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +42,14 @@ class PersistenceAutoConfigurationTest {
             assertThat(ctx).hasSingleBean(DataScopeProvider.class);
             assertThat(ctx).hasSingleBean(DataScopeApplier.class);
         });
+    }
+
+    @Test
+    void dataScopeApplier_shouldNotDependOnAuthorizationStarterAtRuntime() {
+        contextRunner
+                .withClassLoader(new FilteredClassLoader("io.mango.authorization"))
+                .withUserConfiguration(DataScopeProviderConfig.class)
+                .run(ctx -> assertThat(ctx).hasSingleBean(DataScopeApplier.class));
     }
 
     @Configuration
