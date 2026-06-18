@@ -1,5 +1,37 @@
 # Mango Changelog
 
+## v2026.06.18-data-scope-applier - 2026-06-18
+
+### Fixed
+
+- Fixed the startup failure where business applications that import both Mango persistence and authorization starters could not inject `DataScopeApplier`.
+- Ordered persistence auto-configuration after the authorization starter without adding a direct module dependency, so authorization-provided `DataScopeProvider` beans are visible when the persistence starter creates `DataScopeApplier`.
+- Kept `DataScopeApplier` conditional on an available `DataScopeProvider`, preserving applications that do not enable data-scope integration.
+- Fixed the authorization app service generic CRUD contract so the authorization starter aggregation compiles with the typed Mango persistence API.
+
+### Documentation
+
+- Added the Issue 178 delivery contract, verification ledger, and business integration impact notes for permission button and RBAC menu troubleshooting guides.
+
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.infra.persistence:mango-infra-persistence-starter`
+  - `io.mango.platform.authorization:mango-authorization-core`
+  - `io.mango.platform.authorization:mango-authorization-starter`
+
+### Upgrade Notes
+
+- Refresh Mango backend `1.0.0-SNAPSHOT` dependencies after the release before starting business applications that combine persistence data-scope and authorization modules.
+- No database migration, HTTP API, frontend package, menu, or permission-code change is required for this fix.
+
+### Verification
+
+- `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-06-18-issue-178-data-scope-applier.md --ledger mango-docs/plans/2026-06-18-issue-178-data-scope-applier.md --mode verify`
+- `git diff --check origin/main...HEAD`
+- `mvn -f mango/pom.xml -pl :mango-infra-persistence-starter -am test checkstyle:check`
+- `mvn -f mango/pom.xml -pl :mango-authorization-starter -am test`
+
 ## v2026.06.18-persistence-baseline-docs - 2026-06-18
 
 ### Fixed
