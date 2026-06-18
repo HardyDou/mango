@@ -1,5 +1,41 @@
 # @mango/cli Changelog
 
+## 1.0.34 - 2026-06-19
+
+### New
+
+- Updated generated admin project release locks for the resource registry release:
+  - @mango/admin@1.0.23
+  - @mango/admin-pages@1.0.10
+  - @mango/admin-shell@1.0.20
+  - @mango/auth@1.0.8
+  - @mango/calendar@1.0.11
+  - @mango/common@1.0.10
+  - @mango/file@1.0.11
+  - @mango/grid-layout@1.0.2
+  - @mango/job@1.0.3
+  - @mango/notice@1.0.11
+  - @mango/numgen@1.0.11
+  - @mango/payment@1.0.2
+  - @mango/rbac@1.0.8
+  - @mango/system@1.0.9
+  - @mango/template@1.0.11
+  - @mango/workflow@1.0.11
+  - @mango/workflow-business-example@1.0.11
+- Generated full backend projects now include resource sync starter configuration from the current
+  Mango backend SNAPSHOT line.
+
+### Upgrade Notes
+
+- Upgrade CLI before creating new business admin projects so generated dependency locks include
+  the resource registry frontend package set.
+- Existing business projects should refresh backend Mango SNAPSHOT dependencies and upgrade the
+  listed frontend packages together.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+
 ## 1.0.33 - 2026-06-18
 
 ### New

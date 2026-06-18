@@ -1,6 +1,6 @@
 {
   "name": "@mango/rbac",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -24,7 +24,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@mango/app-runtime": "1.0.2",
-    "@mango/common": "1.0.9",
+    "@mango/common": "1.0.10",
     "@mango/api-schema": "1.0.2"
   },
   "peerDependencies": {
