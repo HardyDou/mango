@@ -3,23 +3,58 @@
   "version": "1.0.10",
   "private": false,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./style.css": "./dist/style.css",
     "./theme/index.css": "./theme/index.css",
-    "./theme/index.scss": "./theme/index.scss",
-    "./utils/*": "./utils/*.ts",
-    "./hooks/*": "./hooks/*.ts",
-    "./api/*": "./api/*.ts",
-    "./components/*": "./components/*"
+    "./theme/index.scss": {
+      "types": "./dist/theme/index.scss.d.ts",
+      "import": "./theme/index.scss"
+    },
+    "./components/Pagination/index.vue": {
+      "types": "./dist/components/Pagination/index.d.ts",
+      "import": "./dist/components/Pagination/index.js"
+    },
+    "./components/IconSelector/index.vue": {
+      "types": "./dist/components/IconSelector/index.d.ts",
+      "import": "./dist/components/IconSelector/index.js"
+    },
+    "./components/DictTag/index.vue": {
+      "types": "./dist/components/DictTag/index.d.ts",
+      "import": "./dist/components/DictTag/index.js"
+    },
+    "./components/DictSelect/index.vue": {
+      "types": "./dist/components/DictSelect/index.d.ts",
+      "import": "./dist/components/DictSelect/index.js"
+    },
+    "./components/MangoDialog/index.vue": {
+      "types": "./dist/components/MangoDialog/index.d.ts",
+      "import": "./dist/components/MangoDialog/index.js"
+    },
+    "./utils/*": {
+      "types": "./dist/utils/*.d.ts",
+      "import": "./dist/utils/*.js"
+    },
+    "./utils/realtime/*": {
+      "types": "./dist/utils/realtime/*.d.ts",
+      "import": "./dist/utils/realtime/*.js"
+    },
+    "./hooks/*": {
+      "types": "./dist/hooks/*.d.ts",
+      "import": "./dist/hooks/*.js"
+    },
+    "./api/*": {
+      "types": "./dist/api/*.d.ts",
+      "import": "./dist/api/*.js"
+    }
   },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
     "test": "vitest run"
   },
   "files": [
@@ -71,5 +106,6 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }

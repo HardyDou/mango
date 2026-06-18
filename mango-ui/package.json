@@ -11,6 +11,7 @@
     "admin:styles": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs",
     "admin:styles:check": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs --check",
     "admin:module-styles:check": "node ./scripts/check-admin-module-style-governance.mjs",
+    "package-exports:check": "node ./scripts/check-package-exports.mjs",
     "package-consumer:typecheck": "node ./scripts/check-package-consumer-typecheck.mjs",
     "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
     "lint": "pnpm -r lint",
@@ -18,7 +19,9 @@
     "release:check-notes": "node ./scripts/check-release-notes.mjs"
   },
   "devDependencies": {
+    "@types/node": "^18.19.130",
     "typescript": "^5.3.3",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "vue-tsc": "^3.3.5"
   }
 }

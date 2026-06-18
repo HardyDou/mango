@@ -492,7 +492,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete, Plus } from '@element-plus/icons-vue';
 import { Editor } from '@mango/common';
-import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
+import { DomainSideTree } from '@mango/system';
 import {
   activateBusinessConfigVersion,
   createBusinessType,

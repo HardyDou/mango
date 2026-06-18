@@ -2,8 +2,9 @@
   "name": "@mango/api-schema",
   "version": "1.0.2",
   "private": false,
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
   "files": [
+    "dist",
     "src",
     "README.md",
     "package.json"
@@ -13,5 +14,17 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/generate-package-types.mjs"
   }
 }

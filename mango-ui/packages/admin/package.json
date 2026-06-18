@@ -3,16 +3,16 @@
   "version": "1.0.23",
   "private": false,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "src/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./full": {
-      "types": "./src/full.d.ts",
+      "types": "./dist/full.d.ts",
       "import": "./dist/full.js"
     },
     "./style.css": "./style.css",
@@ -20,15 +20,13 @@
   },
   "scripts": {
     "prepack": "pnpm run build",
-    "build": "pnpm run build:style-deps && pnpm run generate:styles && vite build",
+    "build": "pnpm run build:style-deps && pnpm run generate:styles && vite build && node ../../scripts/generate-package-types.mjs",
     "build:style-deps": "node ./build-style-deps.mjs",
     "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs --check",
     "generate:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs"
   },
   "files": [
     "dist",
-    "src/index.d.ts",
-    "src/full.d.ts",
     "admin-modules.json",
     "admin-packages.json",
     "generated-package-styles.css",

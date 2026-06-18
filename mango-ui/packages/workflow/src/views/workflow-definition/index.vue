@@ -850,7 +850,7 @@ import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
 import { UserSelector, get } from '@mango/common';
 import { MUpload } from '@mango/file';
-import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
+import { DomainSideTree } from '@mango/system';
 import WorkflowDesignerCanvas from './components/workflow-designer/WorkflowDesignerCanvas.vue';
 import WorkflowNodeAdvancedConfig from './components/workflow-designer/WorkflowNodeAdvancedConfig.vue';
 import WorkflowNodeApprovalConfig from './components/workflow-designer/WorkflowNodeApprovalConfig.vue';

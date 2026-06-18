@@ -2,12 +2,19 @@
   "name": "@mango/app-runtime",
   "version": "1.0.2",
   "private": false,
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./vue-micro": "./src/vue-micro.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vue-micro": {
+      "types": "./dist/vue-micro.d.ts",
+      "import": "./dist/vue-micro.js"
+    }
   },
   "files": [
+    "dist",
     "src",
     "README.md",
     "package.json"
@@ -21,5 +28,15 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3"
   }
 }

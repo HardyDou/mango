@@ -3,54 +3,54 @@
   "version": "1.0.20",
   "private": false,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./runtime": {
-      "types": "./src/runtime/runtimeHost.ts",
+      "types": "./dist/runtime.d.ts",
       "import": "./dist/runtime.js"
     },
     "./menu": {
-      "types": "./src/runtime/menuHost.ts",
+      "types": "./dist/menu.d.ts",
       "import": "./dist/menu.js"
     },
     "./stores": {
-      "types": "./src/stores/index.ts",
+      "types": "./dist/stores.d.ts",
       "import": "./dist/stores.js"
     },
     "./router": {
-      "types": "./src/router.ts",
+      "types": "./dist/router.d.ts",
       "import": "./dist/router.js"
     },
     "./home": {
-      "types": "./src/views/home/index.vue",
+      "types": "./dist/home.d.ts",
       "import": "./dist/home.js"
     },
     "./dev-pages": {
-      "types": "./src/views/demo/registerDevPages.ts",
+      "types": "./dist/dev-pages.d.ts",
       "import": "./dist/dev-pages.js"
     },
     "./dev-base-pages": {
-      "types": "./src/views/demo/registerBaseDevPages.ts",
+      "types": "./dist/dev-base-pages.d.ts",
       "import": "./dist/dev-base-pages.js"
     },
     "./dev-upload-page": {
-      "types": "./src/views/demo/components/UploadView.vue",
+      "types": "./dist/dev-upload-page.d.ts",
       "import": "./dist/dev-upload-page.js"
     },
     "./dev-workflow-page": {
-      "types": "./src/views/demo/components/WorkflowComponentsView.vue",
+      "types": "./dist/dev-workflow-page.d.ts",
       "import": "./dist/dev-workflow-page.js"
     },
     "./style.css": "./style.css"
   },
   "scripts": {
     "prepack": "pnpm run build",
-    "build": "vite build",
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
     "test": "vitest run"
   },
   "files": [
@@ -105,5 +105,6 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }
