@@ -31,6 +31,10 @@ public class RolePermissionAuthorityContributor implements AuthorityContributor 
                 subjectAuthorityService.listSubjectPermissions(query));
         LinkedHashSet<String> authorities = new LinkedHashSet<>(roleCodes);
         authorities.addAll(permissionCodes);
-        return AuthorizationSnapshot.of(roleCodes, permissionCodes, authorities);
+        return AuthorizationSnapshot.of(
+                roleCodes,
+                permissionCodes,
+                authorities,
+                subjectAuthorityService.listSubjectButtonRules(query));
     }
 }

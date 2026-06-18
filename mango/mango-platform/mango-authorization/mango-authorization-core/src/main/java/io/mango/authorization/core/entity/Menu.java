@@ -83,6 +83,12 @@ public class Menu implements Serializable {
     /** 权限标识列表。 */
     private String permissions;
 
+    /** Button type for display rule: TABLE or NON_TABLE. */
+    private String buttonType;
+
+    /** Frontend button display rule expression. */
+    private String buttonDisplayRule;
+
     /** 创建人。 */
     @TableField(fill = FieldFill.INSERT)
     private String createBy;

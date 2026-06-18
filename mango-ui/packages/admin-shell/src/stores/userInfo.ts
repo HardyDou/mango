@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import type { ButtonDisplayRule } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 
 export const useUserInfo = defineStore('userInfo', {
@@ -10,6 +11,7 @@ export const useUserInfo = defineStore('userInfo', {
       time: 0,
       roles: [],
       permissions: [],
+      buttonRules: [],
       authBtnList: [],
       tenantId: '',
       tenantCode: '',
@@ -44,6 +46,7 @@ export const useUserInfo = defineStore('userInfo', {
         time: 0,
         roles: [],
         permissions: [],
+        buttonRules: [],
         authBtnList: [],
         tenantId: '',
         tenantCode: '',
@@ -67,6 +70,7 @@ export interface UserInfosState {
     time: number;
     roles: string[];
     permissions: string[];
+    buttonRules: ButtonDisplayRule[];
     authBtnList: string[];
     tenantId: string;
     tenantCode: string;

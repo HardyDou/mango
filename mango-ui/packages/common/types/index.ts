@@ -51,6 +51,7 @@ export interface UserInfosState {
     time: number;
     roles: string[];
     permissions: string[];
+    buttonRules?: import('../utils/authFunction').ButtonDisplayRule[];
     authBtnList: string[];
     tenantId: string;
     tenantCode?: string;

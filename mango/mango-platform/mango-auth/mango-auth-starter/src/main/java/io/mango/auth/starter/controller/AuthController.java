@@ -6,6 +6,7 @@ import io.mango.auth.api.command.LogoutCommand;
 import io.mango.auth.api.command.RefreshTokenCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
+import io.mango.auth.api.vo.ButtonDisplayRuleVO;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
@@ -282,7 +283,18 @@ public class AuthController {
                 .withParty(vo.getPartyType(), vo.getPartyId()));
         vo.setRoles(snapshot.roleCodes().stream().toList());
         vo.setPermissions(snapshot.permissionCodes().stream().toList());
+        vo.setButtonRules(snapshot.buttonRules().stream()
+                .map(this::toLoginButtonRule)
+                .toList());
         return R.ok(vo);
+    }
+
+    private ButtonDisplayRuleVO toLoginButtonRule(io.mango.authorization.api.vo.ButtonDisplayRuleVO source) {
+        ButtonDisplayRuleVO target = new ButtonDisplayRuleVO();
+        target.setCode(source.getCode());
+        target.setButtonType(source.getButtonType());
+        target.setDisplayRule(source.getDisplayRule());
+        return target;
     }
 
     @PostMapping("/captcha/send")

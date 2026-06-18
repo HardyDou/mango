@@ -65,4 +65,7 @@ public class LoginVO {
 
     @Schema(description = "权限编码列表")
     private List<String> permissions;
+
+    @Schema(description = "当前用户已授权按钮的展示规则")
+    private List<ButtonDisplayRuleVO> buttonRules;
 }
