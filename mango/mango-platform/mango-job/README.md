@@ -441,9 +441,10 @@ persistence-datasource=job
 
 ```text
 mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-domain.yml
-mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-message.yml
 mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definition.yml
 ```
+
+任务通知模板不再使用 YAML 文件，改由 `JobMessageTemplateResourceProvider` 通过 Java Provider 注入。
 
 支持类型：
 
@@ -452,6 +453,8 @@ mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definit
 | `BUSINESS_DOMAIN` | `domain` | 登记 Job 业务域 |
 | `MESSAGE_TEMPLATE` | `notice` | 登记任务失败通知模板 |
 | `JOB_DEFINITION` | `job` | 登记任务定义 |
+
+`MESSAGE_TEMPLATE` 包含 `job.instance.failed`、`job.worker.offline`，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。
 
 `JOB_DEFINITION` 字段：
 

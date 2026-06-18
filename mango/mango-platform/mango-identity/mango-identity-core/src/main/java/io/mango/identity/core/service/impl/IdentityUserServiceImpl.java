@@ -29,8 +29,11 @@ import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.service.IIdentityUserService;
 import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.event.NoticeSendEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,8 +41,10 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -64,6 +69,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
     private final ExternalIdentityBindingMapper externalIdentityBindingMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public PageResult<IdentityUserVO> page(IdentityUserPageQuery query) {
@@ -108,6 +114,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         user.setUpdateTime(LocalDateTime.now());
         identityUserMapper.insert(user);
         createTenantMember(user, command.getNickname());
+        publishUserCreatedNotice(user);
         return user.getUserId();
     }
 
@@ -203,7 +210,11 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         }
         user.setPassword(passwordEncoder.encode(command.getPassword()));
         user.setUpdateTime(LocalDateTime.now());
-        return identityUserMapper.updateById(user) > 0;
+        boolean updated = identityUserMapper.updateById(user) > 0;
+        if (updated) {
+            publishPasswordResetNotice(user);
+        }
+        return updated;
     }
 
     @Override
@@ -289,6 +300,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         } else {
             externalIdentityBindingMapper.updateById(entity);
         }
+        publishExternalIdentityNotice(user, entity, "auth.wecom.login.bound", "bindTime");
         return toExternalIdentityVO(entity);
     }
 
@@ -301,7 +313,14 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         if (existing == null || !Objects.equals(existing.getUserId(), command.getUserId())) {
             return false;
         }
-        return externalIdentityBindingMapper.deleteById(existing.getId()) > 0;
+        boolean deleted = externalIdentityBindingMapper.deleteById(existing.getId()) > 0;
+        if (deleted) {
+            IdentityUser user = getManageableUser(command.getUserId());
+            if (user != null) {
+                publishExternalIdentityNotice(user, existing, "auth.wecom.login.unbound", "unbindTime");
+            }
+        }
+        return deleted;
     }
 
     @Override
@@ -355,6 +374,57 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         userInfo.setStatus(user.getStatus());
 
         return userInfo;
+    }
+
+    private void publishUserCreatedNotice(IdentityUser user) {
+        Map<String, Object> params = baseUserParams(user);
+        params.put("createdAt", user.getCreateTime() == null ? null : user.getCreateTime().toString());
+        eventPublisher.publishEvent(NoticeSendEvent.builder()
+                .bizType("identity.user.created")
+                .bizId(String.valueOf(user.getUserId()))
+                .userId(user.getUserId())
+                .params(params)
+                .priority(NoticePriority.NORMAL)
+                .idempotentKey("identity.user.created:" + user.getUserId())
+                .build());
+    }
+
+    private void publishPasswordResetNotice(IdentityUser user) {
+        Map<String, Object> params = baseUserParams(user);
+        params.put("resetAt", LocalDateTime.now().toString());
+        eventPublisher.publishEvent(NoticeSendEvent.builder()
+                .bizType("identity.password.reset")
+                .bizId(String.valueOf(user.getUserId()))
+                .userId(user.getUserId())
+                .params(params)
+                .priority(NoticePriority.HIGH)
+                .idempotentKey("identity.password.reset:" + user.getUserId() + ":" + System.currentTimeMillis())
+                .build());
+    }
+
+    private void publishExternalIdentityNotice(IdentityUser user, ExternalIdentityBindingEntity binding,
+                                               String bizType, String timeParam) {
+        Map<String, Object> params = baseUserParams(user);
+        params.put("corpId", binding.getCorpId());
+        params.put("externalUserId", binding.getExternalUserId());
+        params.put(timeParam, LocalDateTime.now().toString());
+        eventPublisher.publishEvent(NoticeSendEvent.builder()
+                .bizType(bizType)
+                .bizId(user.getUserId() + ":" + binding.getProvider() + ":" + binding.getExternalUserId())
+                .userId(user.getUserId())
+                .params(params)
+                .priority(NoticePriority.NORMAL)
+                .idempotentKey(bizType + ":" + user.getUserId() + ":" + binding.getExternalUserId())
+                .build());
+    }
+
+    private Map<String, Object> baseUserParams(IdentityUser user) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("userId", String.valueOf(user.getUserId()));
+        params.put("username", user.getUsername());
+        params.put("nickname", user.getNickname());
+        params.put("tenantId", currentTenantId());
+        return params;
     }
 
     private LambdaQueryWrapper<IdentityUser> buildManageableUserWrapper(IdentityUserPageQuery query) {

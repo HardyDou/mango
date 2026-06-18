@@ -125,7 +125,9 @@ import '@mango/system/style.css';
 
 ## 7. 资源注入
 
-系统默认字典和系统默认配置通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。资源文件放在：
+系统默认字典、系统默认配置和默认国际化文案通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。字典和配置支持资源文件，国际化默认文案由 `SystemI18nMessageResourceProvider` 声明。
+
+资源文件放在：
 
 ```text
 mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-dict.yml
@@ -169,6 +171,25 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-c
 | `sort` | `INT` | 否 | 排序号，默认 `0`。 |
 | `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
 | `remark` | `STRING` | 否 | 备注。 |
+
+### 7.3 I18N_MESSAGE
+
+`I18N_MESSAGE` 落库到 `sys_i18n`，按 `name` 合并更新。业务模块需要注入国际化文案时，只依赖 `mango-system-api` 和 `mango-resource-api`，使用 `I18nMessageResourceDeclarations.message(...)` 在本模块 starter 中实现 `ResourceProvider`。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `system.i18n.common.submit`。 |
+| `target-module` | `STRING` | 是 | 固定为 `system`。 |
+| `i18nId` | `LONG` | 否 | 国际化条目稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `STRING` | 否 | 当前 `sys_i18n` 未按租户隔离，默认 `1`，仅用于资源声明兼容。 |
+| `name` | `STRING` | 是 | 国际化 Key，全局唯一。 |
+| `zhCn` | `STRING` | 是 | 中文文案。 |
+| `en` | `STRING` | 是 | 英文文案。 |
+| `description` | `STRING` | 否 | 文案说明。 |
+
+`sys_i18n` 当前没有 `status` 字段，资源禁用时会退化为物理删除；如果后续需要后台人工禁用，应先给 `sys_i18n` 增加状态字段。
 
 ## 8. API 与扩展
 

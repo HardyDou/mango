@@ -91,6 +91,16 @@
             <artifactId>mango-system-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.notice</groupId>
+            <artifactId>mango-notice-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- OpenAPI 注解仅用于 controller 文档展示 -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

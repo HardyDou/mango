@@ -19,6 +19,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.AbstractPlatformTransactionManager;
@@ -49,6 +51,7 @@ class PaymentNotificationServiceTest {
     private final PaymentSensitiveValueService sensitiveValueService = mock(PaymentSensitiveValueService.class);
     private final PaymentObservabilityService observabilityService = mock(PaymentObservabilityService.class);
     private final PaymentNumberService numberService = mock(PaymentNumberService.class);
+    private final List<Object> publishedEvents = new ArrayList<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final PaymentNotificationService service = new PaymentNotificationService(
             notificationRecordMapper,
@@ -59,7 +62,8 @@ class PaymentNotificationServiceTest {
             scenarioControlService,
             sensitiveValueService,
             observabilityService,
-            numberService);
+            numberService,
+            new RecordingEventPublisher(publishedEvents));
 
     @BeforeEach
     void setUp() {
@@ -71,6 +75,20 @@ class PaymentNotificationServiceTest {
     @AfterEach
     void tearDown() {
         MangoContextHolder.clear();
+        publishedEvents.clear();
+    }
+
+    private record RecordingEventPublisher(List<Object> events) implements ApplicationEventPublisher {
+
+        @Override
+        public void publishEvent(ApplicationEvent event) {
+            events.add(event);
+        }
+
+        @Override
+        public void publishEvent(Object event) {
+            events.add(event);
+        }
     }
 
     @Test

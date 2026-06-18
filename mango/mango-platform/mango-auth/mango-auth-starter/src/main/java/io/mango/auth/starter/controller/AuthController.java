@@ -30,6 +30,8 @@ import io.mango.infra.context.starter.TtlExecutorDecorator;
 import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.iplocation.api.IpLocation;
+import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.system.api.SysLoginLogApi;
 import io.mango.system.api.po.SysLoginLogPo;
 import jakarta.annotation.PostConstruct;
@@ -44,6 +46,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,7 +56,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +84,7 @@ public class AuthController {
     private final ObjectProvider<CaptchaApi> captchaApiProvider;
     private final ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider;
     private final ObjectProvider<IpLocationResolver> ipLocationResolverProvider;
+    private final ApplicationEventPublisher eventPublisher;
     private LoginAttemptTracker loginAttemptTracker;
     private ScheduledExecutorService executorForTracker;
 
@@ -91,7 +97,8 @@ public class AuthController {
                           IAuthorizationProvider authorizationProvider,
                           ObjectProvider<CaptchaApi> captchaApiProvider,
                           ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider,
-                          ObjectProvider<IpLocationResolver> ipLocationResolverProvider) {
+                          ObjectProvider<IpLocationResolver> ipLocationResolverProvider,
+                          ApplicationEventPublisher eventPublisher) {
         this.authService = authService;
         this.ttlExecutorDecorator = ttlExecutorDecorator;
         this.kvStoreProvider = kvStoreProvider;
@@ -101,6 +108,7 @@ public class AuthController {
         this.captchaApiProvider = captchaApiProvider;
         this.sysLoginLogApiProvider = sysLoginLogApiProvider;
         this.ipLocationResolverProvider = ipLocationResolverProvider;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostConstruct
@@ -195,17 +203,50 @@ public class AuthController {
         if (loginAttemptTracker.isLockedOut(loginKey)) {
             long remainingMinutes = loginAttemptTracker.getRemainingLockoutMinutes(loginKey);
             log.warn("Login attempt blocked for {} - locked out for {} more minutes", loginKey, remainingMinutes);
+            publishLoginLockedNotice(loginCommand, clientIp, remainingMinutes);
             return R.fail(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode(), "登录尝试次数过多，请在 " + remainingMinutes + " 分钟后重试");
         }
 
         try {
             LoginVO loginResponse = authService.login(loginCommand);
             loginAttemptTracker.clearAttempts(loginKey);
+            publishLoginSuccessNotice(loginCommand, loginResponse, clientIp);
             return R.ok(loginResponse);
         } catch (BizException e) {
             loginAttemptTracker.recordFailedAttempt(loginKey);
             return R.fail(e.getCode(), e.getMessage());
         }
+    }
+
+    private void publishLoginSuccessNotice(LoginCommand command, LoginVO response, String clientIp) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("username", response.getUsername());
+        params.put("clientIp", clientIp);
+        params.put("loginTime", LocalDateTime.now().toString());
+        params.put("appCode", firstText(response.getAppCode(), command.getAppCode()));
+        eventPublisher.publishEvent(NoticeSendEvent.builder()
+                .bizType("auth.login.success")
+                .bizId(String.valueOf(response.getUserId()))
+                .userId(response.getUserId())
+                .params(params)
+                .priority(NoticePriority.LOW)
+                .idempotentKey("auth.login.success:" + response.getUserId() + ":" + System.currentTimeMillis())
+                .build());
+    }
+
+    private void publishLoginLockedNotice(LoginCommand command, String clientIp, long remainingMinutes) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("username", command.getUsername());
+        params.put("clientIp", clientIp);
+        params.put("remainingMinutes", remainingMinutes);
+        params.put("loginTime", LocalDateTime.now().toString());
+        eventPublisher.publishEvent(NoticeSendEvent.builder()
+                .bizType("auth.login.locked")
+                .bizId(command.getUsername())
+                .params(params)
+                .priority(NoticePriority.HIGH)
+                .idempotentKey("auth.login.locked:" + command.getUsername() + ":" + clientIp + ":" + remainingMinutes)
+                .build());
     }
 
     private R<LoginVO> refreshToken(RefreshTokenCommand command) {

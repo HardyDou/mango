@@ -56,6 +56,10 @@
             <artifactId>mango-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.realtime</groupId>
             <artifactId>mango-infra-realtime-starter</artifactId>
             <version>${project.version}</version>

@@ -58,7 +58,8 @@ class IdentityUserServiceImplTest {
                 mock(TenantMemberOrgMapper.class),
                 mock(SubjectRoleBindingMapper.class),
                 mock(ExternalIdentityBindingMapper.class),
-                mock(PasswordEncoder.class));
+                mock(PasswordEncoder.class),
+                event -> {});
         var profile = service.getUserInfo("admin");
 
         assertEquals(1L, profile.getUserId());
@@ -86,7 +87,8 @@ class IdentityUserServiceImplTest {
                 mock(TenantMemberOrgMapper.class),
                 mock(SubjectRoleBindingMapper.class),
                 mock(ExternalIdentityBindingMapper.class),
-                mock(PasswordEncoder.class));
+                mock(PasswordEncoder.class),
+                event -> {});
 
         assertNull(service.getUserInfo("missing"));
     }
@@ -119,7 +121,8 @@ class IdentityUserServiceImplTest {
                     relationMapper,
                     roleBindingMapper,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class));
+                    mock(PasswordEncoder.class),
+                    event -> {});
             IdentityUserTargetQuery query = new IdentityUserTargetQuery();
             query.setTargetType(IdentityUserTargetType.ORG);
             query.setTargetId(200L);
@@ -162,7 +165,8 @@ class IdentityUserServiceImplTest {
                     relationMapper,
                     roleBindingMapper,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class));
+                    mock(PasswordEncoder.class),
+                    event -> {});
             IdentityUserTargetQuery query = new IdentityUserTargetQuery();
             query.setTargetType(IdentityUserTargetType.ROLE);
             query.setTargetId(300L);
@@ -201,7 +205,8 @@ class IdentityUserServiceImplTest {
                     relationMapper,
                     roleBindingMapper,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class));
+                    mock(PasswordEncoder.class),
+                    event -> {});
 
             Integer count = service.deleteBatch(List.of(1001L, 1002L, 1003L));
 
@@ -229,7 +234,8 @@ class IdentityUserServiceImplTest {
                     relationMapper,
                     roleBindingMapper,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class));
+                    mock(PasswordEncoder.class),
+                    event -> {});
 
             Integer count = service.deleteBatch(List.of(1001L));
 
@@ -267,7 +273,8 @@ class IdentityUserServiceImplTest {
                     mock(TenantMemberOrgMapper.class),
                     mock(SubjectRoleBindingMapper.class),
                     externalBindingMapper,
-                    mock(PasswordEncoder.class));
+                    mock(PasswordEncoder.class),
+                    event -> {});
             BindExternalIdentityCommand command = new BindExternalIdentityCommand();
             command.setUserId(1002L);
             command.setProvider("WECOM");

@@ -216,6 +216,7 @@ registerMangoWorkflowAdminPages();
 
 ```text
 mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-definition.yml
+mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-domain.yml
 ```
 
 `workflow` 作为资源消费者提供以下处理器：
@@ -225,6 +226,15 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 | `WORKFLOW_CATEGORY` | `workflow_category` | `tenantId + categoryCode` |
 | `WORKFLOW_TEMPLATE_CATEGORY` | `workflow_template_category` | `tenantId + categoryCode` |
 | `WORKFLOW_NODE_DEFINITION` | `workflow_node_definition` | `tenantId + nodeDefinitionCode` |
+
+`workflow` 作为资源提供方还会向其它模块注入：
+
+| 资源类型 | 目标模块 | 声明入口 | 内容 |
+|----------|----------|----------|------|
+| `BUSINESS_DOMAIN` | `domain` | `workflow-common-domain.yml` | 工作流业务域 |
+| `MESSAGE_TEMPLATE` | `notice` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.task.claimable`、`workflow.task.cc`、`workflow.task.rejected`、`workflow.process.completed`、`workflow.process.rejected`、`workflow.process.ended`、`workflow.task.empty-assignee` |
+
+通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。工作流节点只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败不阻断流程主链路。
 
 通用约束：
 

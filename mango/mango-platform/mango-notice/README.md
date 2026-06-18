@@ -172,11 +172,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-m
 mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-domain.yml
 ```
 
-业务模块声明通知模板时，资源文件放在业务模块自己的 starter 中，例如：
-
-```text
-mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-message.yml
-```
+业务模块声明通知模板时，推荐在业务模块自己的 starter 中实现 `ResourceProvider`，并通过 `NoticeMessageTemplateResourceDeclarations.fourChannels(...)` 生成站内信、邮件、企业微信、短信四类模板声明。业务代码只依赖 `mango-notice-api` 和 `mango-resource-api`，不依赖 `mango-resource` 的 core/starter。
 
 ### 8.1 MESSAGE_CHANNEL
 
@@ -234,6 +230,16 @@ mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-message
 | `enabled` | `BOOLEAN` | 否 | 是否启用，默认 `true`。 |
 | `channelConfigId` | `LONG` | 否 | 绑定渠道配置 ID，空表示自动选择。 |
 
+已接入的默认模板 Provider：
+
+| 模块 | Provider | 主要 `bizType` |
+|------|----------|----------------|
+| `mango-auth` | `AuthMessageTemplateResourceProvider` | `auth.login.locked`、`auth.login.success` |
+| `mango-identity` | `IdentityMessageTemplateResourceProvider` | `identity.user.created`、`identity.password.reset`、`auth.wecom.login.bound`、`auth.wecom.login.unbound` |
+| `mango-workflow` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.task.claimable`、`workflow.task.cc`、`workflow.task.rejected`、`workflow.process.completed`、`workflow.process.rejected`、`workflow.process.ended`、`workflow.task.empty-assignee` |
+| `mango-payment` | `PaymentMessageTemplateResourceProvider` | `payment.order.success`、`payment.order.failed`、`payment.refund.success`、`payment.refund.failed`、`payment.refund.approval.created`、`payment.exception.order.created`、`payment.reconciliation.difference`、`payment.settlement.unresolved` |
+| `mango-job` | `JobMessageTemplateResourceProvider` | `job.instance.failed`、`job.worker.offline` |
+
 ### 8.3 BUSINESS_DOMAIN
 
 `notice-common-domain.yml` 通过 `BUSINESS_DOMAIN` 向业务域模块声明 `NOTICE` 业务域。字段契约以 `mango-domain` 的资源注入说明为准。
@@ -258,6 +264,8 @@ mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-message
 | `sendMode` | 发送模式，默认 `IMMEDIATE`。 |
 | `scheduledTime` | 定时发送时间。 |
 | `idempotentKey` | 幂等键。 |
+
+业务模块不希望通知失败影响主流程时，可发布 `NoticeSendEvent`。本地通知中心由 `mango-notice-starter` 监听事件并调用 `NoticeApi`；微服务调用方由 `mango-notice-starter-remote` 监听事件并远程调用通知中心。事件监听器会记录发送失败日志，但不向上抛出异常阻断业务事务。
 
 ### 9.2 接收人字段
 

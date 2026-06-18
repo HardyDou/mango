@@ -262,6 +262,7 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 - 支付基础表、通道能力、支付方式分类、收银台配置、路由规则、虚拟通道、富友通道配置和线下收款相关表。
 - 支付编号规则依赖 `mango-numgen`，通过 `SEQUENCE_RULE` 资源注入；不要在业务代码或前端拼接订单号。
 - 支付昨日账单拉取任务依赖 `mango-job`，通过 `JOB_DEFINITION` 资源注入。
+- 支付结果、退款、异常、对账和结算提醒依赖 `mango-notice`，通过 `MESSAGE_TEMPLATE` 资源注入。
 - 支付菜单、页面资源和按钮权限由 `mango-authorization` 的资源能力维护。
 - `module.properties` 登记 `module-name=mango-payment`、`module-path=/payment`，供模块资源扫描使用。
 - `PaymentRefundApprovalWorkflowDefinitionInitializer` 是应用启动时的退款审批流程定义初始化入口；只有开启 `workflow.refund-approval.initializer.enabled` 并补齐系统租户、用户和操作者配置后才会执行。
@@ -281,6 +282,9 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 | `BUSINESS_DOMAIN` | `domain` | 登记支付业务域 |
 | `SEQUENCE_RULE` | `numgen` | 登记支付编号规则 |
 | `JOB_DEFINITION` | `job` | 登记支付账单拉取任务 |
+| `MESSAGE_TEMPLATE` | `notice` | 登记支付通知模板 |
+
+`MESSAGE_TEMPLATE` 由 `PaymentMessageTemplateResourceProvider` 通过 Java Provider 注入，包含 `payment.order.success`、`payment.order.failed`、`payment.refund.success`、`payment.refund.failed`、`payment.refund.approval.created`、`payment.exception.order.created`、`payment.reconciliation.difference`、`payment.settlement.unresolved`。字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。支付通知节点只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败不影响支付主流程。
 
 平台自生成编号统一通过 `mango-numgen`：
 

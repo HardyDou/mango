@@ -6,6 +6,8 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
@@ -19,6 +21,7 @@ import io.mango.payment.core.entity.PaymentMangoPayScenarioControl;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentNotificationRecordMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,8 +44,10 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -67,6 +72,7 @@ public class PaymentNotificationService {
     private final PaymentSensitiveValueService sensitiveValueService;
     private final PaymentObservabilityService observabilityService;
     private final PaymentNumberService numberService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PaymentNotificationService(
             PaymentNotificationRecordMapper notificationRecordMapper,
@@ -77,7 +83,8 @@ public class PaymentNotificationService {
             PaymentMangoPayScenarioControlService scenarioControlService,
             PaymentSensitiveValueService sensitiveValueService,
             PaymentObservabilityService observabilityService,
-            PaymentNumberService numberService) {
+            PaymentNumberService numberService,
+            ApplicationEventPublisher eventPublisher) {
         this.notificationRecordMapper = notificationRecordMapper;
         this.applicationMapper = applicationMapper;
         this.objectMapper = objectMapper;
@@ -87,6 +94,7 @@ public class PaymentNotificationService {
         this.sensitiveValueService = sensitiveValueService;
         this.observabilityService = observabilityService;
         this.numberService = numberService;
+        this.eventPublisher = eventPublisher;
     }
 
     public void notifyPaymentAfterCommit(PaymentApplication application, PaymentBusinessOrderEntity businessOrder, PaymentOrderVO paymentOrder) {
@@ -97,7 +105,10 @@ public class PaymentNotificationService {
             return;
         }
         MangoContextSnapshot context = MangoContextHolder.get();
-        Runnable task = () -> withContext(context, () -> createAndDeliverPayment(application, businessOrder, paymentOrder));
+        Runnable task = () -> withContext(context, () -> {
+            publishPaymentNoticeEvent(application, businessOrder, paymentOrder);
+            createAndDeliverPayment(application, businessOrder, paymentOrder);
+        });
         runAfterCommit(task);
     }
 
@@ -109,7 +120,10 @@ public class PaymentNotificationService {
             return;
         }
         MangoContextSnapshot context = MangoContextHolder.get();
-        Runnable task = () -> withContext(context, () -> createAndDeliverRefund(application, businessOrder, refundOrder));
+        Runnable task = () -> withContext(context, () -> {
+            publishRefundNoticeEvent(application, businessOrder, refundOrder);
+            createAndDeliverRefund(application, businessOrder, refundOrder);
+        });
         runAfterCommit(task);
     }
 
@@ -188,6 +202,84 @@ public class PaymentNotificationService {
         } finally {
             MangoContextHolder.set(previous);
         }
+    }
+
+    private void publishPaymentNoticeEvent(
+            PaymentApplication application,
+            PaymentBusinessOrderEntity businessOrder,
+            PaymentOrderVO paymentOrder) {
+        eventPublisher.publishEvent(NoticeSendEvent.builder()
+                .bizType(paymentNoticeBizType(paymentOrder.getStatus()))
+                .bizId(paymentOrder.getPayOrderNo())
+                .recipientRuleCode("payment.operator")
+                .priority(NoticePriority.NORMAL)
+                .idempotentKey("payment:" + paymentOrder.getPayOrderNo() + ":" + paymentOrder.getStatus())
+                .params(paymentNoticeParams(application, businessOrder, paymentOrder))
+                .build());
+    }
+
+    private void publishRefundNoticeEvent(
+            PaymentApplication application,
+            PaymentBusinessOrderEntity businessOrder,
+            PaymentRefundOrderVO refundOrder) {
+        eventPublisher.publishEvent(NoticeSendEvent.builder()
+                .bizType(refundNoticeBizType(refundOrder.getStatus()))
+                .bizId(refundOrder.getRefundOrderNo())
+                .recipientRuleCode("payment.operator")
+                .priority(FAILED_STATUS.equals(refundOrder.getStatus()) ? NoticePriority.HIGH : NoticePriority.NORMAL)
+                .idempotentKey("payment:refund:" + refundOrder.getRefundOrderNo() + ":" + refundOrder.getStatus())
+                .params(refundNoticeParams(application, businessOrder, refundOrder))
+                .build());
+    }
+
+    private String paymentNoticeBizType(String status) {
+        if (SUCCESS_STATUS.equals(status)) {
+            return "payment.order.success";
+        }
+        return "payment.order.failed";
+    }
+
+    private String refundNoticeBizType(String status) {
+        if (SUCCESS_STATUS.equals(status)) {
+            return "payment.refund.success";
+        }
+        return "payment.refund.failed";
+    }
+
+    private Map<String, Object> paymentNoticeParams(
+            PaymentApplication application,
+            PaymentBusinessOrderEntity businessOrder,
+            PaymentOrderVO paymentOrder) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("appId", application.getAppId());
+        params.put("appName", application.getAppName());
+        params.put("payOrderNo", paymentOrder.getPayOrderNo());
+        params.put("bizOrderNo", businessOrder.getBizOrderNo());
+        params.put("amount", paymentOrder.getAmount());
+        params.put("currency", paymentOrder.getCurrency());
+        params.put("channelCode", paymentOrder.getChannelCode());
+        params.put("status", paymentOrder.getStatus());
+        params.put("failReason", paymentOrder.getStatusName());
+        return params;
+    }
+
+    private Map<String, Object> refundNoticeParams(
+            PaymentApplication application,
+            PaymentBusinessOrderEntity businessOrder,
+            PaymentRefundOrderVO refundOrder) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("appId", application.getAppId());
+        params.put("appName", application.getAppName());
+        params.put("payOrderNo", refundOrder.getPayOrderNo());
+        params.put("bizOrderNo", businessOrder.getBizOrderNo());
+        params.put("refundOrderNo", refundOrder.getRefundOrderNo());
+        params.put("refundAmount", refundOrder.getRefundAmount());
+        params.put("currency", refundOrder.getCurrency());
+        params.put("channelCode", refundOrder.getChannelCode());
+        params.put("status", refundOrder.getStatus());
+        params.put("failReason", refundOrder.getStatusName());
+        params.put("reason", refundOrder.getReason());
+        return params;
     }
 
     private PaymentNotificationRecordEntity createPendingRecord(
