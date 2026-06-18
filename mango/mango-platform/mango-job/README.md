@@ -403,8 +403,8 @@ mango-job-core/src/main/resources/db/migration/mango-job
 | `V3__cleanup_invalid_worker_snapshot.sql` | 清理占位 Worker 地址 |
 | `V4__native_job_engine_foundation.sql` | 增加 native 调度游标、执行尝试、Worker 能力、日志分片和事件表 |
 | `V5__job_worker_ownership.sql` | 增加 owner service、worker group、transport、register source 等字段 |
-| `V6__seed_default_sample_jobs.sql` | 初始化两个禁用的 Probe 示例任务 |
-| `V7__seed_payment_channel_bill_fetch_job.sql` | 初始化禁用的支付昨日账单拉取任务 |
+| `V6__seed_default_sample_jobs.sql` | 已迁移到 `JOB_DEFINITION` 资源注入 |
+| `V7__seed_payment_channel_bill_fetch_job.sql` | 已迁移到 `JOB_DEFINITION` 资源注入 |
 
 核心表：
 
@@ -433,7 +433,56 @@ persistence-datasource=job
 
 如果环境启用了模块化数据源，`persistence-datasource=job` 表示 Job 模块使用 `job` 数据源；否则通常落在默认业务库。
 
-## 12. 租户和安全
+## 12. 资源注入
+
+`mango-job` 作为资源消费者公开 `JOB_DEFINITION`，业务模块通过 `mango-resource-api` 声明任务定义，由 `mango-job-core` 负责写入 `mango_job_definition`。
+
+资源文件：
+
+```text
+mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-domain.yml
+mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-message.yml
+mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definition.yml
+```
+
+支持类型：
+
+| 资源类型 | 目标模块 | 说明 |
+|----------|----------|------|
+| `BUSINESS_DOMAIN` | `domain` | 登记 Job 业务域 |
+| `MESSAGE_TEMPLATE` | `notice` | 登记任务失败通知模板 |
+| `JOB_DEFINITION` | `job` | 登记任务定义 |
+
+`JOB_DEFINITION` 字段：
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `jobId` | 否 | 任务定义稳定 ID；不填使用资源 ID |
+| `tenantId` | 否 | 租户 ID，默认 `1` |
+| `appCode` | 是 | 所属逻辑应用 |
+| `ownerService` | 否 | 任务归属服务，默认跟随 `appCode` |
+| `workerGroup` | 否 | Worker 分组，默认跟随 `ownerService` |
+| `moduleCode` | 否 | 来源模块编码，默认使用资源 `module-code` |
+| `jobCode` | 是 | 任务编码，租户和应用内唯一 |
+| `jobName` | 是 | 任务名称 |
+| `jobType` | 否 | 任务类型，默认 `BUILTIN` |
+| `scheduleType` | 是 | 调度类型：`CRON`、`FIXED_RATE`、`ONE_TIME`、`MANUAL` |
+| `scheduleExpression` | 否 | 调度表达式，`MANUAL` 可为空 |
+| `handlerName` | 是 | Spring Bean 处理器名称 |
+| `handlerVersion` | 否 | 处理器版本 |
+| `paramSchema` | 否 | 参数表单 JSON Schema |
+| `paramValue` | 否 | 默认参数 JSON，默认 `{}` |
+| `misfireStrategy` | 否 | 错过触发策略，默认 `IGNORE` |
+| `concurrencyPolicy` | 否 | 并发策略，默认 `SERIAL` |
+| `timeoutSeconds` | 否 | 执行超时秒数，默认 `300` |
+| `retryPolicy` | 否 | 重试策略 JSON |
+| `timezone` | 否 | 调度时区，默认 `Asia/Shanghai` |
+| `maxRetryCount` | 否 | 最大重试次数，默认 `0` |
+| `definitionVersion` | 否 | 任务定义内部版本，默认 `0` |
+| `status` | 否 | 初始状态，默认 `DISABLED`；已有非 `DRAFT` 状态不会被资源覆盖 |
+| `engineType` | 否 | 调度引擎类型，默认 `MANGO_NATIVE` |
+
+## 13. 租户和安全
 
 | 项 | 行为 |
 |----|------|
@@ -443,7 +492,7 @@ persistence-datasource=job
 | 内部接口 | `/job/internal/workers/register` 和 `/job/internal/workers/execute` 标记为 INTERNAL，只应暴露给 Mango 内部调用链路或内网 |
 | handler 执行 | 执行时会设置租户、触发人或系统用户上下文 |
 
-## 13. 问题排查
+## 14. 问题排查
 
 | 现象 | 排查点 |
 |------|--------|
@@ -457,7 +506,7 @@ persistence-datasource=job
 | 实例有记录但日志为空 | 检查 handler 是否实际输出日志、实例是否进入执行阶段、Worker 是否成功返回日志 |
 | 告警未发送 | 检查 `mango-notice` 是否启用、告警规则是否启用、`appCode/jobId` 是否匹配、通知场景和模板是否存在 |
 
-## 14. 相关文档
+## 15. 相关文档
 
 - [@mango/job 前端包](../../../mango-ui/packages/job/README.md)
 - [Job 部署说明](../../../deploy/job/README.md)

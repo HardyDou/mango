@@ -1,0 +1,42 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: payment
+    module-name: 支付
+    declarations:
+      JOB_DEFINITION:
+        - id: "2951200000000000001"
+          version: 1
+          biz-key: payment.job.channel-bill-fetch-yesterday
+          name: 支付通道昨日账单拉取
+          target-module: job
+          fields:
+            jobId: { type: LONG, value: 2951200000000000001 }
+            tenantId: { type: STRING, value: "1" }
+            appCode: { type: STRING, value: mango-monolith-app }
+            ownerService: { type: STRING, value: mango-monolith-app }
+            workerGroup: { type: STRING, value: mango-monolith-app }
+            moduleCode: { type: STRING, value: mango-payment }
+            jobCode: { type: STRING, value: payment_channel_bill_fetch_yesterday }
+            jobName: { type: STRING, value: 支付通道昨日账单拉取 }
+            jobType: { type: STRING, value: BUILTIN }
+            scheduleType: { type: STRING, value: CRON }
+            scheduleExpression: { type: STRING, value: "0 10 0 * * ?" }
+            handlerName: { type: STRING, value: paymentChannelBillFetchJobHandler }
+            paramSchema:
+              type: JSON
+              value: '{"type":"object","properties":{"billDate":{"type":"string","title":"账单日期","description":"yyyy-MM-dd；为空时默认拉取昨天账单"}}}'
+            paramValue:
+              type: JSON
+              value: '{}'
+            misfireStrategy: { type: STRING, value: FIRE_ONCE }
+            concurrencyPolicy: { type: STRING, value: SERIAL }
+            timeoutSeconds: { type: INT, value: 1800 }
+            retryPolicy:
+              type: JSON
+              value: '{"maxRetryTimes":1}'
+            timezone: { type: STRING, value: Asia/Shanghai }
+            maxRetryCount: { type: INT, value: 1 }
+            definitionVersion: { type: INT, value: 0 }
+            status: { type: STRING, value: DISABLED }
+            engineType: { type: STRING, value: MANGO_NATIVE }

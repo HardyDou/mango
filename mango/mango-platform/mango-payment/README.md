@@ -260,10 +260,27 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 初始化内容包括：
 
 - 支付基础表、通道能力、支付方式分类、收银台配置、路由规则、虚拟通道、富友通道配置和线下收款相关表。
-- 支付编号规则依赖 `mango-numgen`，不要在业务代码或前端拼接订单号。
+- 支付编号规则依赖 `mango-numgen`，通过 `SEQUENCE_RULE` 资源注入；不要在业务代码或前端拼接订单号。
+- 支付昨日账单拉取任务依赖 `mango-job`，通过 `JOB_DEFINITION` 资源注入。
 - 支付菜单、页面资源和按钮权限由 `mango-authorization` 的资源能力维护。
 - `module.properties` 登记 `module-name=mango-payment`、`module-path=/payment`，供模块资源扫描使用。
 - `PaymentRefundApprovalWorkflowDefinitionInitializer` 是应用启动时的退款审批流程定义初始化入口；只有开启 `workflow.refund-approval.initializer.enabled` 并补齐系统租户、用户和操作者配置后才会执行。
+
+资源文件：
+
+```text
+mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-domain.yml
+mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-numgen.yml
+mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-job.yml
+```
+
+支持类型：
+
+| 资源类型 | 目标模块 | 说明 |
+|----------|----------|------|
+| `BUSINESS_DOMAIN` | `domain` | 登记支付业务域 |
+| `SEQUENCE_RULE` | `numgen` | 登记支付编号规则 |
+| `JOB_DEFINITION` | `job` | 登记支付账单拉取任务 |
 
 平台自生成编号统一通过 `mango-numgen`：
 
