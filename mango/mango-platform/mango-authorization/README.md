@@ -16,7 +16,7 @@
 |------|------|
 | 应用入口 | 管理 `internal-admin` 等应用编码、登录上下文和前端运行配置 |
 | API 资源 | 保存 method、path、access mode、permission code，供 `mango-access` 判断请求策略 |
-| 资源同步 | 扫描 Controller 注解、配置资源和 Gateway route，同步到 `authorization_api_resource` |
+| API 资源同步 | 通过 `mango-resource` 的 `API_RESOURCE` 资源类型扫描 Controller 注解、配置资源和 Gateway route，并同步到 `authorization_api_resource` |
 | 菜单管理 | 保存目录、菜单、按钮权限、页面 key、路由、运行类型和可见状态 |
 | 资源清单 | 从 `META-INF/mango/resource-manifest.json` 或 `resource-manifests/*.json` 批量注册模块菜单和权限 |
 | 角色授权 | 管理角色、成员角色绑定、角色菜单授权 |
@@ -46,7 +46,16 @@
 </dependency>
 ```
 
-业务模块需要在启动时同步 Controller API 资源和 manifest 菜单时依赖 resource sync starter：
+应用需要在启动时同步 Controller API 资源时，按拓扑启用 `mango-resource-sync-starter`，并选择本地或远程 Resource Registry starter：
+
+```xml
+<dependency>
+    <groupId>io.mango.platform.resource</groupId>
+    <artifactId>mango-resource-sync-starter</artifactId>
+</dependency>
+```
+
+应用需要同步 authorization manifest 菜单、按钮权限和前端运行配置时，部署入口依赖 authorization resource sync starter：
 
 ```xml
 <dependency>
@@ -96,7 +105,7 @@
 
 1. Controller 使用 `@PublicApi`、`@LoginApi`、`@PermissionAccess` 或 `@InternalApi` 声明访问模式。
 2. PERMISSION 接口用稳定权限码，例如 `contract:archive:create`。
-3. 模块依赖 `mango-authorization-resource-sync-starter`。
+3. 部署应用启用 `mango-resource-sync-starter`，并按拓扑选择本地 `mango-resource-starter` 或远程 `mango-resource-starter-remote`。
 4. 在模块资源目录放 `META-INF/mango/resource-manifest.json`，登记模块、菜单、页面 key 和按钮权限。
 5. 启动服务后确认 `authorization_api_resource` 有接口资源，`authorization_menu` 有菜单和按钮权限。
 6. 给角色授权菜单，或在 manifest 的 `roleCodes` 中写入已存在角色编码。
@@ -106,7 +115,7 @@
 
 ## 6. 配置说明
 
-API 资源同步示例：
+API 资源扫描配置示例：
 
 ```yaml
 mango:
@@ -169,6 +178,8 @@ mango:
 | `mango.authorization.resource-sync.gateway.module-name` | `gateway` | Gateway 路由资源所属模块名 |
 | `mango.authorization.resource-access.enabled` | `true` | 是否装配 `apiResourceAuthorizationManager` |
 | `mango.frontend.deploy-profile` | `monolith` | 前端部署配置档：`monolith`、`hybrid`、`micro` |
+
+`resources[]` 会被 `ApiAccessResourceProvider` 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
 
 `resources[]` 字段：
 
@@ -391,7 +402,48 @@ GET /authorization/menus/user?fmt=tree&appCode=internal-admin
 | 授权快照包含 `*:*` | 返回全部启用菜单 |
 | 普通角色授权 | 只返回角色授权到的菜单 |
 
-## 12. 数据与初始化
+## 12. 资源注入
+
+授权模块作为 `mango-resource` 的资源消费者公开 `API_RESOURCE`。该类型主要由扫描型 Provider 生成，不要求业务把接口权限写成 YAML。
+
+资源链路：
+
+```text
+Controller / @ApiAccess / YAML resources / Gateway route
+    -> ApiAccessResourceProvider
+    -> ResourceDeclaration(API_RESOURCE)
+    -> ResourceRegistryApi
+    -> ApiResourceHandler
+    -> authorization_api_resource
+```
+
+`API_RESOURCE` 保持原授权注册逻辑，底层仍调用授权模块的 API 资源注册服务；新链路只把“扫描和注册过程”纳入 `mango-resource` 的统一声明、hash、同步日志和覆盖控制。
+
+字段契约：
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，扫描型资源由 Provider 生成稳定 ID。 |
+| `version` | `INT` | 是 | 资源版本，扫描策略变化时递增。 |
+| `biz-key` | `STRING` | 是 | 接口资源业务键，通常由模块、方法和路径生成。 |
+| `target-module` | `STRING` | 是 | 固定为 `authorization`。 |
+| `moduleName` | `STRING` | 否 | 来源模块名。 |
+| `resourceCode` | `STRING` | 是 | 接口资源编码。 |
+| `httpMethod` | `STRING` | 是 | HTTP 方法，支持 `GET`、`POST`、`PUT`、`DELETE`、`ALL` 等。 |
+| `pathPattern` | `STRING` | 是 | 路径模式。 |
+| `accessMode` | `STRING` | 是 | `PUBLIC`、`LOGIN`、`PERMISSION`、`INTERNAL`。 |
+| `permissionCode` | `STRING` | `PERMISSION` 时必填 | 权限码。 |
+| `description` | `STRING` | 否 | 资源说明。 |
+
+批量同步语义：
+
+| 操作 | 行为 |
+|------|------|
+| `upsertBatch` | 按当前扫描批次调用授权原注册逻辑，避免逐条 upsert 改变原数据行为。 |
+| `disable` | 禁用对应 API 资源。 |
+| `delete` | 删除对应 API 资源。 |
+
+## 13. 数据与初始化
 
 Flyway 路径：
 
@@ -425,16 +477,16 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 
 | Runner | 作用 |
 |--------|------|
-| `ApiResourceSyncRunner` | 扫描 Spring MVC Controller 和 YAML 配置资源，注册 API 资源 |
+| `ResourceSyncRunner` | 汇总 `ApiAccessResourceProvider` 生成的 `API_RESOURCE` 声明并调用资源注册中心 |
 | `AppModuleResourceManifestSyncRunner` | 读取资源清单，注册模块、菜单、按钮权限和前端运行配置 |
 | `GatewayRouteResourceSyncRunner` | 扫描 Gateway route Path 谓词，注册网关资源 |
 
-## 13. 问题排查
+## 14. 问题排查
 
 | 现象 | 排查点 |
 |------|--------|
 | 接口权限不生效 | 查 `authorization_api_resource` 是否有正确的 `http_method + path_pattern + access_mode + permission_code` |
-| PERMISSION 同步失败 | `@PermissionAccess` 或 `@ApiAccess(mode=PERMISSION)` 必须填写权限码 |
+| PERMISSION 同步失败 | `@PermissionAccess` 或 `@ApiAccess(mode=PERMISSION)` 必须填写权限码；同时检查 `resource_registry` 和 `resource_sync_log` |
 | 菜单不显示 | 查 `authorization_app_module.status`、菜单 `status/visible`、角色菜单绑定、当前 `appCode` |
 | manifest 写了 `roleCodes` 但没授权 | 只有角色已存在时才会写 `authorization_role_menu` |
 | manifest 写了 `packageCodes` 但套餐没变化 | 只有菜单套餐已存在时才会写套餐明细 |
@@ -442,10 +494,11 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 | 前端页面打不开 | 查菜单 `component` 是否等于前端包注册的页面 key，`pageType` 和 `externalUrl` 是否匹配 |
 | 登录后 `/auth/info` 权限为空 | 查成员角色绑定的 `subjectId` 是否等于登录 `memberId`，`appCode`、`realm`、`actorType` 是否一致 |
 
-## 14. 相关文档
+## 15. 相关文档
 
 - [Mango Access](../mango-access/README.md)
 - [Mango Auth](../mango-auth/README.md)
+- [Mango Resource](../mango-resource/README.md)
 - [@mango/rbac](../../../mango-ui/packages/rbac/README.md)
 - [@mango/admin-shell](../../../mango-ui/packages/admin-shell/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

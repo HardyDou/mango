@@ -25,6 +25,7 @@
 | 租户基础数据和字典闭环 | [Identity](../../mango/mango-platform/mango-identity/README.md) -> [Org](../../mango/mango-platform/mango-org/README.md) -> [System](../../mango/mango-platform/mango-system/README.md) -> [Seed](../../mango/mango-platform/mango-seed/README.md) -> [Access](../../mango/mango-platform/mango-access/README.md) | [System README](../../mango/mango-platform/mango-system/README.md)、[租户字典配置为空排障](../guides/business-integration/tenant-dict-config-empty.md) |
 | 定时任务闭环 | [Job](../../mango/mango-platform/mango-job/README.md) -> [Job Frontend](../../mango-ui/packages/job/README.md) -> [Notice](../../mango/mango-platform/mango-notice/README.md) | [Job README](../../mango/mango-platform/mango-job/README.md)、[Job Frontend README](../../mango-ui/packages/job/README.md) |
 | 业务项目创建到 PR | [CLI](../../mango-ui/packages/mango-cli/README.md) -> [Business Starter](../../mango-business-starter/README.md) -> [Business PMO](../../mango-business-starter/business-pmo/README.md) -> [Topology](../../mango-business-starter/topologies/monolith/README.md) | [CLI README](../../mango-ui/packages/mango-cli/README.md)、[Business Starter README](../../mango-business-starter/README.md) |
+| 业务配置资源注入 | [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> 目标模块 README | [Resource README](../../mango/mango-platform/mango-resource/README.md) |
 
 ## 4. 后端平台能力
 
@@ -45,6 +46,7 @@
 | 编号生成 Numgen | `mango/mango-platform/mango-numgen` | [README](../../mango/mango-platform/mango-numgen/README.md) | [README](../../mango/mango-platform/mango-numgen/README.md) |
 | 组织 Org | `mango/mango-platform/mango-org` | [README](../../mango/mango-platform/mango-org/README.md) | [README](../../mango/mango-platform/mango-org/README.md) |
 | 支付 Payment | `mango/mango-platform/mango-payment` | [README](../../mango/mango-platform/mango-payment/README.md) | [README](../../mango/mango-platform/mango-payment/README.md) |
+| 资源注册中心 Resource Registry | `mango/mango-platform/mango-resource` | [README](../../mango/mango-platform/mango-resource/README.md) | [README](../../mango/mango-platform/mango-resource/README.md) |
 | 初始化种子 Seed | `mango/mango-platform/mango-seed` | [README](../../mango/mango-platform/mango-seed/README.md) | [README](../../mango/mango-platform/mango-seed/README.md) |
 | 系统 System | `mango/mango-platform/mango-system` | [README](../../mango/mango-platform/mango-system/README.md) | [README](../../mango/mango-platform/mango-system/README.md) |
 | 模板 Template | `mango/mango-platform/mango-template` | [README](../../mango/mango-platform/mango-template/README.md) | [README](../../mango/mango-platform/mango-template/README.md) |
