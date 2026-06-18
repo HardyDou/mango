@@ -250,7 +250,7 @@
     "frontendComponent": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango-ui/packages/**", "packages/**"],
-      "keywords": ["组件开发", "公共组件", "业务组件", "选择组件", "npm", "独立消费", "私有仓库", "公开仓库", "微前端", "单体", "组件发布"],
+      "keywords": ["组件开发", "公共组件", "业务组件", "选择组件", "npm", "独立消费", "私有仓库", "公开仓库", "微前端", "单体", "组件发布", "官方模块", "admin full", "@mango/admin/full", "样式聚合", "CLI 模块", "模块样式"],
       "include": ["frontend.componentDevelopment", "frontend.monorepo"]
     },
     "frontendTest": {

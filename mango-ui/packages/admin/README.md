@@ -78,6 +78,7 @@ import '@mango/admin/style-full.css';
 | `registerMangoNoticeAdminPages` | 注册 notice 页面。 |
 | `registerMangoNoticeAdminShell` | 注册 notice Shell 能力。 |
 | `registerMangoNumgenAdminPages` | 注册 numgen 页面。 |
+| `registerMangoPaymentAdminPages` | 注册 payment 页面。 |
 | `registerMangoTemplateAdminPages` | 注册 template 页面。 |
 | `registerMangoWorkflowAdminPages` | 注册 workflow 页面。 |
 | `registerMangoWorkflowBusinessExampleAdminPages` | 注册 workflow 示例页面。 |
@@ -96,6 +97,7 @@ import '@mango/admin/style-full.css';
 @mango/rbac
 @mango/system
 @mango/job
+@mango/payment
 ```
 
 ## 7. 管理入口
@@ -108,7 +110,7 @@ import '@mango/admin/style-full.css';
 2. 引入 `@mango/admin/style.css` 或 `@mango/admin/style-full.css`。
 3. 调用 `createMangoAdminApp()`。
 4. 配置 `apiBaseUrl`。
-5. 需要可选能力时，从具体能力包或 `full` 子入口注册对应页面。
+5. 需要可选能力时，从具体能力包或 `full` 子入口注册对应页面。使用 `@mango/admin/style-full.css` 时，官方 full 模块样式已由聚合入口带入。
 
 ## 9. 问题排查
 

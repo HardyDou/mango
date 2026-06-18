@@ -66,6 +66,7 @@ Mango 是业务开发脚手架，组件会被发布到私有或公开 npm 仓库
 - admin 类宿主或业务管理应用的 package 样式聚合必须由本应用 package 声明文件生成，业务开发者只维护声明，不手工追加 `@import` 清单。
 - admin 类宿主或业务管理应用的 `dev` 和 `build` 命令必须自动执行样式聚合生成；手动生成命令只作为调试、修复和 CI 差异定位入口。
 - package 样式聚合必须通过通用生成工具校验消费方依赖声明和 package `./style.css` 公开导出，必须同时支持 workspace package 和已发布到 npm/Nexus 后安装到 `node_modules` 的 package。
+- 官方业务模块接入 admin/full 或 CLI 可选模块时，必须同时接入页面注册、package 依赖、样式聚合、CLI 模块清单和样式治理检查；禁止只在 `apps/*` 私有入口手工 import 样式兜底。
 - 微前端 app 必须显式引入自身运行页面依赖的 package 样式，禁止依赖宿主或 shell 的聚合样式穿透隔离容器。
 - 业务项目按需消费 package 时，必须同时按 package 公开入口引入对应样式，禁止复制 Mango 页面样式或依赖仓库源码路径。
 - 开发中心、组件示例和文档示例页只能维护示例页布局样式；组件运行所需样式必须归属组件自身 package。
@@ -130,6 +131,7 @@ Mango 是业务开发脚手架，组件会被发布到私有或公开 npm 仓库
 - 单体和微前端共用组件必须至少验证两种部署形态的引用路径和样式生效结果。
 - 微前端样式验证必须检查隔离容器内目标元素的 computed style，不能只检查宿主 document 是否存在 CSS 文本。
 - npm 包组件必须用独立消费示例验证安装、构建、类型检查、样式引入、空状态和错误状态。
+- 官方 admin 模块集成变更必须执行 `pnpm admin:styles:check` 和 `pnpm admin:module-styles:check`。
 - 模板检查必须确保业务 starter baseline 携带本规范。
 
 ## 11. 禁止事项

@@ -62,6 +62,12 @@ const cases = [
     args: ['--role', 'dev', '--phase', 'develop', '--task', '调整模块实现', '--paths', 'mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
     mode: 'worktree-required',
     mustRead: ['rules/08-capability-docs.md']
+  },
+  {
+    name: 'frontend admin module style changes require style governance checks',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '修复 Payment 支付中心 header 样式丢失并接入 admin full', '--paths', 'mango-ui/packages/admin/src/full.ts,mango-ui/packages/payment/style.css,mango-ui/packages/mango-cli/src/index.mjs'],
+    mode: 'worktree-required',
+    requiredChecks: ['pnpm admin:styles:check', 'pnpm admin:module-styles:check']
   }
 ];
 
@@ -84,6 +90,12 @@ for (const item of cases) {
     const hasPath = (output.mustRead || []).some((entry) => entry.path === expectedPath);
     if (!hasPath) {
       failures.push(`${item.name}: expected mustRead ${expectedPath}`);
+    }
+  }
+  for (const expectedCommand of item.requiredChecks || []) {
+    const hasCommand = (output.requiredChecks || []).some((entry) => (entry.commands || []).includes(expectedCommand));
+    if (!hasCommand) {
+      failures.push(`${item.name}: expected required check ${expectedCommand}`);
     }
   }
 }

@@ -6,6 +6,7 @@ export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
 export { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';
 export { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
+export { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
 export { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 export { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
 export { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
@@ -17,6 +18,7 @@ import { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 import { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
 import { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';
 import { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
+import { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
 import { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
 import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
@@ -29,6 +31,7 @@ export const mangoFullAdminFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
   registerMangoNoticeAdminShell,
   registerMangoNumgenAdminPages,
   registerMangoCalendarAdminPages,
+  registerMangoPaymentAdminPages,
   registerMangoWorkflowAdminPages,
   registerMangoWorkflowBusinessExampleAdminPages,
 ];

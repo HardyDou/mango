@@ -2469,7 +2469,24 @@ async function expectPaymentListLayout(page: Page, config: {
 }) {
   await openPaymentPage(page, config.path, config.heading);
   const root = page.locator(`.${config.rootClass}`).first();
-  await expect(root.locator(`.${config.rootClass}__header`)).toBeVisible({ timeout: 10000 });
+  const header = root.locator(`.${config.rootClass}__header`);
+  await expect(header).toBeVisible({ timeout: 10000 });
+  // Payment is the regression sample for official admin module style aggregation.
+  const headerStyle = await header.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      display: style.display,
+      justifyContent: style.justifyContent,
+      minHeight: style.minHeight,
+      backgroundColor: style.backgroundColor,
+    };
+  });
+  expect(headerStyle).toMatchObject({
+    display: 'flex',
+    justifyContent: 'space-between',
+    minHeight: '64px',
+    backgroundColor: 'rgb(255, 255, 255)',
+  });
   await expect(root.locator(`.${config.rootClass}__toolbar`)).toBeVisible({ timeout: 10000 });
   await expect(root.locator(`.${config.rootClass}__toolbar .el-form-item`).first()).toBeVisible({ timeout: 10000 });
   await expect(root.locator(`.${config.rootClass}__table`)).toBeVisible({ timeout: 10000 });

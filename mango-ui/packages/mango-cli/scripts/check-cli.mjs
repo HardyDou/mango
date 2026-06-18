@@ -73,6 +73,7 @@ try {
   assertIncludes(config.modules.optional, 'workflow', 'full optional modules');
   assertIncludes(config.modules.optional, 'template', 'full optional modules');
   assertIncludes(config.modules.optional, 'notice', 'full optional modules');
+  assertIncludes(config.modules.optional, 'payment', 'full optional modules');
 
   const mainTs = readFileSync(join(projectRoot, 'frontend/src/main.ts'), 'utf8');
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
@@ -86,7 +87,7 @@ try {
   if (frontendPackage.devDependencies['@mango/cli']) {
     throw new Error('business frontend must not install @mango/cli as a project dependency; use global mango CLI');
   }
-  for (const dependency of ['@mango/admin', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice']) {
+  for (const dependency of ['@mango/admin', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice', '@mango/payment']) {
     if (!frontendPackage.dependencies[dependency]) {
       throw new Error(`frontend package missing dependency: ${dependency}`);
     }
@@ -104,6 +105,7 @@ try {
     '@mango/job': readReleasedPackageVersion('@mango/job'),
     '@mango/notice': readReleasedPackageVersion('@mango/notice'),
     '@mango/numgen': readReleasedPackageVersion('@mango/numgen'),
+    '@mango/payment': readReleasedPackageVersion('@mango/payment'),
     '@mango/rbac': readReleasedPackageVersion('@mango/rbac'),
     '@mango/system': readReleasedPackageVersion('@mango/system'),
     '@mango/template': readReleasedPackageVersion('@mango/template'),
@@ -293,7 +295,7 @@ try {
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow', 'custom dependencies');
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow-business-example', 'custom dependencies');
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/template', 'custom dependencies');
-  for (const dependency of ['@mango/calendar', '@mango/file', '@mango/notice', '@mango/numgen']) {
+  for (const dependency of ['@mango/calendar', '@mango/file', '@mango/notice', '@mango/numgen', '@mango/payment']) {
     assertIncludes(Object.keys(customPackage.dependencies), dependency, 'admin optional peer dependencies');
     assertEqual(customPackage.dependencies[dependency], readReleasedPackageVersion(dependency), dependency);
   }

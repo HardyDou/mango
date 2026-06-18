@@ -1,4 +1,5 @@
 @import './style.css';
+@import '@mango/payment/style.css';
 @import '@mango/workflow/style.css';
 @import '@mango/workflow-business-example/style.css';
 @import '@mango/file/style.css';

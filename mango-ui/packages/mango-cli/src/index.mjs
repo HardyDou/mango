@@ -31,6 +31,7 @@ const defaultVersions = {
   mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
+  mangoPayment: readReleasedMangoPackageVersion('payment', '1.0.1'),
   mangoRbac: readReleasedMangoPackageVersion('rbac', '1.0.4'),
   mangoSystem: readReleasedMangoPackageVersion('system', '1.0.4'),
   mangoTemplate: readReleasedMangoPackageVersion('template', '1.0.6'),
@@ -73,6 +74,7 @@ const ADMIN_OPTIONAL_PEER_PACKAGES = [
   { name: '@mango/job', versionKey: 'mangoJob' },
   { name: '@mango/notice', versionKey: 'mangoNotice' },
   { name: '@mango/numgen', versionKey: 'mangoNumgen' },
+  { name: '@mango/payment', versionKey: 'mangoPayment' },
   { name: '@mango/template', versionKey: 'mangoTemplate' },
   { name: '@mango/workflow', versionKey: 'mangoWorkflow' },
   { name: '@mango/workflow-business-example', versionKey: 'mangoWorkflowBusinessExample' },
@@ -190,6 +192,19 @@ const OPTIONAL_MODULES = [
     registrar: 'registerMangoCalendarAdminPages',
     backend: [
       { groupId: 'io.mango.platform.calendar', artifactId: 'mango-calendar-starter' },
+    ],
+  },
+  {
+    code: 'payment',
+    label: '支付中心',
+    feature: 'payment',
+    frontendPackage: '@mango/payment',
+    versionKey: 'mangoPayment',
+    styleImport: '@mango/payment/style.css',
+    registrarImport: "import { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';",
+    registrar: 'registerMangoPaymentAdminPages',
+    backend: [
+      { groupId: 'io.mango.platform.payment', artifactId: 'mango-payment-starter' },
     ],
   },
   {

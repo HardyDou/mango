@@ -21,7 +21,7 @@
   "scripts": {
     "prepack": "pnpm run build",
     "build": "pnpm run build:style-deps && pnpm run generate:styles && vite build",
-    "build:style-deps": "pnpm --dir ../.. -F @mango/common build && pnpm --dir ../.. -F @mango/grid-layout build && pnpm --dir ../.. -F @mango/admin-shell build && pnpm --dir ../.. -F @mango/auth build && pnpm --dir ../.. -F @mango/rbac build && pnpm --dir ../.. -F @mango/system build && pnpm --dir ../.. -F @mango/job build",
+    "build:style-deps": "pnpm --dir ../.. -F @mango/common build && pnpm --dir ../.. -F @mango/grid-layout build && pnpm --dir ../.. -F @mango/admin-shell build && pnpm --dir ../.. -F @mango/auth build && pnpm --dir ../.. -F @mango/rbac build && pnpm --dir ../.. -F @mango/system build && pnpm --dir ../.. -F @mango/job build && pnpm --dir ../.. -F @mango/payment build",
     "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
     "generate:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css"
   },
@@ -53,6 +53,7 @@
     "@mango/job": "1.0.2",
     "@mango/notice": "1.0.10",
     "@mango/numgen": "1.0.10",
+    "@mango/payment": "1.0.1",
     "@mango/template": "1.0.10",
     "@mango/workflow": "1.0.10",
     "@mango/workflow-business-example": "1.0.10",
@@ -72,6 +73,9 @@
       "optional": true
     },
     "@mango/job": {
+      "optional": true
+    },
+    "@mango/payment": {
       "optional": true
     },
     "@mango/notice": {

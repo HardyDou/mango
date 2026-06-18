@@ -511,6 +511,9 @@ importers:
       '@mango/numgen':
         specifier: 1.0.10
         version: link:../numgen
+      '@mango/payment':
+        specifier: 1.0.1
+        version: link:../payment
       '@mango/rbac':
         specifier: 1.0.7
         version: link:../rbac

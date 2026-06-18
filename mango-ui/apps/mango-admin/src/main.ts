@@ -10,7 +10,6 @@ import { i18n } from './i18n';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import '@mango/admin/style.css';
-import '@mango/payment/style.css';
 import { initThemeBeforeRender } from '@/utils/themeInit';
 import { registerAuthDirectives } from './directive/authDirective';
 

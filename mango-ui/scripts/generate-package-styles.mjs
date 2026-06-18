@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createRequire } from 'node:module';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -84,7 +84,56 @@ function findPackageJson(startPath, expectedName, rootDir) {
   fail(`Could not locate package.json for ${expectedName} from ${relative(rootDir, startPath)}`);
 }
 
+function findWorkspacePackageJson(rootDir, expectedName) {
+  const packagesDir = join(rootDir, 'packages');
+  if (!existsSync(packagesDir)) {
+    return null;
+  }
+
+  for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const packageJsonPath = join(packagesDir, entry.name, 'package.json');
+    if (!existsSync(packageJsonPath)) {
+      continue;
+    }
+    const packageJson = readJson(packageJsonPath);
+    if (packageJson.name === expectedName) {
+      return { packageJsonPath, packageJson };
+    }
+  }
+
+  return null;
+}
+
+function readStyleExportTarget(packageJson) {
+  const styleExport = packageJson.exports?.['./style.css'];
+  if (typeof styleExport === 'string') {
+    return styleExport;
+  }
+  if (styleExport && typeof styleExport.import === 'string') {
+    return styleExport.import;
+  }
+  if (styleExport && typeof styleExport.default === 'string') {
+    return styleExport.default;
+  }
+  return '';
+}
+
 function validateStyleExport(item, consumerPackagePath, rootDir) {
+  const workspacePackage = findWorkspacePackageJson(rootDir, item.name);
+  if (workspacePackage) {
+    const styleExportTarget = readStyleExportTarget(workspacePackage.packageJson);
+    if (!styleExportTarget) {
+      fail(`${item.name} must export ./style.css before it can be aggregated.`);
+    }
+    return {
+      packageJsonPath: workspacePackage.packageJsonPath,
+      resolvedStylePath: join(dirname(workspacePackage.packageJsonPath), styleExportTarget),
+    };
+  }
+
   const consumerRequire = createRequire(consumerPackagePath);
   let resolvedStylePath;
 

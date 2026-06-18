@@ -47,6 +47,8 @@ import '@mango/payment/style.css';
 registerMangoPaymentAdminPages();
 ```
 
+使用 Mango 单体 full preset 时，`@mango/admin/full` 会注册 Payment 管理页面，`@mango/admin/style-full.css` 会带入 Payment 样式；业务项目不需要再单独 import `@mango/payment/style.css`。
+
 嵌入收银台组件：
 
 ```vue
