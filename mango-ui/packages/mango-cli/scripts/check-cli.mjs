@@ -157,6 +157,9 @@ try {
   assertYamlFlywayModuleEnabled(applicationYml, 'domain');
   assertYamlFlywayModuleEnabled(applicationYml, 'workflow');
   assertYamlFlywayModuleEnabled(applicationYml, 'mango-job');
+  assertYamlFlywayModuleOutOfOrder(applicationYml, 'domain');
+  assertYamlFlywayModuleOutOfOrder(applicationYml, 'mango-job');
+  assertYamlFlywayModuleStrictOrdering(applicationYml, 'workflow');
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
   }
@@ -978,6 +981,30 @@ function assertYamlFlywayModuleEnabled(applicationYml, moduleName) {
   if (!pattern.test(applicationYml)) {
     throw new Error(`full backend application.yml must enable ${moduleName} Flyway module`);
   }
+}
+
+function assertYamlFlywayModuleOutOfOrder(applicationYml, moduleName) {
+  const block = findYamlFlywayModuleBlock(applicationYml, moduleName);
+  if (!block.includes('out-of-order: true')) {
+    throw new Error(`full backend application.yml must mark ${moduleName} Flyway module as out-of-order compatible`);
+  }
+}
+
+function assertYamlFlywayModuleStrictOrdering(applicationYml, moduleName) {
+  const block = findYamlFlywayModuleBlock(applicationYml, moduleName);
+  if (block.includes('out-of-order: true')) {
+    throw new Error(`full backend application.yml must keep ${moduleName} Flyway module strict by default`);
+  }
+}
+
+function findYamlFlywayModuleBlock(applicationYml, moduleName) {
+  const escapedModuleName = escapeRegExp(moduleName);
+  const pattern = new RegExp(`\\n\\s{8}${escapedModuleName}:\\n(?<body>(?:\\s{10}[^\\n]+\\n)+)`);
+  const match = applicationYml.match(pattern);
+  if (!match?.groups?.body) {
+    throw new Error(`full backend application.yml is missing ${moduleName} Flyway module block`);
+  }
+  return match.groups.body;
 }
 
 function escapeRegExp(value) {

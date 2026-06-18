@@ -55,9 +55,10 @@ public class PersistenceFlywayProperties {
 
         /**
          * 是否允许当前模块按非顺序版本补跑迁移。
-         * 默认关闭；仅用于明确的历史库兼容或升级补偿场景。
+         * 仅用于明确的历史库兼容或升级补偿场景。
+         * 未配置时由 Mango 模块兼容策略决定，业务模块默认关闭。
          */
-        private boolean outOfOrder = false;
+        private Boolean outOfOrder;
 
         /**
          * 当前模块 Flyway history table。
@@ -81,6 +82,10 @@ public class PersistenceFlywayProperties {
          * 仅用于模块重构后接管存量历史，默认关闭。
          */
         private boolean ignoreMissingMigrations = false;
+
+        public boolean isOutOfOrder() {
+            return Boolean.TRUE.equals(outOfOrder);
+        }
     }
 
     @Data
