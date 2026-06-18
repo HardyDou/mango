@@ -66,3 +66,4 @@ pnpm -F @mango/workflow-business-example build
 - PR #171 将流程定义列表作为角色数据权限业务接入样例，`workflow:definition:list` 可按显式数据权限过滤；不改变业务审批发起、审批回调、状态回写、页面 key 和租户隔离方式。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变业务审批的公开 API、配置、权限、租户、页面和运行时行为。
 - PR #157 支付异常单依赖环修复和 workflow API/core 边界收敛只调整内部 Bean 依赖，不改变业务审批接入的公开 API、配置、权限、租户、页面和运行时行为。
+- PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、启动和运行时行为。

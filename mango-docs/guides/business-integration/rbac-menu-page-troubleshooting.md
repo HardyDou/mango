@@ -81,3 +81,4 @@ pnpm -F @mango/admin-shell build
 - PR #169 角色授权弹框改为展示后端可分配菜单树中的按钮节点，只影响角色授权时的可选节点展示；不改变菜单页面 component key、页面注册、菜单运行时加载、租户绑定和菜单页面排障路径。
 - PR #166 工作台自定义布局新增 `@mango/grid-layout` 和 `mango-grid-layout`，仅保存当前登录人的工作台布局 JSON；不改变菜单页面 component key、资源授权、页面注册、权限、租户和菜单运行时行为。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变菜单页面、资源授权、页面 key、权限、租户和运行时行为。
+- PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、菜单运行时加载和本场景排障步骤。

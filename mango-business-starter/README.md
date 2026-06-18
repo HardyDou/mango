@@ -40,6 +40,13 @@
 ## 5. 接入方式
 业务开发者通常不直接复制本目录，而是通过 CLI 使用：
 
+生成或改造业务模块前，先确认本次会用到的 Mango 能力说明：
+
+- 能力索引：[Mango 能力地图](../mango-docs/capabilities/README.md)。
+- 持久化基线：[Persistence 持久化](../mango/mango-infra/mango-infra-persistence/README.md)。
+- 平台能力：按业务场景进入对应模块 README，例如 Authorization、File、Job、Workflow。
+- 前端能力包：按实际依赖进入 `mango-ui/packages/<package>/README.md`。
+
 ```bash
 mango module add order --aggregate sales-order --aggregate-name 销售订单 --module-name 订单模块 --project-dir .
 ```

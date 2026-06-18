@@ -9,7 +9,7 @@ import java.util.List;
  * <p>
  * Web 层只依赖本契约，默认 CRUD 入参按同名属性复制到实体或查询条件。
  */
-public interface MangoCrudService {
+public interface MangoCrudService<E> {
 
     /**
      * 创建数据。

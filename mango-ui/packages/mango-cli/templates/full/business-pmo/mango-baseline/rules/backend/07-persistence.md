@@ -9,6 +9,7 @@
 - 业务代码禁止直接使用 JDBC，包括 `JdbcTemplate`、`java.sql.Connection`、`Statement`、`PreparedStatement`、`ResultSet`。
 - 业务 Mapper 禁止使用注解 SQL，包括 `@Select`、`@Insert`、`@Update`、`@Delete`、`@*Provider`；自定义 SQL 必须写在 `mapper.xml`。
 - Mango CLI、starter 和业务模块模板必须生成真实数据库 CRUD 骨架，禁止生成内存 mock、固定返回值或未接数据库的接口壳。
+- 具体接入方式、租户、数据权限、分页和联表查询示例见 Mango 文档站的 Persistence 持久化 README；能力总览见 Mango 能力地图。
 
 ## 0.1 业务 CRUD 模板要求
 

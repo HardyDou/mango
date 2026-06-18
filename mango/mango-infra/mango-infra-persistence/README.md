@@ -390,6 +390,169 @@ public class OrderInvoiceQuery extends PageQuery {
 - `IN` 支持集合；对象数组会转为列表。
 - `Map` 查询不会读取 `@QueryField`，只按 key 驼峰转下划线。
 
+### 7.2.1 业务开发常用示例
+
+#### 租户逻辑
+
+租户业务表继承 `TenantEntity`，表结构保留 `tenant_id`。普通查询、分页、`BaseMapper` 和 XML SQL 默认由租户插件追加租户条件；创建时由审计填充器写入租户，不需要业务手工设置。
+
+```java
+@Getter
+@Setter
+@TableName("order_invoice")
+public class OrderInvoiceEntity extends TenantEntity {
+
+    private String invoiceNo;
+}
+```
+
+```java
+@Service
+public class OrderInvoiceService
+        extends MangoCrudServiceImpl<OrderInvoiceMapper, OrderInvoiceEntity> {
+
+    @Override
+    protected Class<OrderInvoiceEntity> entityType() {
+        return OrderInvoiceEntity.class;
+    }
+}
+```
+
+普通业务代码不要手写 `.eq(OrderInvoiceEntity::getTenantId, ...)`，也不要在创建时 `setTenantId(...)`。跨租户运营、租户初始化或全局表要单独建模，并通过 `mango.persistence.mybatis-plus.tenant.excluded-tables` 明确例外。
+
+#### 数据权限
+
+标准 CRUD 查询通过覆写 `applyDataScope()` 接入数据权限。`tenant_id` 仍由租户插件处理，`created_by` 和 `org_id` 由 `DataScopeApplier` 根据授权模块的数据权限规则追加。
+
+```java
+@Service
+public class PaymentOrderService
+        extends MangoCrudServiceImpl<PaymentOrderMapper, PaymentOrderEntity> {
+
+    private final DataScopeApplier dataScopeApplier;
+
+    public PaymentOrderService(DataScopeApplier dataScopeApplier) {
+        this.dataScopeApplier = dataScopeApplier;
+    }
+
+    @Override
+    protected void applyDataScope(QueryWrapper<PaymentOrderEntity> wrapper, Object query) {
+        dataScopeApplier.apply(
+                wrapper,
+                "payment:order:list",
+                DataScopeMapping.builder()
+                        .tableName("payment_order")
+                        .selfField("created_by")
+                        .orgField("org_id")
+                        .tenantField("tenant_id")
+                        .build()
+        );
+    }
+
+    @Override
+    protected Class<PaymentOrderEntity> entityType() {
+        return PaymentOrderEntity.class;
+    }
+}
+```
+
+普通业务查询不要手写 `created_by = 当前用户`、`org_id in (...)` 或等价条件；这些范围由授权模块的角色数据权限配置和 `DataScopeApplier` 决定。
+
+#### 分页
+
+普通单表分页直接复用 `MangoCrudServiceImpl.pageByQuery()` 和 `BaseCrudController` 的 `/page` 入口。查询对象继承 `PageQuery`，业务字段用 `@QueryField` 描述条件。
+
+```java
+@Getter
+@Setter
+public class OrderInvoiceQuery extends PageQuery {
+
+    @QueryField(type = QueryType.LIKE)
+    private String invoiceNo;
+
+    @QueryField(type = QueryType.IN)
+    private List<String> statusList;
+}
+```
+
+```java
+@RestController
+@RequestMapping("/order/invoices")
+public class OrderInvoiceController extends BaseCrudController<
+        OrderInvoiceService,
+        CreateOrderInvoiceCommand,
+        UpdateOrderInvoiceCommand,
+        OrderInvoiceQuery> {
+
+    public OrderInvoiceController(OrderInvoiceService service) {
+        super(service);
+    }
+
+    @Override
+    protected Class<OrderInvoiceQuery> queryType() {
+        return OrderInvoiceQuery.class;
+    }
+}
+```
+
+普通 CRUD 不需要在业务 Service 中手写 `new Page<>(...)`、`mapper.selectPage(...)` 和 `PageResult.of(...)`。
+
+#### 联表查询
+
+联表查询用于读模型或报表场景，放在 core 内部查询 Service 和 Mapper XML 中。Service 可继承 `MangoQueryServiceSupport` 复用分页和返回包装；SQL 写在 XML，Mapper 方法不要使用注解 SQL。
+
+```java
+@Service
+public class OrderInvoiceReadService extends MangoQueryServiceSupport {
+
+    private final OrderInvoiceReadMapper mapper;
+    private final DataScopeApplier dataScopeApplier;
+
+    public OrderInvoiceReadService(PersistenceContextProvider contextProvider,
+                                   OrderInvoiceReadMapper mapper,
+                                   DataScopeApplier dataScopeApplier) {
+        super(contextProvider);
+        this.mapper = mapper;
+        this.dataScopeApplier = dataScopeApplier;
+    }
+
+    public PersistencePageResult<OrderInvoiceRowVO> pageRows(OrderInvoiceQuery query) {
+        QueryWrapper<OrderInvoiceEntity> scope = new QueryWrapper<>();
+        dataScopeApplier.apply(scope, "order:invoice:list", DataScopeMapping.builder()
+                .tableName("order_invoice")
+                .selfField("i.created_by")
+                .orgField("i.org_id")
+                .tenantField("i.tenant_id")
+                .build());
+        return pageResult(mapper.pageRows(page(query), query, scope));
+    }
+}
+```
+
+```java
+public interface OrderInvoiceReadMapper {
+
+    IPage<OrderInvoiceRowVO> pageRows(Page<OrderInvoiceRowVO> page,
+                                      @Param("query") OrderInvoiceQuery query,
+                                      @Param("scope") Wrapper<OrderInvoiceEntity> scope);
+}
+```
+
+```xml
+<select id="pageRows" resultType="com.example.order.vo.OrderInvoiceRowVO">
+    SELECT i.id, i.invoice_no, c.customer_name
+    FROM order_invoice i
+    LEFT JOIN order_customer c ON c.id = i.customer_id
+    WHERE 1 = 1
+    ${scope.customSqlSegment}
+    <if test="query.invoiceNo != null and query.invoiceNo != ''">
+        AND i.invoice_no LIKE CONCAT('%', #{query.invoiceNo}, '%')
+    </if>
+</select>
+```
+
+联表 SQL 仍会经过 MyBatis-Plus 租户插件；数据权限条件由 `DataScopeApplier` 构造。跨域数据不应通过随意 join 解决，只有同一读模型边界内的查询才使用这种方式。
+
 ### 7.3 CRUD Service
 
 业务 Service 可以继承 `MangoCrudServiceImpl<M, E>`：
@@ -686,6 +849,16 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 **导入导出接口存在但调用失败**
 
 `BaseCrudController` 只是提供入口。导出需要 Service 实现 `ExportableService`，导入需要 Service 实现 `ImportableService`，并且容器里必须有 `ExcelAdapter` bean。
+
+**业务只拿到发布 jar，读不到使用说明**
+
+Maven 运行时 jar 不承载 README。持久化能力的使用说明由文档站和源码 README 交付：
+
+- 文档站入口：[Mango 能力地图](../../../mango-docs/capabilities/README.md) -> Persistence 持久化。
+- 源码入口：`mango/mango-infra/mango-infra-persistence/README.md`。
+- 本地预览：`npm --prefix mango-docs run docs:dev`。
+
+如果业务开发只拿到 Maven 坐标，没有文档仓库或文档站地址，说明交付物缺少文档入口，应补发 Mango 文档站地址或同步对应版本的文档快照，而不是把 README 打进 jar。
 
 ## 12. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)

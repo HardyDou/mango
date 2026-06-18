@@ -3,6 +3,11 @@
   "version": "1.0.2",
   "private": false,
   "main": "src/index.ts",
+  "files": [
+    "src",
+    "README.md",
+    "package.json"
+  ],
   "dependencies": {
     "typescript": "^5.3.3"
   },

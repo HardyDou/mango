@@ -61,7 +61,7 @@
     },
     "process.capabilityDocs": {
       "path": "rules/08-capability-docs.md",
-      "reason": "能力说明维护规范"
+      "reason": "能力说明维护规范与发布门禁"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
@@ -89,7 +89,7 @@
     },
     "backend.persistence": {
       "path": "rules/backend/07-persistence.md",
-      "reason": "事务与持久化规范"
+      "reason": "事务、持久化与业务 CRUD 基线规范"
     },
     "backend.test": {
       "path": "rules/backend/08-test.md",

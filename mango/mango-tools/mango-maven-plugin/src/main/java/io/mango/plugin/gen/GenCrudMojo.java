@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 
 /**
  * 生成 CRUD 代码。
- * 技术栈: MyBatis-Plus + Entity/Query/Command/VO 分离
+ * 技术栈: Mango CRUD 基线 + Entity/Query/Command/VO 分离
  *
  * mvn mango:gen-crud -Dmodule=user -Dentity=User -Dtable=sys_user
  *
@@ -30,6 +30,9 @@ public class GenCrudMojo extends AbstractMojo {
 
     @Parameter(property = "table", required = true)
     private String table;
+
+    @Parameter(property = "dataScopeResource")
+    private String dataScopeResource;
 
     @Parameter(property = "baseDir", defaultValue = "${project.basedir}")
     private String baseDir;
@@ -113,49 +116,27 @@ public class GenCrudMojo extends AbstractMojo {
 
         String content =
             "package io.mango." + module + ".starter.controller;\n\n" +
-            "import io.mango." + module + ".api." + entityName + "Api;\n" +
-            "import io.mango.common.result.R;\n" +
-            "import io.mango.common.vo.PageResult;\n" +
             "import io.mango." + module + ".api.command.Create" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
-            "import io.mango." + module + ".api.vo." + entityName + "VO;\n" +
             "import io.mango." + module + ".core.service.I" + entityName + "Service;\n" +
-            "import lombok.RequiredArgsConstructor;\n" +
-            "import org.springframework.web.bind.annotation.*;\n\n" +
+            "import io.mango.infra.persistence.web.starter.controller.BaseCrudController;\n" +
+            "import org.springframework.web.bind.annotation.RequestMapping;\n" +
+            "import org.springframework.web.bind.annotation.RestController;\n\n" +
             javaDoc(entityName + " 管理接口。", author) +
             "@RestController\n" +
             "@RequestMapping(\"/" + resourcePath + "\")\n" +
-            "@RequiredArgsConstructor\n" +
-            "public class " + entityName + "Controller implements " + entityName + "Api {\n\n" +
-            "    private final I" + entityName + "Service " + camelEntity + "Service;\n\n" +
-            "    @Override\n" +
-            "    @GetMapping(\"/page\")\n" +
-            "    public R<PageResult<" + entityName + "VO>> page(" + entityName + "PageQuery query) {\n" +
-            "        return R.ok(" + camelEntity + "Service.page(query));\n" +
+            "public class " + entityName + "Controller extends BaseCrudController<\n" +
+            "        I" + entityName + "Service,\n" +
+            "        Create" + entityName + "Command,\n" +
+            "        Update" + entityName + "Command,\n" +
+            "        " + entityName + "PageQuery> {\n\n" +
+            "    public " + entityName + "Controller(I" + entityName + "Service service) {\n" +
+            "        super(service);\n" +
             "    }\n\n" +
             "    @Override\n" +
-            "    @GetMapping(\"/detail\")\n" +
-            "    public R<" + entityName + "VO> get(@RequestParam Long id) {\n" +
-            "        return R.ok(" + camelEntity + "Service.getById(id));\n" +
-            "    }\n\n" +
-            "    @Override\n" +
-            "    @PostMapping\n" +
-            "    public R<Void> save(@RequestBody Create" + entityName + "Command command) {\n" +
-            "        " + camelEntity + "Service.save(command);\n" +
-            "        return R.ok();\n" +
-            "    }\n\n" +
-            "    @Override\n" +
-            "    @PutMapping\n" +
-            "    public R<Void> update(@RequestBody Update" + entityName + "Command command) {\n" +
-            "        " + camelEntity + "Service.update(command);\n" +
-            "        return R.ok();\n" +
-            "    }\n\n" +
-            "    @Override\n" +
-            "    @DeleteMapping\n" +
-            "    public R<Void> delete(@RequestParam Long id) {\n" +
-            "        " + camelEntity + "Service.delete(id);\n" +
-            "        return R.ok();\n" +
+            "    protected Class<" + entityName + "PageQuery> queryType() {\n" +
+            "        return " + entityName + "PageQuery.class;\n" +
             "    }\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Controller.java"), content);
@@ -168,117 +149,114 @@ public class GenCrudMojo extends AbstractMojo {
         String content =
             "package io.mango." + module + ".api;\n\n" +
             "import io.mango.common.result.R;\n" +
-            "import io.mango.common.vo.PageResult;\n" +
+            "import io.mango.infra.persistence.api.crud.DeleteCommand;\n" +
+            "import io.mango.infra.persistence.api.query.PersistencePageResult;\n" +
             "import io.mango." + module + ".api.command.Create" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
-            "import io.mango." + module + ".api.vo." + entityName + "VO;\n\n" +
+            "import io.mango." + module + ".api.vo." + entityName + "VO;\n" +
+            "import jakarta.validation.Valid;\n\n" +
             javaDoc(entityName + " 跨模块接口契约。", author) +
             "public interface " + entityName + "Api {\n\n" +
-            "    R<PageResult<" + entityName + "VO>> page(" + entityName + "PageQuery query);\n\n" +
-            "    R<" + entityName + "VO> get(Long id);\n\n" +
-            "    R<Void> save(Create" + entityName + "Command command);\n\n" +
-            "    R<Void> update(Update" + entityName + "Command command);\n\n" +
-            "    R<Void> delete(Long id);\n" +
+            "    R<PersistencePageResult<" + entityName + "VO>> page(" + entityName + "PageQuery query);\n\n" +
+            "    R<" + entityName + "VO> detail(Long id);\n\n" +
+            "    R<Object> create(@Valid Create" + entityName + "Command command);\n\n" +
+            "    R<Boolean> update(@Valid Update" + entityName + "Command command);\n\n" +
+            "    R<Boolean> delete(DeleteCommand command);\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Api.java"), content);
     }
 
     private void generateService(Path serviceDir, Path serviceImplDir) throws IOException {
         String entityName = toPascalCase(entity);
-        String camelEntity = toCamelCase(entity);
         String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".core.service;\n\n" +
-            "import io.mango.common.vo.PageResult;\n" +
-            "import io.mango." + module + ".api.command.Create" + entityName + "Command;\n" +
-            "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
-            "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
-            "import io.mango." + module + ".api.vo." + entityName + "VO;\n\n" +
+            "import io.mango.infra.persistence.api.crud.MangoCrudService;\n\n" +
             javaDoc(entityName + " 业务服务。", author) +
-            "public interface I" + entityName + "Service {\n\n" +
-            "    " + entityName + "VO getById(Long id);\n\n" +
-            "    PageResult<" + entityName + "VO> page(" + entityName + "PageQuery query);\n\n" +
-            "    void save(Create" + entityName + "Command command);\n\n" +
-            "    void update(Update" + entityName + "Command command);\n\n" +
-            "    void delete(Long id);\n" +
+            "public interface I" + entityName + "Service extends MangoCrudService {\n" +
             "}\n";
         Files.writeString(serviceDir.resolve("I" + entityName + "Service.java"), content);
 
         String implContent =
             "package io.mango." + module + ".core.service.impl;\n\n" +
-            "import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;\n" +
-            "import com.baomidou.mybatisplus.core.metadata.IPage;\n" +
-            "import com.baomidou.mybatisplus.extension.plugins.pagination.Page;\n" +
-            "import io.mango.common.result.Require;\n" +
-            "import io.mango.common.vo.PageResult;\n" +
-            "import io.mango." + module + ".api.command.Create" + entityName + "Command;\n" +
-            "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
-            "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
+            dataScopeQueryWrapperImport() +
             "import io.mango." + module + ".api.vo." + entityName + "VO;\n" +
             "import io.mango." + module + ".core.entity." + entityName + "Entity;\n" +
             "import io.mango." + module + ".core.mapper." + entityName + "Mapper;\n" +
             "import io.mango." + module + ".core.service.I" + entityName + "Service;\n" +
-            "import lombok.RequiredArgsConstructor;\n" +
+            dataScopeImports() +
+            "import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;\n" +
             "import org.springframework.stereotype.Service;\n\n" +
             javaDoc(entityName + " 业务服务实现。", author) +
             "@Service\n" +
-            "@RequiredArgsConstructor\n" +
-            "public class " + entityName + "ServiceImpl implements I" + entityName + "Service {\n\n" +
-            "    private final " + entityName + "Mapper " + camelEntity + "Mapper;\n\n" +
+            "public class " + entityName + "ServiceImpl extends MangoCrudServiceImpl<" + entityName + "Mapper, "
+                    + entityName + "Entity>\n" +
+            "        implements I" + entityName + "Service {\n\n" +
+            dataScopeFieldAndConstructor(entityName) +
             "    @Override\n" +
-            "    public " + entityName + "VO getById(Long id) {\n" +
-            "        " + entityName + "Entity entity = " + camelEntity + "Mapper.selectById(id);\n" +
-            "        Require.notNull(entity, 404, \"记录不存在\");\n" +
-            "        return toVO(entity);\n" +
+            "    protected Class<" + entityName + "Entity> entityType() {\n" +
+            "        return " + entityName + "Entity.class;\n" +
             "    }\n\n" +
+            dataScopeMethod(entityName) +
             "    @Override\n" +
-            "    public PageResult<" + entityName + "VO> page(" + entityName + "PageQuery query) {\n" +
-            "        LambdaQueryWrapper<" + entityName + "Entity> wrapper = new LambdaQueryWrapper<>();\n" +
-            "        IPage<" + entityName + "Entity> page = " + camelEntity + "Mapper.selectPage(\n" +
-            "                new Page<>(query.getPage(), query.getSize()), wrapper);\n" +
-            "        return PageResult.of(page.getRecords().stream().map(this::toVO).toList(),\n" +
-            "                page.getTotal(), page.getCurrent(), page.getSize());\n" +
-            "    }\n\n" +
-            "    @Override\n" +
-            "    public void save(Create" + entityName + "Command command) {\n" +
-            "        " + camelEntity + "Mapper.insert(toEntity(command));\n" +
-            "    }\n\n" +
-            "    @Override\n" +
-            "    public void update(Update" + entityName + "Command command) {\n" +
-            "        Require.notNull(command.getId(), 400, \"ID 不能为空\");\n" +
-            "        " + camelEntity + "Mapper.updateById(toEntity(command));\n" +
-            "    }\n\n" +
-            "    @Override\n" +
-            "    public void delete(Long id) {\n" +
-            "        " + camelEntity + "Mapper.deleteById(id);\n" +
-            "    }\n\n" +
-            "    private " + entityName + "VO toVO(" + entityName + "Entity entity) {\n" +
+            "    protected Object toVO(" + entityName + "Entity entity) {\n" +
             "        if (entity == null) {\n" +
             "            return null;\n" +
             "        }\n" +
             "        " + entityName + "VO vo = new " + entityName + "VO();\n" +
             "        vo.setId(entity.getId());\n" +
             "        return vo;\n" +
-            "    }\n\n" +
-            "    private " + entityName + "Entity toEntity(Create" + entityName + "Command command) {\n" +
-            "        if (command == null) {\n" +
-            "            return null;\n" +
-            "        }\n" +
-            "        " + entityName + "Entity entity = new " + entityName + "Entity();\n" +
-            "        return entity;\n" +
-            "    }\n\n" +
-            "    private " + entityName + "Entity toEntity(Update" + entityName + "Command command) {\n" +
-            "        if (command == null) {\n" +
-            "            return null;\n" +
-            "        }\n" +
-            "        " + entityName + "Entity entity = new " + entityName + "Entity();\n" +
-            "        entity.setId(command.getId());\n" +
-            "        return entity;\n" +
             "    }\n" +
             "}\n";
         Files.writeString(serviceImplDir.resolve(entityName + "ServiceImpl.java"), implContent);
+    }
+
+    private String dataScopeImports() {
+        if (!hasDataScopeResource()) {
+            return "";
+        }
+        return "import io.mango.infra.persistence.api.scope.DataScopeApplier;\n"
+                + "import io.mango.infra.persistence.api.scope.DataScopeMapping;\n";
+    }
+
+    private String dataScopeQueryWrapperImport() {
+        return hasDataScopeResource() ? "import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;\n" : "";
+    }
+
+    private String dataScopeFieldAndConstructor(String entityName) {
+        if (!hasDataScopeResource()) {
+            return "";
+        }
+        return "    private final DataScopeApplier dataScopeApplier;\n\n"
+                + "    public " + entityName + "ServiceImpl(DataScopeApplier dataScopeApplier) {\n"
+                + "        this.dataScopeApplier = dataScopeApplier;\n"
+                + "    }\n\n";
+    }
+
+    private String dataScopeMethod(String entityName) {
+        if (!hasDataScopeResource()) {
+            return "";
+        }
+        String tableName = table == null || table.isBlank() ? toSnakeCase(entity) : table.trim();
+        return "    @Override\n"
+                + "    protected void applyDataScope(QueryWrapper<" + entityName + "Entity> wrapper, Object query) {\n"
+                + "        dataScopeApplier.apply(\n"
+                + "                wrapper,\n"
+                + "                \"" + dataScopeResource.trim() + "\",\n"
+                + "                DataScopeMapping.builder()\n"
+                + "                        .tableName(\"" + tableName + "\")\n"
+                + "                        .selfField(\"created_by\")\n"
+                + "                        .orgField(\"org_id\")\n"
+                + "                        .tenantField(\"tenant_id\")\n"
+                + "                        .build()\n"
+                + "        );\n"
+                + "    }\n\n";
+    }
+
+    private boolean hasDataScopeResource() {
+        return dataScopeResource != null && !dataScopeResource.isBlank();
     }
 
     private void generateMapper(Path dir) throws IOException {
@@ -425,10 +403,38 @@ public class GenCrudMojo extends AbstractMojo {
         String content =
             "package io.mango." + module + ".starter.remote;\n\n" +
             "import io.mango." + module + ".api." + entityName + "Api;\n" +
-            "import org.springframework.cloud.openfeign.FeignClient;\n\n" +
+            "import io.mango." + module + ".api.command.Create" + entityName + "Command;\n" +
+            "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
+            "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
+            "import io.mango." + module + ".api.vo." + entityName + "VO;\n" +
+            "import io.mango.common.result.R;\n" +
+            "import io.mango.infra.persistence.api.crud.DeleteCommand;\n" +
+            "import io.mango.infra.persistence.api.query.PersistencePageResult;\n" +
+            "import org.springframework.cloud.openfeign.FeignClient;\n" +
+            "import org.springframework.cloud.openfeign.SpringQueryMap;\n" +
+            "import org.springframework.web.bind.annotation.GetMapping;\n" +
+            "import org.springframework.web.bind.annotation.PostMapping;\n" +
+            "import org.springframework.web.bind.annotation.RequestBody;\n" +
+            "import org.springframework.web.bind.annotation.RequestParam;\n\n" +
             javaDoc(entityName + " 远程调用客户端。", author) +
             "@FeignClient(name = \"" + module + "-service\", path = \"/" + resourcePath + "\")\n" +
-            "public interface " + entityName + "FeignClient extends " + entityName + "Api {\n" +
+            "public interface " + entityName + "FeignClient extends " + entityName + "Api {\n\n" +
+            "    @Override\n" +
+            "    @GetMapping(\"/page\")\n" +
+            "    R<PersistencePageResult<" + entityName + "VO>> page(@SpringQueryMap " + entityName
+                    + "PageQuery query);\n\n" +
+            "    @Override\n" +
+            "    @GetMapping(\"/detail\")\n" +
+            "    R<" + entityName + "VO> detail(@RequestParam(\"id\") Long id);\n\n" +
+            "    @Override\n" +
+            "    @PostMapping(\"/create\")\n" +
+            "    R<Object> create(@RequestBody Create" + entityName + "Command command);\n\n" +
+            "    @Override\n" +
+            "    @PostMapping(\"/update\")\n" +
+            "    R<Boolean> update(@RequestBody Update" + entityName + "Command command);\n\n" +
+            "    @Override\n" +
+            "    @PostMapping(\"/delete\")\n" +
+            "    R<Boolean> delete(@RequestBody DeleteCommand command);\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "FeignClient.java"), content);
     }
