@@ -139,6 +139,18 @@ describe('权限函数', () => {
     it('returns false when rule throws', () => {
       expect(evaluateButtonDisplayRule('row.missing.value === 1', { row: {} })).toBe(false);
     });
+
+    it('rejects function calls and assignment expressions', () => {
+      const context = { row: { status: 'DRAFT' } };
+      expect(evaluateButtonDisplayRule('alert(row.status)', context)).toBe(false);
+      expect(evaluateButtonDisplayRule('row.status = "DONE"', context)).toBe(false);
+    });
+
+    it('rejects prototype and constructor property access', () => {
+      const context = { row: { status: 'DRAFT' } };
+      expect(evaluateButtonDisplayRule('row.constructor === "Object"', context)).toBe(false);
+      expect(evaluateButtonDisplayRule('row.__proto__ === null', context)).toBe(false);
+    });
   });
 
   describe('canShowButton', () => {
