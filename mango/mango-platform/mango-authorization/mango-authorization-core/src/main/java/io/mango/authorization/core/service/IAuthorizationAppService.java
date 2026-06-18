@@ -4,6 +4,7 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.vo.AppRuntimeDescriptorVO;
 import io.mango.authorization.api.vo.AppVO;
+import io.mango.authorization.core.entity.AuthorizationApp;
 import io.mango.infra.persistence.api.crud.MangoCrudService;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 /**
  * 授权应用入口服务。
  */
-public interface IAuthorizationAppService extends MangoCrudService {
+public interface IAuthorizationAppService extends MangoCrudService<AuthorizationApp> {
 
     List<AppVO> listByQuery(Object query);
 
