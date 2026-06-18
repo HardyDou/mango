@@ -79,7 +79,10 @@ class PersistenceFlywayAutoConfigurationTest {
     @Test
     void whenNoModulesSpecified_shouldDiscoverClasspathMigrationModules() {
         contextRunner
-                .withPropertyValues("mango.persistence.flyway.enabled=true")
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -131,6 +134,84 @@ class PersistenceFlywayAutoConfigurationTest {
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                });
+    }
+
+    @Test
+    void mangoPublishedModule_shouldAllowHistoricalLowerVersionMigrationsByDefault() {
+        String url = "jdbc:h2:mem:flyway_payment_upgrade_default;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        Flyway.configure()
+                .dataSource(h2DataSource(url))
+                .locations("classpath:db/legacy-migration/payment")
+                .table("flyway_schema_history_payment")
+                .baselineOnMigrate(true)
+                .load()
+                .migrate();
+
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.payment.enabled=true"
+                )
+                .withBean(DataSource.class, () -> h2DataSource(url))
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(h2DataSource(url));
+                    assertThat(tableExists(jdbcTemplate, "payment_platform_schema")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "payment_method_contract")).isTrue();
+                    assertThat(jdbcTemplate.queryForObject(
+                            "SELECT COUNT(*) FROM flyway_schema_history_payment WHERE version IN ('3', '4') AND success = TRUE",
+                            Integer.class)).isEqualTo(2);
+                });
+    }
+
+    @Test
+    void explicitOutOfOrderFalse_shouldKeepStrictFlywayOrderingForMangoModule() {
+        String url = "jdbc:h2:mem:flyway_payment_upgrade_strict;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        Flyway.configure()
+                .dataSource(h2DataSource(url))
+                .locations("classpath:db/legacy-migration/payment")
+                .table("flyway_schema_history_payment")
+                .baselineOnMigrate(true)
+                .load()
+                .migrate();
+
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.payment.enabled=true",
+                        "mango.persistence.flyway.modules.payment.out-of-order=false"
+                )
+                .withBean(DataSource.class, () -> h2DataSource(url))
+                .run(ctx -> {
+                    assertThat(ctx).hasFailed();
+                    assertThat(ctx.getStartupFailure())
+                            .hasMessageContaining("Mango Flyway module migration failed: module=payment")
+                            .hasMessageContaining("outOfOrder=false");
+                });
+    }
+
+    @Test
+    void businessModule_shouldKeepStrictFlywayOrderingByDefault() {
+        String url = "jdbc:h2:mem:flyway_business_upgrade_strict;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        Flyway.configure()
+                .dataSource(h2DataSource(url))
+                .locations("classpath:db/legacy-migration/business-upgrade")
+                .table("flyway_schema_history_business_upgrade")
+                .baselineOnMigrate(true)
+                .load()
+                .migrate();
+
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.business-upgrade.enabled=true"
+                )
+                .withBean(DataSource.class, () -> h2DataSource(url))
+                .run(ctx -> {
+                    assertThat(ctx).hasFailed();
+                    assertThat(ctx.getStartupFailure())
+                            .hasMessageContaining("Mango Flyway module migration failed: module=business-upgrade")
+                            .hasMessageContaining("outOfOrder=false");
                 });
     }
 

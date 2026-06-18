@@ -106,8 +106,10 @@ mango:
       modules:
         system:
           enabled: true
+          out-of-order: true
         authorization:
           enabled: true
+          out-of-order: true
         identity:
           enabled: true
         org:
@@ -122,6 +124,7 @@ mango:
           enabled: true
         mango-job:
           enabled: true
+          out-of-order: true
         kv:
           enabled: true
         notification:
@@ -130,13 +133,17 @@ mango:
           enabled: true
         numgen:
           enabled: true
+          out-of-order: true
         notice:
           enabled: true
+          out-of-order: true
         payment:
           enabled: true
+          out-of-order: true
           ignore-missing-migrations: true
         domain:
           enabled: true
+          out-of-order: true
         grid-layout:
           enabled: true
   ip-location:

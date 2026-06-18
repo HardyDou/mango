@@ -203,6 +203,8 @@ if (packageName === '@mango/cli') {
     ]);
   }
 }
+console.log('Checking generated business consumer vue-tsc before publish');
+run('pnpm', ['run', 'package-consumer:typecheck', '--', `--registry=${GROUP_REGISTRY}`]);
 if (found.packageJson.scripts?.build) {
   console.log(`Building ${packageName} before publish`);
   run('pnpm', ['--filter', packageName, 'build']);

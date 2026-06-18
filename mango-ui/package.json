@@ -11,6 +11,7 @@
     "admin:styles": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs",
     "admin:styles:check": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs --check",
     "admin:module-styles:check": "node ./scripts/check-admin-module-style-governance.mjs",
+    "package-consumer:typecheck": "node ./scripts/check-package-consumer-typecheck.mjs",
     "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
     "lint": "pnpm -r lint",
     "publish:pkg": "node ./scripts/publish-package.mjs",
