@@ -6,6 +6,7 @@ package io.mango.resource.api;
 public final class ResourceTypes {
 
     public static final String SYSTEM_DICT = "SYSTEM_DICT";
+    public static final String BUSINESS_DOMAIN = "BUSINESS_DOMAIN";
     public static final String API_RESOURCE = "API_RESOURCE";
     public static final String MESSAGE_EVENT = "MESSAGE_EVENT";
     public static final String MESSAGE_TEMPLATE = "MESSAGE_TEMPLATE";

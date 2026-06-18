@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `sys_dict_type` (
   `id` bigint NOT NULL COMMENT '主键',
   `dict_type` varchar(50) NOT NULL COMMENT '字典类型',
   `dict_name` varchar(100) NOT NULL COMMENT '字典名称',
+  `domain_code` varchar(64) NOT NULL DEFAULT 'COMMON' COMMENT '业务域编码',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-禁用 1-启用',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   `create_by` varchar(64) DEFAULT NULL COMMENT '创建人',
@@ -34,15 +35,11 @@ CREATE TABLE IF NOT EXISTS `sys_dict_type` (
   `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
   PRIMARY KEY (`id`),
   UNIQUE KEY `dict_type` (`dict_type`),
-  KEY `idx_sys_dict_type_type` (`dict_type`)
+  KEY `idx_sys_dict_type_type` (`dict_type`),
+  KEY `idx_sys_dict_type_domain` (`tenant_id`, `domain_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典类型表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `sys_dict_type` WRITE;
-/*!40000 ALTER TABLE `sys_dict_type` DISABLE KEYS */;
-INSERT INTO `sys_dict_type` (`id`, `dict_type`, `dict_name`, `status`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`) VALUES (1,'sys_user_sex','用户性别',1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(2,'sys_normal_disable','系统开关',1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(3,'sys_login_type','登录类型',1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(10,'authorization_role_type','授权角色类型',1,'授权模块角色类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(11,'authorization_menu_type','授权菜单类型',1,'授权模块菜单节点类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(12,'system_param_type','系统参数类型',1,'系统参数管理类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(13,'system_config_type','系统配置类型',1,'系统配置分组类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(14,'system_route_type','系统路由类型',1,'系统路由资源类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(15,'sys_login_status','登录状态',1,'登录日志状态',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(16,'sys_operation_status','操作状态',1,'操作日志状态',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(17,'org_type','组织类型',1,'组织架构节点类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(18,'area_type','行政区划类型',1,'行政区划级别类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(19,'area_status','行政区划状态',1,'行政区划状态',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(20,'auth_realm','认证登录域',1,'认证授权上下文登录域',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(21,'auth_actor_type','认证操作者类型',1,'认证授权上下文操作者类型',NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(30,'institution_type','机构类型',1,'机构主体分类',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(31,'institution_capability','机构能力',1,'机构空间开通能力',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(32,'institution_status','机构状态',1,'机构生命周期状态',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default');
-/*!40000 ALTER TABLE `sys_dict_type` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `sys_dict_data` (
@@ -68,11 +65,6 @@ CREATE TABLE IF NOT EXISTS `sys_dict_data` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典数据表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `sys_dict_data` WRITE;
-/*!40000 ALTER TABLE `sys_dict_data` DISABLE KEYS */;
-INSERT INTO `sys_dict_data` (`id`, `dict_type`, `dict_label`, `dict_value`, `sort`, `status`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`) VALUES (1,'sys_user_sex','男','0',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(2,'sys_user_sex','女','1',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(3,'sys_normal_disable','启用','1',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(4,'sys_normal_disable','禁用','0',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(5,'sys_login_type','账号密码','username',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(6,'sys_login_type','手机号','mobile',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(100,'authorization_role_type','系统角色','1',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(101,'authorization_role_type','业务角色','2',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(110,'authorization_menu_type','目录','1',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(111,'authorization_menu_type','菜单','2',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(112,'authorization_menu_type','按钮','3',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(120,'system_param_type','系统参数','1',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(121,'system_param_type','应用参数','2',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(130,'system_config_type','系统','system',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(131,'system_config_type','业务','business',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(132,'system_config_type','安全','security',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(133,'system_config_type','功能','feature',4,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(134,'system_config_type','上传','upload',5,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(135,'system_config_type','邮件','email',6,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(136,'system_config_type','短信','sms',7,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(140,'system_route_type','菜单','1',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(141,'system_route_type','按钮','2',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(142,'system_route_type','API','3',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(150,'sys_login_status','成功','1',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(151,'sys_login_status','失败','0',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(160,'sys_operation_status','正常','1',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(161,'sys_operation_status','异常','0',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(170,'org_type','公司','company',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(171,'org_type','部门','department',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(172,'org_type','岗位','position',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(180,'area_type','国家','country',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(181,'area_type','省份','province',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(182,'area_type','城市','city',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(183,'area_type','区县','district',4,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(184,'area_type','街道','street',5,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(190,'area_status','未生效','0',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(191,'area_status','生效','1',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(200,'auth_realm','内部','INTERNAL',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(201,'auth_realm','租户','TENANT',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(202,'auth_realm','客户','CUSTOMER',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(203,'auth_realm','合作方','PARTNER',4,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(204,'auth_realm','金融机构','FINANCIAL',5,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(210,'auth_actor_type','内部用户','INTERNAL_USER',1,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(211,'auth_actor_type','租户用户','TENANT_USER',2,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(212,'auth_actor_type','客户用户','CUSTOMER_USER',3,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(213,'auth_actor_type','合作方用户','PARTNER_USER',4,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(214,'auth_actor_type','金融机构用户','FINANCIAL_USER',5,1,NULL,NULL,NULL,'2026-05-10 00:04:22','2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22',NULL,'2026-05-10 00:04:22','default'),(300,'institution_type','平台运营方','PLATFORM',1,1,'平台自身运营和代维主体',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(301,'institution_type','企业机构','ENTERPRISE',2,1,'普通企业机构',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(302,'institution_type','担保机构','GUARANTEE',3,1,'融资性或非融资性担保机构',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(303,'institution_type','金融机构','FINANCIAL',4,1,'银行等金融机构',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(304,'institution_type','客户企业','CUSTOMER_ENTERPRISE',5,1,'申请业务的客户企业',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(310,'institution_capability','平台管理','PLATFORM_ADMIN',1,1,'平台级运营管理',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(311,'institution_capability','系统管理','SYSTEM_ADMIN',2,1,'系统基础配置管理',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(312,'institution_capability','权限管理','AUTH_ADMIN',3,1,'应用、菜单、角色、成员权限管理',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(313,'institution_capability','组织管理','ORG_ADMIN',4,1,'组织、岗位、成员组织关系管理',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(314,'institution_capability','流程管理','WORKFLOW',5,1,'审批流程配置与执行',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(320,'institution_status','启用','1',1,1,'允许登录与访问',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(321,'institution_status','禁用','0',2,1,'临时停用，不允许登录与访问',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(322,'institution_status','冻结','2',3,1,'风控冻结，不允许登录与访问',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default'),(323,'institution_status','归档','9',4,1,'生命周期结束，不允许登录与访问',NULL,NULL,'2026-05-10 00:04:23','2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23',NULL,'2026-05-10 00:04:23','default');
-/*!40000 ALTER TABLE `sys_dict_data` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `sys_config` (
@@ -195,35 +187,6 @@ INSERT INTO `sys_tenant` (`id`, `tenant_name`, `tenant_code`, `status`, `contact
 UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE IF NOT EXISTS `sys_route_conf` (
-  `id` bigint NOT NULL COMMENT '主键',
-  `route_name` varchar(100) NOT NULL COMMENT '路由名称',
-  `route_type` tinyint NOT NULL DEFAULT '1' COMMENT '路由类型: 1-内部 2-外部',
-  `route_path` varchar(255) NOT NULL COMMENT '路由路径',
-  `route_desc` varchar(500) DEFAULT NULL COMMENT '路由描述',
-  `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
-  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-禁用 1-启用',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建人',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '修改人',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-  PRIMARY KEY (`id`),
-  KEY `idx_sys_route_conf_type` (`route_type`),
-  KEY `idx_sys_route_conf_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='动态路由配置表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
-LOCK TABLES `sys_route_conf` WRITE;
-/*!40000 ALTER TABLE `sys_route_conf` DISABLE KEYS */;
-/*!40000 ALTER TABLE `sys_route_conf` ENABLE KEYS */;
-UNLOCK TABLES;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `sys_area` (
   `id` bigint NOT NULL COMMENT '主键',
   `pid` bigint NOT NULL DEFAULT '0' COMMENT '父级 ID，0 表示根节点',
@@ -317,68 +280,3 @@ DEALLOCATE PREPARE add_package_id_stmt;
 UPDATE `sys_tenant`
 SET `package_id` = CASE WHEN `id` = 1 THEN 1 ELSE 2 END
 WHERE `package_id` IS NULL;
-
--- -----------------------------------------------------------------------------
--- Squashed from: V3__template_dict.sql
--- -----------------------------------------------------------------------------
-INSERT INTO `sys_dict_type` (`id`, `dict_type`, `dict_name`, `status`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`)
-VALUES
-(330,'template_source_format','模板源格式',1,'模板服务源文件格式',NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(331,'template_output_format','模板输出格式',1,'模板服务输出格式',NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(332,'template_render_status','模板渲染状态',1,'模板渲染任务状态',NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default')
-ON DUPLICATE KEY UPDATE
-`dict_name` = VALUES(`dict_name`),
-`status` = VALUES(`status`),
-`remark` = VALUES(`remark`),
-`update_time` = NOW(),
-`updated_at` = NOW();
-
-INSERT INTO `sys_dict_data` (`id`, `dict_type`, `dict_label`, `dict_value`, `sort`, `status`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`)
-VALUES
-(3300,'template_source_format','纯文本','TEXT',1,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3301,'template_source_format','富文本 HTML','HTML',2,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3302,'template_source_format','Word DOCX','DOCX',3,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3303,'template_source_format','Excel XLSX','XLSX',4,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3310,'template_output_format','纯文本','TEXT',1,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3311,'template_output_format','HTML','HTML',2,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3312,'template_output_format','Word DOCX','DOCX',3,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3313,'template_output_format','Excel XLSX','XLSX',4,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3314,'template_output_format','PDF','PDF',5,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3315,'template_output_format','OFD','OFD',6,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3320,'template_render_status','待处理','PENDING',1,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3321,'template_render_status','处理中','RUNNING',2,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3322,'template_render_status','成功','SUCCESS',3,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3323,'template_render_status','失败','FAILED',4,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default')
-ON DUPLICATE KEY UPDATE
-`dict_label` = VALUES(`dict_label`),
-`dict_value` = VALUES(`dict_value`),
-`sort` = VALUES(`sort`),
-`status` = VALUES(`status`),
-`update_time` = NOW(),
-`updated_at` = NOW();
-
--- -----------------------------------------------------------------------------
--- Squashed from: V4__file_dict.sql
--- -----------------------------------------------------------------------------
-INSERT INTO `sys_dict_type` (`id`, `dict_type`, `dict_name`, `status`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`)
-VALUES
-(340,'file_access_level','文件访问级别',1,'文件中心访问级别',NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default')
-ON DUPLICATE KEY UPDATE
-`dict_name` = VALUES(`dict_name`),
-`status` = VALUES(`status`),
-`remark` = VALUES(`remark`),
-`update_time` = NOW(),
-`updated_at` = NOW();
-
-INSERT INTO `sys_dict_data` (`id`, `dict_type`, `dict_label`, `dict_value`, `sort`, `status`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`, `tenant_id`)
-VALUES
-(3400,'file_access_level','机构私有','PRIVATE',1,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3401,'file_access_level','公开读取','PUBLIC_READ',2,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default'),
-(3402,'file_access_level','内部文件','INTERNAL',3,1,NULL,NULL,NULL,NOW(),NOW(),NULL,NOW(),NULL,NOW(),'default')
-ON DUPLICATE KEY UPDATE
-`dict_label` = VALUES(`dict_label`),
-`dict_value` = VALUES(`dict_value`),
-`sort` = VALUES(`sort`),
-`status` = VALUES(`status`),
-`update_time` = NOW(),
-`updated_at` = NOW();

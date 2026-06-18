@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: workflow
+    module-name: 工作流
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000110"
+          version: 1
+          biz-key: workflow.domain.workflow
+          name: 工作流域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 110
+            domainCode:
+              type: STRING
+              value: WORKFLOW
+            domainShortCode:
+              type: STRING
+              value: WF
+            domainName:
+              type: STRING
+              value: 工作流域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 2
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 工作流与审批业务域

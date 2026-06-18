@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: file
+    module-name: 文件
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000150"
+          version: 1
+          biz-key: file.domain.file
+          name: 文件域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 150
+            domainCode:
+              type: STRING
+              value: FILE
+            domainShortCode:
+              type: STRING
+              value: FIL
+            domainName:
+              type: STRING
+              value: 文件域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 6
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 文件能力业务域

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.domain.core.mapper.DomainMapper">
+
+    <select id="selectByTenantAndCodeIncludingDeleted" resultType="io.mango.domain.core.entity.DomainEntity">
+        SELECT *
+        FROM biz_domain
+        WHERE tenant_id = #{tenantId}
+          AND domain_code = #{domainCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectByIdIncludingDeleted" resultType="io.mango.domain.core.entity.DomainEntity">
+        SELECT *
+        FROM biz_domain
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <delete id="physicalDeleteById">
+        DELETE FROM biz_domain
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

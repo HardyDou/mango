@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: calendar
+    module-name: 日历
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000130"
+          version: 1
+          biz-key: calendar.domain.calendar
+          name: 日历域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 130
+            domainCode:
+              type: STRING
+              value: CALENDAR
+            domainShortCode:
+              type: STRING
+              value: CAL
+            domainName:
+              type: STRING
+              value: 日历域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 4
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 日历能力业务域

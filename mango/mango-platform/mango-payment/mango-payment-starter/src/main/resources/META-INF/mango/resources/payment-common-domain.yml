@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: payment
+    module-name: 支付
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000180"
+          version: 1
+          biz-key: payment.domain.payment
+          name: 支付域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 180
+            domainCode:
+              type: STRING
+              value: PAYMENT
+            domainShortCode:
+              type: STRING
+              value: PAY
+            domainName:
+              type: STRING
+              value: 支付域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 9
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 支付中心业务域
