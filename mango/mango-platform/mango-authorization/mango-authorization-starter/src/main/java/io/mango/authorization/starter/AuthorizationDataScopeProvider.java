@@ -15,8 +15,6 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.entity.SysOrg;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashSet;
@@ -26,8 +24,6 @@ import java.util.Optional;
 /**
  * 基于授权中心角色配置的数据权限提供者。
  */
-@Component
-@ConditionalOnMissingBean(DataScopeProvider.class)
 @RequiredArgsConstructor
 public class AuthorizationDataScopeProvider implements DataScopeProvider {
 

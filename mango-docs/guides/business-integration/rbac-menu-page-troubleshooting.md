@@ -74,6 +74,7 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #181 将授权数据权限提供者改为由 `AuthorizationAutoConfiguration` 显式注册，修复业务同时引入授权与持久化 starter 时 `DataScopeApplier` 未创建导致的启动失败；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、授权 API、配置项和本场景排障步骤。业务只需要刷新后端 Maven `1.0.0-SNAPSHOT` 依赖，不需要升级 npm 包。
 - PR #179 修复持久化 starter 与授权 starter 组合使用时 `DataScopeApplier` 自动配置顺序，并补齐授权 core 服务泛型契约；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、授权 API、配置、启动方式和本场景排障步骤。
 - PR #174 将 `@mango/admin` 默认样式、full 样式和 full registrar 聚合收敛到 `admin-modules.json` 生成，并修复 payment 样式作用域；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定和菜单运行时加载。排查菜单可见但页面样式缺失或异常时，需要确认应用入口使用 `@mango/admin/style.css` 或 `@mango/admin/style-full.css`，并执行 `pnpm admin:styles:check`、`pnpm admin:module-styles:check` 验证聚合文件未漂移。
 - PR #173 Payment 模块接入 `@mango/admin/full`、admin 样式聚合和 mango-cli 可选模块清单；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定和菜单运行时加载。排查页面可见但样式缺失时，需要同时确认目标 package 是否在 admin 样式聚合链或微前端自身入口中引入。
