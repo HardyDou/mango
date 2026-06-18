@@ -135,9 +135,9 @@ class SystemDictResourceHandlerIntegrationTest {
     void syncClasspathDictResources_withSystemAndOrgDeclarations_writesDictsThroughResourceRegistry() {
         ResourceRegistryProperties properties = new ResourceRegistryProperties();
         properties.setLocations(List.of(
-                Path.of("../mango-system-starter/src/main/resources/META-INF/mango/resources/system-system-dict.yml")
+                Path.of("../mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-dict.yml")
                         .toUri().toString(),
-                Path.of("../../mango-org/mango-org-starter/src/main/resources/META-INF/mango/resources/org-system-dict.yml")
+                Path.of("../../mango-org/mango-org-starter/src/main/resources/META-INF/mango/resources/org-common-dict.yml")
                         .toUri().toString()
         ));
         ResourceDeclarationLoader loader = new ResourceDeclarationLoader(new ObjectMapper(), properties);
