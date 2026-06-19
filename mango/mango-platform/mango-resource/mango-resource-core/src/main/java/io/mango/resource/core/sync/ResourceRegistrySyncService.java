@@ -190,6 +190,7 @@ public class ResourceRegistrySyncService {
         }
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = repository.findByResourceId(declaration.getId());
+        validateVersion(row, declaration);
         if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
             return;
@@ -219,6 +220,7 @@ public class ResourceRegistrySyncService {
         for (ResourceDeclaration declaration : declarations) {
             String hash = hasher.hash(declaration);
             ResourceRegistryRow row = repository.findByResourceId(declaration.getId());
+            validateVersion(row, declaration);
             ResourceDeclaration effectiveDeclaration = row == null
                     ? declaration
                     : withEffectiveSyncMode(declaration, row.getSyncMode());
@@ -250,6 +252,17 @@ public class ResourceRegistrySyncService {
                 }
                 saveActiveSyncResult(declaration, result);
             }
+        }
+    }
+
+    private void validateVersion(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        if (row == null || declaration.getVersion() == null || row.getResourceVersion() == null) {
+            return;
+        }
+        if (declaration.getVersion() < row.getResourceVersion()) {
+            throw new IllegalStateException("Resource declaration version rollback is not allowed: "
+                    + declaration.getId() + " current=" + row.getResourceVersion()
+                    + ", incoming=" + declaration.getVersion());
         }
     }
 

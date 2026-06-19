@@ -18,6 +18,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * 计算资源声明内容 hash。
@@ -38,6 +39,7 @@ public class ResourceContentHasher {
             normalized.put("bizKey", declaration.getBizKey());
             normalized.put("name", declaration.getName());
             normalized.put("targetModule", declaration.getTargetModule());
+            normalized.put("syncMode", declaration.getSyncMode());
             normalized.put("status", declaration.getStatus());
             normalized.put("fields", normalizeFields(declaration.getFields()));
             return DigestUtils.md5DigestAsHex(objectMapper.writeValueAsBytes(normalized));
@@ -51,7 +53,7 @@ public class ResourceContentHasher {
         if (fields == null) {
             return normalized;
         }
-        for (Map.Entry<String, ResourceField> entry : fields.entrySet()) {
+        for (Map.Entry<String, ResourceField> entry : new TreeMap<>(fields).entrySet()) {
             ResourceField field = entry.getValue();
             Map<String, Object> value = new LinkedHashMap<>();
             value.put("type", field.getType());

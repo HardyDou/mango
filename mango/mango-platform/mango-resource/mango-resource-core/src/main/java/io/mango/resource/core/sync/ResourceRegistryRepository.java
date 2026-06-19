@@ -75,6 +75,7 @@ public class ResourceRegistryRepository {
         entity.setTargetTable(targetTable);
         entity.setTargetId(targetId);
         entity.setSourceHash(hash);
+        entity.setSyncMode(declaration.getSyncMode().name());
         entity.setStatus(declaration.getStatus().name());
         entity.setLastSyncTime(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());

@@ -12,6 +12,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceProvider;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceSyncResult;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -110,6 +112,35 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_sync_log")).isEqualTo(2);
         assertThat(count("resource_change_log")).isEqualTo(2);
         assertThat(stringValue("message_template", "title")).isEqualTo("提交申请新版");
+    }
+
+    @Test
+    void syncRejectsResourceVersionRollback() {
+        provider.setDeclaration(activeDeclaration(2, "提交申请新版"));
+        syncService.sync();
+        provider.setDeclaration(activeDeclaration(1, "回退版本"));
+
+        assertThatThrownBy(() -> syncService.sync())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("version rollback is not allowed");
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(2);
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请新版");
+    }
+
+    @Test
+    void syncUpdatesRegistrySyncModeWhenDeclarationChanges() {
+        syncService.sync();
+        ResourceDeclaration manualDeclaration = activeDeclaration(2, "提交申请");
+        manualDeclaration.setSyncMode(ResourceSyncMode.MANUAL);
+        provider.setDeclaration(manualDeclaration);
+
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(2);
+        assertThat(registry.getSyncMode()).isEqualTo("MANUAL");
     }
 
     @Test
