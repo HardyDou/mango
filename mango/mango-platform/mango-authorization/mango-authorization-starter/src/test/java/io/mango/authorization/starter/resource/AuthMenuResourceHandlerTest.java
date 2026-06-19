@@ -5,6 +5,7 @@ import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.core.service.IAppModuleService;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceSyncResult;
@@ -136,6 +137,41 @@ class AuthMenuResourceHandlerTest {
 
         assertThat(results.keySet()).containsExactly(resource.getId());
         verify(appModuleService).registerResourceManifest(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void upsertBatchUsesManualResourceAsContextWithoutOverwritingIt() {
+        ResourceDeclaration child = menuResource(
+                "2951300000000009002",
+                "workflow.child",
+                "mango-workflow",
+                List.of(Map.of(
+                        "menuType", 2,
+                        "menuName", "发起流程",
+                        "menuCode", "workflow:start-process",
+                        "parentCode", "workflow",
+                        "path", "/workflow/start-process"
+                )));
+        ResourceDeclaration manualParent = menuResource(
+                "2951300000000009001",
+                "workflow.parent",
+                "mango-workflow",
+                List.of(Map.of(
+                        "menuType", 1,
+                        "menuName", "审批中心",
+                        "menuCode", "workflow",
+                        "path", "/workflow"
+                )));
+        manualParent.setSyncMode(ResourceSyncMode.MANUAL);
+        when(appModuleService.registerResourceManifest(org.mockito.ArgumentMatchers.any())).thenReturn(1);
+
+        Map<String, ResourceSyncResult> results = handler.upsertBatch(List.of(child, manualParent));
+
+        assertThat(results.keySet()).containsExactly(child.getId());
+        ArgumentCaptor<AppModuleResourceManifestCommand> captor =
+                ArgumentCaptor.forClass(AppModuleResourceManifestCommand.class);
+        verify(appModuleService).registerResourceManifest(captor.capture());
+        assertThat(captor.getValue().getMenus().get(0).getMenuCode()).isEqualTo("workflow:start-process");
     }
 
     @Test

@@ -5,6 +5,7 @@ import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.core.service.IAppModuleService;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceHandlerSpec;
@@ -19,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * mango-resource AUTH_MENU 目标处理器。
@@ -76,10 +78,13 @@ public class AuthMenuResourceHandler implements ResourceHandler {
 
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
-        List<ResourceDeclaration> pending = new ArrayList<>(resources);
+        List<ResourceDeclaration> pending = resources.stream()
+                .filter(this::isAutoSync)
+                .collect(Collectors.toCollection(ArrayList::new));
         Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
         Set<String> syncedMenuCodes = new HashSet<>();
         Set<String> declaredMenuCodes = collectDeclaredMenuCodes(resources);
+        collectProtectedMenuCodes(resources, syncedMenuCodes);
         while (!pending.isEmpty()) {
             boolean progressed = false;
             for (int i = 0; i < pending.size(); i++) {
@@ -97,6 +102,18 @@ public class AuthMenuResourceHandler implements ResourceHandler {
             }
         }
         return results;
+    }
+
+    private boolean isAutoSync(ResourceDeclaration resource) {
+        return resource.getSyncMode() == null || resource.getSyncMode() == ResourceSyncMode.AUTO;
+    }
+
+    private void collectProtectedMenuCodes(List<ResourceDeclaration> resources, Set<String> menuCodes) {
+        for (ResourceDeclaration resource : resources) {
+            if (!isAutoSync(resource)) {
+                collectMenuCodes(resource, menuCodes);
+            }
+        }
     }
 
     @Override
