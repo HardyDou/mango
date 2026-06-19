@@ -2,12 +2,12 @@
   "name": "@mango/auth",
   "version": "1.0.8",
   "private": false,
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "src/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./style.css": "./dist/style.css"
@@ -19,7 +19,7 @@
     "package.json"
   ],
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",

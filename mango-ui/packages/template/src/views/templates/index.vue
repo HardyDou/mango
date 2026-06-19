@@ -494,7 +494,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Delete, EditPen, MagicStick, Plus } from '@element-plus/icons-vue';
 import { CodeEditor, DictSelect, DictTag, Editor, Pagination, useDict } from '@mango/common';
 import { fileApi, FilePreviewPanel, MUpload, type FileRecord } from '@mango/file';
-import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
+import { DomainSideTree } from '@mango/system';
 import {
   templateApi,
   type JsonObject,

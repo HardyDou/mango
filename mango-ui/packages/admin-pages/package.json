@@ -3,22 +3,40 @@
   "version": "1.0.10",
   "private": false,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./core": "./src/core.ts",
-    "./defaults": "./src/defaults.ts",
-    "./features": "./src/features.ts",
-    "./notice": "./src/notice.ts",
-    "./dev-pages": "./src/dev-pages.ts",
-    "./dev-component-pages": "./src/devComponentPages.ts"
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./defaults": {
+      "types": "./dist/defaults.d.ts",
+      "import": "./dist/defaults.js"
+    },
+    "./features": {
+      "types": "./dist/features.d.ts",
+      "import": "./dist/features.js"
+    },
+    "./notice": {
+      "types": "./dist/notice.d.ts",
+      "import": "./dist/notice.js"
+    },
+    "./dev-pages": {
+      "types": "./dist/dev-pages.d.ts",
+      "import": "./dist/dev-pages.js"
+    },
+    "./dev-component-pages": {
+      "types": "./dist/dev-component-pages.d.ts",
+      "import": "./dist/dev-component-pages.js"
+    }
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs"
   },
   "files": [
     "dist",
@@ -41,5 +59,6 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }

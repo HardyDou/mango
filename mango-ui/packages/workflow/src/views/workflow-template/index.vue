@@ -302,7 +302,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { FolderAdd, Refresh, Search, Upload } from '@element-plus/icons-vue';
-import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
+import { DomainSideTree } from '@mango/system';
 import {
   defaultDesignerJson,
   workflowApi,

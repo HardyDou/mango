@@ -3,21 +3,21 @@
   "version": "1.0.11",
   "private": false,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./admin-pages": {
-      "types": "./src/admin-pages.ts",
+      "types": "./dist/admin-pages.d.ts",
       "import": "./dist/admin-pages.js"
     },
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs"
   },
   "files": [
     "dist",
@@ -42,5 +42,6 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }

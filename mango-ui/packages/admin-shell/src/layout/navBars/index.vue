@@ -96,7 +96,8 @@ import { Session } from '@mango/common/utils/storage';
 import { hasPermission } from '@mango/common/utils/authFunction';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
-import { getMangoNoticeBellProvider, type MangoNoticeBellRuntimeConfig } from '@mango/admin-pages/notice';
+import { getMangoNoticeBellProvider } from '@mango/admin-pages/notice';
+import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
 import { getMangoAdminShellOptions } from '../../config';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
