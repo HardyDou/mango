@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
 LOCAL_DIR="${REPO_ROOT}/.mango"
 ENV_FILE="${LOCAL_DIR}/dev-workspace.env"
+FRONTEND_ROOT="${REPO_ROOT}/frontend"
 DEFAULT_DB_NAME="{{projectKebabSnake}}"
 
 usage() {
@@ -78,8 +79,14 @@ run_mango() {
     exec mango "$@"
   fi
 
-  echo "global mango CLI not found. Business projects must use a global mango CLI."
-  echo "Install: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}"
+  if [[ -f "${FRONTEND_ROOT}/package.json" ]] && command -v pnpm >/dev/null 2>&1; then
+    cd "${FRONTEND_ROOT}"
+    exec pnpm exec mango "$@"
+  fi
+
+  echo "mango CLI not found globally or in project frontend dependencies."
+  echo "Install project dependencies: cd frontend && pnpm install"
+  echo "Or install globally: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}"
   exit 1
 }
 
