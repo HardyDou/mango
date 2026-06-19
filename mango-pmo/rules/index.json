@@ -196,13 +196,13 @@
     "backendModule": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango/**/mango-*-api/**", "mango/**/mango-*-core/**", "mango/**/mango-*-starter/**", "mango/**/mango-*-starter-remote/**", "mango/**/mango-*-support/**"],
-      "keywords": ["模块边界", "模块分层", "api/core/starter", "starter-remote", "Feign", "远程调用", "module.properties", "模块信息", "module-path", "module-name"],
+      "keywords": ["模块边界", "模块分层", "api/support/core/starter", "starter-*", "starter-remote", "Feign", "远程调用", "module.properties", "模块信息", "module-path", "module-name"],
       "include": ["backend.module"]
     },
     "backendModuleMenu": {
       "roles": ["tech-lead", "dev", "qa", "pmo"],
-      "paths": ["mango/**/META-INF/mango/resource-manifest.json", "mango/**/META-INF/mango/resource-manifests/**", "mango/**/db/migration/**", "mango/**/authorization/**"],
-      "keywords": ["菜单初始化", "资源清单", "resource-manifest", "菜单包", "roleCodes", "packageCodes", "默认菜单", "默认权限", "授权模块归口"],
+      "paths": ["mango/**/META-INF/mango/resources/*-common-menu.json", "mango/**/META-INF/mango/resources/*-common-menu.yml", "mango/**/META-INF/mango/resources/*-common-menu.yaml", "mango/**/META-INF/mango/resource-manifest.json", "mango/**/META-INF/mango/resource-manifests/**", "mango/**/db/migration/**", "mango/**/authorization/**"],
+      "keywords": ["菜单初始化", "资源清单", "AUTH_MENU", "*-common-menu.json", "*-common-menu.yml", "*-common-menu.yaml", "ResourceHandler", "resource-manifest", "菜单包", "roleCodes", "packageCodes", "默认菜单", "默认权限", "Flyway 禁止菜单", "菜单人工验收", "菜单截图", "授权模块归口"],
       "include": ["backend.moduleMenu", "backend.module", "backend.db", "backend.security"]
     },
     "backendApi": {

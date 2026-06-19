@@ -187,7 +187,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango." + module + ".core.mapper." + entityName + "Mapper;\n" +
             "import io.mango." + module + ".core.service.I" + entityName + "Service;\n" +
             dataScopeImports() +
-            "import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;\n" +
+            "import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;\n" +
             "import org.springframework.stereotype.Service;\n\n" +
             javaDoc(entityName + " 业务服务实现。", author) +
             "@Service\n" +

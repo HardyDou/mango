@@ -55,6 +55,16 @@ mvn -f mango/pom.xml mango:gen-permission
 | `mango.check.baseRef` | `origin/main` | 未传 `changedFiles` 时用 Git diff 解析变更。 |
 | `mango.check.baselineFile` | `target/baseline.json` | 存量问题基线报告。 |
 | `mango.check.staticFailurePolicy` | `block` 或 `report` | 静态分析委托失败时阻断或只报告。 |
+| `mango.check.resourceStarterDependencyExceptions` | `artifactId=reason` | Resource Registry runtime 依赖例外。必须人工明确确认并写明理由，多个例外用英文逗号分隔。 |
+
+依赖边界检查按 `api` / `support` / `core` / `starter-*` 模型执行：
+
+- `api` 是接口契约，禁止依赖 `support`、`core`、`starter` 或 `starter-*`。
+- `support` 是可被其它 `core` 依赖的公共支撑能力，禁止依赖 `core`、`starter` 或 `starter-*`，也禁止包含持久化和自动配置内容。
+- `core` 可以依赖其它模块 `api` 或 `support`，禁止依赖其它模块 `core`、`starter` 或 `starter-*`。
+- `starter-remote` 在 `io.mango` 依赖中只允许本模块 `api`、本模块 `support` 和 `mango-infra-feign-starter`，禁止直接依赖 `spring-cloud-starter-openfeign`。
+
+Resource Registry 依赖边界作为 #186 的专项守护继续保留：非 `mango-resource` 模块默认只能依赖 `mango-resource-api`，不能直接依赖 `mango-resource-core`、`mango-resource-support`、`mango-resource-starter`、`mango-resource-sync-starter` 或 `mango-resource-starter-remote`。确需例外时，必须在命令行显式传入 `artifactId=reason`；缺少 reason 的例外不会生效。
 
 PR 检查推荐命令：
 
