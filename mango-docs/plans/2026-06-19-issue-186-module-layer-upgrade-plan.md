@@ -484,3 +484,64 @@ scripts/mango-app-baseline.sh nacos-down
 - `verify-all` 启动基线默认使用 H2、关闭 Flyway/schema validation、关闭外部 KV/Event/Realtime/Workflow/Job 调度能力，目标是验证部署入口和最小 Web 运行态，不替代真实数据库集成验收。
 - 微服务 Nacos 验证需要 Docker 可用；Docker/Nacos 不可用时只能标记 `BLOCKED`，不能声明微服务注册验证完成。
 - 真实接口业务验收需要账号、租户、权限、初始化数据和接口断言，本次只建立基线入口，不声明所有业务接口已正常。
+
+## 10. 破坏性升级契约与重建 Runbook
+
+### 10.1 升级契约
+
+#186 是 Resource Registry 发布后的模块边界和菜单初始化重构，按 Mango `1.0` 前置 rebase 处理。当前交付不承诺兼容既有开发库或测试库中的 Flyway 菜单数据、历史菜单运行时配置、菜单包授权和默认角色菜单授权。
+
+本次升级允许重整未正式发布的 Flyway 初始化数据，菜单、按钮权限、菜单运行时配置、菜单套餐授权和默认角色授权统一改为 Resource Registry `AUTH_MENU` 资源注入。升级验收必须以干净库重建结果为准，不能以手工修补后的存量库作为通过依据。
+
+### 10.2 影响数据
+
+升级时必须关注以下数据归属变化：
+
+- `authorization_menu`：菜单和按钮权限由 `AUTH_MENU` 注入。
+- `authorization_role_menu`：默认角色菜单授权由 `AUTH_MENU.roleCodes` 注入。
+- `authorization_menu_package_item`：菜单套餐授权由 `AUTH_MENU.packageCodes` 注入。
+- `frontend_menu_runtime_config`：前端页面 key、图标、隐藏状态等菜单运行时配置由 `AUTH_MENU` 注入。
+- Resource Registry 相关表：记录资源声明、同步状态、审计字段和幂等键，是菜单注入的事实来源。
+
+不再允许通过 Flyway DML 新增、修改或删除菜单、按钮权限、菜单运行时配置、菜单套餐授权和默认角色授权。
+
+### 10.3 重建步骤
+
+开发库和测试库升级必须按以下步骤执行：
+
+1. 停止后端、前端和所有平台能力 app。
+2. 备份目标数据库，记录备份文件、Git commit 和数据库名。
+3. 删除或重建目标数据库。开发环境只允许处理当前 worktree 的 `MANGO_DB_NAME`。
+4. 使用本分支最新代码启动后端，让 Flyway 从 V1 重新执行 DDL 和基础初始化。
+5. 确认 `mango-resource` 相关 migration 已执行，Resource Registry 可写入资源声明和同步审计字段。
+6. 启动包含 `mango-authorization-starter` 与各平台能力 starter 的部署入口，触发 `AUTH_MENU` 资源注入。
+7. 启动前端，用真实登录态进入菜单树，逐项验证菜单、按钮权限和页面 key。
+
+### 10.4 验收门禁
+
+破坏性升级完成必须同时满足：
+
+- Flyway 在干净库上执行成功。
+- Resource Registry 资源同步成功，`AUTH_MENU` 声明已被 `mango-authorization` handler 消费。
+- `authorization_menu` 不存在孤儿菜单，父级缺失必须失败。
+- `authorization_menu`、`authorization_role_menu`、`authorization_menu_package_item`、`frontend_menu_runtime_config` 的运行态结果与菜单基线一致。
+- `MenuBaselineTest` 通过。
+- 菜单资源静态检查通过，禁止出现 `@/views`、旧套餐 code 或 `ROLE_ADMIN` 兜底授权。
+- 菜单 E2E 通过，右上角通知入口、我的消息、通知中心、发送任务、业务域菜单和工作流菜单可进入。
+- 工作流和通知权限 E2E 通过，不能出现通过手工授权或临时 SQL 消除的 403。
+
+### 10.5 回滚方式
+
+如果重建或验收失败，必须按以下方式回滚：
+
+1. 停止当前分支服务。
+2. 恢复升级前数据库备份。
+3. 切回升级前 tag 或 commit。
+4. 使用升级前启动方式验证登录、菜单和核心接口。
+
+禁止用以下方式作为回滚或修复：
+
+- 手工向菜单、权限、菜单包或角色菜单表补 SQL。
+- 放宽 `mango:check` 规则绕过模块边界或菜单边界。
+- 给角色追加通配权限、`ROLE_ADMIN` 或其它兜底授权。
+- 跳过 Resource Registry 注入，只让页面在当前库中临时可见。
