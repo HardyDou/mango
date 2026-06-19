@@ -12,6 +12,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceProvider;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
@@ -167,6 +168,22 @@ class ResourceRegistrySyncServiceIntegrationTest {
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getStatus()).isEqualTo("REMOVED");
         assertThat(intValue("message_template", "enabled")).isZero();
+    }
+
+    @Test
+    void syncDeprecatedDeclarationKeepsTargetReadable() {
+        syncService.sync();
+        ResourceDeclaration deprecated = activeDeclaration(2, "废弃声明不覆盖目标");
+        deprecated.setStatus(ResourceStatus.DEPRECATED);
+        provider.setDeclaration(deprecated);
+
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(2);
+        assertThat(registry.getStatus()).isEqualTo("DEPRECATED");
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(intValue("message_template", "enabled")).isEqualTo(1);
     }
 
     @Test

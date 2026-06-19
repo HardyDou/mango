@@ -113,7 +113,9 @@ public class ResourceRegistrySyncService {
         List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
         for (ResourceDeclaration declaration : declarations) {
             seenResourceIds.add(declaration.getId());
-            if (isDisabled(declaration)) {
+            if (isDeprecated(declaration)) {
+                syncDeprecated(declaration, force);
+            } else if (isDisabled(declaration)) {
                 syncOne(declaration, handlerMap, force);
             } else {
                 activeDeclarations.add(declaration);
@@ -181,6 +183,29 @@ public class ResourceRegistrySyncService {
             throw new IllegalStateException(message);
         }
         log.warn(message);
+    }
+
+    private void syncDeprecated(ResourceDeclaration declaration, boolean force) {
+        String hash = hasher.hash(declaration);
+        ResourceRegistryRow row = repository.findByResourceId(declaration.getId());
+        validateVersion(row, declaration);
+        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
+            return;
+        }
+        if (!force && row != null && hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource declaration is unchanged");
+            return;
+        }
+        if (row == null) {
+            Long rowId = repository.insert(declaration, hash, null, null);
+            repository.insertSyncLog(rowId, "CREATE", "SUCCESS", "Resource declaration is deprecated");
+            repository.insertChangeLog(rowId, "CREATE", null, toJson(declaration));
+        } else {
+            repository.update(row, declaration, hash, row.getTargetId(), row.getTargetTable());
+            repository.insertSyncLog(row.getId(), "UPDATE", "SUCCESS", "Resource declaration is deprecated");
+            repository.insertChangeLog(row.getId(), "UPDATE", toJson(row), toJson(declaration));
+        }
     }
 
     private void syncOne(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap, boolean force) {
@@ -343,9 +368,12 @@ public class ResourceRegistrySyncService {
         }
     }
 
+    private boolean isDeprecated(ResourceDeclaration declaration) {
+        return declaration.getStatus() == ResourceStatus.DEPRECATED;
+    }
+
     private boolean isDisabled(ResourceDeclaration declaration) {
         return declaration.getStatus() == ResourceStatus.DISABLED
-                || declaration.getStatus() == ResourceStatus.DEPRECATED
                 || declaration.getStatus() == ResourceStatus.REMOVED;
     }
 
