@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008001",
-            "version": 1,
+            "version": 2,
             "bizKey": "system.menu.internal-admin",
             "name": "系统基础菜单",
             "targetModule": "authorization",
@@ -58,6 +58,17 @@
                       }
                     ],
                     "children": [
+                      {
+                        "menuType": 1,
+                        "menuName": "权限管理",
+                        "menuCode": "system:permission",
+                        "path": "/system/permission",
+                        "icon": "Lock",
+                        "sort": 1,
+                        "redirect": "/system/menu-package",
+                        "remark": "机构、成员、角色、菜单与套餐权限管理",
+                        "packageCodes": []
+                      },
                       {
                         "menuType": 1,
                         "menuName": "组织人事",
@@ -493,6 +504,20 @@
                         ]
                       }
                     ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ]
+                  },
+                  {
+                    "menuType": 1,
+                    "menuName": "平台能力",
+                    "menuCode": "data",
+                    "path": "/data",
+                    "icon": "DataAnalysis",
+                    "sort": 4,
+                    "redirect": "/data/calendar",
+                    "remark": "平台公共能力入口",
                     "packageCodes": [
                       "platform_admin",
                       "institution_collaboration"

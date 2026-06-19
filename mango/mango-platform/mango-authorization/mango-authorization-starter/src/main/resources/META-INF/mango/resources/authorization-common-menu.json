@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008101",
-            "version": 1,
+            "version": 2,
             "bizKey": "authorization.menu.internal-admin",
             "name": "授权基础菜单",
             "targetModule": "authorization",
@@ -41,201 +41,187 @@
                 "type": "LIST",
                 "value": [
                   {
-                    "menuType": 1,
-                    "menuName": "权限管理",
-                    "menuCode": "system:permission",
-                    "path": "/system/permission",
-                    "icon": "Lock",
+                    "parentCode": "system:permission",
+                    "menuType": 2,
+                    "menuName": "套餐管理",
+                    "menuCode": "system:menu-package",
+                    "path": "/system/menu-package",
+                    "icon": "Tickets",
+                    "component": "system/menu-package/index",
                     "sort": 1,
-                    "redirect": "/system/menu-package",
-                    "remark": "机构、成员、角色、菜单与套餐权限管理",
-                    "children": [
+                    "permissions": [
+                      "system:menu-package:list"
+                    ],
+                    "remark": "菜单授权套餐管理",
+                    "permissionItems": [
                       {
-                        "menuType": 2,
-                        "menuName": "套餐管理",
-                        "menuCode": "system:menu-package",
-                        "path": "/system/menu-package",
-                        "icon": "Tickets",
-                        "component": "system/menu-package/index",
-                        "sort": 1,
-                        "permissions": [
-                          "system:menu-package:list"
-                        ],
-                        "remark": "菜单授权套餐管理",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "system:menu-package:list",
-                            "permissionName": "查询套餐列表",
-                            "sort": 0,
-                            "remark": "套餐列表查询权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu-package:query",
-                            "permissionName": "查询套餐",
-                            "sort": 1,
-                            "remark": "套餐详情查询权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu-package:add",
-                            "permissionName": "新增套餐",
-                            "sort": 2,
-                            "remark": "套餐新增权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu-package:edit",
-                            "permissionName": "修改套餐",
-                            "sort": 3,
-                            "remark": "套餐修改权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu-package:delete",
-                            "permissionName": "删除套餐",
-                            "sort": 4,
-                            "remark": "套餐删除权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          }
-                        ],
+                        "permissionCode": "system:menu-package:list",
+                        "permissionName": "查询套餐列表",
+                        "sort": 0,
+                        "remark": "套餐列表查询权限",
                         "packageCodes": [
                           "platform_admin"
                         ]
                       },
                       {
-                        "menuType": 2,
-                        "menuName": "角色管理",
-                        "menuCode": "system:role",
-                        "path": "/system/role",
-                        "icon": "UserFilled",
-                        "component": "system/role/index",
-                        "sort": 6,
-                        "permissions": [
-                          "system:role:list"
-                        ],
-                        "remark": "角色管理",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "authorization:role:list",
-                            "permissionName": "查询角色列表",
-                            "sort": 1,
-                            "remark": "角色列表查询权限"
-                          },
-                          {
-                            "permissionCode": "authorization:role:query",
-                            "permissionName": "查询角色",
-                            "sort": 2,
-                            "remark": "角色详情与角色授权查询权限"
-                          },
-                          {
-                            "permissionCode": "authorization:role:add",
-                            "permissionName": "新增角色",
-                            "sort": 3,
-                            "remark": "角色新增权限"
-                          },
-                          {
-                            "permissionCode": "authorization:role:edit",
-                            "permissionName": "修改角色",
-                            "sort": 4,
-                            "remark": "角色修改权限"
-                          },
-                          {
-                            "permissionCode": "authorization:role:delete",
-                            "permissionName": "删除角色",
-                            "sort": 5,
-                            "remark": "角色删除权限"
-                          },
-                          {
-                            "permissionCode": "authorization:role:assign",
-                            "permissionName": "分配角色权限",
-                            "sort": 6,
-                            "remark": "角色菜单与主体角色分配权限"
-                          }
-                        ],
+                        "permissionCode": "system:menu-package:query",
+                        "permissionName": "查询套餐",
+                        "sort": 1,
+                        "remark": "套餐详情查询权限",
                         "packageCodes": [
-                          "platform_admin",
-                          "institution_collaboration"
+                          "platform_admin"
                         ]
                       },
                       {
-                        "menuType": 2,
-                        "menuName": "菜单管理",
-                        "menuCode": "system:menu",
-                        "path": "/system/menu",
-                        "icon": "Menu",
-                        "component": "system/menu/index",
-                        "sort": 7,
-                        "permissions": [
-                          "system:menu:list"
-                        ],
-                        "remark": "菜单管理",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "system:menu:list",
-                            "permissionName": "查询菜单列表",
-                            "sort": 0,
-                            "remark": "菜单列表查询权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu:query",
-                            "permissionName": "查询菜单",
-                            "sort": 1,
-                            "remark": "菜单详情查询权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu:add",
-                            "permissionName": "新增菜单",
-                            "sort": 2,
-                            "remark": "菜单新增权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu:edit",
-                            "permissionName": "修改菜单",
-                            "sort": 3,
-                            "remark": "菜单修改权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          },
-                          {
-                            "permissionCode": "system:menu:delete",
-                            "permissionName": "删除菜单",
-                            "sort": 4,
-                            "remark": "菜单删除权限",
-                            "packageCodes": [
-                              "platform_admin"
-                            ]
-                          }
-                        ],
+                        "permissionCode": "system:menu-package:add",
+                        "permissionName": "新增套餐",
+                        "sort": 2,
+                        "remark": "套餐新增权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:menu-package:edit",
+                        "permissionName": "修改套餐",
+                        "sort": 3,
+                        "remark": "套餐修改权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:menu-package:delete",
+                        "permissionName": "删除套餐",
+                        "sort": 4,
+                        "remark": "套餐删除权限",
                         "packageCodes": [
                           "platform_admin"
                         ]
                       }
                     ],
-                    "parentCode": "system",
+                    "packageCodes": [
+                      "platform_admin"
+                    ]
+                  },
+                  {
+                    "parentCode": "system:permission",
+                    "menuType": 2,
+                    "menuName": "角色管理",
+                    "menuCode": "system:role",
+                    "path": "/system/role",
+                    "icon": "UserFilled",
+                    "component": "system/role/index",
+                    "sort": 6,
+                    "permissions": [
+                      "system:role:list"
+                    ],
+                    "remark": "角色管理",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "authorization:role:list",
+                        "permissionName": "查询角色列表",
+                        "sort": 1,
+                        "remark": "角色列表查询权限"
+                      },
+                      {
+                        "permissionCode": "authorization:role:query",
+                        "permissionName": "查询角色",
+                        "sort": 2,
+                        "remark": "角色详情与角色授权查询权限"
+                      },
+                      {
+                        "permissionCode": "authorization:role:add",
+                        "permissionName": "新增角色",
+                        "sort": 3,
+                        "remark": "角色新增权限"
+                      },
+                      {
+                        "permissionCode": "authorization:role:edit",
+                        "permissionName": "修改角色",
+                        "sort": 4,
+                        "remark": "角色修改权限"
+                      },
+                      {
+                        "permissionCode": "authorization:role:delete",
+                        "permissionName": "删除角色",
+                        "sort": 5,
+                        "remark": "角色删除权限"
+                      },
+                      {
+                        "permissionCode": "authorization:role:assign",
+                        "permissionName": "分配角色权限",
+                        "sort": 6,
+                        "remark": "角色菜单与主体角色分配权限"
+                      }
+                    ],
                     "packageCodes": [
                       "platform_admin",
                       "institution_collaboration"
+                    ]
+                  },
+                  {
+                    "parentCode": "system:permission",
+                    "menuType": 2,
+                    "menuName": "菜单管理",
+                    "menuCode": "system:menu",
+                    "path": "/system/menu",
+                    "icon": "Menu",
+                    "component": "system/menu/index",
+                    "sort": 7,
+                    "permissions": [
+                      "system:menu:list"
+                    ],
+                    "remark": "菜单管理",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "system:menu:list",
+                        "permissionName": "查询菜单列表",
+                        "sort": 0,
+                        "remark": "菜单列表查询权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:menu:query",
+                        "permissionName": "查询菜单",
+                        "sort": 1,
+                        "remark": "菜单详情查询权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:menu:add",
+                        "permissionName": "新增菜单",
+                        "sort": 2,
+                        "remark": "菜单新增权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:menu:edit",
+                        "permissionName": "修改菜单",
+                        "sort": 3,
+                        "remark": "菜单修改权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:menu:delete",
+                        "permissionName": "删除菜单",
+                        "sort": 4,
+                        "remark": "菜单删除权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      }
+                    ],
+                    "packageCodes": [
+                      "platform_admin"
                     ]
                   },
                   {
