@@ -34,6 +34,14 @@
             <groupId>io.mango.platform.notice</groupId>
             <artifactId>mango-notice-starter-remote</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-sync-starter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -30,6 +30,14 @@
             <groupId>io.mango.platform.org</groupId>
             <artifactId>mango-org-starter-remote</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-sync-starter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

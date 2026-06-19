@@ -22,6 +22,14 @@
             <groupId>io.mango.platform.job</groupId>
             <artifactId>mango-job-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-sync-starter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

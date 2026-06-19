@@ -26,6 +26,14 @@
             <groupId>io.mango.platform.domain</groupId>
             <artifactId>mango-domain-starter-remote</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-sync-starter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
