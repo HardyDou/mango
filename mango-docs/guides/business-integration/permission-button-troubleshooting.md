@@ -68,6 +68,7 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #195 加固前端 `@mango/*` 包的 `exports`、`types` 和生成声明文件，使业务项目通过发布后的 `dist` 产物独立消费；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、页面、启动方式和本场景排障步骤。业务项目应继续使用公开 package 入口和 `./style.css`，不要依赖包内 `src` 路径。
 - PR #194 发布资源注册中心版本并升级 `@mango/admin@1.0.23`、`@mango/admin-shell@1.0.20`、`@mango/rbac@1.0.8`、`@mango/common@1.0.10`、`@mango/cli@1.0.34` 等前端包；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、页面和本场景排障步骤。业务升级时应成组升级前端 `@mango/*` 包并刷新后端 Mango `1.0.0-SNAPSHOT` 依赖。
 - PR #193 新增 `mango-resource` 注册中心并将授权接口资源迁移为资源声明同步；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、页面和按钮权限排障步骤。排查按钮资源缺失时，需要同时确认 `API_RESOURCE` 声明是否已由资源同步链路写入授权资源表。
 - PR #181 将授权数据权限提供者改为由 `AuthorizationAutoConfiguration` 显式注册，修复业务同时引入授权与持久化 starter 时 `DataScopeApplier` 未创建导致的启动失败；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、授权 API、配置项、页面和本场景排障步骤。业务只需要刷新后端 Maven `1.0.0-SNAPSHOT` 依赖，不需要升级 npm 包。
