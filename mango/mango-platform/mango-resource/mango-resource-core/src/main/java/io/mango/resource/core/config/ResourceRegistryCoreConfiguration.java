@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceProvider;
+import io.mango.resource.api.ResourceTargetDispatcher;
 import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.mapper.ResourceSyncLogMapper;
@@ -72,11 +73,13 @@ public class ResourceRegistryCoreConfiguration {
     public ResourceRegistrySyncService resourceRegistrySyncService(ResourceRegistryProperties properties,
                                                                    ResourceDeclarationCollector collector,
                                                                    ObjectProvider<ResourceHandler> handlers,
+                                                                   ObjectProvider<ResourceTargetDispatcher> targetDispatchers,
                                                                    ResourceContentHasher hasher,
                                                                    ResourceRegistryRepository repository,
                                                                    ResourceRegistryLock lock,
                                                                    ObjectMapper objectMapper) {
-        return new ResourceRegistrySyncService(properties, collector, handlers, hasher, repository, lock, objectMapper);
+        return new ResourceRegistrySyncService(
+                properties, collector, handlers, targetDispatchers, hasher, repository, lock, objectMapper);
     }
 
 }

@@ -11,6 +11,7 @@ import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceProvider;
+import io.mango.resource.api.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -40,6 +41,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,10 +81,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Autowired
     private TestMessageResourceHandler handler;
 
+    @Autowired
+    private RecordingResourceTargetDispatcher dispatcher;
+
     @BeforeEach
     void setUp() {
         rebuildTables();
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        dispatcher.reset();
     }
 
     @Test
@@ -99,6 +105,28 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_sync_log")).isEqualTo(1);
         assertThat(count("resource_change_log")).isEqualTo(1);
         assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(dispatcher.upsertBatchCount()).isZero();
+    }
+
+    @Test
+    void syncUsesRemoteDispatcherWhenLocalHandlerIsMissing() {
+        provider.setDeclaration(remoteOnlyDeclaration());
+
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000002");
+        assertThat(registry).isNotNull();
+        assertThat(registry.getTargetId()).isEqualTo(92001L);
+        assertThat(registry.getTargetTable()).isEqualTo("remote_notice_template");
+        assertThat(dispatcher.upsertBatchCount()).isEqualTo(1);
+    }
+
+    @Test
+    void syncPrefersLocalHandlerWhenRemoteDispatcherAlsoSupportsTargetModule() {
+        syncService.sync();
+
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(dispatcher.upsertBatchCount()).isZero();
     }
 
     @Test
@@ -235,6 +263,15 @@ class ResourceRegistrySyncServiceIntegrationTest {
         title.setType(ResourceFieldType.STRING);
         title.setValue(titleValue);
         declaration.getFields().put("title", title);
+        return declaration;
+    }
+
+    private ResourceDeclaration remoteOnlyDeclaration() {
+        ResourceDeclaration declaration = activeDeclaration(1, "远程模板");
+        declaration.setId("1900000000000000002");
+        declaration.setResourceType("REMOTE_TEMPLATE");
+        declaration.setBizKey("guarantee.remote.submit");
+        declaration.setTargetModule("remote-notice");
         return declaration;
     }
 
@@ -375,6 +412,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         TestMessageResourceHandler testMessageResourceHandler(TestMessageTemplateMapper messageTemplateMapper) {
             return new TestMessageResourceHandler(messageTemplateMapper);
         }
+
+        @Bean
+        RecordingResourceTargetDispatcher recordingResourceTargetDispatcher() {
+            return new RecordingResourceTargetDispatcher();
+        }
     }
 
     static class MutableResourceProvider implements ResourceProvider {
@@ -448,6 +490,43 @@ class ResourceRegistrySyncServiceIntegrationTest {
         public ResourceSyncResult delete(ResourceDeclaration resource) {
             messageTemplateMapper.deleteById(91001L);
             return ResourceSyncResult.of(91001L, "message_template", "deleted");
+        }
+    }
+
+    static class RecordingResourceTargetDispatcher implements ResourceTargetDispatcher {
+
+        private int upsertBatchCount;
+
+        void reset() {
+            upsertBatchCount = 0;
+        }
+
+        int upsertBatchCount() {
+            return upsertBatchCount;
+        }
+
+        @Override
+        public boolean supports(String targetModule) {
+            return "notice".equals(targetModule) || "remote-notice".equals(targetModule);
+        }
+
+        @Override
+        public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> declarations,
+                                                           List<ResourceDeclaration> completeBatch) {
+            upsertBatchCount++;
+            ResourceDeclaration declaration = declarations.get(0);
+            return Map.of(declaration.getId(),
+                    ResourceSyncResult.of(92001L, "remote_notice_template", "remote ok"));
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration declaration) {
+            return ResourceSyncResult.of(92001L, "remote_notice_template", "remote disabled");
+        }
+
+        @Override
+        public ResourceSyncResult delete(ResourceDeclaration declaration) {
+            return ResourceSyncResult.of(92001L, "remote_notice_template", "remote deleted");
         }
     }
 }

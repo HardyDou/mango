@@ -65,6 +65,16 @@ public class FeignAutoConfiguration {
     }
 
     /**
+     * Configure Feign module target resolver.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.feign", name = "module-target-enabled", havingValue = "true", matchIfMissing = true)
+    public ModuleTargetResolver moduleTargetResolver(ObjectProvider<ModuleInfoResolver> resolverProvider) {
+        return new ModuleTargetResolver(resolverProvider);
+    }
+
+    /**
      * Configure Feign request interceptor for internal call HMAC signature
      */
     @Bean
