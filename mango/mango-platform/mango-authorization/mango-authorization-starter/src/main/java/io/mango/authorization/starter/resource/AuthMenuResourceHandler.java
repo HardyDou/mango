@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthMenuResourceHandler implements ResourceHandler {
 
-    private static final String TARGET_TABLE = "authorization_menu";
+    private static final String TARGET_TABLE = "authorization_app_module";
 
     private final IAppModuleService appModuleService;
     private final ObjectMapper objectMapper;
@@ -71,7 +71,8 @@ public class AuthMenuResourceHandler implements ResourceHandler {
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         AppModuleResourceManifestCommand command = toCommand(resource);
         Integer count = appModuleService.registerResourceManifest(command);
-        return ResourceSyncResult.of(null, TARGET_TABLE,
+        Long bindingId = appModuleService.findBindingId(command.getAppCode(), command.getModuleCode());
+        return ResourceSyncResult.of(bindingId, TARGET_TABLE,
                 "Auth menu synced: " + command.getAppCode() + "/" + command.getModuleCode()
                         + ", count=" + (count == null ? 0 : count));
     }
@@ -118,11 +119,20 @@ public class AuthMenuResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        AppModuleResourceManifestCommand command = toCommand(resource);
-        Boolean disabled = appModuleService.disable(command.getAppCode(), command.getModuleCode());
+        Long bindingId = longField(resource, "targetId");
+        Boolean disabled;
+        String target;
+        if (bindingId != null) {
+            disabled = appModuleService.disableByBindingId(bindingId);
+            target = "bindingId=" + bindingId;
+        } else {
+            String appCode = requiredString(resource, "appCode");
+            String moduleCode = defaultString(stringField(resource, "moduleCode"), resource.getModuleCode());
+            disabled = appModuleService.disable(appCode, moduleCode);
+            target = appCode + "/" + moduleCode;
+        }
         return ResourceSyncResult.of(null, TARGET_TABLE,
-                "Auth menu module disabled: " + command.getAppCode() + "/" + command.getModuleCode()
-                        + ", changed=" + Boolean.TRUE.equals(disabled));
+                "Auth menu module disabled: " + target + ", changed=" + Boolean.TRUE.equals(disabled));
     }
 
     private AppModuleResourceManifestCommand toCommand(ResourceDeclaration resource) {
@@ -260,6 +270,17 @@ public class AuthMenuResourceHandler implements ResourceHandler {
             return number.intValue();
         }
         return Integer.valueOf(String.valueOf(value));
+    }
+
+    private Long longField(ResourceDeclaration resource, String fieldName) {
+        Object value = fieldValue(resource, fieldName);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.valueOf(String.valueOf(value));
     }
 
     private Object fieldValue(ResourceDeclaration resource, String fieldName) {

@@ -381,6 +381,68 @@ class AppModuleServiceImplTest {
         verify(menuMapper, never()).insert(any(Menu.class));
     }
 
+    @Test
+    @DisplayName("disable should disable module menus and clear derived bindings")
+    void disable_existingModule_disablesMenusAndClearsBindings() {
+        AuthorizationAppModule module = new AuthorizationAppModule();
+        module.setBindingId(9001L);
+        module.setAppCode("internal-admin");
+        module.setModuleCode("contract");
+        module.setStatus(1);
+        Menu menu = new Menu();
+        menu.setMenuId(1001L);
+        menu.setAppCode("internal-admin");
+        menu.setModuleCode("contract");
+        menu.setStatus(1);
+        Menu button = new Menu();
+        button.setMenuId(1002L);
+        button.setAppCode("internal-admin");
+        button.setModuleCode("contract");
+        button.setStatus(1);
+        when(appModuleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(module);
+        when(appModuleMapper.updateById(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(menu, button));
+        when(menuMapper.updateById(any(Menu.class))).thenReturn(1);
+
+        Boolean disabled = appModuleService.disable("internal-admin", "contract");
+
+        assertEquals(Boolean.TRUE, disabled);
+        ArgumentCaptor<AuthorizationAppModule> moduleCaptor = ArgumentCaptor.forClass(AuthorizationAppModule.class);
+        verify(appModuleMapper).updateById(moduleCaptor.capture());
+        assertEquals(0, moduleCaptor.getValue().getStatus());
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuMapper, times(2)).updateById(menuCaptor.capture());
+        assertEquals(List.of(0, 0), menuCaptor.getAllValues().stream().map(Menu::getStatus).toList());
+        verify(menuRuntimeConfigMapper).delete(any(LambdaQueryWrapper.class));
+        verify(menuPackageItemMapper).delete(any(LambdaQueryWrapper.class));
+        verify(roleMenuMapper).delete(any(LambdaQueryWrapper.class));
+    }
+
+    @Test
+    @DisplayName("disableByBindingId should disable module using registry target id")
+    void disableByBindingId_existingModule_disablesMenusAndClearsBindings() {
+        AuthorizationAppModule module = new AuthorizationAppModule();
+        module.setBindingId(9001L);
+        module.setAppCode("internal-admin");
+        module.setModuleCode("contract");
+        module.setStatus(1);
+        Menu menu = new Menu();
+        menu.setMenuId(1001L);
+        menu.setStatus(1);
+        when(appModuleMapper.selectById(9001L)).thenReturn(module);
+        when(appModuleMapper.updateById(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(menu));
+        when(menuMapper.updateById(any(Menu.class))).thenReturn(1);
+
+        Boolean disabled = appModuleService.disableByBindingId(9001L);
+
+        assertEquals(Boolean.TRUE, disabled);
+        verify(appModuleMapper).selectById(9001L);
+        verify(menuRuntimeConfigMapper).delete(any(LambdaQueryWrapper.class));
+        verify(menuPackageItemMapper).delete(any(LambdaQueryWrapper.class));
+        verify(roleMenuMapper).delete(any(LambdaQueryWrapper.class));
+    }
+
     private AppModuleResourceManifestCommand createManifest() {
         AppModuleResourceManifestCommand manifest = new AppModuleResourceManifestCommand();
         manifest.setAppCode("internal-admin");

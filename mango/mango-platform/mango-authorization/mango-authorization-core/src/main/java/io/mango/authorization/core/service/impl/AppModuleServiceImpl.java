@@ -90,9 +90,56 @@ public class AppModuleServiceImpl implements IAppModuleService {
         if (binding == null) {
             return false;
         }
+        return disableBinding(binding);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean disableByBindingId(Long bindingId) {
+        if (bindingId == null) {
+            return false;
+        }
+        AuthorizationAppModule binding = appModuleMapper.selectById(bindingId);
+        if (binding == null) {
+            return false;
+        }
+        return disableBinding(binding);
+    }
+
+    @Override
+    public Long findBindingId(String appCode, String moduleCode) {
+        AuthorizationAppModule binding = find(appCode, moduleCode);
+        return binding == null ? null : binding.getBindingId();
+    }
+
+    private Boolean disableBinding(AuthorizationAppModule binding) {
         binding.setStatus(0);
         binding.setUpdateTime(LocalDateTime.now());
-        return appModuleMapper.updateById(binding) > 0;
+        boolean changed = appModuleMapper.updateById(binding) > 0;
+        List<Menu> menus = menuMapper.selectList(new LambdaQueryWrapper<Menu>()
+                .eq(Menu::getAppCode, binding.getAppCode())
+                .eq(Menu::getModuleCode, binding.getModuleCode())
+                .eq(Menu::getDelFlag, 0));
+        List<Long> menuIds = menus.stream()
+                .map(Menu::getMenuId)
+                .filter(id -> id != null)
+                .toList();
+        if (menuIds.isEmpty()) {
+            return changed;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (Menu menu : menus) {
+            menu.setStatus(0);
+            menu.setUpdateTime(now);
+            changed = menuMapper.updateById(menu) > 0 || changed;
+        }
+        menuRuntimeConfigMapper.delete(new LambdaQueryWrapper<FrontendMenuRuntimeConfig>()
+                .in(FrontendMenuRuntimeConfig::getMenuId, menuIds));
+        menuPackageItemMapper.delete(new LambdaQueryWrapper<MenuPackageItem>()
+                .in(MenuPackageItem::getMenuId, menuIds));
+        roleMenuMapper.delete(new LambdaQueryWrapper<RoleMenu>()
+                .in(RoleMenu::getMenuId, menuIds));
+        return changed;
     }
 
     @Override

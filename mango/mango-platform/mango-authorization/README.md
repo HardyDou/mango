@@ -379,6 +379,7 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 前端运行配置 | 每个菜单写入 `frontend_menu_runtime_config` |
 | 套餐绑定 | `packageCodes` 命中已有菜单套餐时写入 `authorization_menu_package_item` |
 | 角色授权 | `roleCodes` 命中已有角色时写入 `authorization_role_menu` |
+| 资源禁用 | `AUTH_MENU` 被禁用或从 AUTO 声明中移除时，停用模块和该模块菜单，并清理菜单运行配置、套餐绑定和角色菜单授权 |
 
 旧 manifest 字段映射仍用于历史迁移：
 

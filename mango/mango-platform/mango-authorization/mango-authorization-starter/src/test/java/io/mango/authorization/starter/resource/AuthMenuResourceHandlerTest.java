@@ -33,11 +33,13 @@ class AuthMenuResourceHandlerTest {
     void upsertConvertsResourceDeclarationToManifestCommand() {
         ResourceDeclaration resource = menuResource();
         when(appModuleService.registerResourceManifest(org.mockito.ArgumentMatchers.any())).thenReturn(3);
+        when(appModuleService.findBindingId("internal-admin", "mango-workflow")).thenReturn(9001L);
 
         ResourceSyncResult result = handler.upsert(resource);
 
         assertThat(handler.resourceType()).isEqualTo(ResourceTypes.AUTH_MENU);
-        assertThat(result.getTargetTable()).isEqualTo("authorization_menu");
+        assertThat(result.getTargetId()).isEqualTo(9001L);
+        assertThat(result.getTargetTable()).isEqualTo("authorization_app_module");
         ArgumentCaptor<AppModuleResourceManifestCommand> captor =
                 ArgumentCaptor.forClass(AppModuleResourceManifestCommand.class);
         verify(appModuleService).registerResourceManifest(captor.capture());
@@ -74,6 +76,20 @@ class AuthMenuResourceHandlerTest {
         ResourceSyncResult result = handler.disable(resource);
 
         verify(appModuleService).disable("internal-admin", "mango-workflow");
+        assertThat(result.getMessage()).contains("changed=true");
+    }
+
+    @Test
+    void disableUsesRegistryTargetIdWhenDeclarationFieldsAreMissing() {
+        ResourceDeclaration resource = new ResourceDeclaration();
+        resource.setResourceType(ResourceTypes.AUTH_MENU);
+        resource.getFields().put("targetId", field(ResourceFieldType.LONG, 9001L));
+        when(appModuleService.disableByBindingId(9001L)).thenReturn(true);
+
+        ResourceSyncResult result = handler.disable(resource);
+
+        verify(appModuleService).disableByBindingId(9001L);
+        assertThat(result.getMessage()).contains("bindingId=9001");
         assertThat(result.getMessage()).contains("changed=true");
     }
 
@@ -250,9 +266,13 @@ class AuthMenuResourceHandlerTest {
     }
 
     private void put(ResourceDeclaration resource, String name, ResourceFieldType type, Object value) {
+        resource.getFields().put(name, field(type, value));
+    }
+
+    private ResourceField field(ResourceFieldType type, Object value) {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        resource.getFields().put(name, field);
+        return field;
     }
 }
