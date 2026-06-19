@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_NOTICE_APP_PORT:18620}
+
+spring:
+  application:
+    name: mango-notice-capability-app

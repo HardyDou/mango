@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_DOMAIN_APP_PORT:18619}
+
+spring:
+  application:
+    name: mango-domain-capability-app

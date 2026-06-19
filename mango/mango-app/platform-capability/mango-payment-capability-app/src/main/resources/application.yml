@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_PAYMENT_APP_PORT:18627}
+
+spring:
+  application:
+    name: mango-payment-capability-app

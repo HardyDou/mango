@@ -1,0 +1,11 @@
+server:
+  port: ${MANGO_WORKFLOW_APP_PORT:18621}
+
+spring:
+  application:
+    name: mango-workflow-capability-app
+
+mango:
+  workflow:
+    samples:
+      enabled: false

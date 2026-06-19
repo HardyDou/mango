@@ -1,0 +1,14 @@
+server:
+  port: ${MANGO_RESOURCE_APP_PORT:18615}
+
+spring:
+  application:
+    name: mango-resource-capability-app
+
+mango:
+  kv:
+    store:
+      type: jdbc
+    capability:
+      enabled: true
+      locker: true

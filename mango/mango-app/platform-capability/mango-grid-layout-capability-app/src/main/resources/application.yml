@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_GRID_LAYOUT_APP_PORT:18624}
+
+spring:
+  application:
+    name: mango-grid-layout-capability-app

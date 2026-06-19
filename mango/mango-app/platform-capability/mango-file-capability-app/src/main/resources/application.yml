@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_FILE_APP_PORT:18617}
+
+spring:
+  application:
+    name: mango-file-capability-app

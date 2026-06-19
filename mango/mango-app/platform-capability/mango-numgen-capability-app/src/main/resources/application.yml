@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_NUMGEN_APP_PORT:18625}
+
+spring:
+  application:
+    name: mango-numgen-capability-app

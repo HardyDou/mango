@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_CAPTCHA_APP_PORT:18616}
+
+spring:
+  application:
+    name: mango-captcha-capability-app

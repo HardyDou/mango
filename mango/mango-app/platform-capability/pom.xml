@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango.app</groupId>
+        <artifactId>mango-app</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <groupId>io.mango.app.platformcapability</groupId>
+    <artifactId>mango-app-platform-capability</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Mango App Platform Capability</name>
+    <description>平台能力独立启动应用入口聚合</description>
+
+    <modules>
+        <module>mango-auth-capability-app</module>
+        <module>mango-authorization-capability-app</module>
+        <module>mango-identity-capability-app</module>
+        <module>mango-org-capability-app</module>
+        <module>mango-system-capability-app</module>
+        <module>mango-resource-capability-app</module>
+        <module>mango-captcha-capability-app</module>
+        <module>mango-file-capability-app</module>
+        <module>mango-file-preview-capability-app</module>
+        <module>mango-domain-capability-app</module>
+        <module>mango-notice-capability-app</module>
+        <module>mango-workflow-capability-app</module>
+        <module>mango-job-capability-app</module>
+        <module>mango-calendar-capability-app</module>
+        <module>mango-grid-layout-capability-app</module>
+        <module>mango-numgen-capability-app</module>
+        <module>mango-template-capability-app</module>
+        <module>mango-payment-capability-app</module>
+    </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.mango.common</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.module</groupId>
+            <artifactId>mango-infra-module-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.web</groupId>
+            <artifactId>mango-infra-web-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-web-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.kv</groupId>
+            <artifactId>mango-infra-kv-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.event</groupId>
+            <artifactId>mango-infra-event-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.doc</groupId>
+            <artifactId>mango-infra-doc-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <configuration>
+                        <skip>false</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

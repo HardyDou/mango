@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_ORG_APP_PORT:18613}
+
+spring:
+  application:
+    name: mango-org-capability-app

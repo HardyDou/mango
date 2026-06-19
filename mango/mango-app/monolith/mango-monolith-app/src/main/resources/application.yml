@@ -93,6 +93,7 @@ mango:
       type: jdbc
     capability:
       enabled: true
+      locker: true
       token-store: true
       outbox: true
   event:
@@ -117,6 +118,8 @@ mango:
         captcha:
           enabled: true
         file:
+          enabled: true
+        resource:
           enabled: true
         template:
           enabled: true

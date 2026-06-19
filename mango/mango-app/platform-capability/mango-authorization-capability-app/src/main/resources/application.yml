@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_AUTHORIZATION_APP_PORT:18611}
+
+spring:
+  application:
+    name: mango-authorization-capability-app

@@ -1,0 +1,6 @@
+server:
+  port: ${MANGO_SYSTEM_APP_PORT:18614}
+
+spring:
+  application:
+    name: mango-system-capability-app

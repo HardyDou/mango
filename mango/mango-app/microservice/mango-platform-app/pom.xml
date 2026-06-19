@@ -88,6 +88,10 @@
             <artifactId>mango-notice-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.numgen</groupId>
+            <artifactId>mango-numgen-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.workflow</groupId>
             <artifactId>mango-workflow-starter</artifactId>
         </dependency>
