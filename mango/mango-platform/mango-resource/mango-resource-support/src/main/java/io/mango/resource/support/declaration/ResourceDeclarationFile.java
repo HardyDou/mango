@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import io.mango.resource.api.model.ResourceDeclaration;
 import lombok.Data;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,11 +13,11 @@ import java.util.Map;
 @Data
 public class ResourceDeclarationFile {
 
-    private Mango mango = new Mango();
+    private Mango mango;
 
     @Data
     public static class Mango {
-        private Resource resource = new Resource();
+        private Resource resource;
     }
 
     @Data
@@ -29,6 +28,6 @@ public class ResourceDeclarationFile {
         private String moduleCode;
         @JsonAlias("module-name")
         private String moduleName;
-        private Map<String, List<ResourceDeclaration>> declarations = new LinkedHashMap<>();
+        private Map<String, List<ResourceDeclaration>> declarations;
     }
 }

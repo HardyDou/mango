@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ResourceDeclarationLoaderTest {
 
@@ -63,6 +64,83 @@ class ResourceDeclarationLoaderTest {
         Object root = ((List<?>) declaration.getFields().get("menus").getValue()).get(0);
         assertThat(root).isInstanceOf(Map.class);
         assertThat(((Map<?, ?>) root).get("menuCode")).isEqualTo("workflow");
+    }
+
+    @Test
+    void loadRejectsUnsupportedSchemaVersionWithSourcePath() throws Exception {
+        Path declaration = Files.createTempFile("mango-resource-schema", ".json");
+        Files.writeString(declaration, """
+                {
+                  "mango": {
+                    "resource": {
+                      "schemaVersion": 2,
+                      "moduleCode": "test",
+                      "moduleName": "测试",
+                      "declarations": {
+                        "MESSAGE_TEMPLATE": [
+                          {
+                            "id": "1900000000000000101",
+                            "version": 1,
+                            "bizKey": "test.message",
+                            "name": "测试消息",
+                            "targetModule": "notice"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """);
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of(declaration.toUri().toString()));
+
+        assertThatThrownBy(() -> new ResourceDeclarationLoader(new ObjectMapper(), properties).load())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Invalid resource declaration")
+                .hasMessageContaining(declaration.getFileName().toString())
+                .hasMessageContaining("Unsupported mango.resource.schemaVersion: 2");
+    }
+
+    @Test
+    void loadRejectsMissingResourceRootWithSourcePath() throws Exception {
+        Path declaration = Files.createTempFile("mango-resource-missing-root", ".json");
+        Files.writeString(declaration, """
+                {"mango": {}}
+                """);
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of(declaration.toUri().toString()));
+
+        assertThatThrownBy(() -> new ResourceDeclarationLoader(new ObjectMapper(), properties).load())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Invalid resource declaration")
+                .hasMessageContaining(declaration.getFileName().toString())
+                .hasMessageContaining("mango.resource is required");
+    }
+
+    @Test
+    void loadRejectsInvalidDeclarationWithSourcePathAndDeclarationPath() throws Exception {
+        Path declaration = Files.createTempFile("mango-resource-invalid-declaration", ".yml");
+        Files.writeString(declaration, """
+                mango:
+                  resource:
+                    schema-version: 1
+                    module-code: test
+                    module-name: 测试
+                    declarations:
+                      MESSAGE_TEMPLATE:
+                        - id: "1900000000000000102"
+                          version: 0
+                          name: 测试消息
+                          target-module: notice
+                """);
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of(declaration.toUri().toString()));
+
+        assertThatThrownBy(() -> new ResourceDeclarationLoader(new ObjectMapper(), properties).load())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Invalid resource declaration")
+                .hasMessageContaining(declaration.getFileName().toString())
+                .hasMessageContaining("mango.resource.declarations.MESSAGE_TEMPLATE[0].version must be positive");
     }
 
     private Path findRepositoryFile(String relativePath) {
