@@ -1,0 +1,171 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "calendar",
+      "moduleName": "工作日历模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000008301",
+            "version": 1,
+            "bizKey": "calendar.menu.internal-admin",
+            "name": "工作日历菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-calendar"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "工作日历模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin",
+                  "institution_collaboration"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "平台能力",
+                    "menuCode": "data",
+                    "path": "/data",
+                    "icon": "DataAnalysis",
+                    "sort": 4,
+                    "redirect": "/data/calendar",
+                    "remark": "工作日历管理入口",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "日历管理",
+                        "menuCode": "data:calendar",
+                        "path": "/data/calendar",
+                        "icon": "Calendar",
+                        "component": "data/calendar/index",
+                        "sort": 1,
+                        "permissions": [
+                          "calendar:admin:list"
+                        ],
+                        "remark": "日历、年度日期和工作日计算管理",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "calendar:admin:list",
+                            "permissionName": "日历查询",
+                            "sort": 1,
+                            "remark": "日历查询权限"
+                          },
+                          {
+                            "permissionCode": "calendar:admin:create",
+                            "permissionName": "日历新增",
+                            "sort": 42,
+                            "remark": "日历新增权限"
+                          },
+                          {
+                            "permissionCode": "calendar:admin:edit",
+                            "permissionName": "日历编辑",
+                            "sort": 43,
+                            "remark": "日历编辑权限"
+                          },
+                          {
+                            "permissionCode": "calendar:admin:status",
+                            "permissionName": "日历状态",
+                            "sort": 44,
+                            "remark": "日历状态权限"
+                          },
+                          {
+                            "permissionCode": "calendar:admin:delete",
+                            "permissionName": "日历删除",
+                            "sort": 45,
+                            "remark": "日历删除权限"
+                          },
+                          {
+                            "permissionCode": "calendar:year:list",
+                            "permissionName": "年度查询",
+                            "sort": 51,
+                            "remark": "年度查询权限"
+                          },
+                          {
+                            "permissionCode": "calendar:year:init",
+                            "permissionName": "年度初始化",
+                            "sort": 52,
+                            "remark": "年度初始化权限"
+                          },
+                          {
+                            "permissionCode": "calendar:year:enabled",
+                            "permissionName": "年度启停",
+                            "sort": 53,
+                            "remark": "年度启停权限"
+                          },
+                          {
+                            "permissionCode": "calendar:year:delete",
+                            "permissionName": "年度删除",
+                            "sort": 54,
+                            "remark": "年度删除权限"
+                          },
+                          {
+                            "permissionCode": "calendar:day:list",
+                            "permissionName": "日期查询",
+                            "sort": 61,
+                            "remark": "日期查询权限"
+                          },
+                          {
+                            "permissionCode": "calendar:day:edit",
+                            "permissionName": "日期编辑",
+                            "sort": 62,
+                            "remark": "日期编辑权限"
+                          },
+                          {
+                            "permissionCode": "calendar:day:batch",
+                            "permissionName": "日期批量设置",
+                            "sort": 63,
+                            "remark": "日期批量设置权限"
+                          },
+                          {
+                            "permissionCode": "calendar:day:import",
+                            "permissionName": "日期导入",
+                            "sort": 64,
+                            "remark": "日期导入权限"
+                          },
+                          {
+                            "permissionCode": "calendar:day:delete",
+                            "permissionName": "日期删除",
+                            "sort": 65,
+                            "remark": "日期删除权限"
+                          },
+                          {
+                            "permissionCode": "calendar:calculate:query",
+                            "permissionName": "工作日计算",
+                            "sort": 71,
+                            "remark": "工作日计算权限"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

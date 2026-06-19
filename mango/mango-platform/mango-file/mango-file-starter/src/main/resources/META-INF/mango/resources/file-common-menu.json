@@ -1,0 +1,225 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "file",
+      "moduleName": "文件管理模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000008501",
+            "version": 1,
+            "bizKey": "file.menu.internal-admin",
+            "name": "文件管理菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-file"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "文件管理模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 5
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "文件管理",
+                    "menuCode": "file",
+                    "path": "/file",
+                    "icon": "FolderOpened",
+                    "sort": 3,
+                    "redirect": "/file/files",
+                    "remark": "统一文件上传、管理、预览与存储配置入口",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "文件管理",
+                        "menuCode": "file:files",
+                        "path": "/file/files",
+                        "icon": "Files",
+                        "component": "file/files/index",
+                        "sort": 1,
+                        "permissions": [
+                          "file:files:list"
+                        ],
+                        "remark": "文件记录、上传下载、预览和归档管理",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "file:files:list",
+                            "permissionName": "查询文件列表",
+                            "sort": 1,
+                            "remark": "文件记录列表查询权限"
+                          },
+                          {
+                            "permissionCode": "file:files:query",
+                            "permissionName": "查询文件详情",
+                            "sort": 2,
+                            "remark": "文件详情与预览元数据查询权限"
+                          },
+                          {
+                            "permissionCode": "file:files:upload",
+                            "permissionName": "上传文件",
+                            "sort": 3,
+                            "remark": "文件管理上传权限"
+                          },
+                          {
+                            "permissionCode": "file:files:download",
+                            "permissionName": "下载文件",
+                            "sort": 4,
+                            "remark": "文件下载权限"
+                          },
+                          {
+                            "permissionCode": "file:files:archive",
+                            "permissionName": "归档文件",
+                            "sort": 5,
+                            "remark": "文件归档权限"
+                          },
+                          {
+                            "permissionCode": "file:directories:list",
+                            "permissionName": "目录查询",
+                            "sort": 6,
+                            "remark": "文件目录树查询权限"
+                          },
+                          {
+                            "permissionCode": "file:directories:add",
+                            "permissionName": "目录新增",
+                            "sort": 7,
+                            "remark": "文件目录新增权限"
+                          },
+                          {
+                            "permissionCode": "file:directories:edit",
+                            "permissionName": "目录编辑",
+                            "sort": 8,
+                            "remark": "文件目录编辑权限"
+                          },
+                          {
+                            "permissionCode": "file:directories:delete",
+                            "permissionName": "目录删除",
+                            "sort": 9,
+                            "remark": "文件目录删除权限"
+                          },
+                          {
+                            "permissionCode": "file:files:delete",
+                            "permissionName": "删除文件",
+                            "sort": 10,
+                            "remark": "文件记录删除权限"
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "存储配置",
+                        "menuCode": "file:storage-configs",
+                        "path": "/file/storage-configs",
+                        "icon": "Setting",
+                        "component": "file/storage-configs/index",
+                        "sort": 2,
+                        "permissions": [
+                          "file:storage-configs:list"
+                        ],
+                        "remark": "文件底层存储配置管理",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "file:storage-configs:list",
+                            "permissionName": "查询存储配置列表",
+                            "sort": 1,
+                            "remark": "文件存储配置列表查询权限"
+                          },
+                          {
+                            "permissionCode": "file:storage-configs:query",
+                            "permissionName": "查询存储配置详情",
+                            "sort": 2,
+                            "remark": "文件存储配置详情查询权限"
+                          },
+                          {
+                            "permissionCode": "file:storage-configs:add",
+                            "permissionName": "新增存储配置",
+                            "sort": 3,
+                            "remark": "文件存储配置新增权限"
+                          },
+                          {
+                            "permissionCode": "file:storage-configs:edit",
+                            "permissionName": "修改存储配置",
+                            "sort": 4,
+                            "remark": "文件存储配置修改权限"
+                          },
+                          {
+                            "permissionCode": "file:storage-configs:delete",
+                            "permissionName": "删除存储配置",
+                            "sort": 5,
+                            "remark": "文件存储配置删除权限"
+                          },
+                          {
+                            "permissionCode": "file:storage-configs:test",
+                            "permissionName": "测试存储配置",
+                            "sort": 6,
+                            "remark": "文件存储配置连接测试权限"
+                          },
+                          {
+                            "permissionCode": "file:storage-configs:active",
+                            "permissionName": "启用默认存储配置",
+                            "sort": 7,
+                            "remark": "文件存储配置启用权限"
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "文件配置",
+                        "menuCode": "file:settings",
+                        "path": "/file/settings",
+                        "icon": "Tools",
+                        "component": "file/settings/index",
+                        "sort": 3,
+                        "permissions": [
+                          "file:settings:query"
+                        ],
+                        "remark": "文件上传策略、访问策略、预览策略和直传策略配置",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "file:settings:query",
+                            "permissionName": "查询",
+                            "sort": 1,
+                            "remark": "文件中心配置查询权限"
+                          },
+                          {
+                            "permissionCode": "file:settings:edit",
+                            "permissionName": "编辑",
+                            "sort": 2,
+                            "remark": "文件中心配置编辑权限"
+                          }
+                        ]
+                      }
+                    ],
+                    "parentCode": "data"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

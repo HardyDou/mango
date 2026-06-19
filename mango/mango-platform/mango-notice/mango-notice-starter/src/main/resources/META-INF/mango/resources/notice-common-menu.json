@@ -1,0 +1,335 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "notice",
+      "moduleName": "通知中心模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000009301",
+            "version": 1,
+            "bizKey": "notice.menu.internal-admin",
+            "name": "通知中心菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-notice"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "通知中心模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 8
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "通知中心",
+                    "menuCode": "notice",
+                    "path": "/notice",
+                    "icon": "Bell",
+                    "sort": 7,
+                    "redirect": "/notice/site-message",
+                    "remark": "统一消息编排中心入口",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "我的消息",
+                        "menuCode": "notice:site-message",
+                        "path": "/notice/site-message",
+                        "icon": "Message",
+                        "component": "notice/site-message/index",
+                        "sort": 1,
+                        "permissions": [
+                          "notice:site:view"
+                        ],
+                        "remark": "当前用户系统消息列表和接收设置入口",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:site:view",
+                            "permissionName": "我的消息查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "notice:site:create",
+                            "permissionName": "消息发送",
+                            "sort": 2
+                          },
+                          {
+                            "permissionCode": "notice:site:edit",
+                            "permissionName": "消息已读",
+                            "sort": 3
+                          },
+                          {
+                            "permissionCode": "notice:site:delete",
+                            "permissionName": "消息删除",
+                            "sort": 4
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "消息配置",
+                        "menuCode": "notice:message-definition",
+                        "path": "/notice/message-definition",
+                        "icon": "DocumentChecked",
+                        "component": "notice/message-definition/index",
+                        "sort": 2,
+                        "permissions": [
+                          "notice:business:view"
+                        ],
+                        "remark": "业务消息、参数、渠道启停和模板配置",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:business:view",
+                            "permissionName": "消息配置查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "notice:business:create",
+                            "permissionName": "消息配置创建",
+                            "sort": 2
+                          },
+                          {
+                            "permissionCode": "notice:business:edit",
+                            "permissionName": "消息配置编辑",
+                            "sort": 3
+                          },
+                          {
+                            "permissionCode": "notice:business:publish",
+                            "permissionName": "消息配置发布",
+                            "sort": 4
+                          },
+                          {
+                            "permissionCode": "notice:business:enable",
+                            "permissionName": "消息配置启停",
+                            "sort": 5
+                          },
+                          {
+                            "permissionCode": "notice:business:delete",
+                            "permissionName": "消息配置删除",
+                            "sort": 6
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "发送任务",
+                        "menuCode": "notice:send-message",
+                        "path": "/notice/send-message",
+                        "icon": "Promotion",
+                        "component": "notice/send-message/index",
+                        "sort": 3,
+                        "permissions": [
+                          "notice:task:view",
+                          "notice:task:create"
+                        ],
+                        "remark": "人工触发业务消息发送任务入口",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:task:view",
+                            "permissionName": "发送任务查询",
+                            "sort": 1,
+                            "remark": "发送任务页面查询通知任务权限"
+                          },
+                          {
+                            "permissionCode": "notice:task:create",
+                            "permissionName": "发送任务提交",
+                            "sort": 2
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "渠道配置",
+                        "menuCode": "notice:channel",
+                        "path": "/notice/channel",
+                        "icon": "Connection",
+                        "component": "notice/channel/index",
+                        "sort": 4,
+                        "permissions": [
+                          "notice:channel:view"
+                        ],
+                        "remark": "系统可用通知通道账号和结构化接入配置",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:channel:view",
+                            "permissionName": "渠道配置查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "notice:channel:create",
+                            "permissionName": "渠道配置创建",
+                            "sort": 2
+                          },
+                          {
+                            "permissionCode": "notice:channel:edit",
+                            "permissionName": "渠道配置编辑",
+                            "sort": 3
+                          },
+                          {
+                            "permissionCode": "notice:channel:delete",
+                            "permissionName": "渠道配置删除",
+                            "sort": 4
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "发送记录",
+                        "menuCode": "notice:record",
+                        "path": "/notice/record",
+                        "icon": "Tickets",
+                        "component": "notice/record/index",
+                        "sort": 5,
+                        "permissions": [
+                          "notice:record:view"
+                        ],
+                        "remark": "消息发送历史、渲染内容、渠道响应和失败原因",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:record:view",
+                            "permissionName": "发送记录查询",
+                            "sort": 1
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "失败重试",
+                        "menuCode": "notice:retry",
+                        "path": "/notice/retry",
+                        "icon": "RefreshRight",
+                        "component": "notice/retry/index",
+                        "sort": 6,
+                        "permissions": [
+                          "notice:record:view"
+                        ],
+                        "remark": "失败发送记录和重试处理入口",
+                        "permissionItems": [
+                          {
+                            "menuCode": "notice:retry:view",
+                            "permissionCode": "notice:record:view",
+                            "permissionName": "失败重试查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "notice:retry:edit",
+                            "permissionName": "失败重试处理",
+                            "sort": 2,
+                            "remark": "失败重试、标记成功和忽略失败权限"
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "接收设置",
+                        "menuCode": "notice:receive-setting",
+                        "path": "/notice/receive-setting",
+                        "icon": "Switch",
+                        "component": "notice/receive-setting/index",
+                        "sort": 7,
+                        "visible": 0,
+                        "permissions": [
+                          "notice:receive-setting:view"
+                        ],
+                        "remark": "接收设置仅从我的消息页面设置按钮进入，不作为通知中心后台菜单展示",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:receive-setting:view",
+                            "permissionName": "接收设置查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "notice:receive-setting:edit",
+                            "permissionName": "接收设置编辑",
+                            "sort": 2
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "全局设置",
+                        "menuCode": "notice:setting",
+                        "path": "/notice/setting",
+                        "icon": "Tools",
+                        "component": "notice/setting/index",
+                        "sort": 8,
+                        "visible": 0,
+                        "permissions": [
+                          "notice:setting:view"
+                        ],
+                        "remark": "通知提示、重试和保留周期设置接口权限，不作为通知中心后台菜单展示",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:setting:view",
+                            "permissionName": "全局设置查询",
+                            "sort": 1,
+                            "packageCodes": []
+                          },
+                          {
+                            "permissionCode": "notice:setting:edit",
+                            "permissionName": "全局设置编辑",
+                            "sort": 2,
+                            "packageCodes": []
+                          }
+                        ],
+                        "packageCodes": []
+                      }
+                    ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
