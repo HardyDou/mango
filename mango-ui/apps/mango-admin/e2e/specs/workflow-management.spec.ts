@@ -16,6 +16,7 @@ const platformTenant: LoginTenant = {
   tenantCode: 'default',
   tenantName: '芒果集团',
 };
+const defaultWorkflowDomainCode = 'COMMON';
 
 function api(path: string) {
   return e2eApi(path);
@@ -101,7 +102,12 @@ async function openTodoTasks(page: Page) {
   await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
 }
 
-async function openClaimableTodoTab(page: Page) {
+async function selectWorkflowCategory(page: Page, categoryName: string) {
+  await page.locator('.builder-form .el-form-item', { hasText: '流程分类' }).locator('.el-select').click();
+  await page.getByRole('option', { name: categoryName }).click();
+}
+
+async function openClaimableTodoTab(page: Page, keyword?: string) {
   const claimableResponsePromise = page.waitForResponse((response) =>
     response.url().includes('/api/workflow/tasks/todo')
     && response.url().includes('todoType=CLAIMABLE')
@@ -109,6 +115,18 @@ async function openClaimableTodoTab(page: Page) {
   );
   await page.getByRole('tab', { name: '待领取' }).click();
   await claimableResponsePromise;
+  if (!keyword) {
+    return;
+  }
+  const filteredResponsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/workflow/tasks/todo')
+    && response.url().includes('todoType=CLAIMABLE')
+    && response.url().includes(`keyword=${encodeURIComponent(keyword)}`)
+    && response.status() === 200
+  );
+  await page.getByPlaceholder('搜索流程/任务名称').fill(keyword);
+  await page.getByRole('button', { name: '查询' }).click();
+  await filteredResponsePromise;
 }
 
 async function openDoneTasks(page: Page) {
@@ -748,6 +766,7 @@ async function prepareExpenseWorkflow(request: APIRequestContext, token: string,
     data: {
       categoryName: `E2E费用报销分类${unique}`,
       categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
       sort: 93,
       status: 1,
       remark: 'E2E费用报销业务接入验证数据',
@@ -761,6 +780,7 @@ async function prepareExpenseWorkflow(request: APIRequestContext, token: string,
     headers,
     data: {
       categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
       definitionName: `E2E费用报销审批${unique}`,
       definitionKey: `e2e_expense_reimbursement_${unique}`,
       designerJson: expenseApprovalDesignerJson(unique),
@@ -967,6 +987,7 @@ async function prepareActionCapabilityWorkflow(
     data: {
       categoryName: `E2E动作分类${unique}`,
       categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
       sort: 91,
       status: 1,
       remark: keyword,
@@ -980,6 +1001,7 @@ async function prepareActionCapabilityWorkflow(
     headers,
     data: {
       categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
       definitionName: `E2E审批动作流程${unique}`,
       definitionKey: `e2e_action_capability_${unique}`,
       designerJson: actionCapabilityDesignerJson(unique, roleId),
@@ -1020,6 +1042,7 @@ async function prepareActionAddSignWorkflow(
     data: {
       categoryName: `E2E加签分类${unique}`,
       categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
       sort: 90,
       status: 1,
       remark: keyword,
@@ -1033,6 +1056,7 @@ async function prepareActionAddSignWorkflow(
     headers,
     data: {
       categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
       definitionName: `E2E审批加签流程${unique}`,
       definitionKey: `e2e_action_add_sign_${unique}`,
       designerJson: actionAddSignDesignerJson(unique, assigneeIds),
@@ -1205,6 +1229,7 @@ async function prepareLeaveWorkflow(request: APIRequestContext, token: string, u
     data: {
       categoryName: `E2E审批分类${unique}`,
       categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
       sort: 96,
       status: 1,
       remark: 'E2E审批闭环验证数据',
@@ -1218,6 +1243,7 @@ async function prepareLeaveWorkflow(request: APIRequestContext, token: string, u
     headers,
     data: {
       categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
       definitionName: `E2E审批请假流程${unique}`,
       definitionKey: `e2e_approval_leave_${unique}`,
       designerJson: approvalDesignerJson(unique),
@@ -1252,6 +1278,7 @@ async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token:
     data: {
       categoryName: `E2E自选分类${unique}`,
       categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
       sort: 95,
       status: 1,
       remark: 'E2E发起人自选验证数据',
@@ -1265,6 +1292,7 @@ async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token:
     headers,
     data: {
       categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
       definitionName: `E2E发起人自选流程${unique}`,
       definitionKey: `e2e_initiator_select_${unique}`,
       designerJson: initiatorSelectDesignerJson(unique),
@@ -1299,6 +1327,7 @@ async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: s
     data: {
       categoryName: `E2E自审分类${unique}`,
       categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
       sort: 94,
       status: 1,
       remark: 'E2E发起人自己审批验证数据',
@@ -1312,6 +1341,7 @@ async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: s
     headers,
     data: {
       categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
       definitionName: `E2E发起人自己审批流程${unique}`,
       definitionKey: `e2e_initiator_self_${unique}`,
       designerJson: initiatorSelfDesignerJson(unique),
@@ -1523,8 +1553,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByText('流程定义').first()).toBeVisible({ timeout: 10000 });
       await page.getByRole('button', { name: '创建流程' }).click();
 
-      await page.locator('.builder-form .el-select').first().click();
-      await page.getByRole('option', { name: categoryName }).click();
+      await selectWorkflowCategory(page, categoryName);
       await page.getByPlaceholder('请输入流程名称').fill(definitionName);
       await page.getByPlaceholder('如 contract_approve').fill(definitionKey);
 
@@ -1614,8 +1643,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByRole('button', { name: /表单信息/ })).toBeVisible();
       await expect(page.getByRole('button', { name: /流程设计/ })).toBeVisible();
 
-      await page.locator('.builder-form .el-select').first().click();
-      await page.getByRole('option', { name: categoryName }).click();
+      await selectWorkflowCategory(page, categoryName);
       await page.getByPlaceholder('请输入流程名称').fill(definitionName);
       await page.getByPlaceholder('如 contract_approve').fill(definitionKey);
       await page.getByRole('button', { name: '下一步' }).click();
@@ -1776,8 +1804,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(nodePanel.getByRole('textbox', { name: '条件表达式' })).toHaveValue("${(amount == 1000 || tenantId == '1')}");
       await nodePanel.getByRole('button', { name: '关闭节点配置' }).click();
       await expect(nodePanel).toBeHidden();
-      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('amount 是 1000');
-      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('tenantId 是 1');
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('流程金额 是 1000');
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('当前机构ID 是 1');
       await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).not.toContainText('${');
       await page.locator('.workflow-add-node-button').last().click();
       await page.getByRole('button', { name: /抄送节点/ }).click();
@@ -2156,6 +2184,7 @@ test.describe('工作流配置真实接口闭环', () => {
         data: {
           categoryName,
           categoryCode,
+          domainCode: defaultWorkflowDomainCode,
           sort: 97,
           status: 1,
           remark: 'E2E发起流程验证数据',
@@ -2169,6 +2198,7 @@ test.describe('工作流配置真实接口闭环', () => {
         headers,
         data: {
           categoryId: createCategoryBody.data,
+          domainCode: defaultWorkflowDomainCode,
           definitionName,
           definitionKey,
           designerJson: designerJson(unique),
@@ -2251,6 +2281,7 @@ test.describe('工作流配置真实接口闭环', () => {
         data: {
           categoryName,
           categoryCode,
+          domainCode: defaultWorkflowDomainCode,
           sort: 96,
           status: 1,
           remark: 'E2E动态表单组件渲染验证数据',
@@ -2264,6 +2295,7 @@ test.describe('工作流配置真实接口闭环', () => {
         headers,
         data: {
           categoryId: createCategoryBody.data,
+          domainCode: defaultWorkflowDomainCode,
           definitionName,
           definitionKey,
           designerJson: designerJson(unique),
@@ -2624,7 +2656,7 @@ test.describe('工作流配置真实接口闭环', () => {
       );
       await openTodoTasks(page);
       await todoResponsePromise;
-      await openClaimableTodoTab(page);
+      await openClaimableTodoTab(page, businessKey);
       const taskRow = page.locator('.el-table__row', { hasText: businessKey });
       await expect(taskRow).toBeVisible({ timeout: 10000 });
       await expect(taskRow).toContainText('动作审批');
@@ -2665,7 +2697,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
       await page.reload();
 
-      await openClaimableTodoTab(page);
+      await openClaimableTodoTab(page, businessKey);
       actionTask = await findTodoTask(request, token, businessKey, '动作审批');
       expect(String(actionTask.assigneeName || '')).toBe('');
 

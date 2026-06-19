@@ -1009,7 +1009,7 @@ test.describe('Job 管理 E2E', () => {
     await alarmTaskField.getByRole('combobox', { name: '作用任务' }).fill(resolvedAlarmTarget.jobCode);
     await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: resolvedAlarmTarget.jobCode }).first().click();
     await alarmDialog.getByLabel('规则名称').fill(alarmRuleName);
-    await alarmDialog.getByLabel('通知场景').fill('MANGO_JOB_FAILED_E2E');
+    await expect(alarmDialog.getByLabel('通知场景')).toHaveValue('job.instance.failed');
     await alarmDialog.getByLabel('消息模板').fill('MANGO_JOB_FAILED_TEMPLATE_E2E');
     await alarmDialog.getByLabel('收件规则').fill('jobDutyE2E');
     await alarmDialog.getByLabel('单个用户').fill('1');
@@ -1027,7 +1027,7 @@ test.describe('Job 管理 E2E', () => {
     await searchAlarmRule(page, alarmRuleName);
     const createdAlarmRow = alarmRuleRow(page, alarmRuleName);
     await expect(createdAlarmRow).toBeVisible();
-    await expect(createdAlarmRow).toContainText('MANGO_JOB_FAILED_E2E');
+    await expect(createdAlarmRow).toContainText('job.instance.failed');
     await expect(createdAlarmRow).toContainText('MANGO_JOB_FAILED_TEMPLATE_E2E');
     await expect(createdAlarmRow).toContainText(resolvedAlarmTarget.jobCode);
     await expect(createdAlarmRow).toContainText('启用');

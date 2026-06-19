@@ -2,11 +2,13 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import * as XLSX from 'xlsx';
+import { resolveE2EApiBaseURL, resolveE2EBaseURL } from '../../../../playwright.workspace';
 
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:7781';
-const frontendBaseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:5581';
+const uiRoot = resolve(__dirname, '../../../..');
+const apiBaseURL = resolveE2EApiBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:5555' });
+const frontendBaseURL = resolveE2EBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:7777' });
 const resultFile = join(process.cwd(), 'e2e', '.tmp', 'file-preview-types-live-results.json');
 
 type PreviewCase = {
