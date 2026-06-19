@@ -1,5 +1,9 @@
 package io.mango.access.core.auth;
 
+import io.mango.access.api.auth.AccessContextValidationResult;
+import io.mango.access.api.auth.AccessContextValidator;
+import io.mango.access.api.auth.AccessPrincipal;
+import io.mango.access.api.auth.AccessResult;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.AuthorizationQuery;

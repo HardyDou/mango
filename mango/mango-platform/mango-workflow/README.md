@@ -325,7 +325,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 1. 业务后端引入 `mango-workflow-api`；部署 workflow 能力的应用引入 `mango-workflow-starter`。
 2. 管理后台安装 `@mango/workflow`，注册 workflow 页面。
-3. 启动后确认 workflow migration 已执行，流程菜单和权限已经进入 `authorization_menu`。
+3. 启动后确认 workflow starter 的 `AUTH_MENU` 资源已同步，流程菜单和权限已经进入 `authorization_menu`。
 4. 在流程定义页面维护流程分类、流程定义、表单和节点配置。
 5. 调用 `/workflow/definitions/deploy` 发布流程，或在业务初始化逻辑中调用 `WorkflowDefinitionApi.ensurePublished()`。
 6. 业务单据提交审批前，先保存业务主表、业务明细、附件关系和业务快照引用。
@@ -340,7 +340,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 `mango.workflow.enabled` 控制 workflow starter 是否启用。默认启用。
 
-`mango.workflow.samples.*` 控制启动时是否补齐内置示例流程。示例流程适合演示环境；生产环境不需要演示流程时应关闭。
+`mango.workflow.samples.*` 控制启动时是否补齐内置示例流程。示例流程适合演示环境；独立部署的 workflow 能力应用默认关闭，避免服务启动依赖 domain 服务在线。生产环境不需要演示流程时应关闭。
 
 ```yaml
 mango:
@@ -368,7 +368,7 @@ mango:
 | 配置 | 默认值 | 含义 |
 |------|--------|------|
 | `mango.workflow.enabled` | `true` | 是否启用 workflow 自动配置。为 `false` 时不注册 mapper、service、controller 和初始化器。 |
-| `mango.workflow.samples.enabled` | `true` | 是否自动补齐内置示例流程。 |
+| `mango.workflow.samples.enabled` | `true` | 是否自动补齐内置示例流程；独立 workflow 能力应用覆盖为 `false`。 |
 | `mango.workflow.samples.tenant-id` | `1` | 示例流程写入的租户 ID。 |
 | `mango.workflow.samples.category-code` | `COMMON` | 示例流程分类编码。 |
 | `mango.workflow.samples.category-name` | `通用流程` | 示例流程分类名称。 |
@@ -536,23 +536,22 @@ workflow_business_apply_status_log
 | 默认流程分类 `COMMON` | `workflow_category` | `ON DUPLICATE KEY UPDATE` |
 | 默认模板分类 `COMMON_TEMPLATE` | `workflow_template_category` | `ON DUPLICATE KEY UPDATE` |
 | 设计器节点目录 | `workflow_node_definition` | `ON DUPLICATE KEY UPDATE` |
-| 流程菜单和按钮权限 | `authorization_menu` | `ON DUPLICATE KEY UPDATE` |
-| 菜单包关系 | `authorization_menu_package_item` | `INSERT IGNORE` |
-| 角色菜单关系 | `authorization_role_menu` | `INSERT IGNORE` |
+
+流程菜单、按钮权限、菜单包关系和角色菜单关系属于 authorization 数据边界，由 authorization 模块初始化；workflow migration 不写 `authorization_*` 表。
 
 `V2__workflow_domain.sql` 补充 workflow 业务域字段和索引。
 
-启动期示例流程由 `WorkflowSampleDefinitionInitializer` 写入，配置来源是 `mango.workflow.samples.*`。默认会写入租户 `1`、分类 `COMMON`、业务域 `COMMON` 下的示例流程；不需要示例流程时关闭 `mango.workflow.samples.enabled`。
+启动期示例流程由 `WorkflowSampleDefinitionInitializer` 写入，配置来源是 `mango.workflow.samples.*`。starter 默认会写入租户 `1`、分类 `COMMON`、业务域 `COMMON` 下的示例流程；独立 workflow 能力应用关闭该初始化。需要启用示例流程时，必须保证 domain 服务可用，或在同一单体应用中装配 domain 本地能力。
 
 ## 12. 管理入口
 
-菜单由 `V1__init_workflow.sql` 写入 `authorization_menu`，应用编码是 `internal-admin`。
+菜单由 `mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json` 的 `AUTH_MENU` 资源注入，应用编码是 `internal-admin`。
 
 | 菜单 | 路径 | 组件 | 权限码 |
 |------|------|------|--------|
 | 流程管理 | `/workflow/manage` | 无，作为流程管理分组入口 | 无 |
-| 流程模板 | `/workflow/manage/template` | `@/views/workflow/template/index.vue` | `workflow:template:list` |
-| 流程定义 | `/workflow/manage/definition` | `@/views/workflow/definition/index.vue` | `workflow:definition:list` |
+| 流程模板 | `/workflow/manage/template` | `workflow/template/index` | `workflow:template:list` |
+| 流程定义 | `/workflow/manage/definition` | `workflow/definition/index` | `workflow:definition:list` |
 
 按钮和接口权限码：
 
@@ -604,7 +603,7 @@ workflow:template:push
 
 **启动后出现演示流程**
 
-默认 `mango.workflow.samples.enabled=true`。生产环境不需要演示流程时，在环境配置中设置为 `false`。
+starter 默认 `mango.workflow.samples.enabled=true`。独立 workflow 能力应用默认关闭示例流程；其它应用不需要演示流程时，在环境配置中设置为 `false`。
 
 **HTTP_URL 或 REMOTE_SERVICE 节点执行失败**
 
@@ -612,7 +611,7 @@ workflow:template:push
 
 **菜单看不到流程管理**
 
-检查 workflow migration 是否执行，确认 `authorization_menu` 有 `/workflow/manage/template`、`/workflow/manage/definition`，并确认当前角色已获得对应 `workflow:template:list` 或 `workflow:definition:list` 权限。
+检查 workflow starter 的 `AUTH_MENU` 资源是否同步，确认 `authorization_menu` 有 `/workflow/manage/template`、`/workflow/manage/definition`，并确认当前角色已获得对应 `workflow:template:list` 或 `workflow:definition:list` 权限。
 
 **前端打开菜单提示页面不存在**
 

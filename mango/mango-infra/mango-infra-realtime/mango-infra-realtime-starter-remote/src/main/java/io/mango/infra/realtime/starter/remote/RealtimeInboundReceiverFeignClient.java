@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "mango-infra-realtime", path = "/realtime/receivers")
+@FeignClient(name = "mango-infra-realtime", contextId = "realtimeInboundReceiverFeignClient", path = "/realtime/receivers")
 public interface RealtimeInboundReceiverFeignClient extends RealtimeInboundReceiverApi {
 
     @Override

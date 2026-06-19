@@ -2,13 +2,12 @@ package io.mango.org.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
-import io.mango.identity.core.entity.TenantMemberOrgEntity;
-import io.mango.identity.core.mapper.IdentityUserMapper;
-import io.mango.identity.core.mapper.TenantMemberMapper;
-import io.mango.identity.core.mapper.TenantMemberOrgMapper;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
+import io.mango.identity.api.vo.TenantMemberInfo;
+import io.mango.identity.api.vo.TenantMemberOrgRelationInfo;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
@@ -51,9 +50,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
 
     private final SysOrgMapper orgMapper;
     private final PostMapper postMapper;
-    private final TenantMemberMapper tenantMemberMapper;
-    private final TenantMemberOrgMapper tenantMemberOrgMapper;
-    private final IdentityUserMapper identityUserMapper;
+    private final TenantMemberProvider tenantMemberProvider;
 
     @Override
     public List<SysOrg> tree(Long parentId, Integer type) {
@@ -160,13 +157,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
     public List<OrgMemberVO> members(Long orgId) {
         SysOrg org = getById(orgId);
         Long tenantId = org.getTenantId();
-        List<TenantMemberOrgEntity> relations = tenantMemberOrgMapper.selectList(
-                new LambdaQueryWrapper<TenantMemberOrgEntity>()
-                        .eq(TenantMemberOrgEntity::getTenantId, tenantId)
-                        .eq(TenantMemberOrgEntity::getOrgId, orgId)
-                        .orderByDesc(TenantMemberOrgEntity::getPrimaryFlag)
-                        .orderByAsc(TenantMemberOrgEntity::getCreatedAt)
-                        .orderByAsc(TenantMemberOrgEntity::getId));
+        List<TenantMemberOrgRelationInfo> relations = tenantMemberProvider.listOrgRelations(tenantId, orgId);
         if (relations == null || relations.isEmpty()) {
             return List.of();
         }
@@ -177,123 +168,83 @@ public class SysOrgServiceImpl implements ISysOrgService {
     @Transactional
     public void addMember(Long orgId, AddOrgMemberCommand command) {
         SysOrg org = getById(orgId);
-        TenantMember member = tenantMemberMapper.selectById(command.getMemberId());
+        TenantMemberInfo member = tenantMemberProvider.getMember(command.getMemberId());
         Require.notNull(member, PostCode.ORG_MEMBER_NOT_FOUND);
         Require.isTrue(org.getTenantId().equals(member.getTenantId()), PostCode.ORG_MEMBER_NOT_FOUND);
         if (command.getPostId() != null) {
             validatePost(org.getTenantId(), command.getPostId());
         }
 
-        Long count = tenantMemberOrgMapper.selectCount(new LambdaQueryWrapper<TenantMemberOrgEntity>()
-                .eq(TenantMemberOrgEntity::getTenantId, org.getTenantId())
-                .eq(TenantMemberOrgEntity::getMemberId, command.getMemberId())
-                .eq(TenantMemberOrgEntity::getOrgId, orgId));
-        Require.isTrue(count == null || count == 0, PostCode.ORG_MEMBER_EXISTS);
+        Require.isFalse(tenantMemberProvider.existsOrgRelation(org.getTenantId(), command.getMemberId(), orgId),
+                PostCode.ORG_MEMBER_EXISTS);
 
-        boolean primary = Boolean.TRUE.equals(command.getPrimaryFlag()) || member.getPrimaryOrgId() == null;
-        if (primary) {
-            clearMemberPrimaryOrg(org.getTenantId(), command.getMemberId());
-            member.setPrimaryOrgId(orgId);
-            member.setPrimaryPostId(command.getPostId());
-            tenantMemberMapper.updateById(member);
-        }
-
-        TenantMemberOrgEntity relation = new TenantMemberOrgEntity();
-        relation.setTenantId(org.getTenantId());
-        relation.setMemberId(command.getMemberId());
-        relation.setOrgId(orgId);
-        relation.setPostId(command.getPostId());
-        relation.setPrimaryFlag(primary ? 1 : 0);
-        if (command.getLeaderFlag() != null) {
-            relation.setLeaderFlag(Boolean.TRUE.equals(command.getLeaderFlag()) ? 1 : 0);
-        }
-        relation.setCreatedBy(MangoContextHolder.userId());
-        relation.setUpdatedBy(MangoContextHolder.userId());
-        tenantMemberOrgMapper.insert(relation);
+        AddTenantMemberOrgCommand addCommand = new AddTenantMemberOrgCommand();
+        addCommand.setTenantId(org.getTenantId());
+        addCommand.setMemberId(command.getMemberId());
+        addCommand.setOrgId(orgId);
+        addCommand.setPostId(command.getPostId());
+        addCommand.setPrimaryFlag(command.getPrimaryFlag());
+        addCommand.setLeaderFlag(command.getLeaderFlag());
+        addCommand.setOperatorUserId(MangoContextHolder.userId());
+        tenantMemberProvider.addOrgRelation(addCommand);
     }
 
     @Override
     @Transactional
     public void updateMember(UpdateOrgMemberCommand command) {
-        TenantMemberOrgEntity relation = tenantMemberOrgMapper.selectById(command.getRelationId());
+        TenantMemberOrgRelationInfo relation = tenantMemberProvider.getOrgRelation(command.getRelationId());
         Require.notNull(relation, PostCode.ORG_MEMBER_RELATION_NOT_FOUND);
         if (command.getPostId() != null) {
             validatePost(relation.getTenantId(), command.getPostId());
         }
-        TenantMember member = tenantMemberMapper.selectById(relation.getMemberId());
+        TenantMemberInfo member = tenantMemberProvider.getMember(relation.getMemberId());
         Require.notNull(member, PostCode.ORG_MEMBER_NOT_FOUND);
 
         boolean primary = Boolean.TRUE.equals(command.getPrimaryFlag());
-        if (primary) {
-            clearMemberPrimaryOrg(relation.getTenantId(), relation.getMemberId());
-            member.setPrimaryOrgId(relation.getOrgId());
-            member.setPrimaryPostId(command.getPostId());
-            tenantMemberMapper.updateById(member);
-        } else if (isPrimaryRelation(relation)) {
+        if (!primary && isPrimaryRelation(relation)) {
             Require.isTrue(hasOtherPrimaryCandidate(relation), PostCode.ORG_MEMBER_PRIMARY_REQUIRED);
-            member.setPrimaryOrgId(null);
-            member.setPrimaryPostId(null);
-            tenantMemberMapper.updateById(member);
         }
 
-        relation.setPostId(command.getPostId());
-        relation.setPrimaryFlag(primary ? 1 : 0);
-        relation.setLeaderFlag(Boolean.TRUE.equals(command.getLeaderFlag()) ? 1 : 0);
-        relation.setUpdatedBy(MangoContextHolder.userId());
-        tenantMemberOrgMapper.updateById(relation);
+        UpdateTenantMemberOrgCommand updateCommand = new UpdateTenantMemberOrgCommand();
+        updateCommand.setRelationId(command.getRelationId());
+        updateCommand.setPostId(command.getPostId());
+        updateCommand.setPrimaryFlag(command.getPrimaryFlag());
+        updateCommand.setLeaderFlag(command.getLeaderFlag());
+        updateCommand.setOperatorUserId(MangoContextHolder.userId());
+        tenantMemberProvider.updateOrgRelation(updateCommand);
     }
 
     @Override
     @Transactional
     public void removeMember(Long relationId) {
-        TenantMemberOrgEntity relation = tenantMemberOrgMapper.selectById(relationId);
+        TenantMemberOrgRelationInfo relation = tenantMemberProvider.getOrgRelation(relationId);
         Require.notNull(relation, PostCode.ORG_MEMBER_RELATION_NOT_FOUND);
         if (isPrimaryRelation(relation)) {
             Require.isTrue(hasOtherPrimaryCandidate(relation), PostCode.ORG_MEMBER_PRIMARY_REQUIRED);
         }
-        tenantMemberOrgMapper.deleteById(relationId);
-        TenantMember member = tenantMemberMapper.selectById(relation.getMemberId());
-        if (member != null && relation.getOrgId().equals(member.getPrimaryOrgId())) {
-            TenantMemberOrgEntity next = tenantMemberOrgMapper.selectOne(
-                    new LambdaQueryWrapper<TenantMemberOrgEntity>()
-                            .eq(TenantMemberOrgEntity::getTenantId, relation.getTenantId())
-                            .eq(TenantMemberOrgEntity::getMemberId, relation.getMemberId())
-                            .orderByDesc(TenantMemberOrgEntity::getPrimaryFlag)
-                            .orderByAsc(TenantMemberOrgEntity::getId)
-                            .last("LIMIT 1"));
-            member.setPrimaryOrgId(next == null ? null : next.getOrgId());
-            member.setPrimaryPostId(next == null ? null : next.getPostId());
-            tenantMemberMapper.updateById(member);
-            if (next != null && !Integer.valueOf(1).equals(next.getPrimaryFlag())) {
-                next.setPrimaryFlag(1);
-                tenantMemberOrgMapper.updateById(next);
-            }
-        }
+        tenantMemberProvider.removeOrgRelation(relationId);
     }
 
     @Override
     public List<Long> leaderUserIds(Long orgId) {
         SysOrg org = getById(orgId);
         List<Long> leaderPostIds = leaderPostIds(org.getTenantId());
-        List<TenantMemberOrgEntity> relations = tenantMemberOrgMapper.selectList(
-                new LambdaQueryWrapper<TenantMemberOrgEntity>()
-                        .eq(TenantMemberOrgEntity::getTenantId, org.getTenantId())
-                        .eq(TenantMemberOrgEntity::getOrgId, orgId));
+        List<TenantMemberOrgRelationInfo> relations = tenantMemberProvider.listOrgRelations(org.getTenantId(), orgId);
         if (relations == null || relations.isEmpty()) {
             return List.of();
         }
         List<Long> memberIds = relations.stream()
                 .filter(relation -> Integer.valueOf(1).equals(relation.getLeaderFlag())
                         || (relation.getPostId() != null && leaderPostIds.contains(relation.getPostId())))
-                .map(TenantMemberOrgEntity::getMemberId)
+                .map(TenantMemberOrgRelationInfo::getMemberId)
                 .distinct()
                 .toList();
         if (memberIds.isEmpty()) {
             return List.of();
         }
-        return tenantMemberMapper.selectBatchIds(memberIds).stream()
+        return tenantMemberProvider.listMembers(memberIds).stream()
                 .filter(member -> member != null && Integer.valueOf(1).equals(member.getStatus()))
-                .map(TenantMember::getUserId)
+                .map(TenantMemberInfo::getUserId)
                 .distinct()
                 .toList();
     }
@@ -348,26 +299,19 @@ public class SysOrgServiceImpl implements ISysOrgService {
         Require.isFalse("0".equals(post.getPostStatus()), PostCode.POST_NOT_FOUND);
     }
 
-    private OrgMemberVO toMemberVO(TenantMemberOrgEntity relation) {
+    private OrgMemberVO toMemberVO(TenantMemberOrgRelationInfo relation) {
         OrgMemberVO vo = new OrgMemberVO();
-        vo.setRelationId(relation.getId());
+        vo.setRelationId(relation.getRelationId());
         vo.setMemberId(relation.getMemberId());
         vo.setOrgId(relation.getOrgId());
         vo.setPostId(relation.getPostId());
-        vo.setPrimaryFlag(Integer.valueOf(1).equals(relation.getPrimaryFlag()));
-
-        TenantMember member = tenantMemberMapper.selectById(relation.getMemberId());
-        if (member != null) {
-            vo.setUserId(member.getUserId());
-            vo.setMemberName(member.getDisplayName());
-            vo.setMemberType(member.getMemberType());
-            vo.setStatus(member.getStatus());
-            IdentityUser user = identityUserMapper.selectById(member.getUserId());
-            if (user != null) {
-                vo.setUsername(user.getUsername());
-                vo.setNickname(user.getNickname());
-            }
-        }
+        vo.setPrimaryFlag(Boolean.TRUE.equals(relation.getPrimaryFlag()));
+        vo.setUserId(relation.getUserId());
+        vo.setMemberName(relation.getDisplayName());
+        vo.setMemberType(relation.getMemberType());
+        vo.setStatus(relation.getStatus());
+        vo.setUsername(relation.getUsername());
+        vo.setNickname(relation.getNickname());
         PostEntity post = relation.getPostId() == null ? null : postMapper.selectById(relation.getPostId());
         if (post != null) {
             vo.setPostName(post.getPostName());
@@ -379,28 +323,13 @@ public class SysOrgServiceImpl implements ISysOrgService {
         return vo;
     }
 
-    private void clearMemberPrimaryOrg(Long tenantId, Long memberId) {
-        List<TenantMemberOrgEntity> relations = tenantMemberOrgMapper.selectList(
-                new LambdaQueryWrapper<TenantMemberOrgEntity>()
-                        .eq(TenantMemberOrgEntity::getTenantId, tenantId)
-                        .eq(TenantMemberOrgEntity::getMemberId, memberId)
-                        .eq(TenantMemberOrgEntity::getPrimaryFlag, 1));
-        relations.forEach(relation -> {
-            relation.setPrimaryFlag(0);
-            tenantMemberOrgMapper.updateById(relation);
-        });
+    private boolean isPrimaryRelation(TenantMemberOrgRelationInfo relation) {
+        return Boolean.TRUE.equals(relation.getPrimaryFlag());
     }
 
-    private boolean isPrimaryRelation(TenantMemberOrgEntity relation) {
-        return Integer.valueOf(1).equals(relation.getPrimaryFlag());
-    }
-
-    private boolean hasOtherPrimaryCandidate(TenantMemberOrgEntity relation) {
-        Long count = tenantMemberOrgMapper.selectCount(new LambdaQueryWrapper<TenantMemberOrgEntity>()
-                .eq(TenantMemberOrgEntity::getTenantId, relation.getTenantId())
-                .eq(TenantMemberOrgEntity::getMemberId, relation.getMemberId())
-                .ne(TenantMemberOrgEntity::getId, relation.getId()));
-        return count != null && count > 0;
+    private boolean hasOtherPrimaryCandidate(TenantMemberOrgRelationInfo relation) {
+        return tenantMemberProvider.countOtherOrgRelations(
+                relation.getTenantId(), relation.getMemberId(), relation.getRelationId()) > 0;
     }
 
     private List<Long> leaderPostIds(Long tenantId) {
@@ -430,8 +359,8 @@ public class SysOrgServiceImpl implements ISysOrgService {
                 || code.endsWith("_" + TEAM_LEADER_POST_CODE);
     }
 
-    private boolean isLeaderRelation(TenantMemberOrgEntity relation, PostEntity post) {
-        if (relation != null && Integer.valueOf(1).equals(relation.getLeaderFlag())) {
+    private boolean isLeaderRelation(TenantMemberOrgRelationInfo relation, PostEntity post) {
+        if (relation != null && Boolean.TRUE.equals(relation.getLeaderFlag())) {
             return true;
         }
         return isLeaderPost(post);

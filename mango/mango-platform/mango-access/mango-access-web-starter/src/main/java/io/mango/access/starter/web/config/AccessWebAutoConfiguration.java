@@ -2,7 +2,7 @@ package io.mango.access.starter.web.config;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.IAuthorizationProvider;
-import io.mango.access.core.auth.AccessContextValidator;
+import io.mango.access.api.auth.AccessContextValidator;
 import io.mango.access.core.auth.AccessService;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.access.starter.web.filter.AuthFilter;

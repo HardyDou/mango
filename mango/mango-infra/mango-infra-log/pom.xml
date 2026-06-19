@@ -19,6 +19,12 @@
     <description>Mango Infra Log Starter - Logback configuration and audit log annotations</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.infra.log</groupId>
+            <artifactId>mango-infra-log-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Spring Boot Logging -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -44,7 +44,7 @@ import java.util.List;
  * Capability beans are opt-in. Store selection creates IKvStore; this class
  * only creates higher-level capability beans when explicitly enabled.
  */
-@AutoConfiguration
+@AutoConfiguration(after = KvStoreAutoConfiguration.class)
 @EnableConfigurationProperties(KvStoreProperties.class)
 @ConditionalOnClass({ICache.class, ILocker.class})
 @ConditionalOnExpression("${mango.kv.capability.enabled:false}")

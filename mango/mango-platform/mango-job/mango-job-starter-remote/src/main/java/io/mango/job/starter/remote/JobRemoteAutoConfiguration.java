@@ -3,8 +3,6 @@ package io.mango.job.starter.remote;
 import io.mango.job.api.handler.MangoJobHandler;
 import io.mango.job.support.service.IMangoJobHandlerRegistry;
 import io.mango.job.support.service.MangoJobHandlerRegistry;
-import io.mango.job.support.nativeengine.MangoJobWorkerExecutor;
-import io.mango.job.support.nativeengine.MangoJobWorkerInternalController;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,12 +32,6 @@ public class JobRemoteAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    MangoJobWorkerExecutor mangoJobWorkerExecutor(IMangoJobHandlerRegistry handlerRegistry) {
-        return new MangoJobWorkerExecutor(handlerRegistry);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
     HttpInternalMangoJobWorkerTransport httpInternalMangoJobWorkerTransport(
             MangoJobWorkerFeignClient workerFeignClient) {
         return new HttpInternalMangoJobWorkerTransport(workerFeignClient);
@@ -53,9 +45,4 @@ public class JobRemoteAutoConfiguration {
         return new MangoJobRemoteWorkerRegistrar(jobFeignClient, handlerRegistry, properties);
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    MangoJobWorkerInternalController mangoJobWorkerInternalController(MangoJobWorkerExecutor workerExecutor) {
-        return new MangoJobWorkerInternalController(workerExecutor);
-    }
 }

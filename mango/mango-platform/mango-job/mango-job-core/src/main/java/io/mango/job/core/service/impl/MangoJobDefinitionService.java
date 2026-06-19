@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;

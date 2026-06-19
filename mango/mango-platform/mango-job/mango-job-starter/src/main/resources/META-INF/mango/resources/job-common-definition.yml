@@ -13,9 +13,9 @@ mango:
           fields:
             jobId: { type: LONG, value: 2951100000000000001 }
             tenantId: { type: STRING, value: "1" }
-            appCode: { type: STRING, value: mango-monolith-app }
-            ownerService: { type: STRING, value: mango-monolith-app }
-            workerGroup: { type: STRING, value: mango-monolith-app }
+            appCode: { type: STRING, value: mango-job }
+            ownerService: { type: STRING, value: mango-job }
+            workerGroup: { type: STRING, value: mango-job }
             moduleCode: { type: STRING, value: mango-job }
             jobCode: { type: STRING, value: mango_job_default_sample_manual_probe }
             jobName: { type: STRING, value: 默认示例 手动 Probe 任务 }
@@ -47,9 +47,9 @@ mango:
           fields:
             jobId: { type: LONG, value: 2951100000000000002 }
             tenantId: { type: STRING, value: "1" }
-            appCode: { type: STRING, value: mango-monolith-app }
-            ownerService: { type: STRING, value: mango-monolith-app }
-            workerGroup: { type: STRING, value: mango-monolith-app }
+            appCode: { type: STRING, value: mango-job }
+            ownerService: { type: STRING, value: mango-job }
+            workerGroup: { type: STRING, value: mango-job }
             moduleCode: { type: STRING, value: mango-job }
             jobCode: { type: STRING, value: mango_job_default_sample_cron_probe }
             jobName: { type: STRING, value: 默认示例 Cron Probe 任务 }

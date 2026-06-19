@@ -1,9 +1,9 @@
 package io.mango.system.core.access;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.access.core.auth.AccessContextValidationResult;
-import io.mango.access.core.auth.AccessContextValidator;
-import io.mango.access.core.auth.AccessPrincipal;
+import io.mango.access.api.auth.AccessContextValidationResult;
+import io.mango.access.api.auth.AccessContextValidator;
+import io.mango.access.api.auth.AccessPrincipal;
 import io.mango.system.api.enums.InstitutionStatus;
 import io.mango.system.core.entity.SysTenant;
 import io.mango.system.core.mapper.SysTenantMapper;

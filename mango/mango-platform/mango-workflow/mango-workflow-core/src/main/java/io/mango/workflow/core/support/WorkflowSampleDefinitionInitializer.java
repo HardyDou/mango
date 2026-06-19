@@ -5,8 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.core.entity.WorkflowDefinition;
@@ -109,7 +109,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         Long definitionId = definition == null
                 ? createDefinition(categoryId, sample)
                 : needsRefresh ? updateDefinition(definition, sample) : definition.getId();
-        R<?> deployResult = definitionService.deploy(definitionId);
+        R<?> deployResult = definitionService.deployInternal(definitionId);
         if (!deployResult.isSuccess()) {
             log.warn("内置示例流程发布失败，definitionKey={}, msg={}", sample.definitionKey(), deployResult.getMsg());
         }

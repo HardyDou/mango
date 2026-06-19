@@ -1,7 +1,7 @@
 package io.mango.infra.web.filter;
 
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;

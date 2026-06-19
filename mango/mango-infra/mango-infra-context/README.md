@@ -18,8 +18,9 @@
 - 不直接实现数据库租户过滤；持久化层只可把这里的 tenant id 作为输入事实。
 
 ## 4. 模块入口
-- `mango-infra-context-core`：提供 `MangoContextSnapshot`、`MangoContextHolder`、`MangoContextHeaders`。
-- `mango-infra-context-starter`：提供自动配置、`TaskDecorator`、`mangoContextExecutor` 和上下文包装工具。
+- `mango-infra-context-api`：提供 `MangoContextSnapshot`、`MangoContextHolder`、`MangoContextHeaders`。
+- `mango-infra-context-support`：提供 `TtlExecutorDecorator`、`TtlAsync`、`MangoContextExecutors` 和 `MangoContextTaskDecorator`。
+- `mango-infra-context-starter`：提供自动配置、`mangoContextExecutor` 和运行时装配。
 - 请求头读取由 `mango-infra-web` 完成；Feign 透传由 `mango-infra-feign` 完成。
 
 ## 5. 接入方式
@@ -28,7 +29,16 @@
 ```xml
 <dependency>
     <groupId>io.mango.infra.context</groupId>
-    <artifactId>mango-infra-context-core</artifactId>
+    <artifactId>mango-infra-context-api</artifactId>
+</dependency>
+```
+
+业务 core 需要包装自定义线程池：
+
+```xml
+<dependency>
+    <groupId>io.mango.infra.context</groupId>
+    <artifactId>mango-infra-context-support</artifactId>
 </dependency>
 ```
 

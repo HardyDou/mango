@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * 身份用户资料 Feign 客户端。
  */
-@FeignClient(name = "mango-identity", path = "/identity")
+@FeignClient(name = "mango-identity", contextId = "identityUserFeignClient", path = "/identity")
 public interface IdentityUserFeignClient extends IdentityUserApi {
 
     @Override

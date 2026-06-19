@@ -18,6 +18,12 @@
     <description>Mango Access Core - 边界访问决策和认证逻辑</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.platform.access</groupId>
+            <artifactId>mango-access-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango 授权与安全 API -->
         <dependency>
             <groupId>io.mango.platform.authorization</groupId>

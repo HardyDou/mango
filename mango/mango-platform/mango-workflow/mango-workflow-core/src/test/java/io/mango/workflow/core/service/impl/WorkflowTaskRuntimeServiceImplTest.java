@@ -2,8 +2,8 @@ package io.mango.workflow.core.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;

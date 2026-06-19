@@ -1,10 +1,10 @@
 package io.mango.access.starter.gateway.filter;
 
 import io.mango.access.core.AccessConstants;
-import io.mango.access.core.auth.AccessPrincipal;
-import io.mango.access.core.auth.AccessResult;
+import io.mango.access.api.auth.AccessPrincipal;
+import io.mango.access.api.auth.AccessResult;
 import io.mango.access.core.auth.AccessService;
-import io.mango.infra.context.core.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHeaders;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Supplier;
 
 /**
  * 认证全局过滤器（微服务模式）。
@@ -29,13 +30,13 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
-    private final AccessService accessService;
+    private final Supplier<AccessService> accessServiceSupplier;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
-        AccessResult result = accessService.check(
+        AccessResult result = accessServiceSupplier.get().check(
                 request.getMethod().name(),
                 path,
                 resolveTokenCredential(request),

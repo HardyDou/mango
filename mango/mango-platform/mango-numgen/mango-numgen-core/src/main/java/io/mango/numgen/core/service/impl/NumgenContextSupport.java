@@ -1,7 +1,7 @@
 package io.mango.numgen.core.service.impl;
 
 import io.mango.common.result.Require;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import org.springframework.util.StringUtils;
 
 final class NumgenContextSupport {

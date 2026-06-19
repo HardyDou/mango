@@ -18,6 +18,12 @@
     <description>Mango Access Web Starter - Servlet Web 边界认证自动配置</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.platform.access</groupId>
+            <artifactId>mango-access-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- 边界入口核心能力 -->
         <dependency>
             <groupId>io.mango.platform.access</groupId>

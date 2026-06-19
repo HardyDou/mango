@@ -1,6 +1,6 @@
 package io.mango.system.core.middleware;
 
-import io.mango.infra.context.core.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHeaders;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

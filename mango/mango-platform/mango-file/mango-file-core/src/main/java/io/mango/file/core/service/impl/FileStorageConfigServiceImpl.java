@@ -18,7 +18,7 @@ import io.mango.file.core.entity.FileStorageConfig;
 import io.mango.file.core.mapper.FileStorageConfigMapper;
 import io.mango.file.core.service.IFileStorageConfigService;
 import io.mango.file.core.storage.FileStorageRouter;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -20,6 +20,7 @@ import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.IAppModuleService;
 import io.mango.common.result.Require;
+import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +47,8 @@ public class AppModuleServiceImpl implements IAppModuleService {
     private final MenuPackageItemMapper menuPackageItemMapper;
     private final RoleMapper roleMapper;
     private final RoleMenuMapper roleMenuMapper;
+    private final List<TenantPackageBindingProvider> tenantPackageBindingProviders;
+    private final TenantMenuPackageBindingHandler tenantMenuPackageBindingHandler;
 
     @Override
     public List<AppModuleVO> list(String appCode, Integer status) {
@@ -117,8 +122,14 @@ public class AppModuleServiceImpl implements IAppModuleService {
         }
         ManifestContext context = new ManifestContext(command);
         for (AppModuleResourceManifestCommand.Menu menu : command.getMenus()) {
-            context.increment(upsertManifestMenu(context, menu, resolveManifestParentId(context, menu, 0L)));
+            context.increment(upsertManifestMenu(
+                    context,
+                    menu,
+                    resolveManifestParentId(context, menu, 0L),
+                    context.packageCodes(),
+                    context.roleCodes()));
         }
+        refreshTenantPackageBindings(context.changedPackageIds());
         return context.count();
     }
 
@@ -135,12 +146,16 @@ public class AppModuleServiceImpl implements IAppModuleService {
     private int upsertManifestMenu(
             ManifestContext context,
             AppModuleResourceManifestCommand.Menu item,
-            Long parentId) {
+            Long parentId,
+            List<String> inheritedPackageCodes,
+            List<String> inheritedRoleCodes) {
         if (item == null) {
             return 0;
         }
         Require.notBlank(item.getMenuName(), "菜单名称不能为空");
         Require.notBlank(item.getMenuCode(), "菜单编码不能为空");
+        List<String> packageCodes = context.resolvePackageCodes(item.getPackageCodes(), inheritedPackageCodes);
+        List<String> roleCodes = context.resolveRoleCodes(item.getRoleCodes(), inheritedRoleCodes);
         Menu menu = findMenu(context.appCode(), context.moduleCode(), item.getMenuCode());
         LocalDateTime now = LocalDateTime.now();
         if (menu == null) {
@@ -158,12 +173,17 @@ public class AppModuleServiceImpl implements IAppModuleService {
             menuMapper.updateById(menu);
         }
         saveRuntimeConfig(menu, item.getPageType(), item.getExternalUrl());
-        assignManifestMenu(context, menu);
+        assignManifestMenu(context, menu, packageCodes, roleCodes);
         int changed = 1;
-        changed += upsertPermissionMenus(context, item, menu.getMenuId());
+        changed += upsertPermissionMenus(context, item, menu.getMenuId(), packageCodes, roleCodes);
         if (item.getChildren() != null) {
             for (AppModuleResourceManifestCommand.Menu child : item.getChildren()) {
-                changed += upsertManifestMenu(context, child, resolveManifestParentId(context, child, menu.getMenuId()));
+                changed += upsertManifestMenu(
+                        context,
+                        child,
+                        resolveManifestParentId(context, child, menu.getMenuId()),
+                        packageCodes,
+                        roleCodes);
             }
         }
         return changed;
@@ -211,7 +231,9 @@ public class AppModuleServiceImpl implements IAppModuleService {
     private int upsertPermissionMenus(
             ManifestContext context,
             AppModuleResourceManifestCommand.Menu item,
-            Long parentId) {
+            Long parentId,
+            List<String> inheritedPackageCodes,
+            List<String> inheritedRoleCodes) {
         if (item.getPermissionItems() == null || item.getPermissionItems().isEmpty()) {
             return 0;
         }
@@ -222,7 +244,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
             }
             Require.notBlank(permission.getPermissionCode(), "权限编码不能为空");
             Require.notBlank(permission.getPermissionName(), "权限名称不能为空");
-            Menu menu = findMenu(context.appCode(), context.moduleCode(), permission.getPermissionCode());
+            Menu menu = findMenu(context.appCode(), context.moduleCode(), permissionMenuCode(permission));
             LocalDateTime now = LocalDateTime.now();
             if (menu == null) {
                 menu = new Menu();
@@ -239,7 +261,11 @@ public class AppModuleServiceImpl implements IAppModuleService {
                 menuMapper.updateById(menu);
             }
             ensureMenuRuntimeConfig(menu);
-            assignManifestMenu(context, menu);
+            assignManifestMenu(
+                    context,
+                    menu,
+                    context.resolvePackageCodes(permission.getPackageCodes(), inheritedPackageCodes),
+                    context.resolveRoleCodes(permission.getRoleCodes(), inheritedRoleCodes));
             changed++;
         }
         return changed;
@@ -256,6 +282,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
         menu.setParentId(parentId == null ? 0L : parentId);
         menu.setMenuType(3);
         menu.setMenuName(permission.getPermissionName());
+        menu.setMenuCode(permissionMenuCode(permission));
         menu.setPath(null);
         menu.setIcon(null);
         menu.setSort(permission.getSort() == null ? 0 : permission.getSort());
@@ -268,6 +295,13 @@ public class AppModuleServiceImpl implements IAppModuleService {
         menu.setPermissions(permission.getPermissionCode());
         menu.setRemark(permission.getRemark());
         menu.setDelFlag(0);
+    }
+
+    private String permissionMenuCode(AppModuleResourceManifestCommand.Permission permission) {
+        if (StringUtils.hasText(permission.getMenuCode())) {
+            return permission.getMenuCode().trim();
+        }
+        return permission.getPermissionCode().trim();
     }
 
     private Menu findMenu(String appCode, String moduleCode, String menuCode) {
@@ -289,7 +323,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
                 .eq(Menu::getTenantId, 1L)
                 .eq(Menu::getAppCode, appCode)
                 .eq(Menu::getMenuCode, menuCode)
-                .eq(Menu::getMenuType, 1)
+                .in(Menu::getMenuType, List.of(1, 2))
                 .eq(Menu::getDelFlag, 0)
                 .last("LIMIT 1"));
     }
@@ -327,17 +361,22 @@ public class AppModuleServiceImpl implements IAppModuleService {
         saveRuntimeConfig(menu, defaultPageType(menu), null);
     }
 
-    private void assignManifestMenu(ManifestContext context, Menu menu) {
-        assignMenuPackages(context, menu);
-        assignRoleMenus(context, menu);
+    private void assignManifestMenu(
+            ManifestContext context,
+            Menu menu,
+            List<String> packageCodes,
+            List<String> roleCodes) {
+        assignMenuPackages(context, menu, packageCodes);
+        assignRoleMenus(context, menu, roleCodes);
     }
 
-    private void assignMenuPackages(ManifestContext context, Menu menu) {
-        for (String packageCode : context.packageCodes()) {
+    private void assignMenuPackages(ManifestContext context, Menu menu, List<String> packageCodes) {
+        for (String packageCode : packageCodes) {
             MenuPackage menuPackage = findMenuPackage(context.appCode(), packageCode);
             if (menuPackage == null) {
                 continue;
             }
+            context.addChangedPackageId(menuPackage.getPackageId());
             MenuPackageItem existing = menuPackageItemMapper.selectOne(new LambdaQueryWrapper<MenuPackageItem>()
                     .eq(MenuPackageItem::getPackageId, menuPackage.getPackageId())
                     .eq(MenuPackageItem::getMenuId, menu.getMenuId())
@@ -353,8 +392,22 @@ public class AppModuleServiceImpl implements IAppModuleService {
         }
     }
 
-    private void assignRoleMenus(ManifestContext context, Menu menu) {
-        for (String roleCode : context.roleCodes()) {
+    private void refreshTenantPackageBindings(Set<Long> packageIds) {
+        for (Long packageId : packageIds) {
+            Set<Long> tenantIds = tenantPackageBindingProviders.stream()
+                    .map(provider -> provider.listTenantIdsByPackage(packageId))
+                    .filter(ids -> ids != null && !ids.isEmpty())
+                    .flatMap(List::stream)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (tenantIds.isEmpty()) {
+                continue;
+            }
+            tenantIds.forEach(tenantId -> tenantMenuPackageBindingHandler.bindPackage(tenantId, packageId));
+        }
+    }
+
+    private void assignRoleMenus(ManifestContext context, Menu menu, List<String> roleCodes) {
+        for (String roleCode : roleCodes) {
             Role role = findRole(context.appCode(), roleCode);
             if (role == null) {
                 continue;
@@ -445,6 +498,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
         private final String moduleCode;
         private final List<String> packageCodes;
         private final List<String> roleCodes;
+        private final Set<Long> changedPackageIds = new LinkedHashSet<>();
         private int count;
 
         private ManifestContext(AppModuleResourceManifestCommand command) {
@@ -470,12 +524,36 @@ public class AppModuleServiceImpl implements IAppModuleService {
             return roleCodes;
         }
 
+        private List<String> resolvePackageCodes(List<String> menuPackageCodes, List<String> inheritedPackageCodes) {
+            if (menuPackageCodes == null) {
+                return inheritedPackageCodes == null ? packageCodes : inheritedPackageCodes;
+            }
+            return cleanCodes(menuPackageCodes);
+        }
+
+        private List<String> resolveRoleCodes(List<String> menuRoleCodes, List<String> inheritedRoleCodes) {
+            if (menuRoleCodes == null) {
+                return inheritedRoleCodes == null ? roleCodes : inheritedRoleCodes;
+            }
+            return cleanCodes(menuRoleCodes);
+        }
+
         private void increment(int value) {
             count += value;
         }
 
         private int count() {
             return count;
+        }
+
+        private void addChangedPackageId(Long packageId) {
+            if (packageId != null) {
+                changedPackageIds.add(packageId);
+            }
+        }
+
+        private Set<Long> changedPackageIds() {
+            return changedPackageIds;
         }
 
         private static List<String> cleanCodes(List<String> values) {

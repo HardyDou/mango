@@ -2,7 +2,7 @@ package io.mango.ai.core.service;
 
 import io.mango.ai.api.dto.ChatRequest;
 import io.mango.ai.core.provider.DeepSeekProvider;
-import io.mango.infra.context.starter.TtlExecutorDecorator;
+import io.mango.infra.context.support.TtlExecutorDecorator;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;

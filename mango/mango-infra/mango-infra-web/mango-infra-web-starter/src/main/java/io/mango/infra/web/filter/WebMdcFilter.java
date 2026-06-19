@@ -1,7 +1,7 @@
 package io.mango.infra.web.filter;
 
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

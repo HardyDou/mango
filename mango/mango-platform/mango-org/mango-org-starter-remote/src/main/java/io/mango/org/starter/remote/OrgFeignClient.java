@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @author Mango
  */
-@FeignClient(name = "mango-org", path = "/org")
+@FeignClient(name = "mango-org", contextId = "orgFeignClient", path = "/org")
 public interface OrgFeignClient extends SysOrgApi {
 
     /**

@@ -8,6 +8,8 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeApplier;
 import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
@@ -128,6 +130,66 @@ class WorkflowDefinitionServiceImplTest {
         verify(definitionMapper).selectOne(wrapperCaptor.capture());
         String sqlSegment = wrapperCaptor.getValue().getSqlSegment();
         assertThat(sqlSegment).contains("id", "org_id", "created_by");
+    }
+
+    @Test
+    void deployInternal_shouldResolveDefinitionByTenantWithoutMemberDataScope() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(8801L, "55", "workflow-initializer", "INTERNAL",
+                        "INTERNAL_USER", "INTERNAL_ORG", 55L, "workflow-starter"));
+        try {
+            WorkflowDefinition definition = new WorkflowDefinition();
+            definition.setId(3001L);
+            definition.setTenantId(55L);
+            definition.setCategoryId(20L);
+            definition.setDomainCode("PAYMENT");
+            definition.setDefinitionName("退款审批");
+            definition.setDefinitionKey("PAYMENT_REFUND_APPROVAL");
+            definition.setDesignerJson("{\"id\":\"startEvent\"}");
+            definition.setStatus(WorkflowDefinitionStatus.DRAFT.name());
+            when(definitionMapper.selectOne(any(Wrapper.class))).thenReturn(definition);
+            when(versionMapper.selectOne(any(Wrapper.class))).thenReturn(null);
+            doAnswer(invocation -> {
+                WorkflowDefinitionVersion version = invocation.getArgument(0);
+                version.setId(4001L);
+                return 1;
+            }).when(versionMapper).insert(any(WorkflowDefinitionVersion.class));
+
+            BpmnModel bpmnModel = new BpmnModel();
+            when(bpmnConverter.toModel(anyString(), eq("PAYMENT_REFUND_APPROVAL"), eq("退款审批")))
+                    .thenReturn(bpmnModel);
+            when(bpmnConverter.toXml(anyString(), eq("PAYMENT_REFUND_APPROVAL"), eq("退款审批")))
+                    .thenReturn("<definitions />");
+            DeploymentBuilder builder = org.mockito.Mockito.mock(DeploymentBuilder.class);
+            Deployment deployment = org.mockito.Mockito.mock(Deployment.class);
+            ProcessDefinitionQuery processDefinitionQuery = org.mockito.Mockito.mock(ProcessDefinitionQuery.class);
+            ProcessDefinition processDefinition = org.mockito.Mockito.mock(ProcessDefinition.class);
+            when(repositoryService.createDeployment()).thenReturn(builder);
+            when(builder.name("退款审批")).thenReturn(builder);
+            when(builder.key("PAYMENT_REFUND_APPROVAL")).thenReturn(builder);
+            when(builder.tenantId("55")).thenReturn(builder);
+            when(builder.addBpmnModel("PAYMENT_REFUND_APPROVAL.bpmn20.xml", bpmnModel)).thenReturn(builder);
+            when(builder.deploy()).thenReturn(deployment);
+            when(deployment.getId()).thenReturn("deploy-internal");
+            when(repositoryService.createProcessDefinitionQuery()).thenReturn(processDefinitionQuery);
+            when(processDefinitionQuery.deploymentId("deploy-internal")).thenReturn(processDefinitionQuery);
+            when(processDefinitionQuery.processDefinitionKey("PAYMENT_REFUND_APPROVAL")).thenReturn(processDefinitionQuery);
+            when(processDefinitionQuery.latestVersion()).thenReturn(processDefinitionQuery);
+            when(processDefinitionQuery.singleResult()).thenReturn(processDefinition);
+            when(processDefinition.getId()).thenReturn("proc-internal");
+            when(processDefinition.getVersion()).thenReturn(1);
+
+            R<WorkflowDeployVO> result = service.deployInternal(3001L);
+
+            assertThat(result.isSuccess()).isTrue();
+            ArgumentCaptor<Wrapper<WorkflowDefinition>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+            verify(definitionMapper).selectOne(wrapperCaptor.capture());
+            String sqlSegment = wrapperCaptor.getValue().getSqlSegment();
+            assertThat(sqlSegment).contains("tenant_id", "id");
+            assertThat(sqlSegment).doesNotContain("org_id", "created_by");
+        } finally {
+            MangoContextHolder.clear();
+        }
     }
 
     @Test

@@ -75,8 +75,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 + "org.springframework.cloud.gateway.config.GatewayAutoConfiguration,"
                 + "org.springframework.cloud.gateway.config.GatewayClassPathWarningAutoConfiguration,"
                 + "io.mango.authorization.starter.AuthorizationAutoConfiguration,"
-                + "io.mango.authorization.support.autoconfigure.TokenAutoConfiguration,"
-                + "io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration"
+                + "io.mango.authorization.starter.autoconfigure.TokenAutoConfiguration,"
+                + "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration"
 })
 class ApiAccessResourceProviderDatabaseComparisonTest {
 
@@ -241,8 +241,8 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
             ApiResourceProviderAutoConfiguration.class
     }, excludeName = {
             "io.mango.authorization.starter.AuthorizationAutoConfiguration",
-            "io.mango.authorization.support.autoconfigure.TokenAutoConfiguration",
-            "io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration"
+            "io.mango.authorization.starter.autoconfigure.TokenAutoConfiguration",
+            "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration"
     })
     @MapperScan(basePackageClasses = {
             ApiResourceMapper.class

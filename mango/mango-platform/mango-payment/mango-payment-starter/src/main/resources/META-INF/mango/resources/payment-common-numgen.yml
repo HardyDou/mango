@@ -5,7 +5,7 @@ mango:
     module-name: 支付
     declarations:
       SEQUENCE_RULE:
-        - id: "2026061800600000001"
+        - id: "2026061800700000001"
           version: 1
           biz-key: payment.numgen.pay-biz-order-no
           name: 支付业务订单号

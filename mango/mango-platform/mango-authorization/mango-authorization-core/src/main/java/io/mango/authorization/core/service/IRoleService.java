@@ -1,7 +1,11 @@
 package io.mango.authorization.core.service;
 
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
+import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
 import io.mango.authorization.api.command.RoleCommand;
+import io.mango.authorization.api.command.SubjectRoleBindingCommand;
+import io.mango.authorization.api.query.RoleLookupQuery;
+import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
 
@@ -64,6 +68,38 @@ public interface IRoleService {
      * 给主体分配角色。
      */
     Boolean assignRoles(AssignSubjectRolesCommand command);
+
+    /**
+     * 按业务条件查询角色 ID。
+     *
+     * @param query 查询条件
+     * @return 角色 ID
+     */
+    Long findRoleId(RoleLookupQuery query);
+
+    /**
+     * 确保主体角色绑定存在。
+     *
+     * @param command 绑定命令
+     * @return 是否成功
+     */
+    Boolean ensureSubjectRoleBinding(SubjectRoleBindingCommand command);
+
+    /**
+     * 删除主体角色绑定。
+     *
+     * @param command 删除命令
+     * @return 删除数量
+     */
+    Integer deleteSubjectRoleBindings(DeleteSubjectRoleBindingsCommand command);
+
+    /**
+     * 按角色查询主体 ID。
+     *
+     * @param query 查询条件
+     * @return 主体 ID 列表
+     */
+    List<Long> listSubjectIdsByRole(SubjectRoleBindingQuery query);
 
     /**
      * 查询角色已分配菜单 ID。

@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * 身份服务自动配置。
@@ -23,5 +25,11 @@ public class IdentityAutoConfiguration {
     @ConditionalOnMissingBean
     public AuthUserProvider authUserProvider(IIdentityUserService identityUserService) {
         return new IdentityAuthUserProvider(identityUserService);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(PasswordEncoder.class)
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

@@ -30,6 +30,7 @@ import java.util.List;
 @EnableConfigurationProperties(FileProperties.class)
 @MapperScan("io.mango.file.core.mapper")
 @ComponentScan({
+        "io.mango.file.core.resource",
         "io.mango.file.core.service",
         "io.mango.file.starter"
     })

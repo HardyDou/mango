@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 /**
  * 授权远程客户端。
  */
-@FeignClient(name = "mango-authorization", path = "/authorization")
+@FeignClient(name = "mango-authorization", contextId = "authorizationFeignClient", path = "/authorization")
 public interface AuthorizationFeignClient extends AuthorizationApi {
 
     @Override

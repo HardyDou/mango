@@ -16,7 +16,6 @@ import io.mango.resource.support.declaration.FileResourceProvider;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationLoader;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -63,7 +62,6 @@ public class ResourceRegistryCoreConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(ILocker.class)
     @ConditionalOnMissingBean
     public ResourceRegistryLock resourceRegistryLock(ILocker locker) {
         return new ResourceRegistryLock(locker);

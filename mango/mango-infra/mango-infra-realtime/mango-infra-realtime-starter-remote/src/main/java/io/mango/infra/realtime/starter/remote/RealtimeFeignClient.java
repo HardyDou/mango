@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 /**
  * Feign adapter for remote realtime publishing.
  */
-@FeignClient(name = "mango-infra-realtime", path = "/realtime/messages")
+@FeignClient(name = "mango-infra-realtime", contextId = "realtimeFeignClient", path = "/realtime/messages")
 public interface RealtimeFeignClient extends RealtimeApi {
 
     @Override

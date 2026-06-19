@@ -18,7 +18,7 @@ import io.mango.authorization.core.service.IAuthorizationAppService;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.authorization.core.service.ITenantAppBindingService;
-import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
+import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

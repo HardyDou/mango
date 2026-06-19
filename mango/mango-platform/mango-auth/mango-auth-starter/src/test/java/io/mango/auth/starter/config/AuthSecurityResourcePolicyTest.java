@@ -1,7 +1,7 @@
 package io.mango.auth.starter.config;
 
 import io.mango.authorization.api.ITokenProvider;
-import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
+import io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

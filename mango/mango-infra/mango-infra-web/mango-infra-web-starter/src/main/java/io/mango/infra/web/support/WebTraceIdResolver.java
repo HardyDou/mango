@@ -1,6 +1,6 @@
 package io.mango.infra.web.support;
 
-import io.mango.infra.context.core.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHeaders;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.MDC;
 

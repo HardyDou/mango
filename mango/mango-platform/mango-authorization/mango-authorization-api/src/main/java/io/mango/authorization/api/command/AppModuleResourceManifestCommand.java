@@ -104,6 +104,12 @@ public class AppModuleResourceManifestCommand implements Serializable {
         @Schema(description = "页面携带的权限编码列表")
         private List<String> permissions = new ArrayList<>();
 
+        @Schema(description = "当前菜单同步到的套餐编码列表；为空时继承父菜单或清单级套餐配置，空数组表示不绑定套餐")
+        private List<String> packageCodes;
+
+        @Schema(description = "当前菜单默认授权到的角色编码列表；为空时继承父菜单或清单级角色配置，空数组表示不授权角色")
+        private List<String> roleCodes;
+
         @Valid
         @Schema(description = "页面下的按钮权限")
         private List<Permission> permissionItems = new ArrayList<>();
@@ -125,6 +131,9 @@ public class AppModuleResourceManifestCommand implements Serializable {
 
         private static final long serialVersionUID = 1L;
 
+        @Schema(description = "按钮菜单编码；为空时使用权限码")
+        private String menuCode;
+
         @NotBlank
         @Schema(description = "权限码")
         private String permissionCode;
@@ -138,6 +147,12 @@ public class AppModuleResourceManifestCommand implements Serializable {
 
         @Schema(description = "状态：0-禁用，1-启用")
         private Integer status;
+
+        @Schema(description = "当前按钮同步到的套餐编码列表；为空时继承所属菜单套餐配置，空数组表示不绑定套餐")
+        private List<String> packageCodes;
+
+        @Schema(description = "当前按钮默认授权到的角色编码列表；为空时继承所属菜单角色配置，空数组表示不授权角色")
+        private List<String> roleCodes;
 
         @Schema(description = "备注")
         private String remark;

@@ -1,7 +1,7 @@
 package io.mango.job.starter;
 
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import lombok.RequiredArgsConstructor;

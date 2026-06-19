@@ -1,8 +1,8 @@
 package io.mango.infra.persistence.starter.scope;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import io.mango.infra.persistence.api.scope.DataScopeRule;
 import org.junit.jupiter.api.AfterEach;

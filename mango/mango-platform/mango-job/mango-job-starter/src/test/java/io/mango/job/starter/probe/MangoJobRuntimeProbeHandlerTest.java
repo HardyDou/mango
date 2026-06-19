@@ -17,6 +17,13 @@ class MangoJobRuntimeProbeHandlerTest {
     }
 
     @Test
+    void shouldDeclareJobCapabilityIdentity() {
+        assertThat(handler.appCode()).isEqualTo("mango-job");
+        assertThat(handler.serviceCode()).isEqualTo("mango-job");
+        assertThat(handler.workerGroup()).isEqualTo("mango-job");
+    }
+
+    @Test
     void shouldReturnRuntimeResultWhenProbeSucceeds() {
         MangoJobHandleContext context = context("{\"scene\":\"manual\"}");
 

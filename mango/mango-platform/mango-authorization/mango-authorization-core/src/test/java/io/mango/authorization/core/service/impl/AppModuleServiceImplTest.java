@@ -16,6 +16,7 @@ import io.mango.authorization.core.mapper.MenuPackageItemMapper;
 import io.mango.authorization.core.mapper.MenuPackageMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
+import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,10 @@ class AppModuleServiceImplTest {
     private RoleMapper roleMapper;
     @Mock
     private RoleMenuMapper roleMenuMapper;
+    @Mock
+    private TenantPackageBindingProvider tenantPackageBindingProvider;
+    @Mock
+    private TenantMenuPackageBindingHandler tenantMenuPackageBindingHandler;
 
     private AppModuleServiceImpl appModuleService;
 
@@ -65,7 +70,9 @@ class AppModuleServiceImplTest {
                 menuPackageMapper,
                 menuPackageItemMapper,
                 roleMapper,
-                roleMenuMapper);
+                roleMenuMapper,
+                List.of(tenantPackageBindingProvider),
+                tenantMenuPackageBindingHandler);
     }
 
     @Test
@@ -135,6 +142,7 @@ class AppModuleServiceImplTest {
         when(menuPackageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(menuPackage);
         when(menuPackageItemMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
         when(menuPackageItemMapper.insert(any(MenuPackageItem.class))).thenReturn(1);
+        when(tenantPackageBindingProvider.listTenantIdsByPackage(1L)).thenReturn(List.of(1L, 2L));
         Role role = new Role();
         role.setTenantId(1L);
         role.setRoleId(1L);
@@ -159,6 +167,117 @@ class AppModuleServiceImplTest {
         assertEquals(1L, roleMenuCaptor.getAllValues().get(0).getTenantId());
         assertEquals(1L, roleMenuCaptor.getAllValues().get(0).getRoleId());
         assertEquals(201L, roleMenuCaptor.getAllValues().get(0).getMenuId());
+        verify(tenantMenuPackageBindingHandler).bindPackage(1L, 1L);
+        verify(tenantMenuPackageBindingHandler).bindPackage(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should let explicit empty package and role codes block inheritance")
+    void registerResourceManifest_emptyPackageAndRoleCodes_blocksInheritance() {
+        AtomicLong ids = new AtomicLong(500);
+        when(appModuleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(appModuleMapper.insert(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuMapper.insert(any(Menu.class))).thenAnswer(invocation -> {
+            Menu menu = invocation.getArgument(0);
+            menu.setMenuId(ids.incrementAndGet());
+            return 1;
+        });
+        when(menuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuRuntimeConfigMapper.insert(any(FrontendMenuRuntimeConfig.class))).thenReturn(1);
+
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.setPackageCodes(List.of("platform_admin"));
+        manifest.setRoleCodes(List.of("ROLE_ADMIN"));
+        manifest.getMenus().get(0).setPackageCodes(List.of());
+        manifest.getMenus().get(0).setRoleCodes(List.of());
+        manifest.getMenus().get(0).getChildren().get(0).getPermissionItems().get(0).setPackageCodes(List.of());
+        manifest.getMenus().get(0).getChildren().get(0).getPermissionItems().get(0).setRoleCodes(List.of());
+
+        int registered = appModuleService.registerResourceManifest(manifest);
+
+        assertEquals(3, registered);
+        verify(menuPackageItemMapper, never()).insert(any(MenuPackageItem.class));
+        verify(roleMenuMapper, never()).insert(any(RoleMenu.class));
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should inherit package and role codes through menu tree")
+    void registerResourceManifest_menuTree_inheritsPackageAndRoleCodes() {
+        AtomicLong ids = new AtomicLong(700);
+        when(appModuleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(appModuleMapper.insert(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuMapper.insert(any(Menu.class))).thenAnswer(invocation -> {
+            Menu menu = invocation.getArgument(0);
+            menu.setMenuId(ids.incrementAndGet());
+            return 1;
+        });
+        when(menuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuRuntimeConfigMapper.insert(any(FrontendMenuRuntimeConfig.class))).thenReturn(1);
+        MenuPackage menuPackage = new MenuPackage();
+        menuPackage.setPackageId(7L);
+        menuPackage.setPackageCode("institution_collaboration");
+        when(menuPackageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(menuPackage);
+        when(menuPackageItemMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuPackageItemMapper.insert(any(MenuPackageItem.class))).thenReturn(1);
+        Role role = new Role();
+        role.setTenantId(2L);
+        role.setRoleId(7L);
+        role.setRoleCode("TENANT_ADMIN");
+        when(roleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(role);
+        when(roleMenuMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(roleMenuMapper.insert(any(RoleMenu.class))).thenReturn(1);
+
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.setPackageCodes(List.of("platform_admin"));
+        manifest.setRoleCodes(List.of("ROLE_ADMIN"));
+        AppModuleResourceManifestCommand.Menu directory = manifest.getMenus().get(0);
+        directory.setPackageCodes(List.of("institution_collaboration"));
+        directory.setRoleCodes(List.of("TENANT_ADMIN"));
+
+        int registered = appModuleService.registerResourceManifest(manifest);
+
+        assertEquals(3, registered);
+        ArgumentCaptor<MenuPackageItem> packageItemCaptor = ArgumentCaptor.forClass(MenuPackageItem.class);
+        verify(menuPackageItemMapper, times(3)).insert(packageItemCaptor.capture());
+        assertEquals(List.of(701L, 702L, 703L),
+                packageItemCaptor.getAllValues().stream().map(MenuPackageItem::getMenuId).toList());
+        ArgumentCaptor<RoleMenu> roleMenuCaptor = ArgumentCaptor.forClass(RoleMenu.class);
+        verify(roleMenuMapper, times(3)).insert(roleMenuCaptor.capture());
+        assertEquals(List.of(701L, 702L, 703L),
+                roleMenuCaptor.getAllValues().stream().map(RoleMenu::getMenuId).toList());
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should allow button menu code to differ from permission code")
+    void registerResourceManifest_permissionMenuCode_upsertsDistinctButtonMenu() {
+        AtomicLong ids = new AtomicLong(400);
+        when(appModuleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(appModuleMapper.insert(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuMapper.insert(any(Menu.class))).thenAnswer(invocation -> {
+            Menu menu = invocation.getArgument(0);
+            menu.setMenuId(ids.incrementAndGet());
+            return 1;
+        });
+        when(menuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuRuntimeConfigMapper.insert(any(FrontendMenuRuntimeConfig.class))).thenReturn(1);
+
+        AppModuleResourceManifestCommand manifest = createManifest();
+        AppModuleResourceManifestCommand.Permission permission =
+                manifest.getMenus().get(0).getChildren().get(0).getPermissionItems().get(0);
+        permission.setMenuCode("contract:archive:create-button");
+        permission.setPermissionCode("contract:archive:create");
+
+        int registered = appModuleService.registerResourceManifest(manifest);
+
+        assertEquals(3, registered);
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuMapper, times(3)).insert(menuCaptor.capture());
+        Menu button = menuCaptor.getAllValues().get(2);
+        assertEquals("contract:archive:create-button", button.getMenuCode());
+        assertEquals("contract:archive:create", button.getPermissions());
     }
 
     @Test
@@ -198,6 +317,53 @@ class AppModuleServiceImplTest {
         assertEquals(2700L, menus.get(0).getParentId());
         assertEquals(menus.get(0).getMenuId(), menus.get(1).getParentId());
         assertEquals(menus.get(1).getMenuId(), menus.get(2).getParentId());
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should attach root button to existing page parent code")
+    void registerResourceManifest_parentCode_attachesButtonToExistingPageMenu() {
+        AtomicLong ids = new AtomicLong(600);
+        Menu page = new Menu();
+        page.setMenuId(2800L);
+        page.setAppCode("internal-admin");
+        page.setModuleCode("mango-system");
+        page.setMenuCode("system:user");
+        page.setMenuType(2);
+        when(appModuleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(appModuleMapper.insert(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectOne(any(LambdaQueryWrapper.class)))
+                .thenReturn(page)
+                .thenReturn(null);
+        when(menuMapper.insert(any(Menu.class))).thenAnswer(invocation -> {
+            Menu menu = invocation.getArgument(0);
+            menu.setMenuId(ids.incrementAndGet());
+            return 1;
+        });
+        when(menuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuRuntimeConfigMapper.insert(any(FrontendMenuRuntimeConfig.class))).thenReturn(1);
+
+        AppModuleResourceManifestCommand manifest = new AppModuleResourceManifestCommand();
+        manifest.setAppCode("internal-admin");
+        manifest.setModuleCode("mango-authorization");
+        manifest.setModuleName("授权模块");
+        AppModuleResourceManifestCommand.Menu button = new AppModuleResourceManifestCommand.Menu();
+        button.setMenuType(3);
+        button.setMenuName("分配成员角色");
+        button.setMenuCode("system:user:assign-role");
+        button.setParentCode("system:user");
+        button.setPermissions(List.of("authorization:role:assign"));
+        manifest.setMenus(List.of(button));
+
+        int registered = appModuleService.registerResourceManifest(manifest);
+
+        assertEquals(1, registered);
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuMapper).insert(menuCaptor.capture());
+        Menu menu = menuCaptor.getValue();
+        assertEquals(2800L, menu.getParentId());
+        assertEquals(3, menu.getMenuType());
+        assertEquals("system:user:assign-role", menu.getMenuCode());
+        assertEquals("authorization:role:assign", menu.getPermissions());
     }
 
     @Test

@@ -8,6 +8,8 @@ import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.IMenuPackageService;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -37,6 +39,16 @@ public class TenantMenuPackageBindingHandler implements TenantPackageBindingHand
         if (tenantId == null || packageId == null) {
             return;
         }
+        MangoContextSnapshot original = MangoContextHolder.get();
+        MangoContextHolder.set(original.withTenantId(String.valueOf(tenantId)));
+        try {
+            bindPackageInTenantContext(tenantId, packageId);
+        } finally {
+            MangoContextHolder.set(original);
+        }
+    }
+
+    private void bindPackageInTenantContext(Long tenantId, Long packageId) {
         Role role = roleMapper.selectOne(new LambdaQueryWrapper<Role>()
                 .eq(Role::getTenantId, tenantId)
                 .eq(Role::getAppCode, AuthorizationTenantProvisioner.DEFAULT_APP_CODE)

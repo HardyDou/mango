@@ -1,8 +1,8 @@
 package io.mango.notice.core.outbox;
 
 import io.mango.infra.kv.api.OutboxMessage;
-import io.mango.infra.context.core.MangoContextHeaders;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHolder;
 
 import java.time.Instant;
 import java.util.HashMap;

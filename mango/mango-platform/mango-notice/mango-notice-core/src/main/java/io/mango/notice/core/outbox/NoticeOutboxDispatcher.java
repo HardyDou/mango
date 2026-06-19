@@ -1,9 +1,9 @@
 package io.mango.notice.core.outbox;
 
 import io.mango.common.result.Require;
-import io.mango.infra.context.core.MangoContextHeaders;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.IOutboxDispatcher;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;

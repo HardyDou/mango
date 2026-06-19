@@ -1,6 +1,6 @@
 package io.mango.infra.web.support;
 
-import io.mango.infra.context.core.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHeaders;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;

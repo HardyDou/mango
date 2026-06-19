@@ -4,7 +4,7 @@ import io.mango.auth.core.constant.AuthConstant;
 import io.mango.auth.core.service.TokenRevocationService;
 import io.mango.access.core.auth.IpWhitelistMatcher;
 import io.mango.access.core.config.AccessProperties;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.SecurityPrincipal;
 import io.mango.authorization.api.TokenContextHolder;

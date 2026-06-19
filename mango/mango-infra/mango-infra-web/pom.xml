@@ -20,6 +20,7 @@
 
     <modules>
         <module>mango-infra-web-api</module>
+        <module>mango-infra-web-support</module>
         <module>mango-infra-web-starter</module>
     </modules>
 </project>

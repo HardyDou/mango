@@ -26,7 +26,7 @@ import java.io.InputStream;
 /**
  * 文件服务 Feign 适配器。
  */
-@FeignClient(name = "mango-file", path = "/file/files")
+@FeignClient(name = "mango-file", contextId = "fileFeignClient", path = "/file/files")
 public interface FileFeignClient extends FileApi {
 
     @Override

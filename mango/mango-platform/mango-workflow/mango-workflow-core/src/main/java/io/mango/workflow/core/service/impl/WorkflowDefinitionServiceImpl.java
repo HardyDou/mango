@@ -12,7 +12,7 @@ import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.persistence.api.scope.DataScopeApplier;
 import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import io.mango.workflow.api.WorkflowCode;
@@ -200,6 +200,17 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     @Transactional(rollbackFor = Exception.class)
     public R<WorkflowDeployVO> deploy(Long id) {
         WorkflowDefinition entity = selectRequired(id);
+        return deployDefinition(entity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowDeployVO> deployInternal(Long id) {
+        WorkflowDefinition entity = selectInternalRequired(id);
+        return deployDefinition(entity);
+    }
+
+    private R<WorkflowDeployVO> deployDefinition(WorkflowDefinition entity) {
         Require.notBlank(entity.getDesignerJson(), WorkflowCode.DESIGNER_INVALID.getCode(), "设计器JSON不能为空");
         WorkflowDefinitionVersion version = null;
         try {
@@ -303,7 +314,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
             return R.ok(vo);
         }
         Long definitionId = definition == null ? createEnsuredDefinition(command, categoryId) : definition.getId();
-        return deploy(definitionId);
+        return deployInternal(definitionId);
     }
 
     @Override
@@ -381,6 +392,16 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                 .eq("id", id)
                 .last("limit 1"));
         WorkflowDefinition entity = mapper.selectOne(wrapper);
+        Require.notNull(entity, WorkflowCode.DEFINITION_NOT_FOUND);
+        return entity;
+    }
+
+    private WorkflowDefinition selectInternalRequired(Long id) {
+        Require.notNull(id, WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
+        WorkflowDefinition entity = mapper.selectOne(new QueryWrapper<WorkflowDefinition>()
+                .eq("tenant_id", resolveTenantId())
+                .eq("id", id)
+                .last("limit 1"));
         Require.notNull(entity, WorkflowCode.DEFINITION_NOT_FOUND);
         return entity;
     }

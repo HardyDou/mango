@@ -1,7 +1,7 @@
 package io.mango.job.core.service.impl;
 
 import io.mango.common.result.Require;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.job.api.enums.JobDefinitionStatus;
 import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobHandleStatus;

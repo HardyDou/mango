@@ -1,6 +1,8 @@
 package io.mango.infra.kv.starter;
 
 import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.api.ILocker;
+import io.mango.infra.kv.api.ITokenStore;
 import io.mango.infra.kv.core.aspect.KvCapabilityAspect;
 import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.kv.core.memory.MemoryKvStore;
@@ -93,6 +95,22 @@ class KvStoreAutoConfigurationTest {
                         "mango.kv.capability.serializer=true")
                 .run(context -> {
                     assertThat(context).hasSingleBean(KvCapabilityAspect.class);
+                });
+    }
+
+    @Test
+    void capabilityEnabled_withMemoryStore_registersStoreBackedCapabilities() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class, KvCapabilityAutoConfiguration.class))
+                .withPropertyValues(
+                        "mango.kv.store.type=memory",
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.locker=true",
+                        "mango.kv.capability.token-store=true")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(IKvStore.class);
+                    assertThat(context).hasSingleBean(ILocker.class);
+                    assertThat(context).hasSingleBean(ITokenStore.class);
                 });
     }
 

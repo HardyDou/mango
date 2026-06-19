@@ -2,8 +2,8 @@ package io.mango.system.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import io.mango.common.exception.BizException;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.system.api.command.SavePersonalConfigCommand;
 import io.mango.system.api.query.PersonalConfigQuery;
 import io.mango.system.api.vo.PersonalConfigVO;

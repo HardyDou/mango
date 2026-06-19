@@ -26,6 +26,21 @@ public class MangoJobRuntimeProbeHandler implements MangoJobHandler {
     }
 
     @Override
+    public String appCode() {
+        return "mango-job";
+    }
+
+    @Override
+    public String serviceCode() {
+        return "mango-job";
+    }
+
+    @Override
+    public String workerGroup() {
+        return "mango-job";
+    }
+
+    @Override
     public MangoJobHandleResult handle(MangoJobHandleContext context) {
         String result = resultJson(context);
         System.out.println("Mango Job runtime probe System.out: " + result);

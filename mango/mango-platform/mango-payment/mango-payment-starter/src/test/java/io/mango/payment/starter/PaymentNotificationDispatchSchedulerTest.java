@@ -1,6 +1,6 @@
 package io.mango.payment.starter;
 
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.payment.core.mapper.PaymentNotificationRecordMapper;
 import io.mango.payment.core.service.PaymentNotificationService;
 import org.junit.jupiter.api.AfterEach;
@@ -84,7 +84,7 @@ class PaymentNotificationDispatchSchedulerTest {
         private final List<Long> limits = new ArrayList<>();
 
         TestPaymentNotificationService() {
-            super(null, null, null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null, null, null);
         }
 
         PaymentNotificationService proxy() {

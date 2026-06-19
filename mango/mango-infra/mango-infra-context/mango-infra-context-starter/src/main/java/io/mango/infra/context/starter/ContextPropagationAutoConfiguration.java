@@ -1,11 +1,13 @@
 package io.mango.infra.context.starter;
 
+import io.mango.infra.context.support.MangoContextTaskDecorator;
+import io.mango.infra.context.support.TtlAsync;
+import io.mango.infra.context.support.TtlExecutorDecorator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.task.TaskDecorator;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -20,7 +22,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @AutoConfiguration
 @EnableAsync
 @EnableConfigurationProperties(ContextProperties.class)
-@ComponentScan(basePackages = "io.mango.infra.context.starter")
 @ConditionalOnProperty(prefix = "mango.context", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ContextPropagationAutoConfiguration {
 
@@ -30,6 +31,12 @@ public class ContextPropagationAutoConfiguration {
     @ConditionalOnMissingBean(TaskDecorator.class)
     public TaskDecorator mangoContextTaskDecorator() {
         return new MangoContextTaskDecorator();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public TtlExecutorDecorator ttlExecutorDecorator() {
+        return new TtlExecutorDecorator();
     }
 
     @Bean(name = MANGO_CONTEXT_EXECUTOR)

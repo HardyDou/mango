@@ -7,7 +7,7 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.template.api.TemplateCode;
 import io.mango.template.api.command.SaveTemplateCategoryCommand;
 import io.mango.template.api.command.UpdateTemplateCategoryStatusCommand;

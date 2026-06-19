@@ -103,6 +103,25 @@ class MangoJobDefinitionResourceHandlerIntegrationTest {
     }
 
     @Test
+    void upsertUsesStableJobIdWhenBusinessKeyChanges() throws Exception {
+        ResourceDeclaration declaration = defaultSampleManualJob();
+        field(declaration, "appCode", ResourceFieldType.STRING, "mango-monolith-app");
+        field(declaration, "ownerService", ResourceFieldType.STRING, "mango-monolith-app");
+        field(declaration, "workerGroup", ResourceFieldType.STRING, "mango-monolith-app");
+        handler.upsert(declaration);
+
+        field(declaration, "appCode", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "ownerService", ResourceFieldType.STRING, "mango-job");
+        field(declaration, "workerGroup", ResourceFieldType.STRING, "mango-job");
+        handler.upsert(declaration);
+
+        assertThat(count()).isOne();
+        assertThat(stringValue("app_code", "id = 2951100000000000001")).isEqualTo("mango-job");
+        assertThat(stringValue("owner_service", "id = 2951100000000000001")).isEqualTo("mango-job");
+        assertThat(stringValue("worker_group", "id = 2951100000000000001")).isEqualTo("mango-job");
+    }
+
+    @Test
     void disableAndDeleteMarkDefinitionStatus() throws Exception {
         ResourceDeclaration declaration = declaration();
         handler.upsert(declaration);

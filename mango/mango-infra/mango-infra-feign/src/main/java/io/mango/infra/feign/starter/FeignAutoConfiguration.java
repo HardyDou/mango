@@ -3,17 +3,13 @@ package io.mango.infra.feign.starter;
 import feign.Logger;
 import feign.Retryer;
 import io.mango.infra.module.api.ModuleInfoResolver;
-import jakarta.servlet.Filter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.core.Ordered;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * Feign auto configuration
@@ -24,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(FeignProperties.class)
-@ConditionalOnClass({feign.Feign.class, Filter.class})
+@ConditionalOnClass(feign.Feign.class)
 @ConditionalOnProperty(prefix = "mango.feign", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FeignAutoConfiguration {
 
@@ -78,18 +74,4 @@ public class FeignAutoConfiguration {
         return new InternalCallFeignInterceptor();
     }
 
-    /**
-     * Configure Feign token filter to capture JWT from incoming requests
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "mango.feign", name = "token-propagation-enabled", havingValue = "true", matchIfMissing = true)
-    public FilterRegistrationBean<FeignTokenFilter> feignTokenFilter() {
-        FilterRegistrationBean<FeignTokenFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new FeignTokenFilter());
-        registration.addUrlPatterns("/*");
-        registration.setName("feignTokenFilter");
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 4);
-        return registration;
-    }
 }

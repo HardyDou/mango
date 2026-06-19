@@ -146,6 +146,44 @@ class MenuServiceImplTest {
     }
 
     @Test
+    @DisplayName("buildMenuTree should keep workflow manage children under workflow root")
+    void buildMenuTree_workflowManageMenuExists_keepsManageChildrenNested() {
+        Menu workflow = createMenu(26L, "审批中心", "workflow");
+        workflow.setSort(2);
+        Menu task = createMenu(2601L, "流程办理", "workflow:task");
+        task.setParentId(26L);
+        task.setSort(1);
+        Menu manage = createMenu(2604L, "流程管理", "workflow:manage");
+        manage.setParentId(26L);
+        manage.setSort(3);
+        Menu template = createMenu(260401L, "流程模板", "workflow:template");
+        template.setParentId(2604L);
+        template.setMenuType(2);
+        template.setSort(1);
+        Menu definition = createMenu(260402L, "流程定义", "workflow:definition");
+        definition.setParentId(2604L);
+        definition.setMenuType(2);
+        definition.setSort(2);
+        when(frontendMenuRuntimeConfigMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<MenuVO> result = menuService.buildMenuTree(List.of(workflow, task, manage, template, definition));
+
+        assertEquals(1, result.size());
+        MenuVO workflowNode = result.get(0);
+        assertEquals(26L, workflowNode.getMenuId());
+        assertEquals(2, workflowNode.getChildren().size());
+        MenuVO manageNode = workflowNode.getChildren().stream()
+                .filter(menu -> Long.valueOf(2604L).equals(menu.getMenuId()))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(2, manageNode.getChildren().size());
+        assertTrue(manageNode.getChildren().stream()
+                .anyMatch(menu -> Long.valueOf(260401L).equals(menu.getMenuId())));
+        assertTrue(manageNode.getChildren().stream()
+                .anyMatch(menu -> Long.valueOf(260402L).equals(menu.getMenuId())));
+    }
+
+    @Test
     @DisplayName("addMenu should return false when menu is null")
     void addMenu_nullMenu_returnsFalse() {
         boolean result = menuService.addMenu(null);

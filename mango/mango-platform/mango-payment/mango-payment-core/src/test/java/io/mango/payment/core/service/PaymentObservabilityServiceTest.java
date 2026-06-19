@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.api.vo.PaymentChannelCertificateExpiryVO;
 import io.mango.payment.api.vo.PaymentObservabilitySnapshotVO;
 import io.mango.payment.core.mapper.PaymentChannelContractCapabilityMapper;

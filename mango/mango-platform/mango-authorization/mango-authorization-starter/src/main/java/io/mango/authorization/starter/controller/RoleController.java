@@ -1,12 +1,18 @@
 package io.mango.authorization.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.InternalApi;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
+import io.mango.authorization.api.RoleBindingApi;
 import io.mango.authorization.api.RoleApi;
 import io.mango.authorization.api.command.AssignRoleMenusCommand;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
+import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
 import io.mango.authorization.api.command.RoleCommand;
+import io.mango.authorization.api.command.SubjectRoleBindingCommand;
+import io.mango.authorization.api.query.RoleLookupQuery;
+import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
 import io.mango.authorization.core.service.IRoleService;
@@ -14,6 +20,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,7 +32,7 @@ import java.util.List;
 @RequestMapping("/authorization/roles")
 @RequiredArgsConstructor
 @Tag(name = "角色权限", description = "角色管理权限相关接口")
-public class RoleController implements RoleApi {
+public class RoleController implements RoleApi, RoleBindingApi {
 
     private final IRoleService roleService;
 
@@ -94,6 +101,38 @@ public class RoleController implements RoleApi {
     public R<Boolean> assignRoles(@RequestBody AssignSubjectRolesCommand command) {
         Boolean success = roleService.assignRoles(command);
         return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(403, "无权分配该角色");
+    }
+
+    @Override
+    @GetMapping("/lookup-id")
+    @InternalApi(desc = "按角色业务条件查询角色 ID")
+    @Operation(summary = "按业务条件查询角色ID", description = "内部接口。供模块间协作按业务条件解析角色ID")
+    public R<Long> findRoleId(@ParameterObject RoleLookupQuery query) {
+        return R.ok(roleService.findRoleId(query));
+    }
+
+    @Override
+    @PostMapping("/subject-bindings/ensure")
+    @InternalApi(desc = "确保主体角色绑定存在")
+    @Operation(summary = "确保主体角色绑定存在", description = "内部接口。供模块间协作维护主体角色绑定")
+    public R<Boolean> ensureSubjectRoleBinding(@RequestBody SubjectRoleBindingCommand command) {
+        return R.ok(roleService.ensureSubjectRoleBinding(command));
+    }
+
+    @Override
+    @DeleteMapping("/subject-bindings")
+    @InternalApi(desc = "删除主体角色绑定")
+    @Operation(summary = "删除主体角色绑定", description = "内部接口。供模块间协作清理主体角色绑定")
+    public R<Integer> deleteSubjectRoleBindings(@RequestBody DeleteSubjectRoleBindingsCommand command) {
+        return R.ok(roleService.deleteSubjectRoleBindings(command));
+    }
+
+    @Override
+    @GetMapping("/subject-bindings/subjects")
+    @InternalApi(desc = "按角色查询主体 ID")
+    @Operation(summary = "按角色查询主体ID", description = "内部接口。供模块间协作按角色解析主体ID")
+    public R<List<Long>> listSubjectIdsByRole(@ParameterObject SubjectRoleBindingQuery query) {
+        return R.ok(roleService.listSubjectIdsByRole(query));
     }
 
     @Override

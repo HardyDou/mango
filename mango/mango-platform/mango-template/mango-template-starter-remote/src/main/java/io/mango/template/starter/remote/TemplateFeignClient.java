@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * 模板服务 Feign 适配器。
  */
-@FeignClient(name = "mango-template", path = "/template/templates")
+@FeignClient(name = "mango-template", contextId = "templateFeignClient", path = "/template/templates")
 public interface TemplateFeignClient extends TemplateApi {
 
     /**

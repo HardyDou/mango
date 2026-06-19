@@ -2,8 +2,8 @@ package io.mango.job.core.datasource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
 import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
 import io.mango.common.result.R;
