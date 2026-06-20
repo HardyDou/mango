@@ -137,12 +137,13 @@ mango:
           description: Swagger UI
 ```
 
-旧 manifest 同步配置只服务存量迁移，不作为新增菜单入口：
+旧 manifest 同步配置只服务存量迁移，不作为新增菜单入口；需要直写授权表时必须显式开启 legacy writer：
 
 ```yaml
 mango:
   authorization:
     resource-sync:
+      legacy-writer-enabled: true
       manifest:
         enabled: true
         mode: write
@@ -165,21 +166,23 @@ mango:
 |--------|--------|------|
 | `mango.authorization.resource-sync.enabled` | `true` | 是否启用 MVC / Gateway 资源同步自动配置 |
 | `mango.authorization.resource-sync.module-name` | 空，兜底 `unknown-module` | 扫描资源无法解析模块时使用的模块名 |
-| `mango.authorization.resource-sync.mode` | `write` | `write` 写入授权服务，`read` 只扫描并输出日志 |
+| `mango.authorization.resource-sync.mode` | `read` | legacy writer 模式：`write` 直写授权服务，`read` 只扫描并输出日志 |
 | `mango.authorization.resource-sync.include-packages` | `io.mango` | 只扫描这些包前缀下的 Controller |
 | `mango.authorization.resource-sync.exclude-paths` | `/error,/actuator/**` | 排除路径 |
 | `mango.authorization.resource-sync.default-access-mode` | `LOGIN` | Controller 未声明访问注解时使用的访问模式 |
+| `mango.authorization.resource-sync.resource-provider.enabled` | `true` | 是否把 Controller / 配置 API 资源声明输出给 Resource Registry |
+| `mango.authorization.resource-sync.legacy-writer-enabled` | `false` | 是否启用旧直写授权表 runner |
 | `mango.authorization.resource-sync.resources[]` | 空列表 | 用 YAML 补充非 Controller 资源 |
 | `mango.authorization.resource-sync.manifest.enabled` | `true` | 是否启用资源清单同步 |
-| `mango.authorization.resource-sync.manifest.mode` | `write` | `write` 写入授权服务，`read` 只解析日志 |
+| `mango.authorization.resource-sync.manifest.mode` | `read` | legacy manifest 模式：`write` 直写授权服务，`read` 只解析日志 |
 | `mango.authorization.resource-sync.manifest.locations` | `classpath*:META-INF/mango/resource-manifest.json`、`classpath*:META-INF/mango/resource-manifests/*.json` | 资源清单位置 |
 | `mango.authorization.resource-sync.gateway.enabled` | `true` | 是否同步 Gateway route Path 谓词 |
-| `mango.authorization.resource-sync.gateway.mode` | `write` | Gateway 资源同步模式 |
+| `mango.authorization.resource-sync.gateway.mode` | `read` | legacy Gateway 模式：`write` 直写授权服务，`read` 只扫描并输出日志 |
 | `mango.authorization.resource-sync.gateway.module-name` | `gateway` | Gateway 路由资源所属模块名 |
 | `mango.authorization.resource-access.enabled` | `true` | 是否装配 `apiResourceAuthorizationManager` |
 | `mango.frontend.deploy-profile` | `monolith` | 前端部署配置档：`monolith`、`hybrid`、`micro` |
 
-`resources[]` 会被 `ApiAccessResourceProvider` 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
+Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provider 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
 
 `resources[]` 字段：
 
