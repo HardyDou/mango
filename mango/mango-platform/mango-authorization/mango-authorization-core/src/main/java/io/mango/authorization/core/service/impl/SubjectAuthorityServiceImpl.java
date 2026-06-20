@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,8 +63,8 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
                 .eq(Menu::getStatus, 1);
         return menuMapper.selectList(menuWrapper)
                 .stream()
-                .map(Menu::getMenuCode)
-                .filter(code -> code != null && !code.isBlank())
+                .flatMap(menu -> permissionCodes(menu).stream())
+                .distinct()
                 .collect(Collectors.toList());
     }
 
@@ -107,6 +108,22 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
         rule.setButtonType(menu.getButtonType());
         rule.setDisplayRule(menu.getButtonDisplayRule());
         return rule;
+    }
+
+    private List<String> permissionCodes(Menu menu) {
+        if (menu == null) {
+            return new ArrayList<>();
+        }
+        if (StringUtils.hasText(menu.getPermissions())) {
+            return Arrays.stream(menu.getPermissions().split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .collect(Collectors.toList());
+        }
+        if (StringUtils.hasText(menu.getMenuCode())) {
+            return List.of(menu.getMenuCode().trim());
+        }
+        return new ArrayList<>();
     }
 
     private List<Long> listSubjectRoleIds(AuthorizationQuery query) {
