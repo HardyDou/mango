@@ -19,6 +19,13 @@
     <name>Mango App Microservice</name>
     <description>最小微服务部署入口</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+    </dependencies>
+
     <modules>
         <module>mango-gateway-app</module>
         <module>mango-platform-app</module>

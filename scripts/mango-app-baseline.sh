@@ -43,6 +43,8 @@ Commands:
   compile [app]        Compile all targets or one target with Maven -am
   package [app]        Package all targets or one target with Maven -am -DskipTests
   clean-package [app]  Clean and package all targets or one target with Maven -am -DskipTests
+  docker-build <app> [image]
+                       Build a container image for one app with scripts/docker/mango-app.Dockerfile
   start <app>          Start one app in the background and write logs under .runtime/
   stop <app|all>       Stop one app or all apps started by this script
   verify <app>         Start one app, probe /actuator/health and /v3/api-docs, then stop it
@@ -69,11 +71,13 @@ load_workspace_env() {
   : "${MANGO_DB_USERNAME:=root}"
   : "${MANGO_DB_PASSWORD:=}"
   : "${MANGO_CRYPTO_SM4_SECRET_KEY:=00000000000000000000000000000000}"
+  : "${MANGO_INTERNAL_CALL_SECRET:=mango-baseline-internal-call-secret-change-in-production}"
   : "${MANGO_OFFICE_PLUGIN_ENABLED:=false}"
   : "${MANGO_BASELINE_PROFILE:=local}"
   : "${MANGO_BASELINE_DB_MODE:=mysql}"
   : "${MANGO_BASELINE_DB_NAME:=${MANGO_DB_NAME}_baseline}"
   : "${MANGO_NACOS_SERVER_ADDR:=127.0.0.1:8848}"
+  : "${MANGO_BASELINE_STOP_WAIT_SECONDS:=10}"
 }
 
 split_app() {
@@ -204,6 +208,24 @@ ensure_app_jar() {
     exit 1
   fi
   echo "${jar_file}"
+}
+
+docker_build() {
+  require_app "${1:-}"
+  local image="${2:-mango/${APP_ARTIFACT}:local}"
+  local jar_file jar_path
+  jar_file="$(ensure_app_jar)"
+  jar_path="${jar_file#${REPO_ROOT}/}"
+  if [[ "${jar_path}" == "${jar_file}" ]]; then
+    echo "App jar must be under repository root: ${jar_file}" >&2
+    exit 1
+  fi
+  docker build \
+    -f "${REPO_ROOT}/scripts/docker/mango-app.Dockerfile" \
+    --build-arg "JAR_FILE=${jar_path}" \
+    --build-arg "APP_PORT=${APP_PORT}" \
+    -t "${image}" \
+    "${REPO_ROOT}"
 }
 
 port_in_use() {
@@ -362,6 +384,8 @@ baseline_args() {
     "--mango.access.ip-whitelist.rules[3].methods=GET"
     "--mango.access.ip-whitelist.rules[3].cidrs=127.0.0.1/32,::1/128"
     "--mango.crypto.sm4.secret-key=${MANGO_CRYPTO_SM4_SECRET_KEY}"
+    "--mango.internal-call.secret=${MANGO_INTERNAL_CALL_SECRET}"
+    "--mango.web.inner.secret=${MANGO_INTERNAL_CALL_SECRET}"
     "--management.endpoints.web.exposure.include=health,info"
     "--management.endpoint.health.show-details=always"
     "--springdoc.api-docs.enabled=true"
@@ -372,10 +396,13 @@ baseline_args() {
   )
   if [[ "${MANGO_BASELINE_PROFILE}" == "nacos" ]]; then
     common+=(
+      "--spring.profiles.active=${MANGO_BASELINE_SPRING_PROFILES:-nacos}"
       "--spring.cloud.discovery.enabled=true"
       "--spring.cloud.nacos.discovery.enabled=true"
+      "--spring.cloud.nacos.discovery.register-enabled=true"
       "--spring.cloud.nacos.discovery.server-addr=${MANGO_NACOS_SERVER_ADDR}"
-      "--spring.cloud.nacos.config.enabled=true"
+      "--spring.cloud.service-registry.auto-registration.enabled=true"
+      "--spring.cloud.nacos.config.enabled=${MANGO_BASELINE_NACOS_CONFIG_ENABLED:-false}"
       "--spring.cloud.nacos.config.server-addr=${MANGO_NACOS_SERVER_ADDR}"
     )
   else
@@ -427,7 +454,8 @@ stop_app() {
     pid="$(cat "${file}")"
     if kill -0 "${pid}" >/dev/null 2>&1; then
       kill "${pid}" >/dev/null 2>&1 || true
-      for _ in $(seq 1 20); do
+      local attempts=$((MANGO_BASELINE_STOP_WAIT_SECONDS * 2))
+      for _ in $(seq 1 "${attempts}"); do
         kill -0 "${pid}" >/dev/null 2>&1 || break
         sleep 0.5
       done
@@ -478,6 +506,22 @@ probe_openapi() {
   return 1
 }
 
+assert_runtime_stable() {
+  local report="$1"
+  sleep "${MANGO_BASELINE_STABILITY_WAIT_SECONDS:-2}"
+  if [[ -f "$(pid_file)" ]] && ! kill -0 "$(cat "$(pid_file)")" >/dev/null 2>&1; then
+    echo "runtime FAIL process-exited-after-probe" >>"${report}"
+    return 1
+  fi
+  local log_file
+  log_file="$(log_file)"
+  if [[ -f "${log_file}" ]] && rg -q "Application run failed|APPLICATION FAILED|NoClassDefFoundError|Invalid signature|Missing X-Internal-Call|UnknownHostException|Remote resource target execution failed" "${log_file}"; then
+    echo "runtime FAIL startup-error-log ${log_file}" >>"${report}"
+    return 1
+  fi
+  echo "runtime PASS stable-after-probe" >>"${report}"
+}
+
 verify_app() {
   require_app "$1"
   load_workspace_env
@@ -495,6 +539,9 @@ verify_app() {
   if [[ "${status}" == "0" ]]; then
     probe_openapi "${report}" || status=1
   fi
+  if [[ "${status}" == "0" ]]; then
+    assert_runtime_stable "${report}" || status=1
+  fi
   stop_app "${APP_KEY}"
   if [[ "${status}" == "0" ]]; then
     echo "verify PASS ${APP_KEY}"
@@ -505,6 +552,11 @@ verify_app() {
 }
 
 verify_all() {
+  load_workspace_env
+  if [[ "${MANGO_BASELINE_PROFILE}" == "nacos" ]]; then
+    verify_all_nacos
+    return
+  fi
   mkdir -p "${RUNTIME_DIR}"
   local summary="${RUNTIME_DIR}/summary.tsv"
   : >"${summary}"
@@ -524,7 +576,70 @@ verify_all() {
   fi
 }
 
+verify_all_nacos() {
+  mkdir -p "${RUNTIME_DIR}"
+  local summary="${RUNTIME_DIR}/summary.tsv"
+  : >"${summary}"
+  reset_mysql_database_if_needed
+
+  stop_all
+  echo "Starting shared resource dependency for Nacos baseline..."
+  start_app resource
+  require_app resource
+  local resource_report
+  resource_report="$(report_file)"
+  : >"${resource_report}"
+  echo "app ${APP_KEY}" >>"${resource_report}"
+  echo "artifact ${APP_ARTIFACT}" >>"${resource_report}"
+  echo "port ${APP_PORT}" >>"${resource_report}"
+  local resource_status=0
+  wait_for_health "${resource_report}" || resource_status=1
+  if [[ "${resource_status}" == "0" ]]; then
+    probe_openapi "${resource_report}" || resource_status=1
+  fi
+  if [[ "${resource_status}" == "0" ]]; then
+    assert_runtime_stable "${resource_report}" || resource_status=1
+  fi
+
+  local entry status
+  printf '%s\t%s\t%s\t%s\n' "resource" "mango-resource-capability-app" "18615" \
+    "$([[ "${resource_status}" == "0" ]] && echo PASS || echo FAIL)" >>"${summary}"
+  for entry in "${APPS[@]}"; do
+    split_app "${entry}"
+    if [[ "${APP_KEY}" == "resource" ]]; then
+      continue
+    fi
+    local report
+    report="$(report_file)"
+    : >"${report}"
+    echo "app ${APP_KEY}" >>"${report}"
+    echo "artifact ${APP_ARTIFACT}" >>"${report}"
+    echo "port ${APP_PORT}" >>"${report}"
+    start_app "${APP_KEY}"
+    status=0
+    wait_for_health "${report}" || status=1
+    if [[ "${status}" == "0" ]]; then
+      probe_openapi "${report}" || status=1
+    fi
+    if [[ "${status}" == "0" ]]; then
+      assert_runtime_stable "${report}" || status=1
+    fi
+    if [[ "${status}" == "0" ]]; then
+      printf '%s\t%s\t%s\t%s\n' "${APP_KEY}" "${APP_ARTIFACT}" "${APP_PORT}" "PASS" >>"${summary}"
+    else
+      printf '%s\t%s\t%s\t%s\n' "${APP_KEY}" "${APP_ARTIFACT}" "${APP_PORT}" "FAIL" >>"${summary}"
+    fi
+  done
+
+  stop_all
+  echo "Summary: ${summary}"
+  if awk -F '\t' '$4 == "FAIL" { found = 1 } END { exit found ? 0 : 1 }' "${summary}"; then
+    return 1
+  fi
+}
+
 nacos_up() {
+  docker rm -f mango-baseline-nacos >/dev/null 2>&1 || true
   docker compose -f "${COMPOSE_FILE}" up -d
 }
 
@@ -543,6 +658,7 @@ case "${1:-}" in
     ;;
   verify) verify_app "${2:-}" ;;
   verify-all) verify_all ;;
+  docker-build) docker_build "${2:-}" "${3:-}" ;;
   nacos-up) nacos_up ;;
   nacos-down) nacos_down ;;
   -h|--help|help) usage ;;

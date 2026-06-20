@@ -21,6 +21,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.5.14</spring-boot.version>
         <spring-cloud.version>2025.0.1</spring-cloud.version>
+        <spring-cloud-alibaba.version>2023.0.3.3</spring-cloud-alibaba.version>
         <assertj.version>3.27.7</assertj.version>
         <netty.version>4.1.132.Final</netty.version>
         <tomcat.version>10.1.54</tomcat.version>
@@ -750,16 +751,16 @@
                 <artifactId>xxl-job-core</artifactId>
                 <version>2.4.0</version>
             </dependency>
-            <!-- Spring Cloud Alibaba Nacos (2025.1.0.0 supports Spring Boot 3.x) -->
+            <!-- Spring Cloud Alibaba Nacos for the current Spring Boot 3.x baseline. -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-                <version>2025.1.0.0</version>
+                <version>${spring-cloud-alibaba.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                <version>2025.1.0.0</version>
+                <version>${spring-cloud-alibaba.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>

@@ -2,9 +2,9 @@ services:
   mango-nacos:
     image: nacos/nacos-server:v2.3.2
     container_name: mango-baseline-nacos
+    platform: linux/amd64
     environment:
       MODE: standalone
-      SPRING_DATASOURCE_PLATFORM: embedded
       NACOS_AUTH_ENABLE: "false"
       JVM_XMS: 256m
       JVM_XMX: 512m
