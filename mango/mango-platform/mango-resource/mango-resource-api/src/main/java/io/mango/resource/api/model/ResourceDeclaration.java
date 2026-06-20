@@ -16,6 +16,10 @@ public class ResourceDeclaration {
 
     private String id;
     private Integer version;
+    @JsonAlias("app-code")
+    private String appCode;
+    @JsonAlias("service-code")
+    private String serviceCode;
     @JsonAlias("resource-type")
     private String resourceType;
     @JsonAlias("module-code")

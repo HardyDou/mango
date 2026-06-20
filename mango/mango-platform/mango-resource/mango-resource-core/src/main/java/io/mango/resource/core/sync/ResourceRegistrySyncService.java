@@ -32,6 +32,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ResourceRegistrySyncService {
 
+    private static final String LOCAL_APP_CODE = "local";
+    private static final String LOCAL_SERVICE_CODE = "local";
+
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
     private final ObjectProvider<ResourceHandler> handlers;
@@ -63,6 +66,17 @@ public class ResourceRegistrySyncService {
     }
 
     public void syncRemote(List<ResourceDeclaration> declarations) {
+        syncRemote(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations);
+    }
+
+    public void syncRemote(String appCode, String serviceCode, List<ResourceDeclaration> declarations) {
+        syncRemote(appCode, serviceCode, List.of(), declarations);
+    }
+
+    public void syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
+                           List<ResourceDeclaration> declarations) {
+        requireText(appCode, "Resource remote appCode is required");
+        requireText(serviceCode, "Resource remote serviceCode is required");
         if (!properties.isEnabled()) {
             log.info("Mango resource registry remote sync disabled");
             return;
@@ -73,7 +87,7 @@ public class ResourceRegistrySyncService {
             return;
         }
         try {
-            doSync(declarations, false);
+            doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false);
         } finally {
             lock.unlock(owner);
         }
@@ -100,16 +114,27 @@ public class ResourceRegistrySyncService {
     private void doSync(boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
         List<ResourceDeclaration> declarations = collector.collect();
-        doSync(declarations, handlerMap, collector.managedModuleCodes(declarations), force);
+        doSync(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations, handlerMap,
+                collector.managedModuleCodes(declarations), force);
     }
 
-    private void doSync(List<ResourceDeclaration> declarations, boolean force) {
+    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
+                        List<String> managedModuleCodes, boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
-        doSync(declarations, handlerMap, declarationModuleCodes(declarations), force);
+        Set<String> modules = new HashSet<>(declarationModuleCodes(declarations));
+        if (managedModuleCodes != null) {
+            managedModuleCodes.stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .forEach(modules::add);
+        }
+        doSync(appCode, serviceCode, declarations, handlerMap, modules, force);
     }
 
-    private void doSync(List<ResourceDeclaration> declarations, Map<String, ResourceHandler> handlerMap,
+    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
+                        Map<String, ResourceHandler> handlerMap,
                         Set<String> managedModuleCodes, boolean force) {
+        declarations.forEach(declaration -> applySource(declaration, appCode, serviceCode));
         validateConflicts(declarations);
         Set<String> seenResourceIds = new HashSet<>();
         List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
@@ -124,8 +149,17 @@ public class ResourceRegistrySyncService {
             }
         }
         syncActiveBatch(activeDeclarations, handlerMap, force);
-        disableMissing(managedModuleCodes, seenResourceIds, handlerMap);
+        disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
         log.info("Mango resource registry sync complete: declarations={}", declarations.size());
+    }
+
+    private void applySource(ResourceDeclaration declaration, String appCode, String serviceCode) {
+        if (!StringUtils.hasText(declaration.getAppCode())) {
+            declaration.setAppCode(appCode);
+        }
+        if (!StringUtils.hasText(declaration.getServiceCode())) {
+            declaration.setServiceCode(serviceCode);
+        }
     }
 
     private Map<String, ResourceHandler> loadHandlers() {
@@ -162,6 +196,8 @@ public class ResourceRegistrySyncService {
 
     private void validateRequired(ResourceDeclaration declaration) {
         requireText(declaration.getId(), "Resource id is required");
+        requireText(declaration.getAppCode(), "Resource appCode is required: " + declaration.getId());
+        requireText(declaration.getServiceCode(), "Resource serviceCode is required: " + declaration.getId());
         requireText(declaration.getResourceType(), "Resource type is required: " + declaration.getId());
         requireText(declaration.getModuleCode(), "Resource moduleCode is required: " + declaration.getId());
         requireText(declaration.getBizKey(), "Resource bizKey is required: " + declaration.getId());
@@ -324,6 +360,8 @@ public class ResourceRegistrySyncService {
         ResourceDeclaration copy = new ResourceDeclaration();
         copy.setId(declaration.getId());
         copy.setVersion(declaration.getVersion());
+        copy.setAppCode(declaration.getAppCode());
+        copy.setServiceCode(declaration.getServiceCode());
         copy.setResourceType(declaration.getResourceType());
         copy.setModuleCode(declaration.getModuleCode());
         copy.setModuleName(declaration.getModuleName());
@@ -347,17 +385,19 @@ public class ResourceRegistrySyncService {
         return moduleCodes;
     }
 
-    private void disableMissing(Set<String> modules, Set<String> seenResourceIds,
+    private void disableMissing(String appCode, String serviceCode, Set<String> modules, Set<String> seenResourceIds,
                                 Map<String, ResourceHandler> handlerMap) {
         for (String module : modules) {
-            for (ResourceRegistryRow row : repository.listByModule(module)) {
+            for (ResourceRegistryRow row : repository.listBySourceAndModule(appCode, serviceCode, module)) {
                 if (!seenResourceIds.contains(row.getResourceId()) && row.getSyncMode() == ResourceSyncMode.AUTO) {
                     ResourceHandler handler = handlerMap.get(row.getResourceType());
                     if (handler == null) {
                         ResourceDeclaration disabled = fromRow(row);
                         ResourceTargetDispatcher dispatcher = targetDispatcher(disabled);
                         if (dispatcher == null) {
-                            continue;
+                            throw new IllegalStateException("No resource handler found for missing resource disable: "
+                                    + row.getResourceType() + ", resourceId=" + row.getResourceId()
+                                    + ", targetModule=" + row.getTargetModule());
                         }
                         ResourceSyncResult result = dispatcher.disable(disabled);
                         repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
@@ -472,6 +512,8 @@ public class ResourceRegistrySyncService {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId(row.getResourceId());
         declaration.setVersion(row.getResourceVersion());
+        declaration.setAppCode(row.getAppCode());
+        declaration.setServiceCode(row.getServiceCode());
         declaration.setResourceType(row.getResourceType());
         declaration.setModuleCode(row.getModuleCode());
         declaration.setBizKey(row.getBizKey());

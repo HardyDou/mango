@@ -2,6 +2,8 @@ CREATE TABLE IF NOT EXISTS `resource_registry` (
   `id` bigint NOT NULL COMMENT '主键',
   `resource_id` varchar(64) NOT NULL COMMENT '稳定资源ID，雪花算法字符串',
   `resource_version` int NOT NULL COMMENT '资源声明版本',
+  `app_code` varchar(128) NOT NULL DEFAULT 'local' COMMENT '资源声明来源应用',
+  `service_code` varchar(128) NOT NULL DEFAULT 'local' COMMENT '资源声明来源服务',
   `resource_type` varchar(64) NOT NULL COMMENT '资源类型',
   `module_code` varchar(64) NOT NULL COMMENT '声明来源模块',
   `biz_key` varchar(128) NOT NULL COMMENT '业务稳定键',
@@ -19,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `resource_registry` (
   UNIQUE KEY `uk_resource_registry_resource_id` (`resource_id`),
   UNIQUE KEY `uk_resource_registry_type_biz_key` (`resource_type`, `biz_key`),
   KEY `idx_resource_registry_module` (`module_code`),
+  KEY `idx_resource_registry_source_module` (`app_code`, `service_code`, `module_code`),
   KEY `idx_resource_registry_target` (`target_module`, `target_table`, `target_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源注册中心';
 

@@ -24,4 +24,12 @@
         from resource_registry
         where module_code = #{moduleCode}
     </select>
+
+    <select id="selectBySourceAndModule" resultType="io.mango.resource.core.entity.ResourceRegistryEntity">
+        select *
+        from resource_registry
+        where app_code = #{appCode}
+          and service_code = #{serviceCode}
+          and module_code = #{moduleCode}
+    </select>
 </mapper>

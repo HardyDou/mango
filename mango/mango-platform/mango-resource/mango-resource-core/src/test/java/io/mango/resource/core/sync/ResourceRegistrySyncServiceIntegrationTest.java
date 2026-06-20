@@ -97,6 +97,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry).isNotNull();
+        assertThat(registry.getAppCode()).isEqualTo("local");
+        assertThat(registry.getServiceCode()).isEqualTo("local");
         assertThat(registry.getResourceVersion()).isEqualTo(1);
         assertThat(registry.getResourceType()).isEqualTo("MESSAGE_TEMPLATE");
         assertThat(registry.getBizKey()).isEqualTo("guarantee.apply.submit");
@@ -199,6 +201,49 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void remoteSyncDisablesMissingOnlyWithinSameSourceService() {
+        ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
+        serviceA.setId("1900000000000000003");
+        serviceA.setBizKey("guarantee.apply.service-a");
+        ResourceDeclaration serviceB = activeDeclaration(1, "服务B");
+        serviceB.setId("1900000000000000004");
+        serviceB.setBizKey("guarantee.apply.service-b");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(serviceA));
+        syncService.syncRemote("platform-admin", "service-b", List.of(serviceB));
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        ResourceRegistryEntity registryA = registryMapper.selectByResourceId("1900000000000000003");
+        ResourceRegistryEntity registryB = registryMapper.selectByResourceId("1900000000000000004");
+        assertThat(registryA.getStatus()).isEqualTo("REMOVED");
+        assertThat(registryB.getStatus()).isEqualTo("ACTIVE");
+        assertThat(registryB.getAppCode()).isEqualTo("platform-admin");
+        assertThat(registryB.getServiceCode()).isEqualTo("service-b");
+    }
+
+    @Test
+    void syncFailsWhenMissingAutoResourceHasNoLocalHandlerOrRemoteDispatcher() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, status
+                ) values (
+                    90005, '1900000000000000005', 1, 'platform-admin', 'orphan-service', 'UNSUPPORTED_TEMPLATE',
+                    'guarantee', 'guarantee.unsupported.submit', '未知远程模板', 'unsupported-notice',
+                    'unsupported_template', 95001, 'old-hash', 'AUTO', 'ACTIVE'
+                )
+                """);
+
+        assertThatThrownBy(() -> syncService.syncRemote(
+                "platform-admin", "orphan-service", List.of("guarantee"), List.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("No resource handler found for missing resource disable")
+                .hasMessageContaining("UNSUPPORTED_TEMPLATE")
+                .hasMessageContaining("unsupported-notice");
+    }
+
+    @Test
     void syncDeprecatedDeclarationKeepsTargetReadable() {
         syncService.sync();
         ResourceDeclaration deprecated = activeDeclaration(2, "废弃声明不覆盖目标");
@@ -286,6 +331,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     id bigint primary key,
                     resource_id varchar(64) not null,
                     resource_version int not null,
+                    app_code varchar(128) not null default 'local',
+                    service_code varchar(128) not null default 'local',
                     resource_type varchar(64) not null,
                     module_code varchar(64) not null,
                     biz_key varchar(128) not null,

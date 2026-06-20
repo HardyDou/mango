@@ -41,8 +41,12 @@ public class ResourceAdminService {
     public void registerDeclarations(RegisterResourceDeclarationsCommand command) {
         Require.notNull(command, "资源声明注册命令不能为空");
         Require.notBlank(command.getAppCode(), "来源应用不能为空");
-        Require.isTrue(command.getDeclarations() != null && !command.getDeclarations().isEmpty(), "资源声明不能为空");
-        syncService.syncRemote(command.getDeclarations());
+        Require.notBlank(command.getServiceCode(), "来源服务不能为空");
+        boolean hasDeclarations = command.getDeclarations() != null && !command.getDeclarations().isEmpty();
+        boolean hasModuleCodes = command.getModuleCodes() != null && !command.getModuleCodes().isEmpty();
+        Require.isTrue(hasDeclarations || hasModuleCodes, "资源声明和管理模块不能同时为空");
+        syncService.syncRemote(command.getAppCode(), command.getServiceCode(),
+                command.getModuleCodes(), command.getDeclarations());
         log.info("Mango resource remote declarations registered: appCode={}, serviceCode={}, count={}",
                 command.getAppCode(), command.getServiceCode(), command.getDeclarations().size());
     }
