@@ -177,7 +177,7 @@ mango:
 | `mango.authorization.resource-sync.manifest.mode` | `read` | legacy manifest 模式：`write` 直写授权服务，`read` 只解析日志 |
 | `mango.authorization.resource-sync.manifest.locations` | `classpath*:META-INF/mango/resource-manifest.json`、`classpath*:META-INF/mango/resource-manifests/*.json` | 资源清单位置 |
 | `mango.authorization.resource-sync.gateway.enabled` | `true` | 是否同步 Gateway route Path 谓词 |
-| `mango.authorization.resource-sync.gateway.mode` | `read` | legacy Gateway 模式：`write` 直写授权服务，`read` 只扫描并输出日志 |
+| `mango.authorization.resource-sync.gateway.mode` | `read` | Gateway route 注册模式：`write` 输出 Resource Registry 声明；`read` 只保留扫描器，不注册资源。旧直写 runner 仅在 `legacy-writer-enabled=true` 时额外生效 |
 | `mango.authorization.resource-sync.gateway.module-name` | `gateway` | Gateway 路由资源所属模块名 |
 | `mango.authorization.resource-access.enabled` | `true` | 是否装配 `apiResourceAuthorizationManager` |
 | `mango.frontend.deploy-profile` | `monolith` | 前端部署配置档：`monolith`、`hybrid`、`micro` |

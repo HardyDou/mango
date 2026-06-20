@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
+import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.starter.query.ResourceLogPageQuery;
 import io.mango.resource.starter.query.ResourceRegistryPageQuery;
 import io.mango.resource.starter.vo.ResourceChangeLogVO;
@@ -25,6 +26,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -42,13 +44,16 @@ public class ResourceAdminService {
         Require.notNull(command, "资源声明注册命令不能为空");
         Require.notBlank(command.getAppCode(), "来源应用不能为空");
         Require.notBlank(command.getServiceCode(), "来源服务不能为空");
-        boolean hasDeclarations = command.getDeclarations() != null && !command.getDeclarations().isEmpty();
-        boolean hasModuleCodes = command.getModuleCodes() != null && !command.getModuleCodes().isEmpty();
+        List<String> moduleCodes = command.getModuleCodes() == null ? new ArrayList<>() : command.getModuleCodes();
+        List<ResourceDeclaration> declarations = command.getDeclarations() == null
+                ? new ArrayList<>()
+                : command.getDeclarations();
+        boolean hasDeclarations = !declarations.isEmpty();
+        boolean hasModuleCodes = !moduleCodes.isEmpty();
         Require.isTrue(hasDeclarations || hasModuleCodes, "资源声明和管理模块不能同时为空");
-        syncService.syncRemote(command.getAppCode(), command.getServiceCode(),
-                command.getModuleCodes(), command.getDeclarations());
+        syncService.syncRemote(command.getAppCode(), command.getServiceCode(), moduleCodes, declarations);
         log.info("Mango resource remote declarations registered: appCode={}, serviceCode={}, count={}",
-                command.getAppCode(), command.getServiceCode(), command.getDeclarations().size());
+                command.getAppCode(), command.getServiceCode(), declarations.size());
     }
 
     public void forceSync() {

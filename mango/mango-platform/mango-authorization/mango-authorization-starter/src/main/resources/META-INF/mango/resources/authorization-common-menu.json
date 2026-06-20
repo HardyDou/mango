@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008101",
-            "version": 2,
+            "version": 3,
             "bizKey": "authorization.menu.internal-admin",
             "name": "授权基础菜单",
             "targetModule": "authorization",
@@ -215,6 +215,60 @@
                         "permissionName": "删除菜单",
                         "sort": 4,
                         "remark": "菜单删除权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:resource:registry:list",
+                        "permissionName": "查询资源注册列表",
+                        "sort": 20,
+                        "remark": "资源注册中心注册资源分页查询权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:resource:sync:force",
+                        "permissionName": "强制同步资源",
+                        "sort": 21,
+                        "remark": "资源注册中心强制同步权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:resource:registry:delete",
+                        "permissionName": "删除注册资源",
+                        "sort": 22,
+                        "remark": "资源注册中心注册资源删除权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:resource:sync-log:list",
+                        "permissionName": "查询资源同步记录",
+                        "sort": 23,
+                        "remark": "资源注册中心同步记录查询权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:resource:change-log:list",
+                        "permissionName": "查询资源变更记录",
+                        "sort": 24,
+                        "remark": "资源注册中心变更记录查询权限",
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "permissionCode": "system:resource:handler:list",
+                        "permissionName": "查询资源处理器契约",
+                        "sort": 25,
+                        "remark": "资源注册中心处理器字段契约查询权限",
                         "packageCodes": [
                           "platform_admin"
                         ]

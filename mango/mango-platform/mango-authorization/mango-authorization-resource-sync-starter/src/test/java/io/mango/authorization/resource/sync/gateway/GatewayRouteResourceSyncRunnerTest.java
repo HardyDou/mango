@@ -87,12 +87,24 @@ class GatewayRouteResourceSyncRunnerTest {
     }
 
     @Test
-    @DisplayName("auto configuration should expose gateway routes as Resource Registry provider by default")
-    void autoConfiguration_shouldExposeGatewayRoutesAsProviderByDefault() {
+    @DisplayName("auto configuration should keep gateway route provider inactive in read mode")
+    void autoConfiguration_shouldKeepGatewayRouteProviderInactiveInReadMode() {
         contextRunner.run(context -> {
-            assertThat(context).hasSingleBean(GatewayRouteResourceProvider.class);
+            assertThat(context).hasSingleBean(GatewayRouteResourceDiscoverer.class);
+            assertThat(context).doesNotHaveBean(GatewayRouteResourceProvider.class);
             assertThat(context).doesNotHaveBean(GatewayRouteResourceSyncRunner.class);
         });
+    }
+
+    @Test
+    @DisplayName("auto configuration should expose gateway routes as Resource Registry provider in write mode")
+    void autoConfiguration_shouldExposeGatewayRoutesAsProviderInWriteMode() {
+        contextRunner
+                .withPropertyValues("mango.authorization.resource-sync.gateway.mode=write")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(GatewayRouteResourceProvider.class);
+                    assertThat(context).doesNotHaveBean(GatewayRouteResourceSyncRunner.class);
+                });
     }
 
     @Test

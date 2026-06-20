@@ -39,6 +39,8 @@
 
 本地提供资源注册中心的应用依赖：
 
+官方单体聚合入口 `mango-admin-starter` 已包含以下本地 Resource Registry runtime；只有自定义单体聚合或平台服务入口需要显式声明。
+
 ```xml
 <dependency>
     <groupId>io.mango.platform.resource</groupId>

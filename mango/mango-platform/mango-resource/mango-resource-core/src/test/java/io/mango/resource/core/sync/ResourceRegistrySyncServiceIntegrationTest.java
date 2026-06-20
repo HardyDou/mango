@@ -222,6 +222,20 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void remoteSyncAllowsNullDeclarationsWhenModuleCodesAreProvided() {
+        ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
+        serviceA.setId("1900000000000000003");
+        serviceA.setBizKey("guarantee.apply.service-a");
+        syncService.syncRemote("platform-admin", "service-a", List.of(serviceA));
+
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), null);
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000003");
+        assertThat(registry.getStatus()).isEqualTo("REMOVED");
+        assertThat(intValue("message_template", "enabled")).isZero();
+    }
+
+    @Test
     void syncFailsWhenMissingAutoResourceHasNoLocalHandlerOrRemoteDispatcher() {
         jdbcTemplate.update("""
                 insert into resource_registry (

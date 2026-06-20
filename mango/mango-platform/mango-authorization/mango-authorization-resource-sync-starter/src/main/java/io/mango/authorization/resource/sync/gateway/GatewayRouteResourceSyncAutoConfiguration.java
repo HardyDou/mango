@@ -40,6 +40,7 @@ public class GatewayRouteResourceSyncAutoConfiguration {
     @Bean
     @ConditionalOnClass(name = "io.mango.resource.api.ResourceProvider")
     @ConditionalOnBean(ApiResourceDeclarationConverter.class)
+    @ConditionalOnProperty(name = "mango.authorization.resource-sync.gateway.mode", havingValue = "write")
     @ConditionalOnMissingBean
     public GatewayRouteResourceProvider gatewayRouteResourceProvider(
             GatewayRouteResourceDiscoverer discoverer,

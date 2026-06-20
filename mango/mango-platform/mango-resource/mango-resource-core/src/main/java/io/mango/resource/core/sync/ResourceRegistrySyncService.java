@@ -121,14 +121,15 @@ public class ResourceRegistrySyncService {
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
                         List<String> managedModuleCodes, boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
-        Set<String> modules = new HashSet<>(declarationModuleCodes(declarations));
+        List<ResourceDeclaration> safeDeclarations = declarations == null ? List.of() : declarations;
+        Set<String> modules = new HashSet<>(declarationModuleCodes(safeDeclarations));
         if (managedModuleCodes != null) {
             managedModuleCodes.stream()
                     .filter(StringUtils::hasText)
                     .map(String::trim)
                     .forEach(modules::add);
         }
-        doSync(appCode, serviceCode, declarations, handlerMap, modules, force);
+        doSync(appCode, serviceCode, safeDeclarations, handlerMap, modules, force);
     }
 
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
