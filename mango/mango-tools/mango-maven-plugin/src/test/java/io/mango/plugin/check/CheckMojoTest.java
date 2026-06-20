@@ -1759,6 +1759,66 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkModuleInfo_withSyncStarterWithoutModuleProperties_passes() throws Exception {
+        Path starterDir = tempDir.resolve("mango-resource-starter");
+        Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.resource</groupId>
+                    <artifactId>mango-resource-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-resource
+                module-path=/resource
+                """);
+        Path syncStarterDir = tempDir.resolve("mango-resource-sync-starter");
+        Files.createDirectories(syncStarterDir);
+        Files.writeString(syncStarterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.resource</groupId>
+                    <artifactId>mango-resource-sync-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleInfo_withSyncStarterModuleProperties_reportsIssue() throws Exception {
+        Path syncStarterDir = tempDir.resolve("mango-resource-sync-starter");
+        Files.createDirectories(syncStarterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(syncStarterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.resource</groupId>
+                    <artifactId>mango-resource-sync-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(syncStarterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-resource-sync
+                module-path=/resource-sync
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void checkRemoteAdapter_withWrongPath_reportsIssue() throws Exception {
         createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
         Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");

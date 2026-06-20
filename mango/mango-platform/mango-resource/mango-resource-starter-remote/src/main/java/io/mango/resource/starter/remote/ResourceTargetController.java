@@ -22,7 +22,7 @@ import java.util.Map;
  * 资源目标模块反向执行入口。
  */
 @RestController
-@RequestMapping("/resource/_targets")
+@RequestMapping("/_resource/targets")
 @RequiredArgsConstructor
 public class ResourceTargetController implements ResourceTargetApi {
 

@@ -1335,6 +1335,9 @@ public class CheckMojo extends AbstractMojo {
         if (artifactId.endsWith("-starter-remote")) {
             return ModuleType.STARTER_REMOTE;
         }
+        if (artifactId.endsWith("-sync-starter")) {
+            return ModuleType.SYNC_STARTER;
+        }
         if (artifactId.endsWith("-starter")) {
             return ModuleType.STARTER;
         }
@@ -3697,6 +3700,7 @@ public class CheckMojo extends AbstractMojo {
         SUPPORT,
         CORE,
         STARTER,
+        SYNC_STARTER,
         STARTER_REMOTE,
     }
 }
