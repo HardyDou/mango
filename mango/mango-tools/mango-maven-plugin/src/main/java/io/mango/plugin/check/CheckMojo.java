@@ -1705,7 +1705,7 @@ public class CheckMojo extends AbstractMojo {
      * Rules:
      * 1. starter-remote Feign client name must use the target module-name.
      * 2. starter-remote Feign client contextId must explicitly use lowerCamelCase Feign interface name.
-     * 3. starter-remote Feign client path must start with the target module-path.
+     * 3. starter-remote Feign client path must start with the target module-path or reverse module-path.
      * 4. One Feign client must implement exactly one XxxApi.
      */
     private void checkRemoteAdapter() {
@@ -1804,9 +1804,11 @@ public class CheckMojo extends AbstractMojo {
                     issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
                             "@FeignClient name 必须使用目标模块 module-name " + descriptor.moduleName + "，当前为 " + feignName));
                 }
-                if (!isAnyModulePathPrefix(feignPath, descriptor.modulePath)) {
+                if (!isFeignModulePathPrefix(feignPath, descriptor.modulePath)) {
                     issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
-                            "@FeignClient path 必须以目标模块 module-path " + descriptor.modulePath + " 开头，当前为 " + feignPath));
+                            "@FeignClient path 必须以目标模块 module-path " + descriptor.modulePath
+                                    + " 或反向 module-path " + reverseModulePaths(descriptor.modulePath)
+                                    + " 开头，当前为 " + feignPath));
                 }
             }
         } catch (IOException e) {
@@ -1860,6 +1862,10 @@ public class CheckMojo extends AbstractMojo {
             }
         }
         return false;
+    }
+
+    private boolean isFeignModulePathPrefix(String path, String modulePath) {
+        return isAnyModulePathPrefix(path, modulePath) || isReverseModuleControllerPath(path, modulePath);
     }
 
     /**

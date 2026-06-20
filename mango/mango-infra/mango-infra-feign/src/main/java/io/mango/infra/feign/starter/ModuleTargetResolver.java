@@ -29,6 +29,16 @@ public class ModuleTargetResolver {
      * @return service URI if module metadata exists.
      */
     public Optional<URI> resolveServiceUri(String moduleName) {
+        return resolveModuleBaseUri(moduleName);
+    }
+
+    /**
+     * Resolve the deployment service URI including configured context path.
+     *
+     * @param moduleName Mango module name.
+     * @return service URI with context path if module metadata exists.
+     */
+    public Optional<URI> resolveModuleBaseUri(String moduleName) {
         if (moduleName == null || moduleName.isBlank()) {
             return Optional.empty();
         }
@@ -37,8 +47,7 @@ public class ModuleTargetResolver {
             return Optional.empty();
         }
         return resolver.resolve(moduleName.trim())
-                .map(ModuleInfo::serviceName)
-                .map(serviceName -> URI.create("http://" + serviceName));
+                .map(moduleInfo -> URI.create("http://" + moduleInfo.serviceName() + moduleInfo.contextPath()));
     }
 
     private static class StaticModuleInfoResolverProvider implements ObjectProvider<ModuleInfoResolver> {

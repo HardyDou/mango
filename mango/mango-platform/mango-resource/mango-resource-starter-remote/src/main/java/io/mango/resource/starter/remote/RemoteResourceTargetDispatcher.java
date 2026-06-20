@@ -10,9 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 基于模块信息解析的资源目标远程调度器。
@@ -31,11 +34,16 @@ public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher 
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> declarations,
                                                        List<ResourceDeclaration> completeBatch) {
-        ResourceDeclaration first = declarations.get(0);
-        ExecuteResourceTargetCommand command = new ExecuteResourceTargetCommand();
-        command.setDeclarations(declarations);
-        command.setCompleteBatch(completeBatch);
-        return requireSuccess(targetFeignClient.upsertBatch(targetUri(first.getTargetModule()), command));
+        Map<String, ResourceSyncResult> results = new HashMap<>();
+        Map<String, List<ResourceDeclaration>> declarationsByTarget = declarations.stream()
+                .collect(Collectors.groupingBy(ResourceDeclaration::getTargetModule));
+        for (Map.Entry<String, List<ResourceDeclaration>> entry : declarationsByTarget.entrySet()) {
+            ExecuteResourceTargetCommand command = new ExecuteResourceTargetCommand();
+            command.setDeclarations(entry.getValue());
+            command.setCompleteBatch(completeBatchForTarget(completeBatch, entry.getKey()));
+            results.putAll(requireSuccess(targetFeignClient.upsertBatch(targetUri(entry.getKey()), command)));
+        }
+        return results;
     }
 
     @Override
@@ -58,11 +66,24 @@ public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher 
             return Optional.empty();
         }
         String normalized = targetModule.trim();
-        Optional<URI> targetUri = moduleTargetResolver.resolveServiceUri(normalized);
+        Optional<URI> targetUri = moduleTargetResolver.resolveModuleBaseUri(normalized);
         if (targetUri.isPresent() || normalized.startsWith("mango-")) {
             return targetUri;
         }
-        return moduleTargetResolver.resolveServiceUri("mango-" + normalized);
+        return moduleTargetResolver.resolveModuleBaseUri("mango-" + normalized);
+    }
+
+    private List<ResourceDeclaration> completeBatchForTarget(List<ResourceDeclaration> completeBatch, String targetModule) {
+        if (completeBatch == null || completeBatch.isEmpty()) {
+            return List.of();
+        }
+        List<ResourceDeclaration> targetBatch = new ArrayList<>();
+        for (ResourceDeclaration declaration : completeBatch) {
+            if (targetModule.equals(declaration.getTargetModule())) {
+                targetBatch.add(declaration);
+            }
+        }
+        return targetBatch;
     }
 
     private ExecuteResourceTargetCommand command(ResourceDeclaration declaration) {

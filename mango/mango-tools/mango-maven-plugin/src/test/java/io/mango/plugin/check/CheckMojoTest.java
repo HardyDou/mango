@@ -1721,6 +1721,30 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkRemoteAdapter_withReverseModulePath_passes() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import io.mango.rbac.api.SysUserApi;
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", contextId = "sysUserFeignClient", path = "/_rbac/targets")
+                public interface SysUserFeignClient extends SysUserApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkModuleInfo_withDuplicateModulePath_reportsIssue() throws Exception {
         createStarterModule("mango-rbac-starter", "mango-rbac", "/shared", "/shared/user");
         createStarterModule("mango-auth-starter", "mango-auth", "/shared", "/shared/login");

@@ -14,12 +14,12 @@ import java.util.Map;
 /**
  * 资源目标模块远程执行适配。
  */
-@FeignClient(name = "mango-resource", contextId = "resourceTargetFeignClient", path = "/resource",
+@FeignClient(name = "mango-resource", contextId = "resourceTargetFeignClient", path = "/_resource/targets",
         url = "${mango.resource.registry.target-feign-url:http://127.0.0.1}")
 public interface ResourceTargetFeignClient extends ResourceTargetApi {
 
     @Override
-    @PostMapping("/_targets/upsert-batch")
+    @PostMapping("/upsert-batch")
     R<Map<String, ResourceSyncResult>> upsertBatch(@RequestBody ExecuteResourceTargetCommand command);
 
     /**
@@ -33,7 +33,7 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
     R<Map<String, ResourceSyncResult>> upsertBatch(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 
     @Override
-    @PostMapping("/_targets/disable")
+    @PostMapping("/disable")
     R<ResourceSyncResult> disable(@RequestBody ExecuteResourceTargetCommand command);
 
     /**
@@ -47,7 +47,7 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
     R<ResourceSyncResult> disable(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 
     @Override
-    @PostMapping("/_targets/delete")
+    @PostMapping("/delete")
     R<ResourceSyncResult> delete(@RequestBody ExecuteResourceTargetCommand command);
 
     /**
