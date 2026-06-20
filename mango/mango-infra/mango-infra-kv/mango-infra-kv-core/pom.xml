@@ -28,11 +28,15 @@
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
         </dependency>
-        <!-- 关系型持久化能力，提供 JdbcTemplate 等 JDBC 基础组件 -->
+        <!-- 关系型持久化 API -->
         <dependency>
             <groupId>io.mango.infra.persistence</groupId>
-            <artifactId>mango-infra-persistence-starter</artifactId>
+            <artifactId>mango-infra-persistence-api</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>

@@ -53,7 +53,7 @@ import io.mango.file.core.storage.FileObject;
 import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.file.core.storage.MultipartUpload;
 import io.mango.file.core.storage.UploadPartSign;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

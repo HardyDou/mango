@@ -10,7 +10,7 @@ import io.mango.gridlayout.api.vo.GridLayoutPersonalVO;
 import io.mango.gridlayout.core.entity.MangoUserGridLayoutEntity;
 import io.mango.gridlayout.core.mapper.MangoUserGridLayoutMapper;
 import io.mango.gridlayout.core.service.IGridLayoutPersonalService;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

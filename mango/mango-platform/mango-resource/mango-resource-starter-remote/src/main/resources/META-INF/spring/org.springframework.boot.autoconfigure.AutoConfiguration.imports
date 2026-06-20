@@ -1,1 +1,3 @@
 io.mango.resource.starter.remote.ResourceRemoteAutoConfiguration
+io.mango.resource.starter.remote.ResourceRegistryClientAutoConfiguration
+io.mango.resource.starter.remote.ResourceTargetClientAutoConfiguration

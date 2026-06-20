@@ -35,13 +35,15 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
             return;
         }
         List<ResourceDeclaration> declarations = collector.collect();
-        if (declarations.isEmpty()) {
-            log.info("Mango resource declaration sync skipped: no declarations");
+        List<String> moduleCodes = collector.managedModuleCodes(declarations).stream().sorted().toList();
+        if (declarations.isEmpty() && moduleCodes.isEmpty()) {
+            log.info("Mango resource declaration sync skipped: no declarations and no managed modules");
             return;
         }
         RegisterResourceDeclarationsCommand command = new RegisterResourceDeclarationsCommand();
         command.setAppCode(resolveAppCode());
         command.setServiceCode(resolveServiceCode());
+        command.setModuleCodes(moduleCodes);
         command.setDeclarations(declarations);
         R<Boolean> response = resourceRegistryApi.registerDeclarations(command);
         Require.notNull(response, "资源注册中心无响应");

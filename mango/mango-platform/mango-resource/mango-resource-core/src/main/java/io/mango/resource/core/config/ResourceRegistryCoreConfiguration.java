@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceProvider;
+import io.mango.resource.api.ResourceTargetDispatcher;
 import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.mapper.ResourceSyncLogMapper;
@@ -16,7 +17,6 @@ import io.mango.resource.support.declaration.FileResourceProvider;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationLoader;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -63,7 +63,6 @@ public class ResourceRegistryCoreConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(ILocker.class)
     @ConditionalOnMissingBean
     public ResourceRegistryLock resourceRegistryLock(ILocker locker) {
         return new ResourceRegistryLock(locker);
@@ -74,11 +73,13 @@ public class ResourceRegistryCoreConfiguration {
     public ResourceRegistrySyncService resourceRegistrySyncService(ResourceRegistryProperties properties,
                                                                    ResourceDeclarationCollector collector,
                                                                    ObjectProvider<ResourceHandler> handlers,
+                                                                   ObjectProvider<ResourceTargetDispatcher> targetDispatchers,
                                                                    ResourceContentHasher hasher,
                                                                    ResourceRegistryRepository repository,
                                                                    ResourceRegistryLock lock,
                                                                    ObjectMapper objectMapper) {
-        return new ResourceRegistrySyncService(properties, collector, handlers, hasher, repository, lock, objectMapper);
+        return new ResourceRegistrySyncService(
+                properties, collector, handlers, targetDispatchers, hasher, repository, lock, objectMapper);
     }
 
 }

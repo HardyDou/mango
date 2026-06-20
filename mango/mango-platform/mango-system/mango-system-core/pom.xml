@@ -18,7 +18,7 @@
         </dependency>
         <dependency>
             <groupId>io.mango.infra.persistence</groupId>
-            <artifactId>mango-infra-persistence-starter</artifactId>
+            <artifactId>mango-infra-persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -27,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>io.mango.infra.log</groupId>
-            <artifactId>mango-infra-log-starter</artifactId>
+            <artifactId>mango-infra-log-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -37,12 +37,12 @@
         </dependency>
         <dependency>
             <groupId>io.mango.infra.web</groupId>
-            <artifactId>mango-infra-web-starter</artifactId>
+            <artifactId>mango-infra-web-support</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.mango.infra.context</groupId>
-            <artifactId>mango-infra-context-starter</artifactId>
+            <artifactId>mango-infra-context-support</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -66,7 +66,8 @@
         </dependency>
         <dependency>
             <groupId>io.mango.platform.access</groupId>
-            <artifactId>mango-access-core</artifactId>
+            <artifactId>mango-access-api</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
@@ -91,6 +92,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-starter</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

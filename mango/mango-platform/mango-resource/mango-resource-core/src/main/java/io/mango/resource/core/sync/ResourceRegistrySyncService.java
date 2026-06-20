@@ -3,6 +3,7 @@ package io.mango.resource.core.sync;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.resource.api.ResourceHandler;
+import io.mango.resource.api.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -31,9 +32,13 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ResourceRegistrySyncService {
 
+    private static final String LOCAL_APP_CODE = "local";
+    private static final String LOCAL_SERVICE_CODE = "local";
+
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
     private final ObjectProvider<ResourceHandler> handlers;
+    private final ObjectProvider<ResourceTargetDispatcher> targetDispatchers;
     private final ResourceContentHasher hasher;
     private final ResourceRegistryRepository repository;
     private final ResourceRegistryLock lock;
@@ -61,6 +66,17 @@ public class ResourceRegistrySyncService {
     }
 
     public void syncRemote(List<ResourceDeclaration> declarations) {
+        syncRemote(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations);
+    }
+
+    public void syncRemote(String appCode, String serviceCode, List<ResourceDeclaration> declarations) {
+        syncRemote(appCode, serviceCode, List.of(), declarations);
+    }
+
+    public void syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
+                           List<ResourceDeclaration> declarations) {
+        requireText(appCode, "Resource remote appCode is required");
+        requireText(serviceCode, "Resource remote serviceCode is required");
         if (!properties.isEnabled()) {
             log.info("Mango resource registry remote sync disabled");
             return;
@@ -71,7 +87,7 @@ public class ResourceRegistrySyncService {
             return;
         }
         try {
-            doSync(declarations, false);
+            doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false);
         } finally {
             lock.unlock(owner);
         }
@@ -98,30 +114,53 @@ public class ResourceRegistrySyncService {
     private void doSync(boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
         List<ResourceDeclaration> declarations = collector.collect();
-        doSync(declarations, handlerMap, collector.managedModuleCodes(declarations), force);
+        doSync(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations, handlerMap,
+                collector.managedModuleCodes(declarations), force);
     }
 
-    private void doSync(List<ResourceDeclaration> declarations, boolean force) {
+    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
+                        List<String> managedModuleCodes, boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
-        doSync(declarations, handlerMap, declarationModuleCodes(declarations), force);
+        List<ResourceDeclaration> safeDeclarations = declarations == null ? List.of() : declarations;
+        Set<String> modules = new HashSet<>(declarationModuleCodes(safeDeclarations));
+        if (managedModuleCodes != null) {
+            managedModuleCodes.stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .forEach(modules::add);
+        }
+        doSync(appCode, serviceCode, safeDeclarations, handlerMap, modules, force);
     }
 
-    private void doSync(List<ResourceDeclaration> declarations, Map<String, ResourceHandler> handlerMap,
+    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
+                        Map<String, ResourceHandler> handlerMap,
                         Set<String> managedModuleCodes, boolean force) {
+        declarations.forEach(declaration -> applySource(declaration, appCode, serviceCode));
         validateConflicts(declarations);
         Set<String> seenResourceIds = new HashSet<>();
         List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
         for (ResourceDeclaration declaration : declarations) {
             seenResourceIds.add(declaration.getId());
-            if (isDisabled(declaration)) {
+            if (isDeprecated(declaration)) {
+                syncDeprecated(declaration, force);
+            } else if (isDisabled(declaration)) {
                 syncOne(declaration, handlerMap, force);
             } else {
                 activeDeclarations.add(declaration);
             }
         }
         syncActiveBatch(activeDeclarations, handlerMap, force);
-        disableMissing(managedModuleCodes, seenResourceIds, handlerMap);
+        disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
         log.info("Mango resource registry sync complete: declarations={}", declarations.size());
+    }
+
+    private void applySource(ResourceDeclaration declaration, String appCode, String serviceCode) {
+        if (!StringUtils.hasText(declaration.getAppCode())) {
+            declaration.setAppCode(appCode);
+        }
+        if (!StringUtils.hasText(declaration.getServiceCode())) {
+            declaration.setServiceCode(serviceCode);
+        }
     }
 
     private Map<String, ResourceHandler> loadHandlers() {
@@ -158,6 +197,8 @@ public class ResourceRegistrySyncService {
 
     private void validateRequired(ResourceDeclaration declaration) {
         requireText(declaration.getId(), "Resource id is required");
+        requireText(declaration.getAppCode(), "Resource appCode is required: " + declaration.getId());
+        requireText(declaration.getServiceCode(), "Resource serviceCode is required: " + declaration.getId());
         requireText(declaration.getResourceType(), "Resource type is required: " + declaration.getId());
         requireText(declaration.getModuleCode(), "Resource moduleCode is required: " + declaration.getId());
         requireText(declaration.getBizKey(), "Resource bizKey is required: " + declaration.getId());
@@ -183,13 +224,33 @@ public class ResourceRegistrySyncService {
         log.warn(message);
     }
 
-    private void syncOne(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap, boolean force) {
-        ResourceHandler handler = handlerMap.get(declaration.getResourceType());
-        if (handler == null) {
-            throw new IllegalStateException("No resource handler found: " + declaration.getResourceType());
-        }
+    private void syncDeprecated(ResourceDeclaration declaration, boolean force) {
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = repository.findByResourceId(declaration.getId());
+        validateVersion(row, declaration);
+        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
+            return;
+        }
+        if (!force && row != null && hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource declaration is unchanged");
+            return;
+        }
+        if (row == null) {
+            Long rowId = repository.insert(declaration, hash, null, null);
+            repository.insertSyncLog(rowId, "CREATE", "SUCCESS", "Resource declaration is deprecated");
+            repository.insertChangeLog(rowId, "CREATE", null, toJson(declaration));
+        } else {
+            repository.update(row, declaration, hash, row.getTargetId(), row.getTargetTable());
+            repository.insertSyncLog(row.getId(), "UPDATE", "SUCCESS", "Resource declaration is deprecated");
+            repository.insertChangeLog(row.getId(), "UPDATE", toJson(row), toJson(declaration));
+        }
+    }
+
+    private void syncOne(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap, boolean force) {
+        String hash = hasher.hash(declaration);
+        ResourceRegistryRow row = repository.findByResourceId(declaration.getId());
+        validateVersion(row, declaration);
         if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
             return;
@@ -199,8 +260,8 @@ public class ResourceRegistrySyncService {
             return;
         }
         ResourceSyncResult result = isDisabled(declaration)
-                ? handler.disable(declaration)
-                : handler.upsert(declaration);
+                ? disableTarget(declaration, handlerMap)
+                : upsertSingleTarget(declaration, handlerMap);
         if (row == null) {
             Long rowId = repository.insert(declaration, hash, result.getTargetId(), result.getTargetTable());
             repository.insertSyncLog(rowId, "CREATE", "SUCCESS", result.getMessage());
@@ -219,6 +280,7 @@ public class ResourceRegistrySyncService {
         for (ResourceDeclaration declaration : declarations) {
             String hash = hasher.hash(declaration);
             ResourceRegistryRow row = repository.findByResourceId(declaration.getId());
+            validateVersion(row, declaration);
             ResourceDeclaration effectiveDeclaration = row == null
                     ? declaration
                     : withEffectiveSyncMode(declaration, row.getSyncMode());
@@ -236,13 +298,14 @@ public class ResourceRegistrySyncService {
         }
         for (Map.Entry<String, List<ResourceDeclaration>> entry : declarationsByType.entrySet()) {
             ResourceHandler handler = handlerMap.get(entry.getKey());
-            if (handler == null) {
+            if (handler == null && !canDispatchAll(entry.getValue())) {
                 throw new IllegalStateException("No resource handler found: " + entry.getKey());
             }
-            List<ResourceDeclaration> handlerDeclarations = handler.requiresCompleteBatch()
-                    ? allDeclarationsByType.get(entry.getKey())
-                    : entry.getValue();
-            Map<String, ResourceSyncResult> results = handler.upsertBatch(handlerDeclarations);
+            List<ResourceDeclaration> completeBatch = allDeclarationsByType.get(entry.getKey());
+            Map<String, ResourceSyncResult> results = syncActiveBatchByTarget(
+                    handler,
+                    entry.getValue(),
+                    completeBatch);
             for (ResourceDeclaration declaration : entry.getValue()) {
                 ResourceSyncResult result = results.get(declaration.getId());
                 if (result == null) {
@@ -253,17 +316,27 @@ public class ResourceRegistrySyncService {
         }
     }
 
+    private void validateVersion(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        if (row == null || declaration.getVersion() == null || row.getResourceVersion() == null) {
+            return;
+        }
+        if (declaration.getVersion() < row.getResourceVersion()) {
+            throw new IllegalStateException("Resource declaration version rollback is not allowed: "
+                    + declaration.getId() + " current=" + row.getResourceVersion()
+                    + ", incoming=" + declaration.getVersion());
+        }
+    }
+
     private void doDeleteResource(String resourceId, boolean physical) {
         ResourceRegistryRow row = repository.findByResourceId(resourceId);
         if (row == null) {
             throw new IllegalStateException("Resource registry not found: " + resourceId);
         }
-        ResourceHandler handler = loadHandlers().get(row.getResourceType());
-        if (handler == null) {
-            throw new IllegalStateException("No resource handler found: " + row.getResourceType());
-        }
+        Map<String, ResourceHandler> handlerMap = loadHandlers();
         ResourceDeclaration declaration = fromRow(row);
-        ResourceSyncResult result = physical ? handler.delete(declaration) : handler.disable(declaration);
+        ResourceSyncResult result = physical
+                ? deleteTarget(declaration, handlerMap)
+                : disableTarget(declaration, handlerMap);
         repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
         String changeType = physical ? "DELETE" : "DISABLE";
         repository.insertSyncLog(row.getId(), changeType, "SUCCESS", result.getMessage());
@@ -288,6 +361,8 @@ public class ResourceRegistrySyncService {
         ResourceDeclaration copy = new ResourceDeclaration();
         copy.setId(declaration.getId());
         copy.setVersion(declaration.getVersion());
+        copy.setAppCode(declaration.getAppCode());
+        copy.setServiceCode(declaration.getServiceCode());
         copy.setResourceType(declaration.getResourceType());
         copy.setModuleCode(declaration.getModuleCode());
         copy.setModuleName(declaration.getModuleName());
@@ -311,13 +386,24 @@ public class ResourceRegistrySyncService {
         return moduleCodes;
     }
 
-    private void disableMissing(Set<String> modules, Set<String> seenResourceIds,
+    private void disableMissing(String appCode, String serviceCode, Set<String> modules, Set<String> seenResourceIds,
                                 Map<String, ResourceHandler> handlerMap) {
         for (String module : modules) {
-            for (ResourceRegistryRow row : repository.listByModule(module)) {
+            for (ResourceRegistryRow row : repository.listBySourceAndModule(appCode, serviceCode, module)) {
                 if (!seenResourceIds.contains(row.getResourceId()) && row.getSyncMode() == ResourceSyncMode.AUTO) {
                     ResourceHandler handler = handlerMap.get(row.getResourceType());
                     if (handler == null) {
+                        ResourceDeclaration disabled = fromRow(row);
+                        ResourceTargetDispatcher dispatcher = targetDispatcher(disabled);
+                        if (dispatcher == null) {
+                            throw new IllegalStateException("No resource handler found for missing resource disable: "
+                                    + row.getResourceType() + ", resourceId=" + row.getResourceId()
+                                    + ", targetModule=" + row.getTargetModule());
+                        }
+                        ResourceSyncResult result = dispatcher.disable(disabled);
+                        repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
+                        repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
+                        repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
                         continue;
                     }
                     ResourceDeclaration disabled = fromRow(row);
@@ -330,9 +416,96 @@ public class ResourceRegistrySyncService {
         }
     }
 
+    private Map<String, ResourceSyncResult> syncActiveBatchByTarget(
+            ResourceHandler handler,
+            List<ResourceDeclaration> changedDeclarations,
+            List<ResourceDeclaration> completeBatch) {
+        Map<String, ResourceSyncResult> results = new HashMap<>();
+        if (handler != null) {
+            List<ResourceDeclaration> handlerDeclarations = handler.requiresCompleteBatch()
+                    ? completeBatch
+                    : changedDeclarations;
+            results.putAll(handler.upsertBatch(handlerDeclarations));
+            return results;
+        }
+        List<ResourceDeclaration> localDeclarations = new ArrayList<>();
+        Map<ResourceTargetDispatcher, List<ResourceDeclaration>> remoteDeclarations = new HashMap<>();
+        for (ResourceDeclaration declaration : changedDeclarations) {
+            ResourceTargetDispatcher dispatcher = targetDispatcher(declaration);
+            if (dispatcher == null) {
+                localDeclarations.add(declaration);
+            } else {
+                remoteDeclarations.computeIfAbsent(dispatcher, ignored -> new ArrayList<>()).add(declaration);
+            }
+        }
+        remoteDeclarations.forEach((dispatcher, declarations) ->
+                results.putAll(dispatcher.upsertBatch(declarations, completeBatch)));
+        if (!localDeclarations.isEmpty()) {
+            throw new IllegalStateException("No resource handler found: " + localDeclarations.get(0).getResourceType());
+        }
+        return results;
+    }
+
+    private ResourceSyncResult upsertSingleTarget(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap) {
+        ResourceHandler handler = handlerMap.get(declaration.getResourceType());
+        if (handler != null) {
+            return handler.upsert(declaration);
+        }
+        ResourceTargetDispatcher dispatcher = targetDispatcher(declaration);
+        if (dispatcher == null) {
+            throw new IllegalStateException("No resource handler found: " + declaration.getResourceType());
+        }
+        Map<String, ResourceSyncResult> results = dispatcher.upsertBatch(List.of(declaration), List.of(declaration));
+        ResourceSyncResult result = results.get(declaration.getId());
+        if (result == null) {
+            throw new IllegalStateException("Resource target dispatcher did not return sync result: " + declaration.getId());
+        }
+        return result;
+    }
+
+    private ResourceSyncResult disableTarget(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap) {
+        ResourceHandler handler = handlerMap.get(declaration.getResourceType());
+        if (handler != null) {
+            return handler.disable(declaration);
+        }
+        ResourceTargetDispatcher dispatcher = targetDispatcher(declaration);
+        if (dispatcher == null) {
+            throw new IllegalStateException("No resource handler found: " + declaration.getResourceType());
+        }
+        return dispatcher.disable(declaration);
+    }
+
+    private ResourceSyncResult deleteTarget(ResourceDeclaration declaration, Map<String, ResourceHandler> handlerMap) {
+        ResourceHandler handler = handlerMap.get(declaration.getResourceType());
+        if (handler != null) {
+            return handler.delete(declaration);
+        }
+        ResourceTargetDispatcher dispatcher = targetDispatcher(declaration);
+        if (dispatcher == null) {
+            throw new IllegalStateException("No resource handler found: " + declaration.getResourceType());
+        }
+        return dispatcher.delete(declaration);
+    }
+
+    private boolean canDispatchAll(List<ResourceDeclaration> declarations) {
+        return declarations.stream().allMatch(declaration -> targetDispatcher(declaration) != null);
+    }
+
+    private ResourceTargetDispatcher targetDispatcher(ResourceDeclaration declaration) {
+        for (ResourceTargetDispatcher dispatcher : targetDispatchers) {
+            if (dispatcher.supports(declaration.getTargetModule())) {
+                return dispatcher;
+            }
+        }
+        return null;
+    }
+
+    private boolean isDeprecated(ResourceDeclaration declaration) {
+        return declaration.getStatus() == ResourceStatus.DEPRECATED;
+    }
+
     private boolean isDisabled(ResourceDeclaration declaration) {
         return declaration.getStatus() == ResourceStatus.DISABLED
-                || declaration.getStatus() == ResourceStatus.DEPRECATED
                 || declaration.getStatus() == ResourceStatus.REMOVED;
     }
 
@@ -340,6 +513,8 @@ public class ResourceRegistrySyncService {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId(row.getResourceId());
         declaration.setVersion(row.getResourceVersion());
+        declaration.setAppCode(row.getAppCode());
+        declaration.setServiceCode(row.getServiceCode());
         declaration.setResourceType(row.getResourceType());
         declaration.setModuleCode(row.getModuleCode());
         declaration.setBizKey(row.getBizKey());

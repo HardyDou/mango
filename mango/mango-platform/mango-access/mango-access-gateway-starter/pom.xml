@@ -18,6 +18,12 @@
     <description>Mango Access Gateway Starter - Spring Cloud Gateway 边界入口自动配置</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.platform.access</groupId>
+            <artifactId>mango-access-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- 边界入口核心能力 -->
         <dependency>
             <groupId>io.mango.platform.access</groupId>

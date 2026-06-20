@@ -41,7 +41,7 @@ import java.util.List;
 /**
  * Mango Job 远程调用客户端。
  */
-@FeignClient(contextId = "mangoJobCenterFeignClient", name = "mango-job", path = "/job",
+@FeignClient(contextId = "mangoJobFeignClient", name = "mango-job", path = "/job",
         url = "${mango.job.native.job-center-feign-url:http://127.0.0.1}")
 public interface MangoJobFeignClient extends MangoJobApi {
 

@@ -288,6 +288,174 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkModuleMenu_withAuthMenuJson_passes() throws Exception {
+        Path resourceFile = tempDir.resolve(
+                "mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json");
+        Files.createDirectories(resourceFile.getParent());
+        Files.writeString(resourceFile, """
+                {
+                  "mango": {
+                    "resource": {
+                      "moduleCode": "workflow",
+                      "declarations": {
+                        "AUTH_MENU": [ {
+                          "id": "2951300000000009001",
+                          "bizKey": "workflow.menu.internal-admin",
+                          "fields": {
+                            "appCode": { "type": "STRING", "value": "internal-admin" },
+                            "menus": { "type": "LIST", "value": [ { "menuCode": "workflow" } ] }
+                          }
+                        } ]
+                      }
+                    }
+                  }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleMenu_withAuthMenuYaml_passes() throws Exception {
+        Path resourceFile = tempDir.resolve(
+                "mango-demo-starter/src/main/resources/META-INF/mango/resources/demo-common-menu.yaml");
+        Files.createDirectories(resourceFile.getParent());
+        Files.writeString(resourceFile, """
+                mango:
+                  resource:
+                    module-code: demo
+                    declarations:
+                      AUTH_MENU:
+                        - id: "2951300000000009101"
+                          biz-key: demo.menu.internal-admin
+                          fields:
+                            appCode:
+                              type: STRING
+                              value: internal-admin
+                            menus:
+                              type: LIST
+                              value:
+                                - menuCode: demo
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleMenu_withProjectScope_ignoresSiblingModuleDebt() throws Exception {
+        Path workflowModule = tempDir.resolve("mango-workflow-starter");
+        Path resourceFile = workflowModule.resolve(
+                "src/main/resources/META-INF/mango/resources/workflow-common-menu.json");
+        Files.createDirectories(resourceFile.getParent());
+        Files.writeString(resourceFile, """
+                {
+                  "mango": {
+                    "resource": {
+                      "moduleCode": "workflow",
+                      "declarations": {
+                        "AUTH_MENU": [ {
+                          "id": "2951300000000009001",
+                          "bizKey": "workflow.menu.internal-admin",
+                          "fields": {
+                            "appCode": { "type": "STRING", "value": "internal-admin" },
+                            "menus": { "type": "LIST", "value": [ { "menuCode": "workflow" } ] }
+                          }
+                        } ]
+                      }
+                    }
+                  }
+                }
+                """);
+        Path siblingSql = tempDir.resolve(
+                "mango-authorization-core/src/main/resources/db/migration/authorization/V2__menu.sql");
+        Files.createDirectories(siblingSql.getParent());
+        Files.writeString(siblingSql, "INSERT INTO authorization_menu (id, menu_code) VALUES (1, 'legacy');");
+
+        MavenProject project = new MavenProject();
+        project.setFile(workflowModule.resolve("pom.xml").toFile());
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", workflowModule.toString());
+        setField(mojo, "project", project);
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleMenu_withMenuFlywaySql_fails() throws Exception {
+        Path sqlFile = tempDir.resolve(
+                "mango-authorization-core/src/main/resources/db/migration/authorization/V2__menu.sql");
+        Files.createDirectories(sqlFile.getParent());
+        Files.writeString(sqlFile, """
+                INSERT INTO authorization_menu (id, menu_code) VALUES (1, 'workflow');
+                UPDATE frontend_menu_runtime_config SET page_type = 'LOCAL_ROUTE' WHERE menu_id = 1;
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("issues=2"));
+    }
+
+    @Test
+    void checkModuleMenu_withRetireMenuFlywaySql_fails() throws Exception {
+        Path sqlFile = tempDir.resolve(
+                "mango-authorization-core/src/main/resources/db/migration/authorization/V38__retire_route_menu.sql");
+        Files.createDirectories(sqlFile.getParent());
+        Files.writeString(sqlFile, """
+                DELETE FROM authorization_role_menu WHERE menu_id = 21;
+                DELETE FROM authorization_menu_package_item WHERE menu_id = 21;
+                DELETE role_menu FROM authorization_role_menu role_menu
+                  INNER JOIN authorization_menu menu ON role_menu.menu_id = menu.id
+                  WHERE menu.menu_code = 'system:route';
+                DELETE FROM authorization_menu WHERE id = 21 OR menu_code = 'system:route';
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("issues=4"));
+    }
+
+    @Test
+    void checkModuleMenu_withLegacyResourceManifestMenus_fails() throws Exception {
+        Path manifestFile = tempDir.resolve(
+                "mango-job-starter/src/main/resources/META-INF/mango/resource-manifest.json");
+        Files.createDirectories(manifestFile.getParent());
+        Files.writeString(manifestFile, """
+                {
+                  "appCode": "internal-admin",
+                  "menus": [ { "menuCode": "job" } ]
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void checkAll_withGenericQualityIssue_runsOnlyMangoSpecificRules() throws Exception {
         // given - generic code quality is delegated to PMD/P3C/Checkstyle, not mango:check
         Path javaFile = tempDir.resolve("src/main/java/io/mango/demo/TestService.java");
@@ -392,6 +560,34 @@ class CheckMojoTest {
         assertInstanceOf(MojoExecutionException.class, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains("timed out after 1s"));
         assertTrue(exception.getCause().getMessage().contains("pmd:check"));
+    }
+
+    @Test
+    void invokeSingleGoal_includesCompileBeforeStaticGoal() throws Exception {
+        // given
+        Files.writeString(tempDir.resolve("pom.xml"), "<project/>");
+        Path fakeMaven = tempDir.resolve("fake-mvn.sh");
+        Path commandFile = tempDir.resolve("command.txt");
+        Files.writeString(fakeMaven, """
+                #!/bin/sh
+                printf '%%s\\n' "$@" > "%s"
+                """.formatted(commandFile));
+        assertTrue(fakeMaven.toFile().setExecutable(true));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "staticTimeoutSeconds", 5L);
+
+        Method method = CheckMojo.class.getDeclaredMethod(
+                "invokeSingleGoal", File.class, Path.class, String.class, List.class);
+        method.setAccessible(true);
+
+        // when
+        method.invoke(mojo, fakeMaven.toFile(), tempDir, "pmd:check", List.of("mango-demo-core"));
+
+        // then
+        List<String> command = Files.readAllLines(commandFile);
+        assertTrue(command.contains("compile"));
+        assertEquals(command.indexOf("compile") + 1, command.indexOf("pmd:check"));
     }
 
     @Test
@@ -529,6 +725,247 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withCoreDependingOnSupport_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-core");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-api</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-support</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withApiDependingOnSupport_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-api");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-api</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-support</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSupportDependingOnCore_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-support");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-support</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-core</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSupportContainingPersistenceContent_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-support");
+        Path sourceDir = projectDir.resolve("src/main/java/io/mango/demo/support");
+        Files.createDirectories(sourceDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-support</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-api</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+        Files.writeString(sourceDir.resolve("DemoEntity.java"), """
+                package io.mango.demo.support;
+
+                import com.baomidou.mybatisplus.annotation.TableName;
+
+                @TableName("demo")
+                public class DemoEntity {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSupportContainingAutoConfiguration_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-support");
+        Path sourceDir = projectDir.resolve("src/main/java/io/mango/demo/support");
+        Files.createDirectories(sourceDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-support</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(sourceDir.resolve("DemoAutoConfiguration.java"), """
+                package io.mango.demo.support;
+
+                import org.springframework.boot.autoconfigure.AutoConfiguration;
+
+                @AutoConfiguration
+                public class DemoAutoConfiguration {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSupportContainingModuleProperties_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-support");
+        Path resourceDir = projectDir.resolve("src/main/resources/META-INF/mango");
+        Files.createDirectories(resourceDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-support</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(resourceDir.resolve("module.properties"), """
+                module-name=mango-demo
+                module-path=/demo
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSupportContainingController_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-support");
+        Path sourceDir = projectDir.resolve("src/main/java/io/mango/demo/support");
+        Files.createDirectories(sourceDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-support</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.support;
+
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                public class DemoController {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSupportContainingFeignClient_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-support");
+        Path sourceDir = projectDir.resolve("src/main/java/io/mango/demo/support");
+        Files.createDirectories(sourceDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-support</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(sourceDir.resolve("DemoFeignClient.java"), """
+                package io.mango.demo.support;
+
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-demo")
+                public interface DemoFeignClient {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
     }
 
     @Test
@@ -674,6 +1111,207 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkDependency_withNonResourceModuleDependingOnResourceStarter_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-platform/mango-domain/mango-domain-core");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.domain</groupId>
+                    <artifactId>mango-domain-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.platform.resource</groupId>
+                            <artifactId>mango-resource-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("issues=1"));
+    }
+
+    @Test
+    void checkDependency_withAppDependingOnResourceStarter_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-app/platform-capability/mango-resource-capability-app");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.app</groupId>
+                    <artifactId>mango-resource-capability-app</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.platform.resource</groupId>
+                            <artifactId>mango-resource-starter</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.mango.platform.resource</groupId>
+                            <artifactId>mango-resource-sync-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withResourceStarterExceptionAndReason_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-platform/mango-domain/mango-domain-core");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.domain</groupId>
+                    <artifactId>mango-domain-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.platform.resource</groupId>
+                            <artifactId>mango-resource-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+        setField(mojo, "resourceStarterDependencyExceptions", "mango-domain-core=confirmed deployment adapter");
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withResourceStarterExceptionWithoutReason_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-platform/mango-domain/mango-domain-core");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.domain</groupId>
+                    <artifactId>mango-domain-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.platform.resource</groupId>
+                            <artifactId>mango-resource-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+        setField(mojo, "resourceStarterDependencyExceptions", "mango-domain-core=");
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("issues=1"));
+    }
+
+    @Test
+    void checkDependency_withResourceStarterInDependencyManagement_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-platform/mango-domain/mango-domain-parent");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.domain</groupId>
+                    <artifactId>mango-domain-parent</artifactId>
+                    <version>1.0.0</version>
+                    <dependencyManagement>
+                        <dependencies>
+                            <dependency>
+                                <groupId>io.mango.platform.resource</groupId>
+                                <artifactId>mango-resource-starter</artifactId>
+                            </dependency>
+                        </dependencies>
+                    </dependencyManagement>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withCoreDependingOnStarterInTestScope_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-platform/mango-domain/mango-domain-core");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.domain</groupId>
+                    <artifactId>mango-domain-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.infra.persistence</groupId>
+                            <artifactId>mango-infra-persistence-starter</artifactId>
+                            <scope>test</scope>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withResourceRemoteDependingOnCore_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-platform/mango-resource/mango-resource-starter-remote");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.resource</groupId>
+                    <artifactId>mango-resource-starter-remote</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.platform.resource</groupId>
+                            <artifactId>mango-resource-core</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("issues=1"));
+    }
+
+    @Test
     void checkWebBoundary_withApiDependingOnWebApi_passes() throws Exception {
         Path projectDir = tempDir.resolve("mango-demo-api");
         Files.createDirectories(projectDir);
@@ -805,6 +1443,71 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkModuleInfo_withMultipleModulePaths_passes() throws Exception {
+        // given
+        Path starterDir = tempDir.resolve("mango-payment-starter");
+        Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.createDirectories(starterDir.resolve("src/main/java/io/mango/payment/starter"));
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-payment-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(starterDir.resolve("src/main/java/io/mango/payment/starter/PaymentController.java"), """
+                package io.mango.payment.starter;
+
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping("/payment/orders")
+                public class PaymentController {
+                }
+                """);
+        Files.writeString(starterDir.resolve("src/main/java/io/mango/payment/starter/PaymentOpenApiController.java"), """
+                package io.mango.payment.starter;
+
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping("/openapi/pay")
+                public class PaymentOpenApiController {
+                }
+                """);
+        Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-payment
+                module-path=/payment,/openapi/pay
+                """);
+
+        Path remoteDir = tempDir.resolve("mango-payment-starter-remote/src/main/java/io/mango/payment/starter/remote");
+        Files.createDirectories(remoteDir);
+        Files.writeString(remoteDir.resolve("PaymentInboundController.java"), """
+                package io.mango.payment.starter.remote;
+
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping("/_payment/callbacks")
+                public class PaymentInboundController {
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkModuleInfo_withMissingModuleProperties_reportsIssue() throws Exception {
         // given
         Path starterDir = tempDir.resolve("mango-rbac-starter");
@@ -852,8 +1555,10 @@ class CheckMojoTest {
 
                 import org.springframework.cloud.openfeign.FeignClient;
 
-                @FeignClient(name = "mango-rbac", path = "/rbac/user")
-                public interface SysUserFeignClient {
+                import io.mango.rbac.api.SysUserApi;
+
+                @FeignClient(name = "mango-rbac", contextId = "sysUserFeignClient", path = "/rbac/user")
+                public interface SysUserFeignClient extends SysUserApi {
                 }
                 """);
 
@@ -891,8 +1596,10 @@ class CheckMojoTest {
 
                 import org.springframework.cloud.openfeign.FeignClient;
 
-                @FeignClient(name = "permission-service", path = "/rbac/user")
-                public interface SysUserFeignClient {
+                import io.mango.rbac.api.SysUserApi;
+
+                @FeignClient(name = "permission-service", contextId = "sysUserFeignClient", path = "/rbac/user")
+                public interface SysUserFeignClient extends SysUserApi {
                 }
                 """);
 
@@ -904,6 +1611,137 @@ class CheckMojoTest {
 
         // then
         assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withoutContextId_reportsIssue() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import io.mango.rbac.api.SysUserApi;
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", path = "/rbac/user")
+                public interface SysUserFeignClient extends SysUserApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withMultipleApiContracts_reportsIssue() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import io.mango.rbac.api.SysRoleApi;
+                import io.mango.rbac.api.SysUserApi;
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", contextId = "sysUserFeignClient", path = "/rbac/user")
+                public interface SysUserFeignClient extends SysUserApi, SysRoleApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withDuplicateContextIdForSameName_reportsIssue() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import io.mango.rbac.api.SysUserApi;
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", contextId = "sysUserFeignClient", path = "/rbac/user")
+                public interface SysUserFeignClient extends SysUserApi {
+                }
+                """);
+        Files.writeString(sourceDir.resolve("SysRoleFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import io.mango.rbac.api.SysRoleApi;
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", contextId = "sysUserFeignClient", path = "/rbac/role")
+                public interface SysRoleFeignClient extends SysRoleApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withMultipleModulePaths_passes() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac,/post", "/rbac/user");
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("PostFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import io.mango.rbac.api.PostApi;
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", contextId = "postFeignClient", path = "/post")
+                public interface PostFeignClient extends PostApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withReverseModulePath_passes() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import io.mango.rbac.api.SysUserApi;
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", contextId = "sysUserFeignClient", path = "/_rbac/targets")
+                public interface SysUserFeignClient extends SysUserApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
     }
 
     @Test
@@ -945,6 +1783,66 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkModuleInfo_withSyncStarterWithoutModuleProperties_passes() throws Exception {
+        Path starterDir = tempDir.resolve("mango-resource-starter");
+        Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.resource</groupId>
+                    <artifactId>mango-resource-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-resource
+                module-path=/resource
+                """);
+        Path syncStarterDir = tempDir.resolve("mango-resource-sync-starter");
+        Files.createDirectories(syncStarterDir);
+        Files.writeString(syncStarterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.resource</groupId>
+                    <artifactId>mango-resource-sync-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleInfo_withSyncStarterModuleProperties_reportsIssue() throws Exception {
+        Path syncStarterDir = tempDir.resolve("mango-resource-sync-starter");
+        Files.createDirectories(syncStarterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(syncStarterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.resource</groupId>
+                    <artifactId>mango-resource-sync-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(syncStarterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-resource-sync
+                module-path=/resource-sync
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void checkRemoteAdapter_withWrongPath_reportsIssue() throws Exception {
         createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
         Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
@@ -954,8 +1852,10 @@ class CheckMojoTest {
 
                 import org.springframework.cloud.openfeign.FeignClient;
 
-                @FeignClient(name = "mango-rbac", path = "/internal/rbac/user")
-                public interface SysUserFeignClient {
+                import io.mango.rbac.api.SysUserApi;
+
+                @FeignClient(name = "mango-rbac", contextId = "sysUserFeignClient", path = "/internal/rbac/user")
+                public interface SysUserFeignClient extends SysUserApi {
                 }
                 """);
 
@@ -1635,6 +2535,96 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkResourceRegistry_withDuplicateResourceId_reportsIssue() throws Exception {
+        Path first = tempDir.resolve("mango-demo-a/src/main/resources/META-INF/mango/resources/demo-a.yml");
+        Path second = tempDir.resolve("mango-demo-b/src/main/resources/META-INF/mango/resources/demo-b.yml");
+        Files.createDirectories(first.getParent());
+        Files.createDirectories(second.getParent());
+        Files.writeString(first, resourceDeclarationYaml("SYSTEM_DICT", "1900000000000000001", "demo.dict.first"));
+        Files.writeString(second, resourceDeclarationYaml("SEQUENCE_RULE", "1900000000000000001", "demo.numgen.second"));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "resource-registry");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
+    }
+
+    @Test
+    void checkResourceRegistry_withDuplicateTypeAndBizKey_reportsIssue() throws Exception {
+        Path first = tempDir.resolve("mango-demo-a/src/main/resources/META-INF/mango/resources/demo-a.yml");
+        Path second = tempDir.resolve("mango-demo-b/src/main/resources/META-INF/mango/resources/demo-b.yml");
+        Files.createDirectories(first.getParent());
+        Files.createDirectories(second.getParent());
+        Files.writeString(first, resourceDeclarationYaml("SYSTEM_DICT", "1900000000000000001", "demo.dict.same"));
+        Files.writeString(second, resourceDeclarationYaml("SYSTEM_DICT", "1900000000000000002", "demo.dict.same"));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "resource-registry");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
+    }
+
+    @Test
+    void checkResourceRegistry_withNestedFieldIds_passes() throws Exception {
+        Path file = tempDir.resolve("mango-demo/src/main/resources/META-INF/mango/resources/demo.yml");
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, """
+                mango:
+                  resource:
+                    schema-version: 1
+                    module-code: demo
+                    module-name: 演示
+                    declarations:
+                      SEQUENCE_RULE:
+                        - id: "1900000000000000001"
+                          version: 1
+                          biz-key: demo.numgen.order-no
+                          name: 演示订单号
+                          target-module: numgen
+                          fields:
+                            segments:
+                              type: LIST
+                              value:
+                                - id: 900000020011
+                                  segmentType: TEXT
+                                - id: 900000020012
+                                  segmentType: SEQ
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "resource-registry");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(mojo::execute);
+    }
+
+    private String resourceDeclarationYaml(String resourceType, String id, String bizKey) {
+        return """
+                mango:
+                  resource:
+                    schema-version: 1
+                    module-code: demo
+                    module-name: 演示
+                    declarations:
+                      %s:
+                        - id: "%s"
+                          version: 1
+                          biz-key: %s
+                          name: 演示资源
+                          target-module: demo
+                          fields:
+                            name:
+                              type: STRING
+                              value: demo
+                """.formatted(resourceType, id, bizKey);
+    }
+
+    @Test
     void checkPersistenceAccess_withJdbcTemplate_reportsIssue() throws Exception {
         // given
         Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
@@ -1729,7 +2719,7 @@ class CheckMojoTest {
 
                 import io.mango.demo.core.entity.DemoEntity;
                 import io.mango.demo.core.mapper.DemoMapper;
-                import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
+                import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;
 
                 public class DemoService extends MangoCrudServiceImpl<DemoMapper, DemoEntity> {
                     @Override
@@ -1762,7 +2752,7 @@ class CheckMojoTest {
                 import io.mango.demo.core.mapper.DemoMapper;
                 import io.mango.infra.persistence.api.scope.DataScopeApplier;
                 import io.mango.infra.persistence.api.scope.DataScopeMapping;
-                import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
+                import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;
 
                 public class DemoService extends MangoCrudServiceImpl<DemoMapper, DemoEntity> {
                     private final DataScopeApplier dataScopeApplier;

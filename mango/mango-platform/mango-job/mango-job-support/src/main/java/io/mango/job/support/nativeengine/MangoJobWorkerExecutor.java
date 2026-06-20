@@ -1,8 +1,8 @@
 package io.mango.job.support.nativeengine;
 
 import io.mango.common.result.Require;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.job.api.command.MangoJobWorkerExecuteCommand;
 import io.mango.job.api.enums.JobHandleStatus;
 import io.mango.job.api.handler.MangoJobHandleContext;
@@ -44,17 +44,17 @@ public class MangoJobWorkerExecutor {
                 ? command.getOwnerService().trim() : command.getAppCode();
         String workerGroup = StringUtils.hasText(command.getWorkerGroup())
                 ? command.getWorkerGroup().trim() : ownerService;
-        MangoJobHandler handler = handlerRegistry.findHandler(command.getAppCode(), ownerService,
-                        workerGroup, command.getHandlerName(), command.getJobCode())
-                .orElseGet(() -> Require.fail(404, "Job 处理器未注册或归属不匹配："
-                        + ownerService + "/" + workerGroup + "/"
-                        + command.getAppCode() + "/" + command.getHandlerName() + "/" + command.getJobCode()));
         MangoContextSnapshot previous = MangoContextHolder.get();
         PrintStream originalOut = System.out;
         PrintStream originalErr = System.err;
         MangoJobExecutionLogBuffer buffer = new MangoJobExecutionLogBuffer();
         MangoJobLogbackCapture logbackCapture = MangoJobLogbackCapture.start();
         try {
+            MangoJobHandler handler = handlerRegistry.findHandler(command.getAppCode(), ownerService,
+                            workerGroup, command.getHandlerName(), command.getJobCode())
+                    .orElseGet(() -> Require.fail(404, "Job 处理器未注册或归属不匹配："
+                            + ownerService + "/" + workerGroup + "/"
+                            + command.getAppCode() + "/" + command.getHandlerName() + "/" + command.getJobCode()));
             MangoContextHolder.set(MangoContextSnapshot.empty()
                     .withRequest(command.getTraceId(), command.getTraceId(), command.getTenantId(),
                             command.getAppCode(), workerAddress)

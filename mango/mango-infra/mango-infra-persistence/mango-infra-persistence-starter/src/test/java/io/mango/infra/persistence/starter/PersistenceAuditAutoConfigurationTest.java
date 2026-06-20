@@ -1,8 +1,8 @@
 package io.mango.infra.persistence.starter;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.context.PersistenceContextProvider;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;

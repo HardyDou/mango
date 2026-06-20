@@ -1,0 +1,15 @@
+server:
+  port: ${MANGO_AUTHORIZATION_APP_PORT:18611}
+
+spring:
+  application:
+    name: mango-authorization-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-identity:
+          service-name: mango-identity-capability-app
+        mango-resource:
+          service-name: mango-resource-capability-app

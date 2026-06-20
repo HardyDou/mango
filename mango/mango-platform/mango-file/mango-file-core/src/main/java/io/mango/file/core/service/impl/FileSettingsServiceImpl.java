@@ -15,7 +15,7 @@ import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.entity.FileSettings;
 import io.mango.file.core.mapper.FileSettingsMapper;
 import io.mango.file.core.service.IFileSettingsService;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;

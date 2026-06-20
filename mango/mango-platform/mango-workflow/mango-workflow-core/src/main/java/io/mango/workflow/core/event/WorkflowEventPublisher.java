@@ -1,7 +1,7 @@
 package io.mango.workflow.core.event;
 
 import io.mango.common.result.Require;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.workflow.core.entity.WorkflowDefinition;

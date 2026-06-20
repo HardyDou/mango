@@ -1,10 +1,10 @@
 package io.mango.access.starter.web.filter;
 
 import io.mango.access.core.AccessConstants;
-import io.mango.access.core.auth.AccessPrincipal;
-import io.mango.access.core.auth.AccessResult;
+import io.mango.access.api.auth.AccessPrincipal;
+import io.mango.access.api.auth.AccessResult;
 import io.mango.access.core.auth.AccessService;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

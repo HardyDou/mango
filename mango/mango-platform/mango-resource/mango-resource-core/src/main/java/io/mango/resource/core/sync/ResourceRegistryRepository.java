@@ -40,6 +40,13 @@ public class ResourceRegistryRepository {
                 .collect(Collectors.toList());
     }
 
+    public List<ResourceRegistryRow> listBySourceAndModule(String appCode, String serviceCode, String moduleCode) {
+        return registryMapper.selectBySourceAndModule(appCode, serviceCode, moduleCode)
+                .stream()
+                .map(this::toRow)
+                .collect(Collectors.toList());
+    }
+
     public Long insert(ResourceDeclaration declaration, String hash, Long targetId, String targetTable) {
         Long id = IdWorker.getId();
         LocalDateTime now = LocalDateTime.now();
@@ -47,6 +54,8 @@ public class ResourceRegistryRepository {
         entity.setId(id);
         entity.setResourceId(declaration.getId());
         entity.setResourceVersion(declaration.getVersion());
+        entity.setAppCode(declaration.getAppCode());
+        entity.setServiceCode(declaration.getServiceCode());
         entity.setResourceType(declaration.getResourceType());
         entity.setModuleCode(declaration.getModuleCode());
         entity.setBizKey(declaration.getBizKey());
@@ -68,6 +77,8 @@ public class ResourceRegistryRepository {
         ResourceRegistryEntity entity = new ResourceRegistryEntity();
         entity.setId(row.getId());
         entity.setResourceVersion(declaration.getVersion());
+        entity.setAppCode(declaration.getAppCode());
+        entity.setServiceCode(declaration.getServiceCode());
         entity.setModuleCode(declaration.getModuleCode());
         entity.setBizKey(declaration.getBizKey());
         entity.setName(declaration.getName());
@@ -75,6 +86,7 @@ public class ResourceRegistryRepository {
         entity.setTargetTable(targetTable);
         entity.setTargetId(targetId);
         entity.setSourceHash(hash);
+        entity.setSyncMode(declaration.getSyncMode().name());
         entity.setStatus(declaration.getStatus().name());
         entity.setLastSyncTime(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
@@ -122,6 +134,8 @@ public class ResourceRegistryRepository {
         row.setId(entity.getId());
         row.setResourceId(entity.getResourceId());
         row.setResourceVersion(entity.getResourceVersion());
+        row.setAppCode(entity.getAppCode());
+        row.setServiceCode(entity.getServiceCode());
         row.setResourceType(entity.getResourceType());
         row.setModuleCode(entity.getModuleCode());
         row.setBizKey(entity.getBizKey());

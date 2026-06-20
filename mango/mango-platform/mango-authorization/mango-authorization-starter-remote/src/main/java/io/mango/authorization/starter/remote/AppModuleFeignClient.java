@@ -19,42 +19,42 @@ import java.util.List;
 /**
  * 应用模块远程客户端。
  */
-@FeignClient(name = "mango-authorization", path = "/authorization/app-modules")
+@FeignClient(name = "mango-authorization", contextId = "appModuleFeignClient", path = "/authorization")
 public interface AppModuleFeignClient extends AppModuleApi {
 
     @Override
-    @GetMapping
+    @GetMapping("/app-modules")
     R<List<AppModuleVO>> list(
             @RequestParam(required = false) String appCode,
             @RequestParam(required = false) Integer status);
 
     @Override
-    @PostMapping
+    @PostMapping("/app-modules")
     R<Long> save(@RequestBody AppModuleCommand command);
 
     @Override
-    @DeleteMapping
+    @DeleteMapping("/app-modules")
     R<Boolean> disable(
             @RequestParam String appCode,
             @RequestParam String moduleCode);
 
     @Override
-    @PostMapping("/sync-menus")
+    @PostMapping("/app-modules/sync-menus")
     R<Integer> syncMenus(
             @RequestParam String appCode,
             @RequestParam String moduleCode);
 
     @Override
-    @PostMapping("/resource-manifests/register")
+    @PostMapping("/app-modules/resource-manifests/register")
     R<Integer> registerResourceManifest(@RequestBody AppModuleResourceManifestCommand command);
 
     @Override
-    @GetMapping("/runtime-strategies")
+    @GetMapping("/app-modules/runtime-strategies")
     R<List<FrontendModuleRuntimeStrategyVO>> listRuntimeStrategies(
             @RequestParam(required = false) String appCode,
             @RequestParam(required = false) String deployProfile);
 
     @Override
-    @PostMapping("/runtime-strategies")
+    @PostMapping("/app-modules/runtime-strategies")
     R<Long> saveRuntimeStrategy(@RequestBody FrontendModuleRuntimeStrategyCommand command);
 }

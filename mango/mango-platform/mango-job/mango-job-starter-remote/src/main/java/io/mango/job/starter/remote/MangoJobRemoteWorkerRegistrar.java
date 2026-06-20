@@ -2,8 +2,8 @@ package io.mango.job.starter.remote;
 
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
 import io.mango.job.api.enums.JobTransportType;
 import io.mango.job.api.enums.JobWorkerRegisterSource;

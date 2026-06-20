@@ -216,7 +216,7 @@ public class WorkflowAssigneeResolver {
 
     private Long currentTenantId() {
         try {
-            return Long.valueOf(io.mango.infra.context.core.MangoContextHolder.tenantId());
+            return Long.valueOf(io.mango.infra.context.api.MangoContextHolder.tenantId());
         } catch (RuntimeException e) {
             return 1L;
         }

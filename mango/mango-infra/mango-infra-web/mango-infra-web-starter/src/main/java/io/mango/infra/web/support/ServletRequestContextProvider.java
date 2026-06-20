@@ -1,6 +1,6 @@
 package io.mango.infra.web.support;
 
-import io.mango.infra.context.core.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHeaders;
 import io.mango.infra.web.api.IRequestContextProvider;
 import io.mango.infra.web.api.RequestContextSnapshot;
 import jakarta.servlet.http.HttpServletRequest;

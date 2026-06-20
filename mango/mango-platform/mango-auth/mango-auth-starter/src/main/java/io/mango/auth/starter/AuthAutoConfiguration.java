@@ -10,7 +10,7 @@ import io.mango.auth.starter.web.anti.AntiReplayProperties;
 import io.mango.auth.starter.web.anti.ConfiguredAppSecretProvider;
 import io.mango.auth.starter.web.interceptor.CaptchaInterceptor;
 import io.mango.auth.starter.web.interceptor.WebMvcConfig;
-import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
+import io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -44,6 +44,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AuthAutoConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean(PasswordEncoder.class)
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }

@@ -180,6 +180,18 @@ HTTP 根路径：`/domain/domains`。
 
 ## 10. 管理入口
 
+业务域管理菜单由 `mango-domain-starter` 的 `AUTH_MENU` 资源注入：
+
+```text
+mango-domain-starter/src/main/resources/META-INF/mango/resources/domain-common-menu.json
+```
+
+菜单入口挂在后台 `系统管理` 下：
+
+| 菜单 | 路径 | 页面 key | 父菜单 |
+|------|------|----------|--------|
+| 业务域 | `/system/domain` | `system/domain/index` | `system` |
+
 后端接口绑定权限码：
 
 | 权限码 | 用途 |
@@ -191,8 +203,6 @@ HTTP 根路径：`/domain/domains`。
 | `domain:delete` | 删除业务域。 |
 
 `enabled-tree` 和 `code` 接口只要求登录，用于其他业务页面读取可选业务域或校验业务域编码。
-
-当前 README 未登记默认菜单入口；如果业务域管理页接入后台菜单，需要在 authorization migration 或菜单管理中补齐菜单、角色授权和前端页面注册。
 
 ## 11. 资源注入
 

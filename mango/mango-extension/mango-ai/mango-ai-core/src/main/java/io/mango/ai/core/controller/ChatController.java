@@ -2,8 +2,8 @@ package io.mango.ai.core.controller;
 
 import io.mango.ai.api.dto.ChatRequest;
 import io.mango.ai.core.service.ChatService;
-import io.mango.infra.context.core.MangoContextHeaders;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

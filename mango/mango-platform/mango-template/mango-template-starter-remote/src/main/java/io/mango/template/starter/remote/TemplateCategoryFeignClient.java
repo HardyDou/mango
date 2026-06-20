@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * 模板分类 Feign 适配器。
  */
-@FeignClient(name = "mango-template", path = "/template/categories")
+@FeignClient(name = "mango-template", contextId = "templateCategoryFeignClient", path = "/template/categories")
 public interface TemplateCategoryFeignClient extends TemplateCategoryApi {
 
     @Override

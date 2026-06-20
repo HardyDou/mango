@@ -2,8 +2,8 @@ package io.mango.system.core.aspect;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.log.annotation.Log;
 import io.mango.system.api.po.SysOperationLogPo;
 import io.mango.system.core.service.ISysLogService;

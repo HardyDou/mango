@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "mango.numgen", name = "enabled", havingValue = "true", matchIfMissing = true)
 @MapperScan("io.mango.numgen.core.mapper")
 @ComponentScan({
+        "io.mango.numgen.core.resource",
         "io.mango.numgen.core.service",
         "io.mango.numgen.starter.controller"
 })

@@ -38,9 +38,24 @@ class AppModuleResourceManifestSyncRunnerTest {
     }
 
     @Test
-    @DisplayName("run should register manifests in write mode")
+    @DisplayName("run should not register manifests by default")
+    void run_defaultMode_doesNotRegisterManifest() {
+        AppModuleResourceManifestSyncProperties properties = new AppModuleResourceManifestSyncProperties();
+        TestAppModuleApi appModuleApi = new TestAppModuleApi();
+        AppModuleResourceManifestSyncRunner runner =
+                new AppModuleResourceManifestSyncRunner(appModuleApi, new ObjectMapper(), properties);
+
+        runner.run(null);
+
+        assertEquals(0, appModuleApi.manifests.size());
+    }
+
+    @Test
+    @DisplayName("run should register manifests when legacy writer is explicitly enabled")
     void run_writeMode_registersManifest() {
         AppModuleResourceManifestSyncProperties properties = new AppModuleResourceManifestSyncProperties();
+        properties.setEnabled(true);
+        properties.setMode("write");
         TestAppModuleApi appModuleApi = new TestAppModuleApi();
         AppModuleResourceManifestSyncRunner runner =
                 new AppModuleResourceManifestSyncRunner(appModuleApi, new ObjectMapper(), properties);
@@ -55,6 +70,7 @@ class AppModuleResourceManifestSyncRunnerTest {
     @DisplayName("run should not register manifests in read mode")
     void run_readMode_doesNotRegisterManifest() {
         AppModuleResourceManifestSyncProperties properties = new AppModuleResourceManifestSyncProperties();
+        properties.setEnabled(true);
         properties.setMode("read");
         TestAppModuleApi appModuleApi = new TestAppModuleApi();
         AppModuleResourceManifestSyncRunner runner =

@@ -1,6 +1,8 @@
 package io.mango.identity.core.service.impl;
 
-import io.mango.authorization.core.entity.SubjectRoleBinding;
+import io.mango.authorization.api.RoleBindingApi;
+import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
+import io.mango.common.result.R;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
 import io.mango.identity.core.entity.IdentityUser;
@@ -12,9 +14,8 @@ import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.ExternalIdentityBindingMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
-import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -56,7 +57,7 @@ class IdentityUserServiceImplTest {
                 mapper,
                 mock(TenantMemberMapper.class),
                 mock(TenantMemberOrgMapper.class),
-                mock(SubjectRoleBindingMapper.class),
+                mock(RoleBindingApi.class),
                 mock(ExternalIdentityBindingMapper.class),
                 mock(PasswordEncoder.class),
                 event -> {});
@@ -85,7 +86,7 @@ class IdentityUserServiceImplTest {
                 mapper,
                 mock(TenantMemberMapper.class),
                 mock(TenantMemberOrgMapper.class),
-                mock(SubjectRoleBindingMapper.class),
+                mock(RoleBindingApi.class),
                 mock(ExternalIdentityBindingMapper.class),
                 mock(PasswordEncoder.class),
                 event -> {});
@@ -101,7 +102,7 @@ class IdentityUserServiceImplTest {
             IdentityUserMapper userMapper = mock(IdentityUserMapper.class);
             TenantMemberMapper memberMapper = mock(TenantMemberMapper.class);
             TenantMemberOrgMapper relationMapper = mock(TenantMemberOrgMapper.class);
-            SubjectRoleBindingMapper roleBindingMapper = mock(SubjectRoleBindingMapper.class);
+            RoleBindingApi roleBindingApi = mock(RoleBindingApi.class);
             TenantMemberOrgEntity relation = new TenantMemberOrgEntity();
             relation.setMemberId(10L);
             when(relationMapper.selectList(any())).thenReturn(List.of(relation));
@@ -119,7 +120,7 @@ class IdentityUserServiceImplTest {
                     userMapper,
                     memberMapper,
                     relationMapper,
-                    roleBindingMapper,
+                    roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
                     mock(PasswordEncoder.class),
                     event -> {});
@@ -146,10 +147,8 @@ class IdentityUserServiceImplTest {
             IdentityUserMapper userMapper = mock(IdentityUserMapper.class);
             TenantMemberMapper memberMapper = mock(TenantMemberMapper.class);
             TenantMemberOrgMapper relationMapper = mock(TenantMemberOrgMapper.class);
-            SubjectRoleBindingMapper roleBindingMapper = mock(SubjectRoleBindingMapper.class);
-            SubjectRoleBinding binding = new SubjectRoleBinding();
-            binding.setSubjectId(10L);
-            when(roleBindingMapper.selectList(any())).thenReturn(List.of(binding));
+            RoleBindingApi roleBindingApi = mock(RoleBindingApi.class);
+            when(roleBindingApi.listSubjectIdsByRole(any())).thenReturn(R.ok(List.of(10L)));
             TenantMember member = new TenantMember();
             member.setMemberId(10L);
             member.setUserId(1001L);
@@ -163,7 +162,7 @@ class IdentityUserServiceImplTest {
                     userMapper,
                     memberMapper,
                     relationMapper,
-                    roleBindingMapper,
+                    roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
                     mock(PasswordEncoder.class),
                     event -> {});
@@ -190,7 +189,7 @@ class IdentityUserServiceImplTest {
             IdentityUserMapper userMapper = mock(IdentityUserMapper.class);
             TenantMemberMapper memberMapper = mock(TenantMemberMapper.class);
             TenantMemberOrgMapper relationMapper = mock(TenantMemberOrgMapper.class);
-            SubjectRoleBindingMapper roleBindingMapper = mock(SubjectRoleBindingMapper.class);
+            RoleBindingApi roleBindingApi = mock(RoleBindingApi.class);
             TenantMember member1 = new TenantMember();
             member1.setMemberId(11L);
             member1.setUserId(1002L);
@@ -203,7 +202,7 @@ class IdentityUserServiceImplTest {
                     userMapper,
                     memberMapper,
                     relationMapper,
-                    roleBindingMapper,
+                    roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
                     mock(PasswordEncoder.class),
                     event -> {});
@@ -211,7 +210,7 @@ class IdentityUserServiceImplTest {
             Integer count = service.deleteBatch(List.of(1001L, 1002L, 1003L));
 
             assertEquals(2, count);
-            verify(roleBindingMapper).delete(any());
+            verify(roleBindingApi).deleteSubjectRoleBindings(any(DeleteSubjectRoleBindingsCommand.class));
             verify(relationMapper).delete(any());
             verify(memberMapper).delete(any());
         } finally {
@@ -227,12 +226,12 @@ class IdentityUserServiceImplTest {
         try {
             TenantMemberMapper memberMapper = mock(TenantMemberMapper.class);
             TenantMemberOrgMapper relationMapper = mock(TenantMemberOrgMapper.class);
-            SubjectRoleBindingMapper roleBindingMapper = mock(SubjectRoleBindingMapper.class);
+            RoleBindingApi roleBindingApi = mock(RoleBindingApi.class);
             IdentityUserServiceImpl service = new IdentityUserServiceImpl(
                     mock(IdentityUserMapper.class),
                     memberMapper,
                     relationMapper,
-                    roleBindingMapper,
+                    roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
                     mock(PasswordEncoder.class),
                     event -> {});
@@ -241,7 +240,7 @@ class IdentityUserServiceImplTest {
 
             assertEquals(0, count);
             verify(memberMapper, never()).selectList(any());
-            verify(roleBindingMapper, never()).delete(any());
+            verify(roleBindingApi, never()).deleteSubjectRoleBindings(any());
             verify(relationMapper, never()).delete(any());
             verify(memberMapper, never()).delete(any());
         } finally {
@@ -271,7 +270,7 @@ class IdentityUserServiceImplTest {
                     userMapper,
                     memberMapper,
                     mock(TenantMemberOrgMapper.class),
-                    mock(SubjectRoleBindingMapper.class),
+                    mock(RoleBindingApi.class),
                     externalBindingMapper,
                     mock(PasswordEncoder.class),
                     event -> {});

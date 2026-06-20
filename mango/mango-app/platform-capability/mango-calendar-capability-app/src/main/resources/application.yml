@@ -1,0 +1,13 @@
+server:
+  port: ${MANGO_CALENDAR_APP_PORT:18623}
+
+spring:
+  application:
+    name: mango-calendar-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-resource:
+          service-name: mango-resource-capability-app

@@ -1,0 +1,13 @@
+server:
+  port: ${MANGO_FILE_PREVIEW_APP_PORT:18618}
+
+spring:
+  application:
+    name: mango-file-preview-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-file:
+          service-name: mango-file-capability-app

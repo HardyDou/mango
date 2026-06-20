@@ -1,0 +1,798 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "system",
+      "moduleName": "系统模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000008001",
+            "version": 2,
+            "bizKey": "system.menu.internal-admin",
+            "name": "系统基础菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-system"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "系统模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "系统管理",
+                    "menuCode": "system",
+                    "path": "/system",
+                    "icon": "Setting",
+                    "sort": 1,
+                    "redirect": "/system/menu-package",
+                    "remark": "顶部系统入口",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "*:*",
+                        "permissionName": "全部权限",
+                        "sort": 999,
+                        "packageCodes": []
+                      }
+                    ],
+                    "children": [
+                      {
+                        "menuType": 1,
+                        "menuName": "权限管理",
+                        "menuCode": "system:permission",
+                        "path": "/system/permission",
+                        "icon": "Lock",
+                        "sort": 1,
+                        "redirect": "/system/menu-package",
+                        "remark": "机构、成员、角色、菜单与套餐权限管理",
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "组织人事",
+                        "menuCode": "system:org-hr",
+                        "path": "/system/org-hr",
+                        "icon": "Connection",
+                        "sort": 2,
+                        "status": 0,
+                        "visible": 0,
+                        "remark": "租户内组织架构与岗位管理",
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "字典管理",
+                        "menuCode": "system:dict",
+                        "path": "/system/dict",
+                        "icon": "Collection",
+                        "component": "system/dict/index",
+                        "sort": 3,
+                        "permissions": [
+                          "system:dict:list"
+                        ],
+                        "remark": "字典类型与字典数据管理",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "system:dict:type:list",
+                            "permissionName": "查询字典类型列表",
+                            "sort": 0,
+                            "remark": "字典类型列表查询权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:type:query",
+                            "permissionName": "查询字典类型",
+                            "sort": 1,
+                            "remark": "字典类型详情查询权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:type:add",
+                            "permissionName": "新增字典类型",
+                            "sort": 2,
+                            "remark": "字典类型新增权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:type:edit",
+                            "permissionName": "修改字典类型",
+                            "sort": 3,
+                            "remark": "字典类型修改权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:type:delete",
+                            "permissionName": "删除字典类型",
+                            "sort": 4,
+                            "remark": "字典类型删除权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:data:list",
+                            "permissionName": "查询字典数据列表",
+                            "sort": 10,
+                            "remark": "字典数据列表查询权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:data:query",
+                            "permissionName": "查询字典数据",
+                            "sort": 11,
+                            "remark": "字典数据详情查询权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:data:add",
+                            "permissionName": "新增字典数据",
+                            "sort": 12,
+                            "remark": "字典数据新增权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:data:edit",
+                            "permissionName": "修改字典数据",
+                            "sort": 13,
+                            "remark": "字典数据修改权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:dict:data:delete",
+                            "permissionName": "删除字典数据",
+                            "sort": 14,
+                            "remark": "字典数据删除权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "平台运营",
+                        "menuCode": "system:platform-ops",
+                        "path": "/system/platform-ops",
+                        "icon": "Platform",
+                        "sort": 3,
+                        "status": 0,
+                        "visible": 0,
+                        "remark": "平台级机构、应用和系统元数据管理",
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "基础数据",
+                        "menuCode": "system:base-data",
+                        "path": "/system/base-data",
+                        "icon": "DataBoard",
+                        "sort": 4,
+                        "status": 0,
+                        "visible": 0,
+                        "remark": "字典、参数、行政区划等基础数据",
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "参数配置",
+                        "menuCode": "system:config",
+                        "path": "/system/config",
+                        "icon": "Setting",
+                        "component": "system/config/index",
+                        "sort": 4,
+                        "permissions": [
+                          "system:config:list"
+                        ],
+                        "remark": "系统参数配置",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "system:config:list",
+                            "permissionName": "查询系统配置列表",
+                            "sort": 0,
+                            "remark": "系统配置列表查询权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:config:query",
+                            "permissionName": "查询系统配置",
+                            "sort": 1,
+                            "remark": "系统配置详情查询权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:config:add",
+                            "permissionName": "新增系统配置",
+                            "sort": 2,
+                            "remark": "系统配置新增权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:config:edit",
+                            "permissionName": "修改系统配置",
+                            "sort": 3,
+                            "remark": "系统配置修改权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:config:delete",
+                            "permissionName": "删除系统配置",
+                            "sort": 4,
+                            "remark": "系统配置删除权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "租户与组织",
+                        "menuCode": "system:tenant-org",
+                        "path": "/system/tenant-org",
+                        "icon": "OfficeBuilding",
+                        "sort": 4,
+                        "status": 0,
+                        "visible": 0,
+                        "redirect": "/system/tenant",
+                        "remark": "已由平台运营目录承接，保留历史 ID 但不再展示",
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "平台应用",
+                        "menuCode": "system:platform",
+                        "path": "/system/platform",
+                        "icon": "Box",
+                        "sort": 5,
+                        "status": 0,
+                        "visible": 0,
+                        "redirect": "/system/app",
+                        "remark": "已由平台运营目录承接，保留历史 ID 但不再展示",
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "行政区划",
+                        "menuCode": "system:area",
+                        "path": "/system/area",
+                        "icon": "MapLocation",
+                        "component": "system/area/index",
+                        "sort": 5,
+                        "permissions": [
+                          "system:area:list"
+                        ],
+                        "remark": "行政区划逐级管理",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "system:area:query",
+                            "permissionName": "查询行政区划",
+                            "sort": 1,
+                            "remark": "行政区划详情查询权限",
+                            "packageCodes": []
+                          },
+                          {
+                            "permissionCode": "system:area:add",
+                            "permissionName": "新增行政区划",
+                            "sort": 2,
+                            "remark": "行政区划新增权限",
+                            "packageCodes": []
+                          },
+                          {
+                            "permissionCode": "system:area:edit",
+                            "permissionName": "修改行政区划",
+                            "sort": 3,
+                            "remark": "行政区划修改权限",
+                            "packageCodes": []
+                          },
+                          {
+                            "permissionCode": "system:area:delete",
+                            "permissionName": "删除行政区划",
+                            "sort": 4,
+                            "remark": "行政区划删除权限",
+                            "packageCodes": []
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "日志管理",
+                        "menuCode": "system:log",
+                        "path": "/system/log",
+                        "icon": "DocumentChecked",
+                        "sort": 6,
+                        "redirect": "/system/login-log",
+                        "remark": "登录与操作审计日志",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "登录日志",
+                            "menuCode": "system:log:login",
+                            "path": "/system/login-log",
+                            "icon": "DocumentChecked",
+                            "component": "system/login-log/index",
+                            "sort": 1,
+                            "permissions": [
+                              "system:log:login:list"
+                            ],
+                            "remark": "登录日志页面入口",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "system:log:login:list",
+                                "permissionName": "查询登录日志列表",
+                                "sort": 1,
+                                "remark": "登录日志列表查询权限"
+                              },
+                              {
+                                "permissionCode": "system:log:login:query",
+                                "permissionName": "查询登录日志",
+                                "sort": 2,
+                                "remark": "登录日志详情与导出查询权限"
+                              },
+                              {
+                                "permissionCode": "system:log:login:delete",
+                                "permissionName": "清理登录日志",
+                                "sort": 3,
+                                "remark": "登录日志清理权限"
+                              }
+                            ],
+                            "packageCodes": [
+                              "platform_admin",
+                              "institution_collaboration"
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "操作日志",
+                            "menuCode": "system:log:operation",
+                            "path": "/system/operation-log",
+                            "icon": "Tickets",
+                            "component": "system/operation-log/index",
+                            "sort": 2,
+                            "permissions": [
+                              "system:log:operation:list"
+                            ],
+                            "remark": "操作日志页面入口",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "system:log:operation:list",
+                                "permissionName": "查询操作日志列表",
+                                "sort": 1,
+                                "remark": "操作日志列表查询权限"
+                              },
+                              {
+                                "permissionCode": "system:log:operation:query",
+                                "permissionName": "查询操作日志",
+                                "sort": 2,
+                                "remark": "操作日志详情查询权限"
+                              },
+                              {
+                                "permissionCode": "system:log:operation:delete",
+                                "permissionName": "清理操作日志",
+                                "sort": 3,
+                                "remark": "操作日志清理权限"
+                              }
+                            ],
+                            "packageCodes": [
+                              "platform_admin",
+                              "institution_collaboration"
+                            ]
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "系统维护",
+                        "menuCode": "system:maintenance",
+                        "path": "/system/maintenance",
+                        "icon": "Tools",
+                        "sort": 7,
+                        "redirect": "/system/events",
+                        "remark": "系统运行维护、异常补偿和基础设施观测入口",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "系统事件",
+                            "menuCode": "system:event",
+                            "path": "/system/events",
+                            "icon": "RefreshRight",
+                            "component": "system/event/index",
+                            "sort": 1,
+                            "permissions": [
+                              "system:event:list"
+                            ],
+                            "remark": "领域事件 Outbox 异常查询和重新投递入口",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "system:event:list",
+                                "permissionName": "事件查询",
+                                "sort": 1,
+                                "remark": "系统事件列表查询权限",
+                                "packageCodes": [
+                                  "platform_admin",
+                                  "institution_collaboration"
+                                ]
+                              },
+                              {
+                                "permissionCode": "system:event:detail",
+                                "permissionName": "事件详情",
+                                "sort": 2,
+                                "remark": "系统事件详情查询权限",
+                                "packageCodes": [
+                                  "platform_admin",
+                                  "institution_collaboration"
+                                ]
+                              },
+                              {
+                                "permissionCode": "system:event:reconsume",
+                                "permissionName": "重新投递",
+                                "sort": 3,
+                                "remark": "系统事件重新投递权限",
+                                "packageCodes": [
+                                  "platform_admin",
+                                  "institution_collaboration"
+                                ]
+                              }
+                            ],
+                            "packageCodes": [
+                              "platform_admin",
+                              "institution_collaboration"
+                            ]
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
+                        ]
+                      }
+                    ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ]
+                  },
+                  {
+                    "menuType": 1,
+                    "menuName": "平台能力",
+                    "menuCode": "data",
+                    "path": "/data",
+                    "icon": "DataAnalysis",
+                    "sort": 4,
+                    "redirect": "/data/calendar",
+                    "remark": "平台公共能力入口",
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "2951300000000008002",
+            "version": 1,
+            "bizKey": "system.menu.account.internal-admin",
+            "name": "系统账号组织菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-system"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "系统模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 2,
+                    "menuName": "机构管理",
+                    "menuCode": "system:tenant",
+                    "parentCode": "system:permission",
+                    "path": "/system/tenant",
+                    "icon": "OfficeBuilding",
+                    "component": "system/tenant/index",
+                    "sort": 2,
+                    "permissions": [
+                      "system:tenant:list"
+                    ],
+                    "packageCodes": [
+                      "platform_admin"
+                    ],
+                    "remark": "机构管理",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "system:tenant:list",
+                        "permissionName": "查询机构列表",
+                        "sort": 0,
+                        "packageCodes": [
+                          "platform_admin"
+                        ],
+                        "remark": "机构列表查询权限"
+                      },
+                      {
+                        "permissionCode": "system:tenant:query",
+                        "permissionName": "查询机构",
+                        "sort": 1,
+                        "packageCodes": [
+                          "platform_admin"
+                        ],
+                        "remark": "机构详情查询权限"
+                      },
+                      {
+                        "permissionCode": "system:tenant:add",
+                        "permissionName": "新增机构",
+                        "sort": 2,
+                        "packageCodes": [
+                          "platform_admin"
+                        ],
+                        "remark": "机构新增权限"
+                      },
+                      {
+                        "permissionCode": "system:tenant:edit",
+                        "permissionName": "编辑机构",
+                        "sort": 3,
+                        "packageCodes": [
+                          "platform_admin"
+                        ],
+                        "remark": "机构编辑权限"
+                      },
+                      {
+                        "permissionCode": "system:tenant:delete",
+                        "permissionName": "删除机构",
+                        "sort": 4,
+                        "packageCodes": [
+                          "platform_admin"
+                        ],
+                        "remark": "机构删除权限"
+                      }
+                    ]
+                  },
+                  {
+                    "menuType": 2,
+                    "menuName": "组织架构",
+                    "menuCode": "system:org",
+                    "parentCode": "system:permission",
+                    "path": "/system/org",
+                    "icon": "OfficeBuilding",
+                    "component": "system/org/index",
+                    "sort": 3,
+                    "permissions": [
+                      "system:org:list"
+                    ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ],
+                    "remark": "组织架构树与详情查询",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "system:org:list",
+                        "permissionName": "查询组织列表",
+                        "sort": 0,
+                        "remark": "组织列表查询权限"
+                      },
+                      {
+                        "permissionCode": "system:org:query",
+                        "permissionName": "查询组织",
+                        "sort": 1,
+                        "remark": "组织详情查询权限"
+                      },
+                      {
+                        "permissionCode": "system:org:add",
+                        "permissionName": "新增组织",
+                        "sort": 2,
+                        "remark": "组织新增权限"
+                      },
+                      {
+                        "permissionCode": "system:org:edit",
+                        "permissionName": "修改组织",
+                        "sort": 3,
+                        "remark": "组织修改权限"
+                      },
+                      {
+                        "permissionCode": "system:org:delete",
+                        "permissionName": "删除组织",
+                        "sort": 4,
+                        "remark": "组织删除权限"
+                      }
+                    ]
+                  },
+                  {
+                    "menuType": 2,
+                    "menuName": "岗位管理",
+                    "menuCode": "system:post",
+                    "parentCode": "system:permission",
+                    "path": "/system/post",
+                    "icon": "Postcard",
+                    "component": "system/post/index",
+                    "sort": 4,
+                    "permissions": [
+                      "system:post:list"
+                    ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ],
+                    "remark": "岗位基础信息管理",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "system:post:list",
+                        "permissionName": "查询岗位列表",
+                        "sort": 0,
+                        "remark": "岗位列表查询权限"
+                      },
+                      {
+                        "permissionCode": "system:post:query",
+                        "permissionName": "查询岗位",
+                        "sort": 1,
+                        "remark": "岗位详情查询权限"
+                      },
+                      {
+                        "permissionCode": "system:post:add",
+                        "permissionName": "新增岗位",
+                        "sort": 2,
+                        "remark": "岗位新增权限"
+                      },
+                      {
+                        "permissionCode": "system:post:edit",
+                        "permissionName": "修改岗位",
+                        "sort": 3,
+                        "remark": "岗位修改权限"
+                      },
+                      {
+                        "permissionCode": "system:post:delete",
+                        "permissionName": "删除岗位",
+                        "sort": 4,
+                        "remark": "岗位删除权限"
+                      }
+                    ]
+                  },
+                  {
+                    "menuType": 2,
+                    "menuName": "成员管理",
+                    "menuCode": "system:user",
+                    "parentCode": "system:permission",
+                    "path": "/system/user",
+                    "icon": "User",
+                    "component": "system/user/index",
+                    "sort": 5,
+                    "permissions": [
+                      "system:user:list"
+                    ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ],
+                    "remark": "机构成员账号管理",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "system:user:list",
+                        "permissionName": "查询成员",
+                        "sort": 0,
+                        "remark": "机构成员查询权限"
+                      },
+                      {
+                        "permissionCode": "system:user:query",
+                        "permissionName": "查询成员",
+                        "sort": 1,
+                        "remark": "机构成员详情权限"
+                      },
+                      {
+                        "permissionCode": "system:user:add",
+                        "permissionName": "新增成员",
+                        "sort": 2,
+                        "remark": "机构成员新增权限"
+                      },
+                      {
+                        "permissionCode": "system:user:edit",
+                        "permissionName": "编辑成员",
+                        "sort": 3,
+                        "remark": "机构成员编辑权限"
+                      },
+                      {
+                        "permissionCode": "system:user:delete",
+                        "permissionName": "移除成员",
+                        "sort": 4,
+                        "remark": "机构成员移除权限"
+                      },
+                      {
+                        "permissionCode": "system:user:status",
+                        "permissionName": "调整成员状态",
+                        "sort": 5,
+                        "remark": "机构成员状态调整权限"
+                      },
+                      {
+                        "permissionCode": "system:user:reset-password",
+                        "permissionName": "重置成员密码",
+                        "sort": 6,
+                        "remark": "机构成员密码重置权限"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

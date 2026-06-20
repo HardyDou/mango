@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import net.sf.jsqlparser.expression.LongValue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -91,6 +91,16 @@ class PersistenceMybatisPlusAutoConfigurationTest {
         contextRunner.run(ctx -> {
             TenantLineHandler handler = tenantLineHandler(ctx.getBean(MybatisPlusInterceptor.class));
             assertThat(handler.getTenantId()).isEqualTo(new LongValue(8));
+        });
+    }
+
+    @Test
+    void tenantInterceptor_shouldIgnoreResourceRegistryTablesByDefault() {
+        contextRunner.run(ctx -> {
+            TenantLineHandler handler = tenantLineHandler(ctx.getBean(MybatisPlusInterceptor.class));
+            assertThat(handler.ignoreTable("resource_registry")).isTrue();
+            assertThat(handler.ignoreTable("resource_sync_log")).isTrue();
+            assertThat(handler.ignoreTable("resource_change_log")).isTrue();
         });
     }
 

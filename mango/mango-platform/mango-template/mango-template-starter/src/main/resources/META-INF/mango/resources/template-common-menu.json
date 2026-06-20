@@ -1,0 +1,207 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "template",
+      "moduleName": "模板管理模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000008601",
+            "version": 1,
+            "bizKey": "template.menu.internal-admin",
+            "name": "模板管理菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-template"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "模板管理模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 7
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "模板管理",
+                    "menuCode": "template",
+                    "path": "/template",
+                    "icon": "DocumentCopy",
+                    "sort": 4,
+                    "redirect": "/template/templates",
+                    "remark": "模板库、变量定义与渲染能力入口",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "模板分类",
+                        "menuCode": "template:category",
+                        "path": "/template/categories",
+                        "icon": "FolderOpened",
+                        "component": "template/categories/index",
+                        "sort": 1,
+                        "permissions": [
+                          "template:category:list"
+                        ],
+                        "remark": "模板分类维护",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "template:category:list",
+                            "permissionName": "查询模板分类列表",
+                            "sort": 0,
+                            "remark": "模板分类列表查询权限"
+                          },
+                          {
+                            "permissionCode": "template:category:query",
+                            "permissionName": "查询模板分类详情",
+                            "sort": 1,
+                            "remark": "模板分类详情查询权限"
+                          },
+                          {
+                            "permissionCode": "template:category:add",
+                            "permissionName": "新增模板分类",
+                            "sort": 2,
+                            "remark": "模板分类新增权限"
+                          },
+                          {
+                            "permissionCode": "template:category:edit",
+                            "permissionName": "编辑模板分类",
+                            "sort": 3,
+                            "remark": "模板分类编辑权限"
+                          },
+                          {
+                            "permissionCode": "template:category:status",
+                            "permissionName": "启停模板分类",
+                            "sort": 4,
+                            "remark": "模板分类启停权限"
+                          },
+                          {
+                            "permissionCode": "template:category:delete",
+                            "permissionName": "删除模板分类",
+                            "sort": 5,
+                            "remark": "模板分类删除权限"
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "模板列表",
+                        "menuCode": "template:template",
+                        "path": "/template/templates",
+                        "icon": "Document",
+                        "component": "template/templates/index",
+                        "sort": 2,
+                        "permissions": [
+                          "template:template:list"
+                        ],
+                        "remark": "模板主数据、版本发布、历史版本启用和预览渲染",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "template:template:list",
+                            "permissionName": "查询模板列表",
+                            "sort": 0,
+                            "remark": "模板列表查询权限"
+                          },
+                          {
+                            "permissionCode": "template:template:query",
+                            "permissionName": "查询模板详情",
+                            "sort": 1,
+                            "remark": "模板详情与版本查询权限"
+                          },
+                          {
+                            "permissionCode": "template:template:add",
+                            "permissionName": "新增模板",
+                            "sort": 2,
+                            "remark": "模板新增权限"
+                          },
+                          {
+                            "permissionCode": "template:template:edit",
+                            "permissionName": "编辑模板",
+                            "sort": 3,
+                            "remark": "模板编辑权限"
+                          },
+                          {
+                            "permissionCode": "template:template:status",
+                            "permissionName": "启停模板",
+                            "sort": 4,
+                            "remark": "模板启停权限"
+                          },
+                          {
+                            "permissionCode": "template:template:publish",
+                            "permissionName": "发布模板版本",
+                            "sort": 5,
+                            "remark": "模板版本发布权限"
+                          },
+                          {
+                            "permissionCode": "template:template:extract-variable",
+                            "permissionName": "提取模板变量",
+                            "sort": 6,
+                            "remark": "模板占位变量提取权限"
+                          },
+                          {
+                            "permissionCode": "template:template:render",
+                            "permissionName": "渲染模板",
+                            "sort": 7,
+                            "remark": "模板预览和正式渲染权限"
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "渲染记录",
+                        "menuCode": "template:render-record",
+                        "path": "/template/render-records",
+                        "icon": "Tickets",
+                        "component": "template/render-records/index",
+                        "sort": 3,
+                        "permissions": [
+                          "template:render-record:list"
+                        ],
+                        "remark": "模板同步和异步渲染记录查询",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "template:render-record:list",
+                            "permissionName": "查询渲染记录",
+                            "sort": 0,
+                            "remark": "模板渲染记录列表查询权限"
+                          },
+                          {
+                            "permissionCode": "template:render-record:query",
+                            "permissionName": "查询渲染详情",
+                            "sort": 1,
+                            "remark": "模板渲染记录详情查询权限"
+                          }
+                        ]
+                      }
+                    ],
+                    "parentCode": "data"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -17,6 +17,8 @@ public class ResourceRegistryEntity extends AuditableEntity {
 
     private String resourceId;
     private Integer resourceVersion;
+    private String appCode;
+    private String serviceCode;
     private String resourceType;
     private String moduleCode;
     private String bizKey;

@@ -18,5 +18,6 @@
         <module>mango-workflow-api</module>
         <module>mango-workflow-core</module>
         <module>mango-workflow-starter</module>
+        <module>mango-workflow-starter-remote</module>
     </modules>
 </project>

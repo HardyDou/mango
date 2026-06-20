@@ -168,6 +168,7 @@ mango:
 通知中心内置站内信渠道通过 `mango-resource` 注入。通知模块也会声明自己的业务域，业务模块可用同一资源协议向通知中心注入消息模板。资源文件放在：
 
 ```text
+mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-menu.json
 mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-message.yml
 mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-domain.yml
 ```
@@ -357,7 +358,18 @@ notice:site:delete
 
 企微用户同步接口复用 `system:user:add`。
 
-前端页面由 `@mango/notice/admin-pages` 注册。菜单 component 需要映射到对应页面 key，例如 `notice/business-config/index`、`notice/channel/index`、`notice/record/index`、`notice/site-message/index`。
+前端页面由 `@mango/notice/admin-pages` 注册。菜单通过 `notice-common-menu.json` 的 `AUTH_MENU` 资源注入到 `internal-admin`，component 映射到页面 key：
+
+| 菜单 | 路径 | component key | 默认展示 |
+|------|------|---------------|----------|
+| 我的消息 | `/notice/site-message` | `notice/site-message/index` | 是 |
+| 消息配置 | `/notice/message-definition` | `notice/message-definition/index` | 是 |
+| 发送任务 | `/notice/send-message` | `notice/send-message/index` | 是 |
+| 渠道配置 | `/notice/channel` | `notice/channel/index` | 是 |
+| 发送记录 | `/notice/record` | `notice/record/index` | 是 |
+| 失败重试 | `/notice/retry` | `notice/retry/index` | 是 |
+| 接收设置 | `/notice/receive-setting` | `notice/receive-setting/index` | 否 |
+| 全局设置 | `/notice/setting` | `notice/setting/index` | 否 |
 
 ## 12. 数据与初始化
 

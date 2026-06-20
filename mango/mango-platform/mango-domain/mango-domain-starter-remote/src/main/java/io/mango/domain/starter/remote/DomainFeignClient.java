@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * 业务域 Feign 适配器。
  */
-@FeignClient(name = "mango-domain", path = "/domain/domains")
+@FeignClient(name = "mango-domain", contextId = "domainFeignClient", path = "/domain/domains")
 public interface DomainFeignClient extends DomainApi {
 
     @Override

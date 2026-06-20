@@ -60,6 +60,13 @@ public class CheckMojo extends AbstractMojo {
     private static final String DOC_PERSISTENCE_RULES = "persistence-rules.md";
     private static final String DOC_STATIC_ANALYSIS = "auto-check-mapping.md";
     private static final String MANGO_GROUP_ID_PREFIX = "io.mango";
+    private static final String RESOURCE_GROUP_ID = "io.mango.platform.resource";
+    private static final Set<String> RESOURCE_RUNTIME_ARTIFACTS = Set.of(
+            "mango-resource-core",
+            "mango-resource-support",
+            "mango-resource-starter",
+            "mango-resource-sync-starter",
+            "mango-resource-starter-remote");
     private static final String PATH_VARIABLE_ANNOTATION = "@Path" + "Variable";
     private static final String CHECKSTYLE_REPORT = "checkstyle-result.xml";
     private static final String PMD_REPORT = "pmd.xml";
@@ -102,6 +109,16 @@ public class CheckMojo extends AbstractMojo {
             "(?:\\.eq\\s*\\([^;\\n]*(?:CreatedBy|OrgId)\\b|\\.(?:in|eq)\\s*\\([^;\\n]*(?:\"(?:created_by|org_id)\"|'(?:created_by|org_id)')|\\b(?:created_by|org_id)\\b\\s*(?:=|in\\b))",
             Pattern.CASE_INSENSITIVE);
     private static final Pattern SET_TENANT_ID_PATTERN = Pattern.compile("\\.setTenantId\\s*\\(");
+    private static final Pattern YAML_RESOURCE_TYPE_PATTERN = Pattern.compile("^\\s{6}([A-Z0-9_]+):\\s*$");
+    private static final Pattern YAML_RESOURCE_ID_PATTERN = Pattern.compile("^\\s{8}-\\s+id:\\s*\"?([0-9]+)\"?\\s*$");
+    private static final Pattern YAML_RESOURCE_BIZ_KEY_PATTERN = Pattern.compile("^\\s{10}biz-key:\\s*(.+?)\\s*$");
+    private static final Pattern SUPPORT_PERSISTENCE_CONTENT_PATTERN = Pattern.compile(
+            "(@TableName\\b|\\bBaseMapper\\b|\\bServiceImpl\\b|\\bMangoCrudServiceImpl\\b|"
+                    + "org\\.apache\\.ibatis|com\\.baomidou\\.mybatisplus|org\\.flywaydb|"
+                    + "\\bDataSource\\b|\\bJdbcTemplate\\b|java\\.sql\\.)");
+    private static final Pattern SUPPORT_AUTO_CONFIGURATION_PATTERN = Pattern.compile(
+            "(@AutoConfiguration\\b|@Configuration\\b|org\\.springframework\\.boot\\.autoconfigure|"
+                    + "org\\.springframework\\.boot\\.autoconfigure)");
     private static final Pattern TYPE_DECLARATION_PATTERN = Pattern.compile(
             "\\b(?:public\\s+)?(?:sealed\\s+)?(?:abstract\\s+)?(?:class|interface|record|enum)\\s+([A-Za-z0-9_]+)");
     private static final Pattern API_FIELD_PATTERN = Pattern.compile(
@@ -111,6 +128,9 @@ public class CheckMojo extends AbstractMojo {
             Pattern.DOTALL);
     private static final Pattern FEIGN_EXTENDS_API_PATTERN = Pattern.compile(
             "\\binterface\\s+([A-Za-z0-9_]+FeignClient)\\b[^\\{;]*\\bextends\\b[^\\{;]*\\b[A-Za-z0-9_]+Api\\b",
+            Pattern.DOTALL);
+    private static final Pattern FEIGN_INTERFACE_DECLARATION_PATTERN = Pattern.compile(
+            "\\binterface\\s+([A-Za-z0-9_]+FeignClient)\\b([^\\{;]*)\\{",
             Pattern.DOTALL);
     private static final Pattern CREATE_TABLE_PATTERN = Pattern.compile(
             "(?is)create\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?(?:`?([a-zA-Z0-9_]+)`?\\.)?`?([a-zA-Z0-9_]+)`?\\s*\\(");
@@ -125,7 +145,8 @@ public class CheckMojo extends AbstractMojo {
     /**
      * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
      * api-contract, path-param, permission-param, kv-key, test-fixture, persistence-schema,
-     * persistence-access, mapper-sql-style, persistence-crud-baseline, service-contract.
+     * persistence-access, mapper-sql-style, persistence-crud-baseline, service-contract,
+     * resource-registry, module-menu.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -149,6 +170,12 @@ public class CheckMojo extends AbstractMojo {
     private String baseDir;
 
     /**
+     * Current Maven project.
+     */
+    @Parameter(defaultValue = "${project}", readonly = true)
+    private MavenProject project;
+
+    /**
      * Maven session.
      */
     @Parameter(defaultValue = "${session}", readonly = true)
@@ -157,7 +184,7 @@ public class CheckMojo extends AbstractMojo {
     /**
      * Timeout in seconds for each delegated PMD/Checkstyle/SpotBugs Maven command.
      */
-    @Parameter(property = "mango.check.staticTimeoutSeconds", defaultValue = "120")
+    @Parameter(property = "mango.check.staticTimeoutSeconds", defaultValue = "600")
     private long staticTimeoutSeconds;
 
     /**
@@ -189,6 +216,13 @@ public class CheckMojo extends AbstractMojo {
      */
     @Parameter(property = "mango.check.staticFailurePolicy", defaultValue = "block")
     private String staticFailurePolicy;
+
+    /**
+     * Explicit exceptions for Resource Registry starter dependencies.
+     * Format: artifactId=reason,artifactId=reason.
+     */
+    @Parameter(property = "mango.check.resourceStarterDependencyExceptions")
+    private String resourceStarterDependencyExceptions;
 
     /**
      * Retained for backward-compatible tests and configuration migration.
@@ -241,6 +275,8 @@ public class CheckMojo extends AbstractMojo {
             case "service-contract" -> checkServiceContract();
             case "test-fixture" -> checkTestFixture();
             case "web-boundary" -> checkWebBoundary();
+            case "resource-registry" -> checkResourceRegistry();
+            case "module-menu" -> checkModuleMenu();
             case "all" -> {
                 runStaticAnalysis();
                 checkNaming();
@@ -264,6 +300,8 @@ public class CheckMojo extends AbstractMojo {
                 }
                 checkTestFixture();
                 checkWebBoundary();
+                checkResourceRegistry();
+                checkModuleMenu();
             }
             default -> getLog().warn("Unknown rule: " + rule);
         }
@@ -381,6 +419,7 @@ public class CheckMojo extends AbstractMojo {
             command.add(String.join(",", reactorProjects));
             command.add("-am");
         }
+        command.add("compile");
         command.add(goal);
         getLog().info("Delegating static analysis goal: " + String.join(" ", command));
 
@@ -996,10 +1035,15 @@ public class CheckMojo extends AbstractMojo {
      * 1. Mango modules are evaluated in two dimensions: first-level layer
      *    (common / infra / platform / app), then second-level role
      *    (api / support / core / starter / starter-remote).
-     * 2. *-api cannot depend on *-core, *-starter, *-starter-remote.
-     * 3. *-core cannot depend on *-starter, *-starter-remote.
-     * 4. *-starter-remote can only depend on its own *-api, *-support and mango-infra-feign-starter inside io.mango modules.
-     * 5. *-starter-remote must not directly depend on spring-cloud-starter-openfeign.
+     * 2. *-api cannot depend on *-support, *-core, *-starter, or any *-starter-*.
+     * 3. *-support cannot depend on *-core, *-starter, or any *-starter-*.
+     * 4. *-support cannot contain persistence content, Spring Boot auto-configuration,
+     *    module metadata, controllers, or Feign adapters.
+     * 5. *-core cannot depend on *-core, *-starter, or any *-starter-*.
+     * 6. *-starter-remote can only depend on its own *-api, *-support and mango-infra-feign-starter inside io.mango modules.
+     * 7. *-starter-remote must not directly depend on spring-cloud-starter-openfeign.
+     * 8. Non-resource non-app modules can only depend on mango-resource-api unless explicitly excepted with a reason.
+     *    *-app modules are runtime assembly boundaries and may depend on resource runtime starters.
      */
     private void checkDependency() {
         getLog().info("Checking module dependencies...");
@@ -1074,9 +1118,16 @@ public class CheckMojo extends AbstractMojo {
             }
 
             ModuleType moduleType = classifyModule(artifactId);
+            if (moduleType == ModuleType.SUPPORT) {
+                analyzeSupportModuleContent(pomFile, artifactId, issues);
+            }
+            Map<String, String> resourceDependencyExceptions = parseResourceDependencyExceptions();
             for (String dependencyBlock : extractDependencies(content)) {
                 String depArtifactId = extractArtifactIdFromDep(dependencyBlock);
                 if (depArtifactId == null || depArtifactId.isEmpty()) {
+                    continue;
+                }
+                if ("test".equals(extractScopeFromDep(dependencyBlock))) {
                     continue;
                 }
                 String depGroupId = extractGroupIdFromDep(dependencyBlock);
@@ -1094,6 +1145,18 @@ public class CheckMojo extends AbstractMojo {
                     continue;
                 }
 
+                DependencyIssue resourceIssue = validateResourceRegistryDependency(
+                        pomFile, moduleType, artifactId, depGroupId, depArtifactId, resourceDependencyExceptions);
+                if (resourceIssue != null) {
+                    resourceIssue.file = pomFile.toString();
+                    issues.add(resourceIssue);
+                    continue;
+                }
+                if (isExplicitResourceRuntimeDependencyException(
+                        pomFile, artifactId, depGroupId, depArtifactId, resourceDependencyExceptions)) {
+                    continue;
+                }
+
                 DependencyIssue issue = validateDependency(moduleType, artifactId, depArtifactId);
                 if (issue != null) {
                     issue.file = pomFile.toString();
@@ -1103,6 +1166,160 @@ public class CheckMojo extends AbstractMojo {
         } catch (Exception e) {
             getLog().warn("Failed to analyze " + pomFile + ": " + e.getMessage());
         }
+    }
+
+    private DependencyIssue validateResourceRegistryDependency(
+            Path pomFile,
+            ModuleType moduleType,
+            String consumerArtifact,
+            String depGroupId,
+            String depArtifact,
+            Map<String, String> exceptions) {
+        if (!RESOURCE_GROUP_ID.equals(depGroupId) || !RESOURCE_RUNTIME_ARTIFACTS.contains(depArtifact)) {
+            return null;
+        }
+        if (moduleType == ModuleType.ROOT || moduleType == ModuleType.APP) {
+            return null;
+        }
+
+        if (isResourceModulePom(pomFile)) {
+            return validateResourceInternalDependency(consumerArtifact, depArtifact);
+        }
+        if (isResourceDependencyException(consumerArtifact, exceptions)) {
+            getLog().warn("Resource starter dependency exception accepted for " + consumerArtifact
+                    + ": " + exceptions.get(consumerArtifact));
+            return null;
+        }
+        return new DependencyIssue("CRITICAL",
+                "非 mango-resource 模块默认只能依赖 mango-resource-api；依赖 " + depArtifact
+                        + " 需要人工明确确认并通过 -Dmango.check.resourceStarterDependencyExceptions="
+                        + consumerArtifact + "=<reason> 记录理由: "
+                        + consumerArtifact + " -> " + depArtifact);
+    }
+
+    private boolean isExplicitResourceRuntimeDependencyException(
+            Path pomFile,
+            String consumerArtifact,
+            String depGroupId,
+            String depArtifact,
+            Map<String, String> exceptions) {
+        return !isResourceModulePom(pomFile)
+                && RESOURCE_GROUP_ID.equals(depGroupId)
+                && RESOURCE_RUNTIME_ARTIFACTS.contains(depArtifact)
+                && isResourceDependencyException(consumerArtifact, exceptions);
+    }
+
+    private DependencyIssue validateResourceInternalDependency(String consumerArtifact, String depArtifact) {
+        if (("mango-resource-starter-remote".equals(consumerArtifact)
+                || "mango-resource-sync-starter".equals(consumerArtifact))
+                && ("mango-resource-core".equals(depArtifact) || "mango-resource-starter".equals(depArtifact))) {
+            return new DependencyIssue("CRITICAL",
+                    consumerArtifact + " 不能依赖本地 Resource Registry runtime: "
+                            + consumerArtifact + " -> " + depArtifact);
+        }
+        return null;
+    }
+
+    private boolean isResourceModulePom(Path pomFile) {
+        return pomFile.toString().replace('\\', '/').contains("/mango-resource/");
+    }
+
+    private boolean isResourceDependencyException(String artifactId, Map<String, String> exceptions) {
+        String reason = exceptions.get(artifactId);
+        return reason != null && !reason.isBlank();
+    }
+
+    private Map<String, String> parseResourceDependencyExceptions() {
+        if (resourceStarterDependencyExceptions == null || resourceStarterDependencyExceptions.isBlank()) {
+            return Map.of();
+        }
+        Map<String, String> exceptions = new LinkedHashMap<>();
+        for (String entry : resourceStarterDependencyExceptions.split(",")) {
+            if (entry == null || entry.isBlank()) {
+                continue;
+            }
+            int separator = entry.indexOf('=');
+            if (separator <= 0 || separator == entry.length() - 1) {
+                continue;
+            }
+            String artifactId = entry.substring(0, separator).trim();
+            String reason = entry.substring(separator + 1).trim();
+            if (!artifactId.isBlank() && !reason.isBlank()) {
+                exceptions.put(artifactId, reason);
+            }
+        }
+        return exceptions;
+    }
+
+    private void analyzeSupportModuleContent(Path pomFile, String artifactId, List<DependencyIssue> issues)
+            throws IOException {
+        Path moduleDir = pomFile.getParent();
+        Path sourceDir = moduleDir.resolve("src/main");
+        if (!Files.exists(sourceDir)) {
+            return;
+        }
+        Files.walkFileTree(sourceDir, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                String normalized = file.toString().replace('\\', '/');
+                if (normalized.contains("/db/migration/")) {
+                    issues.add(supportContentIssue(file, artifactId, "support 模块禁止包含 db/migration"));
+                    return FileVisitResult.CONTINUE;
+                }
+                if (normalized.endsWith("/META-INF/mango/module.properties")) {
+                    issues.add(supportContentIssue(file, artifactId,
+                            "support 模块禁止声明 module.properties，只有本地 starter 可以声明模块信息"));
+                    return FileVisitResult.CONTINUE;
+                }
+                if (normalized.endsWith("AutoConfiguration.imports")) {
+                    issues.add(supportContentIssue(file, artifactId,
+                            "support 模块禁止声明 Spring Boot AutoConfiguration.imports"));
+                    return FileVisitResult.CONTINUE;
+                }
+                if (!normalized.endsWith(".java")) {
+                    return FileVisitResult.CONTINUE;
+                }
+                String code = Files.readString(file);
+                if (code.contains("@RestController") || code.contains("@Controller")) {
+                    issues.add(supportContentIssue(file, artifactId,
+                            "support 模块禁止包含 Controller，HTTP 入口必须放在 starter"));
+                    return FileVisitResult.CONTINUE;
+                }
+                if (code.contains("@FeignClient")) {
+                    issues.add(supportContentIssue(file, artifactId,
+                            "support 模块禁止包含 Feign adapter，远程适配必须放在 starter-remote"));
+                    return FileVisitResult.CONTINUE;
+                }
+                if (SUPPORT_PERSISTENCE_CONTENT_PATTERN.matcher(code).find()
+                        || containsPersistenceTypeDeclaration(code)) {
+                    issues.add(supportContentIssue(file, artifactId,
+                            "support 模块禁止包含持久化内容，持久化能力必须放在 api/core/starter 的对应边界内"));
+                    return FileVisitResult.CONTINUE;
+                }
+                if (SUPPORT_AUTO_CONFIGURATION_PATTERN.matcher(code).find()) {
+                    issues.add(supportContentIssue(file, artifactId,
+                            "support 模块禁止包含 Spring Boot 自动配置或配置属性装配"));
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    private boolean containsPersistenceTypeDeclaration(String code) {
+        Matcher matcher = TYPE_DECLARATION_PATTERN.matcher(code);
+        while (matcher.find()) {
+            String typeName = matcher.group(1);
+            if (typeName.endsWith("Entity") || typeName.endsWith("Mapper")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private DependencyIssue supportContentIssue(Path file, String artifactId, String description) {
+        DependencyIssue issue = new DependencyIssue("CRITICAL", artifactId + " " + description);
+        issue.file = file.toString();
+        return issue;
     }
 
     private ModuleType classifyModule(String artifactId) {
@@ -1118,6 +1335,9 @@ public class CheckMojo extends AbstractMojo {
         if (artifactId.endsWith("-starter-remote")) {
             return ModuleType.STARTER_REMOTE;
         }
+        if (artifactId.endsWith("-sync-starter")) {
+            return ModuleType.SYNC_STARTER;
+        }
         if (artifactId.endsWith("-starter")) {
             return ModuleType.STARTER;
         }
@@ -1132,28 +1352,42 @@ public class CheckMojo extends AbstractMojo {
 
     private DependencyIssue validateDependency(ModuleType consumer, String consumerArtifact, String depArtifact) {
         if (consumer == ModuleType.API) {
+            if (depArtifact.endsWith("-support")) {
+                return new DependencyIssue("CRITICAL",
+                        "*-api 模块不能依赖 *-support: " + consumerArtifact + " -> " + depArtifact);
+            }
             if (depArtifact.endsWith("-core")) {
                 return new DependencyIssue("CRITICAL",
-                        "*_api 模块不能依赖 *-core: " + consumerArtifact + " -> " + depArtifact);
+                        "*-api 模块不能依赖 *-core: " + consumerArtifact + " -> " + depArtifact);
             }
-            if (depArtifact.endsWith("-starter")) {
+            if (isStarterArtifact(depArtifact)) {
                 return new DependencyIssue("CRITICAL",
-                        "*_api 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
+                        "*-api 模块不能依赖 *-starter 或 *-starter-*："
+                                + consumerArtifact + " -> " + depArtifact);
             }
-            if (depArtifact.endsWith("-starter-remote")) {
+        }
+
+        if (consumer == ModuleType.SUPPORT) {
+            if (depArtifact.endsWith("-core")) {
                 return new DependencyIssue("CRITICAL",
-                        "*_api 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
+                        "*-support 模块不能依赖 *-core: " + consumerArtifact + " -> " + depArtifact);
+            }
+            if (isStarterArtifact(depArtifact)) {
+                return new DependencyIssue("CRITICAL",
+                        "*-support 模块不能依赖 *-starter 或 *-starter-*："
+                                + consumerArtifact + " -> " + depArtifact);
             }
         }
 
         if (consumer == ModuleType.CORE) {
-            if (depArtifact.endsWith("-starter")) {
+            if (depArtifact.endsWith("-core")) {
                 return new DependencyIssue("CRITICAL",
-                        "*_core 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
+                        "*-core 模块不能依赖其它模块 *-core: " + consumerArtifact + " -> " + depArtifact);
             }
-            if (depArtifact.endsWith("-starter-remote")) {
+            if (isStarterArtifact(depArtifact)) {
                 return new DependencyIssue("CRITICAL",
-                        "*_core 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
+                        "*-core 模块不能依赖 *-starter 或 *-starter-*："
+                                + consumerArtifact + " -> " + depArtifact);
             }
         }
 
@@ -1175,6 +1409,12 @@ public class CheckMojo extends AbstractMojo {
         }
 
         return null;
+    }
+
+    private boolean isStarterArtifact(String artifactId) {
+        return artifactId.endsWith("-starter")
+                || artifactId.contains("-starter-")
+                || artifactId.endsWith("-sync-starter");
     }
 
     private boolean isAuthorizationRemoteSupportDependency(String consumerArtifact, String depArtifact) {
@@ -1411,15 +1651,15 @@ public class CheckMojo extends AbstractMojo {
 
             Path remoteModuleDir = siblingRemoteModule(pomFile.getParent(), artifactId);
             if (remoteModuleDir != null) {
-                String reversePath = reverseModulePath(descriptor.modulePath);
                 for (Path javaFile : starterJavaFiles(remoteModuleDir)) {
                     String rootPath = extractControllerRootPath(javaFile);
                     if (rootPath.isEmpty()) {
                         continue;
                     }
-                    if (!rootPath.startsWith(reversePath)) {
+                    if (!isReverseModuleControllerPath(rootPath, descriptor.modulePath)) {
                         issues.add(new ModuleInfoIssue("CRITICAL", javaFile.toString(),
-                                remoteModuleDir.getFileName() + " 的反向 Controller 根路径必须以 " + reversePath
+                                remoteModuleDir.getFileName() + " 的反向 Controller 根路径必须以 "
+                                        + reverseModulePaths(descriptor.modulePath)
                                         + " 开头，当前为 " + rootPath));
                     }
                 }
@@ -1431,13 +1671,42 @@ public class CheckMojo extends AbstractMojo {
     }
 
     private boolean isModuleControllerPath(String rootPath, String modulePath) {
-        return rootPath.startsWith(modulePath) || rootPath.startsWith(reverseModulePath(modulePath));
+        return isAnyModulePathPrefix(rootPath, modulePath) || isReverseModuleControllerPath(rootPath, modulePath);
+    }
+
+    private boolean isReverseModuleControllerPath(String rootPath, String modulePath) {
+        if (modulePath == null || modulePath.isBlank()) {
+            return false;
+        }
+        for (String candidate : modulePath.split(",")) {
+            String normalized = normalizeModulePath(candidate);
+            if (!normalized.isEmpty() && rootPath.startsWith(reverseModulePath(normalized))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String reverseModulePaths(String modulePath) {
+        if (modulePath == null || modulePath.isBlank()) {
+            return "";
+        }
+        List<String> paths = new ArrayList<>();
+        for (String candidate : modulePath.split(",")) {
+            String normalized = normalizeModulePath(candidate);
+            if (!normalized.isEmpty()) {
+                paths.add(reverseModulePath(normalized));
+            }
+        }
+        return String.join(",", paths);
     }
 
     /**
      * Rules:
      * 1. starter-remote Feign client name must use the target module-name.
-     * 2. starter-remote Feign client path must start with the target module-path.
+     * 2. starter-remote Feign client contextId must explicitly use lowerCamelCase Feign interface name.
+     * 3. starter-remote Feign client path must start with the target module-path or reverse module-path.
+     * 4. One Feign client must implement exactly one XxxApi.
      */
     private void checkRemoteAdapter() {
         getLog().info("Checking remote adapter declarations...");
@@ -1447,6 +1716,7 @@ public class CheckMojo extends AbstractMojo {
         }
 
         List<RemoteAdapterIssue> issues = new ArrayList<>();
+        Map<String, String> feignContextOwners = new LinkedHashMap<>();
         Map<String, ModuleDescriptor> descriptors = loadModuleDescriptors(rootPath, new ArrayList<>());
 
         try {
@@ -1454,7 +1724,7 @@ public class CheckMojo extends AbstractMojo {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isStarterRemoteJavaFile(file)) {
-                        analyzeRemoteAdapter(file, descriptors, issues);
+                        analyzeRemoteAdapter(file, descriptors, feignContextOwners, issues);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -1480,7 +1750,11 @@ public class CheckMojo extends AbstractMojo {
         return normalized.contains("-starter-remote/src/main/java/") && normalized.endsWith(".java");
     }
 
-    private void analyzeRemoteAdapter(Path file, Map<String, ModuleDescriptor> descriptors, List<RemoteAdapterIssue> issues) {
+    private void analyzeRemoteAdapter(
+            Path file,
+            Map<String, ModuleDescriptor> descriptors,
+            Map<String, String> feignContextOwners,
+            List<RemoteAdapterIssue> issues) {
         try {
             String content = Files.readString(file);
             Matcher matcher = FEIGN_CLIENT_PATTERN.matcher(content);
@@ -1492,7 +1766,35 @@ public class CheckMojo extends AbstractMojo {
             while (matcher.find()) {
                 String annotationBody = matcher.group(1);
                 String feignName = extractAnnotationAttribute(annotationBody, "name");
+                String feignContextId = extractAnnotationAttribute(annotationBody, "contextId");
                 String feignPath = normalizeMappingPath(extractAnnotationAttribute(annotationBody, "path"));
+                FeignInterfaceDeclaration declaration = findFeignInterfaceDeclaration(content, matcher.end());
+                if (declaration == null) {
+                    issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
+                            "@FeignClient 必须声明在 XxxFeignClient 接口上"));
+                    continue;
+                }
+                String expectedContextId = lowerCamelCase(declaration.name);
+                if (!expectedContextId.equals(feignContextId)) {
+                    issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
+                            "@FeignClient contextId 必须显式使用 Feign 接口名 lowerCamelCase " + expectedContextId
+                                    + "，当前为 " + (feignContextId.isEmpty() ? "<missing>" : feignContextId)));
+                }
+                if (!feignName.isEmpty() && !feignContextId.isEmpty()) {
+                    String contextKey = artifactId + "|" + feignName + "|" + feignContextId;
+                    String owner = feignContextOwners.putIfAbsent(contextKey, declaration.name);
+                    if (owner != null && !owner.equals(declaration.name)) {
+                        issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
+                                "相同 @FeignClient name 下 contextId 必须唯一: name=" + feignName
+                                        + ", contextId=" + feignContextId + ", 已被 " + owner + " 使用"));
+                    }
+                }
+                int apiCount = countFeignApiContracts(declaration.extendsClause);
+                if (apiCount != 1) {
+                    issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
+                            "XxxFeignClient 必须且只能继承一个 XxxApi，当前 API 数=" + apiCount
+                                    + ": " + declaration.name));
+                }
                 if (descriptor == null) {
                     issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
                             artifactId + " 缺少目标 starter 的 module.properties，无法校验 @FeignClient"));
@@ -1502,15 +1804,68 @@ public class CheckMojo extends AbstractMojo {
                     issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
                             "@FeignClient name 必须使用目标模块 module-name " + descriptor.moduleName + "，当前为 " + feignName));
                 }
-                if (!feignPath.startsWith(descriptor.modulePath)) {
+                if (!isFeignModulePathPrefix(feignPath, descriptor.modulePath)) {
                     issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
-                            "@FeignClient path 必须以目标模块 module-path " + descriptor.modulePath + " 开头，当前为 " + feignPath));
+                            "@FeignClient path 必须以目标模块 module-path " + descriptor.modulePath
+                                    + " 或反向 module-path " + reverseModulePaths(descriptor.modulePath)
+                                    + " 开头，当前为 " + feignPath));
                 }
             }
         } catch (IOException e) {
             issues.add(new RemoteAdapterIssue("MAJOR", file.toString(),
                     "远程适配器检查失败: " + e.getMessage()));
         }
+    }
+
+    private FeignInterfaceDeclaration findFeignInterfaceDeclaration(String content, int annotationEnd) {
+        Matcher matcher = FEIGN_INTERFACE_DECLARATION_PATTERN.matcher(content);
+        matcher.region(annotationEnd, content.length());
+        if (!matcher.find()) {
+            return null;
+        }
+        return new FeignInterfaceDeclaration(matcher.group(1).trim(), matcher.group(2));
+    }
+
+    private int countFeignApiContracts(String extendsClause) {
+        if (extendsClause == null || extendsClause.isBlank()) {
+            return 0;
+        }
+        int extendsIndex = extendsClause.indexOf("extends");
+        if (extendsIndex < 0) {
+            return 0;
+        }
+        String apiList = extendsClause.substring(extendsIndex + "extends".length());
+        int count = 0;
+        for (String apiType : apiList.split(",")) {
+            if (simpleTypeName(apiType).endsWith("Api")) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private String lowerCamelCase(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return Character.toLowerCase(value.charAt(0)) + value.substring(1);
+    }
+
+    private boolean isAnyModulePathPrefix(String path, String modulePath) {
+        if (modulePath == null || modulePath.isBlank()) {
+            return false;
+        }
+        for (String candidate : modulePath.split(",")) {
+            String normalized = normalizeModulePath(candidate);
+            if (!normalized.isEmpty() && path.startsWith(normalized)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isFeignModulePathPrefix(String path, String modulePath) {
+        return isAnyModulePathPrefix(path, modulePath) || isReverseModuleControllerPath(path, modulePath);
     }
 
     /**
@@ -2604,6 +2959,331 @@ public class CheckMojo extends AbstractMojo {
         return null;
     }
 
+    private void checkResourceRegistry() {
+        getLog().info("Checking resource registry declarations...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<ResourceRegistryIssue> issues = new ArrayList<>();
+        List<ResourceDeclarationRecord> declarations = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainResourceDeclarationFile(file)) {
+                        declarations.addAll(loadResourceDeclarations(file, issues));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            issues.add(new ResourceRegistryIssue("MAJOR", rootPath.toString(), 0,
+                    "资源声明扫描失败: " + e.getMessage()));
+        }
+
+        validateResourceDeclarationUniqueness(declarations, issues);
+
+        if (!issues.isEmpty()) {
+            for (ResourceRegistryIssue issue : issues) {
+                result.addIssue("RESOURCE_REGISTRY", issue.severity, issue.file, issue.line,
+                        issue.description, "RESOURCE_REGISTRY", DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " resource registry declaration violation(s)");
+        } else {
+            getLog().info("All resource registry declaration checks passed");
+        }
+    }
+
+    private void checkModuleMenu() {
+        getLog().info("Checking module menu declarations...");
+        Path rootPath = resolveModuleMenuScanPath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<ModuleMenuIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    analyzeModuleMenuFile(file, issues);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            issues.add(new ModuleMenuIssue("MAJOR", rootPath.toString(), 0,
+                    "菜单声明扫描失败: " + e.getMessage()));
+        }
+
+        if (!issues.isEmpty()) {
+            for (ModuleMenuIssue issue : issues) {
+                result.addIssue("MODULE_MENU", issue.severity, issue.file, issue.line,
+                        issue.description, "MODULE_MENU", "backend/11-module-menu.md", SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " module menu declaration violation(s)");
+        } else {
+            getLog().info("All module menu declaration checks passed");
+        }
+    }
+
+    private Path resolveModuleMenuScanPath() {
+        if (hasExplicitBaseDir()) {
+            return resolveBasePath();
+        }
+        if (project != null && project.getBasedir() != null) {
+            Path projectPath = project.getBasedir().toPath();
+            if (Files.exists(projectPath)) {
+                return projectPath;
+            }
+        }
+        return resolveBasePath();
+    }
+
+    private boolean hasExplicitBaseDir() {
+        String explicitBaseDir = System.getProperty("baseDir");
+        return explicitBaseDir != null && !explicitBaseDir.isBlank();
+    }
+
+    private void analyzeModuleMenuFile(Path file, List<ModuleMenuIssue> issues) {
+        String normalized = file.toString().replace('\\', '/');
+        if (normalized.contains("/target/") || !normalized.contains("/src/main/")) {
+            return;
+        }
+        try {
+            if (isLegacyResourceManifestFile(normalized)) {
+                analyzeLegacyMenuManifest(file, issues);
+                return;
+            }
+            if (normalized.contains("/db/migration/") && normalized.endsWith(".sql")) {
+                analyzeMenuMigrationSql(file, issues);
+                return;
+            }
+            if (isModuleMenuResourceFile(file)) {
+                analyzeModuleMenuResource(file, issues);
+            }
+        } catch (IOException e) {
+            issues.add(new ModuleMenuIssue("MAJOR", file.toString(), 0,
+                    "菜单规则检查失败: " + e.getMessage()));
+        }
+    }
+
+    private boolean isLegacyResourceManifestFile(String normalized) {
+        return normalized.endsWith("/META-INF/mango/resource-manifest.json")
+                || normalized.contains("/META-INF/mango/resource-manifests/");
+    }
+
+    private void analyzeLegacyMenuManifest(Path file, List<ModuleMenuIssue> issues) throws IOException {
+        String content = Files.readString(file);
+        if (content.contains("\"menus\"") || content.contains("\"menuCode\"")) {
+            issues.add(new ModuleMenuIssue("CRITICAL", file.toString(),
+                    lineNumber(content, Math.max(content.indexOf("\"menus\""), content.indexOf("\"menuCode\""))),
+                    "新增菜单禁止使用旧 resource-manifest；请改用 META-INF/mango/resources/{module}-common-menu.{json,yml,yaml} 的 AUTH_MENU 资源"));
+        }
+    }
+
+    private void analyzeMenuMigrationSql(Path file, List<ModuleMenuIssue> issues) throws IOException {
+        String content = Files.readString(file);
+        String lower = content.toLowerCase(Locale.ROOT);
+        if (!lower.contains("authorization_menu")
+                && !lower.contains("frontend_menu_runtime_config")
+                && !lower.contains("authorization_menu_package_item")
+                && !lower.contains("authorization_role_menu")) {
+            return;
+        }
+        String menuTables = "authorization_menu|frontend_menu_runtime_config"
+                + "|authorization_menu_package_item|authorization_role_menu";
+        Matcher matcher = Pattern.compile(
+                "(?i)\\b(?:insert\\s+into|update)\\s+`?(" + menuTables + ")`?\\b"
+                        + "|\\bdelete\\s+(?:from\\s+`?(" + menuTables + ")`?\\b"
+                        + "|(?:`?\\w+`?\\s*,\\s*)*`?\\w+`?\\s+from\\s+`?(" + menuTables + ")`?\\b)")
+                .matcher(content);
+        while (matcher.find()) {
+            issues.add(new ModuleMenuIssue("CRITICAL", file.toString(), lineNumber(content, matcher.start()),
+                    "禁止用 Flyway SQL 维护菜单、按钮权限、运行时配置、套餐授权或默认角色授权数据；请使用 AUTH_MENU 资源注入"));
+        }
+    }
+
+    private boolean isModuleMenuResourceFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        String fileName = file.getFileName().toString();
+        return normalized.contains("/META-INF/mango/resources/")
+                && (fileName.endsWith("-common-menu.json")
+                || fileName.endsWith("-common-menu.yml")
+                || fileName.endsWith("-common-menu.yaml"));
+    }
+
+    private void analyzeModuleMenuResource(Path file, List<ModuleMenuIssue> issues) throws IOException {
+        String content = Files.readString(file);
+        if (!content.contains("AUTH_MENU")) {
+            issues.add(new ModuleMenuIssue("CRITICAL", file.toString(), 0,
+                    "菜单资源文件必须声明 AUTH_MENU 资源类型"));
+        }
+        if (!content.contains("menus")) {
+            issues.add(new ModuleMenuIssue("CRITICAL", file.toString(), 0,
+                    "菜单资源文件必须提供 menus 菜单树字段"));
+        }
+        if (!content.contains("appCode") && !content.contains("app-code")) {
+            issues.add(new ModuleMenuIssue("CRITICAL", file.toString(), 0,
+                    "菜单资源文件必须提供 appCode 字段"));
+        }
+    }
+
+    private boolean isMainResourceDeclarationFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("/src/main/resources/META-INF/mango/resources/")
+                && (normalized.endsWith(".yml") || normalized.endsWith(".yaml") || normalized.endsWith(".json"));
+    }
+
+    private List<ResourceDeclarationRecord> loadResourceDeclarations(Path file, List<ResourceRegistryIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            String fileName = file.getFileName().toString();
+            if (fileName.endsWith(".json")) {
+                return parseJsonResourceDeclarations(file, content, issues);
+            }
+            return parseYamlResourceDeclarations(file, content, issues);
+        } catch (IOException e) {
+            issues.add(new ResourceRegistryIssue("MAJOR", file.toString(), 0,
+                    "资源声明读取失败: " + e.getMessage()));
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ResourceDeclarationRecord> parseJsonResourceDeclarations(
+            Path file, String content, List<ResourceRegistryIssue> issues) {
+        try {
+            Map<String, Object> root = objectMapper.readValue(content, Map.class);
+            Map<String, Object> mango = asMap(root.get("mango"));
+            Map<String, Object> resource = asMap(mango.get("resource"));
+            Map<String, Object> declarationGroups = asMap(resource.get("declarations"));
+            List<ResourceDeclarationRecord> records = new ArrayList<>();
+            for (Map.Entry<String, Object> group : declarationGroups.entrySet()) {
+                if (!(group.getValue() instanceof List<?> declarations)) {
+                    continue;
+                }
+                for (Object value : declarations) {
+                    if (!(value instanceof Map<?, ?> declaration)) {
+                        continue;
+                    }
+                    String id = stringValue(declaration.get("id"));
+                    String bizKey = stringValue(declaration.get("bizKey"));
+                    if (bizKey == null) {
+                        bizKey = stringValue(declaration.get("biz-key"));
+                    }
+                    records.add(new ResourceDeclarationRecord(id, group.getKey(), bizKey, file.toString(), 0));
+                }
+            }
+            return records;
+        } catch (Exception e) {
+            issues.add(new ResourceRegistryIssue("MAJOR", file.toString(), 0,
+                    "JSON 资源声明解析失败: " + e.getMessage()));
+            return List.of();
+        }
+    }
+
+    private Map<String, Object> asMap(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                result.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            return result;
+        }
+        return Map.of();
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value).trim();
+    }
+
+    private List<ResourceDeclarationRecord> parseYamlResourceDeclarations(
+            Path file, String content, List<ResourceRegistryIssue> issues) {
+        List<ResourceDeclarationRecord> records = new ArrayList<>();
+        String currentResourceType = null;
+        ResourceDeclarationRecord current = null;
+        String[] lines = content.split("\\R", -1);
+        for (int index = 0; index < lines.length; index++) {
+            String line = lines[index];
+            Matcher typeMatcher = YAML_RESOURCE_TYPE_PATTERN.matcher(line);
+            if (typeMatcher.matches()) {
+                currentResourceType = typeMatcher.group(1);
+                current = null;
+                continue;
+            }
+
+            Matcher idMatcher = YAML_RESOURCE_ID_PATTERN.matcher(line);
+            if (idMatcher.matches()) {
+                current = new ResourceDeclarationRecord(
+                        idMatcher.group(1), currentResourceType, null, file.toString(), index + 1);
+                records.add(current);
+                continue;
+            }
+
+            Matcher bizKeyMatcher = YAML_RESOURCE_BIZ_KEY_PATTERN.matcher(line);
+            if (bizKeyMatcher.matches() && current != null) {
+                current.bizKey = unquote(bizKeyMatcher.group(1));
+            }
+        }
+
+        for (ResourceDeclarationRecord declaration : records) {
+            if (declaration.resourceType == null || declaration.resourceType.isBlank()) {
+                issues.add(new ResourceRegistryIssue("CRITICAL", declaration.file, declaration.line,
+                        "资源声明缺少 resourceType 分组: id=" + declaration.id));
+            }
+        }
+        return records;
+    }
+
+    private String unquote(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        if (trimmed.length() >= 2 && ((trimmed.startsWith("\"") && trimmed.endsWith("\""))
+                || (trimmed.startsWith("'") && trimmed.endsWith("'")))) {
+            return trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
+    private void validateResourceDeclarationUniqueness(
+            List<ResourceDeclarationRecord> declarations, List<ResourceRegistryIssue> issues) {
+        Map<String, ResourceDeclarationRecord> ids = new LinkedHashMap<>();
+        Map<String, ResourceDeclarationRecord> bizKeys = new LinkedHashMap<>();
+        for (ResourceDeclarationRecord declaration : declarations) {
+            if (declaration.id == null || declaration.id.isBlank()) {
+                issues.add(new ResourceRegistryIssue("CRITICAL", declaration.file, declaration.line,
+                        "资源声明缺少 id"));
+                continue;
+            }
+            if (!declaration.id.matches("\\d+")) {
+                issues.add(new ResourceRegistryIssue("CRITICAL", declaration.file, declaration.line,
+                        "资源声明 id 必须是雪花数字字符串: " + declaration.id));
+            }
+            ResourceDeclarationRecord previousId = ids.putIfAbsent(declaration.id, declaration);
+            if (previousId != null) {
+                issues.add(new ResourceRegistryIssue("CRITICAL", declaration.file, declaration.line,
+                        "资源声明 id 重复: " + declaration.id + "，已存在于 " + previousId.file
+                                + ":" + previousId.line));
+            }
+            if (declaration.resourceType == null || declaration.resourceType.isBlank()
+                    || declaration.bizKey == null || declaration.bizKey.isBlank()) {
+                issues.add(new ResourceRegistryIssue("CRITICAL", declaration.file, declaration.line,
+                        "资源声明缺少 resourceType 或 biz-key: id=" + declaration.id));
+                continue;
+            }
+            String bizKey = declaration.resourceType + ":" + declaration.bizKey;
+            ResourceDeclarationRecord previousBizKey = bizKeys.putIfAbsent(bizKey, declaration);
+            if (previousBizKey != null) {
+                issues.add(new ResourceRegistryIssue("CRITICAL", declaration.file, declaration.line,
+                        "资源声明 resourceType + biz-key 重复: " + bizKey + "，已存在于 "
+                                + previousBizKey.file + ":" + previousBizKey.line));
+            }
+        }
+    }
+
     private String extractSignature(String line) {
         int parenStart = line.indexOf('(');
         int parenEnd = line.lastIndexOf(')');
@@ -2661,24 +3341,25 @@ public class CheckMojo extends AbstractMojo {
 
     private List<String> extractDependencies(String content) {
         List<String> dependencies = new ArrayList<>();
-        int depStart = content.indexOf("<dependencies>");
-        if (depStart == -1) {
-            return dependencies;
-        }
-        int depEnd = content.indexOf("</dependencies>", depStart);
-        if (depEnd == -1) {
-            return dependencies;
-        }
-
-        String depsSection = content.substring(depStart, depEnd);
-        int marker = 0;
-        while ((marker = depsSection.indexOf("<dependency>", marker)) != -1) {
-            int end = depsSection.indexOf("</dependency>", marker);
-            if (end == -1) {
+        String runtimeContent = content.replaceAll("(?s)<dependencyManagement>.*?</dependencyManagement>", "");
+        int depStart = 0;
+        while ((depStart = runtimeContent.indexOf("<dependencies>", depStart)) != -1) {
+            int depEnd = runtimeContent.indexOf("</dependencies>", depStart);
+            if (depEnd == -1) {
                 break;
             }
-            dependencies.add(depsSection.substring(marker, end + "</dependency>".length()));
-            marker = end + "</dependency>".length();
+
+            String depsSection = runtimeContent.substring(depStart, depEnd);
+            int marker = 0;
+            while ((marker = depsSection.indexOf("<dependency>", marker)) != -1) {
+                int end = depsSection.indexOf("</dependency>", marker);
+                if (end == -1) {
+                    break;
+                }
+                dependencies.add(depsSection.substring(marker, end + "</dependency>".length()));
+                marker = end + "</dependency>".length();
+            }
+            depStart = depEnd + "</dependencies>".length();
         }
         return dependencies;
     }
@@ -2703,6 +3384,19 @@ public class CheckMojo extends AbstractMojo {
         }
         start += "<groupId>".length();
         int end = dependencyBlock.indexOf("</groupId>", start);
+        if (end == -1) {
+            return "";
+        }
+        return dependencyBlock.substring(start, end).trim();
+    }
+
+    private String extractScopeFromDep(String dependencyBlock) {
+        int start = dependencyBlock.indexOf("<scope>");
+        if (start == -1) {
+            return "";
+        }
+        start += "<scope>".length();
+        int end = dependencyBlock.indexOf("</scope>", start);
         if (end == -1) {
             return "";
         }
@@ -2854,6 +3548,16 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    private static class FeignInterfaceDeclaration {
+        private final String name;
+        private final String extendsClause;
+
+        private FeignInterfaceDeclaration(String name, String extendsClause) {
+            this.name = name;
+            this.extendsClause = extendsClause == null ? "" : extendsClause;
+        }
+    }
+
     private static class ApiContractIssue {
         private final String severity;
         private final String file;
@@ -2950,6 +3654,50 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    private static class ResourceRegistryIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private ResourceRegistryIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
+        }
+    }
+
+    private static class ResourceDeclarationRecord {
+        private final String id;
+        private final String resourceType;
+        private String bizKey;
+        private final String file;
+        private final int line;
+
+        private ResourceDeclarationRecord(String id, String resourceType, String bizKey, String file, int line) {
+            this.id = id;
+            this.resourceType = resourceType;
+            this.bizKey = bizKey;
+            this.file = file;
+            this.line = line;
+        }
+    }
+
+    private static class ModuleMenuIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private ModuleMenuIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
+        }
+    }
+
     private enum ModuleType {
         ROOT,
         OTHER,
@@ -2958,6 +3706,7 @@ public class CheckMojo extends AbstractMojo {
         SUPPORT,
         CORE,
         STARTER,
+        SYNC_STARTER,
         STARTER_REMOTE,
     }
 }

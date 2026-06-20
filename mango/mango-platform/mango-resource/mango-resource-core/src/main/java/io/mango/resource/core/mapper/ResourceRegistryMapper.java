@@ -16,4 +16,8 @@ public interface ResourceRegistryMapper extends BaseMapper<ResourceRegistryEntit
                                                  @Param("bizKey") String bizKey);
 
     List<ResourceRegistryEntity> selectByModule(@Param("moduleCode") String moduleCode);
+
+    List<ResourceRegistryEntity> selectBySourceAndModule(@Param("appCode") String appCode,
+                                                         @Param("serviceCode") String serviceCode,
+                                                         @Param("moduleCode") String moduleCode);
 }

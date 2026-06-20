@@ -1,6 +1,7 @@
 package io.mango.infra.module.starter;
 
 import io.mango.infra.module.api.ModuleInfoRegistry;
+import io.mango.infra.module.api.ModuleInfoResolver;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -75,6 +76,22 @@ class ModuleAutoConfigurationTest {
                             .get()
                             .extracting("moduleName", "modulePath")
                             .containsExactly("mango-report", "/report");
+                });
+    }
+
+    @Test
+    void moduleInfoResolver_hasSingleBeanIdentity() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.module.module-service.modules.mango-module.service-name=mango-module-app",
+                        "mango.module.module-service.modules.mango-module.module-path=/module")
+                .run(context -> {
+                    assertThat(context.getBeansOfType(ModuleInfoResolver.class)).hasSize(1);
+                    assertThat(context.getBean(ModuleInfoResolver.class).resolve("mango-module"))
+                            .isPresent()
+                            .get()
+                            .extracting("serviceName", "modulePath")
+                            .containsExactly("mango-module-app", "/module");
                 });
     }
 

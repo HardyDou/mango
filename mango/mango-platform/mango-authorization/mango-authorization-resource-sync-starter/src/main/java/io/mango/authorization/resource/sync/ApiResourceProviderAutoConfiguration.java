@@ -19,9 +19,16 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
         "io.mango.resource.api.ResourceProvider",
         "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"
 })
-@ConditionalOnProperty(name = "mango.authorization.resource-sync.resource-provider.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "mango.authorization.resource-sync.resource-provider.enabled",
+        havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(ApiResourceSyncProperties.class)
 public class ApiResourceProviderAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ApiResourceDeclarationConverter apiResourceDeclarationConverter() {
+        return new ApiResourceDeclarationConverter();
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -35,7 +42,8 @@ public class ApiResourceProviderAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ApiAccessResourceProvider apiAccessResourceProvider(ApiAccessResourceDiscoverer discoverer,
-                                                              ApiResourceSyncProperties properties) {
-        return new ApiAccessResourceProvider(discoverer, properties);
+                                                              ApiResourceSyncProperties properties,
+                                                              ApiResourceDeclarationConverter converter) {
+        return new ApiAccessResourceProvider(discoverer, properties, converter);
     }
 }

@@ -3,8 +3,12 @@ package io.mango.authorization.starter.remote;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.IAuthorizationProvider;
+import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.query.LoadUserAuthorizationQuery;
+import io.mango.authorization.support.token.JjwtTokenServiceImpl;
 import io.mango.common.result.R;
+import io.mango.infra.kv.api.IKvStore;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -20,9 +24,15 @@ import org.springframework.context.annotation.Bean;
 public class AuthorizationRemoteAutoConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean(ITokenProvider.class)
+    public ITokenProvider tokenProvider(ObjectProvider<IKvStore> kvStoreProvider) {
+        return new JjwtTokenServiceImpl(kvStoreProvider.getIfAvailable());
+    }
+
+    @Bean
     @ConditionalOnMissingBean(IAuthorizationProvider.class)
     public IAuthorizationProvider authorizationProvider(
-            AuthorizationFeignClient authorizationFeignClient) {
+            ObjectProvider<AuthorizationFeignClient> authorizationFeignClient) {
         return query -> {
             if (!AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER.equals(query.subjectType())) {
                 return AuthorizationSnapshot.empty();
@@ -35,7 +45,7 @@ public class AuthorizationRemoteAutoConfiguration {
             remoteQuery.setActorType(query.actorType());
             remoteQuery.setPartyType(query.partyType());
             remoteQuery.setPartyId(query.partyId());
-            R<AuthorizationSnapshot> response = authorizationFeignClient.loadUserAuthorization(remoteQuery);
+            R<AuthorizationSnapshot> response = authorizationFeignClient.getObject().loadUserAuthorization(remoteQuery);
             return response != null && response.isSuccess() && response.getData() != null
                     ? response.getData()
                     : AuthorizationSnapshot.empty();

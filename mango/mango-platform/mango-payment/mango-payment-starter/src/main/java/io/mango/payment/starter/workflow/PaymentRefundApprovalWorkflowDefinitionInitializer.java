@@ -2,8 +2,8 @@ package io.mango.payment.starter.workflow;
 
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.core.service.PaymentRefundApprovalWorkflowDefinitionService;
 import io.mango.payment.starter.PaymentProperties;

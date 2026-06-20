@@ -1,0 +1,910 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付中心模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000009401",
+            "version": 1,
+            "bizKey": "payment.menu.internal-admin",
+            "name": "支付中心菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-payment"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "支付中心"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 6
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "支付中心",
+                    "menuCode": "payment",
+                    "path": "/payment",
+                    "icon": "CreditCard",
+                    "sort": 8,
+                    "redirect": "/payment/application-access",
+                    "remark": "统一支付平台后台管理",
+                    "children": [
+                      {
+                        "menuType": 1,
+                        "menuName": "应用接入",
+                        "menuCode": "payment:application-access",
+                        "path": "/payment/application-access",
+                        "icon": "Grid",
+                        "sort": 1,
+                        "redirect": "/payment/applications",
+                        "remark": "支付应用接入和收银台配置",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "应用管理",
+                            "menuCode": "payment:application",
+                            "path": "/payment/applications",
+                            "icon": "Box",
+                            "component": "payment/applications/index",
+                            "sort": 1,
+                            "permissions": [
+                              "payment:application:list"
+                            ],
+                            "remark": "支付接入应用管理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:application:query",
+                                "permissionName": "应用查询",
+                                "sort": 1,
+                                "remark": "支付应用详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:application:add",
+                                "permissionName": "应用新增",
+                                "sort": 2,
+                                "remark": "支付应用新增权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:application:edit",
+                                "permissionName": "应用编辑",
+                                "sort": 3,
+                                "remark": "支付应用编辑权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:application:delete",
+                                "permissionName": "应用删除",
+                                "sort": 4,
+                                "remark": "支付应用受控逻辑删除权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "收银台",
+                            "menuCode": "payment:cashier-config",
+                            "path": "/payment/cashier-configs",
+                            "icon": "Tickets",
+                            "component": "payment/cashier-configs/index",
+                            "sort": 2,
+                            "permissions": [
+                              "payment:cashier-config:list"
+                            ],
+                            "remark": "收银台配置管理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:cashier-config:query",
+                                "permissionName": "收银台配置查询",
+                                "sort": 1,
+                                "remark": "收银台配置详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:cashier-config:add",
+                                "permissionName": "收银台配置新增",
+                                "sort": 2,
+                                "remark": "收银台配置新增权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:cashier-config:edit",
+                                "permissionName": "收银台配置编辑",
+                                "sort": 3,
+                                "remark": "收银台配置编辑权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:cashier-config:delete",
+                                "permissionName": "收银台配置删除",
+                                "sort": 4,
+                                "remark": "收银台配置受控逻辑删除权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          }
+                        ],
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "支付通道",
+                        "menuCode": "payment:channel-management",
+                        "path": "/payment/channel-management",
+                        "icon": "Connection",
+                        "sort": 2,
+                        "redirect": "/payment/enterprise-subjects",
+                        "remark": "企业主体、通道签约、通道产品和支付方式管理",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "企业主体",
+                            "menuCode": "payment:enterprise-subject",
+                            "path": "/payment/enterprise-subjects",
+                            "icon": "OfficeBuilding",
+                            "component": "payment/enterprise-subjects/index",
+                            "sort": 1,
+                            "permissions": [
+                              "payment:enterprise-subject:list"
+                            ],
+                            "remark": "收款主体管理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:enterprise-subject:query",
+                                "permissionName": "签约主体详情",
+                                "sort": 1,
+                                "remark": "签约主体详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:enterprise-subject:add",
+                                "permissionName": "签约主体新增",
+                                "sort": 2,
+                                "remark": "签约主体新增权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:enterprise-subject:edit",
+                                "permissionName": "签约主体编辑",
+                                "sort": 3,
+                                "remark": "签约主体编辑权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:enterprise-subject:delete",
+                                "permissionName": "签约主体删除",
+                                "sort": 4,
+                                "remark": "签约主体受控删除权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "签约通道",
+                            "menuCode": "payment:channel-contract",
+                            "path": "/payment/channel-contracts",
+                            "icon": "Postcard",
+                            "component": "payment/channel-contracts/index",
+                            "sort": 2,
+                            "permissions": [
+                              "payment:channel-contract:list"
+                            ],
+                            "remark": "企业主体在支付通道下的商户号、AppId、证书、密钥和签约能力",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:channel-contract:query",
+                                "permissionName": "通道签约详情",
+                                "sort": 1,
+                                "remark": "通道签约配置详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel-contract:add",
+                                "permissionName": "通道签约新增",
+                                "sort": 2,
+                                "remark": "通道签约配置新增权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel-contract:edit",
+                                "permissionName": "通道签约编辑",
+                                "sort": 3,
+                                "remark": "通道签约配置编辑权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel-contract:delete",
+                                "permissionName": "通道签约删除",
+                                "sort": 4,
+                                "remark": "通道签约配置受控删除权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel-contract:certificate-expiry",
+                                "permissionName": "证书到期提醒",
+                                "sort": 5,
+                                "remark": "通道签约证书到期提醒查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel-contract:certificate-rotate",
+                                "permissionName": "证书轮换登记",
+                                "sort": 6,
+                                "remark": "通道签约证书轮换登记权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "支付通道",
+                            "menuCode": "payment:channel",
+                            "path": "/payment/channels",
+                            "icon": "Connection",
+                            "component": "payment/channels/index",
+                            "sort": 3,
+                            "permissions": [
+                              "payment:channel:list"
+                            ],
+                            "remark": "支付通道配置管理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:channel:query",
+                                "permissionName": "支付通道详情",
+                                "sort": 1,
+                                "remark": "支付通道详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel:add",
+                                "permissionName": "支付通道新增",
+                                "sort": 2,
+                                "remark": "支付通道新增权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel:edit",
+                                "permissionName": "支付通道编辑",
+                                "sort": 3,
+                                "remark": "支付通道编辑权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:channel:delete",
+                                "permissionName": "支付通道删除",
+                                "sort": 4,
+                                "remark": "支付通道受控删除权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "支付方式",
+                            "menuCode": "payment:method",
+                            "path": "/payment/methods",
+                            "icon": "Wallet",
+                            "component": "payment/methods/index",
+                            "sort": 4,
+                            "permissions": [
+                              "payment:method:list"
+                            ],
+                            "remark": "支付方式管理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:method-route:query",
+                                "permissionName": "路由策略查询",
+                                "sort": 1,
+                                "remark": "支付方式路由规则详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method-route:add",
+                                "permissionName": "路由策略新增",
+                                "sort": 2,
+                                "remark": "支付方式路由规则新增权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method-route:edit",
+                                "permissionName": "路由策略编辑",
+                                "sort": 3,
+                                "remark": "支付方式路由规则编辑权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method-route:delete",
+                                "permissionName": "路由策略删除",
+                                "sort": 4,
+                                "remark": "支付方式路由规则受控删除权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method-route:trial",
+                                "permissionName": "路由试算",
+                                "sort": 5,
+                                "remark": "支付方式路由试算权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method-route:list",
+                                "permissionName": "路由策略列表",
+                                "sort": 6,
+                                "remark": "支付方式路由规则列表权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method:query",
+                                "permissionName": "支付方式详情",
+                                "sort": 7,
+                                "remark": "支付方式详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method:add",
+                                "permissionName": "支付方式新增",
+                                "sort": 8,
+                                "remark": "支付方式新增权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method:edit",
+                                "permissionName": "支付方式编辑",
+                                "sort": 9,
+                                "remark": "支付方式编辑权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:method:delete",
+                                "permissionName": "支付方式删除",
+                                "sort": 10,
+                                "remark": "支付方式受控删除权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          }
+                        ],
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "交易订单",
+                        "menuCode": "payment:transaction",
+                        "path": "/payment/transaction",
+                        "icon": "Tickets",
+                        "sort": 3,
+                        "redirect": "/payment/business-orders",
+                        "remark": "支付业务订单、支付单、退款单、流水和异常处理",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "业务订单",
+                            "menuCode": "payment:business-order",
+                            "path": "/payment/business-orders",
+                            "icon": "Document",
+                            "component": "payment/business-orders/index",
+                            "sort": 1,
+                            "permissions": [
+                              "payment:business-order:list"
+                            ],
+                            "remark": "业务订单查询",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:business-order:query",
+                                "permissionName": "业务订单查询",
+                                "sort": 1,
+                                "remark": "业务订单详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:business-order:create",
+                                "permissionName": "业务订单新增",
+                                "sort": 2,
+                                "remark": "后台创建待支付业务订单权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "支付订单",
+                            "menuCode": "payment:payment-order",
+                            "path": "/payment/payment-orders",
+                            "icon": "Money",
+                            "component": "payment/payment-orders/index",
+                            "sort": 2,
+                            "permissions": [
+                              "payment:payment-order:list"
+                            ],
+                            "remark": "支付订单查询",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:payment-order:query",
+                                "permissionName": "支付订单查询",
+                                "sort": 1,
+                                "remark": "支付订单详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:payment-order:sync-status",
+                                "permissionName": "支付订单同步状态",
+                                "sort": 2,
+                                "remark": "支付订单主动查单并同步状态权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "退款订单",
+                            "menuCode": "payment:refund-order",
+                            "path": "/payment/refund-orders",
+                            "icon": "RefreshLeft",
+                            "component": "payment/refund-orders/index",
+                            "sort": 3,
+                            "permissions": [
+                              "payment:refund-order:list"
+                            ],
+                            "remark": "退款订单查询",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:refund-order:query",
+                                "permissionName": "退款订单查询",
+                                "sort": 1,
+                                "remark": "退款订单详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:refund-order:query-channel",
+                                "permissionName": "退款订单主动查退款",
+                                "sort": 2,
+                                "remark": "退款订单主动查询通道退款结果权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "退款审批",
+                            "menuCode": "payment:refund-approval",
+                            "path": "/payment/refund-approvals",
+                            "icon": "ClipboardCheck",
+                            "component": "payment/refund-approvals/index",
+                            "sort": 4,
+                            "permissions": [
+                              "payment:refund-approval:list"
+                            ],
+                            "remark": "后台退款审批工作流申请查看入口",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:refund-approval:list",
+                                "permissionName": "退款审批列表",
+                                "sort": 1,
+                                "remark": "后台退款审批列表权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:refund-approval:query",
+                                "permissionName": "退款审批详情",
+                                "sort": 2,
+                                "remark": "后台退款审批详情权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:refund-approval:create",
+                                "permissionName": "创建退款审批",
+                                "sort": 3,
+                                "remark": "后台发起退款审批权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:security:reencrypt-sensitive",
+                                "permissionName": "敏感字段重加密",
+                                "sort": 4,
+                                "remark": "支付历史明文敏感字段受控重加密权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:observability:query",
+                                "permissionName": "可观测性快照",
+                                "sort": 5,
+                                "remark": "支付可观测性指标和告警查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:mango-pay:scenario-control",
+                                "permissionName": "芒果支付场景控制",
+                                "sort": 6,
+                                "remark": "芒果支付内置通道异常场景控制权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "交易流水",
+                            "menuCode": "payment:transaction-flow",
+                            "path": "/payment/transaction-flows",
+                            "icon": "List",
+                            "component": "payment/transaction-flows/index",
+                            "sort": 5,
+                            "permissions": [
+                              "payment:transaction-flow:list"
+                            ],
+                            "remark": "支付和退款流水查询",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:transaction-flow:query",
+                                "permissionName": "交易流水查询",
+                                "sort": 1,
+                                "remark": "交易流水详情查询权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "异常订单",
+                            "menuCode": "payment:exception-order",
+                            "path": "/payment/exception-orders",
+                            "icon": "Warning",
+                            "component": "payment/exception-orders/index",
+                            "sort": 6,
+                            "permissions": [
+                              "payment:exception-order:list"
+                            ],
+                            "remark": "异常订单处理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:exception-order:query",
+                                "permissionName": "异常订单查询",
+                                "sort": 1,
+                                "remark": "异常订单详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:exception-order:handle",
+                                "permissionName": "异常订单处理",
+                                "sort": 2,
+                                "remark": "异常订单受控处理权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          }
+                        ],
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "对账结算",
+                        "menuCode": "payment:settlement",
+                        "path": "/payment/settlement",
+                        "icon": "DataAnalysis",
+                        "sort": 4,
+                        "redirect": "/payment/notification-records",
+                        "remark": "支付通知、对账、差异、结算和审计",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "通知记录",
+                            "menuCode": "payment:notification-record",
+                            "path": "/payment/notification-records",
+                            "icon": "Bell",
+                            "component": "payment/notification-records/index",
+                            "sort": 1,
+                            "permissions": [
+                              "payment:notification-record:list"
+                            ],
+                            "remark": "支付通知记录",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:notification-record:query",
+                                "permissionName": "通知记录查询",
+                                "sort": 1,
+                                "remark": "通知记录详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:notification-record:retry",
+                                "permissionName": "通知记录重推",
+                                "sort": 2,
+                                "remark": "通知记录人工重推权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:notification-record:deliver-due",
+                                "permissionName": "通知记录投递到期任务",
+                                "sort": 3,
+                                "remark": "人工触发投递已到期通知记录权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:task:expire-open-orders",
+                                "permissionName": "关闭已过期待支付订单任务",
+                                "sort": 4,
+                                "remark": "人工或平台调度触发关闭已过期且未成功支付订单权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:task:query-processing-orders",
+                                "permissionName": "批量主动查询支付中订单任务",
+                                "sort": 5,
+                                "remark": "人工或平台调度触发支付中订单主动查单权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "对账管理",
+                            "menuCode": "payment:reconciliation",
+                            "path": "/payment/reconciliations",
+                            "icon": "Files",
+                            "component": "payment/reconciliations/index",
+                            "sort": 2,
+                            "permissions": [
+                              "payment:reconciliation:list"
+                            ],
+                            "remark": "对账任务和批次管理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:reconciliation:query",
+                                "permissionName": "对账批次查询",
+                                "sort": 1,
+                                "remark": "对账批次详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:reconciliation:import",
+                                "permissionName": "通道账单导入",
+                                "sort": 2,
+                                "remark": "通道账单导入权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "差异处理",
+                            "menuCode": "payment:difference",
+                            "path": "/payment/differences",
+                            "icon": "Operation",
+                            "component": "payment/differences/index",
+                            "sort": 3,
+                            "permissions": [
+                              "payment:difference:list"
+                            ],
+                            "remark": "对账差异处理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:difference:query",
+                                "permissionName": "差异详情查询",
+                                "sort": 1,
+                                "remark": "对账差异详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:difference:handle",
+                                "permissionName": "差异受控处理",
+                                "sort": 2,
+                                "remark": "对账差异受控处理权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "结算汇总",
+                            "menuCode": "payment:settlement-summary",
+                            "path": "/payment/settlement-summaries",
+                            "icon": "DataAnalysis",
+                            "component": "payment/settlement-summaries/index",
+                            "sort": 4,
+                            "permissions": [
+                              "payment:settlement-summary:list"
+                            ],
+                            "remark": "结算汇总查询",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:settlement-summary:query",
+                                "permissionName": "结算详情查询",
+                                "sort": 1,
+                                "remark": "结算汇总详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:settlement-summary:generate",
+                                "permissionName": "生成结算汇总",
+                                "sort": 2,
+                                "remark": "生成或重新生成结算汇总权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:settlement-summary:confirm",
+                                "permissionName": "确认结算汇总",
+                                "sort": 3,
+                                "remark": "确认结算汇总权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:settlement-summary:void",
+                                "permissionName": "作废结算汇总",
+                                "sort": 4,
+                                "remark": "作废结算汇总权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "操作审计",
+                            "menuCode": "payment:operation-audit",
+                            "path": "/payment/operation-audits",
+                            "icon": "DocumentChecked",
+                            "component": "payment/operation-audits/index",
+                            "sort": 5,
+                            "permissions": [
+                              "payment:operation-audit:list"
+                            ],
+                            "remark": "支付域操作审计",
+                            "packageCodes": []
+                          }
+                        ],
+                        "packageCodes": []
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "线下支付",
+                        "menuCode": "payment:offline-payment",
+                        "path": "/payment/offline",
+                        "icon": "CreditCard",
+                        "sort": 5,
+                        "redirect": "/payment/offline/collections",
+                        "permissions": [
+                          "payment:offline-payment"
+                        ],
+                        "remark": "线下收款通道的收款确认、退款处理、银行流水导入和对账匹配入口",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "线下收款订单",
+                            "menuCode": "payment:offline-collection",
+                            "path": "/payment/offline/collections",
+                            "icon": "Money",
+                            "component": "payment/offline-collections/index",
+                            "sort": 1,
+                            "permissions": [
+                              "payment:offline-collection:list"
+                            ],
+                            "remark": "线下转账收款单、对账码、转账备注、凭证和到账确认入口",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:offline-collection:query",
+                                "permissionName": "线下收款查询",
+                                "sort": 1,
+                                "remark": "线下收款详情查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:offline-collection:confirm",
+                                "permissionName": "线下收款确认",
+                                "sort": 2,
+                                "remark": "线下收款确认到账权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:offline-collection:refund",
+                                "permissionName": "线下收款退款",
+                                "sort": 3,
+                                "remark": "线下收款发起线下退款权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:offline-collection:bank-statement:query",
+                                "permissionName": "线下银行流水查询",
+                                "sort": 4,
+                                "remark": "线下收款银行流水批次和明细查询权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:offline-collection:bank-statement:import",
+                                "permissionName": "线下银行流水导入",
+                                "sort": 5,
+                                "remark": "线下收款银行流水 Excel 导入权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:offline-collection:bank-statement:confirm",
+                                "permissionName": "线下银行流水确认",
+                                "sort": 6,
+                                "remark": "线下收款银行流水匹配确认权限",
+                                "packageCodes": []
+                              },
+                              {
+                                "permissionCode": "payment:offline-collection:bank-statement:list",
+                                "permissionName": "线下银行流水列表",
+                                "sort": 7,
+                                "remark": "线下收款银行流水批次列表权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "线下退款订单",
+                            "menuCode": "payment:offline-refund",
+                            "path": "/payment/offline/refunds",
+                            "icon": "RefreshLeft",
+                            "component": "payment/offline-refunds/index",
+                            "sort": 2,
+                            "permissions": [
+                              "payment:offline-refund:list"
+                            ],
+                            "remark": "线下收款通道独立退款订单、退款账户和退款凭证查询入口",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "payment:offline-refund:query",
+                                "permissionName": "线下退款查询",
+                                "sort": 1,
+                                "remark": "线下退款详情查询权限",
+                                "packageCodes": []
+                              }
+                            ],
+                            "packageCodes": []
+                          }
+                        ],
+                        "packageCodes": []
+                      }
+                    ],
+                    "packageCodes": []
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

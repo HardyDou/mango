@@ -23,6 +23,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.infra.web</groupId>
+            <artifactId>mango-infra-web-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>

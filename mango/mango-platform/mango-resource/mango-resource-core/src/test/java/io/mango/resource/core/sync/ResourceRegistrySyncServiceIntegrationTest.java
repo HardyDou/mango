@@ -11,7 +11,10 @@ import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceProvider;
+import io.mango.resource.api.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceStatus;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceSyncResult;
@@ -38,9 +41,11 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -76,10 +81,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Autowired
     private TestMessageResourceHandler handler;
 
+    @Autowired
+    private RecordingResourceTargetDispatcher dispatcher;
+
     @BeforeEach
     void setUp() {
         rebuildTables();
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        dispatcher.reset();
     }
 
     @Test
@@ -88,6 +97,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry).isNotNull();
+        assertThat(registry.getAppCode()).isEqualTo("local");
+        assertThat(registry.getServiceCode()).isEqualTo("local");
         assertThat(registry.getResourceVersion()).isEqualTo(1);
         assertThat(registry.getResourceType()).isEqualTo("MESSAGE_TEMPLATE");
         assertThat(registry.getBizKey()).isEqualTo("guarantee.apply.submit");
@@ -96,6 +107,28 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_sync_log")).isEqualTo(1);
         assertThat(count("resource_change_log")).isEqualTo(1);
         assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(dispatcher.upsertBatchCount()).isZero();
+    }
+
+    @Test
+    void syncUsesRemoteDispatcherWhenLocalHandlerIsMissing() {
+        provider.setDeclaration(remoteOnlyDeclaration());
+
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000002");
+        assertThat(registry).isNotNull();
+        assertThat(registry.getTargetId()).isEqualTo(92001L);
+        assertThat(registry.getTargetTable()).isEqualTo("remote_notice_template");
+        assertThat(dispatcher.upsertBatchCount()).isEqualTo(1);
+    }
+
+    @Test
+    void syncPrefersLocalHandlerWhenRemoteDispatcherAlsoSupportsTargetModule() {
+        syncService.sync();
+
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(dispatcher.upsertBatchCount()).isZero();
     }
 
     @Test
@@ -110,6 +143,35 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_sync_log")).isEqualTo(2);
         assertThat(count("resource_change_log")).isEqualTo(2);
         assertThat(stringValue("message_template", "title")).isEqualTo("提交申请新版");
+    }
+
+    @Test
+    void syncRejectsResourceVersionRollback() {
+        provider.setDeclaration(activeDeclaration(2, "提交申请新版"));
+        syncService.sync();
+        provider.setDeclaration(activeDeclaration(1, "回退版本"));
+
+        assertThatThrownBy(() -> syncService.sync())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("version rollback is not allowed");
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(2);
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请新版");
+    }
+
+    @Test
+    void syncUpdatesRegistrySyncModeWhenDeclarationChanges() {
+        syncService.sync();
+        ResourceDeclaration manualDeclaration = activeDeclaration(2, "提交申请");
+        manualDeclaration.setSyncMode(ResourceSyncMode.MANUAL);
+        provider.setDeclaration(manualDeclaration);
+
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(2);
+        assertThat(registry.getSyncMode()).isEqualTo("MANUAL");
     }
 
     @Test
@@ -136,6 +198,79 @@ class ResourceRegistrySyncServiceIntegrationTest {
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getStatus()).isEqualTo("REMOVED");
         assertThat(intValue("message_template", "enabled")).isZero();
+    }
+
+    @Test
+    void remoteSyncDisablesMissingOnlyWithinSameSourceService() {
+        ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
+        serviceA.setId("1900000000000000003");
+        serviceA.setBizKey("guarantee.apply.service-a");
+        ResourceDeclaration serviceB = activeDeclaration(1, "服务B");
+        serviceB.setId("1900000000000000004");
+        serviceB.setBizKey("guarantee.apply.service-b");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(serviceA));
+        syncService.syncRemote("platform-admin", "service-b", List.of(serviceB));
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        ResourceRegistryEntity registryA = registryMapper.selectByResourceId("1900000000000000003");
+        ResourceRegistryEntity registryB = registryMapper.selectByResourceId("1900000000000000004");
+        assertThat(registryA.getStatus()).isEqualTo("REMOVED");
+        assertThat(registryB.getStatus()).isEqualTo("ACTIVE");
+        assertThat(registryB.getAppCode()).isEqualTo("platform-admin");
+        assertThat(registryB.getServiceCode()).isEqualTo("service-b");
+    }
+
+    @Test
+    void remoteSyncAllowsNullDeclarationsWhenModuleCodesAreProvided() {
+        ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
+        serviceA.setId("1900000000000000003");
+        serviceA.setBizKey("guarantee.apply.service-a");
+        syncService.syncRemote("platform-admin", "service-a", List.of(serviceA));
+
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), null);
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000003");
+        assertThat(registry.getStatus()).isEqualTo("REMOVED");
+        assertThat(intValue("message_template", "enabled")).isZero();
+    }
+
+    @Test
+    void syncFailsWhenMissingAutoResourceHasNoLocalHandlerOrRemoteDispatcher() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, status
+                ) values (
+                    90005, '1900000000000000005', 1, 'platform-admin', 'orphan-service', 'UNSUPPORTED_TEMPLATE',
+                    'guarantee', 'guarantee.unsupported.submit', '未知远程模板', 'unsupported-notice',
+                    'unsupported_template', 95001, 'old-hash', 'AUTO', 'ACTIVE'
+                )
+                """);
+
+        assertThatThrownBy(() -> syncService.syncRemote(
+                "platform-admin", "orphan-service", List.of("guarantee"), List.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("No resource handler found for missing resource disable")
+                .hasMessageContaining("UNSUPPORTED_TEMPLATE")
+                .hasMessageContaining("unsupported-notice");
+    }
+
+    @Test
+    void syncDeprecatedDeclarationKeepsTargetReadable() {
+        syncService.sync();
+        ResourceDeclaration deprecated = activeDeclaration(2, "废弃声明不覆盖目标");
+        deprecated.setStatus(ResourceStatus.DEPRECATED);
+        provider.setDeclaration(deprecated);
+
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(2);
+        assertThat(registry.getStatus()).isEqualTo("DEPRECATED");
+        assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
+        assertThat(intValue("message_template", "enabled")).isEqualTo(1);
     }
 
     @Test
@@ -190,6 +325,15 @@ class ResourceRegistrySyncServiceIntegrationTest {
         return declaration;
     }
 
+    private ResourceDeclaration remoteOnlyDeclaration() {
+        ResourceDeclaration declaration = activeDeclaration(1, "远程模板");
+        declaration.setId("1900000000000000002");
+        declaration.setResourceType("REMOTE_TEMPLATE");
+        declaration.setBizKey("guarantee.remote.submit");
+        declaration.setTargetModule("remote-notice");
+        return declaration;
+    }
+
     private void rebuildTables() {
         jdbcTemplate.execute("drop table if exists resource_change_log");
         jdbcTemplate.execute("drop table if exists resource_sync_log");
@@ -201,6 +345,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     id bigint primary key,
                     resource_id varchar(64) not null,
                     resource_version int not null,
+                    app_code varchar(128) not null default 'local',
+                    service_code varchar(128) not null default 'local',
                     resource_type varchar(64) not null,
                     module_code varchar(64) not null,
                     biz_key varchar(128) not null,
@@ -327,6 +473,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         TestMessageResourceHandler testMessageResourceHandler(TestMessageTemplateMapper messageTemplateMapper) {
             return new TestMessageResourceHandler(messageTemplateMapper);
         }
+
+        @Bean
+        RecordingResourceTargetDispatcher recordingResourceTargetDispatcher() {
+            return new RecordingResourceTargetDispatcher();
+        }
     }
 
     static class MutableResourceProvider implements ResourceProvider {
@@ -400,6 +551,43 @@ class ResourceRegistrySyncServiceIntegrationTest {
         public ResourceSyncResult delete(ResourceDeclaration resource) {
             messageTemplateMapper.deleteById(91001L);
             return ResourceSyncResult.of(91001L, "message_template", "deleted");
+        }
+    }
+
+    static class RecordingResourceTargetDispatcher implements ResourceTargetDispatcher {
+
+        private int upsertBatchCount;
+
+        void reset() {
+            upsertBatchCount = 0;
+        }
+
+        int upsertBatchCount() {
+            return upsertBatchCount;
+        }
+
+        @Override
+        public boolean supports(String targetModule) {
+            return "notice".equals(targetModule) || "remote-notice".equals(targetModule);
+        }
+
+        @Override
+        public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> declarations,
+                                                           List<ResourceDeclaration> completeBatch) {
+            upsertBatchCount++;
+            ResourceDeclaration declaration = declarations.get(0);
+            return Map.of(declaration.getId(),
+                    ResourceSyncResult.of(92001L, "remote_notice_template", "remote ok"));
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration declaration) {
+            return ResourceSyncResult.of(92001L, "remote_notice_template", "remote disabled");
+        }
+
+        @Override
+        public ResourceSyncResult delete(ResourceDeclaration declaration) {
+            return ResourceSyncResult.of(92001L, "remote_notice_template", "remote deleted");
         }
     }
 }

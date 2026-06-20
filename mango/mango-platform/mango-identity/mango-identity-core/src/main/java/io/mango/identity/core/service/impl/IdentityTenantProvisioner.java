@@ -2,15 +2,15 @@ package io.mango.identity.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.core.entity.Role;
-import io.mango.authorization.core.entity.SubjectRoleBinding;
-import io.mango.authorization.core.mapper.RoleMapper;
-import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
+import io.mango.authorization.api.RoleBindingApi;
+import io.mango.authorization.api.command.SubjectRoleBindingCommand;
+import io.mango.authorization.api.query.RoleLookupQuery;
+import io.mango.common.result.R;
 import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.core.entity.TenantMember;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantProvisionContext;
 import io.mango.system.api.tenant.TenantProvisioner;
@@ -37,8 +37,7 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
-    private final RoleMapper roleMapper;
-    private final SubjectRoleBindingMapper subjectRoleBindingMapper;
+    private final RoleBindingApi roleBindingApi;
 
     @Override
     public void provision(TenantProvisionContext context) {
@@ -51,9 +50,9 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
             return;
         }
         TenantMember member = ensureTenantAdminMember(context, creator);
-        Role role = findAdminRole(context.tenantId());
-        if (role != null) {
-            ensureRoleBinding(context, member.getMemberId(), role.getRoleId());
+        Long roleId = findAdminRoleId(context.tenantId());
+        if (roleId != null) {
+            ensureRoleBinding(context, member.getMemberId(), roleId);
         }
     }
 
@@ -88,39 +87,27 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         return member;
     }
 
-    private Role findAdminRole(Long tenantId) {
-        return roleMapper.selectOne(new LambdaQueryWrapper<Role>()
-                .eq(Role::getTenantId, tenantId)
-                .eq(Role::getAppCode, DEFAULT_APP_CODE)
-                .eq(Role::getRoleCode, TENANT_ADMIN_ROLE)
-                .last("LIMIT 1"));
+    private Long findAdminRoleId(Long tenantId) {
+        RoleLookupQuery query = new RoleLookupQuery();
+        query.setTenantId(tenantId);
+        query.setAppCode(DEFAULT_APP_CODE);
+        query.setRoleCode(TENANT_ADMIN_ROLE);
+        R<Long> response = roleBindingApi.findRoleId(query);
+        return response != null && response.isSuccess() ? response.getData() : null;
     }
 
     private void ensureRoleBinding(TenantProvisionContext context, Long memberId, Long roleId) {
-        Long count = subjectRoleBindingMapper.selectCount(new LambdaQueryWrapper<SubjectRoleBinding>()
-                .eq(SubjectRoleBinding::getTenantId, context.tenantId())
-                .eq(SubjectRoleBinding::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
-                .eq(SubjectRoleBinding::getSubjectId, memberId)
-                .eq(SubjectRoleBinding::getRoleId, roleId)
-                .eq(SubjectRoleBinding::getAppCode, DEFAULT_APP_CODE)
-                .eq(SubjectRoleBinding::getRealm, DEFAULT_REALM)
-                .eq(SubjectRoleBinding::getActorType, DEFAULT_ACTOR_TYPE)
-                .eq(SubjectRoleBinding::getPartyType, DEFAULT_PARTY_TYPE)
-                .eq(SubjectRoleBinding::getPartyId, context.tenantId()));
-        if (count != null && count > 0) {
-            return;
-        }
-        SubjectRoleBinding binding = new SubjectRoleBinding();
-        binding.setTenantId(context.tenantId());
-        binding.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
-        binding.setSubjectId(memberId);
-        binding.setRoleId(roleId);
-        binding.setAppCode(DEFAULT_APP_CODE);
-        binding.setRealm(DEFAULT_REALM);
-        binding.setActorType(DEFAULT_ACTOR_TYPE);
-        binding.setPartyType(DEFAULT_PARTY_TYPE);
-        binding.setPartyId(context.tenantId());
-        subjectRoleBindingMapper.insert(binding);
+        SubjectRoleBindingCommand command = new SubjectRoleBindingCommand();
+        command.setTenantId(context.tenantId());
+        command.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
+        command.setSubjectId(memberId);
+        command.setRoleId(roleId);
+        command.setAppCode(DEFAULT_APP_CODE);
+        command.setRealm(DEFAULT_REALM);
+        command.setActorType(DEFAULT_ACTOR_TYPE);
+        command.setPartyType(DEFAULT_PARTY_TYPE);
+        command.setPartyId(context.tenantId());
+        roleBindingApi.ensureSubjectRoleBinding(command);
     }
 
     private String firstText(String preferred, String fallback) {

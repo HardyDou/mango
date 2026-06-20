@@ -11,7 +11,7 @@ import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.CreateWorkflowDefinitionFromTemplateCommand;
 import io.mango.workflow.api.command.CreateWorkflowTemplateFromDefinitionCommand;

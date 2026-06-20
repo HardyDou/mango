@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>io.mango.infra.context</groupId>
-            <artifactId>mango-infra-context-core</artifactId>
+            <artifactId>mango-infra-context-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

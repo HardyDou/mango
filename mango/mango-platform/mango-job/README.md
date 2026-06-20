@@ -25,7 +25,7 @@
 | 执行记录 | 记录实例、尝试次数、执行状态、耗时、结果摘要、错误摘要和 traceId |
 | 执行日志 | 捕获 handler 执行日志，支持按实例查看 native 日志内容 |
 | 失败告警 | 任务失败后匹配启用的告警规则，调用 `mango-notice` 发送通知 |
-| 菜单权限 | 通过资源 manifest 初始化任务管理菜单和按钮权限 |
+| 菜单权限 | 通过 Resource Registry `AUTH_MENU` 资源初始化任务管理菜单和按钮权限 |
 
 ## 3. 后端接入
 
@@ -360,18 +360,18 @@ HTTP 前缀是 `/job`。管理页面和前端 `jobApi` 使用这些接口：
 菜单和权限来自：
 
 ```text
-mango-job-starter/src/main/resources/META-INF/mango/resource-manifest.json
+mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-menu.json
 ```
 
-manifest 声明：
+`AUTH_MENU` 声明：
 
 | 项 | 值 |
 |----|----|
 | `appCode` | `internal-admin` |
 | `moduleCode` | `mango-job` |
 | `moduleName` | `任务调度模块` |
-| `packageCodes` | `internal-admin-default`、`internal-admin-ops` |
-| `roleCodes` | `ROLE_ADMIN` |
+| `packageCodes` | `platform_admin`、`institution_collaboration` |
+| `roleCodes` | 空；角色授权由租户套餐绑定同步 |
 | 顶级菜单 | `任务管理`，挂到 `parentCode = data`，路径 `/job` |
 
 后台菜单：
@@ -384,7 +384,7 @@ manifest 声明：
 | 告警规则 | `/job/alarm` | `job/alarm/index` | `job:alarm:list`、`job:alarm:query`、`job:alarm:add`、`job:alarm:edit`、`job:alarm:status`、`job:alarm:delete` |
 | 运行状态 | `/job/engine` | `job/engine/index` | `job:engine:list` |
 
-资源入库由 `mango-authorization` 的 manifest 同步能力完成。后台看不到菜单时，先检查资源同步、菜单包绑定、角色权限和前端 `registerMangoJobAdminPages()` 是否执行。
+资源入库由 Resource Registry 调用 `mango-authorization` 的 `AUTH_MENU` handler 完成。后台看不到菜单时，先检查资源同步、菜单包绑定、角色权限和前端 `registerMangoJobAdminPages()` 是否执行。
 
 ## 11. 数据与初始化
 
@@ -499,7 +499,7 @@ mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definit
 
 | 现象 | 排查点 |
 |------|--------|
-| 后台没有任务菜单 | 检查 `mango-authorization` manifest 同步、`internal-admin-default/internal-admin-ops` 包、当前角色权限和前端页面注册 |
+| 后台没有任务菜单 | 检查 Resource Registry `AUTH_MENU` 同步、`platform_admin/institution_collaboration` 套餐绑定、当前角色权限和前端页面注册 |
 | `/job/handlers` 为空 | 检查业务 handler 是否是 Spring Bean，是否实现 `MangoJobHandler`，组件扫描是否覆盖 |
 | Worker 页面为空 | 单体检查 `embedded-worker-enabled`；远程 Worker 检查 `job-center-address`、`worker-address` 和心跳 |
 | 触发失败：未找到 Worker 能力 | 对齐任务定义的 `appCode`、`ownerService`、`workerGroup`、`handlerName`、`jobCode` 和 handler 上报能力 |

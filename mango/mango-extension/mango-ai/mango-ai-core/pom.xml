@@ -49,7 +49,7 @@
         <!-- Mango Infra Context Starter (TtlExecutorDecorator for context propagation) -->
         <dependency>
             <groupId>io.mango.infra.context</groupId>
-            <artifactId>mango-infra-context-starter</artifactId>
+            <artifactId>mango-infra-context-support</artifactId>
             <version>${project.version}</version>
         </dependency>
 

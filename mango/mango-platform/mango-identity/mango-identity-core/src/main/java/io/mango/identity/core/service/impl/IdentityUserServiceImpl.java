@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.core.entity.SubjectRoleBinding;
-import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
+import io.mango.authorization.api.RoleBindingApi;
+import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
+import io.mango.authorization.api.query.SubjectRoleBindingQuery;
+import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
@@ -28,7 +30,7 @@ import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.service.IIdentityUserService;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.event.NoticeSendEvent;
 import lombok.RequiredArgsConstructor;
@@ -66,7 +68,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
     private final TenantMemberOrgMapper tenantMemberOrgMapper;
-    private final SubjectRoleBindingMapper subjectRoleBindingMapper;
+    private final RoleBindingApi roleBindingApi;
     private final ExternalIdentityBindingMapper externalIdentityBindingMapper;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
@@ -177,7 +179,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         Set<Long> memberIds = members.stream()
                 .map(TenantMember::getMemberId)
                 .collect(Collectors.toSet());
-        subjectRoleBindingMapper.delete(currentTenantSubjectRoleWrapper(memberIds));
+        roleBindingApi.deleteSubjectRoleBindings(currentTenantSubjectRoleDeleteCommand(memberIds));
         tenantMemberOrgMapper.delete(new LambdaQueryWrapper<TenantMemberOrgEntity>()
                 .eq(TenantMemberOrgEntity::getTenantId, tenantId)
                 .in(TenantMemberOrgEntity::getMemberId, memberIds));
@@ -547,17 +549,15 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         if (tenantId == null || roleId == null) {
             return Set.of();
         }
-        List<SubjectRoleBinding> bindings = subjectRoleBindingMapper.selectList(
-                new LambdaQueryWrapper<SubjectRoleBinding>()
-                        .eq(SubjectRoleBinding::getTenantId, tenantId)
-                        .eq(SubjectRoleBinding::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
-                        .eq(SubjectRoleBinding::getRoleId, roleId));
-        if (bindings == null || bindings.isEmpty()) {
+        SubjectRoleBindingQuery query = new SubjectRoleBindingQuery();
+        query.setTenantId(tenantId);
+        query.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
+        query.setRoleId(roleId);
+        R<List<Long>> response = roleBindingApi.listSubjectIdsByRole(query);
+        if (response == null || !response.isSuccess() || response.getData() == null || response.getData().isEmpty()) {
             return Set.of();
         }
-        Set<Long> memberIds = bindings.stream()
-                .map(SubjectRoleBinding::getSubjectId)
-                .collect(Collectors.toSet());
+        Set<Long> memberIds = new LinkedHashSet<>(response.getData());
         return currentTenantMemberUserIds(memberIds, memberStatus);
     }
 
@@ -598,13 +598,12 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
                 .toList();
     }
 
-    private LambdaQueryWrapper<SubjectRoleBinding> currentTenantSubjectRoleWrapper(Collection<Long> subjectIds) {
-        LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SubjectRoleBinding::getSubjectType, "TENANT_MEMBER")
-                .in(SubjectRoleBinding::getSubjectId, subjectIds);
-        Long tenantId = currentTenantIdLong();
-        wrapper.eq(tenantId != null, SubjectRoleBinding::getTenantId, tenantId);
-        return wrapper;
+    private DeleteSubjectRoleBindingsCommand currentTenantSubjectRoleDeleteCommand(Collection<Long> subjectIds) {
+        DeleteSubjectRoleBindingsCommand command = new DeleteSubjectRoleBindingsCommand();
+        command.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
+        command.setSubjectIds(subjectIds == null ? List.of() : List.copyOf(subjectIds));
+        command.setTenantId(currentTenantIdLong());
+        return command;
     }
 
     private IdentityUserVO toVO(IdentityUser user, Long queryOrgId) {

@@ -60,7 +60,7 @@ class WorkflowSampleDefinitionInitializerTest {
         }).when(categoryMapper).insert(any(WorkflowCategory.class));
         when(definitionService.create(any(SaveWorkflowDefinitionCommand.class)))
                 .thenReturn(R.ok("1001"), R.ok("1002"), R.ok("1003"));
-        when(definitionService.deploy(any(Long.class))).thenReturn(R.ok());
+        when(definitionService.deployInternal(any(Long.class))).thenReturn(R.ok());
 
         initializer.run(new DefaultApplicationArguments());
 
@@ -71,6 +71,7 @@ class WorkflowSampleDefinitionInitializerTest {
         ArgumentCaptor<SaveWorkflowDefinitionCommand> commandCaptor =
                 ArgumentCaptor.forClass(SaveWorkflowDefinitionCommand.class);
         verify(definitionService, org.mockito.Mockito.times(3)).create(commandCaptor.capture());
+        verify(definitionService, org.mockito.Mockito.times(3)).deployInternal(any(Long.class));
         assertThat(commandCaptor.getAllValues())
                 .extracting(SaveWorkflowDefinitionCommand::getDomainCode)
                 .containsOnly("COMMON");

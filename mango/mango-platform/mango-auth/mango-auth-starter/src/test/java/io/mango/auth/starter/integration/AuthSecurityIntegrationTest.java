@@ -8,7 +8,7 @@ import io.mango.infra.kv.api.IKvStore;
 import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.SecurityPrincipal;
-import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
+import io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration;
 import io.mango.authorization.support.token.JjwtTokenServiceImpl;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import jakarta.annotation.Resource;

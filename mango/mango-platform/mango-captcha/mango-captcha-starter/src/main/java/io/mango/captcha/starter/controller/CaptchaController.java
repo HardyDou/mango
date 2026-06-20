@@ -6,6 +6,7 @@ import io.mango.captcha.api.CaptchaCode;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
 import io.mango.captcha.api.dto.CaptchaResponse;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.common.result.R;
@@ -108,5 +109,14 @@ public class CaptchaController {
         boolean result = captchaService.verify(request);
         Require.isTrue(result, CaptchaCode.CAPTCHA_INVALID);
         return R.ok(true);
+    }
+
+    /**
+     * 发送短信或邮件验证码。
+     */
+    @PostMapping("/send")
+    @Operation(summary = "发送验证码", description = "发送短信或邮件验证码")
+    public R<String> send(@Valid @RequestBody CaptchaSendRequest request) {
+        return R.ok(captchaService.send(request));
     }
 }

@@ -2,7 +2,6 @@ package io.mango.infra.module.core;
 
 import io.mango.infra.module.api.ModuleInfo;
 import io.mango.infra.module.api.ModuleInfoRegistry;
-import io.mango.infra.module.api.ModuleInfoResolver;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -14,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 内存模块信息注册表。
  */
-public class MemoryModuleInfoRegistry implements ModuleInfoRegistry, ModuleInfoResolver {
+public class MemoryModuleInfoRegistry implements ModuleInfoRegistry {
 
     private final Map<String, ModuleInfo> modules = new ConcurrentHashMap<>();
     private final Map<String, ModuleInfo> modulePaths = new ConcurrentHashMap<>();

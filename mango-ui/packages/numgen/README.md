@@ -56,11 +56,11 @@ platform/numgen/index
 numgen/index
 ```
 
-后端菜单种子中的历史 component 是 `@/views/numgen/index.vue`。实际运行时要确保菜单 component 能映射到上面的页面 key。
+后端菜单资源中的 component 应使用上面的页面 key。
 
 ## 5. 快速开始
 
-1. 后端启用 `mango-numgen`，并执行 numgen、authorization 相关 migration。
+1. 后端启用 `mango-numgen`，执行 numgen 相关 migration，并同步 numgen 菜单资源。
 2. 管理后台安装并注册 `@mango/numgen/admin-pages`。
 3. 给角色授权 `numgen:manage:list`；需要维护规则时再授权 `numgen:manage:write`。
 4. 打开 `/data/numgen` 编号规则菜单。
@@ -75,7 +75,7 @@ numgen/index
 | 输入 | 来源 | 影响 |
 |------|------|------|
 | 页面注册 | `registerMangoNumgenAdminPages` | 决定菜单 component 能否打开页面。 |
-| 菜单权限 | authorization migration / 角色授权 | 决定用户能否看到菜单和维护规则。 |
+| 菜单权限 | numgen `AUTH_MENU` 资源 / 角色授权 | 决定用户能否看到菜单和维护规则。 |
 | 编号规则 | 后端 `mango-numgen` 数据表 | 决定取号格式、发布版本和历史记录。 |
 
 包依赖：

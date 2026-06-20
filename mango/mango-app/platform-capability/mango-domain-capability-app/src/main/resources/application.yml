@@ -1,0 +1,13 @@
+server:
+  port: ${MANGO_DOMAIN_APP_PORT:18619}
+
+spring:
+  application:
+    name: mango-domain-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-resource:
+          service-name: mango-resource-capability-app

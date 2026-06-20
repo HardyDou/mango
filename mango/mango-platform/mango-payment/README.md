@@ -309,6 +309,10 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 
 ## 9. 管理入口
 
+支付中心后台菜单由 `mango-payment-starter` 随 jar 提供 Resource Registry 声明
+`META-INF/mango/resources/payment-common-menu.json` 注入，资源类型为 `AUTH_MENU`。该资源负责登记
+`internal-admin` 下的支付中心菜单树、页面运行配置、按钮权限和菜单套餐明细。默认角色授权由租户 seed 或菜单套餐绑定同步完成。
+
 前端页面 key 由支付管理页面注册函数 `registerMangoPaymentAdminPages` 注册：
 
 | 页面 | page key |

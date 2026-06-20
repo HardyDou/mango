@@ -35,7 +35,8 @@ test.describe('当前用户信息 E2E', () => {
       nickname: 'Administrator',
     });
     expect(infoBody.data.roles).toContain('ROLE_ADMIN');
-    expect(infoBody.data.permissions).toContain('*:*');
+    expect(infoBody.data.permissions).toContain('authorization:role:list');
+    expect(infoBody.data.permissions).not.toContain('*:*');
 
     await page.goto('/#/login');
     await page.fill('input[placeholder="用户名"]', 'admin');

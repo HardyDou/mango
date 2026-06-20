@@ -20,6 +20,7 @@
     <description>Mango Access Module - 边界入口访问控制能力</description>
 
     <modules>
+        <module>mango-access-api</module>
         <module>mango-access-core</module>
         <module>mango-access-web-starter</module>
         <module>mango-access-gateway-starter</module>

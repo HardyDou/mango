@@ -5,12 +5,13 @@ import io.mango.auth.api.spi.CaptchaConfigService;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.common.result.R;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -41,7 +42,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
     private static final String HEADER_CAPTCHA_TYPE = "X-Captcha-Type";
 
     private final CaptchaConfigService captchaConfigService;
-    private final CaptchaApi captchaApi;
+    private final ObjectProvider<CaptchaApi> captchaApi;
     private final ObjectMapper objectMapper;
 
     // 按 IP 追踪验证码失败次数，用于限流。
@@ -83,7 +84,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         verifyRequest.setType(io.mango.captcha.api.constant.CaptchaType.valueOf(
             captchaType != null ? captchaType : "ARITHMETIC"));
 
-        boolean verified = captchaApi.verify(verifyRequest);
+        boolean verified = captchaApi.getObject().verify(verifyRequest);
         if (!verified) {
             incrementFailedAttempts(ip);
             log.warn("Captcha verification failed: ip={}, path={}", ip, path);

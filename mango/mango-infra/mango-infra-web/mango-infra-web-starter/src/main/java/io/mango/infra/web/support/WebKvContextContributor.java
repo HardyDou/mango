@@ -1,6 +1,6 @@
 package io.mango.infra.web.support;
 
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.kv.api.expression.KvContext;
 import io.mango.infra.kv.api.expression.KvContextContributor;
 import io.mango.infra.web.api.IRequestContextProvider;

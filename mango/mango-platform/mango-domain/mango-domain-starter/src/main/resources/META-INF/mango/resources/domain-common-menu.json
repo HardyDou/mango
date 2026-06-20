@@ -1,0 +1,101 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "domain",
+      "moduleName": "业务域",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000009201",
+            "version": 1,
+            "bizKey": "domain.menu.internal-admin",
+            "name": "业务域菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-domain"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "业务域模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 8
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 2,
+                    "menuName": "业务域",
+                    "menuCode": "domain",
+                    "parentCode": "system",
+                    "path": "/system/domain",
+                    "icon": "Grid",
+                    "component": "system/domain/index",
+                    "sort": 8,
+                    "permissions": [
+                      "domain:list"
+                    ],
+                    "remark": "业务域编码、前缀、层级和状态管理",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "domain:list",
+                        "permissionName": "查询业务域",
+                        "sort": 1,
+                        "remark": "业务域列表和详情查询权限"
+                      },
+                      {
+                        "permissionCode": "domain:add",
+                        "permissionName": "新增业务域",
+                        "sort": 2,
+                        "remark": "业务域新增权限"
+                      },
+                      {
+                        "permissionCode": "domain:edit",
+                        "permissionName": "编辑业务域",
+                        "sort": 3,
+                        "remark": "业务域编辑权限"
+                      },
+                      {
+                        "permissionCode": "domain:delete",
+                        "permissionName": "删除业务域",
+                        "sort": 4,
+                        "remark": "业务域删除权限"
+                      },
+                      {
+                        "permissionCode": "domain:status",
+                        "permissionName": "启停业务域",
+                        "sort": 5,
+                        "remark": "业务域启停权限"
+                      }
+                    ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

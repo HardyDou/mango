@@ -300,15 +300,16 @@ mango:
 
 ## 10. 管理入口
 
-授权基线会初始化编号规则菜单：
+编号规则菜单由 `mango-numgen-starter` 随 jar 提供 Resource Registry 声明
+`META-INF/mango/resources/numgen-common-menu.json` 注入：
 
 | 菜单 | 路由 | component | 权限码 |
 |------|------|-----------|--------|
-| 编号规则 | `/data/numgen` | `@/views/numgen/index.vue` | `numgen:manage:list` |
+| 编号规则 | `/data/numgen` | `numgen/index` | `numgen:manage:list` |
 | 编号规则查询 | 无页面路由 | 无 | `numgen:manage:list` |
 | 编号规则维护 | 无页面路由 | 无 | `numgen:manage:write` |
 
-前端运行时注册的页面 key 是 `platform/numgen/index` 和 `numgen/index`。如果菜单可见但页面打不开，先检查前端是否注册 `@mango/numgen/admin-pages`，再检查菜单 component 与运行时页面 key 的映射。
+前端运行时注册的页面 key 是 `platform/numgen/index` 和 `numgen/index`。如果菜单可见但页面打不开，先检查前端是否注册 `@mango/numgen/admin-pages`，再检查菜单 component 是否使用页面 key。
 
 ## 11. 数据与初始化
 
@@ -345,7 +346,7 @@ PAY_MANGO_VIRTUAL_NO
 PAY_MANGO_SCENARIO_NO
 ```
 
-菜单、权限和前端模块运行策略由授权基线初始化，入口在 `mango-authorization-core/src/main/resources/db/migration/authorization/V1__init_authorization.sql`。
+菜单和按钮权限由 `mango-numgen-starter` 的 `AUTH_MENU` 资源声明注入；前端模块运行策略由授权模块的前端运行策略初始化维护。
 
 ## 12. 问题排查
 
@@ -357,7 +358,7 @@ PAY_MANGO_SCENARIO_NO
 | 编号重复 | 业务表唯一索引、是否绕过 `NumgenApi` 手工拼号、KV 后端是否可用。 |
 | 编号不连续 | 这是允许结果；失败、重试、事务回滚和并发竞争都可能造成跳号。 |
 | 每天没有重新从 1 开始 | 日期片段是否设置 `sequenceScope = 1`。 |
-| 管理页面无入口 | 授权基线是否执行，角色是否拥有 `numgen:manage:list`，前端是否注册 `@mango/numgen/admin-pages`。 |
+| 管理页面无入口 | numgen 菜单资源是否同步，角色或菜单套餐是否包含 `numgen:manage:list`，前端是否注册 `@mango/numgen/admin-pages`。 |
 
 ## 13. 相关文档
 

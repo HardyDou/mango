@@ -154,10 +154,10 @@ mango:
 | 数据 | 表或入口 | 作用 |
 |------|----------|------|
 | API 资源 | `authorization_api_resource` | 保存 method、path、access mode 和 permission code |
-| 菜单和按钮权限 | authorization migration 或资源清单 | 给管理端和角色授权使用 |
+| 菜单和按钮权限 | 各功能模块 `AUTH_MENU` 资源清单 | 给管理端和角色授权使用 |
 | 角色授权 | authorization 角色、菜单、主体绑定接口 | PERMISSION 模式下生成成员授权快照 |
 
-接口资源同步通常由 `mango-authorization-resource-sync-starter` 完成。菜单、角色和默认授权由对应业务模块的 authorization migration 或初始化逻辑负责。
+接口资源同步通常由 `mango-authorization-resource-sync-starter` 完成。菜单和按钮权限由对应业务模块 starter 的 `AUTH_MENU` 资源清单负责，角色授权由授权接口、租户 seed 或菜单套餐绑定同步完成。
 
 ## 12. 问题排查
 

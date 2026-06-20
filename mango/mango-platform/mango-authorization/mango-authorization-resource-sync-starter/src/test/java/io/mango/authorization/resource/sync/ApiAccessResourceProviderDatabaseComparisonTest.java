@@ -75,8 +75,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 + "org.springframework.cloud.gateway.config.GatewayAutoConfiguration,"
                 + "org.springframework.cloud.gateway.config.GatewayClassPathWarningAutoConfiguration,"
                 + "io.mango.authorization.starter.AuthorizationAutoConfiguration,"
-                + "io.mango.authorization.support.autoconfigure.TokenAutoConfiguration,"
-                + "io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration"
+                + "io.mango.authorization.starter.autoconfigure.TokenAutoConfiguration,"
+                + "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration"
 })
 class ApiAccessResourceProviderDatabaseComparisonTest {
 
@@ -106,11 +106,12 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
 
     @Test
     void resourceProviderSyncWritesSameAuthorizationApiResourceContentAsLegacyRunner() {
+        ApiResourceSyncProperties legacyWriteProperties = legacyWriteProperties();
         new ApiResourceSyncRunner(
                 handlerMapping,
                 apiResourceApi,
                 new EmptyModuleInfoRegistryProvider(),
-                apiResourceSyncProperties).run(null);
+                legacyWriteProperties).run(null);
         List<ApiResourceSnapshot> legacyRows = apiResourceRows();
 
         clearRuntimeTables();
@@ -119,6 +120,18 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
         List<ApiResourceSnapshot> resourceRows = apiResourceRows();
 
         assertThat(resourceRows).containsExactlyElementsOf(legacyRows);
+    }
+
+    private ApiResourceSyncProperties legacyWriteProperties() {
+        ApiResourceSyncProperties properties = new ApiResourceSyncProperties();
+        properties.setMode("write");
+        properties.setModuleName(apiResourceSyncProperties.getModuleName());
+        properties.setIncludePackages(apiResourceSyncProperties.getIncludePackages());
+        properties.setExcludePaths(apiResourceSyncProperties.getExcludePaths());
+        properties.setDefaultAccessMode(apiResourceSyncProperties.getDefaultAccessMode());
+        properties.setProviderModuleCode(apiResourceSyncProperties.getProviderModuleCode());
+        properties.setResources(apiResourceSyncProperties.getResources());
+        return properties;
     }
 
     @Test
@@ -241,8 +254,8 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
             ApiResourceProviderAutoConfiguration.class
     }, excludeName = {
             "io.mango.authorization.starter.AuthorizationAutoConfiguration",
-            "io.mango.authorization.support.autoconfigure.TokenAutoConfiguration",
-            "io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration"
+            "io.mango.authorization.starter.autoconfigure.TokenAutoConfiguration",
+            "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration"
     })
     @MapperScan(basePackageClasses = {
             ApiResourceMapper.class
@@ -290,7 +303,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
         @Bean
         ApiAccessResourceProvider apiAccessResourceProvider(ApiAccessResourceDiscoverer discoverer,
                                                            ApiResourceSyncProperties properties) {
-            return new ApiAccessResourceProvider(discoverer, properties);
+            return new ApiAccessResourceProvider(discoverer, properties, new ApiResourceDeclarationConverter());
         }
 
         @Bean

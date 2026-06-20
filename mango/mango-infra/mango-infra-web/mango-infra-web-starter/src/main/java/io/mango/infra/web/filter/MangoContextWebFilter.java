@@ -1,8 +1,8 @@
 package io.mango.infra.web.filter;
 
-import io.mango.infra.context.core.MangoContextHeaders;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHeaders;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.web.api.IRequestContextProvider;
 import io.mango.infra.web.api.RequestContextSnapshot;
 import io.mango.infra.web.support.WebTraceIdResolver;

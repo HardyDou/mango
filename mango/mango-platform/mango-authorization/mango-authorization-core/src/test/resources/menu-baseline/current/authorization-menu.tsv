@@ -1,0 +1,337 @@
+id	tenant_id	app_code	module_code	parent_id	menu_type	menu_name	menu_code	path	icon	component	sort	status	visible	keep_alive	embedded	redirect	permissions	remark	del_flag
+1	1	internal-admin	mango-system	0	1	系统管理	system	/system	Setting		1	1	1	0	0	/system/menu-package		顶部系统入口	0
+26	1	internal-admin	mango-workflow	0	1	审批中心	workflow	/workflow	Stamp		2	1	1	0	0	/workflow/start-process		流程发起、审批办理和流程配置入口	0
+2700	1	internal-admin	mango-calendar	0	1	平台能力	data	/data	DataAnalysis		4	1	1	0	0	/data/calendar		工作日历管理入口	0
+2940	1	internal-admin	mango-notice	0	1	通知中心	notice	/notice	Bell		7	1	1	0	0	/notice/site-message		统一消息编排中心入口	0
+2800	1	internal-admin	mango-payment	0	1	支付中心	payment	/payment	CreditCard		8	1	1	0	0	/payment/application-access		统一支付平台后台管理	0
+2	1	internal-admin	mango-authorization	1	1	权限管理	system:permission	/system/permission	Lock		1	1	1	0	0	/system/menu-package		机构、成员、角色、菜单与套餐权限管理	0
+14	1	internal-admin	mango-authorization	1	2	应用管理	system:app	/system/app	Box	@/views/system/app/index.vue	2	1	1	0	0		authorization:app:list	授权应用入口管理	0
+18	1	internal-admin	mango-system	1	1	组织人事	system:org-hr	/system/org-hr	Connection		2	0	0	0	0			租户内组织架构与岗位管理	0
+7	1	internal-admin	mango-system	1	2	字典管理	system:dict	/system/dict	Collection	@/views/system/dict/index.vue	3	1	1	0	0		system:dict:list	字典类型与字典数据管理	0
+19	1	internal-admin	mango-system	1	1	平台运营	system:platform-ops	/system/platform-ops	Platform		3	0	0	0	0			平台级机构、应用和系统元数据管理	0
+5	1	internal-admin	mango-system	1	1	基础数据	system:base-data	/system/base-data	DataBoard		4	0	0	0	0			字典、参数、行政区划等基础数据	0
+6	1	internal-admin	mango-system	1	2	参数配置	system:config	/system/config	Setting	@/views/system/config/index.vue	4	1	1	0	0		system:config:list	系统参数配置	0
+11	1	internal-admin	mango-system	1	1	租户与组织	system:tenant-org	/system/tenant-org	OfficeBuilding		4	0	0	0	0	/system/tenant		已由平台运营目录承接，保留历史 ID 但不再展示	0
+13	1	internal-admin	mango-system	1	1	平台应用	system:platform	/system/platform	Box		5	0	0	0	0	/system/app		已由平台运营目录承接，保留历史 ID 但不再展示	0
+16	1	internal-admin	mango-system	1	2	行政区划	system:area	/system/area	MapLocation	@/views/system/area/index.vue	5	1	1	0	0		system:area:list	行政区划逐级管理	0
+8	1	internal-admin	mango-system	1	1	日志管理	system:log	/system/log	DocumentChecked		6	1	1	0	0	/system/login-log		登录与操作审计日志	0
+2960	1	internal-admin	mango-system	1	1	系统维护	system:maintenance	/system/maintenance	Tools		7	1	1	0	0	/system/events		系统运行维护、异常补偿和基础设施观测入口	0
+2400	1	internal-admin	mango-domain	1	2	业务域	domain	/system/domain	Grid	@/views/system/domain/index.vue	8	1	1	0	0		domain:list	业务域编码、前缀、层级和状态管理	0
+9001	1	internal-admin	mango-system	1	3	全部权限	*:*				999	1	0	0	0				0
+25	1	internal-admin	mango-authorization	2	2	套餐管理	system:menu-package	/system/menu-package	Tickets	@/views/system/menu-package/index.vue	1	1	1	0	0		system:menu-package:list	菜单授权套餐管理	0
+12	1	internal-admin	mango-system	2	2	机构管理	system:tenant	/system/tenant	OfficeBuilding	@/views/system/tenant/index.vue	2	1	1	0	0		system:tenant:list	机构管理	0
+17	1	internal-admin	mango-system	2	2	组织架构	system:org	/system/org	OfficeBuilding	@/views/system/org/index.vue	3	1	1	0	0		system:org:list	组织架构树与详情查询	0
+15	1	internal-admin	mango-system	2	2	岗位管理	system:post	/system/post	Postcard	@/views/system/post/index.vue	4	1	1	0	0		system:post:list	岗位基础信息管理	0
+20	1	internal-admin	mango-system	2	2	成员管理	system:user	/system/user	User	@/views/system/user/index.vue	5	1	1	0	0		system:user:list	机构成员账号管理	0
+3	1	internal-admin	mango-authorization	2	2	角色管理	system:role	/system/role	UserFilled	@/views/system/role/index.vue	6	1	1	0	0		system:role:list	角色管理	0
+4	1	internal-admin	mango-authorization	2	2	菜单管理	system:menu	/system/menu	Menu	@/views/system/menu/index.vue	7	1	1	0	0		system:menu:list	菜单管理	0
+3000	1	internal-admin	mango-authorization	3	3	查询角色列表	authorization:role:list				1	1	0	0	0		authorization:role:list	角色列表查询权限	0
+3001	1	internal-admin	mango-authorization	3	3	查询角色	authorization:role:query				2	1	0	0	0		authorization:role:query	角色详情与角色授权查询权限	0
+3002	1	internal-admin	mango-authorization	3	3	新增角色	authorization:role:add				3	1	0	0	0		authorization:role:add	角色新增权限	0
+3003	1	internal-admin	mango-authorization	3	3	修改角色	authorization:role:edit				4	1	0	0	0		authorization:role:edit	角色修改权限	0
+3004	1	internal-admin	mango-authorization	3	3	删除角色	authorization:role:delete				5	1	0	0	0		authorization:role:delete	角色删除权限	0
+3005	1	internal-admin	mango-authorization	3	3	分配角色权限	authorization:role:assign				6	1	0	0	0		authorization:role:assign	角色菜单与主体角色分配权限	0
+4000	1	internal-admin	mango-authorization	4	3	查询菜单列表	system:menu:list				0	1	0	0	0		system:menu:list	菜单列表查询权限	0
+4001	1	internal-admin	mango-authorization	4	3	查询菜单	system:menu:query				1	1	0	0	0		system:menu:query	菜单详情查询权限	0
+4002	1	internal-admin	mango-authorization	4	3	新增菜单	system:menu:add				2	1	0	0	0		system:menu:add	菜单新增权限	0
+4003	1	internal-admin	mango-authorization	4	3	修改菜单	system:menu:edit				3	1	0	0	0		system:menu:edit	菜单修改权限	0
+4004	1	internal-admin	mango-authorization	4	3	删除菜单	system:menu:delete				4	1	0	0	0		system:menu:delete	菜单删除权限	0
+6000	1	internal-admin	mango-system	6	3	查询系统配置列表	system:config:list				0	1	0	0	0		system:config:list	系统配置列表查询权限	0
+6001	1	internal-admin	mango-system	6	3	查询系统配置	system:config:query				1	1	0	0	0		system:config:query	系统配置详情查询权限	0
+6002	1	internal-admin	mango-system	6	3	新增系统配置	system:config:add				2	1	0	0	0		system:config:add	系统配置新增权限	0
+6003	1	internal-admin	mango-system	6	3	修改系统配置	system:config:edit				3	1	0	0	0		system:config:edit	系统配置修改权限	0
+6004	1	internal-admin	mango-system	6	3	删除系统配置	system:config:delete				4	1	0	0	0		system:config:delete	系统配置删除权限	0
+7000	1	internal-admin	mango-system	7	3	查询字典类型列表	system:dict:type:list				0	1	0	0	0		system:dict:type:list	字典类型列表查询权限	0
+7001	1	internal-admin	mango-system	7	3	查询字典类型	system:dict:type:query				1	1	0	0	0		system:dict:type:query	字典类型详情查询权限	0
+7002	1	internal-admin	mango-system	7	3	新增字典类型	system:dict:type:add				2	1	0	0	0		system:dict:type:add	字典类型新增权限	0
+7003	1	internal-admin	mango-system	7	3	修改字典类型	system:dict:type:edit				3	1	0	0	0		system:dict:type:edit	字典类型修改权限	0
+7004	1	internal-admin	mango-system	7	3	删除字典类型	system:dict:type:delete				4	1	0	0	0		system:dict:type:delete	字典类型删除权限	0
+7010	1	internal-admin	mango-system	7	3	查询字典数据列表	system:dict:data:list				10	1	0	0	0		system:dict:data:list	字典数据列表查询权限	0
+7011	1	internal-admin	mango-system	7	3	查询字典数据	system:dict:data:query				11	1	0	0	0		system:dict:data:query	字典数据详情查询权限	0
+7012	1	internal-admin	mango-system	7	3	新增字典数据	system:dict:data:add				12	1	0	0	0		system:dict:data:add	字典数据新增权限	0
+7013	1	internal-admin	mango-system	7	3	修改字典数据	system:dict:data:edit				13	1	0	0	0		system:dict:data:edit	字典数据修改权限	0
+7014	1	internal-admin	mango-system	7	3	删除字典数据	system:dict:data:delete				14	1	0	0	0		system:dict:data:delete	字典数据删除权限	0
+9	1	internal-admin	mango-system	8	2	登录日志	system:log:login	/system/login-log	DocumentChecked	@/views/system/login-log/index.vue	1	1	1	0	0		system:log:login:list	登录日志页面入口	0
+10	1	internal-admin	mango-system	8	2	操作日志	system:log:operation	/system/operation-log	Tickets	@/views/system/operation-log/index.vue	2	1	1	0	0		system:log:operation:list	操作日志页面入口	0
+9002	1	internal-admin	mango-system	9	3	查询登录日志列表	system:log:login:list				1	1	0	0	0		system:log:login:list	登录日志列表查询权限	0
+9003	1	internal-admin	mango-system	9	3	查询登录日志	system:log:login:query				2	1	0	0	0		system:log:login:query	登录日志详情与导出查询权限	0
+9004	1	internal-admin	mango-system	9	3	清理登录日志	system:log:login:delete				3	1	0	0	0		system:log:login:delete	登录日志清理权限	0
+10002	1	internal-admin	mango-system	10	3	查询操作日志列表	system:log:operation:list				1	1	0	0	0		system:log:operation:list	操作日志列表查询权限	0
+10003	1	internal-admin	mango-system	10	3	查询操作日志	system:log:operation:query				2	1	0	0	0		system:log:operation:query	操作日志详情查询权限	0
+10004	1	internal-admin	mango-system	10	3	清理操作日志	system:log:operation:delete				3	1	0	0	0		system:log:operation:delete	操作日志清理权限	0
+1200	1	internal-admin	mango-system	12	3	查询机构列表	system:tenant:list				0	1	0	0	0		system:tenant:list	机构列表查询权限	0
+1201	1	internal-admin	mango-system	12	3	查询机构	system:tenant:query				1	1	0	0	0		system:tenant:query	机构详情查询权限	0
+1202	1	internal-admin	mango-system	12	3	新增机构	system:tenant:add				2	1	0	0	0		system:tenant:add	机构新增权限	0
+1203	1	internal-admin	mango-system	12	3	编辑机构	system:tenant:edit				3	1	0	0	0		system:tenant:edit	机构编辑权限	0
+1204	1	internal-admin	mango-system	12	3	删除机构	system:tenant:delete				4	1	0	0	0		system:tenant:delete	机构删除权限	0
+1400	1	internal-admin	mango-authorization	14	3	查询应用列表	authorization:app:list				0	1	0	0	0		authorization:app:list	授权应用列表查询权限	0
+1401	1	internal-admin	mango-authorization	14	3	查询应用	authorization:app:query				1	1	0	0	0		authorization:app:query	授权应用详情查询权限	0
+1402	1	internal-admin	mango-authorization	14	3	新增应用	authorization:app:add				2	1	0	0	0		authorization:app:add	授权应用新增权限	0
+1403	1	internal-admin	mango-authorization	14	3	修改应用	authorization:app:edit				3	1	0	0	0		authorization:app:edit	授权应用修改权限	0
+1404	1	internal-admin	mango-authorization	14	3	删除应用	authorization:app:delete				4	1	0	0	0		authorization:app:delete	授权应用删除权限	0
+1500	1	internal-admin	mango-system	15	3	查询岗位列表	system:post:list				0	1	0	0	0		system:post:list	岗位列表查询权限	0
+1501	1	internal-admin	mango-system	15	3	查询岗位	system:post:query				1	1	0	0	0		system:post:query	岗位详情查询权限	0
+1502	1	internal-admin	mango-system	15	3	新增岗位	system:post:add				2	1	0	0	0		system:post:add	岗位新增权限	0
+1503	1	internal-admin	mango-system	15	3	修改岗位	system:post:edit				3	1	0	0	0		system:post:edit	岗位修改权限	0
+1504	1	internal-admin	mango-system	15	3	删除岗位	system:post:delete				4	1	0	0	0		system:post:delete	岗位删除权限	0
+1601	1	internal-admin	mango-system	16	3	查询行政区划	system:area:query				1	1	0	0	0		system:area:query	行政区划详情查询权限	0
+1602	1	internal-admin	mango-system	16	3	新增行政区划	system:area:add				2	1	0	0	0		system:area:add	行政区划新增权限	0
+1603	1	internal-admin	mango-system	16	3	修改行政区划	system:area:edit				3	1	0	0	0		system:area:edit	行政区划修改权限	0
+1604	1	internal-admin	mango-system	16	3	删除行政区划	system:area:delete				4	1	0	0	0		system:area:delete	行政区划删除权限	0
+1700	1	internal-admin	mango-system	17	3	查询组织列表	system:org:list				0	1	0	0	0		system:org:list	组织列表查询权限	0
+1701	1	internal-admin	mango-system	17	3	查询组织	system:org:query				1	1	0	0	0		system:org:query	组织详情查询权限	0
+1702	1	internal-admin	mango-system	17	3	新增组织	system:org:add				2	1	0	0	0		system:org:add	组织新增权限	0
+1703	1	internal-admin	mango-system	17	3	修改组织	system:org:edit				3	1	0	0	0		system:org:edit	组织修改权限	0
+1704	1	internal-admin	mango-system	17	3	删除组织	system:org:delete				4	1	0	0	0		system:org:delete	组织删除权限	0
+2000	1	internal-admin	mango-system	20	3	查询成员	system:user:list				0	1	0	0	0		system:user:list	机构成员查询权限	0
+2001	1	internal-admin	mango-system	20	3	查询成员	system:user:query				1	1	0	0	0		system:user:query	机构成员详情查询权限	0
+2002	1	internal-admin	mango-system	20	3	新增成员	system:user:add				2	1	0	0	0		system:user:add	机构成员新增权限	0
+2003	1	internal-admin	mango-system	20	3	编辑成员	system:user:edit				3	1	0	0	0		system:user:edit	机构成员编辑权限	0
+2004	1	internal-admin	mango-system	20	3	移除成员	system:user:delete				4	1	0	0	0		system:user:delete	机构成员移除权限	0
+2005	1	internal-admin	mango-system	20	3	调整成员状态	system:user:status				5	1	0	0	0		system:user:status	机构成员状态调整权限	0
+2006	1	internal-admin	mango-system	20	3	重置成员密码	system:user:reset-password				6	1	0	0	0		system:user:reset-password	机构成员密码重置权限	0
+2007	1	internal-admin	mango-authorization	20	3	分配成员角色	system:user:assign-role				7	1	0	0	0		authorization:role:assign	机构成员角色分配权限	0
+22001	1	internal-admin	mango-file	22	3	查询文件列表	file:files:list		Search		1	1	0	0	0		file:files:list	文件记录列表查询权限	0
+22002	1	internal-admin	mango-file	22	3	查询文件详情	file:files:query		View		2	1	0	0	0		file:files:query	文件详情与预览元数据查询权限	0
+22003	1	internal-admin	mango-file	22	3	上传文件	file:files:upload		Upload		3	1	0	0	0		file:files:upload	文件管理上传权限	0
+22004	1	internal-admin	mango-file	22	3	下载文件	file:files:download		Download		4	1	0	0	0		file:files:download	文件下载权限	0
+22005	1	internal-admin	mango-file	22	3	归档文件	file:files:archive		Delete		5	1	0	0	0		file:files:archive	文件归档权限	0
+22006	1	internal-admin	mango-file	22	3	目录查询	file:directories:list		FolderSearch		6	1	0	0	0		file:directories:list	文件目录树查询权限	0
+22007	1	internal-admin	mango-file	22	3	目录新增	file:directories:add		FolderPlus		7	1	0	0	0		file:directories:add	文件目录新增权限	0
+22008	1	internal-admin	mango-file	22	3	目录编辑	file:directories:edit		Edit		8	1	0	0	0		file:directories:edit	文件目录编辑权限	0
+22009	1	internal-admin	mango-file	22	3	目录删除	file:directories:delete		FolderDelete		9	1	0	0	0		file:directories:delete	文件目录删除权限	0
+22010	1	internal-admin	mango-file	22	3	删除文件	file:files:delete		Delete		10	1	0	0	0		file:files:delete	文件记录删除权限	0
+23001	1	internal-admin	mango-file	23	3	查询存储配置列表	file:storage-configs:list		Search		1	1	0	0	0		file:storage-configs:list	文件存储配置列表查询权限	0
+23002	1	internal-admin	mango-file	23	3	查询存储配置详情	file:storage-configs:query		View		2	1	0	0	0		file:storage-configs:query	文件存储配置详情查询权限	0
+23003	1	internal-admin	mango-file	23	3	新增存储配置	file:storage-configs:add		CirclePlus		3	1	0	0	0		file:storage-configs:add	文件存储配置新增权限	0
+23004	1	internal-admin	mango-file	23	3	修改存储配置	file:storage-configs:edit		Edit		4	1	0	0	0		file:storage-configs:edit	文件存储配置修改权限	0
+23005	1	internal-admin	mango-file	23	3	删除存储配置	file:storage-configs:delete		Delete		5	1	0	0	0		file:storage-configs:delete	文件存储配置删除权限	0
+23006	1	internal-admin	mango-file	23	3	测试存储配置	file:storage-configs:test		Connection		6	1	0	0	0		file:storage-configs:test	文件存储配置连接测试权限	0
+23007	1	internal-admin	mango-file	23	3	启用默认存储配置	file:storage-configs:active		CircleCheck		7	1	0	0	0		file:storage-configs:active	文件存储配置启用权限	0
+24001	1	internal-admin	mango-file	24	3	查询	file:settings:query		Search		1	1	0	0	0		file:settings:query	文件中心配置查询权限	0
+24002	1	internal-admin	mango-file	24	3	编辑	file:settings:edit		Edit		2	1	0	0	0		file:settings:edit	文件中心配置编辑权限	0
+25000	1	internal-admin	mango-authorization	25	3	查询套餐列表	system:menu-package:list				0	1	0	0	0		system:menu-package:list	套餐列表查询权限	0
+25001	1	internal-admin	mango-authorization	25	3	查询套餐	system:menu-package:query				1	1	0	0	0		system:menu-package:query	套餐详情查询权限	0
+25002	1	internal-admin	mango-authorization	25	3	新增套餐	system:menu-package:add				2	1	0	0	0		system:menu-package:add	套餐新增权限	0
+25003	1	internal-admin	mango-authorization	25	3	修改套餐	system:menu-package:edit				3	1	0	0	0		system:menu-package:edit	套餐修改权限	0
+25004	1	internal-admin	mango-authorization	25	3	删除套餐	system:menu-package:delete				4	1	0	0	0		system:menu-package:delete	套餐删除权限	0
+2601	1	internal-admin	mango-workflow	26	1	流程办理	workflow:task	/workflow/task	Tickets		1	1	1	0	0	/workflow/start-process		流程发起、待办、已办和抄送事项	0
+2603	1	internal-admin	mango-workflow	26	2	业务示例	workflow:business-form	/workflow/business-form	Document	@/views/workflow/business-form/index.vue	3	1	1	0	0		system:workflow:list	业务接入工作流示例	0
+22	1	internal-admin	mango-file	28	2	文件管理	file:files	/file/files	Files	@/views/file/files/index.vue	1	1	1	0	0		file:files:list	文件记录、上传下载、预览和归档管理	0
+23	1	internal-admin	mango-file	28	2	存储配置	file:storage-configs	/file/storage-configs	Setting	@/views/file/storage-configs/index.vue	2	1	1	0	0		file:storage-configs:list	文件底层存储配置管理	0
+24	1	internal-admin	mango-file	28	2	文件配置	file:settings	/file/settings	Tools	@/views/file/settings/index.vue	3	1	1	0	0		file:settings:query	文件上传策略、访问策略、预览策略和直传策略配置	0
+2902	1	internal-admin	mango-template	29	2	模板分类	template:category	/template/categories	FolderOpened	@/views/template/categories/index.vue	1	1	1	0	0		template:category:list	模板分类维护	0
+2901	1	internal-admin	mango-template	29	2	模板列表	template:template	/template/templates	Document	@/views/template/templates/index.vue	2	1	1	0	0		template:template:list	模板主数据、版本发布、历史版本启用和预览渲染	0
+2903	1	internal-admin	mango-template	29	2	渲染记录	template:render-record	/template/render-records	Tickets	@/views/template/render-records/index.vue	3	1	1	0	0		template:render-record:list	模板同步和异步渲染记录查询	0
+240001	1	internal-admin	mango-domain	2400	3	查询业务域	domain:list				1	1	0	0	0		domain:list	业务域列表和详情查询权限	0
+240002	1	internal-admin	mango-domain	2400	3	新增业务域	domain:add				2	1	0	0	0		domain:add	业务域新增权限	0
+240003	1	internal-admin	mango-domain	2400	3	编辑业务域	domain:edit				3	1	0	0	0		domain:edit	业务域编辑权限	0
+240004	1	internal-admin	mango-domain	2400	3	删除业务域	domain:delete				4	1	0	0	0		domain:delete	业务域删除权限	0
+240005	1	internal-admin	mango-domain	2400	3	启停业务域	domain:status				5	1	0	0	0		domain:status	业务域启停权限	0
+2601000	1	internal-admin	mango-workflow	2601	3	查询流程任务	workflow:task:list				0	1	0	0	0		workflow:task:list	审批中心任务列表查询权限	0
+2602	1	internal-admin	mango-workflow	2601	2	发起流程	workflow:start-process	/workflow/start-process	Promotion	@/views/workflow/start-process/index.vue	1	1	1	0	0		system:workflow:list	选择已发布流程并发起	0
+260101	1	internal-admin	mango-workflow	2601	2	我的待办	workflow:task:todo	/workflow/task/todo	Tickets	@/views/workflow/task-list/index.vue	2	1	1	0	0		workflow:task:list	当前用户待办流程任务	0
+260102	1	internal-admin	mango-workflow	2601	2	我的申请	workflow:task:initiated	/workflow/task/initiated	Position	@/views/workflow/task-list/index.vue	3	1	1	0	0		workflow:task:list	当前用户发起的流程	0
+260103	1	internal-admin	mango-workflow	2601	2	我的已办	workflow:task:done	/workflow/task/done	CircleCheck	@/views/workflow/task-list/index.vue	4	1	1	0	0		workflow:task:list	当前用户已办流程任务	0
+260104	1	internal-admin	mango-workflow	2601	2	抄送给我	workflow:task:copied	/workflow/task/copied	Message	@/views/workflow/task-list/index.vue	5	1	1	0	0		workflow:task:list	抄送给当前用户的流程事项	0
+260401	1	internal-admin	mango-template	2604	2	流程模板	workflow:template	/workflow/manage/template	CollectionTag	@/views/workflow/template/index.vue	1	1	1	0	0		workflow:template:list	系统内置流程模板与租户初始化模板管理	0
+260402	1	internal-admin	mango-workflow	2604	2	流程定义	workflow:definition	/workflow/manage/definition	Files	@/views/workflow/definition/index.vue	2	1	1	0	0		workflow:definition:list	流程分类与流程定义管理	0
+2701	1	internal-admin	mango-calendar	2700	2	日历管理	data:calendar	/data/calendar	Calendar	@/views/data/calendar/index.vue	1	1	1	0	0		calendar:admin:list	日历、年度日期和工作日计算管理	0
+2710	1	internal-admin	mango-numgen	2700	2	编号规则	data:numgen	/data/numgen	Tickets	@/views/numgen/index.vue	2	1	1	0	0		numgen:manage:list	编号生成器、版本、片段和流水管理	0
+28	1	internal-admin	mango-file	2700	1	文件管理	file	/file	FolderOpened		3	1	1	0	0	/file/files		统一文件上传、管理、预览与存储配置入口	0
+29	1	internal-admin	mango-template	2700	1	模板管理	template	/template	DocumentCopy		4	1	1	0	0	/template/templates		模板库、变量定义与渲染能力入口	0
+2950	1	internal-admin	mango-job	2700	1	任务管理	job	/job	Timer		9	1	1	0	0	/job/definition		Mango 原生任务调度管理入口	0
+270101	1	internal-admin	mango-calendar	2701	3	日历查询	calendar:admin:list				1	1	0	0	0		calendar:admin:list	日历查询权限	0
+270142	1	internal-admin	mango-calendar	2701	3	日历新增	calendar:admin:create				42	1	0	0	0		calendar:admin:create	日历新增权限	0
+270143	1	internal-admin	mango-calendar	2701	3	日历编辑	calendar:admin:edit				43	1	0	0	0		calendar:admin:edit	日历编辑权限	0
+270144	1	internal-admin	mango-calendar	2701	3	日历状态	calendar:admin:status				44	1	0	0	0		calendar:admin:status	日历状态权限	0
+270145	1	internal-admin	mango-calendar	2701	3	日历删除	calendar:admin:delete				45	1	0	0	0		calendar:admin:delete	日历删除权限	0
+270151	1	internal-admin	mango-calendar	2701	3	年度查询	calendar:year:list				51	1	0	0	0		calendar:year:list	年度查询权限	0
+270152	1	internal-admin	mango-calendar	2701	3	年度初始化	calendar:year:init				52	1	0	0	0		calendar:year:init	年度初始化权限	0
+270153	1	internal-admin	mango-calendar	2701	3	年度启停	calendar:year:enabled				53	1	0	0	0		calendar:year:enabled	年度启停权限	0
+270154	1	internal-admin	mango-calendar	2701	3	年度删除	calendar:year:delete				54	1	0	0	0		calendar:year:delete	年度删除权限	0
+270161	1	internal-admin	mango-calendar	2701	3	日期查询	calendar:day:list				61	1	0	0	0		calendar:day:list	日期查询权限	0
+270162	1	internal-admin	mango-calendar	2701	3	日期编辑	calendar:day:edit				62	1	0	0	0		calendar:day:edit	日期编辑权限	0
+270163	1	internal-admin	mango-calendar	2701	3	日期批量设置	calendar:day:batch				63	1	0	0	0		calendar:day:batch	日期批量设置权限	0
+270164	1	internal-admin	mango-calendar	2701	3	日期导入	calendar:day:import				64	1	0	0	0		calendar:day:import	日期导入权限	0
+270165	1	internal-admin	mango-calendar	2701	3	日期删除	calendar:day:delete				65	1	0	0	0		calendar:day:delete	日期删除权限	0
+270171	1	internal-admin	mango-calendar	2701	3	工作日计算	calendar:calculate:query				71	1	0	0	0		calendar:calculate:query	工作日计算权限	0
+271001	1	internal-admin	mango-numgen	2710	3	编号规则查询	numgen:manage:list				1	1	0	0	0		numgen:manage:list	编号规则查询权限	0
+271002	1	internal-admin	mango-numgen	2710	3	编号规则维护	numgen:manage:write				2	1	0	0	0		numgen:manage:write	编号规则维护权限	0
+2820	1	internal-admin	mango-payment	2800	1	应用接入	payment:application-access	/payment/application-access	Grid		1	1	1	0	0	/payment/applications		支付应用接入和收银台配置	0
+2823	1	internal-admin	mango-payment	2800	1	支付通道	payment:channel-management	/payment/channel-management	Connection		2	1	1	0	0	/payment/enterprise-subjects		企业主体、通道签约、通道产品和支付方式管理	0
+2821	1	internal-admin	mango-payment	2800	1	交易订单	payment:transaction	/payment/transaction	Tickets		3	1	1	0	0	/payment/business-orders		支付业务订单、支付单、退款单、流水和异常处理	0
+2822	1	internal-admin	mango-payment	2800	1	对账结算	payment:settlement	/payment/settlement	DataAnalysis		4	1	1	0	0	/payment/notification-records		支付通知、对账、差异、结算和审计	0
+2824	1	internal-admin	mango-payment	2800	1	线下支付	payment:offline-payment	/payment/offline	CreditCard		5	1	1	0	0	/payment/offline/collections	payment:offline-payment	线下收款通道的收款确认、退款处理、银行流水导入和对账匹配入口	0
+280101	1	internal-admin	mango-payment	2801	3	应用查询	payment:application:query		Search		1	1	0	0	0		payment:application:query	支付应用详情查询权限	0
+280102	1	internal-admin	mango-payment	2801	3	应用新增	payment:application:add		CirclePlus		2	1	0	0	0		payment:application:add	支付应用新增权限	0
+280103	1	internal-admin	mango-payment	2801	3	应用编辑	payment:application:edit		Edit		3	1	0	0	0		payment:application:edit	支付应用编辑权限	0
+280104	1	internal-admin	mango-payment	2801	3	应用删除	payment:application:delete		Delete		4	1	0	0	0		payment:application:delete	支付应用受控逻辑删除权限	0
+280201	1	internal-admin	mango-payment	2802	3	签约主体详情	payment:enterprise-subject:query		Search		1	1	0	0	0		payment:enterprise-subject:query	签约主体详情查询权限	0
+280202	1	internal-admin	mango-payment	2802	3	签约主体新增	payment:enterprise-subject:add		CirclePlus		2	1	0	0	0		payment:enterprise-subject:add	签约主体新增权限	0
+280203	1	internal-admin	mango-payment	2802	3	签约主体编辑	payment:enterprise-subject:edit		Edit		3	1	0	0	0		payment:enterprise-subject:edit	签约主体编辑权限	0
+280204	1	internal-admin	mango-payment	2802	3	签约主体删除	payment:enterprise-subject:delete		Delete		4	1	0	0	0		payment:enterprise-subject:delete	签约主体受控删除权限	0
+280301	1	internal-admin	mango-payment	2803	3	支付通道详情	payment:channel:query		Search		1	1	0	0	0		payment:channel:query	支付通道详情查询权限	0
+280302	1	internal-admin	mango-payment	2803	3	支付通道新增	payment:channel:add		CirclePlus		2	1	0	0	0		payment:channel:add	支付通道新增权限	0
+280303	1	internal-admin	mango-payment	2803	3	支付通道编辑	payment:channel:edit		Edit		3	1	0	0	0		payment:channel:edit	支付通道编辑权限	0
+280304	1	internal-admin	mango-payment	2803	3	支付通道删除	payment:channel:delete		Delete		4	1	0	0	0		payment:channel:delete	支付通道受控删除权限	0
+280401	1	internal-admin	mango-payment	2804	3	路由策略查询	payment:method-route:query		Search		1	1	0	0	0		payment:method-route:query	支付方式路由规则详情查询权限	0
+280402	1	internal-admin	mango-payment	2804	3	路由策略新增	payment:method-route:add		CirclePlus		2	1	0	0	0		payment:method-route:add	支付方式路由规则新增权限	0
+280403	1	internal-admin	mango-payment	2804	3	路由策略编辑	payment:method-route:edit		Edit		3	1	0	0	0		payment:method-route:edit	支付方式路由规则编辑权限	0
+280404	1	internal-admin	mango-payment	2804	3	路由策略删除	payment:method-route:delete		Delete		4	1	0	0	0		payment:method-route:delete	支付方式路由规则受控删除权限	0
+280405	1	internal-admin	mango-payment	2804	3	路由试算	payment:method-route:trial		Operation		5	1	0	0	0		payment:method-route:trial	支付方式路由试算权限	0
+280406	1	internal-admin	mango-payment	2804	3	路由策略列表	payment:method-route:list		List		6	1	0	0	0		payment:method-route:list	支付方式路由规则列表权限	0
+280407	1	internal-admin	mango-payment	2804	3	支付方式详情	payment:method:query		Search		7	1	0	0	0		payment:method:query	支付方式详情查询权限	0
+280408	1	internal-admin	mango-payment	2804	3	支付方式新增	payment:method:add		CirclePlus		8	1	0	0	0		payment:method:add	支付方式新增权限	0
+280409	1	internal-admin	mango-payment	2804	3	支付方式编辑	payment:method:edit		Edit		9	1	0	0	0		payment:method:edit	支付方式编辑权限	0
+280410	1	internal-admin	mango-payment	2804	3	支付方式删除	payment:method:delete		Delete		10	1	0	0	0		payment:method:delete	支付方式受控删除权限	0
+280501	1	internal-admin	mango-payment	2805	3	收银台配置查询	payment:cashier-config:query		Search		1	1	0	0	0		payment:cashier-config:query	收银台配置详情查询权限	0
+280502	1	internal-admin	mango-payment	2805	3	收银台配置新增	payment:cashier-config:add		CirclePlus		2	1	0	0	0		payment:cashier-config:add	收银台配置新增权限	0
+280503	1	internal-admin	mango-payment	2805	3	收银台配置编辑	payment:cashier-config:edit		Edit		3	1	0	0	0		payment:cashier-config:edit	收银台配置编辑权限	0
+280504	1	internal-admin	mango-payment	2805	3	收银台配置删除	payment:cashier-config:delete		Delete		4	1	0	0	0		payment:cashier-config:delete	收银台配置受控逻辑删除权限	0
+280601	1	internal-admin	mango-payment	2806	3	业务订单查询	payment:business-order:query		Search		1	1	0	0	0		payment:business-order:query	业务订单详情查询权限	0
+280602	1	internal-admin	mango-payment	2806	3	业务订单新增	payment:business-order:create		Plus		2	1	0	0	0		payment:business-order:create	后台创建待支付业务订单权限	0
+280701	1	internal-admin	mango-payment	2807	3	支付订单查询	payment:payment-order:query		Search		1	1	0	0	0		payment:payment-order:query	支付订单详情查询权限	0
+280702	1	internal-admin	mango-payment	2807	3	支付订单同步状态	payment:payment-order:sync-status		Refresh		2	1	0	0	0		payment:payment-order:sync-status	支付订单主动查单并同步状态权限	0
+280801	1	internal-admin	mango-payment	2808	3	退款订单查询	payment:refund-order:query		Search		1	1	0	0	0		payment:refund-order:query	退款订单详情查询权限	0
+280802	1	internal-admin	mango-payment	2808	3	退款订单主动查退款	payment:refund-order:query-channel		Refresh		2	1	0	0	0		payment:refund-order:query-channel	退款订单主动查询通道退款结果权限	0
+280901	1	internal-admin	mango-payment	2809	3	交易流水查询	payment:transaction-flow:query		Search		1	1	0	0	0		payment:transaction-flow:query	交易流水详情查询权限	0
+281001	1	internal-admin	mango-payment	2810	3	异常订单查询	payment:exception-order:query		Search		1	1	0	0	0		payment:exception-order:query	异常订单详情查询权限	0
+281002	1	internal-admin	mango-payment	2810	3	异常订单处理	payment:exception-order:handle		Operation		2	1	0	0	0		payment:exception-order:handle	异常订单受控处理权限	0
+281101	1	internal-admin	mango-payment	2811	3	通知记录查询	payment:notification-record:query		Search		1	1	0	0	0		payment:notification-record:query	通知记录详情查询权限	0
+281102	1	internal-admin	mango-payment	2811	3	通知记录重推	payment:notification-record:retry		Refresh		2	1	0	0	0		payment:notification-record:retry	通知记录人工重推权限	0
+281103	1	internal-admin	mango-payment	2811	3	通知记录投递到期任务	payment:notification-record:deliver-due		RefreshRight		3	1	0	0	0		payment:notification-record:deliver-due	人工触发投递已到期通知记录权限	0
+281104	1	internal-admin	mango-payment	2811	3	关闭已过期待支付订单任务	payment:task:expire-open-orders		CircleClose		4	1	0	0	0		payment:task:expire-open-orders	人工或平台调度触发关闭已过期且未成功支付订单权限	0
+281105	1	internal-admin	mango-payment	2811	3	批量主动查询支付中订单任务	payment:task:query-processing-orders		Search		5	1	0	0	0		payment:task:query-processing-orders	人工或平台调度触发支付中订单主动查单权限	0
+281201	1	internal-admin	mango-payment	2812	3	对账批次查询	payment:reconciliation:query		Search		1	1	0	0	0		payment:reconciliation:query	对账批次详情查询权限	0
+281202	1	internal-admin	mango-payment	2812	3	通道账单导入	payment:reconciliation:import		Upload		2	1	0	0	0		payment:reconciliation:import	通道账单导入权限	0
+281301	1	internal-admin	mango-payment	2813	3	差异详情查询	payment:difference:query		Search		1	1	0	0	0		payment:difference:query	对账差异详情查询权限	0
+281302	1	internal-admin	mango-payment	2813	3	差异受控处理	payment:difference:handle		Operation		2	1	0	0	0		payment:difference:handle	对账差异受控处理权限	0
+281401	1	internal-admin	mango-payment	2814	3	结算详情查询	payment:settlement-summary:query		Search		1	1	0	0	0		payment:settlement-summary:query	结算汇总详情查询权限	0
+281402	1	internal-admin	mango-payment	2814	3	生成结算汇总	payment:settlement-summary:generate		Plus		2	1	0	0	0		payment:settlement-summary:generate	生成或重新生成结算汇总权限	0
+281403	1	internal-admin	mango-payment	2814	3	确认结算汇总	payment:settlement-summary:confirm		Check		3	1	0	0	0		payment:settlement-summary:confirm	确认结算汇总权限	0
+281404	1	internal-admin	mango-payment	2814	3	作废结算汇总	payment:settlement-summary:void		Close		4	1	0	0	0		payment:settlement-summary:void	作废结算汇总权限	0
+281601	1	internal-admin	mango-payment	2816	3	通道签约详情	payment:channel-contract:query		Search		1	1	0	0	0		payment:channel-contract:query	通道签约配置详情查询权限	0
+281602	1	internal-admin	mango-payment	2816	3	通道签约新增	payment:channel-contract:add		CirclePlus		2	1	0	0	0		payment:channel-contract:add	通道签约配置新增权限	0
+281603	1	internal-admin	mango-payment	2816	3	通道签约编辑	payment:channel-contract:edit		Edit		3	1	0	0	0		payment:channel-contract:edit	通道签约配置编辑权限	0
+281604	1	internal-admin	mango-payment	2816	3	通道签约删除	payment:channel-contract:delete		Delete		4	1	0	0	0		payment:channel-contract:delete	通道签约配置受控删除权限	0
+281605	1	internal-admin	mango-payment	2816	3	证书到期提醒	payment:channel-contract:certificate-expiry		Bell		5	1	0	0	0		payment:channel-contract:certificate-expiry	通道签约证书到期提醒查询权限	0
+281606	1	internal-admin	mango-payment	2816	3	证书轮换登记	payment:channel-contract:certificate-rotate		RefreshCw		6	1	0	0	0		payment:channel-contract:certificate-rotate	通道签约证书轮换登记权限	0
+280803	1	internal-admin	mango-payment	2817	3	退款审批列表	payment:refund-approval:list		ListChecks		1	1	0	0	0		payment:refund-approval:list	后台退款审批列表权限	0
+280804	1	internal-admin	mango-payment	2817	3	退款审批详情	payment:refund-approval:query		Search		2	1	0	0	0		payment:refund-approval:query	后台退款审批详情权限	0
+280805	1	internal-admin	mango-payment	2817	3	创建退款审批	payment:refund-approval:create		Plus		3	1	0	0	0		payment:refund-approval:create	后台发起退款审批权限	0
+281704	1	internal-admin	mango-payment	2817	3	敏感字段重加密	payment:security:reencrypt-sensitive		Lock		4	1	0	0	0		payment:security:reencrypt-sensitive	支付历史明文敏感字段受控重加密权限	0
+281705	1	internal-admin	mango-payment	2817	3	可观测性快照	payment:observability:query		Monitor		5	1	0	0	0		payment:observability:query	支付可观测性指标和告警查询权限	0
+281706	1	internal-admin	mango-payment	2817	3	芒果支付场景控制	payment:mango-pay:scenario-control		Operation		6	1	0	0	0		payment:mango-pay:scenario-control	芒果支付内置通道异常场景控制权限	0
+2801	1	internal-admin	mango-payment	2820	2	应用管理	payment:application	/payment/applications	Box	@/views/payment/applications/index.vue	1	1	1	0	0		payment:application:list	支付接入应用管理	0
+2805	1	internal-admin	mango-payment	2820	2	收银台	payment:cashier-config	/payment/cashier-configs	Tickets	@/views/payment/cashier-configs/index.vue	2	1	1	0	0		payment:cashier-config:list	收银台配置管理	0
+2806	1	internal-admin	mango-payment	2821	2	业务订单	payment:business-order	/payment/business-orders	Document	@/views/payment/business-orders/index.vue	1	1	1	0	0		payment:business-order:list	业务订单查询	0
+2807	1	internal-admin	mango-payment	2821	2	支付订单	payment:payment-order	/payment/payment-orders	Money	@/views/payment/payment-orders/index.vue	2	1	1	0	0		payment:payment-order:list	支付订单查询	0
+2808	1	internal-admin	mango-payment	2821	2	退款订单	payment:refund-order	/payment/refund-orders	RefreshLeft	@/views/payment/refund-orders/index.vue	3	1	1	0	0		payment:refund-order:list	退款订单查询	0
+2809	1	internal-admin	mango-payment	2821	2	交易流水	payment:transaction-flow	/payment/transaction-flows	List	@/views/payment/transaction-flows/index.vue	4	1	1	0	0		payment:transaction-flow:list	支付和退款流水查询	0
+2817	1	internal-admin	mango-payment	2821	2	退款审批	payment:refund-approval	/payment/refund-approvals	ClipboardCheck	@/views/payment/refund-approvals/index.vue	4	1	1	0	0		payment:refund-approval:list	后台退款审批工作流申请查看入口	0
+2810	1	internal-admin	mango-payment	2821	2	异常订单	payment:exception-order	/payment/exception-orders	Warning	@/views/payment/exception-orders/index.vue	5	1	1	0	0		payment:exception-order:list	异常订单处理	0
+2811	1	internal-admin	mango-payment	2822	2	通知记录	payment:notification-record	/payment/notification-records	Bell	@/views/payment/notification-records/index.vue	1	1	1	0	0		payment:notification-record:list	支付通知记录	0
+2812	1	internal-admin	mango-payment	2822	2	对账管理	payment:reconciliation	/payment/reconciliations	Files	@/views/payment/reconciliations/index.vue	2	1	1	0	0		payment:reconciliation:list	对账任务和批次管理	0
+2813	1	internal-admin	mango-payment	2822	2	差异处理	payment:difference	/payment/differences	Operation	@/views/payment/differences/index.vue	3	1	1	0	0		payment:difference:list	对账差异处理	0
+2814	1	internal-admin	mango-payment	2822	2	结算汇总	payment:settlement-summary	/payment/settlement-summaries	DataAnalysis	@/views/payment/settlement-summaries/index.vue	4	1	1	0	0		payment:settlement-summary:list	结算汇总查询	0
+2815	1	internal-admin	mango-payment	2822	2	操作审计	payment:operation-audit	/payment/operation-audits	DocumentChecked	@/views/payment/operation-audits/index.vue	5	1	1	0	0		payment:operation-audit:list	支付域操作审计	0
+2802	1	internal-admin	mango-payment	2823	2	企业主体	payment:enterprise-subject	/payment/enterprise-subjects	OfficeBuilding	@/views/payment/enterprise-subjects/index.vue	1	1	1	0	0		payment:enterprise-subject:list	收款主体管理	0
+2816	1	internal-admin	mango-payment	2823	2	签约通道	payment:channel-contract	/payment/channel-contracts	Postcard	@/views/payment/channel-contracts/index.vue	2	1	1	0	0		payment:channel-contract:list	企业主体在支付通道下的商户号、AppId、证书、密钥和签约能力	0
+2803	1	internal-admin	mango-payment	2823	2	支付通道	payment:channel	/payment/channels	Connection	@/views/payment/channels/index.vue	3	1	1	0	0		payment:channel:list	支付通道配置管理	0
+2804	1	internal-admin	mango-payment	2823	2	支付方式	payment:method	/payment/methods	Wallet	@/views/payment/methods/index.vue	4	1	1	0	0		payment:method:list	支付方式管理	0
+2825	1	internal-admin	mango-payment	2824	2	线下收款订单	payment:offline-collection	/payment/offline/collections	Money	@/views/payment/offline-collections/index.vue	1	1	1	0	0		payment:offline-collection:list	线下转账收款单、对账码、转账备注、凭证和到账确认入口	0
+2826	1	internal-admin	mango-payment	2824	2	线下退款订单	payment:offline-refund	/payment/offline/refunds	RefreshLeft	@/views/payment/offline-refunds/index.vue	2	1	1	0	0		payment:offline-refund:list	线下收款通道独立退款订单、退款账户和退款凭证查询入口	0
+282501	1	internal-admin	mango-payment	2825	3	线下收款查询	payment:offline-collection:query		Search		1	1	0	0	0		payment:offline-collection:query	线下收款详情查询权限	0
+282502	1	internal-admin	mango-payment	2825	3	线下收款确认	payment:offline-collection:confirm		CheckCircle		2	1	0	0	0		payment:offline-collection:confirm	线下收款确认到账权限	0
+282503	1	internal-admin	mango-payment	2825	3	线下收款退款	payment:offline-collection:refund		RefreshLeft		3	1	0	0	0		payment:offline-collection:refund	线下收款发起线下退款权限	0
+282504	1	internal-admin	mango-payment	2825	3	线下银行流水查询	payment:offline-collection:bank-statement:query		Search		4	1	0	0	0		payment:offline-collection:bank-statement:query	线下收款银行流水批次和明细查询权限	0
+282505	1	internal-admin	mango-payment	2825	3	线下银行流水导入	payment:offline-collection:bank-statement:import		Upload		5	1	0	0	0		payment:offline-collection:bank-statement:import	线下收款银行流水 Excel 导入权限	0
+282506	1	internal-admin	mango-payment	2825	3	线下银行流水确认	payment:offline-collection:bank-statement:confirm		CheckCircle		6	1	0	0	0		payment:offline-collection:bank-statement:confirm	线下收款银行流水匹配确认权限	0
+282507	1	internal-admin	mango-payment	2825	3	线下银行流水列表	payment:offline-collection:bank-statement:list		List		7	1	0	0	0		payment:offline-collection:bank-statement:list	线下收款银行流水批次列表权限	0
+282601	1	internal-admin	mango-payment	2826	3	线下退款查询	payment:offline-refund:query		Search		1	1	0	0	0		payment:offline-refund:query	线下退款详情查询权限	0
+290100	1	internal-admin	mango-template	2901	3	查询模板列表	template:template:list				0	1	0	0	0		template:template:list	模板列表查询权限	0
+290101	1	internal-admin	mango-template	2901	3	查询模板详情	template:template:query				1	1	0	0	0		template:template:query	模板详情与版本查询权限	0
+290102	1	internal-admin	mango-template	2901	3	新增模板	template:template:add				2	1	0	0	0		template:template:add	模板新增权限	0
+290103	1	internal-admin	mango-template	2901	3	编辑模板	template:template:edit				3	1	0	0	0		template:template:edit	模板编辑权限	0
+290104	1	internal-admin	mango-template	2901	3	启停模板	template:template:status				4	1	0	0	0		template:template:status	模板启停权限	0
+290105	1	internal-admin	mango-template	2901	3	发布模板版本	template:template:publish				5	1	0	0	0		template:template:publish	模板版本发布权限	0
+290106	1	internal-admin	mango-template	2901	3	提取模板变量	template:template:extract-variable				6	1	0	0	0		template:template:extract-variable	模板占位变量提取权限	0
+290107	1	internal-admin	mango-template	2901	3	渲染模板	template:template:render				7	1	0	0	0		template:template:render	模板预览和正式渲染权限	0
+290200	1	internal-admin	mango-template	2902	3	查询模板分类列表	template:category:list				0	1	0	0	0		template:category:list	模板分类列表查询权限	0
+290201	1	internal-admin	mango-template	2902	3	查询模板分类详情	template:category:query				1	1	0	0	0		template:category:query	模板分类详情查询权限	0
+290202	1	internal-admin	mango-template	2902	3	新增模板分类	template:category:add				2	1	0	0	0		template:category:add	模板分类新增权限	0
+290203	1	internal-admin	mango-template	2902	3	编辑模板分类	template:category:edit				3	1	0	0	0		template:category:edit	模板分类编辑权限	0
+290204	1	internal-admin	mango-template	2902	3	启停模板分类	template:category:status				4	1	0	0	0		template:category:status	模板分类启停权限	0
+290205	1	internal-admin	mango-template	2902	3	删除模板分类	template:category:delete				5	1	0	0	0		template:category:delete	模板分类删除权限	0
+290300	1	internal-admin	mango-template	2903	3	查询渲染记录	template:render-record:list				0	1	0	0	0		template:render-record:list	模板渲染记录列表查询权限	0
+290301	1	internal-admin	mango-template	2903	3	查询渲染详情	template:render-record:query				1	1	0	0	0		template:render-record:query	模板渲染记录详情查询权限	0
+2946	1	internal-admin	mango-notice	2940	2	我的消息	notice:site-message	/notice/site-message	Message	@/views/notice/site-message/index.vue	1	1	1	0	0		notice:site:view	当前用户系统消息列表和接收设置入口	0
+2941	1	internal-admin	mango-notice	2940	2	消息配置	notice:message-definition	/notice/message-definition	DocumentChecked	@/views/notice/message-definition/index.vue	2	1	1	0	0		notice:business:view	业务消息、参数、渠道启停和模板配置	0
+2947	1	internal-admin	mango-notice	2940	2	发送任务	notice:send-message	/notice/send-message	Promotion	@/views/notice/send-message/index.vue	3	1	1	0	0		notice:task:create	人工触发业务消息发送任务入口	0
+2942	1	internal-admin	mango-notice	2940	2	渠道配置	notice:channel	/notice/channel	Connection	@/views/notice/channel/index.vue	4	1	1	0	0		notice:channel:view	系统可用通知通道账号和结构化接入配置	0
+2944	1	internal-admin	mango-notice	2940	2	发送记录	notice:record	/notice/record	Tickets	@/views/notice/record/index.vue	5	1	1	0	0		notice:record:view	消息发送历史、渲染内容、渠道响应和失败原因	0
+2945	1	internal-admin	mango-notice	2940	2	失败重试	notice:retry	/notice/retry	RefreshRight	@/views/notice/retry/index.vue	6	1	1	0	0		notice:record:view	失败发送记录和重试处理入口	0
+2943	1	internal-admin	mango-notice	2940	2	接收设置	notice:receive-setting	/notice/receive-setting	Switch	@/views/notice/receive-setting/index.vue	7	1	0	0	0		notice:setting:view	接收设置仅从我的消息页面设置按钮进入，不作为通知中心后台菜单展示	0
+294101	1	internal-admin	mango-notice	2941	3	消息配置查询	notice:business:view				1	1	0	0	0		notice:business:view	消息配置查询权限	0
+294102	1	internal-admin	mango-notice	2941	3	消息配置创建	notice:business:create				2	1	0	0	0		notice:business:create	消息配置创建权限	0
+294103	1	internal-admin	mango-notice	2941	3	消息配置编辑	notice:business:edit				3	1	0	0	0		notice:business:edit	消息配置编辑权限	0
+294104	1	internal-admin	mango-notice	2941	3	消息配置发布	notice:business:publish				4	1	0	0	0		notice:business:publish	消息配置发布权限	0
+294105	1	internal-admin	mango-notice	2941	3	消息配置启停	notice:business:enable				5	1	0	0	0		notice:business:enable	消息配置启停权限	0
+294106	1	internal-admin	mango-notice	2941	3	消息配置删除	notice:business:delete				6	1	0	0	0		notice:business:delete	消息配置删除权限	0
+294201	1	internal-admin	mango-notice	2942	3	渠道配置查询	notice:channel:view				1	1	0	0	0		notice:channel:view	渠道配置查询权限	0
+294202	1	internal-admin	mango-notice	2942	3	渠道配置创建	notice:channel:create				2	1	0	0	0		notice:channel:create	渠道配置创建权限	0
+294203	1	internal-admin	mango-notice	2942	3	渠道配置编辑	notice:channel:edit				3	1	0	0	0		notice:channel:edit	渠道配置编辑权限	0
+294204	1	internal-admin	mango-notice	2942	3	渠道配置删除	notice:channel:delete				4	1	0	0	0		notice:channel:delete	渠道配置删除权限	0
+294301	1	internal-admin	mango-notice	2943	3	接收设置查询	notice:setting:view				1	1	0	0	0		notice:setting:view	接收设置查询权限	0
+294302	1	internal-admin	mango-notice	2943	3	接收设置编辑	notice:setting:edit				2	1	0	0	0		notice:setting:edit	接收设置编辑权限	0
+294401	1	internal-admin	mango-notice	2944	3	发送记录查询	notice:record:view				1	1	0	0	0		notice:record:view	发送记录查询权限	0
+294501	1	internal-admin	mango-notice	2945	3	失败重试查询	notice:record:view				1	1	0	0	0		notice:record:view	失败重试查询权限	0
+294502	1	internal-admin	mango-notice	2945	3	失败重试处理	notice:retry:edit				2	1	0	0	0		notice:retry:edit	失败重试、标记成功和忽略失败权限	0
+294503	1	internal-admin	mango-notice	2945	3	消息已读	notice:site:edit				3	0	0	0	0		notice:site:edit	旧站内信按钮权限已迁移到右上角消息入口，后台菜单不再展示	0
+294504	1	internal-admin	mango-notice	2945	3	消息删除	notice:site:delete				4	0	0	0	0		notice:site:delete	旧站内信按钮权限已迁移到右上角消息入口，后台菜单不再展示	0
+294601	1	internal-admin	mango-notice	2946	3	我的消息查询	notice:site:view				1	1	0	0	0		notice:site:view	我的消息查询权限	0
+294602	1	internal-admin	mango-notice	2946	3	消息发送	notice:site:create				2	1	0	0	0		notice:site:create	消息发送权限	0
+294603	1	internal-admin	mango-notice	2946	3	消息已读	notice:site:edit				3	1	0	0	0		notice:site:edit	消息已读权限	0
+294604	1	internal-admin	mango-notice	2946	3	消息删除	notice:site:delete				4	1	0	0	0		notice:site:delete	消息删除权限	0
+294701	1	internal-admin	mango-notice	2947	3	发送任务查询	notice:task:view				1	1	0	0	0		notice:task:view	发送任务页面查询通知任务权限	0
+294702	1	internal-admin	mango-notice	2947	3	发送任务提交	notice:task:create				2	1	0	0	0		notice:task:create	发送任务提交权限	0
+2951	1	internal-admin	mango-job	2950	2	任务定义	job:definition	/job/definition	List	@/views/job/definition/index.vue	1	1	1	0	0		job:definition:list	任务定义、调度表达式、处理器和引擎同步状态管理	0
+2952	1	internal-admin	mango-job	2950	2	执行实例	job:instance	/job/instance	Tickets	@/views/job/instance/index.vue	2	1	1	0	0		job:instance:list	任务执行实例查询	0
+2953	1	internal-admin	mango-job	2950	2	执行日志	job:log	/job/log	Document	@/views/job/log/index.vue	3	0	0	0	0		job:log:list	任务日志索引查询	1
+2954	1	internal-admin	mango-job	2950	2	Worker 节点	job:worker	/job/worker	Monitor	@/views/job/worker/index.vue	3	1	1	0	0		job:worker:list	任务执行 Worker 节点查询和治理	0
+2955	1	internal-admin	mango-job	2950	2	处理器	job:handler	/job/handler	Connection	@/views/job/handler/index.vue	5	0	0	0	0		job:handler:list	当前应用注册的任务处理器清单	1
+2957	1	internal-admin	mango-job	2950	2	告警规则	job:alarm	/job/alarm	Bell	@/views/job/alarm/index.vue	5	1	1	0	0		job:alarm:list	Mango Job 失败实例告警规则管理	0
+2956	1	internal-admin	mango-job	2950	2	运行状态	job:engine	/job/engine	Cpu	@/views/job/engine/index.vue	6	1	1	0	0		job:engine:list	Mango 原生任务调度运行状态汇总	0
+295101	1	internal-admin	mango-job	2951	3	任务查询	job:definition:list				1	1	0	0	0		job:definition:list	任务定义列表查询权限	0
+295102	1	internal-admin	mango-job	2951	3	任务详情	job:definition:query				2	1	0	0	0		job:definition:query	任务定义详情查询权限	0
+295103	1	internal-admin	mango-job	2951	3	新增任务	job:definition:add				3	1	0	0	0		job:definition:add	任务定义新增权限	0
+295104	1	internal-admin	mango-job	2951	3	编辑任务	job:definition:edit				4	1	0	0	0		job:definition:edit	任务定义编辑权限	0
+295105	1	internal-admin	mango-job	2951	3	删除任务	job:definition:delete				5	1	0	0	0		job:definition:delete	任务定义删除权限	0
+295106	1	internal-admin	mango-job	2951	3	调整状态	job:definition:status				6	1	0	0	0		job:definition:status	任务定义启用、暂停、禁用权限	0
+295107	1	internal-admin	mango-job	2951	3	手动触发	job:definition:trigger				7	1	0	0	0		job:definition:trigger	手动触发任务权限	0
+295201	1	internal-admin	mango-job	2952	3	实例查询	job:instance:list				1	1	0	0	0		job:instance:list	执行实例列表查询权限	0
+295202	1	internal-admin	mango-job	2952	3	同步实例	job:instance:sync				2	1	0	0	0		job:instance:sync	从调度引擎同步任务实例权限	0
+295301	1	internal-admin	mango-job	2952	3	日志查询	job:log:list				2	1	0	0	0		job:log:list	执行日志索引查询权限	0
+295401	1	internal-admin	mango-job	2954	3	Worker 查询	job:worker:list				1	1	0	0	0		job:worker:list	Worker 快照查询权限	0
+295402	1	internal-admin	mango-job	2954	3	Worker 登记	job:worker:add				2	1	0	0	0		job:worker:add	手动登记远程 Worker 权限	0
+295403	1	internal-admin	mango-job	2954	3	Worker 状态	job:worker:status				3	1	0	0	0		job:worker:status	禁用、排空、下线和恢复 Worker 权限	0
+295501	1	internal-admin	mango-job	2955	3	处理器查询	job:handler:list				1	0	0	0	0		job:handler:list	处理器清单查询权限	1
+295601	1	internal-admin	mango-job	2956	3	引擎状态查询	job:engine:list				1	1	0	0	0		job:engine:list	引擎同步状态查询权限	0
+295701	1	internal-admin	mango-job	2957	3	告警查询	job:alarm:list				1	1	0	0	0		job:alarm:list	告警规则列表查询权限	0
+295702	1	internal-admin	mango-job	2957	3	告警详情	job:alarm:query				2	1	0	0	0		job:alarm:query	告警规则详情查询权限	0
+295703	1	internal-admin	mango-job	2957	3	新增告警	job:alarm:add				3	1	0	0	0		job:alarm:add	告警规则新增权限	0
+295704	1	internal-admin	mango-job	2957	3	编辑告警	job:alarm:edit				4	1	0	0	0		job:alarm:edit	告警规则编辑权限	0
+295705	1	internal-admin	mango-job	2957	3	告警状态	job:alarm:status				5	1	0	0	0		job:alarm:status	告警规则启停权限	0
+295706	1	internal-admin	mango-job	2957	3	删除告警	job:alarm:delete				6	1	0	0	0		job:alarm:delete	告警规则删除权限	0
+2961	1	internal-admin	mango-system	2960	2	系统事件	system:event	/system/events	RefreshRight	@/views/system/event/index.vue	1	1	1	0	0		system:event:list	领域事件 Outbox 异常查询和重新投递入口	0
+296101	1	internal-admin	mango-system	2961	3	事件查询	system:event:list				1	1	0	0	0		system:event:list	系统事件列表查询权限	0
+296102	1	internal-admin	mango-system	2961	3	事件详情	system:event:detail				2	1	0	0	0		system:event:detail	系统事件详情查询权限	0
+296103	1	internal-admin	mango-system	2961	3	重新投递	system:event:reconsume				3	1	0	0	0		system:event:reconsume	系统事件重新投递权限	0
+2604100	1	internal-admin	mango-workflow	260401	3	查询模板	workflow:template:list				0	1	0	0	0		workflow:template:list	流程模板列表查询权限	0
+2604101	1	internal-admin	mango-workflow	260401	3	查看模板	workflow:template:query				1	1	0	0	0		workflow:template:query	流程模板详情查询权限	0
+2604102	1	internal-admin	mango-workflow	260401	3	新增模板	workflow:template:add				2	1	0	0	0		workflow:template:add	流程模板新增权限	0
+2604103	1	internal-admin	mango-workflow	260401	3	编辑模板	workflow:template:edit				3	1	0	0	0		workflow:template:edit	流程模板编辑权限	0
+2604104	1	internal-admin	mango-workflow	260401	3	删除模板	workflow:template:delete				4	1	0	0	0		workflow:template:delete	流程模板删除权限	0
+2604105	1	internal-admin	mango-workflow	260401	3	由模板创建流程	workflow:template:create-definition				5	1	0	0	0		workflow:template:create-definition	根据流程模板创建租户流程定义权限	0
+2604106	1	internal-admin	mango-workflow	260401	3	推送流程	workflow:template:push				6	1	0	0	0		workflow:template:push	将流程模板推送为目标机构流程草稿权限	0

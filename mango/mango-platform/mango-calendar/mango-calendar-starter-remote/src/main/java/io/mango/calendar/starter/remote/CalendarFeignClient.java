@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.time.LocalDate;
 import java.util.List;
 
-@FeignClient(name = "mango-calendar", path = "/calendar")
+@FeignClient(name = "mango-calendar", contextId = "calendarFeignClient", path = "/calendar")
 public interface CalendarFeignClient extends CalendarApi {
 
     @Override

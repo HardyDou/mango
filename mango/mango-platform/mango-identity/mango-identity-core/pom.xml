@@ -24,12 +24,17 @@
         </dependency>
         <dependency>
             <groupId>io.mango.infra.persistence</groupId>
-            <artifactId>mango-infra-persistence-starter</artifactId>
+            <artifactId>mango-infra-persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.mango.platform.authorization</groupId>
-            <artifactId>mango-authorization-core</artifactId>
+            <artifactId>mango-authorization-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.context</groupId>
+            <artifactId>mango-infra-context-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

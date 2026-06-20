@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.mango.platform.captcha</groupId>
+        <artifactId>mango-captcha</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>mango-captcha-starter-remote</artifactId>
+    <name>Mango Captcha Remote Starter</name>
+    <description>Captcha remote Feign adapter</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.mango.platform.captcha</groupId>
+            <artifactId>mango-captcha-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.feign</groupId>
+            <artifactId>mango-infra-feign-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>

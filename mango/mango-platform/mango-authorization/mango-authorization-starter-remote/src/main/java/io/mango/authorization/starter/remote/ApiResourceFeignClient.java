@@ -16,10 +16,8 @@ import java.util.List;
 
 /**
  * API 资源远程客户端。
- *
- * @author hardy
  */
-@FeignClient(name = "mango-authorization", path = "/authorization")
+@FeignClient(name = "mango-authorization", contextId = "apiResourceFeignClient", path = "/authorization")
 public interface ApiResourceFeignClient extends ApiResourceApi {
 
     @Override

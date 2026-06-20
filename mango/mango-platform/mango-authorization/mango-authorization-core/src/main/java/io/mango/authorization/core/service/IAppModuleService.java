@@ -17,6 +17,10 @@ public interface IAppModuleService {
 
     Boolean disable(String appCode, String moduleCode);
 
+    Boolean disableByBindingId(Long bindingId);
+
+    Long findBindingId(String appCode, String moduleCode);
+
     Integer syncMenus(String appCode, String moduleCode);
 
     Integer registerResourceManifest(AppModuleResourceManifestCommand command);

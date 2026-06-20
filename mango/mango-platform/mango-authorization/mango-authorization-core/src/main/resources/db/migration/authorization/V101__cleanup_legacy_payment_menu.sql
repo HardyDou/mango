@@ -1,13 +1,2 @@
-DELETE FROM `authorization_menu`
-WHERE `module_code` = 'mango-payment'
-  AND (
-    `menu_code` IN (
-      'payment:management',
-      'payment:management:list',
-      'payment:management:write',
-      'payment:cashier',
-      'payment:cashier:use'
-    )
-    OR `parent_id` IN (2720, 2721, 2722)
-    OR (`menu_code` = 'payment' AND `id` <> 2800)
-  );
+-- V101__cleanup_legacy_payment_menu.sql
+-- Payment menus, button permissions, runtime config, package bindings and default role bindings are registered by mango-payment-starter AUTH_MENU resource payment-common-menu.json.

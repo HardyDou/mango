@@ -2,6 +2,7 @@ package io.mango.resource.core.sync;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,36 @@ class ResourceContentHasherTest {
         ResourceDeclaration second = declaration(2);
 
         assertThat(hasher.hash(first)).isNotEqualTo(hasher.hash(second));
+    }
+
+    @Test
+    void hashChangesWhenSyncModeChanges() {
+        ResourceDeclaration first = declaration(1);
+        ResourceDeclaration second = declaration(1);
+        second.setSyncMode(ResourceSyncMode.MANUAL);
+
+        assertThat(hasher.hash(first)).isNotEqualTo(hasher.hash(second));
+    }
+
+    @Test
+    void hashIgnoresFieldDeclarationOrder() {
+        ResourceDeclaration first = declaration(1);
+        ResourceDeclaration second = declaration(1);
+        second.getFields().clear();
+        ResourceField body = new ResourceField();
+        body.setType(ResourceFieldType.STRING);
+        body.setValue("正文");
+        second.getFields().put("body", body);
+        ResourceField title = new ResourceField();
+        title.setType(ResourceFieldType.STRING);
+        title.setValue("提交申请");
+        second.getFields().put("title", title);
+        ResourceField firstBody = new ResourceField();
+        firstBody.setType(ResourceFieldType.STRING);
+        firstBody.setValue("正文");
+        first.getFields().put("body", firstBody);
+
+        assertThat(hasher.hash(first)).isEqualTo(hasher.hash(second));
     }
 
     @Test

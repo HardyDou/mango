@@ -1,1 +1,2 @@
 io.mango.infra.feign.starter.FeignAutoConfiguration
+io.mango.infra.feign.starter.FeignServletAutoConfiguration

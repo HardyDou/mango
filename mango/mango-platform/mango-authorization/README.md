@@ -18,7 +18,7 @@
 | API 资源 | 保存 method、path、access mode、permission code，供 `mango-access` 判断请求策略 |
 | API 资源同步 | 通过 `mango-resource` 的 `API_RESOURCE` 资源类型扫描 Controller 注解、配置资源和 Gateway route，并同步到 `authorization_api_resource` |
 | 菜单管理 | 保存目录、菜单、按钮权限、页面 key、路由、运行类型和可见状态 |
-| 资源清单 | 从 `META-INF/mango/resource-manifest.json` 或 `resource-manifests/*.json` 批量注册模块菜单和权限 |
+| 菜单资源 | 消费 Resource Registry 的 `AUTH_MENU` 声明，批量注册模块菜单、按钮权限、页面 key、套餐绑定和默认角色授权 |
 | 角色授权 | 管理角色、成员角色绑定、角色菜单授权 |
 | 数据权限 | 按角色配置资源级数据范围，解析当前成员生效范围 |
 | 用户菜单 | 按当前成员授权快照返回可见菜单树 |
@@ -106,9 +106,9 @@
 1. Controller 使用 `@PublicApi`、`@LoginApi`、`@PermissionAccess` 或 `@InternalApi` 声明访问模式。
 2. PERMISSION 接口用稳定权限码，例如 `contract:archive:create`。
 3. 部署应用启用 `mango-resource-sync-starter`，并按拓扑选择本地 `mango-resource-starter` 或远程 `mango-resource-starter-remote`。
-4. 在模块资源目录放 `META-INF/mango/resource-manifest.json`，登记模块、菜单、页面 key 和按钮权限。
+4. 在模块资源目录放 `META-INF/mango/resources/{module}-common-menu.{json,yml,yaml}`，用 `AUTH_MENU` 登记模块、菜单、页面 key 和按钮权限。菜单量大时优先使用 JSON。
 5. 启动服务后确认 `authorization_api_resource` 有接口资源，`authorization_menu` 有菜单和按钮权限。
-6. 给角色授权菜单，或在 manifest 的 `roleCodes` 中写入已存在角色编码。
+6. 给租户绑定菜单套餐，由租户套餐同步角色菜单；`roleCodes` 只用于已明确确认的默认角色场景。
 7. 给成员绑定角色。
 8. 登录后检查 `/auth/info` 的 `permissions` 和 `/authorization/menus/user?fmt=tree&appCode=internal-admin` 的菜单树。
 9. 访问受保护接口，确认无权限返回 403、授权后通过。
@@ -137,12 +137,13 @@ mango:
           description: Swagger UI
 ```
 
-manifest 同步示例：
+旧 manifest 同步配置只服务存量迁移，不作为新增菜单入口；需要直写授权表时必须显式开启 legacy writer：
 
 ```yaml
 mango:
   authorization:
     resource-sync:
+      legacy-writer-enabled: true
       manifest:
         enabled: true
         mode: write
@@ -165,21 +166,23 @@ mango:
 |--------|--------|------|
 | `mango.authorization.resource-sync.enabled` | `true` | 是否启用 MVC / Gateway 资源同步自动配置 |
 | `mango.authorization.resource-sync.module-name` | 空，兜底 `unknown-module` | 扫描资源无法解析模块时使用的模块名 |
-| `mango.authorization.resource-sync.mode` | `write` | `write` 写入授权服务，`read` 只扫描并输出日志 |
+| `mango.authorization.resource-sync.mode` | `read` | legacy writer 模式：`write` 直写授权服务，`read` 只扫描并输出日志 |
 | `mango.authorization.resource-sync.include-packages` | `io.mango` | 只扫描这些包前缀下的 Controller |
 | `mango.authorization.resource-sync.exclude-paths` | `/error,/actuator/**` | 排除路径 |
 | `mango.authorization.resource-sync.default-access-mode` | `LOGIN` | Controller 未声明访问注解时使用的访问模式 |
+| `mango.authorization.resource-sync.resource-provider.enabled` | `true` | 是否把 Controller / 配置 API 资源声明输出给 Resource Registry |
+| `mango.authorization.resource-sync.legacy-writer-enabled` | `false` | 是否启用旧直写授权表 runner |
 | `mango.authorization.resource-sync.resources[]` | 空列表 | 用 YAML 补充非 Controller 资源 |
 | `mango.authorization.resource-sync.manifest.enabled` | `true` | 是否启用资源清单同步 |
-| `mango.authorization.resource-sync.manifest.mode` | `write` | `write` 写入授权服务，`read` 只解析日志 |
+| `mango.authorization.resource-sync.manifest.mode` | `read` | legacy manifest 模式：`write` 直写授权服务，`read` 只解析日志 |
 | `mango.authorization.resource-sync.manifest.locations` | `classpath*:META-INF/mango/resource-manifest.json`、`classpath*:META-INF/mango/resource-manifests/*.json` | 资源清单位置 |
 | `mango.authorization.resource-sync.gateway.enabled` | `true` | 是否同步 Gateway route Path 谓词 |
-| `mango.authorization.resource-sync.gateway.mode` | `write` | Gateway 资源同步模式 |
+| `mango.authorization.resource-sync.gateway.mode` | `read` | Gateway route 注册模式：`write` 输出 Resource Registry 声明；`read` 只保留扫描器，不注册资源。旧直写 runner 仅在 `legacy-writer-enabled=true` 时额外生效 |
 | `mango.authorization.resource-sync.gateway.module-name` | `gateway` | Gateway 路由资源所属模块名 |
 | `mango.authorization.resource-access.enabled` | `true` | 是否装配 `apiResourceAuthorizationManager` |
 | `mango.frontend.deploy-profile` | `monolith` | 前端部署配置档：`monolith`、`hybrid`、`micro` |
 
-`resources[]` 会被 `ApiAccessResourceProvider` 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
+Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provider 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
 
 `resources[]` 字段：
 
@@ -272,22 +275,119 @@ mango:
 
 ## 9. 资源清单
 
-资源清单放在模块 classpath：
+新增菜单资源必须走 Resource Registry 的 `AUTH_MENU` 声明，文件放在模块 classpath：
 
 ```text
-src/main/resources/META-INF/mango/resource-manifest.json
-src/main/resources/META-INF/mango/resource-manifests/*.json
+src/main/resources/META-INF/mango/resources/{module}-common-menu.json
+src/main/resources/META-INF/mango/resources/{module}-common-menu.yml
+src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 ```
+
+菜单量大时优先使用 JSON，避免低信息密度配置。旧 `META-INF/mango/resource-manifest.json` 和 `resource-manifests/*.json` 只作为存量迁移对象，不得作为新增菜单标准。
 
 示例：
 
 ```json
 {
-  "appCode": "internal-admin",
-  "moduleCode": "contract",
-  "moduleName": "合同模块",
-  "packageCodes": ["internal-admin-default"],
-  "roleCodes": ["ROLE_ADMIN"],
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "contract",
+      "moduleName": "合同模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2900000000000000001",
+            "version": 1,
+            "bizKey": "contract.menu.internal-admin",
+            "name": "合同菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": { "type": "STRING", "value": "internal-admin" },
+              "moduleCode": { "type": "STRING", "value": "contract" },
+              "moduleName": { "type": "STRING", "value": "合同模块" },
+              "packageCodes": { "type": "LIST", "value": ["platform_admin"] },
+              "roleCodes": { "type": "LIST", "value": [] },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "合同管理",
+                    "menuCode": "contract",
+                    "path": "/contract",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "合同列表",
+                        "menuCode": "contract:archive:list",
+                        "path": "/contract/archives",
+                        "component": "contract/archive/index",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "contract:archive:create",
+                            "permissionName": "新增合同"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+`AUTH_MENU` 字段：
+
+| 字段 | 含义 |
+|------|------|
+| `fields.appCode.value` | 应用编码 |
+| `fields.moduleCode.value` | 能力模块编码，通常来自 `module.properties` 的 `module-name` |
+| `fields.moduleName.value` | 能力模块名称 |
+| `fields.status.value` | 模块状态，空时保存为 1 |
+| `fields.sort.value` | 模块排序，空时保存为 0 |
+| `fields.packageCodes.value` | 清单级套餐编码；菜单未配置时继承，套餐必须已存在 |
+| `fields.roleCodes.value` | 清单级默认角色编码；菜单未配置时继承，角色必须已存在 |
+| `fields.menus.value[].menuType` | 1 目录、2 菜单、3 按钮 |
+| `fields.menus.value[].menuName` | 菜单名称 |
+| `fields.menus.value[].menuCode` | 菜单编码或权限码 |
+| `fields.menus.value[].parentCode` | 指定父菜单编码；为空时按清单树结构入库 |
+| `fields.menus.value[].path` | 前端路由路径 |
+| `fields.menus.value[].pageType` | `LOCAL_ROUTE`、`MICRO_ROUTE`、`IFRAME`、`EXTERNAL_LINK`、`BUTTON` |
+| `fields.menus.value[].component` | 前端页面 key |
+| `fields.menus.value[].externalUrl` | iframe 或外链地址 |
+| `fields.menus.value[].permissions` | 页面携带的权限编码列表 |
+| `fields.menus.value[].packageCodes` | 当前菜单套餐编码；未配置时继承父菜单或清单级配置，空数组表示不加入套餐 |
+| `fields.menus.value[].roleCodes` | 当前菜单默认角色编码；未配置时继承父菜单或清单级配置，空数组表示不授权角色 |
+| `fields.menus.value[].permissionItems` | 页面下按钮权限，会生成隐藏按钮菜单 |
+| `fields.menus.value[].permissionItems[].menuCode` | 按钮菜单编码；为空时使用 `permissionCode`，适用于一个页面按钮复用其它接口权限但仍需要独立菜单编码的场景 |
+| `fields.menus.value[].permissionItems[].permissionCode` | 按钮真实权限码 |
+| `fields.menus.value[].permissionItems[].permissionName` | 按钮权限名称 |
+| `fields.menus.value[].permissionItems[].packageCodes` | 当前按钮套餐编码；未配置时继承所属菜单配置，空数组表示不加入套餐 |
+| `fields.menus.value[].permissionItems[].roleCodes` | 当前按钮默认角色编码；未配置时继承所属菜单配置，空数组表示不授权角色 |
+
+清单同步行为：
+
+| 行为 | 说明 |
+|------|------|
+| 模块绑定 | 写入或更新 `authorization_app_module` |
+| 菜单入库 | 按 `appCode + moduleCode + menuCode` upsert 到 `authorization_menu` |
+| 按钮权限 | `permissionItems` 生成 `menuType=3`、`visible=0` 的按钮菜单 |
+| 前端运行配置 | 每个菜单写入 `frontend_menu_runtime_config` |
+| 套餐绑定 | `packageCodes` 命中已有菜单套餐时写入 `authorization_menu_package_item` |
+| 角色授权 | `roleCodes` 命中已有角色时写入 `authorization_role_menu` |
+| 资源禁用 | `AUTH_MENU` 被禁用或从 AUTO 声明中移除时，停用模块和该模块菜单，并清理菜单运行配置、套餐绑定和角色菜单授权 |
+
+旧 manifest 字段映射仍用于历史迁移：
+
+```json
+{
   "menus": [
     {
       "menuType": 1,
@@ -313,39 +413,6 @@ src/main/resources/META-INF/mango/resource-manifests/*.json
   ]
 }
 ```
-
-资源清单字段：
-
-| 字段 | 含义 |
-|------|------|
-| `appCode` | 应用编码 |
-| `moduleCode` | 能力模块编码，通常来自 `module.properties` 的 `module-name` |
-| `moduleName` | 能力模块名称 |
-| `status` | 模块状态，空时保存为 1 |
-| `sort` | 模块排序，空时保存为 0 |
-| `packageCodes` | 菜单自动加入的套餐编码；套餐必须已存在 |
-| `roleCodes` | 菜单自动授权的角色编码；角色必须已存在 |
-| `menus[].menuType` | 1 目录、2 菜单、3 按钮 |
-| `menus[].menuName` | 菜单名称 |
-| `menus[].menuCode` | 菜单编码或权限码 |
-| `menus[].parentCode` | 指定父菜单编码；为空时按清单树结构入库 |
-| `menus[].path` | 前端路由路径 |
-| `menus[].pageType` | `LOCAL_ROUTE`、`MICRO_ROUTE`、`IFRAME`、`EXTERNAL_LINK`、`BUTTON` |
-| `menus[].component` | 前端页面 key |
-| `menus[].externalUrl` | iframe 或外链地址 |
-| `menus[].permissions` | 页面携带的权限编码列表 |
-| `menus[].permissionItems` | 页面下按钮权限，会生成隐藏按钮菜单 |
-
-清单同步行为：
-
-| 行为 | 说明 |
-|------|------|
-| 模块绑定 | 写入或更新 `authorization_app_module` |
-| 菜单入库 | 按 `appCode + moduleCode + menuCode` upsert 到 `authorization_menu` |
-| 按钮权限 | `permissionItems` 生成 `menuType=3`、`visible=0` 的按钮菜单 |
-| 前端运行配置 | 每个菜单写入 `frontend_menu_runtime_config` |
-| 套餐绑定 | `packageCodes` 命中已有菜单套餐时写入 `authorization_menu_package_item` |
-| 角色授权 | `roleCodes` 命中已有角色时写入 `authorization_role_menu` |
 
 ## 10. 返回字段
 
@@ -471,7 +538,7 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 | `frontend_module_runtime_strategy` | 前端模块运行策略 |
 | `frontend_tenant_app_binding` | 租户应用绑定 |
 
-`V1__init_authorization.sql` 初始化 `internal-admin` 应用、`INTERNAL / INTERNAL_USER` 登录上下文、多个租户下的 `ROLE_ADMIN` 和 admin 成员角色绑定。后续 migration 按模块补充 notice、job、payment、domain、system event 等菜单和权限。
+`V1__init_authorization.sql` 初始化授权表结构、`internal-admin` 应用、`INTERNAL / INTERNAL_USER` 登录上下文、菜单套餐主档、多个租户下的 `ROLE_ADMIN` 和 admin 成员角色绑定。功能模块菜单、按钮权限、菜单运行配置和套餐明细由各模块 starter 提供 `AUTH_MENU` 资源声明注入。
 
 启动同步入口：
 

@@ -27,7 +27,7 @@
         <!-- 关系型持久化能力 -->
         <dependency>
             <groupId>io.mango.infra.persistence</groupId>
-            <artifactId>mango-infra-persistence-starter</artifactId>
+            <artifactId>mango-infra-persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -40,7 +40,7 @@
         <!-- Mango 基础上下文能力 -->
         <dependency>
             <groupId>io.mango.infra.context</groupId>
-            <artifactId>mango-infra-context-core</artifactId>
+            <artifactId>mango-infra-context-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -20,5 +20,6 @@
         <module>mango-captcha-api</module>
         <module>mango-captcha-core</module>
         <module>mango-captcha-starter</module>
+        <module>mango-captcha-starter-remote</module>
     </modules>
 </project>

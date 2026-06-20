@@ -11,14 +11,15 @@ import io.mango.system.api.SystemCode;
 import io.mango.system.api.enums.InstitutionStatus;
 import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
+import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import io.mango.system.api.tenant.TenantProvisionContext;
 import io.mango.system.api.tenant.TenantProvisioner;
 import io.mango.system.api.po.SysTenantPo;
 import io.mango.system.core.entity.SysTenant;
 import io.mango.system.core.mapper.SysTenantMapper;
 import io.mango.system.core.service.ISysTenantService;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvider {
+public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvider, TenantPackageBindingProvider {
 
     private final SysTenantMapper sysTenantMapper;
     private final TenantMemberProvider tenantMemberProvider;
@@ -127,6 +128,20 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
                 .eq(SysTenant::getStatus, InstitutionStatus.ENABLED.value())
                 .orderByAsc(SysTenant::getId));
         return R.ok(list.stream().map(this::convertToLoginTenantVO).collect(Collectors.toList()));
+    }
+
+    @Override
+    public List<Long> listTenantIdsByPackage(Long packageId) {
+        if (packageId == null) {
+            return List.of();
+        }
+        return sysTenantMapper.selectList(new LambdaQueryWrapper<SysTenant>()
+                        .eq(SysTenant::getPackageId, packageId)
+                        .eq(SysTenant::getStatus, InstitutionStatus.ENABLED.value())
+                        .orderByAsc(SysTenant::getId))
+                .stream()
+                .map(SysTenant::getId)
+                .toList();
     }
 
     @Override

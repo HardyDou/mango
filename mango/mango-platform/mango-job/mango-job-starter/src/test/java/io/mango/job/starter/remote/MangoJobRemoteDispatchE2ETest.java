@@ -1,8 +1,8 @@
 package io.mango.job.starter.remote;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
 import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;

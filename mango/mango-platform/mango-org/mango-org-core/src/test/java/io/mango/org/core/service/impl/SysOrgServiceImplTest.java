@@ -2,9 +2,7 @@ package io.mango.org.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.exception.BizException;
-import io.mango.identity.core.mapper.IdentityUserMapper;
-import io.mango.identity.core.mapper.TenantMemberMapper;
-import io.mango.identity.core.mapper.TenantMemberOrgMapper;
+import io.mango.identity.api.TenantMemberProvider;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.core.mapper.PostMapper;
 import io.mango.org.core.mapper.SysOrgMapper;
@@ -40,13 +38,7 @@ class SysOrgServiceImplTest {
     private PostMapper postMapper;
 
     @Mock
-    private TenantMemberMapper tenantMemberMapper;
-
-    @Mock
-    private TenantMemberOrgMapper tenantMemberOrgMapper;
-
-    @Mock
-    private IdentityUserMapper identityUserMapper;
+    private TenantMemberProvider tenantMemberProvider;
 
     private SysOrgServiceImpl sysOrgService;
 
@@ -55,9 +47,7 @@ class SysOrgServiceImplTest {
         sysOrgService = new SysOrgServiceImpl(
                 orgMapper,
                 postMapper,
-                tenantMemberMapper,
-                tenantMemberOrgMapper,
-                identityUserMapper);
+                tenantMemberProvider);
     }
 
     @Test

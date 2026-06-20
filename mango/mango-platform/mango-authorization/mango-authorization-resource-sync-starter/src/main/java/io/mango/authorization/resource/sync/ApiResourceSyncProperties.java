@@ -22,7 +22,7 @@ public class ApiResourceSyncProperties {
     /**
      * 同步模式。write 注册资源，read 只扫描日志。
      */
-    private String mode = "write";
+    private String mode = "read";
 
     /**
      * 只扫描这些 Java 包下的 Controller。

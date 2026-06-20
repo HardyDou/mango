@@ -30,7 +30,9 @@ public class RegisterResourceDeclarationsCommand implements Serializable {
     @Schema(description = "来源服务")
     private String serviceCode;
 
-    @NotEmpty(message = "资源声明不能为空")
+    @Schema(description = "本次上报服务管理的模块编码列表；声明为空时用于判定缺失资源")
+    private List<String> moduleCodes = new ArrayList<>();
+
     @Valid
     @Schema(description = "资源声明列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<ResourceDeclaration> declarations = new ArrayList<>();

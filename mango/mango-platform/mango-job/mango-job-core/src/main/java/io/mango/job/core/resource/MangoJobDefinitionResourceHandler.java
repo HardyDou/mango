@@ -81,7 +81,10 @@ public class MangoJobDefinitionResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         JobDefinitionPayload payload = JobDefinitionPayload.from(resource);
-        MangoJobDefinitionEntity entity = find(payload.tenantId(), payload.appCode(), payload.jobCode());
+        MangoJobDefinitionEntity entity = resolveByStableId(resource, payload.jobId());
+        if (entity == null) {
+            entity = find(payload.tenantId(), payload.appCode(), payload.jobCode());
+        }
         if (entity == null) {
             entity = new MangoJobDefinitionEntity();
             entity.setId(payload.jobId());
@@ -174,18 +177,29 @@ public class MangoJobDefinitionResourceHandler implements ResourceHandler {
         String tenantId = defaultText(fieldText(resource, "tenantId", false), DEFAULT_TENANT_ID);
         String appCode = fieldText(resource, "appCode", false);
         String jobCode = fieldText(resource, "jobCode", false);
+        MangoJobDefinitionEntity entity = resolveByStableId(resource, null);
+        if (entity != null) {
+            return entity;
+        }
         if (StringUtils.hasText(appCode) && StringUtils.hasText(jobCode)) {
-            MangoJobDefinitionEntity entity = find(tenantId, appCode.trim(), jobCode.trim());
+            entity = find(tenantId, appCode.trim(), jobCode.trim());
             if (entity != null) {
                 return entity;
             }
         }
+        return null;
+    }
+
+    private MangoJobDefinitionEntity resolveByStableId(ResourceDeclaration resource, Long defaultJobId) {
         Long jobId = fieldLong(resource, "jobId", false, null);
         if (jobId != null) {
             return definitionMapper.selectById(jobId);
         }
         Long targetId = fieldLong(resource, "targetId", false, null);
-        return targetId == null ? null : definitionMapper.selectById(targetId);
+        if (targetId != null) {
+            return definitionMapper.selectById(targetId);
+        }
+        return defaultJobId == null ? null : definitionMapper.selectById(defaultJobId);
     }
 
     private MangoJobDefinitionEntity find(String tenantId, String appCode, String jobCode) {

@@ -3,7 +3,11 @@ package io.mango.authorization.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
+import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
 import io.mango.authorization.api.command.RoleCommand;
+import io.mango.authorization.api.command.SubjectRoleBindingCommand;
+import io.mango.authorization.api.query.RoleLookupQuery;
+import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
 import io.mango.authorization.core.entity.Menu;
@@ -17,7 +21,7 @@ import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.authorization.core.service.IMenuService;
 import io.mango.authorization.core.service.IRoleService;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
-import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -201,6 +205,90 @@ public class RoleServiceImpl implements IRoleService {
             }
         }
         return true;
+    }
+
+    @Override
+    public Long findRoleId(RoleLookupQuery query) {
+        if (query == null) {
+            return null;
+        }
+        LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(query.getTenantId() != null, Role::getTenantId, query.getTenantId())
+                .eq(hasText(query.getAppCode()), Role::getAppCode, query.getAppCode())
+                .eq(hasText(query.getRealm()), Role::getRealm, query.getRealm())
+                .eq(hasText(query.getActorType()), Role::getActorType, query.getActorType())
+                .eq(hasText(query.getRoleCode()), Role::getRoleCode, query.getRoleCode())
+                .last("LIMIT 1");
+        Role role = roleMapper.selectOne(wrapper);
+        return role == null ? null : role.getRoleId();
+    }
+
+    @Override
+    @Transactional
+    public Boolean ensureSubjectRoleBinding(SubjectRoleBindingCommand command) {
+        if (command == null || command.getSubjectId() == null || command.getRoleId() == null
+                || !hasText(command.getSubjectType())) {
+            return false;
+        }
+        LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(command.getTenantId() != null, SubjectRoleBinding::getTenantId, command.getTenantId())
+                .eq(SubjectRoleBinding::getSubjectType, command.getSubjectType())
+                .eq(SubjectRoleBinding::getSubjectId, command.getSubjectId())
+                .eq(SubjectRoleBinding::getRoleId, command.getRoleId())
+                .eq(hasText(command.getAppCode()), SubjectRoleBinding::getAppCode, command.getAppCode())
+                .eq(hasText(command.getRealm()), SubjectRoleBinding::getRealm, command.getRealm())
+                .eq(hasText(command.getActorType()), SubjectRoleBinding::getActorType, command.getActorType())
+                .eq(hasText(command.getPartyType()), SubjectRoleBinding::getPartyType, command.getPartyType())
+                .eq(command.getPartyId() != null, SubjectRoleBinding::getPartyId, command.getPartyId());
+        Long count = subjectRoleBindingMapper.selectCount(wrapper);
+        if (count != null && count > 0) {
+            return true;
+        }
+        SubjectRoleBinding binding = new SubjectRoleBinding();
+        binding.setTenantId(command.getTenantId());
+        binding.setSubjectId(command.getSubjectId());
+        binding.setSubjectType(command.getSubjectType());
+        binding.setAppCode(command.getAppCode());
+        binding.setRealm(command.getRealm());
+        binding.setActorType(command.getActorType());
+        binding.setPartyType(command.getPartyType());
+        binding.setPartyId(command.getPartyId());
+        binding.setRoleId(command.getRoleId());
+        return subjectRoleBindingMapper.insert(binding) > 0;
+    }
+
+    @Override
+    @Transactional
+    public Integer deleteSubjectRoleBindings(DeleteSubjectRoleBindingsCommand command) {
+        if (command == null || !hasText(command.getSubjectType())
+                || command.getSubjectIds() == null || command.getSubjectIds().isEmpty()) {
+            return 0;
+        }
+        LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SubjectRoleBinding::getSubjectType, command.getSubjectType())
+                .in(SubjectRoleBinding::getSubjectId, command.getSubjectIds())
+                .eq(command.getTenantId() != null, SubjectRoleBinding::getTenantId, command.getTenantId());
+        return subjectRoleBindingMapper.delete(wrapper);
+    }
+
+    @Override
+    public List<Long> listSubjectIdsByRole(SubjectRoleBindingQuery query) {
+        if (query == null || query.getRoleId() == null || !hasText(query.getSubjectType())) {
+            return List.of();
+        }
+        LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(query.getTenantId() != null, SubjectRoleBinding::getTenantId, query.getTenantId())
+                .eq(SubjectRoleBinding::getSubjectType, query.getSubjectType())
+                .eq(SubjectRoleBinding::getRoleId, query.getRoleId())
+                .eq(hasText(query.getAppCode()), SubjectRoleBinding::getAppCode, query.getAppCode())
+                .eq(hasText(query.getRealm()), SubjectRoleBinding::getRealm, query.getRealm())
+                .eq(hasText(query.getActorType()), SubjectRoleBinding::getActorType, query.getActorType())
+                .eq(hasText(query.getPartyType()), SubjectRoleBinding::getPartyType, query.getPartyType())
+                .eq(query.getPartyId() != null, SubjectRoleBinding::getPartyId, query.getPartyId());
+        return subjectRoleBindingMapper.selectList(wrapper)
+                .stream()
+                .map(SubjectRoleBinding::getSubjectId)
+                .collect(Collectors.toList());
     }
 
     @Override

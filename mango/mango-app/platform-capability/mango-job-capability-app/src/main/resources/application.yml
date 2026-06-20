@@ -1,0 +1,13 @@
+server:
+  port: ${MANGO_JOB_APP_PORT:18622}
+
+spring:
+  application:
+    name: mango-job-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-resource:
+          service-name: mango-resource-capability-app

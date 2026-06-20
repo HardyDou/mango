@@ -14,10 +14,16 @@ spring:
         enabled: false
     gateway:
       routes:
+        - id: mango-captcha-public
+          uri: http://localhost:8081
+          predicates:
+            - Path=/captcha/**
+          metadata:
+            apiAccessMode: PUBLIC
         - id: mango-platform-app
           uri: http://localhost:8081
           predicates:
-            - Path=/auth/**,/identity/**,/authorization/**,/org/**,/system/**,/captcha/**,/ai/**
+            - Path=/auth/**,/identity/**,/authorization/**,/org/**,/system/**,/ai/**
         - id: mango-business-app
           uri: http://localhost:8082
           predicates:
@@ -31,7 +37,12 @@ mango:
       gateway:
         enabled: true
         module-name: gateway
-        mode: write
+        mode: read
+  module:
+    module-service:
+      modules:
+        mango-resource:
+          service-name: mango-platform-app
   security:
     jwt:
       secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}

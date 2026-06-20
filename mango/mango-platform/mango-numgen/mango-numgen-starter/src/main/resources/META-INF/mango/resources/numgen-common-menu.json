@@ -1,0 +1,82 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "numgen",
+      "moduleName": "编号生成模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000008401",
+            "version": 1,
+            "bizKey": "numgen.menu.internal-admin",
+            "name": "编号生成菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-numgen"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "编号生成模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 5
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin",
+                  "institution_collaboration"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 2,
+                    "menuName": "编号规则",
+                    "menuCode": "data:numgen",
+                    "path": "/data/numgen",
+                    "icon": "Tickets",
+                    "component": "numgen/index",
+                    "sort": 2,
+                    "permissions": [
+                      "numgen:manage:list"
+                    ],
+                    "remark": "编号生成器、版本、片段和流水管理",
+                    "permissionItems": [
+                      {
+                        "permissionCode": "numgen:manage:list",
+                        "permissionName": "编号规则查询",
+                        "sort": 1,
+                        "remark": "编号规则查询权限"
+                      },
+                      {
+                        "permissionCode": "numgen:manage:write",
+                        "permissionName": "编号规则维护",
+                        "sort": 2,
+                        "remark": "编号规则维护权限"
+                      }
+                    ],
+                    "parentCode": "data"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

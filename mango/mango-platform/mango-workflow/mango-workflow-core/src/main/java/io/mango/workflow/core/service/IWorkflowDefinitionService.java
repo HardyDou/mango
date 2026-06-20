@@ -35,6 +35,8 @@ public interface IWorkflowDefinitionService {
 
     R<WorkflowDeployVO> deploy(Long id);
 
+    R<WorkflowDeployVO> deployInternal(Long id);
+
     R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command);
 
     R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query);

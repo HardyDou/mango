@@ -151,6 +151,35 @@ class SchemaValidationRunnerTest {
         assertThatNoException().isThrownBy(runner::run);
     }
 
+    @Test
+    void run_withResourceRegistryTables_skipsSchemaValidationByDefault() throws Exception {
+        DataSource dataSource = dataSource("resource_registry_tables");
+        execute(dataSource, """
+                CREATE TABLE resource_registry (
+                    id BIGINT PRIMARY KEY,
+                    resource_id VARCHAR(64),
+                    resource_type VARCHAR(64),
+                    biz_key VARCHAR(128)
+                )
+                """);
+        execute(dataSource, """
+                CREATE TABLE resource_sync_log (
+                    id BIGINT PRIMARY KEY,
+                    resource_id BIGINT
+                )
+                """);
+        execute(dataSource, """
+                CREATE TABLE resource_change_log (
+                    id BIGINT PRIMARY KEY,
+                    resource_id BIGINT
+                )
+                """);
+
+        SchemaValidationRunner runner = new SchemaValidationRunner(dataSource, newProperties(true));
+
+        assertThatNoException().isThrownBy(runner::run);
+    }
+
     private PersistenceProperties.SchemaValidation newProperties(boolean failFast) {
         PersistenceProperties.SchemaValidation properties = new PersistenceProperties.SchemaValidation();
         properties.setFailFast(failFast);

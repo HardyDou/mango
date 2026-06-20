@@ -9,6 +9,7 @@ public final class ResourceTypes {
     public static final String SYSTEM_CONFIG = "SYSTEM_CONFIG";
     public static final String I18N_MESSAGE = "I18N_MESSAGE";
     public static final String BUSINESS_DOMAIN = "BUSINESS_DOMAIN";
+    public static final String AUTH_MENU = "AUTH_MENU";
     public static final String API_RESOURCE = "API_RESOURCE";
     public static final String MESSAGE_EVENT = "MESSAGE_EVENT";
     public static final String MESSAGE_CHANNEL = "MESSAGE_CHANNEL";

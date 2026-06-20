@@ -525,11 +525,11 @@ README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 
 ## 11. 管理入口
 
-| 管理能力 | 菜单 component | 前端页面 key | 入口权限 |
-|----------|----------------|--------------|----------|
-| 文件管理 | `@/views/file/files/index.vue` | `file/files/index` | `file:files:list` |
-| 存储配置 | `@/views/file/storage-configs/index.vue` | `file/storage-configs/index` | `file:storage-configs:list` |
-| 文件配置 | `@/views/file/settings/index.vue` | `file/settings/index` | `file:settings:query` |
+| 管理能力 | 菜单 component | 入口权限 |
+|----------|----------------|----------|
+| 文件管理 | `file/files/index` | `file:files:list` |
+| 存储配置 | `file/storage-configs/index` | `file:storage-configs:list` |
+| 文件配置 | `file/settings/index` | `file:settings:query` |
 
 主要权限码：
 
@@ -547,11 +547,10 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 | Migration | 初始化内容 | 幂等键 / 唯一键 |
 |-----------|------------|-----------------|
 | `V1__init_file.sql` | `file_record`、`file_storage_config`、`file_settings`、`file_directory`、`file_object`、`file_hash_mapping`、`file_upload_session`、`file_upload_part` | 表级 `CREATE TABLE IF NOT EXISTS`、`file_storage_config.config_name`、`file_settings.tenant_id` |
-| `V1__init_file.sql` | 文件管理、存储配置、文件配置菜单和按钮权限 | `sys_menu.menu_code`、`permissions` |
 
 默认本地存储、MinIO 本地联调配置和默认文件中心运行时配置通过 `mango-resource` 注入，资源文件是 `file-common-storage.yml`。运行时文件配置写入 `file_settings`，按 `tenant_id` 唯一；当前租户没有配置时，`GET /file/settings` 会返回 YAML 默认值和 `defaultConfig=true`。
 
-文件菜单和权限目前由 file migration 写入 `sys_menu`，component 指向 `@/views/file/**/index.vue`，前端页面 key 使用 `file/files/index`、`file/storage-configs/index`、`file/settings/index`。
+文件菜单和权限由 `mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-menu.json` 的 `AUTH_MENU` 资源注入。
 
 ## 13. 问题排查
 

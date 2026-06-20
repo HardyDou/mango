@@ -15,6 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
 @ConditionalOnProperty(prefix = "mango.domain", name = "enabled", havingValue = "true", matchIfMissing = true)
 @MapperScan("io.mango.domain.core.mapper")
 @ComponentScan({
+    "io.mango.domain.core.resource",
     "io.mango.domain.core.service",
     "io.mango.domain.starter"
 })

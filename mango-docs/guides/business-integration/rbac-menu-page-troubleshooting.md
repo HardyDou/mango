@@ -74,6 +74,7 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #199 将平台菜单数据从 Flyway 菜单种子迁移为 Resource Registry 的 `AUTH_MENU` 声明注入，并加固菜单码、权限码和 starter 边界；不改变前端 component key、页面注册、角色授权、按钮权限、租户绑定和菜单渲染协议。清库重建或 1.0 rebase 升级后，排查菜单缺失、菜单层级异常或页面 403 时，需要同时确认 `AUTH_MENU` 声明、Resource Registry 同步日志、目标 handler 消费结果和角色/租户绑定是否完成。
 - PR #195 加固前端 `@mango/*` 包的 `exports`、`types` 和生成声明文件，使业务项目通过发布后的 `dist` 产物独立消费；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、菜单运行时加载、启动方式和本场景排障步骤。业务项目应继续使用公开 package 入口和 `./style.css`，不要依赖包内 `src` 路径。
 - PR #194 发布资源注册中心版本并升级 `@mango/admin@1.0.23`、`@mango/admin-shell@1.0.20`、`@mango/rbac@1.0.8`、`@mango/common@1.0.10`、`@mango/cli@1.0.34` 等前端包；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、菜单运行时加载和本场景排障步骤。业务升级时应成组升级前端 `@mango/*` 包并刷新后端 Mango `1.0.0-SNAPSHOT` 依赖。
 - PR #193 新增 `mango-resource` 注册中心并将授权接口资源迁移为资源声明同步；不改变菜单页面 component key、前端页面注册、角色授权、按钮权限、租户绑定和菜单运行时加载。排查菜单不存在时，除原有 migration/resource manifest 外，还需要确认 `API_RESOURCE` 声明是否已同步到授权资源表。

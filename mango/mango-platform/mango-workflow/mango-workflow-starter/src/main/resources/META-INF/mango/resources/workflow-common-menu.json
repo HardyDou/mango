@@ -1,0 +1,463 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "workflow",
+      "moduleName": "工作流",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000009001",
+            "version": 1,
+            "bizKey": "workflow.menu.internal-admin",
+            "name": "工作流管理菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-workflow"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "工作流"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 6
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin",
+                  "institution_collaboration"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "审批中心",
+                    "menuCode": "workflow",
+                    "path": "/workflow",
+                    "icon": "Stamp",
+                    "sort": 2,
+                    "redirect": "/workflow/start-process",
+                    "remark": "流程发起、审批办理和流程配置入口",
+                    "children": [
+                      {
+                        "menuType": 1,
+                        "menuName": "流程办理",
+                        "menuCode": "workflow:task",
+                        "path": "/workflow/task",
+                        "icon": "Tickets",
+                        "sort": 1,
+                        "redirect": "/workflow/start-process",
+                        "remark": "流程发起、待办、已办和抄送事项",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "发起流程",
+                            "menuCode": "workflow:start-process",
+                            "path": "/workflow/start-process",
+                            "icon": "Promotion",
+                            "component": "workflow/start-process/index",
+                            "sort": 1,
+                            "permissions": [
+                              "workflow:definition:list",
+                              "workflow:process:start"
+                            ],
+                            "remark": "选择已发布流程并发起",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "workflow:definition:list",
+                                "permissionName": "查询可发起流程",
+                                "sort": 1,
+                                "remark": "发起流程页面查询已发布流程定义权限",
+                                "menuCode": "workflow:start-process:definition-list"
+                              },
+                              {
+                                "permissionCode": "workflow:process:start",
+                                "permissionName": "发起流程",
+                                "sort": 2,
+                                "remark": "提交流程发起请求权限",
+                                "menuCode": "workflow:start-process:process-start"
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "我的待办",
+                            "menuCode": "workflow:task:todo",
+                            "path": "/workflow/task/todo",
+                            "icon": "Tickets",
+                            "component": "workflow/task/todo/index",
+                            "sort": 2,
+                            "permissions": [
+                              "workflow:task:list"
+                            ],
+                            "remark": "当前用户待办流程任务",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "workflow:task:list",
+                                "permissionName": "查询待办任务",
+                                "sort": 1,
+                                "remark": "待办任务列表查询权限",
+                                "menuCode": "workflow:task:todo:task-list"
+                              },
+                              {
+                                "permissionCode": "workflow:task:detail",
+                                "permissionName": "查看任务详情",
+                                "sort": 2,
+                                "remark": "任务详情与审批页查询权限"
+                              },
+                              {
+                                "permissionCode": "workflow:task:complete",
+                                "permissionName": "审批通过",
+                                "sort": 3,
+                                "remark": "审批任务通过权限"
+                              },
+                              {
+                                "permissionCode": "workflow:task:reject",
+                                "permissionName": "审批驳回",
+                                "sort": 4,
+                                "remark": "审批任务驳回权限"
+                              },
+                              {
+                                "permissionCode": "workflow:task:save",
+                                "permissionName": "暂存审批",
+                                "sort": 5,
+                                "remark": "审批任务暂存权限"
+                              },
+                              {
+                                "permissionCode": "workflow:task:transfer",
+                                "permissionName": "转办任务",
+                                "sort": 6,
+                                "remark": "审批任务转办权限"
+                              },
+                              {
+                                "permissionCode": "workflow:task:add-sign",
+                                "permissionName": "加签任务",
+                                "sort": 7,
+                                "remark": "审批任务加签权限"
+                              },
+                              {
+                                "permissionCode": "workflow:task:claim",
+                                "permissionName": "认领任务",
+                                "sort": 8,
+                                "remark": "候选任务认领权限"
+                              },
+                              {
+                                "permissionCode": "workflow:task:unclaim",
+                                "permissionName": "释放任务",
+                                "sort": 9,
+                                "remark": "候选任务释放权限"
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "我的申请",
+                            "menuCode": "workflow:task:initiated",
+                            "path": "/workflow/task/initiated",
+                            "icon": "Position",
+                            "component": "workflow/task/initiated/index",
+                            "sort": 3,
+                            "permissions": [
+                              "workflow:task:list",
+                              "workflow:process:detail"
+                            ],
+                            "remark": "当前用户发起的流程",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "workflow:process:detail",
+                                "permissionName": "查看流程详情",
+                                "sort": 1,
+                                "remark": "我的申请流程详情与历史查询权限",
+                                "menuCode": "workflow:task:initiated:process-detail"
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "我的已办",
+                            "menuCode": "workflow:task:done",
+                            "path": "/workflow/task/done",
+                            "icon": "CircleCheck",
+                            "component": "workflow/task/done/index",
+                            "sort": 4,
+                            "permissions": [
+                              "workflow:task:list",
+                              "workflow:process:detail"
+                            ],
+                            "remark": "当前用户已办流程任务",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "workflow:process:detail",
+                                "permissionName": "查看流程详情",
+                                "sort": 1,
+                                "remark": "我的已办流程详情与历史查询权限",
+                                "menuCode": "workflow:task:done:process-detail"
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "抄送给我",
+                            "menuCode": "workflow:task:copied",
+                            "path": "/workflow/task/copied",
+                            "icon": "Message",
+                            "component": "workflow/task/copied/index",
+                            "sort": 5,
+                            "permissions": [
+                              "workflow:task:list"
+                            ],
+                            "remark": "抄送给当前用户的流程事项",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "workflow:task:read-copied",
+                                "permissionName": "抄送已阅",
+                                "sort": 1,
+                                "remark": "抄送任务标记已阅权限"
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 3,
+                            "menuName": "查询流程任务",
+                            "menuCode": "workflow:task:list",
+                            "sort": 0,
+                            "permissions": [
+                              "workflow:task:list"
+                            ],
+                            "remark": "审批中心任务列表查询权限"
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "流程管理",
+                        "menuCode": "workflow:manage",
+                        "path": "/workflow/manage",
+                        "icon": "Operation",
+                        "sort": 3,
+                        "redirect": "/workflow/manage/definition",
+                        "remark": "流程模板、流程定义和发布配置管理",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "流程模板",
+                            "menuCode": "workflow:template",
+                            "path": "/workflow/manage/template",
+                            "icon": "CollectionTag",
+                            "component": "workflow/template/index",
+                            "sort": 1,
+                            "permissions": [
+                              "workflow:template:list"
+                            ],
+                            "remark": "系统内置流程模板与租户初始化模板管理",
+                            "permissionItems": [
+                              {
+                                "permissionCode": "workflow:template:list",
+                                "permissionName": "查询模板",
+                                "sort": 0,
+                                "remark": "流程模板列表查询权限",
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
+                              },
+                              {
+                                "permissionCode": "workflow:template:query",
+                                "permissionName": "查看模板",
+                                "sort": 1,
+                                "remark": "流程模板详情查询权限",
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
+                              },
+                              {
+                                "permissionCode": "workflow:template:add",
+                                "permissionName": "新增模板",
+                                "sort": 2,
+                                "remark": "流程模板新增权限",
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
+                              },
+                              {
+                                "permissionCode": "workflow:template:edit",
+                                "permissionName": "编辑模板",
+                                "sort": 3,
+                                "remark": "流程模板编辑权限",
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
+                              },
+                              {
+                                "permissionCode": "workflow:template:delete",
+                                "permissionName": "删除模板",
+                                "sort": 4,
+                                "remark": "流程模板删除权限",
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
+                              },
+                              {
+                                "permissionCode": "workflow:template:create-definition",
+                                "permissionName": "由模板创建流程",
+                                "sort": 5,
+                                "remark": "根据流程模板创建租户流程定义权限",
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
+                              },
+                              {
+                                "permissionCode": "workflow:template:push",
+                                "permissionName": "推送流程",
+                                "sort": 6,
+                                "remark": "将流程模板推送为目标机构流程草稿权限",
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
+                              }
+                            ],
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "流程定义",
+                            "menuCode": "workflow:definition",
+                            "path": "/workflow/manage/definition",
+                            "icon": "Files",
+                            "component": "workflow/definition/index",
+                            "sort": 2,
+                            "permissions": [
+                              "workflow:definition:list"
+                            ],
+                            "remark": "流程分类与流程定义管理",
+                            "packageCodes": [
+                              "platform_admin"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "workflow:definition:list",
+                                "permissionName": "查询流程定义",
+                                "sort": 0,
+                                "remark": "流程分类和流程定义列表查询权限",
+                                "menuCode": "workflow:definition:definition-list"
+                              },
+                              {
+                                "permissionCode": "workflow:definition:query",
+                                "permissionName": "查看流程定义",
+                                "sort": 1,
+                                "remark": "流程分类和流程定义详情查询权限"
+                              },
+                              {
+                                "permissionCode": "workflow:definition:add",
+                                "permissionName": "新增流程定义",
+                                "sort": 2,
+                                "remark": "流程分类和流程定义新增权限"
+                              },
+                              {
+                                "permissionCode": "workflow:definition:edit",
+                                "permissionName": "编辑流程定义",
+                                "sort": 3,
+                                "remark": "流程分类和流程定义编辑权限"
+                              },
+                              {
+                                "permissionCode": "workflow:definition:delete",
+                                "permissionName": "删除流程定义",
+                                "sort": 4,
+                                "remark": "流程分类和流程定义删除权限"
+                              },
+                              {
+                                "permissionCode": "workflow:definition:status",
+                                "permissionName": "调整流程定义状态",
+                                "sort": 5,
+                                "remark": "流程定义状态调整权限"
+                              },
+                              {
+                                "permissionCode": "workflow:definition:deploy",
+                                "permissionName": "发布流程定义",
+                                "sort": 6,
+                                "remark": "流程定义发布权限"
+                              }
+                            ]
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "业务示例",
+                        "menuCode": "workflow:business-form",
+                        "path": "/workflow/business-form",
+                        "icon": "Document",
+                        "component": "workflow/business-form/index",
+                        "sort": 4,
+                        "permissions": [
+                          "workflow:definition:list",
+                          "workflow:process:start",
+                          "workflow:business-apply:create",
+                          "workflow:business-apply:list",
+                          "workflow:business-apply:detail"
+                        ],
+                        "remark": "业务接入工作流示例",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "workflow:definition:list",
+                            "permissionName": "查询示例流程定义",
+                            "sort": 1,
+                            "remark": "业务示例页面查询可发起流程定义权限",
+                            "menuCode": "workflow:business-form:definition-list"
+                          },
+                          {
+                            "permissionCode": "workflow:process:start",
+                            "permissionName": "发起示例流程",
+                            "sort": 2,
+                            "remark": "业务示例页面提交流程发起请求权限",
+                            "menuCode": "workflow:business-form:process-start"
+                          },
+                          {
+                            "permissionCode": "workflow:business-apply:create",
+                            "permissionName": "创建业务申请",
+                            "sort": 3,
+                            "remark": "业务示例页面创建业务申请权限"
+                          },
+                          {
+                            "permissionCode": "workflow:business-apply:list",
+                            "permissionName": "查询业务申请",
+                            "sort": 4,
+                            "remark": "业务示例页面分页查询业务申请权限"
+                          },
+                          {
+                            "permissionCode": "workflow:business-apply:detail",
+                            "permissionName": "查看业务申请",
+                            "sort": 5,
+                            "remark": "业务示例页面查看业务申请进度和历史权限"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

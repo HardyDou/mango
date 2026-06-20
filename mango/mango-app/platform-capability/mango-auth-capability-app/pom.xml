@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango.app.platformcapability</groupId>
+        <artifactId>mango-app-platform-capability</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mango-auth-capability-app</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Mango Auth Capability App</name>
+    <description>Mango Auth 平台能力独立启动应用</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.mango.platform.auth</groupId>
+            <artifactId>mango-auth-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.identity</groupId>
+            <artifactId>mango-identity-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.captcha</groupId>
+            <artifactId>mango-captcha-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.notice</groupId>
+            <artifactId>mango-notice-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-sync-starter</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <skip>false</skip>
+                    <mainClass>io.mango.app.platformcapability.auth.MangoAuthCapabilityApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

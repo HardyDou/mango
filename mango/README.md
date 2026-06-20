@@ -40,6 +40,8 @@
 </dependency>
 ```
 
+`mango-admin-starter` 已包含本地 Resource Registry runtime 和资源声明同步 runtime；业务按官方单体入口接入时不需要再额外声明 `mango-resource-starter` 或 `mango-resource-sync-starter`。
+
 微服务提供方装配本地能力：
 
 ```xml

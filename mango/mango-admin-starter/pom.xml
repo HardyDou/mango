@@ -76,6 +76,14 @@
             <artifactId>mango-authorization-resource-access-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-sync-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.access</groupId>
             <artifactId>mango-access-web-starter</artifactId>
         </dependency>

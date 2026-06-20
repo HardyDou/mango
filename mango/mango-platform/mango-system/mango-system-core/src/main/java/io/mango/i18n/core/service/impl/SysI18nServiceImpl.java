@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.mango.i18n.api.entity.SysI18n;
 import io.mango.i18n.core.mapper.SysI18nMapper;
 import io.mango.i18n.core.service.ISysI18nService;
-import io.mango.infra.context.starter.TtlExecutorDecorator;
+import io.mango.infra.context.support.TtlExecutorDecorator;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;

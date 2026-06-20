@@ -1,0 +1,15 @@
+server:
+  port: ${MANGO_ORG_APP_PORT:18613}
+
+spring:
+  application:
+    name: mango-org-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-identity:
+          service-name: mango-identity-capability-app
+        mango-resource:
+          service-name: mango-resource-capability-app
