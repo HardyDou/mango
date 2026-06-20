@@ -56,7 +56,7 @@ function mapPackedMangoTarballs(frontendRoot) {
     }
     const tarballPath = join(packageStore, file);
     const packageJson = readPackedPackageJson(tarballPath);
-    if (packageJson.name?.startsWith('@mango/') && packageJson.name !== '@mango/cli') {
+    if (packageJson.name?.startsWith('@mango/')) {
       mappings.set(packageJson.name, `file:${relative(frontendRoot, tarballPath)}`);
     }
   }
@@ -110,6 +110,7 @@ try {
 
   console.log('Packing Mango frontend packages for consumer typecheck');
   run('pnpm', ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', 'pack', '--pack-destination', packageStore]);
+  run('pnpm', ['--filter', '@mango/cli', 'pack', '--pack-destination', packageStore]);
 
   console.log('Generating temporary Mango business frontend consumer');
   run(process.execPath, [
