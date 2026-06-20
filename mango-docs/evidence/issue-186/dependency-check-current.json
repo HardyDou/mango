@@ -1,0 +1,18 @@
+{
+  "passed" : true,
+  "gate" : "all",
+  "gateStatus" : "PASS",
+  "staticFailurePolicy" : "block",
+  "totalIssueCount" : 0,
+  "newIssueCount" : 0,
+  "baselineIssueCount" : 0,
+  "toolFailureCount" : 0,
+  "changedFiles" : [ ],
+  "gateMessages" : [ ],
+  "issues" : [ ],
+  "newIssues" : [ ],
+  "baselineIssues" : [ ],
+  "toolFailures" : [ ],
+  "issuesBySource" : { },
+  "issuesByRule" : { }
+}
