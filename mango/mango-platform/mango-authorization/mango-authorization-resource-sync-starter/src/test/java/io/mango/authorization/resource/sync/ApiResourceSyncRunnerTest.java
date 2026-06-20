@@ -36,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
         "spring.application.name=resource-sync-test",
         "mango.persistence.flyway.enabled=false",
         "mango.authorization.resource-sync.module-name=mango-resource-sync-test",
+        "mango.authorization.resource-sync.legacy-writer-enabled=true",
+        "mango.authorization.resource-sync.mode=write",
         "mango.authorization.resource-sync.include-packages=io.mango.authorization.resource.sync",
         "mango.authorization.resource-sync.exclude-paths=/error",
         "mango.authorization.resource-sync.default-access-mode=LOGIN",

@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * @author hardy
  */
 @AutoConfiguration
-@ConditionalOnProperty(name = "mango.authorization.resource-sync.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "mango.authorization.resource-sync.legacy-writer-enabled", havingValue = "true")
 @ConditionalOnClass(name = "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping")
 @EnableConfigurationProperties(ApiResourceSyncProperties.class)
 public class ApiResourceMvcSyncAutoConfiguration {

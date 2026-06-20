@@ -16,12 +16,12 @@ public class AppModuleResourceManifestSyncProperties {
     /**
      * 是否启用资源清单同步。
      */
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     /**
      * 同步模式：write 写入授权服务，read 只解析并输出日志。
      */
-    private String mode = "write";
+    private String mode = "read";
 
     /**
      * classpath 资源位置。
