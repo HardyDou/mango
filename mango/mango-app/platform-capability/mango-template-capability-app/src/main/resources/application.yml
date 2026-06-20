@@ -4,3 +4,14 @@ server:
 spring:
   application:
     name: mango-template-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-domain:
+          service-name: mango-domain-capability-app
+        mango-file:
+          service-name: mango-file-capability-app
+        mango-resource:
+          service-name: mango-resource-capability-app

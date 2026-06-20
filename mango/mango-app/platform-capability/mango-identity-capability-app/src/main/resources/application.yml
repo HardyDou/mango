@@ -4,3 +4,10 @@ server:
 spring:
   application:
     name: mango-identity-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-authorization:
+          service-name: mango-authorization-capability-app

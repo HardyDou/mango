@@ -4,3 +4,16 @@ server:
 spring:
   application:
     name: mango-auth-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-captcha:
+          service-name: mango-captcha-capability-app
+        mango-identity:
+          service-name: mango-identity-capability-app
+        mango-notice:
+          service-name: mango-notice-capability-app
+        mango-resource:
+          service-name: mango-resource-capability-app

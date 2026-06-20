@@ -4,3 +4,14 @@ server:
 spring:
   application:
     name: mango-notice-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-identity:
+          service-name: mango-identity-capability-app
+        mango-org:
+          service-name: mango-org-capability-app
+        mango-resource:
+          service-name: mango-resource-capability-app

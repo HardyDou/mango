@@ -6,6 +6,27 @@ spring:
     name: mango-resource-capability-app
 
 mango:
+  module:
+    module-service:
+      modules:
+        mango-authorization:
+          service-name: mango-authorization-capability-app
+        mango-domain:
+          service-name: mango-domain-capability-app
+        mango-file:
+          service-name: mango-file-capability-app
+        mango-job:
+          service-name: mango-job-capability-app
+        mango-notice:
+          service-name: mango-notice-capability-app
+        mango-numgen:
+          service-name: mango-numgen-capability-app
+        mango-system:
+          service-name: mango-system-capability-app
+        mango-template:
+          service-name: mango-template-capability-app
+        mango-workflow:
+          service-name: mango-workflow-capability-app
   kv:
     store:
       type: jdbc

@@ -6,6 +6,13 @@ spring:
     name: mango-workflow-capability-app
 
 mango:
+  module:
+    module-service:
+      modules:
+        mango-domain:
+          service-name: mango-domain-capability-app
+        mango-resource:
+          service-name: mango-resource-capability-app
   workflow:
     samples:
       enabled: false

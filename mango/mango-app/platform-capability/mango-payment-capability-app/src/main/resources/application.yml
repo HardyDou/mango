@@ -4,3 +4,14 @@ server:
 spring:
   application:
     name: mango-payment-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-numgen:
+          service-name: mango-numgen-capability-app
+        mango-resource:
+          service-name: mango-resource-capability-app
+        mango-workflow:
+          service-name: mango-workflow-capability-app

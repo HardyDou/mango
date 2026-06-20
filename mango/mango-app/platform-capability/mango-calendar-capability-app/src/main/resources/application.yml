@@ -4,3 +4,10 @@ server:
 spring:
   application:
     name: mango-calendar-capability-app
+
+mango:
+  module:
+    module-service:
+      modules:
+        mango-resource:
+          service-name: mango-resource-capability-app

@@ -22,6 +22,10 @@
             <groupId>io.mango.platform.resource</groupId>
             <artifactId>mango-resource-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango.platform.resource</groupId>
+            <artifactId>mango-resource-starter-remote</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
