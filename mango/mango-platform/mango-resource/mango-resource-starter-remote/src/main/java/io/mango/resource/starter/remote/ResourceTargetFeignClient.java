@@ -29,7 +29,7 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
      * @param command 目标执行命令。
      * @return 同步结果。
      */
-    @PostMapping("/_resource/targets/upsert-batch")
+    @PostMapping("/upsert-batch")
     R<Map<String, ResourceSyncResult>> upsertBatch(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 
     @Override
@@ -43,7 +43,7 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
      * @param command 目标执行命令。
      * @return 同步结果。
      */
-    @PostMapping("/_resource/targets/disable")
+    @PostMapping("/disable")
     R<ResourceSyncResult> disable(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 
     @Override
@@ -57,6 +57,6 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
      * @param command 目标执行命令。
      * @return 同步结果。
      */
-    @PostMapping("/_resource/targets/delete")
+    @PostMapping("/delete")
     R<ResourceSyncResult> delete(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 }

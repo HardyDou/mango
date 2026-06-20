@@ -7,6 +7,7 @@ import io.mango.resource.api.command.ExecuteResourceTargetCommand;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceSyncResult;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.lang.reflect.Method;
@@ -23,12 +24,14 @@ class RemoteResourceTargetDispatcherTest {
 
     @Test
     void targetFeignClient_uriOverloadsUseReverseResourceTargetPath() throws Exception {
+        assertThat(ResourceTargetFeignClient.class.getAnnotation(FeignClient.class).path())
+                .isEqualTo("/_resource/targets");
         assertThat(postMapping("upsertBatch").value())
-                .containsExactly("/_resource/targets/upsert-batch");
+                .containsExactly("/upsert-batch");
         assertThat(postMapping("disable").value())
-                .containsExactly("/_resource/targets/disable");
+                .containsExactly("/disable");
         assertThat(postMapping("delete").value())
-                .containsExactly("/_resource/targets/delete");
+                .containsExactly("/delete");
     }
 
     @Test
