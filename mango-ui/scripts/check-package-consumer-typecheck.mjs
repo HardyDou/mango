@@ -105,6 +105,9 @@ try {
   console.log('Building Mango frontend packages before consumer typecheck');
   run('pnpm', ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', '--if-present', 'run', 'build']);
 
+  console.log('Checking Mango package exports before packing');
+  run('pnpm', ['package-exports:check']);
+
   console.log('Packing Mango frontend packages for consumer typecheck');
   run('pnpm', ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', 'pack', '--pack-destination', packageStore]);
 

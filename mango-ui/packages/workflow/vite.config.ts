@@ -20,6 +20,7 @@ export default defineConfig({
         '@mango/common',
         '@mango/common/utils/request',
         '@mango/file',
+        '@mango/system',
         'element-plus',
         'form-create-designer',
         'vue',

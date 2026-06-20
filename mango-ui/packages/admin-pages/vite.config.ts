@@ -11,12 +11,22 @@ const externalPackages = [
 export default defineConfig({
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        core: 'src/core.ts',
+        defaults: 'src/defaults.ts',
+        features: 'src/features.ts',
+        notice: 'src/notice.ts',
+        'dev-pages': 'src/dev-pages.ts',
+        'dev-component-pages': 'src/devComponentPages.ts',
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
     },
     rollupOptions: {
       external: externalPackages,
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
   },
 });

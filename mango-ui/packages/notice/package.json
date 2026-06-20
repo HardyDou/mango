@@ -3,39 +3,45 @@
   "version": "1.0.11",
   "private": false,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./admin": {
-      "types": "./src/admin.ts",
+      "types": "./dist/admin.d.ts",
       "import": "./dist/admin.js"
     },
     "./admin-pages": {
-      "types": "./src/admin-pages.ts",
+      "types": "./dist/admin-pages.d.ts",
       "import": "./dist/admin-pages.js"
     },
     "./admin-shell": {
-      "types": "./src/admin-shell.ts",
+      "types": "./dist/admin-shell.d.ts",
       "import": "./dist/admin-shell.js"
     },
     "./client": {
-      "types": "./src/client.ts",
+      "types": "./dist/client.d.ts",
       "import": "./dist/client.js"
     },
     "./realtime": {
-      "types": "./src/realtime.ts",
+      "types": "./dist/realtime.d.ts",
       "import": "./dist/realtime.js"
     },
-    "./api": "./src/api/notice.ts",
-    "./types": "./src/types/notice.ts",
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs"
   },
   "files": [
     "dist",
@@ -61,5 +67,6 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }

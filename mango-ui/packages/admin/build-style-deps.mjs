@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 const packages = [
   '@mango/admin-pages',
   '@mango/admin-shell',
+  '@mango/app-runtime',
   '@mango/auth',
   '@mango/common',
   '@mango/grid-layout',

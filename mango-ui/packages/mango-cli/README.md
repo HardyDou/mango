@@ -70,6 +70,8 @@ mango plan
 mango start
 ```
 
+生成项目的 `scripts/dev-workspace.sh` 优先委托全局 `mango`；未安装全局 CLI 时，脚本会进入 `frontend` 并使用项目依赖中的 `pnpm exec mango`。因此业务项目首次拉取后可先执行 `cd frontend && pnpm install`，再回到项目根目录使用 `scripts/dev-workspace.sh validate|plan|start`。
+
 生成 custom 项目：
 
 ```bash

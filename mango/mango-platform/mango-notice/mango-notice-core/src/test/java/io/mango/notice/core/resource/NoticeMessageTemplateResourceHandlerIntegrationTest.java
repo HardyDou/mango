@@ -2,8 +2,6 @@ package io.mango.notice.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
-import io.mango.notice.core.mapper.NoticeBusinessConfigVersionMapper;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
@@ -321,11 +319,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
 
     @Configuration
     @Import(NoticeMessageTemplateResourceHandler.class)
-    @MapperScan(basePackageClasses = {
-            NoticeBusinessTypeMapper.class,
-            NoticeBusinessConfigVersionMapper.class,
-            NoticeBusinessChannelTemplateMapper.class
-    })
+    @MapperScan(basePackageClasses = NoticeBusinessTypeMapper.class)
     static class TestConfig {
     }
 }

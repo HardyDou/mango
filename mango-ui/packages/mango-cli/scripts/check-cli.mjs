@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
+const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-cli-'));
 const fullProjectName = 'mango-full-acceptance';
@@ -84,9 +85,7 @@ try {
   }
 
   const frontendPackage = JSON.parse(readFileSync(join(projectRoot, 'frontend/package.json'), 'utf8'));
-  if (frontendPackage.devDependencies['@mango/cli']) {
-    throw new Error('business frontend must not install @mango/cli as a project dependency; use global mango CLI');
-  }
+  assertEqual(frontendPackage.devDependencies['@mango/cli'], cliPackage.version, '@mango/cli');
   for (const dependency of ['@mango/admin', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice', '@mango/payment']) {
     if (!frontendPackage.dependencies[dependency]) {
       throw new Error(`frontend package missing dependency: ${dependency}`);
@@ -173,6 +172,8 @@ try {
   if (!devWorkspaceScript.includes('The actual runner lives in the mango CLI')
     || !devWorkspaceScript.includes('run_mango "${command}" "$@"')
     || !devWorkspaceScript.includes('command -v mango')
+    || !devWorkspaceScript.includes('exec pnpm exec mango "$@"')
+    || !devWorkspaceScript.includes('cd frontend && pnpm install')
     || !devWorkspaceScript.includes('npm install -g @mango/cli@')
     || devWorkspaceScript.includes('frontend/node_modules/.bin/mango')
     || devWorkspaceScript.includes('npx --yes')
@@ -181,7 +182,7 @@ try {
     || devWorkspaceScript.includes('diagnose_backend_failure')) {
     throw new Error('generated dev-workspace script must be a thin mango CLI shim');
   }
-  assertGeneratedDevWorkspaceRequiresGlobalCli(projectRoot);
+  assertGeneratedDevWorkspaceUsesCliFallback(projectRoot);
   assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
   assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
   if (!backendDevScript.includes('mango backend')
@@ -623,14 +624,14 @@ function assertCommandOk(args, cwd, label) {
   return result;
 }
 
-function assertGeneratedDevWorkspaceRequiresGlobalCli(projectRoot) {
-  const fakeBinDir = join(projectRoot, '.runtime/fake-bin');
-  mkdirSync(fakeBinDir, { recursive: true });
-  const fakeMangoPath = join(fakeBinDir, 'mango');
+function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
+  const fakeGlobalBinDir = join(projectRoot, '.runtime/fake-global-bin');
+  mkdirSync(fakeGlobalBinDir, { recursive: true });
+  const fakeMangoPath = join(fakeGlobalBinDir, 'mango');
   writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
   chmodExecutable(fakeMangoPath);
   const globalResult = spawnSync('env', [
-    `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    `PATH=${fakeGlobalBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
     'scripts/dev-workspace.sh',
     'validate',
   ], {
@@ -641,20 +642,41 @@ function assertGeneratedDevWorkspaceRequiresGlobalCli(projectRoot) {
     throw new Error(`generated dev-workspace should use global mango CLI:\n${globalResult.stdout}\n${globalResult.stderr}`);
   }
 
+  const fakeLocalBinDir = join(projectRoot, '.runtime/fake-local-bin');
+  mkdirSync(fakeLocalBinDir, { recursive: true });
+  const fakePnpmPath = join(fakeLocalBinDir, 'pnpm');
+  writeFileSync(fakePnpmPath, '#!/usr/bin/env sh\necho local-pnpm-runner \"cwd=$(pwd)\" \"$@\"\n');
+  chmodExecutable(fakePnpmPath);
   const result = spawnSync('env', [
-    'PATH=/usr/bin:/bin:/usr/sbin:/sbin',
+    `PATH=${fakeLocalBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
     'scripts/dev-workspace.sh',
     'validate',
   ], {
     cwd: projectRoot,
     encoding: 'utf8',
   });
-  const output = `${result.stdout}\n${result.stderr}`;
-  if (result.status === 0
-    || !output.includes('global mango CLI not found')
+  if (result.status !== 0
+    || !result.stdout.includes('local-pnpm-runner cwd=')
+    || !result.stdout.includes('/frontend exec mango validate')) {
+    throw new Error(`generated dev-workspace should fallback to project-local pnpm exec mango:\n${result.stdout}\n${result.stderr}`);
+  }
+
+  rmSync(fakePnpmPath, { force: true });
+  const missingResult = spawnSync('env', [
+    `PATH=${fakeLocalBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    'scripts/dev-workspace.sh',
+    'validate',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  const output = `${missingResult.stdout}\n${missingResult.stderr}`;
+  if (missingResult.status === 0
+    || !output.includes('mango CLI not found globally or in project frontend dependencies')
+    || !output.includes('cd frontend && pnpm install')
     || !output.includes('npm install -g @mango/cli@')
     || !output.includes('--registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/')) {
-    throw new Error(`generated dev-workspace should fail clearly without global mango:\n${output}`);
+    throw new Error(`generated dev-workspace should fail clearly without global or local mango:\n${output}`);
   }
 }
 
