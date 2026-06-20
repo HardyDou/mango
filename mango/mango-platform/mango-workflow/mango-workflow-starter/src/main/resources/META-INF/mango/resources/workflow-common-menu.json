@@ -81,13 +81,15 @@
                                 "permissionCode": "workflow:definition:list",
                                 "permissionName": "查询可发起流程",
                                 "sort": 1,
-                                "remark": "发起流程页面查询已发布流程定义权限"
+                                "remark": "发起流程页面查询已发布流程定义权限",
+                                "menuCode": "workflow:start-process:definition-list"
                               },
                               {
                                 "permissionCode": "workflow:process:start",
                                 "permissionName": "发起流程",
                                 "sort": 2,
-                                "remark": "提交流程发起请求权限"
+                                "remark": "提交流程发起请求权限",
+                                "menuCode": "workflow:start-process:process-start"
                               }
                             ]
                           },
@@ -108,7 +110,8 @@
                                 "permissionCode": "workflow:task:list",
                                 "permissionName": "查询待办任务",
                                 "sort": 1,
-                                "remark": "待办任务列表查询权限"
+                                "remark": "待办任务列表查询权限",
+                                "menuCode": "workflow:task:todo:task-list"
                               },
                               {
                                 "permissionCode": "workflow:task:detail",
@@ -178,7 +181,8 @@
                                 "permissionCode": "workflow:process:detail",
                                 "permissionName": "查看流程详情",
                                 "sort": 1,
-                                "remark": "我的申请流程详情与历史查询权限"
+                                "remark": "我的申请流程详情与历史查询权限",
+                                "menuCode": "workflow:task:initiated:process-detail"
                               }
                             ]
                           },
@@ -200,7 +204,8 @@
                                 "permissionCode": "workflow:process:detail",
                                 "permissionName": "查看流程详情",
                                 "sort": 1,
-                                "remark": "我的已办流程详情与历史查询权限"
+                                "remark": "我的已办流程详情与历史查询权限",
+                                "menuCode": "workflow:task:done:process-detail"
                               }
                             ]
                           },
@@ -348,7 +353,8 @@
                                 "permissionCode": "workflow:definition:list",
                                 "permissionName": "查询流程定义",
                                 "sort": 0,
-                                "remark": "流程分类和流程定义列表查询权限"
+                                "remark": "流程分类和流程定义列表查询权限",
+                                "menuCode": "workflow:definition:definition-list"
                               },
                               {
                                 "permissionCode": "workflow:definition:query",
@@ -414,13 +420,15 @@
                             "permissionCode": "workflow:definition:list",
                             "permissionName": "查询示例流程定义",
                             "sort": 1,
-                            "remark": "业务示例页面查询可发起流程定义权限"
+                            "remark": "业务示例页面查询可发起流程定义权限",
+                            "menuCode": "workflow:business-form:definition-list"
                           },
                           {
                             "permissionCode": "workflow:process:start",
                             "permissionName": "发起示例流程",
                             "sort": 2,
-                            "remark": "业务示例页面提交流程发起请求权限"
+                            "remark": "业务示例页面提交流程发起请求权限",
+                            "menuCode": "workflow:business-form:process-start"
                           },
                           {
                             "permissionCode": "workflow:business-apply:create",

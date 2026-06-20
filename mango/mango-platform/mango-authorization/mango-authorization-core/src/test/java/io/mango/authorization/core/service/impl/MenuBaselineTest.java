@@ -43,13 +43,9 @@ class MenuBaselineTest {
     }
 
     @Test
-    @DisplayName("current baseline should explicitly record workflow orphan menus")
-    void currentBaseline_orphanMenus_recordsKnownWorkflowDefect() throws IOException {
-        List<String> rows = readDataRows("orphan-menus.tsv");
-
-        assertEquals(2, rows.size());
-        assertTrue(rows.stream().anyMatch(row -> row.startsWith("260401\t2604\t流程模板\tworkflow:template")));
-        assertTrue(rows.stream().anyMatch(row -> row.startsWith("260402\t2604\t流程定义\tworkflow:definition")));
+    @DisplayName("current baseline should not contain orphan menus after resource manifest migration")
+    void currentBaseline_orphanMenus_isEmptyAfterResourceManifestMigration() throws IOException {
+        assertEquals(List.of(), readDataRows("orphan-menus.tsv"));
     }
 
     @Test
@@ -113,6 +109,27 @@ class MenuBaselineTest {
 
         assertEquals(List.of(), missingParents);
         assertEquals(List.of(), findCycles(dependencyGraph));
+    }
+
+    @Test
+    @DisplayName("resource menu permission items should not reuse page menu codes")
+    void resourceManifests_permissionItems_doNotReusePageMenuCodes() throws IOException {
+        List<ResourceMenuEntry> menus = readDeclaredResourceMenus();
+        Set<String> pageMenuCodes = new HashSet<>();
+        Set<String> permissionMenuCodes = new HashSet<>();
+        for (ResourceMenuEntry menu : menus) {
+            if (menu.permissionItem()) {
+                permissionMenuCodes.add(menu.menuCode());
+            } else {
+                pageMenuCodes.add(menu.menuCode());
+            }
+        }
+        List<String> reusedCodes = permissionMenuCodes.stream()
+                .filter(pageMenuCodes::contains)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(), reusedCodes);
     }
 
     private static void assertDataRows(String filename, int expectedRows) throws IOException {
@@ -248,6 +265,36 @@ class MenuBaselineTest {
                     menuCode,
                     parentCode.isBlank() ? inheritedParentCode : parentCode));
             collectDeclaredMenus(menuNode.path("children"), menus, moduleCode, resourceBizKey, sourcePath, menuCode);
+            collectDeclaredPermissionMenus(menuNode.path("permissionItems"), menus, moduleCode, resourceBizKey,
+                    sourcePath, menuCode);
+        }
+    }
+
+    private static void collectDeclaredPermissionMenus(
+            JsonNode permissionsNode,
+            List<ResourceMenuEntry> menus,
+            String moduleCode,
+            String resourceBizKey,
+            String sourcePath,
+            String parentCode) {
+        if (!permissionsNode.isArray()) {
+            return;
+        }
+        for (JsonNode permissionNode : permissionsNode) {
+            String menuCode = permissionNode.path("menuCode").asText();
+            if (menuCode.isBlank()) {
+                menuCode = permissionNode.path("permissionCode").asText();
+            }
+            if (menuCode.isBlank()) {
+                continue;
+            }
+            menus.add(new ResourceMenuEntry(
+                    moduleCode,
+                    resourceBizKey,
+                    sourcePath,
+                    menuCode,
+                    parentCode,
+                    true));
         }
     }
 
@@ -299,6 +346,11 @@ class MenuBaselineTest {
             String resourceBizKey,
             String sourcePath,
             String menuCode,
-            String parentCode) {
+            String parentCode,
+            boolean permissionItem) {
+
+        ResourceMenuEntry(String moduleCode, String resourceBizKey, String sourcePath, String menuCode, String parentCode) {
+            this(moduleCode, resourceBizKey, sourcePath, menuCode, parentCode, false);
+        }
     }
 }
