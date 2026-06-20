@@ -1,19 +1,19 @@
 # Mango Job 本地调度稳定性证据
 
-- jobCode: mango_job_stability_chromium_1780843542233
+- jobCode: mango_job_stability_chromium_1781966688839
 - jobName: 稳定性 每分钟任务 chromium
-- jobId: 2063633503600001025
+- jobId: 2068344323936432129
 - schedule: 0 */1 * * * ?
-- observeStartedAt: 2026-06-07T14:45:42.233Z
-- observeEndedAt: 2026-06-07T14:48:43.814Z
-- observeMinutes: 3
-- expectedMinimumCompletedInstances: 2
-- actualCompletedInstances: 3
-- totalInstances: 3
+- observeStartedAt: 2026-06-20T14:44:48.839Z
+- observeEndedAt: 2026-06-20T14:50:54.801Z
+- observeMinutes: 6
+- expectedMinimumCompletedInstances: 4
+- actualCompletedInstances: 6
+- totalInstances: 6
 - duplicateScheduledFireTimes: 0
 - nonSuccessInstances: 0
-- sampleInstanceId: 2063634086956384258
-- sampleWorkerAddress: in-memory://MacBookPro.local/embedded-29094@MacBookPro.local
+- sampleInstanceId: 2068345642499780610
+- sampleWorkerAddress: embedded://127.0.0.1:18820
 - sampleLogContainsSystemOut: true
 - sampleLogContainsLogger: true
 
@@ -21,23 +21,38 @@
 
 | time | completed | total |
 |---|---:|---:|
-| 2026-06-07T14:45:42.647Z | 0 | 0 |
-| 2026-06-07T14:45:57.725Z | 0 | 0 |
-| 2026-06-07T14:46:12.807Z | 1 | 1 |
-| 2026-06-07T14:46:27.889Z | 1 | 1 |
-| 2026-06-07T14:46:42.970Z | 1 | 1 |
-| 2026-06-07T14:46:58.052Z | 1 | 1 |
-| 2026-06-07T14:47:13.130Z | 2 | 2 |
-| 2026-06-07T14:47:28.229Z | 2 | 2 |
-| 2026-06-07T14:47:43.312Z | 2 | 2 |
-| 2026-06-07T14:47:58.397Z | 2 | 2 |
-| 2026-06-07T14:48:13.481Z | 3 | 3 |
-| 2026-06-07T14:48:28.567Z | 3 | 3 |
+| 2026-06-20T14:44:50.000Z | 0 | 0 |
+| 2026-06-20T14:45:05.160Z | 1 | 1 |
+| 2026-06-20T14:45:20.326Z | 1 | 1 |
+| 2026-06-20T14:45:35.492Z | 1 | 1 |
+| 2026-06-20T14:45:50.719Z | 1 | 1 |
+| 2026-06-20T14:46:06.077Z | 2 | 2 |
+| 2026-06-20T14:46:21.248Z | 2 | 2 |
+| 2026-06-20T14:46:36.412Z | 2 | 2 |
+| 2026-06-20T14:46:51.596Z | 2 | 2 |
+| 2026-06-20T14:47:06.766Z | 3 | 3 |
+| 2026-06-20T14:47:21.930Z | 3 | 3 |
+| 2026-06-20T14:47:37.106Z | 3 | 3 |
+| 2026-06-20T14:47:52.261Z | 3 | 3 |
+| 2026-06-20T14:48:07.459Z | 4 | 4 |
+| 2026-06-20T14:48:22.644Z | 4 | 4 |
+| 2026-06-20T14:48:37.841Z | 4 | 4 |
+| 2026-06-20T14:48:53.095Z | 4 | 4 |
+| 2026-06-20T14:49:08.260Z | 5 | 5 |
+| 2026-06-20T14:49:23.433Z | 5 | 5 |
+| 2026-06-20T14:49:38.608Z | 5 | 5 |
+| 2026-06-20T14:49:53.767Z | 5 | 5 |
+| 2026-06-20T14:50:08.933Z | 6 | 6 |
+| 2026-06-20T14:50:24.107Z | 6 | 6 |
+| 2026-06-20T14:50:39.285Z | 6 | 6 |
 
 ## 完成实例窗口
 
 | instanceId | scheduledFireTime | triggerTime | status | workerAddress |
 |---|---|---|---|---|
-| 2063633581475643394 | 2026-06-07 22:46:00 | 2026-06-07 22:46:01 | SUCCESS | in-memory://MacBookPro.local/embedded-29094@MacBookPro.local |
-| 2063633834220208130 | 2026-06-07 22:47:00 | 2026-06-07 22:47:01 | SUCCESS | in-memory://MacBookPro.local/embedded-29094@MacBookPro.local |
-| 2063634086956384258 | 2026-06-07 22:48:00 | 2026-06-07 22:48:01 | SUCCESS | in-memory://MacBookPro.local/embedded-29094@MacBookPro.local |
+| 2068344373844455426 | 2026-06-20 22:45:00 | 2026-06-20 22:45:01 | SUCCESS | embedded://127.0.0.1:18820 |
+| 2068344628048637953 | 2026-06-20 22:46:00 | 2026-06-20 22:46:02 | SUCCESS | embedded://127.0.0.1:18820 |
+| 2068344881141329921 | 2026-06-20 22:47:00 | 2026-06-20 22:47:02 | SUCCESS | embedded://127.0.0.1:18820 |
+| 2068345134162718722 | 2026-06-20 22:48:00 | 2026-06-20 22:48:03 | SUCCESS | embedded://127.0.0.1:18820 |
+| 2068345389620998145 | 2026-06-20 22:49:00 | 2026-06-20 22:49:04 | SUCCESS | embedded://127.0.0.1:18820 |
+| 2068345642499780610 | 2026-06-20 22:50:00 | 2026-06-20 22:50:04 | SUCCESS | embedded://127.0.0.1:18820 |
