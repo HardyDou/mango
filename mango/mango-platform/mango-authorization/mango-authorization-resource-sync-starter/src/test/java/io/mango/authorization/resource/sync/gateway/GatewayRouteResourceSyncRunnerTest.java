@@ -96,6 +96,19 @@ class GatewayRouteResourceSyncRunnerTest {
     }
 
     @Test
+    @DisplayName("auto configuration should respect gateway enabled flag")
+    void autoConfiguration_shouldRespectGatewayEnabledFlag() {
+        contextRunner
+                .withPropertyValues("mango.authorization.resource-sync.gateway.enabled=false")
+                .withBean(ApiResourceApi.class, TestApi::new)
+                .run(context -> {
+                    assertThat(context).doesNotHaveBean(GatewayRouteResourceDiscoverer.class);
+                    assertThat(context).doesNotHaveBean(GatewayRouteResourceProvider.class);
+                    assertThat(context).doesNotHaveBean(GatewayRouteResourceSyncRunner.class);
+                });
+    }
+
+    @Test
     @DisplayName("legacy gateway writer should only be created when explicitly enabled")
     void legacyGatewayWriter_shouldOnlyBeCreatedWhenExplicitlyEnabled() {
         contextRunner
