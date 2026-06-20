@@ -63,6 +63,10 @@ const topLevelReadmes = [
 ];
 
 const ignoredDirs = new Set(['node_modules', 'target', 'dist', 'templates']);
+const ignoredReadmePathSegments = [
+  '/src/test/',
+  '/src/testFixtures/'
+];
 const placeholderPattern = /\bTODO\b|\bTBD\b|待补充|待完善/;
 const backtickedCommandPattern = /^`(?:pnpm|mvn|node|npm|npx|git|gh)\b.*`$/gm;
 const packageScriptPattern = /^pnpm\s+-F\s+(@mango\/[^\s]+)\s+([a-z][\w:-]*)\b/gm;
@@ -78,7 +82,10 @@ function walk(dir, results = []) {
     if (entry.isDirectory()) {
       walk(fullPath, results);
     } else if (entry.name === 'README.md') {
-      results.push(path.relative(root, fullPath));
+      const relativePath = path.relative(root, fullPath).split(path.sep).join('/');
+      if (!ignoredReadmePathSegments.some((segment) => relativePath.includes(segment))) {
+        results.push(relativePath);
+      }
     }
   }
   return results;
@@ -547,7 +554,7 @@ text
     { name: 'empty quick start fails', text: invalid, valid: false },
     { name: 'placeholder fails', text: `${valid}\nTODO`, valid: false },
     { name: 'backticked command fails', text: valid.replace('migration 菜单 权限 初始化 接口 页面', '`node mango-pmo/tools/audit-module-readmes.mjs`'), valid: false },
-    { name: 'missing package script fails', text: valid.replace('migration 菜单 权限 初始化 接口 页面', 'pnpm -F @mango/api-schema build'), valid: false },
+    { name: 'missing package script fails', text: valid.replace('migration 菜单 权限 初始化 接口 页面', 'pnpm -F @mango/api-schema missing-script'), valid: false },
     { name: 'missing related link fails', text: valid.replace('mango-pmo/rules/08-capability-docs.md', 'README.md'), valid: false },
     { name: 'broken link fails', text: valid.replace('mango-pmo/rules/08-capability-docs.md', 'missing.md'), valid: false }
   ];
