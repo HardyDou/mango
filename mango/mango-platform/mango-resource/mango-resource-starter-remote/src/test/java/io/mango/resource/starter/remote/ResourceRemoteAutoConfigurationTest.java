@@ -14,7 +14,10 @@ import io.mango.resource.api.model.ResourceSyncResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +29,10 @@ class ResourceRemoteAutoConfigurationTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
                     org.springframework.cloud.openfeign.FeignAutoConfiguration.class,
+                    org.springframework.cloud.openfeign.loadbalancer.FeignLoadBalancerAutoConfiguration.class,
+                    org.springframework.cloud.loadbalancer.config.LoadBalancerAutoConfiguration.class,
+                    org.springframework.cloud.loadbalancer.config.BlockingLoadBalancerClientAutoConfiguration.class,
+                    org.springframework.cloud.loadbalancer.config.LoadBalancerCacheAutoConfiguration.class,
                     FeignAutoConfiguration.class,
                     ResourceRemoteAutoConfiguration.class,
                     ResourceRegistryClientAutoConfiguration.class,
@@ -54,6 +61,27 @@ class ResourceRemoteAutoConfigurationTest {
                     assertThat(context).hasSingleBean(ResourceTargetDispatcher.class);
                     assertThat(context).doesNotHaveBean(ResourceRegistryFeignClient.class);
                 });
+    }
+
+    @Test
+    void registryFeignClient_usesFullResourceRegistryPathOnMethod() throws Exception {
+        assertThat(ResourceRegistryFeignClient.class.getAnnotation(FeignClient.class).path()).isEmpty();
+        Method method = ResourceRegistryFeignClient.class.getMethod(
+                "registerDeclarations", RegisterResourceDeclarationsCommand.class);
+        assertThat(method.getAnnotation(PostMapping.class).value())
+                .containsExactly("/resource/declarations/register");
+    }
+
+    @Test
+    void targetFeignClient_usesLoadBalancerAndFullReverseTargetPathOnMethod() throws Exception {
+        FeignClient feignClient = ResourceTargetFeignClient.class.getAnnotation(FeignClient.class);
+        assertThat(feignClient.path()).isEmpty();
+        assertThat(feignClient.url()).isEmpty();
+
+        Method method = ResourceTargetFeignClient.class.getMethod(
+                "upsertBatch", URI.class, ExecuteResourceTargetCommand.class);
+        assertThat(method.getAnnotation(PostMapping.class).value())
+                .containsExactly("/_resource/targets/upsert-batch");
     }
 
     private static class TestResourceHandler implements ResourceHandler {

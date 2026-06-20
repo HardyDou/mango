@@ -5,8 +5,11 @@ import feign.RequestTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
@@ -28,7 +31,9 @@ import java.util.stream.Collectors;
  * @author Mango
  */
 @Component
-public class InternalCallFeignInterceptor implements RequestInterceptor {
+public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered {
+
+    public static final int ORDER = ModuleTargetFeignInterceptor.ORDER + 100;
 
     private static final Logger log = LoggerFactory.getLogger(InternalCallFeignInterceptor.class);
 
@@ -64,7 +69,7 @@ public class InternalCallFeignInterceptor implements RequestInterceptor {
         // Build query string from queries map
         String queryString = buildQueryString(template.queries());
         String method = template.method();
-        String path = template.url();
+        String path = canonicalPath(template.url());
 
         // Build signature payload: timestamp:nonce:method:path:query
         String payload = timestamp + ":" + nonce + ":" + method + ":" + path + ":" + queryString;
@@ -83,6 +88,11 @@ public class InternalCallFeignInterceptor implements RequestInterceptor {
                 timestamp, nonce, signature);
     }
 
+    @Override
+    public int getOrder() {
+        return ORDER;
+    }
+
     /**
      * Build query string from Feign's queries map.
      * Results are sorted alphabetically for consistent signature calculation.
@@ -96,6 +106,28 @@ public class InternalCallFeignInterceptor implements RequestInterceptor {
                 .flatMap(e -> e.getValue().stream()
                         .map(v -> e.getKey() + "=" + v))
                 .collect(Collectors.joining("&"));
+    }
+
+    /**
+     * Sign the request path only. Feign may expose an absolute URL after dynamic target rewriting,
+     * while the server validates against HttpServletRequest#getRequestURI().
+     */
+    private String canonicalPath(String url) {
+        if (url == null || url.isEmpty()) {
+            return "/";
+        }
+        try {
+            URI uri = new URI(url);
+            String path = uri.getRawPath();
+            if (path != null && !path.isEmpty()) {
+                return path;
+            }
+        } catch (URISyntaxException ignored) {
+            // Fallback below keeps invalid but usable path strings deterministic.
+        }
+        int queryIndex = url.indexOf('?');
+        String path = queryIndex >= 0 ? url.substring(0, queryIndex) : url;
+        return path.isEmpty() ? "/" : path;
     }
 
     /**

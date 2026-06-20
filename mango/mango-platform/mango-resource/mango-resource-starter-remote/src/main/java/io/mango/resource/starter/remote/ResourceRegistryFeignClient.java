@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 /**
  * 资源注册中心远程调用适配。
  */
-@FeignClient(name = "mango-resource", contextId = "resourceRegistryFeignClient", path = "/resource")
+@FeignClient(name = "mango-resource", contextId = "resourceRegistryFeignClient")
 public interface ResourceRegistryFeignClient extends ResourceRegistryApi {
 
     @Override
-    @PostMapping("/declarations/register")
+    @PostMapping("/resource/declarations/register")
     R<Boolean> registerDeclarations(@RequestBody RegisterResourceDeclarationsCommand command);
 }
