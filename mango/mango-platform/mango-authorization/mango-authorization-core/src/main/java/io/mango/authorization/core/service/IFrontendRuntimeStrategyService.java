@@ -15,4 +15,12 @@ public interface IFrontendRuntimeStrategyService {
     List<FrontendModuleRuntimeStrategyVO> list(String appCode, String deployProfile, Integer status);
 
     Long save(FrontendModuleRuntimeStrategyCommand command);
+
+    Boolean disable(Long strategyId);
+
+    Boolean disable(String appCode, String moduleCode, String deployProfile);
+
+    Boolean delete(Long strategyId);
+
+    Boolean delete(String appCode, String moduleCode, String deployProfile);
 }

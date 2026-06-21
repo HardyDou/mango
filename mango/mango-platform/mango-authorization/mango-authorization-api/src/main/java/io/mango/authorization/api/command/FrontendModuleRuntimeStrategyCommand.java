@@ -35,7 +35,7 @@ public class FrontendModuleRuntimeStrategyCommand implements Serializable {
     private String pageType;
 
     @NotBlank
-    @Schema(description = "前端运行单元编码，关联 frontend_app_registry.app_code")
+    @Schema(description = "前端运行单元编码，关联 authorization_frontend_app_registry.app_code")
     private String runtimeCode;
 
     @Schema(description = "状态：0-停用，1-启用")

@@ -107,8 +107,8 @@ public class PersistenceProperties {
                         "authorization_api_resource", "authorization_permission",
                         "authorization_menu", "authorization_menu_package", "authorization_menu_package_item",
                         "authorization_app", "authorization_app_login_context",
-                        "authorization_app_module", "frontend_app_registry", "frontend_menu_runtime_config",
-                        "frontend_module_runtime_strategy",
+                        "authorization_app_module", "authorization_frontend_app_registry", "frontend_menu_runtime_config",
+                        "authorization_frontend_module_runtime_strategy",
                         "identity_user", "tenant_member", "tenant_member_org"));
     }
 
@@ -145,7 +145,7 @@ public class PersistenceProperties {
                 List.of("flyway_schema_history*", "databasechangelog", "databasechangeloglock",
                         "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log",
                         "resource_*",
-                        "authorization_app_module", "frontend_app_registry", "frontend_menu_runtime_config",
-                        "frontend_module_runtime_strategy"));
+                        "authorization_app_module", "authorization_frontend_app_registry", "frontend_menu_runtime_config",
+                        "authorization_frontend_module_runtime_strategy"));
     }
 }

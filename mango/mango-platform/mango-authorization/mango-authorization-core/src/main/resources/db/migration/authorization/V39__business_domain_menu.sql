@@ -1,3 +1,6 @@
+-- REBASE_REQUIRED(issue-204): targets authorization_frontend_module_runtime_strategy after table namespace rebase.
+-- Databases that already applied the previous local migration set must be rebuilt.
+
 -- Register business domain module runtime metadata.
 -- Business domain menus are registered by mango-domain-starter AUTH_MENU resource.
 
@@ -24,7 +27,7 @@ ON DUPLICATE KEY UPDATE
   `sort` = VALUES(`sort`),
   `update_time` = CURRENT_TIMESTAMP;
 
-INSERT INTO `frontend_module_runtime_strategy`
+INSERT INTO `authorization_frontend_module_runtime_strategy`
   (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
 VALUES
   (9, 'internal-admin', 'mango-domain', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

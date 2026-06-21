@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 以授权应用 appCode 为关联键，独立保存前端运行单元配置，不改动 authorization_app 的授权边界语义。
  */
 @Data
-@TableName("frontend_app_registry")
+@TableName("authorization_frontend_app_registry")
 public class FrontendAppRegistry implements Serializable {
 
     private static final long serialVersionUID = 1L;
