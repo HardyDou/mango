@@ -319,29 +319,25 @@
                             "permissionCode": "system:area:query",
                             "permissionName": "查询行政区划",
                             "sort": 1,
-                            "remark": "行政区划详情查询权限",
-                            "packageCodes": []
+                            "remark": "行政区划详情查询权限"
                           },
                           {
                             "permissionCode": "system:area:add",
                             "permissionName": "新增行政区划",
                             "sort": 2,
-                            "remark": "行政区划新增权限",
-                            "packageCodes": []
+                            "remark": "行政区划新增权限"
                           },
                           {
                             "permissionCode": "system:area:edit",
                             "permissionName": "修改行政区划",
                             "sort": 3,
-                            "remark": "行政区划修改权限",
-                            "packageCodes": []
+                            "remark": "行政区划修改权限"
                           },
                           {
                             "permissionCode": "system:area:delete",
                             "permissionName": "删除行政区划",
                             "sort": 4,
-                            "remark": "行政区划删除权限",
-                            "packageCodes": []
+                            "remark": "行政区划删除权限"
                           }
                         ],
                         "packageCodes": [
