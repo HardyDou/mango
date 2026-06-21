@@ -1,0 +1,10 @@
+.git
+.mango
+.runtime
+logs
+**/.DS_Store
+**/node_modules
+**/.pnpm-store
+**/coverage
+mango-ui/**/dist
+mango-ui/**/.vite

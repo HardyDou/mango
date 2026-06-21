@@ -285,6 +285,19 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 
 菜单量大时优先使用 JSON，避免低信息密度配置。旧 `META-INF/mango/resource-manifest.json` 和 `resource-manifests/*.json` 只作为存量迁移对象，不得作为新增菜单标准。
 
+业务模块接入原则：
+
+| 场景 | 做法 |
+|------|------|
+| 新增管理菜单 | 在本模块 starter 的 `META-INF/mango/resources/{module}-common-menu.json` 声明 `AUTH_MENU`。 |
+| 新增按钮权限 | 在所属页面菜单的 `permissionItems` 中声明；如果按钮菜单编码和接口权限码不同，同时写 `menuCode` 和 `permissionCode`。 |
+| 加入默认套餐 | 在声明、菜单或按钮上写已有 `packageCodes`。未配置时继承父级，空数组表示不加入套餐。 |
+| 默认授权角色 | 仅在已明确确认的默认角色场景写已有 `roleCodes`。未配置时继承父级，空数组表示不授权角色。 |
+| 只新增接口权限 | 使用 `@ApiAccess` / `@PermissionAccess`，由 `API_RESOURCE` Provider 扫描，不需要写菜单资源。 |
+| 历史 manifest | 只用于迁移，不作为新增入口。 |
+
+菜单、按钮权限、菜单运行时配置、菜单套餐明细和默认角色菜单授权不再通过 Flyway DML 维护。Flyway 只保留表结构、应用入口、登录上下文、套餐主档、基础角色和成员角色绑定等基础数据。
+
 示例：
 
 ```json
@@ -383,6 +396,31 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 套餐绑定 | `packageCodes` 命中已有菜单套餐时写入 `authorization_menu_package_item` |
 | 角色授权 | `roleCodes` 命中已有角色时写入 `authorization_role_menu` |
 | 资源禁用 | `AUTH_MENU` 被禁用或从 AUTO 声明中移除时，停用模块和该模块菜单，并清理菜单运行配置、套餐绑定和角色菜单授权 |
+
+编码和继承约定：
+
+| 项 | 说明 |
+|----|------|
+| 幂等键 | `appCode + moduleCode + menuCode` |
+| `menuCode` | 同一模块内长期稳定，不和按钮 `permissionCode` 混用 |
+| `permissionCode` | 后端接口和前端按钮判断使用的真实权限码 |
+| `packageCodes` 省略 | 继承父菜单或声明级套餐 |
+| `packageCodes: []` | 明确不加入任何套餐 |
+| `roleCodes` 省略 | 继承父菜单或声明级默认角色 |
+| `roleCodes: []` | 明确不授权任何默认角色 |
+| `DEPRECATED` | 目标菜单继续可读，只更新 registry 状态 |
+| `DISABLED` | 禁用模块或菜单并清理运行配置/授权关系 |
+| `REMOVED` | 删除或按 handler 能力降级禁用 |
+
+升级验证建议：
+
+1. 用干净库启动包含 `mango-resource-starter`、`mango-resource-sync-starter` 和 `mango-authorization-starter` 的部署入口。
+2. 查询 `resource_registry`，确认 `AUTH_MENU` 声明存在且状态为 `ACTIVE`。
+3. 查询 `resource_sync_log`，确认当前批次同步成功。
+4. 查询 `authorization_menu`，确认菜单父级完整且不存在孤儿菜单。
+5. 查询 `authorization_menu_package_item` 和 `authorization_role_menu`，确认套餐和默认角色授权来自声明。
+6. 登录后访问 `/auth/info` 和 `/authorization/menus/user?fmt=tree&appCode=internal-admin`，确认权限码和菜单树可见。
+7. 用无授权租户或普通角色访问维护接口，确认返回 403。
 
 旧 manifest 字段映射仍用于历史迁移：
 

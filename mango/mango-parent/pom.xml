@@ -36,6 +36,7 @@
         <!-- Spring Boot -->
         <spring-boot.version>3.5.14</spring-boot.version>
         <spring-cloud.version>2025.0.1</spring-cloud.version>
+        <spring-cloud-alibaba.version>2023.0.3.3</spring-cloud-alibaba.version>
         <assertj.version>3.27.7</assertj.version>
         <netty.version>4.1.132.Final</netty.version>
         <tomcat.version>10.1.54</tomcat.version>
@@ -87,6 +88,18 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud Alibaba Nacos for the current Spring Boot 3.x baseline. -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
             </dependency>
 
             <!-- MyBatis-Plus -->

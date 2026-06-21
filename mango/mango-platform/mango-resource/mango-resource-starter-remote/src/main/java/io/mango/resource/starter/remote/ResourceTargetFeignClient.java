@@ -14,12 +14,11 @@ import java.util.Map;
 /**
  * 资源目标模块远程执行适配。
  */
-@FeignClient(name = "mango-resource", contextId = "resourceTargetFeignClient", path = "/_resource/targets",
-        url = "${mango.resource.registry.target-feign-url:http://127.0.0.1}")
+@FeignClient(name = "mango-resource", contextId = "resourceTargetFeignClient")
 public interface ResourceTargetFeignClient extends ResourceTargetApi {
 
     @Override
-    @PostMapping("/upsert-batch")
+    @PostMapping("/_resource/targets/upsert-batch")
     R<Map<String, ResourceSyncResult>> upsertBatch(@RequestBody ExecuteResourceTargetCommand command);
 
     /**
@@ -29,11 +28,11 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
      * @param command 目标执行命令。
      * @return 同步结果。
      */
-    @PostMapping("/upsert-batch")
+    @PostMapping("/_resource/targets/upsert-batch")
     R<Map<String, ResourceSyncResult>> upsertBatch(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 
     @Override
-    @PostMapping("/disable")
+    @PostMapping("/_resource/targets/disable")
     R<ResourceSyncResult> disable(@RequestBody ExecuteResourceTargetCommand command);
 
     /**
@@ -43,11 +42,11 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
      * @param command 目标执行命令。
      * @return 同步结果。
      */
-    @PostMapping("/disable")
+    @PostMapping("/_resource/targets/disable")
     R<ResourceSyncResult> disable(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 
     @Override
-    @PostMapping("/delete")
+    @PostMapping("/_resource/targets/delete")
     R<ResourceSyncResult> delete(@RequestBody ExecuteResourceTargetCommand command);
 
     /**
@@ -57,6 +56,6 @@ public interface ResourceTargetFeignClient extends ResourceTargetApi {
      * @param command 目标执行命令。
      * @return 同步结果。
      */
-    @PostMapping("/delete")
+    @PostMapping("/_resource/targets/delete")
     R<ResourceSyncResult> delete(URI targetUri, @RequestBody ExecuteResourceTargetCommand command);
 }

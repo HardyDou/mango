@@ -1017,9 +1017,24 @@ async function submitRender() {
   try {
     renderResult.value = renderForm.async ? await templateApi.renderAsync(payload) : await templateApi.render(payload);
     ElMessage.success(renderForm.async ? '异步渲染已提交' : '渲染完成');
+  } catch (error) {
+    renderResult.value = {
+      recordId: 0,
+      status: 'FAILED',
+      errorMessage: renderErrorMessage(error),
+    };
   } finally {
     previewLoading.value = false;
   }
+}
+
+function renderErrorMessage(error: unknown) {
+  if (error && typeof error === 'object') {
+    const responseData = (error as { response?: { data?: { msg?: unknown; message?: unknown; error?: unknown } } }).response?.data;
+    const responseMessage = responseData?.msg || responseData?.message || responseData?.error;
+    if (responseMessage) return String(responseMessage);
+  }
+  return error instanceof Error ? error.message : String(error || '预览失败');
 }
 
 function downloadRenderFile() {

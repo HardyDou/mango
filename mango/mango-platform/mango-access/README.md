@@ -70,6 +70,8 @@ Spring Cloud Gateway 接入：
 4. 单体部署接入 `mango-access-web-starter`，微服务网关部署接入 `mango-access-gateway-starter`。
 5. 使用真实 access token 请求接口，按接口类型确认匿名、401、403 和放行结果。
 
+Gateway route 也可以通过 `mango-authorization-resource-sync-starter` 输出 `API_RESOURCE` 声明。登录前链路必须显式声明为 PUBLIC，例如 `/captcha/**`，否则默认 LOGIN 会要求登录态。
+
 ## 6. 配置说明
 
 配置前缀是 `mango.access`。
@@ -164,6 +166,7 @@ mango:
 | 现象 | 排查点 |
 |------|--------|
 | 匿名接口返回 401 | 查 `authorization_api_resource` 中对应 path/method 是否登记为 PUBLIC；如果外部路径带 `/api`，确认 `mango.access.external-api-prefixes` 是否包含该前缀 |
+| 验证码接口登录前不可用 | 查 Gateway route 或 Controller 资源是否把 `/captcha/**` 同步为 PUBLIC |
 | PERMISSION 接口返回 403 | 查资源是否有 `permission_code`，当前成员是否绑定包含该权限的角色，token 是否带 `memberId` 和正确 `appCode` |
 | INTERNAL 接口无法访问 | 这是入口默认行为。INTERNAL 资源不允许从 access 外部入口访问 |
 | 网关后面的服务拿不到租户 | 查 Gateway 是否接入 `mango-access-gateway-starter`，下游是否读取 Mango 上下文请求头 |

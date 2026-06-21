@@ -48,14 +48,12 @@
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-            <version>2025.1.0.0</version>
         </dependency>
 
         <!-- Spring Cloud Nacos 配置中心 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-            <version>2025.1.0.0</version>
         </dependency>
 
         <!-- Mango 远程授权与安全能力，提供 Token 与权限适配 -->

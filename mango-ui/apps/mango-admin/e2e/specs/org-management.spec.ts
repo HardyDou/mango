@@ -92,7 +92,7 @@ test.describe('T15 组织架构管理闭环', () => {
     const illegalRootBody = await illegalRootResponse.json();
     expect(illegalRootBody.success).toBeFalsy();
     expect(illegalRootBody.code).toBe(400);
-    expect(illegalRootBody.msg).toContain('根组织由租户初始化创建');
+    expect(illegalRootBody.msg).toContain('根组织由机构初始化创建');
 
     await loginAsCompanyA(page);
 

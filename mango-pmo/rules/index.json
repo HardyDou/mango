@@ -105,7 +105,7 @@
     },
     "backend.moduleMenu": {
       "path": "rules/backend/11-module-menu.md",
-      "reason": "模块菜单初始化归口规范"
+      "reason": "模块菜单 Resource Registry 初始化、编码、同步与验收规范"
     },
     "frontend.vue": {
       "path": "rules/frontend/01-vue-code.md",

@@ -24,4 +24,20 @@ class ModuleTargetFeignInterceptorTest {
 
         assertThat(template.url()).isEqualTo("http://mango-admin-app/admin/api-resources/access-decision");
     }
+
+    @Test
+    void apply_whenTemplateUrlIsAbsolute_keepsExplicitDynamicTarget() {
+        ModuleTargetFeignInterceptor interceptor = new ModuleTargetFeignInterceptor(moduleName ->
+                Optional.of(new ModuleInfo(moduleName, "mango-resource-capability-app", "", "/resource", "test")));
+        RequestTemplate template = new RequestTemplate()
+                .feignTarget(new Target.HardCodedTarget<>(
+                        Object.class, "mango-resource", "http://mango-resource"))
+                .target("http://mango-authorization-capability-app")
+                .uri("/_resource/targets/upsert-batch");
+
+        interceptor.apply(template);
+
+        assertThat(template.url())
+                .isEqualTo("http://mango-authorization-capability-app/_resource/targets/upsert-batch");
+    }
 }

@@ -203,7 +203,7 @@ test.describe('套餐管理页面真实接口闭环', () => {
     expect(listResponse.status()).toBe(403);
 
     await loginPage(page, companyATenant);
-    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: '系统管理' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('套餐管理')).toHaveCount(0);
   });
 });

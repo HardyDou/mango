@@ -69,6 +69,7 @@ async function prepareHistoryData(page: Page, headers: Record<string, string>, g
     data: {
       genKey,
       genName,
+      domainCode: 'NUMGEN',
       status: 1,
     },
   });

@@ -75,7 +75,11 @@ async function expectLatestMessage(page: Page, message: string) {
 
 async function expectNoAuthError(page: Page) {
   await expect(page.locator('.el-message--error')).toHaveCount(0);
-  await expect(page.locator('text=/401|403|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/')).toHaveCount(0);
+  await expect(
+    page.locator('.el-message--error, .el-alert--error, [role="alert"]').filter({
+      hasText: /401|403|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/,
+    })
+  ).toHaveCount(0);
 }
 
 function currentTabRows(page: Page, text: string) {
@@ -222,7 +226,7 @@ test.describe('T12 系统配置页面真实接口闭环', () => {
     expect(createResponse.status()).toBe(403);
 
     await loginPage(page, companyATenant);
-    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: '系统管理' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('基础数据')).toHaveCount(0);
     await expect(page.getByText('参数配置')).toHaveCount(0);
     await expectNoAuthError(page);

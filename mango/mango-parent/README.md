@@ -26,6 +26,7 @@
 - Java 17 编译基线。
 - Maven 坐标版本变量 `revision`，默认 `1.0.0-SNAPSHOT`。
 - Spring Boot `3.5.14`、Spring Cloud `2025.0.1`。
+- Spring Cloud Alibaba Nacos discovery/config starter 版本。
 - MyBatis-Plus、springdoc、Knife4j、Swagger annotations、Lombok、JUnit。
 - 安全敏感依赖版本：JJWT、BouncyCastle、commons-compress、commons-fileupload、plexus-utils。
 - Maven compiler、surefire、checkstyle、spotbugs、pmd 等插件版本。
@@ -53,6 +54,7 @@ Mango 后端模块通过父 POM 或 reactor 继承版本管理：
 | `java.version` | `17` | Java 基线。 |
 | `spring-boot.version` | `3.5.14` | Spring Boot BOM。 |
 | `spring-cloud.version` | `2025.0.1` | Spring Cloud BOM。 |
+| `spring-cloud-alibaba.version` | `2023.0.3.3` | Spring Cloud Alibaba Nacos discovery/config starter 版本。 |
 | `mybatis-plus.version` | `3.5.16` | MyBatis-Plus 版本。 |
 | `junit.version` | `5.10.1` | JUnit 版本。 |
 

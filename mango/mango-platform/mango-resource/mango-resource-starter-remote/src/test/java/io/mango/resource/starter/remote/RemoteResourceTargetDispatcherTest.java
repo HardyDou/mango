@@ -24,14 +24,15 @@ class RemoteResourceTargetDispatcherTest {
 
     @Test
     void targetFeignClient_uriOverloadsUseReverseResourceTargetPath() throws Exception {
-        assertThat(ResourceTargetFeignClient.class.getAnnotation(FeignClient.class).path())
-                .isEqualTo("/_resource/targets");
+        FeignClient feignClient = ResourceTargetFeignClient.class.getAnnotation(FeignClient.class);
+        assertThat(feignClient.path()).isEmpty();
+        assertThat(feignClient.url()).isEmpty();
         assertThat(postMapping("upsertBatch").value())
-                .containsExactly("/upsert-batch");
+                .containsExactly("/_resource/targets/upsert-batch");
         assertThat(postMapping("disable").value())
-                .containsExactly("/disable");
+                .containsExactly("/_resource/targets/disable");
         assertThat(postMapping("delete").value())
-                .containsExactly("/delete");
+                .containsExactly("/_resource/targets/delete");
     }
 
     @Test

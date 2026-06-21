@@ -113,8 +113,7 @@ test.describe('模板管理 E2E', () => {
     const templatePage = page.locator('.page-card').filter({ hasText: '模板维护' });
     await templatePage.getByPlaceholder('如 CONTRACT_NOTICE').fill(templateCode);
     await templatePage.getByPlaceholder('如 合同到期提醒').fill(templateName);
-    await templatePage.locator('.el-select').first().click();
-    await page.getByRole('option', { name: categoryName }).click();
+    await expect(templatePage.getByPlaceholder('如 TEMPLATE')).toHaveValue('TEMPLATE');
     await templatePage.getByPlaceholder('记录适用场景、调用方或维护说明').fill('E2E 只按模板编码渲染');
     await templatePage.getByRole('button', { name: '保存', exact: true }).click();
     await expect(page.getByText('模板已创建，发布后生效')).toBeVisible({ timeout: 10000 });

@@ -80,7 +80,8 @@ const result = await templateApi.render({
 6. TEXT/HTML 模板填写内容；DOCX/XLSX 模板上传源文件。
 7. 维护变量定义并发布版本。
 8. 发起渲染，确认返回文本内容或文件 ID。
-9. 在渲染记录页查看状态和失败原因。
+9. 同步渲染失败时，页面会显示失败状态和后端错误信息。
+10. 在渲染记录页查看状态和失败原因。
 
 ## 6. 配置说明
 
@@ -193,6 +194,7 @@ const result = await templateApi.render({
 | 页面打不开 | 是否注册 `@mango/template/admin-pages`，菜单 component 是否正确。 |
 | 文件上传不可用 | 是否安装 `@mango/file`，后端文件服务是否可用。 |
 | 渲染失败 | 模板是否发布、变量是否完整、输出格式是否受支持。 |
+| 预览区显示 FAILED | 查看错误信息，按后端返回的模板变量、文件处理或输出格式错误修正。 |
 | DOCX/PDF/OFD 输出失败 | 后端 fileproc 和转换 license 是否可用。 |
 | 渲染返回无文件 ID | 输出格式是否是文档类，后端 `mango-file` 是否保存成功。 |
 | 渲染记录查不到 | 查询条件 `templateCode`、`bizType`、`bizId`、状态是否正确。 |

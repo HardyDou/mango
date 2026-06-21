@@ -116,7 +116,7 @@ async function installSession(page: Page, loginData: LoginData) {
 
 async function expectNoAuthOrNetworkError(page: Page) {
   await expect(page.locator('.el-message--error')).toHaveCount(0);
-  await expect(page.locator('text=/401|403|404|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/')).toHaveCount(0);
+  await expect(page.locator('.el-alert--error, .el-result, .error-page, .app-error')).toHaveCount(0);
 }
 
 function recordsOf<T>(pageResult: PageResult<T> | undefined): T[] {

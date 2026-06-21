@@ -5,6 +5,7 @@ import feign.RequestTemplate;
 import io.mango.infra.module.api.ModuleInfo;
 import io.mango.infra.module.api.ModuleInfoResolver;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.core.Ordered;
 
 import java.net.URI;
 import java.util.Optional;
@@ -12,7 +13,9 @@ import java.util.Optional;
 /**
  * Rewrites Feign module targets to real deployment service targets.
  */
-public class ModuleTargetFeignInterceptor implements RequestInterceptor {
+public class ModuleTargetFeignInterceptor implements RequestInterceptor, Ordered {
+
+    public static final int ORDER = 0;
 
     private final ObjectProvider<ModuleInfoResolver> resolverProvider;
 
@@ -27,6 +30,9 @@ public class ModuleTargetFeignInterceptor implements RequestInterceptor {
     @Override
     public void apply(RequestTemplate template) {
         if (template.feignTarget() == null) {
+            return;
+        }
+        if (isAbsoluteUrl(template.url())) {
             return;
         }
         String moduleName = template.feignTarget().name();
@@ -48,6 +54,11 @@ public class ModuleTargetFeignInterceptor implements RequestInterceptor {
         template.uri(joinPath(info.contextPath(), originalPath), false);
     }
 
+    @Override
+    public int getOrder() {
+        return ORDER;
+    }
+
     private String extractPath(String value) {
         if (value == null || value.isBlank()) {
             return "/";
@@ -56,6 +67,10 @@ public class ModuleTargetFeignInterceptor implements RequestInterceptor {
             return value;
         }
         return URI.create(value).getRawPath();
+    }
+
+    private boolean isAbsoluteUrl(String value) {
+        return value != null && (value.startsWith("http://") || value.startsWith("https://"));
     }
 
     private String joinPath(String contextPath, String path) {
