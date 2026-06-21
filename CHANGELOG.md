@@ -25,6 +25,15 @@
 - Aligned admin E2E tests with the Resource Registry menu baseline, current realtime protocol,
   current tenant provisioning contract, notification center flow, and platform metadata isolation.
 
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line. Business backends should
+  refresh the SNAPSHOT dependencies for the updated Resource Registry runtime, authorization
+  resource sync, gateway resource sync, infra Feign, admin starter, platform capability apps, and
+  affected platform starters.
+- No frontend npm package version was changed in this release. Consumers can keep the package set
+  from `v2026.06.19-resource-registry` while applying the backend/runtime upgrade notes below.
+
 ### Upgrade Notes
 
 - This is a breaking pre-1.0 upgrade for menu and default resource initialization. Development and
