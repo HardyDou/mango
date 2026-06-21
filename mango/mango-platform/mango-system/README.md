@@ -107,6 +107,7 @@ import '@mango/system/style.css';
 4. 运行时开关、阈值、文案等放入 `sys_config`，业务通过 `SysConfigApi.getValue(configKey)` 读取。
 5. 管理后台接入 `@mango/system` 页面或 API 封装，并在菜单资源中绑定对应页面和权限码。
 6. 新建机构时必须选择 `packageId`，系统会触发机构初始化扩展点，并把机构绑定到套餐。
+7. 平台默认菜单和按钮权限来自 `system-common-menu.json` 的 `AUTH_MENU` 声明，不再通过 Flyway 菜单 DML 初始化。
 
 ## 6. 配置说明
 
@@ -132,7 +133,10 @@ import '@mango/system/style.css';
 ```text
 mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-dict.yml
 mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-config.yml
+mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-menu.json
 ```
+
+`system-common-menu.json` 声明系统管理菜单、行政区划菜单和 `system:area:*` 等按钮权限。按钮权限未显式配置 `packageCodes` 时会继承父菜单套餐；显式空数组表示不加入任何套餐。
 
 ### 7.1 SYSTEM_DICT
 

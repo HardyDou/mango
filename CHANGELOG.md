@@ -1,5 +1,64 @@
 # Mango Changelog
 
+## v2026.06.21-resource-registry-runtime-baseline - 2026-06-21
+
+### New
+
+- Added the Issue #186 runtime validation baseline for Resource Registry, including monolith
+  startup, capability-app Nacos configuration, Docker/Nacos helper assets, and admin E2E coverage
+  for menus, permissions, notifications, workflow, tenant, system, template, realtime, and platform
+  metadata isolation.
+- Added Nacos-ready `application-nacos.yml` entries for microservice and platform capability apps so
+  independent deployment can resolve service registration and remote Resource Registry wiring from
+  environment variables.
+- Added runtime evidence for Resource Registry synchronization, `AUTH_MENU` consumption, `API_RESOURCE`
+  injection, clean-database rebuild, and menu/permission E2E acceptance.
+
+### Fixed
+
+- Fixed dynamic Feign target preservation so remote Resource Registry and module-based internal
+  calls keep runtime target service resolution instead of losing the module target URI.
+- Fixed `system:area:*` menu permission package inheritance by removing explicit empty
+  `packageCodes`, allowing the permissions to inherit their parent menu package as documented.
+- Fixed template preview failure handling so backend render errors are surfaced as a failed render
+  result instead of leaving the page without an actionable error state.
+- Aligned admin E2E tests with the Resource Registry menu baseline, current realtime protocol,
+  current tenant provisioning contract, notification center flow, and platform metadata isolation.
+
+### Upgrade Notes
+
+- This is a breaking pre-1.0 upgrade for menu and default resource initialization. Development and
+  test databases that contain Flyway-seeded menus must be backed up and rebuilt from a clean schema;
+  do not repair menus, role-menu bindings, menu package items, or frontend menu runtime config with
+  ad hoc SQL.
+- Functional modules must publish menus and button permissions through
+  `META-INF/mango/resources/{module}-common-menu.{json,yml,yaml}` as `AUTH_MENU` declarations.
+  Flyway migration files may keep DDL and immutable base records, but must not seed menus, button
+  permissions, menu package items, role-menu bindings, or frontend menu runtime config.
+- Business monolith deployments should use `mango-admin-starter`, which includes the local Resource
+  Registry runtime. Custom monolith aggregations must include `mango-resource-starter` and
+  `mango-resource-sync-starter`.
+- Microservice or capability-app deployments that only report declarations must include
+  `mango-resource-starter-remote` and `mango-resource-sync-starter`; the Resource capability app
+  hosts the registry and target dispatch.
+- Menu resources are idempotent by `appCode + moduleCode + menuCode`. `packageCodes` and `roleCodes`
+  inherit from the parent menu or declaration when omitted; an explicit empty array means no package
+  or role binding.
+- `DEPRECATED` resources remain readable and only update registry state; `DISABLED` disables target
+  resources; `REMOVED` deletes when the target handler supports physical deletion.
+
+### Verification
+
+- `git diff --check`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm -F @mango/template build`
+- `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=false PLAYWRIGHT_BASE_URL=http://127.0.0.1:8510 PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18820 pnpm exec playwright test ... --project=chromium --workers=1 --reporter=line --timeout=240000` (`26 passed`)
+- `GET http://127.0.0.1:18820/actuator/health` returned `UP`
+- Anonymous `GET /authorization/menus/user?fmt=tree&appCode=internal-admin` returned `401`
+- Authenticated `/auth/info` included `system:area:add`, `system:area:delete`,
+  `system:area:edit`, and `system:area:query`
+
 ## v2026.06.19-resource-registry - 2026-06-19
 
 ### New

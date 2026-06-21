@@ -69,6 +69,7 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- Issue #186 runtime baseline follow-up 补齐 Resource Registry 运行态验收、Nacos 能力 app 配置、Feign 动态目标保持、系统菜单套餐继承和管理端 E2E 基线；不改变租户字典、组织、用户、系统配置的公开查询 API、权限、租户隔离方式和页面入口。业务升级后排查基础数据为空时，需要同时确认 `SYSTEM_DICT`、`SYSTEM_CONFIG`、`AUTH_MENU` 等资源声明同步成功，能力 app 使用正确 Nacos 服务名和 context path，且当前部署拓扑装配了本地或远程 Resource Registry runtime。
 - PR #199 将平台菜单、接口权限和多类默认数据注入统一纳入 Resource Registry 运行态，并补齐单体/微服务能力 app 的资源同步入口；不改变租户字典、组织、用户、系统配置的公开查询 API、页面、权限和租户隔离方式。清库重建或 1.0 rebase 升级后，排查基础数据为空时，需要同时确认对应资源声明已同步、目标模块 handler 消费成功、租户应用绑定和角色授权数据已重建。
 - PR #195 加固前端 `@mango/*` 包的 `exports`、`types` 和生成声明文件，使业务项目通过发布后的 `dist` 产物独立消费；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户、页面、启动方式和本场景排障步骤。业务项目应继续使用公开 package 入口和 `./style.css`，不要依赖包内 `src` 路径。
 - PR #194 发布资源注册中心版本并升级 `@mango/admin-shell@1.0.20`、`@mango/system@1.0.9`、`@mango/common@1.0.10`、`@mango/cli@1.0.34` 等前端包；不改变租户字典、组织、用户、系统配置的公开查询 API、页面、权限、租户隔离方式、启动方式和本场景排障步骤。业务升级时应成组升级前端 `@mango/*` 包并刷新后端 Mango `1.0.0-SNAPSHOT` 依赖。

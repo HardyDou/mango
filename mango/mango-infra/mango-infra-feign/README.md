@@ -85,6 +85,16 @@ mango:
 - `FeignTokenFilter`：从入口 `Authorization` 请求头写入 `TokenContextHolder`，请求结束后清理。
 - `ModuleTargetFeignInterceptor`：结合 `ModuleInfoResolver` 补充模块目标上下文。
 
+### 7.1 模块动态目标
+
+远程 starter 可通过 `URI` 参数传入动态目标，例如 Resource Registry 按 `targetModule` 分发资源时会解析目标模块服务。`ModuleTargetFeignInterceptor` 必须保留 Feign 模板中的运行时 target，不能把动态 URI 覆盖成静态 service name。
+
+模块目标解析顺序：
+
+1. 优先使用调用方显式传入的动态 `URI`。
+2. 没有动态 `URI` 时，通过模块注册信息解析 `serviceName` 和 `contextPath`。
+3. 最终请求地址必须包含目标服务的 context path，避免微服务部署下路径缺失。
+
 ## 8. 数据与初始化
 无数据库 migration、无 Runner、无 Initializer、无初始化数据。
 
@@ -102,6 +112,7 @@ mango:
 - 下游拿不到 token：检查 `token-propagation-enabled` 是否开启，入口请求是否带 Authorization。
 - 下游拿不到 tenant/user：检查 `mango-infra-context` 是否已有上下文，`interceptor-enabled` 是否开启。
 - 内部接口 403：检查调用方 `mango.internal-call.secret` 和接收方 `mango.web.inner.secret` 是否一致，时间戳是否过期，nonce 是否重复。
+- 动态目标请求 404：检查目标模块是否注册了正确 `serviceName` 和 `contextPath`，以及 Feign client 是否使用动态 `URI` 方法。
 - 重试导致重复写：写接口必须有幂等约束，或在业务 Feign 配置中调整重试策略。
 
 ## 12. 相关文档

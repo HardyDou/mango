@@ -73,6 +73,19 @@ mvn -f mango/pom.xml -pl :mango-business-app -am spring-boot:run
 
 微服务示例默认使用 H2 内存库并关闭 Flyway，更适合拓扑验证。真实部署需要改为 MySQL、打开目标模块 migration，并补齐注册发现、配置中心、网关路由和安全配置。
 
+### 6.1 Nacos 部署配置
+
+微服务和平台能力 app 提供 `application-nacos.yml`，用于真实注册发现和配置中心部署。Nacos 地址通过环境变量注入：
+
+| 环境变量 | 默认值 | 说明 |
+|----------|--------|------|
+| `NACOS_SERVER_ADDR` | `127.0.0.1:8848` | Nacos 服务地址。 |
+| `NACOS_NAMESPACE` | 空 | Nacos 命名空间。 |
+| `NACOS_GROUP` | `DEFAULT_GROUP` | Nacos 配置分组。 |
+| `SPRING_PROFILES_ACTIVE` | 当前 app 默认 profile | 启用 `nacos` profile 后加载 Nacos 配置。 |
+
+本仓库提供 `scripts/docker/nacos-compose.yml` 作为本地 Nacos 验证物料，应用容器可使用 `scripts/docker/mango-app.Dockerfile` 构建。部署时仍以具体 app 的 `spring.application.name` 作为服务名，远程 Resource Registry 和 Feign 动态目标会按模块注册信息解析目标服务。
+
 ## 7. API 与扩展
 app 层对外暴露的是 Spring Boot 进程和路由，不暴露复用 Java API。
 
@@ -101,6 +114,7 @@ app 层只装配权限能力。菜单、权限和租户数据由 `mango-authoriz
 - 微服务平台 app：提供 auth、identity、authorization、system 等平台接口。
 - 微服务业务 app：通过 remote starter 调用平台能力，并同步自己的业务资源。
 - 网关：通过 `mango-access-gateway-starter` 做边界鉴权和路由。
+- Resource Registry：单体在本进程消费资源声明；微服务中普通能力 app 远程上报声明，Resource 能力 app 负责注册中心和目标分发。
 
 ## 10. 快速开始
 1. 本地开发优先选择单体，减少服务间调用和配置复杂度。
@@ -115,6 +129,7 @@ app 层只装配权限能力。菜单、权限和租户数据由 `mango-authoriz
 - 表没创建：检查 migration 是否随 starter 进入 classpath，Flyway 模块开关是否打开。
 - 单体能用、微服务不能用：检查调用方是否使用 remote starter、网关路由是否覆盖目标路径。
 - 菜单初始化了但页面打不开：检查前端页面 key 和菜单 component 是否一致。
+- 菜单或接口资源未注入：检查部署入口是否装配本地 Resource Registry runtime，微服务能力 app 是否装配 `mango-resource-starter-remote` 和 `mango-resource-sync-starter`。
 - 微服务示例没有真实数据：示例默认 H2 和关闭 Flyway，真实联调要改配置。
 
 ## 12. 相关文档
