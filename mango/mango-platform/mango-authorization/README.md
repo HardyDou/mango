@@ -294,6 +294,8 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 加入默认套餐 | 在声明、菜单或按钮上写已有 `packageCodes`。未配置时继承父级，空数组表示不加入套餐。 |
 | 默认授权角色 | 仅在已明确确认的默认角色场景写已有 `roleCodes`。未配置时继承父级，空数组表示不授权角色。 |
 | 只新增接口权限 | 使用 `@ApiAccess` / `@PermissionAccess`，由 `API_RESOURCE` Provider 扫描，不需要写菜单资源。 |
+| 新增前端运行单元 | 声明 `FRONTEND_APP_REGISTRY`，由授权模块写入 `authorization_frontend_app_registry`。 |
+| 新增前端模块运行策略 | 声明 `FRONTEND_MODULE_RUNTIME_STRATEGY`，由授权模块写入 `authorization_frontend_module_runtime_strategy`。 |
 | 历史 manifest | 只用于迁移，不作为新增入口。 |
 
 菜单、按钮权限、菜单运行时配置、菜单套餐明细和默认角色菜单授权不再通过 Flyway DML 维护。Flyway 只保留表结构、应用入口、登录上下文、套餐主档、基础角色和成员角色绑定等基础数据。
@@ -411,6 +413,79 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | `DEPRECATED` | 目标菜单继续可读，只更新 registry 状态 |
 | `DISABLED` | 禁用模块或菜单并清理运行配置/授权关系 |
 | `REMOVED` | 删除或按 handler 能力降级禁用 |
+
+前端运行单元资源示例：
+
+```json
+{
+  "id": "2900000000000000101",
+  "version": 1,
+  "bizKey": "guarantee.frontend.app.guarantee-local",
+  "name": "保函前端本地运行单元",
+  "targetModule": "authorization",
+  "fields": {
+    "appCode": { "type": "STRING", "value": "guarantee-local" },
+    "appType": { "type": "STRING", "value": "MICRO_APP" },
+    "deployMode": { "type": "STRING", "value": "REMOTE" },
+    "entryUrl": { "type": "STRING", "value": "http://127.0.0.1:5188/src/micro.ts" },
+    "mountPath": { "type": "STRING", "value": "/micro/guarantee" },
+    "activeRule": { "type": "STRING", "value": "/guarantee/**" },
+    "framework": { "type": "STRING", "value": "vue3" },
+    "version": { "type": "STRING", "value": "dev" },
+    "sandboxEnabled": { "type": "BOOLEAN", "value": false },
+    "styleIsolation": { "type": "STRING", "value": "NONE" }
+  }
+}
+```
+
+前端模块运行策略资源示例：
+
+```json
+{
+  "id": "2900000000000000102",
+  "version": 1,
+  "bizKey": "guarantee.frontend.strategy.internal-admin.hybrid",
+  "name": "保函模块前端运行策略",
+  "targetModule": "authorization",
+  "fields": {
+    "appCode": { "type": "STRING", "value": "internal-admin" },
+    "moduleCode": { "type": "STRING", "value": "guarantee" },
+    "deployProfile": { "type": "STRING", "value": "hybrid" },
+    "pageType": { "type": "STRING", "value": "MICRO_ROUTE" },
+    "runtimeCode": { "type": "STRING", "value": "guarantee-local" },
+    "status": { "type": "INT", "value": 1 },
+    "sort": { "type": "INT", "value": 30 }
+  }
+}
+```
+
+`FRONTEND_APP_REGISTRY` 字段：
+
+| 字段 | 含义 |
+|------|------|
+| `fields.appCode.value` | 前端运行单元编码 |
+| `fields.appType.value` | `LOCAL`、`MICRO_APP`、`IFRAME`、`EXTERNAL_LINK` |
+| `fields.deployMode.value` | `EMBEDDED`、`REMOTE`、`HYBRID` |
+| `fields.entryUrl.value` | 远程入口地址 |
+| `fields.mountPath.value` | 主框架挂载路径 |
+| `fields.activeRule.value` | 激活规则 |
+| `fields.framework.value` | 前端运行框架 |
+| `fields.version.value` | 运行单元版本 |
+| `fields.healthCheckUrl.value` | 健康检查地址 |
+| `fields.sandboxEnabled.value` | 是否启用沙箱 |
+| `fields.styleIsolation.value` | `NONE`、`SCOPED`、`SHADOW_DOM`、`IFRAME` |
+
+`FRONTEND_MODULE_RUNTIME_STRATEGY` 字段：
+
+| 字段 | 含义 |
+|------|------|
+| `fields.appCode.value` | 逻辑应用编码 |
+| `fields.moduleCode.value` | 能力模块编码，通常与声明 `moduleCode` 一致 |
+| `fields.deployProfile.value` | 部署配置档，例如 `monolith`、`hybrid`、`micro` |
+| `fields.pageType.value` | `LOCAL_ROUTE`、`MICRO_ROUTE`、`IFRAME`、`EXTERNAL_LINK` |
+| `fields.runtimeCode.value` | 前端运行单元编码，关联 `authorization_frontend_app_registry.app_code` |
+| `fields.status.value` | 状态，空时保存为 1 |
+| `fields.sort.value` | 排序，空时保存为 0 |
 
 升级验证建议：
 
@@ -571,9 +646,9 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 | `authorization_role_data_scope` | 角色数据权限 |
 | `authorization_menu_package` | 菜单套餐 |
 | `authorization_menu_package_item` | 套餐包含菜单 |
-| `frontend_app_registry` | 前端运行单元注册 |
+| `authorization_frontend_app_registry` | 前端运行单元注册 |
 | `frontend_menu_runtime_config` | 菜单页面运行类型和外链地址 |
-| `frontend_module_runtime_strategy` | 前端模块运行策略 |
+| `authorization_frontend_module_runtime_strategy` | 前端模块运行策略 |
 | `frontend_tenant_app_binding` | 租户应用绑定 |
 
 `V1__init_authorization.sql` 初始化授权表结构、`internal-admin` 应用、`INTERNAL / INTERNAL_USER` 登录上下文、菜单套餐主档、多个租户下的 `ROLE_ADMIN` 和 admin 成员角色绑定。功能模块菜单、按钮权限、菜单运行配置和套餐明细由各模块 starter 提供 `AUTH_MENU` 资源声明注入。

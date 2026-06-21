@@ -1,3 +1,6 @@
+-- REBASE_REQUIRED(issue-204): targets authorization_frontend_module_runtime_strategy after table namespace rebase.
+-- Databases that already applied the previous local migration set must be rebuilt.
+
 INSERT INTO `authorization_app_module`
   (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
 VALUES
@@ -10,7 +13,7 @@ ON DUPLICATE KEY UPDATE
   `sort` = VALUES(`sort`),
   `update_time` = CURRENT_TIMESTAMP;
 
-INSERT INTO `frontend_module_runtime_strategy`
+INSERT INTO `authorization_frontend_module_runtime_strategy`
   (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
 VALUES
   (8, 'internal-admin', 'mango-notice', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

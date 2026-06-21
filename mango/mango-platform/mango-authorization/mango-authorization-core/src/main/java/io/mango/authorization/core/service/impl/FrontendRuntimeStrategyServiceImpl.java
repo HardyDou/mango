@@ -70,6 +70,54 @@ public class FrontendRuntimeStrategyServiceImpl implements IFrontendRuntimeStrat
         return strategy.getStrategyId();
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean disable(Long strategyId) {
+        if (strategyId == null) {
+            return false;
+        }
+        FrontendModuleRuntimeStrategy strategy = strategyMapper.selectById(strategyId);
+        if (strategy == null) {
+            return false;
+        }
+        strategy.setStatus(0);
+        strategy.setUpdateTime(LocalDateTime.now());
+        return strategyMapper.updateById(strategy) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean disable(String appCode, String moduleCode, String deployProfile) {
+        FrontendModuleRuntimeStrategy strategy = find(appCode, moduleCode, deployProfile);
+        if (strategy == null) {
+            return false;
+        }
+        strategy.setStatus(0);
+        strategy.setUpdateTime(LocalDateTime.now());
+        return strategyMapper.updateById(strategy) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean delete(Long strategyId) {
+        if (strategyId == null) {
+            return false;
+        }
+        return strategyMapper.deleteById(strategyId) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean delete(String appCode, String moduleCode, String deployProfile) {
+        if (!StringUtils.hasText(appCode) || !StringUtils.hasText(moduleCode)) {
+            return false;
+        }
+        return strategyMapper.delete(new LambdaQueryWrapper<FrontendModuleRuntimeStrategy>()
+                .eq(FrontendModuleRuntimeStrategy::getAppCode, appCode)
+                .eq(FrontendModuleRuntimeStrategy::getModuleCode, moduleCode)
+                .eq(FrontendModuleRuntimeStrategy::getDeployProfile, normalizeProfile(deployProfile))) > 0;
+    }
+
     private FrontendModuleRuntimeStrategy find(String appCode, String moduleCode, String deployProfile) {
         if (!StringUtils.hasText(appCode) || !StringUtils.hasText(moduleCode)) {
             return null;

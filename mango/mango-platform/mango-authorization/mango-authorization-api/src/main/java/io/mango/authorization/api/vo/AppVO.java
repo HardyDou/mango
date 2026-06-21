@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 授权应用 VO。
  * <p>
- * 基础字段来自 authorization_app；前端运行配置字段来自 frontend_app_registry。
+ * 基础字段来自 authorization_app；前端运行配置字段来自 authorization_frontend_app_registry。
  */
 @Data
 public class AppVO implements Serializable {

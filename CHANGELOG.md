@@ -1,5 +1,51 @@
 # Mango Changelog
 
+## v2026.06.21-frontend-runtime-resource-registry - 2026-06-21
+
+### New
+
+- Added Resource Registry handlers for authorization frontend runtime declarations:
+  `FRONTEND_APP_REGISTRY` writes frontend runtime units to
+  `authorization_frontend_app_registry`, and `FRONTEND_MODULE_RUNTIME_STRATEGY`
+  writes module runtime routing rules to `authorization_frontend_module_runtime_strategy`.
+- Added runtime descriptor support so authorization can return the current deploy profile,
+  accessible frontend runtime units, and active module runtime strategies for the requesting
+  subject.
+- Added integration coverage for the full declaration flow from Resource Registry sync through
+  authorization runtime tables and `runtimeDescriptor`.
+
+### Fixed
+
+- Rebased the pre-release authorization frontend runtime table names into the
+  `authorization_*` namespace and marked the affected Flyway SQL files with
+  `REBASE_REQUIRED(issue-204)`.
+- Split authorization app metadata from frontend runtime configuration so `authorization_app`
+  keeps authorization-domain fields while frontend runtime fields are read from the dedicated
+  frontend runtime registry table.
+
+### Upgrade Notes
+
+- This is a breaking pre-1.0 database rebase. Development and test databases that already applied
+  the previous local frontend runtime migrations must be rebuilt from a clean schema; do not use
+  Flyway repair as a substitute for rebuilding those local databases.
+- Frontend runtime declarations should use `FRONTEND_APP_REGISTRY` and
+  `FRONTEND_MODULE_RUNTIME_STRATEGY` resources instead of seeding these runtime rows manually.
+
+### Published Packages
+
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line. Consumers should refresh the
+  authorization API/core/starter artifacts and their required upstream SNAPSHOT dependencies after
+  publication.
+
+### Verification
+
+- `git diff --check`
+- `mvn -f mango/pom.xml -pl :mango-authorization-starter -am -Dtest=FrontendRuntimeResourceSyncIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl :mango-authorization-starter -am test -DskipITs`
+- `mvn -f mango/pom.xml -pl :mango-authorization-core -am test -DskipITs`
+- `mvn -f mango/pom.xml -pl :mango-resource-core -am test -DskipITs`
+- `mvn -f mango/pom.xml -pl :mango-resource-sync-starter -am test -DskipITs`
+
 ## v2026.06.21-resource-registry-runtime-baseline - 2026-06-21
 
 ### New

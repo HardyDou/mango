@@ -5,6 +5,7 @@ import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.vo.AppRuntimeDescriptorVO;
 import io.mango.authorization.api.vo.AppVO;
 import io.mango.authorization.core.entity.AuthorizationApp;
+import io.mango.authorization.core.entity.FrontendAppRegistry;
 import io.mango.infra.persistence.api.crud.MangoCrudService;
 
 import java.util.List;
@@ -29,4 +30,10 @@ public interface IAuthorizationAppService extends MangoCrudService<Authorization
     Boolean update(AppCommand command);
 
     Boolean delete(Long appId);
+
+    Long saveFrontendAppRegistry(FrontendAppRegistry registry);
+
+    Boolean deleteFrontendAppRegistry(Long registryId);
+
+    Boolean deleteFrontendAppRegistry(String appCode);
 }

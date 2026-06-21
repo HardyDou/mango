@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 /**
  * 授权应用服务实现。
  * <p>
- * 授权应用基础信息仍写入 authorization_app；前端入口运行配置独立写入 frontend_app_registry。
+ * 授权应用基础信息仍写入 authorization_app；前端入口运行配置独立写入 authorization_frontend_app_registry。
  */
 @Service
 @RequiredArgsConstructor
@@ -168,6 +168,59 @@ public class AuthorizationAppServiceImpl
         frontendAppRegistryMapper.delete(new LambdaQueryWrapper<FrontendAppRegistry>()
                 .eq(FrontendAppRegistry::getAppCode, app.getAppCode()));
         return super.deleteById(appId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long saveFrontendAppRegistry(FrontendAppRegistry source) {
+        if (source == null || !StringUtils.hasText(source.getAppCode())) {
+            throw new IllegalArgumentException("前端运行单元编码不能为空");
+        }
+        FrontendAppRegistry registry = frontendAppRegistryMapper.selectOne(new LambdaQueryWrapper<FrontendAppRegistry>()
+                .eq(FrontendAppRegistry::getAppCode, source.getAppCode())
+                .last("LIMIT 1"));
+        LocalDateTime now = LocalDateTime.now();
+        if (registry == null) {
+            registry = new FrontendAppRegistry();
+            registry.setAppCode(source.getAppCode());
+            registry.setCreateTime(now);
+        }
+        registry.setAppType(defaultString(source.getAppType(), "LOCAL"));
+        registry.setDeployMode(defaultString(source.getDeployMode(), "EMBEDDED"));
+        registry.setEntryUrl(source.getEntryUrl());
+        registry.setMountPath(source.getMountPath());
+        registry.setActiveRule(source.getActiveRule());
+        registry.setFramework(source.getFramework());
+        registry.setVersion(source.getVersion());
+        registry.setHealthCheckUrl(source.getHealthCheckUrl());
+        registry.setSandboxEnabled(Boolean.TRUE.equals(source.getSandboxEnabled()));
+        registry.setStyleIsolation(defaultString(source.getStyleIsolation(), "NONE"));
+        registry.setUpdateTime(now);
+        if (registry.getRegistryId() == null) {
+            frontendAppRegistryMapper.insert(registry);
+        } else {
+            frontendAppRegistryMapper.updateById(registry);
+        }
+        return registry.getRegistryId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean deleteFrontendAppRegistry(Long registryId) {
+        if (registryId == null) {
+            return false;
+        }
+        return frontendAppRegistryMapper.deleteById(registryId) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean deleteFrontendAppRegistry(String appCode) {
+        if (!StringUtils.hasText(appCode)) {
+            return false;
+        }
+        return frontendAppRegistryMapper.delete(new LambdaQueryWrapper<FrontendAppRegistry>()
+                .eq(FrontendAppRegistry::getAppCode, appCode)) > 0;
     }
 
     @Override

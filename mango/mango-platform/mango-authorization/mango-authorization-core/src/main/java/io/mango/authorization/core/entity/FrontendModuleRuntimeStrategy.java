@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 菜单仍属于逻辑应用；该表只决定某个部署配置档下模块页面由本地包还是远程运行单元承载。
  */
 @Data
-@TableName("frontend_module_runtime_strategy")
+@TableName("authorization_frontend_module_runtime_strategy")
 public class FrontendModuleRuntimeStrategy implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -35,7 +35,7 @@ public class FrontendModuleRuntimeStrategy implements Serializable {
     /** 页面运行类型：LOCAL_ROUTE/MICRO_ROUTE/IFRAME/EXTERNAL_LINK。 */
     private String pageType;
 
-    /** 前端运行单元编码，关联 frontend_app_registry.app_code。 */
+    /** 前端运行单元编码，关联 authorization_frontend_app_registry.app_code。 */
     private String runtimeCode;
 
     /** 状态：0-停用，1-启用。 */

@@ -1,5 +1,7 @@
 -- Baseline migration for module: authorization
 -- Squashed from 15 migration files before first shared release.
+-- REBASE_REQUIRED(issue-204): frontend runtime tables were renamed to the authorization_* namespace.
+-- Databases that already applied earlier local migrations must be rebuilt from this baseline.
 
 -- -----------------------------------------------------------------------------
 -- Squashed from: V1__init_authorization.sql
@@ -419,10 +421,10 @@ ON DUPLICATE KEY UPDATE
 
 
 -- -----------------------------------------------------------------------------
--- Folded from V5__frontend_app_registry_runtime.sql
+-- Folded from V5__authorization_frontend_app_registry_runtime.sql
 -- -----------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS `frontend_app_registry` (
+CREATE TABLE IF NOT EXISTS `authorization_frontend_app_registry` (
   `id` bigint NOT NULL COMMENT '前端入口注册ID',
   `app_code` varchar(64) NOT NULL COMMENT '授权应用编码',
   `app_type` varchar(32) NOT NULL DEFAULT 'LOCAL' COMMENT '前端入口类型: LOCAL/MICRO_APP/IFRAME/EXTERNAL_LINK',
@@ -438,12 +440,12 @@ CREATE TABLE IF NOT EXISTS `frontend_app_registry` (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_frontend_app_registry_app_code` (`app_code`),
-  KEY `idx_frontend_app_registry_type` (`app_type`),
-  KEY `idx_frontend_app_registry_mount_path` (`mount_path`)
+  UNIQUE KEY `uk_authorization_frontend_app_registry_app_code` (`app_code`),
+  KEY `idx_authorization_frontend_app_registry_type` (`app_type`),
+  KEY `idx_authorization_frontend_app_registry_mount_path` (`mount_path`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='前端应用入口注册表';
 
-INSERT IGNORE INTO `frontend_app_registry`
+INSERT IGNORE INTO `authorization_frontend_app_registry`
   (`id`, `app_code`, `app_type`, `deploy_mode`, `framework`, `sandbox_enabled`, `style_isolation`, `create_time`, `update_time`)
 VALUES
   (1, 'internal-admin', 'LOCAL', 'EMBEDDED', 'vue3', 0, 'NONE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
@@ -560,28 +562,28 @@ ON DUPLICATE KEY UPDATE
 
 
 -- -----------------------------------------------------------------------------
--- Folded from V7__frontend_module_runtime_strategy.sql
+-- Folded from V7__authorization_frontend_module_runtime_strategy.sql
 -- -----------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS `frontend_module_runtime_strategy` (
+CREATE TABLE IF NOT EXISTS `authorization_frontend_module_runtime_strategy` (
   `id` bigint NOT NULL COMMENT '模块运行策略ID',
   `app_code` varchar(64) NOT NULL COMMENT '逻辑应用编码',
   `module_code` varchar(128) NOT NULL COMMENT '能力模块编码',
   `deploy_profile` varchar(32) NOT NULL DEFAULT 'monolith' COMMENT '部署配置档: monolith/hybrid/micro',
   `page_type` varchar(32) NOT NULL DEFAULT 'LOCAL_ROUTE' COMMENT '页面运行类型: LOCAL_ROUTE/MICRO_ROUTE/IFRAME/EXTERNAL_LINK',
-  `runtime_code` varchar(64) NOT NULL COMMENT '前端运行单元编码，关联 frontend_app_registry.app_code',
+  `runtime_code` varchar(64) NOT NULL COMMENT '前端运行单元编码，关联 authorization_frontend_app_registry.app_code',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-停用, 1-启用',
   `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_frontend_module_runtime_strategy` (`app_code`,`module_code`,`deploy_profile`),
-  KEY `idx_frontend_module_runtime_strategy_app` (`app_code`),
-  KEY `idx_frontend_module_runtime_strategy_runtime` (`runtime_code`),
-  KEY `idx_frontend_module_runtime_strategy_profile` (`deploy_profile`,`status`)
+  UNIQUE KEY `uk_authorization_frontend_module_runtime_strategy` (`app_code`,`module_code`,`deploy_profile`),
+  KEY `idx_authorization_frontend_module_runtime_strategy_app` (`app_code`),
+  KEY `idx_authorization_frontend_module_runtime_strategy_runtime` (`runtime_code`),
+  KEY `idx_authorization_frontend_module_runtime_strategy_profile` (`deploy_profile`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='前端模块运行策略表';
 
-INSERT INTO `frontend_app_registry`
+INSERT INTO `authorization_frontend_app_registry`
   (`id`, `app_code`, `app_type`, `deploy_mode`, `entry_url`, `mount_path`, `active_rule`, `framework`, `version`, `sandbox_enabled`, `style_isolation`, `create_time`, `update_time`)
 VALUES
   (1001, 'mango-admin-local', 'LOCAL', 'EMBEDDED', NULL, '/', '/**', 'vue3', 'dev', 0, 'NONE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -598,7 +600,7 @@ ON DUPLICATE KEY UPDATE
   `style_isolation` = VALUES(`style_isolation`),
   `update_time` = CURRENT_TIMESTAMP;
 
-INSERT INTO `frontend_module_runtime_strategy`
+INSERT INTO `authorization_frontend_module_runtime_strategy`
   (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
 VALUES
   (1, 'internal-admin', 'mango-authorization', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -754,7 +756,7 @@ ON DUPLICATE KEY UPDATE
   `sort` = VALUES(`sort`),
   `update_time` = CURRENT_TIMESTAMP;
 
-INSERT INTO `frontend_module_runtime_strategy`
+INSERT INTO `authorization_frontend_module_runtime_strategy`
   (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
 VALUES
   (4, 'internal-admin', 'mango-calendar', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -807,7 +809,7 @@ ON DUPLICATE KEY UPDATE
   `sort` = VALUES(`sort`),
   `update_time` = CURRENT_TIMESTAMP;
 
-INSERT INTO `frontend_module_runtime_strategy`
+INSERT INTO `authorization_frontend_module_runtime_strategy`
   (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
 VALUES
   (5, 'internal-admin', 'mango-numgen', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -908,7 +910,7 @@ ON DUPLICATE KEY UPDATE
   `sort` = VALUES(`sort`),
   `update_time` = CURRENT_TIMESTAMP;
 
-INSERT INTO `frontend_module_runtime_strategy`
+INSERT INTO `authorization_frontend_module_runtime_strategy`
   (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
 VALUES
   (6, 'internal-admin', 'mango-file', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

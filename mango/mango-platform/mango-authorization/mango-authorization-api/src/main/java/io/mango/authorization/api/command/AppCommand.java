@@ -35,11 +35,11 @@ public class AppCommand implements Serializable {
     @Size(max = 100, message = "应用名称最多100个字符")
     private String appName;
 
-    @Schema(description = "前端入口类型：LOCAL/MICRO_APP/IFRAME/EXTERNAL_LINK，属于 frontend_app_registry 运行配置")
+    @Schema(description = "前端入口类型：LOCAL/MICRO_APP/IFRAME/EXTERNAL_LINK，属于 authorization_frontend_app_registry 运行配置")
     @Size(max = 32, message = "应用类型最多32个字符")
     private String appType;
 
-    @Schema(description = "前端部署形态：EMBEDDED/REMOTE/HYBRID，属于 frontend_app_registry 运行配置")
+    @Schema(description = "前端部署形态：EMBEDDED/REMOTE/HYBRID，属于 authorization_frontend_app_registry 运行配置")
     @Size(max = 32, message = "部署模式最多32个字符")
     private String deployMode;
 
