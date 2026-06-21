@@ -68,6 +68,7 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #206 新增授权侧前端运行态 Resource Registry 同步和 `runtimeDescriptor` 返回的部署 profile、前端应用注册、模块运行策略信息；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则和本场景排障步骤。清库重建或 1.0 rebase 升级后，若按钮权限正常但前端运行态应用或模块策略缺失，需要额外确认 `FRONTEND_APP_REGISTRY` 和 `FRONTEND_MODULE_RUNTIME_STRATEGY` 声明是否已同步到授权前端运行态表。
 - Issue #186 runtime baseline follow-up 补齐 Resource Registry 运行态验收、Nacos 能力 app 配置、Feign 动态目标保持、系统菜单套餐继承和管理端 E2E 基线；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界和页面交互。业务升级后排查按钮缺失时，除角色授权外，还要确认对应 `AUTH_MENU` 的 `packageCodes` 继承结果、`API_RESOURCE` 同步日志和远程 Resource Registry 上报来源服务。
 - PR #199 将平台菜单和接口权限资源统一收敛到 Resource Registry 注入链路，并加固 starter/module 依赖边界；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界和页面交互。清库重建或 1.0 rebase 升级后，排查按钮缺失时优先确认 `API_RESOURCE`、`AUTH_MENU` 声明已同步，Resource Registry 同步日志成功，且目标模块 handler 已消费声明。
 - PR #195 加固前端 `@mango/*` 包的 `exports`、`types` 和生成声明文件，使业务项目通过发布后的 `dist` 产物独立消费；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、页面、启动方式和本场景排障步骤。业务项目应继续使用公开 package 入口和 `./style.css`，不要依赖包内 `src` 路径。
