@@ -46,6 +46,8 @@ async function createTenant(request: APIRequestContext, token: string) {
     data: {
       tenantName,
       tenantCode,
+      institutionType: 'ENTERPRISE',
+      packageId: 2,
       status: 1,
       contact: 'E2E管理员',
       mobile: '13900000001',
@@ -74,6 +76,12 @@ async function expectNoAuthError(page: Page) {
   await expect(page.locator('text=/401|403|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/')).toHaveCount(0);
 }
 
+async function openTopMenu(page: Page, name: string) {
+  const button = page.getByRole('button', { name }).first();
+  await expect(button).toBeVisible({ timeout: 10000 });
+  await button.evaluate((element: HTMLElement) => element.click());
+}
+
 test.describe('T6 新机构初始化闭环', () => {
   test('平台新增机构后创建者可直接登录并加载菜单', async ({ page, request }) => {
     const platformToken = await loginTokenAsPlatform(request);
@@ -97,6 +105,7 @@ test.describe('T6 新机构初始化闭环', () => {
 
     await loginByUi(page, tenant.tenantName);
     await expect(page.getByText('系统管理').first()).toBeVisible({ timeout: 10000 });
+    await openTopMenu(page, '系统管理');
     await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
     await expectNoAuthError(page);
   });

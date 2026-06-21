@@ -250,7 +250,7 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
     ]);
 
     await loginPage(page, companyATenant);
-    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: '系统管理' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('基础数据')).toHaveCount(0);
     await expect(page.getByText('字典管理')).toHaveCount(0);
     await expectNoAuthError(page);

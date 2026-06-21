@@ -78,6 +78,16 @@ async function expandMenuGroup(page: Page, name: string) {
   }
 }
 
+async function openTopMenu(page: Page, name: string) {
+  const button = page.getByRole('button', { name }).first();
+  await expect(button).toBeVisible({ timeout: 10000 });
+  await button.evaluate((element: HTMLElement) => element.click());
+}
+
+function sideMenu(page: Page) {
+  return page.locator('.layout-sidebar, aside, [role="menubar"]').first();
+}
+
 test.describe('T3 平台元数据隔离复核', () => {
   test('平台元数据不被机构 SQL 误过滤，普通机构无维护权限', async ({ request }) => {
     const platformToken = await loginToken(request, platformTenant);
@@ -126,6 +136,7 @@ test.describe('T3 平台元数据隔离复核', () => {
 
   test('平台机构可见系统与审批中心入口，A 公司不可见平台维护入口', async ({ page }) => {
     await loginPage(page, platformTenant);
+    await openTopMenu(page, '系统管理');
     await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('审批中心').first()).toBeVisible();
     await expect(page.getByText('应用管理').first()).toBeVisible();
@@ -140,14 +151,13 @@ test.describe('T3 平台元数据隔离复核', () => {
 
     await clearAuthState(page);
     await loginPage(page, companyATenant);
-    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('日志管理').first()).toBeVisible();
-    await expect(page.getByText('应用管理')).toHaveCount(0);
-    await expect(page.getByText('机构管理')).toHaveCount(0);
-    await expect(page.getByText('菜单管理')).toHaveCount(0);
-    await expect(page.getByText('套餐管理')).toHaveCount(0);
-    await expect(page.getByText('字典管理')).toHaveCount(0);
-    await expect(page.getByText('行政区划')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '系统管理' })).toBeVisible({ timeout: 10000 });
+    await expect(sideMenu(page).getByText('应用管理')).toHaveCount(0);
+    await expect(sideMenu(page).getByText('机构管理')).toHaveCount(0);
+    await expect(sideMenu(page).getByText('菜单管理')).toHaveCount(0);
+    await expect(sideMenu(page).getByText('套餐管理')).toHaveCount(0);
+    await expect(sideMenu(page).getByText('字典管理')).toHaveCount(0);
+    await expect(sideMenu(page).getByText('行政区划')).toHaveCount(0);
     await expectNoAuthError(page);
   });
 });

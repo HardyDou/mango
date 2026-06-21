@@ -333,7 +333,10 @@ test.describe.serial('模板中心嵌套参数浏览器 E2E', () => {
 
       const pdfBody = await renderWithJson(page, textPreview, textCode, 'PDF', nestedVariables);
       expect(pdfBody.success || pdfBody.code === 200, JSON.stringify(pdfBody)).toBeFalsy();
-      await expect(page.getByText(/Unsupported document conversion|不支持|转换/).first()).toBeVisible({ timeout: 10000 });
+      await expect(textPreview.locator('.preview-result')).toContainText(
+        pdfBody.msg || pdfBody.message || /不支持|转换/,
+        { timeout: 10000 },
+      );
 
       const docxPreview = await openPreview(page, docxCode);
       const docxBody = await renderWithJson(page, docxPreview, docxCode, /Word DOCX|DOCX/, {

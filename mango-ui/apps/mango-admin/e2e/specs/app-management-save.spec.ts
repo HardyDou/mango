@@ -8,6 +8,10 @@ async function login(page: import('@playwright/test').Page) {
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
+function namedDialog(page: import('@playwright/test').Page, title: string) {
+  return page.locator('.el-dialog').filter({ hasText: title }).last();
+}
+
 test.describe('应用管理保存联调', () => {
   test('编辑应用保存使用真实接口并保持登录态', async ({ page }) => {
     await login(page);
@@ -23,16 +27,17 @@ test.describe('应用管理保存联调', () => {
     expect(typeof appListBody.data?.[0]?.loginContexts?.[0]?.contextId).toBe('string');
 
     await expect(page.getByText('应用管理').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('运营管理系统').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('内部管理后台').first()).toBeVisible({ timeout: 10000 });
 
-    const row = page.locator('.el-table__body-wrapper tr', { hasText: '运营管理系统' }).first();
+    const row = page.locator('.el-table__body-wrapper tr', { hasText: 'internal-admin' }).first();
     await row.getByRole('button', { name: '编辑' }).click();
-    await expect(page.getByRole('dialog', { name: '编辑应用' })).toBeVisible();
+    const editDialog = namedDialog(page, '编辑应用');
+    await expect(editDialog).toBeVisible();
 
     const updateResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/authorization/apps') && response.request().method() === 'PUT'
     );
-    await page.getByRole('dialog', { name: '编辑应用' }).getByRole('button', { name: '确定' }).click();
+    await editDialog.getByRole('button', { name: '确定' }).click();
     const updateResponse = await updateResponsePromise;
     const requestBody = updateResponse.request().postDataJSON();
     const updateBody = await updateResponse.json();
@@ -64,7 +69,7 @@ test.describe('应用管理保存联调', () => {
     await expect(page.getByText('应用管理').first()).toBeVisible({ timeout: 10000 });
 
     await page.getByRole('button', { name: '新增应用' }).click();
-    const createDialog = page.getByRole('dialog', { name: '新增应用' });
+    const createDialog = namedDialog(page, '新增应用');
     await expect(createDialog).toBeVisible();
     await createDialog.locator('input').nth(0).fill(appName);
     await createDialog.locator('input').nth(1).fill(appCode);
@@ -94,7 +99,7 @@ test.describe('应用管理保存联调', () => {
 
     const row = page.locator('.el-table__body-wrapper tr', { hasText: appCode }).first();
     await row.getByRole('button', { name: '编辑' }).click();
-    const editDialog = page.getByRole('dialog', { name: '编辑应用' });
+    const editDialog = namedDialog(page, '编辑应用');
     await expect(editDialog).toBeVisible();
     await editDialog.locator('input').nth(0).fill(updatedName);
 
