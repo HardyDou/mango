@@ -3,6 +3,7 @@ package io.mango.authorization.starter.resource;
 import io.mango.authorization.api.AuthorizationResourceTypes;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
+import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
@@ -32,6 +33,7 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
 
         ResourceSyncResult result = handler.upsert(resource);
 
+        assertThat(handler.resourceType()).isEqualTo(ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY);
         assertThat(handler.resourceType()).isEqualTo(AuthorizationResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY);
         assertThat(result.getTargetId()).isEqualTo(8001L);
         assertThat(result.getTargetTable()).isEqualTo("authorization_frontend_module_runtime_strategy");

@@ -74,6 +74,11 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #207 补齐 `mango-resource-api` 中的
+  `ResourceTypes.FRONTEND_APP_REGISTRY` 和
+  `ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY` Java 常量，并保持授权侧
+  `AuthorizationResourceTypes` 兼容别名；不改变菜单 `component` key、菜单树接口、
+  页面注册方式、角色授权、按钮权限、租户绑定、前端运行态同步资源类型字符串和本场景排障步骤。
 - PR #206 新增授权侧前端运行态 Resource Registry 同步和 `runtimeDescriptor` 返回的部署 profile、前端应用注册、模块运行策略信息；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权、按钮权限、租户绑定和本场景排障步骤。清库重建或 1.0 rebase 升级后，若菜单能返回但前端运行态应用或模块策略缺失，需要额外确认 `FRONTEND_APP_REGISTRY` 和 `FRONTEND_MODULE_RUNTIME_STRATEGY` 声明是否已同步到授权前端运行态表。
 - PR #199 将平台菜单数据从 Flyway 菜单种子迁移为 Resource Registry 的 `AUTH_MENU` 声明注入，并加固菜单码、权限码和 starter 边界；不改变前端 component key、页面注册、角色授权、按钮权限、租户绑定和菜单渲染协议。清库重建或 1.0 rebase 升级后，排查菜单缺失、菜单层级异常或页面 403 时，需要同时确认 `AUTH_MENU` 声明、Resource Registry 同步日志、目标 handler 消费结果和角色/租户绑定是否完成。
 - PR #195 加固前端 `@mango/*` 包的 `exports`、`types` 和生成声明文件，使业务项目通过发布后的 `dist` 产物独立消费；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定、菜单运行时加载、启动方式和本场景排障步骤。业务项目应继续使用公开 package 入口和 `./style.css`，不要依赖包内 `src` 路径。

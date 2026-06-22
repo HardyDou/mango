@@ -1,5 +1,21 @@
 # Mango Changelog
 
+## Unreleased
+
+### Fixed
+
+- Exposed frontend runtime resource type constants from `mango-resource-api` via
+  `ResourceTypes.FRONTEND_APP_REGISTRY` and
+  `ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY`, and kept authorization
+  resource type aliases aligned with the shared Resource Registry API constants.
+
+### Verification
+
+- `git diff --check`
+- `mvn -f mango/pom.xml -pl :mango-authorization-api,:mango-authorization-starter mango:check -Drule=dependency`
+- `mvn -f mango/pom.xml -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter -am test`
+- `mvn -f mango/pom.xml -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter -am -DskipTests package`
+
 ## v2026.06.21-frontend-runtime-resource-registry - 2026-06-21
 
 ### New
