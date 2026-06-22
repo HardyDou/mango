@@ -19,7 +19,7 @@
 
 ## 3. 不做范围
 
-- 不支持用户自行开发小组件。
+- 不支持终端用户在运行态自行开发、上传或编辑小组件代码。
 - 不支持用户自定义卡片标题。
 - 不把默认布局保存到后端。
 - 不在第一版处理复杂多端冲突合并，以最后一次保存成功结果为准。
@@ -156,12 +156,20 @@ export interface GridWidgetDefinition {
 ```ts
 {
   columns: 12,
-  rowHeight: 96,
-  gap: 16,
+  rowHeight: 15,
+  gap: 15,
   defaultWidth: 3,
-  defaultHeight: 3,
+  defaultHeight: 10,
 }
 ```
+
+当前实现中，高度不是固定像素值，而是通过栅格行数换算：
+
+- `rowHeight` 表示单个高度栅格单位，单位为 `px`。
+- `defaultHeight` 表示默认卡片占用的高度栅格行数。
+- 默认卡片视觉高度由 `defaultHeight * rowHeight` 和纵向间距共同决定。
+- 工作台当前落地使用 `defaultWidth=3`、`defaultHeight=10`、`rowHeight=15`、`gap=15`，默认新增卡片约为 3 列宽、10 行高。
+- `verticalGapRows` 由 `gap / rowHeight` 换算，用于碰撞整理时表达纵向间距，避免向上拖拽时误挤开上方卡片。
 
 默认值来源优先级：
 
@@ -177,7 +185,7 @@ export interface GridWidgetDefinition {
 - 查看态使用 `MangoGridLayout`。
 - 编辑态使用 `MangoGridDesigner`。
 - 组件库支持搜索、点击添加、拖拽添加。
-- 默认新增卡片尺寸为 `3 * 3`。
+- 默认新增卡片尺寸为 `3` 列宽、`10` 行高。
 - 拖拽组件进入布局区域后才展示新增占位。
 - 拖拽已有卡片时，鼠标移动超过阈值后才进入移动状态。
 - 拖拽已有卡片时，卡片上方展示透明度 `0.3` 的蒙层。
@@ -199,12 +207,16 @@ export interface GridWidgetDefinition {
     v-model="draftItems"
     :widgets="widgets"
     :default-width="3"
-    :default-height="3"
+    :default-height="10"
+    :row-height="15"
+    :gap="15"
   />
   <MangoGridLayout
     v-else
     :items="layoutItems"
     :widgets="widgets"
+    :row-height="15"
+    :gap="15"
   />
 </template>
 ```
@@ -216,6 +228,46 @@ gridLayoutPersonalApi.getPersonal('admin-home-workbench');
 gridLayoutPersonalApi.savePersonal({ pageCode, layoutJson });
 gridLayoutPersonalApi.resetPersonal('admin-home-workbench');
 ```
+
+### 5.7 小组件创建与组合设计
+
+`@mango/grid-layout` 只识别最终传入的 `GridWidgetDefinition[]`，不关心小组件来自系统模块、业务模块还是宿主页面。这样可以保证布局组件保持通用，不引入业务接口、菜单、路由、权限或特定模块依赖。
+
+小组件创建分为两层：
+
+1. 小组件内容组件：由系统模块或业务模块开发，负责自己的展示、数据加载、响应式和内部交互。
+2. 小组件定义元数据：用 `GridWidgetDefinition` 描述 `type`、`title`、`description`、`category`、`component`、`defaultLayout`、`defaultProps`、`showTitle`、`padding` 等信息。
+
+系统小组件和业务小组件可以分别维护并导出：
+
+```ts
+export const systemWorkbenchWidgets: GridWidgetDefinition[] = [
+  // 平台、权限、文件、流程等系统小组件
+];
+
+export const businessWorkbenchWidgets: GridWidgetDefinition[] = [
+  // 项目、订单、客户、合同等业务小组件
+];
+```
+
+宿主页面或业务接入层负责把多个来源的小组件合并成一个组件库，再传给 `MangoGridDesigner` 和 `MangoGridLayout`：
+
+```ts
+const widgets = [
+  ...systemWorkbenchWidgets,
+  ...businessWorkbenchWidgets,
+];
+```
+
+当前工作台落地采用页面侧聚合方式，`admin-shell` 通过 `workbenchWidgets` 向布局组件传入可用小组件。后续如果系统小组件和业务小组件来源增多，可以在宿主侧抽出轻量 `workbenchWidgetRegistry`，统一完成合并、分组、排序、去重和权限过滤，最后仍然只把过滤后的 `GridWidgetDefinition[]` 传给 `@mango/grid-layout`。
+
+组件库组合边界：
+
+- `@mango/grid-layout` 负责展示组件库、搜索、拖拽添加和布局编辑。
+- 系统模块负责导出系统小组件定义。
+- 业务模块负责导出业务小组件定义。
+- 宿主或业务接入层负责组合小组件库，并在传入前完成权限过滤。
+- 小组件 `type` 作为稳定标识，需要在同一页面组件库中保持唯一；历史布局通过 `widgetType` 找不到组件时，由布局组件展示兜底状态。
 
 ## 6. 后端设计
 
