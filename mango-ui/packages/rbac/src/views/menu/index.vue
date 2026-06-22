@@ -385,12 +385,12 @@
           />
         </el-form-item>
         <el-form-item
-          label="菜单编码"
+          label="权限标识"
           prop="menuCode"
         >
           <el-input
             v-model="form.menuCode"
-            placeholder="请输入唯一菜单编码，如：system:user"
+            placeholder="请输入页面或按钮权限标识，如：system:user"
           />
         </el-form-item>
         <el-form-item
@@ -700,7 +700,7 @@ const form = reactive<SysMenuVO & { groupCode?: string }>({
 
 const rules = computed<FormRules>(() => ({
   menuName: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
-  menuCode: [{ required: true, message: '请输入菜单编码', trigger: 'blur' }],
+  menuCode: [{ required: true, message: '请输入权限标识', trigger: 'blur' }],
   path: form.menuType === 3 ? [] : [{ required: true, message: '请输入路由路径', trigger: 'blur' }],
   pageType: form.menuType === 3 ? [] : [{ required: true, message: '请选择页面类型', trigger: 'change' }],
   externalUrl: form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK'
