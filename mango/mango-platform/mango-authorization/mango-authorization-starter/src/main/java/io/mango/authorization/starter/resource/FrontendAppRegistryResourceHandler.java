@@ -1,9 +1,9 @@
 package io.mango.authorization.starter.resource;
 
-import io.mango.authorization.api.AuthorizationResourceTypes;
 import io.mango.authorization.core.entity.FrontendAppRegistry;
 import io.mango.authorization.core.service.IAuthorizationAppService;
 import io.mango.resource.api.ResourceHandler;
+import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceHandlerSpec;
@@ -25,7 +25,7 @@ public class FrontendAppRegistryResourceHandler implements ResourceHandler {
 
     @Override
     public String resourceType() {
-        return AuthorizationResourceTypes.FRONTEND_APP_REGISTRY;
+        return ResourceTypes.FRONTEND_APP_REGISTRY;
     }
 
     @Override

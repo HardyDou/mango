@@ -11,6 +11,8 @@ public final class ResourceTypes {
     public static final String BUSINESS_DOMAIN = "BUSINESS_DOMAIN";
     public static final String AUTH_MENU = "AUTH_MENU";
     public static final String API_RESOURCE = "API_RESOURCE";
+    public static final String FRONTEND_APP_REGISTRY = "FRONTEND_APP_REGISTRY";
+    public static final String FRONTEND_MODULE_RUNTIME_STRATEGY = "FRONTEND_MODULE_RUNTIME_STRATEGY";
     public static final String MESSAGE_EVENT = "MESSAGE_EVENT";
     public static final String MESSAGE_CHANNEL = "MESSAGE_CHANNEL";
     public static final String MESSAGE_TEMPLATE = "MESSAGE_TEMPLATE";

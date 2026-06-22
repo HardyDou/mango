@@ -3,6 +3,7 @@ package io.mango.authorization.starter.resource;
 import io.mango.authorization.api.AuthorizationResourceTypes;
 import io.mango.authorization.core.entity.FrontendAppRegistry;
 import io.mango.authorization.core.service.IAuthorizationAppService;
+import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
@@ -30,6 +31,7 @@ class FrontendAppRegistryResourceHandlerTest {
 
         ResourceSyncResult result = handler.upsert(resource);
 
+        assertThat(handler.resourceType()).isEqualTo(ResourceTypes.FRONTEND_APP_REGISTRY);
         assertThat(handler.resourceType()).isEqualTo(AuthorizationResourceTypes.FRONTEND_APP_REGISTRY);
         assertThat(result.getTargetId()).isEqualTo(7001L);
         assertThat(result.getTargetTable()).isEqualTo("authorization_frontend_app_registry");
