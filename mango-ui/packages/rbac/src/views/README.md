@@ -28,14 +28,14 @@
 
 | 页面 key | 组件 |
 |----------|------|
-| `rbac/menu/index` | `MenuView` |
-| `rbac/menu-package/index` | `MenuPackageView` |
-| `rbac/role/index` | `RoleView` |
-| `rbac/user/index` | `UserView` |
-| `rbac/org/index` | `OrgView` |
-| `rbac/permission/index` | `PermissionView` |
-| `rbac/app/index` | `AppView` |
-| `rbac/post/index` | `PostView` |
+| `system/menu/index` | `MenuView` |
+| `system/menu-package/index` | `MenuPackageView` |
+| `system/role/index` | `RoleView` |
+| `system/user/index` | `UserView` |
+| `system/org/index` | `OrgView` |
+| `system/permission/index` | `PermissionView` |
+| `system/app/index` | `AppView` |
+| `system/post/index` | `PostView` |
 
 接入示例：
 

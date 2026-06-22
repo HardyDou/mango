@@ -1,6 +1,7 @@
 package io.mango.authorization.starter;
 
 import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.vo.ButtonDisplayRuleVO;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,11 @@ class RolePermissionAuthorityContributorTest {
         ISubjectAuthorityService subjectAuthorityService = mock(ISubjectAuthorityService.class);
         when(subjectAuthorityService.listSubjectRoles(any(AuthorizationQuery.class))).thenReturn(List.of("ROLE_ADMIN"));
         when(subjectAuthorityService.listSubjectPermissions(any(AuthorizationQuery.class))).thenReturn(List.of("system:user:view"));
+        ButtonDisplayRuleVO rule = new ButtonDisplayRuleVO();
+        rule.setCode("system:user:edit");
+        rule.setButtonType("TABLE");
+        rule.setDisplayRule("row.status === 1");
+        when(subjectAuthorityService.listSubjectButtonRules(any(AuthorizationQuery.class))).thenReturn(List.of(rule));
 
         RolePermissionAuthorityContributor contributor = new RolePermissionAuthorityContributor(subjectAuthorityService);
         var snapshot = contributor.contribute(AuthorizationQuery.member(1L));
@@ -41,5 +47,6 @@ class RolePermissionAuthorityContributorTest {
         assertEquals(List.of("system:user:view"), snapshot.permissionCodes().stream().toList());
         assertTrue(snapshot.authorities().contains("ROLE_ADMIN"));
         assertTrue(snapshot.authorities().contains("system:user:view"));
+        assertEquals(List.of(rule), snapshot.buttonRules());
     }
 }

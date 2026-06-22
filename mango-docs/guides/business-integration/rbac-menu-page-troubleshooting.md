@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- 本次 PR 仅纠正菜单管理页面字段文案、RBAC views README 页面 key，并补齐授权聚合测试中按钮展示规则断言；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。
+
 - PR #207 补齐 `mango-resource-api` 中的
   `ResourceTypes.FRONTEND_APP_REGISTRY` 和
   `ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY` Java 常量，并保持授权侧
