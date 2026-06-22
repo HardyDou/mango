@@ -456,6 +456,12 @@ function runSelfTest() {
     }
   }
 
+  const platformFailures = [];
+  checkPlatformCapabilityEntrypoints(platformFailures);
+  if (platformFailures.length > 0) {
+    failures.push(`platform capability entrypoint check should pass for current repository: ${platformFailures.join('; ')}`);
+  }
+
   if (failures.length > 0) {
     console.error(`Capability docs self-test failed:\n${failures.map((failure) => `- ${failure}`).join('\n')}`);
     process.exit(1);
@@ -641,6 +647,84 @@ function checkCapabilityDocCoverage(files, prBody, failures, warnings) {
   }
 }
 
+function extractBackendPlatformCapabilityReadmes() {
+  const text = read('mango-docs/capabilities/README.md');
+  return uniqueMatches(
+    text,
+    /`(mango\/mango-platform\/[^`]+)`\s*\|\s*\[README\]\([^)]*README\.md\)/g,
+    (match) => `${match[1]}/README.md`
+  );
+}
+
+function extractDocsReadmeBackendPlatformLinks() {
+  const text = read('mango-docs/README.md');
+  return uniqueMatches(
+    text,
+    /\]\(\.\.\/(mango\/mango-platform\/[^)]+\/README\.md)\)/g,
+    (match) => match[1]
+  );
+}
+
+function extractPublicDocsBackendPlatformReadmes() {
+  const text = read('mango-docs/.vitepress/stage-public-docs.mjs');
+  const publicDocsMatch = text.match(/const publicDocs = \[([\s\S]*?)\];/);
+  if (!publicDocsMatch) {
+    return [];
+  }
+  return uniqueMatches(
+    publicDocsMatch[1],
+    /'([^']+)'/g,
+    (match) => match[1]
+  ).filter((item) => /^mango\/mango-platform\/[^/]+\/README\.md$/.test(item));
+}
+
+function extractSidebarBackendPlatformLinks() {
+  const text = read('mango-docs/.vitepress/stage-public-docs.mjs');
+  return uniqueMatches(
+    text,
+    /link: '\/(mango\/mango-platform\/[^']+\/README)'/g,
+    (match) => `${match[1]}.md`
+  );
+}
+
+function uniqueMatches(text, pattern, mapper) {
+  return [...new Set([...text.matchAll(pattern)].map(mapper))].sort();
+}
+
+function missingItems(expected, actual) {
+  const actualSet = new Set(actual);
+  return expected.filter((item) => !actualSet.has(item));
+}
+
+function checkPlatformCapabilityEntrypoints(failures) {
+  if (
+    !fileExists('mango-docs/capabilities/README.md') ||
+    !fileExists('mango-docs/README.md') ||
+    !fileExists('mango-docs/.vitepress/stage-public-docs.mjs')
+  ) {
+    return;
+  }
+
+  const capabilityReadmes = extractBackendPlatformCapabilityReadmes();
+  const docsReadmeLinks = extractDocsReadmeBackendPlatformLinks();
+  const publicDocsReadmes = extractPublicDocsBackendPlatformReadmes();
+  const sidebarLinks = extractSidebarBackendPlatformLinks();
+
+  const missingDocsReadme = missingItems(capabilityReadmes, docsReadmeLinks);
+  const missingPublicDocs = missingItems(capabilityReadmes, publicDocsReadmes);
+  const missingSidebar = missingItems(capabilityReadmes, sidebarLinks);
+
+  if (missingDocsReadme.length > 0) {
+    failures.push(`mango-docs/README.md is missing backend platform capability links from capability map: ${missingDocsReadme.join(', ')}`);
+  }
+  if (missingPublicDocs.length > 0) {
+    failures.push(`mango-docs/.vitepress/stage-public-docs.mjs publicDocs is missing backend platform capability README files from capability map: ${missingPublicDocs.join(', ')}`);
+  }
+  if (missingSidebar.length > 0) {
+    failures.push(`mango-docs/.vitepress/stage-public-docs.mjs sidebar is missing backend platform capability links from capability map: ${missingSidebar.join(', ')}`);
+  }
+}
+
 if (selfTest) {
   runSelfTest();
 }
@@ -680,6 +764,7 @@ if (shouldValidatePrBody) {
 }
 
 checkCapabilityDocCoverage(files, prBody, failures, warnings);
+checkPlatformCapabilityEntrypoints(failures);
 
 const capabilityMap = fileExists('mango-docs/capabilities/README.md')
   ? read('mango-docs/capabilities/README.md')
