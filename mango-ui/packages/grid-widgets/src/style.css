@@ -5,6 +5,115 @@
   min-height: 0;
 }
 
+.mango-grid-widget-user-profile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 0;
+  padding: 18px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--mango-bg-color, #fff) 0%, var(--mango-bg-color-page, #f5f7fa) 100%);
+}
+
+.mango-grid-widget-user-profile__main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.mango-grid-widget-user-profile__avatar {
+  flex: none;
+  color: var(--mango-color-primary, #409eff);
+  background: var(--mango-color-primary-light-9, #ecf5ff);
+}
+
+.mango-grid-widget-user-profile__info {
+  min-width: 0;
+}
+
+.mango-grid-widget-user-profile__name,
+.mango-grid-widget-user-profile__meta,
+.mango-grid-widget-user-profile__tenant {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-grid-widget-user-profile__name {
+  color: var(--mango-text-color, #303133);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.mango-grid-widget-user-profile__meta {
+  margin-top: 6px;
+  color: var(--mango-text-color-regular, #606266);
+  font-size: 13px;
+}
+
+.mango-grid-widget-user-profile__tenant {
+  margin-top: 4px;
+  color: var(--mango-text-color-secondary, #909399);
+  font-size: 12px;
+}
+
+.mango-grid-widget-user-profile__details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+  min-height: 0;
+}
+
+.mango-grid-widget-user-profile__detail {
+  min-width: 0;
+  padding: 8px 10px;
+  overflow: hidden;
+  border: 1px solid var(--mango-border-color-lighter, #ebeef5);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 68%);
+}
+
+.mango-grid-widget-user-profile__detail-label {
+  margin-bottom: 4px;
+  color: var(--mango-text-color-secondary, #909399);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.mango-grid-widget-user-profile__detail-value {
+  overflow: hidden;
+  color: var(--mango-text-color, #303133);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-grid-widget-user-profile__actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.mango-grid-widget-user-profile__actions .el-button {
+  min-width: 104px;
+  height: 36px;
+  padding: 0 14px;
+  margin-left: 0;
+  font-size: 14px;
+}
+
+.mango-grid-widget-user-profile__actions .el-icon {
+  font-size: 17px;
+}
+
 .mango-grid-widget-quick-entry__title {
   position: relative;
   z-index: 3;
@@ -44,11 +153,11 @@
 .mango-grid-widget-quick-entry__body {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
-  padding: 14px;
+  padding: 12px;
   overflow: auto;
 }
 
@@ -56,9 +165,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  min-height: 74px;
-  padding: 12px 8px;
+  gap: 6px;
+  min-height: 62px;
+  padding: 9px 6px;
   border: 1px solid var(--mango-border-color, #e4e7ed);
   border-radius: 8px;
   background: var(--mango-bg-color-page, #f5f7fa);
@@ -76,7 +185,8 @@
 .mango-grid-widget-quick-entry__item span {
   max-width: 100%;
   overflow: hidden;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

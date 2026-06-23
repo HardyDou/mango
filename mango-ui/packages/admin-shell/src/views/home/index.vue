@@ -70,7 +70,10 @@ import {
   stringifyGridLayoutValue,
 } from '@mango/grid-layout';
 import type { GridLayoutItem } from '@mango/grid-layout';
-import { mergeGridWidgets, systemQuickEntryWidgets } from '@mango/grid-widgets';
+import {
+  mergeGridWidgets,
+  systemGridWidgets,
+} from '@mango/grid-widgets';
 import type { MangoWidgetNavigateTarget, MangoWidgetRuntimeContext } from '@mango/grid-widgets';
 
 const PAGE_CODE = 'admin-home-workbench';
@@ -93,16 +96,21 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
     userId: userInfo.userInfos.userId,
     username: userInfo.userInfos.username,
     nickname: userInfo.userInfos.nickname,
+    avatar: userInfo.userInfos.photo,
+    roles: userInfo.userInfos.roles,
+    appCode: userInfo.userInfos.appCode,
   },
   tenant: {
     tenantId: userInfo.userInfos.tenantId,
+    tenantCode: userInfo.userInfos.tenantCode,
+    tenantName: userInfo.userInfos.tenantName,
   },
   menus: routesList.value,
   navigate: navigateWidget,
 }));
 const workbenchWidgets = computed(() => mergeGridWidgets({
   runtime: widgetRuntime.value,
-  systemWidgets: systemQuickEntryWidgets,
+  systemWidgets: systemGridWidgets,
   businessWidgets: [],
 }));
 
@@ -179,7 +187,8 @@ async function resetLayout(): Promise<void> {
 
 function defaultLayoutItems(): GridLayoutItem[] {
   return [
-    gridItem('quick', 'system.quick-entry', 0, 0, 3, 10, '快捷入口'),
+    gridItem('user-profile', 'system.user-profile', 0, 0, 3, 10, '用户信息'),
+    gridItem('quick', 'system.quick-entry', 3, 0, 3, 10, '快捷入口'),
   ];
 }
 

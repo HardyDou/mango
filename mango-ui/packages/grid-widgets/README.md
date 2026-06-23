@@ -14,6 +14,8 @@
 | 去重策略 | 同一 `type` 只保留先注册的小组件，避免隐式覆盖 | `MergeGridWidgetsOptions.onDuplicate` |
 | 排序策略 | 按 `order`、`category`、`title` 排序，保证组件库展示稳定 | `mergeGridWidgets` |
 | 运行时注入 | 把宿主传入的用户、租户、菜单、跳转函数注入小组件 | `MangoWidgetRuntimeContext` |
+| 系统小组件集合 | 汇总 Mango 预制系统小组件，便于工作台一次性接入 | `systemGridWidgets` |
+| 用户信息小组件 | 展示当前登录人信息，并跳转到个人中心和修改密码 | `systemUserProfileWidgets` |
 | 快捷入口小组件 | 选择可见菜单并保存到浏览器本地，点击后跳转到对应模块 | `systemQuickEntryWidgets` |
 | 样式入口 | 独立消费系统小组件样式 | `@mango/grid-widgets/style.css` |
 | 类型导出 | 业务侧声明小组件、运行时上下文和快捷入口菜单 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps` |
@@ -23,7 +25,7 @@
 业务页面需要先接入 `@mango/grid-layout`，再从本包导入系统小组件和聚合工具：
 
 ```ts
-import { mergeGridWidgets, systemQuickEntryWidgets } from '@mango/grid-widgets';
+import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
 import '@mango/grid-widgets/style.css';
 ```
 
@@ -32,7 +34,7 @@ import '@mango/grid-widgets/style.css';
 ```ts
 const widgets = mergeGridWidgets({
   runtime,
-  systemWidgets: systemQuickEntryWidgets,
+  systemWidgets: systemGridWidgets,
   businessWidgets: [],
 });
 ```
@@ -55,11 +57,14 @@ const widgets = mergeGridWidgets({
 | `mergeGridWidgets` | `businessWidgets` | `[]` | 业务系统小组件列表 | 排在系统小组件之后参与合并 | `src/registry.ts` |
 | `mergeGridWidgets` | `runtime` | `undefined` | 小组件运行时上下文 | 注入到小组件 props，不进入个人布局 JSON | `src/registry.ts` |
 | `mergeGridWidgets` | `onDuplicate` | `undefined` | 重复 `type` 回调 | 发现重复注册时可记录或提示 | `src/registry.ts` |
-| `QuickEntryWidget` | `menus` | `[]` | 快捷入口可选菜单来源 | 优先于 `runtime.menus` 使用 | `src/system/QuickEntryWidget.vue` |
-| `QuickEntryWidget` | `resolveMenus` | `undefined` | 自定义菜单解析函数 | 覆盖默认菜单过滤和映射规则 | `src/system/QuickEntryWidget.vue` |
-| `QuickEntryWidget` | `storageKey` | 按页面、租户、用户生成 | 本地保存 key | 决定快捷入口选择保存位置 | `src/system/QuickEntryWidget.vue` |
-| `QuickEntryWidget` | `maxDefaultItems` | `6` | 未保存配置时默认展示数量 | 决定首次进入工作台的快捷入口数量 | `src/system/QuickEntryWidget.vue` |
-| `QuickEntryWidget` | `navigate` | `undefined` | 小组件级跳转函数 | 优先于 `runtime.navigate` 调用 | `src/system/QuickEntryWidget.vue` |
+| `QuickEntryWidget` | `menus` | `[]` | 快捷入口可选菜单来源 | 优先于 `runtime.menus` 使用 | `src/system/quick-entry/QuickEntryWidget.vue` |
+| `QuickEntryWidget` | `resolveMenus` | `undefined` | 自定义菜单解析函数 | 覆盖默认菜单过滤和映射规则 | `src/system/quick-entry/QuickEntryWidget.vue` |
+| `QuickEntryWidget` | `storageKey` | 按页面、租户、用户生成 | 本地保存 key | 决定快捷入口选择保存位置 | `src/system/quick-entry/QuickEntryWidget.vue` |
+| `QuickEntryWidget` | `maxDefaultItems` | `6` | 未保存配置时默认展示数量 | 决定首次进入工作台的快捷入口数量 | `src/system/quick-entry/QuickEntryWidget.vue` |
+| `QuickEntryWidget` | `navigate` | `undefined` | 小组件级跳转函数 | 优先于 `runtime.navigate` 调用 | `src/system/quick-entry/QuickEntryWidget.vue` |
+| `UserProfileWidget` | `runtime` | `undefined` | 当前登录人和租户上下文 | 决定用户信息展示和跳转能力 | `src/system/user-profile/UserProfileWidget.vue` |
+| `UserProfileWidget` | `profilePath` | `/profile` | 个人中心页面路径 | 点击个人中心按钮时传给 `runtime.navigate` | `src/system/user-profile/UserProfileWidget.vue` |
+| `UserProfileWidget` | `passwordPath` | `/password` | 修改密码页面路径 | 点击修改密码按钮时传给 `runtime.navigate` | `src/system/user-profile/UserProfileWidget.vue` |
 
 ## 5. API 与扩展
 
@@ -70,7 +75,7 @@ const widgets = mergeGridWidgets({
 | 参数 | 说明 |
 |------|------|
 | `widgets` | 直接传入的小组件定义，适合消费页面临时补充 |
-| `systemWidgets` | Mango 系统预制小组件，当前包含快捷入口小组件 |
+| `systemWidgets` | Mango 系统预制小组件，当前包含用户信息小组件和快捷入口小组件 |
 | `businessWidgets` | 业务系统自定义小组件 |
 | `runtime` | 当前页面运行时上下文，会通过包装组件注入到每个小组件 |
 | `onDuplicate` | 重复 `type` 处理回调，当前策略保留先注册项、忽略后注册项 |
@@ -81,8 +86,8 @@ const widgets = mergeGridWidgets({
 interface MangoWidgetRuntimeContext {
   pageCode: string;
   mode?: 'host' | 'sub-app' | 'standalone';
-  user?: { userId?: string | number; username?: string; nickname?: string };
-  tenant?: { tenantId?: string | number };
+  user?: { userId?: string | number; username?: string; nickname?: string; avatar?: string; roles?: string[]; appCode?: string };
+  tenant?: { tenantId?: string | number; tenantCode?: string; tenantName?: string };
   menus?: unknown[];
   navigate?: (target: MangoWidgetNavigateTarget) => void | Promise<void>;
 }
@@ -90,12 +95,40 @@ interface MangoWidgetRuntimeContext {
 
 `runtime` 只用于小组件运行期，不会写入个人布局 JSON，避免把菜单树、用户上下文或跳转函数持久化到布局配置。
 
+### 系统小组件目录
+
+系统小组件按独立目录组织。新增系统小组件时，组件、注册定义和私有类型优先放在同一个目录中，公共类型仍从包级 `types.ts` 导出。
+
+```text
+src/system/
+├─ quick-entry/
+│  ├─ QuickEntryWidget.vue
+│  ├─ index.ts
+│  └─ quick-entry.ts
+├─ user-profile/
+│  ├─ UserProfileWidget.vue
+│  ├─ index.ts
+│  └─ user-profile.ts
+└─ index.ts
+```
+
+### 用户信息小组件
+
+用户信息小组件展示当前登录人的头像、昵称、账号、租户、角色和应用标识。组件不直接读取宿主 store 或 router，只消费 `runtime.user`、`runtime.tenant` 和 `runtime.navigate`。
+
+默认按钮行为：
+
+| 按钮 | 默认路径 | 行为 |
+|------|----------|------|
+| 个人中心 | `/profile` | 调用 `runtime.navigate({ path: '/profile' })` |
+| 修改密码 | `/password` | 调用 `runtime.navigate({ path: '/password' })` |
+
 ### 快捷入口小组件
 
 快捷入口小组件负责菜单适配、过滤、展示、选择、本地保存和触发跳转。默认只保留可见的菜单页面，过滤目录、按钮、隐藏菜单和不可跳转项。宿主系统和微前端子系统可以通过 `runtime.navigate` 统一处理路由跳转。
 
 ```ts
-import { mergeGridWidgets, systemQuickEntryWidgets } from '@mango/grid-widgets';
+import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
 
 const runtime = {
   pageCode: 'admin-home-workbench',
@@ -103,9 +136,15 @@ const runtime = {
   user: {
     userId: userInfo.userInfos.userId,
     username: userInfo.userInfos.username,
+    nickname: userInfo.userInfos.nickname,
+    avatar: userInfo.userInfos.photo,
+    roles: userInfo.userInfos.roles,
+    appCode: userInfo.userInfos.appCode,
   },
   tenant: {
     tenantId: userInfo.userInfos.tenantId,
+    tenantCode: userInfo.userInfos.tenantCode,
+    tenantName: userInfo.userInfos.tenantName,
   },
   menus: routesList.value,
   navigate: target => router.push(target.path),
@@ -113,7 +152,7 @@ const runtime = {
 
 const widgets = mergeGridWidgets({
   runtime,
-  systemWidgets: systemQuickEntryWidgets,
+  systemWidgets: systemGridWidgets,
 });
 ```
 
@@ -156,7 +195,7 @@ const widgets = mergeGridWidgets({
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { MangoGridDesigner, MangoGridLayout } from '@mango/grid-layout';
-import { mergeGridWidgets, systemQuickEntryWidgets } from '@mango/grid-widgets';
+import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
 import '@mango/grid-layout/style.css';
 import '@mango/grid-widgets/style.css';
 
@@ -175,7 +214,7 @@ const runtime = computed(() => ({
 
 const widgets = computed(() => mergeGridWidgets({
   runtime: runtime.value,
-  systemWidgets: systemQuickEntryWidgets,
+  systemWidgets: systemGridWidgets,
 }));
 </script>
 ```
@@ -204,6 +243,8 @@ pnpm.cmd admin:module-styles:check
 | `MangoGridWidgetDefinition.title` | 小组件展示名称 | 不建议单独入库，通常随小组件定义维护 |
 | `MangoGridWidgetDefinition.category` | 组件库分组名称 | 不建议单独入库，通常随小组件定义维护 |
 | `MangoGridWidgetDefinition.defaultLayout` | 小组件默认宽高和约束 | 不建议单独入库，布局保存后以后端布局项为准 |
+| `UserProfileWidgetProps.profilePath` | 个人中心跳转路径 | 不建议单独入库，可由消费页面 props 覆盖 |
+| `UserProfileWidgetProps.passwordPath` | 修改密码跳转路径 | 不建议单独入库，可由消费页面 props 覆盖 |
 | `QuickEntryMenuItem.id` | 快捷入口菜单唯一 ID | 本版仅保存到 `localStorage` |
 | `QuickEntryMenuItem.title` | 快捷入口展示名称 | 跟随菜单数据，不单独保存 |
 | `QuickEntryMenuItem.path` | 快捷入口路由路径 | 跟随菜单数据，不单独保存 |
@@ -213,8 +254,10 @@ pnpm.cmd admin:module-styles:check
 
 | 问题 | 排查方向 |
 |------|----------|
-| 组件库里没有快捷入口 | 检查是否把 `systemQuickEntryWidgets` 传给 `mergeGridWidgets` |
-| 卡片内容不显示 | 检查布局项 `widgetType` 是否等于 `system.quick-entry` 或业务小组件 `type` |
+| 组件库里没有系统小组件 | 检查是否把 `systemGridWidgets` 传给 `mergeGridWidgets` |
+| 卡片内容不显示 | 检查布局项 `widgetType` 是否等于 `system.user-profile`、`system.quick-entry` 或业务小组件 `type` |
+| 用户信息显示为空 | 检查 `runtime.user`、`runtime.tenant` 是否传入 |
+| 用户信息按钮不跳转 | 检查 `runtime.navigate` 是否传入，并确认 `/profile`、`/password` 已注册 |
 | 快捷入口没有菜单 | 检查 `runtime.menus` 或 `menus` 是否传入可见菜单页面 |
 | 搜索不到菜单 | 检查菜单是否为目录、按钮、隐藏菜单或不可跳转项，默认解析会过滤这些数据 |
 | 点击快捷入口不跳转 | 检查 `runtime.navigate` 或 `navigate` 是否传入，并确认微前端场景的跳转适配 |

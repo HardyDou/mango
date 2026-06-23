@@ -20,7 +20,7 @@
         type="button"
         @click="handleNavigate(item)"
       >
-        <el-icon size="22">
+        <el-icon size="18">
           <component
             :is="item.icon || LinkIcon"
           />
@@ -154,7 +154,7 @@ import { computed, ref, watch } from 'vue';
 import type { Component } from 'vue';
 import { Close, Link as LinkIcon, Search, Setting } from '@element-plus/icons-vue';
 import { iconMap, MangoDialog } from '@mango/common';
-import type { QuickEntryMenuItem, QuickEntryWidgetProps } from '../types';
+import type { QuickEntryMenuItem, QuickEntryWidgetProps } from '../../types';
 
 defineOptions({
   name: 'MangoQuickEntryWidget',
