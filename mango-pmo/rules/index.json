@@ -139,6 +139,10 @@
       "path": "rules/product/02-sprint.md",
       "reason": "Sprint 规范"
     },
+    "product.detailedDesign": {
+      "path": "rules/product/03-detailed-design-template.md",
+      "reason": "详细设计模板规范"
+    },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",
       "reason": "Admin UI 通用规范"
@@ -162,14 +166,14 @@
   },
   "roles": {
     "pm": ["agent.pm", "product.prd"],
-    "tech-lead": ["agent.techLead"],
+    "tech-lead": ["agent.techLead", "product.detailedDesign"],
     "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.aiDeliveryQuality"],
     "qa": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
     "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
     "requirement": ["product.prd"],
-    "design": ["agent.techLead"],
+    "design": ["agent.techLead", "product.detailedDesign"],
     "develop": ["agent.dev", "process.devEnvironment", "process.aiDeliveryQuality"],
     "verify": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
     "release": ["process.aiDeliveryQuality"],
@@ -288,8 +292,8 @@
     },
     "product": {
       "paths": ["mango-docs/**"],
-      "keywords": ["需求", "PRD", "Sprint", "验收标准"],
-      "include": ["agent.pm", "product.prd", "product.sprint"]
+      "keywords": ["需求", "PRD", "原型", "详细设计", "设计文档", "关键对象", "关键业务流程", "业务规则", "状态机", "数据流图", "Sprint", "验收标准"],
+      "include": ["agent.pm", "product.prd", "product.detailedDesign", "product.sprint"]
     },
     "releaseBackend": {
       "paths": [],
