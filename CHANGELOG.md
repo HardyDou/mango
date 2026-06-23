@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v2026.06.23-business-docs-export - 2026-06-23
+
+### New
+
+- Added public documentation site entry points for business-facing product document output,
+  including the PRD template, detailed design template, delivery contract template, PRD template
+  rules, detailed design template rules, and Sprint rules.
+- Added a dedicated docs sidebar group for product document output so business developers can find
+  PRD, design, and delivery contract assets without browsing internal PMO folders.
+- Added the business docs export release plan and delivery ledger for this release.
+
 ### Fixed
 
 - Exposed frontend runtime resource type constants from `mango-resource-api` via
@@ -14,9 +25,34 @@
   frontend packages from leaking source files or missing exported declaration files.
 - Aligned `@form-create/element-ui` usage in the workflow and system packages to `3.2.42`
   so workflow package consumption does not resolve conflicting form-create type versions.
+- Exposed the detailed design template and detailed design template rules in the public docs staging
+  whitelist so the docs build can publish both PRD and design assets together.
+
+### Documentation
+
+- Added AI-ready PRD and detailed design templates for business requirements, menu/page prototypes,
+  business rules, PRD traceability, implementation mapping, interface/data/permission design, and
+  acceptance mapping.
+- Updated product documentation rules so PRD remains business-facing while detailed design carries
+  technical decisions, interface contracts, data changes, permissions, state machines, and
+  verification mapping.
+
+### Published Packages
+
+- No Maven artifact version changes. Backend artifacts remain on the Mango `1.0.0-SNAPSHOT` line.
+- No npm package version changes. Frontend package versions remain unchanged.
+- Published release object: Mango docs site source, platform changelog, annotated Git tag, and
+  GitHub Release notes for `v2026.06.23-business-docs-export`.
 
 ### Upgrade Notes
 
+- Business developers should use the Mango docs site “产品文档输出” entry to copy or reference:
+  - `mango-pmo/templates/prd.md`
+  - `mango-pmo/templates/detailed-design.md`
+  - `mango-pmo/templates/delivery-contract.md`
+  - `mango-pmo/rules/product/01-prd-template.md`
+  - `mango-pmo/rules/product/03-detailed-design-template.md`
+- Existing Mango runtime consumers do not need to change dependencies for this release.
 - Existing published npm versions are immutable. Before publishing this fix, bump the affected
   `@mango/*` frontend package versions and publish new versions through `pnpm publish:pkg`.
 - Business frontends should upgrade to the newly published Mango frontend package set after
@@ -25,6 +61,9 @@
 ### Verification
 
 - `git diff --check`
+- `npm --prefix mango-docs run docs:stage`
+- `npm --prefix mango-docs run docs:build`
+- `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-06-23-business-docs-export-release-plan.md --ledger mango-docs/plans/2026-06-23-business-docs-export-release-ledger.md --mode verify`
 - `pnpm admin:styles:check`
 - `pnpm admin:module-styles:check`
 - `pnpm -r --filter './packages/*' --filter '!@mango/cli' --if-present run build`
