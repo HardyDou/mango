@@ -15,16 +15,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin": "{{mangoAdminVersion}}",
-    "@mango/admin-pages": "{{mangoAdminPagesVersion}}",
-    "@mango/admin-shell": "{{mangoAdminShellVersion}}",
-    "@mango/app-runtime": "{{mangoAppRuntimeVersion}}",
-    "@mango/auth": "{{mangoAuthVersion}}",
-    "@mango/common": "{{mangoCommonVersion}}",
-    "@mango/grid-layout": "{{mangoGridLayoutVersion}}",
-    "@mango/rbac": "{{mangoRbacVersion}}",
-    "@mango/system": "{{mangoSystemVersion}}",
-{{frontendModuleDependencies}}
+{{frontendPackageDependencies}}
     "element-plus": "{{elementPlusVersion}}",
     "pinia": "{{piniaVersion}}",
     "vue": "{{vueVersion}}",

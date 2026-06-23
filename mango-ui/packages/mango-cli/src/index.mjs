@@ -16,6 +16,7 @@ const businessStarterRoot = existsSync(businessModuleTemplateRoot)
   ? businessModuleTemplateRoot
   : resolve(repoRoot, 'mango-business-starter');
 const releaseVersions = readReleaseVersions();
+const adminModulesManifest = readAdminModulesManifest();
 
 const defaultVersions = {
   mangoBackend: releaseVersions.maven?.mangoBackend || '1.0.0-SNAPSHOT',
@@ -28,6 +29,7 @@ const defaultVersions = {
   mangoCommon: readReleasedMangoPackageVersion('common', '1.0.7'),
   mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
+  mangoGridWidgets: readReleasedMangoPackageVersion('grid-widgets', '1.0.0'),
   mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
@@ -56,29 +58,17 @@ const defaultVersions = {
   swaggerAnnotations: '2.2.30',
 };
 
-const CORE_FRONTEND_PACKAGES = [
+const ADMIN_DEFAULT_MODULES = normalizeAdminModules(adminModulesManifest.defaultPackages);
+const ADMIN_FULL_MODULES = normalizeAdminModules(adminModulesManifest.fullPackages);
+
+const CORE_FRONTEND_PACKAGES = uniqueBy([
   { name: '@mango/admin', versionKey: 'mangoAdmin' },
   { name: '@mango/admin-pages', versionKey: 'mangoAdminPages' },
-  { name: '@mango/admin-shell', versionKey: 'mangoAdminShell' },
   { name: '@mango/app-runtime', versionKey: 'mangoAppRuntime' },
-  { name: '@mango/auth', versionKey: 'mangoAuth' },
-  { name: '@mango/common', versionKey: 'mangoCommon' },
-  { name: '@mango/grid-layout', versionKey: 'mangoGridLayout' },
-  { name: '@mango/rbac', versionKey: 'mangoRbac' },
-  { name: '@mango/system', versionKey: 'mangoSystem' },
-];
+  ...ADMIN_DEFAULT_MODULES.map(toFrontendDependency),
+], dependency => dependency.name);
 
-const ADMIN_OPTIONAL_PEER_PACKAGES = [
-  { name: '@mango/calendar', versionKey: 'mangoCalendar' },
-  { name: '@mango/file', versionKey: 'mangoFile' },
-  { name: '@mango/job', versionKey: 'mangoJob' },
-  { name: '@mango/notice', versionKey: 'mangoNotice' },
-  { name: '@mango/numgen', versionKey: 'mangoNumgen' },
-  { name: '@mango/payment', versionKey: 'mangoPayment' },
-  { name: '@mango/template', versionKey: 'mangoTemplate' },
-  { name: '@mango/workflow', versionKey: 'mangoWorkflow' },
-  { name: '@mango/workflow-business-example', versionKey: 'mangoWorkflowBusinessExample' },
-];
+const ADMIN_OPTIONAL_PEER_PACKAGES = ADMIN_FULL_MODULES.map(toFrontendDependency);
 
 const CORE_BACKEND_DEPENDENCIES = [
   { groupId: 'io.mango.common', artifactId: 'mango-common' },
@@ -119,16 +109,11 @@ const BUSINESS_BACKEND_MANAGED_DEPENDENCIES = [
   },
 ];
 
-const OPTIONAL_MODULES = [
+const OPTIONAL_MODULE_OVERLAYS = [
   {
     code: 'file',
     label: '文件中心',
     feature: 'file',
-    frontendPackage: '@mango/file',
-    versionKey: 'mangoFile',
-    styleImport: '@mango/file/style.css',
-    registrarImport: "import { registerMangoFileAdminPages } from '@mango/file/admin-pages';",
-    registrar: 'registerMangoFileAdminPages',
     backend: [
       { groupId: 'io.mango.platform.file', artifactId: 'mango-file-starter' },
       { groupId: 'io.mango.platform.file.preview', artifactId: 'mango-file-preview-starter' },
@@ -138,11 +123,6 @@ const OPTIONAL_MODULES = [
     code: 'template',
     label: '模板管理',
     feature: 'template',
-    frontendPackage: '@mango/template',
-    versionKey: 'mangoTemplate',
-    styleImport: '@mango/template/style.css',
-    registrarImport: "import { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';",
-    registrar: 'registerMangoTemplateAdminPages',
     runtimeModule: {
       moduleCode: 'mango-template',
       local: { mode: 'local', runtimeCode: 'mango-admin-template-local' },
@@ -156,14 +136,6 @@ const OPTIONAL_MODULES = [
     code: 'notice',
     label: '通知中心',
     feature: 'notice',
-    frontendPackage: '@mango/notice',
-    versionKey: 'mangoNotice',
-    styleImport: '@mango/notice/style.css',
-    registrarImport: [
-      "import { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';",
-      "import { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';",
-    ],
-    registrar: ['registerMangoNoticeAdminPages', 'registerMangoNoticeAdminShell'],
     backend: [
       { groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-starter' },
     ],
@@ -172,11 +144,6 @@ const OPTIONAL_MODULES = [
     code: 'numgen',
     label: '编号规则',
     feature: 'numgen',
-    frontendPackage: '@mango/numgen',
-    versionKey: 'mangoNumgen',
-    styleImport: '@mango/numgen/style.css',
-    registrarImport: "import { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';",
-    registrar: 'registerMangoNumgenAdminPages',
     backend: [
       { groupId: 'io.mango.platform.numgen', artifactId: 'mango-numgen-starter' },
     ],
@@ -185,11 +152,6 @@ const OPTIONAL_MODULES = [
     code: 'calendar',
     label: '工作日历',
     feature: 'calendar',
-    frontendPackage: '@mango/calendar',
-    versionKey: 'mangoCalendar',
-    styleImport: '@mango/calendar/style.css',
-    registrarImport: "import { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';",
-    registrar: 'registerMangoCalendarAdminPages',
     backend: [
       { groupId: 'io.mango.platform.calendar', artifactId: 'mango-calendar-starter' },
     ],
@@ -198,11 +160,6 @@ const OPTIONAL_MODULES = [
     code: 'payment',
     label: '支付中心',
     feature: 'payment',
-    frontendPackage: '@mango/payment',
-    versionKey: 'mangoPayment',
-    styleImport: '@mango/payment/style.css',
-    registrarImport: "import { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';",
-    registrar: 'registerMangoPaymentAdminPages',
     backend: [
       { groupId: 'io.mango.platform.payment', artifactId: 'mango-payment-starter' },
     ],
@@ -211,11 +168,6 @@ const OPTIONAL_MODULES = [
     code: 'workflow',
     label: '审批中心',
     feature: 'workflow',
-    frontendPackage: '@mango/workflow',
-    versionKey: 'mangoWorkflow',
-    styleImport: '@mango/workflow/style.css',
-    registrarImport: "import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';",
-    registrar: 'registerMangoWorkflowAdminPages',
     runtimeModule: {
       moduleCode: 'mango-workflow',
       local: { mode: 'local', runtimeCode: 'mango-admin-workflow-local' },
@@ -228,15 +180,11 @@ const OPTIONAL_MODULES = [
   {
     code: 'workflow-example',
     label: '审批示例',
-    frontendPackage: '@mango/workflow-business-example',
-    versionKey: 'mangoWorkflowBusinessExample',
-    styleImport: '@mango/workflow-business-example/style.css',
-    registrarImport: "import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';",
-    registrar: 'registerMangoWorkflowBusinessExampleAdminPages',
     dependsOn: ['workflow'],
   },
 ];
 
+const OPTIONAL_MODULES = buildOptionalModules(ADMIN_FULL_MODULES, OPTIONAL_MODULE_OVERLAYS);
 const MODULE_BY_CODE = new Map(OPTIONAL_MODULES.map(module => [module.code, module]));
 const FULL_MODULE_CODES = OPTIONAL_MODULES.map(module => module.code);
 
@@ -447,17 +395,8 @@ function validateOptions(options) {
 function buildVariables(options) {
   const basePackagePath = options.packageName.replaceAll('.', '/');
   const selectedModules = resolveSelectedModules(options);
-  const optionalDependencies = uniqueBy(
-    [
-      ...ADMIN_OPTIONAL_PEER_PACKAGES,
-      ...selectedModules
-        .filter(module => module.frontendPackage)
-        .map(module => ({ name: module.frontendPackage, versionKey: module.versionKey })),
-    ],
-    dependency => dependency.name,
-  );
   const frontendVersions = Object.fromEntries(
-    [...CORE_FRONTEND_PACKAGES, ...optionalDependencies].map(dependency => [
+    [...CORE_FRONTEND_PACKAGES, ...ADMIN_OPTIONAL_PEER_PACKAGES].map(dependency => [
       dependency.name,
       defaultVersions[dependency.versionKey],
     ]),
@@ -486,6 +425,7 @@ function buildVariables(options) {
     mangoCommonVersion: defaultVersions.mangoCommon,
     mangoFileVersion: defaultVersions.mangoFile,
     mangoGridLayoutVersion: defaultVersions.mangoGridLayout,
+    mangoGridWidgetsVersion: defaultVersions.mangoGridWidgets,
     mangoJobVersion: defaultVersions.mangoJob,
     mangoNoticeVersion: defaultVersions.mangoNotice,
     mangoNumgenVersion: defaultVersions.mangoNumgen,
@@ -519,7 +459,7 @@ function buildVariables(options) {
   };
   return {
     ...variables,
-    frontendModuleDependencies: renderFrontendModuleDependencies(selectedModules),
+    frontendPackageDependencies: renderFrontendPackageDependencies(frontendVersions),
     frontendEntryImports: renderFrontendEntryImports(options.preset, selectedModules),
     frontendFeaturesExpression: renderFrontendFeaturesExpression(options.preset, selectedModules),
     frontendFeatureRegistrarsExpression: renderFrontendFeatureRegistrarsExpression(options.preset, selectedModules),
@@ -2162,6 +2102,47 @@ function resolveModuleCodes(value) {
   return result;
 }
 
+function normalizeAdminModules(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  return items.map(item => ({
+    ...item,
+    packageName: item.packageName || item.name,
+    registrars: item.registrars || [],
+  }));
+}
+
+function toFrontendDependency(module) {
+  if (!module.packageName || !module.cliVersionKey) {
+    fail(`admin module ${module.code || module.packageName || '<unknown>'} must declare packageName and cliVersionKey for CLI`);
+  }
+  return {
+    name: module.packageName,
+    versionKey: module.cliVersionKey,
+  };
+}
+
+function buildOptionalModules(adminFullModules, overlays) {
+  const overlayByCode = new Map(overlays.map(overlay => [overlay.code, overlay]));
+  return adminFullModules
+    .filter(module => module.cliOptional !== false)
+    .map(module => {
+      const overlay = overlayByCode.get(module.code);
+      if (!overlay) {
+        fail(`mango-cli optional module overlay missing for ${module.code}`);
+      }
+      return {
+        ...overlay,
+        frontendPackage: module.packageName,
+        versionKey: module.cliVersionKey,
+        styleImport: module.style,
+        registrarImport: module.registrars.map(registrar => `import { ${registrar.name} } from '${registrar.import}';`),
+        registrar: module.registrars.map(registrar => registrar.name),
+      };
+    });
+}
+
 function addModuleCode(result, code) {
   const module = MODULE_BY_CODE.get(code);
   for (const dependency of module.dependsOn || []) {
@@ -2172,18 +2153,9 @@ function addModuleCode(result, code) {
   }
 }
 
-function renderFrontendModuleDependencies(selectedModules) {
-  const dependencies = uniqueBy(
-    [
-      ...ADMIN_OPTIONAL_PEER_PACKAGES,
-      ...selectedModules
-        .filter(module => module.frontendPackage)
-        .map(module => ({ name: module.frontendPackage, versionKey: module.versionKey })),
-    ],
-    dependency => dependency.name,
-  );
-  return dependencies
-    .map(dependency => `    "${dependency.name}": "${defaultVersions[dependency.versionKey]}",`)
+function renderFrontendPackageDependencies(frontendVersions) {
+  return Object.entries(frontendVersions)
+    .map(([dependency, version]) => `    "${dependency}": "${version}",`)
     .join('\n');
 }
 
@@ -2389,6 +2361,14 @@ function readReleaseVersions() {
     return {};
   }
   return JSON.parse(readFileSync(releaseVersionsPath, 'utf8'));
+}
+
+function readAdminModulesManifest() {
+  const manifestPath = join(packageRoot, 'admin-modules.json');
+  if (!existsSync(manifestPath)) {
+    fail('admin-modules.json is missing from @mango/cli package');
+  }
+  return readJsonFile(manifestPath);
 }
 
 function printChangelog() {

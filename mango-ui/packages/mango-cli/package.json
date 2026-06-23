@@ -10,6 +10,7 @@
   "files": [
     "src",
     "templates",
+    "admin-modules.json",
     "release-versions.json",
     "CHANGELOG.md",
     "README.md",
