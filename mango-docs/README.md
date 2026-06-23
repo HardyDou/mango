@@ -8,6 +8,11 @@
 
 - [Mango 能力地图](./capabilities/README.md)：按模块查 README、接入入口和组合使用顺序。
 - [业务接入场景手册](./guides/business-integration/README.md)：按业务问题查接入路径和排障入口。
+- [PRD 模板](../mango-pmo/templates/prd.md)：输出业务开发可读、AI 可继续设计的需求文档。
+- [详细设计模板](../mango-pmo/templates/detailed-design.md)：把 PRD 转成可开发、可验证、可交付的设计文档。
+- [交付契约模板](../mango-pmo/templates/delivery-contract.md)：把 PRD、设计、开发和验收项拆成逐项可核验台账。
+- [PRD 模板规范](../mango-pmo/rules/product/01-prd-template.md)：约束 PRD 的业务边界、编号和验收闭环。
+- [详细设计模板规范](../mango-pmo/rules/product/03-detailed-design-template.md)：约束设计文档的 PRD 追踪、接口、数据、权限、状态和验收映射。
 - [文档资产归档边界](../mango-pmo/rules/06-document-assets.md)：说明哪些文档放 PMO、哪些放模块 README、哪些放 evidence。
 - [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)：模块 README 的验收门禁。
 
@@ -138,6 +143,11 @@ npm --prefix mango-docs run docs:build
 PMO 内容统一维护在 `mango-pmo`，这里登记入口：
 
 - [PMO 总流程](../mango-pmo/rules/00-dev-flow.md)
+- [PRD 模板规范](../mango-pmo/rules/product/01-prd-template.md)
+- [PRD 模板](../mango-pmo/templates/prd.md)
+- [详细设计模板规范](../mango-pmo/rules/product/03-detailed-design-template.md)
+- [详细设计模板](../mango-pmo/templates/detailed-design.md)
+- [交付契约模板](../mango-pmo/templates/delivery-contract.md)
 - [文档资产归档边界](../mango-pmo/rules/06-document-assets.md)
 - [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
 - [规则索引](../mango-pmo/rules/index.json)
