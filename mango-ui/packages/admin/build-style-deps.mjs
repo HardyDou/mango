@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
 
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+
 const packages = [
   '@mango/admin-pages',
   '@mango/admin-shell',
@@ -8,6 +10,7 @@ const packages = [
   '@mango/auth',
   '@mango/common',
   '@mango/grid-layout',
+  '@mango/grid-widgets',
   '@mango/job',
   '@mango/rbac',
   '@mango/system',
@@ -22,7 +25,7 @@ const packages = [
 ];
 
 for (const packageName of packages) {
-  const result = spawnSync('pnpm', ['--dir', '../..', '-F', packageName, 'build'], {
+  const result = spawnSync(pnpmCommand, ['--dir', '../..', '-F', packageName, 'build'], {
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });

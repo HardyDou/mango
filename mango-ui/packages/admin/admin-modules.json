@@ -17,6 +17,11 @@
       "style": "@mango/grid-layout/style.css"
     },
     {
+      "code": "grid-widgets",
+      "packageName": "@mango/grid-widgets",
+      "style": "@mango/grid-widgets/style.css"
+    },
+    {
       "code": "auth",
       "packageName": "@mango/auth",
       "style": "@mango/auth/style.css"

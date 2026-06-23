@@ -508,6 +508,9 @@ importers:
       '@mango/grid-layout':
         specifier: 1.0.2
         version: link:../grid-layout
+      '@mango/grid-widgets':
+        specifier: 1.0.0
+        version: link:../grid-widgets
       '@mango/job':
         specifier: 1.0.3
         version: link:../job
@@ -609,6 +612,9 @@ importers:
       '@mango/grid-layout':
         specifier: 1.0.2
         version: link:../grid-layout
+      '@mango/grid-widgets':
+        specifier: 1.0.0
+        version: link:../grid-widgets
       '@mango/notice':
         specifier: 1.0.11
         version: link:../notice
@@ -864,6 +870,34 @@ importers:
       '@mango/common':
         specifier: 1.0.10
         version: link:../common
+      element-plus:
+        specifier: 2.14.1
+        version: 2.14.1(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
+  packages/grid-widgets:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: 2.3.2
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/common':
+        specifier: 1.0.10
+        version: link:../common
+      '@mango/grid-layout':
+        specifier: 1.0.2
+        version: link:../grid-layout
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))

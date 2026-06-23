@@ -250,16 +250,18 @@ export const businessWorkbenchWidgets: GridWidgetDefinition[] = [
 ];
 ```
 
-宿主页面或业务接入层负责把多个来源的小组件合并成一个组件库，再传给 `MangoGridDesigner` 和 `MangoGridLayout`：
+宿主页面或业务接入层负责把多个来源的小组件合并成一个组件库，再传给 `MangoGridDesigner` 和 `MangoGridLayout`。当前系统小组件注册与聚合能力已经沉淀到 `@mango/grid-widgets`，工作台通过该包获得系统预制小组件并生成最终 `widgets`：
 
 ```ts
-const widgets = [
-  ...systemWorkbenchWidgets,
-  ...businessWorkbenchWidgets,
-];
+import { mergeGridWidgets, systemQuickEntryWidgets } from '@mango/grid-widgets';
+
+const widgets = mergeGridWidgets({
+  systemWidgets: systemQuickEntryWidgets,
+  businessWidgets: businessWorkbenchWidgets,
+});
 ```
 
-当前工作台落地采用页面侧聚合方式，`admin-shell` 通过 `workbenchWidgets` 向布局组件传入可用小组件。后续如果系统小组件和业务小组件来源增多，可以在宿主侧抽出轻量 `workbenchWidgetRegistry`，统一完成合并、分组、排序、去重和权限过滤，最后仍然只把过滤后的 `GridWidgetDefinition[]` 传给 `@mango/grid-layout`。
+当前工作台落地采用页面侧聚合方式，`admin-shell` 通过 `workbenchWidgets` 向布局组件传入可用小组件。`@mango/grid-widgets` 负责系统小组件导出、合并、排序和去重；业务系统仍然可以在本地维护业务小组件数组，并在页面或业务接入层调用聚合工具生成最终 `GridWidgetDefinition[]`。第一版不做小组件权限过滤，后续如果需要按角色过滤，应在传入 `@mango/grid-layout` 前完成。
 
 组件库组合边界：
 
@@ -383,15 +385,16 @@ tenant_id + user_id + page_code
 - 取消后丢弃当前草稿。
 - 恢复默认后删除后端个人布局并回到前端默认布局。
 
-第一版默认小组件：
+第一版默认小组件收敛为 `system.quick-entry` 快捷入口，用于验证系统小组件从 `@mango/grid-widgets` 注入工作台的链路。
 
-- 权限与组织
-- 流程与协同
-- 平台基础能力
-- 常用能力
-- 平台状态
-- 待办提醒
-- 通知公告
+快捷入口展示内容：
+
+- 系统设置
+- 菜单管理
+- 文件中心
+- 工作日历
+
+原工作台本地验证小组件已删除，不再作为默认组件库内容保留。
 
 ## 8. 验证范围
 
