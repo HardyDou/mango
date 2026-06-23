@@ -63,6 +63,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 8. 变更影响记录
 
+- PR #216 加固前端 `@mango/*` npm 包发布边界，非 CLI 包不再发布 `src` 等源码目录，并补充发布包 tarball 和业务消费 typecheck 基线；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、页面验收步骤、启动方式和运行时行为。业务项目应继续使用公开 package 入口和样式入口，升级到后续发布的新包版本后重新运行前端 typecheck。
+
 - PR #199 将工作流菜单、接口权限和默认资源声明纳入 Resource Registry 注入链路，并修正菜单码/权限码复用风险；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限判断、租户隔离和页面验收步骤。清库重建或 1.0 rebase 升级后，排查工作流菜单、待办接口 403、流程定义或节点定义缺失时，需要同时确认 `AUTH_MENU`、`API_RESOURCE`、`WORKFLOW_CATEGORY`、`WORKFLOW_TEMPLATE_CATEGORY` 和 `WORKFLOW_NODE_DEFINITION` 声明同步成功。
 - PR #195 加固前端 `@mango/*` 包的 `exports`、`types` 和生成声明文件，使业务项目通过发布后的 `dist` 产物独立消费；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、页面验收步骤、启动方式和运行时行为。业务项目应继续使用公开 package 入口和 `./style.css`，不要依赖包内 `src` 路径。
 - PR #194 发布资源注册中心版本并升级 `@mango/workflow@1.0.11`、`@mango/workflow-business-example@1.0.11`、`@mango/admin@1.0.23`、`@mango/common@1.0.10`、`@mango/cli@1.0.34` 等前端包；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、页面验收步骤和运行时行为。业务升级时应成组升级前端 `@mango/*` 包并刷新后端 Mango `1.0.0-SNAPSHOT` 依赖。
