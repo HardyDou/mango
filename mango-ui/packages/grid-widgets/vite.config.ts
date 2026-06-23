@@ -7,7 +7,8 @@ export default defineConfig({
     lib: {
       entry: {
         index: 'src/index.ts',
-        'quick-entry': 'src/system/quick-entry.ts',
+        'quick-entry': 'src/system/quick-entry/quick-entry.ts',
+        'user-profile': 'src/system/user-profile/user-profile.ts',
       },
       formats: ['es'],
     },

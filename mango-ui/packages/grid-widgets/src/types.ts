@@ -29,10 +29,15 @@ export interface MangoWidgetRuntimeUser {
   userId?: string | number;
   username?: string;
   nickname?: string;
+  avatar?: string;
+  roles?: string[];
+  appCode?: string;
 }
 
 export interface MangoWidgetRuntimeTenant {
   tenantId?: string | number;
+  tenantCode?: string;
+  tenantName?: string;
 }
 
 export interface MangoWidgetNavigateTarget {
@@ -77,4 +82,10 @@ export interface QuickEntryWidgetProps {
   storageKey?: string;
   maxDefaultItems?: number;
   navigate?: (item: QuickEntryMenuItem) => void | Promise<void>;
+}
+
+export interface UserProfileWidgetProps {
+  runtime?: MangoWidgetRuntimeContext;
+  profilePath?: string;
+  passwordPath?: string;
 }

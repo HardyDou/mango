@@ -1,9 +1,9 @@
 import { Grid } from '@element-plus/icons-vue';
-import type { MangoGridWidgetDefinition } from '../types';
+import type { MangoGridWidgetDefinition } from '../../types';
 import QuickEntryWidget from './QuickEntryWidget.vue';
 
 export { default as QuickEntryWidget } from './QuickEntryWidget.vue';
-export type { QuickEntryMenuItem, QuickEntryMenuResolver, QuickEntryWidgetProps } from '../types';
+export type { QuickEntryMenuItem, QuickEntryMenuResolver, QuickEntryWidgetProps } from '../../types';
 
 export const systemQuickEntryWidgets: MangoGridWidgetDefinition[] = [
   {
