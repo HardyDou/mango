@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #215 新增 `@mango/grid-widgets` 小组件注册聚合能力与工作台快捷入口小组件；本次不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。快捷入口小组件只基于已可见菜单生成入口，不新增或绕过按钮权限判断。
+
 - 本次 PR 仅纠正菜单管理页面字段文案、补齐 RBAC views README 页面 key，并补充授权聚合测试中 `buttonRules` 断言；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
 
 - PR #207 补齐 `mango-resource-api` 中的
