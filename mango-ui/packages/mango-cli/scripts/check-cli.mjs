@@ -7,12 +7,15 @@ const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
 const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
+const packagedAdminModules = JSON.parse(readFileSync(join(packageRoot, 'admin-modules.json'), 'utf8'));
+const sourceAdminModules = JSON.parse(readFileSync(join(packageRoot, '../admin/admin-modules.json'), 'utf8'));
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-cli-'));
 const fullProjectName = 'mango-full-acceptance';
 const customProjectName = 'mango-custom-acceptance';
 
 try {
   assertNoWorkspacePackageJsonInTemplates();
+  assertPackagedAdminModules();
 
   const result = spawnSync(process.execPath, [
     cli,
@@ -86,7 +89,7 @@ try {
 
   const frontendPackage = JSON.parse(readFileSync(join(projectRoot, 'frontend/package.json'), 'utf8'));
   assertEqual(frontendPackage.devDependencies['@mango/cli'], cliPackage.version, '@mango/cli');
-  for (const dependency of ['@mango/admin', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice', '@mango/payment']) {
+  for (const dependency of ['@mango/admin', '@mango/grid-widgets', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice', '@mango/payment']) {
     if (!frontendPackage.dependencies[dependency]) {
       throw new Error(`frontend package missing dependency: ${dependency}`);
     }
@@ -100,6 +103,7 @@ try {
     '@mango/calendar': readReleasedPackageVersion('@mango/calendar'),
     '@mango/common': readReleasedPackageVersion('@mango/common'),
     '@mango/grid-layout': readReleasedPackageVersion('@mango/grid-layout'),
+    '@mango/grid-widgets': readReleasedPackageVersion('@mango/grid-widgets'),
     '@mango/file': readReleasedPackageVersion('@mango/file'),
     '@mango/job': readReleasedPackageVersion('@mango/job'),
     '@mango/notice': readReleasedPackageVersion('@mango/notice'),
@@ -296,6 +300,7 @@ try {
   }
 
   const customPackage = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
+  assertIncludes(Object.keys(customPackage.dependencies), '@mango/grid-widgets', 'custom default admin dependencies');
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow', 'custom dependencies');
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow-business-example', 'custom dependencies');
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/template', 'custom dependencies');
@@ -315,6 +320,9 @@ try {
     "registerMangoWorkflowAdminPages",
     "registerMangoWorkflowBusinessExampleAdminPages",
     "registerMangoTemplateAdminPages",
+    "import '@mango/workflow/style.css';",
+    "import '@mango/workflow-business-example/style.css';",
+    "import '@mango/template/style.css';",
   ]) {
     if (!customMain.includes(expected)) {
       throw new Error(`custom frontend entry missing registrar: ${expected}`);
@@ -387,6 +395,9 @@ try {
   const addedMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!addedMain.includes('registerMangoNoticeAdminPages') || !addedMain.includes('registerMangoNoticeAdminShell')) {
     throw new Error('add command did not update notice frontend registrars');
+  }
+  if (!addedMain.includes("import '@mango/notice/style.css';")) {
+    throw new Error('add command did not update notice frontend style import');
   }
   if (!addedMain.includes("console.info('business-owned bootstrap hook');")) {
     throw new Error('add command overwrote business-owned frontend entry content');
@@ -610,6 +621,15 @@ function assertEqual(actual, expected, field) {
 function assertIncludes(values, expected, field) {
   if (!values.includes(expected)) {
     throw new Error(`${field} expected to include ${expected}`);
+  }
+}
+
+function assertPackagedAdminModules() {
+  if (JSON.stringify(packagedAdminModules) !== JSON.stringify(sourceAdminModules)) {
+    throw new Error('packaged @mango/cli admin-modules.json must match @mango/admin admin-modules.json');
+  }
+  if (!cliPackage.files.includes('admin-modules.json')) {
+    throw new Error('@mango/cli package files must include admin-modules.json');
   }
 }
 

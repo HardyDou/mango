@@ -8,12 +8,12 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.31` |
+| 当前版本 | `1.0.34` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
 | 使用 registry | [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) |
-| 随包发布文件 | `src`、`templates`、`release-versions.json`、`CHANGELOG.md`、`README.md`、`package.json` |
+| 随包发布文件 | `src`、`templates`、`admin-modules.json`、`release-versions.json`、`CHANGELOG.md`、`README.md`、`package.json` |
 
 ## 2. 功能清单
 
@@ -38,7 +38,7 @@ CLI 负责：
 
 - 从 `templates/full` 渲染业务项目。
 - 根据 `release-versions.json` 锁定 Mango Maven 和 NPM 包版本。
-- 根据 preset 和 module code 生成前端依赖、页面注册、运行时模块配置和后端 Maven 依赖。
+- 根据随包发布的 `admin-modules.json`、preset 和 module code 生成前端依赖、页面注册、样式入口、运行时模块配置和后端 Maven 依赖。
 - 读取 `mango.dev.json`、`.mango/dev-workspace.env`、`.mango/dev-workspace.local.json`，启动本地开发应用。
 - 维护受 `mango-cli` marker 保护的代码块，例如 `backend/pom.xml`、`backend/app/pom.xml`、`frontend/src/main.ts`、`application.yml` 中的 managed block。
 - 同步业务 PMO baseline、兼容脚本和 Agent 入口。

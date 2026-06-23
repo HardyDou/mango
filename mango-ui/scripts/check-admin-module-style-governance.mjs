@@ -15,6 +15,8 @@ const styleFull = readText('packages/admin/style-full.css');
 const fullEntry = readText('packages/admin/src/full.ts');
 const fullTypes = readText('packages/admin/src/full.d.ts');
 const cliSource = readText('packages/mango-cli/src/index.mjs');
+const cliAdminModules = readJson('packages/mango-cli/admin-modules.json');
+const cliPackageJson = readJson('packages/mango-cli/package.json');
 const paymentStyle = readText('packages/payment/style.css');
 const mangoAliases = readText('build-config/mangoAliases.ts');
 
@@ -29,6 +31,7 @@ assertPaymentIsFullOnly();
 assertPaymentStyleScoped();
 assertWorkspaceAliasesUseAdminModules();
 assertBuildStyleDepsGenerated();
+assertCliAdminModulesPackaged();
 
 for (const module of [...defaultModules, ...fullModules]) {
   assertPackageStyleExport(module);
@@ -241,17 +244,51 @@ function assertCliModule(module) {
   if (!cliSource.includes(`code: '${module.code}'`)) {
     failures.push(`mango-cli optional modules must include ${module.code}`);
   }
-  const expectedValues = [
-    module.packageName,
-    module.style,
-    module.cliVersionKey,
-    ...module.registrars.flatMap((registrar) => [registrar.name, registrar.import]),
-  ];
-  for (const expected of expectedValues) {
-    if (expected && !cliSource.includes(expected)) {
-      failures.push(`mango-cli optional module ${module.code} must include ${expected}`);
+}
+
+function assertCliAdminModulesPackaged() {
+  if (JSON.stringify(cliAdminModules) !== JSON.stringify(adminModules)) {
+    failures.push('packages/mango-cli/admin-modules.json must match packages/admin/admin-modules.json');
+  }
+  if (!cliPackageJson.files?.includes('admin-modules.json')) {
+    failures.push('@mango/cli package files must include admin-modules.json');
+  }
+  for (const requiredFragment of [
+    'readAdminModulesManifest',
+    'admin-modules.json',
+    'buildOptionalModules(ADMIN_FULL_MODULES, OPTIONAL_MODULE_OVERLAYS)',
+  ]) {
+    if (!cliSource.includes(requiredFragment)) {
+      failures.push(`mango-cli must derive optional module metadata from packaged admin-modules.json: missing ${requiredFragment}`);
     }
   }
+  const overlayBlock = readCliOverlayBlock();
+  for (const forbidden of [
+    'frontendPackage',
+    'versionKey',
+    'styleImport',
+    'registrarImport',
+    'registrar:',
+  ]) {
+    if (overlayBlock.includes(forbidden)) {
+      failures.push(`mango-cli optional module overlay must not duplicate admin module metadata field ${forbidden}`);
+    }
+  }
+  for (const module of [...defaultModules, ...fullModules]) {
+    if (module.cliVersionKey && !cliSource.includes(module.cliVersionKey)) {
+      failures.push(`mango-cli default versions must include ${module.cliVersionKey}`);
+    }
+  }
+}
+
+function readCliOverlayBlock() {
+  const start = cliSource.indexOf('const OPTIONAL_MODULE_OVERLAYS = [');
+  const end = cliSource.indexOf('const OPTIONAL_MODULES = buildOptionalModules', start);
+  if (start < 0 || end < 0) {
+    failures.push('mango-cli must keep optional CLI-only metadata in OPTIONAL_MODULE_OVERLAYS');
+    return '';
+  }
+  return cliSource.slice(start, end);
 }
 
 function assertStyleAggregation(module) {
