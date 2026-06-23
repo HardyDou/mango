@@ -81,7 +81,7 @@ function assertDeclaration(packageName, packageRoot, declarationPath) {
       addFailure(packageName, `${declarationPath} references missing declaration ${modulePath}`);
       continue;
     }
-    const relativeToPackage = resolved.slice(packageRoot.length + 1);
+    const relativeToPackage = resolved.slice(packageRoot.length + 1).split('\\').join('/');
     if (!relativeToPackage.startsWith('dist/')) {
       addFailure(packageName, `${declarationPath} references declaration outside dist: ${modulePath}`);
     }

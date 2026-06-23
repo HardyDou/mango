@@ -1,0 +1,46 @@
+{
+  "name": "@mango/grid-widgets",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./quick-entry": {
+      "types": "./dist/quick-entry.d.ts",
+      "import": "./dist/quick-entry.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+  },
+  "files": [
+    "dist",
+    "src",
+    "package.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "@element-plus/icons-vue": "2.3.2",
+    "@mango/common": "1.0.10",
+    "@mango/grid-layout": "1.0.2"
+  },
+  "peerDependencies": {
+    "element-plus": "2.14.1",
+    "vue": "3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "types": "./dist/index.d.ts"
+}

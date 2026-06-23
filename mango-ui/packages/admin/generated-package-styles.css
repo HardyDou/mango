@@ -3,6 +3,7 @@
 @import '@mango/common/style.css';
 @import '@mango/admin-shell/style.css';
 @import '@mango/grid-layout/style.css';
+@import '@mango/grid-widgets/style.css';
 @import '@mango/auth/style.css';
 @import '@mango/rbac/style.css';
 @import '@mango/system/style.css';

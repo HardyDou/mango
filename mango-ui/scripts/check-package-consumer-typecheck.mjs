@@ -8,13 +8,15 @@ const currentFile = fileURLToPath(import.meta.url);
 const uiRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(uiRoot, '..');
 const cli = join(uiRoot, 'packages/mango-cli/src/index.mjs');
-const runId = `issue-148-${Date.now()}`;
-const projectRoot = join(repoRoot, '.runtime/projects/package-consumer-typecheck', runId);
-const packageStore = join(repoRoot, '.runtime/package-store/package-consumer-typecheck', runId);
+const runId = Date.now().toString(36);
+const runtimeRoot = join(repoRoot, '.runtime/pct', runId);
+const projectRoot = join(runtimeRoot, 'p');
+const packageStore = join(runtimeRoot, 's');
 const consumerName = 'mango-package-consumer-typecheck';
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length) || 'https://registry.npmjs.org/';
 const keepTemp = process.argv.includes('--keep-temp');
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -46,6 +48,20 @@ function readPackedPackageJson(tarballPath) {
     throw new Error(`Failed to read package.json from ${tarballPath}:\n${result.stderr}`);
   }
   return JSON.parse(result.stdout);
+}
+
+function listPackableMangoPackages() {
+  const packagesRoot = join(uiRoot, 'packages');
+  return readdirSync(packagesRoot)
+    .map((packageDir) => join(packagesRoot, packageDir))
+    .filter((packageRoot) => {
+      const packageJsonPath = join(packageRoot, 'package.json');
+      if (!existsSync(packageJsonPath)) {
+        return false;
+      }
+      const packageJson = readJson(packageJsonPath);
+      return packageJson.name?.startsWith('@mango/') && !packageJson.private;
+    });
 }
 
 function mapPackedMangoTarballs(frontendRoot) {
@@ -87,8 +103,7 @@ function applyTarballMappings(frontendRoot, mappings) {
 
 function cleanup() {
   if (!keepTemp) {
-    rmSync(projectRoot, { recursive: true, force: true });
-    rmSync(packageStore, { recursive: true, force: true });
+    rmSync(runtimeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
   }
 }
 
@@ -100,17 +115,18 @@ try {
   mkdirSync(packageStore, { recursive: true });
 
   console.log('Generating package styles before packing');
-  run('pnpm', ['admin:styles']);
+  run(pnpmCommand, ['admin:styles']);
 
   console.log('Building Mango frontend packages before consumer typecheck');
-  run('pnpm', ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', '--if-present', 'run', 'build']);
+  run(pnpmCommand, ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', '--if-present', 'run', 'build']);
 
   console.log('Checking Mango package exports before packing');
-  run('pnpm', ['package-exports:check']);
+  run(pnpmCommand, ['package-exports:check']);
 
   console.log('Packing Mango frontend packages for consumer typecheck');
-  run('pnpm', ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', 'pack', '--pack-destination', packageStore]);
-  run('pnpm', ['--filter', '@mango/cli', 'pack', '--pack-destination', packageStore]);
+  for (const packageRoot of listPackableMangoPackages()) {
+    run(pnpmCommand, ['pack', '--pack-destination', packageStore], { cwd: packageRoot });
+  }
 
   console.log('Generating temporary Mango business frontend consumer');
   run(process.execPath, [
@@ -137,7 +153,7 @@ try {
   applyTarballMappings(frontendRoot, mappings);
 
   console.log(`Installing generated consumer dependencies with ${mappings.size} local Mango tarballs`);
-  run('pnpm', ['install', `--registry=${registry}`], {
+  run(pnpmCommand, ['install', `--registry=${registry}`], {
     cwd: frontendRoot,
     env: {
       npm_config_registry: registry,
@@ -146,7 +162,7 @@ try {
   });
 
   console.log('Running generated consumer vue-tsc type gate');
-  run('pnpm', ['run', 'typecheck'], { cwd: frontendRoot });
+  run(pnpmCommand, ['run', 'typecheck'], { cwd: frontendRoot });
 
   console.log('Generated consumer vue-tsc type gate passed.');
   cleanup();

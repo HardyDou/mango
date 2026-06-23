@@ -14,6 +14,10 @@
       "style": "@mango/grid-layout/style.css"
     },
     {
+      "name": "@mango/grid-widgets",
+      "style": "@mango/grid-widgets/style.css"
+    },
+    {
       "name": "@mango/auth",
       "style": "@mango/auth/style.css"
     },

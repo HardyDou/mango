@@ -1,8 +1,5 @@
 <template>
-  <div
-    v-loading="loading"
-    class="home-container"
-  >
+  <div v-loading="loading" class="home-container">
     <section class="home-hero">
       <div>
         <div class="home-hero__title">工作台</div>
@@ -10,11 +7,7 @@
       </div>
       <div class="home-hero__actions">
         <template v-if="editing">
-          <el-button
-            :loading="saving"
-            type="primary"
-            @click="saveLayout"
-          >
+          <el-button :loading="saving" type="primary" @click="saveLayout">
             保存布局
           </el-button>
           <el-button @click="cancelEdit">取消</el-button>
@@ -29,11 +22,7 @@
             </template>
           </el-popconfirm>
         </template>
-        <el-button
-          v-else
-          type="primary"
-          @click="startEdit"
-        >
+        <el-button v-else type="primary" @click="startEdit">
           编辑布局
         </el-button>
       </div>
@@ -69,7 +58,10 @@
 
 <script setup lang="ts" name="MangoShellHome">
 import { computed, onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import { useUserInfo } from '../../stores/userInfo';
+import { useRoutesList } from '../../stores/routesList';
 import {
   MangoGridDesigner,
   MangoGridLayout,
@@ -78,17 +70,41 @@ import {
   stringifyGridLayoutValue,
 } from '@mango/grid-layout';
 import type { GridLayoutItem } from '@mango/grid-layout';
-import { workbenchWidgets } from '../../grid-widgets/workbench';
+import { mergeGridWidgets, systemQuickEntryWidgets } from '@mango/grid-widgets';
+import type { MangoWidgetNavigateTarget, MangoWidgetRuntimeContext } from '@mango/grid-widgets';
 
 const PAGE_CODE = 'admin-home-workbench';
 
+const router = useRouter();
 const userInfo = useUserInfo();
+const routesListStore = useRoutesList();
+const { routesList } = storeToRefs(routesListStore);
 const loading = ref(false);
 const saving = ref(false);
 const editing = ref(false);
 const errorMessage = ref('');
 const layoutItems = ref<GridLayoutItem[]>(defaultLayoutItems());
 const draftItems = ref<GridLayoutItem[]>([]);
+
+const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
+  pageCode: PAGE_CODE,
+  mode: 'host',
+  user: {
+    userId: userInfo.userInfos.userId,
+    username: userInfo.userInfos.username,
+    nickname: userInfo.userInfos.nickname,
+  },
+  tenant: {
+    tenantId: userInfo.userInfos.tenantId,
+  },
+  menus: routesList.value,
+  navigate: navigateWidget,
+}));
+const workbenchWidgets = computed(() => mergeGridWidgets({
+  runtime: widgetRuntime.value,
+  systemWidgets: systemQuickEntryWidgets,
+  businessWidgets: [],
+}));
 
 const displayName = computed(() => {
   const nickname = userInfo.userInfos.nickname || userInfo.userInfos.username;
@@ -163,12 +179,7 @@ async function resetLayout(): Promise<void> {
 
 function defaultLayoutItems(): GridLayoutItem[] {
   return [
-    gridItem('permission', 'platform-permission', 0, 0, 3, 10, '权限与组织'),
-    gridItem('workflow', 'platform-workflow', 3, 0, 3, 10, '流程与协同'),
-    gridItem('common', 'platform-common', 6, 0, 3, 10, '平台基础能力'),
-    gridItem('quick', 'quick-entry', 9, 0, 3, 10, '常用能力'),
-    gridItem('status', 'platform-status', 0, 11, 6, 10, '平台状态'),
-    gridItem('todo', 'todo', 6, 11, 6, 10, '待办提醒'),
+    gridItem('quick', 'system.quick-entry', 0, 0, 3, 10, '快捷入口'),
   ];
 }
 
@@ -187,6 +198,17 @@ function cloneItems(items: GridLayoutItem[]): GridLayoutItem[] {
     layout: { ...item.layout },
     props: item.props ? { ...item.props } : undefined,
   }));
+}
+
+async function navigateWidget(target: MangoWidgetNavigateTarget): Promise<void> {
+  if (target.pageType === 'EXTERNAL_LINK' && target.url) {
+    window.open(target.url, '_blank', 'noopener,noreferrer');
+    return;
+  }
+  if (!target.path) {
+    return;
+  }
+  await router.push(target.path);
 }
 </script>
 
@@ -229,92 +251,5 @@ function cloneItems(items: GridLayoutItem[]): GridLayoutItem[] {
 
 .home-alert {
   margin-bottom: 0;
-}
-
-:deep(.home-widget-metric) {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-:deep(.home-widget-metric__value) {
-  color: var(--mango-text-color);
-  font-size: 28px;
-  font-weight: 700;
-}
-
-:deep(.home-widget-metric__label) {
-  margin-top: 8px;
-  color: var(--mango-text-color-regular);
-  font-size: 13px;
-}
-
-:deep(.home-widget-metric.is-primary .home-widget-metric__value) {
-  color: var(--mango-color-primary);
-}
-
-:deep(.home-widget-metric.is-success .home-widget-metric__value) {
-  color: var(--mango-color-success);
-}
-
-:deep(.home-widget-metric.is-warning .home-widget-metric__value) {
-  color: var(--mango-color-warning);
-}
-
-:deep(.home-widget-quick) {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-:deep(.home-widget-quick__item) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  min-height: 74px;
-  padding: 12px 8px;
-  border: 1px solid var(--mango-border-color);
-  border-radius: 8px;
-  background: var(--mango-bg-color-page);
-  color: var(--mango-text-color);
-  cursor: pointer;
-}
-
-:deep(.home-widget-quick__item:hover) {
-  border-color: var(--mango-color-primary);
-  color: var(--mango-color-primary);
-}
-
-:deep(.home-widget-status) {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-:deep(.home-widget-status__label) {
-  margin-bottom: 6px;
-  color: var(--mango-text-color-regular);
-  font-size: 13px;
-}
-
-:deep(.home-widget-list) {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-:deep(.home-widget-list__item) {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 38px;
-}
-
-:deep(.home-widget-list__item span:nth-child(2)) {
-  flex: 1;
-  min-width: 0;
-  color: var(--mango-text-color);
 }
 </style>
