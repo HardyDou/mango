@@ -17,13 +17,12 @@
   },
   "files": [
     "dist",
-    "src",
     "README.md",
     "package.json"
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@form-create/element-ui": "3.2.16",
+    "@form-create/element-ui": "3.2.42",
     "@mango/api-schema": "1.0.2",
     "@mango/common": "1.0.10",
     "@mango/rbac": "1.0.8",

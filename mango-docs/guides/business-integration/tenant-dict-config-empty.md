@@ -69,6 +69,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #216 加固前端 `@mango/*` npm 包发布边界，非 CLI 包不再发布 `src` 等源码目录，并补充发布包 tarball 和业务消费 typecheck 基线；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口和运行时行为。业务项目应继续使用公开 package 入口和样式入口，升级到后续发布的新包版本后重新运行前端 typecheck。
+
 - PR #215 新增 `@mango/grid-widgets` 小组件注册聚合能力与工作台快捷入口小组件；本次不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口和运行时行为。快捷入口配置暂存浏览器本地，不写入租户基础数据或后端配置表。
 
 - Issue #186 runtime baseline follow-up 补齐 Resource Registry 运行态验收、Nacos 能力 app 配置、Feign 动态目标保持、系统菜单套餐继承和管理端 E2E 基线；不改变租户字典、组织、用户、系统配置的公开查询 API、权限、租户隔离方式和页面入口。业务升级后排查基础数据为空时，需要同时确认 `SYSTEM_DICT`、`SYSTEM_CONFIG`、`AUTH_MENU` 等资源声明同步成功，能力 app 使用正确 Nacos 服务名和 context path，且当前部署拓扑装配了本地或远程 Resource Registry runtime。

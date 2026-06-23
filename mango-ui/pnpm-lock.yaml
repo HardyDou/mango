@@ -1096,8 +1096,8 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@form-create/element-ui':
-        specifier: 3.2.16
-        version: 3.2.16(vue@3.5.13(typescript@5.9.3))
+        specifier: 3.2.42
+        version: 3.2.42(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
         specifier: 1.0.2
         version: link:../api-schema
@@ -1173,8 +1173,8 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@form-create/element-ui':
-        specifier: 3.2.16
-        version: 3.2.16(vue@3.5.13(typescript@5.9.3))
+        specifier: 3.2.42
+        version: 3.2.42(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
         specifier: 1.0.10
         version: link:../admin-pages

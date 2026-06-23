@@ -50,6 +50,60 @@ function readPackedPackageJson(tarballPath) {
   return JSON.parse(result.stdout);
 }
 
+function listTarballFiles(tarballPath) {
+  const result = run('tar', ['-tzf', tarballPath], { capture: true });
+  if (result.status !== 0) {
+    throw new Error(`Failed to list ${tarballPath}:\n${result.stderr}`);
+  }
+  return result.stdout.split(/\r?\n/).filter(Boolean);
+}
+
+function exportedTypePaths(packageJson) {
+  const paths = [];
+  if (packageJson.types) {
+    paths.push(packageJson.types);
+  }
+  for (const exportConfig of Object.values(packageJson.exports || {})) {
+    if (typeof exportConfig !== 'string' && exportConfig?.types) {
+      paths.push(exportConfig.types);
+    }
+  }
+  return paths.map((entry) => `package/${entry.replace(/^\.\//, '')}`);
+}
+
+function wildcardToRegExp(pattern) {
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped.replaceAll('*', '[^/]+')}$`);
+}
+
+function assertPackedPackageBoundary(tarballPath) {
+  const packageJson = readPackedPackageJson(tarballPath);
+  if (!packageJson.name?.startsWith('@mango/') || packageJson.name === '@mango/cli') {
+    return;
+  }
+  const files = listTarballFiles(tarballPath);
+  const sourceFile = files.find((file) =>
+    /^package\/src\//.test(file)
+    || /^package\/(?:api|components|hooks|types|utils|views)\//.test(file)
+    || /^package\/index\.ts$/.test(file),
+  );
+  if (sourceFile) {
+    throw new Error(`${packageJson.name} tarball must not publish source file: ${sourceFile}`);
+  }
+  for (const typePath of exportedTypePaths(packageJson)) {
+    if (typePath.includes('*')) {
+      const pattern = wildcardToRegExp(typePath);
+      if (!files.some((file) => pattern.test(file))) {
+        throw new Error(`${packageJson.name} tarball is missing exported declaration pattern: ${typePath}`);
+      }
+      continue;
+    }
+    if (!files.includes(typePath)) {
+      throw new Error(`${packageJson.name} tarball is missing exported declaration: ${typePath}`);
+    }
+  }
+}
+
 function listPackableMangoPackages() {
   const packagesRoot = join(uiRoot, 'packages');
   return readdirSync(packagesRoot)
@@ -71,6 +125,7 @@ function mapPackedMangoTarballs(frontendRoot) {
       continue;
     }
     const tarballPath = join(packageStore, file);
+    assertPackedPackageBoundary(tarballPath);
     const packageJson = readPackedPackageJson(tarballPath);
     if (packageJson.name?.startsWith('@mango/')) {
       mappings.set(packageJson.name, `file:${relative(frontendRoot, tarballPath)}`);

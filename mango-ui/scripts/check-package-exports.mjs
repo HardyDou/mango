@@ -35,6 +35,19 @@ function assertPath(packageName, packageRoot, field, value) {
   }
 }
 
+function assertPublishedFiles(packageName, packageJson) {
+  const files = packageJson.files ?? [];
+  const sourceEntries = ['src', 'api', 'components', 'hooks', 'types', 'utils', 'views', 'index.ts'];
+  for (const entry of files) {
+    if (sourceEntries.includes(entry) || entry.startsWith('src/') || entry.endsWith('.ts') || entry.endsWith('.vue')) {
+      addFailure(packageName, `files must not publish source entry ${entry}`);
+    }
+  }
+  if (!files.includes('dist')) {
+    addFailure(packageName, 'files must include dist');
+  }
+}
+
 function findDeclarationFiles(dir) {
   if (!existsSync(dir)) {
     return [];
@@ -101,6 +114,7 @@ for (const packageDir of readdirSync(packagesRoot)) {
   if (packageJson.private) {
     continue;
   }
+  assertPublishedFiles(packageJson.name, packageJson);
   assertPath(packageJson.name, packageRoot, 'main', packageJson.main);
   assertPath(packageJson.name, packageRoot, 'module', packageJson.module);
   assertPath(packageJson.name, packageRoot, 'types', packageJson.types);

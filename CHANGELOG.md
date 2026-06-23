@@ -8,10 +8,28 @@
   `ResourceTypes.FRONTEND_APP_REGISTRY` and
   `ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY`, and kept authorization
   resource type aliases aligned with the shared Resource Registry API constants.
+- Fixed Mango frontend npm package boundaries so non-CLI `@mango/*` packages publish `dist`
+  declarations and runtime artifacts instead of repository `src` or other source directories.
+- Added package export and generated business consumer typecheck gates to prevent published
+  frontend packages from leaking source files or missing exported declaration files.
+- Aligned `@form-create/element-ui` usage in the workflow and system packages to `3.2.42`
+  so workflow package consumption does not resolve conflicting form-create type versions.
+
+### Upgrade Notes
+
+- Existing published npm versions are immutable. Before publishing this fix, bump the affected
+  `@mango/*` frontend package versions and publish new versions through `pnpm publish:pkg`.
+- Business frontends should upgrade to the newly published Mango frontend package set after
+  publication, then rerun their project typecheck.
 
 ### Verification
 
 - `git diff --check`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm -r --filter './packages/*' --filter '!@mango/cli' --if-present run build`
+- `pnpm package-exports:check`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ --keep-temp`
 - `mvn -f mango/pom.xml -pl :mango-authorization-api,:mango-authorization-starter mango:check -Drule=dependency`
 - `mvn -f mango/pom.xml -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter -am test`
 - `mvn -f mango/pom.xml -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter -am -DskipTests package`
