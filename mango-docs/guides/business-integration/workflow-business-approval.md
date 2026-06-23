@@ -63,6 +63,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 8. 变更影响记录
 
+- PR #222 对齐 `@mango/numgen`、`@mango/template`、`@mango/workflow` 内部依赖的 `@mango/system` 版本到本地最新发布物料集合；不改变业务审批发起、审批回调、状态回写、流程页面 key、公开 API、配置、权限、租户隔离、页面验收步骤、启动方式和运行时行为。业务项目应成组安装同一批次的本地 `@mango/*` tarball，避免新旧内部依赖混装导致安装解析失败。
+
 - PR #216 加固前端 `@mango/*` npm 包发布边界，非 CLI 包不再发布 `src` 等源码目录，并补充发布包 tarball 和业务消费 typecheck 基线；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、页面验收步骤、启动方式和运行时行为。业务项目应继续使用公开 package 入口和样式入口，升级到后续发布的新包版本后重新运行前端 typecheck。
 
 - PR #199 将工作流菜单、接口权限和默认资源声明纳入 Resource Registry 注入链路，并修正菜单码/权限码复用风险；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限判断、租户隔离和页面验收步骤。清库重建或 1.0 rebase 升级后，排查工作流菜单、待办接口 403、流程定义或节点定义缺失时，需要同时确认 `AUTH_MENU`、`API_RESOURCE`、`WORKFLOW_CATEGORY`、`WORKFLOW_TEMPLATE_CATEGORY` 和 `WORKFLOW_NODE_DEFINITION` 声明同步成功。

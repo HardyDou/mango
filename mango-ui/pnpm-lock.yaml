@@ -994,8 +994,8 @@ importers:
         specifier: 1.0.10
         version: link:../common
       '@mango/system':
-        specifier: 1.0.8
-        version: 1.0.8(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: 1.0.9
+        version: link:../system
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1145,8 +1145,8 @@ importers:
         specifier: 1.0.11
         version: link:../file
       '@mango/system':
-        specifier: 1.0.8
-        version: 1.0.8(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: 1.0.9
+        version: link:../system
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1188,8 +1188,8 @@ importers:
         specifier: 1.0.11
         version: link:../file
       '@mango/system':
-        specifier: 1.0.8
-        version: 1.0.8(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: 1.0.9
+        version: link:../system
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1619,11 +1619,6 @@ packages:
     peerDependencies:
       vue: ^3.5.12
 
-  '@form-create/element-ui@3.2.16':
-    resolution: {integrity: sha512-LOQaycPw5aHdsGLGohsQvQjhlzbUBpUHz2pbcneFMix8bYwrJq1Hj5kDLTmxrl59gNkOqMiX6qwDAZpkTmAXtQ==}
-    peerDependencies:
-      vue: ^3.1.0
-
   '@form-create/element-ui@3.2.42':
     resolution: {integrity: sha512-yOc53N6TfNYuwNhs87kxcTfrQesjYCuv5IPmrkRLGWPvbvpb9IoBFhnVq2yekezO0p8Ng5ZKuzPY4o78QCuNmg==}
     peerDependencies:
@@ -1726,37 +1721,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@mango/api-schema@1.0.2':
-    resolution: {integrity: sha512-+vS9dOoJkRKY+cw1ACd49Ommjka+ZWtAISX8LlHpSl/hXf9TfBRFvbg+gjIPBNEo3nydctZwjXxOzojqL+gJBw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/api-schema/-/api-schema-1.0.2.tgz}
-
-  '@mango/app-runtime@1.0.2':
-    resolution: {integrity: sha512-COHJzcqylDGf5TLXOJJOvx23STu1jkiTIXEzqPEU6Ejk/rvgAClsDsjfwA8OnepRb9KIzEGkVjATzKnPSCyZRQ==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/app-runtime/-/app-runtime-1.0.2.tgz}
-    peerDependencies:
-      vue: 3.5.13
-
-  '@mango/common@1.0.9':
-    resolution: {integrity: sha512-CHGTUPAiUA04jcUxD7FEjYukuC6/OQ7ny3JO7kYHWK01nlTvJysm3tI1+uUCifr4eV6mkjwnwbqJYTINO/2UpQ==}
-    peerDependencies:
-      element-plus: 2.14.1
-      pinia: 2.0.32
-      vue: 3.5.13
-      vue-i18n: 9.2.2
-      vue-router: ^4.1.6
-
-  '@mango/rbac@1.0.7':
-    resolution: {integrity: sha512-4MR1gjD9IAoG4lb0pghlEIC7R/1F1sB2KrbYHoOS18sP/Ei5qUDuTXqSBoKzjuy0KmLbsxZxk5GTj4eHq7iFCQ==}
-    peerDependencies:
-      element-plus: 2.14.1
-      vue: 3.5.13
-      vue-router: ^4.1.6
-
-  '@mango/system@1.0.8':
-    resolution: {integrity: sha512-R+9BgQsQnQmx7V/vv01xxDPxS1Fq9nZAlUOCAu53LMrvbRmgR7eNwigvoEf/5aBcxcQBNI0VKlfLoxptkq4NPg==}
-    peerDependencies:
-      element-plus: 2.14.1
-      vue: 3.5.13
-      vue-router: ^4.1.6
 
   '@microsoft/fetch-event-source@2.0.1':
     resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
@@ -4759,20 +4723,6 @@ snapshots:
       '@form-create/utils': 3.2.31
       vue: 3.5.13(typescript@5.9.3)
 
-  '@form-create/element-ui@3.2.16(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@form-create/component-elm-checkbox': 3.2.39
-      '@form-create/component-elm-frame': 3.2.31
-      '@form-create/component-elm-group': 3.2.38
-      '@form-create/component-elm-radio': 3.2.31
-      '@form-create/component-elm-select': 3.2.37
-      '@form-create/component-elm-tree': 3.2.31
-      '@form-create/component-elm-upload': 3.2.31
-      '@form-create/component-subform': 3.2.34
-      '@form-create/core': 3.2.42(vue@3.5.13(typescript@5.9.3))
-      '@form-create/utils': 3.2.31
-      vue: 3.5.13(typescript@5.9.3)
-
   '@form-create/element-ui@3.2.42(vue@3.5.13(typescript@5.9.3))':
     dependencies:
       '@form-create/component-elm-checkbox': 3.2.39
@@ -4888,76 +4838,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  '@mango/api-schema@1.0.2':
-    dependencies:
-      typescript: 5.9.3
-
-  '@mango/app-runtime@1.0.2(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-      wujie: 1.0.29
-
-  '@mango/common@1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@microsoft/fetch-event-source': 2.0.1
-      '@vueuse/core': 10.11.1(vue@3.5.13(typescript@5.9.3))
-      '@wangeditor/editor': 5.1.23
-      '@wangeditor/editor-for-vue': 5.1.12(@wangeditor/editor@5.1.23)(vue@3.5.13(typescript@5.9.3))
-      axios: 1.15.0
-      codemirror: 5.65.21
-      crypto-js: 3.3.0
-      echarts: 6.0.0
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      js-cookie: 3.0.5
-      lodash: 4.18.1
-      mitt: 3.0.1
-      nprogress: 0.2.0
-      pinia: 2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
-      qs: 6.15.1
-      screenfull: 6.0.2
-      sm-crypto: 0.3.14
-      vue: 3.5.13(typescript@5.9.3)
-      vue-i18n: 9.2.2(vue@3.5.13(typescript@5.9.3))
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-      xlsx: 0.18.5
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-
-  '@mango/rbac@1.0.7(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/app-runtime': 1.0.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/common': 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
-
-  '@mango/system@1.0.8(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))':
-    dependencies:
-      '@element-plus/icons-vue': 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@form-create/element-ui': 3.2.16(vue@3.5.13(typescript@5.9.3))
-      '@mango/api-schema': 1.0.2
-      '@mango/common': 1.0.9(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      '@mango/rbac': 1.0.7(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
-      element-plus: 2.14.1(vue@3.5.13(typescript@5.9.3))
-      form-create-designer: 3.2.11-oem(vue@3.5.13(typescript@5.9.3))
-      vue: 3.5.13(typescript@5.9.3)
-      vue-router: 4.6.4(vue@3.5.13(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - pinia
-      - vue-i18n
 
   '@microsoft/fetch-event-source@2.0.1': {}
 
