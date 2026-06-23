@@ -59,13 +59,7 @@
   },
   "files": [
     "dist",
-    "api",
-    "components",
-    "hooks",
     "theme",
-    "types",
-    "utils",
-    "index.ts",
     "README.md",
     "package.json"
   ],
