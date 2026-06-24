@@ -210,7 +210,7 @@ props：
 
 | prop | 默认值 | 含义 |
 |------|--------|------|
-| `domainCodes` | 必填 | 需要展示的业务域编码列表，例如 `['CMS', 'WORKFLOW']`。编码必须来自 `mango-domain` 已启用业务域。 |
+| `domainCodes` | 必填参数 | 需要展示的业务域编码列表，例如 `['CMS', 'WORKFLOW']`。通常传入 `mango-domain` 已启用业务域编码。 |
 | `domainLabels` | `{}` | 业务域 Tab 展示名映射。 |
 | `keyword` | `''` | 按配置键、名称、介绍进行前端过滤。 |
 | `readonly` | `true` | 是否整体只读。业务页面默认只读；只有明确允许业务用户修改配置值时才传 `false`。 |
