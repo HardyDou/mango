@@ -901,6 +901,9 @@ importers:
       '@mango/notice':
         specifier: 1.0.11
         version: link:../notice
+      '@mango/workflow':
+        specifier: 1.0.11
+        version: link:../workflow
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))

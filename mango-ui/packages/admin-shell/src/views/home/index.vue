@@ -59,7 +59,7 @@
 <script setup lang="ts" name="MangoShellHome">
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { useRouter, type LocationQueryRaw } from 'vue-router';
 import { useUserInfo } from '../../stores/userInfo';
 import { useRoutesList } from '../../stores/routesList';
 import {
@@ -218,7 +218,19 @@ async function navigateWidget(target: MangoWidgetNavigateTarget): Promise<void> 
   if (!target.path) {
     return;
   }
-  await router.push(target.path);
+  const query = resolveWidgetQuery(target.raw);
+  await router.push(query ? { path: target.path, query } : target.path);
+}
+
+function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
+  if (!raw || typeof raw !== 'object' || !('query' in raw)) {
+    return undefined;
+  }
+  const query = (raw as { query?: unknown }).query;
+  if (!query || typeof query !== 'object' || Array.isArray(query)) {
+    return undefined;
+  }
+  return query as LocationQueryRaw;
 }
 </script>
 

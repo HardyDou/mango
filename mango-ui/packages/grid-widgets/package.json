@@ -18,6 +18,10 @@
       "types": "./dist/message-center.d.ts",
       "import": "./dist/message-center.js"
     },
+    "./my-todo": {
+      "types": "./dist/my-todo.d.ts",
+      "import": "./dist/my-todo.js"
+    },
     "./user-profile": {
       "types": "./dist/user-profile.d.ts",
       "import": "./dist/user-profile.js"
@@ -36,7 +40,8 @@
     "@element-plus/icons-vue": "2.3.2",
     "@mango/common": "1.0.10",
     "@mango/grid-layout": "1.0.2",
-    "@mango/notice": "1.0.11"
+    "@mango/notice": "1.0.11",
+    "@mango/workflow": "1.0.11"
   },
   "peerDependencies": {
     "element-plus": "2.14.1",

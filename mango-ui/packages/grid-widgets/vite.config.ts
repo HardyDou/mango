@@ -7,6 +7,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: 'src/index.ts',
+        'my-todo': 'src/system/my-todo/my-todo.ts',
         'quick-entry': 'src/system/quick-entry/quick-entry.ts',
         'message-center': 'src/system/message-center/message-center.ts',
         'user-profile': 'src/system/user-profile/user-profile.ts',
@@ -19,6 +20,7 @@ export default defineConfig({
         '@mango/common',
         '@mango/grid-layout',
         '@mango/notice',
+        '@mango/workflow',
         'element-plus',
         'vue',
       ],
