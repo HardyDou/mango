@@ -4,21 +4,23 @@
     :class="{ 'layout-main--fixed-shell': enableFixedShell }"
     :style="layoutMainStyle"
   >
-    <el-scrollbar
-      v-if="!enableFixedShell"
-      ref="layoutMainScrollbarRef"
-      class="layout-main-scroll layout-backtop-header-fixed"
-      wrap-class="layout-main-scroll"
-      view-class="layout-main-scroll"
-    >
-      <div class="layout-main-body">
-        <div class="layout-main-content">
-          <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
-          <LayoutParentView v-else />
+    <template v-if="!enableFixedShell">
+      <el-scrollbar
+        ref="layoutMainScrollbarRef"
+        class="layout-main-scroll layout-backtop-header-fixed"
+        wrap-class="layout-main-scroll"
+        view-class="layout-main-scroll"
+      >
+        <div class="layout-main-body">
+          <div class="layout-main-content">
+            <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
+            <LayoutParentView v-else />
+          </div>
+          <LayoutFooter v-if="showFooter && !enableEdgeFooter" />
         </div>
-        <LayoutFooter v-if="showFooter" />
-      </div>
-    </el-scrollbar>
+      </el-scrollbar>
+      <LayoutFooter v-if="showFooter && enableEdgeFooter" />
+    </template>
     <div
       v-else
       class="layout-main-body layout-main-body--fixed-shell"
@@ -29,9 +31,11 @@
         wrap-class="layout-main-scroll"
         view-class="layout-main-scroll"
       >
-        <div class="layout-main-content">
-          <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
-          <LayoutParentView v-else />
+        <div class="layout-main-content-shell">
+          <div class="layout-main-content">
+            <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
+            <LayoutParentView v-else />
+          </div>
         </div>
       </el-scrollbar>
       <LayoutFooter v-if="showFooter" />
@@ -56,6 +60,7 @@ const { isFooter, layout } = storeToRefs(layoutStore);
 const layoutMainScrollbarRef = ref();
 const showFooter = computed(() => isFooter.value);
 const enableFixedShell = computed(() => layout.value === 'defaults' || layout.value === 'columns');
+const enableEdgeFooter = computed(() => ['defaults', 'classic', 'columns'].includes(layout.value));
 const layoutMainStyle = computed(() => ({
   '--mango-layout-footer-height': showFooter.value ? '40px' : '0px',
 }));
@@ -73,6 +78,7 @@ const setBacktopClass = computed(() => {
 <style scoped lang="scss">
 .layout-main {
   --layout-content-space: 16px;
+  --layout-content-safe-bottom: calc(var(--layout-content-space) + env(safe-area-inset-bottom, 0px));
 }
 
 .layout-main {
@@ -94,7 +100,7 @@ const setBacktopClass = computed(() => {
 
 .layout-main-body {
   min-height: 100%;
-  padding: var(--layout-content-space);
+  padding: var(--layout-content-space) var(--layout-content-space) var(--layout-content-safe-bottom);
   background: var(--mango-bg-main);
   display: flex;
   flex-direction: column;
@@ -104,11 +110,18 @@ const setBacktopClass = computed(() => {
   min-height: 0;
   height: 100%;
   overflow: hidden;
+  padding: 0;
 }
 
 .layout-main-content {
   flex: 1;
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
+  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - var(--layout-content-space) - var(--layout-content-safe-bottom));
+}
+
+.layout-main-content-shell {
+  min-height: 100%;
+  padding: var(--layout-content-space) var(--layout-content-space) var(--layout-content-safe-bottom);
+  box-sizing: border-box;
 }
 
 .layout-main-scroll--content {
@@ -116,7 +129,7 @@ const setBacktopClass = computed(() => {
 }
 
 :deep(.router-view-parent.is-root) {
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
+  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - var(--layout-content-space) - var(--layout-content-safe-bottom));
 }
 
 .layout-backtop-header-fixed {
