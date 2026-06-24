@@ -99,4 +99,11 @@ public class SysConfigController {
     public R<List<String>> groups() {
         return configService.listTypes();
     }
+
+    @GetMapping("/value-types")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
+    @Operation(summary = "获取系统配置展示类型", description = "权限接口。查询配置面板支持的展示与编辑类型")
+    public R<List<String>> valueTypes() {
+        return configService.listValueTypes();
+    }
 }

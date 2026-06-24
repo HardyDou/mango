@@ -2,14 +2,14 @@
 
 ## 1. 概览
 
-`@mango/system` 是 Mango 系统管理前端包，提供字典、系统配置、租户、公共路径、地区、业务域、登录日志、操作日志、系统事件页面，并导出业务域选择和参与人选择等后台业务组件。
+`@mango/system` 是 Mango 系统管理前端包，提供字典、系统配置、租户、公共路径、地区、业务域、登录日志、操作日志、系统事件页面，并导出系统配置面板、业务域选择和参与人选择等后台业务组件。
 
 集成形态：
 
 | 标识 | 说明 |
 |------|------|
 | `admin-pages` | 系统管理、租户、日志、业务域和事件运维页面。 |
-| `business-component` | `DomainSelector`、`DomainSideTree`、`ParticipantSelector` 可被后台业务页面复用。 |
+| `business-component` | `SystemConfigPanel`、`DomainSelector`、`DomainSideTree`、`ParticipantSelector` 可被后台业务页面复用。 |
 | `api-client` | system、domain、event、public path 相关 API 封装。 |
 
 它不是官网或 C 端站点组件库。页面和组件默认使用 Mango Admin 的请求、登录态、租户、权限和 Element Plus 样式。
@@ -19,7 +19,7 @@
 | 能力 | 使用入口 | 后端依赖 |
 |------|----------|----------|
 | 字典类型和字典数据 | `DictView`、`dictTypeApi`、`dictDataApi` | `mango-system` |
-| 系统配置和参数 | `ConfigView`、`configApi`、`paramApi` | `mango-system` |
+| 系统配置 | `ConfigView`、`SystemConfigPanel`、`configApi`、`paramApi` | `mango-system` |
 | 租户 | `TenantView`、`tenantApi` | `mango-system`、`mango-authorization` |
 | 公共路径 | `PublicPathView`、public path API | BFF permission / authorization |
 | 地区 | `AreaView`、`areaApi` | `mango-system` |
@@ -47,6 +47,7 @@ import {
   DomainSelector,
   DomainSideTree,
   ParticipantSelector,
+  SystemConfigPanel,
   dictDataApi,
   domainApi,
   tenantApi,
@@ -74,6 +75,39 @@ import '@mango/system/style.css';
 </template>
 ```
 
+复用系统配置面板：
+
+```vue
+<script setup lang="ts">
+import { SystemConfigPanel } from '@mango/system';
+import '@mango/system/style.css';
+</script>
+
+<template>
+  <SystemConfigPanel
+    :domain-codes="['ORDER']"
+    :domain-labels="{ ORDER: '订单中心' }"
+  />
+</template>
+```
+
+允许业务控制页修改当前配置值：
+
+```vue
+<script setup lang="ts">
+import { SystemConfigPanel } from '@mango/system';
+import '@mango/system/style.css';
+</script>
+
+<template>
+  <SystemConfigPanel
+    :domain-codes="['ORDER', 'SETTLEMENT']"
+    :domain-labels="{ ORDER: '订单中心', SETTLEMENT: '结算中心' }"
+    :readonly="false"
+  />
+</template>
+```
+
 ## 4. 配置说明
 
 本包没有独立 Vite 环境变量。配置来自宿主请求层、页面注册、后端数据和组件 props。
@@ -85,8 +119,9 @@ import '@mango/system/style.css';
 | `DomainSelector` | `multiple`、`clearable`、`disabled`、`checkStrictly`、`placeholder` | 控制业务域下拉选择。 |
 | `DomainSideTree` | `options`、`counts`、`showAll`、`searchable`、`allCode` | 控制左侧业务域树、数量和筛选。 |
 | `ParticipantSelector` | `userOptions`、`roleOptions`、`postOptions`、`orgTreeOptions`、`targetLoading` | 控制参与人候选项。 |
+| `SystemConfigPanel` | `domainCodes`、`domainLabels`、`keyword`、`readonly`、`showRefresh`、`typeFilter` | 控制业务域配置卡片、详情和编辑能力。 |
 
-系统配置和字典是后端数据，不是前端构建配置。业务页面要通过 `configApi.byGroup(group)`、`dictDataApi.options(typeCode)` 读取。
+系统配置和字典是后端数据，不是前端构建配置。业务页面要通过 `configApi.list({ domainCode })`、`dictDataApi.options(typeCode)` 读取。
 
 ## 5. API 与扩展
 
@@ -111,6 +146,7 @@ import '@mango/system/style.css';
 | `ParticipantSelector` | 选择用户、部门范围、角色、岗位组合。 |
 | `DomainSelector` | 业务域树下拉选择，返回业务域 id。 |
 | `DomainSideTree` | 后台列表左侧业务域树，返回业务域 code。 |
+| `SystemConfigPanel` | 按业务域 Tab 展示配置卡片，支持开关、文本、数字、单选、日期和日期区间配置。 |
 | `ParticipantSelectorValue` 等类型 | 参与人选择器类型。 |
 
 主要 API：
@@ -119,7 +155,7 @@ import '@mango/system/style.css';
 |-----|----------|------|
 | `dictTypeApi` | `/system/dict/type/list` | 字典类型列表、详情、创建、更新、删除。 |
 | `dictDataApi` | `/system/dict/data/list`、`/system/dict/data/options` | 字典数据维护和选项读取。 |
-| `configApi` | `/system/config/list`、`/system/config/type` | 系统配置 CRUD、按组读取、分组列表。 |
+| `configApi` | `/system/config/list`、`/system/config/type`、`/system/config/value` | 系统配置 CRUD、按组读取、分组列表和值更新。 |
 | `paramApi` | `/system/config/list`、`/system/config/value` | 参数维护和值更新。 |
 | `tenantApi` | `/system/tenant/list` | 租户 CRUD 和状态切换。 |
 | `areaApi` | `/system/area/tree`、`/system/area/children` | 地区树、子节点、详情、维护。 |
@@ -134,7 +170,7 @@ import '@mango/system/style.css';
 | 数据 | 字段 |
 |------|------|
 | 字典选项 | `label`、`value`、`sort`、`status` |
-| 系统配置 | `id`、`configKey`、`configValue`、`configType`、`group` |
+| 系统配置 | `id`、`configKey`、`configValue`、`configName`、`domainCode`、`valueType`、`options`、`editable`、`status` |
 | 租户 | `id`、`tenantCode`、`tenantName`、`status` |
 | 业务域 | `id`、`domainCode`、`domainShortCode`、`domainName`、`children` |
 | 系统事件 | `messageId`、`eventType`、`status`、`retryCount`、`createTime` |
@@ -150,6 +186,29 @@ import '@mango/system/style.css';
 | 菜单、菜单包、租户授权 | `mango-authorization`、`@mango/rbac` API | 租户菜单包授权。 |
 | 用户、组织、岗位、角色 | `mango-identity`、`mango-org`、`mango-authorization` | `ParticipantSelector` 候选项。 |
 | 系统事件 | `mango-infra-event` outbox | 事件运维页面。 |
+
+### 6.1 业务域配置面板数据准备
+
+业务模块要把自己的配置接入 `SystemConfigPanel`，先准备后端数据，再在业务页面传入业务域编码：
+
+1. 在 `业务域` 管理或本模块初始化数据中登记业务域，保持 `domainCode` 稳定，例如 `ORDER`、`CRM`、`SETTLEMENT`。
+2. 在 `参数配置` 页面为该业务域维护配置定义。配置定义包括参数名称、参数键、展示类型、默认值、当前值、是否可编辑、配置介绍、可选值和绑定字典。
+3. 固定选项少且不复用时，使用参数配置的自定义选项；跨页面复用或需要运营维护时，先在字典管理维护字典类型和字典数据，再在参数配置中绑定 `dictType`。
+4. 业务页面嵌入 `SystemConfigPanel` 时传入同一个 `domainCode`。普通业务页面保持默认只读；业务控制台或运营面板再传 `readonly=false`。
+5. 业务后端通过 `SysConfigApi` 读取配置值，前端面板修改值后只影响 `sys_config.config_value`，不替代后端权限、租户和业务规则校验。
+
+配置展示类型：
+
+| valueType | 面板控件 | 选项来源 |
+|-----------|----------|----------|
+| `BOOLEAN` | 开关 | 不需要选项。 |
+| `STRING` | 文本输入 | 不需要选项。 |
+| `NUMBER` | 数字输入 | 不需要选项。 |
+| `RADIO` | 单选按钮 | 自定义 `options` 或绑定字典。 |
+| `SELECT` | 下拉选择 | 自定义 `options` 或绑定字典。 |
+| `MULTI_SELECT` | 多选下拉 | 自定义 `options` 或绑定字典。 |
+| `DATE` | 日期选择 | 不需要选项。 |
+| `DATE_RANGE` | 日期区间 | 不需要选项。 |
 
 ## 7. 管理入口
 
@@ -170,9 +229,10 @@ import '@mango/system/style.css';
 1. 后端启用 `mango-system`，按需启用 `mango-domain`、`mango-infra-event`、identity、org、authorization。
 2. 前端安装 `@mango/system`，引入 `@mango/system/style.css`。
 3. 用 `@mango/admin-pages` 默认注册系统页面，或手工把页面 key 映射到导出组件。
-4. 业务页面通过 `dictDataApi.options()`、`configApi.byGroup()`、`domainApi.enabledTree()` 读取基础数据。
-5. 需要业务域筛选时使用 `DomainSelector` 或 `DomainSideTree`。
-6. 需要选择用户、组织、角色、岗位时使用 `ParticipantSelector` 并准备候选项。
+4. 业务页面通过 `dictDataApi.options()`、`configApi.list()`、`domainApi.enabledTree()` 读取基础数据。
+5. 需要按业务域集中管理配置时使用 `SystemConfigPanel`，传入一个或多个业务域编码。
+6. 需要业务域筛选时使用 `DomainSelector` 或 `DomainSideTree`。
+7. 需要选择用户、组织、角色、岗位时使用 `ParticipantSelector` 并准备候选项。
 
 ## 9. 问题排查
 
@@ -180,6 +240,9 @@ import '@mango/system/style.css';
 |------|----------|----------|
 | 字典为空 | `typeCode` 错误、字典未初始化或无权限 | 查 `/system/dict/data/options`。 |
 | 配置读取为空 | 分组或配置 key 不一致 | 查 `/system/config/type`。 |
+| 配置面板没有业务配置 | `domainCodes` 和业务域编码不一致，或参数配置未绑定该业务域 | 查业务域启用树和 `/system/config/list?domainCode=...`。 |
+| 配置面板不能编辑 | `SystemConfigPanel` 默认只读，或参数定义 `editable=false` | 业务控制页传 `readonly=false`，并检查参数配置的可编辑状态。 |
+| 选择类配置没有选项 | 未维护 `options` 或绑定字典无启用数据 | 查参数配置的选项来源和 `/system/dict/data/options`。 |
 | 租户授权菜单树为空 | 菜单包、菜单或 appCode 缺失 | 查 authorization 菜单和菜单包。 |
 | 业务域树为空 | `mango-domain` 未启用、无启用业务域或无权限 | 查 `/domain/domains/enabled-tree`。 |
 | 事件页面为空 | 当前环境没有 outbox 事件或后端未启用 event | 查 `/system/events`。 |

@@ -35,3 +35,93 @@ mango:
             remark:
               type: STRING
               value: 跨模块通用业务域
+        - id: "2170000000000001001"
+          version: 1
+          biz-key: domain.notice
+          name: 通知中心
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 2170000000000001001
+            domainCode:
+              type: STRING
+              value: NOTICE
+            domainShortCode:
+              type: STRING
+              value: NOTICE
+            domainName:
+              type: STRING
+              value: 通知中心
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 30
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 通知中心业务域，用于维护消息发送、渠道和接收人策略参数
+        - id: "2170000000000001002"
+          version: 1
+          biz-key: domain.workflow
+          name: 流程审批
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 2170000000000001002
+            domainCode:
+              type: STRING
+              value: WORKFLOW
+            domainShortCode:
+              type: STRING
+              value: WF
+            domainName:
+              type: STRING
+              value: 流程审批
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 40
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 流程审批业务域，用于维护审批流转和任务处理策略参数
+        - id: "2170000000000001003"
+          version: 1
+          biz-key: domain.cms
+          name: 内容管理
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 2170000000000001003
+            domainCode:
+              type: STRING
+              value: CMS
+            domainShortCode:
+              type: STRING
+              value: CMS
+            domainName:
+              type: STRING
+              value: 内容管理
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 50
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 内容管理业务域，用于维护内容发布、审核和展示策略参数

@@ -10,6 +10,7 @@ export { default as SystemEventView } from './views/event/index.vue';
 export { default as ParticipantSelector } from './components/ParticipantSelector/index.vue';
 export { default as DomainSelector } from './components/DomainSelector/index.vue';
 export { default as DomainSideTree } from './components/DomainSideTree/index.vue';
+export { default as SystemConfigPanel } from './components/SystemConfigPanel/index.vue';
 export type {
   ParticipantOrgTreeOption,
   ParticipantSelectorLoading,

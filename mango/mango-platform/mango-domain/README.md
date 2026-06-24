@@ -15,7 +15,7 @@
 | 按编码查询 | 业务运行时校验 `domainCode` 是否存在 | `DomainApi.detailByCode` / `GET /domain/domains/code` |
 | 分页查询 | 管理端列表查询业务域 | `DomainApi.page` / `GET /domain/domains/page` |
 | 业务域维护 | 新增、修改、启停、逻辑删除业务域 | 管理接口 |
-| 内置业务域 | 初始化 `COMMON`、`WORKFLOW`、`NOTICE`、`CALENDAR`、`NUMGEN`、`FILE`、`TEMPLATE`、`JOB`、`PAYMENT` | `mango-resource` 的 `BUSINESS_DOMAIN` |
+| 内置业务域 | 初始化 `COMMON`、`WORKFLOW`、`NOTICE`、`CMS`、`CALENDAR`、`NUMGEN`、`FILE`、`TEMPLATE`、`JOB`、`PAYMENT` | `mango-resource` 的 `BUSINESS_DOMAIN` |
 
 ## 3. 后端接入
 

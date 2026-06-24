@@ -15,7 +15,7 @@
 | 能力 | 说明 | 常用入口 |
 |------|------|----------|
 | 字典 | 维护字典类型、字典数据，给表单下拉、筛选项、标签展示提供选项 | `DictApi`、`/system/dict`、`dictTypeApi`、`dictDataApi` |
-| 系统配置 | 维护运行时配置键值，例如安全开关、业务开关、上传/邮件/短信分组参数 | `SysConfigApi`、`/system/config`、`configApi`、`paramApi` |
+| 系统配置 | 维护运行时配置键值和业务域配置控制面板，例如安全开关、业务开关、上传/邮件/短信分组参数 | `SysConfigApi`、`/system/config`、`configApi`、`SystemConfigPanel` |
 | 机构 | 维护机构空间、机构类型、机构状态、机构套餐绑定，登录页读取启用机构选项 | `SysTenantApi`、`/system/tenant`、`tenantApi` |
 | 行政区划 | 查询省市区树、子级区划、adcode 详情和启用区划 | `SysAreaApi`、`/system/area`、`areaApi` |
 | 国际化 | 读取公开语言包、语言列表和指定国际化条目 | `SysI18nApi`、`/system/i18n` |
@@ -49,7 +49,7 @@
 | API | 用法 |
 |-----|------|
 | `DictApi` | 字典类型、字典数据、字典选项读取和维护。业务表单通常调用 `getOptions(typeCode)`。 |
-| `SysConfigApi` | 系统配置列表、详情、创建、修改、删除、按配置键取值。业务开关通常调用 `getValue(configKey)`。 |
+| `SysConfigApi` | 系统配置列表、详情、创建、修改、删除、按配置键取值。业务开关通常调用 `getValue(configKey)`，布尔和整数配置可调用 `getBooleanValue(configKey, defaultValue)`、`getIntegerValue(configKey, defaultValue)`。 |
 | `SysTenantApi` | 机构列表、详情、新增、修改、删除和状态调整。 |
 | `SysAreaApi` | 行政区划树、子级、详情、adcode、启用区划读取。 |
 | `SysI18nApi` | 国际化语言包、语言列表、国际化键读取。 |
@@ -104,7 +104,7 @@ import '@mango/system/style.css';
 1. 业务模块需要读取字典或配置时，在后端引入 `mango-system-api`。
 2. 宿主应用需要提供系统管理能力时，引入 `mango-system-starter`，启动后执行 `system` migration。
 3. 字典类字段先在 `sys_dict_type` 登记类型，再在 `sys_dict_data` 登记选项，业务通过 `DictApi.getOptions(typeCode)` 或 `GET /system/dict/data/options` 读取。
-4. 运行时开关、阈值、文案等放入 `sys_config`，业务通过 `SysConfigApi.getValue(configKey)` 读取。
+4. 运行时开关、阈值、文案等放入 `sys_config`，业务通过 `SysConfigApi.getValue(configKey)` 读取；需要后台控制面板展示时补充 `domainCode`、`valueType`、`optionSource`、`dictType`、`options`、`editable` 等元数据。
 5. 管理后台接入 `@mango/system` 页面或 API 封装，并在菜单资源中绑定对应页面和权限码。
 6. 新建机构时必须选择 `packageId`，系统会触发机构初始化扩展点，并把机构绑定到套餐。
 7. 平台默认菜单和按钮权限来自 `system-common-menu.json` 的 `AUTH_MENU` 声明，不再通过 Flyway 菜单 DML 初始化。
@@ -123,6 +123,43 @@ import '@mango/system/style.css';
 | `sys.login.lockCount` | `5` | `SECURITY` | 登录锁定次数。 |
 
 系统配置支持按 `domainCode` 归类。字典类型也支持 `domainCode`，用于把公共字典、文件、模板、通知、编号、日历等配置分到不同业务域。
+
+系统配置控制面板元数据：
+
+| 字段 | 默认值 | 含义 |
+|------|--------|------|
+| `domainCode` | `COMMON` | 业务域编码，必须和 `mango-domain` 中启用业务域一致。 |
+| `valueType` | `STRING` | 配置值展示与编辑类型：`BOOLEAN`、`STRING`、`NUMBER`、`RADIO`、`SELECT`、`MULTI_SELECT`、`DATE`、`DATE_RANGE`。 |
+| `groupCode` | 空 | 配置分组编码，用于业务域内二次分组。 |
+| `groupName` | 空 | 配置分组名称。 |
+| `defaultValue` | 空 | 默认值。 |
+| `options` | 空 | 自定义选项 JSON 数组，例如 `[{"label":"加急","value":"urgent"}]`。 |
+| `optionSource` | `CUSTOM` | 选项来源：`CUSTOM` 使用 `options`，`DICT` 使用 `dictType` 读取字典。 |
+| `dictType` | 空 | 绑定字典类型，仅 `optionSource=DICT` 时使用。 |
+| `editable` | `true` | 是否允许在控制面板修改配置值。 |
+| `editableReason` | 空 | 不可编辑时展示的原因。 |
+
+`MULTI_SELECT` 和 `DATE_RANGE` 的配置值使用 JSON 字符串数组，例如 `["site","email"]`、`["2026-06-01","2026-06-23"]`。
+
+### 6.1 业务模块接入配置面板
+
+业务模块要在自己的后台页面展示配置面板时，按业务域组织配置：
+
+1. 在 `mango-domain` 中登记并启用业务域，例如 `ORDER`、`CRM`、`SETTLEMENT`。业务域编码是前端 `SystemConfigPanel.domainCodes` 和后端 `sys_config.domain_code` 的连接点。
+2. 在 `sys_config` 中维护本业务域配置。人工维护入口是后台 `参数配置` 页面；模块默认配置通过 `mango-resource` 的 `SYSTEM_CONFIG` 声明注入。
+3. 配置定义放在 `参数配置` 页面维护：配置名称、参数键、业务域、展示类型、默认值、可选值、绑定字典、是否可编辑和配置介绍。
+4. 业务前端页面嵌入 `SystemConfigPanel` 并传入业务域编码。普通业务页面默认只读；运营控制台需要改当前值时传 `readonly=false`。
+5. 业务后端读取配置仍使用 `SysConfigApi`，例如 `getValue(configKey)`、`getBooleanValue(configKey, defaultValue)`、`getIntegerValue(configKey, defaultValue)`。前端面板只是维护当前值的入口，不替代业务后端校验。
+
+示例配置：
+
+| 业务域 | 配置键 | valueType | 说明 |
+|--------|--------|-----------|------|
+| `NOTICE` | `notice.center.enabled` | `BOOLEAN` | 通知中心总开关。 |
+| `NOTICE` | `notice.retry.maxTimes` | `NUMBER` | 第三方渠道失败重试次数。 |
+| `NOTICE` | `notice.channels.default` | `MULTI_SELECT` | 默认通知渠道，可绑定 `notice_channel` 字典。 |
+| `WORKFLOW` | `workflow.task.defaultPriority` | `SELECT` | 默认审批优先级，可绑定 `workflow_task_priority` 字典。 |
+| `CMS` | `cms.publish.channels.default` | `MULTI_SELECT` | 默认发布渠道，可绑定 `cms_publish_channel` 字典。 |
 
 ## 7. 资源注入
 
@@ -172,6 +209,15 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | `configName` | `STRING` | 是 | 系统参数名称。 |
 | `type` | `STRING` | 否 | `SYSTEM`、`BUSINESS`、`SECURITY`、`FEATURE`，默认 `SYSTEM`。 |
 | `domainCode` | `STRING` | 否 | 业务域编码，默认 `COMMON`。 |
+| `valueType` | `STRING` | 否 | 配置值展示与编辑类型，默认 `STRING`。 |
+| `groupCode` | `STRING` | 否 | 配置分组编码。 |
+| `groupName` | `STRING` | 否 | 配置分组名称。 |
+| `defaultValue` | `STRING` | 否 | 默认值。 |
+| `options` | `STRING` | 否 | 选项列表，JSON 字符串。 |
+| `optionSource` | `STRING` | 否 | 选项来源：`CUSTOM`、`DICT`，默认 `CUSTOM`。 |
+| `dictType` | `STRING` | 否 | 绑定字典类型，`optionSource=DICT` 时用于加载字典项。 |
+| `editable` | `BOOLEAN` | 否 | 是否可编辑，默认 `true`。 |
+| `editableReason` | `STRING` | 否 | 不可编辑原因。 |
 | `sort` | `INT` | 否 | 排序号，默认 `0`。 |
 | `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
 | `remark` | `STRING` | 否 | 备注。 |
@@ -219,6 +265,7 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | 删除系统配置 | `DELETE /system/config` | `system:config:delete` |
 | 修改配置值 | `PUT /system/config/value` | `system:config:edit` |
 | 配置分组 | `GET /system/config/groups` | `system:config:list` |
+| 配置展示类型 | `GET /system/config/value-types` | `system:config:list` |
 | 机构列表 | `GET /system/tenant/list` | `system:tenant:list` |
 | 登录机构选项 | `GET /system/tenant/login-options` | 公开接口 |
 | 机构详情 | `GET /system/tenant/detail` | `system:tenant:query` |
@@ -258,7 +305,7 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | `DictTypePo` | `dictType`、`dictName` | `id`、`dictType`、`dictName`、`domainCode`、`status`、`remark` |
 | `DictDataPo` | `dictLabel`、`dictValue`、`dictType` | `id`、`dictType`、`dictLabel`、`dictValue`、`sort`、`status` |
 | `DictOptionVO` | 无 | `label`、`value` |
-| `SysConfigPo` | `configKey`、`configValue`、`configName`、`type` | `id`、`configKey`、`configValue`、`configName`、`type`、`domainCode`、`status` |
+| `SysConfigPo` | `configKey`、`configValue`、`configName`、`type` | `id`、`configKey`、`configValue`、`configName`、`type`、`domainCode`、`valueType`、`options`、`editable`、`status` |
 | `SysTenantPo` | `tenantName`、`tenantCode`、`packageId`、`status` | `id`、`tenantName`、`tenantCode`、`institutionType`、`packageId`、`capabilityCodes`、`status` |
 | `SysArea` | 新增时传 `pid`、`name` | `id`、`pid`、`name`、`letter`、`adcode`、`location`、`areaSort`、`areaStatus`、`areaType`、`hot`、`cityCode`、`tenantId` |
 | `SysI18n` | 无 | `id`、`name`、`zhCn`、`en`、`description` |
@@ -276,7 +323,7 @@ Flyway 路径：`mango-system-core/src/main/resources/db/migration/system`。
 |----|------|
 | `sys_dict_type` | 字典类型，包含 `dict_type`、`dict_name`、`domain_code`、`status`。 |
 | `sys_dict_data` | 字典数据，包含 `dict_type`、`dict_label`、`dict_value`、`sort`、`status`。 |
-| `sys_config` | 系统配置，包含 `config_key`、`config_value`、`config_name`、`type`、`domain_code`、`status`。 |
+| `sys_config` | 系统配置，包含 `config_key`、`config_value`、`config_name`、`type`、`domain_code`、`value_type`、`options`、`editable`、`status`。 |
 | `sys_tenant` | 机构，包含机构编码、名称、类型、套餐、能力编码、状态和联系人信息。 |
 | `sys_login_log` | 登录日志。 |
 | `sys_operation_log` | 操作日志。 |

@@ -1,470 +1,599 @@
 <template>
   <div class="config-container">
-    <el-card>
-      <el-tabs
-        v-model="activeTab"
-        @tab-change="handleTabChange"
+    <template v-if="viewMode === 'list'">
+      <div class="config-layout">
+        <DomainSideTree
+          v-model="selectedDomainCode"
+          title="业务域"
+          subtitle="按业务域维护系统参数"
+          all-label="全部参数"
+          all-code="ALL"
+          :all-count="filteredConfigs.length"
+          :options="domainTree"
+          @change="handleDomainChange"
+          @loaded="handleDomainLoaded"
+        />
+
+        <section class="config-main">
+          <el-card
+            class="config-search"
+            shadow="never"
+          >
+            <el-form
+              :inline="true"
+              :model="query"
+              class="config-search__form"
+            >
+              <el-form-item label="关键词">
+                <el-input
+                  v-model="query.keyword"
+                  placeholder="搜索参数名称/参数键/介绍"
+                  clearable
+                  @keyup.enter="handleSearch"
+                  @clear="handleSearch"
+                />
+              </el-form-item>
+              <el-form-item label="参数分类">
+                <el-select
+                  v-model="query.configGroup"
+                  placeholder="不限"
+                  clearable
+                  @change="handleSearch"
+                >
+                  <el-option
+                    v-for="item in configTypeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="String(item.value)"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="展示类型">
+                <el-select
+                  v-model="query.valueType"
+                  placeholder="不限"
+                  clearable
+                  @change="handleSearch"
+                >
+                  <el-option
+                    v-for="item in valueTypeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="状态">
+                <el-select
+                  v-model="query.status"
+                  placeholder="不限"
+                  clearable
+                  @change="handleSearch"
+                >
+                  <el-option
+                    v-for="item in statusOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="Number(item.value)"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item>
+                <el-button
+                  type="primary"
+                  @click="handleSearch"
+                >
+                  查询
+                </el-button>
+                <el-button @click="handleReset">
+                  重置
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </el-card>
+
+          <el-card
+            class="config-table-card"
+            shadow="never"
+          >
+            <div class="config-toolbar">
+              <div class="config-toolbar__left">
+                <el-button
+                  type="primary"
+                  plain
+                  @click="handleAdd"
+                >
+                  新增参数
+                </el-button>
+                <el-button
+                  plain
+                  @click="openOperationPanel"
+                >
+                  操作面板
+                </el-button>
+              </div>
+              <div class="config-toolbar__right">
+                <el-button
+                  plain
+                  :loading="listLoading"
+                  @click="loadConfigList"
+                >
+                  刷新
+                </el-button>
+              </div>
+            </div>
+
+            <el-table
+              v-loading="listLoading"
+              :data="pagedConfigs"
+              stripe
+              row-key="id"
+            >
+              <el-table-column
+                prop="configName"
+                label="参数定义"
+                min-width="190"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  <div class="config-name-cell">
+                    <span>{{ row.configName || row.configKey }}</span>
+                    <small>{{ row.configKey }}</small>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="domainCode"
+                label="业务域"
+                width="160"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  {{ domainDisplayName(row.domainCode) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="valueType"
+                label="展示类型"
+                width="110"
+              >
+                <template #default="{ row }">
+                  {{ valueTypeLabel(row.valueType) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="defaultValue"
+                label="默认值"
+                min-width="150"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  {{ displayValue(row.defaultValue) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="options"
+                label="可选择的值"
+                min-width="180"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  {{ displayOptions(row) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="optionSource"
+                label="选项来源"
+                width="120"
+              >
+                <template #default="{ row }">
+                  {{ optionSourceLabel(row.optionSource) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="dictType"
+                label="绑定字典"
+                min-width="130"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  {{ dictTypeLabel(row.dictType) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="configValue"
+                label="当前值"
+                min-width="160"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  {{ displayValue(row.configValue) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="editable"
+                label="可编辑"
+                width="100"
+              >
+                <template #default="{ row }">
+                  <el-tag
+                    :type="row.editable === false ? 'warning' : 'success'"
+                    effect="plain"
+                    size="small"
+                  >
+                    {{ row.editable === false ? '只读' : '可编辑' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="status"
+                label="状态"
+                width="90"
+              >
+                <template #default="{ row }">
+                  <el-tag
+                    :type="row.status === 0 ? 'info' : 'success'"
+                    effect="plain"
+                    size="small"
+                  >
+                    {{ row.status === 0 ? '禁用' : '启用' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="操作"
+                width="190"
+                fixed="right"
+              >
+                <template #default="{ row }">
+                  <el-button
+                    link
+                    type="primary"
+                    @click="handleView(row)"
+                  >
+                    详情
+                  </el-button>
+                  <el-button
+                    link
+                    type="primary"
+                    @click="handleEdit(row)"
+                  >
+                    编辑
+                  </el-button>
+                  <el-button
+                    link
+                    type="danger"
+                    @click="handleDelete(row)"
+                  >
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <Pagination
+              v-model:page="query.pageNum"
+              v-model:limit="query.pageSize"
+              :total="filteredConfigs.length"
+            />
+          </el-card>
+        </section>
+      </div>
+    </template>
+
+    <template v-else>
+      <el-card
+        class="config-panel-card"
+        shadow="never"
       >
-        <!-- 系统参数 Tab -->
-        <el-tab-pane label="系统参数" name="param">
-          <el-form
-            :inline="true"
-            class="search-form"
-          >
-            <el-form-item label="关键词">
-              <el-input
-                v-model="paramQuery.keyword"
-                placeholder="搜索参数键/描述"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item label="类型">
-              <DictSelect
-                v-model="paramQuery.paramType"
-                dict-type="system_param_type"
-                placeholder="类型"
-                show-any-option
-                any-option-label="不限"
-                number-value
-              />
-            </el-form-item>
-            <el-form-item label="业务域">
-              <DomainSelector
-                v-model="paramQuery.domainCode"
-                placeholder="业务域"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                type="primary"
-                @click="handleSearchParam"
-              >
-                查询
-              </el-button>
-              <el-button @click="handleResetParam">
-                重置
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <div class="action-toolbar">
-            <el-button
-              type="primary"
-              @click="handleAddParam"
-            >
-              新增参数
+        <div class="config-panel-toolbar">
+          <div>
+            <el-button @click="backToList">
+              返回列表
             </el-button>
+            <span class="config-panel-toolbar__title">
+              操作面板
+            </span>
           </div>
+        </div>
 
-          <el-table
-            v-loading="paramLoading"
-            :data="paramTableData"
-            stripe
-          >
-            <el-table-column
-              prop="paramKey"
-              label="参数键"
-            />
-            <el-table-column
-              prop="paramValue"
-              label="参数值"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="paramType"
-              label="类型"
-              width="100"
-            >
-              <template #default="{ row }">
-                <DictTag
-                  dict-code="system_param_type"
-                  :value="row.paramType"
-                  :type="row.paramType === 1 ? 'primary' : 'success'"
-                  size="small"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="domainCode"
-              label="业务域"
-              width="130"
-            />
-            <el-table-column
-              prop="description"
-              label="描述"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="status"
-              label="状态"
-              width="80"
-            >
-              <template #default="{ row }">
-                <DictTag
-                  dict-code="sys_normal_disable"
-                  :value="row.status"
-                  size="small"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="createTime"
-              label="创建时间"
-              width="180"
-            >
-              <template #default="{ row }">
-                {{ formatDate(row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="操作"
-              width="150"
-              fixed="right"
-            >
-              <template #default="{ row }">
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  @click="handleEditParam(row)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  link
-                  type="danger"
-                  size="small"
-                  @click="handleDeleteParam(row)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
+        <SystemConfigPanel
+          :key="panelKey"
+          :domain-codes="operationPanelDomains"
+          :domain-labels="domainLabelMap"
+          :keyword="query.keyword"
+          :readonly="false"
+          :type-filter="panelValueTypes"
+          @loaded="handlePanelLoaded"
+        />
+      </el-card>
+    </template>
 
-        <!-- 系统配置 Tab -->
-        <el-tab-pane label="系统配置" name="config">
-          <el-form
-            :inline="true"
-            class="search-form"
-          >
-            <el-form-item label="关键词">
-              <el-input
-                v-model="configQuery.keyword"
-                placeholder="搜索配置键/描述"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item label="分组">
-              <DictSelect
-                v-model="configQuery.configGroup"
-                dict-type="system_config_type"
-                placeholder="分组"
-                show-any-option
-                any-option-label="不限"
-              />
-            </el-form-item>
-            <el-form-item label="业务域">
-              <DomainSelector
-                v-model="configQuery.domainCode"
-                placeholder="业务域"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                type="primary"
-                @click="handleSearchConfig"
-              >
-                查询
-              </el-button>
-              <el-button @click="handleResetConfig">
-                重置
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <div class="action-toolbar">
-            <el-button
-              type="primary"
-              @click="handleAddConfig"
-            >
-              新增配置
-            </el-button>
-          </div>
-
-          <el-table
-            v-loading="configLoading"
-            :data="configTableData"
-            stripe
-          >
-            <el-table-column
-              prop="configKey"
-              label="配置键"
-            />
-            <el-table-column
-              prop="configValue"
-              label="配置值"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="configGroup"
-              label="分组"
-              width="100"
-            >
-              <template #default="{ row }">
-                <DictTag
-                  dict-code="system_config_type"
-                  :value="row.configGroup"
-                  size="small"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="domainCode"
-              label="业务域"
-              width="130"
-            />
-            <el-table-column
-              prop="description"
-              label="描述"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              prop="status"
-              label="状态"
-              width="80"
-            >
-              <template #default="{ row }">
-                <DictTag
-                  dict-code="sys_normal_disable"
-                  :value="row.status"
-                  size="small"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="createTime"
-              label="创建时间"
-              width="180"
-            >
-              <template #default="{ row }">
-                {{ formatDate(row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="操作"
-              width="150"
-              fixed="right"
-            >
-              <template #default="{ row }">
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  @click="handleEditConfig(row)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  link
-                  type="danger"
-                  size="small"
-                  @click="handleDeleteConfig(row)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
-
-    <!-- 系统参数编辑弹窗 -->
     <el-dialog
-      v-model="paramDialogVisible"
-      :title="paramForm.id ? '编辑参数' : '新增参数'"
-      width="500px"
+      v-model="detailVisible"
+      title="参数详情"
+      width="720px"
     >
-      <el-form
-        ref="paramFormRef"
-        :model="paramForm"
-        :rules="paramRules"
-        label-width="100px"
+      <el-descriptions
+        v-if="detailConfig"
+        :column="2"
+        border
       >
-        <el-form-item
-          label="参数键"
-          prop="paramKey"
-        >
-          <el-input
-            v-model="paramForm.paramKey"
-            placeholder="如：sys.login.maxRetryCount"
-            :disabled="!!paramForm.id"
-          />
-        </el-form-item>
-        <el-form-item
-          label="参数值"
-          prop="paramValue"
-        >
-          <el-input
-            v-model="paramForm.paramValue"
-            type="textarea"
-            placeholder="请输入参数值"
-          />
-        </el-form-item>
-        <el-form-item
-          label="参数类型"
-          prop="paramType"
-        >
-          <el-radio-group v-model="paramForm.paramType">
-            <el-radio
-              v-for="item in paramTypeOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
-              {{ item.label }}
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item
-          label="业务域"
-          prop="domainCode"
-        >
-          <DomainSelector
-            v-model="paramForm.domainCode"
-            placeholder="请选择业务域"
-          />
-        </el-form-item>
-        <el-form-item
-          label="描述"
-          prop="description"
-        >
-          <el-input
-            v-model="paramForm.description"
-            type="textarea"
-            placeholder="请输入描述"
-          />
-        </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
-          <el-radio-group v-model="paramForm.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
-            >
-              {{ item.label }}
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
+        <el-descriptions-item label="参数定义">
+          {{ detailConfig.configName || detailConfig.configKey }}
+        </el-descriptions-item>
+        <el-descriptions-item label="参数键">
+          {{ detailConfig.configKey }}
+        </el-descriptions-item>
+        <el-descriptions-item label="业务域">
+          {{ domainDisplayName(detailConfig.domainCode) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="展示类型">
+          {{ valueTypeLabel(detailConfig.valueType) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="默认值">
+          {{ displayValue(detailConfig.defaultValue) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="当前值">
+          {{ displayValue(detailConfig.configValue) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="可选择的值">
+          {{ displayOptions(detailConfig) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="选项来源">
+          {{ optionSourceLabel(detailConfig.optionSource) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="绑定字典">
+          {{ dictTypeLabel(detailConfig.dictType) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          {{ detailConfig.status === 0 ? '禁用' : '启用' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="可编辑">
+          {{ detailConfig.editable === false ? (detailConfig.editableReason || '只读') : '可编辑' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="配置介绍">
+          {{ detailConfig.description || detailConfig.remark || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
       <template #footer>
-        <el-button @click="paramDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="handleSubmitParam"
-        >
-          确定
+        <el-button @click="detailVisible = false">
+          关闭
         </el-button>
       </template>
     </el-dialog>
 
-    <!-- 系统配置编辑弹窗 -->
     <el-dialog
-      v-model="configDialogVisible"
-      :title="configForm.id ? '编辑配置' : '新增配置'"
-      width="500px"
+      v-model="dialogVisible"
+      :title="form.id ? '编辑参数' : '新增参数'"
+      width="760px"
+      :close-on-click-modal="false"
     >
       <el-form
-        ref="configFormRef"
-        :model="configForm"
-        :rules="configRules"
-        label-width="100px"
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="110px"
       >
-        <el-form-item
-          label="配置键"
-          prop="configKey"
-        >
-          <el-input
-            v-model="configForm.configKey"
-            placeholder="请输入配置键"
-            :disabled="!!configForm.id"
-          />
-        </el-form-item>
-        <el-form-item
-          label="配置值"
-          prop="configValue"
-        >
-          <el-input
-            v-model="configForm.configValue"
-            type="textarea"
-            placeholder="请输入配置值"
-          />
-        </el-form-item>
-        <el-form-item
-          label="配置分组"
-          prop="configGroup"
-        >
-          <el-select
-            v-model="configForm.configGroup"
-            placeholder="请选择"
-          >
-            <el-option
-              v-for="item in configTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-          label="业务域"
-          prop="domainCode"
-        >
-          <DomainSelector
-            v-model="configForm.domainCode"
-            placeholder="请选择业务域"
-          />
-        </el-form-item>
-        <el-form-item
-          label="描述"
-          prop="description"
-        >
-          <el-input
-            v-model="configForm.description"
-            type="textarea"
-            placeholder="请输入描述"
-          />
-        </el-form-item>
-        <el-form-item
-          label="状态"
-          prop="status"
-        >
-          <el-radio-group v-model="configForm.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="Number(item.value)"
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item
+              label="参数键"
+              prop="configKey"
             >
-              {{ item.label }}
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
+              <el-input
+                v-model="form.configKey"
+                placeholder="请输入参数键"
+                :disabled="!!form.id"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item
+              label="参数名称"
+              prop="configName"
+            >
+              <el-input
+                v-model="form.configName"
+                placeholder="请输入参数名称"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item
+              label="业务域"
+              prop="domainCode"
+            >
+              <el-tree-select
+                v-model="form.domainCode"
+                :data="domainTree"
+                :loading="domainLoading"
+                :props="domainTreeProps"
+                node-key="domainCode"
+                value-key="domainCode"
+                check-strictly
+                filterable
+                default-expand-all
+                placeholder="请选择业务域"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item
+              label="参数分类"
+              prop="configGroup"
+            >
+              <el-select
+                v-model="form.configGroup"
+                placeholder="请选择参数分类"
+              >
+                <el-option
+                  v-for="item in configTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="String(item.value)"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item
+              label="展示类型"
+              prop="valueType"
+            >
+              <el-select
+                v-model="form.valueType"
+                placeholder="请选择展示类型"
+              >
+                <el-option
+                  v-for="item in valueTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item
+              label="状态"
+              prop="status"
+            >
+              <el-radio-group v-model="form.status">
+                <el-radio
+                  v-for="item in statusOptions"
+                  :key="item.value"
+                  :label="Number(item.value)"
+                >
+                  {{ item.label }}
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="可编辑">
+              <el-switch v-model="form.editable" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="分组编码">
+              <el-input
+                v-model="form.groupCode"
+                placeholder="可选"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="分组名称">
+              <el-input
+                v-model="form.groupName"
+                placeholder="可选"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="默认值">
+              <el-input
+                v-model="form.defaultValue"
+                placeholder="请输入默认值"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col
+            v-if="usesOptions(form.valueType)"
+            :span="12"
+          >
+            <el-form-item label="选项来源">
+              <el-radio-group v-model="form.optionSource">
+                <el-radio label="CUSTOM">
+                  自定义
+                </el-radio>
+                <el-radio label="DICT">
+                  字典
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col
+            v-if="usesOptions(form.valueType) && form.optionSource === 'DICT'"
+            :span="12"
+          >
+            <el-form-item
+              label="绑定字典"
+              prop="dictType"
+            >
+              <el-select
+                v-model="form.dictType"
+                :loading="dictTypeLoading"
+                filterable
+                clearable
+                placeholder="请选择字典类型"
+              >
+                <el-option
+                  v-for="item in dictTypes"
+                  :key="item.code"
+                  :label="`${item.name}（${item.code}）`"
+                  :value="item.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item
+              label="当前值"
+              prop="configValue"
+            >
+              <el-input
+                v-model="form.configValue"
+                type="textarea"
+                :rows="3"
+                placeholder="日期区间使用 JSON 数组，例如：[&quot;2026-06-01&quot;,&quot;2026-06-23&quot;]"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col
+            v-if="usesOptions(form.valueType) && form.optionSource !== 'DICT'"
+            :span="24"
+          >
+            <el-form-item label="可选择的值">
+              <el-input
+                v-model="form.options"
+                type="textarea"
+                :rows="2"
+                placeholder="使用 JSON 数组，例如：[{&quot;label&quot;:&quot;高&quot;,&quot;value&quot;:&quot;high&quot;}]"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="参数介绍">
+              <el-input
+                v-model="form.description"
+                type="textarea"
+                :rows="2"
+                placeholder="请输入参数介绍"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="不可编辑原因">
+              <el-input
+                v-model="form.editableReason"
+                placeholder="参数不可编辑时展示"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
-        <el-button @click="configDialogVisible = false">
+        <el-button @click="dialogVisible = false">
           取消
         </el-button>
         <el-button
           type="primary"
-          @click="handleSubmitConfig"
+          :loading="submitLoading"
+          @click="handleSubmit"
         >
-          确定
+          保存
         </el-button>
       </template>
     </el-dialog>
@@ -472,218 +601,408 @@
 </template>
 
 <script setup lang="ts" name="SystemConfig">
-import { ref, reactive, onMounted } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictSelect, DictTag, formatDate, useDict } from '@mango/common';
-import { paramApi, type SysParam } from '../../api/param';
-import { configApi, type SysConfig } from '../../api/config';
-import DomainSelector from '../../components/DomainSelector/index.vue';
+import { Pagination, useDict } from '@mango/common';
+import { configApi, type ConfigOptionSource, type ConfigValueType, type SysConfig } from '../../api/config';
+import { dictTypeApi, type DictType } from '../../api/dict';
+import { domainApi, type DomainItem } from '../../api/domain';
+import DomainSideTree from '../../components/DomainSideTree/index.vue';
+import SystemConfigPanel from '../../components/SystemConfigPanel/index.vue';
+
+type ViewMode = 'list' | 'panel';
+
+interface ConfigQuery {
+  keyword: string;
+  configGroup: string;
+  valueType: ConfigValueType | '';
+  status: number | undefined;
+  pageNum: number;
+  pageSize: number;
+}
+
+interface DomainTreeProps {
+  label: string;
+  value: string;
+  children: string;
+}
 
 const { options: statusOptions } = useDict('sys_normal_disable');
-const { options: paramTypeOptions } = useDict('system_param_type');
 const { options: configTypeOptions } = useDict('system_config_type');
 
-const activeTab = ref('param');
+const viewMode = ref<ViewMode>('list');
+const selectedDomainCode = ref('');
+const domainTree = ref<DomainItem[]>([]);
+const domainLoading = ref(false);
+const listLoading = ref(false);
+const submitLoading = ref(false);
+const dictTypeLoading = ref(false);
+const configList = ref<SysConfig[]>([]);
+const dictTypes = ref<DictType[]>([]);
+const panelKey = ref(0);
 
-// ==================== 系统参数 ====================
-const paramLoading = ref(false);
-const paramTableData = ref<SysParam[]>([]);
-const paramQuery = reactive({
-  keyword: '',
-  paramType: undefined as number | undefined,
-  domainCode: '',
-});
-const paramDialogVisible = ref(false);
-const paramFormRef = ref<FormInstance>();
-const paramForm = reactive<SysParam>({
-  id: undefined,
-  paramKey: '',
-  paramValue: '',
-  paramType: 1,
-  domainCode: 'COMMON',
-  description: '',
-  status: 1,
-});
-const paramRules: FormRules = {
-  paramKey: [{ required: true, message: '请输入参数键', trigger: 'blur' }],
-  paramValue: [{ required: true, message: '请输入参数值', trigger: 'blur' }],
-  paramType: [{ required: true, message: '请选择参数类型', trigger: 'change' }],
+const domainTreeProps: DomainTreeProps = {
+  label: 'domainName',
+  value: 'domainCode',
+  children: 'children',
 };
 
-async function loadParamData() {
-  paramLoading.value = true;
-  try {
-    const data = await paramApi.list(paramQuery);
-    paramTableData.value = data.list || [];
-  } catch (error) {
-    console.error('加载参数数据失败:', error);
-  } finally {
-    paramLoading.value = false;
-  }
-}
-
-function handleSearchParam() {
-  loadParamData();
-}
-
-function handleResetParam() {
-  paramQuery.keyword = '';
-  paramQuery.paramType = undefined;
-  paramQuery.domainCode = '';
-  loadParamData();
-}
-
-function handleAddParam() {
-  paramForm.id = undefined;
-  paramForm.paramKey = '';
-  paramForm.paramValue = '';
-  paramForm.paramType = 1;
-  paramForm.domainCode = 'COMMON';
-  paramForm.description = '';
-  paramForm.status = 1;
-  paramDialogVisible.value = true;
-}
-
-function handleEditParam(row: SysParam) {
-  Object.assign(paramForm, row);
-  paramDialogVisible.value = true;
-}
-
-async function handleSubmitParam() {
-  if (!paramFormRef.value) return;
-  try {
-    await paramFormRef.value.validate();
-    if (paramForm.id) {
-      await paramApi.update(paramForm);
-    } else {
-      await paramApi.create(paramForm);
-    }
-    ElMessage.success(paramForm.id ? '修改成功' : '新增成功');
-    paramDialogVisible.value = false;
-    loadParamData();
-  } catch (error) {
-    console.error('提交失败:', error);
-  }
-}
-
-function handleDeleteParam(row: SysParam) {
-  ElMessageBox.confirm('确认删除该参数?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(async () => {
-    if (!row.id) return;
-    await paramApi.delete(row.id);
-    ElMessage.success('删除成功');
-    loadParamData();
-  }).catch(() => {});
-}
-
-// ==================== 系统配置 ====================
-const configLoading = ref(false);
-const configTableData = ref<SysConfig[]>([]);
-const configQuery = reactive({
+const query = reactive<ConfigQuery>({
   keyword: '',
   configGroup: '',
-  domainCode: '',
+  valueType: '',
+  status: undefined,
+  pageNum: 1,
+  pageSize: 10,
 });
-const configDialogVisible = ref(false);
-const configFormRef = ref<FormInstance>();
-const configForm = reactive<SysConfig>({
+
+const valueTypeOptions: Array<{ label: string; value: ConfigValueType }> = [
+  { label: '开关', value: 'BOOLEAN' },
+  { label: '文本', value: 'STRING' },
+  { label: '数字', value: 'NUMBER' },
+  { label: '单选', value: 'RADIO' },
+  { label: '下拉', value: 'SELECT' },
+  { label: '多选', value: 'MULTI_SELECT' },
+  { label: '日期', value: 'DATE' },
+  { label: '日期区间', value: 'DATE_RANGE' },
+];
+
+const optionSourceOptions: Array<{ label: string; value: ConfigOptionSource }> = [
+  { label: '自定义', value: 'CUSTOM' },
+  { label: '字典', value: 'DICT' },
+];
+
+const filteredConfigs = computed(() => {
+  const keyword = query.keyword.trim().toLowerCase();
+  return configList.value.filter((config) => {
+    const keywordMatched = !keyword
+      || [
+        config.configName,
+        config.configKey,
+        config.description,
+        config.remark,
+      ].some((value) => String(value || '').toLowerCase().includes(keyword));
+    const valueTypeMatched = !query.valueType || config.valueType === query.valueType;
+    const statusMatched = query.status === undefined || config.status === query.status;
+    return keywordMatched && valueTypeMatched && statusMatched;
+  });
+});
+
+const pagedConfigs = computed(() => {
+  const start = (query.pageNum - 1) * query.pageSize;
+  return filteredConfigs.value.slice(start, start + query.pageSize);
+});
+
+const flatDomains = computed(() => flattenDomains(domainTree.value));
+
+const domainLabelMap = computed(() => {
+  return flatDomains.value.reduce<Record<string, string>>((result, domain) => {
+    result[domain.domainCode] = domain.domainName;
+    return result;
+  }, {});
+});
+
+const operationPanelDomains = computed(() => {
+  if (selectedDomainCode.value) {
+    return [selectedDomainCode.value];
+  }
+  const configuredCodes = new Set(configList.value
+    .map((config) => config.domainCode)
+    .filter((code): code is string => Boolean(code)));
+  const domainCodes = flatDomains.value
+    .map((domain) => domain.domainCode)
+    .filter((code) => configuredCodes.has(code));
+  const sortedCodes = [
+    ...domainCodes.filter((code) => code !== 'COMMON'),
+    ...domainCodes.filter((code) => code === 'COMMON'),
+  ];
+  return sortedCodes.length ? sortedCodes : ['COMMON'];
+});
+
+const panelValueTypes = computed(() => {
+  return query.valueType ? [query.valueType] : [];
+});
+
+const dialogVisible = ref(false);
+const detailVisible = ref(false);
+const formRef = ref<FormInstance>();
+const detailConfig = ref<SysConfig>();
+const form = reactive<SysConfig>({
   id: undefined,
   configKey: '',
   configValue: '',
+  configName: '',
   configGroup: 'system',
+  type: 'SYSTEM',
   domainCode: 'COMMON',
+  valueType: 'STRING',
+  groupCode: '',
+  groupName: '',
+  defaultValue: '',
+  options: '',
+  optionSource: 'CUSTOM',
+  dictType: '',
+  editable: true,
+  editableReason: '',
   description: '',
   status: 1,
 });
-const configLoaded = ref(false);
-const configRules: FormRules = {
-  configKey: [{ required: true, message: '请输入配置键', trigger: 'blur' }],
-  configValue: [{ required: true, message: '请输入配置值', trigger: 'blur' }],
-  configGroup: [{ required: true, message: '请选择配置分组', trigger: 'change' }],
+
+const rules: FormRules = {
+  configKey: [{ required: true, message: '请输入参数键', trigger: 'blur' }],
+  configName: [{ required: true, message: '请输入参数名称', trigger: 'blur' }],
+  configValue: [{ required: true, message: '请输入当前值', trigger: 'blur' }],
+  configGroup: [{ required: true, message: '请选择参数分类', trigger: 'change' }],
+  domainCode: [{ required: true, message: '请选择业务域', trigger: 'change' }],
+  valueType: [{ required: true, message: '请选择展示类型', trigger: 'change' }],
+  dictType: [{
+    validator: (_rule, value, callback) => {
+      if (usesOptions(form.valueType) && form.optionSource === 'DICT' && !value) {
+        callback(new Error('请选择绑定字典'));
+        return;
+      }
+      callback();
+    },
+    trigger: 'change',
+  }],
 };
 
-async function loadConfigData() {
-  configLoading.value = true;
+onMounted(() => {
+  void loadDomains();
+  void loadDictTypes();
+  void loadConfigList();
+});
+
+async function loadDomains() {
+  domainLoading.value = true;
   try {
-    const data = await configApi.list(configQuery);
-    configTableData.value = data.list || [];
-    configLoaded.value = true;
-  } catch (error) {
-    console.error('加载配置数据失败:', error);
+    domainTree.value = await domainApi.enabledTree();
   } finally {
-    configLoading.value = false;
+    domainLoading.value = false;
   }
 }
 
-function handleSearchConfig() {
-  loadConfigData();
+function handleDomainLoaded(domains: DomainItem[]) {
+  domainTree.value = domains;
 }
 
-function handleResetConfig() {
-  configQuery.keyword = '';
-  configQuery.configGroup = '';
-  configQuery.domainCode = '';
-  loadConfigData();
+function handleDomainChange() {
+  query.pageNum = 1;
+  void loadConfigList();
 }
 
-function handleAddConfig() {
-  configForm.id = undefined;
-  configForm.configKey = '';
-  configForm.configValue = '';
-  configForm.configGroup = 'system';
-  configForm.domainCode = 'COMMON';
-  configForm.description = '';
-  configForm.status = 1;
-  configDialogVisible.value = true;
-}
-
-function handleEditConfig(row: SysConfig) {
-  Object.assign(configForm, row);
-  configDialogVisible.value = true;
-}
-
-async function handleSubmitConfig() {
-  if (!configFormRef.value) return;
+async function loadConfigList() {
+  listLoading.value = true;
   try {
-    await configFormRef.value.validate();
-    if (configForm.id) {
-      await configApi.update(configForm);
-    } else {
-      await configApi.create(configForm);
-    }
-    ElMessage.success(configForm.id ? '修改成功' : '新增成功');
-    configDialogVisible.value = false;
-    loadConfigData();
-  } catch (error) {
-    console.error('提交失败:', error);
+    const result = await configApi.list({
+      configGroup: query.configGroup || undefined,
+      domainCode: selectedDomainCode.value || undefined,
+    });
+    configList.value = result.list || [];
+  } finally {
+    listLoading.value = false;
   }
 }
 
-function handleDeleteConfig(row: SysConfig) {
-  ElMessageBox.confirm('确认删除该配置?', '提示', {
-    confirmButtonText: '确定',
+async function loadDictTypes() {
+  dictTypeLoading.value = true;
+  try {
+    const result = await dictTypeApi.list({ pageNum: 1, pageSize: 500 });
+    dictTypes.value = result.list || [];
+  } finally {
+    dictTypeLoading.value = false;
+  }
+}
+
+function handleSearch() {
+  query.pageNum = 1;
+  void loadConfigList();
+}
+
+function handleReset() {
+  query.keyword = '';
+  query.configGroup = '';
+  query.valueType = '';
+  query.status = undefined;
+  query.pageNum = 1;
+  void loadConfigList();
+}
+
+function openOperationPanel() {
+  panelKey.value += 1;
+  viewMode.value = 'panel';
+}
+
+function backToList() {
+  viewMode.value = 'list';
+  void loadConfigList();
+}
+
+function handlePanelLoaded(domainCode: string, configs: SysConfig[]) {
+  const existingCodes = new Set(flatDomains.value.map((domain) => domain.domainCode));
+  if (!existingCodes.has(domainCode) && configs.length > 0) {
+    void loadDomains();
+  }
+}
+
+function handleAdd() {
+  resetForm({
+    domainCode: selectedDomainCode.value || firstDomainCode(),
+  });
+  dialogVisible.value = true;
+}
+
+function handleEdit(row: SysConfig) {
+  resetForm(row);
+  dialogVisible.value = true;
+}
+
+function handleView(row: SysConfig) {
+  detailConfig.value = row;
+  detailVisible.value = true;
+}
+
+async function handleDelete(row: SysConfig) {
+  if (!row.id) {
+    return;
+  }
+  await ElMessageBox.confirm(`确认删除参数“${row.configName || row.configKey}”？`, '删除确认', {
+    confirmButtonText: '确认删除',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(async () => {
-    if (!row.id) return;
-    await configApi.delete(row.id);
-    ElMessage.success('删除成功');
-    loadConfigData();
-  }).catch(() => {});
+    confirmButtonClass: 'el-button--danger',
+  });
+  await configApi.delete(row.id);
+  ElMessage.success('删除成功');
+  await loadConfigList();
+  panelKey.value += 1;
 }
 
-function handleTabChange(name: string | number) {
-  if (name === 'config' && !configLoaded.value) {
-    loadConfigData();
+async function handleSubmit() {
+  if (!formRef.value) {
+    return;
+  }
+  await formRef.value.validate();
+  submitLoading.value = true;
+  try {
+    const payload: SysConfig = {
+      ...form,
+      configGroup: form.configGroup || 'system',
+      type: form.type || String(form.configGroup || 'system').toUpperCase(),
+      optionSource: usesOptions(form.valueType) ? (form.optionSource || 'CUSTOM') : 'CUSTOM',
+      dictType: usesOptions(form.valueType) && form.optionSource === 'DICT' ? form.dictType : '',
+      options: usesOptions(form.valueType) && form.optionSource !== 'DICT' ? form.options : '',
+      description: form.description,
+      remark: form.description,
+    };
+    if (form.id) {
+      await configApi.update(payload);
+    } else {
+      await configApi.create(payload);
+    }
+    ElMessage.success(form.id ? '修改成功' : '新增成功');
+    dialogVisible.value = false;
+    await loadConfigList();
+    panelKey.value += 1;
+  } finally {
+    submitLoading.value = false;
   }
 }
 
-onMounted(() => {
-  loadParamData();
-});
+function resetForm(source?: Partial<SysConfig>) {
+  Object.assign(form, {
+    id: undefined,
+    configKey: '',
+    configValue: '',
+    configName: '',
+    configGroup: 'system',
+    type: 'SYSTEM',
+    domainCode: 'COMMON',
+    valueType: 'STRING',
+    groupCode: '',
+    groupName: '',
+    defaultValue: '',
+    options: '',
+    optionSource: 'CUSTOM',
+    dictType: '',
+    editable: true,
+    editableReason: '',
+    description: '',
+    status: 1,
+    ...source,
+  });
+}
+
+function flattenDomains(domains: DomainItem[]): DomainItem[] {
+  return domains.flatMap((domain) => [
+    domain,
+    ...flattenDomains(domain.children || []),
+  ]);
+}
+
+function firstDomainCode() {
+  return flatDomains.value[0]?.domainCode || 'COMMON';
+}
+
+function domainDisplayName(domainCode?: string) {
+  if (!domainCode) {
+    return '-';
+  }
+  const label = domainLabelMap.value[domainCode];
+  return label ? `${label}（${domainCode}）` : domainCode;
+}
+
+function valueTypeLabel(type?: ConfigValueType) {
+  const matched = valueTypeOptions.find((item) => item.value === (type || 'STRING'));
+  return matched?.label || '文本';
+}
+
+function usesOptions(type?: ConfigValueType) {
+  return type === 'RADIO' || type === 'SELECT' || type === 'MULTI_SELECT';
+}
+
+function optionSourceLabel(source?: ConfigOptionSource) {
+  const matched = optionSourceOptions.find((item) => item.value === (source || 'CUSTOM'));
+  return matched?.label || '自定义';
+}
+
+function dictTypeLabel(dictType?: string) {
+  if (!dictType) {
+    return '-';
+  }
+  const matched = dictTypes.value.find((item) => item.code === dictType);
+  return matched ? `${matched.name}（${dictType}）` : dictType;
+}
+
+function displayValue(value?: string) {
+  if (value === undefined || value === null || value === '') {
+    return '-';
+  }
+  return value;
+}
+
+function displayOptions(config?: SysConfig) {
+  if (!config) {
+    return '-';
+  }
+  if (config.optionSource === 'DICT') {
+    return config.dictType ? `字典：${dictTypeLabel(config.dictType)}` : '字典：未绑定';
+  }
+  if (!config.options) {
+    return '-';
+  }
+  try {
+    const parsed = JSON.parse(config.options) as Array<{ label?: string; value?: string | number | boolean }>;
+    if (!Array.isArray(parsed)) {
+      return config.options;
+    }
+    return parsed
+      .map((item) => `${item.label || item.value}: ${item.value}`)
+      .join('，') || '-';
+  } catch {
+    return config.options;
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -691,17 +1010,75 @@ onMounted(() => {
   padding: 0;
 }
 
-.search-form {
-  margin-bottom: 16px;
+.config-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
 
+.config-main {
+  min-width: 0;
+}
+
+.config-search {
+  margin-bottom: 12px;
+}
+
+.config-search__form {
   :deep(.el-form-item) {
-    margin-bottom: 0;
+    margin-bottom: 10px;
   }
 }
 
-.action-toolbar {
+.config-table-card {
+  min-width: 0;
+}
+
+.config-toolbar,
+.config-panel-toolbar {
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.config-toolbar__left,
+.config-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.config-name-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+
+  span,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+}
+
+.config-panel-toolbar__title {
+  margin-left: 10px;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
