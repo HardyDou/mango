@@ -6,12 +6,14 @@
 
 - Published the Mango governance baseline as `@mango/pmo@1.0.0` so business projects can consume PMO rules, agents, templates, and preflight tools from the internal npm registry.
 - Published `@mango/cli@1.0.35` so project creation, historical project upgrades, and PMO baseline synchronization use the versioned `@mango/pmo` package.
+- Published `@mango/grid-widgets@1.0.0` to complete the CLI release lock for business frontend project installation.
 - Added release notes for the local repository publication flow that maps npm, Maven, and GitHub Release records to the same release tag.
 
 ### Published Packages
 
 - npm: `@mango/pmo@1.0.0` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
 - npm: `@mango/cli@1.0.35` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/grid-widgets@1.0.0` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
 - Maven: Mango backend artifacts remain on `1.0.0-SNAPSHOT` and are published to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
 - GitHub Release: `v2026.06.24-mango-governance-local-repo`.
 
@@ -30,9 +32,11 @@
 - `pnpm --filter @mango/pmo check`
 - `pnpm --filter @mango/cli test`
 - `node scripts/check-release-notes.mjs --package=@mango/pmo --version=1.0.0`
+- `node scripts/check-release-notes.mjs --package=@mango/grid-widgets --version=1.0.0`
 - `node scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.35`
 - `mvn -f mango/pom.xml -Drevision=1.0.0-SNAPSHOT -DskipTests deploy`
 - `npm view @mango/pmo@1.0.0 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/grid-widgets@1.0.0 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
 - `npm view @mango/cli@1.0.35 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
 
 ## Unreleased
