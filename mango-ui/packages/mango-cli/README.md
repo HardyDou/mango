@@ -22,7 +22,7 @@
 | 新建 Mango 业务项目 | `mango init <project> --preset full`、`mango init <project> --preset custom` | 新项目目录 |
 | custom 项目追加 Mango 可选能力 | `mango add file workflow --project-dir <dir>` | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json` |
 | 生成业务模块骨架 | `mango module add order --aggregate sales-order --project-dir <dir>` | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置 |
-| 检查和同步业务 PMO baseline | `mango pmo status/check/sync/upgrade --project-dir <dir>` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| 检查和同步业务 PMO baseline | `mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
 | 初始化和启动本地开发工作区 | `mango init-dev`、`mango validate`、`mango doctor`、`mango plan`、`mango start` | `.mango/dev-workspace.env`、`.mango/run` |
 | 查看发布说明 | `mango changelog` | 不改文件 |
 
@@ -71,7 +71,7 @@ mango plan
 mango start
 ```
 
-生成项目的 `scripts/dev-workspace.sh` 优先委托全局 `mango`；未安装全局 CLI 时，脚本会进入 `frontend` 并使用项目依赖中的 `pnpm exec mango`。因此业务项目首次拉取后可先执行 `cd frontend && pnpm install`，再回到项目根目录使用 `scripts/dev-workspace.sh validate|plan|start`。
+推荐全局安装 `@mango/cli`，这样可以在任意业务仓根目录直接执行 `mango ...`。生成项目的 `scripts/dev-workspace.sh` 优先使用 `frontend` 中锁定的项目内 CLI；项目依赖未安装时回退到全局 `mango`。因此业务项目首次拉取后应先执行 `cd frontend && pnpm install`，再回到项目根目录使用 `scripts/dev-workspace.sh validate|plan|start`。
 
 生成 custom 项目：
 

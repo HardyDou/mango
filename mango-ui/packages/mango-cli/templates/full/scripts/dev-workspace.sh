@@ -29,16 +29,16 @@ EOF
 }
 
 run_mango() {
-  if command -v mango >/dev/null 2>&1; then
-    exec mango "$@"
-  fi
-
-  if [[ -f "${FRONTEND_ROOT}/package.json" ]] && command -v pnpm >/dev/null 2>&1; then
+  if [[ -x "${FRONTEND_ROOT}/node_modules/.bin/mango" ]] && command -v pnpm >/dev/null 2>&1; then
     cd "${FRONTEND_ROOT}"
     exec pnpm exec mango "$@"
   fi
 
-  echo "mango CLI not found globally or in project frontend dependencies."
+  if command -v mango >/dev/null 2>&1; then
+    exec mango "$@"
+  fi
+
+  echo "mango CLI not found in project frontend dependencies or globally."
   echo "Install project dependencies: cd frontend && pnpm install"
   echo "Or install globally: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}"
   exit 1
