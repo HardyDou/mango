@@ -52,12 +52,12 @@ CLI 不负责：
 - 业务项目已有文件的语义合并；没有 managed block 的文件不会被 CLI 猜测修改。
 
 ## 5. 接入方式
-全局安装：
+全局安装用于创建项目、历史项目升级和跨仓库临时诊断：
 
 使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
 
 ```bash
-npm install -g @mango/cli --registry <npm-group-url>
+npm install -g @mango/cli --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 生成 full 项目：
@@ -72,6 +72,8 @@ mango start
 ```
 
 推荐全局安装 `@mango/cli`，这样可以在任意业务仓根目录直接执行 `mango ...`。生成项目的 `scripts/dev-workspace.sh` 优先使用 `frontend` 中锁定的项目内 CLI；项目依赖未安装时回退到全局 `mango`。因此业务项目首次拉取后应先执行 `cd frontend && pnpm install`，再回到项目根目录使用 `scripts/dev-workspace.sh validate|plan|start`。
+
+最终执行约定是：创建、升级和临时诊断可以直接用全局 CLI；业务仓日常开发命令优先走 `scripts/dev-workspace.sh`，以项目内锁定的 CLI 版本为准。历史项目如果没有脚本或项目依赖，可以先用全局 CLI 执行 `mango pmo upgrade --project-dir .`，再按升级后的项目说明切换到项目内版本。
 
 生成 custom 项目：
 

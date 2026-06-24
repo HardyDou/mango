@@ -46,11 +46,20 @@
 
 ```bash
 cd {{projectKebab}}
+cd frontend && pnpm install && cd ..
 scripts/dev-workspace.sh init
-mango validate
-mango doctor
-mango plan
-mango start
+scripts/dev-workspace.sh validate
+scripts/dev-workspace.sh doctor
+scripts/dev-workspace.sh plan
+scripts/dev-workspace.sh start
+```
+
+CLI 执行来源需要区分：首次创建、历史项目升级和临时诊断可以使用全局 `@mango/cli`；生成后的业务项目日常开发应优先使用 `scripts/dev-workspace.sh`。该脚本会先调用 `frontend` 内锁定的项目 CLI，只有项目依赖未安装时才回退到全局 `mango`。
+
+需要直接执行 `mango ...` 时，先确认本机全局 CLI 已安装且版本符合当前项目依赖：
+
+```bash
+npm install -g @mango/cli --registry {{npmRegistry}}
 ```
 
 后端健康检查：
@@ -74,6 +83,9 @@ npm --prefix frontend run build
 | `scripts/dev-workspace.sh start` | 委托 `mango start` 启动默认分组 |
 | `scripts/dev-workspace.sh backend` | 委托 `mango backend` 启动后端 |
 | `scripts/dev-workspace.sh frontend` | 委托 `mango frontend` 启动前端 |
+| `scripts/dev-workspace.sh validate` | 使用项目内 CLI 校验 `mango.dev.json` |
+| `scripts/dev-workspace.sh doctor` | 使用项目内 CLI 校验工具链、POM 和端口 |
+| `scripts/dev-workspace.sh plan` | 使用项目内 CLI 展开启动命令 |
 | `mango validate` | 校验 `mango.dev.json` |
 | `mango doctor` | 校验工具链、POM 和端口 |
 | `mango plan` | 展开启动命令 |

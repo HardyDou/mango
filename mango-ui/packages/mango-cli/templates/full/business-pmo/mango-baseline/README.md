@@ -16,7 +16,17 @@
 | 模板资产 | `templates/**` | PRD、详细设计、交付契约、验收证据模板 |
 
 ## 3. 接入方式
-业务项目通过 CLI 管理 baseline：
+业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。推荐在开发机全局安装 CLI，用于创建项目、历史项目升级和临时诊断：
+
+```bash
+npm install -g @mango/cli --registry {{npmRegistry}}
+```
+
+生成后的业务项目仍以项目内锁定版本为准：先执行 `cd frontend && pnpm install` 安装 `frontend` 中声明的 `@mango/cli`，再通过 `scripts/dev-workspace.sh ...` 执行本地开发命令。脚本会优先使用项目内 CLI；项目依赖未安装时才回退到全局 `mango`。
+
+历史项目如果还没有兼容脚本或项目内 CLI，可以先使用全局 CLI 执行 `mango pmo upgrade --project-dir .`，把 baseline、Agent 入口和兼容脚本升级到当前版本。
+
+常用 baseline 命令：
 
 ```bash
 mango pmo status --project-dir .
