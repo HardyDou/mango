@@ -22,4 +22,8 @@ public interface SysConfigApi {
     R<Boolean> updateValue(UpdateConfigValueCommand command);
 
     R<String> getValue(String configKey);
+
+    R<Boolean> getBooleanValue(String configKey, Boolean defaultValue);
+
+    R<Integer> getIntegerValue(String configKey, Integer defaultValue);
 }

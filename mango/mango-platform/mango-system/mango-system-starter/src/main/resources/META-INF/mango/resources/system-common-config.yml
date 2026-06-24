@@ -125,3 +125,630 @@ mango:
             status:
               type: INT
               value: 1
+        - id: "2170000000000003001"
+          version: 1
+          biz-key: system.config.notice-center-enabled
+          name: 通知中心总开关
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003001
+            configKey:
+              type: STRING
+              value: notice.center.enabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 通知中心总开关
+            type:
+              type: STRING
+              value: FEATURE
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: delivery
+            groupName:
+              type: STRING
+              value: 消息投递
+            defaultValue:
+              type: STRING
+              value: "true"
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 10
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息
+        - id: "2170000000000003002"
+          version: 1
+          biz-key: system.config.notice-sender-display-name
+          name: 默认发送方名称
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003002
+            configKey:
+              type: STRING
+              value: notice.sender.displayName
+            configValue:
+              type: STRING
+              value: 芒果运营中心
+            configName:
+              type: STRING
+              value: 默认发送方名称
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: delivery
+            groupName:
+              type: STRING
+              value: 消息投递
+            defaultValue:
+              type: STRING
+              value: 芒果运营中心
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 20
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 业务通知在消息中心、短信和邮件中展示的默认发送方名称
+        - id: "2170000000000003003"
+          version: 1
+          biz-key: system.config.notice-retry-max-times
+          name: 失败重试次数
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003003
+            configKey:
+              type: STRING
+              value: notice.retry.maxTimes
+            configValue:
+              type: STRING
+              value: "5"
+            configName:
+              type: STRING
+              value: 失败重试次数
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: NUMBER
+            groupCode:
+              type: STRING
+              value: delivery
+            groupName:
+              type: STRING
+              value: 消息投递
+            defaultValue:
+              type: STRING
+              value: "3"
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 30
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 第三方渠道发送失败后的最大自动重试次数
+        - id: "2170000000000003004"
+          version: 1
+          biz-key: system.config.notice-priority-default
+          name: 默认通知优先级
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003004
+            configKey:
+              type: STRING
+              value: notice.priority.default
+            configValue:
+              type: STRING
+              value: normal
+            configName:
+              type: STRING
+              value: 默认通知优先级
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: RADIO
+            groupCode:
+              type: STRING
+              value: delivery
+            groupName:
+              type: STRING
+              value: 消息投递
+            defaultValue:
+              type: STRING
+              value: normal
+            options:
+              type: STRING
+              value: '[{"label":"低","value":"low"},{"label":"普通","value":"normal"},{"label":"高","value":"high"},{"label":"紧急","value":"urgent"}]'
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 40
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 未指定优先级时通知任务进入队列的默认优先级
+        - id: "2170000000000003005"
+          version: 1
+          biz-key: system.config.notice-template-scene
+          name: 默认模板场景
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003005
+            configKey:
+              type: STRING
+              value: notice.template.scene
+            configValue:
+              type: STRING
+              value: workflow_approved
+            configName:
+              type: STRING
+              value: 默认模板场景
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: SELECT
+            groupCode:
+              type: STRING
+              value: template
+            groupName:
+              type: STRING
+              value: 消息模板
+            defaultValue:
+              type: STRING
+              value: workflow_approved
+            options:
+              type: STRING
+              value: '[{"label":"订单支付成功","value":"order_paid"},{"label":"流程审批通过","value":"workflow_approved"},{"label":"发票开具完成","value":"invoice_ready"}]'
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 50
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 运营人员新增通知模板时默认选中的业务场景
+        - id: "2170000000000003006"
+          version: 1
+          biz-key: system.config.notice-channels-default
+          name: 默认通知渠道
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003006
+            configKey:
+              type: STRING
+              value: notice.channels.default
+            configValue:
+              type: STRING
+              value: '["site","email"]'
+            configName:
+              type: STRING
+              value: 默认通知渠道
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: MULTI_SELECT
+            groupCode:
+              type: STRING
+              value: delivery
+            groupName:
+              type: STRING
+              value: 消息投递
+            defaultValue:
+              type: STRING
+              value: '["site"]'
+            optionSource:
+              type: STRING
+              value: DICT
+            dictType:
+              type: STRING
+              value: notice_channel
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 60
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 没有指定渠道时系统自动使用的通知触达渠道
+        - id: "2170000000000003007"
+          version: 1
+          biz-key: system.config.notice-quiet-until
+          name: 免打扰截止日期
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003007
+            configKey:
+              type: STRING
+              value: notice.quiet.until
+            configValue:
+              type: STRING
+              value: "2026-12-31"
+            configName:
+              type: STRING
+              value: 免打扰截止日期
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: DATE
+            groupCode:
+              type: STRING
+              value: delivery
+            groupName:
+              type: STRING
+              value: 消息投递
+            defaultValue:
+              type: STRING
+              value: "2026-12-31"
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 70
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 在该日期前不发送非紧急类夜间提醒
+        - id: "2170000000000003008"
+          version: 1
+          biz-key: system.config.notice-send-window
+          name: 通知发送日期范围
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003008
+            configKey:
+              type: STRING
+              value: notice.send.window
+            configValue:
+              type: STRING
+              value: '["2026-07-01","2026-12-31"]'
+            configName:
+              type: STRING
+              value: 通知发送日期范围
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: NOTICE
+            valueType:
+              type: STRING
+              value: DATE_RANGE
+            groupCode:
+              type: STRING
+              value: delivery
+            groupName:
+              type: STRING
+              value: 消息投递
+            defaultValue:
+              type: STRING
+              value: '["2026-07-01","2026-12-31"]'
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 80
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 通知中心允许自动发送运营消息的日期范围
+        - id: "2170000000000003101"
+          version: 1
+          biz-key: system.config.workflow-auto-assign-enabled
+          name: 审批任务自动分派
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003101
+            configKey:
+              type: STRING
+              value: workflow.autoAssign.enabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 审批任务自动分派
+            type:
+              type: STRING
+              value: FEATURE
+            domainCode:
+              type: STRING
+              value: WORKFLOW
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: task
+            groupName:
+              type: STRING
+              value: 任务处理
+            defaultValue:
+              type: STRING
+              value: "true"
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 10
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后系统按组织、岗位和负载自动分派待办任务
+        - id: "2170000000000003102"
+          version: 1
+          biz-key: system.config.workflow-task-default-priority
+          name: 默认审批优先级
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003102
+            configKey:
+              type: STRING
+              value: workflow.task.defaultPriority
+            configValue:
+              type: STRING
+              value: urgent
+            configName:
+              type: STRING
+              value: 默认审批优先级
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: WORKFLOW
+            valueType:
+              type: STRING
+              value: SELECT
+            groupCode:
+              type: STRING
+              value: task
+            groupName:
+              type: STRING
+              value: 任务处理
+            defaultValue:
+              type: STRING
+              value: normal
+            optionSource:
+              type: STRING
+              value: DICT
+            dictType:
+              type: STRING
+              value: workflow_task_priority
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 20
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 新建流程未指定优先级时采用的审批任务优先级
+        - id: "2170000000000003201"
+          version: 1
+          biz-key: system.config.cms-audit-required
+          name: 内容发布需审核
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003201
+            configKey:
+              type: STRING
+              value: cms.audit.required
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 内容发布需审核
+            type:
+              type: STRING
+              value: FEATURE
+            domainCode:
+              type: STRING
+              value: CMS
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: publish
+            groupName:
+              type: STRING
+              value: 内容发布
+            defaultValue:
+              type: STRING
+              value: "true"
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 10
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后内容发布前必须完成审核流程
+        - id: "2170000000000003202"
+          version: 1
+          biz-key: system.config.cms-publish-channels-default
+          name: 默认发布渠道
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2170000000000003202
+            configKey:
+              type: STRING
+              value: cms.publish.channels.default
+            configValue:
+              type: STRING
+              value: '["portal_home","help_center"]'
+            configName:
+              type: STRING
+              value: 默认发布渠道
+            type:
+              type: STRING
+              value: BUSINESS
+            domainCode:
+              type: STRING
+              value: CMS
+            valueType:
+              type: STRING
+              value: MULTI_SELECT
+            groupCode:
+              type: STRING
+              value: publish
+            groupName:
+              type: STRING
+              value: 内容发布
+            defaultValue:
+              type: STRING
+              value: '["help_center"]'
+            optionSource:
+              type: STRING
+              value: DICT
+            dictType:
+              type: STRING
+              value: cms_publish_channel
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 20
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 内容通过审核后默认同步发布的前台渠道

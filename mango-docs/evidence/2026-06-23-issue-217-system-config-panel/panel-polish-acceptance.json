@@ -1,0 +1,311 @@
+{
+  "evidenceName": "Issue 217 系统配置操作面板精修验收",
+  "status": "PASS",
+  "startedAt": "2026-06-24T00:25:13.248Z",
+  "environment": {
+    "frontendURL": "http://127.0.0.1:8655",
+    "backendURL": "http://127.0.0.1:18965",
+    "accountIdentifier": "admin / tenantCode=default / tenantName=芒果集团"
+  },
+  "assertions": [
+    {
+      "name": "后端健康检查 UP",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "status": "UP",
+          "components": {
+            "db": {
+              "status": "UP",
+              "details": {
+                "database": "MySQL",
+                "validationQuery": "isValid()"
+              }
+            },
+            "discoveryComposite": {
+              "description": "Discovery Client not initialized",
+              "status": "UNKNOWN",
+              "components": {
+                "discoveryClient": {
+                  "description": "Discovery Client not initialized",
+                  "status": "UNKNOWN"
+                }
+              }
+            },
+            "diskSpace": {
+              "status": "UP",
+              "details": {
+                "total": 494384795648,
+                "free": 21047590912,
+                "threshold": 10485760,
+                "path": "/Users/hardy/Work/mango/.mango/worktrees/issue-217-system-config-panel/mango/mango-app/monolith/mango-monolith-app/.",
+                "exists": true
+              }
+            },
+            "ping": {
+              "status": "UP"
+            },
+            "refreshScope": {
+              "status": "UP"
+            },
+            "ssl": {
+              "status": "UP",
+              "details": {
+                "validChains": [],
+                "invalidChains": []
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "真实登录成功",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "面板展示仿真配置：通知中心总开关",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "面板展示仿真配置：默认发送方名称",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "面板展示仿真配置：失败重试次数",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "面板展示仿真配置：默认通知优先级",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "面板展示仿真配置：默认模板场景",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "面板展示仿真配置：默认通知渠道",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "面板展示仿真配置：免打扰截止日期",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "面板展示仿真配置：通知发送日期范围",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "卡片信息层级包含：消息投递",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "卡片信息层级包含：站内信",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "卡片信息层级包含：流程审批通过",
+      "pass": true,
+      "detail": {
+        "excerpt": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n通知中心总开关\n消息投递\n开关\n详情\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n开启\n默认发送方名称\n消息投递\n文本\n详情\n业务通知在消息中心、短信和邮件中展示的默认发送方名称\n失败重试次数\n消息投递\n数字\n详情\n第三方渠道发送失败后的最大自动重试次数\n默认通知优先级\n消息投递\n单选\n详情\n未指定优先级时通知任务进入队列的默认优先级\n低\n普通\n高\n紧急\n默认模板场景\n消息模板\n下拉\n详情\n运营人员新增通知模板时默认选中的业务场景\n流程审批通过\n默认通知渠道\n消息投递\n多选\n详情\n没有指定渠道时系统自动使用的通知触达渠道\n站内信\n+ 1\n免打扰截止日期\n消息投递\n日期\n详情\n在该日期前不发送非紧急类夜间提醒\n通知发送日期范围\n消息投递\n日期区间\n详情\n通知中心允许自动发送运营消息的日期范围\n-"
+      }
+    },
+    {
+      "name": "弹窗包含业务判断字段：配置操作",
+      "pass": true,
+      "detail": {
+        "dialogText": "配置操作：通知中心总开关\n通知中心总开关\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n可改\n业务域\n通知中心\n配置类型\n开关\n选项来源\n开关值\n默认值\n开启\n当前值\n开启\n配置键\nnotice.center.enabled\n关闭\n保存当前值"
+      }
+    },
+    {
+      "name": "弹窗包含业务判断字段：业务域",
+      "pass": true,
+      "detail": {
+        "dialogText": "配置操作：通知中心总开关\n通知中心总开关\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n可改\n业务域\n通知中心\n配置类型\n开关\n选项来源\n开关值\n默认值\n开启\n当前值\n开启\n配置键\nnotice.center.enabled\n关闭\n保存当前值"
+      }
+    },
+    {
+      "name": "弹窗包含业务判断字段：配置类型",
+      "pass": true,
+      "detail": {
+        "dialogText": "配置操作：通知中心总开关\n通知中心总开关\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n可改\n业务域\n通知中心\n配置类型\n开关\n选项来源\n开关值\n默认值\n开启\n当前值\n开启\n配置键\nnotice.center.enabled\n关闭\n保存当前值"
+      }
+    },
+    {
+      "name": "弹窗包含业务判断字段：选项来源",
+      "pass": true,
+      "detail": {
+        "dialogText": "配置操作：通知中心总开关\n通知中心总开关\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n可改\n业务域\n通知中心\n配置类型\n开关\n选项来源\n开关值\n默认值\n开启\n当前值\n开启\n配置键\nnotice.center.enabled\n关闭\n保存当前值"
+      }
+    },
+    {
+      "name": "弹窗包含业务判断字段：默认值",
+      "pass": true,
+      "detail": {
+        "dialogText": "配置操作：通知中心总开关\n通知中心总开关\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n可改\n业务域\n通知中心\n配置类型\n开关\n选项来源\n开关值\n默认值\n开启\n当前值\n开启\n配置键\nnotice.center.enabled\n关闭\n保存当前值"
+      }
+    },
+    {
+      "name": "弹窗包含业务判断字段：当前值",
+      "pass": true,
+      "detail": {
+        "dialogText": "配置操作：通知中心总开关\n通知中心总开关\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n可改\n业务域\n通知中心\n配置类型\n开关\n选项来源\n开关值\n默认值\n开启\n当前值\n开启\n配置键\nnotice.center.enabled\n关闭\n保存当前值"
+      }
+    },
+    {
+      "name": "弹窗包含业务判断字段：配置键",
+      "pass": true,
+      "detail": {
+        "dialogText": "配置操作：通知中心总开关\n通知中心总开关\n控制通知中心是否对外发送站内信、短信、邮件和 Webhook 消息\n可改\n业务域\n通知中心\n配置类型\n开关\n选项来源\n开关值\n默认值\n开启\n当前值\n开启\n配置键\nnotice.center.enabled\n关闭\n保存当前值"
+      }
+    },
+    {
+      "name": "流程审批 Tab 展示审批配置",
+      "pass": true,
+      "detail": {
+        "workflowText": "通知中心\n流程审批\n内容管理\n通用域\n刷新\n审批任务自动分派\n任务处理\n开关\n详情\n开启后系统按组织、岗位和负载自动分派待办任务\n开启\n默认审批优先级\n任务处理\n下拉\n详情\n新建流程未指定优先级时采用的审批任务优先级\n加急"
+      }
+    },
+    {
+      "name": "页面无 uncaught pageerror",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "页面无 console error",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "目标接口无 4xx/5xx",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "consoleMessages": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "log",
+      "text": "[Router] doInitRoutes called, isRequestRoutes: true (useMock: false )"
+    },
+    {
+      "type": "log",
+      "text": "[Router] Current routes: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] 从后端加载菜单配置..."
+    },
+    {
+      "type": "log",
+      "text": "[MenuLoader] 从后端加载菜单成功，共 8 个菜单（前端: 3 后端: 4 ）"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] 菜单加载成功，共 8 个菜单"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Layout route already exists"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Cleared Layout children"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] tabBarRoutes: [Object, Object, Object, Object, Object, Object, Object, Object]"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /home Home"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /system system"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /workflow workflow"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /data data"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /notice notice"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /workflow/task/detail WorkflowTaskDetail"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /workflow/custom-apply WorkflowCustomApply"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /develop DevelopCenter"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding hidden runtime route to Layout: /payment/cashier-configs/:cashierId/cashier PaymentCashier"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Final routes: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Obj"
+    },
+    {
+      "type": "log",
+      "text": "[Router] After backEnd init: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object"
+    }
+  ],
+  "pageErrors": [],
+  "failedNetwork": [],
+  "screenshots": [
+    "screenshots/06-polished-panel-overview.png",
+    "screenshots/07-polished-panel-dialog.png",
+    "screenshots/08-polished-panel-workflow-tab.png"
+  ],
+  "finishedAt": "2026-06-24T00:25:17.505Z"
+}

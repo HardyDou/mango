@@ -5,6 +5,9 @@
 import { del, get, post, put } from '@mango/common/utils/request';
 import type { ApiId } from '@mango/api-schema';
 
+export type ConfigValueType = 'BOOLEAN' | 'STRING' | 'NUMBER' | 'RADIO' | 'SELECT' | 'MULTI_SELECT' | 'DATE' | 'DATE_RANGE';
+export type ConfigOptionSource = 'CUSTOM' | 'DICT';
+
 export interface SysConfig {
   id?: ApiId;
   configKey: string;
@@ -13,6 +16,15 @@ export interface SysConfig {
   configName?: string;
   type?: string;
   domainCode?: string;
+  valueType?: ConfigValueType;
+  groupCode?: string;
+  groupName?: string;
+  defaultValue?: string;
+  options?: string;
+  optionSource?: ConfigOptionSource;
+  dictType?: string;
+  editable?: boolean;
+  editableReason?: string;
   description?: string;
   remark?: string;
   status?: number;
@@ -52,12 +64,18 @@ export const configApi = {
   delete: (id: ApiId) => {
     return del<boolean>('/system/config', { params: { id } });
   },
+  updateValue: (id: ApiId, value: string) => {
+    return put<boolean>('/system/config/value', undefined, { params: { id, value } });
+  },
   group: (group: string) => {
     return get<any[]>('/system/config/type', { params: { type: toBackendType(group) } })
       .then((list) => list.map(fromBackend));
   },
   groups: () => {
     return get<string[]>('/system/config/groups');
+  },
+  valueTypes: () => {
+    return get<ConfigValueType[]>('/system/config/value-types');
   },
 };
 
@@ -82,6 +100,15 @@ function fromBackend(item: any): SysConfig {
     ...item,
     configGroup: group,
     domainCode: item.domainCode ?? 'COMMON',
+    valueType: normalizeValueType(item.valueType),
+    groupCode: item.groupCode,
+    groupName: item.groupName,
+    defaultValue: item.defaultValue,
+    options: item.options,
+    optionSource: normalizeOptionSource(item.optionSource),
+    dictType: item.dictType,
+    editable: item.editable ?? true,
+    editableReason: item.editableReason,
     description: item.description ?? item.remark,
   };
 }
@@ -94,10 +121,40 @@ function toBackend(item: SysConfig) {
     configName: item.configName || item.configKey,
     type: item.type || toBackendType(item.configGroup),
     domainCode: item.domainCode || 'COMMON',
+    valueType: item.valueType || 'STRING',
+    groupCode: item.groupCode,
+    groupName: item.groupName,
+    defaultValue: item.defaultValue,
+    options: item.options,
+    optionSource: item.optionSource || 'CUSTOM',
+    dictType: item.dictType,
+    editable: item.editable ?? true,
+    editableReason: item.editableReason,
     status: item.status,
     sort: 0,
     remark: item.remark || item.description,
   };
+}
+
+function normalizeValueType(value?: string): ConfigValueType {
+  const normalized = (value || 'STRING').toUpperCase();
+  if (
+    normalized === 'BOOLEAN'
+    || normalized === 'STRING'
+    || normalized === 'NUMBER'
+    || normalized === 'RADIO'
+    || normalized === 'SELECT'
+    || normalized === 'MULTI_SELECT'
+    || normalized === 'DATE'
+    || normalized === 'DATE_RANGE'
+  ) {
+    return normalized;
+  }
+  return 'STRING';
+}
+
+function normalizeOptionSource(value?: string): ConfigOptionSource {
+  return value === 'DICT' ? 'DICT' : 'CUSTOM';
 }
 
 function toPageResult<T>(list: T[] = [], params?: SysConfigQuery): PageResult<T> {

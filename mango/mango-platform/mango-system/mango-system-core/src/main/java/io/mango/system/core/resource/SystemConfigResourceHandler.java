@@ -7,7 +7,9 @@ import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.system.api.enums.ConfigOptionSourceEnum;
 import io.mango.system.api.enums.ConfigTypeEnum;
+import io.mango.system.api.enums.ConfigValueTypeEnum;
 import io.mango.system.core.entity.SysConfig;
 import io.mango.system.core.mapper.SysConfigMapper;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,15 @@ public class SystemConfigResourceHandler implements ResourceHandler {
                 .fieldDescription("configName", "系统参数名称。")
                 .fieldDescription("type", "系统参数类型：SYSTEM、BUSINESS、SECURITY、FEATURE。")
                 .fieldDescription("domainCode", "业务域编码，默认 COMMON。")
+                .fieldDescription("valueType", "配置值展示与编辑类型：BOOLEAN、STRING、NUMBER、RADIO、SELECT、MULTI_SELECT、DATE、DATE_RANGE。")
+                .fieldDescription("groupCode", "配置分组编码。")
+                .fieldDescription("groupName", "配置分组名称。")
+                .fieldDescription("defaultValue", "默认值。")
+                .fieldDescription("options", "选项列表，JSON字符串。")
+                .fieldDescription("optionSource", "选项来源：CUSTOM、DICT，默认 CUSTOM。")
+                .fieldDescription("dictType", "绑定字典类型，optionSource=DICT 时使用。")
+                .fieldDescription("editable", "是否可编辑，默认 true。")
+                .fieldDescription("editableReason", "不可编辑原因。")
                 .fieldDescription("sort", "排序号，默认 0。")
                 .fieldDescription("status", "状态：1 启用，0 禁用。")
                 .fieldDescription("remark", "备注。")
@@ -100,6 +111,15 @@ public class SystemConfigResourceHandler implements ResourceHandler {
         config.setConfigName(payload.configName());
         config.setType(payload.type());
         config.setDomainCode(payload.domainCode());
+        config.setValueType(payload.valueType());
+        config.setGroupCode(payload.groupCode());
+        config.setGroupName(payload.groupName());
+        config.setDefaultValue(payload.defaultValue());
+        config.setOptions(payload.options());
+        config.setOptionSource(payload.optionSource());
+        config.setDictType(payload.dictType());
+        config.setEditable(payload.editable());
+        config.setEditableReason(payload.editableReason());
         config.setSort(payload.sort());
         config.setStatus(payload.status());
         config.setRemark(payload.remark());
@@ -132,8 +152,10 @@ public class SystemConfigResourceHandler implements ResourceHandler {
     }
 
     private record ConfigPayload(Long configId, String configKey, String configValue, String configName,
-                                 ConfigTypeEnum type, String domainCode, Integer sort, Integer status,
-                                 String remark) {
+                                 ConfigTypeEnum type, String domainCode, ConfigValueTypeEnum valueType,
+                                 String groupCode, String groupName, String defaultValue, String options,
+                                 ConfigOptionSourceEnum optionSource, String dictType,
+                                 Boolean editable, String editableReason, Integer sort, Integer status, String remark) {
 
         private static ConfigPayload from(ResourceDeclaration resource) {
             return new ConfigPayload(
@@ -143,6 +165,15 @@ public class SystemConfigResourceHandler implements ResourceHandler {
                     requiredText(fieldValue(resource, "configName", true), "SYSTEM_CONFIG configName is required").trim(),
                     parseType(fieldText(resource, "type", false)),
                     defaultText(fieldText(resource, "domainCode", false), DEFAULT_DOMAIN_CODE).toUpperCase(),
+                    parseValueType(fieldText(resource, "valueType", false)),
+                    fieldText(resource, "groupCode", false),
+                    fieldText(resource, "groupName", false),
+                    fieldText(resource, "defaultValue", false),
+                    fieldText(resource, "options", false),
+                    parseOptionSource(fieldText(resource, "optionSource", false)),
+                    fieldText(resource, "dictType", false),
+                    fieldBoolean(resource, "editable", false, Boolean.TRUE),
+                    fieldText(resource, "editableReason", false),
                     fieldInt(resource, "sort", false, 0),
                     normalizeStatus(fieldInt(resource, "status", false, ENABLED)),
                     fieldText(resource, "remark", false)
@@ -155,6 +186,20 @@ public class SystemConfigResourceHandler implements ResourceHandler {
             return ConfigTypeEnum.SYSTEM;
         }
         return ConfigTypeEnum.valueOf(value.trim().toUpperCase());
+    }
+
+    private static ConfigValueTypeEnum parseValueType(String value) {
+        if (!StringUtils.hasText(value)) {
+            return ConfigValueTypeEnum.STRING;
+        }
+        return ConfigValueTypeEnum.valueOf(value.trim().toUpperCase());
+    }
+
+    private static ConfigOptionSourceEnum parseOptionSource(String value) {
+        if (!StringUtils.hasText(value)) {
+            return ConfigOptionSourceEnum.CUSTOM;
+        }
+        return ConfigOptionSourceEnum.valueOf(value.trim().toUpperCase());
     }
 
     private static Integer normalizeStatus(Integer status) {
@@ -177,6 +222,10 @@ public class SystemConfigResourceHandler implements ResourceHandler {
 
     private static Integer fieldInt(ResourceDeclaration resource, String name, boolean required, Integer defaultValue) {
         return toInt(fieldValue(resource, name, required), required, defaultValue);
+    }
+
+    private static Boolean fieldBoolean(ResourceDeclaration resource, String name, boolean required, Boolean defaultValue) {
+        return toBoolean(fieldValue(resource, name, required), required, defaultValue);
     }
 
     private static Object fieldValue(ResourceDeclaration resource, String name, boolean required) {
@@ -228,5 +277,25 @@ public class SystemConfigResourceHandler implements ResourceHandler {
             return number.intValue();
         }
         return Integer.valueOf(String.valueOf(value));
+    }
+
+    private static Boolean toBoolean(Object value, boolean required, Boolean defaultValue) {
+        if (value == null || !StringUtils.hasText(String.valueOf(value))) {
+            if (required) {
+                throw new IllegalStateException("SYSTEM_CONFIG boolean value is required");
+            }
+            return defaultValue;
+        }
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        String text = String.valueOf(value).trim();
+        if ("1".equals(text)) {
+            return Boolean.TRUE;
+        }
+        if ("0".equals(text)) {
+            return Boolean.FALSE;
+        }
+        return Boolean.valueOf(text);
     }
 }

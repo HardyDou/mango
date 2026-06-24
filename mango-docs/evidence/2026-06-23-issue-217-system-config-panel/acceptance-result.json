@@ -1,0 +1,313 @@
+{
+  "evidenceName": "Issue 217 系统配置控制面板浏览器运行态验收",
+  "status": "PASS",
+  "startedAt": "2026-06-23T13:56:04.056Z",
+  "finishedAt": "2026-06-23T13:56:07.793Z",
+  "environment": {
+    "frontendURL": "http://127.0.0.1:8655",
+    "backendURL": "http://127.0.0.1:18965",
+    "backendHealthURL": "http://127.0.0.1:18965/actuator/health",
+    "backendHealthStatus": "UP",
+    "databaseName": "mango_dev_37cdfa",
+    "accountIdentifier": "admin / tenantCode=default / tenantName=芒果集团"
+  },
+  "scope": [
+    "真实启动后端与前端服务",
+    "登录后台管理端",
+    "访问 /#/system/config 系统配置页",
+    "验证业务域 Tab、配置卡片、配置介绍、详情抽屉、开关保存链路",
+    "采集页面截图、console、network 结果"
+  ],
+  "testData": {
+    "domainCode": "COMMON",
+    "configName": "Issue217浏览器验收开关-1782222964056",
+    "configRemark": "Issue217浏览器运行态验收配置-1782222964056",
+    "createdConfigId": "2069419226378838018"
+  },
+  "steps": [
+    {
+      "name": "打开登录页",
+      "status": "RUNNING",
+      "detail": {},
+      "at": "2026-06-23T13:56:04.252Z"
+    },
+    {
+      "name": "打开登录页",
+      "status": "PASS",
+      "detail": {},
+      "at": "2026-06-23T13:56:05.413Z"
+    },
+    {
+      "name": "真实登录默认租户",
+      "status": "RUNNING",
+      "detail": {},
+      "at": "2026-06-23T13:56:05.413Z"
+    },
+    {
+      "name": "真实登录默认租户",
+      "status": "PASS",
+      "detail": {},
+      "at": "2026-06-23T13:56:06.032Z"
+    },
+    {
+      "name": "创建验收配置数据",
+      "status": "RUNNING",
+      "detail": {},
+      "at": "2026-06-23T13:56:06.032Z"
+    },
+    {
+      "name": "创建验收配置数据",
+      "status": "PASS",
+      "detail": {
+        "id": "2069419226378838018",
+        "key": "issue217.browser.acceptance.1782222966032"
+      },
+      "at": "2026-06-23T13:56:06.184Z"
+    },
+    {
+      "name": "打开系统配置页",
+      "status": "RUNNING",
+      "detail": {},
+      "at": "2026-06-23T13:56:06.184Z"
+    },
+    {
+      "name": "打开系统配置页",
+      "status": "PASS",
+      "detail": {},
+      "at": "2026-06-23T13:56:06.418Z"
+    },
+    {
+      "name": "查看详情抽屉",
+      "status": "RUNNING",
+      "detail": {},
+      "at": "2026-06-23T13:56:06.418Z"
+    },
+    {
+      "name": "查看详情抽屉",
+      "status": "PASS",
+      "detail": {},
+      "at": "2026-06-23T13:56:06.797Z"
+    },
+    {
+      "name": "直接编辑开关配置",
+      "status": "RUNNING",
+      "detail": {},
+      "at": "2026-06-23T13:56:06.797Z"
+    },
+    {
+      "name": "直接编辑开关配置",
+      "status": "PASS",
+      "detail": {},
+      "at": "2026-06-23T13:56:07.793Z"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "后端健康检查必须 UP",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "status": "UP",
+          "components": {
+            "db": {
+              "status": "UP",
+              "details": {
+                "database": "MySQL",
+                "validationQuery": "isValid()"
+              }
+            },
+            "discoveryComposite": {
+              "description": "Discovery Client not initialized",
+              "status": "UNKNOWN",
+              "components": {
+                "discoveryClient": {
+                  "description": "Discovery Client not initialized",
+                  "status": "UNKNOWN"
+                }
+              }
+            },
+            "diskSpace": {
+              "status": "UP",
+              "details": {
+                "total": 494384795648,
+                "free": 23903203328,
+                "threshold": 10485760,
+                "path": "/Users/hardy/Work/mango/.mango/worktrees/issue-217-system-config-panel/mango/mango-app/monolith/mango-monolith-app/.",
+                "exists": true
+              }
+            },
+            "ping": {
+              "status": "UP"
+            },
+            "refreshScope": {
+              "status": "UP"
+            },
+            "ssl": {
+              "status": "UP",
+              "details": {
+                "validChains": [],
+                "invalidChains": []
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "登录页用户名输入框可见",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "登录页密码输入框可见",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "登录接口返回 200",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "新增验收配置接口成功",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "code": 200,
+          "success": true,
+          "msg": "操作成功",
+          "data": "2069419226378838018"
+        }
+      }
+    },
+    {
+      "name": "系统配置列表接口返回 200",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "系统配置页新增配置按钮可见",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "系统配置页业务域 Tab 可见",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "系统配置页不再展示旧系统参数 Tab",
+      "pass": true,
+      "detail": {
+        "excerpt": "Mango Admin\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n1\nadmin\n芒果集团\n权限管理\n应用管理\n字典管理\n参数配置\n行政区划\n日志管理\n系统维护\n业务域\n首页\n参数配置\n关键词\n业务域\nCOMMON\n展示类型\n不限\n查询\n重置\n新增配置\nCOMMON\n刷新\nIssue217浏览器验收开关\n详情\nIssue217浏览器运行态验收配置\n开关\nissue217.browser.acceptance.1782222579309\nIssue217浏览器验收开关\n详情\nIssue217浏览器运行态验收配置\n开关\nissue217.browser.acceptance.1782222658177\nIssue217浏览器验收开关-1782222964056\n详情\nIssue217浏览器运行态验收配置-1782222964056\n开关\nissue217.browser.acceptance.1782222966032\n皮肤名称\n详情\n未填写配置介绍\n文本\nsys.index.skinName\n验证码开关\n详情\n未填写配置介绍\n文本\nsys.account.captchaEnabled\n注册开关\n详情\n未填写配置介绍\n文本\nsys.account.registerEnabled\n登录锁定次数\n详情\n未填写配置介绍\n文本\nsys.login.lockCount\nMango Admin · Mango\n\n登录成功"
+      }
+    },
+    {
+      "name": "新增配置卡片可见",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "配置介绍可见",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "详情抽屉标题可见",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "详情抽屉显示配置名称",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "详情抽屉显示展示类型",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "配置值更新接口返回 200",
+      "pass": true,
+      "detail": {
+        "body": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":true}"
+      }
+    },
+    {
+      "name": "页面无 uncaught pageerror",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "页面无 console error",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "目标接口无 4xx/5xx 响应",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "consoleSummary": {
+    "total": 21,
+    "errors": [],
+    "warnings": [],
+    "note": "Vite debug/log 输出保留为开发环境正常信息；验收断言要求 console error 为 0。"
+  },
+  "pageErrors": [],
+  "networkSummary": [
+    {
+      "method": "POST",
+      "status": 200,
+      "path": "/api/auth/login-institutions",
+      "bodySnippet": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":[{\"tenantId\":\"1\",\"tenantCode\":\"default\",\"tenantName\":\"芒果集团\",\"memberId\":\"1001\",\"memberName\":\"芒果集团管理员\",\"memberType\":\"INSTITUTION_ADMIN\"},{\"tenantId\":\"2\",\"tenantCode\":\"company_a\",\"tenantName\":\"A公司\",\"memberId\":\"1002\",\"memberName\":\"A公司管理员\",\"memberType\":\"INSTITUTION_ADMIN\"},{\"tenantId\":\"3\",\"tenantCode\":\"company_b\",\"tenantName\":\"B公司\",\"memberId\":\"1003\",\"memberName\":\"B公司管理员\",\"memberType\":\"INSTITUTION_ADMIN\"},{\"tenantId\":\"4\",\"tenantCode\":\"company_c\",\"tenantName\":\"C公司\",\"memberId\":\"1004\",\"memberName\":\"C公司管理员\",\"memberType\":\"INSTITUTION_ADMIN\"}]}"
+    },
+    {
+      "method": "POST",
+      "status": 200,
+      "path": "/api/auth/login",
+      "bodySnippet": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":{\"accessToken\":\"<redacted>\",\"tokenType\":\"Bearer\",\"expiresIn\":\"7200\",\"refreshToken\":\"<redacted>\",\"userId\":\"1\",\"memberId\":\"1001\",\"username\":\"admin\",\"nickname\":\"Administrator\",\"realm\":\"INTERNAL\",\"actorType\":\"INTERNAL_USER\",\"partyType\":\"INTERNAL_ORG\",\"partyId\":\"1\",\"tenantId\":\"1\",\"tenantCode\":\"default\",\"tenantName\":\"芒果集团\",\"appCode\":\"internal-admin\",\"roles\":[\"ROLE_ADMIN\"],\"permissions\":[\"system:dict:type:list\",\"system:dict:type:query\",\"system:dict:type:add\",\"system:dict:type:edit\",\"system:dict:type:delete\",\"system:dict:data:list\",\"system:dict:data:query\",\"system:dict:data:add\",\"system:dict:data:edit\",\"system:dict:data:delete\",\"system:config:list\",\"system:config:query\",\"system:config:add\",\"system:config:edit\",\"system:config:delete\",\"system:area:query"
+    },
+    {
+      "method": "GET",
+      "status": 200,
+      "path": "/api/authorization/menus/user?fmt=tree",
+      "bodySnippet": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":[{\"menuId\":\"2069415916905254913\",\"appCode\":\"internal-admin\",\"moduleCode\":\"mango-system\",\"parentId\":\"0\",\"menuType\":1,\"menuName\":\"系统管理\",\"menuCode\":\"system\",\"path\":\"/system\",\"pageType\":\"LOCAL_ROUTE\",\"component\":null,\"externalUrl\":null,\"icon\":\"Setting\",\"sort\":1,\"status\":1,\"visible\":1,\"keepAlive\":0,\"embedded\":0,\"redirect\":\"/system/menu-package\",\"permissions\":null,\"buttonType\":null,\"buttonDisplayRule\":null,\"createBy\":null,\"updateBy\":null,\"createTime\":null,\"updateTime\":null,\"remark\":null,\"meta\":{\"title\":\"系统管理\",\"icon\":\"Setting\",\"isAffix\":null,\"isLink\":false,\"link\":null,\"isFrame\":false,\"frameSrc\":null,\"activeMenu\":null,\"breadcrumbHidden\":null,\"permissions\":null,\"badge\":null,\"badgeType\":null,\"dot\":null},\"children\":[{\"menuId\":\"2069415916997529601\",\"appCo"
+    },
+    {
+      "method": "POST",
+      "status": 200,
+      "path": "/api/system/config",
+      "bodySnippet": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":\"2069419226378838018\"}"
+    },
+    {
+      "method": "GET",
+      "status": 200,
+      "path": "/api/system/config/list?domainCode=COMMON",
+      "bodySnippet": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":[{\"id\":\"2069417604525367298\",\"configKey\":\"issue217.browser.acceptance.1782222579309\",\"configValue\":\"false\",\"configName\":\"Issue217浏览器验收开关\",\"type\":\"SYSTEM\",\"domainCode\":\"COMMON\",\"valueType\":\"BOOLEAN\",\"groupCode\":\"acceptance\",\"groupName\":\"验收配置\",\"defaultValue\":\"false\",\"options\":null,\"editable\":true,\"editableReason\":null,\"sort\":0,\"status\":1,\"remark\":\"Issue217浏览器运行态验收配置\"},{\"id\":\"2069417935179128834\",\"configKey\":\"issue217.browser.acceptance.1782222658177\",\"configValue\":\"true\",\"configName\":\"Issue217浏览器验收开关\",\"type\":\"SYSTEM\",\"domainCode\":\"COMMON\",\"valueType\":\"BOOLEAN\",\"groupCode\":\"acceptance\",\"groupName\":\"验收配置\",\"defaultValue\":\"false\",\"options\":null,\"editable\":true,\"editableReason\":null,\"sort\":0,\"status\":1,\"remark\":\"Issue217浏览器运行态验收配置\"},{\"id\":\"2069419226"
+    },
+    {
+      "method": "PUT",
+      "status": 200,
+      "path": "/api/system/config/value?id=2069419226378838018&value=false",
+      "bodySnippet": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":true}"
+    }
+  ],
+  "failedNetwork": [],
+  "screenshots": [
+    "screenshots/01-login-page.png",
+    "screenshots/02-home-after-login.png",
+    "screenshots/03-system-config-page.png",
+    "screenshots/04-config-detail-drawer.png",
+    "screenshots/05-config-after-switch-update.png"
+  ],
+  "notes": [
+    "登录响应中的 accessToken、refreshToken 已脱敏。",
+    "未记录密码或明文 token。",
+    "本次前端启动前执行 pnpm -F @mango/admin run build:style-deps 生成本地 dev 所需样式产物。"
+  ]
+}

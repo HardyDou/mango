@@ -61,6 +61,13 @@ class SystemConfigResourceHandlerIntegrationTest {
         assertThat(stringValue("sys_config", "config_value", "id = 1")).isEqualTo("skin-blue");
         assertThat(stringValue("sys_config", "type", "id = 1")).isEqualTo("SYSTEM");
         assertThat(stringValue("sys_config", "domain_code", "id = 1")).isEqualTo("COMMON");
+        assertThat(stringValue("sys_config", "value_type", "id = 1")).isEqualTo("SELECT");
+        assertThat(stringValue("sys_config", "group_code", "id = 1")).isEqualTo("appearance");
+        assertThat(stringValue("sys_config", "group_name", "id = 1")).isEqualTo("外观配置");
+        assertThat(stringValue("sys_config", "options", "id = 1")).contains("skin-blue");
+        assertThat(stringValue("sys_config", "option_source", "id = 1")).isEqualTo("DICT");
+        assertThat(stringValue("sys_config", "dict_type", "id = 1")).isEqualTo("ui_skin");
+        assertThat(intValue("sys_config", "editable", "id = 1")).isEqualTo(1);
     }
 
     @Test
@@ -109,6 +116,16 @@ class SystemConfigResourceHandlerIntegrationTest {
         field(declaration, "configName", ResourceFieldType.STRING, "皮肤名称");
         field(declaration, "type", ResourceFieldType.STRING, "SYSTEM");
         field(declaration, "domainCode", ResourceFieldType.STRING, "COMMON");
+        field(declaration, "valueType", ResourceFieldType.STRING, "SELECT");
+        field(declaration, "groupCode", ResourceFieldType.STRING, "appearance");
+        field(declaration, "groupName", ResourceFieldType.STRING, "外观配置");
+        field(declaration, "defaultValue", ResourceFieldType.STRING, "skin-blue");
+        field(declaration, "options", ResourceFieldType.STRING,
+                "[{\"label\":\"蓝色\",\"value\":\"skin-blue\"},{\"label\":\"绿色\",\"value\":\"skin-green\"}]");
+        field(declaration, "optionSource", ResourceFieldType.STRING, "DICT");
+        field(declaration, "dictType", ResourceFieldType.STRING, "ui_skin");
+        field(declaration, "editable", ResourceFieldType.BOOLEAN, true);
+        field(declaration, "editableReason", ResourceFieldType.STRING, "");
         field(declaration, "sort", ResourceFieldType.INT, sort);
         field(declaration, "status", ResourceFieldType.INT, 1);
         return declaration;
@@ -131,6 +148,15 @@ class SystemConfigResourceHandlerIntegrationTest {
                     config_name varchar(100) not null,
                     type varchar(20) not null,
                     domain_code varchar(64) not null default 'COMMON',
+                    value_type varchar(32) default 'STRING',
+                    group_code varchar(64),
+                    group_name varchar(100),
+                    default_value clob,
+                    options clob,
+                    option_source varchar(32) not null default 'CUSTOM',
+                    dict_type varchar(50),
+                    editable tinyint not null default 1,
+                    editable_reason varchar(200),
                     sort int not null default 0,
                     status tinyint not null default 1,
                     remark varchar(500),

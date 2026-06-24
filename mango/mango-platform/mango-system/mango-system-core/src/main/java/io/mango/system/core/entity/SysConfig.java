@@ -1,7 +1,9 @@
 package io.mango.system.core.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import io.mango.system.api.enums.ConfigOptionSourceEnum;
 import io.mango.system.api.enums.ConfigTypeEnum;
+import io.mango.system.api.enums.ConfigValueTypeEnum;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -16,6 +18,15 @@ public class SysConfig {
     private String configName;
     private ConfigTypeEnum type;
     private String domainCode;
+    private ConfigValueTypeEnum valueType;
+    private String groupCode;
+    private String groupName;
+    private String defaultValue;
+    private String options;
+    private ConfigOptionSourceEnum optionSource;
+    private String dictType;
+    private Boolean editable;
+    private String editableReason;
     private Integer sort;
     private Integer status;
     private String remark;

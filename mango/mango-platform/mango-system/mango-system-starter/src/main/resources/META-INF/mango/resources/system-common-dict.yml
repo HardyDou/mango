@@ -498,3 +498,183 @@ mango:
                   sort: 4
                   status: 1
                   remark: 生命周期结束，不允许登录与访问
+        - id: "2170000000000002001"
+          version: 1
+          biz-key: system.dict.notice-channel
+          name: 通知渠道
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 2170000000000002001
+            dictType:
+              type: STRING
+              value: notice_channel
+            dictName:
+              type: STRING
+              value: 通知渠道
+            domainCode:
+              type: STRING
+              value: NOTICE
+            remark:
+              type: STRING
+              value: 通知中心可用的消息触达渠道
+            items:
+              type: LIST
+              value:
+                - id: 2170000000000002101
+                  label: 站内信
+                  value: site
+                  sort: 10
+                  status: 1
+                  remark: 发送到平台消息中心
+                - id: 2170000000000002102
+                  label: 短信
+                  value: sms
+                  sort: 20
+                  status: 1
+                  remark: 发送到用户绑定手机号
+                - id: 2170000000000002103
+                  label: 邮件
+                  value: email
+                  sort: 30
+                  status: 1
+                  remark: 发送到用户绑定邮箱
+                - id: 2170000000000002104
+                  label: Webhook
+                  value: webhook
+                  sort: 40
+                  status: 1
+                  remark: 推送到业务系统回调地址
+        - id: "2170000000000002002"
+          version: 1
+          biz-key: system.dict.notice-audience-role
+          name: 通知接收角色
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 2170000000000002002
+            dictType:
+              type: STRING
+              value: notice_audience_role
+            dictName:
+              type: STRING
+              value: 通知接收角色
+            domainCode:
+              type: STRING
+              value: NOTICE
+            remark:
+              type: STRING
+              value: 通知中心默认接收人角色范围
+            items:
+              type: LIST
+              value:
+                - id: 2170000000000002201
+                  label: 租户管理员
+                  value: tenant_admin
+                  sort: 10
+                  status: 1
+                  remark: 租户内管理角色
+                - id: 2170000000000002202
+                  label: 运营负责人
+                  value: ops_manager
+                  sort: 20
+                  status: 1
+                  remark: 负责业务运营的接收人
+                - id: 2170000000000002203
+                  label: 财务人员
+                  value: finance
+                  sort: 30
+                  status: 1
+                  remark: 负责费用、账单和结算的接收人
+                - id: 2170000000000002204
+                  label: 审批处理人
+                  value: approver
+                  sort: 40
+                  status: 1
+                  remark: 审批节点办理人
+        - id: "2170000000000002003"
+          version: 1
+          biz-key: system.dict.workflow-task-priority
+          name: 审批任务优先级
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 2170000000000002003
+            dictType:
+              type: STRING
+              value: workflow_task_priority
+            dictName:
+              type: STRING
+              value: 审批任务优先级
+            domainCode:
+              type: STRING
+              value: WORKFLOW
+            remark:
+              type: STRING
+              value: 流程审批任务默认优先级
+            items:
+              type: LIST
+              value:
+                - id: 2170000000000002301
+                  label: 普通
+                  value: normal
+                  sort: 10
+                  status: 1
+                  remark: 按默认 SLA 处理
+                - id: 2170000000000002302
+                  label: 加急
+                  value: urgent
+                  sort: 20
+                  status: 1
+                  remark: 提高待办排序和提醒频率
+                - id: 2170000000000002303
+                  label: 关键
+                  value: critical
+                  sort: 30
+                  status: 1
+                  remark: 关键流程任务，优先提醒负责人
+        - id: "2170000000000002004"
+          version: 1
+          biz-key: system.dict.cms-publish-channel
+          name: 内容发布渠道
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 2170000000000002004
+            dictType:
+              type: STRING
+              value: cms_publish_channel
+            dictName:
+              type: STRING
+              value: 内容发布渠道
+            domainCode:
+              type: STRING
+              value: CMS
+            remark:
+              type: STRING
+              value: 内容管理可发布的前台渠道
+            items:
+              type: LIST
+              value:
+                - id: 2170000000000002401
+                  label: 门户首页
+                  value: portal_home
+                  sort: 10
+                  status: 1
+                  remark: 发布到门户首页推荐位
+                - id: 2170000000000002402
+                  label: 帮助中心
+                  value: help_center
+                  sort: 20
+                  status: 1
+                  remark: 发布到帮助文档频道
+                - id: 2170000000000002403
+                  label: 运营公告
+                  value: operation_notice
+                  sort: 30
+                  status: 1
+                  remark: 发布到运营公告频道
