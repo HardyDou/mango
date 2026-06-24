@@ -1,6 +1,7 @@
 import type { App as VueApp } from 'vue';
 import { createPinia, type Pinia } from 'pinia';
 import ElementPlus from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { createI18n, type I18n } from 'vue-i18n';
 import { authAll, auths, canShowButton, type AuthRuleBindingValue } from '@mango/common/utils/authFunction';
@@ -75,7 +76,7 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     app.component(key, component);
   }
   installAuthDirectives(app);
-  app.use(ElementPlus);
+  app.use(ElementPlus, { locale: zhCn });
   app.use(getShellPinia());
   app.use(getShellI18n());
   installMangoAuth(app, {
