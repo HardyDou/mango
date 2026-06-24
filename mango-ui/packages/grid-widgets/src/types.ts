@@ -105,3 +105,8 @@ export interface UserProfileWidgetProps {
   profilePath?: string;
   passwordPath?: string;
 }
+
+export interface MyTodoWidgetProps {
+  runtime?: MangoWidgetRuntimeContext;
+  todoPath?: string;
+}

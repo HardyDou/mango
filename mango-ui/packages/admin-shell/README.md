@@ -130,6 +130,10 @@ admin.mount();
 
 `modules` 用于声明运行时模块加载方式，结构来自 `@mango/app-runtime`。本地页面优先使用已注册的 page loader；微前端页面需要在运行时配置中声明 entry、activeRule 和隔离策略。
 
+### Home Widget Runtime
+
+Shell 首页会为工作台小组件注入当前用户、租户、菜单树和 `navigate` 跳转函数。小组件可通过 `navigate({ path, raw: { query } })` 交给 Shell 跳转，Shell 只透传 `raw.query` 到 Vue Router，不会把业务小组件的路由细节写入布局组件或持久化布局 JSON。
+
 ### Menu Contract
 
 Shell 只消费后端授权菜单。菜单 `component` 会归一化后匹配 `@mango/admin-pages` 注册的页面 key；匹配失败时显示 404，不会自动推断业务包路径。后端菜单、前端注册 key、能力开关必须保持一致。

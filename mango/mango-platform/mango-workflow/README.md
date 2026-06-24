@@ -427,6 +427,7 @@ mango:
 | 加签 | `POST /workflow/tasks/add-sign` | `workflow:task:add-sign` |
 | 认领 | `POST /workflow/tasks/claim` | `workflow:task:claim` |
 | 释放 | `POST /workflow/tasks/unclaim` | `workflow:task:unclaim` |
+| 待办统计 | `GET /workflow/tasks/todo/summary` | `workflow:task:list` |
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 

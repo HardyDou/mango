@@ -32,6 +32,7 @@ import io.mango.workflow.api.vo.WorkflowRenderConfigVO;
 import io.mango.workflow.api.vo.WorkflowNodeActionConfigVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
+import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
@@ -75,6 +76,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Date;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
@@ -120,6 +122,9 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         List<String> businessProcessInstanceIds = businessProcessInstanceIds(keyword);
         List<String> candidateGroups = candidateGroupProvider.currentCandidateGroups();
         applyTodoTypeFilter(taskQuery, resolved.getTodoType(), candidateGroups);
+        if (Boolean.TRUE.equals(resolved.getOverdue())) {
+            taskQuery.taskDueBefore(new Date());
+        }
         taskQuery.orderByTaskCreateTime().desc();
         if (StringUtils.hasText(keyword)) {
             taskQuery.or()
@@ -169,6 +174,52 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     }
 
     @Override
+    public R<WorkflowTaskSummaryVO> summary() {
+        List<String> candidateGroups = candidateGroupProvider.currentCandidateGroups();
+        WorkflowTaskSummaryVO vo = new WorkflowTaskSummaryVO();
+        vo.setPendingApproval(countTodoByType("ASSIGNED", candidateGroups));
+        vo.setPendingHandle(countTodoByType("CLAIMABLE", candidateGroups));
+        vo.setPendingConfirm(countUnreadCopied());
+        vo.setOverdue(countOverdueTasks(candidateGroups));
+        return R.ok(vo);
+    }
+
+    private Long countTodoByType(String todoType, List<String> candidateGroups) {
+        TaskQuery taskQuery = taskService.createTaskQuery();
+        applyTodoTypeFilter(taskQuery, todoType, candidateGroups);
+        return taskQuery.count();
+    }
+
+    private Long countUnreadCopied() {
+        return copiedTaskMapper.selectCount(new LambdaQueryWrapper<WorkflowCopiedTask>()
+                .eq(WorkflowCopiedTask::getCopiedUserId, currentUser())
+                .eq(WorkflowCopiedTask::getReadFlag, Boolean.FALSE));
+    }
+
+    private Long countOverdueTasks(List<String> candidateGroups) {
+        Date now = new Date();
+        Set<String> taskIds = new LinkedHashSet<>();
+        taskIds.addAll(overdueAssignedTasks(now).stream().map(Task::getId).toList());
+        taskIds.addAll(overdueClaimableTasks(now, candidateGroups).stream().map(Task::getId).toList());
+        return (long) taskIds.size();
+    }
+
+    private List<Task> overdueAssignedTasks(Date now) {
+        return taskService.createTaskQuery()
+                .taskAssignee(currentUser())
+                .taskDueBefore(now)
+                .list();
+    }
+
+    private List<Task> overdueClaimableTasks(Date now, List<String> candidateGroups) {
+        TaskQuery taskQuery = taskService.createTaskQuery();
+        applyTodoTypeFilter(taskQuery, "CLAIMABLE", candidateGroups);
+        return taskQuery
+                .taskDueBefore(now)
+                .list();
+    }
+
+    @Override
     public R<PageResult<WorkflowTaskVO>> done(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
         long offset = (resolved.getPage() - 1) * resolved.getSize();
@@ -206,6 +257,9 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         String keyword = trim(resolved.getKeyword());
         LambdaQueryWrapper<WorkflowCopiedTask> wrapper = new LambdaQueryWrapper<WorkflowCopiedTask>()
                 .eq(WorkflowCopiedTask::getCopiedUserId, currentUser());
+        if (Boolean.TRUE.equals(resolved.getUnread())) {
+            wrapper.eq(WorkflowCopiedTask::getReadFlag, Boolean.FALSE);
+        }
         if (StringUtils.hasText(keyword)) {
             wrapper.and(item -> item
                     .like(WorkflowCopiedTask::getProcessName, keyword)

@@ -21,6 +21,7 @@
 | 注册流程管理页面 | 调用 `registerMangoWorkflowAdminPages()`。 |
 | 管理流程定义和流程模板 | 使用注册后的页面 key 和后端 workflow 接口。 |
 | 展示待办、已办、抄送和任务详情 | 使用任务列表页、任务详情页或 `workflowApi`。 |
+| 展示待办统计 | 使用 `workflowApi.todoSummary()` 读取待审批、待处理、待确认和已超时数量。 |
 | 发起流程 | 使用发起流程页、自定义申请页或 `workflowApi.startProcess()`。 |
 | 渲染动态表单 | 使用 `RuntimeFormRenderer`、`parseRuntimeForm()`、`createDefaultVariables()`。 |
 | 接入业务自定义申请页 | 使用 `registerBusinessApplyComponent()`。 |
@@ -125,6 +126,9 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 | 任务变量 `businessType` 或 `bizType` | 字符串 | 任务详情解析业务类型。 |
 | 任务变量 `applyId`、`workflowApplyId`、`businessApplyId`、`snapshotId` | 字符串 | 任务详情解析业务申请记录 ID。 |
 | 任务变量 `businessPermissions` | 字段权限对象 | 字段级权限，支持 `HIDDEN`、`READONLY`、`EDITABLE`。 |
+| 待办列表查询 | `todoType` | `ASSIGNED` 查询待审批，`CLAIMABLE` 查询待处理，`ALL` 查询全部待办。 |
+| 待办列表查询 | `overdue` | 为 `true` 时只查询已超时待办。 |
+| 抄送列表查询 | `unread` | 为 `true` 时只查询未读抄送。 |
 
 `parseWorkflowFormConfig()` 支持数组式表单 JSON，也支持包含 `mode`、`rules`、`fields`、`customConfig` 的对象结构。非法 JSON 会按空动态表单处理。
 
@@ -188,7 +192,7 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 |------|------|
 | 分类和定义 | `categoriesPage()`、`categoriesList()`、`definitionDetail()`、`definitionsPage()`、`saveDefinition()`、`updateDefinition()`、`deleteDefinition()`、`deployDefinition()`、`nodeCatalog()` |
 | 模板 | `templatesPage()`、`templateDetail()`、`saveTemplate()`、`deleteTemplate()`、`createTemplateFromDefinition()`、`createDefinitionFromTemplate()`、`importTemplates()`、`pushTemplates()` |
-| 任务 | `todoTasks()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()` |
+| 任务 | `todoTasks()`、`todoSummary()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()` |
 | 动作 | `completeTask()`、`rejectTask()`、`saveTask()`、`transferTask()`、`addSignTask()`、`claimTask()`、`unclaimTask()`、`readCopiedTask()` |
 | 流程实例 | `startProcess()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()` |
 | 业务申请 | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyByProcessInstance()` |
@@ -223,6 +227,14 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 | `/workflow/custom-apply` | `workflow/custom-apply/index` | `workflow:custom-apply` |
 
 常用权限码来自后端 workflow 菜单和按钮权限，例如 `workflow:definition:list`、`workflow:definition:deploy`、`workflow:template:list`、`workflow:task:list`、`workflow:task:complete`。
+
+待办任务相关公开 API：
+
+| API | 后端接口 | 说明 |
+|-----|----------|------|
+| `workflowApi.todoTasks(params)` | `GET /workflow/tasks/todo` | 支持 `todoType` 和 `overdue` 筛选。 |
+| `workflowApi.todoSummary()` | `GET /workflow/tasks/todo/summary` | 返回 `WorkflowTaskSummary`，字段为 `pendingApproval`、`pendingHandle`、`pendingConfirm`、`overdue`。 |
+| `workflowApi.copiedTasks(params)` | `GET /workflow/tasks/copied` | 支持 `unread` 筛选未读抄送。 |
 
 ## 10. 问题排查
 

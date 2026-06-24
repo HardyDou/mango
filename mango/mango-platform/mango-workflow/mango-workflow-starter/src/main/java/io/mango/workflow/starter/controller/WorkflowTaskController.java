@@ -13,6 +13,7 @@ import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
+import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,6 +46,13 @@ public class WorkflowTaskController {
     @Operation(summary = "查询我的待办")
     public R<PageResult<WorkflowTaskVO>> todo(@ParameterObject WorkflowTaskPageQuery query) {
         return workflowTaskRuntimeService.todo(query);
+    }
+
+    @GetMapping("/todo/summary")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "查询我的待办统计")
+    public R<WorkflowTaskSummaryVO> summary() {
+        return workflowTaskRuntimeService.summary();
     }
 
     @GetMapping("/initiated")

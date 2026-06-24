@@ -123,6 +123,8 @@ export interface WorkflowPageQuery {
   bpmnType?: string;
   executionType?: string;
   todoType?: 'ASSIGNED' | 'CLAIMABLE' | 'ALL';
+  unread?: boolean;
+  overdue?: boolean;
 }
 
 export interface WorkflowTemplateCategory {
@@ -282,6 +284,13 @@ export interface WorkflowTask {
   status: string;
   createTime?: string;
   endTime?: string;
+}
+
+export interface WorkflowTaskSummary {
+  pendingApproval: number;
+  pendingHandle: number;
+  pendingConfirm: number;
+  overdue: number;
 }
 
 export interface WorkflowProcessInstance {
@@ -507,6 +516,8 @@ export const workflowApi = {
 
   todoTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/todo', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
+  todoSummary: () => get<WorkflowTaskSummary>('/workflow/tasks/todo/summary')
+    .then(normalizeTaskSummary),
   initiatedTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/initiated', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
   doneTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/done', { params: toBackendPageParams(params) })
@@ -935,6 +946,15 @@ function normalizeTask(item: any): WorkflowTask {
     status: item?.status || '-',
     createTime: normalizeDateTime(item?.createTime),
     endTime: normalizeDateTime(item?.endTime),
+  };
+}
+
+function normalizeTaskSummary(item: any): WorkflowTaskSummary {
+  return {
+    pendingApproval: Number(item?.pendingApproval ?? 0),
+    pendingHandle: Number(item?.pendingHandle ?? 0),
+    pendingConfirm: Number(item?.pendingConfirm ?? 0),
+    overdue: Number(item?.overdue ?? 0),
   };
 }
 

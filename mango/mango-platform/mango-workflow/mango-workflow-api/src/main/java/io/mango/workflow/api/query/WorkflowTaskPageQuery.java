@@ -18,4 +18,10 @@ public class WorkflowTaskPageQuery extends PageQuery {
 
     @Schema(description = "待办类型：ASSIGNED=待处理，CLAIMABLE=待领取，ALL=全部")
     private String todoType;
+
+    @Schema(description = "是否只查询未读抄送")
+    private Boolean unread;
+
+    @Schema(description = "是否只查询已超时待办")
+    private Boolean overdue;
 }

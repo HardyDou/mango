@@ -72,10 +72,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { workflowApi, type WorkflowTask } from '../../api/workflow';
+import { workflowApi, type WorkflowPageQuery, type WorkflowTask } from '../../api/workflow';
 
 const route = useRoute();
 const router = useRouter();
@@ -112,11 +112,20 @@ const description = computed(() => ({
 
 const todoType = computed(() => (todoTab.value === 'claimable' ? 'CLAIMABLE' : 'ASSIGNED'));
 
+watch(
+  () => route.fullPath,
+  () => {
+    query.value.pageNum = 1;
+    syncTodoTabFromQuery(route.query.todoType);
+    loadData();
+  },
+);
+
 async function loadData() {
   loading.value = true;
   try {
     if (taskMode.value === 'initiated') {
-    const result = await workflowApi.initiatedProcesses(query.value);
+      const result = await workflowApi.initiatedProcesses(query.value);
       tableData.value = result.list.map(item => ({
         ...item,
         id: item.processInstanceId,
@@ -131,9 +140,7 @@ async function loadData() {
       done: workflowApi.doneTasks,
       copied: workflowApi.copiedTasks,
     };
-    const params = taskMode.value === 'todo'
-      ? { ...query.value, todoType: todoType.value }
-      : query.value;
+    const params = buildTaskQueryParams();
     const result = await apiMap[taskMode.value as 'todo' | 'done' | 'copied'](params);
     tableData.value = result.list;
     total.value = result.total;
@@ -151,6 +158,27 @@ function resetQuery() {
 function handleTodoTabChange() {
   query.value.pageNum = 1;
   loadData();
+}
+
+function syncTodoTabFromQuery(todoType: unknown): void {
+  if (taskMode.value !== 'todo') {
+    return;
+  }
+  todoTab.value = todoType === 'CLAIMABLE' ? 'claimable' : 'assigned';
+}
+
+function buildTaskQueryParams(): WorkflowPageQuery {
+  if (taskMode.value === 'todo') {
+    return {
+      ...query.value,
+      todoType: todoType.value,
+      overdue: route.query.overdue === 'true',
+    };
+  }
+  if (taskMode.value === 'copied') {
+    return { ...query.value, unread: route.query.unread === 'true' };
+  }
+  return query.value;
 }
 
 function openTask(row: WorkflowTask) {
@@ -185,7 +213,10 @@ async function readCopied(row: WorkflowTask) {
   await loadData();
 }
 
-onMounted(loadData);
+onMounted(() => {
+  syncTodoTabFromQuery(route.query.todoType);
+  loadData();
+});
 </script>
 
 <style scoped>

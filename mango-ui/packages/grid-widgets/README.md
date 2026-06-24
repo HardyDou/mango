@@ -18,8 +18,9 @@
 | 用户信息小组件 | 展示当前登录人信息，并跳转到个人中心和修改密码 | `systemUserProfileWidgets` |
 | 快捷入口小组件 | 选择可见菜单并保存到浏览器本地，点击后跳转到对应模块 | `systemQuickEntryWidgets` |
 | 消息中心小组件 | 展示当前登录人的未读消息、最新未读摘要和消息分类统计 | `systemMessageCenterWidgets` |
+| 我的待办小组件 | 展示当前登录人的工作流待办统计，并跳转到对应任务列表 | `systemMyTodoWidgets` |
 | 样式入口 | 独立消费系统小组件样式 | `@mango/grid-widgets/style.css` |
-| 类型导出 | 业务侧声明小组件、运行时上下文、快捷入口菜单和消息中心分类 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps` |
+| 类型导出 | 业务侧声明小组件、运行时上下文、快捷入口菜单、消息中心分类和待办小组件参数 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps`、`MyTodoWidgetProps` |
 
 ## 3. 接入方式
 
@@ -47,6 +48,7 @@ const widgets = mergeGridWidgets({
 | 自定义栅格布局前端 | 小组件定义最终传给 `MangoGridDesigner` 和 `MangoGridLayout` | [@mango/grid-layout README](../grid-layout/README.md) |
 | 公共组件 | 快捷入口配置弹框使用 `MangoDialog`，图标解析使用 `iconMap` | [@mango/common README](../common/README.md) |
 | 通知中心前端 | 消息中心小组件读取未读消息、最新未读和消息分类统计 | [@mango/notice README](../notice/README.md) |
+| 工作流前端 | 我的待办小组件读取待办统计并跳转任务列表 | [@mango/workflow README](../workflow/README.md) |
 
 ## 4. 配置说明
 
@@ -71,6 +73,8 @@ const widgets = mergeGridWidgets({
 | `MessageCenterWidget` | `messageCenterPath` | `/notice/site-message` | 消息中心页面路径 | 点击查看全部时传给 `runtime.navigate` | `src/system/message-center/MessageCenterWidget.vue` |
 | `MessageCenterWidget` | `pageSize` | `1` | 最新未读查询条数 | 决定最新未读摘要读取数量 | `src/system/message-center/MessageCenterWidget.vue` |
 | `MessageCenterWidget` | `categories` | 系统、业务、审批、告警 | 消息分类统计配置 | 按 `bizGroup`、`bizType` 或 `priority` 查询未读统计 | `src/system/message-center/MessageCenterWidget.vue` |
+| `MyTodoWidget` | `runtime` | `undefined` | 当前页面跳转上下文 | 点击统计项时通过 `runtime.navigate` 跳转 | `src/system/my-todo/MyTodoWidget.vue` |
+| `MyTodoWidget` | `todoPath` | `/workflow/task/todo` | 待办任务页面路径 | 查看全部、待审批、待处理和已超时默认跳转路径 | `src/system/my-todo/MyTodoWidget.vue` |
 
 ## 5. API 与扩展
 
@@ -115,6 +119,10 @@ src/system/
 │  ├─ MessageCenterWidget.vue
 │  ├─ index.ts
 │  └─ message-center.ts
+├─ my-todo/
+│  ├─ MyTodoWidget.vue
+│  ├─ index.ts
+│  └─ my-todo.ts
 ├─ user-profile/
 │  ├─ UserProfileWidget.vue
 │  ├─ index.ts
@@ -152,6 +160,20 @@ src/system/
 | 查看全部 | `runtime.navigate({ path: messageCenterPath })` | 默认跳转到 `/notice/site-message` |
 
 默认分类为系统通知、业务通知、审批通知和告警通知。消费页面可以通过 `categories` 覆盖分类口径，但分类配置只影响查询和展示，不会写入个人布局 JSON。
+
+### 我的待办小组件
+
+我的待办小组件展示当前登录人的待审批、待处理、待确认和已超时任务数量，并提供跳转到任务列表的入口。组件不直接读取宿主 store 或 router，只消费 `@mango/workflow` 的 `workflowApi.todoSummary()` 和宿主注入的 `runtime.navigate`。
+
+默认跳转行为：
+
+| 入口 | 默认路径 | 默认 query |
+|------|----------|------------|
+| 查看全部 | `/workflow/task/todo` | 无 |
+| 待审批 | `/workflow/task/todo` | `todoType=ASSIGNED` |
+| 待处理 | `/workflow/task/todo` | `todoType=CLAIMABLE` |
+| 待确认 | `/workflow/task/copied` | `unread=true` |
+| 已超时 | `/workflow/task/todo` | `overdue=true` |
 
 ```ts
 import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
@@ -312,3 +334,45 @@ pnpm.cmd admin:module-styles:check
 - [@mango/notice README](../notice/README.md)
 - [Grid Widgets 注册聚合设计方案](../../../mango-docs/designs/mango-grid-widgets-registry-design.md)
 - [Grid Widgets 注册聚合交付台账](../../../mango-docs/plans/2026-06-22-grid-widgets-registry-delivery-ledger.md)
+
+## 12. 我的待办小组件
+
+`system.my-todo` 是 Mango 预制系统小组件，用于在工作台或其它自定义布局页面展示当前登录人的工作流待办统计。组件内部调用 `@mango/workflow` 的 `workflowApi.todoSummary()`，消费页面只需要按既有方式传入 `runtime.navigate`。
+
+默认展示项：
+
+| 展示文案 | 数据字段 | 统计口径 |
+|------|------|------|
+| 待审批 | `pendingApproval` | 当前用户已分配待办 |
+| 待处理 | `pendingHandle` | 当前用户可认领或候选待办 |
+| 待确认 | `pendingConfirm` | 当前用户未读抄送 |
+| 已超时 | `overdue` | 当前用户相关待办中超过 due date 的任务 |
+
+默认布局：
+
+```ts
+{
+  type: 'system.my-todo',
+  defaultLayout: { w: 3, h: 10, minW: 3, minH: 8 },
+  showTitle: false,
+  padding: false,
+}
+```
+
+跳转规则：
+
+| 点击区域 | 跳转目标 |
+|------|------|
+| 查看全部 | `runtime.navigate({ path: '/workflow/task/todo' })` |
+| 待审批 | `runtime.navigate({ path: '/workflow/task/todo', raw: { query: { todoType: 'ASSIGNED' } } })` |
+| 待处理 | `runtime.navigate({ path: '/workflow/task/todo', raw: { query: { todoType: 'CLAIMABLE' } } })` |
+| 待确认 | `runtime.navigate({ path: '/workflow/task/copied', raw: { query: { unread: 'true' } } })` |
+| 已超时 | `runtime.navigate({ path: '/workflow/task/todo', raw: { query: { overdue: 'true' } } })` |
+
+`raw.query` 由消费页面按自身路由能力转换为真实路由 query。小组件不直接依赖宿主 `router`，以兼容单体、微前端宿主和子应用场景。
+
+独立引入：
+
+```ts
+import { MyTodoWidget, systemMyTodoWidgets } from '@mango/grid-widgets/my-todo';
+```

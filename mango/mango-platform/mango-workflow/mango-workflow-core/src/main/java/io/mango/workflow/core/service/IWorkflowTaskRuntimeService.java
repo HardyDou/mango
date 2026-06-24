@@ -12,6 +12,7 @@ import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
+import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 
 /**
@@ -24,6 +25,8 @@ public interface IWorkflowTaskRuntimeService {
     R<PageResult<WorkflowTaskVO>> done(WorkflowTaskPageQuery query);
 
     R<PageResult<WorkflowTaskVO>> copied(WorkflowTaskPageQuery query);
+
+    R<WorkflowTaskSummaryVO> summary();
 
     R<WorkflowTaskDetailVO> detail(String taskId);
 
