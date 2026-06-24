@@ -189,6 +189,7 @@ function defaultLayoutItems(): GridLayoutItem[] {
   return [
     gridItem('user-profile', 'system.user-profile', 0, 0, 3, 10, '用户信息'),
     gridItem('quick', 'system.quick-entry', 3, 0, 3, 10, '快捷入口'),
+    gridItem('message-center', 'system.message-center', 6, 0, 3, 10, '消息中心'),
   ];
 }
 
