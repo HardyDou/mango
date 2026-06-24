@@ -11,7 +11,7 @@
 | 1 | [Identity 后端 README](../../../mango/mango-platform/mango-identity/README.md) | 用户、账号、租户身份 |
 | 2 | [Org 后端 README](../../../mango/mango-platform/mango-org/README.md) | 组织、岗位、组织树 |
 | 3 | [System 后端 README](../../../mango/mango-platform/mango-system/README.md) | 系统配置、字典、参数 |
-| 4 | [Seed 后端 README](../../../mango/mango-platform/mango-seed/README.md) | 官方固定种子数据 |
+| 4 | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md) | 资源声明同步和模块初始化 |
 | 5 | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md) | 接口访问和数据权限上下文 |
 | 6 | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源 |
 | 7 | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md) | 登录态、租户切换、上下文透传 |
@@ -25,7 +25,7 @@
 | 基础数据 | 目标租户已初始化所需字典、配置、组织或岗位数据 |
 | 数据过滤 | 查询接口没有被数据权限、组织范围或状态字段过滤掉 |
 | 前端参数 | 前端查询参数没有带错 appCode、dictCode、domainCode 或 status |
-| 初始化边界 | 种子数据只覆盖官方固定基线，业务租户数据由业务初始化流程补齐 |
+| 初始化边界 | 平台默认资源由 Flyway、Resource Registry 和模块 TenantProvisioner 处理；生产租户数据由业务开通、后台维护或导入流程补齐 |
 
 ## 4. 最小闭环
 
@@ -39,7 +39,7 @@
 
 | 现象 | 优先检查 |
 |------|----------|
-| 平台租户有数据，业务租户为空 | 租户初始化流程、业务数据 seed、租户应用绑定 |
+| 平台租户有数据，业务租户为空 | 租户开通流程、业务导入任务、租户应用绑定 |
 | 用户下拉为空 | identity 用户状态、组织关系、租户上下文 |
 | 组织树为空 | org 初始化数据、组织状态、父子关系 |
 | 字典项为空 | system 字典编码、状态、租户维度 |
@@ -48,7 +48,7 @@
 ## 6. 验证命令
 
 ```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-identity,mango-platform/mango-org,mango-platform/mango-system,mango-platform/mango-seed -am test
+mvn -f mango/pom.xml -pl mango-platform/mango-identity,mango-platform/mango-org,mango-platform/mango-system,mango-platform/mango-resource -am test
 pnpm -F @mango/system build
 pnpm -F @mango/admin-shell build
 ```
@@ -58,7 +58,7 @@ pnpm -F @mango/admin-shell build
 - [Identity 验证方式](../../../mango/mango-platform/mango-identity/README.md#10-验证方式)
 - [Org 验证方式](../../../mango/mango-platform/mango-org/README.md#10-验证方式)
 - [System 验证方式](../../../mango/mango-platform/mango-system/README.md#10-验证方式)
-- [Seed 验证方式](../../../mango/mango-platform/mango-seed/README.md#10-验证方式)
+- [Resource 同步规则](../../../mango/mango-platform/mango-resource/README.md#10-同步规则)
 - [Access 验证方式](../../../mango/mango-platform/mango-access/README.md#10-验证方式)
 - [Authorization 验证方式](../../../mango/mango-platform/mango-authorization/README.md#10-验证方式)
 

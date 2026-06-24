@@ -67,15 +67,7 @@ mango init guarantee-platform \
   --topology monolith
 ```
 
-full preset 后端会依赖 `mango-admin-starter` 和可选的 `mango-seed-starter`。初始化种子数据默认关闭；首次空库启动如需官方入口数据，必须显式启用并提供管理员初始密码：
-
-```bash
-MANGO_SEED_ENABLED=true \
-MANGO_SEED_ADMIN_PASSWORD='replace-with-a-strong-password' \
-scripts/backend-dev.sh
-```
-
-seed 只补齐默认租户、管理员账号、租户成员、管理员角色、成员角色绑定、租户应用绑定和官方菜单套餐授权；不会复制或掩盖缺失的菜单、组件或历史 migration 问题。重复执行保持幂等，已有管理员密码不会被覆盖，`prod`/`production` profile 下禁止弱默认密码。
+full preset 后端依赖 `mango-admin-starter`，不再内置独立的运行时种子初始化。平台表结构、默认资源和菜单权限基线由各模块 Flyway、Resource Registry 和模块自身的 TenantProvisioner 写入；租户、组织架构、账号、岗位等生产数据应通过业务开通、后台维护、导入任务或明确的初始化 runbook 管理。
 
 只需要必选系统能力时使用 custom preset 且不选择可选模块：
 

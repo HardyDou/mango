@@ -99,7 +99,6 @@ npm --prefix mango-docs run docs:build
 - [Org 组织](../mango/mango-platform/mango-org/README.md)
 - [Payment 支付](../mango/mango-platform/mango-payment/README.md)
 - [Resource Registry 资源注册中心](../mango/mango-platform/mango-resource/README.md)
-- [Seed 初始化种子](../mango/mango-platform/mango-seed/README.md)
 - [System 系统](../mango/mango-platform/mango-system/README.md)
 - [Template 模板](../mango/mango-platform/mango-template/README.md)
 - [Workflow 工作流](../mango/mango-platform/mango-workflow/README.md)

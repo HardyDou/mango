@@ -579,11 +579,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango.platform.seed</groupId>
-                <artifactId>mango-seed-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.mango.infra.realtime</groupId>
                 <artifactId>mango-infra-realtime-api</artifactId>
                 <version>${project.version}</version>

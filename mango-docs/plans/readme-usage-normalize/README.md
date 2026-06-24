@@ -118,7 +118,7 @@
 | DONE | `mango/mango-platform/mango-org/README.md` | 后端平台能力 | 组织能力 |
 | DONE | `mango/mango-platform/mango-payment/README.md` | 后端平台能力 | 支付能力 |
 | DONE | `mango/mango-platform/mango-system/README.md` | 后端平台能力 | 系统管理能力 |
-| DONE | `mango/mango-platform/mango-seed/README.md` | 后端平台能力 | 种子初始化能力 |
+| REMOVED | 原 `mango/mango-platform/mango-seed/README.md` | 后端平台能力 | Issue #182 已移除独立种子初始化模块 |
 | DONE | `mango/mango-platform/mango-template/README.md` | 后端平台能力 | 模板能力 |
 | DONE | `mango-ui/packages/template/README.md` | 前端能力包 | admin-pages 页面插件、模板 API 和文件选择依赖 |
 | DONE | `mango-ui/packages/payment/README.md` | 前端能力包 | admin-pages、PaymentCashier、支付 API、初始化和高风险入口 |

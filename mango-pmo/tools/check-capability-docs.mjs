@@ -64,7 +64,7 @@ const businessGuideMappings = [
       /^mango\/mango-platform\/mango-identity(\/|$)/,
       /^mango\/mango-platform\/mango-org(\/|$)/,
       /^mango\/mango-platform\/mango-system(\/|$)/,
-      /^mango\/mango-platform\/mango-seed(\/|$)/,
+      /^mango\/mango-platform\/mango-resource(\/|$)/,
       /^mango-ui\/packages\/system(\/|$)/,
       /^mango-ui\/packages\/admin-shell(\/|$)/
     ]

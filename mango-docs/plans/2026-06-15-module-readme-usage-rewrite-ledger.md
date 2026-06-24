@@ -95,7 +95,7 @@
 | DONE | `mango/mango-platform/mango-numgen/README.md` | 后端能力 | numgen |
 | DONE | `mango/mango-platform/mango-org/README.md` | 后端能力 | org |
 | DONE | `mango/mango-platform/mango-payment/README.md` | 后端能力 | payment |
-| DONE | `mango/mango-platform/mango-seed/README.md` | 后端能力 | seed |
+| REMOVED | 原 `mango/mango-platform/mango-seed/README.md` | 后端能力 | Issue #182 已移除独立 seed 模块 |
 | DONE | `mango/mango-platform/mango-system/README.md` | 后端能力 | system |
 | DONE | `mango/mango-platform/mango-template/README.md` | 后端能力 | template |
 | DONE | `mango/mango-platform/mango-workflow/README.md` | 后端能力 | workflow |
