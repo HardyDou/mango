@@ -803,7 +803,7 @@ create table resource_change_log (
 | `mango-access` | 网关访问策略后续可支持，但需先归入 authorization/access policy 统一设计。 |
 | `mango-captcha` | 通常是配置，不需要资源登记。 |
 | `mango-file-preview` | 通常是能力开关或引擎配置，不需要业务资源注入。 |
-| `mango-seed` | 长期应被 Resource Registry 替代或只保留测试数据能力。 |
+| 原 `mango-seed` | 已由 Resource Registry、各模块 TenantProvisioner 和业务开通/导入流程承接；不再保留独立运行时种子模块。 |
 
 ## 18. Flyway 边界
 

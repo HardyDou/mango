@@ -69,7 +69,7 @@ const guideChecks = [
       'Identity 后端 README',
       'Org 后端 README',
       'System 后端 README',
-      'Seed 后端 README',
+      'Resource 后端 README',
       '@mango/admin-shell README',
       'tenantId',
       '字典'

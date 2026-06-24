@@ -148,20 +148,6 @@ mango:
   job:
     probe:
       enabled: ${MANGO_JOB_PROBE_ENABLED:true}
-  seed:
-    enabled: ${MANGO_SEED_ENABLED:false}
-    profile: official
-    admin:
-      username: ${MANGO_SEED_ADMIN_USERNAME:admin}
-      initial-password: ${MANGO_SEED_ADMIN_PASSWORD:}
-      nickname: ${MANGO_SEED_ADMIN_NICKNAME:Administrator}
-      email: ${MANGO_SEED_ADMIN_EMAIL:admin@mango.local}
-      phone: ${MANGO_SEED_ADMIN_PHONE:}
-    tenant:
-      code: ${MANGO_SEED_TENANT_CODE:default}
-      name: ${MANGO_SEED_TENANT_NAME:芒果集团}
-      institution-type: ${MANGO_SEED_TENANT_TYPE:PLATFORM}
-      package-code: ${MANGO_SEED_TENANT_PACKAGE_CODE:platform_admin}
   doc:
     module-grouping:
       include-default-group: false

@@ -144,12 +144,13 @@ try {
   }
   if (appPom.includes('<artifactId>mango-seed-starter</artifactId>')
     || pom.includes('<artifactId>mango-seed-starter</artifactId>')) {
-    throw new Error('full backend must not require optional mango-seed-starter by default');
+    throw new Error('full backend must not require removed mango-seed-starter');
   }
   const applicationYml = readFileSync(join(projectRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
-  if (!applicationYml.includes('enabled: ${MANGO_SEED_ENABLED:false}')
-    || !applicationYml.includes('initial-password: ${MANGO_SEED_ADMIN_PASSWORD:}')) {
-    throw new Error('full backend application.yml must keep Mango seed disabled by default with explicit admin password');
+  if (applicationYml.includes('MANGO_SEED_')
+    || applicationYml.includes('mango.seed')
+    || applicationYml.includes('\n  seed:\n')) {
+    throw new Error('full backend application.yml must not include removed Mango seed config');
   }
   if (!applicationYml.includes('    sm4:\n      secret-key: ${MANGO_CRYPTO_SM4_SECRET_KEY:}')
     || applicationYml.includes('sm4-key')
