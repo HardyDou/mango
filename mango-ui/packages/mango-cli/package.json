@@ -22,5 +22,8 @@
   "scripts": {
     "check:release-versions": "node scripts/check-release-versions.mjs",
     "test": "pnpm run check:release-versions && node scripts/check-cli.mjs"
+  },
+  "dependencies": {
+    "@mango/pmo": "workspace:*"
   }
 }

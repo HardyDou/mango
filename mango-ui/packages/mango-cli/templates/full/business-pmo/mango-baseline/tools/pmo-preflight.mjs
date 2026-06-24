@@ -46,10 +46,70 @@ function splitPaths(value) {
     .filter(Boolean);
 }
 
+const directMainPathPatterns = [
+  'mango-pmo/**',
+  'mango-docs/**',
+  'AGENTS.md',
+  'CLAUDE.md',
+  'GEMINI.md'
+];
+
+const worktreeRequiredPathPatterns = [
+  'mango/**',
+  'mango-ui/**',
+  'mango-business-starter/**',
+  'backend',
+  'backend/**',
+  'frontend',
+  'frontend/**',
+  'scripts/**',
+  '.github/**',
+  'package.json',
+  'pnpm-lock.yaml',
+  'pom.xml',
+  '**/package.json',
+  '**/pom.xml',
+  '**/src/**',
+  '**/db/migration/**'
+];
+
+const directMainKeywords = [
+  '规范',
+  '规则',
+  '流程治理',
+  '规范治理',
+  'agent 入口',
+  'agent入口',
+  '文档资产',
+  '归档边界',
+  '交付记录',
+  '复盘'
+];
+
+const worktreeRequiredKeywords = [
+  '代码',
+  '接口',
+  '数据库',
+  'migration',
+  '前端页面',
+  '页面',
+  '构建配置',
+  '测试',
+  '发布脚本',
+  '启动脚本',
+  '模板',
+  'starter',
+  'cli',
+  'npm',
+  'maven',
+  'pom',
+  'package.json'
+];
+
 function pathMatches(inputPath, pattern) {
   const normalizedPath = inputPath.replaceAll('\\', '/');
   const normalizedPattern = pattern.replaceAll('\\', '/');
-  if (normalizedPattern.endsWith('/**')) {
+  if (normalizedPattern.endsWith('/**') && !normalizedPattern.slice(0, -3).match(/[*?]/)) {
     const prefix = normalizedPattern.slice(0, -3);
     return normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`);
   }
@@ -58,6 +118,69 @@ function pathMatches(inputPath, pattern) {
     return regex.test(normalizedPath);
   }
   return normalizedPath === normalizedPattern || normalizedPath.startsWith(`${normalizedPattern}/`);
+}
+
+function anyKeywordMatches(task, keywords) {
+  const normalizedTask = normalizeText(task);
+  return keywords.some((keyword) => normalizedTask.includes(normalizeText(keyword)));
+}
+
+function classifyWorkspacePolicy(args) {
+  const inputPaths = splitPaths(args.paths);
+  const requiredHits = [];
+  const directHits = [];
+
+  if (args.role === 'pmo' || args.phase === 'governance') {
+    directHits.push('role/phase is PMO governance');
+  }
+  if (anyKeywordMatches(args.task, directMainKeywords)) {
+    directHits.push('task matches governance/document keywords');
+  }
+  for (const inputPath of inputPaths) {
+    if (worktreeRequiredPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) {
+      requiredHits.push(`path ${inputPath}`);
+    }
+    if (directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) {
+      directHits.push(`path ${inputPath}`);
+    }
+  }
+  if (anyKeywordMatches(args.task, worktreeRequiredKeywords)) {
+    requiredHits.push('task matches service/code/build keywords');
+  }
+
+  if (requiredHits.length > 0) {
+    return {
+      mode: 'worktree-required',
+      summary: '必须使用任务专用 Git worktree 和任务分支。',
+      reason: unique(requiredHits).join('; ')
+    };
+  }
+
+  if (inputPaths.length > 0 && inputPaths.every((inputPath) => directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern)))) {
+    return {
+      mode: 'main-direct-allowed',
+      summary: '可在主工作区直接修改并提交。',
+      reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
+    };
+  }
+
+  if (directHits.length > 0 && inputPaths.length === 0) {
+    return {
+      mode: 'main-direct-allowed',
+      summary: '可在主工作区直接修改并提交；若实际影响服务代码、接口、数据库、测试、前端页面或构建配置，必须改用任务 worktree。',
+      reason: unique(directHits).join('; ')
+    };
+  }
+
+  return {
+    mode: 'needs-human-check',
+    summary: '影响范围不足，先确认路径；一旦涉及服务代码、接口、数据库、测试、前端页面或构建配置，必须使用任务 worktree。',
+    reason: 'no decisive path or keyword match'
+  };
+}
+
+function unique(items) {
+  return [...new Set(items)];
 }
 
 function globToRegExp(pattern) {
@@ -102,6 +225,61 @@ function bundleMatches(bundle, args) {
   return keywordHit || pathHit;
 }
 
+const frontendAdminModuleStyleCheck = {
+  id: 'frontend-admin-module-style-governance',
+  commands: ['pnpm admin:styles:check', 'pnpm admin:module-styles:check'],
+  reason: '前端官方模块、@mango/admin/full、CLI 模块清单或 admin 样式聚合可能变化'
+};
+
+const frontendAdminModuleStylePaths = [
+  'mango-ui/packages/admin/**',
+  'mango-ui/packages/mango-cli/**',
+  'mango-ui/packages/*/style.css',
+  'mango-ui/packages/*/package.json',
+  'mango-ui/packages/*/src/**/admin-pages*',
+  'mango-ui/scripts/generate-package-styles.mjs',
+  'mango-ui/scripts/check-admin-module-style-governance.mjs',
+  'mango-ui/apps/mango-admin/src/main.ts',
+  'mango-ui/package.json'
+];
+
+const frontendAdminModuleStyleKeywords = [
+  '@mango/admin/full',
+  'admin full',
+  'full preset',
+  'style-full',
+  'admin-packages',
+  'generated-package-styles',
+  'module-styles',
+  '官方模块',
+  '业务模块',
+  '模块样式',
+  '样式聚合',
+  '样式丢失',
+  'header 样式',
+  'header样式',
+  '微前端',
+  '单体',
+  'mango-cli',
+  'cli 模块',
+  'CLI 模块'
+];
+
+function collectRequiredChecks(args) {
+  const inputPaths = splitPaths(args.paths);
+  const task = normalizeText(args.task);
+  const pathHit = inputPaths.some((inputPath) =>
+    frontendAdminModuleStylePaths.some((pattern) => pathMatches(inputPath, pattern)),
+  );
+  const keywordHit = frontendAdminModuleStyleKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+
+  if (!pathHit && !keywordHit) {
+    return [];
+  }
+
+  return [frontendAdminModuleStyleCheck];
+}
+
 function addRule(result, index, key, source) {
   const rule = index.rules[key];
   if (!rule) {
@@ -124,7 +302,9 @@ function buildResult(index, args) {
     phase: args.phase || 'auto',
     task: args.task || '',
     paths: splitPaths(args.paths),
+    workspacePolicy: classifyWorkspacePolicy(args),
     mustRead: [],
+    requiredChecks: collectRequiredChecks(args),
     errors: [],
     seen: new Set()
   };
@@ -177,11 +357,21 @@ function printText(result) {
   if (result.paths.length > 0) {
     console.log(`Paths: ${result.paths.join(', ')}`);
   }
+  console.log(`Workspace: ${result.workspacePolicy.mode} - ${result.workspacePolicy.summary}`);
+  console.log(`Workspace reason: ${result.workspacePolicy.reason}`);
   console.log('');
   console.log('Must read:');
   result.mustRead.forEach((item, index) => {
     console.log(`${index + 1}. ${item.path} - ${item.reason}`);
   });
+  if (result.requiredChecks.length > 0) {
+    console.log('');
+    console.log('Required checks:');
+    result.requiredChecks.forEach((item) => {
+      console.log(`- ${item.reason}`);
+      item.commands.forEach((command) => console.log(`  ${command}`));
+    });
+  }
   if (result.errors.length > 0) {
     console.log('');
     console.log('Errors:');

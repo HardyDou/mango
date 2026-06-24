@@ -7,45 +7,50 @@
 - `mango-infra`：基础设施能力。
 - `mango-tools`：研发工具。
 
-## 2. 业务域模块
+## 2. 模块角色
 
-每个业务域按需要拆成：
+每个能力模块按需要拆成：
 
-- `api`：接口契约
-- `support`：仅供本域 `core` / `starter-remote` 复用的内部共享技术实现
-- `core`：核心业务
-- `starter`：本地装配与对外暴露
-- `starter-remote`：远程调用适配
+- `api`：对外接口契约。
+- `support`：对外复用支撑能力，不承载接口契约、持久化和自动装配。
+- `core`：核心业务实现和持久化。
+- `starter`：本地 Spring Boot 装配与对外暴露。
+- `starter-*`：特定运行模式或外部系统适配装配，例如 `starter-remote`、`sync-starter`。
 
 ## 3. 子模块职责
 
-- `api` 只放契约模型和 `XxxApi`。
-- `support` 只放本域内部共享实现，不对业务模块暴露。
-- `core` 只放业务实现、实体、Mapper、转换。
-- `starter` 负责由 `XxxController` 实现 `XxxApi`、自动装配、模块信息声明。
-- `starter-remote` 负责远程调用适配和模块信息解析。
+- `api` 放 `XxxApi`、Command、Query、VO、Enum、注解、SPI 接口和其它对外接口契约。
+- `support` 放其它模块 `core` 可复用的非接口契约能力，例如默认实现、扫描器、注册表、执行器、工具和适配辅助。
+- `core` 放业务实现、实体、Mapper、转换、内部服务和持久化逻辑。
+- `starter` 负责由 `XxxController` 实现 `XxxApi`、自动配置、Bean 注册、扫描、模块信息声明和运行时装配。
+- `starter-remote` 负责远程调用适配、Feign adapter 和模块信息解析。
+- 其它 `starter-*` 负责特定运行模式的自动配置和运行时装配。
 
 ## 4. 依赖规则
 
-- `app` 依赖 `starter` 或 `starter-remote`。
-- `core` 只依赖本域 `api` 和其他域 `api`。
-- `core` 可依赖本域 `support`。
+- `app` 依赖 `starter` 或具体 `starter-*`。
+- `core` 只依赖其它模块 `api` 或 `support`。
 - `starter` 依赖本域 `api` 和本域 `core`。
 - `starter-remote` 在 `io.mango` 依赖中只允许本域 `api`、本域 `support` 和 `mango-infra-feign-starter`。
 - `starter-remote` 的 Feign 能力必须通过 `mango-infra-feign-starter` 引入，禁止直接依赖 `spring-cloud-starter-openfeign`；其它 Spring、Web 等技术依赖按需使用外部框架坐标。
 - 安全入口类聚合模块例外：`mango-security-starter-remote` 只允许聚合 `mango-infra-security-starter`、`mango-auth-starter-remote`、`mango-identity-starter-remote`、`mango-authorization-starter-remote`，不得新增业务实现。
-- `api` 不依赖业务实现。
+- `api` 不依赖 `support`、`core`、`starter` 或 `starter-*`。
+- `support` 只依赖其它模块 `api`、其它模块 `support`、`mango-common` 和必要第三方库。
+- `support` 禁止依赖任何 `core`、`starter` 或 `starter-*`。
 - `mango-infra` 的轻量基础设施契约应拆到 `*-api`，例如注解、实体基类、分页模型、运行期上下文句柄和 Provider/Resolver 接口。
 - `mango-infra` 的 `*-starter` 只承载自动配置、Spring Boot 装配、扫描器、运行时实现、Flyway/MyBatis 等具体基础设施。
-- `core` 可依赖 infra `*-api` 和本域 `support`，禁止为了使用轻量契约依赖 infra/platform/business `*-starter`。
+- `core` 可依赖 infra/platform/business `*-api` 和 `*-support`，禁止为了使用轻量契约或复用能力依赖 `*-core`、`*-starter` 或 `starter-*`。
 - 已存在的 `core -> *-starter` 历史依赖必须通过拆分契约到 `*-api` 后逐模块迁移，禁止放松 checker 规则。
+- Resource Registry 是平台能力注册边界；非 `mango-resource` 模块默认只能依赖 `mango-resource-api`，禁止直接依赖 `mango-resource-core`、`mango-resource-support`、`mango-resource-starter`、`mango-resource-sync-starter` 或 `mango-resource-starter-remote`。确需例外时，必须人工明确确认并通过 `mango:check` 参数 `-Dmango.check.resourceStarterDependencyExceptions=<artifactId>=<reason>` 记录充分理由。
 
 ## 5. 边界规则
 
 - `api` 不放 `Entity`、`Mapper`、`Controller`。
 - `api` 不放 `@FeignClient`。
 - `api` 只放其它模块会直接或间接依赖的契约类。
-- `support` 不放业务契约、Controller、Feign adapter。
+- `support` 不放业务接口契约、Controller、Feign adapter。
+- `support` 不放 `@AutoConfiguration`、`AutoConfiguration.imports` 或 `module.properties`。
+- `support` 不放持久化内容，包括 `Entity`、`Mapper`、`BaseMapper`、`ServiceImpl`、`MangoCrudServiceImpl`、`@TableName`、`db/migration`、MyBatis/Flyway/DataSource/JDBC/JdbcTemplate 接入。
 - 其它模块直接依赖包括：注入、继承、实现、方法签名、远程调用契约。
 - 本地实现协作用类型，例如 `*Service`、`*Manager`、`*Registry`、`*Session`、`*Dispatcher`，禁止放 `api`。
 - Controller 对外接口契约统一声明为 `XxxApi`。
@@ -83,8 +88,10 @@
 ## 7. Remote Adapter 规则
 
 - Feign adapter 必须放在 `starter-remote`。
-- Feign adapter 必须继承本域 `XxxApi`。
+- Feign adapter 必须继承本域唯一一个 `XxxApi`，禁止一个 Feign adapter 继承多个 API。
 - `@FeignClient(name = "...")` 必须填写目标模块 `module-name`。
+- `@FeignClient(contextId = "...")` 必须显式声明当前 Feign adapter 身份，默认使用 Feign 接口名 lowerCamelCase，例如 `AuthorizationFeignClient` 使用 `authorizationFeignClient`。
+- 同一个 `starter-remote` 中相同 `name` 的多个 Feign adapter 必须使用不同 `contextId`。
 - `@FeignClient(path = "...")` 必须以目标模块 `module-path` 开头。
 - Feign 请求必须通过模块信息解析真实服务名和 contextPath。
 - Feign adapter 禁止硬编码真实服务名。

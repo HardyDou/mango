@@ -113,6 +113,9 @@ function verifyPublishedPackage(packageName, version, foundPackage) {
     if (packageName === '@mango/cli') {
       verifyPublishedCliLocks(packageRoot, foundPackage);
     }
+    if (packageName === '@mango/pmo') {
+      verifyPublishedPmoBaseline(packageRoot);
+    }
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -151,6 +154,26 @@ function verifyPublishedCliLocks(packageRoot, foundPackage) {
   if (!existsSync(join(packageRoot, 'CHANGELOG.md'))) {
     console.error('Published @mango/cli tarball is missing CHANGELOG.md.');
     process.exit(1);
+  }
+}
+
+function verifyPublishedPmoBaseline(packageRoot) {
+  const manifestPath = join(packageRoot, 'dist/baseline.json');
+  const baselineRoot = join(packageRoot, 'dist/baseline');
+  if (!existsSync(manifestPath)) {
+    console.error('Published @mango/pmo tarball is missing dist/baseline.json.');
+    process.exit(1);
+  }
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  for (const file of ['rules/index.json', 'tools/pmo-preflight.mjs', 'agents/03-dev-agent.md']) {
+    if (!existsSync(join(baselineRoot, file))) {
+      console.error(`Published @mango/pmo tarball is missing baseline file: ${file}`);
+      process.exit(1);
+    }
+    if (!manifest.files?.some((entry) => entry.path === file)) {
+      console.error(`Published @mango/pmo baseline manifest is missing: ${file}`);
+      process.exit(1);
+    }
   }
 }
 

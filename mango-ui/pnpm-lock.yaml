@@ -946,7 +946,13 @@ importers:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
 
-  packages/mango-cli: {}
+  packages/mango-cli:
+    dependencies:
+      '@mango/pmo':
+        specifier: workspace:*
+        version: link:../mango-pmo
+
+  packages/mango-pmo: {}
 
   packages/notice:
     dependencies:

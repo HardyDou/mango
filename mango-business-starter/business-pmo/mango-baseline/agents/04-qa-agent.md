@@ -12,16 +12,21 @@
 2. 覆盖正常流
 3. 覆盖异常流
 4. 输出失败项和风险
-5. 测试范围、有效测试判断、分层归属，以 `mango-pmo/rules/backend/08-test.md` 为准
+5. 后端测试范围、有效测试判断、分层归属，以 `mango-pmo/rules/backend/08-test.md` 为准
+6. 前端页面、交互、样式或运行时变更，以 `mango-pmo/rules/frontend/04-test.md` 和 `mango-pmo/rules/frontend/02-element-plus-ui.md` 为准
+7. 验收任务必须按交付台账逐项给出证据，不能只写接口 200、页面无异常或服务已启动
 
 ## 3. 禁止事项
 
 - 只报通过，不报范围
 - 只看 happy path
 - 没有证据就下结论
+- 只看接口状态码或页面能打开就声明功能通过
+- 不记录页面、功能点、断言、截图、console 和 network 结果
 
 ## 4. 输出要求
 
 - 测了什么
 - 没测什么
 - 结果是什么
+- 每个关键页面和功能点的验收证据是什么

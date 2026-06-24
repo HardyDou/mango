@@ -22,7 +22,7 @@
 | 新建 Mango 业务项目 | `mango init <project> --preset full`、`mango init <project> --preset custom` | 新项目目录 |
 | custom 项目追加 Mango 可选能力 | `mango add file workflow --project-dir <dir>` | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json` |
 | 生成业务模块骨架 | `mango module add order --aggregate sales-order --project-dir <dir>` | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置 |
-| 同步业务 PMO baseline | `mango pmo sync --project-dir <dir>` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| 检查和同步业务 PMO baseline | `mango pmo status/check/sync/upgrade --project-dir <dir>` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
 | 初始化和启动本地开发工作区 | `mango init-dev`、`mango validate`、`mango doctor`、`mango plan`、`mango start` | `.mango/dev-workspace.env`、`.mango/run` |
 | 查看发布说明 | `mango changelog` | 不改文件 |
 
@@ -42,6 +42,7 @@ CLI 负责：
 - 读取 `mango.dev.json`、`.mango/dev-workspace.env`、`.mango/dev-workspace.local.json`，启动本地开发应用。
 - 维护受 `mango-cli` marker 保护的代码块，例如 `backend/pom.xml`、`backend/app/pom.xml`、`frontend/src/main.ts`、`application.yml` 中的 managed block。
 - 同步业务 PMO baseline、兼容脚本和 Agent 入口。
+- 通过 `@mango/pmo` 安装版本化 PMO baseline，并用 `baseline.json` 校验业务仓是否漂移。
 
 CLI 不负责：
 
@@ -93,8 +94,11 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 同步 PMO baseline：
 
 ```bash
+mango pmo status --project-dir demo-custom
+mango pmo check --project-dir demo-custom
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
+mango pmo upgrade --project-dir demo-custom
 ```
 
 ## 6. 配置说明
@@ -148,12 +152,13 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地私有配置来自 `.ma
 | `mango.dev.json` | `apps.<name>.health` | `/actuator/health` | 健康检查路径 | `start` 等待后端 ready | `waitForDevApp` |
 | `mango.dev.json` | `apps.<name>.portEnv` | `MANGO_BACKEND_PORT` 或 `MANGO_FRONTEND_PORT` | 端口环境变量名 | 覆盖默认端口 | `resolveDevApp` |
 | `.mango/dev-workspace.env` | `MANGO_CRYPTO_SM4_SECRET_KEY` | 随机 16 字节 hex | Mango 加密密钥 | 注入后端环境变量；缺失时自动补写 | `defaultDevWorkspaceEnv`、`ensureDevWorkspaceEnv` |
-| `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | `5555` | 后端端口 | 后端 `server.port` 和前端代理目标 | `defaultDevWorkspaceEnv` |
-| `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | `5176` | 前端端口 | Vite dev server 端口 | `defaultDevWorkspaceEnv` |
+| `.mango/dev-workspace.env` | `MANGO_WORKSPACE_ID` | `mango_<hash>` | 当前本地 worktree 标识 | 用于区分同机多业务工作区 | `allocateDevWorkspace` |
+| `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | `18080+hash` | 后端端口 | 后端 `server.port` 和前端代理目标；同机 registry 分配避免冲突 | `allocateDevWorkspace` |
+| `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | `7770+hash` | 前端端口 | Vite dev server 端口；同机 registry 分配避免冲突 | `allocateDevWorkspace` |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端监听 host | Vite host | `defaultDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_OPEN` | `false` | 是否自动打开浏览器 | 写入 `VITE_OPEN` | `defaultDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_AUTO_INSTALL` | `true` | 预留前端自动安装开关 | 供生成脚本和后续扩展读取 | `defaultDevWorkspaceEnv` |
-| `.mango/dev-workspace.env` | `MANGO_DB_NAME` | 当前目录 snake case | 数据库名 | 拼接 Spring datasource URL | `defaultDevWorkspaceEnv` |
+| `.mango/dev-workspace.env` | `MANGO_DB_NAME` | `mango_dev_<hash>` | 数据库名 | 拼接 Spring datasource URL；同机 registry 分配避免跨 worktree 共用库 | `allocateDevWorkspace` |
 | `.mango/dev-workspace.env` | `MANGO_DB_HOST` | `127.0.0.1` | 数据库 host | 拼接 Spring datasource URL | `defaultDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_DB_PORT` | `3306` | 数据库端口 | 拼接 Spring datasource URL | `defaultDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_DB_USERNAME` | `root` | 数据库用户名 | 注入 Spring datasource | `defaultDevWorkspaceEnv` |
@@ -180,6 +185,9 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地私有配置来自 `.ma
 | `mango add <module...>` | custom 项目追加 Mango 可选能力 | `--project-dir` | `frontend/package.json`、`frontend/src/main.ts`、runtime config、后端 POM、`mango.config.json` |
 | `mango module add <module>` | 生成业务模块骨架 | `--aggregate`、`--aggregate-name`、`--module-name`、`--project-dir`、`--force` | `backend/modules`、`frontend/packages`、POM、前端入口、Flyway 模块配置、`mango.config.json` |
 | `mango pmo sync` | 同步 PMO baseline | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| `mango pmo status` | 查看业务仓 PMO baseline 状态 | `--project-dir` | 不改文件 |
+| `mango pmo check` | 校验业务仓 PMO baseline 是否等于当前 `@mango/pmo` | `--project-dir` | 不改文件 |
+| `mango pmo upgrade` | 按当前 `@mango/pmo` 升级业务仓 baseline | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
 | `mango init-dev` | 初始化本地开发工作区 | 无 | `.mango/dev-workspace.env`、缺失时创建 `mango.dev.json` |
 | `mango print` | 打印 workspace 应用 | 无 | 不改文件 |
 | `mango validate` | 校验 workspace manifest | 无 | 不改文件 |
