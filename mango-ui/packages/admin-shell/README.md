@@ -142,6 +142,10 @@ Shell 只消费后端授权菜单。菜单 `component` 会归一化后匹配 `@m
 
 主题状态由 Shell store 管理，当前包含布局偏好、主题色和侧边栏状态。业务项目应通过 Shell 暴露的 store 或配置入口调整主题，不应直接依赖 Shell 内部组件路径。
 
+### Layout Footer
+
+Shell footer 属于布局框架行，不属于业务内容卡片。`defaults`、`classic`、`columns` 三种布局下，footer 与工作区 tab 导航一样贴合主内容区左右边缘和底部；业务内容滚动区由 Shell 预留底部安全距离，页面不需要为 footer 额外写占位。
+
 ### I18n
 
 Shell 安装 `vue-i18n` 并提供基础文案。能力包可以在自身注册流程中补充本地文案；业务应用需要复用同一个 i18n 实例，避免重复安装多个互不相通的实例。
