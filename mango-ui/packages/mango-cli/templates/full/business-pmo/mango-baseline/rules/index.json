@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -59,6 +59,10 @@
       "path": "rules/07-mango-issue-runbook.md",
       "reason": "Mango Issue 登记 Runbook"
     },
+    "process.capabilityDocs": {
+      "path": "rules/08-capability-docs.md",
+      "reason": "能力说明维护规范与发布门禁"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -85,7 +89,7 @@
     },
     "backend.persistence": {
       "path": "rules/backend/07-persistence.md",
-      "reason": "事务与持久化规范"
+      "reason": "事务、持久化与业务 CRUD 基线规范"
     },
     "backend.test": {
       "path": "rules/backend/08-test.md",
@@ -101,7 +105,7 @@
     },
     "backend.moduleMenu": {
       "path": "rules/backend/11-module-menu.md",
-      "reason": "模块菜单初始化归口规范"
+      "reason": "模块菜单 Resource Registry 初始化、编码、同步与验收规范"
     },
     "frontend.vue": {
       "path": "rules/frontend/01-vue-code.md",
@@ -134,32 +138,56 @@
     "product.sprint": {
       "path": "rules/product/02-sprint.md",
       "reason": "Sprint 规范"
+    },
+    "product.detailedDesign": {
+      "path": "rules/product/03-detailed-design-template.md",
+      "reason": "详细设计模板规范"
+    },
+    "frontend.adminUiCommon": {
+      "path": "rules/frontend/07-admin-ui-common.md",
+      "reason": "Admin UI 通用规范"
+    },
+    "frontend.listPage": {
+      "path": "rules/frontend/08-list-page.md",
+      "reason": "列表页 UI 规范"
+    },
+    "frontend.detailPage": {
+      "path": "rules/frontend/09-detail-page.md",
+      "reason": "详情页 UI 规范"
+    },
+    "frontend.formPage": {
+      "path": "rules/frontend/10-form-page.md",
+      "reason": "表单页 UI 规范"
+    },
+    "frontend.dialogDrawer": {
+      "path": "rules/frontend/11-dialog-drawer.md",
+      "reason": "弹框与抽屉 UI 规范"
     }
   },
   "roles": {
     "pm": ["agent.pm", "product.prd"],
-    "tech-lead": ["agent.techLead"],
+    "tech-lead": ["agent.techLead", "product.detailedDesign"],
     "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.aiDeliveryQuality"],
     "qa": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
-    "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
+    "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
     "requirement": ["product.prd"],
-    "design": ["agent.techLead"],
+    "design": ["agent.techLead", "product.detailedDesign"],
     "develop": ["agent.dev", "process.devEnvironment", "process.aiDeliveryQuality"],
     "verify": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
     "release": ["process.aiDeliveryQuality"],
-    "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
+    "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "bundles": {
     "deliveryContract": {
-      "paths": ["mango-docs/designs/**", "mango-docs/sprints/**", "mango-docs/delivery/**"],
+      "paths": ["mango-docs/designs/**", "mango-docs/sprints/**", "mango-docs/delivery/**", "business-docs/**"],
       "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "delivery-ledger", "delivery-contract", "创建PR", "评审PR", "提交PR", "合并PR", "创建 PR", "评审 PR", "提交 PR", "合并 PR", "Pull Request", "验收", "正式交付"],
       "include": ["process.deliveryContract", "process.aiDeliveryQuality"]
     },
     "backendFlow": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["backend/**", "mango/**", "mango-platform/**", "mango-app/**"],
+      "paths": ["mango/**", "mango-platform/**", "mango-app/**", "backend", "backend/**"],
       "keywords": ["后端", "Java", "Spring", "service", "Controller", "Mapper"],
       "include": ["backend.devFlow", "backend.code", "backend.naming"]
     },
@@ -171,31 +199,31 @@
     },
     "backendModule": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["mango/**/mango-*-api/**", "mango/**/mango-*-core/**", "mango/**/mango-*-starter/**", "mango/**/mango-*-starter-remote/**", "mango/**/mango-*-support/**"],
-      "keywords": ["模块边界", "模块分层", "api/core/starter", "starter-remote", "Feign", "远程调用", "module.properties", "模块信息", "module-path", "module-name"],
+      "paths": ["mango/**/mango-*-api/**", "mango/**/mango-*-core/**", "mango/**/mango-*-starter/**", "mango/**/mango-*-starter-remote/**", "mango/**/mango-*-support/**", "backend/modules/**"],
+      "keywords": ["模块边界", "模块分层", "api/support/core/starter", "starter-*", "starter-remote", "Feign", "远程调用", "module.properties", "模块信息", "module-path", "module-name"],
       "include": ["backend.module"]
     },
     "backendModuleMenu": {
       "roles": ["tech-lead", "dev", "qa", "pmo"],
-      "paths": ["mango/**/META-INF/mango/resource-manifest.json", "mango/**/META-INF/mango/resource-manifests/**", "mango/**/db/migration/**", "mango/**/authorization/**"],
-      "keywords": ["菜单初始化", "资源清单", "resource-manifest", "菜单包", "roleCodes", "packageCodes", "默认菜单", "默认权限", "授权模块归口"],
+      "paths": ["mango/**/META-INF/mango/resources/*-common-menu.json", "mango/**/META-INF/mango/resources/*-common-menu.yml", "mango/**/META-INF/mango/resources/*-common-menu.yaml", "mango/**/META-INF/mango/resource-manifest.json", "mango/**/META-INF/mango/resource-manifests/**", "mango/**/db/migration/**", "mango/**/authorization/**", "backend/**/META-INF/mango/resource-manifest.json", "backend/**/META-INF/mango/resource-manifests/**", "backend/**/db/migration/**", "backend/**/authorization/**"],
+      "keywords": ["菜单初始化", "资源清单", "AUTH_MENU", "*-common-menu.json", "*-common-menu.yml", "*-common-menu.yaml", "ResourceHandler", "resource-manifest", "菜单包", "roleCodes", "packageCodes", "默认菜单", "默认权限", "Flyway 禁止菜单", "菜单人工验收", "菜单截图", "授权模块归口"],
       "include": ["backend.moduleMenu", "backend.module", "backend.db", "backend.security"]
     },
     "backendApi": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["mango/**/*Api.java", "mango/**/*Command.java", "mango/**/*Query.java", "mango/**/*VO.java", "mango/**/controller/**"],
+      "paths": ["mango/**/*Api.java", "mango/**/*Command.java", "mango/**/*Query.java", "mango/**/*VO.java", "mango/**/controller/**", "backend/**/*Api.java", "backend/**/*Command.java", "backend/**/*Query.java", "backend/**/*VO.java", "backend/**/controller/**"],
       "keywords": ["接口", "API", "OpenAPI", "Knife4j", "Command", "Query", "VO", "Controller", "Service", "IXxxService", "ServiceImpl", "参数校验", "Bean Validation", "方法入参", "参数展开"],
       "include": ["backend.api"]
     },
     "backendDb": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["backend/**/db/migration/**", "backend/**/*Mapper.java", "backend/**/*Entity.java", "mango/**/db/migration/**", "mango/**/*Mapper.java", "mango/**/*Entity.java"],
+      "paths": ["mango/**/db/migration/**", "mango/**/*Mapper.java", "mango/**/*Entity.java", "backend/**/db/migration/**", "backend/**/*Mapper.java", "backend/**/*Entity.java"],
       "keywords": ["数据库设计", "数据库变更", "数据库表", "数据库字段", "migration", "Flyway", "数据表", "表结构", "建表", "改表", "索引", "DDL", "SQL", "Mapper", "mapper.xml", "Entity", "CRUD", "持久化", "JdbcTemplate", "JDBC", "@Select", "@Insert", "@Update", "@Delete", "租户隔离", "租户自动注入", "租户自动过滤", "tenantId", "tenant_id", "TenantLineInnerInterceptor", "MetaObjectHandler", "MangoCrudService", "BaseCrudController", "MyBatis-Plus"],
       "include": ["backend.db", "backend.persistence"]
     },
     "backendSecurity": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["mango/**/security/**", "mango/**/auth/**", "mango/**/authorization/**", "mango/**/access/**"],
+      "paths": ["mango/**/security/**", "mango/**/auth/**", "mango/**/authorization/**", "mango/**/access/**", "backend/**/security/**", "backend/**/auth/**", "backend/**/authorization/**", "backend/**/access/**"],
       "keywords": ["权限", "认证", "授权", "安全", "token", "密码", "密钥", "@Inner", "租户", "数据权限"],
       "include": ["backend.security", "backend.api"]
     },
@@ -207,31 +235,31 @@
     },
     "backendTest": {
       "roles": ["dev", "qa"],
-      "paths": ["backend/**/src/test/**", "mango/**/src/test/**"],
+      "paths": ["mango/**/src/test/**", "backend/**/src/test/**"],
       "keywords": ["后端测试", "单测", "集成测试", "mvn test", "mvn verify", "mango:check", "pmd", "checkstyle", "spotbugs", "测试资产", "回归脚本", "验收证据", "evidence"],
       "include": ["backend.test", "process.testAssets", "process.aiDeliveryQuality"]
     },
     "frontendFlow": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["frontend/**", "mango-ui/**", "apps/**", "packages/**"],
+      "paths": ["mango-ui/**", "frontend", "frontend/**", "apps/**", "packages/**"],
       "keywords": ["前端", "Vue", "TypeScript", "路由", "页面"],
       "include": ["frontend.devFlow", "frontend.vue", "frontend.test"]
     },
     "frontendUi": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["frontend/**/views/**", "frontend/packages/**/views/**", "mango-ui/apps/**/views/**", "mango-ui/packages/**/views/**"],
-      "keywords": ["UI", "Element Plus", "列表", "搜索", "表格", "表单", "弹窗", "抽屉", "状态标签", "下拉", "筛选"],
-      "include": ["frontend.elementPlusUi"]
+      "paths": ["mango-ui/apps/**/views/**", "mango-ui/packages/**/views/**", "frontend/apps/**/views/**", "frontend/packages/**/views/**"],
+      "keywords": ["UI", "Element Plus", "列表", "搜索", "表格", "表单", "弹窗", "抽屉", "状态标签", "下拉", "筛选", "详情", "详情页", "编辑页", "配置页", "删除确认", "底部操作栏"],
+      "include": ["frontend.elementPlusUi", "frontend.adminUiCommon", "frontend.listPage", "frontend.detailPage", "frontend.formPage", "frontend.dialogDrawer"]
     },
     "frontendComponent": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["frontend/packages/**", "mango-ui/packages/**", "packages/**"],
-      "keywords": ["组件开发", "公共组件", "业务组件", "选择组件", "npm", "独立消费", "私有仓库", "公开仓库", "微前端", "单体", "组件发布"],
+      "paths": ["mango-ui/packages/**", "frontend/packages/**", "packages/**"],
+      "keywords": ["组件开发", "公共组件", "业务组件", "选择组件", "npm", "独立消费", "私有仓库", "公开仓库", "微前端", "单体", "组件发布", "官方模块", "admin full", "@mango/admin/full", "样式聚合", "CLI 模块", "模块样式"],
       "include": ["frontend.componentDevelopment", "frontend.monorepo"]
     },
     "frontendTest": {
       "roles": ["dev", "qa"],
-      "paths": ["frontend/**/__tests__/**", "frontend/**/*.spec.*", "frontend/**/*.test.*", "frontend/**/e2e/**", "frontend/**/playwright/**", "frontend/**/playwright.config.*", "mango-ui/**/__tests__/**", "mango-ui/**/*.spec.*", "mango-ui/**/*.test.*", "mango-ui/**/e2e/**", "mango-ui/**/playwright/**", "mango-ui/**/playwright.config.*"],
+      "paths": ["mango-ui/**/__tests__/**", "mango-ui/**/*.spec.*", "mango-ui/**/*.test.*", "mango-ui/**/e2e/**", "mango-ui/**/playwright/**", "mango-ui/**/playwright.config.*", "frontend/**/__tests__/**", "frontend/**/*.spec.*", "frontend/**/*.test.*", "frontend/**/e2e/**", "frontend/**/playwright/**", "frontend/**/playwright.config.*"],
       "keywords": ["前端测试", "E2E", "Playwright", "组件测试", "pnpm test", "pnpm build", "pnpm lint", "测试资产", "回归脚本", "验收证据", "evidence"],
       "include": ["frontend.test", "process.testAssets", "process.aiDeliveryQuality"]
     },
@@ -251,6 +279,12 @@
       "keywords": ["文档资产", "归档边界", "规范源", "唯一规范源", "使用说明", "设计文档", "交付记录", "开发者指南", "模块 README"],
       "include": ["process.documentAssets"]
     },
+    "capabilityDocs": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango-docs/capabilities/**", "mango/**/README.md", "mango-ui/packages/**/README.md", "mango-business-starter/**/README.md", "mango/**/src", "mango/**/src/**", "mango-ui/packages/**/src", "mango-ui/packages/**/src/**", "mango-business-starter/**", "mango-ui/packages/mango-cli/**"],
+      "keywords": ["能力说明", "能力地图", "模块 README", "capability", "capabilities", "README", "starter", "模板", "CLI", "公开能力", "接入方式", "配置项", "菜单", "权限", "排障入口", "生效确认"],
+      "include": ["process.capabilityDocs", "process.documentAssets"]
+    },
     "devEnvironment": {
       "paths": ["scripts/**", ".mango/**"],
       "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "dev-workspace", "前后端", "数据库名称", "清理", "drop-db"],
@@ -258,8 +292,8 @@
     },
     "product": {
       "paths": ["mango-docs/**"],
-      "keywords": ["需求", "PRD", "Sprint", "验收标准"],
-      "include": ["agent.pm", "product.prd", "product.sprint"]
+      "keywords": ["需求", "PRD", "原型", "详细设计", "设计文档", "关键对象", "关键业务流程", "业务规则", "状态机", "数据流图", "Sprint", "验收标准"],
+      "include": ["agent.pm", "product.prd", "product.detailedDesign", "product.sprint"]
     },
     "releaseBackend": {
       "paths": [],

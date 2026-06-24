@@ -43,6 +43,8 @@
 preflight：
 
 ```bash
+mango pmo check --project-dir .
+
 node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
   --role dev \
   --phase develop \
@@ -116,6 +118,7 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 |------|------|----------|
 | Must read 不符合预期 | `--task` 和 `--paths` 太空泛 | 写清任务关键词和影响路径 |
 | preflight 报 Missing PMO file | `rules/index.json` 指向不存在文件 | 通过 baseline 同步修复 |
+| `mango pmo check` 报 changed | 普通业务任务改了 baseline 或 baseline 未升级 | 确认不是业务需求内手改后，执行 `mango pmo upgrade --project-dir .` |
 | verify 模式失败 | 台账状态仍是未开始或进行中 | 完成后改 `DONE`，例外写 `EXCEPTION` 和证据 |
 | 禁用词扫描失败 | 代码或文档仍有临时实现标记 | 删除临时实现或登记明确例外 |
 | 普通需求改了 baseline | 把规则当成业务文档改了 | 还原 baseline，业务说明放入 `business-docs` |

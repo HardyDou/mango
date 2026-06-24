@@ -35,6 +35,7 @@
 - 新增或移除 admin 类 package 后必须运行样式生成校验，确保声明、消费方依赖和 package `./style.css` 导出一致。
 - admin 类宿主或业务管理应用的 `dev` 和 `build` 必须自动生成样式聚合文件，避免依赖人工预先执行生成命令。
 - package 样式生成工具必须基于消费方 `package.json` 的 Node 依赖解析，不得只依赖当前 monorepo 目录结构；同一机制必须支持 workspace package 和已发布 npm/Nexus package。
+- 官方业务模块出现在 `@mango/admin/full`、`mango-cli` full/custom 模块清单或管理端页面注册链时，必须同步出现在样式聚合链或微前端自身入口，并通过 `pnpm admin:module-styles:check`。
 - 微前端 app 必须按运行模块显式引入自身依赖的 package 样式，例如 workflow app 引入 workflow package 样式。
 - 业务项目消费 Mango package 时应通过 package 公开入口引入样式，不能依赖 `apps/*` 或仓库源码路径。
 - 开发中心和组件示例属于展示与验证承载层，只能依赖被展示组件的公开包入口和样式入口。
@@ -66,6 +67,7 @@
 - 关键测试可执行
 - 单体和微前端模式的关键页面样式必须分别验证。
 - 涉及微前端样式时，E2E 必须保留截图，并验证子应用隔离容器内关键元素 computed style 符合预期。
+- 涉及 `@mango/admin/full`、CLI 模块清单、admin 样式聚合或官方业务模块样式的 PR，必须执行 `pnpm admin:styles:check` 和 `pnpm admin:module-styles:check`。
 
 ## 9. 禁止事项
 

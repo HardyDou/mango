@@ -6,7 +6,6 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
 LOCAL_DIR="${REPO_ROOT}/.mango"
 ENV_FILE="${LOCAL_DIR}/dev-workspace.env"
 FRONTEND_ROOT="${REPO_ROOT}/frontend"
-DEFAULT_DB_NAME="{{projectKebabSnake}}"
 
 usage() {
   cat <<'EOF'
@@ -29,62 +28,17 @@ The actual runner lives in the mango CLI. This shell file is a compatibility ent
 EOF
 }
 
-generate_sm4_key() {
-  if command -v openssl >/dev/null 2>&1; then
-    openssl rand -hex 16
-    return
-  fi
-  cksum <<<"${REPO_ROOT}:$(date +%s):$$" | awk '{printf "%032x\n", $1}'
-}
-
-ensure_sm4_key_env() {
-  if [[ -f "${ENV_FILE}" ]] && ! grep -q '^MANGO_CRYPTO_SM4_SECRET_KEY=' "${ENV_FILE}"; then
-    printf '\nMANGO_CRYPTO_SM4_SECRET_KEY=%s\n' "$(generate_sm4_key)" >>"${ENV_FILE}"
-    echo "Added MANGO_CRYPTO_SM4_SECRET_KEY to existing workspace env: ${ENV_FILE}"
-  fi
-}
-
-write_default_env() {
-  mkdir -p "${LOCAL_DIR}"
-  if [[ -f "${ENV_FILE}" ]]; then
-    ensure_sm4_key_env
-    echo "Workspace env already exists: ${ENV_FILE}"
-    return
-  fi
-
-  cat >"${ENV_FILE}" <<EOF
-# Mango business project local workspace configuration.
-# This file is generated once per workspace and must not be committed.
-MANGO_CRYPTO_SM4_SECRET_KEY=$(generate_sm4_key)
-MANGO_BACKEND_PORT=5555
-MANGO_FRONTEND_PORT=5176
-MANGO_FRONTEND_HOST=127.0.0.1
-MANGO_FRONTEND_OPEN=false
-MANGO_FRONTEND_AUTO_INSTALL=true
-MANGO_DB_HOST=127.0.0.1
-MANGO_DB_PORT=3306
-MANGO_DB_NAME=${DEFAULT_DB_NAME}
-MANGO_DB_USERNAME=root
-MANGO_DB_PASSWORD=''
-MANGO_DB_AUTO_CREATE=true
-MANGO_OFFICE_PLUGIN_ENABLED=false
-MANGO_BACKEND_ADDITIONAL_ARGS=''
-EOF
-
-  echo "Created workspace env: ${ENV_FILE}"
-}
-
 run_mango() {
-  if command -v mango >/dev/null 2>&1; then
-    exec mango "$@"
-  fi
-
-  if [[ -f "${FRONTEND_ROOT}/package.json" ]] && command -v pnpm >/dev/null 2>&1; then
+  if [[ -x "${FRONTEND_ROOT}/node_modules/.bin/mango" ]] && command -v pnpm >/dev/null 2>&1; then
     cd "${FRONTEND_ROOT}"
     exec pnpm exec mango "$@"
   fi
 
-  echo "mango CLI not found globally or in project frontend dependencies."
+  if command -v mango >/dev/null 2>&1; then
+    exec mango "$@"
+  fi
+
+  echo "mango CLI not found in project frontend dependencies or globally."
   echo "Install project dependencies: cd frontend && pnpm install"
   echo "Or install globally: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}"
   exit 1
@@ -93,8 +47,10 @@ run_mango() {
 command="${1:-start}"
 case "${command}" in
   init)
-    write_default_env
-    run_mango print
+    run_mango init-dev
+    ;;
+  init-dev)
+    run_mango init-dev
     ;;
   print|backend|frontend|start|stop|status|logs|doctor|validate|plan)
     shift || true

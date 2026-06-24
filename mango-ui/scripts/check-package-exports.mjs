@@ -114,6 +114,12 @@ for (const packageDir of readdirSync(packagesRoot)) {
   if (packageJson.private) {
     continue;
   }
+  if (packageJson.name === '@mango/pmo') {
+    assertPublishedFiles(packageJson.name, packageJson);
+    assertPath(packageJson.name, packageRoot, 'exports..', packageJson.exports?.['.']);
+    assertPath(packageJson.name, packageRoot, 'exports../baseline.json', packageJson.exports?.['./baseline.json']);
+    continue;
+  }
   assertPublishedFiles(packageJson.name, packageJson);
   assertPath(packageJson.name, packageRoot, 'main', packageJson.main);
   assertPath(packageJson.name, packageRoot, 'module', packageJson.module);

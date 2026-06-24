@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -11,6 +11,7 @@ const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
 const templateRoot = resolve(packageRoot, 'templates/full');
+const bundledPmoPackageRoot = resolve(packageRoot, '../mango-pmo');
 const businessModuleTemplateRoot = resolve(packageRoot, 'templates/business-module');
 const businessStarterRoot = existsSync(businessModuleTemplateRoot)
   ? businessModuleTemplateRoot
@@ -204,7 +205,10 @@ Usage:
   mango status
   mango logs <app>
   mango changelog
+  mango pmo status --project-dir <dir>
+  mango pmo check --project-dir <dir>
   mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]
+  mango pmo upgrade --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]
   mango module add <module> --aggregate <name> [--aggregate-name <name>] [options]
   mango-cli init <project> --preset full [options]
   mango-cli add <module...> [options]
@@ -268,11 +272,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   if (args[0] === 'pmo') {
-    const subCommand = args[1];
-    if (subCommand !== 'sync') {
-      fail(`unknown pmo command: ${subCommand || ''}`);
-    }
-    syncPmoBaseline(args.slice(2));
+    runPmoCommand(args[1], args.slice(2));
     return;
   }
 
@@ -296,6 +296,7 @@ async function main(argv = process.argv.slice(2)) {
 
   const variables = buildVariables(options);
   copyTemplate(templateRoot, targetDir, variables);
+  installPmoBaseline(targetDir);
   chmodSync(join(targetDir, 'scripts/dev-workspace.sh'), 0o755);
   chmodSync(join(targetDir, 'scripts/backend-dev.sh'), 0o755);
   writeMangoConfig(targetDir, variables);
@@ -800,6 +801,7 @@ function initDevWorkspace(context) {
     writeFileSync(envPath, defaultDevWorkspaceEnv(context.root));
     process.stdout.write(`Created local workspace env: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
   } else {
+    ensureDevWorkspaceEnv(context);
     process.stdout.write(`Workspace env already exists: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
   }
 
@@ -810,17 +812,18 @@ function initDevWorkspace(context) {
 }
 
 function defaultDevWorkspaceEnv(root) {
-  const projectName = toSnakeCase(basename(root)) || 'mango_workspace';
+  const workspace = allocateDevWorkspace(root);
   return [
     '# Mango local workspace configuration.',
     '# This file is generated once per workspace and must not be committed.',
+    `MANGO_WORKSPACE_ID=${workspace.workspaceId}`,
     `MANGO_CRYPTO_SM4_SECRET_KEY=${randomBytes(16).toString('hex')}`,
-    'MANGO_BACKEND_PORT=5555',
-    'MANGO_FRONTEND_PORT=5176',
+    `MANGO_BACKEND_PORT=${workspace.backendPort}`,
+    `MANGO_FRONTEND_PORT=${workspace.frontendPort}`,
     'MANGO_FRONTEND_HOST=127.0.0.1',
     'MANGO_FRONTEND_OPEN=false',
     'MANGO_FRONTEND_AUTO_INSTALL=true',
-    `MANGO_DB_NAME=${projectName}`,
+    `MANGO_DB_NAME=${workspace.dbName}`,
     'MANGO_DB_HOST=127.0.0.1',
     'MANGO_DB_PORT=3306',
     'MANGO_DB_USERNAME=root',
@@ -830,6 +833,81 @@ function defaultDevWorkspaceEnv(root) {
     "MANGO_BACKEND_ADDITIONAL_ARGS=''",
     '',
   ].join('\n');
+}
+
+function allocateDevWorkspace(root) {
+  const normalizedRoot = resolve(root);
+  const registry = readWorkspaceRegistry(normalizedRoot);
+  const existing = registry.find(entry => entry.root === normalizedRoot);
+  if (existing) {
+    return existing;
+  }
+  const seed = numericHash(normalizedRoot);
+  const usedBackendPorts = new Set(registry.map(entry => Number(entry.backendPort)));
+  const usedFrontendPorts = new Set(registry.map(entry => Number(entry.frontendPort)));
+  const usedDbNames = new Set(registry.map(entry => entry.dbName));
+  for (let offset = 0; offset < 1000; offset += 1) {
+    const suffix = (seed + offset) % 1000;
+    const candidate = {
+      root: normalizedRoot,
+      workspaceId: `mango_${suffix.toString().padStart(3, '0')}`,
+      backendPort: 18080 + suffix,
+      frontendPort: 7770 + suffix,
+      dbName: `mango_dev_${suffix.toString().padStart(3, '0')}`,
+    };
+    if (usedBackendPorts.has(candidate.backendPort)
+      || usedFrontendPorts.has(candidate.frontendPort)
+      || usedDbNames.has(candidate.dbName)
+      || isPortInUse(candidate.backendPort)
+      || isPortInUse(candidate.frontendPort)) {
+      continue;
+    }
+    writeWorkspaceRegistry(normalizedRoot, [...registry, candidate]);
+    return candidate;
+  }
+  fail('unable to allocate free Mango workspace ports. Edit MANGO_WORKSPACE_REGISTRY or stop conflicting services.');
+}
+
+function workspaceRegistryPath(root) {
+  if (process.env.MANGO_WORKSPACE_REGISTRY) {
+    return resolve(process.env.MANGO_WORKSPACE_REGISTRY);
+  }
+  const home = process.env.HOME || root;
+  return join(home, '.mango/workspaces.tsv');
+}
+
+function readWorkspaceRegistry(root) {
+  const path = workspaceRegistryPath(root);
+  if (!existsSync(path)) {
+    return [];
+  }
+  return readFileSync(path, 'utf8')
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map(line => {
+      const [entryRoot, workspaceId, backendPort, frontendPort, dbName] = line.split('\t');
+      return {
+        root: entryRoot,
+        workspaceId,
+        backendPort: Number(backendPort),
+        frontendPort: Number(frontendPort),
+        dbName,
+      };
+    })
+    .filter(entry => entry.root && entry.workspaceId && entry.backendPort && entry.frontendPort && entry.dbName);
+}
+
+function writeWorkspaceRegistry(root, entries) {
+  const path = workspaceRegistryPath(root);
+  mkdirSync(dirname(path), { recursive: true });
+  const content = entries
+    .map(entry => [entry.root, entry.workspaceId, entry.backendPort, entry.frontendPort, entry.dbName].join('\t'))
+    .join('\n');
+  writeFileSync(path, `${content}\n`);
+}
+
+function numericHash(value) {
+  return Number.parseInt(createHash('sha256').update(value).digest('hex').slice(0, 8), 16);
 }
 
 function defaultBusinessDevManifest(projectName) {
@@ -1536,8 +1614,33 @@ function tailFile(path, lineCount) {
   return `${lines.slice(Math.max(0, lines.length - lineCount)).join('\n')}\n`;
 }
 
-function syncPmoBaseline(argv) {
-  const options = parsePmoSyncArgs(argv);
+function runPmoCommand(command, argv) {
+  if (command === 'status') {
+    const options = parsePmoArgs(argv);
+    const targetDir = resolve(process.cwd(), options.projectDir);
+    const status = getPmoStatus(targetDir);
+    printPmoStatus(status);
+    return;
+  }
+  if (command === 'check') {
+    const options = parsePmoArgs(argv);
+    const targetDir = resolve(process.cwd(), options.projectDir);
+    const status = getPmoStatus(targetDir);
+    printPmoStatus(status);
+    if (status.errors.length > 0 || status.warnings.length > 0) {
+      process.exit(1);
+    }
+    return;
+  }
+  if (command === 'sync' || command === 'upgrade') {
+    syncPmoBaseline(argv, { command });
+    return;
+  }
+  fail(`unknown pmo command: ${command || ''}`);
+}
+
+function syncPmoBaseline(argv, { command = 'sync' } = {}) {
+  const options = parsePmoArgs(argv);
   const targetDir = resolve(process.cwd(), options.projectDir);
   if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
     fail(`project directory not found: ${targetDir}`);
@@ -1554,8 +1657,9 @@ function syncPmoBaseline(argv) {
     mavenRepository: 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
     modules: 'none',
   });
+  const baseline = loadPmoPackageBaseline();
   const plan = [
-    ...planTemplateSync('business-pmo/mango-baseline', targetDir, variables),
+    ...planPmoBaselineSync(targetDir, baseline),
     ...planTemplateSync('business-pmo/README.md', targetDir, variables),
     ...planBusinessDocsSync(targetDir, variables),
     planAgentsSync(targetDir, variables, options.writeAgents),
@@ -1563,7 +1667,7 @@ function syncPmoBaseline(argv) {
   ].filter(Boolean);
 
   const summary = summarizeSyncPlan(plan);
-  printPmoSyncPlan(targetDir, plan, options.dryRun);
+  printPmoSyncPlan(targetDir, plan, options.dryRun, command);
   if (options.dryRun) {
     return;
   }
@@ -1573,11 +1677,12 @@ function syncPmoBaseline(argv) {
     }
     writePlannedFile(item);
   }
+  writePmoBaselineManifest(targetDir, baseline.manifest);
   const synced = summary.add + summary.update;
-  process.stdout.write(`PMO baseline sync complete: ${synced} files written, ${summary.skip} skipped.\n`);
+  process.stdout.write(`PMO baseline ${command} complete: ${synced} files written, ${summary.skip} skipped.\n`);
 }
 
-function parsePmoSyncArgs(argv) {
+function parsePmoArgs(argv) {
   const result = {
     projectDir: '.',
     dryRun: false,
@@ -1613,6 +1718,168 @@ function parsePmoSyncArgs(argv) {
     fail(`unexpected argument: ${arg}`);
   }
   return result;
+}
+
+function loadPmoPackageBaseline() {
+  const candidates = [
+    bundledPmoPackageRoot,
+    resolve(packageRoot, 'node_modules/@mango/pmo'),
+    resolve(packageRoot, '../../node_modules/@mango/pmo'),
+    resolve(process.cwd(), 'node_modules/@mango/pmo'),
+  ];
+  for (const candidate of candidates) {
+    const manifestPath = join(candidate, 'dist/baseline.json');
+    const baselineRoot = join(candidate, 'dist/baseline');
+    if (existsSync(manifestPath) && existsSync(baselineRoot)) {
+      return {
+        root: baselineRoot,
+        manifest: JSON.parse(readFileSync(manifestPath, 'utf8')),
+      };
+    }
+  }
+  const templateBaselineRoot = join(templateRoot, 'business-pmo/mango-baseline');
+  return {
+    root: templateBaselineRoot,
+    manifest: buildLegacyPmoManifest(templateBaselineRoot),
+  };
+}
+
+function buildLegacyPmoManifest(root) {
+  return {
+    packageName: '@mango/cli-template',
+    packageVersion: readCliVersion(),
+    schemaVersion: 1,
+    source: 'mango-cli-template',
+    generatedAt: new Date().toISOString(),
+    files: walkFiles(root)
+      .map(file => {
+        const content = readFileSync(file);
+        return {
+          path: toPosix(relative(root, file)),
+          sha256: createHash('sha256').update(content).digest('hex'),
+          size: content.length,
+        };
+      })
+      .sort((left, right) => left.path.localeCompare(right.path)),
+  };
+}
+
+function planPmoBaselineSync(targetDir, baseline) {
+  const plan = [];
+  for (const file of baseline.manifest.files || []) {
+    const targetRelative = `business-pmo/mango-baseline/${file.path}`;
+    const sourceFile = join(baseline.root, file.path);
+    plan.push(buildFilePlanItem(targetRelative, join(targetDir, targetRelative), readRenderedBaselineFile(sourceFile)));
+  }
+  plan.push(buildFilePlanItem(
+    'business-pmo/mango-baseline/baseline.json',
+    join(targetDir, 'business-pmo/mango-baseline/baseline.json'),
+    `${JSON.stringify(baseline.manifest, null, 2)}\n`,
+  ));
+  return plan;
+}
+
+function readRenderedBaselineFile(sourceFile) {
+  return readFileSync(sourceFile, 'utf8');
+}
+
+function writePmoBaselineManifest(targetDir, manifest) {
+  const manifestPath = join(targetDir, 'business-pmo/mango-baseline/baseline.json');
+  mkdirSync(dirname(manifestPath), { recursive: true });
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+function installPmoBaseline(targetDir) {
+  const baseline = loadPmoPackageBaseline();
+  const baselineDir = join(targetDir, 'business-pmo/mango-baseline');
+  rmSync(baselineDir, { recursive: true, force: true });
+  for (const file of baseline.manifest.files || []) {
+    const sourceFile = join(baseline.root, file.path);
+    const targetPath = join(baselineDir, file.path);
+    mkdirSync(dirname(targetPath), { recursive: true });
+    copyFileSync(sourceFile, targetPath);
+    if (file.path.startsWith('tools/') && file.path.endsWith('.mjs')) {
+      chmodSync(targetPath, 0o755);
+    }
+  }
+  writePmoBaselineManifest(targetDir, baseline.manifest);
+}
+
+function getPmoStatus(targetDir) {
+  const baseline = loadPmoPackageBaseline();
+  const baselineDir = join(targetDir, 'business-pmo/mango-baseline');
+  const installedManifestPath = join(baselineDir, 'baseline.json');
+  const errors = [];
+  const warnings = [];
+  if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
+    errors.push(`project directory not found: ${targetDir}`);
+    return { targetDir, baseline, baselineDir, errors, warnings, missing: [], changed: [], extra: [] };
+  }
+  if (!existsSync(baselineDir)) {
+    errors.push('business-pmo/mango-baseline is missing. Run mango pmo sync --project-dir .');
+    return { targetDir, baseline, baselineDir, errors, warnings, missing: [], changed: [], extra: [] };
+  }
+  if (!existsSync(installedManifestPath)) {
+    warnings.push('baseline.json is missing. Run mango pmo sync --project-dir . to install a versioned manifest.');
+  }
+  const comparison = comparePmoBaselineFiles(baselineDir, baseline.manifest);
+  if (comparison.missing.length > 0) {
+    errors.push(`${comparison.missing.length} baseline files are missing`);
+  }
+  if (comparison.changed.length > 0) {
+    warnings.push(`${comparison.changed.length} baseline files differ from ${baseline.manifest.packageName}@${baseline.manifest.packageVersion}`);
+  }
+  return {
+    targetDir,
+    baseline,
+    baselineDir,
+    errors,
+    warnings,
+    ...comparison,
+  };
+}
+
+function comparePmoBaselineFiles(baselineDir, manifest) {
+  const expected = new Map((manifest.files || []).map(file => [file.path, file]));
+  const missing = [];
+  const changed = [];
+  for (const [filePath, file] of expected.entries()) {
+    const targetPath = join(baselineDir, filePath);
+    if (!existsSync(targetPath)) {
+      missing.push(filePath);
+      continue;
+    }
+    const actualHash = hashFile(targetPath);
+    if (actualHash !== file.sha256) {
+      changed.push(filePath);
+    }
+  }
+  const expectedPaths = new Set([...expected.keys(), 'baseline.json']);
+  const extra = walkFiles(baselineDir)
+    .map(file => toPosix(relative(baselineDir, file)))
+    .filter(file => !expectedPaths.has(file));
+  return { missing, changed, extra };
+}
+
+function printPmoStatus(status) {
+  process.stdout.write(`Project: ${status.targetDir}\n`);
+  process.stdout.write(`Baseline: ${status.baseline.manifest.packageName}@${status.baseline.manifest.packageVersion}\n`);
+  process.stdout.write(`Files: ${status.baseline.manifest.files?.length || 0} expected, ${status.missing.length} missing, ${status.changed.length} changed, ${status.extra.length} extra\n`);
+  for (const warning of status.warnings) {
+    process.stdout.write(`warn    ${warning}\n`);
+  }
+  for (const error of status.errors) {
+    process.stdout.write(`error   ${error}\n`);
+  }
+  if (status.missing.length > 0) {
+    process.stdout.write(`Missing: ${status.missing.slice(0, 10).join(', ')}${status.missing.length > 10 ? ', ...' : ''}\n`);
+  }
+  if (status.changed.length > 0) {
+    process.stdout.write(`Changed: ${status.changed.slice(0, 10).join(', ')}${status.changed.length > 10 ? ', ...' : ''}\n`);
+  }
+  if (status.errors.length === 0 && status.warnings.length === 0) {
+    process.stdout.write('PMO baseline is current.\n');
+  }
 }
 
 function planShellSync(targetDir, variables, syncShell) {
@@ -1774,9 +2041,9 @@ function summarizeSyncPlan(plan) {
   }, { add: 0, update: 0, skip: 0, warn: 0 });
 }
 
-function printPmoSyncPlan(targetDir, plan, dryRun) {
+function printPmoSyncPlan(targetDir, plan, dryRun, command = 'sync') {
   const summary = summarizeSyncPlan(plan);
-  process.stdout.write(`${dryRun ? 'PMO baseline dry-run plan' : 'PMO baseline sync plan'} for ${relativeOrAbsolute(process.cwd(), targetDir)}\n`);
+  process.stdout.write(`${dryRun ? 'PMO baseline dry-run plan' : `PMO baseline ${command} plan`} for ${relativeOrAbsolute(process.cwd(), targetDir)}\n`);
   process.stdout.write(`  add: ${summary.add}, update: ${summary.update}, skip: ${summary.skip}, warn: ${summary.warn}\n`);
   for (const item of plan) {
     const reason = item.reason ? ` (${item.reason})` : '';
@@ -2336,6 +2603,14 @@ function walkFiles(root) {
     }
   }
   return result;
+}
+
+function hashFile(path) {
+  return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
+
+function toPosix(path) {
+  return path.split('\\').join('/');
 }
 
 function isTextFile(file) {

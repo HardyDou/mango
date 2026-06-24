@@ -16,11 +16,13 @@
 
 1. 明确交付契约。
 2. 建立交付台账。
-3. 执行 Mango baseline preflight。
-4. 按任务类型读取 preflight 输出中的所有 `Must read` 文件原文。
-5. 读取本业务 `business-pmo/README.md` 和相关领域规则。
-6. 在任务 worktree 或任务分支内开发。
-7. 执行后端、前端和台账验证。
+3. 执行 `mango pmo check --project-dir .`，确认本仓 baseline 没有漂移。
+4. 执行 Mango baseline preflight。
+5. 按任务类型读取 preflight 输出中的所有 `Must read` 文件原文。
+6. 读取本业务 `business-pmo/README.md`、相关领域规则和本次任务对应的 `business-docs/**` 文件。
+7. 执行 `git worktree list`，同一任务返工必须复用已有任务 worktree。
+8. 在任务 worktree 或任务分支内开发。
+9. 执行后端、前端和台账验证。
 
 推荐命令：
 
@@ -53,7 +55,7 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 
 - Maven 依赖版本。
 - npm 依赖版本。
-- `business-pmo/mango-baseline/` 快照。
+- 通过 `mango pmo upgrade --project-dir .` 更新 `business-pmo/mango-baseline/` 快照。
 - 业务验证命令和交付台账。
 
 ## 4. 业务边界
@@ -68,6 +70,16 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 ## 5. AI 协作
 
 AI 可以参与实现，但 owner 和验收责任不转移。前端使用 AI 修改后端代码时，必须由后端 owner review。
+
+本地启动只使用：
+
+```bash
+scripts/dev-workspace.sh init
+scripts/dev-workspace.sh print
+scripts/dev-workspace.sh start
+```
+
+启动前必须确认并在交付记录中报告 `.mango/dev-workspace.env` 中的 `MANGO_WORKSPACE_ID`、`MANGO_BACKEND_PORT`、`MANGO_FRONTEND_PORT`、`MANGO_DB_NAME`。不要交叉使用其它 worktree 的服务、端口或数据库。
 
 正式交付的最终报告必须包含：
 
