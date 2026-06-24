@@ -8,6 +8,7 @@ import App from './App.vue';
 import router from './router';
 import { i18n } from './i18n';
 import ElementPlus from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import '@mango/admin/style-full.css';
 import { initThemeBeforeRender } from '@/utils/themeInit';
@@ -56,7 +57,7 @@ app.config.errorHandler = (err, instance, info) => {
 app.use(createPinia().use(piniaPluginPersist));
 app.use(router);
 app.use(i18n);
-app.use(ElementPlus);
+app.use(ElementPlus, { locale: zhCn });
 installMangoAuth(app, {
   login: {
     brand: {

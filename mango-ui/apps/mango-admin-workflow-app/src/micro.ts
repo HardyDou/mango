@@ -1,6 +1,7 @@
 import { createApp, type App as VueApp } from 'vue';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 import ElementPlus from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
@@ -42,7 +43,7 @@ export async function mount(container: HTMLElement, runtime: MangoAppRuntime) {
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);
   }
-  app.use(ElementPlus);
+  app.use(ElementPlus, { locale: zhCn });
   app.use(router);
   app.mount(root);
 }
