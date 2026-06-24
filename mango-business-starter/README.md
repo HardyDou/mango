@@ -25,7 +25,7 @@
 - 不替代业务领域建模；模板只生成单聚合 CRUD 起点。
 - 不自动设计复杂权限、租户隔离、数据权限、状态机、审批流和跨服务一致性。
 - 不替代 CLI full 项目模板；full 初始化产物以 `mango-ui/packages/mango-cli/templates/full` 为准。
-- 不负责把已生成业务项目自动升级到最新模板；已有业务代码需要 CLI sync 或人工迁移。
+- 不负责把已生成业务项目自动升级到最新模板；已有业务代码需要 CLI sync/upgrade 或人工迁移。
 
 ## 4. 模块入口
 本目录负责模板资产和静态契约校验。CLI 负责读取模板、渲染变量、写入生成项目并更新 managed block。生成后的业务项目负责：
@@ -49,6 +49,15 @@
 
 ```bash
 mango module add order --aggregate sales-order --aggregate-name 销售订单 --module-name 订单模块 --project-dir .
+```
+
+老业务升级 Mango PMO baseline 时，从业务项目根目录执行：
+
+```bash
+mango pmo status --project-dir .
+mango pmo check --project-dir .
+mango pmo upgrade --project-dir . --dry-run
+mango pmo upgrade --project-dir .
 ```
 
 命令会生成：

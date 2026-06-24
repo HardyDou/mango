@@ -20,6 +20,8 @@
 - 宿主只负责布局、路由聚合、权限拦截、全局初始化。
 - 宿主不承载公共组件第二实现。
 - 宿主不长期保留业务包已下沉的代码。
+- 宿主可以提供单体模式样式聚合入口，但不能作为业务 package 样式的唯一来源。
+- 宿主或 shell 不负责把业务 package 样式注入到微前端隔离容器。
 
 ## 4. 公共能力规则
 
@@ -27,6 +29,18 @@
 - 公共组件需要统一导出。
 - 公共组件禁止直接依赖宿主 store、router、api、i18n。
 - 公共组件依赖的 API 必须放在对应公共位置。
+- 可复用页面、组件和能力的样式必须跟随所属 package，package 通过 `./style.css` 公开样式入口。
+- 单体聚合入口只能 `@import` 各 package 样式，禁止复制或重写 package 私有样式。
+- admin 类宿主或业务管理应用集成 package 必须通过本应用的 package manifest 一处显式声明，样式聚合文件由通用脚本生成，禁止手工长期维护 package 样式清单。
+- 新增或移除 admin 类 package 后必须运行样式生成校验，确保声明、消费方依赖和 package `./style.css` 导出一致。
+- admin 类宿主或业务管理应用的 `dev` 和 `build` 必须自动生成样式聚合文件，避免依赖人工预先执行生成命令。
+- package 样式生成工具必须基于消费方 `package.json` 的 Node 依赖解析，不得只依赖当前 monorepo 目录结构；同一机制必须支持 workspace package 和已发布 npm/Nexus package。
+- 官方业务模块出现在 `@mango/admin/full`、`mango-cli` full/custom 模块清单或管理端页面注册链时，必须同步出现在样式聚合链或微前端自身入口，并通过 `pnpm admin:module-styles:check`。
+- 微前端 app 必须按运行模块显式引入自身依赖的 package 样式，例如 workflow app 引入 workflow package 样式。
+- 业务项目消费 Mango package 时应通过 package 公开入口引入样式，不能依赖 `apps/*` 或仓库源码路径。
+- 开发中心和组件示例属于展示与验证承载层，只能依赖被展示组件的公开包入口和样式入口。
+- 开发中心不得作为组件样式总包；业务项目不得为了使用某个组件而被迫依赖开发中心 package。
+- 通用组件样式归属 `@mango/common/style.css`，文件组件样式归属 `@mango/file/style.css`，工作流组件样式归属 `@mango/workflow/style.css`；示例中心只引入这些入口，不接管运行样式。
 
 ## 5. 路由规则
 
@@ -51,9 +65,17 @@
 - `pnpm dev` 可启动
 - 关键页面可访问
 - 关键测试可执行
+- 单体和微前端模式的关键页面样式必须分别验证。
+- 涉及微前端样式时，E2E 必须保留截图，并验证子应用隔离容器内关键元素 computed style 符合预期。
+- 涉及 `@mango/admin/full`、CLI 模块清单、admin 样式聚合或官方业务模块样式的 PR，必须执行 `pnpm admin:styles:check` 和 `pnpm admin:module-styles:check`。
 
 ## 9. 禁止事项
 
 - `packages/*` 反向依赖 `apps/*`
 - 同一能力在宿主和公共包各维护一份
 - 公共包直接引用宿主别名路径
+- 业务 package 样式只存在于单体聚合入口
+- 手工修改单体 admin 生成的 package 样式聚合文件
+- 微前端页面依赖宿主聚合样式穿透隔离容器
+- 组件运行样式依赖开发中心、示例中心或文档示例页
+- 通用组件或业务组件为了显示正常要求额外安装开发中心 package

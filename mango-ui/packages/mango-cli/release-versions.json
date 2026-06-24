@@ -17,6 +17,7 @@
     "@mango/notice": "1.0.11",
     "@mango/numgen": "1.0.11",
     "@mango/payment": "1.0.2",
+    "@mango/pmo": "1.0.0",
     "@mango/rbac": "1.0.8",
     "@mango/system": "1.0.9",
     "@mango/template": "1.0.11",

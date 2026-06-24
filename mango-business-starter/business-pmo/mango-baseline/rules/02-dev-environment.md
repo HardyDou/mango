@@ -12,7 +12,13 @@
 - 每个工作区必须使用 `scripts/dev-workspace.sh init` 初始化本地配置。
 - 所有代码、接口、数据库、测试、前端页面或构建配置改动必须在任务专用 Git worktree 中进行。
 - 任务 worktree 必须从最新 `main` 新建，并使用独立任务分支。
+- 一个任务或一个 PR 在本地只能对应一个开发 worktree。
+- 验收返工、Review 修改、CI 修复和 PR 门禁修复必须复用该任务或 PR 的既有 worktree。
+- 新建 worktree 前，Agent 必须先执行 `git worktree list`，确认是否已有同一任务分支或 PR 分支对应的 worktree。
+- 只有新独立任务、用户明确拆分任务、原 worktree 丢失或用户明确要求重建时，才允许创建新的 worktree。
+- 原 worktree 丢失或损坏时，必须基于原任务分支重建 worktree，不得另起无关联分支。
 - 主工作区只用于拉取 `main`、创建 worktree、查看状态和执行清理，不承载任务改动。
+- 只修改 PMO 规范、流程、Agent 入口、设计文档、Sprint 计划、交付记录或历史材料，且不影响服务代码、接口、数据库、测试、前端页面或构建配置时，可按 preflight 的 `main-direct-allowed` 结果在主工作区直接提交。
 - 本地配置文件固定为 `.mango/dev-workspace.env`。
 - `.mango/dev-workspace.env` 只属于当前工作区，禁止提交到 Git。
 - 脚本应维护本机工作区注册表，避免同一台机器上不同工作区分配到相同端口或数据库名。
@@ -70,9 +76,20 @@
 - 禁止用本地启动脚本替代正式 migration。
 - 禁止把本地数据库名写死到应用配置或代码中。
 
-## 6. Agent 执行要求
+## 6. 运行时临时目录
+
+- 仓库内运行时临时文件统一放到 `<repo>/.runtime/`。
+- `.runtime/` 必须被 Git 忽略，禁止提交。
+- 测试 `mango-cli` 生成的新项目必须放到 `.runtime/projects/`。
+- 临时包缓存必须放到 `.runtime/package-store/`。
+- 临时启动日志、浏览器脚本中间产物、下载文件和非证据截图必须放到 `.runtime/` 下的子目录。
+- `mango-docs/evidence/` 只保存最终验收截图、报告和可复核脚本，禁止放生成项目、依赖缓存、构建产物和运行日志。
+- 任务结束后应清理 `.runtime/` 中与本次任务相关且不再需要的内容。
+
+## 7. Agent 执行要求
 
 - 需要启动本地服务时，Agent 必须优先使用 `scripts/dev-workspace.sh`。
+- 需要修复验收、Review、CI 或 PR 门禁发现的问题时，Agent 必须先复用当前任务或 PR 的既有 worktree。
 - 需要删除本地开发 worktree 时，Agent 必须优先使用 `scripts/dev-workspace.sh worktree-remove`。
 - 启动前必须说明本次使用的后端端口、前端端口和数据库名。
 - 启动失败时必须先检查 `.mango/dev-workspace.env`、端口占用、数据库连接和启动日志。

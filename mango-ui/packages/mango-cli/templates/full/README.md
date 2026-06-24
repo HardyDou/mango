@@ -11,7 +11,7 @@
 - `business-docs`：业务交付契约和台账示例。
 - `topologies`：单体和微服务接入说明。
 - `mango.dev.json`：本地开发工作区 manifest。
-- `scripts`：兼容入口，实际执行委托给全局 `mango` CLI；未安装全局 CLI 时回退到前端项目内 `pnpm exec mango`。
+- `scripts`：兼容入口，优先使用前端项目内锁定的 `@mango/cli`；项目依赖未安装时回退到全局 `mango` CLI。
 
 ## 2. 功能清单
 
@@ -35,7 +35,7 @@
 模板负责生成可运行的业务项目骨架和默认 Mango 平台依赖。生成后：
 
 - 平台能力由 Mango starter 和 `@mango/*` 包提供。
-- 本地启动由 `@mango/cli` 读取 `mango.dev.json` 执行；脚本优先使用全局 CLI，未安装时使用 `frontend` 内的项目依赖。
+- 本地启动由 `@mango/cli` 读取 `mango.dev.json` 执行；脚本优先使用 `frontend` 内的项目依赖，未安装项目依赖时使用全局 CLI。
 - 业务模块由业务仓库维护，CLI 只更新 managed block。
 - 生产部署、密钥、数据库、对象存储、网关域名和权限授权由业务项目自己治理。
 
@@ -202,7 +202,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 ## 11. 问题排查
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
-| `mango CLI not found globally or in project frontend dependencies` | 机器没有全局 CLI，且前端依赖未安装或缺少 `@mango/cli` | 先执行 `cd frontend && pnpm install`，或安装全局 `@mango/cli` |
+| `mango CLI not found in project frontend dependencies or globally` | 前端依赖未安装或缺少 `@mango/cli`，且机器没有全局 CLI | 先执行 `cd frontend && pnpm install`，或安装全局 `@mango/cli` |
 | 前端请求后端失败 | `VITE_ADMIN_PROXY_PATH` 未指向本机后端，或后端未启动 | 用 `mango plan` 查看代理目标，用 `mango status` 查看后端 |
 | Vite proxy 报 host 不允许 | `vite.config.ts` 只允许本机代理 | 本地开发保持代理到 `127.0.0.1` 或 `localhost` |
 | 后端 health 访问失败 | 数据库、Flyway、端口或密钥配置错误 | 查 `mango logs {{projectKebab}}-service` |

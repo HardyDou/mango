@@ -1,0 +1,24 @@
+{
+  "name": "@mango/pmo",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "description": "Versioned Mango PMO baseline for business projects.",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "exports": {
+    ".": "./dist/baseline.json",
+    "./baseline.json": "./dist/baseline.json",
+    "./baseline/*": "./dist/baseline/*"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "scripts": {
+    "build": "node scripts/build-package.mjs",
+    "check": "node scripts/check-package.mjs"
+  }
+}

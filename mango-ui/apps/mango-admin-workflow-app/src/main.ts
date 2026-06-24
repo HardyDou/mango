@@ -2,6 +2,7 @@ import type { App as VueApp } from 'vue';
 import { createPinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
 import ElementPlus from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { registerUnauthorizedHandler } from '@mango/common';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
@@ -34,7 +35,7 @@ function installCommon(appInstance: VueApp) {
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     appInstance.component(key, component);
   }
-  appInstance.use(ElementPlus);
+  appInstance.use(ElementPlus, { locale: zhCn });
   appInstance.use(createPinia());
   appInstance.use(createI18n({
     legacy: false,

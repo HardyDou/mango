@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
+const pmoPackageRoot = resolve(packageRoot, '../mango-pmo');
 const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const packagedAdminModules = JSON.parse(readFileSync(join(packageRoot, 'admin-modules.json'), 'utf8'));
@@ -14,6 +15,7 @@ const fullProjectName = 'mango-full-acceptance';
 const customProjectName = 'mango-custom-acceptance';
 
 try {
+  assertPmoPackageBuilt();
   assertNoWorkspacePackageJsonInTemplates();
   assertPackagedAdminModules();
 
@@ -58,6 +60,7 @@ try {
     'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
     'backend/app/src/main/resources/application.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+    'business-pmo/mango-baseline/baseline.json',
     'business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs',
     'business-pmo/mango-baseline/templates/acceptance-evidence.md',
     'topologies/monolith/README.md',
@@ -180,7 +183,7 @@ try {
     || !devWorkspaceScript.includes('exec pnpm exec mango "$@"')
     || !devWorkspaceScript.includes('cd frontend && pnpm install')
     || !devWorkspaceScript.includes('npm install -g @mango/cli@')
-    || devWorkspaceScript.includes('frontend/node_modules/.bin/mango')
+    || !devWorkspaceScript.includes('FRONTEND_ROOT}/node_modules/.bin/mango')
     || devWorkspaceScript.includes('npx --yes')
     || devWorkspaceScript.includes('mango-ui/packages/mango-cli/src/index.mjs')
     || devWorkspaceScript.includes('spring-boot:run')
@@ -220,12 +223,16 @@ try {
   if (!businessAgents.includes('mango-cli init --preset full')) {
     throw new Error('generated full AGENTS.md should record full preset');
   }
-  if (!businessAgents.includes('acceptance-evidence-check.mjs')) {
-    throw new Error('generated AGENTS.md should mention acceptance evidence check');
+  for (const expected of ['mango pmo check --project-dir .', 'git worktree list', 'scripts/dev-workspace.sh print', 'business-docs']) {
+    if (!businessAgents.includes(expected)) {
+      throw new Error(`generated AGENTS.md should mention governance workflow: ${expected}`);
+    }
   }
+  const generatedBaselineManifest = JSON.parse(readFileSync(join(projectRoot, 'business-pmo/mango-baseline/baseline.json'), 'utf8'));
+  assertEqual(generatedBaselineManifest.packageName, '@mango/pmo', 'generated PMO baseline package');
   const baselineReadme = readFileSync(join(projectRoot, 'business-pmo/mango-baseline/README.md'), 'utf8');
-  if (baselineReadme.includes('7bca6b8f') || baselineReadme.includes('{{mangoBaselineCommit}}')) {
-    throw new Error('generated baseline README contains stale or unrendered commit source');
+  if (!baselineReadme.includes('mango pmo check') || baselineReadme.includes('7bca6b8f') || baselineReadme.includes('{{mangoBaselineCommit}}')) {
+    throw new Error('generated baseline README contains stale, unrendered, or unversioned source info');
   }
 
   const fullAddResult = spawnSync(process.execPath, [
@@ -267,6 +274,7 @@ try {
   }
   assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot);
   assertBusinessAcceptanceBaseline(projectRoot);
+  assertPmoCommands(projectRoot);
   assertPmoSyncCommand(tempRoot);
 
   const customResult = spawnSync(process.execPath, [
@@ -634,6 +642,26 @@ function assertPackagedAdminModules() {
   }
 }
 
+function assertPmoPackageBuilt() {
+  const build = spawnSync('pnpm', ['--filter', '@mango/pmo', 'build'], {
+    cwd: resolve(packageRoot, '../..'),
+    encoding: 'utf8',
+  });
+  if (build.status !== 0) {
+    throw new Error(`@mango/pmo build failed:\n${build.stdout}\n${build.stderr}`);
+  }
+  const check = spawnSync('pnpm', ['--filter', '@mango/pmo', 'check'], {
+    cwd: resolve(packageRoot, '../..'),
+    encoding: 'utf8',
+  });
+  if (check.status !== 0) {
+    throw new Error(`@mango/pmo check failed:\n${check.stdout}\n${check.stderr}`);
+  }
+  if (!existsSync(join(pmoPackageRoot, 'dist/baseline.json'))) {
+    throw new Error('@mango/pmo build did not create dist/baseline.json');
+  }
+}
+
 function assertCommandOk(args, cwd, label) {
   const result = spawnSync(process.execPath, args, {
     cwd,
@@ -646,25 +674,13 @@ function assertCommandOk(args, cwd, label) {
 }
 
 function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
-  const fakeGlobalBinDir = join(projectRoot, '.runtime/fake-global-bin');
-  mkdirSync(fakeGlobalBinDir, { recursive: true });
-  const fakeMangoPath = join(fakeGlobalBinDir, 'mango');
-  writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
-  chmodExecutable(fakeMangoPath);
-  const globalResult = spawnSync('env', [
-    `PATH=${fakeGlobalBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
-    'scripts/dev-workspace.sh',
-    'validate',
-  ], {
-    cwd: projectRoot,
-    encoding: 'utf8',
-  });
-  if (globalResult.status !== 0 || !globalResult.stdout.includes('global-mango-runner validate')) {
-    throw new Error(`generated dev-workspace should use global mango CLI:\n${globalResult.stdout}\n${globalResult.stderr}`);
-  }
-
   const fakeLocalBinDir = join(projectRoot, '.runtime/fake-local-bin');
   mkdirSync(fakeLocalBinDir, { recursive: true });
+  const frontendBinDir = join(projectRoot, 'frontend/node_modules/.bin');
+  mkdirSync(frontendBinDir, { recursive: true });
+  const fakeLocalMangoPath = join(frontendBinDir, 'mango');
+  writeFileSync(fakeLocalMangoPath, '#!/usr/bin/env sh\necho local-mango-bin \"$@\"\n');
+  chmodExecutable(fakeLocalMangoPath);
   const fakePnpmPath = join(fakeLocalBinDir, 'pnpm');
   writeFileSync(fakePnpmPath, '#!/usr/bin/env sh\necho local-pnpm-runner \"cwd=$(pwd)\" \"$@\"\n');
   chmodExecutable(fakePnpmPath);
@@ -679,7 +695,25 @@ function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
   if (result.status !== 0
     || !result.stdout.includes('local-pnpm-runner cwd=')
     || !result.stdout.includes('/frontend exec mango validate')) {
-    throw new Error(`generated dev-workspace should fallback to project-local pnpm exec mango:\n${result.stdout}\n${result.stderr}`);
+    throw new Error(`generated dev-workspace should use project-local pnpm exec mango first:\n${result.stdout}\n${result.stderr}`);
+  }
+
+  rmSync(fakeLocalMangoPath, { force: true });
+  const fakeGlobalBinDir = join(projectRoot, '.runtime/fake-global-bin');
+  mkdirSync(fakeGlobalBinDir, { recursive: true });
+  const fakeMangoPath = join(fakeGlobalBinDir, 'mango');
+  writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
+  chmodExecutable(fakeMangoPath);
+  const globalResult = spawnSync('env', [
+    `PATH=${fakeGlobalBinDir}:${fakeLocalBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    'scripts/dev-workspace.sh',
+    'validate',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (globalResult.status !== 0 || !globalResult.stdout.includes('global-mango-runner validate')) {
+    throw new Error(`generated dev-workspace should fallback to global mango CLI:\n${globalResult.stdout}\n${globalResult.stderr}`);
   }
 
   rmSync(fakePnpmPath, { force: true });
@@ -693,7 +727,7 @@ function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
   });
   const output = `${missingResult.stdout}\n${missingResult.stderr}`;
   if (missingResult.status === 0
-    || !output.includes('mango CLI not found globally or in project frontend dependencies')
+    || !output.includes('mango CLI not found in project frontend dependencies or globally')
     || !output.includes('cd frontend && pnpm install')
     || !output.includes('npm install -g @mango/cli@')
     || !output.includes('--registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/')) {
@@ -704,9 +738,14 @@ function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
 function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
   const fakeBinDir = join(projectRoot, '.runtime/init-fake-bin');
   mkdirSync(fakeBinDir, { recursive: true });
-  const fakeMangoPath = join(fakeBinDir, 'mango');
-  writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
+  const fakeLocalMangoDir = join(projectRoot, 'frontend/node_modules/.bin');
+  mkdirSync(fakeLocalMangoDir, { recursive: true });
+  const fakeMangoPath = join(fakeLocalMangoDir, 'mango');
+  writeFileSync(fakeMangoPath, `#!/usr/bin/env sh\nexec "${process.execPath}" "${cli}" "$@"\n`);
   chmodExecutable(fakeMangoPath);
+  const fakePnpmPath = join(fakeBinDir, 'pnpm');
+  writeFileSync(fakePnpmPath, '#!/usr/bin/env sh\nif [ "$1" = "exec" ]; then shift; exec "./node_modules/.bin/$@"; fi\necho "unsupported fake pnpm command: $*" >&2\nexit 1\n');
+  chmodExecutable(fakePnpmPath);
   rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
   const result = spawnSync('env', [
     `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
@@ -717,7 +756,7 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
     encoding: 'utf8',
   });
   if (result.status !== 0) {
-    throw new Error(`generated dev-workspace init should succeed with global mango:\n${result.stdout}\n${result.stderr}`);
+    throw new Error(`generated dev-workspace init should succeed with project-local mango:\n${result.stdout}\n${result.stderr}`);
   }
   const envFile = readFileSync(join(projectRoot, '.mango/dev-workspace.env'), 'utf8');
   const match = envFile.match(/^MANGO_CRYPTO_SM4_SECRET_KEY=([0-9a-f]{32})$/m);
@@ -727,13 +766,31 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
   if (match[1] === '00112233445566778899aabbccddeeff') {
     throw new Error('generated dev-workspace env must not use the public fixed SM4 key');
   }
+  for (const expected of [
+    /^MANGO_WORKSPACE_ID=mango_[0-9]{3}$/m,
+    /^MANGO_BACKEND_PORT=[0-9]+$/m,
+    /^MANGO_FRONTEND_PORT=[0-9]+$/m,
+    /^MANGO_DB_NAME=mango_dev_[0-9]{3}$/m,
+  ]) {
+    if (!expected.test(envFile)) {
+      throw new Error(`generated dev-workspace env must contain allocated workspace values matching ${expected}:\n${envFile}`);
+    }
+  }
+  const backendPort = Number(envFile.match(/^MANGO_BACKEND_PORT=([0-9]+)$/m)?.[1] || 0);
+  if (backendPort < 18080 || backendPort > 19079) {
+    throw new Error(`generated backend port must be in allocated range 18080-19079:\n${envFile}`);
+  }
+  const frontendPort = Number(envFile.match(/^MANGO_FRONTEND_PORT=([0-9]+)$/m)?.[1] || 0);
+  if (frontendPort < 7770 || frontendPort > 8769) {
+    throw new Error(`generated frontend port must be in allocated range 7770-8769:\n${envFile}`);
+  }
 }
 
 function assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot) {
   const fakeBinDir = join(projectRoot, '.runtime/backfill-fake-bin');
   mkdirSync(fakeBinDir, { recursive: true });
   const fakeMangoPath = join(fakeBinDir, 'mango');
-  writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
+  writeFileSync(fakeMangoPath, `#!/usr/bin/env sh\nexec "${process.execPath}" "${cli}" "$@"\n`);
   chmodExecutable(fakeMangoPath);
   rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
   mkdirSync(join(projectRoot, '.mango'), { recursive: true });
@@ -1175,6 +1232,33 @@ function waitForPort(port) {
   throw new Error(`port did not become occupied: ${port}`);
 }
 
+function assertPmoCommands(projectRoot) {
+  const status = assertCommandOk([cli, 'pmo', 'status', '--project-dir', projectRoot], projectRoot, 'generated mango pmo status');
+  if (!status.stdout.includes('Baseline: @mango/pmo@') || !status.stdout.includes('PMO baseline is current.')) {
+    throw new Error(`pmo status should report current @mango/pmo baseline:\n${status.stdout}`);
+  }
+  assertCommandOk([cli, 'pmo', 'check', '--project-dir', projectRoot], projectRoot, 'generated mango pmo check');
+  const dryRun = assertCommandOk([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--dry-run'], projectRoot, 'generated mango pmo upgrade dry-run');
+  if (!dryRun.stdout.includes('PMO baseline dry-run plan')) {
+    throw new Error(`pmo upgrade --dry-run should print plan:\n${dryRun.stdout}`);
+  }
+  const tamperedPath = join(projectRoot, 'business-pmo/mango-baseline/rules/00-dev-flow.md');
+  const original = readFileSync(tamperedPath, 'utf8');
+  writeFileSync(tamperedPath, `${original}\n# tampered by CLI test\n`);
+  const checkResult = spawnSync(process.execPath, [cli, 'pmo', 'check', '--project-dir', projectRoot], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (checkResult.status === 0 || !checkResult.stdout.includes('changed')) {
+    throw new Error(`pmo check should fail when baseline file is tampered:\n${checkResult.stdout}\n${checkResult.stderr}`);
+  }
+  const syncResult = assertCommandOk([cli, 'pmo', 'sync', '--project-dir', projectRoot], projectRoot, 'generated mango pmo sync repair');
+  if (!syncResult.stdout.includes('PMO baseline sync complete')) {
+    throw new Error(`pmo sync should repair tampered baseline:\n${syncResult.stdout}`);
+  }
+  assertEqual(readFileSync(tamperedPath, 'utf8'), original, 'tampered baseline after pmo sync');
+}
+
 function assertPmoSyncCommand(tempRoot) {
   const dryRunRoot = join(tempRoot, 'existing-business-dry-run');
   mkdirSync(dryRunRoot, { recursive: true });
@@ -1252,6 +1336,7 @@ function assertPmoSyncCommand(tempRoot) {
   for (const file of [
     'business-pmo/README.md',
     'business-pmo/mango-baseline/README.md',
+    'business-pmo/mango-baseline/baseline.json',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/rules/backend/07-persistence.md',
     'business-docs/plans/example-contract.md',
@@ -1268,11 +1353,12 @@ function assertPmoSyncCommand(tempRoot) {
     throw new Error('pmo sync --write-agents did not migrate AGENTS.md to project-local baseline');
   }
   const syncedReadme = readFileSync(join(syncRoot, 'business-pmo/mango-baseline/README.md'), 'utf8');
-  for (const expected of ['Mango commit:', 'Mango CLI version:', 'Synced at:']) {
-    if (!syncedReadme.includes(expected) || syncedReadme.includes('{{')) {
-      throw new Error(`pmo sync baseline README missing rendered source info: ${expected}`);
-    }
+  if (!syncedReadme.includes('mango pmo check') || syncedReadme.includes('{{')) {
+    throw new Error('pmo sync baseline README missing versioned package guidance');
   }
+  const syncedBaselineManifest = JSON.parse(readFileSync(join(syncRoot, 'business-pmo/mango-baseline/baseline.json'), 'utf8'));
+  assertEqual(syncedBaselineManifest.packageName, '@mango/pmo', 'synced PMO baseline package');
+  assertCommandOk([cli, 'pmo', 'check', '--project-dir', syncRoot], syncRoot, 'synced mango pmo check');
   const persistenceRule = readFileSync(join(syncRoot, 'business-pmo/mango-baseline/rules/backend/07-persistence.md'), 'utf8');
   for (const expected of [
     '数据库命名规则',
@@ -1349,6 +1435,72 @@ function assertPmoSyncCommand(tempRoot) {
     throw new Error(`pmo sync --sync-shell with owned manifest failed:\n${ownedSyncResult.stdout}\n${ownedSyncResult.stderr}`);
   }
   assertEqual(readFileSync(join(ownedManifestRoot, 'mango.dev.json'), 'utf8'), ownedManifest, 'business-owned mango.dev.json after sync');
+  assertDevWorkspaceRegistryAllocation(tempRoot);
+}
+
+function assertDevWorkspaceRegistryAllocation(tempRoot) {
+  const registryPath = join(tempRoot, 'workspace-registry.tsv');
+  const roots = [join(tempRoot, 'workspace-a'), join(tempRoot, 'workspace-b')];
+  for (const root of roots) {
+    mkdirSync(root, { recursive: true });
+    writeFileSync(join(root, 'mango.dev.json'), `${JSON.stringify({
+      version: 1,
+      groups: { default: ['backend'] },
+      apps: {
+        backend: {
+          type: 'command',
+          cwd: '.',
+          command: 'node',
+          args: ['--version'],
+          portEnv: 'MANGO_BACKEND_PORT',
+          port: 5555,
+        },
+      },
+    }, null, 2)}\n`);
+    const result = spawnSync('env', [
+      `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
+      process.execPath,
+      cli,
+      'init-dev',
+    ], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    if (result.status !== 0) {
+      throw new Error(`mango init-dev should allocate workspace env:\n${result.stdout}\n${result.stderr}`);
+    }
+  }
+  const envs = roots.map(root => parseSimpleEnv(readFileSync(join(root, '.mango/dev-workspace.env'), 'utf8')));
+  if (envs[0].MANGO_BACKEND_PORT === envs[1].MANGO_BACKEND_PORT
+    || envs[0].MANGO_FRONTEND_PORT === envs[1].MANGO_FRONTEND_PORT
+    || envs[0].MANGO_DB_NAME === envs[1].MANGO_DB_NAME) {
+    throw new Error(`workspace allocation should isolate ports and DBs:\n${JSON.stringify(envs, null, 2)}`);
+  }
+  const before = readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8');
+  const repeat = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
+    process.execPath,
+    cli,
+    'init-dev',
+  ], {
+    cwd: roots[0],
+    encoding: 'utf8',
+  });
+  if (repeat.status !== 0) {
+    throw new Error(`mango init-dev repeat should preserve existing env:\n${repeat.stdout}\n${repeat.stderr}`);
+  }
+  assertEqual(readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8'), before, 'existing dev-workspace.env after repeat init');
+}
+
+function parseSimpleEnv(content) {
+  const result = {};
+  for (const line of content.split(/\r?\n/)) {
+    const index = line.indexOf('=');
+    if (index > 0) {
+      result[line.slice(0, index)] = line.slice(index + 1);
+    }
+  }
+  return result;
 }
 
 function assertNoUnrenderedPlaceholders(projectRoot) {
