@@ -1,5 +1,25 @@
 # @mango/cli Changelog
 
+## 1.0.35 - 2026-06-24
+
+### New
+
+- Published the versioned PMO baseline through `@mango/pmo@1.0.0` and made CLI PMO commands consume that package instead of relying on copied source-tree rules.
+- Updated generated business projects so PMO baseline checks, upgrades, and compatibility scripts are tied to a published package version.
+- Clarified global CLI installation for project creation, historical project upgrades, and cross-repository diagnostics.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.35 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo upgrade --project-dir .` from the project root, then reinstall frontend dependencies so the project-local CLI lock is refreshed.
+- Generated projects still prefer the project-local CLI through `scripts/dev-workspace.sh`; the global CLI is the bootstrap and upgrade entry.
+
+### Verification
+
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+
 ## 1.0.34 - 2026-06-19
 
 ### New

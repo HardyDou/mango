@@ -1,5 +1,40 @@
 # Mango Changelog
 
+## v2026.06.24-mango-governance-local-repo - 2026-06-24
+
+### New
+
+- Published the Mango governance baseline as `@mango/pmo@1.0.0` so business projects can consume PMO rules, agents, templates, and preflight tools from the internal npm registry.
+- Published `@mango/cli@1.0.35` so project creation, historical project upgrades, and PMO baseline synchronization use the versioned `@mango/pmo` package.
+- Added release notes for the local repository publication flow that maps npm, Maven, and GitHub Release records to the same release tag.
+
+### Published Packages
+
+- npm: `@mango/pmo@1.0.0` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.35` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Maven: Mango backend artifacts remain on `1.0.0-SNAPSHOT` and are published to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.24-mango-governance-local-repo`.
+
+### Upgrade Notes
+
+- New machines should install the CLI globally with `npm install -g @mango/cli@1.0.35 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo upgrade --project-dir .` with the upgraded CLI, then run `cd frontend && pnpm install` so the project-local CLI and `@mango/pmo` dependency are locked.
+- Daily business development should continue to use `scripts/dev-workspace.sh`; that script prefers the project-local CLI and only falls back to the global `mango` command before dependencies are installed.
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies from the internal Maven group repository after the Maven publication completes.
+
+### Verification
+
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+- `node scripts/check-release-notes.mjs --package=@mango/pmo --version=1.0.0`
+- `node scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.35`
+- `mvn -f mango/pom.xml -Drevision=1.0.0-SNAPSHOT -DskipTests deploy`
+- `npm view @mango/pmo@1.0.0 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/cli@1.0.35 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## Unreleased
 
 ## v2026.06.23-business-docs-export - 2026-06-23
