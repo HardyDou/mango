@@ -8,6 +8,7 @@ export default defineConfig({
       entry: {
         index: 'src/index.ts',
         'quick-entry': 'src/system/quick-entry/quick-entry.ts',
+        'message-center': 'src/system/message-center/message-center.ts',
         'user-profile': 'src/system/user-profile/user-profile.ts',
       },
       formats: ['es'],
@@ -17,6 +18,7 @@ export default defineConfig({
         '@element-plus/icons-vue',
         '@mango/common',
         '@mango/grid-layout',
+        '@mango/notice',
         'element-plus',
         'vue',
       ],
