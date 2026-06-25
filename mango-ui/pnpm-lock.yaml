@@ -615,7 +615,7 @@ importers:
         specifier: 1.0.10
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: 1.0.20
+        specifier: 1.0.21
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: 1.0.2
@@ -638,6 +638,9 @@ importers:
       '@mango/grid-layout':
         specifier: 1.0.2
         version: link:../grid-layout
+      '@mango/grid-widgets':
+        specifier: 1.0.0
+        version: link:../grid-widgets
       '@mango/job':
         specifier: 1.0.3
         version: link:../job
@@ -739,6 +742,9 @@ importers:
       '@mango/grid-layout':
         specifier: 1.0.2
         version: link:../grid-layout
+      '@mango/grid-widgets':
+        specifier: 1.0.0
+        version: link:../grid-widgets
       '@mango/notice':
         specifier: 1.0.11
         version: link:../notice
@@ -1042,6 +1048,40 @@ importers:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
 
+  packages/grid-widgets:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: 2.3.2
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/common':
+        specifier: 1.0.10
+        version: link:../common
+      '@mango/grid-layout':
+        specifier: 1.0.2
+        version: link:../grid-layout
+      '@mango/notice':
+        specifier: 1.0.11
+        version: link:../notice
+      '@mango/workflow':
+        specifier: 1.0.11
+        version: link:../workflow
+      element-plus:
+        specifier: 2.14.1
+        version: 2.14.1(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
   packages/job:
     dependencies:
       '@element-plus/icons-vue':
@@ -1070,7 +1110,13 @@ importers:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
 
-  packages/mango-cli: {}
+  packages/mango-cli:
+    dependencies:
+      '@mango/pmo':
+        specifier: workspace:*
+        version: link:../mango-pmo
+
+  packages/mango-pmo: {}
 
   packages/notice:
     dependencies:
@@ -1121,8 +1167,8 @@ importers:
         specifier: 1.0.10
         version: link:../common
       '@mango/system':
-        specifier: 1.0.8
-        version: 1.0.8(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: 1.0.9
+        version: link:../system
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1242,8 +1288,8 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@form-create/element-ui':
-        specifier: 3.2.16
-        version: 3.2.16(vue@3.5.13(typescript@5.9.3))
+        specifier: 3.2.42
+        version: 3.2.42(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
         specifier: 1.0.2
         version: link:../api-schema
@@ -1291,8 +1337,8 @@ importers:
         specifier: 1.0.11
         version: link:../file
       '@mango/system':
-        specifier: 1.0.8
-        version: 1.0.8(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: 1.0.9
+        version: link:../system
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -1319,8 +1365,8 @@ importers:
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@form-create/element-ui':
-        specifier: 3.2.16
-        version: 3.2.16(vue@3.5.13(typescript@5.9.3))
+        specifier: 3.2.42
+        version: 3.2.42(vue@3.5.13(typescript@5.9.3))
       '@mango/admin-pages':
         specifier: 1.0.10
         version: link:../admin-pages
@@ -1334,8 +1380,8 @@ importers:
         specifier: 1.0.11
         version: link:../file
       '@mango/system':
-        specifier: 1.0.8
-        version: 1.0.8(element-plus@2.14.1(vue@3.5.13(typescript@5.9.3)))(pinia@2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)))(vue-i18n@9.2.2(vue@3.5.13(typescript@5.9.3)))(vue-router@4.6.4(vue@3.5.13(typescript@5.9.3)))(vue@3.5.13(typescript@5.9.3))
+        specifier: 1.0.9
+        version: link:../system
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
