@@ -72,6 +72,8 @@ pnpm -F @mango/admin-shell build
 
 - 本次 PR 调整 `@mango/admin-shell` 在布局 1、2、4 下的 footer 贴边和内容区底部安全距离；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
 
+- 本次 PR 新增 `@mango/grid-widgets` 我的申请系统小组件和 workflow 申请统计接口；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。我的申请小组件只复用 `workflow:task:list` 权限读取统计和跳转已有申请列表，不新增按钮权限判断。
+
 - 本次 PR 新增 `@mango/grid-widgets` 我的待办系统小组件和 workflow 待办统计接口；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。我的待办小组件只复用 `workflow:task:list` 权限读取统计和列表，不新增按钮权限判断。
 
 - 本次 PR 为管理端 Element Plus 全局中文 locale 配置，确保分页等内置组件默认文案使用中文；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、启动方式和本场景排障步骤。

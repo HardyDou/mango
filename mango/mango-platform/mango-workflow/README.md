@@ -402,6 +402,7 @@ mango:
 | 最新进度 | `GET /workflow/business-applies/progress/latest` | `workflow:business-apply:detail` |
 | 批量最新进度 | `POST /workflow/business-applies/progress/latest-batch` | `workflow:business-apply:list` |
 | 按流程实例查申请 | `GET /workflow/business-applies/progress/by-process-instance` | `workflow:business-apply:detail` |
+| 我的申请统计 | `GET /workflow/business-applies/my/summary` | `workflow:task:list` |
 
 流程实例接口：
 
@@ -428,6 +429,7 @@ mango:
 | 认领 | `POST /workflow/tasks/claim` | `workflow:task:claim` |
 | 释放 | `POST /workflow/tasks/unclaim` | `workflow:task:unclaim` |
 | 待办统计 | `GET /workflow/tasks/todo/summary` | `workflow:task:list` |
+| 我的任务统计 | `GET /workflow/tasks/my/summary` | `workflow:task:list` |
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 

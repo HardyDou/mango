@@ -8,6 +8,7 @@ import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.query.WorkflowBusinessApplyProgressBatchQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
+import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +49,13 @@ public class WorkflowBusinessApplyController {
     @Operation(summary = "分页查询业务工作流申请")
     public R<PageResult<WorkflowBusinessApplyVO>> page(@RequestBody(required = false) WorkflowBusinessApplyPageQuery query) {
         return workflowBusinessApplyService.page(query);
+    }
+
+    @GetMapping("/my/summary")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "查询我的申请统计")
+    public R<WorkflowBusinessApplySummaryVO> mySummary() {
+        return workflowBusinessApplyService.mySummary();
     }
 
     @GetMapping("/{applyId}")

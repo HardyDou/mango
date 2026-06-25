@@ -5,6 +5,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
+import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 
 import java.util.Collection;
@@ -19,6 +20,8 @@ public interface WorkflowBusinessApplyApi {
     R<WorkflowBusinessApplyVO> create(CreateWorkflowBusinessApplyCommand command);
 
     R<PageResult<WorkflowBusinessApplyVO>> page(WorkflowBusinessApplyPageQuery query);
+
+    R<WorkflowBusinessApplySummaryVO> mySummary();
 
     R<WorkflowBusinessApplyVO> detail(Long applyId);
 

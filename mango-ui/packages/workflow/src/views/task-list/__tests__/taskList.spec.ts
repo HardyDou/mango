@@ -2,7 +2,11 @@ import { computed, createApp, h, inject, nextTick, provide, reactive } from 'vue
 import TaskList from '../index.vue';
 import { workflowApi } from '../../../api/workflow';
 
-const route = reactive({ path: '/workflow/task/todo' });
+const route = reactive<{ path: string; fullPath: string; query: Record<string, any> }>({
+  path: '/workflow/task/todo',
+  fullPath: '/workflow/task/todo',
+  query: {},
+});
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   confirm: vi.fn(() => Promise.resolve()),
@@ -36,6 +40,7 @@ vi.mock('../../../api/workflow', async () => {
       doneTasks: vi.fn(),
       copiedTasks: vi.fn(),
       initiatedProcesses: vi.fn(),
+      businessAppliesPage: vi.fn(),
       readCopiedTask: vi.fn(),
       claimTask: vi.fn(() => Promise.resolve(true)),
     },
@@ -46,6 +51,8 @@ describe('workflow task list', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     route.path = '/workflow/task/todo';
+    route.fullPath = '/workflow/task/todo';
+    route.query = {};
   });
 
   it('splits assigned todo tasks and claimable tasks by tabs', async () => {
@@ -106,6 +113,32 @@ describe('workflow task list', () => {
     expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(expect.objectContaining({
       todoType: 'CLAIMABLE',
     }));
+    unmount();
+  });
+
+  it('loads initiated applications by business apply statuses', async () => {
+    route.path = '/workflow/task/initiated';
+    route.fullPath = '/workflow/task/initiated?statuses=APPROVED';
+    route.query = { statuses: 'APPROVED' };
+    vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(pageResult([
+      {
+        id: 'apply-1',
+        applyTitle: '合同审批',
+        businessKey: 'HT-001',
+        processName: '合同流程',
+        processDefinitionKey: 'contract_process',
+        applyStatusName: '已完成',
+        createdAt: '2026-06-24 10:00:00',
+      },
+    ]) as any);
+
+    const { el, unmount } = await mountTaskList();
+
+    expect(workflowApi.businessAppliesPage).toHaveBeenCalledWith(expect.objectContaining({
+      statuses: ['APPROVED'],
+    }));
+    expect(el.textContent).toContain('合同审批');
+    expect(el.textContent).toContain('已完成');
     unmount();
   });
 });
