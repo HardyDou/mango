@@ -1,6 +1,6 @@
 {
   "name": "@mango/grid-widgets",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -49,7 +49,7 @@
     "@mango/common": "1.0.10",
     "@mango/grid-layout": "1.0.2",
     "@mango/notice": "1.0.11",
-    "@mango/workflow": "1.0.11"
+    "@mango/workflow": "1.0.12"
   },
   "peerDependencies": {
     "element-plus": "2.14.1",
