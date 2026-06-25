@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #243 新增 CMS 管理页面、`mango-admin-cms-app` 微前端运行态和 `@mango/cms` 页面注册；不改变既有菜单 `component` key 归一化规则、菜单树接口、页面注册机制、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。排查 CMS 菜单时按 `mango-cms` 模块 README 与 `@mango/cms` README 中的页面 key 对照确认。
+
 - PR #235 发布 `@mango/admin-shell@1.0.21`、`@mango/admin@1.0.24` 并对齐 `@mango/cli@1.0.36` 的发布版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
 
 - 本次 PR 调整 `@mango/admin-shell` 在布局 1、2、4 下的 footer 贴边和内容区底部安全距离；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
