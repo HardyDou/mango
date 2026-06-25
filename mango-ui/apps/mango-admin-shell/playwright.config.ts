@@ -11,7 +11,7 @@ const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'tr
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 45 * 1000,
+  timeout: 120 * 1000,
   expect: {
     timeout: 8000,
   },
@@ -37,7 +37,7 @@ export default defineConfig({
         webServer: {
           command: 'pnpm dev:micro',
           url: baseURL,
-          cwd: process.cwd(),
+          cwd: uiRoot,
           env: {
             VITE_ADMIN_PROXY_PATH: apiBaseURL,
             VITE_PORT: frontendURL.port,

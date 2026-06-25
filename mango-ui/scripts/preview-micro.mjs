@@ -7,6 +7,7 @@ const apps = [
   ['mango-admin-rbac-app', 'http://b.mango.io:4181'],
   ['mango-admin-workflow-app', 'http://c.mango.io:4182'],
   ['mango-admin-template-app', 'http://d.mango.io:4183'],
+  ['mango-admin-cms-app', 'http://e.mango.io:4184'],
 ];
 
 const children = apps.map(([name]) => {
@@ -31,7 +32,7 @@ console.log('\nMango micro frontend preview servers:');
 for (const [name, url] of apps) {
   console.log(`- ${name}: ${url}`);
 }
-console.log('\nRequired hosts: a.mango.io b.mango.io c.mango.io d.mango.io -> 127.0.0.1\n');
+console.log('\nRequired hosts: a.mango.io b.mango.io c.mango.io d.mango.io e.mango.io -> 127.0.0.1\n');
 
 function shutdown(reason) {
   for (const child of children) {

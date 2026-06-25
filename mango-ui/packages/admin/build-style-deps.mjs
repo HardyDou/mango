@@ -8,6 +8,7 @@ const packages = [
   '@mango/admin-shell',
   '@mango/app-runtime',
   '@mango/auth',
+  '@mango/cms',
   '@mango/common',
   '@mango/grid-layout',
   '@mango/grid-widgets',

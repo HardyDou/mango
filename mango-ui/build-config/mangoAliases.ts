@@ -76,6 +76,12 @@ const BASE_PACKAGE_ENTRIES: PackageEntry[] = [
     },
   },
   {
+    name: 'site-shell',
+    entries: {
+      '.': 'src/index.ts',
+    },
+  },
+  {
     name: 'app-runtime',
     entries: {
       '.': 'src/index.ts',

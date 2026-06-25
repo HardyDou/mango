@@ -1,0 +1,20 @@
+{
+  "errors": [],
+  "responses": [
+    "200 http://127.0.0.1:5191/api/cms-api/sites/resolve?domain=127.0.0.1",
+    "200 http://127.0.0.1:5191/api/cms-api/navigations/list?domain=127.0.0.1&navType=MAIN",
+    "200 http://127.0.0.1:5191/api/cms-api/banners/list?domain=127.0.0.1&position=HOME_HERO",
+    "200 http://127.0.0.1:5191/api/cms-api/site-categories/tree?domain=127.0.0.1",
+    "200 http://127.0.0.1:5191/api/cms-api/contents/page?domain=127.0.0.1&pageNum=1&pageSize=6",
+    "200 http://127.0.0.1:5192/api/cms-api/sites/resolve?domain=127.0.0.1",
+    "200 http://127.0.0.1:5192/api/cms-api/site-categories/tree?domain=127.0.0.1",
+    "200 http://127.0.0.1:5192/api/cms-api/advertisements/list?domain=127.0.0.1&position=HELP_TOP",
+    "200 http://127.0.0.1:5192/api/cms-api/contents/page?domain=127.0.0.1&pageNum=1&pageSize=10&keyword=",
+    "200 http://127.0.0.1:5192/api/cms-api/contents/page?domain=127.0.0.1&pageNum=1&pageSize=10&keyword=%E6%9D%83%E9%99%90"
+  ],
+  "screenshots": [
+    "enterprise-site-home.png",
+    "help-site-home.png",
+    "help-site-search.png"
+  ]
+}

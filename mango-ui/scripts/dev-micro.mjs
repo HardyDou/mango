@@ -6,6 +6,7 @@ const apps = [
   ['mango-admin-rbac-app', 'http://b.mango.io:5181'],
   ['mango-admin-workflow-app', 'http://c.mango.io:5182'],
   ['mango-admin-template-app', 'http://d.mango.io:5183'],
+  ['mango-admin-cms-app', 'http://e.mango.io:5184'],
 ];
 
 const microAllowedOrigins = apps.map(([, url]) => new URL(url).origin).join(',');
@@ -38,7 +39,7 @@ for (const [name, url] of apps) {
   console.log(`- ${name}: ${url}`);
 }
 console.log(`\nProxy target: ${adminProxyPath}`);
-console.log('\nRequired hosts: a.mango.io b.mango.io c.mango.io d.mango.io -> 127.0.0.1\n');
+console.log('\nRequired hosts: a.mango.io b.mango.io c.mango.io d.mango.io e.mango.io -> 127.0.0.1\n');
 
 function readWorkspaceEnv() {
   const envUrl = new URL('../../.mango/dev-workspace.env', import.meta.url);

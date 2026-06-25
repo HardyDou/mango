@@ -136,6 +136,24 @@ const OPTIONAL_MODULE_OVERLAYS = [
     ],
   },
   {
+    code: 'cms',
+    label: '内容中心',
+    feature: 'cms',
+    frontendPackage: '@mango/cms',
+    versionKey: 'mangoCms',
+    styleImport: '@mango/cms/style.css',
+    registrarImport: "import { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';",
+    registrar: 'registerMangoCmsAdminPages',
+    runtimeModule: {
+      moduleCode: 'mango-cms',
+      local: { mode: 'local', runtimeCode: 'mango-admin-cms-local' },
+      micro: { mode: 'micro', runtimeCode: 'mango-admin-cms-app', entry: 'http://e.mango.io:5184/' },
+    },
+    backend: [
+      { groupId: 'io.mango.platform.cms', artifactId: 'mango-cms-starter' },
+    ],
+  },
+  {
     code: 'notice',
     label: '通知中心',
     feature: 'notice',

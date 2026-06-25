@@ -34,6 +34,7 @@
         <module>mango-calendar</module>
         <module>mango-grid-layout</module>
         <module>mango-job</module>
+        <module>mango-cms</module>
         <module>mango-numgen</module>
         <module>mango-payment</module>
         <module>mango-org</module>

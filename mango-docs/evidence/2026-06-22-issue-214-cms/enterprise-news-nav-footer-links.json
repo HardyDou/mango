@@ -1,0 +1,14 @@
+{
+  "hasNewsNav": true,
+  "hasGithub": true,
+  "hasGitee": true,
+  "hasNavigationMissing": false,
+  "hasSiteLoadFail": false,
+  "hasSiteNotFound": false,
+  "hasContentMissing": false,
+  "consoleMessages": [],
+  "badResponses": [],
+  "navText": "产品能力\n产品能力\n解决方案\n公司动态\n新闻动态",
+  "footerText": "芒果科技\n\n芒果科技提供可运营 CMS、微前端管理后台、统一权限、租户隔离和流程协同能力，帮助企业快速交付可验证的数字化系统。\n\n站点导航\n产品能力\n产品能力\n解决方案\n公司动态\n新闻动态\n栏目\n产品能力\n解决方案\n公司动态\n开发者链接\nGitHub\nGitee\n开发文档\n技术社区\n联系方式\n\n商务咨询：contact@mango-tech.example；服务时间：工作日 09:00-18:00；地址：上海市浦东新区软件园芒果科技体验中心\n\n沪ICP备20260214号-1\n\nCopyright 2026 芒果科技（Mango Technology）保留所有权利",
+  "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/issue-214-cms/mango-docs/evidence/2026-06-22-issue-214-cms/enterprise-news-nav-footer-links.png"
+}

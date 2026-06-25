@@ -2,7 +2,7 @@ import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
-const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io'];
+const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io', 'e.mango.io'];
 
 function mangoManualChunks(id: string): string | undefined {
   const normalized = id.replace(/\\/g, '/');
@@ -17,6 +17,9 @@ function mangoManualChunks(id: string): string | undefined {
   }
   if (normalized.includes('/node_modules/@mango/template')) {
     return 'mango-template';
+  }
+  if (normalized.includes('/node_modules/@mango/cms')) {
+    return 'mango-cms';
   }
   if (normalized.includes('/node_modules/@mango/notice')) {
     return 'mango-notice';

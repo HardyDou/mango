@@ -7,7 +7,7 @@
     "dev:micro": "pnpm admin:styles && node ./scripts/dev-micro.mjs",
     "preview:micro": "node ./scripts/preview-micro.mjs",
     "build": "pnpm -r build",
-    "build:micro": "pnpm admin:styles && pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build && pnpm -F mango-admin-template-app build",
+    "build:micro": "pnpm admin:styles && pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build && pnpm -F mango-admin-template-app build && pnpm -F mango-admin-cms-app build",
     "admin:styles": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs",
     "admin:styles:check": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-modules.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --admin-manifest-out ./packages/admin/admin-packages.json --full-style-out ./packages/admin/style-full.css --full-entry-out ./packages/admin/src/full.ts --full-types-out ./packages/admin/src/full.d.ts --build-deps-script-out ./packages/admin/build-style-deps.mjs --check",
     "admin:module-styles:check": "node ./scripts/check-admin-module-style-governance.mjs",

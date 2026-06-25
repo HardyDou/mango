@@ -1,0 +1,71 @@
+[
+  {
+    "name": "enterprise-after-fix",
+    "title": "芒果科技 - 企业数字化官网与业务协同平台",
+    "hasNavigationMissing": false,
+    "hasSiteLoadFail": false,
+    "hasSiteNotFound": false,
+    "hasSystemError": false,
+    "hasContentMissing": false,
+    "hasNaN": false,
+    "hasCmsDebugWords": false,
+    "consoleMessages": [],
+    "failedRequests": [],
+    "badResponses": [],
+    "suspiciousSvg": [],
+    "messageNodes": [],
+    "overflow": {
+      "horizontal": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440
+    },
+    "bodyTextStart": "芒\n芒果科技\n芒果科技 - 企业数字化官网与业务协同平台\n产品能力\n产品能力\n解决方案\n公司动态\n\nMango Technology\n\n芒果科技企业数字化平台\n\n官网、CMS、微前端后台、权限租户和流程协同由一套 Mango 能力统一承载。\n\n了解产品能力\n查看最新动态\n芒果科技\n芒果科技提供可运营 CMS、微前端管理后台、统一权限、租户隔离和流程协同能力，帮助企业快速交付可验证的数字化系统。\n3\n公开栏目\n3\n发布内容\n1\n广告位\n\n企业官网\n\n芒果科技\n\n芒果科技提供可运营 CMS、微前端管理后台、统一权限、租户隔离和流程协同能力，帮助企业快速交付可验证的数字化系统。\n\n运营公告\n\n预约芒果科技产品演示\n\nmango-tech-demo\n\n立即咨询\n\n业务布局\n\n围绕企业数字化的完整能力\n\n栏目由后台站点管理维护，用于组织官网导航、内容分发和专题入口。\n\n01\n产品能力\n\nCMS 内容运营、微前端后台、统一权限租户和流程协同等企业数字化能力。\n\n02\n解决方案\n\n面向集团门户、业务中台、流程审批和官网运营的一体化解决方案。\n\n03\n公司动态\n\n芒果科技产品发布、项目实践和平台能力更新。\n\n内容栏目\n\n全部内容\n产品能力\n解决方案\n公司动态\n\n新闻动态\n\n全部内容更新\n\n内容列表和分页结果来自 CMS 发布接口，点击条目可加载富文本详情。\n\n2026-06-23\nMango CMS：让官网运营从开发排期中解放出来\n芒果科技将官网内容、栏目结构、首页 Banner、广告位和站点配置沉淀到 CMS，让市场与运营团队通过后台完成日常更新。\n芒果科技产品中心\n2026-06-23\n统一权限与租户模型，支撑集团级后台协作\n芒果科技后台基于统一登录、租户、菜单、角色和数据权限模型，让集团组织可以按职责协同运营不同站点。\n芒果科技架构团队\n2026-06-23\n流程协同能力接入业务审批场景\n内容提交、审核、发布和下线形成了可验证的状态流转，也为企业业务审批场景提供了标准化样板。\n芒果科技解决方案中心\n\n内容详情\n\nMango CMS：让官网运营从开发排期中解放出来\nCMS 内容\n2026-06-23\n芒果科技产品团队\n\n芒果科技的 Mango CMS 面向企业官网、帮助中心和门户站点建设。运营人员可以在后台维护站点、栏目、导航、Banner、广告和内容发布关系；研发团队只需要维",
+    "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/issue-214-cms/mango-docs/evidence/2026-06-22-issue-214-cms/enterprise-after-fix.png"
+  },
+  {
+    "name": "enterprise-mobile-after-fix",
+    "title": "芒果科技 - 企业数字化官网与业务协同平台",
+    "hasNavigationMissing": false,
+    "hasSiteLoadFail": false,
+    "hasSiteNotFound": false,
+    "hasSystemError": false,
+    "hasContentMissing": false,
+    "hasNaN": false,
+    "hasCmsDebugWords": false,
+    "consoleMessages": [],
+    "failedRequests": [],
+    "badResponses": [],
+    "suspiciousSvg": [],
+    "messageNodes": [],
+    "overflow": {
+      "horizontal": false,
+      "scrollWidth": 390,
+      "innerWidth": 390
+    },
+    "bodyTextStart": "芒\n芒果科技\n芒果科技 - 企业数字化官网与业务协同平台\n产品能力\n产品能力\n解决方案\n公司动态\n\nMango Technology\n\n芒果科技企业数字化平台\n\n官网、CMS、微前端后台、权限租户和流程协同由一套 Mango 能力统一承载。\n\n了解产品能力\n查看最新动态\n芒果科技\n芒果科技提供可运营 CMS、微前端管理后台、统一权限、租户隔离和流程协同能力，帮助企业快速交付可验证的数字化系统。\n3\n公开栏目\n3\n发布内容\n1\n广告位\n\n企业官网\n\n芒果科技\n\n芒果科技提供可运营 CMS、微前端管理后台、统一权限、租户隔离和流程协同能力，帮助企业快速交付可验证的数字化系统。\n\n运营公告\n\n预约芒果科技产品演示\n\nmango-tech-demo\n\n立即咨询\n\n业务布局\n\n围绕企业数字化的完整能力\n\n栏目由后台站点管理维护，用于组织官网导航、内容分发和专题入口。\n\n01\n产品能力\n\nCMS 内容运营、微前端后台、统一权限租户和流程协同等企业数字化能力。\n\n02\n解决方案\n\n面向集团门户、业务中台、流程审批和官网运营的一体化解决方案。\n\n03\n公司动态\n\n芒果科技产品发布、项目实践和平台能力更新。\n\n内容栏目\n\n全部内容\n产品能力\n解决方案\n公司动态\n\n新闻动态\n\n全部内容更新\n\n内容列表和分页结果来自 CMS 发布接口，点击条目可加载富文本详情。\n\n2026-06-23\nMango CMS：让官网运营从开发排期中解放出来\n芒果科技将官网内容、栏目结构、首页 Banner、广告位和站点配置沉淀到 CMS，让市场与运营团队通过后台完成日常更新。\n芒果科技产品中心\n2026-06-23\n统一权限与租户模型，支撑集团级后台协作\n芒果科技后台基于统一登录、租户、菜单、角色和数据权限模型，让集团组织可以按职责协同运营不同站点。\n芒果科技架构团队\n2026-06-23\n流程协同能力接入业务审批场景\n内容提交、审核、发布和下线形成了可验证的状态流转，也为企业业务审批场景提供了标准化样板。\n芒果科技解决方案中心\n\n内容详情\n\nMango CMS：让官网运营从开发排期中解放出来\nCMS 内容\n2026-06-23\n芒果科技产品团队\n\n芒果科技的 Mango CMS 面向企业官网、帮助中心和门户站点建设。运营人员可以在后台维护站点、栏目、导航、Banner、广告和内容发布关系；研发团队只需要维",
+    "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/issue-214-cms/mango-docs/evidence/2026-06-22-issue-214-cms/enterprise-mobile-after-fix.png"
+  },
+  {
+    "name": "help-after-fix",
+    "title": "芒果科技帮助中心 - CMS 与后台使用指南",
+    "hasNavigationMissing": false,
+    "hasSiteLoadFail": false,
+    "hasSiteNotFound": false,
+    "hasSystemError": false,
+    "hasContentMissing": false,
+    "hasNaN": false,
+    "hasCmsDebugWords": false,
+    "consoleMessages": [],
+    "failedRequests": [],
+    "badResponses": [],
+    "suspiciousSvg": [],
+    "messageNodes": [],
+    "overflow": {
+      "horizontal": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440
+    },
+    "bodyTextStart": "芒\n芒果科技帮助中心\n快速入门\n后台管理\n站点运营\n搜索\n\n帮助中心\n\n芒果科技帮助中心\n\n面向运营、实施和开发团队的芒果科技产品帮助中心，覆盖站点创建、栏目规划、内容发布、菜单图标和验收排查。\n\n常用入口\n芒果科技帮助中心\n面向运营、实施和开发团队的芒果科技产品帮助中心，覆盖站点创建、栏目规划、内容发布、菜单图标和验收排查。\n\n服务说明\n\n芒果科技帮助中心\n\n面向运营、实施和开发团队的芒果科技产品帮助中心，覆盖站点创建、栏目规划、内容发布、菜单图标和验收排查。\n\n帮助公告\n\n芒果科技帮助中心公告\nmango-help-notice\n\n文档栏目\n\n全部文档\n快速入门\n后台管理\n站点运营\n\n使用指南\n\n公开帮助文档\n共 3 篇\nARTICLE\n如何创建一个可公开访问的官网站点\n创建站点时需要维护站点名称、编码、域名、SEO、备案和联系方式，并确认站点处于启用状态。\nARTICLE\n后台菜单为什么需要图标和分组\n菜单图标和子菜单组能帮助管理员快速区分内容、站点和投放任务，减少日常运营误操作。\nARTICLE\n站点不可用时应该检查哪些功能\n当官网或帮助站点没有内容时，优先检查域名解析、栏目可见状态、内容审核状态和发布关系。\n\n文档详情\n\n如何创建一个可公开访问的官网站点\n芒果科技帮助中心\n芒果科技支持团队\n2026-06-23\n\n进入站点管理后新增站点，填写稳定的站点编码和访问域名。官网站点使用 127.0.0.1:5191，帮助站点使用 127.0.0.1:5192。保存后继续维护站点配置，确保 SEO 标题、描述、版权、备案和联系方式完整。\n\n推荐关注\n\nmango-help-notice\n芒果科技帮助中心公告\n芒果科技帮助中心\n沪ICP备20260214号-2\n支持邮箱：support@mango-tech.example；服务热线：400-0214-214\nCopyright 2026 芒果科技帮助中心",
+    "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/issue-214-cms/mango-docs/evidence/2026-06-22-issue-214-cms/help-after-fix.png"
+  }
+]

@@ -1,0 +1,194 @@
+[
+  {
+    "name": "enterprise",
+    "url": "http://127.0.0.1:5191",
+    "title": "芒果科技 - 企业数字化官网与业务协同平台",
+    "screenshot": "mango-docs/evidence/2026-06-22-issue-214-cms/enterprise-real-after-category-fix.png",
+    "includes": {
+      "navMissing": false,
+      "siteFailed": false,
+      "siteNotFound": false,
+      "systemError": false
+    },
+    "sampleText": "芒\n芒果科技\n芒果科技 - 企业数字化官网与业务协同平台\n产品能力\n产品能力\n解决方案\n公司动态\n\nCMS BANNER\n\n芒果科技企业数字化平台\n\n官网、CMS、微前端后台、权限租户和流程协同由一套 Mango 能力统一承载。\n\n查看内容\n浏览栏目\nHOME_HERO\nIMAGE\nCMS Banner 视觉位\n芒果科技企业数字化平台\n\nSITE TEXT\n\n芒果科技\n\n芒果科技提供可运营 CMS、微前端管理后台、统一权限、租户隔离和流程协同能力，帮助企业快速交付可验证的数字化系统。\n\nADVERTISEMENT\n\n预约芒果科技产品演示\n\nHOME_FLOAT\n\n查看广告链接\n\nSITE CATEGORIES\n\n站点栏目\n\n栏目树来自 CMS 站点栏目接口，用于组织官网的业务入口和内容分发。\n\nproducts\n产品能力\n\nCMS 内容运营、微前端后台、统一权限租户和流程协同等企业数字化能力。\n\nsolutions\n解决方案\n\n面向集团门户、业务中台、流程审批和官网运营的一体化解决方案。\n\nnews\n公司动态\n\n芒果科技产品发布、项目实践和平台能力更新。\n\nCOLUMN\n\n全部内容\n产品能力\n解决方案\n公司动态\n\nCONTENTS\n\n内容发布\n\n列表通过 CMS 内容分页接口加载，详情正文通过 CMS 内容详情接口加载。\n\n2026-06-23\nMango CMS：让官网运营从开发排期中解放出来\n芒果科技将官网内容、栏目结构、首页 Banner、广告位和站点配置沉淀到 CMS，让市场与运营团队通过后台完成日常更新。\n芒果科技产品中心\n2026-06-23\n统一权限与租户模型，支撑集团级后台协作\n芒果科技后台基于统一登录、租户、菜单、角色和数据权限模型，让集团组织可以按职责协同运营不同站点。\n芒果科技架构团队\n2026-06-23\n流程协同能力接入业务审批场景\n内容提交、审核、发布和下线形成了可验证的状态流转，也为企业业务审批场景提供了标准化样板。\n芒果科技解决方案中心\n\nRICH TEXT DETAIL\n\nMango CMS：让官网运营从开发排期中解放出来\nCMS 内容\n2026-06-23\n芒果科技产品团队\n\n芒果科技的 Mango CMS 面向企业官网、帮助中心和门户站点建设。运营人员可以在后台维护站点、栏目、导航、Banner、广告和内容发布关系；研发团队只需要维护站点应用与公共接口。系统同时遵守租户隔离、分页查询、数据权限和统一菜单规范，适合集团级多站点管理。\n\nADS\n\nHOME_FLOAT\n预约芒果科技产品演示\n芒果科技\n\n芒果科技提供可运营 CMS、微前端管理后台、统一权限、租户隔离和流程协同能力，帮助企业快速交付可验证的数字化系统。\n\n站点导航\n产品能力\n产品能力\n解决方案\n公司动态\n栏目\n产品能力\n解决方案\n公司动态\n联系方式\n\n商务咨询：",
+    "messages": [],
+    "failed": [],
+    "badResponses": [],
+    "closeBBoxes": [],
+    "hugeElements": [
+      {
+        "tag": "BUTTON",
+        "className": "active",
+        "aria": null,
+        "text": "全部内容",
+        "x": 120,
+        "y": 1882.984375,
+        "width": 260,
+        "height": 51,
+        "fontSize": "15px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "",
+        "aria": null,
+        "text": "产品能力",
+        "x": 120,
+        "y": 1933.984375,
+        "width": 260,
+        "height": 51,
+        "fontSize": "15px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "",
+        "aria": null,
+        "text": "解决方案",
+        "x": 120,
+        "y": 1984.984375,
+        "width": 260,
+        "height": 51,
+        "fontSize": "15px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "",
+        "aria": null,
+        "text": "公司动态",
+        "x": 120,
+        "y": 2035.984375,
+        "width": 260,
+        "height": 51,
+        "fontSize": "15px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "news-item active",
+        "aria": null,
+        "text": "2026-06-23Mango CMS：让官网运营从开发排期中解放出来芒果科技将官网内容、栏目结构、首页 Banner、广告位和站点配置沉淀到 CMS，让市场与运营团队通过后台完成日常更新。芒果科技产品中心",
+        "x": 426,
+        "y": 1978.796875,
+        "width": 894,
+        "height": 166.5,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "news-item",
+        "aria": null,
+        "text": "2026-06-23统一权限与租户模型，支撑集团级后台协作芒果科技后台基于统一登录、租户、菜单、角色和数据权限模型，让集团组织可以按职责协同运营不同站点。芒果科技架构团队",
+        "x": 426,
+        "y": 2145.296875,
+        "width": 894,
+        "height": 140.25,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "news-item",
+        "aria": null,
+        "text": "2026-06-23流程协同能力接入业务审批场景内容提交、审核、发布和下线形成了可验证的状态流转，也为企业业务审批场景提供了标准化样板。芒果科技解决方案中心",
+        "x": 426,
+        "y": 2285.546875,
+        "width": 894,
+        "height": 140.25,
+        "fontSize": "16px"
+      }
+    ]
+  },
+  {
+    "name": "help",
+    "url": "http://127.0.0.1:5192",
+    "title": "芒果科技帮助中心 - CMS 与后台使用指南",
+    "screenshot": "mango-docs/evidence/2026-06-22-issue-214-cms/help-real-after-category-fix.png",
+    "includes": {
+      "navMissing": false,
+      "siteFailed": false,
+      "siteNotFound": false,
+      "systemError": false
+    },
+    "sampleText": "芒\n芒果科技帮助中心\n快速入门\n后台管理\n站点运营\n搜索\n\nHELP CENTER\n\n芒果科技帮助中心\n\n面向运营、实施和开发团队的芒果科技产品帮助中心，覆盖站点创建、栏目规划、内容发布、菜单图标和验收排查。\n\nHELP_HERO\n芒果科技帮助中心\nCMS Banner 位\n\nSITE TEXT\n\n芒果科技帮助中心\n\n面向运营、实施和开发团队的芒果科技产品帮助中心，覆盖站点创建、栏目规划、内容发布、菜单图标和验收排查。\n\nADVERTISEMENT\n\n芒果科技帮助中心公告\nHELP_TOP\n\nCOLUMNS\n\n全部文档\n快速入门\n后台管理\n站点运营\n\nCMS CONTENTS\n\n公开帮助文档\n共 3 篇\nARTICLE\n如何创建一个可公开访问的官网站点\n创建站点时需要维护站点名称、编码、域名、SEO、备案和联系方式，并确认站点处于启用状态。\nARTICLE\n后台菜单为什么需要图标和分组\n菜单图标和子菜单组能帮助管理员快速区分内容、站点和投放任务，减少日常运营误操作。\nARTICLE\n站点不可用时应该检查哪些功能\n当官网或帮助站点没有内容时，优先检查域名解析、栏目可见状态、内容审核状态和发布关系。\n\nRICH TEXT DETAIL\n\n如何创建一个可公开访问的官网站点\n芒果科技帮助中心\n芒果科技支持团队\n2026-06-23\n\n进入站点管理后新增站点，填写稳定的站点编码和访问域名。官网站点使用 127.0.0.1:5191，帮助站点使用 127.0.0.1:5192。保存后继续维护站点配置，确保 SEO 标题、描述、版权、备案和联系方式完整。\n\nADS\n\nHELP_TOP\n芒果科技帮助中心公告\n芒果科技帮助中心\n沪ICP备20260214号-2\n支持邮箱：support@mango-tech.example；服务热线：400-0214-214\nCopyright 2026 芒果科技帮助中心",
+    "messages": [],
+    "failed": [],
+    "badResponses": [],
+    "closeBBoxes": [],
+    "hugeElements": [
+      {
+        "tag": "BUTTON",
+        "className": "active",
+        "aria": null,
+        "text": "全部文档",
+        "x": 151,
+        "y": 945.1875,
+        "width": 218,
+        "height": 44,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "",
+        "aria": null,
+        "text": "快速入门",
+        "x": 151,
+        "y": 997.1875,
+        "width": 218,
+        "height": 44,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "",
+        "aria": null,
+        "text": "后台管理",
+        "x": 151,
+        "y": 1049.1875,
+        "width": 218,
+        "height": 44,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "",
+        "aria": null,
+        "text": "站点运营",
+        "x": 151,
+        "y": 1101.1875,
+        "width": 218,
+        "height": 44,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "doc-item active",
+        "aria": null,
+        "text": "ARTICLE如何创建一个可公开访问的官网站点创建站点时需要维护站点名称、编码、域名、SEO、备案和联系方式，并确认站点处于启用状态。",
+        "x": 459,
+        "y": 1002.1875,
+        "width": 816,
+        "height": 126.390625,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "doc-item",
+        "aria": null,
+        "text": "ARTICLE后台菜单为什么需要图标和分组菜单图标和子菜单组能帮助管理员快速区分内容、站点和投放任务，减少日常运营误操作。",
+        "x": 459,
+        "y": 1140.578125,
+        "width": 816,
+        "height": 126.390625,
+        "fontSize": "16px"
+      },
+      {
+        "tag": "BUTTON",
+        "className": "doc-item",
+        "aria": null,
+        "text": "ARTICLE站点不可用时应该检查哪些功能当官网或帮助站点没有内容时，优先检查域名解析、栏目可见状态、内容审核状态和发布关系。",
+        "x": 459,
+        "y": 1278.96875,
+        "width": 816,
+        "height": 126.390625,
+        "fontSize": "16px"
+      }
+    ]
+  }
+]
