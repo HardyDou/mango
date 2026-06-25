@@ -18,6 +18,7 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
+import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.core.entity.WorkflowBusinessApply;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyCurrentTask;
@@ -35,6 +36,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -120,6 +122,25 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
                 .map(entry -> toVo(entry.apply(), entry.tasks()))
                 .toList();
         return R.ok(PageResult.of(records, result.getTotal(), resolved.getPage(), resolved.getSize()));
+    }
+
+    @Override
+    public R<WorkflowBusinessApplySummaryVO> mySummary() {
+        WorkflowBusinessApplySummaryVO summary = new WorkflowBusinessApplySummaryVO();
+        Long userId = MangoContextHolder.userId();
+        if (userId == null) {
+            summary.setInReview(0L);
+            summary.setCompleted(0L);
+            summary.setRejected(0L);
+            summary.setWithdrawn(0L);
+            return R.ok(summary);
+        }
+        // 小组件统计只暴露用户可见状态，不把底层 SUBMITTED/IN_APPROVAL 组合泄漏给前端。
+        summary.setInReview(countMyApply(userId, WorkflowApplyStatus.SUBMITTED, WorkflowApplyStatus.IN_APPROVAL));
+        summary.setCompleted(countMyApply(userId, WorkflowApplyStatus.APPROVED));
+        summary.setRejected(countMyApply(userId, WorkflowApplyStatus.REJECTED));
+        summary.setWithdrawn(countMyApply(userId, WorkflowApplyStatus.WITHDRAWN));
+        return R.ok(summary);
     }
 
     @Override
@@ -362,6 +383,12 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
                 .eq(WorkflowBusinessApply::getLatestFlag, Boolean.TRUE)
                 .orderByDesc(WorkflowBusinessApply::getCreatedAt)
                 .last("limit 1"));
+    }
+
+    private Long countMyApply(Long userId, WorkflowApplyStatus... statuses) {
+        return applyMapper.selectCount(new LambdaQueryWrapper<WorkflowBusinessApply>()
+                .eq(WorkflowBusinessApply::getApplicantId, userId)
+                .in(WorkflowBusinessApply::getApplyStatus, Arrays.stream(statuses).map(Enum::name).toList()));
     }
 
     private WorkflowBusinessApply applyByProcessInstanceId(String processInstanceId) {

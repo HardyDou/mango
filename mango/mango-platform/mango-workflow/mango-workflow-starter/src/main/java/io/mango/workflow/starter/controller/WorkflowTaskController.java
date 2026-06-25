@@ -12,6 +12,7 @@ import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
+import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
@@ -53,6 +54,13 @@ public class WorkflowTaskController {
     @Operation(summary = "查询我的待办统计")
     public R<WorkflowTaskSummaryVO> summary() {
         return workflowTaskRuntimeService.summary();
+    }
+
+    @GetMapping("/my/summary")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "查询我的任务统计", description = "统计当前登录人的待完成、进行中、已完成和已逾期任务数量")
+    public R<WorkflowMyTaskSummaryVO> myTaskSummary() {
+        return workflowTaskRuntimeService.myTaskSummary();
     }
 
     @GetMapping("/initiated")

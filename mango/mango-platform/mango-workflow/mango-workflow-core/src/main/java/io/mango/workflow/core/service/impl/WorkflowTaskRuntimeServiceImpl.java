@@ -26,6 +26,7 @@ import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
+import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import io.mango.workflow.api.vo.WorkflowRenderConfigVO;
@@ -184,10 +185,33 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         return R.ok(vo);
     }
 
+    @Override
+    public R<WorkflowMyTaskSummaryVO> myTaskSummary() {
+        List<String> candidateGroups = candidateGroupProvider.currentCandidateGroups();
+        Long pending = countTodoByType("CLAIMABLE", candidateGroups);
+        Long processing = countTodoByType("ASSIGNED", candidateGroups);
+        Long completed = countCompletedTasks();
+        Long overdue = countOverdueTasks(candidateGroups);
+        WorkflowMyTaskSummaryVO vo = new WorkflowMyTaskSummaryVO();
+        vo.setPending(pending);
+        vo.setProcessing(processing);
+        vo.setCompleted(completed);
+        vo.setOverdue(overdue);
+        vo.setTotal(pending + processing + completed + overdue);
+        return R.ok(vo);
+    }
+
     private Long countTodoByType(String todoType, List<String> candidateGroups) {
         TaskQuery taskQuery = taskService.createTaskQuery();
         applyTodoTypeFilter(taskQuery, todoType, candidateGroups);
         return taskQuery.count();
+    }
+
+    private Long countCompletedTasks() {
+        return historyService.createHistoricTaskInstanceQuery()
+                .taskAssignee(currentUser())
+                .finished()
+                .count();
     }
 
     private Long countUnreadCopied() {

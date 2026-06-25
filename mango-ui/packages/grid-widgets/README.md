@@ -19,8 +19,9 @@
 | 快捷入口小组件 | 选择可见菜单并保存到浏览器本地，点击后跳转到对应模块 | `systemQuickEntryWidgets` |
 | 消息中心小组件 | 展示当前登录人的未读消息、最新未读摘要和消息分类统计 | `systemMessageCenterWidgets` |
 | 我的待办小组件 | 展示当前登录人的工作流待办统计，并跳转到对应任务列表 | `systemMyTodoWidgets` |
+| 我的申请小组件 | 展示当前登录人发起的工作流申请统计，并跳转到我的申请列表 | `systemMyProcessWidgets` |
 | 样式入口 | 独立消费系统小组件样式 | `@mango/grid-widgets/style.css` |
-| 类型导出 | 业务侧声明小组件、运行时上下文、快捷入口菜单、消息中心分类和待办小组件参数 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps`、`MyTodoWidgetProps` |
+| 类型导出 | 业务侧声明小组件、运行时上下文、快捷入口菜单、消息中心分类、待办和申请小组件参数 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps`、`MyTodoWidgetProps`、`MyProcessWidgetProps` |
 
 ## 3. 接入方式
 
@@ -48,7 +49,7 @@ const widgets = mergeGridWidgets({
 | 自定义栅格布局前端 | 小组件定义最终传给 `MangoGridDesigner` 和 `MangoGridLayout` | [@mango/grid-layout README](../grid-layout/README.md) |
 | 公共组件 | 快捷入口配置弹框使用 `MangoDialog`，图标解析使用 `iconMap` | [@mango/common README](../common/README.md) |
 | 通知中心前端 | 消息中心小组件读取未读消息、最新未读和消息分类统计 | [@mango/notice README](../notice/README.md) |
-| 工作流前端 | 我的待办小组件读取待办统计并跳转任务列表 | [@mango/workflow README](../workflow/README.md) |
+| 工作流前端 | 我的待办和我的申请小组件读取工作流统计并跳转任务列表 | [@mango/workflow README](../workflow/README.md) |
 
 ## 4. 配置说明
 
@@ -75,6 +76,8 @@ const widgets = mergeGridWidgets({
 | `MessageCenterWidget` | `categories` | 系统、业务、审批、告警 | 消息分类统计配置 | 按 `bizGroup`、`bizType` 或 `priority` 查询未读统计 | `src/system/message-center/MessageCenterWidget.vue` |
 | `MyTodoWidget` | `runtime` | `undefined` | 当前页面跳转上下文 | 点击统计项时通过 `runtime.navigate` 跳转 | `src/system/my-todo/MyTodoWidget.vue` |
 | `MyTodoWidget` | `todoPath` | `/workflow/task/todo` | 待办任务页面路径 | 查看全部、待审批、待处理和已超时默认跳转路径 | `src/system/my-todo/MyTodoWidget.vue` |
+| `MyProcessWidget` | `runtime` | `undefined` | 当前页面跳转上下文 | 点击统计项时通过 `runtime.navigate` 跳转 | `src/system/my-process/MyProcessWidget.vue` |
+| `MyProcessWidget` | `processPath` | `/workflow/task/initiated` | 我的申请页面路径 | 查看全部和状态统计项默认跳转路径 | `src/system/my-process/MyProcessWidget.vue` |
 
 ## 5. API 与扩展
 
@@ -85,7 +88,7 @@ const widgets = mergeGridWidgets({
 | 参数 | 说明 |
 |------|------|
 | `widgets` | 直接传入的小组件定义，适合消费页面临时补充 |
-| `systemWidgets` | Mango 系统预制小组件，当前包含用户信息、快捷入口和消息中心小组件 |
+| `systemWidgets` | Mango 系统预制小组件，当前包含用户信息、快捷入口、消息中心、我的待办和我的申请小组件 |
 | `businessWidgets` | 业务系统自定义小组件 |
 | `runtime` | 当前页面运行时上下文，会通过包装组件注入到每个小组件 |
 | `onDuplicate` | 重复 `type` 处理回调，当前策略保留先注册项、忽略后注册项 |
@@ -123,6 +126,10 @@ src/system/
 │  ├─ MyTodoWidget.vue
 │  ├─ index.ts
 │  └─ my-todo.ts
+├─ my-process/
+│  ├─ MyProcessWidget.vue
+│  ├─ index.ts
+│  └─ my-process.ts
 ├─ user-profile/
 │  ├─ UserProfileWidget.vue
 │  ├─ index.ts
@@ -322,6 +329,8 @@ pnpm.cmd admin:module-styles:check
 | 搜索不到菜单 | 检查菜单是否为目录、按钮、隐藏菜单或不可跳转项，默认解析会过滤这些数据 |
 | 点击快捷入口不跳转 | 检查 `runtime.navigate` 或 `navigate` 是否传入，并确认微前端场景的跳转适配 |
 | 刷新后选择丢失 | 检查 `storageKey` 是否稳定，以及浏览器是否允许访问 `localStorage` |
+| 我的申请数量加载失败 | 检查 `/workflow/business-applies/my/summary` 接口权限、登录态和后端错误日志 |
+| 我的申请状态跳转不生效 | 检查 `runtime.navigate` 是否保留 `raw.query.statuses` 并转换为路由 query |
 | 样式缺失 | 检查业务入口是否引入 `@mango/grid-widgets/style.css` |
 
 ## 11. 相关文档
@@ -375,4 +384,90 @@ pnpm.cmd admin:module-styles:check
 
 ```ts
 import { MyTodoWidget, systemMyTodoWidgets } from '@mango/grid-widgets/my-todo';
+```
+
+
+## 13. 我的申请小组件
+
+`system.my-process` 是 Mango 预制系统小组件，用于在工作台或其它自定义布局页面展示当前登录人发起的工作流申请统计。组件内部调用 `@mango/workflow` 的 `workflowApi.businessApplyMySummary()`，消费页面只需要按既有方式传入 `runtime.navigate`。
+
+默认展示项：
+
+| 展示文案 | 数据字段 | 统计口径 |
+|------|------|------|
+| 审核中 | `inReview` | 当前用户发起且状态为 `SUBMITTED` 或 `IN_APPROVAL` 的申请 |
+| 已完成 | `completed` | 当前用户发起且状态为 `APPROVED` 的申请 |
+| 已驳回 | `rejected` | 当前用户发起且状态为 `REJECTED` 的申请 |
+| 已撤回 | `withdrawn` | 当前用户发起且状态为 `WITHDRAWN` 的申请 |
+
+默认布局：
+
+```ts
+{
+  type: 'system.my-process',
+  defaultLayout: { w: 3, h: 10, minW: 3, minH: 8 },
+  showTitle: false,
+  padding: false,
+}
+```
+
+跳转规则：
+
+| 点击区域 | 跳转目标 |
+|------|------|
+| 查看全部 | `runtime.navigate({ path: '/workflow/task/initiated' })` |
+| 审核中 | `runtime.navigate({ path: '/workflow/task/initiated', raw: { query: { statuses: ['SUBMITTED', 'IN_APPROVAL'] } } })` |
+| 已完成 | `runtime.navigate({ path: '/workflow/task/initiated', raw: { query: { statuses: ['APPROVED'] } } })` |
+| 已驳回 | `runtime.navigate({ path: '/workflow/task/initiated', raw: { query: { statuses: ['REJECTED'] } } })` |
+| 已撤回 | `runtime.navigate({ path: '/workflow/task/initiated', raw: { query: { statuses: ['WITHDRAWN'] } } })` |
+
+`raw.query` 由消费页面按自身路由能力转换为真实路由 query。小组件不直接依赖宿主 `router`，以兼容单体、微前端宿主和子应用场景。
+
+独立引入：
+
+```ts
+import { MyProcessWidget, systemMyProcessWidgets } from '@mango/grid-widgets/my-process';
+```
+
+## 14. 我的任务小组件
+
+`system.my-task` 是 Mango 预制系统小组件，用于在工作台或其它自定义布局页面展示当前登录人的任务总览。组件内部调用 `@mango/workflow` 的 `workflowApi.myTaskSummary()`，消费页面只需要按既有方式传入 `runtime.navigate`。
+
+默认展示项：
+
+| 展示文案 | 数据字段 | 统计口径 |
+|----------|----------|----------|
+| 任务总数 | `total` | 待完成、进行中、已完成、已逾期数量合计 |
+| 待完成 | `pending` | 当前用户可认领或候选处理的运行任务 |
+| 进行中 | `processing` | 当前用户已分配待处理的运行任务 |
+| 已完成 | `completed` | 当前用户已处理完成的历史任务 |
+| 已逾期 | `overdue` | 当前用户相关运行任务中超过到期时间的任务 |
+
+默认注册：
+
+```ts
+{
+  type: 'system.my-task',
+  defaultLayout: { w: 3, h: 10, minW: 3, minH: 10 },
+  showTitle: false,
+  padding: false,
+}
+```
+
+默认跳转行为：
+
+| 入口 | 默认路径 | 默认 query |
+|------|----------|------------|
+| 查看全部 | `/workflow/task/todo` | 无 |
+| 待完成 | `/workflow/task/todo` | `todoType=CLAIMABLE` |
+| 进行中 | `/workflow/task/todo` | `todoType=ASSIGNED` |
+| 已完成 | `/workflow/task/done` | 无 |
+| 已逾期 | `/workflow/task/todo` | `todoType=ALL&overdue=true` |
+
+`raw.query` 由消费页面按自身路由能力转换为真实路由 query。小组件不直接依赖宿主 `router`，以兼容单体、微前端宿主和子应用场景。
+
+独立引入：
+
+```ts
+import { MyTaskWidget, systemMyTaskWidgets } from '@mango/grid-widgets/my-task';
 ```

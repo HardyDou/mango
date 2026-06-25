@@ -75,7 +75,13 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { workflowApi, type WorkflowPageQuery, type WorkflowTask } from '../../api/workflow';
+import {
+  workflowApi,
+  type WorkflowApplyStatus,
+  type WorkflowBusinessApplyPageQuery,
+  type WorkflowPageQuery,
+  type WorkflowTask,
+} from '../../api/workflow';
 
 const route = useRoute();
 const router = useRouter();
@@ -125,12 +131,20 @@ async function loadData() {
   loading.value = true;
   try {
     if (taskMode.value === 'initiated') {
-      const result = await workflowApi.initiatedProcesses(query.value);
+      const result = await workflowApi.businessAppliesPage(buildInitiatedQueryParams());
       tableData.value = result.list.map(item => ({
-        ...item,
-        id: item.processInstanceId,
-        taskName: '流程实例',
-        createTime: item.startTime,
+        id: item.id,
+        taskName: item.applyTitle || '业务申请',
+        businessKey: item.businessKey,
+        processName: item.processName || item.applyTitle || '-',
+        processKey: item.processDefinitionKey || item.businessType || '-',
+        processInstanceId: item.processInstanceId || '',
+        initiatorName: item.applicantName,
+        assigneeName: item.currentAssigneeNames,
+        status: item.applyStatusName || item.applyStatus || '-',
+        createTime: item.createdAt,
+        startTime: item.createdAt,
+        endTime: item.updatedAt,
       }));
       total.value = result.total;
       return;
@@ -179,6 +193,27 @@ function buildTaskQueryParams(): WorkflowPageQuery {
     return { ...query.value, unread: route.query.unread === 'true' };
   }
   return query.value;
+}
+
+function buildInitiatedQueryParams(): WorkflowBusinessApplyPageQuery {
+  return {
+    ...query.value,
+    statuses: resolveApplyStatuses(route.query.statuses),
+  };
+}
+
+function resolveApplyStatuses(value: unknown): WorkflowApplyStatus[] | undefined {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  const statuses = values
+    .map(item => String(item))
+    .filter((item): item is WorkflowApplyStatus => [
+      'SUBMITTED',
+      'IN_APPROVAL',
+      'APPROVED',
+      'REJECTED',
+      'WITHDRAWN',
+    ].includes(item));
+  return statuses.length ? statuses : undefined;
 }
 
 function openTask(row: WorkflowTask) {

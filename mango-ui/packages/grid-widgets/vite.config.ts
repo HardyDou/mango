@@ -7,7 +7,9 @@ export default defineConfig({
     lib: {
       entry: {
         index: 'src/index.ts',
+        'my-task': 'src/system/my-task/my-task.ts',
         'my-todo': 'src/system/my-todo/my-todo.ts',
+        'my-process': 'src/system/my-process/my-process.ts',
         'quick-entry': 'src/system/quick-entry/quick-entry.ts',
         'message-center': 'src/system/message-center/message-center.ts',
         'user-profile': 'src/system/user-profile/user-profile.ts',

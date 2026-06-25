@@ -18,9 +18,17 @@
       "types": "./dist/message-center.d.ts",
       "import": "./dist/message-center.js"
     },
+    "./my-task": {
+      "types": "./dist/my-task.d.ts",
+      "import": "./dist/my-task.js"
+    },
     "./my-todo": {
       "types": "./dist/my-todo.d.ts",
       "import": "./dist/my-todo.js"
+    },
+    "./my-process": {
+      "types": "./dist/my-process.d.ts",
+      "import": "./dist/my-process.js"
     },
     "./user-profile": {
       "types": "./dist/user-profile.d.ts",

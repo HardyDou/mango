@@ -293,6 +293,21 @@ export interface WorkflowTaskSummary {
   overdue: number;
 }
 
+export interface WorkflowBusinessApplySummary {
+  inReview: number;
+  completed: number;
+  rejected: number;
+  withdrawn: number;
+}
+
+export interface WorkflowMyTaskSummary {
+  total: number;
+  pending: number;
+  processing: number;
+  completed: number;
+  overdue: number;
+}
+
 export interface WorkflowProcessInstance {
   processInstanceId: string;
   businessKey?: string;
@@ -518,6 +533,8 @@ export const workflowApi = {
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
   todoSummary: () => get<WorkflowTaskSummary>('/workflow/tasks/todo/summary')
     .then(normalizeTaskSummary),
+  myTaskSummary: () => get<WorkflowMyTaskSummary>('/workflow/tasks/my/summary')
+    .then(normalizeMyTaskSummary),
   initiatedTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/initiated', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
   doneTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/done', { params: toBackendPageParams(params) })
@@ -539,6 +556,8 @@ export const workflowApi = {
     .then(normalizeProcessInstance),
   businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
     .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
+  businessApplyMySummary: () => get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary')
+    .then(normalizeBusinessApplySummary),
   businessApplyHistory: (businessType: string, businessKey: string, params?: WorkflowBusinessApplyPageQuery) => get<any>('/workflow/business-applies/history', {
     params: {
       ...toBackendPageParams(params),
@@ -954,6 +973,25 @@ function normalizeTaskSummary(item: any): WorkflowTaskSummary {
     pendingApproval: Number(item?.pendingApproval ?? 0),
     pendingHandle: Number(item?.pendingHandle ?? 0),
     pendingConfirm: Number(item?.pendingConfirm ?? 0),
+    overdue: Number(item?.overdue ?? 0),
+  };
+}
+
+function normalizeBusinessApplySummary(item: any): WorkflowBusinessApplySummary {
+  return {
+    inReview: Number(item?.inReview ?? 0),
+    completed: Number(item?.completed ?? 0),
+    rejected: Number(item?.rejected ?? 0),
+    withdrawn: Number(item?.withdrawn ?? 0),
+  };
+}
+
+function normalizeMyTaskSummary(item: any): WorkflowMyTaskSummary {
+  return {
+    total: Number(item?.total ?? 0),
+    pending: Number(item?.pending ?? 0),
+    processing: Number(item?.processing ?? 0),
+    completed: Number(item?.completed ?? 0),
     overdue: Number(item?.overdue ?? 0),
   };
 }
