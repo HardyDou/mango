@@ -141,7 +141,9 @@ function verifyPublishedFiles(packageName, packageRoot, sourcePackageJson) {
 
 function verifyPublishedStyleContent(packageName, stylePath) {
   const content = readFileSync(stylePath, 'utf8').trim();
-  if (content.length < 64 || content === 'export {};' || !content.includes('{') || !content.includes('}')) {
+  const hasCssRule = content.includes('{') && content.includes('}');
+  const hasCssImport = /^\s*@import\s+['"][^'"]+['"]\s*;/m.test(content);
+  if (content.length < 16 || content === 'export {};' || (!hasCssRule && !hasCssImport)) {
     console.error(`Published tarball for ${packageName} has invalid exported style.css content.`);
     process.exit(1);
   }
