@@ -615,7 +615,7 @@ importers:
         specifier: 1.0.10
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: 1.0.21
+        specifier: 1.0.22
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: 1.0.2
@@ -639,7 +639,7 @@ importers:
         specifier: 1.0.2
         version: link:../grid-layout
       '@mango/grid-widgets':
-        specifier: 1.0.0
+        specifier: 1.0.1
         version: link:../grid-widgets
       '@mango/job':
         specifier: 1.0.3
@@ -663,10 +663,10 @@ importers:
         specifier: 1.0.11
         version: link:../template
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
@@ -743,7 +743,7 @@ importers:
         specifier: 1.0.2
         version: link:../grid-layout
       '@mango/grid-widgets':
-        specifier: 1.0.0
+        specifier: 1.0.1
         version: link:../grid-widgets
       '@mango/notice':
         specifier: 1.0.11
@@ -752,7 +752,7 @@ importers:
         specifier: 1.0.8
         version: link:../rbac
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -1063,7 +1063,7 @@ importers:
         specifier: 1.0.11
         version: link:../notice
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -1411,7 +1411,7 @@ importers:
         specifier: 1.0.10
         version: link:../admin-pages
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       element-plus:
         specifier: 2.14.1

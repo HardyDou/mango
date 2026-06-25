@@ -167,4 +167,3 @@ public class WorkflowBusinessApplySummaryVO {
 | 旧申请没有 `applicantId` | 历史数据如果缺失申请人 ID 可能不计入 | 本次按现有创建逻辑使用 `applicantId`，不做历史数据修复 |
 | 列表字段和任务列表字段不同 | 业务申请没有任务名、流程 key 等完全相同字段 | 前端映射为现有表格字段，保持页面结构不大改 |
 | 小组件接口无权限 | 当前用户无 `workflow:task:list` 时接口可能 403 | 小组件显示局部错误，不影响工作台其它卡片 |
-
