@@ -1125,7 +1125,7 @@ button {
   background: #071526;
 }
 
-.rich-text a[href*="/api/cms-api/files/public-preview"] {
+.rich-text a[href*="/api/cms/open/files/public-preview"] {
   display: inline-flex;
   align-items: center;
   margin: 8px 0 18px;

@@ -543,7 +543,7 @@ public class CmsSiteService implements ICmsSiteService {
         }
         try {
             Long id = Long.valueOf(fileId.trim());
-            return "/api/cms-api/files/public-preview?id=" + id + "&domain=" + encode(site.getDomain());
+            return "/api/cms/open/files/public-preview?id=" + id + "&domain=" + encode(site.getDomain());
         } catch (RuntimeException ex) {
             LOGGER.log(Level.WARNING, "CMS public file preview resolve failed, fileId=" + fileId, ex);
             return null;
@@ -557,10 +557,27 @@ public class CmsSiteService implements ICmsSiteService {
         if (fileId.equals(String.valueOf(site.getLogoFileId()))) {
             return true;
         }
+        if (isPublicBannerFile(site, fileId)) {
+            return true;
+        }
         if (isPublicContentFile(site, fileId)) {
             return true;
         }
         return isPublicAdFile(site, fileId);
+    }
+
+    /**
+     * 判断文件是否为当前启用站点有效 Banner 的媒体素材。
+     */
+    private boolean isPublicBannerFile(CmsSiteEntity site, String fileId) {
+        LocalDateTime now = LocalDateTime.now();
+        return bannerMapper.selectList(new LambdaQueryWrapper<CmsBannerEntity>()
+                        .eq(CmsBannerEntity::getTenantId, site.getTenantId())
+                        .eq(CmsBannerEntity::getSiteId, site.getId())
+                        .eq(CmsBannerEntity::getStatus, CmsSupport.ENABLED))
+                .stream()
+                .filter(item -> CmsSupport.isEffective(item.getStartTime(), item.getEndTime(), now))
+                .anyMatch(item -> fileId.equals(String.valueOf(item.getMediaFileId())));
     }
 
     private boolean isPublicContentFile(CmsSiteEntity site, String fileId) {

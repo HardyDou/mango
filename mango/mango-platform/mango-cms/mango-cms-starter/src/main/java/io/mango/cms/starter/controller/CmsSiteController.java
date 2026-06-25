@@ -43,7 +43,7 @@ import java.util.List;
 
 @Validated
 @RestController
-@RequestMapping("/cms-api")
+@RequestMapping("/cms/open")
 @RequiredArgsConstructor
 @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "CMS 站点消费公共接口")
 @Tag(name = "CMS 站点消费", description = "官网、帮助中心和门户站点只读接口")

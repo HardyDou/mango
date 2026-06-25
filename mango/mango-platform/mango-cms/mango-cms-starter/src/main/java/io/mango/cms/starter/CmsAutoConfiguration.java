@@ -3,6 +3,7 @@ package io.mango.cms.starter;
 import org.apache.ibatis.annotations.Mapper;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,4 +15,9 @@ import org.springframework.context.annotation.Configuration;
         "io.mango.cms.starter.controller"
 })
 public class CmsAutoConfiguration {
+
+    @Bean
+    public static CmsPermitPathBeanPostProcessor cmsPermitPathBeanPostProcessor() {
+        return new CmsPermitPathBeanPostProcessor();
+    }
 }

@@ -156,16 +156,16 @@ export interface SiteShellState {
 const SiteShellKey: InjectionKey<SiteShellState> = Symbol('MangoSiteShell');
 
 export const cmsSiteApi = {
-  resolveSite: (params: SiteResolveQuery) => get<SiteResolve>('/cms-api/sites/resolve', publicRequest(params)),
-  detailSite: (params: SiteResolveQuery) => get<CmsSite>('/cms-api/sites/detail', publicRequest(params)),
-  treeCategories: (params: SiteResolveQuery) => get<SiteCategory[]>('/cms-api/site-categories/tree', publicRequest(params)),
-  listNavigations: (params: SiteResolveQuery & { navType?: string }) => get<SiteNavigation[]>('/cms-api/navigations/list', publicRequest(params)),
-  listBanners: (params: SiteResolveQuery & { position?: string }) => get<SiteBanner[]>('/cms-api/banners/list', publicRequest(params)),
-  listAdvertisements: (params: SiteResolveQuery & { position?: string }) => get<SiteAdvertisement[]>('/cms-api/advertisements/list', publicRequest(params)),
+  resolveSite: (params: SiteResolveQuery) => get<SiteResolve>('/cms/open/sites/resolve', publicRequest(params)),
+  detailSite: (params: SiteResolveQuery) => get<CmsSite>('/cms/open/sites/detail', publicRequest(params)),
+  treeCategories: (params: SiteResolveQuery) => get<SiteCategory[]>('/cms/open/site-categories/tree', publicRequest(params)),
+  listNavigations: (params: SiteResolveQuery & { navType?: string }) => get<SiteNavigation[]>('/cms/open/navigations/list', publicRequest(params)),
+  listBanners: (params: SiteResolveQuery & { position?: string }) => get<SiteBanner[]>('/cms/open/banners/list', publicRequest(params)),
+  listAdvertisements: (params: SiteResolveQuery & { position?: string }) => get<SiteAdvertisement[]>('/cms/open/advertisements/list', publicRequest(params)),
   pageContents: (params: SiteResolveQuery & { page?: number; size?: number; pageNum?: number; pageSize?: number; categoryId?: ApiId; keyword?: string; recommendationType?: string }) =>
-    get<PageResult<SiteContent>>('/cms-api/contents/page', publicRequest(params)),
+    get<PageResult<SiteContent>>('/cms/open/contents/page', publicRequest(params)),
   detailContent: (params: SiteResolveQuery & { contentId: ApiId; categoryId?: ApiId }) =>
-    get<SiteContent>('/cms-api/contents/detail', publicRequest(params)),
+    get<SiteContent>('/cms/open/contents/detail', publicRequest(params)),
 };
 
 function publicRequest<T extends Record<string, unknown>>(params: T) {

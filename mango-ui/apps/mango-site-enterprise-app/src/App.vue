@@ -843,7 +843,7 @@ function sanitizeRichText(html: string) {
 
 function renderRichText(html: string) {
   return sanitizeRichText(html).replace(/mango-file:([1-9]\d*)/g, (_match, fileId: string) => {
-    return `/api/cms-api/files/public-preview?id=${encodeURIComponent(fileId)}&domain=${encodeURIComponent(window.location.host)}`;
+    return `/api/cms/open/files/public-preview?id=${encodeURIComponent(fileId)}&domain=${encodeURIComponent(window.location.host)}`;
   });
 }
 
