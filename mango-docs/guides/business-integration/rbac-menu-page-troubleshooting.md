@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #235 发布 `@mango/admin-shell@1.0.21`、`@mango/admin@1.0.24` 并对齐 `@mango/cli@1.0.36` 的发布版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
+
 - 本次 PR 调整 `@mango/admin-shell` 在布局 1、2、4 下的 footer 贴边和内容区底部安全距离；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
 
 - 本次 PR 新增 `@mango/grid-widgets` 我的待办系统小组件，并在工作台默认布局中展示；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。我的待办小组件只复用已有 `/workflow/task/todo`、`/workflow/task/copied` 页面入口和 `workflow:task:list` 权限，不新增菜单授权协议。
