@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -38,12 +38,12 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "1.0.10",
-    "@mango/admin-shell": "1.0.21",
+    "@mango/admin-shell": "1.0.22",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.8",
     "@mango/common": "1.0.10",
     "@mango/grid-layout": "1.0.2",
-    "@mango/grid-widgets": "1.0.0",
+    "@mango/grid-widgets": "1.0.1",
     "@mango/job": "1.0.3",
     "@mango/rbac": "1.0.8",
     "@mango/system": "1.0.9",

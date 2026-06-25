@@ -1,6 +1,6 @@
 {
   "name": "@mango/grid-widgets",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -29,7 +29,7 @@
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs && node ./scripts/copy-style.mjs"
   },
   "files": [
     "dist",
