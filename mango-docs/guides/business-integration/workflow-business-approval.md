@@ -63,6 +63,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 8. 变更影响记录
 
+- 本次 PR 新增 `@mango/grid-widgets` 我的申请系统小组件，并新增 `GET /workflow/business-applies/my/summary` 当前登录人申请统计接口；我的申请列表切换为业务申请分页数据源并支持 `statuses` 状态筛选。业务项目接入工作台后，可通过 `system.my-process` 展示审核中、已完成、已驳回和已撤回申请概览，列表跳转复用现有 `/workflow/task/initiated` 页面。
+
 - 本次 PR 新增 `@mango/grid-widgets` 我的待办系统小组件，并新增 `GET /workflow/tasks/todo/summary` 待办统计接口；业务审批发起、审批回调、状态回写、流程页面 key、流程定义配置、租户隔离和页面验收步骤不变。业务项目接入工作台后，可通过 `system.my-todo` 展示待审批、待处理、待确认和已超时任务概览，列表跳转仍复用现有待办和抄送页面。
 
 - PR #222 对齐 `@mango/numgen`、`@mango/template`、`@mango/workflow` 内部依赖的 `@mango/system` 版本到本地最新发布物料集合；不改变业务审批发起、审批回调、状态回写、流程页面 key、公开 API、配置、权限、租户隔离、页面验收步骤、启动方式和运行时行为。业务项目应成组安装同一批次的本地 `@mango/*` tarball，避免新旧内部依赖混装导致安装解析失败。

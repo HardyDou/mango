@@ -33,6 +33,7 @@ import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.runtime.ProcessInstanceQuery;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
+import org.flowable.task.api.history.HistoricTaskInstanceQuery;
 import org.flowable.variable.api.history.HistoricVariableInstanceQuery;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.TaskQuery;
@@ -339,6 +340,29 @@ class WorkflowTaskRuntimeServiceImplTest {
                 .containsEntry("reason", "READONLY");
     }
 
+    @Test
+    void myTaskSummary_shouldAggregateCurrentUserTaskStatus() {
+        TaskQuery pendingQuery = countTaskQuery(3L);
+        TaskQuery processingQuery = countTaskQuery(5L);
+        TaskQuery overdueAssignedQuery = listTaskQuery(List.of(task("overdue-1", "node", "proc-1", "pd-1", "anonymous")));
+        TaskQuery overdueClaimableQuery = listTaskQuery(List.of(task("overdue-2", "node", "proc-2", "pd-1", null)));
+        HistoricTaskInstanceQuery completedQuery = mock(HistoricTaskInstanceQuery.class);
+        when(taskService.createTaskQuery())
+                .thenReturn(pendingQuery, processingQuery, overdueAssignedQuery, overdueClaimableQuery);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(completedQuery);
+        when(completedQuery.taskAssignee("anonymous")).thenReturn(completedQuery);
+        when(completedQuery.finished()).thenReturn(completedQuery);
+        when(completedQuery.count()).thenReturn(7L);
+
+        var summary = service.myTaskSummary().getData();
+
+        assertThat(summary.getPending()).isEqualTo(3L);
+        assertThat(summary.getProcessing()).isEqualTo(5L);
+        assertThat(summary.getCompleted()).isEqualTo(7L);
+        assertThat(summary.getOverdue()).isEqualTo(2L);
+        assertThat(summary.getTotal()).isEqualTo(17L);
+    }
+
     private org.mockito.ArgumentMatcher<io.mango.workflow.core.entity.WorkflowTaskRecord> recordMatcher(String action, String comment) {
         return record -> action.equals(record.getAction()) && comment.equals(record.getComment());
     }
@@ -372,6 +396,26 @@ class WorkflowTaskRuntimeServiceImplTest {
         when(query.taskId("task-1")).thenReturn(query);
         when(query.taskCandidateOrAssigned("anonymous")).thenReturn(query);
         when(query.count()).thenReturn(allowed ? 1L : 0L);
+        return query;
+    }
+
+    private TaskQuery countTaskQuery(long count) {
+        TaskQuery query = mock(TaskQuery.class);
+        when(query.or()).thenReturn(query);
+        when(query.endOr()).thenReturn(query);
+        when(query.taskCandidateUser(any())).thenReturn(query);
+        when(query.taskCandidateOrAssigned(any())).thenReturn(query);
+        when(query.taskCandidateGroupIn(any())).thenReturn(query);
+        when(query.taskUnassigned()).thenReturn(query);
+        when(query.taskAssignee(any())).thenReturn(query);
+        when(query.count()).thenReturn(count);
+        return query;
+    }
+
+    private TaskQuery listTaskQuery(List<Task> tasks) {
+        TaskQuery query = countTaskQuery(tasks.size());
+        when(query.taskDueBefore(any())).thenReturn(query);
+        when(query.list()).thenReturn(tasks);
         return query;
     }
 
