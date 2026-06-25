@@ -1,5 +1,61 @@
 # Mango Changelog
 
+## v2026.06.25-cms-platform - 2026-06-25
+
+### New
+
+- Released the Mango CMS platform module with backend API/core/starter artifacts, Flyway migrations, tenant-aware admin APIs, public site APIs, CMS menu resources, and file-center based media handling.
+- Added the `@mango/cms` admin package with site, category, content, publishing, navigation, advertisement, and delivery management pages, plus the `@mango/cms/admin-pages` and `@mango/cms/style.css` public entries.
+- Added the `@mango/site-shell` frontend package for public CMS site rendering, including site resolution, navigation, category, advertisement, content listing, content detail, SEO, and public media URL helpers.
+- Integrated CMS into the aggregate admin package, the admin shell micro-frontend runtime configuration, and the CLI full/custom module metadata so generated business projects can include CMS by default.
+
+### Fixed
+
+- Aligned CMS frontend package publication metadata so `@mango/cms` and `@mango/site-shell` publish `dist` artifacts without leaking repository `src` files.
+- Bumped the aggregate admin package and CLI release lock so business consumers can resolve the newly published CMS package set from Nexus.
+
+### Published Packages
+
+- npm: `@mango/cms@1.0.0` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/site-shell@1.0.0` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.26` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.38` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Maven: Mango backend artifacts remain on `1.0.0-SNAPSHOT`; CMS artifacts are published under `io.mango.platform.cms` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.25-cms-platform`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies and add `io.mango.platform.cms:mango-cms-starter` for local CMS deployment or `io.mango.platform.cms:mango-cms-starter-remote` for remote deployment.
+- New or regenerated business projects should use `@mango/cli@1.0.38` so generated backend module metadata, admin module metadata, and release locks include CMS.
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.26`; this resolves `@mango/cms@1.0.0` and keeps the generated admin style aggregation aligned.
+- Business frontends that embed CMS admin pages directly should install `@mango/cms@1.0.0` and import `@mango/cms/style.css`.
+- Public site frontends should install `@mango/site-shell@1.0.0` and call the CMS public APIs through the site shell helpers instead of hardcoding open CMS endpoints.
+
+### Verification
+
+- `git diff --check`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm package-exports:check`
+- `pnpm --filter @mango/cms build`
+- `pnpm --filter @mango/site-shell build`
+- `pnpm --filter @mango/admin build`
+- `pnpm --filter @mango/cli test`
+- `mvn -f mango/pom.xml -pl :mango-cms-core,:mango-cms-starter -am test`
+- `node scripts/check-release-notes.mjs --package=@mango/cms --version=1.0.0`
+- `node scripts/check-release-notes.mjs --package=@mango/site-shell --version=1.0.0`
+- `node scripts/check-release-notes.mjs --package=@mango/admin --version=1.0.26`
+- `node scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.38`
+- `scripts/publish-maven-module.sh mango-platform/mango-cms --also-make`
+- `pnpm publish:pkg cms --release-tag=v2026.06.25-cms-platform`
+- `pnpm publish:pkg site-shell --release-tag=v2026.06.25-cms-platform`
+- `pnpm publish:pkg admin --release-tag=v2026.06.25-cms-platform`
+- `pnpm publish:pkg cli --release-tag=v2026.06.25-cms-platform`
+- `npm view @mango/cms@1.0.0 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/site-shell@1.0.0 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/admin@1.0.26 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/cli@1.0.38 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.06.25-workflow-return-path - 2026-06-25
 
 ### Fixed
