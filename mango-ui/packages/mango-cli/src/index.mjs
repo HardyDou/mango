@@ -4,9 +4,11 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
+import { createRequire } from 'node:module';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const requireFromCli = createRequire(import.meta.url);
 const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
@@ -1721,6 +1723,11 @@ function parsePmoArgs(argv) {
 }
 
 function loadPmoPackageBaseline() {
+  const resolvedPackageBaseline = resolveInstalledPmoPackageBaseline();
+  if (resolvedPackageBaseline) {
+    return resolvedPackageBaseline;
+  }
+
   const candidates = [
     bundledPmoPackageRoot,
     resolve(packageRoot, 'node_modules/@mango/pmo'),
@@ -1742,6 +1749,24 @@ function loadPmoPackageBaseline() {
     root: templateBaselineRoot,
     manifest: buildLegacyPmoManifest(templateBaselineRoot),
   };
+}
+
+function resolveInstalledPmoPackageBaseline() {
+  try {
+    const manifestPath = requireFromCli.resolve('@mango/pmo/baseline.json');
+    const baselineRoot = join(dirname(manifestPath), 'baseline');
+    if (existsSync(manifestPath) && existsSync(baselineRoot)) {
+      return {
+        root: baselineRoot,
+        manifest: JSON.parse(readFileSync(manifestPath, 'utf8')),
+      };
+    }
+  } catch (error) {
+    if (error?.code !== 'MODULE_NOT_FOUND' && error?.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+      throw error;
+    }
+  }
+  return null;
 }
 
 function buildLegacyPmoManifest(root) {
