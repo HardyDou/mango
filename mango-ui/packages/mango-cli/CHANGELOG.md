@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.36 - 2026-06-25
+
+### Fixed
+
+- Fixed PMO baseline package resolution for pnpm-installed business projects. `mango pmo status/check/sync/upgrade` now resolves `@mango/pmo` through Node package resolution before falling back to the CLI template baseline.
+- Added a regression check for the published pnpm layout where `@mango/pmo` is installed beside `@mango/cli` under `.pnpm/.../node_modules/@mango`.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.36 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects that synced PMO baseline with `@mango/cli@1.0.35` should run `mango pmo sync --project-dir .` again after upgrading, so `business-pmo/mango-baseline` is compared against `@mango/pmo@1.0.0` instead of the CLI template fallback.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/pmo check`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+
 ## 1.0.35 - 2026-06-24
 
 ### New

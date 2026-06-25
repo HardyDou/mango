@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
@@ -16,6 +16,7 @@ const customProjectName = 'mango-custom-acceptance';
 
 try {
   assertPmoPackageBuilt();
+  assertPublishedPnpmPmoResolution(tempRoot);
   assertNoWorkspacePackageJsonInTemplates();
   assertPackagedAdminModules();
 
@@ -660,6 +661,34 @@ function assertPmoPackageBuilt() {
   if (!existsSync(join(pmoPackageRoot, 'dist/baseline.json'))) {
     throw new Error('@mango/pmo build did not create dist/baseline.json');
   }
+}
+
+function assertPublishedPnpmPmoResolution(tempRoot) {
+  const publishedRoot = join(tempRoot, 'published-pnpm-layout');
+  const packageStoreRoot = join(publishedRoot, `node_modules/.pnpm/@mango+cli@${cliPackage.version}/node_modules/@mango`);
+  const publishedCliRoot = join(packageStoreRoot, 'cli');
+  const publishedPmoRoot = join(packageStoreRoot, 'pmo');
+  mkdirSync(join(publishedCliRoot, 'src'), { recursive: true });
+  mkdirSync(publishedPmoRoot, { recursive: true });
+  for (const file of ['package.json', 'release-versions.json', 'admin-modules.json']) {
+    cpSync(join(packageRoot, file), join(publishedCliRoot, file));
+  }
+  cpSync(join(packageRoot, 'src'), join(publishedCliRoot, 'src'), { recursive: true });
+  cpSync(join(pmoPackageRoot, 'package.json'), join(publishedPmoRoot, 'package.json'));
+  cpSync(join(pmoPackageRoot, 'dist'), join(publishedPmoRoot, 'dist'), { recursive: true });
+
+  const projectRoot = join(tempRoot, 'published-pnpm-business');
+  const baselineRoot = join(projectRoot, 'business-pmo/mango-baseline');
+  mkdirSync(baselineRoot, { recursive: true });
+  cpSync(join(pmoPackageRoot, 'dist/baseline'), baselineRoot, { recursive: true });
+  cpSync(join(pmoPackageRoot, 'dist/baseline.json'), join(baselineRoot, 'baseline.json'));
+
+  const publishedCli = join(publishedCliRoot, 'src/index.mjs');
+  const status = assertCommandOk([publishedCli, 'pmo', 'status', '--project-dir', projectRoot], projectRoot, 'published pnpm mango pmo status');
+  if (!status.stdout.includes('Baseline: @mango/pmo@') || status.stdout.includes('@mango/cli-template')) {
+    throw new Error(`published pnpm CLI should consume @mango/pmo baseline:\n${status.stdout}`);
+  }
+  assertCommandOk([publishedCli, 'pmo', 'check', '--project-dir', projectRoot], projectRoot, 'published pnpm mango pmo check');
 }
 
 function assertCommandOk(args, cwd, label) {
