@@ -28,6 +28,37 @@
 - `node mango-ui/packages/mango-cli/src/index.mjs pmo status --project-dir <business-project-root>`
 - `pnpm publish:pkg cli --dry-run`
 
+## v2026.06.24-admin-shell-footer-layout - 2026-06-24
+
+### Fixed
+
+- Fixed the Mango admin shell footer layout so edge footer modes align with shell layouts and the main content keeps the correct safe bottom spacing.
+- Updated the Mango admin aggregate package dependency lock so business projects that consume `@mango/admin` receive the new admin shell package version.
+
+### Published Packages
+
+- npm: `@mango/admin-shell@1.0.21` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.24` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Maven: no backend artifact changes. Mango backend artifacts remain on the existing `1.0.0-SNAPSHOT` line.
+- GitHub Release: `v2026.06.24-admin-shell-footer-layout`.
+
+### Upgrade Notes
+
+- Business frontends that depend on `@mango/admin-shell` directly should upgrade to `@mango/admin-shell@1.0.21`.
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.24` so its dependency lock resolves `@mango/admin-shell@1.0.21`.
+- No backend dependency or database migration changes are required for this release.
+
+### Verification
+
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm --filter @mango/admin-shell build`
+- `pnpm --filter @mango/admin build`
+- `node scripts/check-release-notes.mjs --package=@mango/admin-shell --version=1.0.21`
+- `node scripts/check-release-notes.mjs --package=@mango/admin --version=1.0.24`
+- `npm view @mango/admin-shell@1.0.21 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/admin@1.0.24 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.06.24-mango-governance-local-repo - 2026-06-24
 
 ### New
