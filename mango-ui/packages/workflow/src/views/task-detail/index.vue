@@ -417,7 +417,7 @@ async function submitAction(action: WorkflowTaskActionKey) {
     if (action === 'save') {
       await loadDetail();
     } else {
-      await router.push(action === 'claim' || action === 'unclaim' ? '/workflow/task/todo' : '/workflow/task/done');
+      await router.push(resolveBusinessReturnLocation() || defaultActionReturnLocation(action));
     }
   } catch (error) {
     if (!isKnownRequestError(error)) {
@@ -569,14 +569,82 @@ function isKnownRequestError(error: unknown) {
 }
 
 function backToList() {
+  const businessReturnLocation = resolveBusinessReturnLocation();
+  if (businessReturnLocation) {
+    router.push(businessReturnLocation);
+    return;
+  }
+  router.push(defaultListReturnLocation());
+}
+
+function resolveBusinessReturnLocation() {
+  const path = normalizeReturnPath(route.query.returnPath);
+  if (!path) {
+    return null;
+  }
+  const query = parseReturnQuery(route.query.returnQuery);
+  if (Object.keys(query).length) {
+    return { path, query };
+  }
+  return path;
+}
+
+function normalizeReturnPath(value: unknown) {
+  const path = firstQueryValue(value).trim();
+  if (!path || !path.startsWith('/') || path.startsWith('//')) {
+    return '';
+  }
+  if (path.includes('\\') || path.includes('?') || path.includes('#') || /[\u0000-\u001F\u007F]/.test(path)) {
+    return '';
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
+    return '';
+  }
+  return path;
+}
+
+function parseReturnQuery(value: unknown) {
+  const raw = firstQueryValue(value).trim();
+  const query: Record<string, string | string[]> = {};
+  if (!raw) {
+    return query;
+  }
+  new URLSearchParams(raw.startsWith('?') ? raw.slice(1) : raw).forEach((itemValue, key) => {
+    if (!key) {
+      return;
+    }
+    const existing = query[key];
+    if (Array.isArray(existing)) {
+      existing.push(itemValue);
+    } else if (typeof existing === 'string') {
+      query[key] = [existing, itemValue];
+    } else {
+      query[key] = itemValue;
+    }
+  });
+  return query;
+}
+
+function firstQueryValue(value: unknown) {
+  if (Array.isArray(value)) {
+    return String(value[0] || '');
+  }
+  return String(value || '');
+}
+
+function defaultActionReturnLocation(action: WorkflowTaskActionKey) {
+  return action === 'claim' || action === 'unclaim' ? '/workflow/task/todo' : '/workflow/task/done';
+}
+
+function defaultListReturnLocation() {
   const mode = String(route.query.from || '');
   if (mode === 'initiated') {
-    router.push('/workflow/task/initiated');
-  } else if (mode === 'done') {
-    router.push('/workflow/task/done');
-  } else {
-    router.push('/workflow/task/todo');
+    return '/workflow/task/initiated';
   }
+  if (mode === 'done') {
+    return '/workflow/task/done';
+  }
+  return '/workflow/task/todo';
 }
 
 function formatJson(value: any) {

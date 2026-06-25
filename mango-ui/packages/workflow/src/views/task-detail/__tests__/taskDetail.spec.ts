@@ -67,6 +67,9 @@ describe('workflow task detail', () => {
     routeQuery.taskId = 'task-1';
     delete routeQuery.processInstanceId;
     delete routeQuery.mode;
+    delete routeQuery.from;
+    delete routeQuery.returnPath;
+    delete routeQuery.returnQuery;
   });
 
   it('renders custom approval component from formJson instead of JSON preview', async () => {
@@ -173,6 +176,74 @@ describe('workflow task detail', () => {
     expect(workflowApi.taskDetail).toHaveBeenLastCalledWith('task-2');
     expect(el.textContent).toContain('第二字段');
     expect(el.textContent).not.toContain('第一字段');
+    unmount();
+  });
+
+  it('returns to safe business return path before workflow list fallback', async () => {
+    routeQuery.returnPath = '/guarantee/risk/reviews';
+    routeQuery.returnQuery = 'scope=TODO&tab=pending';
+    routeQuery.from = 'done';
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+
+    const { el, unmount } = await mountTaskDetail();
+    clickButton(el, '返回');
+
+    expect(mocks.push).toHaveBeenCalledWith({
+      path: '/guarantee/risk/reviews',
+      query: { scope: 'TODO', tab: 'pending' },
+    });
+    unmount();
+  });
+
+  it.each([
+    ['external URL', 'https://example.com/workflow'],
+    ['protocol-relative URL', '//example.com/workflow'],
+    ['empty path', ''],
+  ])('rejects unsafe returnPath and keeps workflow fallback for %s', async (_caseName, returnPath) => {
+    routeQuery.returnPath = returnPath;
+    routeQuery.from = 'done';
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+
+    const { el, unmount } = await mountTaskDetail();
+    clickButton(el, '返回');
+
+    expect(mocks.push).toHaveBeenCalledWith('/workflow/task/done');
+    unmount();
+  });
+
+  it('keeps original workflow list fallback when returnPath is absent', async () => {
+    routeQuery.from = 'initiated';
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+
+    const { el, unmount } = await mountTaskDetail();
+    clickButton(el, '返回');
+
+    expect(mocks.push).toHaveBeenCalledWith('/workflow/task/initiated');
+    unmount();
+  });
+
+  it('returns to business source after task action succeeds', async () => {
+    routeQuery.returnPath = '/guarantee/risk/reviews';
+    routeQuery.returnQuery = 'scope=TODO';
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail() as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+
+    const { el, unmount } = await mountTaskDetail();
+    clickButton(el, '通过');
+    await flushPromises();
+
+    expect(workflowApi.completeTask).toHaveBeenCalledWith({
+      taskId: 'task-1',
+      comment: '',
+      variables: {},
+    });
+    expect(mocks.push).toHaveBeenCalledWith({
+      path: '/guarantee/risk/reviews',
+      query: { scope: 'TODO' },
+    });
     unmount();
   });
 
