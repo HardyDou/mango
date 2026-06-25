@@ -19,6 +19,11 @@
       "mode": "micro",
       "runtimeCode": "mango-admin-template-app",
       "entry": "http://d.mango.io:5183/"
+    },
+    "mango-cms": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-cms-app",
+      "entry": "http://e.mango.io:5184/"
     }
   }
 }

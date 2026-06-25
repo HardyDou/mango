@@ -7,6 +7,7 @@ const distRuntimeConfigPath = resolve(__dirname, '../../dist/runtime-config.json
 const shellOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL || 'http://a.mango.io:5176').origin;
 const rbacEntry = process.env.PLAYWRIGHT_RBAC_ENTRY || resolvePeerEntry('b.mango.io', 5181, 4181);
 const workflowEntry = process.env.PLAYWRIGHT_WORKFLOW_ENTRY || resolvePeerEntry('c.mango.io', 5182, 4182);
+const cmsEntry = process.env.PLAYWRIGHT_CMS_ENTRY || resolvePeerEntry('e.mango.io', 5184, 4184);
 const brokenRbacEntry = rbacEntry.replace(/:\d+\//, ':5999/');
 const failClosedRuntimeConfig = new URL(shellOrigin).port === '4176';
 let originalRuntimeConfig = '';
@@ -29,6 +30,11 @@ const hybridConfig = {
       runtimeCode: 'mango-admin-workflow-app',
       entry: workflowEntry,
     },
+    'mango-cms': {
+      mode: 'micro',
+      runtimeCode: 'mango-admin-cms-app',
+      entry: cmsEntry,
+    },
   },
 };
 
@@ -46,6 +52,10 @@ const monolithConfig = {
     'mango-workflow': {
       mode: 'local',
       runtimeCode: 'mango-admin-workflow-local',
+    },
+    'mango-cms': {
+      mode: 'local',
+      runtimeCode: 'mango-admin-cms-local',
     },
   },
 };
@@ -163,6 +173,18 @@ test.describe.serial('Shell runtime composition', () => {
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
     await expectBusinessSmoke(page, 'rbac');
+
+    await page.goto('/#/cms/sites');
+    await page.waitForURL('**/#/cms/sites**', { timeout: 10000 });
+    await expectRuntime(page, {
+      moduleCode: 'mango-cms',
+      runtimeCode: 'mango-admin-cms-app',
+      pageType: 'MICRO_ROUTE',
+      entryIncludes: new URL(cmsEntry).host,
+    });
+    await expect(page.locator('main')).toContainText('站点管理');
+    await expectRemoteResource(page, new URL(cmsEntry).host);
+    await expectBusinessSmoke(page, 'cms');
   });
 
   test('monolith profile renders modules locally without loading remote apps', async ({ page }) => {
@@ -188,6 +210,16 @@ test.describe.serial('Shell runtime composition', () => {
     });
     await expect(page.locator('main')).toContainText('发起流程');
     await expectBusinessSmoke(page, 'workflow');
+
+    await page.goto('/#/cms/sites');
+    await page.waitForURL('**/#/cms/sites**', { timeout: 10000 });
+    await expectRuntime(page, {
+      moduleCode: 'mango-cms',
+      runtimeCode: 'mango-admin-cms-local',
+      pageType: 'LOCAL_ROUTE',
+    });
+    await expect(page.locator('main')).toContainText('站点管理');
+    await expectBusinessSmoke(page, 'cms');
 
     const remoteResources = await remoteRuntimeResources(page);
     expect(remoteResources).toEqual([]);
@@ -309,7 +341,7 @@ async function login(page: Page) {
   await accountTenantsResponsePromise;
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
-  await page.getByRole('button', { name: /登\s*录/ }).click();
+  await page.getByRole('button', { name: /^登\s*录$/ }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
   await expect(page.locator('.shell-runtime-content')).toBeVisible();
 }
@@ -359,7 +391,7 @@ async function expectRemoteResource(page: Page, urlPart: string) {
   }).toBeTruthy();
 }
 
-async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow') {
+async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow' | 'cms') {
   if (module === 'rbac') {
     await page.goto('/#/system/role');
     await expectRuntime(page, {
@@ -373,6 +405,22 @@ async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow') {
     await page.goto('/#/system/menu');
     await expect(page.getByRole('button', { name: '新增菜单' })).toBeVisible();
     await expect(page.getByText('菜单名称')).toBeVisible();
+    return;
+  }
+
+  if (module === 'cms') {
+    await page.goto('/#/cms/content-categories');
+    await expectRuntime(page, {
+      moduleCode: 'mango-cms',
+      runtimeCode: await currentRuntimeCode(page),
+      pageType: await currentPageType(page),
+    });
+    await expect(page.locator('main')).toContainText('内容分类');
+    await expect(page.getByRole('button', { name: '新增' })).toBeVisible();
+
+    await page.goto('/#/cms/ad-deliveries');
+    await expect(page.locator('main')).toContainText('广告投放管理');
+    await expect(page.getByRole('button', { name: '新增' })).toBeVisible();
     return;
   }
 
@@ -434,8 +482,10 @@ async function remoteRuntimeResources(page: Page) {
       .filter((url) =>
         url.includes('b.mango.io:5181')
         || url.includes('c.mango.io:5182')
+        || url.includes('e.mango.io:5184')
         || url.includes('b.mango.io:4181')
         || url.includes('c.mango.io:4182')
+        || url.includes('e.mango.io:4184')
       )
   );
 }

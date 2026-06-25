@@ -55,6 +55,19 @@
       ],
       "cliVersionKey": "mangoJob",
       "cliOptional": false
+    },
+    {
+      "code": "cms",
+      "packageName": "@mango/cms",
+      "style": "@mango/cms/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoCmsAdminPages",
+          "import": "@mango/cms/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoCms",
+      "cliOptional": false
     }
   ],
   "fullPackages": [

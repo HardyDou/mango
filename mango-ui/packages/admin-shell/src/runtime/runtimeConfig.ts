@@ -38,6 +38,13 @@ export const defaultRuntimeConfig: MangoRuntimeConfig = {
       appType: 'MICRO_APP',
       framework: 'vue3',
     },
+    'mango-cms': {
+      mode: (import.meta.env.VITE_MANGO_CMS_MODE || 'local') as any,
+      entry: import.meta.env.VITE_MANGO_CMS_ENTRY || 'http://127.0.0.1:5184/',
+      runtimeCode: 'mango-admin-cms-app',
+      appType: 'MICRO_APP',
+      framework: 'vue3',
+    },
   },
 };
 
@@ -80,6 +87,9 @@ export function createShellRuntimeConfigOptions(): MangoRuntimeConfigLoadOptions
             'http://localhost:5182',
             'http://127.0.0.1:5182',
             'http://c.mango.io:5182',
+            'http://localhost:5184',
+            'http://127.0.0.1:5184',
+            'http://e.mango.io:5184',
       ],
       allowedEntryHosts: allowedHosts,
       ...options.runtimeConfigLoadOptions,

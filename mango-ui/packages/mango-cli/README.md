@@ -209,6 +209,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地私有配置来自 `.ma
 |------|------|--------|--------------|-------------------------|
 | `file` | 文件中心 | `@mango/file` | `mango-file-starter`、`mango-file-preview-starter` | 注册文件管理页面，不生成 runtime module |
 | `template` | 模板管理 | `@mango/template` | `mango-template-starter` | runtime module 为 `mango-template` |
+| `cms` | 内容中心 | `@mango/cms` | `mango-cms-starter` | runtime module 为 `mango-cms` |
 | `notice` | 通知中心 | `@mango/notice` | `mango-notice-starter` | 注册 admin pages 和 admin shell |
 | `numgen` | 编号规则 | `@mango/numgen` | `mango-numgen-starter` | 注册编号规则页面 |
 | `calendar` | 工作日历 | `@mango/calendar` | `mango-calendar-starter` | 注册工作日历页面 |
@@ -223,6 +224,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地私有配置来自 `.ma
 | `mango-system` | `mango-admin-system-local` | `mango-admin-system-local` |
 | `mango-workflow` | `mango-admin-workflow-local` | `mango-admin-workflow-app`，entry `http://c.mango.io:5182/` |
 | `mango-template` | `mango-admin-template-local` | `mango-admin-template-app`，entry `http://d.mango.io:5183/` |
+| `mango-cms` | `mango-admin-cms-local` | `mango-admin-cms-app`，entry `http://e.mango.io:5184/` |
 
 ### 7.3 模板和版本扩展点
 

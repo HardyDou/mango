@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.cms.core.mapper.CmsContentMapper">
+
+    <select id="selectPublicPage" resultType="io.mango.cms.core.entity.CmsContentEntity">
+        SELECT c.*
+        FROM cms_content c
+        INNER JOIN (
+            SELECT p.content_id,
+                   MAX(p.top) AS top_value,
+                   MIN(p.sort) AS sort_value,
+                   MAX(p.publish_time) AS publish_time_value,
+                   MAX(p.id) AS publish_id
+            FROM cms_content_publish p
+            WHERE p.deleted = 0
+              AND p.tenant_id = #{tenantId}
+              AND p.site_id = #{siteId}
+            <if test="categoryId != null">
+              AND p.category_id = #{categoryId}
+            </if>
+            <if test="recommendationType != null and recommendationType != ''">
+              AND p.recommendation_type = #{recommendationType}
+            </if>
+              AND p.publish_status IN (#{publishedStatus}, #{scheduledStatus})
+              AND (p.scheduled_publish_time IS NULL OR p.scheduled_publish_time &lt;= #{now})
+              AND (p.offline_time IS NULL OR p.offline_time &gt; #{now})
+            GROUP BY p.content_id
+        ) px
+          ON px.content_id = c.id
+        WHERE c.deleted = 0
+          AND c.tenant_id = #{tenantId}
+          AND c.status = #{contentStatus}
+          AND (c.publish_time IS NULL OR c.publish_time &lt;= #{now})
+          AND (c.offline_time IS NULL OR c.offline_time &gt; #{now})
+        <if test="keyword != null and keyword != ''">
+          AND (c.title LIKE CONCAT('%', #{keyword}, '%') OR c.summary LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY px.top_value DESC, px.sort_value ASC, px.publish_time_value DESC, px.publish_id DESC
+    </select>
+
+</mapper>

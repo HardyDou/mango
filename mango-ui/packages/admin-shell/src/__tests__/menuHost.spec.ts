@@ -165,6 +165,56 @@ describe('admin-shell menu contract', () => {
       .toEqual(['系统管理', '通知中心']);
   });
 
+  it('hides deprecated CMS site setting menus from historical backend data', () => {
+    const menus: ShellMenu[] = [
+      {
+        menuId: 'cms',
+        moduleCode: 'mango-cms',
+        menuName: '站点运营',
+        menuCode: 'cms',
+        parentId: 0,
+        menuType: MenuTypeEnum.DIRECTORY,
+        path: '/cms',
+        sort: 1,
+        status: 1,
+        visible: 1,
+        children: [
+          {
+            menuId: 'site',
+            moduleCode: 'mango-cms',
+            menuName: '站点管理',
+            menuCode: 'cms:site',
+            parentId: 'cms',
+            menuType: MenuTypeEnum.MENU,
+            path: '/cms/sites',
+            component: 'cms/sites/index',
+            sort: 1,
+            status: 1,
+            visible: 1,
+          },
+          {
+            menuId: 'site-setting',
+            moduleCode: 'mango-cms',
+            menuName: '站点配置',
+            menuCode: 'cms:site-setting',
+            parentId: 'cms',
+            menuType: MenuTypeEnum.MENU,
+            path: '/cms/site-settings',
+            component: 'cms/site-settings/index',
+            sort: 2,
+            status: 1,
+            visible: 1,
+          },
+        ],
+      },
+    ];
+
+    const filtered = filterMenuForRouteByFeatures(menus, new Set());
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].children?.map(menu => menu.menuName)).toEqual(['站点管理']);
+  });
+
   it('keeps package hidden routes registered without exposing them as visible menus', () => {
     registerModulePages({
       moduleCode: 'mango-workflow',

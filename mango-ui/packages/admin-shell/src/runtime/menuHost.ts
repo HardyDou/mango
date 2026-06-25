@@ -1,7 +1,6 @@
 import { computed, ref } from 'vue';
 import { get } from '@mango/common/utils/request';
-import { getRegisteredPageRoutes } from '@mango/admin-pages/core';
-import { DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages/dev-component-pages';
+import { getRegisteredPageRoutes, normalizeComponentPath } from '@mango/admin-pages/core';
 import {
   isMangoAdminFeatureEnabled,
   resolveMangoAdminFeatures,
@@ -144,6 +143,7 @@ export function useMenuHost() {
 }
 
 let devCenterPagesPromise: Promise<void> | undefined;
+const DEV_COMPONENT_DEMO_REDIRECT = '/components/editor';
 
 export function ensureDevCenterPagesRegistered() {
   if (!shouldShowDevCenter()) {
@@ -167,6 +167,7 @@ function filterMenuForRoute(menus: ShellMenu[]): ShellMenu[] {
 export function filterMenuForRouteByFeatures(menus: ShellMenu[], enabledFeatures: Set<MangoAdminFeatureCode>): ShellMenu[] {
   return menus
     .filter(menu => menu.menuType !== MenuTypeEnum.BUTTON)
+    .filter(menu => !isDeprecatedMenu(menu))
     .filter(menu => {
       const moduleCode = menu.moduleCode || inferModuleCode(menu.component, menu.path);
       return isMangoAdminFeatureEnabled(enabledFeatures, resolveMangoAdminModuleFeature(moduleCode));
@@ -176,6 +177,13 @@ export function filterMenuForRouteByFeatures(menus: ShellMenu[], enabledFeatures
       children: menu.children ? filterMenuForRouteByFeatures(menu.children, enabledFeatures) : [],
     }))
     .filter(menu => menu.menuType === MenuTypeEnum.MENU || (menu.children && menu.children.length > 0));
+}
+
+function isDeprecatedMenu(menu: ShellMenu) {
+  const component = normalizeComponentPath(menu.component);
+  return menu.menuCode === 'cms:site-setting'
+    || menu.path === '/cms/site-settings'
+    || component === 'cms/site-settings/index';
 }
 
 export function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {

@@ -21,10 +21,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount, shallowRef, nextTick } from 'vue';
+import { ref, watch, onBeforeUnmount, shallowRef, nextTick, onMounted } from 'vue';
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue';
 import '@wangeditor/editor/dist/css/style.css';
 import { uploadImage } from '../../api/upload';
+
+const staleSelectionErrorMessage = 'Cannot resolve a Slate range from DOM range';
+let staleSelectionGuardRefs = 0;
+let staleSelectionGuardCleanupTimer: ReturnType<typeof window.setTimeout> | undefined;
+
+function isWangEditorStaleSelectionError(error: unknown, message: string) {
+  if (!message.includes(staleSelectionErrorMessage)) {
+    return false;
+  }
+  const stack = error instanceof Error ? error.stack || '' : '';
+  return stack.includes('@wangeditor') || stack.includes('wangeditor') || stack.includes('toSlateRange');
+}
+
+function handleStaleSelectionError(event: ErrorEvent) {
+  if (isWangEditorStaleSelectionError(event.error, event.message)) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+}
+
+function retainStaleSelectionGuard() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  if (staleSelectionGuardCleanupTimer) {
+    window.clearTimeout(staleSelectionGuardCleanupTimer);
+    staleSelectionGuardCleanupTimer = undefined;
+  }
+  if (staleSelectionGuardRefs === 0) {
+    window.addEventListener('error', handleStaleSelectionError, true);
+  }
+  staleSelectionGuardRefs += 1;
+}
+
+function releaseStaleSelectionGuard() {
+  if (typeof window === 'undefined' || staleSelectionGuardRefs === 0) {
+    return;
+  }
+  staleSelectionGuardRefs -= 1;
+  if (staleSelectionGuardRefs === 0) {
+    staleSelectionGuardCleanupTimer = window.setTimeout(() => {
+      window.removeEventListener('error', handleStaleSelectionError, true);
+      staleSelectionGuardCleanupTimer = undefined;
+    }, 500);
+  }
+}
 
 const props = withDefaults(
   defineProps<{
@@ -120,9 +166,30 @@ function handleCreated(editor: any) {
 // Handle content change
 function handleChange(editor: any) {
   const html = editor.getHtml();
+  valueHtml.value = html;
   emit('update:modelValue', html);
   emit('change', html);
 }
+
+function updateContent(content: string) {
+  valueHtml.value = content;
+  if (editorInstance.value && editorInstance.value.getHtml?.() !== content) {
+    editorInstance.value.setHtml?.(content);
+  }
+  emit('update:modelValue', content);
+  emit('change', content);
+}
+
+function blurEditorSelection() {
+  editorInstance.value?.blur?.();
+  if (typeof window !== 'undefined') {
+    window.getSelection()?.removeAllRanges();
+  }
+}
+
+onMounted(() => {
+  retainStaleSelectionGuard();
+});
 
 // Watch for external value changes
 watch(
@@ -182,8 +249,10 @@ watch(
 onBeforeUnmount(() => {
   const editor = editorInstance.value;
   if (editor) {
+    blurEditorSelection();
     editor.destroy();
   }
+  releaseStaleSelectionGuard();
 });
 
 // Expose methods
@@ -191,12 +260,9 @@ defineExpose({
   getEditor: () => editorInstance.value,
   getText: () => editorInstance.value?.getText() || '',
   getHtml: () => editorInstance.value?.getHtml() || '',
-  setContent: (content: string) => {
-    valueHtml.value = content;
-  },
-  clear: () => {
-    valueHtml.value = '';
-  },
+  setContent: updateContent,
+  clear: () => updateContent(''),
+  blur: blurEditorSelection,
 });
 </script>
 

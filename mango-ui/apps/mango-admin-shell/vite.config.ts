@@ -8,7 +8,7 @@ import {
 } from '../../build-config/mangoAliases';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
-const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io'];
+const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io', 'e.mango.io'];
 
 function validateProxyTarget(target: string): string {
   const url = new URL(target);
@@ -21,7 +21,7 @@ function validateProxyTarget(target: string): string {
 export default defineConfig((mode: ConfigEnv) => {
   assertMangoPackageModeDist(__dirname, { command: mode.command });
   const env = loadEnv(mode.mode, process.cwd());
-  const proxyTarget = validateProxyTarget(env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:18081');
+  const proxyTarget = validateProxyTarget(process.env.VITE_ADMIN_PROXY_PATH || env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:18081');
 
   return {
     base: env.VITE_PUBLIC_PATH || '/',

@@ -29,6 +29,7 @@ const defaultVersions = {
   mangoAppRuntime: readReleasedMangoPackageVersion('app-runtime', '1.0.2'),
   mangoAuth: readReleasedMangoPackageVersion('auth', '1.0.4'),
   mangoCalendar: readReleasedMangoPackageVersion('calendar', '1.0.6'),
+  mangoCms: readReleasedMangoPackageVersion('cms', '1.0.0'),
   mangoCommon: readReleasedMangoPackageVersion('common', '1.0.7'),
   mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
@@ -133,6 +134,19 @@ const OPTIONAL_MODULE_OVERLAYS = [
     },
     backend: [
       { groupId: 'io.mango.platform.template', artifactId: 'mango-template-starter' },
+    ],
+  },
+  {
+    code: 'cms',
+    label: '内容中心',
+    feature: 'cms',
+    runtimeModule: {
+      moduleCode: 'mango-cms',
+      local: { mode: 'local', runtimeCode: 'mango-admin-cms-local' },
+      micro: { mode: 'micro', runtimeCode: 'mango-admin-cms-app', entry: 'http://e.mango.io:5184/' },
+    },
+    backend: [
+      { groupId: 'io.mango.platform.cms', artifactId: 'mango-cms-starter' },
     ],
   },
   {

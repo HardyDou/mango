@@ -1,0 +1,24 @@
+{
+  "titleHeight": 233,
+  "homeAfterClick": {
+    "url": "http://127.0.0.1:5191/",
+    "h1": "芒果科技企业数字化平台"
+  },
+  "productAfterClick": {
+    "url": "http://127.0.0.1:5191/#category-2069298560874921986",
+    "path": "/",
+    "hash": "#category-2069298560874921986",
+    "visibleCategory": true,
+    "scrollY": 1488
+  },
+  "solutionAfterClick": {
+    "url": "http://127.0.0.1:5191/#category-2069298589803036673",
+    "path": "/",
+    "hash": "#category-2069298589803036673",
+    "visibleCategory": true,
+    "scrollY": 1488
+  },
+  "hasBadText": false,
+  "consoleMessages": [],
+  "failedRequests": []
+}

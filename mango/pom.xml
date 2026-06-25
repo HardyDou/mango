@@ -519,6 +519,26 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.cms</groupId>
+                <artifactId>mango-cms-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.cms</groupId>
+                <artifactId>mango-cms-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.cms</groupId>
+                <artifactId>mango-cms-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.cms</groupId>
+                <artifactId>mango-cms-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.calendar</groupId>
                 <artifactId>mango-calendar-starter</artifactId>
                 <version>${project.version}</version>
