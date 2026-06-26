@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #256 将后台工作台默认布局调整为页面内固定配置，仅影响没有个人工作台配置或恢复默认后的首页卡片排布；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
+
 - PR #253 新增 Resource Registry 的 `AUTH_ROLE`、`AUTH_ROLE_DATA_SCOPE`、`AUTH_SUBJECT_ROLE` 基线声明，可让角色、角色数据权限和成员角色绑定随资源同步注入；不改变菜单 `component` key、菜单树接口、页面注册方式、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。排查清库初始化后的菜单可见性时，可额外确认角色基线声明是否先于 `AUTH_MENU.roleCodes` 完成同步。
 
 - PR #246 发布 `@mango/grid-widgets@1.0.2`、`@mango/admin-shell@1.0.23`、`@mango/admin@1.0.27`、`@mango/cli@1.0.39`，用于修复 grid widgets 样式发布产物并对齐业务项目版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。
