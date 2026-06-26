@@ -1,5 +1,17 @@
 # Mango Changelog
 
+## Unreleased
+
+### New
+
+- Added Resource Registry baseline declarations for authorization roles, role data scopes, subject-role bindings, organization units, posts, identity users, and member org/post bindings. This lets clean deployments or demo/bootstrap projects initialize RBAC, organization, post, and demo account baseline data through resource declarations instead of manual SQL. User password security policy enforcement remains out of scope and is tracked separately by Issue #250.
+
+### Verification
+
+- `mvn -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter,:mango-org-starter,:mango-identity-starter -am test`
+- `git diff --check`
+- `PR_BODY_FILE=.pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+
 ## v2026.06.26-pmo-batch-release-rules - 2026-06-26
 
 ### Fixed
