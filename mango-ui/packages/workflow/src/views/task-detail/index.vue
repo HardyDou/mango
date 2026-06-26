@@ -57,6 +57,25 @@
           </el-form>
         </section>
 
+        <div v-if="!readonlyMode && detail" class="approval-action-bar">
+          <el-tooltip
+            v-for="action in visibleNodeActions"
+            :key="action.key"
+            :content="action.tooltip || ''"
+            :disabled="!action.tooltip"
+          >
+            <el-button
+              :type="action.buttonType"
+              :plain="action.key !== 'complete'"
+              :disabled="action.disabled"
+              :loading="submittingAction === action.key"
+              @click="submitAction(action.key)"
+            >
+              {{ action.label }}
+            </el-button>
+          </el-tooltip>
+        </div>
+
         <template #sidebar>
           <WorkflowSidebar
             :summary="workflowSummary"
@@ -86,25 +105,6 @@
         </template>
       </WorkflowLayout>
     </el-card>
-
-    <div v-if="!readonlyMode && detail" class="approval-action-bar">
-      <el-tooltip
-        v-for="action in visibleNodeActions"
-        :key="action.key"
-        :content="action.tooltip || ''"
-        :disabled="!action.tooltip"
-      >
-        <el-button
-          :type="action.buttonType"
-          :plain="action.key !== 'complete'"
-          :disabled="action.disabled"
-          :loading="submittingAction === action.key"
-          @click="submitAction(action.key)"
-        >
-          {{ action.label }}
-        </el-button>
-      </el-tooltip>
-    </div>
 
     <el-dialog
       v-model="selectorDialog.visible"
@@ -688,6 +688,12 @@ watch(
   background: var(--el-fill-color-extra-light);
 }
 
+.workflow-task-detail-page :deep(.workflow-business-layout__main) {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
 .task-section {
   padding: 18px;
   border: 1px solid var(--el-border-color-lighter);
@@ -745,9 +751,8 @@ watch(
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
-  margin-top: 12px;
   padding: 14px 16px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;

@@ -380,6 +380,8 @@ describe('workflow task detail', () => {
     expect(el.textContent).toContain('审批动作');
     expect(buttonTexts(el)).toContain('返回');
     expect(el.textContent).toContain('当前节点');
+    expect(el.querySelector('.workflow-business-layout__main > .approval-action-bar')).toBeTruthy();
+    expect(el.querySelector('.workflow-business-layout__sidebar .approval-action-bar')).toBeFalsy();
     unmount();
   });
 });
