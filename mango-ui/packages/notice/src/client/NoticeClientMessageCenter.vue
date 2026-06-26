@@ -160,6 +160,12 @@ function resetSearch() {
 }
 
 async function openDetail(row: NoticeSiteMessage) {
+  if (row.bizType === 'notice.announcement.published' && row.bizId) {
+    emit('announcement', row.bizId);
+    await markMySiteMessageRead(row.id);
+    await loadMessages();
+    return;
+  }
   currentMessage.value = await getMySiteMessageDetail(row.id);
   detailVisible.value = true;
 }
@@ -197,6 +203,7 @@ async function removeMessage(id: string) {
 
 const emit = defineEmits<{
   (event: 'settings'): void;
+  (event: 'announcement', id: string): void;
 }>();
 
 function openReceiveSetting() {

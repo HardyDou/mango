@@ -1,6 +1,8 @@
 import { del, get, post, put } from '@mango/common';
 import type {
   NoticeBusinessConfigVersion,
+  NoticeAnnouncement,
+  NoticeAnnouncementStats,
   NoticeBusinessType,
   NoticeDomainOption,
   NoticeChannelConfig,
@@ -15,6 +17,8 @@ import type {
   NoticeSendCommand,
   NoticeSendRecord,
   NoticeSendResult,
+  PublishNoticeAnnouncementCommand,
+  SaveNoticeAnnouncementCommand,
   NoticeSiteMessage,
   NoticeSiteMessagePageQuery,
   NoticeTask,
@@ -240,6 +244,46 @@ export function getMySiteMessageDetail(id: string) {
   return get<NoticeSiteMessage>(`/notice/site/my/messages/${id}`);
 }
 
+export function getAnnouncements(params?: Record<string, unknown>) {
+  return get<PageResult<NoticeAnnouncement>>('/notice/announcements', { params });
+}
+
+export function getAnnouncement(id: string) {
+  return get<NoticeAnnouncement>('/notice/announcements/detail', { params: { id } });
+}
+
+export function createAnnouncement(data: SaveNoticeAnnouncementCommand) {
+  return post<NoticeAnnouncement>('/notice/announcements', data);
+}
+
+export function updateAnnouncement(id: string, data: SaveNoticeAnnouncementCommand) {
+  return put<NoticeAnnouncement>('/notice/announcements', { ...data, id });
+}
+
+export function publishAnnouncement(id: string, data?: PublishNoticeAnnouncementCommand) {
+  return post<boolean>('/notice/announcements/publish', { ...(data || {}), id });
+}
+
+export function offlineAnnouncement(id: string) {
+  return post<boolean>('/notice/announcements/offline', { id });
+}
+
+export function getAnnouncementStats(id: string) {
+  return get<NoticeAnnouncementStats>('/notice/announcements/stats', { params: { id } });
+}
+
+export function getMyAnnouncements(params?: Record<string, unknown>) {
+  return get<PageResult<NoticeAnnouncement>>('/notice/site/my/announcements', { params });
+}
+
+export function getMyAnnouncement(id: string) {
+  return get<NoticeAnnouncement>('/notice/site/my/announcements/detail', { params: { id } });
+}
+
+export function confirmMyAnnouncement(id: string) {
+  return post<boolean>('/notice/site/my/announcements/confirm', { id });
+}
+
 export function getNoticeSettings() {
   return get<Record<string, unknown>>('/notice/settings');
 }
@@ -403,6 +447,16 @@ export const noticeApi = {
   ignoreSendRecords,
   getMySiteMessages,
   getMySiteMessageDetail,
+  getAnnouncements,
+  getAnnouncement,
+  createAnnouncement,
+  updateAnnouncement,
+  publishAnnouncement,
+  offlineAnnouncement,
+  getAnnouncementStats,
+  getMyAnnouncements,
+  getMyAnnouncement,
+  confirmMyAnnouncement,
   getIdentityUsers,
   getNoticeOrgTree,
   getNoticePosts,

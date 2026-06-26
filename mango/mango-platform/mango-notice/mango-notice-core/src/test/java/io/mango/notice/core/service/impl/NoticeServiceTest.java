@@ -53,6 +53,7 @@ import io.mango.notice.core.mapper.NoticeSettingMapper;
 import io.mango.notice.core.mapper.NoticeSiteMessageMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.mapper.NoticeWecomSyncMappingMapper;
+import io.mango.notice.core.service.NoticeRecipientResolver;
 import io.mango.notice.channel.wecom.WecomDirectoryClient;
 import io.mango.notice.support.channel.ChannelSendCommand;
 import io.mango.notice.support.channel.ChannelSendResult;
@@ -202,7 +203,8 @@ class NoticeServiceTest {
  outboxStore,
  identityUserApi,
  sysOrgApi,
- wecomDirectoryClient);
+ wecomDirectoryClient,
+ recipientResolver());
  }
 
  @Test
@@ -977,7 +979,8 @@ class NoticeServiceTest {
  outboxStore,
  identityUserApi,
  sysOrgApi,
- mock(WecomDirectoryClient.class));
+ mock(WecomDirectoryClient.class),
+ recipientResolver());
  NoticeTaskEntity task = new NoticeTaskEntity();
  task.setId(1L);
  task.setBizType("TEST_NOTICE");
@@ -1597,7 +1600,12 @@ class NoticeServiceTest {
  outboxStore,
  identityUserApi,
  sysOrgApi,
- mock(WecomDirectoryClient.class));
+ mock(WecomDirectoryClient.class),
+ recipientResolver());
+ }
+
+ private NoticeRecipientResolver recipientResolver() {
+ return new NoticeRecipientResolver(identityUserApi);
  }
 
  private void assertTaskFinalStatus(NoticeTaskStatus status, int successCount, int failCount) {
