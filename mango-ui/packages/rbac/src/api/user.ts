@@ -43,6 +43,12 @@ export interface IdentityUserVO {
   orgLeaderFlag?: boolean;
   tenantId?: string;
   lastLoginTime?: string;
+  passwordResetRequired?: boolean;
+  passwordUpdatedAt?: string;
+  failedLoginCount?: number;
+  lockedUntil?: string;
+  lockedReason?: string;
+  locked?: boolean;
   remark?: string;
   createTime?: string;
   updateTime?: string;
@@ -142,6 +148,8 @@ export const userApi = {
   deleteBatch: (userIds: ApiId[]) => post<number>('/identity/users/delete-batch', { userIds }),
   updateStatus: (userId: ApiId, status: number) => put<boolean>('/identity/users/status', { userId, status }),
   resetPassword: (userId: ApiId, password: string) => put<boolean>('/identity/users/password/reset', { userId, password }),
+  unlock: (userId: ApiId) => put<boolean>('/identity/users/unlock', { userId }),
+  requirePasswordReset: (userId: ApiId) => put<boolean>('/identity/users/password/reset-required', { userId }),
   syncWecomUsers: (data: WecomUserSyncCommand) => post<WecomUserSyncResult>('/notice/wecom/users/sync', data),
   listExternalIdentities: (userId: ApiId) => get<ExternalIdentityBindingVO[]>('/identity/users/external-identities', { params: { userId } }),
   bindExternalIdentity: (data: BindExternalIdentityCommand) => post<ExternalIdentityBindingVO>('/identity/users/external-identities', data),

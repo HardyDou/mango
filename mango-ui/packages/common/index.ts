@@ -16,6 +16,7 @@ export * from './utils/menuTree';
 export * from './utils/iconConfig';
 export * from './utils/message';
 export * from './utils/tagsView';
+export * from './utils/passwordPolicy';
 export * from './utils/realtime';
 
 export * from './hooks/useTitle';
@@ -70,6 +71,7 @@ export type {
 } from './components/UserSelector/types';
 export { default as TreeSelect } from './components/TreeSelect/index.vue';
 export { default as MangoDialog } from './components/MangoDialog/index.vue';
+export { default as PasswordPolicyHint } from './components/PasswordPolicyHint/index.vue';
 export type {
   MangoDialogEmits,
   MangoDialogFooterAlign,

@@ -70,7 +70,6 @@
               size="large"
               prefix-icon="User"
               clearable
-              @blur="refreshAccountTenants()"
             />
           </el-form-item>
           <el-form-item prop="password">
@@ -82,7 +81,6 @@
               prefix-icon="Lock"
               show-password
               clearable
-              @blur="refreshAccountTenants()"
             />
           </el-form-item>
           <el-form-item>
@@ -158,20 +156,79 @@
         </el-button>
       </template>
     </el-dialog>
+    <el-dialog
+      v-model="passwordResetDialogVisible"
+      title="修改登录密码"
+      width="420px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+    >
+      <el-form
+        ref="passwordResetFormRef"
+        :model="passwordResetForm"
+        :rules="passwordResetRules"
+        label-width="96px"
+        @keyup.enter="handleChangeRequiredPassword"
+      >
+        <el-form-item
+          label="新密码"
+          prop="newPassword"
+        >
+          <el-input
+            v-model="passwordResetForm.newPassword"
+            type="password"
+            show-password
+            autocomplete="new-password"
+            placeholder="至少8位，包含字母和数字"
+          />
+          <PasswordPolicyHint :password="passwordResetForm.newPassword" />
+        </el-form-item>
+        <el-form-item
+          label="确认密码"
+          prop="confirmPassword"
+        >
+          <el-input
+            v-model="passwordResetForm.confirmPassword"
+            type="password"
+            show-password
+            autocomplete="new-password"
+            placeholder="请再次输入新密码"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button
+          type="primary"
+          :loading="passwordResetLoading"
+          :disabled="!canSubmitPasswordReset"
+          @click="handleChangeRequiredPassword"
+        >
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts" name="Login">
 import { computed, onMounted, ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import {
+  defaultPasswordPolicy,
+  getPasswordPolicyMessage,
+  isPasswordPolicyPassed,
+  PasswordPolicyHint,
+} from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import {
-  getAccountLoginTenantOptions,
+  changeRequiredPassword,
   getWecomLoginConfig,
   getLoginTenantOptions,
   login,
   wecomLogin,
+  type LoginResult,
   type WecomLoginConfig,
   type LoginTenantOption,
 } from '../api/sys';
@@ -207,19 +264,61 @@ const rules = {
 // 状态
 const loading = ref(false);
 const wecomLoading = ref(false);
+const passwordResetLoading = ref(false);
 const wecomDialogVisible = ref(false);
+const passwordResetDialogVisible = ref(false);
 const wecomCode = ref('');
 const wecomLoginConfig = ref<WecomLoginConfig>();
 const tenantLoading = ref(false);
 const tenantOptions = ref<LoginTenantOption[]>([]);
-const accountTenantResolvedKey = ref('');
-const accountTenantPendingKey = ref('');
-let accountTenantPendingPromise: Promise<boolean> | undefined;
+const passwordResetFormRef = ref<FormInstance>();
+const passwordResetTicket = ref('');
+const passwordResetFallback = ref<Record<string, any>>();
 
 interface WecomCallbackState {
   tenantId?: string;
   channelConfigId?: string;
 }
+
+const passwordResetForm = reactive({
+  newPassword: '',
+  confirmPassword: '',
+});
+
+const passwordPolicyMessage = getPasswordPolicyMessage(defaultPasswordPolicy);
+const canSubmitPasswordReset = computed(() =>
+  isPasswordPolicyPassed(passwordResetForm.newPassword, defaultPasswordPolicy)
+  && passwordResetForm.confirmPassword === passwordResetForm.newPassword
+);
+
+const passwordResetRules: FormRules = {
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    {
+      validator: (_rule, value, callback) => {
+        if (!isPasswordPolicyPassed(String(value || ''), defaultPasswordPolicy)) {
+          callback(new Error(passwordPolicyMessage));
+          return;
+        }
+        callback();
+      },
+      trigger: 'blur',
+    },
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (_rule, value, callback) => {
+        if (value !== passwordResetForm.newPassword) {
+          callback(new Error('两次输入的密码不一致'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'blur',
+    },
+  ],
+};
 
 const selectedTenant = computed(() => {
   return tenantOptions.value.find((tenant) => tenant.tenantId === form.tenantId);
@@ -347,8 +446,6 @@ const loadLoginTenants = async () => {
   }
 };
 
-const accountTenantKey = () => `${form.username.trim()}:${form.password}:${form.tenantId}`;
-
 const applyTenantOptions = (options: LoginTenantOption[]) => {
   tenantOptions.value = Array.isArray(options) ? options : [];
   if (tenantOptions.value.length === 0) {
@@ -360,52 +457,6 @@ const applyTenantOptions = (options: LoginTenantOption[]) => {
   if (!form.tenantId || !selectedExists) {
     form.tenantId = tenantOptions.value.find((tenant) => tenant.tenantCode === (loginDefaults.value.tenantCode || 'default'))?.tenantId
       || tenantOptions.value[0].tenantId;
-  }
-};
-
-const refreshAccountTenants = async (strict = false) => {
-  if (!form.username.trim() || !form.password) {
-    return !strict;
-  }
-
-  const key = accountTenantKey();
-  if (accountTenantResolvedKey.value === key) {
-    return true;
-  }
-  if (accountTenantPendingPromise && accountTenantPendingKey.value === key) {
-    return accountTenantPendingPromise;
-  }
-
-  const selectedTenantId = form.tenantId;
-  tenantLoading.value = true;
-  accountTenantPendingKey.value = key;
-  accountTenantPendingPromise = (async () => {
-    const options = await getAccountLoginTenantOptions({
-      username: form.username.trim(),
-      password: form.password,
-      realm: loginDefaults.value.realm || 'INTERNAL',
-      appCode: loginDefaults.value.appCode || 'internal-admin',
-    });
-    accountTenantResolvedKey.value = accountTenantKey();
-    const canKeepSelected = !selectedTenantId
-      || options.some((tenant) => tenant.tenantId === selectedTenantId);
-    applyTenantOptions(options);
-    if (strict && !canKeepSelected) {
-      ElMessage.warning('当前账号不可进入所选机构，请重新选择机构');
-      return false;
-    }
-    return true;
-  })();
-
-  try {
-    return await accountTenantPendingPromise;
-  } catch (error) {
-    console.error('查询账号可登录机构失败:', error);
-    return false;
-  } finally {
-    tenantLoading.value = false;
-    accountTenantPendingKey.value = '';
-    accountTenantPendingPromise = undefined;
   }
 };
 
@@ -426,7 +477,7 @@ onMounted(() => {
   })();
 });
 
-function persistLoginResult(res: any, fallback: Record<string, any>) {
+function persistLoginResult(res: LoginResult, fallback: Record<string, any>) {
   const token = res?.accessToken || res?.token;
   if (!res || !token) {
     throw new Error('登录响应无效');
@@ -450,6 +501,42 @@ function persistLoginResult(res: any, fallback: Record<string, any>) {
   userInfoStore.setUserInfos(normalizedUserInfo);
   if (normalizedUserInfo.tenantId) {
     Session.set('tenantId', normalizedUserInfo.tenantId);
+  }
+}
+
+function openPasswordReset(res: LoginResult, fallback: Record<string, any>) {
+  if (!res.passwordResetTicket) {
+    throw new Error('强制改密票据缺失');
+  }
+  passwordResetTicket.value = res.passwordResetTicket;
+  passwordResetFallback.value = fallback;
+  passwordResetForm.newPassword = '';
+  passwordResetForm.confirmPassword = '';
+  passwordResetDialogVisible.value = true;
+  passwordResetFormRef.value?.clearValidate();
+  ElMessage.warning('当前账号需要修改密码后才能继续登录');
+}
+
+async function handleChangeRequiredPassword() {
+  if (!passwordResetFormRef.value || passwordResetLoading.value) return;
+  await passwordResetFormRef.value.validate();
+  passwordResetLoading.value = true;
+  try {
+    const res = await changeRequiredPassword({
+      passwordResetTicket: passwordResetTicket.value,
+      newPassword: passwordResetForm.newPassword,
+      confirmPassword: passwordResetForm.confirmPassword,
+    });
+    persistLoginResult(res, passwordResetFallback.value || {});
+    passwordResetDialogVisible.value = false;
+    passwordResetTicket.value = '';
+    ElMessage.success('密码已修改');
+    await router.push(loginDefaults.value.redirectPath || '/home');
+  } catch (error) {
+    console.error('强制改密失败:', error);
+    ElMessage.error('密码修改失败，请确认密码符合复杂度要求');
+  } finally {
+    passwordResetLoading.value = false;
   }
 }
 
@@ -551,12 +638,6 @@ const handleLogin = async () => {
     loading.value = true;
     const loadingStartedAt = Date.now();
     try {
-      const accountTenantsReady = accountTenantResolvedKey.value === accountTenantKey()
-        || await refreshAccountTenants(true);
-      if (!accountTenantsReady) {
-        throw new Error('账号机构校验失败');
-      }
-
       // 构造登录数据
       const loginData = {
         username: form.username,
@@ -571,8 +652,7 @@ const handleLogin = async () => {
 
       // 调用真实登录接口
       const res = await login(loginData);
-
-      persistLoginResult(res, {
+      const fallback = {
         tenantId: form.tenantId,
         tenantCode: selectedTenant.value?.tenantCode ?? loginData.tenantCode,
         tenantName: selectedTenant.value?.tenantName,
@@ -580,13 +660,19 @@ const handleLogin = async () => {
         actorType: loginData.actorType,
         partyType: loginData.partyType,
         appCode: loginData.appCode,
-      });
+      };
+
+      if (res.passwordResetRequired || res.loginAction === 'CHANGE_PASSWORD') {
+        openPasswordReset(res, fallback);
+        return;
+      }
+
+      persistLoginResult(res, fallback);
 
       ElMessage.success('登录成功');
       await router.push(loginDefaults.value.redirectPath || '/home');
-    } catch (error) {
-      console.error('登录失败:', error);
-      ElMessage.error('登录失败，请检查用户名和密码');
+    } catch {
+      // Business errors are already displayed by the request interceptor.
     } finally {
       const remaining = 500 - (Date.now() - loadingStartedAt);
       if (remaining > 0) {

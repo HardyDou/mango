@@ -1,6 +1,25 @@
 import { get, post } from '@mango/common/utils/request';
 import { generateArithmetic } from '@mango/common/api/captcha';
 
+export interface LoginResult {
+  accessToken?: string;
+  token?: string;
+  refreshToken?: string;
+  expiresIn?: number | string;
+  tenantId?: string | number;
+  tenantCode?: string;
+  tenantName?: string;
+  realm?: string;
+  actorType?: string;
+  partyType?: string;
+  partyId?: string | number;
+  appCode?: string;
+  userInfo?: Record<string, any>;
+  passwordResetRequired?: boolean;
+  loginAction?: string;
+  passwordResetTicket?: string;
+}
+
 /**
  * 登录
  */
@@ -17,7 +36,15 @@ export function login(data: {
   captchaCode?: string;
   captchaKey?: string;
 }) {
-  return post('/auth/login', data);
+  return post<LoginResult>('/auth/login', data);
+}
+
+export function changeRequiredPassword(data: {
+  passwordResetTicket: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  return post<LoginResult>('/auth/password/change-required', data, { ignoreToken: true });
 }
 
 export function wecomLogin(data: {
@@ -46,7 +73,6 @@ export function getWecomLoginConfig(tenantId: string | number) {
 
 export function getAccountLoginTenantOptions(data: {
   username: string;
-  password: string;
   realm?: string;
   appCode?: string;
 }) {

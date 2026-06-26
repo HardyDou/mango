@@ -47,6 +47,7 @@
                 type="password"
                 show-password
               />
+              <PasswordPolicyHint :password="form.newPassword" />
             </el-form-item>
             <el-form-item
               label="确认密码"
@@ -62,6 +63,7 @@
               <el-button
                 type="primary"
                 :loading="submitting"
+                :disabled="!canSubmit"
                 @click="handleSubmit"
               >
                 提交
@@ -89,6 +91,12 @@
 <script setup lang="ts" name="MangoAuthPassword">
 import { computed, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import {
+  defaultPasswordPolicy,
+  getPasswordPolicyMessage,
+  isPasswordPolicyPassed,
+  PasswordPolicyHint,
+} from '@mango/common';
 import { updatePassword } from '../api/sys';
 import { useAuthConfig } from '../composables/useAuthConfig';
 
@@ -100,8 +108,13 @@ const form = reactive({
   newPassword: '',
   confirmPassword: '',
 });
-const minLength = computed(() => authConfig.value.password?.minLength || 6);
 const passwordSlots = computed(() => authConfig.value.password?.slots || {});
+const passwordPolicyMessage = getPasswordPolicyMessage(defaultPasswordPolicy);
+const canSubmit = computed(() =>
+  Boolean(form.oldPassword)
+  && isPasswordPolicyPassed(form.newPassword, defaultPasswordPolicy)
+  && form.confirmPassword === form.newPassword
+);
 
 const validateConfirm = (_rule: any, value: string, callback: any) => {
   if (value !== form.newPassword) {
@@ -115,7 +128,16 @@ const rules = computed(() => ({
   oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: minLength.value, message: `密码长度不能少于${minLength.value}位`, trigger: 'blur' },
+    {
+      validator: (_rule: any, value: string, callback: any) => {
+        if (!isPasswordPolicyPassed(String(value || ''), defaultPasswordPolicy)) {
+          callback(new Error(passwordPolicyMessage));
+          return;
+        }
+        callback();
+      },
+      trigger: 'blur',
+    },
   ],
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },

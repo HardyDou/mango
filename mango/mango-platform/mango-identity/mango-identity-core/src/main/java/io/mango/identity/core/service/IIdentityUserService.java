@@ -4,7 +4,9 @@ import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
+import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
+import io.mango.identity.api.command.UnlockIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
@@ -61,6 +63,16 @@ public interface IIdentityUserService {
      * 重置当前租户可管理的身份用户密码。
      */
     Boolean resetPassword(ResetIdentityUserPasswordCommand command);
+
+    /**
+     * 解锁当前租户可管理的身份用户。
+     */
+    Boolean unlock(UnlockIdentityUserCommand command);
+
+    /**
+     * 要求当前租户可管理的身份用户下次登录改密。
+     */
+    Boolean requirePasswordReset(RequireIdentityUserPasswordResetCommand command);
 
     /**
      * 按用户名查询身份资料。

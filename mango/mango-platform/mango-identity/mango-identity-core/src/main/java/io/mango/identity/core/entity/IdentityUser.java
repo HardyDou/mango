@@ -27,6 +27,12 @@ public class IdentityUser implements Serializable {
     /** 密码哈希。 */
     private String password;
 
+    /** 是否要求下次登录修改密码。 */
+    private Boolean passwordResetRequired;
+
+    /** 最近密码更新时间。 */
+    private LocalDateTime passwordUpdatedAt;
+
     /** 昵称。 */
     private String nickname;
 
@@ -62,6 +68,18 @@ public class IdentityUser implements Serializable {
 
     /** 最近登录时间。 */
     private LocalDateTime lastLoginTime;
+
+    /** 连续登录失败次数。 */
+    private Integer failedLoginCount;
+
+    /** 最近登录失败时间。 */
+    private LocalDateTime lastFailedLoginAt;
+
+    /** 账号锁定截止时间。 */
+    private LocalDateTime lockedUntil;
+
+    /** 账号锁定原因。 */
+    private String lockedReason;
 
     /** 备注。 */
     private String remark;

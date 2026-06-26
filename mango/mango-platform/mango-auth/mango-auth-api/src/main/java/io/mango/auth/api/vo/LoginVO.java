@@ -24,6 +24,15 @@ public class LoginVO {
     @Schema(description = "刷新令牌")
     private String refreshToken;
 
+    @Schema(description = "是否要求修改密码")
+    private Boolean passwordResetRequired;
+
+    @Schema(description = "登录后动作，例如 CHANGE_PASSWORD")
+    private String loginAction;
+
+    @Schema(description = "强制改密一次性凭据")
+    private String passwordResetTicket;
+
     @Schema(description = "用户ID")
     private Long userId;
 

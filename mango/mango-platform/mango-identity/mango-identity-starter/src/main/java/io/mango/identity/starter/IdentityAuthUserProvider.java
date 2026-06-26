@@ -45,6 +45,12 @@ public class IdentityAuthUserProvider implements AuthUserProvider {
         authUser.setPartyType(entity.getPartyType());
         authUser.setPartyId(entity.getPartyId());
         authUser.setStatus(entity.getStatus());
+        authUser.setPasswordResetRequired(entity.getPasswordResetRequired());
+        authUser.setPasswordUpdatedAt(entity.getPasswordUpdatedAt());
+        authUser.setFailedLoginCount(entity.getFailedLoginCount());
+        authUser.setLastFailedLoginAt(entity.getLastFailedLoginAt());
+        authUser.setLockedUntil(entity.getLockedUntil());
+        authUser.setLockedReason(entity.getLockedReason());
         return authUser;
     }
 }

@@ -1,5 +1,6 @@
 package io.mango.auth.core.service;
 
+import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.LoginCommand;
 import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
@@ -11,6 +12,8 @@ import java.util.List;
 
 public interface IAuthService {
     LoginVO login(LoginCommand command);
+
+    LoginVO changeRequiredPassword(ChangeRequiredPasswordCommand command);
 
     LoginVO loginByWecom(WecomLoginCommand command);
 

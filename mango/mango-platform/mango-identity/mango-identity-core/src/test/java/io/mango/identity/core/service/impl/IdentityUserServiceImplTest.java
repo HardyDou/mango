@@ -16,8 +16,10 @@ import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.system.api.SysConfigApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -53,14 +55,13 @@ class IdentityUserServiceImplTest {
         user.setStatus(1);
         when(mapper.selectOne(any())).thenReturn(user);
 
-        IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+        IdentityUserServiceImpl service = newService(
                 mapper,
                 mock(TenantMemberMapper.class),
                 mock(TenantMemberOrgMapper.class),
                 mock(RoleBindingApi.class),
                 mock(ExternalIdentityBindingMapper.class),
-                mock(PasswordEncoder.class),
-                event -> {});
+                mock(PasswordEncoder.class));
         var profile = service.getUserInfo("admin");
 
         assertEquals(1L, profile.getUserId());
@@ -82,14 +83,13 @@ class IdentityUserServiceImplTest {
         IdentityUserMapper mapper = mock(IdentityUserMapper.class);
         when(mapper.selectOne(any())).thenReturn(null);
 
-        IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+        IdentityUserServiceImpl service = newService(
                 mapper,
                 mock(TenantMemberMapper.class),
                 mock(TenantMemberOrgMapper.class),
                 mock(RoleBindingApi.class),
                 mock(ExternalIdentityBindingMapper.class),
-                mock(PasswordEncoder.class),
-                event -> {});
+                mock(PasswordEncoder.class));
 
         assertNull(service.getUserInfo("missing"));
     }
@@ -116,14 +116,13 @@ class IdentityUserServiceImplTest {
             user.setNickname("管理员");
             user.setStatus(1);
             when(userMapper.selectList(any())).thenReturn(List.of(user));
-            IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+            IdentityUserServiceImpl service = newService(
                     userMapper,
                     memberMapper,
                     relationMapper,
                     roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class),
-                    event -> {});
+                    mock(PasswordEncoder.class));
             IdentityUserTargetQuery query = new IdentityUserTargetQuery();
             query.setTargetType(IdentityUserTargetType.ORG);
             query.setTargetId(200L);
@@ -158,14 +157,13 @@ class IdentityUserServiceImplTest {
             user.setUsername("admin");
             user.setStatus(1);
             when(userMapper.selectList(any())).thenReturn(List.of(user));
-            IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+            IdentityUserServiceImpl service = newService(
                     userMapper,
                     memberMapper,
                     relationMapper,
                     roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class),
-                    event -> {});
+                    mock(PasswordEncoder.class));
             IdentityUserTargetQuery query = new IdentityUserTargetQuery();
             query.setTargetType(IdentityUserTargetType.ROLE);
             query.setTargetId(300L);
@@ -198,14 +196,13 @@ class IdentityUserServiceImplTest {
             member2.setUserId(1003L);
             when(memberMapper.selectList(any())).thenReturn(List.of(member1, member2));
             when(memberMapper.delete(any())).thenReturn(2);
-            IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+            IdentityUserServiceImpl service = newService(
                     userMapper,
                     memberMapper,
                     relationMapper,
                     roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class),
-                    event -> {});
+                    mock(PasswordEncoder.class));
 
             Integer count = service.deleteBatch(List.of(1001L, 1002L, 1003L));
 
@@ -227,14 +224,13 @@ class IdentityUserServiceImplTest {
             TenantMemberMapper memberMapper = mock(TenantMemberMapper.class);
             TenantMemberOrgMapper relationMapper = mock(TenantMemberOrgMapper.class);
             RoleBindingApi roleBindingApi = mock(RoleBindingApi.class);
-            IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+            IdentityUserServiceImpl service = newService(
                     mock(IdentityUserMapper.class),
                     memberMapper,
                     relationMapper,
                     roleBindingApi,
                     mock(ExternalIdentityBindingMapper.class),
-                    mock(PasswordEncoder.class),
-                    event -> {});
+                    mock(PasswordEncoder.class));
 
             Integer count = service.deleteBatch(List.of(1001L));
 
@@ -266,14 +262,13 @@ class IdentityUserServiceImplTest {
             when(memberMapper.selectOne(any())).thenReturn(null);
             when(externalBindingMapper.selectOne(any())).thenReturn(null);
             when(externalBindingMapper.insert(any(ExternalIdentityBindingEntity.class))).thenReturn(1);
-            IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+            IdentityUserServiceImpl service = newService(
                     userMapper,
                     memberMapper,
                     mock(TenantMemberOrgMapper.class),
                     mock(RoleBindingApi.class),
                     externalBindingMapper,
-                    mock(PasswordEncoder.class),
-                    event -> {});
+                    mock(PasswordEncoder.class));
             BindExternalIdentityCommand command = new BindExternalIdentityCommand();
             command.setUserId(1002L);
             command.setProvider("WECOM");
@@ -292,5 +287,25 @@ class IdentityUserServiceImplTest {
         } finally {
             MangoContextHolder.clear();
         }
+    }
+
+    private IdentityUserServiceImpl newService(IdentityUserMapper userMapper,
+                                               TenantMemberMapper memberMapper,
+                                               TenantMemberOrgMapper relationMapper,
+                                               RoleBindingApi roleBindingApi,
+                                               ExternalIdentityBindingMapper externalBindingMapper,
+                                               PasswordEncoder passwordEncoder) {
+        IdentitySecurityProperties properties = new IdentitySecurityProperties();
+        IdentitySecurityPolicyService policyService = new IdentitySecurityPolicyService(properties, emptyProvider());
+        IdentityPasswordPolicyService passwordPolicyService = new IdentityPasswordPolicyService(policyService);
+        IdentityUserSecurityService securityService = new IdentityUserSecurityService(
+                userMapper, policyService, passwordPolicyService, passwordEncoder);
+        return new IdentityUserServiceImpl(userMapper, memberMapper, relationMapper, roleBindingApi,
+                externalBindingMapper, passwordEncoder, event -> {}, passwordPolicyService, policyService, securityService);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ObjectProvider<SysConfigApi> emptyProvider() {
+        return mock(ObjectProvider.class);
     }
 }

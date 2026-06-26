@@ -1,6 +1,7 @@
 package io.mango.auth.core.service.impl;
 
 import io.mango.auth.api.AuthCode;
+import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
@@ -17,6 +18,7 @@ import io.mango.common.result.Require;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.TokenRevocationService;
 import io.mango.auth.core.service.WecomLoginClient;
+import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.query.ExternalIdentityQuery;
@@ -56,6 +58,9 @@ public class AuthServiceImpl implements IAuthService {
     private final IAuthorizationProvider authorizationProvider;
     private final ITokenProvider tokenService;
     private final PasswordEncoder passwordEncoder;
+    private final AuthIdentitySecurityProvider authIdentitySecurityProvider;
+    private final PasswordResetTicketService passwordResetTicketService;
+    private final LoginAttemptTracker loginAttemptTracker;
     private final ObjectProvider<LoginTenantProvider> loginTenantProvider;
     private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
     private final IdentityUserApi identityUserApi;
@@ -71,16 +76,32 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public LoginVO login(LoginCommand command) {
         String username = command.getUsername();
+        String loginAttemptKey = loginAttemptKey(command.getRealm(), username);
+        Require.isFalse(loginAttemptTracker.isLockedOut(loginAttemptKey), AuthCode.LOGIN_ATTEMPT_LOCKED);
+
         // 1. 校验账号。
         AuthUserInfo user = authUserProvider.getByUsernameForAuth(username, command.getRealm());
-        Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        if (user == null) {
+            loginAttemptTracker.recordFailedAttempt(loginAttemptKey);
+            return Require.fail(AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        }
+        authIdentitySecurityProvider.assertLoginAllowed(user);
 
         // 2. 校验密码。
-        Require.isTrue(passwordEncoder.matches(command.getPassword(), user.getPassword()),
-                AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        if (!passwordEncoder.matches(command.getPassword(), user.getPassword())) {
+            authIdentitySecurityProvider.recordLoginFailure(user.getUserId());
+            return Require.fail(AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        }
 
         // 3. 校验用户状态。
         Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
+        if (Boolean.TRUE.equals(user.getPasswordResetRequired())) {
+            LoginVO response = buildPasswordResetRequiredLoginVO(user, command);
+            log.info("User login requires password change: userId={}, username={}", user.getUserId(), username);
+            return response;
+        }
+        loginAttemptTracker.clearAttempts(loginAttemptKey);
+        authIdentitySecurityProvider.recordLoginSuccess(user.getUserId());
 
         // 4. 生成令牌。
         IdentityContext identityContext = resolveIdentityContext(user, command);
@@ -95,6 +116,37 @@ public class AuthServiceImpl implements IAuthService {
         loadUserRolesAndPermissions(user.getUserId(), identityContext, response);
 
         log.info("User logged in successfully: {}", username);
+        return response;
+    }
+
+    @Override
+    public LoginVO changeRequiredPassword(ChangeRequiredPasswordCommand command) {
+        PasswordResetTicketService.TicketPayload ticket = passwordResetTicketService.peek(command.getPasswordResetTicket());
+        AuthUserInfo user = authUserProvider.getByIdForAuth(ticket.userId());
+        Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
+        io.mango.identity.api.command.ChangeRequiredPasswordCommand identityCommand =
+                new io.mango.identity.api.command.ChangeRequiredPasswordCommand();
+        identityCommand.setUserId(ticket.userId());
+        identityCommand.setNewPassword(command.getNewPassword());
+        identityCommand.setConfirmPassword(command.getConfirmPassword());
+        authIdentitySecurityProvider.changeRequiredPassword(identityCommand);
+        passwordResetTicketService.revoke(command.getPasswordResetTicket());
+        AuthUserInfo updatedUser = authUserProvider.getByIdForAuth(ticket.userId());
+        LoginCommand loginContext = new LoginCommand();
+        loginContext.setTenantId(ticket.tenantId());
+        loginContext.setTenantCode(ticket.tenantCode());
+        loginContext.setAppCode(ticket.appCode());
+        loginContext.setRealm(firstText(ticket.realm(), updatedUser.getRealm()));
+        loginContext.setActorType(firstText(ticket.actorType(), updatedUser.getActorType()));
+        loginContext.setPartyType(firstText(ticket.partyType(), updatedUser.getPartyType()));
+        loginContext.setPartyId(ticket.partyId() == null ? updatedUser.getPartyId() : ticket.partyId());
+        IdentityContext identityContext = resolveIdentityContext(updatedUser, loginContext);
+        Map<String, Object> claims = identityContext.toClaims(updatedUser.getUsername());
+        String accessToken = tokenService.generateAccessToken(updatedUser.getUserId(), updatedUser.getUsername(), claims);
+        String refreshToken = tokenService.generateRefreshToken(updatedUser.getUserId(), updatedUser.getUsername(), claims);
+        authIdentitySecurityProvider.recordLoginSuccess(updatedUser.getUserId());
+        LoginVO response = buildLoginVO(updatedUser, identityContext, accessToken, refreshToken);
+        loadUserRolesAndPermissions(updatedUser.getUserId(), identityContext, response);
         return response;
     }
 
@@ -121,7 +173,9 @@ public class AuthServiceImpl implements IAuthService {
             }
             AuthUserInfo user = authUserProvider.getByIdForAuth(binding.getUserId());
             Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
+            authIdentitySecurityProvider.assertLoginAllowed(user);
             Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
+            Require.isFalse(Boolean.TRUE.equals(user.getPasswordResetRequired()), AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
 
             LoginCommand loginContext = new LoginCommand();
             loginContext.setTenantId(tenantId);
@@ -137,6 +191,7 @@ public class AuthServiceImpl implements IAuthService {
             String refreshToken = tokenService.generateRefreshToken(user.getUserId(), user.getUsername(), claims);
             LoginVO response = buildLoginVO(user, identityContext, accessToken, refreshToken);
             loadUserRolesAndPermissions(user.getUserId(), identityContext, response);
+            authIdentitySecurityProvider.recordLoginSuccess(user.getUserId());
             log.info("User logged in by WeCom successfully: userId={}, wecomUserId={}", user.getUserId(), wecomUserId);
             return response;
         } finally {
@@ -169,8 +224,7 @@ public class AuthServiceImpl implements IAuthService {
     public List<LoginTenantVO> listLoginTenants(LoginTenantOptionsCommand command) {
         AuthUserInfo user = authUserProvider.getByUsernameForAuth(command.getUsername(), command.getRealm());
         Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
-        Require.isTrue(passwordEncoder.matches(command.getPassword(), user.getPassword()),
-                AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        authIdentitySecurityProvider.assertLoginAllowed(user);
         Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
 
         LoginTenantProvider provider = loginTenantProvider.getIfAvailable();
@@ -322,6 +376,36 @@ public class AuthServiceImpl implements IAuthService {
         response.setTenantCode(identityContext.tenantCode());
         response.setTenantName(identityContext.tenantName());
         response.setAppCode(identityContext.appCode());
+        response.setPasswordResetRequired(Boolean.FALSE);
+        return response;
+    }
+
+    private LoginVO buildPasswordResetRequiredLoginVO(AuthUserInfo user, LoginCommand command) {
+        LoginVO response = new LoginVO();
+        response.setUserId(user.getUserId());
+        response.setUsername(user.getUsername());
+        response.setNickname(user.getNickname());
+        response.setRealm(firstText(command.getRealm(), user.getRealm()));
+        response.setActorType(firstText(command.getActorType(), user.getActorType()));
+        response.setPartyType(firstText(command.getPartyType(), user.getPartyType()));
+        response.setPartyId(command.getPartyId() == null ? user.getPartyId() : command.getPartyId());
+        response.setAppCode(firstText(command.getAppCode(), DEFAULT_APP_CODE));
+        response.setPasswordResetRequired(Boolean.TRUE);
+        response.setLoginAction("CHANGE_PASSWORD");
+        LoginTenantVO tenant = resolveTenant(user.getUserId(), command.getTenantId(), command.getTenantCode());
+        response.setMemberId(tenant.getMemberId());
+        response.setTenantId(tenant.getTenantId());
+        response.setTenantCode(tenant.getTenantCode());
+        response.setTenantName(tenant.getTenantName());
+        response.setPasswordResetTicket(passwordResetTicketService.issue(new PasswordResetTicketService.TicketPayload(
+                user.getUserId(),
+                tenant.getTenantId(),
+                tenant.getTenantCode(),
+                response.getAppCode(),
+                response.getRealm(),
+                response.getActorType(),
+                response.getPartyType(),
+                response.getPartyId())));
         return response;
     }
 
@@ -391,6 +475,10 @@ public class AuthServiceImpl implements IAuthService {
     private String firstText(String preferred, String fallback) {
         String value = normalize(preferred);
         return value != null ? value : normalize(fallback);
+    }
+
+    private String loginAttemptKey(String realm, String username) {
+        return firstText(realm, "INTERNAL").toUpperCase() + ":" + firstText(username, "").toLowerCase();
     }
 
     private String normalize(String value) {
