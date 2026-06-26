@@ -123,3 +123,8 @@ export interface MyTaskWidgetProps {
   runtime?: MangoWidgetRuntimeContext;
   taskPath?: string;
 }
+
+export interface CalendarWidgetProps {
+  runtime?: MangoWidgetRuntimeContext;
+  calendarCode?: string;
+}
