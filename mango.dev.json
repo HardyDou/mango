@@ -9,7 +9,15 @@
       "mango-backend"
     ],
     "frontend": [
-      "mango-admin"
+      "mango-admin",
+      "mango-admin-shell",
+      "mango-admin-rbac-app",
+      "mango-admin-workflow-app",
+      "mango-admin-template-app",
+      "mango-admin-cms-app",
+      "mango-site-enterprise-app",
+      "mango-site-help-app",
+      "mango-site-demo-app"
     ]
   },
   "apps": {
@@ -70,6 +78,231 @@
         "${host}",
         "--port",
         "${port}"
+      ]
+    },
+    "mango-admin-shell": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_ADMIN_SHELL_PORT",
+      "port": 5176,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "MANGO_FRONTEND_MODE": "${env.MANGO_FRONTEND_MODE}",
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-admin-shell",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
+      ]
+    },
+    "mango-admin-rbac-app": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_ADMIN_RBAC_APP_PORT",
+      "port": 5181,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-admin-rbac-app",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
+      ]
+    },
+    "mango-admin-workflow-app": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_ADMIN_WORKFLOW_APP_PORT",
+      "port": 5182,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-admin-workflow-app",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
+      ]
+    },
+    "mango-admin-template-app": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_ADMIN_TEMPLATE_APP_PORT",
+      "port": 5183,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-admin-template-app",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
+      ]
+    },
+    "mango-admin-cms-app": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_ADMIN_CMS_APP_PORT",
+      "port": 5184,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-admin-cms-app",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
+      ]
+    },
+    "mango-site-enterprise-app": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_SITE_ENTERPRISE_APP_PORT",
+      "port": 5191,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-site-enterprise-app",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
+      ]
+    },
+    "mango-site-help-app": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_SITE_HELP_APP_PORT",
+      "port": 5192,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-site-help-app",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
+      ]
+    },
+    "mango-site-demo-app": {
+      "type": "vite",
+      "cwd": "mango-ui",
+      "dependsOn": [
+        "mango-backend"
+      ],
+      "packageManager": "pnpm",
+      "portEnv": "MANGO_SITE_DEMO_APP_PORT",
+      "port": 5193,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_ADMIN_PROXY_PATH": "http://127.0.0.1:${apps.mango-backend.port}",
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}"
+      },
+      "args": [
+        "-F",
+        "mango-site-demo-app",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}",
+        "--strictPort"
       ]
     }
   }
