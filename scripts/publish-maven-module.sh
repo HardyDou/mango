@@ -9,6 +9,9 @@ usage() {
   cat <<'EOF'
 Usage: scripts/publish-maven-module.sh <artifactId|module-path> [options]
 
+Use scripts/publish-maven-batch.sh for release batches that publish more than
+one Maven artifact. This single-module helper is for one-off module publication.
+
 Options:
   --also-make       Also build and deploy required upstream reactor modules
   --revision <ver>  Maven CI-friendly version; default is 1.0.0-SNAPSHOT

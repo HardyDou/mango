@@ -297,7 +297,7 @@
     },
     "releaseBackend": {
       "paths": [],
-      "keywords": ["Maven 发布", "maven 发布", "发布 jar", "发布后端", "deploy maven"],
+      "keywords": ["Maven 发布", "maven 发布", "JAR 发布", "jar 发布", "发布 jar", "发布后端", "批量 Maven 发布", "Maven 批量发布", "maven batch", "deploy maven"],
       "include": ["backend.versioning", "process.aiDeliveryQuality"]
     },
     "releaseFrontend": {
