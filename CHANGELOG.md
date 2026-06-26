@@ -8,6 +8,7 @@
 
 ### Changed
 
+- Scoped the workflow task detail approval action bar to the left content column. The buttons are centered under the approval content and stay sticky at the bottom of that column when the content scrolls, without extending below the right workflow sidebar.
 - Refactored the workflow task detail page to reuse the new layout and sidebar components while keeping custom business approval forms, record panel extension, and the bottom approval action bar behavior.
 - Kept the workflow "My Applications" page compatible with both business application records and directly started process instances. Status-filtered views still use business application records, while the default list also includes direct process instances and deduplicates rows by process instance ID.
 

@@ -970,6 +970,23 @@ async function expectWorkflowTaskDetailSidebar(page: Page, currentNode: string) 
   await expect(detailPage.locator('.workflow-sidebar__actions .el-button').first()).toBeVisible();
 }
 
+async function expectApprovalActionBarInContentColumn(page: Page) {
+  const actionBar = page.locator('.workflow-business-layout__main > .approval-action-bar');
+  const sidebarActionBar = page.locator('.workflow-business-layout__sidebar .approval-action-bar');
+  await expect(actionBar).toBeVisible();
+  await expect(sidebarActionBar).toHaveCount(0);
+
+  const actionBox = await actionBar.boundingBox();
+  const mainBox = await page.locator('.workflow-business-layout__main').boundingBox();
+  const sidebarBox = await page.locator('.workflow-business-layout__sidebar').boundingBox();
+  expect(actionBox, '审批按钮栏未渲染').toBeTruthy();
+  expect(mainBox, '审批内容区域未渲染').toBeTruthy();
+  expect(sidebarBox, '审批右侧摘要未渲染').toBeTruthy();
+  expect(actionBox!.x).toBeGreaterThanOrEqual(mainBox!.x - 1);
+  expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(mainBox!.x + mainBox!.width + 1);
+  expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(sidebarBox!.x - 8);
+}
+
 async function pickUserFromDialog(page: Page, outerDialogName: string, pickerDialogName: string, username: string) {
   const outerDialog = page.locator('.el-dialog:visible', {
     has: page.getByRole('heading', { name: outerDialogName }),
@@ -2520,6 +2537,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await expectReadonlyFieldValue(page, '请假天数', '5');
       await expectReadonlyFieldValue(page, '请假原因', 'E2E 发起人自己审批验证');
       await expectWorkflowTaskDetailSidebar(page, '发起人自己审批');
+      await expectApprovalActionBarInContentColumn(page);
 
       await page.getByPlaceholder('请输入审批意见').fill('本人确认通过');
       const completeResponsePromise = page.waitForResponse((response) =>
@@ -2568,6 +2586,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await expectReadonlyFieldValue(page, '请假天数', '3');
       await expectReadonlyFieldValue(page, '请假原因', 'E2E 审批通过验证');
       await expectWorkflowTaskDetailSidebar(page, '主管审批');
+      await expectApprovalActionBarInContentColumn(page);
 
       await page.getByPlaceholder('请输入审批意见').fill('同意，UI E2E');
       const completeResponsePromise = page.waitForResponse((response) =>
