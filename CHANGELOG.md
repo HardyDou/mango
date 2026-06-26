@@ -1,7 +1,5 @@
 # Mango Changelog
 
-## Unreleased
-
 ## v2026.06.26-notice-workflow-release - 2026-06-26
 
 ### New
