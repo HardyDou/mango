@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./calendar": {
+      "types": "./dist/calendar.d.ts",
+      "import": "./dist/calendar.js"
+    },
     "./quick-entry": {
       "types": "./dist/quick-entry.d.ts",
       "import": "./dist/quick-entry.js"
@@ -46,6 +50,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
+    "@mango/calendar": "1.0.11",
     "@mango/common": "1.0.10",
     "@mango/grid-layout": "1.0.2",
     "@mango/notice": "1.0.11",
