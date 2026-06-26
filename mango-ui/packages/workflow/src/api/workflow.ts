@@ -83,6 +83,7 @@ export interface WorkflowDefinition {
   domainCode?: string;
   orgId?: WorkflowId;
   adminUsers?: string[];
+  startEntryVisible?: boolean;
   icon?: string;
   definitionName: string;
   definitionKey: string;
@@ -107,7 +108,7 @@ export interface WorkflowDefinition {
 }
 
 type WorkflowDefinitionCommand = Pick<WorkflowDefinition,
-  'id' | 'categoryId' | 'domainCode' | 'orgId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
+  'id' | 'categoryId' | 'domainCode' | 'orgId' | 'adminUsers' | 'startEntryVisible' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
 >;
 
 export interface WorkflowPageQuery {
@@ -119,6 +120,7 @@ export interface WorkflowPageQuery {
   orgId?: WorkflowId | '';
   status?: string;
   publishedOnly?: boolean;
+  startEntryVisible?: boolean;
   categoryCode?: string;
   bpmnType?: string;
   executionType?: string;
@@ -855,6 +857,7 @@ function normalizeDefinition(item: any): WorkflowDefinition {
     orgId: item?.orgId ? normalizeId(item.orgId) : undefined,
     sourceTemplateId: item?.sourceTemplateId ? normalizeId(item.sourceTemplateId) : undefined,
     adminUsers: normalizeStringList(item?.adminUsers),
+    startEntryVisible: item?.startEntryVisible !== false,
     icon: item?.icon || 'Setting',
     designerJson: item?.designerJson || defaultDesignerJson(),
     createdTime: normalizeDateTime(item?.createdTime),
@@ -869,6 +872,7 @@ function toDefinitionCommand(data: WorkflowDefinition, includeId: boolean): Work
     domainCode: data.domainCode || undefined,
     orgId: data.orgId,
     adminUsers: normalizeStringList(data.adminUsers),
+    startEntryVisible: data.startEntryVisible !== false,
     icon: data.icon || 'Setting',
     definitionName: data.definitionName,
     definitionKey: data.definitionKey,

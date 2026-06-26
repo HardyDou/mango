@@ -70,6 +70,7 @@ describe('start process workflow icons', () => {
 
     expect(workflowApi.definitionsPage).toHaveBeenCalledWith(expect.objectContaining({
       publishedOnly: true,
+      startEntryVisible: true,
       status: 'PUBLISHED',
     }));
     expect(fileApi.preview).toHaveBeenCalledTimes(1);

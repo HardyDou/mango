@@ -64,6 +64,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 8. 变更影响记录
 
+- 本次 PR 新增流程定义 `startEntryVisible` 启动入口可见性。业务内嵌流程可声明为“仅业务内嵌”，从审批中心发起流程列表隐藏；业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离和业务上下文启动方式不变。业务模块仍应通过 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()` 按 `definitionKey`、`businessType`、`businessKey` 发起，并继续自行校验业务权限、快照和幂等。
+
 - 本次 PR 新增 `@mango/grid-widgets` 我的申请系统小组件，并新增 `GET /workflow/business-applies/my/summary` 当前登录人申请统计接口；我的申请列表切换为业务申请分页数据源并支持 `statuses` 状态筛选。业务项目接入工作台后，可通过 `system.my-process` 展示审核中、已完成、已驳回和已撤回申请概览，列表跳转复用现有 `/workflow/task/initiated` 页面。
 
 - PR #241 支持业务回传路径：业务系统跳转审批任务详情时可通过 `returnPath`（可选 `returnQuery`）指定审批完成后或点“返回”的落点，任务详情页顶部返回按钮按 `returnPath` 回到业务列表，不带则兜底回 Mango 默认待办/已办；同时精简审批任务详情页布局（流程信息右移、操作按钮条贴底固定）。不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、启动方式和运行时行为。业务项目接入时，跳转 `/workflow/task/detail?taskId=xxx&returnPath=/业务列表` 即可让审批人返回业务上下文。

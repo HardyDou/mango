@@ -31,6 +31,9 @@ public class WorkflowDefinitionVO {
     @Schema(description = "流程管理员用户名列表")
     private List<String> adminUsers;
 
+    @Schema(description = "启动入口是否可见；false 表示不出现在审批中心发起流程入口")
+    private Boolean startEntryVisible;
+
     @Schema(description = "流程图标")
     private String icon;
 

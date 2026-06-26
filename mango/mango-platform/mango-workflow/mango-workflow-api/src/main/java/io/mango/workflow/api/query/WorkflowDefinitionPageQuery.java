@@ -30,4 +30,7 @@ public class WorkflowDefinitionPageQuery extends PageQuery {
 
     @Schema(description = "是否仅返回已发布生效快照；发起流程列表应传 true，避免读取未发布草稿")
     private Boolean publishedOnly;
+
+    @Schema(description = "启动入口是否可见；审批中心发起流程列表应传 true")
+    private Boolean startEntryVisible;
 }

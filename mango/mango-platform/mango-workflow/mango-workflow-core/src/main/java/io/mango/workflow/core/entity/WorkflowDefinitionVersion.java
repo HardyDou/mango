@@ -24,6 +24,7 @@ public class WorkflowDefinitionVersion {
     private String domainCode;
     private Long orgId;
     private String adminUsers;
+    private Boolean startEntryVisible;
     private String icon;
     private String definitionName;
     private String definitionKey;

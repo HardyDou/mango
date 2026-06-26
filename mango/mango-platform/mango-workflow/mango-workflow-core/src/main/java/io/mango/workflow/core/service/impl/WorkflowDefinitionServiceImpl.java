@@ -177,6 +177,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         entity.setDomainCode(latest.getDomainCode());
         entity.setOrgId(latest.getOrgId());
         entity.setAdminUsers(latest.getAdminUsers());
+        entity.setStartEntryVisible(defaultStartEntryVisible(latest.getStartEntryVisible()));
         entity.setIcon(latest.getIcon());
         entity.setDefinitionName(latest.getDefinitionName());
         entity.setDefinitionKey(latest.getDefinitionKey());
@@ -227,6 +228,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
             version.setDomainCode(entity.getDomainCode());
             version.setOrgId(entity.getOrgId());
             version.setAdminUsers(entity.getAdminUsers());
+            version.setStartEntryVisible(defaultStartEntryVisible(entity.getStartEntryVisible()));
             version.setIcon(entity.getIcon());
             version.setDefinitionName(entity.getDefinitionName());
             version.setDefinitionKey(entity.getDefinitionKey());
@@ -364,6 +366,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                 .eq(query.getCategoryId() != null, "category_id", query.getCategoryId())
                 .eq(StringUtils.hasText(query.getDomainCode()), "domain_code", trimToNull(query.getDomainCode()))
                 .eq(query.getOrgId() != null, "org_id", query.getOrgId())
+                .eq(query.getStartEntryVisible() != null, "start_entry_visible", query.getStartEntryVisible())
                 .eq(StringUtils.hasText(query.getStatus()), "status", query.getStatus())
                 .orderByDesc("updated_time");
         return applyDefinitionDataScope(wrapper);
@@ -382,6 +385,13 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                 .eq("status", WorkflowDefinitionStatus.PUBLISHED.name())
                 .isNotNull("published_version_no")
                 .isNotNull("process_definition_id")
+                .exists(query.getStartEntryVisible() != null,
+                        "SELECT 1 FROM workflow_definition_version wdv"
+                                + " WHERE wdv.definition_id = workflow_definition.id"
+                                + " AND wdv.version_no = workflow_definition.published_version_no"
+                                + " AND wdv.publish_status = 'SUCCESS'"
+                                + " AND wdv.start_entry_visible = {0}",
+                        query.getStartEntryVisible())
                 .orderByDesc("last_deploy_time");
         return applyDefinitionDataScope(wrapper);
     }
@@ -470,6 +480,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         definition.setDomainCode(command.getDomainCode());
         definition.setOrgId(command.getOrgId());
         definition.setAdminUsers(command.getAdminUsers());
+        definition.setStartEntryVisible(command.getStartEntryVisible());
         definition.setIcon(command.getIcon());
         definition.setDefinitionName(command.getDefinitionName());
         definition.setDefinitionKey(command.getDefinitionKey());
@@ -500,6 +511,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         entity.setDomainCode(command.getDomainCode().trim());
         entity.setOrgId(command.getOrgId());
         entity.setAdminUsers(toJsonList(command.getAdminUsers()));
+        entity.setStartEntryVisible(defaultStartEntryVisible(command.getStartEntryVisible()));
         entity.setIcon(trimToNull(command.getIcon()));
         entity.setDefinitionName(command.getDefinitionName().trim());
         entity.setDefinitionKey(command.getDefinitionKey().trim());
@@ -529,6 +541,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setDomainCode(entity.getDomainCode());
         vo.setOrgId(entity.getOrgId());
         vo.setAdminUsers(parseStringList(entity.getAdminUsers()));
+        vo.setStartEntryVisible(defaultStartEntryVisible(entity.getStartEntryVisible()));
         vo.setIcon(entity.getIcon());
         vo.setDefinitionName(entity.getDefinitionName());
         vo.setDefinitionKey(entity.getDefinitionKey());
@@ -564,6 +577,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setDomainCode(version.getDomainCode());
         vo.setOrgId(version.getOrgId());
         vo.setAdminUsers(parseStringList(version.getAdminUsers()));
+        vo.setStartEntryVisible(defaultStartEntryVisible(version.getStartEntryVisible()));
         vo.setIcon(version.getIcon());
         vo.setDefinitionName(version.getDefinitionName());
         vo.setDefinitionKey(version.getDefinitionKey());
@@ -690,6 +704,9 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         if (!sameText(entity.getAdminUsers(), latest.getAdminUsers())) {
             reasons.add("流程管理员");
         }
+        if (defaultStartEntryVisible(entity.getStartEntryVisible()) != defaultStartEntryVisible(latest.getStartEntryVisible())) {
+            reasons.add("启动入口可见性");
+        }
         if (!sameText(entity.getIcon(), latest.getIcon())) {
             reasons.add("流程图标");
         }
@@ -735,6 +752,10 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         return a == b;
     }
 
+    private boolean defaultStartEntryVisible(Boolean value) {
+        return value == null || value;
+    }
+
     private WorkflowDefinitionVersionVO toVersionVO(WorkflowDefinitionVersion entity) {
         WorkflowDefinitionVersionVO vo = new WorkflowDefinitionVersionVO();
         vo.setId(entity.getId());
@@ -744,6 +765,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setDomainCode(entity.getDomainCode());
         vo.setOrgId(entity.getOrgId());
         vo.setAdminUsers(entity.getAdminUsers());
+        vo.setStartEntryVisible(defaultStartEntryVisible(entity.getStartEntryVisible()));
         vo.setIcon(entity.getIcon());
         vo.setDefinitionName(entity.getDefinitionName());
         vo.setDefinitionKey(entity.getDefinitionKey());

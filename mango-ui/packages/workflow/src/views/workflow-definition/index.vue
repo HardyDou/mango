@@ -112,6 +112,21 @@
               </template>
               <UserSelector v-model="definitionForm.adminUsers" multiple placeholder="请选择流程管理员" title="选择流程管理员" />
             </el-form-item>
+            <el-form-item class="basic-field full" prop="startEntryVisible">
+              <template #label>
+                <span class="field-label-with-help">
+                  启动入口
+                  <el-tooltip content="关闭后不显示在审批中心的发起流程入口；业务页面仍可通过标准 API 发起。" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </span>
+              </template>
+              <el-switch
+                v-model="definitionForm.startEntryVisible"
+                active-text="可独立发起"
+                inactive-text="仅业务内嵌"
+              />
+            </el-form-item>
             <el-form-item class="basic-field full" label="备注">
               <el-input v-model="definitionForm.remark" :rows="3" placeholder="说明流程适用场景、发起条件或维护边界" type="textarea" />
             </el-form-item>
@@ -561,6 +576,13 @@
           <el-table-column label="流程分类" min-width="130">
             <template #default="{ row }">
               <span>{{ row.categoryName || '未分类' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="启动入口" width="118">
+            <template #default="{ row }">
+              <el-tag :type="row.startEntryVisible === false ? 'info' : 'success'">
+                {{ row.startEntryVisible === false ? '仅业务内嵌' : '可独立发起' }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="生命周期" width="100">
@@ -1370,6 +1392,7 @@ const definitionForm = reactive<WorkflowDefinition>({
   categoryId: '',
   domainCode: 'WORKFLOW',
   adminUsers: [],
+  startEntryVisible: true,
   icon: '',
   definitionName: '',
   definitionKey: '',
@@ -1678,6 +1701,7 @@ async function openDefinitionForm(row?: WorkflowDefinition) {
     categoryId: definitionCategoryOptions.value[0]?.id || '',
     domainCode: targetDomainCode,
     adminUsers: [],
+    startEntryVisible: true,
     icon: '',
     definitionName: '',
     definitionKey: '',
@@ -1688,6 +1712,7 @@ async function openDefinitionForm(row?: WorkflowDefinition) {
     status: 'DRAFT' as WorkflowStatus,
     remark: '',
   });
+  definitionForm.startEntryVisible = definitionForm.startEntryVisible !== false;
   loadWorkflowFormConfig(definitionForm.formJson);
   designerRoot.value = parseDesignerJson(definitionForm.designerJson);
   selectedNode.value = undefined;
