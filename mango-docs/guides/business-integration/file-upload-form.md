@@ -129,6 +129,7 @@ pnpm -F @mango/file build
 
 ## 10. 变更影响记录
 
+- Issue #264 发布 `@mango/file@1.0.12` 并随前端发布批次对齐 `@mango/admin-pages@1.0.11`；不改变文件上传、下载、预览的公开 API、前端组件、配置、权限、租户、页面、启动方式和表单验收步骤。本次仅同步发布锁和 package 边界，业务项目继续通过 `@mango/file` 公开入口和 `@mango/file/style.css` 接入。
 - PR #216 加固前端 `@mango/*` npm 包发布边界，非 CLI 包不再发布 `src` 等源码目录，并补充发布包 tarball 和业务消费 typecheck 基线；不改变文件上传、下载、预览的公开 API、前端组件、配置、权限、租户、页面、启动方式和表单验收步骤。业务项目应继续使用公开 package 入口和样式入口，升级到后续发布的新包版本后重新运行前端 typecheck。
 
 - PR #199 加固 Resource Registry runtime、远程上报和能力 app 注入链路，并保持 file/file-preview 能力通过声明方式初始化菜单、权限和默认资源；不改变文件上传、下载、预览的公开 API、前端组件、存储配置、租户隔离和表单验收步骤。清库重建或 1.0 rebase 升级后，排查文件中心菜单、下载/预览权限或默认文件配置缺失时，需要同时确认 `AUTH_MENU`、`API_RESOURCE`、`FILE_STORAGE_CONFIG` 和 `FILE_SETTINGS` 声明同步成功。

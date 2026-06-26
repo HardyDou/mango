@@ -305,11 +305,7 @@
 <script setup lang="ts" name="SystemTenant">
 import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import DictSelect from '@mango/common/components/DictSelect/index.vue';
-import DictTag from '@mango/common/components/DictTag/index.vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
-import { useDict } from '@mango/common/hooks/useDict';
-import { formatDate } from '@mango/common/utils/formatTime';
+import { DictSelect, DictTag, Pagination, formatDate, useDict } from '@mango/common';
 import { tenantApi, type SysTenant } from '../../api/tenant';
 import { menuApi, type SysMenuVO } from '@mango/rbac';
 import { menuPackageApi, type MenuPackageVO } from '@mango/rbac';

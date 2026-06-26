@@ -992,16 +992,8 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
-import DictSelect from '@mango/common/components/DictSelect/index.vue';
-import DictTag from '@mango/common/components/DictTag/index.vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
-import {
-  defaultPasswordPolicy,
-  getPasswordPolicyMessage,
-  isPasswordPolicyPassed,
-  PasswordPolicyHint,
-} from '@mango/common';
+import { DictSelect, DictTag, Pagination, PasswordPolicyHint, defaultPasswordPolicy, getPasswordPolicyMessage, isPasswordPolicyPassed } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { orgApi, type OrgMemberVO, type SysOrg } from '../../api/org';
 import { postApi, type PostVO } from '../../api/post';

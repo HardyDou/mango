@@ -476,12 +476,12 @@
 </template>
 
 <script setup lang="ts">
+import { Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Check, Refresh, RefreshLeft, Search, Tickets } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules, UploadFile } from 'element-plus';
 import { ElMessage } from 'element-plus';
 import { MUpload } from '@mango/file';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import {
   paymentOfflineCollectionApi,
   type PaymentOfflineBankStatementBatch,

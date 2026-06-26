@@ -457,6 +457,7 @@
 </template>
 
 <script setup lang="ts">
+import { Pagination } from '@mango/common';
 import { computed, markRaw, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import {
@@ -473,7 +474,6 @@ import {
   Sunny,
   Tools,
 } from '@element-plus/icons-vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import {
   calendarApi,
   dayTypeLabel,

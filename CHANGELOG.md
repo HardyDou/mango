@@ -1,5 +1,49 @@
 # Mango Changelog
 
+## v2026.06.26-frontend-release-missing-widgets-system - 2026-06-26
+
+### Fixed
+
+- Published the already-implemented workbench calendar widget in `@mango/grid-widgets@1.0.3`; the previous `@mango/grid-widgets@1.0.2` tarball did not contain `dist/calendar.js` or `dist/system/calendar/**`.
+- Published the updated system configuration page and `SystemConfigPanel` in `@mango/system@1.0.10`; the previous `@mango/system@1.0.9` tarball did not contain the panel component.
+- Updated the dependent frontend release batch, `@mango/cli@1.0.42`, and the business starter lock so generated and upgraded business projects resolve the fixed frontend package set.
+
+### Published Packages
+
+- npm: `@mango/grid-widgets@1.0.3` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/system@1.0.10` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-pages@1.0.11` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-shell@1.0.25` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.29` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/calendar@1.0.12`, `@mango/cms@1.0.1`, `@mango/file@1.0.12`, `@mango/job@1.0.4`, `@mango/notice@1.0.12`, `@mango/numgen@1.0.12`, `@mango/payment@1.0.3`, `@mango/template@1.0.12`, `@mango/workflow@1.0.14`, and `@mango/workflow-business-example@1.0.13` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.42` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.26-frontend-release-missing-widgets-system`.
+
+### Upgrade Notes
+
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.29`.
+- Business frontends that consume the admin shell directly should upgrade to `@mango/admin-shell@1.0.25`.
+- Business frontends that consume grid widgets directly should upgrade to `@mango/grid-widgets@1.0.3` and keep importing `@mango/grid-widgets/style.css`.
+- Business frontends that consume system pages directly should upgrade to `@mango/system@1.0.10`.
+- Business frontends that consume optional admin feature packages should upgrade the dependent package set together: `@mango/calendar@1.0.12`, `@mango/cms@1.0.1`, `@mango/file@1.0.12`, `@mango/job@1.0.4`, `@mango/notice@1.0.12`, `@mango/numgen@1.0.12`, `@mango/payment@1.0.3`, `@mango/template@1.0.12`, `@mango/workflow@1.0.14`, and `@mango/workflow-business-example@1.0.13`.
+- New or regenerated business projects must use `@mango/cli@1.0.42` so generated frontend dependency locks include this release batch.
+
+### Verification
+
+- `gh issue create --repo HardyDou/mango ...` created Issue #264.
+- `pnpm install --lockfile-only`
+- `pnpm --filter @mango/grid-widgets build`
+- `pnpm --filter @mango/system build`
+- `pnpm --filter @mango/admin-pages build`
+- `pnpm --filter @mango/admin-shell build`
+- `pnpm --filter @mango/admin build`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `npm pack @mango/grid-widgets@1.0.3 --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm pack @mango/system@1.0.10 --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.06.26-cms-demo-identity-security - 2026-06-26
 
 ### New

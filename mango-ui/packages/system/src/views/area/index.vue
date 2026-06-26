@@ -270,8 +270,7 @@
 <script setup lang="ts" name="SystemArea">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import DictTag from '@mango/common/components/DictTag/index.vue';
-import { useDict } from '@mango/common/hooks/useDict';
+import { DictTag, useDict } from '@mango/common';
 import { areaApi, type SysArea } from '../../api/area';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
