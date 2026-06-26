@@ -24,8 +24,8 @@
     "@element-plus/icons-vue": "2.3.2",
     "@form-create/element-ui": "3.2.42",
     "@mango/api-schema": "1.0.2",
-    "@mango/common": "1.0.10",
-    "@mango/rbac": "1.0.8",
+    "@mango/common": "1.0.11",
+    "@mango/rbac": "1.0.9",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {

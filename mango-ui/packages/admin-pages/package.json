@@ -44,9 +44,9 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/auth": "1.0.8",
-    "@mango/common": "1.0.10",
-    "@mango/rbac": "1.0.8",
+    "@mango/auth": "1.0.9",
+    "@mango/common": "1.0.11",
+    "@mango/rbac": "1.0.9",
     "@mango/system": "1.0.9"
   },
   "peerDependencies": {

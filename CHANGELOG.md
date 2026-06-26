@@ -16,16 +16,25 @@
 
 ### Published Packages
 
-- No npm package version bump in this release. Source changes remain on the existing package versions.
+- npm: `@mango/common@1.0.11` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/auth@1.0.9` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/rbac@1.0.9` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/workflow@1.0.13` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-shell@1.0.24` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.28` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.41` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
 - Maven: backend artifacts remain on the existing `1.0.0-SNAPSHOT` line.
 - GitHub Release: `v2026.06.26-cms-demo-identity-security`.
 
 ### Upgrade Notes
 
 - Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies and rerun Flyway migrations to receive identity security policy columns and CMS demo seed data.
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.28`.
+- Business frontends that consume the admin shell directly should upgrade to `@mango/admin-shell@1.0.24`.
+- Business frontends that embed auth, RBAC, workflow, or common UI packages directly should upgrade to `@mango/auth@1.0.9`, `@mango/rbac@1.0.9`, `@mango/workflow@1.0.13`, and `@mango/common@1.0.11` together.
+- New projects should use `@mango/cli@1.0.41` so generated dependency locks include this release batch.
 - Business projects using local worktrees should rerun `scripts/dev-workspace.sh init` only when a workspace has no existing `.mango/dev-workspace.env`; existing workspaces keep their current port assignments.
 - Public CMS demo apps now rely on seeded CMS domains for `127.0.0.1:5191`, `127.0.0.1:5192`, and `127.0.0.1:5193` when using the default main-workspace port set.
-- No npm dependency upgrade is required for this source release.
 
 ### Verification
 
@@ -35,6 +44,16 @@
 - `bash -n scripts/dev-workspace.sh`
 - `mvn -f mango/pom.xml -pl :mango-auth-starter -am test`
 - `mvn -f mango/pom.xml -pl :mango-identity-core -am test`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node scripts/check-release-notes.mjs --package=@mango/common --version=1.0.11 --tag=v2026.06.26-cms-demo-identity-security --check-github-release`
+- `node scripts/check-release-notes.mjs --package=@mango/auth --version=1.0.9 --tag=v2026.06.26-cms-demo-identity-security --check-github-release`
+- `node scripts/check-release-notes.mjs --package=@mango/rbac --version=1.0.9 --tag=v2026.06.26-cms-demo-identity-security --check-github-release`
+- `node scripts/check-release-notes.mjs --package=@mango/workflow --version=1.0.13 --tag=v2026.06.26-cms-demo-identity-security --check-github-release`
+- `node scripts/check-release-notes.mjs --package=@mango/admin-shell --version=1.0.24 --tag=v2026.06.26-cms-demo-identity-security --check-github-release`
+- `node scripts/check-release-notes.mjs --package=@mango/admin --version=1.0.28 --tag=v2026.06.26-cms-demo-identity-security --check-github-release`
+- `node scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.41 --tag=v2026.06.26-cms-demo-identity-security --check-github-release`
 - CMS V10 Flyway seed SQL was executed repeatably against the local main-workspace database during PR verification.
 
 ## v2026.06.26-resource-identity-auth-domain - 2026-06-26

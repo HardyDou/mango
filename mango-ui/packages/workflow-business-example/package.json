@@ -27,7 +27,7 @@
   ],
   "dependencies": {
     "@mango/admin-pages": "1.0.10",
-    "@mango/workflow": "1.0.12"
+    "@mango/workflow": "1.0.13"
   },
   "peerDependencies": {
     "element-plus": "2.14.1",
