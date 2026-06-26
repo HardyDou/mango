@@ -8,9 +8,18 @@ export { default as RuntimeFormRenderer } from './components/RuntimeFormRenderer
 export { default as WorkflowProgressTree } from './components/trace/WorkflowProgressTree.vue';
 export { default as WorkflowApprovalTimeline } from './components/trace/WorkflowApprovalTimeline.vue';
 export { default as WorkflowNodeTimeline } from './components/trace/WorkflowNodeTimeline.vue';
+export { default as WorkflowLayout } from './components/business-ui/WorkflowLayout.vue';
+export { default as WorkflowSidebar } from './components/business-ui/WorkflowSidebar.vue';
+export { default as WorkflowInstanceSummary } from './components/business-ui/WorkflowInstanceSummary.vue';
+export { default as WorkflowInstanceProgress } from './components/business-ui/WorkflowInstanceProgress.vue';
+export { default as WorkflowDefinitionGraph } from './components/business-ui/WorkflowDefinitionGraph.vue';
+export { default as WorkflowDefinitionGraphDialog } from './components/business-ui/WorkflowDefinitionGraphDialog.vue';
+export { default as WorkflowInstanceHistory } from './components/business-ui/WorkflowInstanceHistory.vue';
+export { default as WorkflowInstanceHistoryDialog } from './components/business-ui/WorkflowInstanceHistoryDialog.vue';
 
 export * from './api/workflow';
 export * from './workflowFormConfig';
 export * from './components/runtimeForm';
 export * from './components/businessApply';
 export * from './components/businessApproval';
+export * from './components/business-ui/types';
