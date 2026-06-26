@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #246 发布 `@mango/grid-widgets@1.0.2`、`@mango/admin-shell@1.0.23`、`@mango/admin@1.0.27`、`@mango/cli@1.0.39`，用于修复 grid widgets 样式发布产物并对齐业务项目版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。
+
 - PR #244 发布 `@mango/cms@1.0.0`、`@mango/site-shell@1.0.0`、`@mango/admin@1.0.26`、`@mango/cli@1.0.38` 并对齐 CMS 发布物料；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。业务升级时按发布说明成组刷新 CMS/Admin/CLI 版本即可，排查菜单页面仍按本指南闭环执行。
 
 - PR #243 新增 CMS 管理页面、`mango-admin-cms-app` 微前端运行态和 `@mango/cms` 页面注册；不改变既有菜单 `component` key 归一化规则、菜单树接口、页面注册机制、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。排查 CMS 菜单时按 `mango-cms` 模块 README 与 `@mango/cms` README 中的页面 key 对照确认。
