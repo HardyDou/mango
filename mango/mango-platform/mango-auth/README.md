@@ -318,3 +318,7 @@ token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyI
 - [Mango Captcha](../mango-captcha/README.md)
 - [@mango/auth](../../../mango-ui/packages/auth/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 变更影响记录
+
+- 本次为登录链路新增首次改密票据、密码复杂度校验和失败次数锁定增强。`POST /auth/login` 现在可能返回 `passwordResetRequired=true`、`loginAction=CHANGE_PASSWORD` 和 `passwordResetTicket`，前端据此切换到强制改密弹窗；`POST /auth/password/change-required` 只有在密码校验成功后才会消费 ticket。该变更不改变登录、登出、刷新、企微登录和验证码接口路径。

@@ -6,6 +6,12 @@
 
 - Added Resource Registry baseline declarations for authorization roles, role data scopes, subject-role bindings, organization units, posts, identity users, and member org/post bindings. This lets clean deployments or demo/bootstrap projects initialize RBAC, organization, post, and demo account baseline data through resource declarations instead of manual SQL. User password security policy enforcement remains out of scope and is tracked separately by Issue #250.
 
+### Fixed
+
+- Added identity security policy baseline for first-login forced password change, password complexity hints, login-failure lockout, and timed unlock behavior.
+- Extended the user management backend with password reset, forced password reset, and unlock actions for locked users.
+- Updated auth and identity validation so weak password changes do not consume forced-change tickets before validation succeeds.
+
 ### Verification
 
 - `mvn -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter,:mango-org-starter,:mango-identity-starter -am test`

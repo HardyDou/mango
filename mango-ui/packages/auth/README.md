@@ -202,3 +202,7 @@ API 封装：
 - [@mango/common](../common/README.md)
 - [认证页面说明](./src/views/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- 本次新增登录首次强制改密、密码复杂度提示和弱密码提交拦截；`LoginView` 和 `PasswordView` 都会展示密码规则，并按统一密码策略校验。登录成功后若后端返回 `passwordResetRequired=true` 或 `loginAction=CHANGE_PASSWORD`，前端会切换到改密弹窗而不是直接进入后台。该变更不改变 `login()`、`logout()`、`getUserInfo()`、`getLoginTenantOptions()`、`wecomLogin()` 和 `updatePassword()` 的接口路径。
