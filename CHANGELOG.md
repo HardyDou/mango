@@ -1,5 +1,40 @@
 # Mango Changelog
 
+## v2026.06.26-pmo-batch-release-rules - 2026-06-26
+
+### Fixed
+
+- Added a PMO multi-package release gate requiring shared batch checks to run once before per-package publish actions.
+- Added guarded `--skip-shared-gates` support to `pnpm publish:pkg` for releases that already completed shared package-consumer validation.
+- Updated the published PMO baseline lock used by `@mango/cli`.
+
+### Published Packages
+
+- npm: `@mango/pmo@1.0.1` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.40` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.26-pmo-batch-release-rules`.
+
+### Upgrade Notes
+
+- Existing business projects should upgrade to `@mango/cli@1.0.40` and run `mango pmo sync --project-dir .` to receive the multi-package release gate.
+- Mango release agents must run shared release gates once per release batch, then publish each package with per-package build, registry verification, and tarball verification.
+
+### Verification
+
+- `git diff --check`
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `node scripts/check-release-notes.mjs --package=@mango/pmo --version=1.0.1`
+- `node scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.40`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg pmo --release-tag=v2026.06.26-pmo-batch-release-rules --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg cli --release-tag=v2026.06.26-pmo-batch-release-rules --skip-shared-gates`
+- `npm view @mango/pmo@1.0.1 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/cli@1.0.40 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.06.26-grid-widgets-style-main-release - 2026-06-26
 
 ### Fixed

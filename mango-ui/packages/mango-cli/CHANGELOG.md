@@ -1,5 +1,23 @@
 # @mango/cli Changelog
 
+## 1.0.40 - 2026-06-26
+
+### Fixed
+
+- Updated generated PMO release locks to `@mango/pmo@1.0.1`.
+- Published the PMO baseline rule requiring multi-package release batches to run shared gates once before per-package publish verification.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.40 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir .` after upgrading to receive the new release gate.
+
+### Verification
+
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+
 ## 1.0.36 - 2026-06-25
 
 ### Fixed

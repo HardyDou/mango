@@ -8,13 +8,17 @@ const HOSTED_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-hos
 const GROUP_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/';
 
 function usage() {
-  console.log(`Usage: pnpm publish:pkg <package|short-name> [--dry-run]
+  console.log(`Usage: pnpm publish:pkg <package|short-name> [--dry-run] [--skip-shared-gates]
 
 Examples:
   pnpm publish:pkg common
   pnpm publish:pkg @mango/file
   pnpm publish:pkg workflow --dry-run
   pnpm publish:pkg cli --release-tag=v2026.06.12-mango-platform-release
+  MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg cli --release-tag=v2026.06.12-mango-platform-release --skip-shared-gates
+
+Use --skip-shared-gates only after the release batch has already run shared gates such as
+package-consumer:typecheck once for the full batch.
 `);
 }
 
@@ -190,6 +194,7 @@ function verifyPublishedPmoBaseline(packageRoot) {
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
+const skipSharedGates = args.includes('--skip-shared-gates');
 const releaseTagArg = args.find((arg) => arg.startsWith('--release-tag='));
 const releaseTag = releaseTagArg?.slice('--release-tag='.length) || '';
 const packageArg = args.find((arg) => !arg.startsWith('--'));
@@ -217,6 +222,12 @@ if (!dryRun && !releaseTag) {
   console.error('Real publish requires --release-tag=<tag> so GitHub Release notes can be verified.');
   process.exit(1);
 }
+if (skipSharedGates && !dryRun && process.env.MANGO_SHARED_PUBLISH_GATES_PASSED !== '1') {
+  console.error(
+    'Real publish with --skip-shared-gates requires MANGO_SHARED_PUBLISH_GATES_PASSED=1 after the release batch shared gates have passed.',
+  );
+  process.exit(1);
+}
 console.log('Checking platform release notes before publish');
 checkReleaseNotes(packageName, version, {
   releaseTag,
@@ -237,8 +248,12 @@ if (packageName === '@mango/cli') {
     ]);
   }
 }
-console.log('Checking generated business consumer vue-tsc before publish');
-run('pnpm', ['run', 'package-consumer:typecheck', '--', `--registry=${GROUP_REGISTRY}`]);
+if (skipSharedGates) {
+  console.log('Skipping shared publish gates because the release batch gates already passed');
+} else {
+  console.log('Checking generated business consumer vue-tsc before publish');
+  run('pnpm', ['run', 'package-consumer:typecheck', '--', `--registry=${GROUP_REGISTRY}`]);
+}
 if (found.packageJson.scripts?.build) {
   console.log(`Building ${packageName} before publish`);
   run('pnpm', ['--filter', packageName, 'build']);

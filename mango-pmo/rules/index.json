@@ -302,7 +302,7 @@
     },
     "releaseFrontend": {
       "paths": [],
-      "keywords": ["npm 发布", "发布 npm", "发布前端组件", "发布组件", "Nexus npm", "npm 仓库"],
+      "keywords": ["npm 发布", "发布 npm", "发布前端组件", "发布组件", "Nexus npm", "npm 仓库", "多包发布", "批量发布", "batch publish", "release batch"],
       "include": ["frontend.componentDevelopment", "frontend.monorepo", "process.aiDeliveryQuality"]
     }
   }

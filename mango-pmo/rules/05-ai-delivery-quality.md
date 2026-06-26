@@ -33,7 +33,24 @@
 
 没有平台级升级日志、没有业务升级步骤、没有验证说明或没有对应 GitHub Release 时，禁止声明发布完成。
 
-## 2.2 PR 评审门禁
+## 2.2 多包发布门禁
+
+同一 release 涉及多个 npm 包、Maven 物料、CLI、starter 或模板时，必须先形成发布批次，按依赖顺序规划共享门禁和逐包动作。
+
+必须执行：
+
+- 批次内共享门禁只跑一次，包括升级日志、GitHub Release、样式聚合、package exports、consumer typecheck、release lock registry check。
+- 逐包只执行目标包构建、版本存在检查、publish、npm-hosted/npm-group 或 Maven 仓库回查、tarball/产物校验。
+- 依赖链按被依赖方先发布，例如 `grid-widgets -> admin-shell -> admin -> cli`。
+- 发布脚本没有 batch 能力时，禁止直接逐包调用会重复全量门禁的单包命令；必须先完成共享门禁，再使用跳过共享门禁的发布入口，或先补齐 batch 发布入口。
+- 交付报告必须说明共享门禁只执行一次的命令，以及逐包发布和回查结果。
+
+禁止：
+
+- 同一 release 对每个包重复执行完整 consumer typecheck、全量 workspace build 或完整文档门禁。
+- 为了省时间跳过发布后仓库回查或 tarball/产物校验。
+
+## 2.3 PR 评审门禁
 
 评审 PR 前必须先识别 PR 改动内容：
 
