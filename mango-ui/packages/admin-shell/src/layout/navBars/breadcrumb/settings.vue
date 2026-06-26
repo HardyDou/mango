@@ -168,39 +168,6 @@
           />
         </div>
       </div>
-      <div class="layout-settings-item mt15">
-        <span class="layout-settings-label">深色模式</span>
-        <div class="layout-settings-value">
-          <el-switch
-            v-model="themeStore.isDark"
-            size="small"
-            @change="onAddDarkChange"
-          />
-        </div>
-      </div>
-      <div class="layout-settings-item mt15">
-        <span class="layout-settings-label">组件大小</span>
-        <div class="layout-settings-value">
-          <el-select
-            v-model="preferencesStore.globalComponentSize"
-            style="width: 90px"
-            @change="onComponentSizeChange"
-          >
-            <el-option
-              label="大型"
-              value="large"
-            />
-            <el-option
-              label="默认"
-              value="default"
-            />
-            <el-option
-              label="小型"
-              value="small"
-            />
-          </el-select>
-        </div>
-      </div>
 
       <!-- 顶栏设置 -->
       <el-divider content-position="left">
@@ -437,16 +404,6 @@
         </div>
       </div>
       <div class="layout-settings-item mt15">
-        <span class="layout-settings-label">缓存 Tagsview</span>
-        <div class="layout-settings-value">
-          <el-switch
-            v-model="layoutStore.isCacheTagsView"
-            size="small"
-            @change="setLocalThemeConfig"
-          />
-        </div>
-      </div>
-      <div class="layout-settings-item mt15">
         <span class="layout-settings-label">显示 Footer</span>
         <div class="layout-settings-value">
           <el-switch
@@ -493,29 +450,6 @@
       <el-divider content-position="left">
         其它设置
       </el-divider>
-      <div class="layout-settings-item mt15">
-        <span class="layout-settings-label">页面动画</span>
-        <div class="layout-settings-value">
-          <el-select
-            v-model="preferencesStore.animation"
-            style="width: 90px"
-            @change="setLocalThemeConfig"
-          >
-            <el-option
-              label="右侧滑入"
-              value="slide-right"
-            />
-            <el-option
-              label="左侧滑入"
-              value="slide-left"
-            />
-            <el-option
-              label="渐变"
-              value="opacitys"
-            />
-          </el-select>
-        </div>
-      </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">Tagsview 样式</span>
         <div class="layout-settings-value">
@@ -718,13 +652,6 @@ const initLayoutChangeFun = () => {
   onBgColorPickerChange('topBarColor');
   onBgColorPickerChange('columnsMenuBar');
   onBgColorPickerChange('columnsMenuBarColor');
-};
-
-// 组件大小变化
-const onComponentSizeChange = () => {
-  setLocalThemeConfig();
-  // 需要刷新页面应用组件大小
-  // window.location.reload();
 };
 
 // 打开抽屉
