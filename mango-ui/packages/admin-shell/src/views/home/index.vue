@@ -186,22 +186,57 @@ async function resetLayout(): Promise<void> {
 }
 
 function defaultLayoutItems(): GridLayoutItem[] {
+  // 工作台默认布局由页面直接传入自定义布局组件，无个人配置或恢复默认时使用。
   return [
-    gridItem('user-profile', 'system.user-profile', 0, 0, 3, 22, '用户信息'),
-    gridItem('quick', 'system.quick-entry', 3, 0, 3, 10, '快捷入口'),
-    gridItem('my-process', 'system.my-process', 6, 0, 3, 10, '我的申请'),
-    gridItem('message-center', 'system.message-center', 9, 0, 3, 10, '消息中心'),
-    gridItem('calendar', 'system.calendar', 3, 10, 3, 10, '日历'),
-    gridItem('my-task', 'system.my-task', 0, 22, 3, 10, '我的任务'),
+    gridItem('message-center', 'system.message-center', 0, 0, 6, 18, '消息中心'),
+    gridItem('quick', 'system.quick-entry', 6, 0, 3, 18, '快捷入口'),
+    gridItem('calendar', 'system.calendar', 9, 0, 3, 14, '日历'),
+    gridItem('user-profile', 'system.user-profile', 9, 15, 3, 28, '用户信息', {
+      minH: 16,
+      showTitle: false,
+      padding: false,
+    }),
+    gridItem('my-process', 'system.my-process', 0, 19, 3, 24, '我的申请'),
+    gridItem('my-task', 'system.my-task', 3, 19, 3, 24, '我的任务'),
+    gridItem('my-todo', 'system.my-todo', 6, 19, 3, 24, '我的待办', {
+      showTitle: false,
+      padding: false,
+    }),
   ];
 }
 
-function gridItem(id: string, widgetType: string, x: number, y: number, w: number, h: number, title: string): GridLayoutItem {
+function gridItem(
+  id: string,
+  widgetType: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  title: string,
+  options: {
+    minW?: number;
+    minH?: number;
+    maxW?: number;
+    maxH?: number;
+    showTitle?: boolean;
+    padding?: boolean;
+  } = {},
+): GridLayoutItem {
+  const {
+    minW = 3,
+    minH = 10,
+    maxW = 12,
+    maxH = 1000,
+    showTitle,
+    padding,
+  } = options;
   return {
     id,
     widgetType,
     title,
-    layout: { x, y, w, h, minW: 3, minH: 10 },
+    layout: { x, y, w, h, minW, minH, maxW, maxH },
+    showTitle,
+    padding,
   };
 }
 
