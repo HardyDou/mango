@@ -1,5 +1,72 @@
 # Mango Changelog
 
+## v2026.06.27-system-component-release - 2026-06-27
+
+### Fixed
+
+- Published the updated `@mango/system` component package so business frontends can consume the latest system UI build through npm-hosted.
+- Updated the direct frontend packages that depend on `@mango/system`, plus the aggregate `@mango/admin` package and `@mango/cli` release lock, so new, regenerated, and upgraded business projects resolve a consistent system component version.
+
+### Published Packages
+
+- npm: `@mango/system@1.0.11` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-pages@1.0.12`, `@mango/admin-shell@1.0.27`, `@mango/calendar@1.0.13`, `@mango/cms@1.0.2`, `@mango/file@1.0.13`, `@mango/grid-widgets@1.0.5`, `@mango/job@1.0.5`, `@mango/notice@1.0.14`, `@mango/numgen@1.0.13`, `@mango/payment@1.0.4`, `@mango/template@1.0.13`, `@mango/workflow@1.0.16`, and `@mango/workflow-business-example@1.0.15` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.31` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.44` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.27-system-component-release`.
+
+### Upgrade Notes
+
+- Business frontends that consume system pages directly should upgrade to `@mango/system@1.0.11`.
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.31`.
+- Business frontends that consume optional modules directly should upgrade this frontend package batch together, including `@mango/admin-pages@1.0.12`, `@mango/admin-shell@1.0.27`, `@mango/calendar@1.0.13`, `@mango/cms@1.0.2`, `@mango/file@1.0.13`, `@mango/grid-widgets@1.0.5`, `@mango/job@1.0.5`, `@mango/notice@1.0.14`, `@mango/numgen@1.0.13`, `@mango/payment@1.0.4`, `@mango/template@1.0.13`, `@mango/workflow@1.0.16`, and `@mango/workflow-business-example@1.0.15`.
+- New or regenerated business projects must use `@mango/cli@1.0.44` so generated frontend dependency locks include this release batch.
+
+### Verification
+
+- `pnpm install --lockfile-only`
+- `pnpm --filter @mango/system build`
+- `pnpm --filter @mango/admin-pages build`
+- `pnpm --filter @mango/admin-shell build`
+- `pnpm --filter @mango/calendar build`
+- `pnpm --filter @mango/cms build`
+- `pnpm --filter @mango/file build`
+- `pnpm --filter @mango/grid-widgets build`
+- `pnpm --filter @mango/job build`
+- `pnpm --filter @mango/notice build`
+- `pnpm --filter @mango/numgen build`
+- `pnpm --filter @mango/payment build`
+- `pnpm --filter @mango/template build`
+- `pnpm --filter @mango/workflow build`
+- `pnpm --filter @mango/workflow-business-example build`
+- `pnpm --filter @mango/admin build`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/system --version=1.0.11 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/admin-pages --version=1.0.12 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/admin-shell --version=1.0.27 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/calendar --version=1.0.13 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/cms --version=1.0.2 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/file --version=1.0.13 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/grid-widgets --version=1.0.5 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/job --version=1.0.5 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/notice --version=1.0.14 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/numgen --version=1.0.13 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/payment --version=1.0.4 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/template --version=1.0.13 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/workflow --version=1.0.16 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/workflow-business-example --version=1.0.15 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/admin --version=1.0.31 --tag=v2026.06.27-system-component-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.44 --tag=v2026.06.27-system-component-release --check-github-release`
+- `git diff --check`
+
 ## v2026.06.26-notice-workflow-release - 2026-06-26
 
 ### New

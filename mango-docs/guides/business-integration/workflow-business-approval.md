@@ -64,6 +64,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 8. 变更影响记录
 
+- v2026.06.27-system-component-release 同步发布 `@mango/workflow@1.0.16`、`@mango/workflow-business-example@1.0.15` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目排查审批页面异常时，仍先确认前端包批次一致、页面 key 已注册、流程定义和任务数据有效。
+
 - 本次 PR 调整内置审批任务详情页操作按钮栏布局：按钮栏只显示在左侧业务内容列下方并居中，右侧流程摘要栏下方不再显示操作区；内容较长时按钮栏仍在内容列底部粘性悬浮。此次变更不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
 
 - PR #268 新增 `@mango/workflow` 可复用审批详情 UI 组件：`WorkflowLayout`、`WorkflowSidebar`、`WorkflowInstanceSummary`、`WorkflowInstanceProgress`、`WorkflowDefinitionGraph`、`WorkflowDefinitionGraphDialog`、`WorkflowInstanceHistory` 和 `WorkflowInstanceHistoryDialog`。业务审批详情页可以优先使用 `WorkflowLayout + WorkflowSidebar` 组合左侧业务内容和右侧流程信息；任务详情页已复用该组件组。此次变更不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目继续通过 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()` 发起流程，并在业务后端自行校验权限、快照和幂等。

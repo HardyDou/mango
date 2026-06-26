@@ -129,6 +129,8 @@ pnpm -F @mango/file build
 
 ## 10. 变更影响记录
 
+- v2026.06.27-system-component-release 同步发布 `@mango/file@1.0.13` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变文件上传组件用法、上传/下载/预览 API、存储配置、业务表保存方式、权限边界、页面入口和本场景验收步骤。业务项目排查上传表单异常时，仍先确认前端包批次一致、后端 file starter 已引入、存储配置可用。
+
 - Issue #264 发布 `@mango/file@1.0.12` 并随前端发布批次对齐 `@mango/admin-pages@1.0.11`；不改变文件上传、下载、预览的公开 API、前端组件、配置、权限、租户、页面、启动方式和表单验收步骤。本次仅同步发布锁和 package 边界，业务项目继续通过 `@mango/file` 公开入口和 `@mango/file/style.css` 接入。
 - PR #216 加固前端 `@mango/*` npm 包发布边界，非 CLI 包不再发布 `src` 等源码目录，并补充发布包 tarball 和业务消费 typecheck 基线；不改变文件上传、下载、预览的公开 API、前端组件、配置、权限、租户、页面、启动方式和表单验收步骤。业务项目应继续使用公开 package 入口和样式入口，升级到后续发布的新包版本后重新运行前端 typecheck。
 
