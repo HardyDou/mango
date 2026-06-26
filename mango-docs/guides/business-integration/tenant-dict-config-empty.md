@@ -69,6 +69,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #253 新增 Resource Registry 的 `IDENTITY_USER`、`ORG_UNIT`、`ORG_POST`、`ORG_MEMBER_BINDING` 基线声明，可让 demo/bootstrap 用户、租户成员、组织、岗位和成员组织岗位关系随资源同步注入；不改变租户字典、系统配置公开查询 API、权限、租户隔离方式、页面入口和本场景排障步骤。排查清库初始化后的用户、组织或岗位为空时，可额外确认这些基线声明和目标 handler 同步结果。
+
 - PR #246 发布 `@mango/grid-widgets@1.0.2`、`@mango/admin-shell@1.0.23`、`@mango/admin@1.0.27`、`@mango/cli@1.0.39`，用于修复 grid widgets 样式发布产物并对齐业务项目版本锁；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由和运行时数据行为。
 
 - PR #243 新增 CMS 站点、栏目、内容、广告等 Flyway 种子数据和公开站点消费链路；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、启动方式和本场景排障步骤。CMS 内容数据归属 `mango-cms` 表和 CMS 管理入口，排查 CMS 内容为空时先确认站点、发布状态、有效期和 CMS migration。
