@@ -1,5 +1,50 @@
 # Mango Changelog
 
+## v2026.06.26-grid-widgets-style-main-release - 2026-06-26
+
+### Fixed
+
+- Published `@mango/grid-widgets@1.0.2` from main so the `./style.css` export ships the real widget CSS artifact.
+- Kept npm publish validation for exported `style.css` content so empty JavaScript placeholder style artifacts fail publication.
+- Updated `@mango/admin-shell@1.0.23`, `@mango/admin@1.0.27`, and `@mango/cli@1.0.39` locks so business projects resolve `@mango/grid-widgets@1.0.2`.
+
+### Published Packages
+
+- npm: `@mango/grid-widgets@1.0.2` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-shell@1.0.23` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.27` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.39` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.26-grid-widgets-style-main-release`.
+
+### Upgrade Notes
+
+- Business frontends that depend on `@mango/admin` should upgrade to `@mango/admin@1.0.27`.
+- Business frontends that depend on `@mango/admin-shell` directly should upgrade to `@mango/admin-shell@1.0.23`.
+- Business frontends that depend on `@mango/grid-widgets` directly should upgrade to `@mango/grid-widgets@1.0.2` and keep importing `@mango/grid-widgets/style.css`.
+- New projects should use `@mango/cli@1.0.39` so generated dependency locks include the fixed widget package.
+
+### Verification
+
+- `git diff --check`
+- `pnpm --filter @mango/grid-widgets build`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm --filter @mango/admin-shell build`
+- `pnpm --filter @mango/admin build`
+- `pnpm --filter @mango/cli test`
+- `node scripts/check-release-notes.mjs --package=@mango/grid-widgets --version=1.0.2`
+- `node scripts/check-release-notes.mjs --package=@mango/admin-shell --version=1.0.23`
+- `node scripts/check-release-notes.mjs --package=@mango/admin --version=1.0.27`
+- `node scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.39`
+- `pnpm publish:pkg grid-widgets --release-tag=v2026.06.26-grid-widgets-style-main-release`
+- `pnpm publish:pkg admin-shell --release-tag=v2026.06.26-grid-widgets-style-main-release`
+- `pnpm publish:pkg admin --release-tag=v2026.06.26-grid-widgets-style-main-release`
+- `pnpm publish:pkg cli --release-tag=v2026.06.26-grid-widgets-style-main-release`
+- `npm view @mango/grid-widgets@1.0.2 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/admin-shell@1.0.23 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/admin@1.0.27 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm view @mango/cli@1.0.39 version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.06.25-cms-platform - 2026-06-25
 
 ### New

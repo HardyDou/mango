@@ -3,9 +3,9 @@
     "mangoBackend": "1.0.0-SNAPSHOT"
   },
   "npm": {
-    "@mango/admin": "1.0.26",
+    "@mango/admin": "1.0.27",
     "@mango/admin-pages": "1.0.10",
-    "@mango/admin-shell": "1.0.22",
+    "@mango/admin-shell": "1.0.23",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.8",
     "@mango/calendar": "1.0.11",
@@ -13,7 +13,7 @@
     "@mango/common": "1.0.10",
     "@mango/file": "1.0.11",
     "@mango/grid-layout": "1.0.2",
-    "@mango/grid-widgets": "1.0.1",
+    "@mango/grid-widgets": "1.0.2",
     "@mango/job": "1.0.3",
     "@mango/notice": "1.0.11",
     "@mango/numgen": "1.0.11",
