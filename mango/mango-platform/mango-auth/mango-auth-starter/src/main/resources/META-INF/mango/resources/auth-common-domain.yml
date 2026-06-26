@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: auth
+    module-name: 认证
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026061800200000190"
+          version: 1
+          biz-key: auth.domain.auth
+          name: 认证授权
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 190
+            domainCode:
+              type: STRING
+              value: AUTH
+            domainShortCode:
+              type: STRING
+              value: AUTH
+            domainName:
+              type: STRING
+              value: 认证授权
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 10
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 认证授权业务域，用于维护登录认证、授权和安全提醒策略参数

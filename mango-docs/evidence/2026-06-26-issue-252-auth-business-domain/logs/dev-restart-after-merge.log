@@ -1,0 +1,9 @@
+===== stop =====
+mango-admin: stopped pid=22863
+mango-backend: stopped pid=21984
+===== start =====
+mango-backend: running install command
+mango-backend: started pid=71777 log=.mango/run/logs/mango-backend.log
+mango-backend: waiting for http://127.0.0.1:18294/actuator/health
+mango-backend: ready http://127.0.0.1:18294/actuator/health
+mango-admin: started pid=72662 log=.mango/run/logs/mango-admin.log

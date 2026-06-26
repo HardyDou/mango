@@ -12,7 +12,7 @@
       <el-table :data="tasks" border stripe v-loading="recordLoading">
         <el-table-column prop="taskCode" label="登记编号" width="190" show-overflow-tooltip />
         <el-table-column label="业务域" width="130" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.bizGroup || '-' }}</template>
+          <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
         </el-table-column>
         <el-table-column label="消息模板名称" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">{{ row.bizName || row.bizType }}</template>
@@ -82,7 +82,7 @@
           </el-form-item>
           <el-form-item v-if="selectedBusiness" label="配置概览">
             <div class="business-summary">
-              <el-tag effect="plain">{{ selectedBusiness.bizGroup || '未分类' }}</el-tag>
+              <el-tag effect="plain">{{ domainText(selectedBusiness.bizGroup || selectedBusiness.domainCode) }}</el-tag>
               <span>{{ selectedBusiness.bizName }}</span>
               <span>生效版本：{{ selectedBusiness.activeVersion || '-' }}</span>
               <span>启用渠道：{{ enabledChannelText(selectedBusiness.enabledChannels) }}</span>
@@ -170,7 +170,7 @@
         <el-descriptions-item label="状态">
           <el-tag :type="taskStatusTag(selectedTask.status)">{{ taskStatusLabel(selectedTask.status) }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="业务域">{{ selectedTask.bizGroup || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="业务域">{{ domainText(selectedTask.bizGroup) }}</el-descriptions-item>
         <el-descriptions-item label="消息模板名称">{{ selectedTask.bizName || selectedTask.bizType }}</el-descriptions-item>
         <el-descriptions-item label="模板 Key">{{ selectedTask.bizType }}</el-descriptions-item>
         <el-descriptions-item label="计划渠道">{{ enabledChannelText(selectedTask.channelTypes) }}</el-descriptions-item>
@@ -222,6 +222,7 @@ import type {
   NoticeTask,
   NoticeTaskStatus,
 } from '../../types/notice';
+import { useNoticeDomains } from '../../components/useNoticeDomains';
 
 type ParamFieldType = 'string' | 'textarea' | 'number' | 'integer' | 'boolean' | 'date' | 'time' | 'datetime' | 'select' | 'json';
 type ParamValue = string | number | boolean | undefined;
@@ -298,6 +299,7 @@ const form = reactive<{
   params: {},
   recipientTargets: [],
 });
+const { domainText, loadDomains } = useNoticeDomains();
 
 const rules = computed<FormRules>(() => ({
   recipientTargets: [{ required: true, type: 'array', min: 1, message: '请选择接收对象', trigger: 'change' }],
@@ -816,6 +818,7 @@ function snapshotJson(snapshot?: string, emptyValue = '-') {
 }
 
 onMounted(() => {
+  loadDomains();
   loadRecords();
   loadBusinessTypes();
 });

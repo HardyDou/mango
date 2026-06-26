@@ -33,8 +33,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, onUnmounted, ref } from 'vue';
 import { ElNotification } from 'element-plus';
-import { iconMap } from '@mango/common/utils/iconConfig';
-import type { RealtimeOptions } from '@mango/common';
+import { iconMap, type RealtimeOptions } from '@mango/common';
 import { getMySiteMessageDetail, getMySiteMessages, getMyUnreadCount, markAllMySiteMessagesRead, markMySiteMessageRead } from '../api/notice';
 import NoticeDetailDialog from '../components/NoticeDetailDialog.vue';
 import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../realtime/noticeRealtime';

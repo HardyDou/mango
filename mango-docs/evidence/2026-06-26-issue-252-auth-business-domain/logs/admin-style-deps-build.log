@@ -1,0 +1,163 @@
+
+> @mango/admin@1.0.27 build:style-deps /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/admin
+> node ./build-style-deps.mjs
+
+
+> @mango/admin-pages@1.0.10 build /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/admin-pages
+> vite build && node ../../scripts/generate-package-types.mjs
+
+vite v4.5.14 building for production...
+transforming...
+✓ 7 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/notice.js               0.21 kB │ gzip: 0.16 kB
+dist/dev-pages.js            0.26 kB │ gzip: 0.18 kB
+dist/features.js             0.99 kB │ gzip: 0.46 kB
+dist/index.js                1.32 kB │ gzip: 0.44 kB
+dist/core.js                 2.02 kB │ gzip: 0.88 kB
+dist/defaults.js             2.43 kB │ gzip: 0.68 kB
+dist/dev-component-pages.js  2.71 kB │ gzip: 0.71 kB
+✓ built in 66ms
+
+> @mango/admin-shell@1.0.23 build /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/admin-shell
+> vite build && node ../../scripts/generate-package-types.mjs
+
+vite v4.5.14 building for production...
+transforming...
+✓ 146 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/style.css                                                  511.27 kB │ gzip: 62.12 kB
+dist/_plugin-vue_export-helper-cc2b3d55.js                        0.19 kB │ gzip:  0.15 kB
+dist/keepAliveNames-9d5c462d.js                                   0.53 kB │ gzip:  0.25 kB
+dist/stores.js                                                    0.64 kB │ gzip:  0.34 kB
+dist/menu.js                                                      0.65 kB │ gzip:  0.36 kB
+dist/ShellView-1d166dc4.js                                        0.72 kB │ gzip:  0.33 kB
+dist/dev-pages.js                                                 0.73 kB │ gzip:  0.34 kB
+dist/runtime.js                                                   0.78 kB │ gzip:  0.34 kB
+dist/router.js                                                    1.03 kB │ gzip:  0.44 kB
+dist/tagsViewRoutes-46c6b461.js                                   1.07 kB │ gzip:  0.44 kB
+dist/preferences-fd1536f2.js                                      1.11 kB │ gzip:  0.53 kB
+dist/index-c545e2b3.js                                            1.15 kB │ gzip:  0.55 kB
+dist/header-4e2e9448.js                                           1.30 kB │ gzip:  0.61 kB
+dist/footer-51d407fc.js                                           1.37 kB │ gzip:  0.64 kB
+dist/404-f6311da6.js                                              1.45 kB │ gzip:  0.65 kB
+dist/parent-28c301ad.js                                           1.65 kB │ gzip:  0.70 kB
+dist/userInfo-a0b11a46.js                                         1.79 kB │ gzip:  0.56 kB
+dist/index-585be538.js                                            1.80 kB │ gzip:  0.71 kB
+dist/config-48980b4d.js                                           1.83 kB │ gzip:  0.49 kB
+dist/breadcrumb-f9228ff4.js                                       2.11 kB │ gzip:  0.81 kB
+dist/DemoCodeBlock-7440b662.js                                    2.11 kB │ gzip:  0.97 kB
+dist/closeFull-7410537a.js                                        2.63 kB │ gzip:  1.13 kB
+dist/layout-bfd42bf6.js                                           3.28 kB │ gzip:  0.84 kB
+dist/horizontal-5cd7377e.js                                       3.31 kB │ gzip:  0.92 kB
+dist/DemoDocLayout.vue_vue_type_style_index_0_lang-7c4ff598.js    3.40 kB │ gzip:  1.27 kB
+dist/subItem-e50bf930.js                                          3.61 kB │ gzip:  1.03 kB
+dist/dev-base-pages.js                                            3.71 kB │ gzip:  0.94 kB
+dist/index.js                                                     4.07 kB │ gzip:  1.54 kB
+dist/vertical-44e0c546.js                                         4.48 kB │ gzip:  1.24 kB
+dist/user-3fc71881.js                                             5.62 kB │ gzip:  1.47 kB
+dist/aside-f446f16a.js                                            7.25 kB │ gzip:  2.03 kB
+dist/columnsAside-c1fd3291.js                                     7.91 kB │ gzip:  2.17 kB
+dist/appBootstrap-d2d126c6.js                                     8.25 kB │ gzip:  3.23 kB
+dist/home.js                                                      9.53 kB │ gzip:  2.87 kB
+dist/index-89d05119.js                                            9.62 kB │ gzip:  2.64 kB
+dist/main-05b13372.js                                            10.89 kB │ gzip:  2.87 kB
+dist/tagsView-2ee0e986.js                                        10.91 kB │ gzip:  2.81 kB
+dist/menuHost-38129ec5.js                                        14.50 kB │ gzip:  3.73 kB
+dist/OrgSelectorView-abcafbc7.js                                 15.75 kB │ gzip:  3.25 kB
+dist/ShellView.vue_vue_type_script_setup_true_lang-07286675.js   15.82 kB │ gzip:  3.23 kB
+dist/ChatView-84423675.js                                        15.85 kB │ gzip:  3.66 kB
+dist/ChinaAreaView-c773f61c.js                                   16.60 kB │ gzip:  3.23 kB
+dist/EditorView-5a5d7e20.js                                      17.78 kB │ gzip:  3.92 kB
+dist/runtimeHost-677c89e2.js                                     19.99 kB │ gzip:  5.33 kB
+dist/ChartsView-9be2b546.js                                      21.05 kB │ gzip:  4.38 kB
+dist/CodeEditorView-01d9ee19.js                                  21.53 kB │ gzip:  4.55 kB
+dist/DirectiveView-7b0ab22b.js                                   22.10 kB │ gzip:  3.89 kB
+dist/dev-workflow-page.js                                        23.37 kB │ gzip:  6.13 kB
+dist/dev-upload-page.js                                          30.35 kB │ gzip:  6.92 kB
+dist/settings-dd0da088.js                                        44.25 kB │ gzip:  5.43 kB
+dist/CaptchaView-4ce7f424.js                                     49.22 kB │ gzip:  8.76 kB
+dist/RealtimeView-b3b6b7c0.js                                    74.98 kB │ gzip: 14.75 kB
+✓ built in 917ms
+
+> @mango/app-runtime@1.0.2 build /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/app-runtime
+> vite build && node ../../scripts/generate-package-types.mjs
+
+vite v4.5.14 building for production...
+transforming...
+✓ 2 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/vue-micro.js   2.09 kB │ gzip: 0.93 kB
+dist/index.js      11.40 kB │ gzip: 3.28 kB
+✓ built in 74ms
+
+> @mango/auth@1.0.8 build /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/auth
+> vite build && node ../../scripts/generate-package-types.mjs
+
+vite v4.5.14 building for production...
+transforming...
+✓ 15 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/style.css   2.34 kB │ gzip: 0.76 kB
+dist/index.js   35.78 kB │ gzip: 8.27 kB
+✓ built in 336ms
+
+> @mango/cms@1.0.0 build /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/cms
+> vite build && node ../../scripts/generate-package-types.mjs
+
+vite v4.5.14 building for production...
+transforming...
+✓ 21 modules transformed.
+✓ built in 113ms
+[commonjs--resolver] Failed to resolve entry for package "@mango/file". The package may have incorrect main/module/exports specified in its package.json.
+error during build:
+Error: Failed to resolve entry for package "@mango/file". The package may have incorrect main/module/exports specified in its package.json.
+    at packageEntryFailure (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:28726:11)
+    at resolvePackageEntry (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:28723:5)
+    at tryNodeResolve (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:28454:20)
+    at Object.resolveId (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:28213:28)
+    at file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:25573:40
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PluginDriver.hookFirstAndGetPlugin (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:25473:28)
+    at async resolveId (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:24146:26)
+    at async ModuleLoader.resolveId (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:24560:15)
+    at async Object.resolveId (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:7911:10)
+/Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/cms:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @mango/cms@1.0.0 build: `vite build && node ../../scripts/generate-package-types.mjs`
+Exit status 1
+/Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/admin:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @mango/admin@1.0.27 build:style-deps: `node ./build-style-deps.mjs`
+Exit status 1
+===== @mango/file =====
+
+> @mango/file@1.0.11 build /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/file
+> vite build && node ../../scripts/generate-package-types.mjs
+
+vite v4.5.14 building for production...
+transforming...
+✓ 12 modules transformed.
+✓ built in 272ms
+[vite]: Rollup failed to resolve import "@mango/common/components/Pagination/index.vue" from "/Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/file/src/views/storage-configs/index.vue?vue&type=script&setup=true&lang.ts".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+error during build:
+Error: [vite]: Rollup failed to resolve import "@mango/common/components/Pagination/index.vue" from "/Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/file/src/views/storage-configs/index.vue?vue&type=script&setup=true&lang.ts".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteWarn (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:48272:27)
+    at onRollupWarning (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:48304:9)
+    at onwarn (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/vite@4.5.14_@types+node@18.19.130_sass@1.58.3_terser@5.46.1/node_modules/vite/dist/node/chunks/dep-827b23df.js:48032:13)
+    at file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:24305:13
+    at Object.logger [as onLog] (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:25979:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:24891:26)
+    at file:///Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/node_modules/.pnpm/rollup@3.30.0/node_modules/rollup/dist/es/shared/node-entry.js:24851:26
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+/Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-ui/packages/file:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @mango/file@1.0.11 build: `vite build && node ../../scripts/generate-package-types.mjs`
+Exit status 1

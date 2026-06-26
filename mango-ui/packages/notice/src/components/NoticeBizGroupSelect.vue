@@ -11,13 +11,13 @@
     @change="handleChange"
     @update:model-value="handleUpdate"
   >
-    <el-option v-for="item in options" :key="item" :label="item" :value="item" />
+    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
   </el-select>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { getBusinessTypes } from '../api/notice';
+import { computed, onMounted } from 'vue';
+import { useNoticeDomains } from './useNoticeDomains';
 
 defineOptions({
   inheritAttrs: false,
@@ -42,16 +42,16 @@ const emit = defineEmits<{
   (event: 'change', value: string): void;
 }>();
 
-const loading = ref(false);
-const bizGroups = ref<string[]>([]);
+const { domainLoading: loading, domainOptions, loadDomains } = useNoticeDomains();
 
 const options = computed(() => {
-  const values = new Set<string>();
-  bizGroups.value.forEach(item => values.add(item));
+  const values = new Map(domainOptions.value.map(item => [item.value, item.label]));
   if (props.modelValue) {
-    values.add(props.modelValue);
+    values.set(props.modelValue, values.get(props.modelValue) || props.modelValue);
   }
-  return Array.from(values).sort((left, right) => left.localeCompare(right, 'zh-CN'));
+  return Array.from(values.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((left, right) => left.label.localeCompare(right.label, 'zh-CN'));
 });
 
 function handleUpdate(value: string) {
@@ -62,19 +62,5 @@ function handleChange(value: string) {
   emit('change', value || '');
 }
 
-async function loadBizGroups() {
-  loading.value = true;
-  try {
-    const result = await getBusinessTypes({ pageNum: 1, pageSize: 200 });
-    bizGroups.value = Array.from(new Set(
-      (result.list || [])
-        .map(item => item.bizGroup?.trim())
-        .filter((item): item is string => Boolean(item)),
-    ));
-  } finally {
-    loading.value = false;
-  }
-}
-
-onMounted(loadBizGroups);
+onMounted(loadDomains);
 </script>

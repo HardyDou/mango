@@ -1,0 +1,34 @@
+{
+  "frontendUrl": "http://127.0.0.1:7984",
+  "checks": {
+    "login": true,
+    "enabledTreeContainsAuth": true,
+    "businessConfigShowsAuthDomain": true,
+    "receiveSettingLoaded": true,
+    "businessConfigFilterSelectable": true
+  },
+  "domainResponses": [
+    {
+      "url": "http://127.0.0.1:7984/api/domain/domains/enabled-tree",
+      "status": 200,
+      "containsAuth": true
+    },
+    {
+      "url": "http://127.0.0.1:7984/api/domain/domains/enabled-tree",
+      "status": 200,
+      "containsAuth": true
+    },
+    {
+      "url": "http://127.0.0.1:7984/api/domain/domains/enabled-tree",
+      "status": 200,
+      "containsAuth": true
+    }
+  ],
+  "consoleErrors": [],
+  "failedRequests": [],
+  "screenshots": [
+    "screenshots/notice-business-config-auth-domain-tree.png",
+    "screenshots/notice-business-config-auth-filtered.png",
+    "screenshots/notice-receive-setting-loaded.png"
+  ]
+}

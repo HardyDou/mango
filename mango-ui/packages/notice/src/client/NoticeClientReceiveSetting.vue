@@ -175,7 +175,9 @@
           </div>
 
           <el-table :data="filteredBusinessTypes" border stripe v-loading="loading.businessTypes || loading.preferences">
-            <el-table-column prop="bizGroup" label="业务域" width="140" />
+            <el-table-column label="业务域" width="160" show-overflow-tooltip>
+              <template #default="{ row }">{{ domainText(row.bizGroup || row.domainCode) }}</template>
+            </el-table-column>
             <el-table-column prop="bizName" label="消息名称" min-width="180" show-overflow-tooltip />
             <el-table-column width="110" align="center">
               <template #header>
@@ -283,6 +285,7 @@ import type {
   NoticeRecipientAccountType,
   NoticeSiteMessage,
 } from '../types/notice';
+import { useNoticeDomains } from '../components/useNoticeDomains';
 
 type AccountRow = {
   type?: NoticeRecipientAccountType;
@@ -339,6 +342,7 @@ const accountDialog = reactive({
     defaultAccount: false,
   },
 });
+const { domainText, loadDomains } = useNoticeDomains();
 const accountRows = computed<AccountRow[]>(() => {
   return [{
     label: '系统账号',
@@ -693,6 +697,7 @@ function upsertPreference(preference: NoticeReceivePreference) {
 
 onMounted(() => {
   refreshDesktopPermission();
+  void loadDomains();
   void loadAccounts();
   void loadPreferences();
   void loadBusinessTypes();
