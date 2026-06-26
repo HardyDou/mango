@@ -17,6 +17,7 @@
 | 岗位维护 | 岗位分页、详情、新增、修改和删除 |
 | 租户初始化 | 新租户创建时初始化根组织和默认岗位 |
 | 删除保护 | 租户删除前检查当前租户是否仍有组织或岗位数据 |
+| 资源声明 | 通过 Resource Registry 的 `ORG_UNIT` 和 `ORG_POST` 注入组织、岗位基线 |
 
 ## 3. 后端接入
 
@@ -74,6 +75,13 @@
 4. 调用 `POST /org/{orgId}/members`，传入 identity 的 `memberId` 和岗位 `postId`。
 5. 需要部门负责人时，把 `leaderFlag` 设为 `true`。
 6. 审批或选人场景通过 `GET /org/leader/{orgId}` 查询负责人。
+
+也可以用 Resource Registry 做基线注入：
+
+| 资源类型 | 关键字段 |
+|----------|----------|
+| `ORG_UNIT` | `tenantId`、`orgCode`、`orgName`、`orgType`，可用 `parentOrgCode` 解析父组织。 |
+| `ORG_POST` | `tenantId`、`postCode`、`postName`，可声明排序、状态和备注。 |
 
 ## 6. 配置说明
 

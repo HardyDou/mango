@@ -653,6 +653,14 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 
 `V1__init_authorization.sql` 初始化授权表结构、`internal-admin` 应用、`INTERNAL / INTERNAL_USER` 登录上下文、菜单套餐主档、多个租户下的 `ROLE_ADMIN` 和 admin 成员角色绑定。功能模块菜单、按钮权限、菜单运行配置和套餐明细由各模块 starter 提供 `AUTH_MENU` 资源声明注入。
 
+Resource Registry 还支持授权基线声明：
+
+| 资源类型 | 作用 |
+|----------|------|
+| `AUTH_ROLE` | 按 `tenantId + appCode + realm + actorType + roleCode` 幂等创建或更新角色，禁用时停用角色。 |
+| `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组。 |
+| `AUTH_SUBJECT_ROLE` | 按 `subjectId + roleCodes` 确保成员主体绑定角色，禁用时移除声明中的角色绑定。 |
+
 启动同步入口：
 
 | Runner | 作用 |
