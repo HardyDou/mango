@@ -1,5 +1,42 @@
 # Mango Changelog
 
+## v2026.06.26-cms-demo-identity-security - 2026-06-26
+
+### New
+
+- Added identity security policy baseline for first-login forced password change, password complexity hints and validation, login-failure lockout, timed unlock behavior, and admin-side user unlock/reset actions.
+- Added default workbench layout data so clean environments can show the expected admin home widgets without manual layout setup.
+- Added CMS demo data for the help, enterprise, and demo public sites, including site settings, domains, categories, navigation, articles, publish relations, and advertisements.
+- Registered local frontend app ports in workspace configuration so each worktree can run its own admin shell, CMS admin app, and public site apps through environment-driven ports.
+
+### Fixed
+
+- Aligned failed-login lockout handling with the identity security policy, including persisted locking for existing users and KV-backed tracking for nonexistent usernames.
+- Fixed CMS demo seed ownership so the default admin data scope can see seeded site and category records.
+
+### Published Packages
+
+- No npm package version bump in this release. Source changes remain on the existing package versions.
+- Maven: backend artifacts remain on the existing `1.0.0-SNAPSHOT` line.
+- GitHub Release: `v2026.06.26-cms-demo-identity-security`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies and rerun Flyway migrations to receive identity security policy columns and CMS demo seed data.
+- Business projects using local worktrees should rerun `scripts/dev-workspace.sh init` only when a workspace has no existing `.mango/dev-workspace.env`; existing workspaces keep their current port assignments.
+- Public CMS demo apps now rely on seeded CMS domains for `127.0.0.1:5191`, `127.0.0.1:5192`, and `127.0.0.1:5193` when using the default main-workspace port set.
+- No npm dependency upgrade is required for this source release.
+
+### Verification
+
+- `git diff --check`
+- `PR_BODY_FILE=/tmp/pr-261-body-current.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main^1 --head origin/main`
+- `node mango-ui/packages/mango-cli/src/index.mjs validate`
+- `bash -n scripts/dev-workspace.sh`
+- `mvn -f mango/pom.xml -pl :mango-auth-starter -am test`
+- `mvn -f mango/pom.xml -pl :mango-identity-core -am test`
+- CMS V10 Flyway seed SQL was executed repeatably against the local main-workspace database during PR verification.
+
 ## v2026.06.26-resource-identity-auth-domain - 2026-06-26
 
 ### New
