@@ -30,8 +30,11 @@ export interface MangoWidgetRuntimeUser {
   username?: string;
   nickname?: string;
   avatar?: string;
+  deptName?: string;
+  orgName?: string;
   roles?: string[];
   appCode?: string;
+  lastLoginTime?: string;
 }
 
 export interface MangoWidgetRuntimeTenant {
