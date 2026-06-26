@@ -277,7 +277,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | `workflowApi.myTaskSummary()` | `GET /workflow/tasks/my/summary` | 返回 `WorkflowMyTaskSummary`，字段为 `total`、`pending`、`processing`、`completed`、`overdue`。 |
 | `workflowApi.copiedTasks(params)` | `GET /workflow/tasks/copied` | 支持 `unread` 筛选未读抄送。 |
 | `workflowApi.businessApplyMySummary()` | `GET /workflow/business-applies/my/summary` | 返回 `WorkflowBusinessApplySummary`，字段为 `inReview`、`completed`、`rejected`、`withdrawn`。 |
-| `workflowApi.businessAppliesPage(params)` | `POST /workflow/business-applies/page` | 我的申请页面复用该接口，支持 `statuses` 筛选申请状态。 |
+| `workflowApi.businessAppliesPage(params)` | `POST /workflow/business-applies/page` | 我的申请页面的业务申请数据源，支持 `statuses` 筛选申请状态。 |
+| `workflowApi.initiatedProcesses(params)` | `GET /workflow/processes/initiated` | 我的申请默认列表兼容直接发起的流程实例，并按流程实例 ID 与业务申请记录去重。 |
 
 ## 10. 问题排查
 

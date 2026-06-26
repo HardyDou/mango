@@ -9,6 +9,7 @@
 ### Changed
 
 - Refactored the workflow task detail page to reuse the new layout and sidebar components while keeping custom business approval forms, record panel extension, and the bottom approval action bar behavior.
+- Kept the workflow "My Applications" page compatible with both business application records and directly started process instances. Status-filtered views still use business application records, while the default list also includes direct process instances and deduplicates rows by process instance ID.
 
 ### Published Packages
 
@@ -17,11 +18,13 @@
 ### Upgrade Notes
 
 - Business frontends that consume a future `@mango/workflow` build can use `WorkflowLayout + WorkflowSidebar` to compose approval detail pages without changing workflow backend APIs, page keys, permissions, tenant handling, startup behavior, or runtime task actions.
+- Workflows started directly through `WorkflowProcessApi.start()` remain visible in the approval center "My Applications" list. Business-apply status filters continue to apply only to business application records.
 
 ### Verification
 
 - `pnpm --filter @mango/workflow build`
-- `node_modules/.pnpm/node_modules/.bin/vitest run --config vitest.workflow.config.ts packages/workflow/src/components/__tests__/workflowBusinessUi.spec.ts packages/workflow/src/views/task-detail/__tests__/taskDetail.spec.ts`
+- `node_modules/.pnpm/node_modules/.bin/vitest run --config vitest.workflow.config.ts packages/workflow/src/views/task-list/__tests__/taskList.spec.ts packages/workflow/src/components/__tests__/workflowBusinessUi.spec.ts packages/workflow/src/views/task-detail/__tests__/taskDetail.spec.ts`
+- `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true node_modules/.pnpm/node_modules/.bin/playwright test apps/mango-admin/e2e/specs/workflow-management.spec.ts --config apps/mango-admin/playwright.config.ts --project=chromium --workers=1 --grep "发起人自己审批进入本人待办并可通过|指定成员审批进入所选人待办并可通过|平台管理员可在我的待办驳回审批并在我的发起查看已驳回详情"`
 - `node mango-pmo/tools/audit-module-readmes.mjs`
 - `node mango-pmo/tools/audit-readme-source-facts.mjs`
 - `node mango-pmo/tools/check-business-guides.mjs`
