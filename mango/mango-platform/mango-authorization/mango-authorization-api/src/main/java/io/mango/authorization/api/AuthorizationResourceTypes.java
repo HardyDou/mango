@@ -9,6 +9,9 @@ public final class AuthorizationResourceTypes {
 
     public static final String FRONTEND_APP_REGISTRY = ResourceTypes.FRONTEND_APP_REGISTRY;
     public static final String FRONTEND_MODULE_RUNTIME_STRATEGY = ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY;
+    public static final String AUTH_ROLE = ResourceTypes.AUTH_ROLE;
+    public static final String AUTH_ROLE_DATA_SCOPE = ResourceTypes.AUTH_ROLE_DATA_SCOPE;
+    public static final String AUTH_SUBJECT_ROLE = ResourceTypes.AUTH_SUBJECT_ROLE;
 
     private AuthorizationResourceTypes() {
     }

@@ -284,6 +284,13 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | `BUSINESS_DOMAIN` | `mango-domain` | 见 `mango-domain` README。 |
 | `AUTH_MENU` | `mango-authorization` | 菜单、按钮权限、菜单运行时配置、套餐授权和默认角色授权注入。 |
 | `API_RESOURCE` | `mango-authorization` | 由接口权限 Provider 扫描生成，见 `mango-authorization` README。 |
+| `AUTH_ROLE` | `mango-authorization` | 按租户和应用声明角色基线。 |
+| `AUTH_ROLE_DATA_SCOPE` | `mango-authorization` | 按角色声明数据权限基线。 |
+| `AUTH_SUBJECT_ROLE` | `mango-authorization` | 按成员主体声明角色绑定基线。 |
+| `ORG_UNIT` | `mango-org` | 按组织编码声明租户内组织基线。 |
+| `ORG_POST` | `mango-org` | 按岗位编码声明租户内岗位基线。 |
+| `ORG_MEMBER_BINDING` | `mango-identity` | 声明租户成员和组织、岗位的绑定关系。 |
+| `IDENTITY_USER` | `mango-identity` | 声明 demo/bootstrap 用户和租户成员；声明中的初始密码会由 handler 加密保存。 |
 | `MESSAGE_CHANNEL` | `mango-notice` | 见 `mango-notice` README。 |
 | `MESSAGE_TEMPLATE` | `mango-notice` | 见 `mango-notice` README。 |
 | `I18N_MESSAGE` | `mango-system` | 见 `mango-system` README。 |

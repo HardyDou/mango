@@ -10,7 +10,14 @@ public final class ResourceTypes {
     public static final String I18N_MESSAGE = "I18N_MESSAGE";
     public static final String BUSINESS_DOMAIN = "BUSINESS_DOMAIN";
     public static final String AUTH_MENU = "AUTH_MENU";
+    public static final String AUTH_ROLE = "AUTH_ROLE";
+    public static final String AUTH_ROLE_DATA_SCOPE = "AUTH_ROLE_DATA_SCOPE";
+    public static final String AUTH_SUBJECT_ROLE = "AUTH_SUBJECT_ROLE";
     public static final String API_RESOURCE = "API_RESOURCE";
+    public static final String ORG_UNIT = "ORG_UNIT";
+    public static final String ORG_POST = "ORG_POST";
+    public static final String ORG_MEMBER_BINDING = "ORG_MEMBER_BINDING";
+    public static final String IDENTITY_USER = "IDENTITY_USER";
     public static final String FRONTEND_APP_REGISTRY = "FRONTEND_APP_REGISTRY";
     public static final String FRONTEND_MODULE_RUNTIME_STRATEGY = "FRONTEND_MODULE_RUNTIME_STRATEGY";
     public static final String MESSAGE_EVENT = "MESSAGE_EVENT";
