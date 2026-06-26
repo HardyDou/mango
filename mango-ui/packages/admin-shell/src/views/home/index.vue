@@ -187,11 +187,12 @@ async function resetLayout(): Promise<void> {
 
 function defaultLayoutItems(): GridLayoutItem[] {
   return [
-    gridItem('user-profile', 'system.user-profile', 0, 0, 3, 10, '用户信息'),
+    gridItem('user-profile', 'system.user-profile', 0, 0, 3, 22, '用户信息'),
     gridItem('quick', 'system.quick-entry', 3, 0, 3, 10, '快捷入口'),
     gridItem('my-process', 'system.my-process', 6, 0, 3, 10, '我的申请'),
     gridItem('message-center', 'system.message-center', 9, 0, 3, 10, '消息中心'),
-    gridItem('my-task', 'system.my-task', 0, 10, 3, 10, '我的任务'),
+    gridItem('calendar', 'system.calendar', 3, 10, 3, 10, '日历'),
+    gridItem('my-task', 'system.my-task', 0, 22, 3, 10, '我的任务'),
   ];
 }
 

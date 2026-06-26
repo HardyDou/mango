@@ -7,6 +7,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: 'src/index.ts',
+        calendar: 'src/system/calendar/calendar.ts',
         'my-task': 'src/system/my-task/my-task.ts',
         'my-todo': 'src/system/my-todo/my-todo.ts',
         'my-process': 'src/system/my-process/my-process.ts',
@@ -19,6 +20,7 @@ export default defineConfig({
     rollupOptions: {
       external: [
         '@element-plus/icons-vue',
+        '@mango/calendar',
         '@mango/common',
         '@mango/grid-layout',
         '@mango/notice',

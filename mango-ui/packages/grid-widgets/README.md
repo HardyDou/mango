@@ -18,10 +18,11 @@
 | 用户信息小组件 | 展示当前登录人信息，并跳转到个人中心和修改密码 | `systemUserProfileWidgets` |
 | 快捷入口小组件 | 选择可见菜单并保存到浏览器本地，点击后跳转到对应模块 | `systemQuickEntryWidgets` |
 | 消息中心小组件 | 展示当前登录人的未读消息、最新未读摘要和消息分类统计 | `systemMessageCenterWidgets` |
+| 日历小组件 | 展示今日日期、农历、工作日状态和本月最后一个工作日提醒 | `systemCalendarWidgets` |
 | 我的待办小组件 | 展示当前登录人的工作流待办统计，并跳转到对应任务列表 | `systemMyTodoWidgets` |
 | 我的申请小组件 | 展示当前登录人发起的工作流申请统计，并跳转到我的申请列表 | `systemMyProcessWidgets` |
 | 样式入口 | 独立消费系统小组件样式 | `@mango/grid-widgets/style.css` |
-| 类型导出 | 业务侧声明小组件、运行时上下文、快捷入口菜单、消息中心分类、待办和申请小组件参数 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps`、`MyTodoWidgetProps`、`MyProcessWidgetProps` |
+| 类型导出 | 业务侧声明小组件、运行时上下文、快捷入口菜单、消息中心分类、日历、待办和申请小组件参数 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps`、`CalendarWidgetProps`、`MyTodoWidgetProps`、`MyProcessWidgetProps` |
 
 ## 3. 接入方式
 
@@ -48,6 +49,7 @@ const widgets = mergeGridWidgets({
 |------------|----------------|----------|
 | 自定义栅格布局前端 | 小组件定义最终传给 `MangoGridDesigner` 和 `MangoGridLayout` | [@mango/grid-layout README](../grid-layout/README.md) |
 | 公共组件 | 快捷入口配置弹框使用 `MangoDialog`，图标解析使用 `iconMap` | [@mango/common README](../common/README.md) |
+| 日历前端 | 日历小组件读取今日日期属性和月份工作日汇总 | [@mango/calendar README](../calendar/README.md) |
 | 通知中心前端 | 消息中心小组件读取未读消息、最新未读和消息分类统计 | [@mango/notice README](../notice/README.md) |
 | 工作流前端 | 我的待办和我的申请小组件读取工作流统计并跳转任务列表 | [@mango/workflow README](../workflow/README.md) |
 
@@ -74,6 +76,7 @@ const widgets = mergeGridWidgets({
 | `MessageCenterWidget` | `messageCenterPath` | `/notice/site-message` | 消息中心页面路径 | 点击查看全部时传给 `runtime.navigate` | `src/system/message-center/MessageCenterWidget.vue` |
 | `MessageCenterWidget` | `pageSize` | `1` | 最新未读查询条数 | 决定最新未读摘要读取数量 | `src/system/message-center/MessageCenterWidget.vue` |
 | `MessageCenterWidget` | `categories` | 系统、业务、审批、告警 | 消息分类统计配置 | 按 `bizGroup`、`bizType` 或 `priority` 查询未读统计 | `src/system/message-center/MessageCenterWidget.vue` |
+| `CalendarWidget` | `calendarCode` | `CN_STANDARD` | 工作日历编码 | 决定今日属性和月份工作日汇总的数据来源 | `src/system/calendar/CalendarWidget.vue` |
 | `MyTodoWidget` | `runtime` | `undefined` | 当前页面跳转上下文 | 点击统计项时通过 `runtime.navigate` 跳转 | `src/system/my-todo/MyTodoWidget.vue` |
 | `MyTodoWidget` | `todoPath` | `/workflow/task/todo` | 待办任务页面路径 | 查看全部、待审批、待处理和已超时默认跳转路径 | `src/system/my-todo/MyTodoWidget.vue` |
 | `MyProcessWidget` | `runtime` | `undefined` | 当前页面跳转上下文 | 点击统计项时通过 `runtime.navigate` 跳转 | `src/system/my-process/MyProcessWidget.vue` |
@@ -88,7 +91,7 @@ const widgets = mergeGridWidgets({
 | 参数 | 说明 |
 |------|------|
 | `widgets` | 直接传入的小组件定义，适合消费页面临时补充 |
-| `systemWidgets` | Mango 系统预制小组件，当前包含用户信息、快捷入口、消息中心、我的待办和我的申请小组件 |
+| `systemWidgets` | Mango 系统预制小组件，当前包含日历、用户信息、快捷入口、消息中心、我的待办、我的申请和我的任务小组件 |
 | `businessWidgets` | 业务系统自定义小组件 |
 | `runtime` | 当前页面运行时上下文，会通过包装组件注入到每个小组件 |
 | `onDuplicate` | 重复 `type` 处理回调，当前策略保留先注册项、忽略后注册项 |
@@ -114,6 +117,10 @@ interface MangoWidgetRuntimeContext {
 
 ```text
 src/system/
+├─ calendar/
+│  ├─ CalendarWidget.vue
+│  ├─ index.ts
+│  └─ calendar.ts
 ├─ quick-entry/
 │  ├─ QuickEntryWidget.vue
 │  ├─ index.ts
@@ -122,6 +129,10 @@ src/system/
 │  ├─ MessageCenterWidget.vue
 │  ├─ index.ts
 │  └─ message-center.ts
+├─ my-task/
+│  ├─ MyTaskWidget.vue
+│  ├─ index.ts
+│  └─ my-task.ts
 ├─ my-todo/
 │  ├─ MyTodoWidget.vue
 │  ├─ index.ts
@@ -167,6 +178,19 @@ src/system/
 | 查看全部 | `runtime.navigate({ path: messageCenterPath })` | 默认跳转到 `/notice/site-message` |
 
 默认分类为系统通知、业务通知、审批通知和告警通知。消费页面可以通过 `categories` 覆盖分类口径，但分类配置只影响查询和展示，不会写入个人布局 JSON。
+
+### 日历小组件
+
+日历小组件展示当前日期、星期、年份、工作日状态、农历文本、节假日信息和本月最后一个工作日提醒。组件不直接读取宿主 store 或 router，数据来自 `@mango/calendar` 的真实接口，消费页面只需要按既有方式传入系统小组件集合。
+
+默认接口行为：
+
+| 能力 | 接口 | 说明 |
+|------|------|------|
+| 今日日期属性 | `calendarApi.getDay({ calendarCode, date })` | 读取当前日期的工作日、农历、节气、节假日和备注信息 |
+| 月份工作日汇总 | `calendarApi.monthSummary({ calendarCode, year, month })` | 读取当月工作日数量、休息日数量和最后一个工作日 |
+
+默认 `calendarCode` 为 `CN_STANDARD`。消费页面可以通过小组件 props 覆盖日历编码，但该配置不写入个人布局 JSON；布局保存仍只保存布局项和 `widgetType`。
 
 ### 我的待办小组件
 
@@ -224,6 +248,8 @@ const widgets = mergeGridWidgets({
 保存内容是菜单 ID 字符串数组。工作台布局仍然由 `@mango/grid-layout` 的个人布局能力保存，快捷入口选择不和个人布局 JSON 混在一起。
 
 消息中心小组件不新增本地存储，也不修改个人布局 JSON。消息数据、未读数和已读状态全部来自 `@mango/notice` 对应真实接口，接口权限、租户和数据范围由通知后端控制。
+
+日历小组件不新增本地存储，也不修改个人布局 JSON。日期属性、农历文本和工作日汇总全部来自 `@mango/calendar` 对应真实接口，接口权限、租户和数据范围由日历后端控制。
 
 ## 7. 管理入口
 
@@ -307,6 +333,7 @@ pnpm.cmd admin:module-styles:check
 | `MessageCenterCategory.bizType` | 消息分类所属业务类型 | 不建议单独入库，可由消费页面 props 覆盖 |
 | `MessageCenterCategory.priority` | 消息分类优先级 | 不建议单独入库，可由消费页面 props 覆盖 |
 | `MessageCenterWidgetProps.messageCenterPath` | 消息中心页面跳转路径 | 不建议单独入库，可由消费页面 props 覆盖 |
+| `CalendarWidgetProps.calendarCode` | 日历小组件使用的工作日历编码 | 不建议单独入库，可由消费页面 props 覆盖 |
 | `QuickEntryMenuItem.id` | 快捷入口菜单唯一 ID | 本版仅保存到 `localStorage` |
 | `QuickEntryMenuItem.title` | 快捷入口展示名称 | 跟随菜单数据，不单独保存 |
 | `QuickEntryMenuItem.path` | 快捷入口路由路径 | 跟随菜单数据，不单独保存 |
@@ -317,7 +344,9 @@ pnpm.cmd admin:module-styles:check
 | 问题 | 排查方向 |
 |------|----------|
 | 组件库里没有系统小组件 | 检查是否把 `systemGridWidgets` 传给 `mergeGridWidgets` |
-| 卡片内容不显示 | 检查布局项 `widgetType` 是否等于 `system.user-profile`、`system.quick-entry`、`system.message-center` 或业务小组件 `type` |
+| 卡片内容不显示 | 检查布局项 `widgetType` 是否等于 `system.calendar`、`system.user-profile`、`system.quick-entry`、`system.message-center` 或业务小组件 `type` |
+| 日历加载失败 | 检查 `/calendar/workdays/day` 和 `/calendar/workdays/month/summary` 接口权限、登录态、日历编码和后端错误日志 |
+| 日历节假日显示为空 | 检查日历日期数据中 `dayName`、`solarTerm`、`remark` 和农历初始化是否完整 |
 | 用户信息显示为空 | 检查 `runtime.user`、`runtime.tenant` 是否传入 |
 | 用户信息按钮不跳转 | 检查 `runtime.navigate` 是否传入，并确认 `/profile`、`/password` 已注册 |
 | 消息中心没有显示 | 检查 `@mango/notice` 是否已安装，`systemMessageCenterWidgets` 或 `systemGridWidgets` 是否传入 |
@@ -340,6 +369,7 @@ pnpm.cmd admin:module-styles:check
 - [前端 Monorepo 架构规范](../../../mango-pmo/rules/frontend/06-monorepo-architecture.md)
 - [@mango/grid-layout README](../grid-layout/README.md)
 - [@mango/common README](../common/README.md)
+- [@mango/calendar README](../calendar/README.md)
 - [@mango/notice README](../notice/README.md)
 - [Grid Widgets 注册聚合设计方案](../../../mango-docs/designs/mango-grid-widgets-registry-design.md)
 - [Grid Widgets 注册聚合交付台账](../../../mango-docs/plans/2026-06-22-grid-widgets-registry-delivery-ledger.md)

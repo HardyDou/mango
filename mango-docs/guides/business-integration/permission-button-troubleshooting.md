@@ -114,3 +114,5 @@ pnpm -F @mango/admin-shell build
 - PR #166 工作台自定义布局新增 `@mango/grid-layout` 和 `mango-grid-layout`，布局组件不接管按钮权限判断；不改变按钮权限的公开 API、配置、权限码、租户、页面和运行时行为。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变按钮权限的公开 API、配置、权限、租户、页面和运行时行为。
 - PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、页面和本场景排障步骤。
+- 本次用户信息小组件视觉优化 PR 仅调整 `@mango/grid-widgets` 中用户信息卡片展示和后台工作台默认布局高度；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
+- PR 本次新增 `@mango/grid-widgets` 日历系统小组件，并在工作台默认布局中展示；不改变按钮 permissionCode、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面和本场景排障步骤。

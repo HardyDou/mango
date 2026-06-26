@@ -30,8 +30,11 @@ export interface MangoWidgetRuntimeUser {
   username?: string;
   nickname?: string;
   avatar?: string;
+  deptName?: string;
+  orgName?: string;
   roles?: string[];
   appCode?: string;
+  lastLoginTime?: string;
 }
 
 export interface MangoWidgetRuntimeTenant {
@@ -119,4 +122,9 @@ export interface MyProcessWidgetProps {
 export interface MyTaskWidgetProps {
   runtime?: MangoWidgetRuntimeContext;
   taskPath?: string;
+}
+
+export interface CalendarWidgetProps {
+  runtime?: MangoWidgetRuntimeContext;
+  calendarCode?: string;
 }
