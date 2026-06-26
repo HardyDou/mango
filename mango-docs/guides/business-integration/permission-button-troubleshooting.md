@@ -95,6 +95,7 @@ pnpm -F @mango/admin-shell build
 - PR #215 新增 `@mango/grid-widgets` 小组件注册聚合能力与工作台快捷入口小组件；本次不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。快捷入口小组件只基于已可见菜单生成入口，不新增或绕过按钮权限判断。
 
 - 本次 PR 仅纠正菜单管理页面字段文案、补齐 RBAC views README 页面 key，并补充授权聚合测试中 `buttonRules` 断言；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
+- Issue #250 新增 `system:user:unlock` 和 `system:user:reset-password` 的用户管理动作，且用户列表的“解锁”按钮会常驻展示但在未锁定时禁用；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界和按钮展示规则执行逻辑。排查解锁按钮点了报无权限时，需要确认角色是否已获授权且登录态已重新获取最新权限集合。
 
 - PR #207 补齐 `mango-resource-api` 中的
   `ResourceTypes.FRONTEND_APP_REGISTRY` 和

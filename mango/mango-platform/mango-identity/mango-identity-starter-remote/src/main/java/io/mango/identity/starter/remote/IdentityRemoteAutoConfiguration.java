@@ -1,9 +1,11 @@
 package io.mango.identity.starter.remote;
 
 import io.mango.common.result.R;
+import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.AuthUsernameQuery;
 import io.mango.identity.api.vo.AuthUserInfo;
@@ -33,8 +35,55 @@ public class IdentityRemoteAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public AuthIdentitySecurityProvider authIdentitySecurityProvider(
+            ObjectProvider<AuthIdentityFeignClient> authIdentityFeignClient) {
+        return new RemoteAuthIdentitySecurityProvider(authIdentityFeignClient);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public TenantMemberProvider tenantMemberProvider(ObjectProvider<TenantMemberFeignClient> tenantMemberFeignClient) {
         return new RemoteTenantMemberProvider(tenantMemberFeignClient);
+    }
+
+    private static class RemoteAuthIdentitySecurityProvider implements AuthIdentitySecurityProvider {
+
+        private final ObjectProvider<AuthIdentityFeignClient> authIdentityFeignClient;
+
+        RemoteAuthIdentitySecurityProvider(ObjectProvider<AuthIdentityFeignClient> authIdentityFeignClient) {
+            this.authIdentityFeignClient = authIdentityFeignClient;
+        }
+
+        @Override
+        public void assertLoginAllowed(AuthUserInfo user) {
+            if (user == null || user.getLockedUntil() == null
+                    || !user.getLockedUntil().isAfter(java.time.LocalDateTime.now())) {
+                return;
+            }
+            throw new io.mango.common.exception.BizException(1429, "账号已被临时锁定，请稍后再试或联系管理员");
+        }
+
+        @Override
+        public void recordLoginFailure(Long userId) {
+            requireSuccess(authIdentityFeignClient.getObject().recordLoginFailure(userId));
+        }
+
+        @Override
+        public void recordLoginSuccess(Long userId) {
+            requireSuccess(authIdentityFeignClient.getObject().recordLoginSuccess(userId));
+        }
+
+        @Override
+        public void changeRequiredPassword(ChangeRequiredPasswordCommand command) {
+            requireSuccess(authIdentityFeignClient.getObject().changeRequiredPassword(command));
+        }
+
+        private void requireSuccess(R<Boolean> response) {
+            if (response == null || !response.isSuccess() || !Boolean.TRUE.equals(response.getData())) {
+                String message = response == null ? "Remote identity security operation failed" : response.getMsg();
+                throw new IllegalStateException(message);
+            }
+        }
     }
 
     private static class RemoteAuthUserProvider implements AuthUserProvider {

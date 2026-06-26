@@ -190,3 +190,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 - [RBAC 页面说明](./src/views/README.md)
 - [@mango/admin-pages](../admin-pages/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- 本次用户管理页新增锁定状态、密码状态、解锁按钮常驻展示、重置密码弹窗和首次登录密码提示。用户列表仍使用 `userApi` 既有接口，只是把重置密码从 prompt 改成完整表单并统一接入密码策略提示；`system:user:unlock` 需要后端权限资源和角色授权同时生效，未授权时按钮会禁用或接口会返回无权限。该变更不改变用户列表、角色授权、组织和岗位页面的 component key、页面注册方式和接口路径。

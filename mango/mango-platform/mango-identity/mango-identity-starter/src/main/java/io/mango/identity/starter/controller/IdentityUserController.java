@@ -7,9 +7,11 @@ import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
+import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.command.UnlockIdentityUserCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
@@ -119,7 +121,27 @@ public class IdentityUserController implements IdentityUserApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:reset-password")
     @Operation(summary = "重置成员账号密码", description = "权限接口。重置当前机构可管理的成员账号密码")
     public R<Boolean> resetPassword(@Valid @RequestBody ResetIdentityUserPasswordCommand command) {
-        Boolean success = identityUserService.resetPassword(command);
+        try {
+            Boolean success = identityUserService.resetPassword(command);
+            return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(404, "成员不存在");
+        } catch (IllegalArgumentException e) {
+            return R.fail(400, e.getMessage());
+        }
+    }
+
+    @PutMapping("/users/unlock")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:unlock")
+    @Operation(summary = "解锁成员账号", description = "权限接口。清除当前机构可管理成员账号的登录失败锁定状态，不改变启用禁用状态")
+    public R<Boolean> unlock(@Valid @RequestBody UnlockIdentityUserCommand command) {
+        Boolean success = identityUserService.unlock(command);
+        return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(404, "成员不存在");
+    }
+
+    @PutMapping("/users/password/reset-required")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:password-policy")
+    @Operation(summary = "要求成员下次登录改密", description = "权限接口。标记当前机构可管理成员账号下次登录必须修改密码")
+    public R<Boolean> requirePasswordReset(@Valid @RequestBody RequireIdentityUserPasswordResetCommand command) {
+        Boolean success = identityUserService.requirePasswordReset(command);
         return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(404, "成员不存在");
     }
 

@@ -397,3 +397,7 @@ module-path=/system
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [文档资产边界](../../../mango-pmo/rules/06-document-assets.md)
+
+## 13. 变更影响记录
+
+- 本次在系统资源声明中新增 `system:user:unlock` 菜单/权限资源，用于让用户管理页的解锁按钮进入正式资源和角色授权链路。该变更只补充权限资源，不改变字典、系统配置、机构、行政区划、登录日志和操作日志接口路径，也不改变现有 `sys.login.lockCount` 等安全配置键的读取方式。

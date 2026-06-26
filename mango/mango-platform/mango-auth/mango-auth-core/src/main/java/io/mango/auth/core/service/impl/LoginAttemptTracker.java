@@ -19,22 +19,34 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class LoginAttemptTracker {
 
-    private static final int MAX_ATTEMPTS = 5;
-    private static final long LOCKOUT_DURATION_MINUTES = 15;
-    private static final long WINDOW_MINUTES = 10;
-    private static final String KEY_PREFIX = "auth:login:attempt:";
+    private static final String ATTEMPT_KEY_PREFIX = "auth:login:attempt:";
+    private static final String LOCK_KEY_PREFIX = "auth:login:lock:";
 
     private final Map<String, LoginAttempt> attempts = new ConcurrentHashMap<>();
     private final ScheduledExecutorService cleanupScheduler;
     private final IKvStore kvStore;
+    private final int maxAttempts;
+    private final long failureWindowMinutes;
+    private final long lockoutDurationMinutes;
 
     public LoginAttemptTracker(ScheduledExecutorService cleanupScheduler) {
-        this(null, cleanupScheduler);
+        this(null, cleanupScheduler, 5, 60, 15);
     }
 
     public LoginAttemptTracker(IKvStore kvStore, ScheduledExecutorService cleanupScheduler) {
+        this(kvStore, cleanupScheduler, 5, 60, 15);
+    }
+
+    public LoginAttemptTracker(IKvStore kvStore,
+                               ScheduledExecutorService cleanupScheduler,
+                               int maxAttempts,
+                               long failureWindowMinutes,
+                               long lockoutDurationMinutes) {
         this.kvStore = kvStore;
         this.cleanupScheduler = cleanupScheduler;
+        this.maxAttempts = maxAttempts;
+        this.failureWindowMinutes = failureWindowMinutes;
+        this.lockoutDurationMinutes = lockoutDurationMinutes;
         // 每分钟清理一次过期记录。
         cleanupScheduler.scheduleAtFixedRate(this::cleanupExpiredAttempts, 1, 1, TimeUnit.MINUTES);
     }
@@ -46,14 +58,16 @@ public class LoginAttemptTracker {
      */
     public void recordFailedAttempt(String key) {
         if (kvStore != null) {
-            String storeKey = kvKey(key);
-            long count = parseCount(kvStore.get(storeKey)) + 1;
-            kvStore.set(storeKey, String.valueOf(count), WINDOW_MINUTES * 60L);
+            String storeKey = attemptKey(key);
+            long count = kvStore.increment(storeKey, failureWindowMinutes * 60L);
+            if (count >= maxAttempts) {
+                kvStore.set(lockKey(key), "1", lockoutDurationMinutes * 60L);
+            }
             log.debug("Failed login attempt recorded for {}: {} attempts", key, count);
             return;
         }
         LoginAttempt attempt = attempts.computeIfAbsent(key, k -> new LoginAttempt());
-        attempt.recordFailure();
+        attempt.recordFailure(failureWindowMinutes);
         log.debug("Failed login attempt recorded for {}: {} attempts", key, attempt.count);
     }
 
@@ -65,14 +79,13 @@ public class LoginAttemptTracker {
      */
     public boolean isLockedOut(String key) {
         if (kvStore != null) {
-            String value = kvStore.get(kvKey(key));
-            return value != null && Long.parseLong(value) >= MAX_ATTEMPTS;
+            return kvStore.exists(lockKey(key));
         }
         LoginAttempt attempt = attempts.get(key);
         if (attempt == null) {
             return false;
         }
-        if (attempt.isLockedOut(LOCKOUT_DURATION_MINUTES, WINDOW_MINUTES)) {
+        if (attempt.isLockedOut(maxAttempts, lockoutDurationMinutes, failureWindowMinutes)) {
             log.debug("Login is locked out for {} due to too many failed attempts", key);
             return true;
         }
@@ -86,7 +99,8 @@ public class LoginAttemptTracker {
      */
     public void clearAttempts(String key) {
         if (kvStore != null) {
-            kvStore.delete(kvKey(key));
+            kvStore.delete(attemptKey(key));
+            kvStore.delete(lockKey(key));
             return;
         }
         attempts.remove(key);
@@ -101,18 +115,18 @@ public class LoginAttemptTracker {
      */
     public long getRemainingLockoutMinutes(String key) {
         if (kvStore != null) {
-            return isLockedOut(key) ? LOCKOUT_DURATION_MINUTES : 0;
+            return isLockedOut(key) ? lockoutDurationMinutes : 0;
         }
         LoginAttempt attempt = attempts.get(key);
         if (attempt == null) {
             return 0;
         }
-        return attempt.getRemainingLockoutMinutes(LOCKOUT_DURATION_MINUTES, WINDOW_MINUTES);
+        return attempt.getRemainingLockoutMinutes(maxAttempts, lockoutDurationMinutes, failureWindowMinutes);
     }
 
     private void cleanupExpiredAttempts() {
         int before = attempts.size();
-        Instant cutoff = Instant.now().minusSeconds(WINDOW_MINUTES * 60L);
+        Instant cutoff = Instant.now().minusSeconds(failureWindowMinutes * 60L);
         attempts.entrySet().removeIf(entry -> entry.getValue().isExpired(cutoff));
         int removed = before - attempts.size();
         if (removed > 0) {
@@ -124,19 +138,12 @@ public class LoginAttemptTracker {
         cleanupScheduler.shutdown();
     }
 
-    private String kvKey(String key) {
-        return KEY_PREFIX + key;
+    private String attemptKey(String key) {
+        return ATTEMPT_KEY_PREFIX + key;
     }
 
-    private long parseCount(String value) {
-        if (value == null || value.isBlank()) {
-            return 0;
-        }
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+    private String lockKey(String key) {
+        return LOCK_KEY_PREFIX + key;
     }
 
     /**
@@ -146,10 +153,10 @@ public class LoginAttemptTracker {
         private int count = 0;
         private Instant windowStart = Instant.now();
 
-        synchronized void recordFailure() {
+        synchronized void recordFailure(long windowMinutes) {
             Instant now = Instant.now();
             // 窗口过期后重新计数。
-            if (now.isAfter(windowStart.plusSeconds(WINDOW_MINUTES * 60L))) {
+            if (now.isAfter(windowStart.plusSeconds(windowMinutes * 60L))) {
                 windowStart = now;
                 count = 1;
             } else {
@@ -157,17 +164,17 @@ public class LoginAttemptTracker {
             }
         }
 
-        synchronized boolean isLockedOut(long lockoutMinutes, long windowMinutes) {
+        synchronized boolean isLockedOut(int maxAttempts, long lockoutMinutes, long windowMinutes) {
             Instant now = Instant.now();
             // 窗口过期时视为未锁定。
             if (now.isAfter(windowStart.plusSeconds(windowMinutes * 60L))) {
                 return false;
             }
-            return count >= MAX_ATTEMPTS;
+            return count >= maxAttempts;
         }
 
-        synchronized long getRemainingLockoutMinutes(long lockoutMinutes, long windowMinutes) {
-            if (!isLockedOut(lockoutMinutes, windowMinutes)) {
+        synchronized long getRemainingLockoutMinutes(int maxAttempts, long lockoutMinutes, long windowMinutes) {
+            if (!isLockedOut(maxAttempts, lockoutMinutes, windowMinutes)) {
                 return 0;
             }
             // 计算当前窗口剩余时间。

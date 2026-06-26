@@ -780,6 +780,12 @@
                         "permissionName": "重置成员密码",
                         "sort": 6,
                         "remark": "机构成员密码重置权限"
+                      },
+                      {
+                        "permissionCode": "system:user:unlock",
+                        "permissionName": "解锁成员",
+                        "sort": 7,
+                        "remark": "机构成员解锁权限"
                       }
                     ]
                   }

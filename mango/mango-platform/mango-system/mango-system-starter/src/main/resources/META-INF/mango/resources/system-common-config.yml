@@ -58,10 +58,25 @@ mango:
               value: SECURITY
             domainCode:
               type: STRING
-              value: COMMON
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "true"
+            editable:
+              type: BOOLEAN
+              value: true
             sort:
               type: INT
-              value: 1
+              value: 10
             status:
               type: INT
               value: 1
@@ -88,10 +103,25 @@ mango:
               value: SECURITY
             domainCode:
               type: STRING
-              value: COMMON
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "false"
+            editable:
+              type: BOOLEAN
+              value: true
             sort:
               type: INT
-              value: 2
+              value: 20
             status:
               type: INT
               value: 1
@@ -118,13 +148,604 @@ mango:
               value: SECURITY
             domainCode:
               type: STRING
-              value: COMMON
+              value: AUTH
+            valueType:
+              type: STRING
+              value: NUMBER
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "5"
+            editable:
+              type: BOOLEAN
+              value: true
             sort:
               type: INT
-              value: 3
+              value: 60
             status:
               type: INT
               value: 1
+        - id: "2026062602500000001"
+          version: 1
+          biz-key: system.config.identity-password-complexity-enabled
+          name: 密码复杂度开关
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000001
+            configKey:
+              type: STRING
+              value: identity.security.password-complexity.enabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 密码复杂度开关
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "true"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 30
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 关闭后不再校验新密码的长度、字母、数字和空白字符规则
+        - id: "2026062602500000101"
+          version: 1
+          biz-key: system.config.identity-password-min-length
+          name: 密码最小长度
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000101
+            configKey:
+              type: STRING
+              value: identity.security.password.min-length
+            configValue:
+              type: STRING
+              value: "8"
+            configName:
+              type: STRING
+              value: 密码最小长度
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: NUMBER
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "8"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 31
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 密码最少字符数
+        - id: "2026062602500000102"
+          version: 1
+          biz-key: system.config.identity-password-require-letter
+          name: 密码必须包含字母
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000102
+            configKey:
+              type: STRING
+              value: identity.security.password.require-letter
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 密码必须包含字母
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "true"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 32
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后密码必须包含至少一个字母
+        - id: "2026062602500000103"
+          version: 1
+          biz-key: system.config.identity-password-require-digit
+          name: 密码必须包含数字
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000103
+            configKey:
+              type: STRING
+              value: identity.security.password.require-digit
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 密码必须包含数字
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "true"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 33
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后密码必须包含至少一个数字
+        - id: "2026062602500000104"
+          version: 1
+          biz-key: system.config.identity-password-require-special-char
+          name: 密码必须包含特殊字符
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000104
+            configKey:
+              type: STRING
+              value: identity.security.password.require-special-char
+            configValue:
+              type: STRING
+              value: "false"
+            configName:
+              type: STRING
+              value: 密码必须包含特殊字符
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "false"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 34
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后密码必须包含至少一个非字母数字字符
+        - id: "2026062602500000105"
+          version: 1
+          biz-key: system.config.identity-password-allow-whitespace
+          name: 密码允许空白字符
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000105
+            configKey:
+              type: STRING
+              value: identity.security.password.allow-whitespace
+            configValue:
+              type: STRING
+              value: "false"
+            configName:
+              type: STRING
+              value: 密码允许空白字符
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "false"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 35
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后密码可以包含空格、制表符等空白字符
+        - id: "2026062602500000106"
+          version: 1
+          biz-key: system.config.identity-password-pattern
+          name: 密码自定义正则
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000106
+            configKey:
+              type: STRING
+              value: identity.security.password.pattern
+            configValue:
+              type: STRING
+              value: ""
+            configName:
+              type: STRING
+              value: 密码自定义正则
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: ""
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 36
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 为空时不启用自定义正则校验
+        - id: "2026062602500000002"
+          version: 1
+          biz-key: system.config.identity-password-reset-after-create-enabled
+          name: 首次登录改密开关
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000002
+            configKey:
+              type: STRING
+              value: identity.security.password-reset-after-create.enabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 首次登录改密开关
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "true"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 40
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后新增用户首次登录必须修改初始密码
+        - id: "2026062602500000003"
+          version: 1
+          biz-key: system.config.identity-password-reset-after-admin-reset-enabled
+          name: 重置后改密开关
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000003
+            configKey:
+              type: STRING
+              value: identity.security.password-reset-after-admin-reset.enabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 重置后改密开关
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "true"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 50
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后管理员重置密码后用户下次登录必须修改密码
+        - id: "2026062602500000004"
+          version: 1
+          biz-key: system.config.identity-login-failure-lock-enabled
+          name: 登录失败锁定开关
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000004
+            configKey:
+              type: STRING
+              value: identity.security.login-failure-lock.enabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 登录失败锁定开关
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "true"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 70
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 关闭后登录失败不累计次数且不会临时锁定账号
+        - id: "2026062602500000005"
+          version: 1
+          biz-key: system.config.identity-login-failure-window-minutes
+          name: 登录失败统计窗口
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000005
+            configKey:
+              type: STRING
+              value: identity.security.login.failure-window-minutes
+            configValue:
+              type: STRING
+              value: "60"
+            configName:
+              type: STRING
+              value: 登录失败统计窗口
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: NUMBER
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "60"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 75
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 近 N 分钟内连续登录失败达到阈值后锁定账号或用户名
+        - id: "2026062602500000006"
+          version: 1
+          biz-key: system.config.identity-login-lock-duration-minutes
+          name: 登录锁定时长
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062602500000006
+            configKey:
+              type: STRING
+              value: identity.security.login.lock-duration-minutes
+            configValue:
+              type: STRING
+              value: "15"
+            configName:
+              type: STRING
+              value: 登录锁定时长
+            type:
+              type: STRING
+              value: SECURITY
+            domainCode:
+              type: STRING
+              value: AUTH
+            valueType:
+              type: STRING
+              value: NUMBER
+            groupCode:
+              type: STRING
+              value: auth-security
+            groupName:
+              type: STRING
+              value: 认证安全策略
+            defaultValue:
+              type: STRING
+              value: "15"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 80
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 账号临时锁定持续分钟数
         - id: "2170000000000003001"
           version: 1
           biz-key: system.config.notice-center-enabled

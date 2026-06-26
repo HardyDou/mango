@@ -12,9 +12,11 @@ import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
+import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.command.UnlockIdentityUserCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
@@ -62,7 +64,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private static final String DEFAULT_REALM = "INTERNAL";
     private static final String DEFAULT_ACTOR_TYPE = "INTERNAL_USER";
     private static final String DEFAULT_PARTY_TYPE = "INTERNAL_ORG";
-    private static final String DEFAULT_INITIAL_PASSWORD = "admin123";
+    private static final String DEFAULT_INITIAL_PASSWORD = "Mango@123456";
     private static final String STATUS_BOUND = "BOUND";
 
     private final IdentityUserMapper identityUserMapper;
@@ -72,6 +74,9 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private final ExternalIdentityBindingMapper externalIdentityBindingMapper;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final IdentityPasswordPolicyService passwordPolicyService;
+    private final IdentitySecurityPolicyService securityPolicyService;
+    private final IdentityUserSecurityService identityUserSecurityService;
 
     @Override
     public PageResult<IdentityUserVO> page(IdentityUserPageQuery query) {
@@ -99,8 +104,13 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
             throw new IllegalArgumentException("用户名已存在");
         }
         IdentityUser user = new IdentityUser();
+        String plainPassword = firstText(command.getPassword(), DEFAULT_INITIAL_PASSWORD);
+        passwordPolicyService.validatePlainPassword(plainPassword);
+        LocalDateTime now = LocalDateTime.now();
         user.setUsername(command.getUsername().trim());
-        user.setPassword(passwordEncoder.encode(firstText(command.getPassword(), DEFAULT_INITIAL_PASSWORD)));
+        user.setPassword(passwordEncoder.encode(plainPassword));
+        user.setPasswordResetRequired(securityPolicyService.resetRequiredAfterCreate());
+        user.setPasswordUpdatedAt(now);
         user.setNickname(command.getNickname());
         user.setRealm(realm);
         user.setActorType(firstText(command.getActorType(), DEFAULT_ACTOR_TYPE));
@@ -112,8 +122,10 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         user.setStatus(command.getStatus() == null ? 1 : command.getStatus());
         user.setTenantId(currentTenantId());
         user.setRemark(command.getRemark());
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
+        user.setFailedLoginCount(0);
+        user.setLastFailedLoginAt(null);
+        user.setCreateTime(now);
+        user.setUpdateTime(now);
         identityUserMapper.insert(user);
         createTenantMember(user, command.getNickname());
         publishUserCreatedNotice(user);
@@ -210,13 +222,41 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         if (user == null) {
             return false;
         }
+        passwordPolicyService.validatePlainPassword(command.getPassword());
+        LocalDateTime now = LocalDateTime.now();
         user.setPassword(passwordEncoder.encode(command.getPassword()));
-        user.setUpdateTime(LocalDateTime.now());
+        user.setPasswordUpdatedAt(now);
+        user.setPasswordResetRequired(securityPolicyService.resetRequiredAfterAdminReset());
+        user.setFailedLoginCount(0);
+        user.setLastFailedLoginAt(null);
+        user.setLockedUntil(null);
+        user.setLockedReason(null);
+        user.setUpdateTime(now);
         boolean updated = identityUserMapper.updateById(user) > 0;
         if (updated) {
             publishPasswordResetNotice(user);
         }
         return updated;
+    }
+
+    @Override
+    @Transactional
+    public Boolean unlock(UnlockIdentityUserCommand command) {
+        IdentityUser user = getManageableUser(command.getUserId());
+        if (user == null) {
+            return false;
+        }
+        return identityUserSecurityService.unlock(user.getUserId());
+    }
+
+    @Override
+    @Transactional
+    public Boolean requirePasswordReset(RequireIdentityUserPasswordResetCommand command) {
+        IdentityUser user = getManageableUser(command.getUserId());
+        if (user == null) {
+            return false;
+        }
+        return identityUserSecurityService.requirePasswordReset(user.getUserId());
     }
 
     @Override
@@ -630,6 +670,13 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         vo.setStatus(member != null ? member.getStatus() : user.getStatus());
         vo.setTenantId(user.getTenantId());
         vo.setLastLoginTime(user.getLastLoginTime());
+        vo.setPasswordResetRequired(Boolean.TRUE.equals(user.getPasswordResetRequired()));
+        vo.setPasswordUpdatedAt(user.getPasswordUpdatedAt());
+        vo.setFailedLoginCount(user.getFailedLoginCount() == null ? 0 : user.getFailedLoginCount());
+        vo.setLastFailedLoginAt(user.getLastFailedLoginAt());
+        vo.setLockedUntil(user.getLockedUntil());
+        vo.setLockedReason(user.getLockedReason());
+        vo.setLocked(identityUserSecurityService.isLocked(user));
         vo.setRemark(user.getRemark());
         vo.setCreateTime(user.getCreateTime());
         vo.setUpdateTime(user.getUpdateTime());

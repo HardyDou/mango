@@ -126,6 +126,7 @@ HTTP 接口前缀是 `/identity`。
 | POST | `/identity/users/delete-batch` | `system:user:delete` | 批量移除当前租户成员身份 |
 | PUT | `/identity/users/status` | `system:user:status` | 启用或禁用当前租户成员身份 |
 | PUT | `/identity/users/password/reset` | `system:user:reset-password` | 重置成员账号密码 |
+| PUT | `/identity/users/unlock` | `system:user:unlock` | 解锁被临时锁定的成员账号 |
 | POST | `/identity/users/external-identities` | `system:user:edit` | 绑定第三方登录身份 |
 | DELETE | `/identity/users/external-identities` | `system:user:edit` | 解绑第三方登录身份 |
 | GET | `/identity/users/external-identity` | `system:user:query` | 按 provider、corpId、externalUserId 或 userId 查询绑定 |
@@ -179,6 +180,7 @@ identity 的用户管理接口使用这些权限码：
 | `system:user:delete` | 删除或批量删除当前租户成员 |
 | `system:user:status` | 启停用户成员状态 |
 | `system:user:reset-password` | 重置密码 |
+| `system:user:unlock` | 解锁被锁定账号 |
 
 菜单和角色授权由 `mango-authorization` 初始化和维护。用户管理页面能否看到、按钮能否点击，取决于当前角色是否拥有这些权限码。
 

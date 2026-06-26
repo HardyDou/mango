@@ -32,6 +32,10 @@
       "types": "./dist/components/DictSelect/index.d.ts",
       "import": "./dist/components/DictSelect/index.js"
     },
+    "./components/PasswordPolicyHint/index.vue": {
+      "types": "./dist/components/PasswordPolicyHint/index.d.ts",
+      "import": "./dist/components/PasswordPolicyHint/index.js"
+    },
     "./components/MangoDialog/index.vue": {
       "types": "./dist/components/MangoDialog/index.d.ts",
       "import": "./dist/components/MangoDialog/index.js"

@@ -103,6 +103,7 @@ pnpm -F @mango/admin-shell build
 - PR #215 新增 `@mango/grid-widgets` 小组件注册聚合能力与工作台快捷入口小组件；本次不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。工作台快捷入口只消费登录后可见菜单数据做本地快捷入口展示与跳转，不新增菜单授权协议。
 
 - 本次 PR 仅纠正菜单管理页面字段文案、RBAC views README 页面 key，并补齐授权聚合测试中按钮展示规则断言；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。
+- Issue #250 在用户管理页新增锁定状态、密码状态、解锁按钮常驻展示和重置密码弹窗，按钮是否可点取决于 `system:user:unlock`、`system:user:reset-password` 和当前登录态权限集合；不改变菜单 `component` key、菜单树接口、页面注册方式、租户绑定和本场景排障步骤。若点击解锁报无权限，需要同时确认角色是否已拿到 `system:user:unlock`，以及当前登录态是否刷新到最新权限。
 
 - PR #207 补齐 `mango-resource-api` 中的
   `ResourceTypes.FRONTEND_APP_REGISTRY` 和

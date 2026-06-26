@@ -87,6 +87,27 @@ public class IdentityUserVO {
     @Schema(description = "最近登录时间")
     private LocalDateTime lastLoginTime;
 
+    @Schema(description = "是否要求下次登录修改密码")
+    private Boolean passwordResetRequired;
+
+    @Schema(description = "最近密码更新时间")
+    private LocalDateTime passwordUpdatedAt;
+
+    @Schema(description = "连续登录失败次数")
+    private Integer failedLoginCount;
+
+    @Schema(description = "最近登录失败时间")
+    private LocalDateTime lastFailedLoginAt;
+
+    @Schema(description = "账号锁定截止时间")
+    private LocalDateTime lockedUntil;
+
+    @Schema(description = "账号锁定原因")
+    private String lockedReason;
+
+    @Schema(description = "当前是否已锁定")
+    private Boolean locked;
+
     @Schema(description = "备注")
     private String remark;
 

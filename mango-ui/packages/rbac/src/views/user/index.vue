@@ -269,6 +269,47 @@
           </template>
         </el-table-column>
         <el-table-column
+          label="密码状态"
+          width="110"
+        >
+          <template #default="{ row }">
+            <el-tag
+              :type="row.passwordResetRequired ? 'warning' : 'success'"
+              effect="light"
+            >
+              {{ row.passwordResetRequired ? '需改密' : '正常' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="锁定状态"
+          width="130"
+        >
+          <template #default="{ row }">
+            <el-tooltip
+              :disabled="!isLocked(row)"
+              :content="lockTip(row)"
+              placement="top"
+            >
+              <el-tag
+                :type="isLocked(row) ? 'danger' : 'success'"
+                effect="light"
+              >
+                {{ isLocked(row) ? '已锁定' : '未锁定' }}
+              </el-tag>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="lastLoginTime"
+          label="最近登录"
+          width="180"
+        >
+          <template #default="{ row }">
+            {{ formatTime(row.lastLoginTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column
           prop="createTime"
           label="创建时间"
           width="180"
@@ -279,7 +320,7 @@
         </el-table-column>
         <el-table-column
           label="操作"
-          :width="selectedOrg ? 560 : 430"
+          :width="selectedOrg ? 700 : 570"
           fixed="right"
         >
           <template #default="{ row }">
@@ -353,6 +394,23 @@
             </el-button>
             <el-button
               link
+              type="warning"
+              size="small"
+              @click="handleRequirePasswordReset(row)"
+            >
+              要求改密
+            </el-button>
+            <el-button
+              link
+              type="success"
+              size="small"
+              :disabled="!isLocked(row)"
+              @click="handleUnlock(row)"
+            >
+              解锁
+            </el-button>
+            <el-button
+              link
               :type="row.status === 1 ? 'warning' : 'success'"
               size="small"
               @click="handleStatus(row)"
@@ -411,7 +469,11 @@
             v-model="form.password"
             type="password"
             show-password
-            placeholder="不填默认 admin123"
+            placeholder="不填默认 Mango@123456"
+          />
+          <PasswordPolicyHint
+            v-if="form.password"
+            :password="form.password"
           />
         </el-form-item>
         <el-form-item
@@ -527,6 +589,50 @@
           type="primary"
           :loading="submitLoading"
           @click="handleSubmit"
+        >
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="resetPasswordDialogVisible"
+      title="重置密码"
+      width="460px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="resetPasswordFormRef"
+        :model="resetPasswordForm"
+        :rules="resetPasswordRules"
+        label-width="96px"
+      >
+        <el-form-item label="用户">
+          <span>{{ resetPasswordUser?.username }}</span>
+        </el-form-item>
+        <el-form-item
+          label="新密码"
+          prop="password"
+        >
+          <el-input
+            v-model="resetPasswordForm.password"
+            type="password"
+            show-password
+            autocomplete="new-password"
+            placeholder="至少8位，包含字母和数字"
+          />
+          <PasswordPolicyHint :password="resetPasswordForm.password" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="resetPasswordDialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="resetPasswordLoading"
+          :disabled="!canSubmitResetPassword"
+          @click="handleResetPasswordSubmit"
         >
           确定
         </el-button>
@@ -890,6 +996,12 @@ import DictSelect from '@mango/common/components/DictSelect/index.vue';
 import DictTag from '@mango/common/components/DictTag/index.vue';
 import Pagination from '@mango/common/components/Pagination/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
+import {
+  defaultPasswordPolicy,
+  getPasswordPolicyMessage,
+  isPasswordPolicyPassed,
+  PasswordPolicyHint,
+} from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { orgApi, type OrgMemberVO, type SysOrg } from '../../api/org';
 import { postApi, type PostVO } from '../../api/post';
@@ -913,11 +1025,13 @@ const assignDialogVisible = ref(false);
 const orgMemberDialogVisible = ref(false);
 const wecomSyncDialogVisible = ref(false);
 const externalIdentityDialogVisible = ref(false);
+const resetPasswordDialogVisible = ref(false);
 const orgLoading = ref(false);
 const candidateLoading = ref(false);
 const orgMemberSubmitLoading = ref(false);
 const wecomSyncLoading = ref(false);
 const externalIdentityLoading = ref(false);
+const resetPasswordLoading = ref(false);
 const tableData = ref<IdentityUserVO[]>([]);
 const selectedUsers = ref<IdentityUserVO[]>([]);
 const externalIdentities = ref<ExternalIdentityBindingVO[]>([]);
@@ -930,7 +1044,9 @@ const total = ref(0);
 const formRef = ref<FormInstance>();
 const orgTreeRef = ref<TreeInstance>();
 const orgMemberFormRef = ref<FormInstance>();
+const resetPasswordFormRef = ref<FormInstance>();
 const currentUser = ref<IdentityUserVO>();
+const resetPasswordUser = ref<IdentityUserVO>();
 const selectedOrg = ref<SysOrg>();
 const orgKeyword = ref('');
 const wecomSyncUseChannelConfig = ref(true);
@@ -975,6 +1091,10 @@ const externalIdentityForm = reactive({
   displayName: '',
 });
 
+const resetPasswordForm = reactive({
+  password: '',
+});
+
 const GROUP_ORG_TYPE = 1;
 const COMPANY_ORG_TYPE = 2;
 const DEPARTMENT_ORG_TYPE = 3;
@@ -992,8 +1112,23 @@ const wecomSyncForm = reactive({
   bindLoginIdentity: true,
 });
 
+const passwordPolicyMessage = getPasswordPolicyMessage(defaultPasswordPolicy);
+const canSubmitResetPassword = computed(() => isPasswordPolicyPassed(resetPasswordForm.password, defaultPasswordPolicy));
+
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [
+    {
+      validator: (_rule, value, callback) => {
+        if (!value || isPasswordPolicyPassed(String(value), defaultPasswordPolicy)) {
+          callback();
+          return;
+        }
+        callback(new Error(passwordPolicyMessage));
+      },
+      trigger: 'blur',
+    },
+  ],
   realm: [{ required: true, message: '请选择登录域', trigger: 'change' }],
   actorType: [{ required: true, message: '请选择操作者类型', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
@@ -1001,6 +1136,22 @@ const rules: FormRules = {
 
 const orgMemberRules: FormRules = {
   memberId: [{ required: true, message: '请选择成员', trigger: 'change' }],
+};
+
+const resetPasswordRules: FormRules = {
+  password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    {
+      validator: (_rule, value, callback) => {
+        if (isPasswordPolicyPassed(String(value || ''), defaultPasswordPolicy)) {
+          callback();
+          return;
+        }
+        callback(new Error(passwordPolicyMessage));
+      },
+      trigger: 'blur',
+    },
+  ],
 };
 
 async function loadData() {
@@ -1070,6 +1221,16 @@ function orgTypeLabel(type?: number) {
     4: '小组',
   };
   return type ? labels[type] || '组织' : '组织';
+}
+
+function isLocked(row: IdentityUserVO) {
+  return row.locked === true;
+}
+
+function lockTip(row: IdentityUserVO) {
+  const until = formatTime(row.lockedUntil);
+  const reason = row.lockedReason || '登录失败次数超过限制';
+  return until === '-' ? reason : `${reason}，锁定至 ${until}`;
 }
 
 function resetForm() {
@@ -1308,15 +1469,52 @@ function handleStatus(row: IdentityUserVO) {
 
 function handleResetPassword(row: IdentityUserVO) {
   if (!row.userId) return;
-  ElMessageBox.prompt(`请输入用户「${row.username}」的新密码`, '重置密码', {
+  resetPasswordUser.value = row;
+  resetPasswordForm.password = '';
+  resetPasswordDialogVisible.value = true;
+  resetPasswordFormRef.value?.clearValidate();
+}
+
+async function handleResetPasswordSubmit() {
+  if (!resetPasswordUser.value?.userId || !resetPasswordFormRef.value || resetPasswordLoading.value) return;
+  const valid = await resetPasswordFormRef.value.validate().catch(() => false);
+  if (!valid) return;
+
+  resetPasswordLoading.value = true;
+  try {
+    await userApi.resetPassword(resetPasswordUser.value.userId, resetPasswordForm.password);
+    ElMessage.success('重置成功');
+    resetPasswordDialogVisible.value = false;
+    resetPasswordForm.password = '';
+    await loadData();
+  } finally {
+    resetPasswordLoading.value = false;
+  }
+}
+
+function handleRequirePasswordReset(row: IdentityUserVO) {
+  if (!row.userId) return;
+  ElMessageBox.confirm(`确认要求成员「${row.username}」下次登录修改密码？`, '要求改密确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    inputType: 'password',
-    inputPattern: /^.{6,200}$/,
-    inputErrorMessage: '密码长度必须在6到200个字符之间',
-  }).then(async ({ value }) => {
-    await userApi.resetPassword(row.userId!, value);
-    ElMessage.success('重置成功');
+    type: 'warning',
+  }).then(async () => {
+    await userApi.requirePasswordReset(row.userId!);
+    ElMessage.success('已设置下次登录改密');
+    await loadData();
+  }).catch(() => {});
+}
+
+function handleUnlock(row: IdentityUserVO) {
+  if (!row.userId) return;
+  ElMessageBox.confirm(`确认解除成员「${row.username}」的登录锁定？`, '解锁确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(async () => {
+    await userApi.unlock(row.userId!);
+    ElMessage.success('已解锁');
+    await loadData();
   }).catch(() => {});
 }
 

@@ -62,6 +62,9 @@ public enum AuthCode implements BizCode {
     /** 防重放请求已过期。 */
     REQUEST_EXPIRED(1413, "请求已过期"),
 
+    /** 强制改密凭据无效或已过期。 */
+    PASSWORD_RESET_TICKET_INVALID(1417, "强制改密凭据无效或已过期"),
+
     /** 防重放时间戳非法。 */
     REQUEST_TIMESTAMP_INVALID(1414, "请求时间戳非法"),
 

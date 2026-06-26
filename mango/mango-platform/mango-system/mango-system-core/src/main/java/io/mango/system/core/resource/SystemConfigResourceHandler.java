@@ -161,7 +161,7 @@ public class SystemConfigResourceHandler implements ResourceHandler {
             return new ConfigPayload(
                     fieldLong(resource, "configId", false, Long.valueOf(resource.getId())),
                     requiredText(fieldValue(resource, "configKey", true), "SYSTEM_CONFIG configKey is required").trim(),
-                    requiredText(fieldValue(resource, "configValue", true), "SYSTEM_CONFIG configValue is required"),
+                    toText(fieldValue(resource, "configValue", true)),
                     requiredText(fieldValue(resource, "configName", true), "SYSTEM_CONFIG configName is required").trim(),
                     parseType(fieldText(resource, "type", false)),
                     defaultText(fieldText(resource, "domainCode", false), DEFAULT_DOMAIN_CODE).toUpperCase(),

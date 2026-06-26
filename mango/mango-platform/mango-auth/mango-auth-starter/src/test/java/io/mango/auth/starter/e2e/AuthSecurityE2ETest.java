@@ -11,6 +11,8 @@ import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.core.service.impl.AuthServiceImpl;
 import io.mango.auth.core.service.TokenRevocationService;
 import io.mango.auth.core.service.WecomLoginClient;
+import io.mango.auth.core.service.impl.LoginAttemptTracker;
+import io.mango.auth.core.service.impl.PasswordResetTicketService;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.controller.AuthController;
 import io.mango.common.result.R;
@@ -21,6 +23,8 @@ import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.SecurityPrincipal;
 import io.mango.authorization.support.token.JjwtTokenServiceImpl;
 import io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration;
+import io.mango.common.exception.BizException;
+import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.AuthUserInfo;
@@ -30,6 +34,7 @@ import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -50,7 +55,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -82,6 +90,14 @@ class AuthSecurityE2ETest {
 
     @Resource
     private ObjectMapper objectMapper;
+
+    @Resource
+    private TestUserStore testUserStore;
+
+    @BeforeEach
+    void setUp() {
+        testUserStore.reset();
+    }
 
     @Test
     @DisplayName("login should issue token and token should access secured endpoint")
@@ -156,6 +172,171 @@ class AuthSecurityE2ETest {
     }
 
     @Test
+    @DisplayName("first login should require password change and changed password should issue token")
+    void firstLoginShouldRequirePasswordChangeAndThenIssueToken() throws Exception {
+        MvcResult firstLogin = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "first-login",
+                                  "password": "Init@123456",
+                                  "tenantId": "1"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.data.passwordResetRequired").value(true))
+                .andExpect(jsonPath("$.data.loginAction").value("CHANGE_PASSWORD"))
+                .andExpect(jsonPath("$.data.passwordResetTicket").isNotEmpty())
+                .andReturn();
+
+        JsonNode firstBody = objectMapper.readTree(firstLogin.getResponse().getContentAsString());
+        String ticket = firstBody.path("data").path("passwordResetTicket").asText();
+
+        mockMvc.perform(post("/auth/password/change-required")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "passwordResetTicket": "%s",
+                                  "newPassword": "12345678",
+                                  "confirmPassword": "12345678"
+                                }
+                                """.formatted(ticket)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false));
+
+        MvcResult changed = mockMvc.perform(post("/auth/password/change-required")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "passwordResetTicket": "%s",
+                                  "newPassword": "Changed@123456",
+                                  "confirmPassword": "Changed@123456"
+                                }
+                                """.formatted(ticket)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.passwordResetRequired").value(false))
+                .andReturn();
+
+        String accessToken = objectMapper.readTree(changed.getResponse().getContentAsString())
+                .path("data").path("accessToken").asText();
+        mockMvc.perform(get("/e2e/secured")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("2:first-login"));
+
+        mockMvc.perform(post("/auth/password/change-required")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "passwordResetTicket": "%s",
+                                  "newPassword": "Changed@654321",
+                                  "confirmPassword": "Changed@654321"
+                                }
+                                """.formatted(ticket)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(AuthCode.PASSWORD_RESET_TICKET_INVALID.getCode()));
+    }
+
+    @Test
+    @DisplayName("failed login should lock account and admin unlock should restore login")
+    void failedLoginShouldLockAccountAndAdminUnlockShouldRestoreLogin() throws Exception {
+        mockMvc.perform(post("/auth/login-institutions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "lock-user",
+                                  "realm": "INTERNAL",
+                                  "appCode": "internal-admin"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray());
+
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {
+                                      "username": "lock-user",
+                                      "password": "wrong-password",
+                                      "tenantId": "1"
+                                    }
+                                    """))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(false));
+        }
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "lock-user",
+                                  "password": "Lock@123456",
+                                  "tenantId": "1"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode()));
+
+        testUserStore.unlock(3L);
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "lock-user",
+                                  "password": "Lock@123456",
+                                  "tenantId": "1"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("unknown username failures should be locked by kv marker")
+    void unknownUsernameFailuresShouldBeLockedByKvMarker() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {
+                                      "username": "admin1",
+                                      "password": "wrong-password",
+                                      "tenantId": "1",
+                                      "realm": "INTERNAL"
+                                    }
+                                    """))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID.getCode()));
+        }
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "admin1",
+                                  "password": "wrong-password",
+                                  "tenantId": "1",
+                                  "realm": "INTERNAL"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode()));
+    }
+
+    @Test
     @DisplayName("refresh with invalid token should return refresh business code")
     void refreshWithInvalidTokenShouldReturnRefreshBusinessCode() throws Exception {
         mockMvc.perform(post("/auth/refresh")
@@ -212,6 +393,7 @@ class AuthSecurityE2ETest {
             SecurityAutoConfiguration.class,
             AuthController.class,
             AuthServiceImpl.class,
+            PasswordResetTicketService.class,
             TokenRevocationService.class,
             SecuredController.class
     })
@@ -227,6 +409,11 @@ class AuthSecurityE2ETest {
             return new InMemoryTestKvStore();
         }
 
+        @Bean(destroyMethod = "shutdown")
+        LoginAttemptTracker loginAttemptTracker(IKvStore kvStore) {
+            return new LoginAttemptTracker(kvStore, Executors.newSingleThreadScheduledExecutor(), 5, 60, 15);
+        }
+
         @Bean
         PasswordEncoder passwordEncoder() {
             return new BCryptPasswordEncoder();
@@ -238,43 +425,35 @@ class AuthSecurityE2ETest {
         }
 
         @Bean
-        AuthUserProvider authUserProvider(PasswordEncoder passwordEncoder) {
+        TestUserStore testUserStore(PasswordEncoder passwordEncoder) {
+            return new TestUserStore(passwordEncoder);
+        }
+
+        @Bean
+        AuthUserProvider authUserProvider(TestUserStore userStore) {
             return new AuthUserProvider() {
                 @Override
                 public AuthUserInfo getByUsernameForAuth(String username) {
-                    if (!"admin".equals(username)) {
-                        return null;
-                    }
-                    AuthUserInfo user = new AuthUserInfo();
-                    user.setUserId(1L);
-                    user.setUsername("admin");
-                    user.setNickname("Administrator");
-                    user.setStatus(1);
-                    user.setPassword(passwordEncoder.encode("admin123"));
-                    return user;
+                    return userStore.byUsername(username);
                 }
 
                 @Override
                 public AuthUserInfo getByIdForAuth(Long userId) {
-                    if (!Long.valueOf(1L).equals(userId)) {
-                        return null;
-                    }
-                    AuthUserInfo user = new AuthUserInfo();
-                    user.setUserId(1L);
-                    user.setUsername("admin");
-                    user.setNickname("Administrator");
-                    user.setStatus(1);
-                    user.setPassword(passwordEncoder.encode("admin123"));
-                    return user;
+                    return userStore.byId(userId);
                 }
             };
         }
 
         @Bean
         IAuthorizationProvider authorizationProvider() {
-            return query -> Long.valueOf(1L).equals(query.subjectId())
+            return query -> query.subjectId() != null
                     ? AuthorizationSnapshot.of(List.of("ROLE_ADMIN"), List.of("e2e:read"), List.of("ROLE_ADMIN", "e2e:read"))
                     : AuthorizationSnapshot.empty();
+        }
+
+        @Bean
+        AuthIdentitySecurityProvider authIdentitySecurityProvider(TestUserStore userStore) {
+            return userStore;
         }
 
         @Bean
@@ -407,6 +586,11 @@ class AuthSecurityE2ETest {
                     return "default".equals(tenantCode) ? tenant() : null;
                 }
 
+                @Override
+                public List<LoginTenantVO> listEnabledByUser(Long userId) {
+                    return List.of(tenant());
+                }
+
                 private LoginTenantVO tenant() {
                     LoginTenantVO tenant = new LoginTenantVO();
                     tenant.setTenantId("1");
@@ -424,7 +608,9 @@ class AuthSecurityE2ETest {
             return (authenticationSupplier, context) -> {
                 String requestUri = context.getRequest().getRequestURI();
                 if ("/auth/login".equals(requestUri)
+                        || "/auth/login-institutions".equals(requestUri)
                         || "/auth/refresh".equals(requestUri)
+                        || "/auth/password/change-required".equals(requestUri)
                         || "/auth/wecom/login".equals(requestUri)
                         || "/auth/wecom/login-config".equals(requestUri)) {
                     return new AuthorizationDecision(true);
@@ -444,6 +630,138 @@ class AuthSecurityE2ETest {
 
     }
 
+    static final class TestUserStore implements AuthIdentitySecurityProvider {
+        private static final int MAX_FAILED_ATTEMPTS = 5;
+        private final PasswordEncoder passwordEncoder;
+        private final Map<Long, StoredUser> users = new ConcurrentHashMap<>();
+        private final Map<String, Long> userIdsByUsername = new ConcurrentHashMap<>();
+
+        TestUserStore(PasswordEncoder passwordEncoder) {
+            this.passwordEncoder = passwordEncoder;
+            reset();
+        }
+
+        void reset() {
+            users.clear();
+            userIdsByUsername.clear();
+            add(new StoredUser(1L, "admin", "admin123", false));
+            add(new StoredUser(2L, "first-login", "Init@123456", true));
+            add(new StoredUser(3L, "lock-user", "Lock@123456", false));
+        }
+
+        AuthUserInfo byUsername(String username) {
+            Long userId = userIdsByUsername.get(username);
+            return userId == null ? null : byId(userId);
+        }
+
+        AuthUserInfo byId(Long userId) {
+            StoredUser stored = users.get(userId);
+            if (stored == null) {
+                return null;
+            }
+            AuthUserInfo user = new AuthUserInfo();
+            user.setUserId(stored.userId);
+            user.setUsername(stored.username);
+            user.setNickname(stored.username);
+            user.setStatus(1);
+            user.setPassword(stored.encodedPassword);
+            user.setRealm("INTERNAL");
+            user.setActorType("INTERNAL_USER");
+            user.setPartyType("INTERNAL_ORG");
+            user.setPartyId(1L);
+            user.setPasswordResetRequired(stored.passwordResetRequired);
+            user.setFailedLoginCount(stored.failedLoginCount);
+            user.setLockedUntil(stored.locked ? LocalDateTime.now().plusMinutes(15) : null);
+            return user;
+        }
+
+        @Override
+        public void assertLoginAllowed(AuthUserInfo user) {
+            StoredUser stored = users.get(user.getUserId());
+            if (stored != null && stored.locked) {
+                throw new BizException(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode(), AuthCode.LOGIN_ATTEMPT_LOCKED.getMessage());
+            }
+        }
+
+        @Override
+        public void recordLoginFailure(Long userId) {
+            StoredUser stored = users.get(userId);
+            if (stored == null) {
+                return;
+            }
+            stored.failedLoginCount++;
+            if (stored.failedLoginCount >= MAX_FAILED_ATTEMPTS) {
+                stored.locked = true;
+            }
+        }
+
+        @Override
+        public void recordLoginSuccess(Long userId) {
+            unlock(userId);
+        }
+
+        @Override
+        public void changeRequiredPassword(io.mango.identity.api.command.ChangeRequiredPasswordCommand command) {
+            StoredUser stored = users.get(command.getUserId());
+            if (stored == null) {
+                throw new IllegalArgumentException("用户不存在");
+            }
+            if (!Objects.equals(command.getNewPassword(), command.getConfirmPassword())) {
+                throw new IllegalArgumentException("两次输入的新密码不一致");
+            }
+            validatePassword(command.getNewPassword());
+            stored.encodedPassword = passwordEncoder.encode(command.getNewPassword());
+            stored.passwordResetRequired = false;
+            unlock(command.getUserId());
+        }
+
+        private void validatePassword(String password) {
+            if (password == null || password.length() < 8) {
+                throw new IllegalArgumentException("密码长度不能少于8位");
+            }
+            if (password.matches(".*\\s+.*")) {
+                throw new IllegalArgumentException("密码不能包含空白字符");
+            }
+            if (!password.matches(".*[A-Za-z].*")) {
+                throw new IllegalArgumentException("密码必须包含字母");
+            }
+            if (!password.matches(".*\\d.*")) {
+                throw new IllegalArgumentException("密码必须包含数字");
+            }
+        }
+
+        void unlock(Long userId) {
+            StoredUser stored = users.get(userId);
+            if (stored != null) {
+                stored.failedLoginCount = 0;
+                stored.locked = false;
+            }
+        }
+
+        private void add(StoredUser user) {
+            user.encodedPassword = passwordEncoder.encode(user.rawPassword);
+            users.put(user.userId, user);
+            userIdsByUsername.put(user.username, user.userId);
+        }
+    }
+
+    static final class StoredUser {
+        final Long userId;
+        final String username;
+        final String rawPassword;
+        String encodedPassword;
+        boolean passwordResetRequired;
+        int failedLoginCount;
+        boolean locked;
+
+        StoredUser(Long userId, String username, String rawPassword, boolean passwordResetRequired) {
+            this.userId = userId;
+            this.username = username;
+            this.rawPassword = rawPassword;
+            this.passwordResetRequired = passwordResetRequired;
+        }
+    }
+
     static class InMemoryTestKvStore implements IKvStore {
 
         private final Map<String, String> values = new ConcurrentHashMap<>();
@@ -456,6 +774,11 @@ class AuthSecurityE2ETest {
         @Override
         public String get(String key) {
             return values.get(key);
+        }
+
+        @Override
+        public long increment(String key, long windowSeconds) {
+            return Long.parseLong(values.merge(key, "1", (current, ignored) -> String.valueOf(Long.parseLong(current) + 1)));
         }
 
         @Override

@@ -3,6 +3,8 @@ package io.mango.identity.api.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * 内部认证用户事实。
  */
@@ -43,6 +45,24 @@ public class AuthUserInfo {
      */
     @Schema(description = "密码哈希，只允许内部认证链路使用")
     private String password;
+
+    @Schema(description = "是否要求下次登录修改密码")
+    private Boolean passwordResetRequired;
+
+    @Schema(description = "最近密码更新时间")
+    private LocalDateTime passwordUpdatedAt;
+
+    @Schema(description = "连续登录失败次数")
+    private Integer failedLoginCount;
+
+    @Schema(description = "最近登录失败时间")
+    private LocalDateTime lastFailedLoginAt;
+
+    @Schema(description = "账号锁定截止时间")
+    private LocalDateTime lockedUntil;
+
+    @Schema(description = "账号锁定原因")
+    private String lockedReason;
 
     /** 状态：0-禁用，1-启用。 */
     @Schema(description = "状态：0-禁用，1-启用")

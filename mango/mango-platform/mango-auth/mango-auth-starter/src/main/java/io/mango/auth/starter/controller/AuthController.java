@@ -1,5 +1,6 @@
 package io.mango.auth.starter.controller;
 
+import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.LoginCommand;
 import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.command.LogoutCommand;
@@ -12,7 +13,6 @@ import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
 import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.service.IAuthService;
-import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.ITokenProvider;
@@ -26,16 +26,12 @@ import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.infra.context.support.TtlExecutorDecorator;
 import io.mango.infra.iplocation.api.IpLocationResolver;
-import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.system.api.SysLoginLogApi;
 import io.mango.system.api.po.SysLoginLogPo;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -59,9 +55,6 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 认证控制器，提供认证 HTTP 端点。
@@ -76,8 +69,6 @@ import java.util.concurrent.TimeUnit;
 public class AuthController {
 
     private final IAuthService authService;
-    private final TtlExecutorDecorator ttlExecutorDecorator;
-    private final ObjectProvider<IKvStore> kvStoreProvider;
     private final ITokenProvider tokenProvider;
     private final IdentityUserApi identityUserApi;
     private final IAuthorizationProvider authorizationProvider;
@@ -85,13 +76,9 @@ public class AuthController {
     private final ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider;
     private final ObjectProvider<IpLocationResolver> ipLocationResolverProvider;
     private final ApplicationEventPublisher eventPublisher;
-    private LoginAttemptTracker loginAttemptTracker;
-    private ScheduledExecutorService executorForTracker;
 
     @Autowired
     public AuthController(IAuthService authService,
-                          TtlExecutorDecorator ttlExecutorDecorator,
-                          ObjectProvider<IKvStore> kvStoreProvider,
                           ITokenProvider tokenProvider,
                           IdentityUserApi identityUserApi,
                           IAuthorizationProvider authorizationProvider,
@@ -100,8 +87,6 @@ public class AuthController {
                           ObjectProvider<IpLocationResolver> ipLocationResolverProvider,
                           ApplicationEventPublisher eventPublisher) {
         this.authService = authService;
-        this.ttlExecutorDecorator = ttlExecutorDecorator;
-        this.kvStoreProvider = kvStoreProvider;
         this.tokenProvider = tokenProvider;
         this.identityUserApi = identityUserApi;
         this.authorizationProvider = authorizationProvider;
@@ -109,36 +94,6 @@ public class AuthController {
         this.sysLoginLogApiProvider = sysLoginLogApiProvider;
         this.ipLocationResolverProvider = ipLocationResolverProvider;
         this.eventPublisher = eventPublisher;
-    }
-
-    @PostConstruct
-    public void init() {
-        this.executorForTracker = ttlExecutorDecorator.decorate(
-            Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "login-attempt-cleanup");
-                t.setDaemon(true);
-                return t;
-            })
-        );
-        this.loginAttemptTracker = new LoginAttemptTracker(kvStoreProvider.getIfAvailable(), executorForTracker);
-    }
-
-    @PreDestroy
-    public void shutdown() {
-        if (loginAttemptTracker != null) {
-            loginAttemptTracker.shutdown();
-        }
-        if (executorForTracker != null) {
-            executorForTracker.shutdown();
-            try {
-                if (!executorForTracker.awaitTermination(5, TimeUnit.SECONDS)) {
-                    executorForTracker.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executorForTracker.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
     }
 
     @PostMapping("/login")
@@ -150,7 +105,7 @@ public class AuthController {
             HttpServletResponse response) {
         String clientIp = resolveClientIp(request);
         R<LoginVO> result = doLogin(loginCommand, clientIp);
-        if (result.isSuccess() && result.getData() != null) {
+        if (result.isSuccess() && result.getData() != null && result.getData().getAccessToken() != null) {
             Cookie cookie = new Cookie("MANGO_TOKEN", result.getData().getAccessToken());
             cookie.setHttpOnly(true);
             cookie.setPath("/");
@@ -163,7 +118,7 @@ public class AuthController {
 
     @PostMapping("/login-institutions")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询账号可登录机构")
-    @Operation(summary = "查询账号可登录机构", description = "公开接口。校验用户名、密码和登录域后，返回当前账号可进入的启用机构列表，用于登录页机构选择")
+    @Operation(summary = "查询账号可登录机构", description = "公开接口。校验用户名和登录域后，返回当前账号可进入的启用机构列表，用于登录页机构选择")
     public R<List<LoginTenantVO>> loginInstitutions(@Valid @RequestBody LoginTenantOptionsCommand command) {
         return R.ok(authService.listLoginTenants(command));
     }
@@ -198,22 +153,16 @@ public class AuthController {
     }
 
     private R<LoginVO> doLogin(LoginCommand loginCommand, String clientIp) {
-        String loginKey = loginCommand.getUsername() + ":" + clientIp;
-
-        if (loginAttemptTracker.isLockedOut(loginKey)) {
-            long remainingMinutes = loginAttemptTracker.getRemainingLockoutMinutes(loginKey);
-            log.warn("Login attempt blocked for {} - locked out for {} more minutes", loginKey, remainingMinutes);
-            publishLoginLockedNotice(loginCommand, clientIp, remainingMinutes);
-            return R.fail(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode(), "登录尝试次数过多，请在 " + remainingMinutes + " 分钟后重试");
-        }
-
         try {
             LoginVO loginResponse = authService.login(loginCommand);
-            loginAttemptTracker.clearAttempts(loginKey);
-            publishLoginSuccessNotice(loginCommand, loginResponse, clientIp);
+            if (!Boolean.TRUE.equals(loginResponse.getPasswordResetRequired())) {
+                publishLoginSuccessNotice(loginCommand, loginResponse, clientIp);
+            }
             return R.ok(loginResponse);
         } catch (BizException e) {
-            loginAttemptTracker.recordFailedAttempt(loginKey);
+            if (e.getCode() == AuthCode.LOGIN_ATTEMPT_LOCKED.getCode()) {
+                publishLoginLockedNotice(loginCommand, clientIp);
+            }
             return R.fail(e.getCode(), e.getMessage());
         }
     }
@@ -234,19 +183,38 @@ public class AuthController {
                 .build());
     }
 
-    private void publishLoginLockedNotice(LoginCommand command, String clientIp, long remainingMinutes) {
+    private void publishLoginLockedNotice(LoginCommand command, String clientIp) {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("username", command.getUsername());
         params.put("clientIp", clientIp);
-        params.put("remainingMinutes", remainingMinutes);
         params.put("loginTime", LocalDateTime.now().toString());
         eventPublisher.publishEvent(NoticeSendEvent.builder()
                 .bizType("auth.login.locked")
                 .bizId(command.getUsername())
                 .params(params)
                 .priority(NoticePriority.HIGH)
-                .idempotentKey("auth.login.locked:" + command.getUsername() + ":" + clientIp + ":" + remainingMinutes)
+                .idempotentKey("auth.login.locked:" + command.getUsername() + ":" + clientIp)
                 .build());
+    }
+
+    @PostMapping("/password/change-required")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "强制修改初始密码")
+    @Operation(summary = "强制修改初始密码", description = "公开接口。使用登录返回的一次性强制改密凭据修改密码，成功后返回正式登录令牌")
+    public R<LoginVO> changeRequiredPassword(@Valid @RequestBody ChangeRequiredPasswordCommand command,
+                                             HttpServletResponse response) {
+        try {
+            LoginVO loginResponse = authService.changeRequiredPassword(command);
+            Cookie cookie = new Cookie("MANGO_TOKEN", loginResponse.getAccessToken());
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setAttribute("SameSite", "Lax");
+            response.addCookie(cookie);
+            return R.ok(loginResponse);
+        } catch (BizException e) {
+            return R.fail(e.getCode(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return R.fail(400, e.getMessage());
+        }
     }
 
     private R<LoginVO> refreshToken(RefreshTokenCommand command) {

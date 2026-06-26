@@ -27,6 +27,12 @@
 - Resource baseline deployments can now declare roles, role data scopes, subject-role bindings, org units, posts, identity users, and member org/post bindings through Resource Registry YAML.
 - AUTH notification business types can be grouped under the `AUTH` domain after the resource sync writes `biz_domain.domain_code=AUTH`.
 
+### Fixed
+
+- Added identity security policy baseline for first-login forced password change, password complexity hints, login-failure lockout, and timed unlock behavior.
+- Extended the user management backend with password reset, forced password reset, and unlock actions for locked users.
+- Updated auth and identity validation so weak password changes do not consume forced-change tickets before validation succeeds.
+
 ### Verification
 
 - `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-api -am -DskipTests install`
