@@ -1,16 +1,43 @@
 # Mango Changelog
 
-## Unreleased
+## v2026.06.26-resource-identity-auth-domain - 2026-06-26
 
 ### New
 
 - Added Resource Registry baseline declarations for authorization roles, role data scopes, subject-role bindings, organization units, posts, identity users, and member org/post bindings. This lets clean deployments or demo/bootstrap projects initialize RBAC, organization, post, and demo account baseline data through resource declarations instead of manual SQL. User password security policy enforcement remains out of scope and is tracked separately by Issue #250.
+- Added a workbench calendar widget to `@mango/grid-widgets@1.0.2` and registered it in the admin shell home view.
+- Improved the workbench user profile widget layout while keeping the existing `@mango/grid-widgets@1.0.2` package line.
+
+### Fixed
+
+- Injected the `AUTH` business domain from `mango-auth-starter` resource declarations so notification business configuration can group and filter authentication events.
+- Updated `@mango/notice@1.0.11` business-domain selectors and notice pages to load enabled domains, filter message definitions by domain, and keep receive settings compatible with the existing business-type API.
+
+### Published Packages
+
+- No npm package version bump in this release. Source changes remain on the existing package versions: `@mango/grid-widgets@1.0.2` and `@mango/notice@1.0.11`.
+- Maven: backend artifacts remain on the existing `1.0.0-SNAPSHOT` line.
+- GitHub Release: `v2026.06.26-resource-identity-auth-domain`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies to receive Resource Registry handlers for authorization, organization, identity, and the AUTH business domain resource.
+- Business projects that consume the existing admin source line should rebuild with `@mango/grid-widgets@1.0.2` and `@mango/notice@1.0.11`; no npm package version upgrade is required for this source release.
+- Resource baseline deployments can now declare roles, role data scopes, subject-role bindings, org units, posts, identity users, and member org/post bindings through Resource Registry YAML.
+- AUTH notification business types can be grouped under the `AUTH` domain after the resource sync writes `biz_domain.domain_code=AUTH`.
 
 ### Verification
 
 - `mvn -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter,:mango-org-starter,:mango-identity-starter -am test`
+- `mvn -f mango/pom.xml -pl :mango-auth-starter -am test`
+- `pnpm --filter @mango/grid-widgets build`
+- `pnpm --filter @mango/notice build`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
 - `git diff --check`
 - `PR_BODY_FILE=.pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/grid-widgets --version=1.0.2`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/notice --version=1.0.11`
 
 ## v2026.06.26-pmo-batch-release-rules - 2026-06-26
 
