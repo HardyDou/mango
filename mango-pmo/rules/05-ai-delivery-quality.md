@@ -42,12 +42,15 @@
 - 批次内共享门禁只跑一次，包括升级日志、GitHub Release、样式聚合、package exports、consumer typecheck、release lock registry check。
 - 逐包只执行目标包构建、版本存在检查、publish、npm-hosted/npm-group 或 Maven 仓库回查、tarball/产物校验。
 - 依赖链按被依赖方先发布，例如 `grid-widgets -> admin-shell -> admin -> cli`。
+- 同一 release 涉及多个 Maven jar、starter 或 remote-starter 时，必须使用一次 reactor deploy 发布完整批次，例如 `scripts/publish-maven-batch.sh <targets...>`；禁止对每个目标循环执行 `mvn -pl <module> -am deploy`。
+- Maven 发布后必须复用同一个临时本地仓库做统一拉取验证；默认只对对外消费入口执行 `dependency:get -Dtransitive=false`，只有验证完整业务消费链路时才启用传递依赖解析。
 - 发布脚本没有 batch 能力时，禁止直接逐包调用会重复全量门禁的单包命令；必须先完成共享门禁，再使用跳过共享门禁的发布入口，或先补齐 batch 发布入口。
 - 交付报告必须说明共享门禁只执行一次的命令，以及逐包发布和回查结果。
 
 禁止：
 
 - 同一 release 对每个包重复执行完整 consumer typecheck、全量 workspace build 或完整文档门禁。
+- 同一 Maven release 对每个 starter 重复发布相同上游模块，或每个 artifact 使用独立空 Maven local repo 重复下载依赖。
 - 为了省时间跳过发布后仓库回查或 tarball/产物校验。
 
 ## 2.3 PR 评审门禁
