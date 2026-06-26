@@ -334,6 +334,16 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 9. 业务列表用 `WorkflowBusinessProcessApi.latestByBusinessKeys(businessType, keys)` 批量补充审批状态。
 10. 审批页面用任务详情接口拿表单、变量、字段权限和当前节点配置，再调用任务处理接口。
 
+### 启动入口可见性
+
+流程定义支持 `startEntryVisible` 启动入口可见性，默认 `true`，保持既有流程可在审批中心“发起流程”入口展示。业务内嵌流程可以设置为 `false`，用于声明流程不能脱离业务对象独立发起。
+
+- `startEntryVisible=true`：出现在审批中心发起流程列表，可由通用发起页启动。
+- `startEntryVisible=false`：不出现在审批中心发起流程列表，也不作为通用发起入口展示。
+- 业务页面或业务服务仍可通过 `WorkflowBusinessApplyApi.create()` 和 `WorkflowProcessApi.start()` 按 `definitionKey`、`businessType`、`businessKey` 发起流程。
+- 管理端流程定义、版本、发布、启停、任务流转和业务上下文发起不受隐藏入口影响。
+- 启动入口可见性不是权限控制；业务模块仍需校验业务发起权限、业务状态、快照和幂等。
+
 ## 7. 配置说明
 
 配置写在应用的 `application.yml` 或对应环境配置文件中。
@@ -386,7 +396,7 @@ mango:
 | `WorkflowProcessInstanceVO` | 流程实例 ID、流程定义信息、业务主键、发起人、状态、开始时间。 | 发起流程后的结果回显。 |
 | `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间。 | 待办、已办、抄送列表。 |
 | `WorkflowTaskDetailVO` | 任务详情、表单渲染配置、变量、审批记录、节点动作配置。 | 审批详情页渲染和按钮控制。 |
-| `WorkflowDefinitionVO` | 流程定义 ID、编码、名称、分类、业务域、状态、发布版本和流程管理员。 | 流程定义管理和业务选择流程。 |
+| `WorkflowDefinitionVO` | 流程定义 ID、编码、名称、分类、业务域、启动入口可见性、状态、发布版本和流程管理员。 | 流程定义管理和业务选择流程。 |
 | `WorkflowDeployVO` | 部署 ID、流程定义 ID、流程定义 key、版本和发布结果。 | 发布流程或确保流程已发布后的结果。 |
 
 ## 10. API 与扩展

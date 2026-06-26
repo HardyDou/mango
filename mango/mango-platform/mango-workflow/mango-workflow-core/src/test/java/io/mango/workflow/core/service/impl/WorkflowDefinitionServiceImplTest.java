@@ -256,6 +256,76 @@ class WorkflowDefinitionServiceImplTest {
     }
 
     @Test
+    void page_shouldFilterStartEntryVisibleDefinitionsWhenRequested() {
+        Page<WorkflowDefinition> page = new Page<>(1, 10);
+        page.setRecords(List.of());
+        page.setTotal(0);
+        when(definitionMapper.selectPage(any(Page.class), any(Wrapper.class))).thenReturn(page);
+
+        WorkflowDefinitionPageQuery query = new WorkflowDefinitionPageQuery();
+        query.setPage(1);
+        query.setSize(10);
+        query.setPublishedOnly(true);
+        query.setStartEntryVisible(true);
+
+        R<PageResult<WorkflowDefinitionVO>> result = service.page(query);
+
+        assertThat(result.isSuccess()).isTrue();
+        ArgumentCaptor<Wrapper<WorkflowDefinition>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(definitionMapper).selectPage(any(Page.class), wrapperCaptor.capture());
+        assertThat(wrapperCaptor.getValue().getSqlSegment())
+                .contains("workflow_definition_version", "version_no = workflow_definition.published_version_no",
+                        "start_entry_visible", "status", "published_version_no", "process_definition_id");
+    }
+
+    @Test
+    void page_shouldOnlyReturnVisibleStartEntriesInPublishedOnlyResult() {
+        WorkflowDefinition visibleDefinition = new WorkflowDefinition();
+        visibleDefinition.setId(1001L);
+        visibleDefinition.setCategoryId(10L);
+        visibleDefinition.setDefinitionName("可独立发起流程-草稿名");
+        visibleDefinition.setDefinitionKey("VISIBLE_APPROVAL");
+        visibleDefinition.setStatus(WorkflowDefinitionStatus.PUBLISHED.name());
+        visibleDefinition.setPublishedVersionNo(2);
+        visibleDefinition.setProcessDefinitionId("proc-visible-draft");
+
+        Page<WorkflowDefinition> page = new Page<>(1, 10);
+        page.setRecords(List.of(visibleDefinition));
+        page.setTotal(1);
+        when(definitionMapper.selectPage(any(Page.class), any(Wrapper.class))).thenReturn(page);
+
+        WorkflowDefinitionVersion visiblePublished = new WorkflowDefinitionVersion();
+        visiblePublished.setDefinitionId(1001L);
+        visiblePublished.setVersionNo(2);
+        visiblePublished.setCategoryId(10L);
+        visiblePublished.setDefinitionName("可独立发起流程");
+        visiblePublished.setDefinitionKey("VISIBLE_APPROVAL");
+        visiblePublished.setStartEntryVisible(true);
+        visiblePublished.setDesignerJson("{\"name\":\"visible\"}");
+        visiblePublished.setDeploymentId("deploy-visible");
+        visiblePublished.setProcessDefinitionId("proc-visible");
+        visiblePublished.setProcessDefinitionVersion(2);
+        visiblePublished.setPublishStatus("SUCCESS");
+        visiblePublished.setPublishTime(LocalDateTime.parse("2026-06-26T10:00:00"));
+        when(versionMapper.selectOne(any(Wrapper.class))).thenReturn(visiblePublished);
+
+        WorkflowDefinitionPageQuery query = new WorkflowDefinitionPageQuery();
+        query.setPage(1);
+        query.setSize(10);
+        query.setPublishedOnly(true);
+        query.setStartEntryVisible(true);
+
+        R<PageResult<WorkflowDefinitionVO>> result = service.page(query);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getData().getList())
+                .extracting(WorkflowDefinitionVO::getDefinitionName)
+                .containsExactly("可独立发起流程")
+                .doesNotContain("仅业务内嵌流程");
+        assertThat(result.getData().getList().get(0).getStartEntryVisible()).isTrue();
+    }
+
+    @Test
     void ensurePublished_existingPublishedDeployableDefinition_returnsPublishedSnapshotWithoutCreatingOrDeploying() {
         WorkflowCategory category = new WorkflowCategory();
         category.setId(20L);

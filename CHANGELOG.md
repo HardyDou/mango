@@ -7,6 +7,7 @@
 - Added Resource Registry baseline declarations for authorization roles, role data scopes, subject-role bindings, organization units, posts, identity users, and member org/post bindings. This lets clean deployments or demo/bootstrap projects initialize RBAC, organization, post, and demo account baseline data through resource declarations instead of manual SQL. User password security policy enforcement remains out of scope and is tracked separately by Issue #250.
 - Added a workbench calendar widget to `@mango/grid-widgets@1.0.2` and registered it in the admin shell home view.
 - Improved the workbench user profile widget layout while keeping the existing `@mango/grid-widgets@1.0.2` package line.
+- Added Workflow start entry visibility for business-embedded processes. Workflow definitions can now be marked as hidden from the approval center start-process list while remaining startable through business-context Workflow APIs.
 
 ### Fixed
 
@@ -28,6 +29,9 @@
 
 ### Verification
 
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-api -am -DskipTests install`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core -Dtest=WorkflowDefinitionServiceImplTest test`
+- `pnpm -F @mango/workflow build`
 - `mvn -pl :mango-resource-api,:mango-authorization-api,:mango-authorization-starter,:mango-org-starter,:mango-identity-starter -am test`
 - `mvn -f mango/pom.xml -pl :mango-auth-starter -am test`
 - `pnpm --filter @mango/grid-widgets build`

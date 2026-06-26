@@ -119,6 +119,7 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 | 配置位置 | 字段或参数 | 含义 |
 |----------|------------|------|
 | `registerMangoWorkflowAdminPages()` | 无入参 | 幂等注册 `mango-workflow` 页面 key 和动态路由。 |
+| 流程定义 `startEntryVisible` | `true` / `false` | 是否展示在审批中心发起流程入口；默认 `true`，业务内嵌流程可设为 `false`。 |
 | 流程定义 `formJson.mode` | `DYNAMIC_FORM` | 使用动态表单渲染。 |
 | 流程定义 `formJson.mode` | `CUSTOM_PAGE` | 使用业务自定义申请页或审批页。 |
 | 流程定义 `formJson.customConfig.submitPath` | 路由 path | 自定义申请页路由。 |
@@ -249,7 +250,7 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 
 **发起流程列表为空**
 
-检查后端流程定义是否已发布，当前租户是否有可用定义，当前账号是否有流程定义或发起流程权限。
+检查后端流程定义是否已发布，当前租户是否有可用定义，当前账号是否有流程定义或发起流程权限。声明为“仅业务内嵌”的流程不会显示在审批中心发起流程列表中，需要从业务页面按业务上下文发起。
 
 **自定义申请页打不开**
 

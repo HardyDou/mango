@@ -140,7 +140,7 @@ const tableData = ref<WorkflowDefinition[]>([]);
 const workflowIconUrlMap = ref<Record<string, string>>({});
 const selectedDefinition = ref<WorkflowDefinition | null>(null);
 const startFormRef = ref<FormInstance>();
-const query = ref({ pageNum: 1, pageSize: 50, keyword: '', status: 'PUBLISHED', publishedOnly: true });
+const query = ref({ pageNum: 1, pageSize: 50, keyword: '', status: 'PUBLISHED', publishedOnly: true, startEntryVisible: true });
 const startForm = ref({
   variablesJson: '{}',
 });

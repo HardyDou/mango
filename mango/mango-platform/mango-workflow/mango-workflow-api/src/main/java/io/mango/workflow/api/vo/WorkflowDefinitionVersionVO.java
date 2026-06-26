@@ -33,6 +33,9 @@ public class WorkflowDefinitionVersionVO {
     @Schema(description = "流程管理员用户名JSON数组快照")
     private String adminUsers;
 
+    @Schema(description = "启动入口是否可见快照")
+    private Boolean startEntryVisible;
+
     @Schema(description = "流程图标快照")
     private String icon;
 
