@@ -1,6 +1,6 @@
 {
   "name": "@mango/job",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -26,7 +26,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.10",
+    "@mango/admin-pages": "1.0.11",
     "@mango/common": "1.0.11"
   },
   "peerDependencies": {

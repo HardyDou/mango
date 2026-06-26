@@ -2,34 +2,108 @@
 
 ## Unreleased
 
+## v2026.06.26-notice-workflow-release - 2026-06-26
+
 ### New
 
+- Added Notice announcement management for admin publishing and user-side announcement reading/confirmation. Announcement targets support all users, organizations, roles, and selected users, with recipient snapshots scoped by tenant.
 - Added reusable `@mango/workflow` business approval detail UI components: `WorkflowLayout`, `WorkflowSidebar`, instance summary/progress, definition graph dialog, and business application history dialog.
 
-### Changed
+### Fixed
 
-- Scoped the workflow task detail approval action bar to the left content column. The buttons are centered under the approval content and stay sticky at the bottom of that column when the content scrolls, without extending below the right workflow sidebar.
-- Refactored the workflow task detail page to reuse the new layout and sidebar components while keeping custom business approval forms, record panel extension, and the bottom approval action bar behavior.
 - Kept the workflow "My Applications" page compatible with both business application records and directly started process instances. Status-filtered views still use business application records, while the default list also includes direct process instances and deduplicates rows by process instance ID.
+- Scoped the workflow task detail approval action bar to the left content column. The buttons are centered under the approval content and stay sticky at the bottom of that column when the content scrolls, without extending below the right workflow sidebar.
+- Synchronized the previously published frontend package release lock from `v2026.06.26-frontend-release-missing-widgets-system` back into `main` before this release so source package versions no longer lag npm-hosted.
 
 ### Published Packages
 
-- No package version bump in this PR. The change is recorded for the next `@mango/workflow` release batch.
+- npm: `@mango/notice@1.0.13` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/workflow@1.0.15` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/workflow-business-example@1.0.14` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/grid-widgets@1.0.4`, `@mango/admin-shell@1.0.26`, `@mango/admin@1.0.30`, and `@mango/cli@1.0.43` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Maven: `mango-notice-api`, `mango-notice-core`, and `mango-notice-starter` on the `1.0.0-SNAPSHOT` line to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.26-notice-workflow-release`.
 
 ### Upgrade Notes
 
-- Business frontends that consume a future `@mango/workflow` build can use `WorkflowLayout + WorkflowSidebar` to compose approval detail pages without changing workflow backend APIs, page keys, permissions, tenant handling, startup behavior, or runtime task actions.
-- Workflows started directly through `WorkflowProcessApi.start()` remain visible in the approval center "My Applications" list. Business-apply status filters continue to apply only to business application records.
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies and rerun Flyway migrations to receive Notice announcement tables and starter endpoints.
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.30`.
+- Business frontends that consume the admin shell directly should upgrade to `@mango/admin-shell@1.0.26`.
+- Business frontends that embed Notice, Workflow, Workflow Business Example, or Grid Widgets directly should upgrade to `@mango/notice@1.0.13`, `@mango/workflow@1.0.15`, `@mango/workflow-business-example@1.0.14`, and `@mango/grid-widgets@1.0.4` together.
+- New or regenerated business projects must use `@mango/cli@1.0.43` so generated frontend dependency locks include this release batch.
 
 ### Verification
 
+- `pnpm install --lockfile-only`
+- `pnpm --filter @mango/notice build`
 - `pnpm --filter @mango/workflow build`
-- `node_modules/.pnpm/node_modules/.bin/vitest run --config vitest.workflow.config.ts packages/workflow/src/views/task-list/__tests__/taskList.spec.ts packages/workflow/src/components/__tests__/workflowBusinessUi.spec.ts packages/workflow/src/views/task-detail/__tests__/taskDetail.spec.ts`
-- `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true node_modules/.pnpm/node_modules/.bin/playwright test apps/mango-admin/e2e/specs/workflow-management.spec.ts --config apps/mango-admin/playwright.config.ts --project=chromium --workers=1 --grep "发起人自己审批进入本人待办并可通过|指定成员审批进入所选人待办并可通过|平台管理员可在我的待办驳回审批并在我的发起查看已驳回详情"`
+- `pnpm --filter @mango/workflow-business-example build`
+- `pnpm --filter @mango/grid-widgets build`
+- `pnpm --filter @mango/admin-shell build`
+- `pnpm --filter @mango/admin build`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `mvn -f mango/pom.xml -pl :mango-notice-starter -am test`
+- `scripts/publish-maven-batch.sh :mango-notice-api :mango-notice-core :mango-notice-starter --revision 1.0.0-SNAPSHOT`
 - `node mango-pmo/tools/audit-module-readmes.mjs`
 - `node mango-pmo/tools/audit-readme-source-facts.mjs`
 - `node mango-pmo/tools/check-business-guides.mjs`
-- `PR_BODY_FILE=.pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base 6ccda9bfe643bf6ac2e111b8644b5008b0ae5095 --head HEAD`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/notice --version=1.0.13 --tag=v2026.06.26-notice-workflow-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/workflow --version=1.0.15 --tag=v2026.06.26-notice-workflow-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/workflow-business-example --version=1.0.14 --tag=v2026.06.26-notice-workflow-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/grid-widgets --version=1.0.4 --tag=v2026.06.26-notice-workflow-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/admin-shell --version=1.0.26 --tag=v2026.06.26-notice-workflow-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/admin --version=1.0.30 --tag=v2026.06.26-notice-workflow-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.43 --tag=v2026.06.26-notice-workflow-release --check-github-release`
+- `git diff --check`
+
+## v2026.06.26-frontend-release-missing-widgets-system - 2026-06-26
+
+### Fixed
+
+- Published the already-implemented workbench calendar widget in `@mango/grid-widgets@1.0.3`; the previous `@mango/grid-widgets@1.0.2` tarball did not contain `dist/calendar.js` or `dist/system/calendar/**`.
+- Published the updated system configuration page and `SystemConfigPanel` in `@mango/system@1.0.10`; the previous `@mango/system@1.0.9` tarball did not contain the panel component.
+- Updated the dependent frontend release batch, `@mango/cli@1.0.42`, and the business starter lock so generated and upgraded business projects resolve the fixed frontend package set.
+
+### Published Packages
+
+- npm: `@mango/grid-widgets@1.0.3` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/system@1.0.10` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-pages@1.0.11` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-shell@1.0.25` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.29` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/calendar@1.0.12`, `@mango/cms@1.0.1`, `@mango/file@1.0.12`, `@mango/job@1.0.4`, `@mango/notice@1.0.12`, `@mango/numgen@1.0.12`, `@mango/payment@1.0.3`, `@mango/template@1.0.12`, `@mango/workflow@1.0.14`, and `@mango/workflow-business-example@1.0.13` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.42` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.26-frontend-release-missing-widgets-system`.
+
+### Upgrade Notes
+
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.29`.
+- Business frontends that consume the admin shell directly should upgrade to `@mango/admin-shell@1.0.25`.
+- Business frontends that consume grid widgets directly should upgrade to `@mango/grid-widgets@1.0.3` and keep importing `@mango/grid-widgets/style.css`.
+- Business frontends that consume system pages directly should upgrade to `@mango/system@1.0.10`.
+- Business frontends that consume optional admin feature packages should upgrade the dependent package set together: `@mango/calendar@1.0.12`, `@mango/cms@1.0.1`, `@mango/file@1.0.12`, `@mango/job@1.0.4`, `@mango/notice@1.0.12`, `@mango/numgen@1.0.12`, `@mango/payment@1.0.3`, `@mango/template@1.0.12`, `@mango/workflow@1.0.14`, and `@mango/workflow-business-example@1.0.13`.
+- New or regenerated business projects must use `@mango/cli@1.0.42` so generated frontend dependency locks include this release batch.
+
+### Verification
+
+- `gh issue create --repo HardyDou/mango ...` created Issue #264.
+- `pnpm install --lockfile-only`
+- `pnpm --filter @mango/grid-widgets build`
+- `pnpm --filter @mango/system build`
+- `pnpm --filter @mango/admin-pages build`
+- `pnpm --filter @mango/admin-shell build`
+- `pnpm --filter @mango/admin build`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `npm pack @mango/grid-widgets@1.0.3 --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm pack @mango/system@1.0.10 --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
 
 ## v2026.06.26-cms-demo-identity-security - 2026-06-26
 
