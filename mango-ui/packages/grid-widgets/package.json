@@ -18,9 +18,17 @@
       "types": "./dist/message-center.d.ts",
       "import": "./dist/message-center.js"
     },
+    "./my-task": {
+      "types": "./dist/my-task.d.ts",
+      "import": "./dist/my-task.js"
+    },
     "./my-todo": {
       "types": "./dist/my-todo.d.ts",
       "import": "./dist/my-todo.js"
+    },
+    "./my-process": {
+      "types": "./dist/my-process.d.ts",
+      "import": "./dist/my-process.js"
     },
     "./user-profile": {
       "types": "./dist/user-profile.d.ts",
@@ -41,7 +49,7 @@
     "@mango/common": "1.0.10",
     "@mango/grid-layout": "1.0.2",
     "@mango/notice": "1.0.11",
-    "@mango/workflow": "1.0.11"
+    "@mango/workflow": "1.0.12"
   },
   "peerDependencies": {
     "element-plus": "2.14.1",

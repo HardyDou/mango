@@ -22,6 +22,8 @@
 | 管理流程定义和流程模板 | 使用注册后的页面 key 和后端 workflow 接口。 |
 | 展示待办、已办、抄送和任务详情 | 使用任务列表页、任务详情页或 `workflowApi`。 |
 | 展示待办统计 | 使用 `workflowApi.todoSummary()` 读取待审批、待处理、待确认和已超时数量。 |
+| 展示我的任务统计 | 使用 `workflowApi.myTaskSummary()` 读取任务总数、待完成、进行中、已完成和已逾期数量。 |
+| 展示我的申请统计 | 使用 `workflowApi.businessApplyMySummary()` 读取审核中、已完成、已驳回和已撤回数量。 |
 | 发起流程 | 使用发起流程页、自定义申请页或 `workflowApi.startProcess()`。 |
 | 渲染动态表单 | 使用 `RuntimeFormRenderer`、`parseRuntimeForm()`、`createDefaultVariables()`。 |
 | 接入业务自定义申请页 | 使用 `registerBusinessApplyComponent()`。 |
@@ -192,10 +194,10 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 |------|------|
 | 分类和定义 | `categoriesPage()`、`categoriesList()`、`definitionDetail()`、`definitionsPage()`、`saveDefinition()`、`updateDefinition()`、`deleteDefinition()`、`deployDefinition()`、`nodeCatalog()` |
 | 模板 | `templatesPage()`、`templateDetail()`、`saveTemplate()`、`deleteTemplate()`、`createTemplateFromDefinition()`、`createDefinitionFromTemplate()`、`importTemplates()`、`pushTemplates()` |
-| 任务 | `todoTasks()`、`todoSummary()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()` |
+| 任务 | `todoTasks()`、`todoSummary()`、`myTaskSummary()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()` |
 | 动作 | `completeTask()`、`rejectTask()`、`saveTask()`、`transferTask()`、`addSignTask()`、`claimTask()`、`unclaimTask()`、`readCopiedTask()` |
 | 流程实例 | `startProcess()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()` |
-| 业务申请 | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyByProcessInstance()` |
+| 业务申请 | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyMySummary()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyByProcessInstance()` |
 | 候选项 | `users()`、`tenants()`、`enabledDomains()` |
 
 ## 8. 数据与初始化
@@ -234,7 +236,10 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 |-----|----------|------|
 | `workflowApi.todoTasks(params)` | `GET /workflow/tasks/todo` | 支持 `todoType` 和 `overdue` 筛选。 |
 | `workflowApi.todoSummary()` | `GET /workflow/tasks/todo/summary` | 返回 `WorkflowTaskSummary`，字段为 `pendingApproval`、`pendingHandle`、`pendingConfirm`、`overdue`。 |
+| `workflowApi.myTaskSummary()` | `GET /workflow/tasks/my/summary` | 返回 `WorkflowMyTaskSummary`，字段为 `total`、`pending`、`processing`、`completed`、`overdue`。 |
 | `workflowApi.copiedTasks(params)` | `GET /workflow/tasks/copied` | 支持 `unread` 筛选未读抄送。 |
+| `workflowApi.businessApplyMySummary()` | `GET /workflow/business-applies/my/summary` | 返回 `WorkflowBusinessApplySummary`，字段为 `inReview`、`completed`、`rejected`、`withdrawn`。 |
+| `workflowApi.businessAppliesPage(params)` | `POST /workflow/business-applies/page` | 我的申请页面复用该接口，支持 `statuses` 筛选申请状态。 |
 
 ## 10. 问题排查
 

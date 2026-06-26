@@ -1,0 +1,500 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容运营",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951400000000000001",
+            "version": 1,
+            "bizKey": "cms.menu.internal-admin",
+            "name": "内容运营菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-cms"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "内容运营"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin",
+                  "institution_collaboration"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "内容运营",
+                    "menuCode": "cms",
+                    "parentCode": "data",
+                    "path": "/cms",
+                    "icon": "DataBoard",
+                    "sort": 10,
+                    "redirect": "/cms/contents",
+                    "children": [
+                      {
+                        "menuType": 1,
+                        "menuName": "内容管理",
+                        "menuCode": "cms:content-manage",
+                        "path": "/cms/content",
+                        "icon": "Files",
+                        "sort": 1,
+                        "redirect": "/cms/contents",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "内容中心",
+                            "menuCode": "cms:content",
+                            "path": "/cms/contents",
+                            "icon": "Document",
+                            "component": "cms/contents/index",
+                            "sort": 1,
+                            "permissions": [
+                              "cms:content:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:content:list",
+                                "permissionName": "内容查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:content:query",
+                                "permissionName": "内容详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:content:add",
+                                "permissionName": "新增内容",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:content:edit",
+                                "permissionName": "编辑内容",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:content:delete",
+                                "permissionName": "删除内容",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:content:submit",
+                                "permissionName": "提交审核",
+                                "sort": 6
+                              },
+                              {
+                                "permissionCode": "cms:content:approve",
+                                "permissionName": "审核通过",
+                                "sort": 7
+                              },
+                              {
+                                "permissionCode": "cms:content:reject",
+                                "permissionName": "审核驳回",
+                                "sort": 8
+                              },
+                              {
+                                "permissionCode": "cms:content:offline",
+                                "permissionName": "内容下线",
+                                "sort": 9
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "内容分类",
+                            "menuCode": "cms:content-category",
+                            "path": "/cms/content-categories",
+                            "icon": "FolderOpened",
+                            "component": "cms/content-categories/index",
+                            "sort": 2,
+                            "permissions": [
+                              "cms:content-category:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:content-category:list",
+                                "permissionName": "分类查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:content-category:query",
+                                "permissionName": "分类详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:content-category:add",
+                                "permissionName": "新增分类",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:content-category:edit",
+                                "permissionName": "编辑分类",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:content-category:delete",
+                                "permissionName": "删除分类",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:content-category:status",
+                                "permissionName": "分类状态",
+                                "sort": 6
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "标签管理",
+                            "menuCode": "cms:content-tag",
+                            "path": "/cms/content-tags",
+                            "icon": "CollectionTag",
+                            "component": "cms/content-tags/index",
+                            "sort": 3,
+                            "permissions": [
+                              "cms:content-tag:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:content-tag:list",
+                                "permissionName": "标签查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:content-tag:query",
+                                "permissionName": "标签详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:content-tag:add",
+                                "permissionName": "新增标签",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:content-tag:edit",
+                                "permissionName": "编辑标签",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:content-tag:delete",
+                                "permissionName": "删除标签",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:content-tag:status",
+                                "permissionName": "标签状态",
+                                "sort": 6
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "发布管理",
+                            "menuCode": "cms:publish",
+                            "path": "/cms/content-publishes",
+                            "icon": "Promotion",
+                            "component": "cms/content-publishes/index",
+                            "sort": 4,
+                            "permissions": [
+                              "cms:publish:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:publish:list",
+                                "permissionName": "发布查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:publish:publish",
+                                "permissionName": "发布内容",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:publish:offline",
+                                "permissionName": "发布下线",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:publish:delete",
+                                "permissionName": "删除发布关系",
+                                "sort": 4
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "站点管理",
+                        "menuCode": "cms:site-manage",
+                        "path": "/cms/site",
+                        "icon": "Platform",
+                        "sort": 2,
+                        "redirect": "/cms/sites",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "站点列表",
+                            "menuCode": "cms:site",
+                            "path": "/cms/sites",
+                            "icon": "House",
+                            "component": "cms/sites/index",
+                            "sort": 1,
+                            "permissions": [
+                              "cms:site:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:site:list",
+                                "permissionName": "站点查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:site:query",
+                                "permissionName": "站点详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:site:add",
+                                "permissionName": "新增站点",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:site:edit",
+                                "permissionName": "编辑站点",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:site:delete",
+                                "permissionName": "删除站点",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:site:status",
+                                "permissionName": "站点状态",
+                                "sort": 6
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "栏目管理",
+                            "menuCode": "cms:site-category",
+                            "path": "/cms/site-categories",
+                            "icon": "Guide",
+                            "component": "cms/site-categories/index",
+                            "sort": 2,
+                            "permissions": [
+                              "cms:site-category:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:site-category:list",
+                                "permissionName": "栏目查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:site-category:query",
+                                "permissionName": "栏目详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:site-category:add",
+                                "permissionName": "新增栏目",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:site-category:edit",
+                                "permissionName": "编辑栏目",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:site-category:delete",
+                                "permissionName": "删除栏目",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:site-category:status",
+                                "permissionName": "栏目状态",
+                                "sort": 6
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "导航管理",
+                            "menuCode": "cms:navigation",
+                            "path": "/cms/navigations",
+                            "icon": "Position",
+                            "component": "cms/navigations/index",
+                            "sort": 3,
+                            "permissions": [
+                              "cms:navigation:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:navigation:list",
+                                "permissionName": "导航查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:navigation:query",
+                                "permissionName": "导航详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:navigation:add",
+                                "permissionName": "新增导航",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:navigation:edit",
+                                "permissionName": "编辑导航",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:navigation:delete",
+                                "permissionName": "删除导航",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:navigation:status",
+                                "permissionName": "导航状态",
+                                "sort": 6
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 1,
+                        "menuName": "投放管理",
+                        "menuCode": "cms:delivery-manage",
+                        "path": "/cms/delivery",
+                        "icon": "Promotion",
+                        "sort": 3,
+                        "redirect": "/cms/advertisements",
+                        "children": [
+                          {
+                            "menuType": 2,
+                            "menuName": "广告位管理",
+                            "menuCode": "cms:advertisement",
+                            "path": "/cms/advertisements",
+                            "icon": "Tickets",
+                            "component": "cms/advertisements/index",
+                            "sort": 1,
+                            "permissions": [
+                              "cms:advertisement:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:advertisement:list",
+                                "permissionName": "广告位查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:advertisement:query",
+                                "permissionName": "广告位详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:advertisement:add",
+                                "permissionName": "新增广告位",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:advertisement:edit",
+                                "permissionName": "编辑广告位",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:advertisement:delete",
+                                "permissionName": "删除广告位",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:advertisement:status",
+                                "permissionName": "广告位状态",
+                                "sort": 6
+                              }
+                            ]
+                          },
+                          {
+                            "menuType": 2,
+                            "menuName": "广告投放管理",
+                            "menuCode": "cms:ad-delivery",
+                            "path": "/cms/ad-deliveries",
+                            "icon": "PictureFilled",
+                            "component": "cms/ad-deliveries/index",
+                            "sort": 2,
+                            "permissions": [
+                              "cms:ad-delivery:list"
+                            ],
+                            "permissionItems": [
+                              {
+                                "permissionCode": "cms:ad-delivery:list",
+                                "permissionName": "投放查询",
+                                "sort": 1
+                              },
+                              {
+                                "permissionCode": "cms:ad-delivery:query",
+                                "permissionName": "投放详情",
+                                "sort": 2
+                              },
+                              {
+                                "permissionCode": "cms:ad-delivery:add",
+                                "permissionName": "新增投放",
+                                "sort": 3
+                              },
+                              {
+                                "permissionCode": "cms:ad-delivery:edit",
+                                "permissionName": "编辑投放",
+                                "sort": 4
+                              },
+                              {
+                                "permissionCode": "cms:ad-delivery:delete",
+                                "permissionName": "删除投放",
+                                "sort": 5
+                              },
+                              {
+                                "permissionCode": "cms:ad-delivery:status",
+                                "permissionName": "投放状态",
+                                "sort": 6
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

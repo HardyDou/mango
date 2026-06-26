@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../mango-parent/pom.xml</relativePath>
+    </parent>
+
+    <groupId>io.mango.platform.cms</groupId>
+    <artifactId>mango-cms</artifactId>
+    <packaging>pom</packaging>
+    <description>Mango CMS Module</description>
+
+    <modules>
+        <module>mango-cms-api</module>
+        <module>mango-cms-core</module>
+        <module>mango-cms-starter</module>
+        <module>mango-cms-starter-remote</module>
+    </modules>
+</project>

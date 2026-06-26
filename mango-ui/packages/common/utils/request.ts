@@ -277,7 +277,9 @@ service.interceptors.response.use(
           return service(config);
         }
       }
-      void handleUnauthorized(message || '登录已过期，请重新登录');
+      if (!config.ignoreToken) {
+        void handleUnauthorized(message || '登录已过期，请重新登录');
+      }
       return Promise.reject(createRequestError(message || '登录已过期', code, response));
     }
 
@@ -307,7 +309,9 @@ service.interceptors.response.use(
           return service(config);
         }
       }
-      void handleUnauthorized('登录已过期，请重新登录');
+      if (!config.ignoreToken) {
+        void handleUnauthorized('登录已过期，请重新登录');
+      }
     } else if (!config.silentError) {
       mangoMessage.error(message);
     }

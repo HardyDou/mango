@@ -28,6 +28,14 @@
       "timeoutMs": 15000,
       "preload": false,
       "alive": false
+    },
+    "mango-cms": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-cms-app",
+      "entry": "https://cms.mango.io/",
+      "timeoutMs": 15000,
+      "preload": false,
+      "alive": false
     }
   }
 }

@@ -41,6 +41,9 @@ importers:
       '@mango/calendar':
         specifier: workspace:*
         version: link:../../packages/calendar
+      '@mango/cms':
+        specifier: workspace:*
+        version: link:../../packages/cms
       '@mango/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -253,6 +256,55 @@ importers:
         specifier: ^9.1.0
         version: 9.4.3(eslint@8.57.1)
 
+  apps/mango-admin-cms-app:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: 2.3.2
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: workspace:*
+        version: link:../../packages/admin-pages
+      '@mango/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
+      '@mango/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@mango/cms':
+        specifier: workspace:*
+        version: link:../../packages/cms
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/file':
+        specifier: workspace:*
+        version: link:../../packages/file
+      element-plus:
+        specifier: 2.14.1
+        version: 2.14.1(vue@3.5.13(typescript@5.9.3))
+      pinia:
+        specifier: ^2.0.33
+        version: 2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-i18n:
+        specifier: 9.2.2
+        version: 9.2.2(vue@3.5.13(typescript@5.9.3))
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
   apps/mango-admin-rbac-app:
     dependencies:
       '@element-plus/icons-vue':
@@ -322,6 +374,9 @@ importers:
       '@mango/calendar':
         specifier: workspace:*
         version: link:../../packages/calendar
+      '@mango/cms':
+        specifier: workspace:*
+        version: link:../../packages/cms
       '@mango/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -479,6 +534,78 @@ importers:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
 
+  apps/mango-site-demo-app:
+    dependencies:
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/site-shell':
+        specifier: workspace:*
+        version: link:../../packages/site-shell
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+
+  apps/mango-site-enterprise-app:
+    dependencies:
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/site-shell':
+        specifier: workspace:*
+        version: link:../../packages/site-shell
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.59.1
+        version: 1.59.1
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+
+  apps/mango-site-help-app:
+    dependencies:
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/site-shell':
+        specifier: workspace:*
+        version: link:../../packages/site-shell
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.59.1
+        version: 1.59.1
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+
   packages/admin:
     dependencies:
       '@element-plus/icons-vue':
@@ -499,6 +626,9 @@ importers:
       '@mango/calendar':
         specifier: 1.0.11
         version: link:../calendar
+      '@mango/cms':
+        specifier: 1.0.0
+        version: link:../cms
       '@mango/common':
         specifier: 1.0.10
         version: link:../common
@@ -533,10 +663,10 @@ importers:
         specifier: 1.0.11
         version: link:../template
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
@@ -622,7 +752,7 @@ importers:
         specifier: 1.0.8
         version: link:../rbac
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -726,6 +856,37 @@ importers:
       '@mango/common':
         specifier: 1.0.10
         version: link:../common
+      element-plus:
+        specifier: 2.14.1
+        version: 2.14.1(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
+  packages/cms:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: 2.3.2
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: 1.0.10
+        version: link:../admin-pages
+      '@mango/common':
+        specifier: 1.0.10
+        version: link:../common
+      '@mango/file':
+        specifier: 1.0.11
+        version: link:../file
       element-plus:
         specifier: 2.14.1
         version: 2.14.1(vue@3.5.13(typescript@5.9.3))
@@ -902,7 +1063,7 @@ importers:
         specifier: 1.0.11
         version: link:../notice
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -1102,6 +1263,25 @@ importers:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
 
+  packages/site-shell:
+    dependencies:
+      '@mango/common':
+        specifier: 1.0.10
+        version: link:../common
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
   packages/system:
     dependencies:
       '@element-plus/icons-vue':
@@ -1231,7 +1411,7 @@ importers:
         specifier: 1.0.10
         version: link:../admin-pages
       '@mango/workflow':
-        specifier: 1.0.11
+        specifier: 1.0.12
         version: link:../workflow
       element-plus:
         specifier: 2.14.1

@@ -1,59 +1,15 @@
 <template>
   <div class="workflow-task-detail-page">
-    <el-card v-loading="loading" class="task-detail-shell">
-      <template #header>
-        <div class="card-header">
-          <div>
-            <div class="page-title">{{ readonlyMode ? '流程详情' : '处理任务' }}</div>
-            <div class="page-subtitle">{{ detail?.process.processName || '-' }}</div>
-          </div>
-          <div class="header-actions">
-            <el-tag v-if="detail?.process.status" effect="plain">{{ detail.process.status }}</el-tag>
-            <el-button @click="backToList">返回</el-button>
-          </div>
-        </div>
-      </template>
+    <div class="detail-toolbar">
+      <div class="detail-toolbar__title">{{ detail?.process.processName || '流程详情' }}</div>
+      <el-button :icon="ArrowLeft" @click="backToList">返回</el-button>
+    </div>
 
+    <el-card v-loading="loading" class="task-detail-shell">
       <el-empty v-if="!detail" description="暂无流程详情" />
 
       <div v-else class="task-detail-layout">
         <main class="task-main">
-          <section class="task-section process-summary">
-            <div class="section-header">
-              <div>
-                <h3>流程基础信息</h3>
-                <p>{{ detail.process.processKey }}</p>
-              </div>
-              <el-tag v-if="detail.task?.taskName" type="warning" effect="plain">{{ detail.task.taskName }}</el-tag>
-            </div>
-            <div class="summary-grid">
-              <div class="summary-item important">
-                <span>流程名称</span>
-                <strong>{{ detail.process.processName }}</strong>
-              </div>
-              <div class="summary-item important">
-                <span>发起人</span>
-                <strong>{{ detail.process.initiatorName || '-' }}</strong>
-              </div>
-              <div class="summary-item important">
-                <span>办理人</span>
-                <strong>{{ detail.task?.assigneeName || '-' }}</strong>
-              </div>
-              <div class="summary-item muted">
-                <span>开始时间</span>
-                <strong>{{ detail.process.startTime || '-' }}</strong>
-              </div>
-              <div class="summary-item muted">
-                <span>结束时间</span>
-                <strong>{{ detail.process.endTime || '-' }}</strong>
-              </div>
-              <div class="summary-item muted">
-                <span>业务关联</span>
-                <strong>{{ detail.process.businessKey || detail.task?.businessKey || '-' }}</strong>
-              </div>
-            </div>
-          </section>
-
           <section class="task-section">
             <div class="section-header compact">
               <h3>{{ businessComponent ? '业务审批信息' : '业务表单信息' }}</h3>
@@ -102,53 +58,80 @@
               </el-form-item>
             </el-form>
           </section>
-
-          <div v-if="!readonlyMode" class="approval-action-bar">
-            <el-tooltip
-              v-for="action in visibleNodeActions"
-              :key="action.key"
-              :content="action.tooltip || ''"
-              :disabled="!action.tooltip"
-            >
-              <el-button
-                :type="action.buttonType"
-                :plain="action.key !== 'complete'"
-                :disabled="action.disabled"
-                :loading="submittingAction === action.key"
-                @click="submitAction(action.key)"
-              >
-                {{ action.label }}
-              </el-button>
-            </el-tooltip>
-          </div>
         </main>
 
-        <aside v-if="showRecordPanel" class="record-panel">
-          <div class="record-header">
-            <h3>{{ customRecordPanelComponent ? '审批信息' : '审批记录' }}</h3>
-            <span>{{ detail.records.length }} 条</span>
+        <aside class="task-aside">
+          <div class="aside-card">
+            <div class="aside-meta">
+              <div class="meta-item" v-if="detail.task?.taskName">
+              <span>当前节点</span>
+              <strong>{{ detail.task.taskName }}</strong>
+            </div>
+            <div class="meta-item" v-if="detail.process.status">
+              <span>状态</span>
+              <strong>{{ detail.process.status }}</strong>
+            </div>
+            <div class="meta-item">
+              <span>发起人</span>
+              <strong>{{ detail.process.initiatorName || '-' }}</strong>
+            </div>
+            <div class="meta-item">
+              <span>办理人</span>
+              <strong>{{ detail.task?.assigneeName || '-' }}</strong>
+            </div>
+            <div class="meta-item">
+              <span>开始时间</span>
+              <strong>{{ detail.process.startTime || '-' }}</strong>
+            </div>
+            </div>
+
+            <div v-if="showRecordPanel" class="aside-records">
+              <div class="record-header">
+                <h3>{{ customRecordPanelComponent ? '审批信息' : '审批记录' }}</h3>
+                <span>{{ detail.records.length }} 条</span>
+              </div>
+              <component
+                :is="customRecordPanelComponent"
+                v-if="customRecordPanelComponent && businessContext"
+                :context="businessContext"
+              />
+              <el-timeline v-else-if="detail.records.length" class="record-timeline">
+                <el-timeline-item
+                  v-for="record in detail.records"
+                  :key="record.id || `${record.action}-${record.createdTime}`"
+                  :timestamp="record.createdTime"
+                  placement="top"
+                >
+                  <div class="record-title">{{ record.actionName }} · {{ record.operatorName || '-' }}</div>
+                  <div v-if="record.taskName" class="record-meta">{{ record.taskName }}</div>
+                  <div v-if="record.comment" class="record-comment">{{ record.comment }}</div>
+                </el-timeline-item>
+              </el-timeline>
+              <el-empty v-else description="暂无审批记录" />
+            </div>
           </div>
-          <component
-            :is="customRecordPanelComponent"
-            v-if="customRecordPanelComponent && businessContext"
-            :context="businessContext"
-          />
-          <el-timeline v-else-if="detail.records.length" class="record-timeline">
-            <el-timeline-item
-              v-for="record in detail.records"
-              :key="record.id || `${record.action}-${record.createdTime}`"
-              :timestamp="record.createdTime"
-              placement="top"
-            >
-              <div class="record-title">{{ record.actionName }} · {{ record.operatorName || '-' }}</div>
-              <div v-if="record.taskName" class="record-meta">{{ record.taskName }}</div>
-              <div v-if="record.comment" class="record-comment">{{ record.comment }}</div>
-            </el-timeline-item>
-          </el-timeline>
-          <el-empty v-else description="暂无审批记录" />
         </aside>
       </div>
     </el-card>
+
+    <div v-if="!readonlyMode && detail" class="approval-action-bar">
+      <el-tooltip
+        v-for="action in visibleNodeActions"
+        :key="action.key"
+        :content="action.tooltip || ''"
+        :disabled="!action.tooltip"
+      >
+        <el-button
+          :type="action.buttonType"
+          :plain="action.key !== 'complete'"
+          :disabled="action.disabled"
+          :loading="submittingAction === action.key"
+          @click="submitAction(action.key)"
+        >
+          {{ action.label }}
+        </el-button>
+      </el-tooltip>
+    </div>
 
     <el-dialog
       v-model="selectorDialog.visible"
@@ -185,6 +168,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { ArrowLeft } from '@element-plus/icons-vue';
 import { UserSelector } from '@mango/common';
 import { workflowApi, type WorkflowBusinessApply, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
 import {
@@ -417,7 +401,7 @@ async function submitAction(action: WorkflowTaskActionKey) {
     if (action === 'save') {
       await loadDetail();
     } else {
-      await router.push(action === 'claim' || action === 'unclaim' ? '/workflow/task/todo' : '/workflow/task/done');
+      await router.push(resolveBusinessReturnLocation() || defaultActionReturnLocation(action));
     }
   } catch (error) {
     if (!isKnownRequestError(error)) {
@@ -569,14 +553,82 @@ function isKnownRequestError(error: unknown) {
 }
 
 function backToList() {
+  const businessReturnLocation = resolveBusinessReturnLocation();
+  if (businessReturnLocation) {
+    router.push(businessReturnLocation);
+    return;
+  }
+  router.push(defaultListReturnLocation());
+}
+
+function resolveBusinessReturnLocation() {
+  const path = normalizeReturnPath(route.query.returnPath);
+  if (!path) {
+    return null;
+  }
+  const query = parseReturnQuery(route.query.returnQuery);
+  if (Object.keys(query).length) {
+    return { path, query };
+  }
+  return path;
+}
+
+function normalizeReturnPath(value: unknown) {
+  const path = firstQueryValue(value).trim();
+  if (!path || !path.startsWith('/') || path.startsWith('//')) {
+    return '';
+  }
+  if (path.includes('\\') || path.includes('?') || path.includes('#') || /[\u0000-\u001F\u007F]/.test(path)) {
+    return '';
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
+    return '';
+  }
+  return path;
+}
+
+function parseReturnQuery(value: unknown) {
+  const raw = firstQueryValue(value).trim();
+  const query: Record<string, string | string[]> = {};
+  if (!raw) {
+    return query;
+  }
+  new URLSearchParams(raw.startsWith('?') ? raw.slice(1) : raw).forEach((itemValue, key) => {
+    if (!key) {
+      return;
+    }
+    const existing = query[key];
+    if (Array.isArray(existing)) {
+      existing.push(itemValue);
+    } else if (typeof existing === 'string') {
+      query[key] = [existing, itemValue];
+    } else {
+      query[key] = itemValue;
+    }
+  });
+  return query;
+}
+
+function firstQueryValue(value: unknown) {
+  if (Array.isArray(value)) {
+    return String(value[0] || '');
+  }
+  return String(value || '');
+}
+
+function defaultActionReturnLocation(action: WorkflowTaskActionKey) {
+  return action === 'claim' || action === 'unclaim' ? '/workflow/task/todo' : '/workflow/task/done';
+}
+
+function defaultListReturnLocation() {
   const mode = String(route.query.from || '');
   if (mode === 'initiated') {
-    router.push('/workflow/task/initiated');
-  } else if (mode === 'done') {
-    router.push('/workflow/task/done');
-  } else {
-    router.push('/workflow/task/todo');
+    return '/workflow/task/initiated';
   }
+  if (mode === 'done') {
+    return '/workflow/task/done';
+  }
+  return '/workflow/task/todo';
 }
 
 function formatJson(value: any) {
@@ -613,29 +665,23 @@ watch(
   background: var(--el-fill-color-extra-light);
 }
 
-.card-header {
+/* Sits above the card (the global root-page theme hides el-card headers),
+   so the back button stays visible. */
+.detail-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  margin-bottom: 12px;
 }
 
-.page-title {
+.detail-toolbar__title {
+  overflow: hidden;
   color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 600;
-}
-
-.page-subtitle {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .task-detail-layout {
@@ -651,8 +697,7 @@ watch(
   min-width: 0;
 }
 
-.task-section,
-.record-panel {
+.task-section {
   padding: 18px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -687,46 +732,6 @@ watch(
   font-size: 12px;
 }
 
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.summary-item {
-  min-width: 0;
-}
-
-.summary-item span,
-.summary-item strong {
-  display: block;
-}
-
-.summary-item span {
-  margin-bottom: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.summary-item strong {
-  overflow: hidden;
-  color: var(--el-text-color-primary);
-  font-size: 14px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.summary-item.muted strong {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  font-weight: 400;
-}
-
-.process-summary {
-  border-color: transparent;
-}
-
 .detail-alert {
   margin-top: 12px;
 }
@@ -742,20 +747,19 @@ watch(
   white-space: pre-wrap;
 }
 
-.approval-section {
-  padding-bottom: 78px;
-}
-
 .approval-action-bar {
+  /* Lives outside el-card (whose overflow:hidden breaks sticky) so it can
+     pin to the scroll container's bottom. As the last in-flow element it
+     releases at the very bottom, so it never overlaps the last form field. */
   position: sticky;
-  right: 0;
   bottom: 0;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: -78px;
+  margin-top: 12px;
   padding: 14px 16px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -764,11 +768,51 @@ watch(
   backdrop-filter: blur(8px);
 }
 
-.record-panel {
+.task-aside {
   position: sticky;
   top: 12px;
   max-height: calc(100vh - 150px);
   overflow: auto;
+}
+
+/* Single continuous card so the meta block and records share one aligned border */
+.aside-card {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+}
+
+.aside-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  padding: 14px;
+}
+
+.aside-records {
+  padding: 18px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.meta-item {
+  min-width: 0;
+}
+
+.meta-item span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.meta-item strong {
+  display: block;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .record-timeline {
@@ -805,14 +849,14 @@ watch(
     grid-template-columns: 1fr;
   }
 
-  .record-panel {
+  .task-aside {
     position: static;
     max-height: none;
   }
 }
 
 @media (max-width: 760px) {
-  .summary-grid {
+  .aside-meta {
     grid-template-columns: 1fr;
   }
 }

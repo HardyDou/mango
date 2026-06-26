@@ -1,0 +1,97 @@
+{
+  "report": {
+    "nav": [
+      "首页",
+      "产品能力",
+      "解决方案",
+      "新闻动态",
+      "公司动态"
+    ],
+    "hero": {
+      "kicker": "Mango Technology",
+      "h1": "芒果科技企业数字化平台",
+      "lead": "官网、CMS、微前端后台、权限租户和流程协同由一套 Mango 能力统一承载。",
+      "actions": [
+        "了解产品能力",
+        "查看新闻动态"
+      ],
+      "rect": {
+        "width": 1440,
+        "height": 749,
+        "top": 0
+      }
+    },
+    "siteInfo": {
+      "h2": "芒果科技",
+      "body": "企业官网",
+      "ad": "预约芒果科技产品演示"
+    },
+    "categories": {
+      "heading": "围绕企业数字化的完整能力",
+      "count": 3,
+      "cards": [
+        "产品能力",
+        "解决方案",
+        "公司动态"
+      ]
+    },
+    "news": {
+      "heading": "聚焦产品进展与企业动态",
+      "count": 1,
+      "cards": [
+        "流程协同能力接入业务审批场景"
+      ]
+    },
+    "footerGroups": [
+      "站点导航",
+      "栏目",
+      "开发者链接",
+      "联系方式"
+    ],
+    "sections": [
+      {
+        "selector": ".site-hero",
+        "rect": {
+          "width": 1440,
+          "height": 749,
+          "top": 0
+        }
+      },
+      {
+        "selector": ".site-info-section",
+        "rect": {
+          "width": 1440,
+          "height": 445,
+          "top": 749
+        }
+      },
+      {
+        "selector": ".category-section",
+        "rect": {
+          "width": 1440,
+          "height": 620,
+          "top": 1194
+        }
+      },
+      {
+        "selector": ".content-section",
+        "rect": {
+          "width": 1440,
+          "height": 721,
+          "top": 1814
+        }
+      },
+      {
+        "selector": ".site-footer",
+        "rect": {
+          "width": 1440,
+          "height": 362,
+          "top": 2536
+        }
+      }
+    ],
+    "bodyHasBadText": false
+  },
+  "consoleMessages": [],
+  "failedRequests": []
+}

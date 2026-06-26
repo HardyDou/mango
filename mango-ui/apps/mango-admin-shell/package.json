@@ -15,6 +15,7 @@
     "@mango/admin-pages": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/calendar": "workspace:*",
+    "@mango/cms": "workspace:*",
     "@mango/common": "workspace:*",
     "@mango/file": "workspace:*",
     "@mango/notice": "workspace:*",

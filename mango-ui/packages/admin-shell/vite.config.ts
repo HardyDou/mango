@@ -1,5 +1,6 @@
 import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vite';
+import { createMangoWorkspaceAliases } from '../../build-config/mangoAliases';
 
 const externalPackages = [
   '@element-plus/icons-vue',
@@ -37,6 +38,12 @@ const externalPackages = [
 
 export default defineConfig({
   plugins: [vue()],
+  resolve: {
+    alias: createMangoWorkspaceAliases({
+      appDir: __dirname,
+      includeStyles: false,
+    }),
+  },
   build: {
     minify: false,
     lib: {

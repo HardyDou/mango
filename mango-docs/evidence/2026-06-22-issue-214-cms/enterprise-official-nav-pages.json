@@ -1,0 +1,60 @@
+{
+  "results": [
+    {
+      "pathname": "/",
+      "url": "http://127.0.0.1:5191/",
+      "firstNav": "首页",
+      "navTexts": [
+        "首页",
+        "产品能力",
+        "产品能力",
+        "解决方案",
+        "新闻动态",
+        "公司动态"
+      ],
+      "h1": "芒果科技企业数字化平台",
+      "hasBadText": false,
+      "hasNewsNav": true,
+      "hasCompanyNewsNav": true,
+      "screenshot": "enterprise-home-nav.png"
+    },
+    {
+      "pathname": "/news",
+      "url": "http://127.0.0.1:5191/news",
+      "firstNav": "首页",
+      "navTexts": [
+        "首页",
+        "产品能力",
+        "产品能力",
+        "解决方案",
+        "新闻动态",
+        "公司动态"
+      ],
+      "h1": "新闻动态",
+      "hasBadText": false,
+      "hasNewsNav": true,
+      "hasCompanyNewsNav": true,
+      "screenshot": "enterprise-news.png"
+    },
+    {
+      "pathname": "/company-news",
+      "url": "http://127.0.0.1:5191/company-news",
+      "firstNav": "首页",
+      "navTexts": [
+        "首页",
+        "产品能力",
+        "产品能力",
+        "解决方案",
+        "新闻动态",
+        "公司动态"
+      ],
+      "h1": "公司动态",
+      "hasBadText": false,
+      "hasNewsNav": true,
+      "hasCompanyNewsNav": true,
+      "screenshot": "enterprise-company-news.png"
+    }
+  ],
+  "consoleMessages": [],
+  "failedRequests": []
+}

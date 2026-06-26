@@ -20,6 +20,7 @@
     "@mango/admin-pages": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/calendar": "workspace:*",
+    "@mango/cms": "workspace:*",
     "@mango/file": "workspace:*",
     "@mango/job": "workspace:*",
     "@mango/numgen": "workspace:*",

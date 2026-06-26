@@ -61,6 +61,7 @@ mango:
         - /realtime/transports/websocket
         - /realtime/transports/sse
         - /realtime/transports/probe/**
+        - /cms/open/**
   access:
     ip-whitelist:
       enabled: true
@@ -148,6 +149,8 @@ mango:
           enabled: true
           out-of-order: true
         grid-layout:
+          enabled: true
+        mango-cms:
           enabled: true
   ip-location:
     enabled: true

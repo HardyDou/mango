@@ -97,6 +97,10 @@ temp/
 !**/config/ip-location/README.md
 .playwright-cli/
 
+# ============ Playwright CMS Acceptance Reports ============
+mango-ui/apps/mango-admin-shell/pw-cms-report/
+mango-ui/mango-docs/evidence/
+
 # ============ Runtime Upload Data ============
 .runtime/
 **/data/files/
