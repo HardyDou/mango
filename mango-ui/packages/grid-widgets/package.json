@@ -37,7 +37,7 @@
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+    "build": "vite build && node ../../scripts/generate-package-types.mjs && node ./scripts/copy-style.mjs"
   },
   "files": [
     "dist",

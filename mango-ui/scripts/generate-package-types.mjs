@@ -63,6 +63,9 @@ function resolveLocalSource(fromSource, modulePath) {
   if (!modulePath.startsWith('.')) {
     return undefined;
   }
+  if (modulePath.match(/\.(?:css|scss|sass|less)$/)) {
+    return undefined;
+  }
   const base = resolve(packageRoot, dirname(fromSource), modulePath);
   const candidates = [
     base,

@@ -135,6 +135,17 @@ function verifyPublishedFiles(packageName, packageRoot, sourcePackageJson) {
       console.error(`Published tarball for ${packageName} is missing exported style.css: ${stylePath || '<unknown>'}.`);
       process.exit(1);
     }
+    verifyPublishedStyleContent(packageName, join(packageRoot, stylePath.replace(/^\.\//, '')));
+  }
+}
+
+function verifyPublishedStyleContent(packageName, stylePath) {
+  const content = readFileSync(stylePath, 'utf8').trim();
+  const hasCssRule = content.includes('{') && content.includes('}');
+  const hasCssImport = /^\s*@import\s+['"][^'"]+['"]\s*;/m.test(content);
+  if (content.length < 16 || content === 'export {};' || (!hasCssRule && !hasCssImport)) {
+    console.error(`Published tarball for ${packageName} has invalid exported style.css content.`);
+    process.exit(1);
   }
 }
 
