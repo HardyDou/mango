@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #246 发布 `@mango/grid-widgets@1.0.2`、`@mango/admin-shell@1.0.23`、`@mango/admin@1.0.27`、`@mango/cli@1.0.39`，用于修复 grid widgets 样式发布产物并对齐业务项目版本锁；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
+
 - PR #243 新增 CMS 管理页面、CMS 菜单按钮权限和 `@mango/cms` 前端页面包；不改变按钮 `permissionCode` 机制、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。排查 CMS 按钮时按后端 `mango-cms` 菜单资源与 `@mango/cms` 页面说明确认 `cms:*` 权限码是否授权。
 
 - PR #241 发布 `@mango/admin-shell@1.0.22`、`@mango/admin@1.0.25` 并新增工作流业务回传路径与审批任务详情页布局优化；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。回传路径仅改变工作流任务详情页返回落点，不新增按钮权限判断。
