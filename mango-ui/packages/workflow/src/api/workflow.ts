@@ -285,6 +285,7 @@ export interface WorkflowTask {
   unclaimable?: boolean;
   status: string;
   createTime?: string;
+  startTime?: string;
   endTime?: string;
 }
 
