@@ -55,6 +55,37 @@ ensure_sm4_key_env() {
   fi
 }
 
+ensure_frontend_app_port_env() {
+  if [[ ! -f "${ENV_FILE}" ]] || ! grep -q '^MANGO_FRONTEND_PORT=' "${ENV_FILE}"; then
+    return
+  fi
+  local frontend_port
+  frontend_port="$(awk -F= '$1 == "MANGO_FRONTEND_PORT" { print $2; exit }' "${ENV_FILE}" | tr -d "'\"")"
+  if [[ ! "${frontend_port}" =~ ^[0-9]+$ ]]; then
+    return
+  fi
+  local added=false
+  append_missing_env() {
+    local key="$1"
+    local value="$2"
+    if ! grep -q "^${key}=" "${ENV_FILE}"; then
+      printf '%s=%s\n' "${key}" "${value}" >>"${ENV_FILE}"
+      added=true
+    fi
+  }
+  append_missing_env MANGO_ADMIN_SHELL_PORT "$((frontend_port + 1))"
+  append_missing_env MANGO_ADMIN_RBAC_APP_PORT "$((frontend_port + 6))"
+  append_missing_env MANGO_ADMIN_WORKFLOW_APP_PORT "$((frontend_port + 7))"
+  append_missing_env MANGO_ADMIN_TEMPLATE_APP_PORT "$((frontend_port + 8))"
+  append_missing_env MANGO_ADMIN_CMS_APP_PORT "$((frontend_port + 9))"
+  append_missing_env MANGO_SITE_ENTERPRISE_APP_PORT "$((frontend_port + 16))"
+  append_missing_env MANGO_SITE_HELP_APP_PORT "$((frontend_port + 17))"
+  append_missing_env MANGO_SITE_DEMO_APP_PORT "$((frontend_port + 18))"
+  if [[ "${added}" == "true" ]]; then
+    echo "Added frontend app ports to existing workspace env: ${ENV_FILE}"
+  fi
+}
+
 registered_workspace() {
   [[ -f "${REGISTRY_FILE}" ]] || return 1
   awk -F '\t' -v root="${REPO_ROOT}" '$1 == root { print $2 "\t" $3 "\t" $4; found = 1; exit } END { exit found ? 0 : 1 }' "${REGISTRY_FILE}"
@@ -118,6 +149,7 @@ write_default_env() {
   mkdir -p "${LOCAL_DIR}" "${LOG_DIR}"
   if [[ -f "${ENV_FILE}" ]]; then
     ensure_sm4_key_env
+    ensure_frontend_app_port_env
     echo "Workspace env already exists: ${ENV_FILE}"
     return
   fi
@@ -158,6 +190,14 @@ MANGO_WORKSPACE_ID=mango_${db_suffix}
 MANGO_CRYPTO_SM4_SECRET_KEY=$(generate_sm4_key)
 MANGO_BACKEND_PORT=${backend_port}
 MANGO_FRONTEND_PORT=${frontend_port}
+MANGO_ADMIN_SHELL_PORT=$((frontend_port + 1))
+MANGO_ADMIN_RBAC_APP_PORT=$((frontend_port + 6))
+MANGO_ADMIN_WORKFLOW_APP_PORT=$((frontend_port + 7))
+MANGO_ADMIN_TEMPLATE_APP_PORT=$((frontend_port + 8))
+MANGO_ADMIN_CMS_APP_PORT=$((frontend_port + 9))
+MANGO_SITE_ENTERPRISE_APP_PORT=$((frontend_port + 16))
+MANGO_SITE_HELP_APP_PORT=$((frontend_port + 17))
+MANGO_SITE_DEMO_APP_PORT=$((frontend_port + 18))
 MANGO_FRONTEND_HOST=127.0.0.1
 MANGO_FRONTEND_OPEN=false
 MANGO_FRONTEND_AUTO_INSTALL=true
@@ -180,6 +220,7 @@ load_workspace_env() {
     write_default_env
   fi
   ensure_sm4_key_env
+  ensure_frontend_app_port_env
   set -a
   # shellcheck disable=SC1090
   . "${ENV_FILE}"
