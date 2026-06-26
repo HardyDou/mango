@@ -1,5 +1,32 @@
 # Mango Changelog
 
+## Unreleased
+
+### New
+
+- Added reusable `@mango/workflow` business approval detail UI components: `WorkflowLayout`, `WorkflowSidebar`, instance summary/progress, definition graph dialog, and business application history dialog.
+
+### Changed
+
+- Refactored the workflow task detail page to reuse the new layout and sidebar components while keeping custom business approval forms, record panel extension, and the bottom approval action bar behavior.
+
+### Published Packages
+
+- No package version bump in this PR. The change is recorded for the next `@mango/workflow` release batch.
+
+### Upgrade Notes
+
+- Business frontends that consume a future `@mango/workflow` build can use `WorkflowLayout + WorkflowSidebar` to compose approval detail pages without changing workflow backend APIs, page keys, permissions, tenant handling, startup behavior, or runtime task actions.
+
+### Verification
+
+- `pnpm --filter @mango/workflow build`
+- `node_modules/.pnpm/node_modules/.bin/vitest run --config vitest.workflow.config.ts packages/workflow/src/components/__tests__/workflowBusinessUi.spec.ts packages/workflow/src/views/task-detail/__tests__/taskDetail.spec.ts`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base 6ccda9bfe643bf6ac2e111b8644b5008b0ae5095 --head HEAD`
+
 ## v2026.06.26-cms-demo-identity-security - 2026-06-26
 
 ### New

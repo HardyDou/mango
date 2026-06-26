@@ -28,7 +28,7 @@
 | 渲染动态表单 | 使用 `RuntimeFormRenderer`、`parseRuntimeForm()`、`createDefaultVariables()`。 |
 | 接入业务自定义申请页 | 使用 `registerBusinessApplyComponent()`。 |
 | 接入业务自定义审批页 | 使用 `registerBusinessApprovalComponent()`。 |
-| 展示审批进度和审批记录 | 使用 `WorkflowProgressTree`、`WorkflowApprovalTimeline`、`WorkflowNodeTimeline`。 |
+| 展示审批进度和审批记录 | 使用 `WorkflowProgressTree`、`WorkflowApprovalTimeline`、`WorkflowNodeTimeline`、`WorkflowLayout`、`WorkflowSidebar`。 |
 
 ## 3. 集成形态
 
@@ -102,6 +102,35 @@ import { workflowApi } from '@mango/workflow';
 const progress = await workflowApi.businessApplyLatestProgress('contract', contractId);
 ```
 
+嵌入业务详情审批面板：
+
+```vue
+<script setup lang="ts">
+import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
+</script>
+
+<template>
+  <WorkflowLayout title="合同用印详情" @back="$router.back()">
+    <ContractSealDetailForm />
+
+    <template #sidebar>
+      <WorkflowSidebar
+        :summary="summary"
+        :node="definitionNode"
+        :current-node-key="currentNodeKey"
+        :visited-node-keys="visitedNodeKeys"
+        :status="status"
+        :records="records"
+        :business-type="businessType"
+        :business-key="businessKey"
+      />
+    </template>
+  </WorkflowLayout>
+</template>
+```
+
+`WorkflowLayout` 内置顶部 header、右侧返回按钮、header/body 灰色分割线、左侧业务内容区和右侧审批区。`WorkflowSidebar` 内置流程基础信息、流程图弹窗按钮、历史申请弹窗按钮和当前审批进度展示。详细 props 和插槽见 [组件 README](./src/components/README.md)。
+
 ## 5. 快速开始
 
 1. 后端应用启用 `mango-workflow-starter`，并完成 workflow 菜单和权限初始化。
@@ -174,6 +203,14 @@ const progress = await workflowApi.businessApplyLatestProgress('contract', contr
 | `WorkflowProgressTree` | `business-component` | 审批进度树。 |
 | `WorkflowApprovalTimeline` | `business-component` | 审批时间线。 |
 | `WorkflowNodeTimeline` | `business-component` | 节点时间线。 |
+| `WorkflowLayout` | `business-component` | 工作流详情布局。 |
+| `WorkflowSidebar` | `business-component` | 工作流侧栏。 |
+| `WorkflowInstanceSummary` | `business-component` | 流程实例概要。 |
+| `WorkflowInstanceProgress` | `business-component` | 当前流程实例进度。 |
+| `WorkflowDefinitionGraph` | `business-component` | 流程定义图。 |
+| `WorkflowDefinitionGraphDialog` | `business-component` | 流程定义图弹窗。 |
+| `WorkflowInstanceHistory` | `business-component` | 历史申请记录。 |
+| `WorkflowInstanceHistoryDialog` | `business-component` | 历史申请弹窗。 |
 
 业务扩展导出：
 

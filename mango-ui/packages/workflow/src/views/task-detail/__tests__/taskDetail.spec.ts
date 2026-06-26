@@ -52,6 +52,7 @@ vi.mock('../../../api/workflow', async () => {
     workflowApi: {
       taskDetail: vi.fn(),
       businessApplyByProcessInstance: vi.fn(),
+      definitionsPage: vi.fn(),
       completeTask: vi.fn(() => Promise.resolve(true)),
       transferTask: vi.fn(() => Promise.resolve(true)),
       addSignTask: vi.fn(() => Promise.resolve(true)),
@@ -70,6 +71,12 @@ describe('workflow task detail', () => {
     delete routeQuery.from;
     delete routeQuery.returnPath;
     delete routeQuery.returnQuery;
+    vi.mocked(workflowApi.definitionsPage).mockResolvedValue({
+      list: [],
+      total: 0,
+      pageNum: 1,
+      pageSize: 20,
+    } as any);
   });
 
   it('renders custom approval component from formJson instead of JSON preview', async () => {
@@ -350,6 +357,31 @@ describe('workflow task detail', () => {
     expect(el.querySelectorAll('textarea')).toHaveLength(1);
     unmount();
   });
+
+  it('renders the workflow layout sidebar and keeps back/action affordances', async () => {
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
+      records: [
+        {
+          action: 'COMPLETE',
+          actionName: '通过',
+          processInstanceId: 'proc-1',
+          taskDefinitionKey: 'manager_approve',
+          taskName: '经理审批',
+          operatorName: 'admin',
+          comment: '同意',
+          createdTime: '2026-06-26 18:29:21',
+        },
+      ],
+    }) as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+
+    const { el, unmount } = await mountTaskDetail();
+    expect(el.textContent).toContain('测试流程');
+    expect(el.textContent).toContain('审批动作');
+    expect(buttonTexts(el)).toContain('返回');
+    expect(el.textContent).toContain('当前节点');
+    unmount();
+  });
 });
 
 function taskDetail(overrides: Record<string, any> = {}) {
@@ -418,13 +450,10 @@ function registerElementStubs(app: ReturnType<typeof createApp>) {
 }
 
 async function flushPromises() {
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
-  await nextTick();
-  await Promise.resolve();
-  await nextTick();
+  for (let index = 0; index < 8; index += 1) {
+    await Promise.resolve();
+    await nextTick();
+  }
 }
 
 function clickButton(el: HTMLElement, text: string) {
