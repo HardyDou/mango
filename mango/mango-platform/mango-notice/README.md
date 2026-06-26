@@ -369,7 +369,7 @@ notice:announcement:offline
 |------|------|---------------|----------|
 | 我的消息 | `/notice/site-message` | `notice/site-message/index` | 是 |
 | 公告管理 | `/notice/announcement` | `notice/announcement/index` | 是 |
-| 公告 | `/notice/announcement-user` | `notice/announcement-user/index` | 是 |
+| 公告 | `/message-center/announcement` | `notice/announcement-user/index` | 是 |
 | 消息配置 | `/notice/message-definition` | `notice/message-definition/index` | 是 |
 | 发送任务 | `/notice/send-message` | `notice/send-message/index` | 是 |
 | 渠道配置 | `/notice/channel` | `notice/channel/index` | 是 |
