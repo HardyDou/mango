@@ -602,12 +602,9 @@
 </template>
 
 <script setup lang="ts" name="SystemApp">
+import { DictSelect, DictTag, IconSelector, MangoDialog } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import DictSelect from '@mango/common/components/DictSelect/index.vue';
-import DictTag from '@mango/common/components/DictTag/index.vue';
-import IconSelector from '@mango/common/components/IconSelector/index.vue';
-import MangoDialog from '@mango/common/components/MangoDialog/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
 import {
   appApi,

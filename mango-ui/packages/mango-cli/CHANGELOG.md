@@ -1,5 +1,23 @@
 # @mango/cli Changelog
 
+## 1.0.42 - 2026-06-26
+
+### Fixed
+
+- Updated generated frontend release locks to `@mango/admin@1.0.29`, `@mango/admin-shell@1.0.25`, `@mango/admin-pages@1.0.11`, `@mango/grid-widgets@1.0.3`, and `@mango/system@1.0.10`.
+- Ensured new business projects receive the published workbench calendar widget and updated system configuration page through npm packages instead of relying on Mango source-tree rebuilds.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.42 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should upgrade frontend dependencies to the same release batch, or regenerate/sync their frontend package locks from this CLI version.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+
 ## 1.0.40 - 2026-06-26
 
 ### Fixed

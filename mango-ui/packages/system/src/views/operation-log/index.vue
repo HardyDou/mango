@@ -241,9 +241,7 @@
 <script setup lang="ts" name="SystemOperationLog">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import DictTag from '@mango/common/components/DictTag/index.vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
-import { useDict } from '@mango/common/hooks/useDict';
+import { DictTag, Pagination, useDict } from '@mango/common';
 import { operationLogApi, type SysOperationLog } from '../../api/log';
 
 const { options: operationStatusOptions } = useDict('sys_operation_status');

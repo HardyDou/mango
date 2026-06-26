@@ -354,7 +354,7 @@
 <script setup lang="ts" name="SystemEvent">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import Pagination from '@mango/common/components/Pagination/index.vue';
+import { Pagination } from '@mango/common';
 import {
   requestErrorMessage,
   systemEventApi,

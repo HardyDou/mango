@@ -390,11 +390,11 @@
 </template>
 
 <script setup lang="ts">
+import { Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Clock, Delete, Edit, Finished, Plus, Refresh, Search } from '@element-plus/icons-vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import { DomainSideTree } from '@mango/system';
 import {
   numgenApi,

@@ -106,10 +106,10 @@
 </template>
 
 <script setup lang="ts">
+import { Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import type { ApiId } from '@mango/api-schema';
 import type { PageResult, PaymentPageQuery, PaymentResourceApi, PaymentTableColumn } from '../api/payment';
 import PaymentRowActions from './PaymentRowActions.vue';
