@@ -21,7 +21,7 @@
       <el-table :data="records" border stripe v-loading="loading" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="48" />
         <el-table-column label="业务域" min-width="120" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.bizGroup || '-' }}</template>
+          <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
         </el-table-column>
         <el-table-column label="消息名称" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ recordMessageName(row) }}</template>
@@ -71,7 +71,7 @@
         <section>
           <h3>基础信息</h3>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="业务域">{{ currentRecord.bizGroup || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="业务域">{{ domainText(currentRecord.bizGroup) }}</el-descriptions-item>
             <el-descriptions-item label="消息名称">{{ recordMessageName(currentRecord) }}</el-descriptions-item>
             <el-descriptions-item label="标题" :span="2">{{ currentRecord.renderedTitle || '-' }}</el-descriptions-item>
             <el-descriptions-item label="内容" :span="2">
@@ -143,6 +143,7 @@ import {
   retrySendRecords,
 } from '../../api/notice';
 import type { NoticeChannelType, NoticeSendRecord, NoticeSendStatus } from '../../types/notice';
+import { useNoticeDomains } from '../../components/useNoticeDomains';
 
 const failedStatuses: NoticeSendStatus[] = ['FAILED', 'RETRY_WAITING', 'FINAL_FAILED'];
 const loading = ref(false);
@@ -156,6 +157,7 @@ const handleReason = ref('');
 const handleAction = ref<'manualSuccess' | 'ignore'>('manualSuccess');
 const handleMode = ref<'single' | 'batch'>('single');
 const handleRecord = ref<NoticeSendRecord>();
+const { domainText, loadDomains } = useNoticeDomains();
 
 const records = computed(() => rawRecords.value
   .filter(item => failedStatuses.includes(item.status))
@@ -367,7 +369,10 @@ function stringValue(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
-onMounted(load);
+onMounted(() => {
+  loadDomains();
+  load();
+});
 </script>
 
 <style scoped>

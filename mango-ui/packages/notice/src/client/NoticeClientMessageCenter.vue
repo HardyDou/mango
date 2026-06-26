@@ -20,8 +20,15 @@
           <el-input v-model="query.keyword" clearable placeholder="标题/内容" @keyup.enter="search" />
         </el-form-item>
         <el-form-item label="业务域">
-          <el-select v-model="query.bizGroup" clearable filterable placeholder="请选择业务域" class="notice-filter-form__select">
-            <el-option v-for="item in bizGroupOptions" :key="item" :label="item" :value="item" />
+          <el-select
+            v-model="query.bizGroup"
+            clearable
+            filterable
+            placeholder="请选择业务域"
+            class="notice-filter-form__select"
+            :loading="domainLoading"
+          >
+            <el-option v-for="item in domainOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="优先级">
@@ -47,7 +54,9 @@
 
       <el-table :data="messages" border stripe v-loading="loading" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="48" />
-        <el-table-column prop="bizGroup" label="业务域" width="120" />
+        <el-table-column label="业务域" width="150" show-overflow-tooltip>
+          <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
+        </el-table-column>
         <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip />
         <el-table-column prop="bizName" label="消息名称" min-width="160" show-overflow-tooltip />
         <el-table-column label="优先级" width="100">
@@ -89,12 +98,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import NoticeDetailDialog from '../components/NoticeDetailDialog.vue';
 import {
   deleteMySiteMessage,
-  getBusinessTypes,
   getMySiteMessageDetail,
   getMySiteMessages,
   markAllMySiteMessagesRead,
@@ -102,10 +110,10 @@ import {
   markMySiteMessagesRead,
 } from '../api/notice';
 import type { NoticePriority, NoticeSiteMessage } from '../types/notice';
+import { useNoticeDomains } from '../components/useNoticeDomains';
 
 const loading = ref(false);
 const messages = ref<NoticeSiteMessage[]>([]);
-const businessTypes = ref<Array<{ bizGroup?: string }>>([]);
 const total = ref(0);
 const detailVisible = ref(false);
 const currentMessage = ref<NoticeSiteMessage>();
@@ -119,10 +127,7 @@ const query = reactive({
   bizGroup: '',
   priority: undefined as NoticePriority | undefined,
 });
-
-const bizGroupOptions = computed(() => Array.from(new Set(
-  businessTypes.value.map(item => item.bizGroup).filter((item): item is string => Boolean(item)),
-)));
+const { domainLoading, domainOptions, domainText, loadDomains } = useNoticeDomains();
 
 async function loadMessages() {
   loading.value = true;
@@ -138,11 +143,6 @@ async function loadMessages() {
   } finally {
     loading.value = false;
   }
-}
-
-async function loadBusinessTypes() {
-  const result = await getBusinessTypes({ pageNum: 1, pageSize: 200 });
-  businessTypes.value = result.list || [];
 }
 
 function search() {
@@ -212,7 +212,7 @@ function priorityTag(priority: NoticePriority) {
 }
 
 onMounted(() => {
-  void loadBusinessTypes();
+  void loadDomains();
   void loadMessages();
 });
 </script>

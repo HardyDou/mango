@@ -1,0 +1,13 @@
+===== delivery-contract-check =====
+Delivery Contract Check
+Mode: verify
+Design: mango-docs/evidence/2026-06-26-issue-252-auth-business-domain/delivery-contract.md
+Ledger: mango-docs/evidence/2026-06-26-issue-252-auth-business-domain/delivery-contract.md
+Rows: 5
+DONE: 5
+EXCEPTION: 0
+Incomplete: 0
+===== acceptance-evidence-check =====
+Acceptance Evidence Check
+Evidence: /Users/hardy/Work/mango/.mango/worktrees/issue-252-auth-business-domain/mango-docs/evidence/2026-06-26-issue-252-auth-business-domain/acceptance-evidence.md
+Rows: 6

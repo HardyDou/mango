@@ -291,7 +291,7 @@
         <section class="form-section">
           <div class="section-title">基础信息</div>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="业务域">{{ currentBusinessType?.domainCode || currentBusinessType?.bizGroup || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="业务域">{{ domainText(currentBusinessType?.domainCode || currentBusinessType?.bizGroup) }}</el-descriptions-item>
             <el-descriptions-item label="业务Key">{{ currentBusinessType?.bizType || '-' }}</el-descriptions-item>
             <el-descriptions-item label="名称">{{ currentBusinessType?.bizName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="生命周期">
@@ -413,7 +413,7 @@
             <section class="form-section">
               <div class="section-title">基础信息</div>
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="业务域">{{ currentBusinessType?.domainCode || currentBusinessType?.bizGroup || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="业务域">{{ domainText(currentBusinessType?.domainCode || currentBusinessType?.bizGroup) }}</el-descriptions-item>
                 <el-descriptions-item label="业务Key">{{ currentBusinessType?.bizType || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="名称">{{ currentBusinessType?.bizName || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="查看版本">
@@ -709,6 +709,16 @@ function handleDomainsLoaded(domains: NoticeDomainOption[]) {
 
 function flattenDomainOptions(options: NoticeDomainOption[]): NoticeDomainOption[] {
   return options.flatMap(item => [item, ...flattenDomainOptions(item.children || [])]);
+}
+
+function domainText(code?: string) {
+  const normalizedCode = code?.trim();
+  if (!normalizedCode) return '-';
+  const domain = flattenDomainOptions(domainOptions.value).find(item => item.domainCode === normalizedCode);
+  if (!domain) return normalizedCode;
+  return domain.domainName && domain.domainName !== domain.domainCode
+    ? `${domain.domainName}（${domain.domainCode}）`
+    : domain.domainCode;
 }
 
 function openCreate() {

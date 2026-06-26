@@ -1,0 +1,13 @@
+section	id	tenant_id	domain_code	domain_short_code	domain_name	parent_id	sort	status	remark
+biz_domain	190	1	AUTH	AUTH	认证授权	0	10	1	认证授权业务域，用于维护登录认证、授权和安全提醒策略参数
+section	resource_id	resource_type	biz_key	module_code	name	target_id	target_table	status	sync_mode
+resource_registry	2026061800200000190	BUSINESS_DOMAIN	auth.domain.auth	auth	认证授权	190	biz_domain	ACTIVE	AUTO
+resource_registry	2026061800200000150	BUSINESS_DOMAIN	file.domain.file	file	文件域	150	biz_domain	ACTIVE	AUTO
+resource_registry	2026061800200000160	BUSINESS_DOMAIN	template.domain.template	template	模板域	160	biz_domain	ACTIVE	AUTO
+resource_registry	2026061800200000170	BUSINESS_DOMAIN	job.domain.job	job	定时任务域	170	biz_domain	ACTIVE	AUTO
+resource_registry	2026061800200000130	BUSINESS_DOMAIN	calendar.domain.calendar	calendar	日历域	130	biz_domain	ACTIVE	AUTO
+resource_registry	2026061800200000140	BUSINESS_DOMAIN	numgen.domain.numgen	numgen	编号域	140	biz_domain	ACTIVE	AUTO
+resource_registry	2026061800200000180	BUSINESS_DOMAIN	payment.domain.payment	payment	支付域	180	biz_domain	ACTIVE	AUTO
+section	id	biz_type	biz_name	biz_group	domain_code	enabled	default_priority
+notice_business_type	2060000000001010000	auth.login.locked	登录尝试锁定	AUTH	AUTH	1	HIGH
+notice_business_type	2060000000001010100	auth.login.success	登录成功	AUTH	AUTH	1	LOW

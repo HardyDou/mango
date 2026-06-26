@@ -5,8 +5,8 @@
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="业务域">
-              <el-select v-model="searchForm.bizGroup" clearable filterable placeholder="请选择业务域">
-                <el-option v-for="item in bizGroupOptions" :key="item" :label="item" :value="item" />
+              <el-select v-model="searchForm.bizGroup" clearable filterable placeholder="请选择业务域" :loading="domainLoading">
+                <el-option v-for="item in domainOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -86,7 +86,7 @@
 
       <el-table :data="records" border stripe v-loading="loading">
         <el-table-column label="业务域" min-width="120" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.bizGroup || '-' }}</template>
+          <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
         </el-table-column>
         <el-table-column label="消息名称" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ recordMessageName(row) }}</template>
@@ -124,7 +124,7 @@
         <section>
           <h3>基础信息</h3>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="业务域">{{ currentRecord.bizGroup || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="业务域">{{ domainText(currentRecord.bizGroup) }}</el-descriptions-item>
             <el-descriptions-item label="消息名称">{{ recordMessageName(currentRecord) }}</el-descriptions-item>
             <el-descriptions-item label="消息Key">{{ currentRecord.bizType || '-' }}</el-descriptions-item>
             <el-descriptions-item label="业务对象">{{ currentRecord.bizId || '-' }}</el-descriptions-item>
@@ -181,10 +181,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
-import { getBusinessTypes, getIdentityUsers, getSendRecords, type NoticeIdentityUser } from '../../api/notice';
+import { getIdentityUsers, getSendRecords, type NoticeIdentityUser } from '../../api/notice';
 import type { NoticeChannelType, NoticeSendRecord, NoticeSendStatus } from '../../types/notice';
+import { useNoticeDomains } from '../../components/useNoticeDomains';
 
 interface SearchForm {
   bizGroup: string;
@@ -198,7 +199,6 @@ interface SearchForm {
 const loading = ref(false);
 const recipientLoading = ref(false);
 const records = ref<NoticeSendRecord[]>([]);
-const businessTypes = ref<Array<{ bizGroup?: string }>>([]);
 const recipientOptions = ref<Array<{ value: string; label: string; keyword: string }>>([]);
 const detailVisible = ref(false);
 const currentRecord = ref<NoticeSendRecord>();
@@ -232,9 +232,7 @@ const statusOptions: Array<{ label: string; value: NoticeSendStatus }> = [
   { label: '已取消', value: 'CANCELED' },
 ];
 
-const bizGroupOptions = computed(() => Array.from(new Set(
-  businessTypes.value.map(item => stringValue(item.bizGroup)).filter(Boolean),
-)).sort((left, right) => left.localeCompare(right, 'zh-CN')));
+const { domainLoading, domainOptions, domainText, loadDomains } = useNoticeDomains();
 
 async function loadRecords() {
   loading.value = true;
@@ -244,11 +242,6 @@ async function loadRecords() {
   } finally {
     loading.value = false;
   }
-}
-
-async function loadBizGroups() {
-  const result = await getBusinessTypes({ pageNum: 1, pageSize: 200 });
-  businessTypes.value = result.list || [];
 }
 
 async function searchRecipients(keyword: string) {
@@ -411,7 +404,7 @@ function toRecipientOption(item: NoticeIdentityUser) {
 }
 
 onMounted(() => {
-  loadBizGroups();
+  loadDomains();
   loadRecords();
 });
 </script>

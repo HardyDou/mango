@@ -1,0 +1,13 @@
+mango-backend: running install command
+mango-backend: started pid=6773 log=.mango/run/logs/mango-backend.log
+mango-backend: waiting for http://127.0.0.1:18294/actuator/health
+mango-backend: running install command
+mango-backend: started pid=10781 log=.mango/run/logs/mango-backend.log
+mango-backend: waiting for http://127.0.0.1:18294/actuator/health
+mango-backend: ready http://127.0.0.1:18294/actuator/health
+mango-admin: started pid=11468 log=.mango/run/logs/mango-admin.log
+mango-backend: running install command
+mango-backend: started pid=21984 log=.mango/run/logs/mango-backend.log
+mango-backend: waiting for http://127.0.0.1:18294/actuator/health
+mango-backend: ready http://127.0.0.1:18294/actuator/health
+mango-admin: started pid=22863 log=.mango/run/logs/mango-admin.log
