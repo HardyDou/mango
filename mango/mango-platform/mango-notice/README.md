@@ -354,6 +354,11 @@ notice:site:create
 notice:site:view
 notice:site:edit
 notice:site:delete
+notice:announcement:view
+notice:announcement:create
+notice:announcement:edit
+notice:announcement:publish
+notice:announcement:offline
 ```
 
 企微用户同步接口复用 `system:user:add`。
@@ -363,6 +368,8 @@ notice:site:delete
 | 菜单 | 路径 | component key | 默认展示 |
 |------|------|---------------|----------|
 | 我的消息 | `/notice/site-message` | `notice/site-message/index` | 是 |
+| 公告管理 | `/notice/announcement` | `notice/announcement/index` | 是 |
+| 公告 | `/notice/announcement-user` | `notice/announcement-user/index` | 是 |
 | 消息配置 | `/notice/message-definition` | `notice/message-definition/index` | 是 |
 | 发送任务 | `/notice/send-message` | `notice/send-message/index` | 是 |
 | 渠道配置 | `/notice/channel` | `notice/channel/index` | 是 |
@@ -391,8 +398,9 @@ Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
 | `V12__notice_wecom_sync_mapping.sql` | 初始化企微同步映射表。 |
 | `V13__notice_business_domain.sql` | 通知业务类型接入业务域。 |
 | `V14__seed_job_site_message.sql` | 定时任务站内信模板已迁移到 `mango-job` 的 `job-common-message.yml`。 |
+| `V15__notice_announcement.sql` | 增加公告、公告发布对象快照和用户级接收记录。 |
 
-核心表包括 `notice_business_type`、`notice_business_config_version`、`notice_business_channel_template`、`notice_channel_config`、`notice_task`、`notice_recipient`、`notice_send_record`、`notice_site_message`、`notice_retry_log`、`notice_callback_log`、`notice_setting`、`notice_recipient_account`、`notice_receive_preference`、`notice_wecom_sync_mapping`。
+核心表包括 `notice_business_type`、`notice_business_config_version`、`notice_business_channel_template`、`notice_channel_config`、`notice_task`、`notice_recipient`、`notice_send_record`、`notice_site_message`、`notice_retry_log`、`notice_callback_log`、`notice_setting`、`notice_recipient_account`、`notice_receive_preference`、`notice_wecom_sync_mapping`、`notice_announcement`、`notice_announcement_target`、`notice_announcement_recipient`。
 
 通知异步分发依赖 `mango-infra-kv` outbox。部署时要确认 outbox 存储可用，否则任务可能创建成功但不会被后台 worker 分发。
 

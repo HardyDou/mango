@@ -14,8 +14,6 @@ import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.query.IdentityUserPageQuery;
-import io.mango.identity.api.enums.IdentityUserTargetType;
-import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
@@ -111,6 +109,7 @@ import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.mapper.NoticeWecomSyncMappingMapper;
 import io.mango.notice.core.outbox.NoticeOutboxMessageMapper;
 import io.mango.notice.core.service.INoticeService;
+import io.mango.notice.core.service.NoticeRecipientResolver;
 import io.mango.notice.support.channel.ChannelSendCommand;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
@@ -186,13 +185,14 @@ public class NoticeService implements INoticeService {
  private final IdentityUserApi identityUserApi;
  private final SysOrgApi sysOrgApi;
  private final WecomDirectoryClient wecomDirectoryClient;
+ private final NoticeRecipientResolver recipientResolver;
 
  @Override
  @Transactional(rollbackFor = Exception.class)
  public NoticeSendResultVO send(SendNoticeCommand command) {
  NoticeBusinessTypeEntity businessType = findBusinessType(command.getBizType());
  List<NoticeBusinessChannelTemplateEntity> templates = resolveTemplates(command, businessType);
- List<NoticeRecipientCommand> recipients = resolveRecipients(command);
+ List<NoticeRecipientCommand> recipients = recipientResolver.resolveRecipients(command);
  Require.isTrue(!recipients.isEmpty(), "接收用户不能为空");
  NoticeTaskEntity task = createTask(command, templates, recipients);
  int totalCount = 0;
@@ -1481,90 +1481,6 @@ public class NoticeService implements INoticeService {
  template.setEnabled(true);
  return template;
  }).toList();
- }
-
- private List<NoticeRecipientCommand> resolveRecipients(SendNoticeCommand command) {
- Map<Long, NoticeRecipientCommand> userRecipients = new LinkedHashMap<>();
- List<NoticeRecipientCommand> externalRecipients = new ArrayList<>();
- if (command.getRecipients() != null) {
- for (NoticeRecipientCommand recipient : command.getRecipients()) {
- if (recipient.getUserId() == null) {
- externalRecipients.add(recipient);
- } else {
- enrichRecipientFromUser(recipient);
- userRecipients.putIfAbsent(recipient.getUserId(), recipient);
- }
- }
- }
- receiverIds(command).forEach(userId -> {
- NoticeRecipientCommand recipient = new NoticeRecipientCommand();
- recipient.setUserId(userId);
- enrichRecipientFromUser(recipient);
- userRecipients.putIfAbsent(userId, recipient);
- });
- resolveRecipientTargets(command).forEach(recipient ->
- userRecipients.putIfAbsent(recipient.getUserId(), recipient));
- List<NoticeRecipientCommand> recipients = new ArrayList<>(externalRecipients);
- recipients.addAll(userRecipients.values());
- return recipients;
- }
-
- private List<NoticeRecipientCommand> resolveRecipientTargets(SendNoticeCommand command) {
- if (command.getRecipientTargets() == null || command.getRecipientTargets().isEmpty() || identityUserApi == null) {
- return List.of();
- }
- return command.getRecipientTargets().stream()
- .filter(target -> target.getTargetType() != null && target.getTargetId() != null)
- .flatMap(target -> listUsersByTarget(target).stream())
- .collect(Collectors.toMap(NoticeRecipientCommand::getUserId, Function.identity(), (left, right) -> left,
- LinkedHashMap::new))
- .values()
- .stream()
- .toList();
- }
-
- private List<NoticeRecipientCommand> listUsersByTarget(NoticeRecipientTargetCommand target) {
- IdentityUserTargetQuery query = new IdentityUserTargetQuery();
- query.setTargetType(IdentityUserTargetType.valueOf(target.getTargetType().name()));
- query.setTargetId(target.getTargetId());
- query.setStatus(1);
- R<List<IdentityUserInfo>> response = identityUserApi.listUserInfosByTarget(query);
- if (response == null || !response.isSuccess() || response.getData() == null) {
- return List.of();
- }
- return response.getData().stream()
- .filter(user -> user.getUserId() != null)
- .map(this::toRecipient)
- .toList();
- }
-
- private NoticeRecipientCommand toRecipient(IdentityUserInfo user) {
- NoticeRecipientCommand recipient = new NoticeRecipientCommand();
- recipient.setUserId(user.getUserId());
- recipient.setRecipientName(firstText(user.getNickname(), user.getUsername()));
- recipient.setMobile(user.getPhone());
- recipient.setEmail(user.getEmail());
- return recipient;
- }
-
- private void enrichRecipientFromUser(NoticeRecipientCommand recipient) {
- if (recipient.getUserId() == null || identityUserApi == null) {
- return;
- }
- R<IdentityUserInfo> response = identityUserApi.getUserInfoById(recipient.getUserId());
- if (response == null || !response.isSuccess() || response.getData() == null) {
- return;
- }
- IdentityUserInfo user = response.getData();
- if (!StringUtils.hasText(recipient.getRecipientName())) {
- recipient.setRecipientName(firstText(user.getNickname(), user.getUsername()));
- }
- if (!StringUtils.hasText(recipient.getMobile())) {
- recipient.setMobile(user.getPhone());
- }
- if (!StringUtils.hasText(recipient.getEmail())) {
- recipient.setEmail(user.getEmail());
- }
  }
 
  private String firstText(String first, String second) {

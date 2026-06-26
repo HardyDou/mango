@@ -166,7 +166,7 @@ const onTopMenuClick = (item: MangoMenuTreeNode) => {
 };
 
 const goNoticeMessages = () => {
-  router.push('/notice/site-message');
+  router.push('/message-center/site-message');
 };
 
 const goNoticeReceiveSetting = () => {

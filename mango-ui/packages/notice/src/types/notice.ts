@@ -17,6 +17,9 @@ export type NoticeSyncStatus = 'SYNCED' | 'PENDING_PUBLISH';
 export type NoticeChannelConfigStatus = 'COMPLETE' | 'INCOMPLETE';
 export type NoticeChannelSendHealthStatus = 'NONE' | 'SUCCESS' | 'FAILED';
 export type NoticeRecipientTargetType = 'USER' | 'ORG' | 'POST' | 'ROLE';
+export type NoticeAnnouncementStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE';
+export type NoticeAnnouncementTargetType = 'ALL' | 'ORG' | 'ROLE' | 'USER';
+export type NoticeAnnouncementConfirmStatus = 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED';
 export type NoticeRecipientAccountType = 'MOBILE' | 'EMAIL' | 'WECHAT' | 'WECOM' | 'DINGTALK' | 'FEISHU';
 export type NoticeRecipientAccountStatus = 'UNBOUND' | 'PENDING_VERIFY' | 'VERIFIED' | 'DISABLED';
 export type NoticeReceivePreferenceScopeType = 'GLOBAL' | 'BIZ_GROUP' | 'BIZ_TYPE';
@@ -130,6 +133,74 @@ export interface NoticeSendCommand {
   content?: string;
   priority?: NoticePriority;
   idempotentKey?: string;
+}
+
+export interface NoticeAnnouncementTargetCommand {
+  targetType: NoticeAnnouncementTargetType;
+  targetId?: string;
+  targetName?: string;
+  includeChildren?: boolean;
+}
+
+export interface SaveNoticeAnnouncementCommand {
+  id?: string;
+  title: string;
+  content: string;
+  validStartTime?: string;
+  validEndTime?: string;
+  pinned?: boolean;
+  confirmRequired?: boolean;
+  syncMessageEnabled?: boolean;
+  targets?: NoticeAnnouncementTargetCommand[];
+}
+
+export interface PublishNoticeAnnouncementCommand {
+  id?: string;
+  validStartTime?: string;
+  validEndTime?: string;
+  pinned?: boolean;
+  confirmRequired?: boolean;
+  syncMessageEnabled?: boolean;
+  targets?: NoticeAnnouncementTargetCommand[];
+}
+
+export interface NoticeAnnouncementTarget {
+  id: string;
+  announcementId: string;
+  targetType: NoticeAnnouncementTargetType;
+  targetId?: string;
+  targetName?: string;
+  includeChildren?: boolean;
+}
+
+export interface NoticeAnnouncementStats {
+  announcementId: string;
+  recipientCount: number;
+  readCount: number;
+  pendingConfirmCount: number;
+  confirmedCount: number;
+}
+
+export interface NoticeAnnouncement {
+  id: string;
+  title: string;
+  content: string;
+  status: NoticeAnnouncementStatus;
+  publishTime?: string;
+  validStartTime?: string;
+  validEndTime?: string;
+  pinned?: boolean;
+  confirmRequired?: boolean;
+  syncMessageEnabled?: boolean;
+  targets?: NoticeAnnouncementTarget[];
+  stats?: NoticeAnnouncementStats;
+  readStatus?: NoticeReadStatus;
+  readTime?: string;
+  confirmStatus?: NoticeAnnouncementConfirmStatus;
+  confirmTime?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NoticeBusinessType {

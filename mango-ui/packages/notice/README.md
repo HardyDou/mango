@@ -119,6 +119,8 @@ stop();
 | 业务配置 | `notice/business-config/index` |
 | 消息定义 | `notice/message-definition/index` |
 | 发送消息 | `notice/send-message/index` |
+| 公告管理 | `notice/announcement/index` |
+| 公告 | `notice/announcement-user/index` |
 | 渠道管理 | `notice/channel/index` |
 | 通知任务 | `notice/task/index` |
 | 发送记录 | `notice/record/index` |
@@ -180,6 +182,8 @@ stop();
 |------|----------|----------|
 | 通知业务配置 | `notice/business-config/index` | `notice:business:*` |
 | 发送消息 | `notice/send-message/index` | `notice:task:create` |
+| 公告管理 | `notice/announcement/index` | `notice:announcement:*` |
+| 公告 | `notice/announcement-user/index` | `notice:site:view`、`notice:site:edit` |
 | 渠道管理 | `notice/channel/index` | `notice:channel:*` |
 | 通知任务 | `notice/task/index` | `notice:task:view` |
 | 发送记录 | `notice/record/index` | `notice:record:view` |
