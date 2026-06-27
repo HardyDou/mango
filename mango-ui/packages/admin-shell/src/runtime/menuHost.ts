@@ -16,7 +16,6 @@ import {
   findMenuByPath,
   findTopMenuByPath,
   resolveFirstMenu as resolveFirstMenuNode,
-  resolveFirstMenuPath,
   type MangoMenuTreeNode,
 } from '@mango/common/utils/menuTree';
 
@@ -324,12 +323,8 @@ export function resolveDirectoryRouteRedirect(menu: ShellRouteMenu | undefined, 
   if (!menu || menu.path !== currentPath || menu.sourceMenu.menuType === MenuTypeEnum.MENU) {
     return '';
   }
-  const targetPath = resolveFirstMenuPath(menu, isRunnableRouteMenu);
+  const targetPath = resolveAccessibleMenuPath(menu);
   return targetPath && targetPath !== currentPath ? targetPath : '';
-}
-
-function isRunnableRouteMenu(menu: ShellRouteMenu): boolean {
-  return isRunnableMenu(menu);
 }
 
 export function shouldShowDevCenter(options: MangoAdminShellDevCenterOptions = getMangoAdminShellOptions().devCenter || {}) {
@@ -504,6 +499,34 @@ export { containsMenuPath };
 
 export function resolveFirstMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefined {
   return resolveFirstMenuNode(menu, isRunnableMenu);
+}
+
+export function resolveAccessibleMenuPath(menu?: ShellRouteMenu): string {
+  const target = resolveAccessibleMenu(menu);
+  return target?.path || '';
+}
+
+function resolveAccessibleMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefined {
+  if (!menu) {
+    return undefined;
+  }
+  if (isRunnableMenu(menu)) {
+    return menu;
+  }
+  const redirectMenu = resolveRunnableRedirectMenu(menu);
+  if (redirectMenu) {
+    return redirectMenu;
+  }
+  return resolveFirstMenu(menu);
+}
+
+function resolveRunnableRedirectMenu(menu: ShellRouteMenu): ShellRouteMenu | undefined {
+  const redirect = typeof menu.redirect === 'string' ? menu.redirect.trim() : '';
+  if (!redirect) {
+    return undefined;
+  }
+  const target = findMenuByPath((menu.children || []) as ShellRouteMenu[], redirect);
+  return isRunnableMenu(target) ? target : undefined;
 }
 
 export function isRunnableMenu(menu?: ShellRouteMenu): boolean {
