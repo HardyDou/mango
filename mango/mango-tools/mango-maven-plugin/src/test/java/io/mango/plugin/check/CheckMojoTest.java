@@ -374,6 +374,60 @@ class CheckMojoTest {
     }
 
     @Test
+    void finalizeResult_noNewViolationsDoesNotReuseOneBaselineForDuplicateStableIssues() throws Exception {
+        // given
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.type = "MagicNumberCheck";
+        baselineIssue.severity = "MINOR";
+        baselineIssue.file = tempDir.resolve("mango-platform/mango-notice/src/main/java/Demo.java").toString();
+        baselineIssue.line = 12;
+        baselineIssue.description = "magic number";
+        baselineIssue.rule = "MagicNumberCheck";
+        baselineIssue.reference = "auto-check-mapping.md";
+        baselineIssue.source = "checkstyle";
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        CheckIssue existingIssue = new CheckIssue();
+        existingIssue.type = "MagicNumberCheck";
+        existingIssue.severity = "MINOR";
+        existingIssue.file = tempDir.resolve("mango-platform/mango-notice/src/main/java/Demo.java").toString();
+        existingIssue.line = 18;
+        existingIssue.description = "magic number";
+        existingIssue.rule = "MagicNumberCheck";
+        existingIssue.reference = "auto-check-mapping.md";
+        existingIssue.source = "checkstyle";
+        result.issues.add(existingIssue);
+
+        CheckIssue duplicateIssue = new CheckIssue();
+        duplicateIssue.type = "MagicNumberCheck";
+        duplicateIssue.severity = "MINOR";
+        duplicateIssue.file = tempDir.resolve("mango-platform/mango-notice/src/main/java/Demo.java").toString();
+        duplicateIssue.line = 24;
+        duplicateIssue.description = "magic number";
+        duplicateIssue.rule = "MagicNumberCheck";
+        duplicateIssue.reference = "auto-check-mapping.md";
+        duplicateIssue.source = "checkstyle";
+        result.issues.add(duplicateIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, "mango-platform/mango-notice/src/main/java/Demo.java", null,
+                        baselineFile.toString(), "no-new-violations", "block"));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertFalse(result.passed);
+        assertEquals("FAIL", result.gateStatus);
+        assertEquals(1, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+    }
+
+    @Test
     void finalizeResult_noNewViolationsMatchesFileLengthBaselineWhenCountChanges() throws Exception {
         // given
         CheckIssue baselineIssue = new CheckIssue();

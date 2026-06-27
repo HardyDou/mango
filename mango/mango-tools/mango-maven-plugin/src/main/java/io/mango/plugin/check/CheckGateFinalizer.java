@@ -85,13 +85,12 @@ class CheckGateFinalizer {
     private void finalizeNoNewViolations(CheckResult result) throws MojoExecutionException {
         Set<String> changedFileSet = resolveChangedFiles(result);
         result.changedFiles.addAll(changedFileSet);
-        Set<String> baselineFingerprints = loadBaselineFingerprints(result);
+        Map<String, Integer> baselineFingerprints = loadBaselineFingerprints(result);
         boolean hasBaseline = !baselineFingerprints.isEmpty();
         for (CheckIssue issue : result.issues) {
             issue.fingerprint = fingerprint(issue);
             issue.inChangedFiles = isChangedIssue(issue, changedFileSet);
-            issue.baseline = baselineFingerprints.contains(issue.fingerprint)
-                    || baselineFingerprints.contains(stableFingerprint(issue));
+            issue.baseline = consumeBaselineMatch(baselineFingerprints, issue);
             if (isNewIssue(issue, changedFileSet, hasBaseline)) {
                 result.newIssues.add(issue);
             } else {
@@ -119,6 +118,26 @@ class CheckGateFinalizer {
             return changedFileSet.isEmpty() || issue.inChangedFiles;
         }
         return issue.inChangedFiles;
+    }
+
+    private boolean consumeBaselineMatch(Map<String, Integer> baselineFingerprints, CheckIssue issue) {
+        if (consumeFingerprint(baselineFingerprints, issue.fingerprint)) {
+            return true;
+        }
+        return consumeFingerprint(baselineFingerprints, stableFingerprint(issue));
+    }
+
+    private boolean consumeFingerprint(Map<String, Integer> baselineFingerprints, String fingerprint) {
+        Integer count = baselineFingerprints.get(fingerprint);
+        if (count == null || count <= 0) {
+            return false;
+        }
+        if (count == 1) {
+            baselineFingerprints.remove(fingerprint);
+        } else {
+            baselineFingerprints.put(fingerprint, count - 1);
+        }
+        return true;
     }
 
     private void finalizeAllIssuesGate(CheckResult result) {
@@ -244,8 +263,8 @@ class CheckGateFinalizer {
         }
     }
 
-    private Set<String> loadBaselineFingerprints(CheckResult result) throws MojoExecutionException {
-        LinkedHashSet<String> fingerprints = new LinkedHashSet<>();
+    private Map<String, Integer> loadBaselineFingerprints(CheckResult result) throws MojoExecutionException {
+        LinkedHashMap<String, Integer> fingerprints = new LinkedHashMap<>();
         Path baselinePath = baselinePath();
         if (baselinePath == null) {
             return fingerprints;
@@ -258,14 +277,21 @@ class CheckGateFinalizer {
             CheckResult baseline = objectMapper.readValue(baselinePath.toFile(), CheckResult.class);
             if (baseline.issues != null) {
                 for (CheckIssue issue : baseline.issues) {
-                    fingerprints.add(fingerprintForBaseline(issue));
-                    fingerprints.add(stableFingerprint(issue));
+                    addFingerprint(fingerprints, fingerprintForBaseline(issue));
+                    addFingerprint(fingerprints, stableFingerprint(issue));
                 }
             }
             return fingerprints;
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to read mango check baseline: " + baselinePath, e);
         }
+    }
+
+    private void addFingerprint(Map<String, Integer> fingerprints, String fingerprint) {
+        if (fingerprint == null || fingerprint.isBlank()) {
+            return;
+        }
+        fingerprints.merge(fingerprint, 1, Integer::sum);
     }
 
     private Path baselinePath() {
