@@ -1,11 +1,17 @@
 #!/usr/bin/env node
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
-
-const HOSTED_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/';
-const GROUP_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/';
+import {
+  findPackage,
+  GROUP_REGISTRY,
+  HOSTED_REGISTRY,
+  normalizePackageName,
+  npmView,
+  readReleaseContracts,
+  run,
+  verifyPublishedPackage,
+} from './release-guard-utils.mjs';
 
 function usage() {
   console.log(`Usage: pnpm publish:pkg <package|short-name> [--dry-run] [--skip-shared-gates]
@@ -22,56 +28,6 @@ package-consumer:typecheck once for the full batch.
 `);
 }
 
-function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    stdio: options.capture ? 'pipe' : 'inherit',
-    encoding: 'utf8',
-    ...options,
-  });
-  if (options.capture) {
-    return result;
-  }
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
-  }
-  return result;
-}
-
-function normalizePackageName(input) {
-  if (!input) {
-    return '';
-  }
-  if (input.startsWith('@')) {
-    return input;
-  }
-  if (input === 'cli' || input === 'mango-cli') {
-    return '@mango/cli';
-  }
-  return `@mango/${input.replace(/^mango-/, '')}`;
-}
-
-function findPackage(packageName) {
-  const packagesDir = join(process.cwd(), 'packages');
-  for (const dir of readdirSync(packagesDir)) {
-    const packageJsonPath = join(packagesDir, dir, 'package.json');
-    if (!existsSync(packageJsonPath)) {
-      continue;
-    }
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-    if (packageJson.name === packageName) {
-      return { dir, packageJson, packageJsonPath };
-    }
-  }
-  return null;
-}
-
-function npmView(packageName, registry) {
-  return spawnSync('npm', ['view', packageName, 'version', `--registry=${registry}`], {
-    stdio: 'pipe',
-    encoding: 'utf8',
-  });
-}
-
 function checkReleaseNotes(packageName, version, options = {}) {
   const args = ['./scripts/check-release-notes.mjs', `--package=${packageName}`, `--version=${version}`];
   if (options.releaseTag) {
@@ -81,76 +37,6 @@ function checkReleaseNotes(packageName, version, options = {}) {
     args.push('--check-github-release');
   }
   run('node', args);
-}
-
-function verifyPublishedPackage(packageName, version, foundPackage) {
-  const tempDir = mkdtempSync(join(tmpdir(), 'mango-npm-publish-verify-'));
-  try {
-    console.log(`Verifying published tarball ${packageName}@${version}`);
-    run('npm', [
-      'pack',
-      `${packageName}@${version}`,
-      `--registry=${HOSTED_REGISTRY}`,
-      '--pack-destination',
-      tempDir,
-    ]);
-    const tarball = readdirSync(tempDir).find((file) => file.endsWith('.tgz'));
-    if (!tarball) {
-      console.error(`Published tarball not found for ${packageName}@${version}.`);
-      process.exit(1);
-    }
-    run('tar', ['-xzf', join(tempDir, tarball), '-C', tempDir]);
-    const packageRoot = join(tempDir, 'package');
-    const publishedPackageJsonPath = join(packageRoot, 'package.json');
-    if (!existsSync(publishedPackageJsonPath)) {
-      console.error(`Published tarball for ${packageName}@${version} does not contain package.json.`);
-      process.exit(1);
-    }
-    const publishedPackageJson = JSON.parse(readFileSync(publishedPackageJsonPath, 'utf8'));
-    if (publishedPackageJson.name !== packageName || publishedPackageJson.version !== version) {
-      console.error(
-        `Published tarball metadata mismatch: expected ${packageName}@${version}, got ${publishedPackageJson.name}@${publishedPackageJson.version}.`,
-      );
-      process.exit(1);
-    }
-    verifyPublishedFiles(packageName, packageRoot, foundPackage.packageJson);
-    if (packageName === '@mango/cli') {
-      verifyPublishedCliLocks(packageRoot, foundPackage);
-    }
-    if (packageName === '@mango/pmo') {
-      verifyPublishedPmoBaseline(packageRoot);
-    }
-  } finally {
-    rmSync(tempDir, { recursive: true, force: true });
-  }
-}
-
-function verifyPublishedFiles(packageName, packageRoot, sourcePackageJson) {
-  for (const entry of sourcePackageJson.files ?? []) {
-    if (!existsSync(join(packageRoot, entry))) {
-      console.error(`Published tarball for ${packageName} is missing files entry: ${entry}`);
-      process.exit(1);
-    }
-  }
-  const styleExport = sourcePackageJson.exports?.['./style.css'];
-  if (styleExport) {
-    const stylePath = typeof styleExport === 'string' ? styleExport : styleExport.import;
-    if (!stylePath || !existsSync(join(packageRoot, stylePath.replace(/^\.\//, '')))) {
-      console.error(`Published tarball for ${packageName} is missing exported style.css: ${stylePath || '<unknown>'}.`);
-      process.exit(1);
-    }
-    verifyPublishedStyleContent(packageName, join(packageRoot, stylePath.replace(/^\.\//, '')));
-  }
-}
-
-function verifyPublishedStyleContent(packageName, stylePath) {
-  const content = readFileSync(stylePath, 'utf8').trim();
-  const hasCssRule = content.includes('{') && content.includes('}');
-  const hasCssImport = /^\s*@import\s+['"][^'"]+['"]\s*;/m.test(content);
-  if (content.length < 16 || content === 'export {};' || (!hasCssRule && !hasCssImport)) {
-    console.error(`Published tarball for ${packageName} has invalid exported style.css content.`);
-    process.exit(1);
-  }
 }
 
 function verifyPublishedCliLocks(packageRoot, foundPackage) {
@@ -211,6 +97,7 @@ if (!packageArg) {
 
 const packageName = normalizePackageName(packageArg);
 const found = findPackage(packageName);
+const releaseContracts = readReleaseContracts();
 
 if (!found) {
   console.error(`Package not found in packages/*: ${packageName}`);
@@ -303,5 +190,25 @@ if (!dryRun) {
     }
     console.log(`${name}: ${packageName}@${publishedVersion}`);
   }
-  verifyPublishedPackage(packageName, version, found);
+  try {
+    verifyPublishedPackage(packageName, version, found, {
+      registry: HOSTED_REGISTRY,
+      contract: releaseContracts[packageName],
+    });
+    verifyPublishedPackage(packageName, version, found, {
+      registry: GROUP_REGISTRY,
+      contract: releaseContracts[packageName],
+      afterExtract: (packageRoot) => {
+        if (packageName === '@mango/cli') {
+          verifyPublishedCliLocks(packageRoot, found);
+        }
+        if (packageName === '@mango/pmo') {
+          verifyPublishedPmoBaseline(packageRoot);
+        }
+      },
+    });
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 }

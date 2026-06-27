@@ -117,7 +117,7 @@
     },
     "frontend.componentDevelopment": {
       "path": "rules/frontend/03-component-development.md",
-      "reason": "前端组件开发规范"
+      "reason": "前端组件开发与发布防漏规范"
     },
     "frontend.test": {
       "path": "rules/frontend/04-test.md",

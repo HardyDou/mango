@@ -1,0 +1,28 @@
+{
+  "npm": {
+    "@mango/grid-widgets": {
+      "files": [
+        "dist/calendar.js",
+        "dist/calendar.d.ts",
+        "dist/style.css"
+      ]
+    },
+    "@mango/system": {
+      "files": [
+        "dist/index.js",
+        "dist/index.d.ts",
+        "dist/style.css"
+      ],
+      "contains": [
+        {
+          "path": "dist/index.js",
+          "text": "SystemConfigPanel"
+        },
+        {
+          "path": "dist/index.d.ts",
+          "text": "SystemConfigPanel"
+        }
+      ]
+    }
+  }
+}
