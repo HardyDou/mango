@@ -39,11 +39,43 @@
 |------|----------|
 | 发起审批后没有待办 | 流程定义版本、节点办理人表达式、当前租户和组织数据 |
 | 业务状态不更新 | 事件监听、回写服务、业务 ID 与流程 businessKey 映射 |
+| 审批通过后业务侧仍显示上一节点 | 是否误用 `workflow.task.completed` 同步当前任务；当前任务刷新应使用 `workflow.task.advanced` 或 `complete-result` |
 | 审批页打开空白 | 前端 workflow 包是否引入，页面 key 是否注册，接口是否 401/403 |
 | 驳回后业务不可再次提交 | 业务状态流转是否覆盖驳回到草稿或重新提交 |
 | 多租户流程串数据 | 流程定义、实例、任务和业务表 tenantId 是否一致 |
 
-## 6. 验证命令
+## 6. 事件接入
+
+业务模块可以通过 workflow 事件异步回写业务状态，也可以在审批页调用任务接口同步拿到刷新结果。选择方式如下：
+
+| 业务目标 | 推荐方式 |
+|----------|----------|
+| 审批按钮点击后立即刷新当前节点、当前办理人和页面按钮状态 | 调用 `POST /workflow/tasks/complete-result` |
+| 审批中同步下一节点办理人、业务列表当前节点、待办摘要 | 订阅 `workflow.task.advanced` |
+| 审计刚完成的任务和办理意见 | 订阅 `workflow.task.completed` |
+| 流程通过后回写业务通过状态 | 订阅 `workflow.process.completed` |
+| 流程驳回后回写业务驳回状态 | 订阅 `workflow.process.rejected` |
+
+`workflow.task.completed` 和 `workflow.task.advanced` 的差异：
+
+| 事件 | 当前任务表是否已刷新 | 适合用途 |
+|------|----------------------|----------|
+| `workflow.task.completed` | 否 | 记录当前任务完成动作。 |
+| `workflow.task.advanced` | 是 | 同步下一节点、当前办理人和业务进度。 |
+
+单体多实例、微服务或微服务多实例部署时，事件应按至少一次投递处理。业务订阅方使用 `eventId`、`processInstanceId + completedTaskId` 或业务主键构造幂等键，避免重复回写状态、重复发通知或重复生成待办摘要。
+
+部署配置示例：
+
+```yaml
+mango:
+  event:
+    outbox:
+      enabled: true
+    transport: redis-stream
+```
+
+## 7. 验证命令
 
 ```bash
 mvn -f mango/pom.xml -pl mango-platform/mango-workflow -am test
@@ -57,12 +89,14 @@ pnpm -F @mango/workflow-business-example build
 - [Workflow Frontend 验证方式](../../../mango-ui/packages/workflow/README.md#10-验证方式)
 - [Workflow Example 验证方式](../../../mango-ui/packages/workflow-business-example/README.md#10-验证方式)
 
-## 7. 关联规则
+## 8. 关联规则
 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
-## 8. 变更影响记录
+## 9. 变更影响记录
+
+- Issue #233 明确审批任务完成后的流程推进时序：业务模块同步下一节点待办、当前办理人或业务状态时，使用 `workflow.task.advanced` 或 `POST /workflow/tasks/complete-result`；`workflow.task.completed` 只表示当前任务完成，不承诺当前任务快照已刷新。
 
 - v2026.06.27-workflow-history-dialog-release 发布 `@mango/workflow@1.0.17`、`@mango/admin-shell@1.0.29`、`@mango/grid-widgets@1.0.6`、`@mango/workflow-business-example@1.0.16`、`@mango/admin@1.0.33` 和 `@mango/cli@1.0.46`，仅对齐工作流历史弹窗标题修复的 npm 物料、聚合包和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
 

@@ -6,12 +6,15 @@ import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.workflow.core.entity.WorkflowDefinition;
 import io.mango.workflow.core.entity.WorkflowFormInstance;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,6 +54,24 @@ public class WorkflowEventPublisher {
             Map<String, Object> variables,
             String comment) {
         publishTaskEvent(WorkflowDomainEvents.TASK_COMPLETED, task, formInstance, variables, comment);
+    }
+
+    public void publishTaskAdvanced(
+            Task completedTask,
+            WorkflowFormInstance formInstance,
+            Map<String, Object> variables,
+            String comment,
+            boolean ended,
+            WorkflowBusinessApplyVO businessApply) {
+        Require.notNull(completedTask, "已完成任务不能为空");
+        Map<String, Object> payload = basePayload(completedTask.getProcessInstanceId(), variables);
+        payload.put("completedTaskId", completedTask.getId());
+        payload.put("completedTaskDefinitionKey", completedTask.getTaskDefinitionKey());
+        payload.put("completedTaskName", completedTask.getName());
+        payload.put("comment", comment);
+        payload.put("ended", ended);
+        putBusinessApply(payload, businessApply);
+        publish(WorkflowDomainEvents.TASK_ADVANCED, businessKey(formInstance, variables), variables, payload);
     }
 
     public void publishTaskRejected(
@@ -102,6 +123,43 @@ public class WorkflowEventPublisher {
         payload.put("assignee", task.getAssignee());
         payload.put("comment", comment);
         publish(eventType, businessKey(formInstance, variables), variables, payload);
+    }
+
+    private void putBusinessApply(Map<String, Object> payload, WorkflowBusinessApplyVO businessApply) {
+        if (businessApply == null) {
+            payload.put("currentTasks", List.of());
+            return;
+        }
+        List<WorkflowBusinessApplyCurrentTaskVO> currentTasks = businessApply.getCurrentTasks() == null
+                ? List.of()
+                : businessApply.getCurrentTasks();
+        payload.put("applyId", businessApply.getId());
+        payload.put("businessType", businessApply.getBusinessType());
+        payload.put("businessKey", businessApply.getBusinessKey());
+        payload.put("applyStatus", businessApply.getApplyStatus() == null ? null : businessApply.getApplyStatus().name());
+        payload.put("applyStatusName", businessApply.getApplyStatusName());
+        payload.put("currentTaskNames", businessApply.getCurrentTaskNames());
+        payload.put("currentTaskDefinitionKeys", businessApply.getCurrentTaskDefinitionKeys());
+        payload.put("currentAssigneeNames", businessApply.getCurrentAssigneeNames());
+        if (!currentTasks.isEmpty()) {
+            WorkflowBusinessApplyCurrentTaskVO firstTask = currentTasks.getFirst();
+            payload.put("assignee", firstTask.getAssigneeId());
+            payload.put("assigneeName", firstTask.getAssigneeName());
+        }
+        payload.put("currentTasks", currentTasks.stream()
+                .map(this::currentTaskPayload)
+                .toList());
+    }
+
+    private Map<String, Object> currentTaskPayload(WorkflowBusinessApplyCurrentTaskVO task) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("taskId", task.getTaskId());
+        payload.put("taskDefinitionKey", task.getTaskDefinitionKey());
+        payload.put("taskName", task.getTaskName());
+        payload.put("assigneeId", task.getAssigneeId());
+        payload.put("assigneeName", task.getAssigneeName());
+        payload.put("arrivedAt", task.getArrivedAt());
+        return payload;
     }
 
     private void publishProcessEvent(

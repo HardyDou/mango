@@ -13,6 +13,7 @@ import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
+import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
@@ -90,6 +91,13 @@ public class WorkflowTaskController {
     @Operation(summary = "审批通过")
     public R<Boolean> complete(@Valid @RequestBody CompleteWorkflowTaskCommand command) {
         return workflowTaskRuntimeService.complete(command);
+    }
+
+    @PostMapping("/complete-result")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:complete")
+    @Operation(summary = "审批通过并返回推进后结果", description = "返回流程推进完成后的业务申请状态和当前任务快照")
+    public R<WorkflowTaskCompleteResultVO> completeResult(@Valid @RequestBody CompleteWorkflowTaskCommand command) {
+        return workflowTaskRuntimeService.completeWithResult(command);
     }
 
     @PostMapping("/reject")

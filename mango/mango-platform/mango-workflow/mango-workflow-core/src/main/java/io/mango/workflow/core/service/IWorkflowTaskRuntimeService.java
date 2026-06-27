@@ -13,6 +13,7 @@ import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
+import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 
@@ -35,6 +36,8 @@ public interface IWorkflowTaskRuntimeService {
 
     R<Boolean> complete(CompleteWorkflowTaskCommand command);
 
+    R<WorkflowTaskCompleteResultVO> completeWithResult(CompleteWorkflowTaskCommand command);
+
     R<Boolean> reject(RejectWorkflowTaskCommand command);
 
     R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command);
@@ -51,5 +54,5 @@ public interface IWorkflowTaskRuntimeService {
 
     R<WorkflowProcessDetailVO> processDetail(String processInstanceId);
 
-    void advanceRuntimeTasks(String processInstanceId);
+    WorkflowTaskAdvanceResult advanceRuntimeTasks(String processInstanceId);
 }
