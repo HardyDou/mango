@@ -449,6 +449,7 @@ export interface WorkflowTaskDetail {
   process: WorkflowProcessInstance;
   formCode?: string;
   formJson?: string;
+  designerJson?: string;
   variables: Record<string, any>;
   formPermissions?: Record<string, WorkflowFormPermission>;
   renderConfig?: WorkflowRenderConfig;
@@ -459,6 +460,7 @@ export interface WorkflowProcessDetail {
   process: WorkflowProcessInstance;
   formCode?: string;
   formJson?: string;
+  designerJson?: string;
   variables: Record<string, any>;
   renderConfig?: WorkflowRenderConfig;
   records: WorkflowTaskRecord[];
@@ -1059,6 +1061,7 @@ function normalizeTaskDetail(item: any): WorkflowTaskDetail {
     process: normalizeProcessInstance(item?.process || {}),
     formCode: item?.formCode,
     formJson: item?.formJson,
+    designerJson: item?.designerJson,
     variables: normalizeVariables(item?.variables),
     formPermissions: normalizeVariables(item?.formPermissions) as Record<string, WorkflowFormPermission>,
     renderConfig: normalizeRenderConfig(item?.renderConfig),
@@ -1071,6 +1074,7 @@ function normalizeProcessDetail(item: any): WorkflowProcessDetail {
     process: normalizeProcessInstance(item?.process || {}),
     formCode: item?.formCode,
     formJson: item?.formJson,
+    designerJson: item?.designerJson,
     variables: normalizeVariables(item?.variables),
     renderConfig: normalizeRenderConfig(item?.renderConfig),
     records: normalizeRecords(item?.records),

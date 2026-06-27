@@ -142,7 +142,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { UserSelector } from '@mango/common';
-import { parseDesignerJson, workflowApi, type WorkflowBusinessApply, type WorkflowDesignerNode, type WorkflowDefinitionVersion, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
+import { parseDesignerJson, workflowApi, type WorkflowBusinessApply, type WorkflowDesignerNode, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
 import {
   applyIdOf,
   businessPermissionsOf,
@@ -190,6 +190,7 @@ const detail = computed(() => taskDetail.value || (processDetail.value ? {
   process: processDetail.value.process,
   formCode: processDetail.value.formCode,
   formJson: processDetail.value.formJson,
+  designerJson: processDetail.value.designerJson,
   variables: processDetail.value.variables,
   records: processDetail.value.records,
   formPermissions: processDetail.value.renderConfig?.formPermissions || {},
@@ -327,7 +328,7 @@ async function loadDetail() {
     const parsed = parseRuntimeForm(detail.value?.formJson);
     runtimeFields.value = parsed.fields;
     unsupportedFields.value = parsed.unsupported;
-    void loadWorkflowDefinitionTree(seq);
+    loadWorkflowDefinitionTree();
   } finally {
     if (seq === detailLoadSeq) {
       loading.value = false;
@@ -348,77 +349,17 @@ async function loadBusinessApply() {
   }
 }
 
-async function loadWorkflowDefinitionTree(seq = detailLoadSeq) {
-  const definition = await resolveWorkflowDefinitionForGraph();
-  if (seq !== detailLoadSeq) {
-    return;
-  }
-  if (!definition?.designerJson) {
+function loadWorkflowDefinitionTree() {
+  const designerJson = String(detail.value?.designerJson || '').trim();
+  if (!designerJson) {
     workflowDefinitionNode.value = null;
     return;
   }
-  workflowDefinitionNode.value = parseDesignerJson(definition.designerJson);
-}
-
-async function resolveWorkflowDefinitionForGraph() {
-  const definitionId = resolveWorkflowDefinitionId();
   try {
-    if (definitionId) {
-      const versions = await workflowApi.definitionVersions(definitionId);
-      const matchedVersion = resolveWorkflowDefinitionVersion(versions, detail.value?.process.processDefinitionId, detail.value?.process.processInstanceId);
-      if (matchedVersion?.designerJson) {
-        return matchedVersion;
-      }
-      return await workflowApi.definitionDetail(definitionId);
-    }
-    return await resolveWorkflowDefinitionByProcessKey();
+    workflowDefinitionNode.value = parseDesignerJson(designerJson);
   } catch {
-    return await resolveWorkflowDefinitionByProcessKey();
+    workflowDefinitionNode.value = null;
   }
-}
-
-function resolveWorkflowDefinitionId() {
-  const candidates = [
-    detail.value?.process.definitionId,
-    businessApply.value?.processDefinitionId,
-  ];
-  return candidates.map(item => String(item || '').trim()).find(isBackendDefinitionId) || '';
-}
-
-function isBackendDefinitionId(value: string) {
-  return /^\d+$/.test(value);
-}
-
-async function resolveWorkflowDefinitionByProcessKey() {
-  const processKey = String(detail.value?.process.processKey || businessApply.value?.processDefinitionKey || '').trim();
-  if (!processKey) {
-    return null;
-  }
-  const page = await workflowApi.definitionsPage({ keyword: processKey, publishedOnly: true, pageSize: 20 });
-  return page.list.find(item => item.definitionKey === processKey) || page.list[0] || null;
-}
-
-function resolveWorkflowDefinitionVersion(
-  versions: WorkflowDefinitionVersion[],
-  processDefinitionId?: string,
-  processInstanceId?: string,
-) {
-  if (!Array.isArray(versions) || !versions.length) {
-    return null;
-  }
-  if (processDefinitionId) {
-    const byProcessDefinition = versions.find(version => version.processDefinitionId === processDefinitionId);
-    if (byProcessDefinition) {
-      return byProcessDefinition;
-    }
-  }
-  if (processInstanceId) {
-    const byProcessInstance = versions.find(version => version.id === processInstanceId);
-    if (byProcessInstance) {
-      return byProcessInstance;
-    }
-  }
-  return versions[0] || null;
 }
 
 async function submitAction(action: WorkflowTaskActionKey) {

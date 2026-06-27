@@ -51,7 +51,10 @@ vi.mock('../../../api/workflow', async () => {
     ...actual,
     workflowApi: {
       taskDetail: vi.fn(),
+      processDetail: vi.fn(),
       businessApplyByProcessInstance: vi.fn(),
+      definitionVersions: vi.fn(),
+      definitionDetail: vi.fn(),
       definitionsPage: vi.fn(),
       completeTask: vi.fn(() => Promise.resolve(true)),
       transferTask: vi.fn(() => Promise.resolve(true)),
@@ -71,12 +74,9 @@ describe('workflow task detail', () => {
     delete routeQuery.from;
     delete routeQuery.returnPath;
     delete routeQuery.returnQuery;
-    vi.mocked(workflowApi.definitionsPage).mockResolvedValue({
-      list: [],
-      total: 0,
-      pageNum: 1,
-      pageSize: 20,
-    } as any);
+    vi.mocked(workflowApi.definitionVersions).mockRejectedValue(new Error('definition versions forbidden'));
+    vi.mocked(workflowApi.definitionDetail).mockRejectedValue(new Error('definition detail forbidden'));
+    vi.mocked(workflowApi.definitionsPage).mockRejectedValue(new Error('definitions page forbidden'));
   });
 
   it('renders custom approval component from formJson instead of JSON preview', async () => {
@@ -101,6 +101,42 @@ describe('workflow task detail', () => {
 
     expect(el.querySelector('.custom-approval')).toBeTruthy();
     expect(el.querySelector('.json-preview')).toBeFalsy();
+    unmount();
+  });
+
+  it('does not query definition management APIs when task runtime detail is enough', async () => {
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
+      process: {
+        processInstanceId: 'proc-1',
+        processName: '保函风控审批',
+        processKey: 'WF_GUARANTEE_RISK_REVIEW',
+        processDefinitionId: 'workflow:runtime:definition',
+        definitionId: '10001',
+        businessKey: 'RISK-1',
+      },
+      formJson: JSON.stringify([
+        { type: 'input', field: 'riskTitle', title: '风控标题' },
+      ]),
+      variables: {
+        businessType: 'GUARANTEE_RISK_REVIEW',
+        riskTitle: '保函审批办理',
+      },
+      renderConfig: {
+        renderMode: 'DYNAMIC_FORM',
+        businessType: 'GUARANTEE_RISK_REVIEW',
+        businessKey: 'RISK-1',
+        nodeActions: {},
+      },
+    }) as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValueOnce(new Error('no apply'));
+
+    const { el, unmount } = await mountTaskDetail();
+
+    expect(el.textContent).toContain('保函风控审批');
+    expect(el.textContent).toContain('风控标题');
+    expect(workflowApi.definitionVersions).not.toHaveBeenCalled();
+    expect(workflowApi.definitionDetail).not.toHaveBeenCalled();
+    expect(workflowApi.definitionsPage).not.toHaveBeenCalled();
     unmount();
   });
 
