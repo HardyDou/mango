@@ -16,6 +16,8 @@ export default defineConfig({
       '@mango/workflow': resolve(repoRoot, 'packages/workflow'),
       '@mango/common': resolve(repoRoot, 'packages/common'),
       '@mango/file': resolve(repoRoot, 'packages/file'),
+      '@mango/rbac': resolve(repoRoot, 'packages/rbac'),
+      '@mango/system': resolve(repoRoot, 'packages/system'),
       '@mango/api-schema': resolve(repoRoot, 'packages/api-schema'),
       '@mango/admin-pages/core': resolve(repoRoot, 'packages/admin-pages/src/core.ts'),
       vue: resolve(adminNodeModules, 'vue'),
