@@ -1,5 +1,50 @@
 # Mango Changelog
 
+## v2026.06.27-notice-check-release - 2026-06-27
+
+### Fixed
+
+- Published the `mango:check` no-new-violations baseline gate support from PR #287. The Maven plugin can now compare current findings against a JSON baseline and fail only on findings outside that baseline.
+- Published the Notice announcement cleanup from PR #288. Announcement query/entity/service code now aligns with the low-risk check cleanup, and upgraded databases receive missing announcement organization/audit fields through `V16__notice_announcement_audit_fields.sql` without rewriting the released V15 migration.
+- Updated the versioned PMO baseline and CLI release lock so business projects can sync the current Mango PMO rules, mango-check baseline, and generated release metadata from published npm packages.
+
+### Published Packages
+
+- Maven: `io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- Maven: Notice backend batch `io.mango.platform.notice:mango-notice-api`, `mango-notice-core`, `mango-notice-starter`, and `mango-notice-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- npm: `@mango/pmo@1.0.3` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.48` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.27-notice-check-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies before using the Notice announcement cleanup. Existing databases must run Flyway so `V16__notice_announcement_audit_fields.sql` adds the missing organization and audit fields.
+- Projects or CI jobs that use `mvn mango:check -Dmango.check.gate=no-new-violations` can now provide `-Dmango.check.baselineFile=<baseline.json>` to gate only newly introduced findings.
+- Existing business projects should upgrade to `@mango/cli@1.0.48` and rerun `mango pmo sync --project-dir .` or `mango pmo upgrade --project-dir .` to receive `@mango/pmo@1.0.3` baseline content.
+- No frontend runtime page, menu data, button permission, tenant binding, or business guide behavior changes are required for this release.
+
+### Verification
+
+- `mvn -pl mango-tools/mango-maven-plugin,mango-platform/mango-notice/mango-notice-core,mango-platform/mango-notice/mango-notice-api -am test -DskipTests=false`
+- `mvn mango:check -Dmango.check.gate=no-new-violations -Dmango.check.baselineFile=../mango-pmo/baselines/mango-check/no-new-violations-baseline.json -Dmango.check.codeLevelExcludedModules=mango-platform/mango-file-preview -DreportFile=target/mango-check-report.json`
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions -- --check-registry --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ --ignore-registry-package=@mango/pmo --ignore-registry-package=@mango/cli`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-maven-plugin :mango-notice-api :mango-notice-core :mango-notice-starter :mango-notice-starter-remote --revision 1.0.0-SNAPSHOT`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg pmo --release-tag=v2026.06.27-notice-check-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.27-notice-check-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm pmo --version=1.0.3`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.48`
+- `git diff --check`
+
 ## v2026.06.27-pmo-cli-baseline-release - 2026-06-27
 
 ### Fixed
