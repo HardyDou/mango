@@ -41,7 +41,7 @@
     },
     "process.aiCodingRedlines": {
       "path": "rules/03-ai-coding-redlines.md",
-      "reason": "AI 编码红线"
+      "reason": "AI 编码红线、最终交付真实实现与测试替身边界"
     },
     "process.testAssets": {
       "path": "rules/04-test-assets.md",
@@ -93,7 +93,7 @@
     },
     "backend.test": {
       "path": "rules/backend/08-test.md",
-      "reason": "后端测试规范"
+      "reason": "后端测试规范、有效测试、测试替身边界与 E2E 可组合执行"
     },
     "backend.versioning": {
       "path": "rules/backend/09-versioning.md",
