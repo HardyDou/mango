@@ -90,7 +90,7 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
-import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
+import { containsMenuPath } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, Close } from '@element-plus/icons-vue';
 import { Session } from '@mango/common/utils/storage';
 import { hasPermission } from '@mango/common/utils/authFunction';
@@ -99,6 +99,7 @@ import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
 import { getMangoNoticeBellProvider } from '@mango/admin-pages/notice';
 import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
 import { getMangoAdminShellOptions } from '../../config';
+import { resolveAccessibleMenuPath, type ShellRouteMenu } from '../../runtime/menuHost';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -140,7 +141,7 @@ const noticeRealtimeOptions = computed<RealtimeOptions>(() => {
   };
 });
 
-const findTopByPath = (path: string): MangoMenuTreeNode | undefined => {
+const findTopByPath = (path: string): ShellRouteMenu | undefined => {
   return topMenus.value.find(item => containsMenuPath(item, path))
     || topMenus.value[0];
 };
@@ -157,9 +158,9 @@ const onToggleMobileMenu = () => {
   layoutStore.toggleMobileMenu();
 };
 
-const onTopMenuClick = (item: MangoMenuTreeNode) => {
+const onTopMenuClick = (item: ShellRouteMenu) => {
   storesRoutesList.setActiveTopRoutePath(item.path);
-  const targetPath = resolveFirstMenuPath(item);
+  const targetPath = resolveAccessibleMenuPath(item);
   if (targetPath && targetPath !== route.path) {
     router.push(targetPath);
   }

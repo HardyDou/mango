@@ -4,6 +4,7 @@ import {
   filterMenuForRouteByFeatures,
   findUnexpectedTopLevelMenus,
   isRunnableMenu,
+  resolveAccessibleMenuPath,
   resolveDirectoryRouteRedirect,
   shouldShowDevCenter,
   MenuTypeEnum,
@@ -54,6 +55,46 @@ describe('admin-shell menu contract', () => {
     expect(resolveDirectoryRouteRedirect(menu, '/procurement')).toBe('/procurement/orders');
   });
 
+  it('falls back to the first accessible child when directory redirect is not visible to current user', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.DIRECTORY,
+      path: '/guarantee',
+      redirect: '/guarantee/overview',
+      children: [
+        createRouteMenu({
+          menuType: MenuTypeEnum.MENU,
+          path: '/guarantee/risk-review',
+          component: 'guarantee/risk-review/index',
+        }),
+      ],
+    });
+
+    expect(resolveAccessibleMenuPath(menu)).toBe('/guarantee/risk-review');
+    expect(resolveDirectoryRouteRedirect(menu, '/guarantee')).toBe('/guarantee/risk-review');
+  });
+
+  it('falls back to the first accessible child when directory redirect target is not runnable', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.DIRECTORY,
+      path: '/guarantee',
+      redirect: '/guarantee/overview',
+      children: [
+        createRouteMenu({
+          menuType: MenuTypeEnum.MENU,
+          path: '/guarantee/overview',
+        }),
+        createRouteMenu({
+          menuType: MenuTypeEnum.MENU,
+          path: '/guarantee/risk-review',
+          component: 'guarantee/risk-review/index',
+        }),
+      ],
+    });
+
+    expect(resolveAccessibleMenuPath(menu)).toBe('/guarantee/risk-review');
+    expect(resolveDirectoryRouteRedirect(menu, '/guarantee')).toBe('/guarantee/risk-review');
+  });
+
   it('falls back from a direct directory route to the first runnable child route', () => {
     const menu = createRouteMenu({
       menuType: MenuTypeEnum.DIRECTORY,
@@ -68,6 +109,36 @@ describe('admin-shell menu contract', () => {
     });
 
     expect(resolveDirectoryRouteRedirect(menu, '/procurement')).toBe('/procurement/orders');
+  });
+
+  it('keeps runnable menu clicks on the menu itself', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.MENU,
+      path: '/guarantee/overview',
+      component: 'guarantee/overview/index',
+      redirect: '/guarantee/risk-review',
+    });
+
+    expect(resolveAccessibleMenuPath(menu)).toBe('/guarantee/overview');
+    expect(resolveDirectoryRouteRedirect(menu, '/guarantee/overview')).toBe('');
+  });
+
+  it('returns empty path when a directory has no accessible page child', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.DIRECTORY,
+      path: '/guarantee',
+      redirect: '/guarantee/overview',
+      children: [
+        createRouteMenu({
+          menuType: MenuTypeEnum.DIRECTORY,
+          path: '/guarantee/risk',
+          children: [],
+        }),
+      ],
+    });
+
+    expect(resolveAccessibleMenuPath(menu)).toBe('');
+    expect(resolveDirectoryRouteRedirect(menu, '/guarantee')).toBe('');
   });
 
   it('does not redirect runnable menu routes so missing component errors remain visible', () => {
