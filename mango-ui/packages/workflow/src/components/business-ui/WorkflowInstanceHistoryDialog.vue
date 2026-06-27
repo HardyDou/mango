@@ -17,6 +17,7 @@
       :title="title"
       :subtitle="subtitle"
       :empty-text="emptyText"
+      :show-title="false"
     >
       <template #summary="slotProps">
         <slot name="summary" v-bind="slotProps" />

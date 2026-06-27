@@ -64,6 +64,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 8. 变更影响记录
 
+- 本次 PR 修复 `WorkflowInstanceHistoryDialog` 内部历史申请标题重复显示问题，并为 `WorkflowInstanceHistory` 增加 `showTitle` 展示开关。该开关默认 `true`，业务页面直接使用历史申请组件时标题行为不变；内置弹窗会关闭组件内部标题，只保留弹窗标题。此次变更不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
+
 - Issue #275 修复标准审批任务详情页对流程定义管理接口的隐式依赖。办理人打开 `/workflow/task/detail` 或业务包装后的任务详情页时，页面只依赖任务详情、流程实例、业务申请、`formJson`、运行时变量、`renderConfig` 和可选运行时 `designerJson`；不再主动调用流程定义列表、详情或版本管理接口。业务项目不需要给普通审批办理人额外授予流程定义管理权限；若运行时详情未携带 `designerJson`，页面会降级展示审批记录，不阻断业务表单和审批操作。
 
 - v2026.06.27-system-component-release 同步发布 `@mango/workflow@1.0.16`、`@mango/workflow-business-example@1.0.15` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目排查审批页面异常时，仍先确认前端包批次一致、页面 key 已注册、流程定义和任务数据有效。
