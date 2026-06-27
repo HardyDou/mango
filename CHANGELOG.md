@@ -1,5 +1,47 @@
 # Mango Changelog
 
+## v2026.06.27-admin-shell-menu-redirect-release - 2026-06-27
+
+### Fixed
+
+- Published the Admin Shell directory menu redirect fix from issue #274. Directory menu redirects now only take effect when the target page is visible and runnable for the current user; otherwise Admin Shell falls back to the first accessible child page in the visible menu tree.
+- Updated the aggregate admin package and CLI release locks so direct consumers, aggregate consumers, and newly generated business projects can receive the same Admin Shell fix.
+
+### Published Packages
+
+- npm: `@mango/admin-shell@1.0.28` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.32` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.45` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.27-admin-shell-menu-redirect-release`.
+
+### Upgrade Notes
+
+- Business frontends that consume the admin shell directly should upgrade to `@mango/admin-shell@1.0.28`.
+- Business frontends that consume the aggregate admin package should upgrade to `@mango/admin@1.0.32`.
+- New or regenerated business projects must use `@mango/cli@1.0.45` so generated frontend dependency locks include `@mango/admin-shell@1.0.28` and `@mango/admin@1.0.32`.
+- No backend Maven dependency, database migration, menu data, permission code, or tenant configuration change is required for this release.
+
+### Verification
+
+- `pnpm install --lockfile-only`
+- `pnpm --filter @mango/admin-shell test`
+- `pnpm --filter @mango/admin-shell build`
+- `pnpm --filter @mango/admin build`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm package-exports:check`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/admin-shell --version=1.0.28 --tag=v2026.06.27-admin-shell-menu-redirect-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/admin --version=1.0.32 --tag=v2026.06.27-admin-shell-menu-redirect-release --check-github-release`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/cli --version=1.0.45 --tag=v2026.06.27-admin-shell-menu-redirect-release --check-github-release`
+- `git diff --check`
+
 ## v2026.06.27-system-component-release - 2026-06-27
 
 ### Fixed

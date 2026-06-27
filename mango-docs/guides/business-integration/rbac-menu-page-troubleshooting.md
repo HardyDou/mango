@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- v2026.06.27-admin-shell-menu-redirect-release 发布 `@mango/admin-shell@1.0.28`、`@mango/admin@1.0.32` 和 `@mango/cli@1.0.45`，让业务项目可通过 npm 包消费 Issue #274 的目录菜单 redirect 修复；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定和本场景排障步骤。业务项目如仍复现顶层目录跳到无权限 redirect 页面，应先确认前端依赖已升级到本发布批次。
+
 - Issue #274 修复 `@mango/admin-shell` 目录型菜单 redirect 解析：目录菜单的 `redirect` 只有命中当前用户可见且可运行的菜单时才生效，否则会进入当前可见菜单树中的第一个可运行子页面；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定和本场景排障步骤。排查“点击顶层目录进入无权限页面”时，应同时确认当前用户可见菜单树中是否包含 redirect 目标以及是否存在可运行子页面。
 
 - v2026.06.27-system-component-release 同步发布 `@mango/system@1.0.11` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、页面路由和本场景排障步骤。业务项目排查页面加载异常时，仍先确认前端包批次一致、页面 key 已注册、后端菜单资源已同步。

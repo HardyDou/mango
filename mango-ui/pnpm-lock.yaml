@@ -615,7 +615,7 @@ importers:
         specifier: 1.0.12
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: 1.0.27
+        specifier: 1.0.28
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: 1.0.2
