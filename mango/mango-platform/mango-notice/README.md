@@ -411,6 +411,7 @@ Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
 | `V13__notice_business_domain.sql` | 通知业务类型接入业务域。 |
 | `V14__seed_job_site_message.sql` | 定时任务站内信模板已迁移到 `mango-job` 的 `job-common-message.yml`。 |
 | `V15__notice_announcement.sql` | 增加公告、公告发布对象快照和用户级接收记录。 |
+| `V16__notice_announcement_audit_fields.sql` | 为公告、发布对象和用户接收记录补齐组织与审计字段。 |
 
 核心表包括 `notice_business_type`、`notice_business_config_version`、`notice_business_channel_template`、`notice_channel_config`、`notice_task`、`notice_recipient`、`notice_send_record`、`notice_site_message`、`notice_retry_log`、`notice_callback_log`、`notice_setting`、`notice_recipient_account`、`notice_receive_preference`、`notice_wecom_sync_mapping`、`notice_announcement`、`notice_announcement_target`、`notice_announcement_recipient`。
 

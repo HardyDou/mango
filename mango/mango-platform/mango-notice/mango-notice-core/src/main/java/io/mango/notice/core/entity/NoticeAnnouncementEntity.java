@@ -37,6 +37,8 @@ public class NoticeAnnouncementEntity {
 
     private String tenantId;
 
+    private Long orgId;
+
     @TableField(fill = FieldFill.INSERT)
     private Long createdBy;
 

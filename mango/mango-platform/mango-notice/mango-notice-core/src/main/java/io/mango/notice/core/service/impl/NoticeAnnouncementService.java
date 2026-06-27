@@ -62,18 +62,21 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
             wrapper.eq(NoticeAnnouncementEntity::getStatus, query.getStatus());
         }
         if (StringUtils.hasText(query.getKeyword())) {
-            wrapper.and(condition -> condition
-                    .like(NoticeAnnouncementEntity::getTitle, query.getKeyword())
-                    .or()
-                    .like(NoticeAnnouncementEntity::getContent, query.getKeyword()));
+            wrapper.and(condition -> {
+                condition.like(NoticeAnnouncementEntity::getTitle, query.getKeyword());
+                condition.or();
+                condition.like(NoticeAnnouncementEntity::getContent, query.getKeyword());
+            });
         }
-        wrapper.orderByDesc(NoticeAnnouncementEntity::getPinned)
-                .orderByDesc(NoticeAnnouncementEntity::getPublishTime)
-                .orderByDesc(NoticeAnnouncementEntity::getCreatedAt);
+        wrapper.orderByDesc(NoticeAnnouncementEntity::getPinned);
+        wrapper.orderByDesc(NoticeAnnouncementEntity::getPublishTime);
+        wrapper.orderByDesc(NoticeAnnouncementEntity::getCreatedAt);
         Page<NoticeAnnouncementEntity> result = announcementMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()), wrapper);
-        List<NoticeAnnouncementVO> rows = result.getRecords().stream()
-                .map(entity -> NoticeAnnouncementConvert.toVO(entity, targets(entity.getId()), getAnnouncementStats(entity.getId())))
-                .toList();
+        List<NoticeAnnouncementEntity> records = result.getRecords();
+        List<NoticeAnnouncementVO> rows = new ArrayList<>(records.size());
+        for (NoticeAnnouncementEntity entity : records) {
+            rows.add(NoticeAnnouncementConvert.toVO(entity, targets(entity.getId()), getAnnouncementStats(entity.getId())));
+        }
         return PageResult.of(rows, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
@@ -158,10 +161,13 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
                 query.getPendingConfirmOnly(),
                 query.getKeyword(),
                 LocalDateTime.now());
-        List<NoticeAnnouncementVO> rows = page.getRecords().stream()
-                .map(this::myAnnouncementVO)
-                .filter(vo -> vo != null)
-                .toList();
+        List<NoticeAnnouncementVO> rows = new ArrayList<>();
+        for (NoticeAnnouncementRecipientEntity recipient : page.getRecords()) {
+            NoticeAnnouncementVO vo = myAnnouncementVO(recipient);
+            if (vo != null) {
+                rows.add(vo);
+            }
+        }
         return PageResult.of(rows, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
@@ -245,15 +251,19 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
         if (command != null && command.getTargets() != null) {
             return command.getTargets();
         }
-        return targetMapper.selectList(new LambdaQueryWrapper<NoticeAnnouncementTargetEntity>()
-                        .eq(NoticeAnnouncementTargetEntity::getAnnouncementId, id))
-                .stream()
-                .map(this::toCommand)
-                .toList();
+        LambdaQueryWrapper<NoticeAnnouncementTargetEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NoticeAnnouncementTargetEntity::getAnnouncementId, id);
+        List<NoticeAnnouncementTargetEntity> targetEntities = targetMapper.selectList(wrapper);
+        List<NoticeAnnouncementTargetCommand> targets = new ArrayList<>(targetEntities.size());
+        for (NoticeAnnouncementTargetEntity entity : targetEntities) {
+            targets.add(toCommand(entity));
+        }
+        return targets;
     }
 
     private void validateTargets(List<NoticeAnnouncementTargetCommand> targets) {
-        Require.isTrue(targets != null && !targets.isEmpty(), "公告发布对象不能为空");
+        Require.notNull(targets, "公告发布对象不能为空");
+        Require.isTrue(!targets.isEmpty(), "公告发布对象不能为空");
         long allCount = targets.stream().filter(target -> target.getTargetType() == NoticeAnnouncementTargetType.ALL).count();
         Require.isTrue(allCount <= 1, "全员发布对象只能选择一次");
         Require.isTrue(allCount == 0 || targets.size() == 1, "全员发布不能和组织、角色、用户混用");
@@ -269,9 +279,10 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
         if (targets.size() == 1 && targets.get(0).getTargetType() == NoticeAnnouncementTargetType.ALL) {
             return recipientResolver.listAllEnabledUsers();
         }
-        List<NoticeRecipientTargetCommand> recipientTargets = targets.stream()
-                .map(this::toRecipientTarget)
-                .toList();
+        List<NoticeRecipientTargetCommand> recipientTargets = new ArrayList<>(targets.size());
+        for (NoticeAnnouncementTargetCommand target : targets) {
+            recipientTargets.add(toRecipientTarget(target));
+        }
         return recipientResolver.resolveRecipientTargets(recipientTargets);
     }
 
@@ -293,8 +304,9 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     }
 
     private void saveTargets(Long announcementId, List<NoticeAnnouncementTargetCommand> targets) {
-        targetMapper.delete(new LambdaQueryWrapper<NoticeAnnouncementTargetEntity>()
-                .eq(NoticeAnnouncementTargetEntity::getAnnouncementId, announcementId));
+        LambdaQueryWrapper<NoticeAnnouncementTargetEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NoticeAnnouncementTargetEntity::getAnnouncementId, announcementId);
+        targetMapper.delete(wrapper);
         if (targets == null || targets.isEmpty()) {
             return;
         }
@@ -310,25 +322,31 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     }
 
     private void saveRecipients(Long announcementId, List<NoticeRecipientCommand> recipients, boolean confirmRequired) {
-        recipientMapper.delete(new LambdaQueryWrapper<NoticeAnnouncementRecipientEntity>()
-                .eq(NoticeAnnouncementRecipientEntity::getAnnouncementId, announcementId));
+        LambdaQueryWrapper<NoticeAnnouncementRecipientEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NoticeAnnouncementRecipientEntity::getAnnouncementId, announcementId);
+        recipientMapper.delete(wrapper);
+        NoticeAnnouncementConfirmStatus confirmStatus = NoticeAnnouncementConfirmStatus.NOT_REQUIRED;
+        if (confirmRequired) {
+            confirmStatus = NoticeAnnouncementConfirmStatus.PENDING;
+        }
+        NoticeAnnouncementConfirmStatus recipientConfirmStatus = confirmStatus;
         deduplicateRecipients(recipients).forEach(recipient -> {
             NoticeAnnouncementRecipientEntity entity = new NoticeAnnouncementRecipientEntity();
             entity.setAnnouncementId(announcementId);
             entity.setUserId(recipient.getUserId());
             entity.setReadStatus(NoticeReadStatus.UNREAD);
-            entity.setConfirmStatus(confirmRequired
-                    ? NoticeAnnouncementConfirmStatus.PENDING
-                    : NoticeAnnouncementConfirmStatus.NOT_REQUIRED);
+            entity.setConfirmStatus(recipientConfirmStatus);
             recipientMapper.insert(entity);
         });
     }
 
     private List<NoticeRecipientCommand> deduplicateRecipients(List<NoticeRecipientCommand> recipients) {
         Map<Long, NoticeRecipientCommand> dedup = new LinkedHashMap<>();
-        recipients.stream()
-                .filter(recipient -> recipient.getUserId() != null)
-                .forEach(recipient -> dedup.putIfAbsent(recipient.getUserId(), recipient));
+        for (NoticeRecipientCommand recipient : recipients) {
+            if (recipient.getUserId() != null) {
+                dedup.putIfAbsent(recipient.getUserId(), recipient);
+            }
+        }
         return new ArrayList<>(dedup.values());
     }
 
@@ -346,11 +364,14 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     }
 
     private List<NoticeAnnouncementTargetVO> targets(Long announcementId) {
-        return targetMapper.selectList(new LambdaQueryWrapper<NoticeAnnouncementTargetEntity>()
-                        .eq(NoticeAnnouncementTargetEntity::getAnnouncementId, announcementId))
-                .stream()
-                .map(NoticeAnnouncementConvert::toTargetVO)
-                .toList();
+        LambdaQueryWrapper<NoticeAnnouncementTargetEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NoticeAnnouncementTargetEntity::getAnnouncementId, announcementId);
+        List<NoticeAnnouncementTargetEntity> targetEntities = targetMapper.selectList(wrapper);
+        List<NoticeAnnouncementTargetVO> targetVOs = new ArrayList<>(targetEntities.size());
+        for (NoticeAnnouncementTargetEntity entity : targetEntities) {
+            targetVOs.add(NoticeAnnouncementConvert.toTargetVO(entity));
+        }
+        return targetVOs;
     }
 
     private NoticeAnnouncementEntity requireAnnouncement(Long id) {
@@ -368,10 +389,11 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
 
     private NoticeAnnouncementRecipientEntity requireUserRecipient(Long id, Long userId) {
         Require.notNull(userId, "当前用户不能为空");
-        NoticeAnnouncementRecipientEntity recipient = recipientMapper.selectOne(new LambdaQueryWrapper<NoticeAnnouncementRecipientEntity>()
-                .eq(NoticeAnnouncementRecipientEntity::getAnnouncementId, id)
-                .eq(NoticeAnnouncementRecipientEntity::getUserId, userId)
-                .last("limit 1"));
+        LambdaQueryWrapper<NoticeAnnouncementRecipientEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NoticeAnnouncementRecipientEntity::getAnnouncementId, id);
+        wrapper.eq(NoticeAnnouncementRecipientEntity::getUserId, userId);
+        wrapper.last("limit 1");
+        NoticeAnnouncementRecipientEntity recipient = recipientMapper.selectOne(wrapper);
         Require.notNull(recipient, "公告不存在或不可访问");
         return recipient;
     }
@@ -386,6 +408,9 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     }
 
     private long nullToZero(Long value) {
-        return value == null ? 0 : value;
+        if (value == null) {
+            return 0L;
+        }
+        return value;
     }
 }
