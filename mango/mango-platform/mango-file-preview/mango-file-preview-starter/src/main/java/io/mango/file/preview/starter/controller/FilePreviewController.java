@@ -41,8 +41,8 @@ public class FilePreviewController implements FilePreviewApi {
 
     @Override
     @GetMapping("/files/preview-link")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
-    @Operation(summary = "创建文件预览链接", description = "权限接口。按文件ID创建在线预览页面地址")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "创建文件预览链接")
+    @Operation(summary = "创建文件预览链接", description = "登录用户基础接口。按文件ID创建当前租户可见文件的在线预览页面地址")
     public R<FilePreviewLinkVO> preview(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long fileId) {
@@ -50,8 +50,8 @@ public class FilePreviewController implements FilePreviewApi {
     }
 
     @GetMapping("/files/preview")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
-    @Operation(summary = "跳转文件预览页", description = "权限接口。按文件ID跳转到在线预览页面")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "跳转文件预览页")
+    @Operation(summary = "跳转文件预览页", description = "登录用户基础接口。按文件ID跳转到当前租户可见文件的在线预览页面")
     public ModelAndView redirectPreview(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long fileId) {

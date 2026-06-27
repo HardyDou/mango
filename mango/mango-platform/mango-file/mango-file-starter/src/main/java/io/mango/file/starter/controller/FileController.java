@@ -97,8 +97,8 @@ public class FileController implements FileApi {
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
-    @Operation(summary = "获取文件详情", description = "权限接口。按文件ID查询文件记录详情")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取文件详情")
+    @Operation(summary = "获取文件详情", description = "登录用户基础接口。按文件ID查询当前租户可见文件记录详情")
     @Override
     public R<FileRecordVO> get(
             @Parameter(description = "文件ID", required = true)
@@ -107,8 +107,8 @@ public class FileController implements FileApi {
     }
 
     @GetMapping("/preview")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
-    @Operation(summary = "获取文件预览元数据", description = "权限接口。返回文件名、类型、大小、预览地址和下载地址")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取文件预览元数据")
+    @Operation(summary = "获取文件预览元数据", description = "登录用户基础接口。返回当前租户可见文件的文件名、类型、大小、预览地址和下载地址")
     @Override
     public R<FilePreviewVO> preview(
             @Parameter(description = "文件ID", required = true)
@@ -142,8 +142,8 @@ public class FileController implements FileApi {
     }
 
     @GetMapping("/download")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
-    @Operation(summary = "下载文件", description = "权限接口。按文件ID下载当前机构文件")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "下载文件")
+    @Operation(summary = "下载文件", description = "登录用户基础接口。按文件ID下载当前租户可见文件")
     public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadResponse(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {

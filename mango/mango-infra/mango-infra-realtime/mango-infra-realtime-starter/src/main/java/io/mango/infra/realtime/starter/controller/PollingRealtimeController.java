@@ -1,5 +1,7 @@
 package io.mango.infra.realtime.starter.controller;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
 import io.mango.infra.realtime.api.dto.RealtimeContext;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
@@ -40,6 +42,7 @@ public class PollingRealtimeController {
     private final ProtocolRealtimeInboundForwarder inboundForwarder;
 
     @GetMapping("${mango.infra.realtime.polling.endpoint:/realtime/transports/polling}")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "轮询实时消息")
     @Operation(summary = "轮询实时消息", description = "登录接口。按用户轮询实时消息，支持长轮询超时和最大消息数")
     public DeferredResult<List<RealtimeOutboundMessage>> poll(
             @Parameter(description = "租户ID请求头")
@@ -92,6 +95,7 @@ public class PollingRealtimeController {
     }
 
     @PostMapping("${mango.infra.realtime.polling.inbound-endpoint:/realtime/messages/inbound/polling}")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "发送轮询上行消息")
     @Operation(summary = "发送轮询上行消息", description = "登录接口。通过轮询通道提交客户端上行消息")
     public RealtimeOutboundMessage inbound(
             @Parameter(description = "租户ID请求头")
@@ -167,6 +171,7 @@ public class PollingRealtimeController {
     }
 
     @GetMapping("/realtime/transports/probe/polling")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "探测轮询链路")
     @Operation(summary = "探测轮询链路", description = "检查 HTTP 轮询链路，不注册业务订阅")
     public Map<String, String> probe() {
         return Map.of("type", "probe.ok", "protocol", "polling");

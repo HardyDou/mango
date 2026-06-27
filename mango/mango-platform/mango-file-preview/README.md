@@ -85,7 +85,7 @@
 2. 如果需要 Office 转换能力，按环境接入 `mango-infra-fileproc-starter` 和对应转换依赖。
 3. 业务上传文件后只保存 `fileId`。
 4. 详情页用 `FilePreviewPanel` 或调用 `/file-preview/files/preview-link` 创建预览链接。
-5. 当前用户必须具备 `file:files:query`，否则不能签发预览链接。
+5. 当前用户必须已登录；创建预览链接属于登录用户基础能力，不需要给每个角色或用户单独配置 `file:files:query`。
 6. 预览引擎通过短期 source token 调 `/file-preview/sources/{token}` 读取源文件。
 
 ## 6. 配置说明
@@ -126,8 +126,8 @@ HTTP 接口前缀是 `/file-preview`。
 
 | 方法 | 路径 | 访问模式 | 用途 |
 |------|------|----------|------|
-| GET | `/file-preview/files/preview-link?fileId=...` | PERMISSION，`file:files:query` | 创建短期预览入口 |
-| GET | `/file-preview/files/preview?fileId=...` | PERMISSION，`file:files:query` | 按文件 ID forward 到预览页 |
+| GET | `/file-preview/files/preview-link?fileId=...` | LOGIN | 创建短期预览入口 |
+| GET | `/file-preview/files/preview?fileId=...` | LOGIN | 按文件 ID forward 到预览页 |
 | GET | `/file-preview/files/preview-entry?token=...` | PUBLIC | 使用已签发入口 token 进入预览 |
 | GET | `/file-preview/sources/{token}` | PUBLIC | 预览引擎读取源文件流 |
 
@@ -172,11 +172,13 @@ token 行为：
 
 | 入口 | 边界 |
 |------|------|
-| 创建预览链接 | 要求当前用户有 `file:files:query` |
+| 创建预览链接 | 要求当前用户已登录，不需要每个角色或用户单独配置文件查询权限 |
 | 公开预览入口 | 只接受短期入口 token，不接受任意 `fileId` |
 | 源文件读取 | 只接受短期 source token |
 | 源文件权限 | 读取时恢复 token 中的上下文，再调用 `FileApi.downloadForService(fileId)` |
 | kkFileView 独立 UI | 默认由 `standalone-ui-enabled=false` 阻断 |
+
+`LOGIN` 只表示登录用户可以签发预览入口，不表示可以预览任意文件。签发 token 前会调用 `FileApi.get(fileId)`，源文件读取时会恢复签发时的 `MangoContextSnapshot` 并再次调用文件中心读取文件流。文件是否属于当前租户、是否归档或删除，仍由 `mango-file` 判定。
 
 ## 11. 数据与初始化
 
@@ -191,7 +193,7 @@ token 行为：
 | `FilePreviewSecurityCustomizer` | 配置预览相关安全放行 |
 | `FilePreviewStandaloneUiBlockFilter` | 默认阻断 kkFileView 首页和演示文件管理入口 |
 
-自动注册为 PUBLIC 的资源包括：
+自动注册为 PUBLIC 的资源只服务预览引擎页面和短期 token 访问，不接受任意 `fileId`。包括：
 
 ```text
 /onlinePreview
@@ -215,7 +217,7 @@ token 行为：
 
 | 现象 | 排查点 |
 |------|--------|
-| 创建预览链接失败 | 检查文件是否存在、当前账号是否有 `file:files:query`、租户上下文是否正确 |
+| 创建预览链接失败 | 检查当前账号是否已登录、文件是否存在、租户上下文和文件可见性是否正确 |
 | 预览页能打开但文件加载失败 | 检查 `/file-preview/sources/{token}` 是否被网关放行，token 是否过期 |
 | Office 预览失败 | 检查预览引擎、LibreOffice、Aspose license 和 `mango-infra-fileproc` |
 | 不希望暴露 kkFileView 首页 | 保持 `mango.file-preview.standalone-ui-enabled=false` |
