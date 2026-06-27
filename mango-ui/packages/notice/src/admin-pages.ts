@@ -13,6 +13,8 @@ export function registerMangoNoticeAdminPages() {
       'notice/business-config/index': () => import('./admin').then(m => m.NoticeBusinessConfigView),
       'notice/message-definition/index': () => import('./admin').then(m => m.NoticeMessageDefinitionView),
       'notice/send-message/index': () => import('./admin').then(m => m.NoticeSendMessageView),
+      'notice/announcement/index': () => import('./admin').then(m => m.NoticeAnnouncementView),
+      'notice/announcement-user/index': () => import('./admin').then(m => m.NoticeAnnouncementUserView),
       'notice/channel/index': () => import('./admin').then(m => m.NoticeChannelView),
       'notice/task/index': () => import('./admin').then(m => m.NoticeTaskView),
       'notice/record/index': () => import('./admin').then(m => m.NoticeRecordView),

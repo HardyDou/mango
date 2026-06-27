@@ -263,10 +263,10 @@
 </template>
 
 <script setup lang="ts">
+import { Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Operation, QuestionFilled, Refresh, Search, Tickets } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import {
   paymentExceptionOrderApi,
   type HandlePaymentExceptionOrderCommand,

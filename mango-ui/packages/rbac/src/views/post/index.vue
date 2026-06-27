@@ -216,11 +216,9 @@
 </template>
 
 <script setup lang="ts" name="SystemPost">
+import { DictSelect, DictTag, Pagination } from '@mango/common';
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import DictSelect from '@mango/common/components/DictSelect/index.vue';
-import DictTag from '@mango/common/components/DictTag/index.vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
 import { postApi, type PostVO } from '../../api/post';
 

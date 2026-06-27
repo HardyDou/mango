@@ -64,10 +64,17 @@ pnpm -F @mango/workflow-business-example build
 
 ## 8. 变更影响记录
 
+- v2026.06.27-system-component-release 同步发布 `@mango/workflow@1.0.16`、`@mango/workflow-business-example@1.0.15` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目排查审批页面异常时，仍先确认前端包批次一致、页面 key 已注册、流程定义和任务数据有效。
+
+- 本次 PR 调整内置审批任务详情页操作按钮栏布局：按钮栏只显示在左侧业务内容列下方并居中，右侧流程摘要栏下方不再显示操作区；内容较长时按钮栏仍在内容列底部粘性悬浮。此次变更不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
+
+- PR #268 新增 `@mango/workflow` 可复用审批详情 UI 组件：`WorkflowLayout`、`WorkflowSidebar`、`WorkflowInstanceSummary`、`WorkflowInstanceProgress`、`WorkflowDefinitionGraph`、`WorkflowDefinitionGraphDialog`、`WorkflowInstanceHistory` 和 `WorkflowInstanceHistoryDialog`。业务审批详情页可以优先使用 `WorkflowLayout + WorkflowSidebar` 组合左侧业务内容和右侧流程信息；任务详情页已复用该组件组。此次变更不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目继续通过 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()` 发起流程，并在业务后端自行校验权限、快照和幂等。
+
 - 本次 PR 新增流程定义 `startEntryVisible` 启动入口可见性。业务内嵌流程可声明为“仅业务内嵌”，从审批中心发起流程列表隐藏；业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离和业务上下文启动方式不变。业务模块仍应通过 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()` 按 `definitionKey`、`businessType`、`businessKey` 发起，并继续自行校验业务权限、快照和幂等。
 
-- 本次 PR 新增 `@mango/grid-widgets` 我的申请系统小组件，并新增 `GET /workflow/business-applies/my/summary` 当前登录人申请统计接口；我的申请列表切换为业务申请分页数据源并支持 `statuses` 状态筛选。业务项目接入工作台后，可通过 `system.my-process` 展示审核中、已完成、已驳回和已撤回申请概览，列表跳转复用现有 `/workflow/task/initiated` 页面。
+- 本次 PR 新增 `@mango/grid-widgets` 我的申请系统小组件，并新增 `GET /workflow/business-applies/my/summary` 当前登录人申请统计接口；我的申请列表默认同时展示业务申请记录和直接发起的流程实例，并按流程实例 ID 去重，带 `statuses` 状态筛选时使用业务申请分页数据源。业务项目接入工作台后，可通过 `system.my-process` 展示审核中、已完成、已驳回和已撤回申请概览，列表跳转复用现有 `/workflow/task/initiated` 页面。
 
+- Issue #264 发布 `@mango/workflow@1.0.14`、`@mango/workflow-business-example@1.0.13` 并随前端发布批次对齐 `@mango/admin-pages@1.0.11`、`@mango/system@1.0.10`；不改变业务审批发起、审批回调、状态回写、流程页面 key、公开 API、配置、权限、租户隔离、页面验收步骤、启动方式和运行时行为。本次仅同步发布锁和 package 边界，业务项目应成组升级同一批次前端包。
 - PR #241 支持业务回传路径：业务系统跳转审批任务详情时可通过 `returnPath`（可选 `returnQuery`）指定审批完成后或点“返回”的落点，任务详情页顶部返回按钮按 `returnPath` 回到业务列表，不带则兜底回 Mango 默认待办/已办；同时精简审批任务详情页布局（流程信息右移、操作按钮条贴底固定）。不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、启动方式和运行时行为。业务项目接入时，跳转 `/workflow/task/detail?taskId=xxx&returnPath=/业务列表` 即可让审批人返回业务上下文。
 
 - 本次 PR 新增 `@mango/grid-widgets` 我的待办系统小组件，并新增 `GET /workflow/tasks/todo/summary` 待办统计接口；业务审批发起、审批回调、状态回写、流程页面 key、流程定义配置、租户隔离和页面验收步骤不变。业务项目接入工作台后，可通过 `system.my-todo` 展示待审批、待处理、待确认和已超时任务概览，列表跳转仍复用现有待办和抄送页面。

@@ -141,6 +141,77 @@ describe('workflow task list', () => {
     expect(el.textContent).toContain('已完成');
     unmount();
   });
+
+  it('keeps direct initiated process instances visible in initiated list', async () => {
+    route.path = '/workflow/task/initiated';
+    route.fullPath = '/workflow/task/initiated';
+    vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(pageResult([]) as any);
+    vi.mocked(workflowApi.initiatedProcesses).mockResolvedValueOnce(pageResult([
+      {
+        processInstanceId: 'process-1',
+        businessKey: 'leave-reject-1',
+        processName: '请假流程',
+        processKey: 'leave_process',
+        initiatorName: 'admin',
+        status: '已驳回',
+        startTime: '2026-06-26 10:00:00',
+        endTime: '2026-06-26 10:10:00',
+      },
+    ]) as any);
+
+    const { el, unmount } = await mountTaskList();
+
+    expect(workflowApi.businessAppliesPage).toHaveBeenCalledWith(expect.objectContaining({
+      statuses: undefined,
+    }));
+    expect(workflowApi.initiatedProcesses).toHaveBeenCalledWith(expect.objectContaining({
+      pageNum: 1,
+      pageSize: 10,
+    }));
+    expect(el.textContent).toContain('leave-reject-1');
+    expect(el.textContent).toContain('已驳回');
+    unmount();
+  });
+
+  it('deduplicates business applies and direct process instances by process instance id', async () => {
+    route.path = '/workflow/task/initiated';
+    route.fullPath = '/workflow/task/initiated';
+    vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(pageResult([
+      {
+        id: 'apply-1',
+        applyTitle: '费用报销',
+        businessKey: 'EXP-001',
+        processName: '费用流程',
+        processDefinitionKey: 'expense_process',
+        processInstanceId: 'process-1',
+        applyStatusName: '审批中',
+        createdAt: '2026-06-26 10:00:00',
+      },
+    ]) as any);
+    vi.mocked(workflowApi.initiatedProcesses).mockResolvedValueOnce(pageResult([
+      {
+        processInstanceId: 'process-1',
+        businessKey: 'EXP-001',
+        processName: '费用流程',
+        processKey: 'expense_process',
+        status: '运行中',
+      },
+      {
+        processInstanceId: 'process-2',
+        businessKey: 'DIRECT-001',
+        processName: '直接流程',
+        processKey: 'direct_process',
+        status: '已完成',
+      },
+    ]) as any);
+
+    const { el, unmount } = await mountTaskList();
+
+    expect(el.textContent).toContain('费用报销');
+    expect(el.textContent).toContain('DIRECT-001');
+    expect((el.textContent || '').match(/EXP-001/g)).toHaveLength(1);
+    unmount();
+  });
 });
 
 async function mountTaskList() {

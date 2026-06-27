@@ -95,6 +95,16 @@ async function openInitiatedTasks(page: Page) {
   await page.waitForURL('**/#/workflow/task/initiated', { timeout: 10000 });
 }
 
+async function waitForInitiatedTasksLoad(page: Page) {
+  await page.waitForResponse((response) =>
+    response.status() === 200
+    && (
+      response.url().includes('/api/workflow/business-applies/page')
+      || response.url().includes('/api/workflow/processes/initiated')
+    )
+  );
+}
+
 async function openTodoTasks(page: Page) {
   await page.getByRole('button', { name: '审批中心' }).click();
   await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
@@ -948,6 +958,33 @@ async function listTodoTasks(request: APIRequestContext, token: string, business
 
 async function expectReadonlyFieldValue(page: Page, label: string, value: string) {
   await expect(page.locator('.el-form-item', { hasText: label })).toContainText(value);
+}
+
+async function expectWorkflowTaskDetailSidebar(page: Page, currentNode: string) {
+  const detailPage = page.locator('.workflow-task-detail-page');
+  await expect(detailPage).toContainText('当前节点');
+  await expect(detailPage).toContainText(currentNode);
+  await expect(detailPage).toContainText('发起人');
+  await expect(detailPage).toContainText('admin');
+  await expect(detailPage).toContainText('当前节点待处理');
+  await expect(detailPage.locator('.workflow-sidebar__actions .el-button').first()).toBeVisible();
+}
+
+async function expectApprovalActionBarInContentColumn(page: Page) {
+  const actionBar = page.locator('.workflow-business-layout__main > .approval-action-bar');
+  const sidebarActionBar = page.locator('.workflow-business-layout__sidebar .approval-action-bar');
+  await expect(actionBar).toBeVisible();
+  await expect(sidebarActionBar).toHaveCount(0);
+
+  const actionBox = await actionBar.boundingBox();
+  const mainBox = await page.locator('.workflow-business-layout__main').boundingBox();
+  const sidebarBox = await page.locator('.workflow-business-layout__sidebar').boundingBox();
+  expect(actionBox, '审批按钮栏未渲染').toBeTruthy();
+  expect(mainBox, '审批内容区域未渲染').toBeTruthy();
+  expect(sidebarBox, '审批右侧摘要未渲染').toBeTruthy();
+  expect(actionBox!.x).toBeGreaterThanOrEqual(mainBox!.x - 1);
+  expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(mainBox!.x + mainBox!.width + 1);
+  expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(sidebarBox!.x - 8);
 }
 
 async function pickUserFromDialog(page: Page, outerDialogName: string, pickerDialogName: string, username: string) {
@@ -2248,9 +2285,7 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(startedBusinessKey).toBeTruthy();
       await expect(page.getByText(/流程已发起/)).toBeVisible({ timeout: 10000 });
 
-      const initiatedResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/processes/initiated') && response.status() === 200
-      );
+      const initiatedResponsePromise = waitForInitiatedTasksLoad(page);
       await openInitiatedTasks(page);
       await initiatedResponsePromise;
       await expect(page.locator('.el-table__row', { hasText: startedBusinessKey })).toBeVisible({ timeout: 10000 });
@@ -2501,7 +2536,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await detailResponsePromise;
       await expectReadonlyFieldValue(page, '请假天数', '5');
       await expectReadonlyFieldValue(page, '请假原因', 'E2E 发起人自己审批验证');
-      await expect(page.getByText('发起 · admin')).toBeVisible();
+      await expectWorkflowTaskDetailSidebar(page, '发起人自己审批');
+      await expectApprovalActionBarInContentColumn(page);
 
       await page.getByPlaceholder('请输入审批意见').fill('本人确认通过');
       const completeResponsePromise = page.waitForResponse((response) =>
@@ -2549,7 +2585,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByText('请假天数')).toBeVisible();
       await expectReadonlyFieldValue(page, '请假天数', '3');
       await expectReadonlyFieldValue(page, '请假原因', 'E2E 审批通过验证');
-      await expect(page.getByText('发起 · admin')).toBeVisible();
+      await expectWorkflowTaskDetailSidebar(page, '主管审批');
+      await expectApprovalActionBarInContentColumn(page);
 
       await page.getByPlaceholder('请输入审批意见').fill('同意，UI E2E');
       const completeResponsePromise = page.waitForResponse((response) =>
@@ -2601,9 +2638,7 @@ test.describe('工作流配置真实接口闭环', () => {
       const rejectBody = await rejectResponse.json();
       expect(rejectBody.success || rejectBody.code === 200).toBeTruthy();
 
-      const initiatedResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/workflow/processes/initiated') && response.status() === 200
-      );
+      const initiatedResponsePromise = waitForInitiatedTasksLoad(page);
       await openInitiatedTasks(page);
       await initiatedResponsePromise;
       await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
@@ -2615,9 +2650,9 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.el-table__row', { hasText: businessKey }).getByRole('button', { name: '查看' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
       await processDetailResponsePromise;
-      await expect(page.getByText('结束时间')).toBeVisible();
       await expect(page.locator('.workflow-task-detail-page')).toContainText('E2E 审批驳回验证');
-      await expect(page.getByText('驳回 · admin')).toBeVisible();
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('驳回');
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('admin');
       await expect(page.getByText('驳回，UI E2E')).toBeVisible();
       await expectNoAuthError(page);
     } finally {

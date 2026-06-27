@@ -1,5 +1,5 @@
 <template>
-  <NoticeClientMessageCenter @settings="goReceiveSetting" />
+  <NoticeClientMessageCenter @settings="goReceiveSetting" @announcement="goAnnouncement" />
 </template>
 
 <script setup lang="ts">
@@ -10,5 +10,9 @@ const router = useRouter();
 
 function goReceiveSetting() {
   router.push('/notice/receive-setting');
+}
+
+function goAnnouncement(id: string) {
+  router.push({ path: '/message-center/announcement', query: { id } });
 }
 </script>

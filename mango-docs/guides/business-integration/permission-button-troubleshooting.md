@@ -68,10 +68,19 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.06.27-admin-shell-menu-redirect-release 发布 `@mango/admin-shell@1.0.28`、`@mango/admin@1.0.32` 和 `@mango/cli@1.0.45`，仅让业务项目可通过 npm 包消费 Issue #274 的目录菜单 redirect 修复；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
+
+- Issue #274 修复 `@mango/admin-shell` 目录型菜单 redirect 解析，仅影响点击目录菜单或直接访问目录 path 时的页面落点；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。若用户先被目录菜单带到其它可访问子页面，再发现按钮不可见，仍按当前实际页面的按钮权限码和登录态权限集合排查。
+
+- v2026.06.27-system-component-release 同步发布 `@mango/system@1.0.11` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。业务项目排查按钮缺失时，仍先确认前端包批次一致、权限资源已同步、用户登录态已刷新。
+
+- PR #267 新增通知公告管理和用户公告确认能力，公告管理页面会使用 `notice:announcement:*` 类权限控制新增、编辑、发布、下线等动作；不改变按钮 `permissionCode` 机制、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。若公告管理按钮不可见或接口报无权限，按角色是否授权对应 `notice:announcement:*` 权限、登录态是否刷新、页面 `v-auth`/接口鉴权是否一致的顺序排查。
+
 - PR #256 将后台工作台默认布局调整为页面内固定配置，仅影响没有个人工作台配置或恢复默认后的首页卡片排布；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
 
 - PR #253 新增 Resource Registry 的 `AUTH_ROLE`、`AUTH_ROLE_DATA_SCOPE`、`AUTH_SUBJECT_ROLE` 基线声明，可让角色和成员角色绑定随资源同步注入；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。排查清库初始化后的按钮缺失时，可额外确认角色基线和主体角色绑定声明是否同步成功。
 
+- Issue #264 发布 `@mango/grid-widgets@1.0.3`、`@mango/system@1.0.10`、`@mango/admin-pages@1.0.11`、`@mango/admin-shell@1.0.25`、`@mango/admin@1.0.29`、`@mango/cli@1.0.42`，补齐此前未进入 npm 物料的工作台日历小组件和新版系统配置页面；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。业务项目排查首页日历缺失或系统配置页面旧版时，应先确认前端包和 CLI/starter 锁已升级到本批次。
 - PR #246 发布 `@mango/grid-widgets@1.0.2`、`@mango/admin-shell@1.0.23`、`@mango/admin@1.0.27`、`@mango/cli@1.0.39`，用于修复 grid widgets 样式发布产物并对齐业务项目版本锁；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
 
 - PR #243 新增 CMS 管理页面、CMS 菜单按钮权限和 `@mango/cms` 前端页面包；不改变按钮 `permissionCode` 机制、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。排查 CMS 按钮时按后端 `mango-cms` 菜单资源与 `@mango/cms` 页面说明确认 `cms:*` 权限码是否授权。

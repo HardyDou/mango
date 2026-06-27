@@ -319,7 +319,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import Pagination from '@mango/common/components/Pagination/index.vue';
+import { Pagination } from '@mango/common';
 import {
   fileStorageApi,
   storageTypeLabel,

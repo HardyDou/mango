@@ -251,9 +251,9 @@
 </template>
 
 <script setup lang="ts" name="SystemPermission">
+import { Pagination } from '@mango/common';
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import type { ApiId } from '@mango/api-schema';
 
 // ==================== 类型定义 ====================

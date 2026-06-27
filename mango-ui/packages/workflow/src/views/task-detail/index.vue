@@ -1,137 +1,110 @@
 <template>
   <div class="workflow-task-detail-page">
-    <div class="detail-toolbar">
-      <div class="detail-toolbar__title">{{ detail?.process.processName || '流程详情' }}</div>
-      <el-button :icon="ArrowLeft" @click="backToList">返回</el-button>
-    </div>
-
     <el-card v-loading="loading" class="task-detail-shell">
       <el-empty v-if="!detail" description="暂无流程详情" />
 
-      <div v-else class="task-detail-layout">
-        <main class="task-main">
-          <section class="task-section">
-            <div class="section-header compact">
-              <h3>{{ businessComponent ? '业务审批信息' : '业务表单信息' }}</h3>
-            </div>
-            <component
-              :is="businessComponent"
-              v-if="businessComponent && businessContext"
-              :context="businessContext"
-            />
-            <RuntimeFormRenderer
-              v-else-if="shouldRenderDynamicForm && runtimeFields.length"
-              :fields="runtimeFields"
-              :model="detail.variables"
-              :readonly="readonlyMode"
-              :permissions="effectiveFormPermissions"
-            />
-            <el-alert
-              v-else-if="isCustomRenderMode"
-              title="当前流程配置为自定义业务表单，但未找到匹配的审批组件。"
-              type="warning"
-              :closable="false"
-              show-icon
-            />
-            <el-descriptions v-else :column="1" border>
-              <el-descriptions-item label="流程变量">
-                <pre class="json-preview">{{ formatJson(detail.variables) }}</pre>
-              </el-descriptions-item>
-            </el-descriptions>
-            <el-alert
-              v-if="unsupportedFields.length"
-              class="detail-alert"
-              :title="`有 ${unsupportedFields.length} 个复杂表单组件暂以变量 JSON 展示。`"
-              type="warning"
-              :closable="false"
-              show-icon
-            />
-          </section>
-
-          <section v-if="!readonlyMode && showActionCommentInput" class="task-section approval-section">
-            <div class="section-header compact">
-              <h3>审批动作</h3>
-            </div>
-            <el-form label-width="84px">
-              <el-form-item label="审批意见">
-                <el-input v-model="actionForm.comment" type="textarea" :rows="4" placeholder="请输入审批意见" />
-              </el-form-item>
-            </el-form>
-          </section>
-        </main>
-
-        <aside class="task-aside">
-          <div class="aside-card">
-            <div class="aside-meta">
-              <div class="meta-item" v-if="detail.task?.taskName">
-              <span>当前节点</span>
-              <strong>{{ detail.task.taskName }}</strong>
-            </div>
-            <div class="meta-item" v-if="detail.process.status">
-              <span>状态</span>
-              <strong>{{ detail.process.status }}</strong>
-            </div>
-            <div class="meta-item">
-              <span>发起人</span>
-              <strong>{{ detail.process.initiatorName || '-' }}</strong>
-            </div>
-            <div class="meta-item">
-              <span>办理人</span>
-              <strong>{{ detail.task?.assigneeName || '-' }}</strong>
-            </div>
-            <div class="meta-item">
-              <span>开始时间</span>
-              <strong>{{ detail.process.startTime || '-' }}</strong>
-            </div>
-            </div>
-
-            <div v-if="showRecordPanel" class="aside-records">
-              <div class="record-header">
-                <h3>{{ customRecordPanelComponent ? '审批信息' : '审批记录' }}</h3>
-                <span>{{ detail.records.length }} 条</span>
-              </div>
-              <component
-                :is="customRecordPanelComponent"
-                v-if="customRecordPanelComponent && businessContext"
-                :context="businessContext"
-              />
-              <el-timeline v-else-if="detail.records.length" class="record-timeline">
-                <el-timeline-item
-                  v-for="record in detail.records"
-                  :key="record.id || `${record.action}-${record.createdTime}`"
-                  :timestamp="record.createdTime"
-                  placement="top"
-                >
-                  <div class="record-title">{{ record.actionName }} · {{ record.operatorName || '-' }}</div>
-                  <div v-if="record.taskName" class="record-meta">{{ record.taskName }}</div>
-                  <div v-if="record.comment" class="record-comment">{{ record.comment }}</div>
-                </el-timeline-item>
-              </el-timeline>
-              <el-empty v-else description="暂无审批记录" />
-            </div>
-          </div>
-        </aside>
-      </div>
-    </el-card>
-
-    <div v-if="!readonlyMode && detail" class="approval-action-bar">
-      <el-tooltip
-        v-for="action in visibleNodeActions"
-        :key="action.key"
-        :content="action.tooltip || ''"
-        :disabled="!action.tooltip"
+      <WorkflowLayout
+        v-else
+        :title="detail.process.processName || '流程详情'"
+        @back="backToList"
       >
-        <el-button
-          :type="action.buttonType"
-          :plain="action.key !== 'complete'"
-          :disabled="action.disabled"
-          :loading="submittingAction === action.key"
-          @click="submitAction(action.key)"
-        >
-          {{ action.label }}
-        </el-button>
-      </el-tooltip>
-    </div>
+        <section class="task-section">
+          <div class="section-header compact">
+            <h3>{{ businessComponent ? '业务审批信息' : '业务表单信息' }}</h3>
+          </div>
+          <component
+            :is="businessComponent"
+            v-if="businessComponent && businessContext"
+            :context="businessContext"
+          />
+          <RuntimeFormRenderer
+            v-else-if="shouldRenderDynamicForm && runtimeFields.length"
+            :fields="runtimeFields"
+            :model="detail.variables"
+            :readonly="readonlyMode"
+            :permissions="effectiveFormPermissions"
+          />
+          <el-alert
+            v-else-if="isCustomRenderMode"
+            title="当前流程配置为自定义业务表单，但未找到匹配的审批组件。"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
+          <el-descriptions v-else :column="1" border>
+            <el-descriptions-item label="流程变量">
+              <pre class="json-preview">{{ formatJson(detail.variables) }}</pre>
+            </el-descriptions-item>
+          </el-descriptions>
+          <el-alert
+            v-if="unsupportedFields.length"
+            class="detail-alert"
+            :title="`有 ${unsupportedFields.length} 个复杂表单组件暂以变量 JSON 展示。`"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
+        </section>
+
+        <section v-if="!readonlyMode && showActionCommentInput" class="task-section approval-section">
+          <div class="section-header compact">
+            <h3>审批动作</h3>
+          </div>
+          <el-form label-width="84px">
+            <el-form-item label="审批意见">
+              <el-input v-model="actionForm.comment" type="textarea" :rows="4" placeholder="请输入审批意见" />
+            </el-form-item>
+          </el-form>
+        </section>
+
+        <div v-if="!readonlyMode && detail" class="approval-action-bar">
+          <el-tooltip
+            v-for="action in visibleNodeActions"
+            :key="action.key"
+            :content="action.tooltip || ''"
+            :disabled="!action.tooltip"
+          >
+            <el-button
+              :type="action.buttonType"
+              :plain="action.key !== 'complete'"
+              :disabled="action.disabled"
+              :loading="submittingAction === action.key"
+              @click="submitAction(action.key)"
+            >
+              {{ action.label }}
+            </el-button>
+          </el-tooltip>
+        </div>
+
+        <template #sidebar>
+          <WorkflowSidebar
+            :summary="workflowSummary"
+            :node="workflowDefinitionNode"
+            :current-node-key="workflowCurrentNodeKey"
+            :visited-node-keys="workflowVisitedNodeKeys"
+            :status="workflowStatus"
+            :records="detail.records"
+            :business-type="businessType"
+            :business-key="workflowBusinessKey"
+            :mode="sidebarMode"
+          >
+            <template #default>
+              <div v-if="customRecordPanelComponent && showRecordPanel" class="aside-records">
+                <div class="record-header">
+                  <h3>审批信息</h3>
+                  <span>{{ detail.records.length }} 条</span>
+                </div>
+                <component
+                  :is="customRecordPanelComponent"
+                  v-if="businessContext"
+                  :context="businessContext"
+                />
+              </div>
+            </template>
+          </WorkflowSidebar>
+        </template>
+      </WorkflowLayout>
+    </el-card>
 
     <el-dialog
       v-model="selectorDialog.visible"
@@ -168,9 +141,8 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft } from '@element-plus/icons-vue';
 import { UserSelector } from '@mango/common';
-import { workflowApi, type WorkflowBusinessApply, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
+import { parseDesignerJson, workflowApi, type WorkflowBusinessApply, type WorkflowDesignerNode, type WorkflowDefinitionVersion, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
 import {
   applyIdOf,
   businessPermissionsOf,
@@ -180,6 +152,8 @@ import {
   resolveBusinessApprovalRegistration,
   type BusinessApprovalContext,
 } from '../../components/businessApproval';
+import WorkflowLayout from '../../components/business-ui/WorkflowLayout.vue';
+import WorkflowSidebar from '../../components/business-ui/WorkflowSidebar.vue';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
 import { parseRuntimeForm, type RuntimeFormField } from '../../components/runtimeForm';
 import {
@@ -198,11 +172,11 @@ const submittingAction = ref<WorkflowTaskActionKey | ''>('');
 const taskDetail = ref<WorkflowTaskDetail | null>(null);
 const processDetail = ref<WorkflowProcessDetail | null>(null);
 const businessApply = ref<WorkflowBusinessApply | null>(null);
+const workflowDefinitionNode = ref<WorkflowDesignerNode | null>(null);
 const runtimeFields = ref<RuntimeFormField[]>([]);
 const unsupportedFields = ref<Array<{ label: string; type: string }>>([]);
-const actionForm = ref({
-  comment: '',
-});
+const actionForm = ref({ comment: '' });
+let detailLoadSeq = 0;
 const selectorDialog = ref({
   visible: false,
   action: '' as 'transfer' | 'addSign' | '',
@@ -211,37 +185,25 @@ const selectorDialog = ref({
 });
 
 const readonlyMode = computed(() => route.query.mode === 'view' || !route.query.taskId);
-const detail = computed(() => {
-  if (taskDetail.value) {
-    return taskDetail.value;
-  }
-  if (!processDetail.value) {
-    return null;
-  }
-  return {
-    task: null,
-    process: processDetail.value.process,
-    formCode: processDetail.value.formCode,
-    formJson: processDetail.value.formJson,
-    variables: processDetail.value.variables,
-    records: processDetail.value.records,
-    formPermissions: processDetail.value.renderConfig?.formPermissions || {},
-    renderConfig: processDetail.value.renderConfig,
-  } as unknown as WorkflowTaskDetail;
-});
+const detail = computed(() => taskDetail.value || (processDetail.value ? {
+  task: null,
+  process: processDetail.value.process,
+  formCode: processDetail.value.formCode,
+  formJson: processDetail.value.formJson,
+  variables: processDetail.value.variables,
+  records: processDetail.value.records,
+  formPermissions: processDetail.value.renderConfig?.formPermissions || {},
+  renderConfig: processDetail.value.renderConfig,
+} as unknown as WorkflowTaskDetail : null));
 const currentTaskDefinitionKey = computed(() =>
-  detail.value?.task?.taskDefinitionKey
-  || (detail.value?.task?.id ? firstCurrentTaskDefinitionKey() : latestTaskDefinitionKey()),
+  detail.value?.task?.taskDefinitionKey || (detail.value?.task?.id ? firstCurrentTaskDefinitionKey() : latestTaskDefinitionKey()),
 );
 const renderConfig = computed(() => detail.value?.renderConfig);
 const businessType = computed(() => renderConfig.value?.businessType || businessApply.value?.businessType || businessTypeOf(detail.value?.variables));
 const formConfig = computed(() => parseWorkflowFormConfig(detail.value?.formJson));
-const renderMode = computed(() => {
-  if (formConfig.value.mode === 'CUSTOM_PAGE') {
-    return 'CUSTOM_PAGE';
-  }
-  return renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM';
-});
+const renderMode = computed(() => formConfig.value.mode === 'CUSTOM_PAGE'
+  ? 'CUSTOM_PAGE'
+  : renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM');
 const approvePageKey = computed(() =>
   String(renderConfig.value?.nodeExtension?.approvePageKey || renderConfig.value?.approvePageKey || formConfig.value.customConfig.approvePageKey || '').trim(),
 );
@@ -311,40 +273,71 @@ const businessContext = computed<BusinessApprovalContext | null>(() => {
     records: detail.value.records || [],
   };
 });
+const workflowSummary = computed(() => ({
+  currentNodeName: detail.value?.task?.taskName || latestTaskName(),
+  status: detail.value?.process.status || '',
+  initiatorName: detail.value?.process.initiatorName || '-',
+  assigneeName: detail.value?.task?.assigneeName || '-',
+  startTime: detail.value?.process.startTime || '-',
+}));
+const workflowDefinitionNodeComputed = computed(() => workflowDefinitionNode.value);
+const workflowCurrentNodeKey = computed(() => currentTaskDefinitionKey.value);
+const workflowVisitedNodeKeys = computed(() => {
+  const keys = detail.value?.records?.map(record => record.taskDefinitionKey).filter(Boolean) as string[] | undefined;
+  return Array.from(new Set(keys || []));
+});
+const workflowStatus = computed(() => detail.value?.process.status || '');
+const workflowBusinessKey = computed(() => String(renderConfig.value?.businessKey || businessApply.value?.businessKey || detail.value?.process.businessKey || detail.value?.task?.businessKey || ''));
+const sidebarMode = computed(() => {
+  if (!showRecordPanel.value) return 'HIDDEN';
+  if (customRecordPanelComponent.value) return 'CUSTOM';
+  if (workflowDefinitionNodeComputed.value) return 'PROGRESS';
+  return 'APPROVAL_RECORDS';
+});
 
 async function loadDetail() {
+  const seq = ++detailLoadSeq;
   loading.value = true;
   try {
     taskDetail.value = null;
     processDetail.value = null;
     businessApply.value = null;
+    workflowDefinitionNode.value = null;
     runtimeFields.value = [];
     unsupportedFields.value = [];
     actionForm.value.comment = '';
     const taskId = String(route.query.taskId || '');
     const processInstanceId = String(route.query.processInstanceId || '');
     if (taskId) {
-      taskDetail.value = await workflowApi.taskDetail(taskId);
+      const nextTaskDetail = await workflowApi.taskDetail(taskId);
+      if (seq !== detailLoadSeq) return;
+      taskDetail.value = nextTaskDetail;
       processDetail.value = null;
     } else if (processInstanceId) {
-      processDetail.value = await workflowApi.processDetail(processInstanceId);
+      const nextProcessDetail = await workflowApi.processDetail(processInstanceId);
+      if (seq !== detailLoadSeq) return;
+      processDetail.value = nextProcessDetail;
       taskDetail.value = null;
     } else {
       ElMessage.warning('缺少任务ID或流程实例ID');
       return;
     }
     await loadBusinessApply();
+    if (seq !== detailLoadSeq) return;
     const parsed = parseRuntimeForm(detail.value?.formJson);
     runtimeFields.value = parsed.fields;
     unsupportedFields.value = parsed.unsupported;
+    void loadWorkflowDefinitionTree(seq);
   } finally {
-    loading.value = false;
+    if (seq === detailLoadSeq) {
+      loading.value = false;
+    }
   }
 }
 
 async function loadBusinessApply() {
   const processInstanceId = detail.value?.process.processInstanceId;
-  if (!processInstanceId || renderMode.value !== 'CUSTOM_PAGE') {
+  if (!processInstanceId) {
     businessApply.value = null;
     return;
   }
@@ -353,6 +346,79 @@ async function loadBusinessApply() {
   } catch {
     businessApply.value = null;
   }
+}
+
+async function loadWorkflowDefinitionTree(seq = detailLoadSeq) {
+  const definition = await resolveWorkflowDefinitionForGraph();
+  if (seq !== detailLoadSeq) {
+    return;
+  }
+  if (!definition?.designerJson) {
+    workflowDefinitionNode.value = null;
+    return;
+  }
+  workflowDefinitionNode.value = parseDesignerJson(definition.designerJson);
+}
+
+async function resolveWorkflowDefinitionForGraph() {
+  const definitionId = resolveWorkflowDefinitionId();
+  try {
+    if (definitionId) {
+      const versions = await workflowApi.definitionVersions(definitionId);
+      const matchedVersion = resolveWorkflowDefinitionVersion(versions, detail.value?.process.processDefinitionId, detail.value?.process.processInstanceId);
+      if (matchedVersion?.designerJson) {
+        return matchedVersion;
+      }
+      return await workflowApi.definitionDetail(definitionId);
+    }
+    return await resolveWorkflowDefinitionByProcessKey();
+  } catch {
+    return await resolveWorkflowDefinitionByProcessKey();
+  }
+}
+
+function resolveWorkflowDefinitionId() {
+  const candidates = [
+    detail.value?.process.definitionId,
+    businessApply.value?.processDefinitionId,
+  ];
+  return candidates.map(item => String(item || '').trim()).find(isBackendDefinitionId) || '';
+}
+
+function isBackendDefinitionId(value: string) {
+  return /^\d+$/.test(value);
+}
+
+async function resolveWorkflowDefinitionByProcessKey() {
+  const processKey = String(detail.value?.process.processKey || businessApply.value?.processDefinitionKey || '').trim();
+  if (!processKey) {
+    return null;
+  }
+  const page = await workflowApi.definitionsPage({ keyword: processKey, publishedOnly: true, pageSize: 20 });
+  return page.list.find(item => item.definitionKey === processKey) || page.list[0] || null;
+}
+
+function resolveWorkflowDefinitionVersion(
+  versions: WorkflowDefinitionVersion[],
+  processDefinitionId?: string,
+  processInstanceId?: string,
+) {
+  if (!Array.isArray(versions) || !versions.length) {
+    return null;
+  }
+  if (processDefinitionId) {
+    const byProcessDefinition = versions.find(version => version.processDefinitionId === processDefinitionId);
+    if (byProcessDefinition) {
+      return byProcessDefinition;
+    }
+  }
+  if (processInstanceId) {
+    const byProcessInstance = versions.find(version => version.id === processInstanceId);
+    if (byProcessInstance) {
+      return byProcessInstance;
+    }
+  }
+  return versions[0] || null;
 }
 
 async function submitAction(action: WorkflowTaskActionKey) {
@@ -392,8 +458,7 @@ async function submitAction(action: WorkflowTaskActionKey) {
       await businessRegistration.value.beforeAction(businessContext.value, action);
     }
     const variables = editableFormVariables(action);
-    let result: unknown;
-    result = await executeTaskAction(action, taskId, comment, variables, extraPayload);
+    const result = await executeTaskAction(action, taskId, comment, variables, extraPayload);
     if (businessRegistration.value?.afterAction && businessContext.value) {
       await businessRegistration.value.afterAction(businessContext.value, action, result);
     }
@@ -437,12 +502,7 @@ async function pickAddSignUsers(): Promise<string[]> {
 function pickUsers(action: 'transfer'): Promise<string | false>;
 function pickUsers(action: 'addSign'): Promise<string[] | false>;
 function pickUsers(action: 'transfer' | 'addSign') {
-  selectorDialog.value = {
-    visible: true,
-    action,
-    targetUserId: '',
-    targetUserIds: [],
-  };
+  selectorDialog.value = { visible: true, action, targetUserId: '', targetUserIds: [] };
   return new Promise<string | string[] | false>((resolve) => {
     pendingUserResolve = resolve;
   });
@@ -451,11 +511,9 @@ function pickUsers(action: 'transfer' | 'addSign') {
 let pendingUserResolve: ((value: string | string[] | false) => void) | null = null;
 
 function cancelUserSelection() {
-  if (!pendingUserResolve) {
-    return;
-  }
+  if (!pendingUserResolve) return;
   selectorDialog.value.visible = false;
-  pendingUserResolve?.(false);
+  pendingUserResolve(false);
   pendingUserResolve = null;
 }
 
@@ -488,27 +546,13 @@ async function executeTaskAction(
   variables: Record<string, any>,
   extraPayload: any,
 ) {
-  if (action === 'complete') {
-    return workflowApi.completeTask({ taskId, comment, variables });
-  }
-  if (action === 'reject') {
-    return workflowApi.rejectTask({ taskId, comment, variables });
-  }
-  if (action === 'save') {
-    return workflowApi.saveTask({ taskId, comment, variables });
-  }
-  if (action === 'transfer') {
-    return workflowApi.transferTask({ taskId, comment, targetUserId: extraPayload.targetUserId });
-  }
-  if (action === 'addSign') {
-    return workflowApi.addSignTask({ taskId, comment, targetUserIds: extraPayload.targetUserIds });
-  }
-  if (action === 'claim') {
-    return workflowApi.claimTask(taskId);
-  }
-  if (action === 'unclaim') {
-    return workflowApi.unclaimTask(taskId);
-  }
+  if (action === 'complete') return workflowApi.completeTask({ taskId, comment, variables });
+  if (action === 'reject') return workflowApi.rejectTask({ taskId, comment, variables });
+  if (action === 'save') return workflowApi.saveTask({ taskId, comment, variables });
+  if (action === 'transfer') return workflowApi.transferTask({ taskId, comment, targetUserId: extraPayload.targetUserId });
+  if (action === 'addSign') return workflowApi.addSignTask({ taskId, comment, targetUserIds: extraPayload.targetUserIds });
+  if (action === 'claim') return workflowApi.claimTask(taskId);
+  if (action === 'unclaim') return workflowApi.unclaimTask(taskId);
   throw new Error(`Unsupported workflow action: ${action}`);
 }
 
@@ -532,9 +576,7 @@ function fillDefaultApprovalPermissions(fields: RuntimeFormField[], permissions:
     if (field.children?.length) {
       fillDefaultApprovalPermissions(field.children, permissions);
     }
-    if (!field.key || field.key.startsWith('__runtime_')) {
-      return;
-    }
+    if (!field.key || field.key.startsWith('__runtime_')) return;
     if (!permissions[field.key]) {
       permissions[field.key] = 'READONLY';
     }
@@ -563,40 +605,25 @@ function backToList() {
 
 function resolveBusinessReturnLocation() {
   const path = normalizeReturnPath(route.query.returnPath);
-  if (!path) {
-    return null;
-  }
+  if (!path) return null;
   const query = parseReturnQuery(route.query.returnQuery);
-  if (Object.keys(query).length) {
-    return { path, query };
-  }
-  return path;
+  return Object.keys(query).length ? { path, query } : path;
 }
 
 function normalizeReturnPath(value: unknown) {
   const path = firstQueryValue(value).trim();
-  if (!path || !path.startsWith('/') || path.startsWith('//')) {
-    return '';
-  }
-  if (path.includes('\\') || path.includes('?') || path.includes('#') || /[\u0000-\u001F\u007F]/.test(path)) {
-    return '';
-  }
-  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
-    return '';
-  }
+  if (!path || !path.startsWith('/') || path.startsWith('//')) return '';
+  if (path.includes('\\') || path.includes('?') || path.includes('#') || /[\u0000-\u001F\u007F]/.test(path)) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return '';
   return path;
 }
 
 function parseReturnQuery(value: unknown) {
   const raw = firstQueryValue(value).trim();
   const query: Record<string, string | string[]> = {};
-  if (!raw) {
-    return query;
-  }
+  if (!raw) return query;
   new URLSearchParams(raw.startsWith('?') ? raw.slice(1) : raw).forEach((itemValue, key) => {
-    if (!key) {
-      return;
-    }
+    if (!key) return;
     const existing = query[key];
     if (Array.isArray(existing)) {
       existing.push(itemValue);
@@ -622,12 +649,8 @@ function defaultActionReturnLocation(action: WorkflowTaskActionKey) {
 
 function defaultListReturnLocation() {
   const mode = String(route.query.from || '');
-  if (mode === 'initiated') {
-    return '/workflow/task/initiated';
-  }
-  if (mode === 'done') {
-    return '/workflow/task/done';
-  }
+  if (mode === 'initiated') return '/workflow/task/initiated';
+  if (mode === 'done') return '/workflow/task/done';
   return '/workflow/task/todo';
 }
 
@@ -665,36 +688,10 @@ watch(
   background: var(--el-fill-color-extra-light);
 }
 
-/* Sits above the card (the global root-page theme hides el-card headers),
-   so the back button stays visible. */
-.detail-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.detail-toolbar__title {
-  overflow: hidden;
-  color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.task-detail-layout {
+.workflow-task-detail-page :deep(.workflow-business-layout__main) {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  align-content: start;
   gap: 16px;
-  align-items: start;
-}
-
-.task-main {
-  display: grid;
-  gap: 16px;
-  min-width: 0;
 }
 
 .task-section {
@@ -748,18 +745,14 @@ watch(
 }
 
 .approval-action-bar {
-  /* Lives outside el-card (whose overflow:hidden breaks sticky) so it can
-     pin to the scroll container's bottom. As the last in-flow element it
-     releases at the very bottom, so it never overlaps the last form field. */
   position: sticky;
   bottom: 0;
   z-index: 3;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
-  margin-top: 12px;
   padding: 14px 16px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -768,51 +761,9 @@ watch(
   backdrop-filter: blur(8px);
 }
 
-.task-aside {
-  position: sticky;
-  top: 12px;
-  max-height: calc(100vh - 150px);
-  overflow: auto;
-}
-
-/* Single continuous card so the meta block and records share one aligned border */
-.aside-card {
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-bg-color);
-}
-
-.aside-meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 12px;
-  padding: 14px;
-}
-
 .aside-records {
   padding: 18px;
   border-top: 1px solid var(--el-border-color-lighter);
-}
-
-.meta-item {
-  min-width: 0;
-}
-
-.meta-item span {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.meta-item strong {
-  display: block;
-  overflow: hidden;
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .record-timeline {
@@ -844,20 +795,9 @@ watch(
   line-height: 1.5;
 }
 
-@media (max-width: 1180px) {
-  .task-detail-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .task-aside {
-    position: static;
-    max-height: none;
-  }
-}
-
 @media (max-width: 760px) {
-  .aside-meta {
-    grid-template-columns: 1fr;
+  .section-header {
+    flex-direction: column;
   }
 }
 </style>

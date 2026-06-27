@@ -78,8 +78,10 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   workflowApi,
   type WorkflowApplyStatus,
+  type WorkflowBusinessApply,
   type WorkflowBusinessApplyPageQuery,
   type WorkflowPageQuery,
+  type WorkflowProcessInstance,
   type WorkflowTask,
 } from '../../api/workflow';
 
@@ -131,22 +133,9 @@ async function loadData() {
   loading.value = true;
   try {
     if (taskMode.value === 'initiated') {
-      const result = await workflowApi.businessAppliesPage(buildInitiatedQueryParams());
-      tableData.value = result.list.map(item => ({
-        id: item.id,
-        taskName: item.applyTitle || '业务申请',
-        businessKey: item.businessKey,
-        processName: item.processName || item.applyTitle || '-',
-        processKey: item.processDefinitionKey || item.businessType || '-',
-        processInstanceId: item.processInstanceId || '',
-        initiatorName: item.applicantName,
-        assigneeName: item.currentAssigneeNames,
-        status: item.applyStatusName || item.applyStatus || '-',
-        createTime: item.createdAt,
-        startTime: item.createdAt,
-        endTime: item.updatedAt,
-      }));
-      total.value = result.total;
+      const initiatedResult = await loadInitiatedRows();
+      tableData.value = initiatedResult.list;
+      total.value = initiatedResult.total;
       return;
     }
     const apiMap = {
@@ -214,6 +203,66 @@ function resolveApplyStatuses(value: unknown): WorkflowApplyStatus[] | undefined
       'WITHDRAWN',
     ].includes(item));
   return statuses.length ? statuses : undefined;
+}
+
+async function loadInitiatedRows() {
+  const businessApplyQuery = buildInitiatedQueryParams();
+  const businessResult = await workflowApi.businessAppliesPage(businessApplyQuery);
+  const businessRows = businessResult.list.map(mapBusinessApplyToTask);
+  if (businessApplyQuery.statuses?.length) {
+    return {
+      list: businessRows,
+      total: businessResult.total,
+    };
+  }
+
+  const processResult = await workflowApi.initiatedProcesses(query.value);
+  const seenProcessIds = new Set(
+    businessRows
+      .map(item => item.processInstanceId)
+      .filter(Boolean),
+  );
+  const processRows = processResult.list
+    .filter(item => !seenProcessIds.has(item.processInstanceId))
+    .map(mapProcessToTask);
+  return {
+    list: [...businessRows, ...processRows],
+    total: businessResult.total + processRows.length,
+  };
+}
+
+function mapBusinessApplyToTask(item: WorkflowBusinessApply): WorkflowTask {
+  return {
+    id: item.id,
+    taskName: item.applyTitle || '业务申请',
+    businessKey: item.businessKey,
+    processName: item.processName || item.applyTitle || '-',
+    processKey: item.processDefinitionKey || item.businessType || '-',
+    processInstanceId: item.processInstanceId || '',
+    initiatorName: item.applicantName,
+    assigneeName: item.currentAssigneeNames,
+    status: item.applyStatusName || item.applyStatus || '-',
+    createTime: item.createdAt,
+    startTime: item.createdAt,
+    endTime: item.updatedAt,
+  };
+}
+
+function mapProcessToTask(item: WorkflowProcessInstance): WorkflowTask {
+  return {
+    id: item.processInstanceId,
+    taskName: item.currentTaskName || item.processName || '流程实例',
+    businessKey: item.businessKey,
+    processName: item.processName || '-',
+    processKey: item.processKey || '-',
+    processInstanceId: item.processInstanceId,
+    initiatorName: item.initiatorName,
+    assigneeName: '',
+    status: item.status || '-',
+    createTime: item.startTime,
+    startTime: item.startTime,
+    endTime: item.endTime,
+  };
 }
 
 function openTask(row: WorkflowTask) {

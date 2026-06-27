@@ -47,42 +47,51 @@
                     "path": "/notice",
                     "icon": "Bell",
                     "sort": 7,
-                    "redirect": "/notice/site-message",
-                    "remark": "统一消息编排中心入口",
+                    "redirect": "/notice/announcement",
+                    "remark": "管理端消息配置、发送治理和公告管理入口",
                     "children": [
                       {
                         "menuType": 2,
-                        "menuName": "我的消息",
-                        "menuCode": "notice:site-message",
-                        "path": "/notice/site-message",
-                        "icon": "Message",
-                        "component": "notice/site-message/index",
+                        "menuName": "公告管理",
+                        "menuCode": "notice:announcement",
+                        "path": "/notice/announcement",
+                        "icon": "Notification",
+                        "component": "notice/announcement/index",
                         "sort": 1,
                         "permissions": [
-                          "notice:site:view"
+                          "notice:announcement:view"
                         ],
-                        "remark": "当前用户系统消息列表和接收设置入口",
+                        "remark": "公告草稿、发布、下线和统计入口",
                         "permissionItems": [
                           {
-                            "permissionCode": "notice:site:view",
-                            "permissionName": "我的消息查询",
+                            "permissionCode": "notice:announcement:view",
+                            "permissionName": "公告查询",
                             "sort": 1
                           },
                           {
-                            "permissionCode": "notice:site:create",
-                            "permissionName": "消息发送",
+                            "permissionCode": "notice:announcement:create",
+                            "permissionName": "公告创建",
                             "sort": 2
                           },
                           {
-                            "permissionCode": "notice:site:edit",
-                            "permissionName": "消息已读",
+                            "permissionCode": "notice:announcement:edit",
+                            "permissionName": "公告编辑",
                             "sort": 3
                           },
                           {
-                            "permissionCode": "notice:site:delete",
-                            "permissionName": "消息删除",
+                            "permissionCode": "notice:announcement:publish",
+                            "permissionName": "公告发布",
                             "sort": 4
+                          },
+                          {
+                            "permissionCode": "notice:announcement:offline",
+                            "permissionName": "公告下线",
+                            "sort": 5
                           }
+                        ],
+                        "packageCodes": [
+                          "platform_admin",
+                          "institution_collaboration"
                         ]
                       },
                       {
@@ -266,12 +275,12 @@
                         "path": "/notice/receive-setting",
                         "icon": "Switch",
                         "component": "notice/receive-setting/index",
-                        "sort": 7,
+                        "sort": 90,
                         "visible": 0,
                         "permissions": [
                           "notice:receive-setting:view"
                         ],
-                        "remark": "接收设置仅从我的消息页面设置按钮进入，不作为通知中心后台菜单展示",
+                        "remark": "接收设置仅从我的消息页面设置按钮进入，不作为消息中心主菜单展示",
                         "permissionItems": [
                           {
                             "permissionCode": "notice:receive-setting:view",
@@ -296,7 +305,7 @@
                         "path": "/notice/setting",
                         "icon": "Tools",
                         "component": "notice/setting/index",
-                        "sort": 8,
+                        "sort": 91,
                         "visible": 0,
                         "permissions": [
                           "notice:setting:view"
@@ -317,6 +326,82 @@
                           }
                         ],
                         "packageCodes": []
+                      }
+                    ],
+                    "packageCodes": [
+                      "platform_admin",
+                      "institution_collaboration"
+                    ]
+                  },
+                  {
+                    "menuType": 1,
+                    "menuName": "消息中心",
+                    "menuCode": "message-center",
+                    "path": "/message-center",
+                    "icon": "Message",
+                    "sort": 8,
+                    "redirect": "/message-center/site-message",
+                    "remark": "用户侧消息接收、公告阅读和确认入口",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "我的消息",
+                        "menuCode": "notice:site-message",
+                        "path": "/message-center/site-message",
+                        "icon": "Message",
+                        "component": "notice/site-message/index",
+                        "sort": 1,
+                        "permissions": [
+                          "notice:site:view"
+                        ],
+                        "remark": "当前用户系统消息列表和接收设置入口",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:site:view",
+                            "permissionName": "我的消息查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "notice:site:create",
+                            "permissionName": "消息发送",
+                            "sort": 2
+                          },
+                          {
+                            "permissionCode": "notice:site:edit",
+                            "permissionName": "消息已读",
+                            "sort": 3
+                          },
+                          {
+                            "permissionCode": "notice:site:delete",
+                            "permissionName": "消息删除",
+                            "sort": 4
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "公告",
+                        "menuCode": "notice:announcement-user",
+                        "path": "/message-center/announcement",
+                        "icon": "Reading",
+                        "component": "notice/announcement-user/index",
+                        "sort": 2,
+                        "permissions": [
+                          "notice:site:view"
+                        ],
+                        "remark": "当前用户公告列表、阅读和确认入口",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "notice:site:view",
+                            "permissionName": "公告查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "notice:site:edit",
+                            "permissionName": "公告已读确认",
+                            "sort": 2
+                          }
+                        ]
                       }
                     ],
                     "packageCodes": [

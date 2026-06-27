@@ -105,9 +105,9 @@
 </template>
 
 <script setup lang="ts">
+import { Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Refresh, Search } from '@element-plus/icons-vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
 import {
   paymentOperationAuditApi,
   type PaymentOperationAudit,

@@ -16,7 +16,7 @@ export default defineConfig({
         '@element-plus/icons-vue',
         '@mango/admin-pages/core',
         '@mango/api-schema',
-        '@mango/common/components/Pagination/index.vue',
+        '@mango/common',
         '@mango/common/utils/request',
         '@mango/file',
         'element-plus',

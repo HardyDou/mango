@@ -476,10 +476,10 @@
 </template>
 
 <script setup lang="ts" name="SystemRole">
+import { DictTag } from '@mango/common';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
-import DictTag from '@mango/common/components/DictTag/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
 import { formatDate } from '@mango/common/utils/formatTime';
 import { Session } from '@mango/common/utils/storage';
