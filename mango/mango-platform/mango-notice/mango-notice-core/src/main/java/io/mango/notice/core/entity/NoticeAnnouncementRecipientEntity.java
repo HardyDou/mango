@@ -32,8 +32,16 @@ public class NoticeAnnouncementRecipientEntity {
 
     private String tenantId;
 
+    private Long orgId;
+
+    @TableField(fill = FieldFill.INSERT)
+    private Long createdBy;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private Long updatedBy;
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;

@@ -10,12 +10,13 @@ import java.io.Serializable;
 public class MyNoticeAnnouncementPageQuery implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final long DEFAULT_PAGE_SIZE = 10L;
 
     @Schema(description = "当前页，从 1 开始")
     private long pageNum = 1;
 
     @Schema(description = "每页大小")
-    private long pageSize = 10;
+    private long pageSize = DEFAULT_PAGE_SIZE;
 
     @Schema(description = "是否只查询未读公告")
     private Boolean unreadOnly;

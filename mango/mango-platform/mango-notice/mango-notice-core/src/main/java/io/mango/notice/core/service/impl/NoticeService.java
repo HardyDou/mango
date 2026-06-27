@@ -597,7 +597,11 @@ public class NoticeService implements INoticeService {
  entity.setConfigJson(configJson);
  entity.setEnabled(command.getEnabled());
  entity.setPriority(command.getPriority());
- entity.setWeight(command.getWeight() == null || command.getWeight() <= 0 ? 100 : command.getWeight());
+ Integer weight = command.getWeight();
+ if (weight == null || weight <= 0) {
+ weight = 100;
+ }
+ entity.setWeight(weight);
  entity.setConfigStatus(resolveConfigStatus(command.getChannelType(), command.getProviderCode(), configJson));
  if (entity.getLastSendStatus() == null) {
  entity.setLastSendStatus(NoticeChannelSendHealthStatus.NONE);
@@ -2012,8 +2016,8 @@ public class NoticeService implements INoticeService {
  Map<Long, NoticeWecomSyncMappingEntity> syncedMappings = new LinkedHashMap<>();
  List<WecomDepartment> pending = departments.stream()
  .filter(department -> department.id() != null)
- .sorted(Comparator.comparing((WecomDepartment department) -> department.id().equals(WECOM_ROOT_DEPARTMENT_ID) ? 0 : 1)
- .thenComparing(department -> department.parentId() == null ? 0L : department.parentId())
+ .sorted(Comparator.comparing(this::wecomRootDepartmentOrder)
+ .thenComparing(this::wecomDepartmentParentOrder)
  .thenComparing(WecomDepartment::id))
  .collect(Collectors.toCollection(ArrayList::new));
  int lastPendingSize = -1;
@@ -2034,6 +2038,20 @@ public class NoticeService implements INoticeService {
  result.setDepartmentSkippedCount(result.getDepartmentSkippedCount() + 1);
  result.addMessage("跳过未找到父部门映射的企业微信部门：" + department.id());
  }
+ }
+
+ private int wecomRootDepartmentOrder(WecomDepartment department) {
+ if (department.id().equals(WECOM_ROOT_DEPARTMENT_ID)) {
+ return 0;
+ }
+ return 1;
+ }
+
+ private Long wecomDepartmentParentOrder(WecomDepartment department) {
+ if (department.parentId() == null) {
+ return 0L;
+ }
+ return department.parentId();
  }
 
  private Long resolveEffectiveWecomDepartmentId(SyncWecomUsersCommand command) {
@@ -2148,7 +2166,11 @@ public class NoticeService implements INoticeService {
  create.setOrgName(firstText(department.name(), "企业微信部门" + department.id()));
  create.setOrgCode(wecomDepartmentOrgCode(department.id()));
  create.setOrgType(3);
- create.setOrgSort(department.order() == null ? 0 : department.order());
+ Integer orgSort = department.order();
+ if (orgSort == null) {
+ orgSort = 0;
+ }
+ create.setOrgSort(orgSort);
  create.setOrgStatus("1");
  R<Long> response = sysOrgApi.create(create);
  if (response == null || !response.isSuccess() || response.getData() == null) {
@@ -2199,8 +2221,16 @@ public class NoticeService implements INoticeService {
  update.setPid(parentLocalId);
  update.setOrgName(firstText(department.name(), existing.getOrgName()));
  update.setOrgCode(firstText(existing.getOrgCode(), wecomDepartmentOrgCode(department.id())));
- update.setOrgType(existing.getOrgType() == null ? 3 : existing.getOrgType());
- update.setOrgSort(department.order() == null ? existing.getOrgSort() : department.order());
+ Integer orgType = existing.getOrgType();
+ if (orgType == null) {
+ orgType = 3;
+ }
+ Integer orgSort = department.order();
+ if (orgSort == null) {
+ orgSort = existing.getOrgSort();
+ }
+ update.setOrgType(orgType);
+ update.setOrgSort(orgSort);
  update.setOrgStatus(firstText(existing.getOrgStatus(), "1"));
  R<Void> response = sysOrgApi.update(update);
  if (response == null || !response.isSuccess()) {

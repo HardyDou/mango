@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -60,14 +58,13 @@ public class NoticeRecipientResolver {
         if (targets == null || targets.isEmpty() || identityUserApi == null) {
             return List.of();
         }
-        return targets.stream()
-                .filter(target -> target.getTargetType() != null && target.getTargetId() != null)
-                .flatMap(target -> listUsersByTarget(target).stream())
-                .collect(Collectors.toMap(NoticeRecipientCommand::getUserId, Function.identity(), (left, right) -> left,
-                        LinkedHashMap::new))
-                .values()
-                .stream()
-                .toList();
+        Map<Long, NoticeRecipientCommand> recipients = new LinkedHashMap<>();
+        for (NoticeRecipientTargetCommand target : targets) {
+            if (target.getTargetType() != null && target.getTargetId() != null) {
+                listUsersByTarget(target).forEach(recipient -> recipients.putIfAbsent(recipient.getUserId(), recipient));
+            }
+        }
+        return new ArrayList<>(recipients.values());
     }
 
     public List<NoticeRecipientCommand> listAllEnabledUsers() {
@@ -86,11 +83,11 @@ public class NoticeRecipientResolver {
                 break;
             }
             PageResult<IdentityUserVO> page = response.getData();
-            List<IdentityUserVO> list = page.getList() == null ? List.of() : page.getList();
-            list.stream()
-                    .filter(user -> user.getUserId() != null)
-                    .map(this::toRecipient)
-                    .forEach(recipient -> users.putIfAbsent(recipient.getUserId(), recipient));
+            List<IdentityUserVO> list = page.getList();
+            if (list == null) {
+                list = List.of();
+            }
+            addPageUsers(users, list);
             long total = page.getTotal();
             long loaded = pageNum * ALL_USER_PAGE_SIZE;
             if (list.isEmpty() || loaded >= total) {
@@ -141,10 +138,13 @@ public class NoticeRecipientResolver {
         if (response == null || !response.isSuccess() || response.getData() == null) {
             return List.of();
         }
-        return response.getData().stream()
-                .filter(user -> user.getUserId() != null)
-                .map(this::toRecipient)
-                .toList();
+        List<NoticeRecipientCommand> recipients = new ArrayList<>();
+        for (IdentityUserInfo user : response.getData()) {
+            if (user.getUserId() != null) {
+                recipients.add(toRecipient(user));
+            }
+        }
+        return recipients;
     }
 
     private NoticeRecipientCommand toRecipient(IdentityUserInfo user) {
@@ -165,7 +165,19 @@ public class NoticeRecipientResolver {
         return recipient;
     }
 
+    private void addPageUsers(Map<Long, NoticeRecipientCommand> users, List<IdentityUserVO> list) {
+        for (IdentityUserVO user : list) {
+            if (user.getUserId() != null) {
+                NoticeRecipientCommand recipient = toRecipient(user);
+                users.putIfAbsent(recipient.getUserId(), recipient);
+            }
+        }
+    }
+
     private String firstText(String first, String second) {
-        return StringUtils.hasText(first) ? first : second;
+        if (StringUtils.hasText(first)) {
+            return first;
+        }
+        return second;
     }
 }

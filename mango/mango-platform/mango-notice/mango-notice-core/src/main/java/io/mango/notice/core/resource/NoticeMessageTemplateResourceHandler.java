@@ -301,6 +301,10 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
 
         private static TemplatePayload from(ResourceDeclaration resource) {
             String id = resource.getId();
+            Integer version = resource.getVersion();
+            if (version == null) {
+                version = 1;
+            }
             return new TemplatePayload(
                     fieldLong(resource, "businessTypeId", false, Long.valueOf(id)),
                     fieldLong(resource, "configVersionId", true, null),
@@ -315,7 +319,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                     fieldBoolean(resource, "enabled", false, true),
                     parseEnum(NoticePriority.class, fieldText(resource, "defaultPriority", false), NoticePriority.NORMAL),
                     fieldText(resource, "idempotentStrategy", false),
-                    fieldInt(resource, "version", false, resource.getVersion() == null ? 1 : resource.getVersion()),
+                    fieldInt(resource, "version", false, version),
                     parseEnum(NoticeTemplateVersionStatus.class, fieldText(resource, "versionStatus", false),
                             NoticeTemplateVersionStatus.ACTIVE),
                     parseEnum(NoticeChannelType.class, fieldText(resource, "channelType", true), null),
