@@ -44,7 +44,11 @@ for (const file of manifest.files || []) {
   if (!existsSync(path) || !statSync(path).isFile()) {
     throw new Error(`manifest points to missing file: ${file.path}`);
   }
-  const actual = createHash('sha256').update(readFileSync(path)).digest('hex');
+  const content = readFileSync(path);
+  if (content.toString('utf8').endsWith('\n\n')) {
+    throw new Error(`baseline file has trailing blank line at EOF: ${file.path}`);
+  }
+  const actual = createHash('sha256').update(content).digest('hex');
   if (actual !== file.sha256) {
     throw new Error(`manifest hash mismatch: ${file.path}`);
   }

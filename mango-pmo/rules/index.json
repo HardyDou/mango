@@ -145,23 +145,23 @@
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",
-      "reason": "Admin UI 通用规范"
+      "reason": "Admin UI 通用规范与基线格式门禁"
     },
     "frontend.listPage": {
       "path": "rules/frontend/08-list-page.md",
-      "reason": "列表页 UI 规范"
+      "reason": "列表页 UI 规范与基线格式门禁"
     },
     "frontend.detailPage": {
       "path": "rules/frontend/09-detail-page.md",
-      "reason": "详情页 UI 规范"
+      "reason": "详情页 UI 规范与基线格式门禁"
     },
     "frontend.formPage": {
       "path": "rules/frontend/10-form-page.md",
-      "reason": "表单页 UI 规范"
+      "reason": "表单页 UI 规范与基线格式门禁"
     },
     "frontend.dialogDrawer": {
       "path": "rules/frontend/11-dialog-drawer.md",
-      "reason": "弹框与抽屉 UI 规范"
+      "reason": "弹框与抽屉 UI 规范与基线格式门禁"
     }
   },
   "roles": {
