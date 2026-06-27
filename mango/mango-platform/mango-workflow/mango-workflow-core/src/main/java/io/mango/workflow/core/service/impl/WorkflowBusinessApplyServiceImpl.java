@@ -255,12 +255,18 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void refreshCurrentTasks(String processInstanceId) {
+        refreshCurrentTasksAndReturn(processInstanceId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public WorkflowBusinessApplyVO refreshCurrentTasksAndReturn(String processInstanceId) {
         if (!StringUtils.hasText(processInstanceId)) {
-            return;
+            return null;
         }
         WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
         if (apply == null) {
-            return;
+            return null;
         }
         currentTaskMapper.delete(new LambdaQueryWrapper<WorkflowBusinessApplyCurrentTask>()
                 .eq(WorkflowBusinessApplyCurrentTask::getApplyId, apply.getId()));
@@ -292,6 +298,7 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
         if (!tasks.isEmpty() && WorkflowApplyStatus.SUBMITTED.name().equals(apply.getApplyStatus())) {
             updateStatus(apply, WorkflowApplyStatus.IN_APPROVAL, WorkflowApplyAction.TASK_CREATED, null, null, null);
         }
+        return findByProcessInstance(processInstanceId);
     }
 
     @Override

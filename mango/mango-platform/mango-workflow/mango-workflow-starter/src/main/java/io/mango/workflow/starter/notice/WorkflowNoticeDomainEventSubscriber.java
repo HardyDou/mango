@@ -21,7 +21,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
 
     private static final String RECIPIENT_RULE_CODE = "workflow.operator";
     private static final Set<String> SUPPORTED_EVENTS = Set.of(
-            WorkflowEventTypes.TASK_COMPLETED,
+            WorkflowEventTypes.TASK_ADVANCED,
             WorkflowEventTypes.TASK_REJECTED,
             WorkflowEventTypes.PROCESS_COMPLETED,
             WorkflowEventTypes.PROCESS_REJECTED,
@@ -67,7 +67,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
             case WorkflowEventTypes.PROCESS_COMPLETED -> "workflow.process.completed";
             case WorkflowEventTypes.PROCESS_REJECTED -> "workflow.process.rejected";
             case WorkflowEventTypes.PROCESS_ENDED -> "workflow.process.ended";
-            case WorkflowEventTypes.TASK_COMPLETED -> "workflow.task.assigned";
+            case WorkflowEventTypes.TASK_ADVANCED -> "workflow.task.assigned";
             default -> null;
         };
     }

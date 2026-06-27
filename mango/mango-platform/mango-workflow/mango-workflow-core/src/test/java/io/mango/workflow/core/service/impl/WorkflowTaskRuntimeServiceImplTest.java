@@ -10,6 +10,9 @@ import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
+import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
@@ -51,6 +54,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -250,6 +254,42 @@ class WorkflowTaskRuntimeServiceImplTest {
     }
 
     @Test
+    void completeWithResult_shouldReturnAdvancedSnapshotAndPublishAdvancedAfterRefresh() {
+        CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
+        command.setTaskId("task-1");
+        command.setComment("同意");
+        command.setVariables(Map.of("approved", true));
+        Task nextTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "supervisor");
+        TaskQuery currentTaskQuery = taskQuery(task);
+        TaskQuery operateQuery = canOperateQuery(true);
+        TaskQuery nextTaskQuery = listTaskQuery(List.of(nextTask));
+        when(taskService.createTaskQuery()).thenReturn(currentTaskQuery, operateQuery, nextTaskQuery);
+        WorkflowBusinessApplyVO advancedApply = advancedApply();
+        when(workflowBusinessApplyService.refreshCurrentTasksAndReturn("proc-1")).thenReturn(advancedApply);
+        HistoricProcessInstance historicInstance = mock(HistoricProcessInstance.class);
+        when(historicInstance.getEndTime()).thenReturn(null);
+        HistoricProcessInstanceQuery historicQuery = mock(HistoricProcessInstanceQuery.class);
+        when(historyService.createHistoricProcessInstanceQuery()).thenReturn(historicQuery);
+        when(historicQuery.processInstanceId("proc-1")).thenReturn(historicQuery);
+        when(historicQuery.singleResult()).thenReturn(historicInstance);
+
+        var result = service.completeWithResult(command).getData();
+
+        assertThat(result.getCompletedTaskId()).isEqualTo("task-1");
+        assertThat(result.getCompletedTaskDefinitionKey()).isEqualTo("manager_approve");
+        assertThat(result.getProcessInstanceId()).isEqualTo("proc-1");
+        assertThat(result.getEnded()).isFalse();
+        assertThat(result.getApplyId()).isEqualTo(1001L);
+        assertThat(result.getApplyStatus()).isEqualTo(WorkflowApplyStatus.IN_APPROVAL);
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("task-2", WorkflowBusinessApplyCurrentTaskVO::getTaskId)
+                .returns("supervisor_approve", WorkflowBusinessApplyCurrentTaskVO::getTaskDefinitionKey);
+        var order = inOrder(workflowBusinessApplyService, workflowEventPublisher);
+        order.verify(workflowBusinessApplyService).refreshCurrentTasksAndReturn("proc-1");
+        order.verify(workflowEventPublisher).publishTaskAdvanced(eq(task), any(), any(), eq("同意"), eq(false), eq(advancedApply));
+    }
+
+    @Test
     void detail_shouldReturnBusinessErrorWhenProcessDefinitionMissing() {
         HistoricProcessInstance historicInstance = mock(HistoricProcessInstance.class);
         when(historicInstance.getId()).thenReturn("proc-1");
@@ -382,6 +422,25 @@ class WorkflowTaskRuntimeServiceImplTest {
         return mockTask;
     }
 
+    private WorkflowBusinessApplyVO advancedApply() {
+        WorkflowBusinessApplyCurrentTaskVO currentTask = new WorkflowBusinessApplyCurrentTaskVO();
+        currentTask.setTaskId("task-2");
+        currentTask.setTaskDefinitionKey("supervisor_approve");
+        currentTask.setTaskName("主管审批");
+        currentTask.setAssigneeName("supervisor");
+        WorkflowBusinessApplyVO apply = new WorkflowBusinessApplyVO();
+        apply.setId(1001L);
+        apply.setBusinessType("GUARANTEE_RISK_REVIEW");
+        apply.setBusinessKey("APP-1");
+        apply.setApplyStatus(WorkflowApplyStatus.IN_APPROVAL);
+        apply.setApplyStatusName("审批中");
+        apply.setCurrentTaskNames("主管审批");
+        apply.setCurrentTaskDefinitionKeys("supervisor_approve");
+        apply.setCurrentAssigneeNames("supervisor");
+        apply.setCurrentTasks(List.of(currentTask));
+        return apply;
+    }
+
     private TaskQuery taskQuery(Task result) {
         TaskQuery query = mock(TaskQuery.class);
         when(query.taskId("task-1")).thenReturn(query);
@@ -408,6 +467,7 @@ class WorkflowTaskRuntimeServiceImplTest {
         when(query.taskCandidateGroupIn(any())).thenReturn(query);
         when(query.taskUnassigned()).thenReturn(query);
         when(query.taskAssignee(any())).thenReturn(query);
+        when(query.processInstanceId(any())).thenReturn(query);
         when(query.count()).thenReturn(count);
         return query;
     }

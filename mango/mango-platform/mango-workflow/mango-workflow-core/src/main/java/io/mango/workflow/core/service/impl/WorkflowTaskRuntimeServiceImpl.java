@@ -25,12 +25,14 @@ import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
+import io.mango.workflow.api.vo.WorkflowNodeActionConfigVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import io.mango.workflow.api.vo.WorkflowRenderConfigVO;
-import io.mango.workflow.api.vo.WorkflowNodeActionConfigVO;
+import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
@@ -53,6 +55,7 @@ import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
+import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import io.mango.workflow.core.support.WorkflowNodeActionConfigResolver;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
@@ -346,6 +349,13 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public R<Boolean> complete(CompleteWorkflowTaskCommand command) {
+        completeWithResult(command);
+        return R.ok(Boolean.TRUE);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowTaskCompleteResultVO> completeWithResult(CompleteWorkflowTaskCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID.getCode(), "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
@@ -371,8 +381,15 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             workflowBusinessApplyService.markApproved(task.getProcessInstanceId());
         }
         triggerEventNotify(task, variables);
-        advanceRuntimeTasks(task.getProcessInstanceId());
-        return R.ok(Boolean.TRUE);
+        WorkflowTaskAdvanceResult advanceResult = advanceRuntimeTasks(task.getProcessInstanceId());
+        workflowEventPublisher.publishTaskAdvanced(
+                task,
+                formInstance,
+                variables,
+                command.getComment(),
+                advanceResult.ended(),
+                advanceResult.businessApply());
+        return R.ok(toCompleteResult(task, advanceResult));
     }
 
     @Override
@@ -551,9 +568,13 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void advanceRuntimeTasks(String processInstanceId) {
-        if (!StringUtils.hasText(processInstanceId) || isProcessEnded(processInstanceId)) {
-            return;
+    public WorkflowTaskAdvanceResult advanceRuntimeTasks(String processInstanceId) {
+        if (!StringUtils.hasText(processInstanceId)) {
+            return new WorkflowTaskAdvanceResult(processInstanceId, false, null);
+        }
+        if (isProcessEnded(processInstanceId)) {
+            return new WorkflowTaskAdvanceResult(processInstanceId, true,
+                    workflowBusinessApplyService.findByProcessInstance(processInstanceId));
         }
         for (int i = 0; i < 16; i++) {
             List<Task> tasks = taskService.createTaskQuery().processInstanceId(processInstanceId).list();
@@ -563,17 +584,45 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             }
             updateFormInstance(processInstanceId, readStoredVariables(processInstanceId),
                     isProcessEnded(processInstanceId) ? WorkflowInstanceStatus.COMPLETED : WorkflowInstanceStatus.RUNNING);
-            workflowBusinessApplyService.refreshCurrentTasks(processInstanceId);
+            WorkflowBusinessApplyVO businessApply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(processInstanceId);
             if (!changed || isProcessEnded(processInstanceId)) {
                 if (isProcessEnded(processInstanceId)) {
                     WorkflowFormInstance formInstance = findFormInstance(processInstanceId);
                     if (formInstance != null && WorkflowInstanceStatus.COMPLETED.name().equals(formInstance.getStatus())) {
                         workflowBusinessApplyService.markApproved(processInstanceId);
+                        businessApply = workflowBusinessApplyService.findByProcessInstance(processInstanceId);
                     }
                 }
-                return;
+                return new WorkflowTaskAdvanceResult(processInstanceId, isProcessEnded(processInstanceId), businessApply);
             }
         }
+        return new WorkflowTaskAdvanceResult(processInstanceId, isProcessEnded(processInstanceId),
+                workflowBusinessApplyService.findByProcessInstance(processInstanceId));
+    }
+
+    private WorkflowTaskCompleteResultVO toCompleteResult(Task completedTask, WorkflowTaskAdvanceResult advanceResult) {
+        WorkflowTaskCompleteResultVO vo = new WorkflowTaskCompleteResultVO();
+        vo.setCompletedTaskId(completedTask.getId());
+        vo.setCompletedTaskDefinitionKey(completedTask.getTaskDefinitionKey());
+        vo.setProcessInstanceId(advanceResult.processInstanceId());
+        vo.setEnded(advanceResult.ended());
+        WorkflowBusinessApplyVO apply = advanceResult.businessApply();
+        if (apply == null) {
+            vo.setCurrentTasks(List.of());
+            return vo;
+        }
+        vo.setApplyId(apply.getId());
+        vo.setBusinessType(apply.getBusinessType());
+        vo.setBusinessKey(apply.getBusinessKey());
+        vo.setApplyStatus(apply.getApplyStatus());
+        vo.setApplyStatusName(apply.getApplyStatusName());
+        vo.setCurrentTaskNames(apply.getCurrentTaskNames());
+        vo.setCurrentTaskDefinitionKeys(apply.getCurrentTaskDefinitionKeys());
+        vo.setCurrentAssigneeNames(apply.getCurrentAssigneeNames());
+        vo.setCurrentTasks(apply.getCurrentTasks() == null
+                ? List.<WorkflowBusinessApplyCurrentTaskVO>of()
+                : apply.getCurrentTasks());
+        return vo;
     }
 
     @Override
