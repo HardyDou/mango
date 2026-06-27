@@ -28,6 +28,16 @@ class CheckGateFinalizer {
     private static final String CURRENT_DIR_PREFIX = "./";
     private static final String CHANGED_FILE_SEPARATOR = ",";
     private static final String LINE_SEPARATOR_PATTERN = "\\R";
+    private static final Set<String> FILE_LEVEL_COUNT_RULES = Set.of("filelengthcheck");
+    private static final Set<String> REPOSITORY_ROOT_SEGMENTS = Set.of(
+            "mango-parent",
+            "mango-common",
+            "mango-tools",
+            "mango-infra",
+            "mango-platform",
+            "mango-admin-starter",
+            "mango-app",
+            "mango-extension");
     private static final Consumer<String> NO_WARNING_SINK = warning -> {
     };
 
@@ -54,8 +64,11 @@ class CheckGateFinalizer {
         initializeResultOptions(result);
         result.totalIssueCount = result.issues.size();
         result.toolFailureCount = result.toolFailures.size();
+        result.excludedIssueCount = result.excludedIssues.size();
         result.issuesBySource = countIssuesByField(result, FIELD_SOURCE);
         result.issuesByRule = countIssuesByField(result, FIELD_RULE);
+        result.excludedIssuesBySource = countIssuesByField(result.excludedIssues, FIELD_SOURCE);
+        result.excludedIssuesByRule = countIssuesByField(result.excludedIssues, FIELD_RULE);
 
         if (isNoNewViolationsGate(result)) {
             finalizeNoNewViolations(result);
@@ -73,11 +86,13 @@ class CheckGateFinalizer {
         Set<String> changedFileSet = resolveChangedFiles(result);
         result.changedFiles.addAll(changedFileSet);
         Set<String> baselineFingerprints = loadBaselineFingerprints(result);
+        boolean hasBaseline = !baselineFingerprints.isEmpty();
         for (CheckIssue issue : result.issues) {
             issue.fingerprint = fingerprint(issue);
             issue.inChangedFiles = isChangedIssue(issue, changedFileSet);
-            issue.baseline = baselineFingerprints.contains(issue.fingerprint);
-            if (issue.inChangedFiles && !issue.baseline) {
+            issue.baseline = baselineFingerprints.contains(issue.fingerprint)
+                    || baselineFingerprints.contains(stableFingerprint(issue));
+            if (isNewIssue(issue, changedFileSet, hasBaseline)) {
                 result.newIssues.add(issue);
             } else {
                 result.baselineIssues.add(issue);
@@ -87,13 +102,23 @@ class CheckGateFinalizer {
         result.baselineIssueCount = result.baselineIssues.size();
         result.passed = result.newIssues.isEmpty() && !hasBlockingToolFailure(result);
         result.gateStatus = statusFor(result.passed);
-        if (changedFileSet.isEmpty()) {
+        if (!hasBaseline && changedFileSet.isEmpty()) {
             result.gateStatus = STATUS_INCONCLUSIVE;
             result.passed = false;
             result.addGateMessage("no-new-violations gate requires changed files; set "
-                    + "-Dmango.check.changedFiles or -Dmango.check.baseRef");
+                    + "-Dmango.check.changedFiles, -Dmango.check.baseRef or -Dmango.check.baselineFile");
         }
         applyToolFailureMessages(result);
+    }
+
+    private boolean isNewIssue(CheckIssue issue, Set<String> changedFileSet, boolean hasBaseline) {
+        if (hasBaseline) {
+            if (issue.baseline) {
+                return false;
+            }
+            return changedFileSet.isEmpty() || issue.inChangedFiles;
+        }
+        return issue.inChangedFiles;
     }
 
     private void finalizeAllIssuesGate(CheckResult result) {
@@ -234,6 +259,7 @@ class CheckGateFinalizer {
             if (baseline.issues != null) {
                 for (CheckIssue issue : baseline.issues) {
                     fingerprints.add(fingerprintForBaseline(issue));
+                    fingerprints.add(stableFingerprint(issue));
                 }
             }
             return fingerprints;
@@ -292,6 +318,22 @@ class CheckGateFinalizer {
                 normalizeFingerprintText(issue.description));
     }
 
+    private String stableFingerprint(CheckIssue issue) {
+        return String.join("|",
+                safeLower(issue.source),
+                safeLower(issue.rule),
+                normalizeIssueFile(issue.file),
+                stableFingerprintText(issue));
+    }
+
+    private String stableFingerprintText(CheckIssue issue) {
+        String text = normalizeFingerprintText(issue.description);
+        if (FILE_LEVEL_COUNT_RULES.contains(safeLower(issue.rule))) {
+            return text.replaceAll("\\d+", "#");
+        }
+        return text;
+    }
+
     private String normalizeFingerprintText(String value) {
         if (value == null) {
             return "";
@@ -315,7 +357,34 @@ class CheckGateFinalizer {
         if (normalized.startsWith(root + PATH_SEPARATOR)) {
             return normalized.substring(root.length() + 1);
         }
-        return normalized;
+        return repositoryRelativePath(normalized);
+    }
+
+    private String repositoryRelativePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        String[] segments = path.split(PATH_SEPARATOR);
+        for (int i = 0; i < segments.length; i++) {
+            if (REPOSITORY_ROOT_SEGMENTS.contains(segments[i])) {
+                return joinSegments(segments, i);
+            }
+        }
+        return path;
+    }
+
+    private String joinSegments(String[] segments, int start) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = start; i < segments.length; i++) {
+            if (segments[i] == null || segments[i].isBlank()) {
+                continue;
+            }
+            if (!builder.isEmpty()) {
+                builder.append(PATH_SEPARATOR);
+            }
+            builder.append(segments[i]);
+        }
+        return builder.toString();
     }
 
     private String normalizePath(String path) {
@@ -337,8 +406,12 @@ class CheckGateFinalizer {
     }
 
     private Map<String, Integer> countIssuesByField(CheckResult result, String fieldName) {
+        return countIssuesByField(result.issues, fieldName);
+    }
+
+    private Map<String, Integer> countIssuesByField(Iterable<CheckIssue> issues, String fieldName) {
         Map<String, Integer> counts = new LinkedHashMap<>();
-        for (CheckIssue issue : result.issues) {
+        for (CheckIssue issue : issues) {
             String key = issueField(issue, fieldName);
             if (key == null || key.isBlank()) {
                 key = "unknown";

@@ -209,6 +209,273 @@ class CheckMojoTest {
     }
 
     @Test
+    void finalizeResult_noNewViolationsWithBaselineDoesNotRequireChangedFiles() throws Exception {
+        // given
+        CheckIssue issue = new CheckIssue();
+        issue.type = "NAMING";
+        issue.severity = "MAJOR";
+        issue.file = tempDir.resolve("mango-demo/pom.xml").toString();
+        issue.line = 3;
+        issue.description = "Mango module artifactId must use kebab-case: mangoDemoCore";
+        issue.rule = "NAMING";
+        issue.reference = "naming-rules.md";
+        issue.source = "mango-check";
+
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(issue);
+        Path baselineFile = tempDir.resolve("target/baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        result.issues.add(issue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, null, null, baselineFile.toString(),
+                        "no-new-violations", "block"));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertTrue(result.passed);
+        assertEquals("PASS", result.gateStatus);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+        assertFalse(result.gateMessages.contains("no-new-violations gate requires changed files; set "
+                + "-Dmango.check.changedFiles, -Dmango.check.baseRef or -Dmango.check.baselineFile"));
+    }
+
+    @Test
+    void finalizeResult_noNewViolationsWithBaselineMarksUnmatchedIssueAsNewWithoutChangedFiles() throws Exception {
+        // given
+        CheckResult baseline = new CheckResult();
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.type = "NAMING";
+        baselineIssue.severity = "MAJOR";
+        baselineIssue.file = tempDir.resolve("mango-demo/pom.xml").toString();
+        baselineIssue.line = 3;
+        baselineIssue.description = "Mango module artifactId must use kebab-case: mangoDemoCore";
+        baselineIssue.rule = "NAMING";
+        baselineIssue.reference = "naming-rules.md";
+        baselineIssue.source = "mango-check";
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckIssue newIssue = new CheckIssue();
+        newIssue.type = "NAMING";
+        newIssue.severity = "MAJOR";
+        newIssue.file = tempDir.resolve("mango-new/pom.xml").toString();
+        newIssue.line = 3;
+        newIssue.description = "Mango module artifactId must use kebab-case: mangoNewCore";
+        newIssue.rule = "NAMING";
+        newIssue.reference = "naming-rules.md";
+        newIssue.source = "mango-check";
+        CheckResult result = new CheckResult();
+        result.issues.add(newIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, null, null, baselineFile.toString(),
+                        "no-new-violations", "block"));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertFalse(result.passed);
+        assertEquals("FAIL", result.gateStatus);
+        assertEquals(1, result.newIssueCount);
+        assertEquals(0, result.baselineIssueCount);
+    }
+
+    @Test
+    void finalizeResult_noNewViolationsMatchesBaselineAcrossWorktreeRoots() throws Exception {
+        // given
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.type = "MagicNumberCheck";
+        baselineIssue.severity = "MINOR";
+        baselineIssue.file = "/workspace/mango/mango/mango-platform/mango-notice/src/main/java/Demo.java";
+        baselineIssue.line = 12;
+        baselineIssue.description = "magic number";
+        baselineIssue.rule = "MagicNumberCheck";
+        baselineIssue.reference = "auto-check-mapping.md";
+        baselineIssue.source = "checkstyle";
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckIssue currentIssue = new CheckIssue();
+        currentIssue.type = "MagicNumberCheck";
+        currentIssue.severity = "MINOR";
+        currentIssue.file = "/workspace/mango-issue-205/mango/mango-platform/mango-notice/src/main/java/Demo.java";
+        currentIssue.line = 12;
+        currentIssue.description = "magic number";
+        currentIssue.rule = "MagicNumberCheck";
+        currentIssue.reference = "auto-check-mapping.md";
+        currentIssue.source = "checkstyle";
+        CheckResult result = new CheckResult();
+        result.issues.add(currentIssue);
+        Path currentRoot = Path.of("/workspace/mango-issue-205/mango");
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(currentRoot, null, null, baselineFile.toString(),
+                        "no-new-violations", "block"));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertTrue(result.passed);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+    }
+
+    @Test
+    void finalizeResult_noNewViolationsMatchesBaselineWhenLineDrifts() throws Exception {
+        // given
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.type = "MagicNumberCheck";
+        baselineIssue.severity = "MINOR";
+        baselineIssue.file = tempDir.resolve("mango-platform/mango-notice/src/main/java/Demo.java").toString();
+        baselineIssue.line = 12;
+        baselineIssue.description = "magic number";
+        baselineIssue.rule = "MagicNumberCheck";
+        baselineIssue.reference = "auto-check-mapping.md";
+        baselineIssue.source = "checkstyle";
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckIssue currentIssue = new CheckIssue();
+        currentIssue.type = "MagicNumberCheck";
+        currentIssue.severity = "MINOR";
+        currentIssue.file = tempDir.resolve("mango-platform/mango-notice/src/main/java/Demo.java").toString();
+        currentIssue.line = 18;
+        currentIssue.description = "magic number";
+        currentIssue.rule = "MagicNumberCheck";
+        currentIssue.reference = "auto-check-mapping.md";
+        currentIssue.source = "checkstyle";
+        CheckResult result = new CheckResult();
+        result.issues.add(currentIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, null, null, baselineFile.toString(),
+                        "no-new-violations", "block"));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertTrue(result.passed);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+    }
+
+    @Test
+    void finalizeResult_noNewViolationsMatchesFileLengthBaselineWhenCountChanges() throws Exception {
+        // given
+        CheckIssue baselineIssue = new CheckIssue();
+        baselineIssue.type = "FileLengthCheck";
+        baselineIssue.severity = "MINOR";
+        baselineIssue.file = tempDir.resolve("mango-tools/mango-maven-plugin/src/main/java/io/mango/plugin/check/CheckMojo.java").toString();
+        baselineIssue.line = 1;
+        baselineIssue.description = "文件 3,600 行 （最多：2,000 行）。";
+        baselineIssue.rule = "FileLengthCheck";
+        baselineIssue.reference = "auto-check-mapping.md";
+        baselineIssue.source = "checkstyle";
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckIssue currentIssue = new CheckIssue();
+        currentIssue.type = "FileLengthCheck";
+        currentIssue.severity = "MINOR";
+        currentIssue.file = tempDir.resolve("mango-tools/mango-maven-plugin/src/main/java/io/mango/plugin/check/CheckMojo.java").toString();
+        currentIssue.line = 1;
+        currentIssue.description = "文件 3,770 行 （最多：2,000 行）。";
+        currentIssue.rule = "FileLengthCheck";
+        currentIssue.reference = "auto-check-mapping.md";
+        currentIssue.source = "checkstyle";
+        CheckResult result = new CheckResult();
+        result.issues.add(currentIssue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, null, null, baselineFile.toString(),
+                        "no-new-violations", "block"));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertTrue(result.passed);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+    }
+
+    @Test
+    void parseCheckstyleReport_excludesConfiguredCodeLevelModule() throws Exception {
+        // given
+        Path report = tempDir.resolve("mango-platform/mango-file-preview/target/checkstyle-result.xml");
+        Files.createDirectories(report.getParent());
+        Files.writeString(report, """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <checkstyle version="10.0">
+                  <file name="%s">
+                    <error line="10" severity="warning" message="magic number" source="com.puppycrawl.tools.checkstyle.checks.coding.MagicNumberCheck"/>
+                  </file>
+                </checkstyle>
+                """.formatted(tempDir.resolve("mango-platform/mango-file-preview/src/main/java/Demo.java")));
+        CheckMojo mojo = new CheckMojo();
+        CheckResult result = new CheckResult();
+        setField(mojo, "result", result);
+        setField(mojo, "codeLevelExcludedModules", "mango-platform/mango-file-preview");
+
+        Method method = CheckMojo.class.getDeclaredMethod("parseCheckstyleReport", Path.class);
+        method.setAccessible(true);
+
+        // when
+        method.invoke(mojo, report);
+
+        // then
+        assertEquals(0, result.issues.size());
+        assertEquals(1, result.excludedIssues.size());
+        assertEquals("checkstyle", result.excludedIssues.get(0).source);
+    }
+
+    @Test
+    void parseCheckstyleReport_keepsUnconfiguredModuleIssue() throws Exception {
+        // given
+        Path report = tempDir.resolve("mango-platform/mango-notice/target/checkstyle-result.xml");
+        Files.createDirectories(report.getParent());
+        Files.writeString(report, """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <checkstyle version="10.0">
+                  <file name="%s">
+                    <error line="10" severity="warning" message="magic number" source="com.puppycrawl.tools.checkstyle.checks.coding.MagicNumberCheck"/>
+                  </file>
+                </checkstyle>
+                """.formatted(tempDir.resolve("mango-platform/mango-notice/src/main/java/Demo.java")));
+        CheckMojo mojo = new CheckMojo();
+        CheckResult result = new CheckResult();
+        setField(mojo, "result", result);
+        setField(mojo, "codeLevelExcludedModules", "mango-platform/mango-file-preview");
+
+        Method method = CheckMojo.class.getDeclaredMethod("parseCheckstyleReport", Path.class);
+        method.setAccessible(true);
+
+        // when
+        method.invoke(mojo, report);
+
+        // then
+        assertEquals(1, result.issues.size());
+        assertEquals(0, result.excludedIssues.size());
+        assertEquals("checkstyle", result.issues.get(0).source);
+    }
+
+    @Test
     void checkMethodLength_genericRule_reportsUnsupported() throws Exception {
         // given - create a file with a long method
         Path javaFile = tempDir.resolve("TestService.java");
