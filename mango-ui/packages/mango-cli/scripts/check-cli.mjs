@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
 const pmoPackageRoot = resolve(packageRoot, '../mango-pmo');
+const templateBaselineRoot = join(packageRoot, 'templates/full/business-pmo/mango-baseline');
 const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const packagedAdminModules = JSON.parse(readFileSync(join(packageRoot, 'admin-modules.json'), 'utf8'));
@@ -16,6 +17,7 @@ const customProjectName = 'mango-custom-acceptance';
 
 try {
   assertPmoPackageBuilt();
+  assertNoTrailingBlankLinesAtEof(templateBaselineRoot, 'CLI template PMO baseline');
   assertPublishedPnpmPmoResolution(tempRoot);
   assertNoWorkspacePackageJsonInTemplates();
   assertPackagedAdminModules();
@@ -640,6 +642,15 @@ function assertPackagedAdminModules() {
   }
   if (!cliPackage.files.includes('admin-modules.json')) {
     throw new Error('@mango/cli package files must include admin-modules.json');
+  }
+}
+
+function assertNoTrailingBlankLinesAtEof(root, label) {
+  for (const file of walkFiles(root)) {
+    const content = readFileSync(file, 'utf8');
+    if (content.endsWith('\n\n')) {
+      throw new Error(`${label} file has trailing blank line at EOF: ${file}`);
+    }
   }
 }
 
