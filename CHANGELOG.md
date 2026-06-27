@@ -1,5 +1,42 @@
 # Mango Changelog
 
+## v2026.06.27-pmo-cli-baseline-release - 2026-06-27
+
+### Fixed
+
+- Published the PMO baseline EOF blank-line fix from PR #285 so business projects consuming `@mango/pmo` or `@mango/cli` can sync a baseline without trailing blank lines.
+- Fixed `publish:pkg cli` so CLI self-publish checks can validate all already-published release locks while excluding the CLI package version that is currently being published.
+
+### Published Packages
+
+- npm: `@mango/pmo@1.0.2` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.47` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.27-pmo-cli-baseline-release`.
+
+### Upgrade Notes
+
+- Existing business projects that synced PMO baseline with an earlier CLI should upgrade to `@mango/cli@1.0.47` and rerun `mango pmo sync --project-dir .` or `mango pmo upgrade --project-dir .`.
+- Business projects that consume `@mango/pmo` directly should upgrade to `@mango/pmo@1.0.2`.
+- No backend Maven dependency, database migration, menu data, permission code, tenant configuration, or frontend runtime page change is required for this release.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions -- --check-registry --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ --ignore-registry-package=@mango/pmo --ignore-registry-package=@mango/cli`
+- `pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.27-pmo-cli-baseline-release --dry-run`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `pnpm -C mango-ui release:verify-npm pmo --version=1.0.2`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.47`
+- `git diff --check`
+
 ## v2026.06.27-workflow-history-dialog-release - 2026-06-27
 
 ### Fixed

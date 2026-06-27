@@ -24,6 +24,9 @@ const uiDependencyTemplateLocks = {
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length);
 const checkRegistry = process.argv.includes('--check-registry');
+const ignoredRegistryPackages = new Set(process.argv
+  .filter((arg) => arg.startsWith('--ignore-registry-package='))
+  .map((arg) => arg.slice('--ignore-registry-package='.length)));
 const mismatches = [];
 
 for (const [packageName, lockedVersion] of Object.entries(releaseVersions.npm ?? {})) {
@@ -35,7 +38,7 @@ for (const [packageName, lockedVersion] of Object.entries(releaseVersions.npm ??
   if (workspacePackage.version !== lockedVersion) {
     mismatches.push(`${packageName}: release lock ${lockedVersion} != local package ${workspacePackage.version}`);
   }
-  if (checkRegistry) {
+  if (checkRegistry && !ignoredRegistryPackages.has(packageName)) {
     if (!registry) {
       mismatches.push(`${packageName}: --check-registry requires --registry=<npm-registry-url>`);
       continue;
@@ -97,6 +100,9 @@ if (mismatches.length > 0) {
 console.log(`release-versions.json matches ${Object.keys(releaseVersions.npm ?? {}).length} local package versions.`);
 if (checkRegistry) {
   console.log(`release-versions.json also matches registry ${registry}.`);
+  if (ignoredRegistryPackages.size > 0) {
+    console.log(`Skipped registry check for: ${[...ignoredRegistryPackages].join(', ')}`);
+  }
 }
 
 function indexWorkspacePackages() {

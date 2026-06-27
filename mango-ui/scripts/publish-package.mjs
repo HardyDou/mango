@@ -124,6 +124,7 @@ if (packageName === '@mango/cli') {
   console.log('Checking CLI release version lock before publish');
   run('pnpm', ['--filter', packageName, 'run', 'check:release-versions']);
   if (!dryRun) {
+    console.log('Checking published release locks before CLI publish, excluding the CLI package being published');
     run('pnpm', [
       '--filter',
       packageName,
@@ -132,6 +133,7 @@ if (packageName === '@mango/cli') {
       '--',
       '--check-registry',
       `--registry=${GROUP_REGISTRY}`,
+      `--ignore-registry-package=${packageName}`,
     ]);
   }
 }
