@@ -210,6 +210,19 @@ const status: WorkflowInstanceStatus = 'running';
 | `history-summary` | 历史申请弹窗顶部摘要区。 |
 | `history-record-extra` | 历史申请单条记录扩展内容。 |
 
+`WorkflowInstanceHistory` 常用 props：
+
+| prop | 含义 |
+|------|------|
+| `businessType` | 业务类型，用于内部查询历史申请。 |
+| `businessKey` | 业务主键，用于内部查询历史申请。 |
+| `records` | 外部传入的历史申请记录；传入后组件不再内部请求。 |
+| `total` | 历史申请总数，传入后在头部右侧展示。 |
+| `title` | 组件头部标题，默认“历史申请”。 |
+| `subtitle` | 组件头部说明，默认“同一业务单据的多次申请记录”。 |
+| `showTitle` | 是否展示组件内部标题，默认 `true`；嵌入 `WorkflowInstanceHistoryDialog` 时由弹窗关闭内部标题，避免和弹窗标题重复。 |
+| `emptyText` | 空状态文案，默认“暂无申请记录”。 |
+
 ## 5. 参数与事件
 
 `RuntimeFormRenderer` props：

@@ -2,7 +2,7 @@
   <div class="workflow-instance-history" v-loading="effectiveLoading">
     <div class="workflow-instance-history__header">
       <div>
-        <h3>{{ title }}</h3>
+        <h3 v-if="showTitle">{{ title }}</h3>
         <p>{{ subtitle }}</p>
       </div>
       <span v-if="total !== null">{{ total }} 条</span>
@@ -52,6 +52,7 @@ const props = withDefaults(defineProps<WorkflowInstanceHistoryQuery & {
   records?: WorkflowBusinessApply[];
   loading?: boolean;
   total?: number | null;
+  showTitle?: boolean;
 }>(), {
   businessType: '',
   businessKey: '',
@@ -62,6 +63,7 @@ const props = withDefaults(defineProps<WorkflowInstanceHistoryQuery & {
   records: undefined,
   loading: undefined,
   total: null,
+  showTitle: true,
 });
 
 const loading = ref(false);
