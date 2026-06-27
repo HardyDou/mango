@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.48 - 2026-06-27
+
+### Fixed
+
+- Updated generated PMO release locks to `@mango/pmo@1.0.3`.
+- Published the latest PMO baseline and mango-check no-new-violations baseline metadata so generated and upgraded business projects can sync the same release governance content as Mango main.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.48 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir .` or `mango pmo upgrade --project-dir .` after upgrading to receive the updated PMO baseline package.
+
+### Verification
+
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.45 - 2026-06-27
 
 ### Fixed
