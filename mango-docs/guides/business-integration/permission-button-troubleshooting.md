@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.06.27-admin-shell-menu-redirect-release 发布 `@mango/admin-shell@1.0.28`、`@mango/admin@1.0.32` 和 `@mango/cli@1.0.45`，仅让业务项目可通过 npm 包消费 Issue #274 的目录菜单 redirect 修复；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
+
 - Issue #274 修复 `@mango/admin-shell` 目录型菜单 redirect 解析，仅影响点击目录菜单或直接访问目录 path 时的页面落点；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。若用户先被目录菜单带到其它可访问子页面，再发现按钮不可见，仍按当前实际页面的按钮权限码和登录态权限集合排查。
 
 - v2026.06.27-system-component-release 同步发布 `@mango/system@1.0.11` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。业务项目排查按钮缺失时，仍先确认前端包批次一致、权限资源已同步、用户登录态已刷新。

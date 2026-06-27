@@ -1,5 +1,23 @@
 # @mango/cli Changelog
 
+## 1.0.45 - 2026-06-27
+
+### Fixed
+
+- Updated generated project release locks to consume the Admin Shell directory menu redirect fix:
+  - `@mango/admin-shell@1.0.28`
+  - `@mango/admin@1.0.32`
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.45 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should upgrade `@mango/admin-shell` to `1.0.28` when consuming the shell directly, or `@mango/admin` to `1.0.32` when consuming the aggregate package.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.42 - 2026-06-26
 
 ### Fixed
