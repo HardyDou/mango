@@ -1,5 +1,7 @@
 package io.mango.infra.realtime.starter.controller;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.realtime.api.RealtimeOutboundApi;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.core.outbound.IRealtimePublishService;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
 @Tag(name = "实时出站", description = "实时消息本地出站派发接口")
 public class RealtimeOutboundController implements RealtimeOutboundApi {
 

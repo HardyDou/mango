@@ -1,5 +1,7 @@
 package io.mango.infra.realtime.starter.remote;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import io.mango.infra.realtime.api.RealtimeInboundApi;
 import io.mango.infra.realtime.support.inbound.IRealtimeInboundService;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
 @Tag(name = "实时入站-远程", description = "远程实时入站消息分发接口")
 public class RealtimeInboundRemoteController implements RealtimeInboundApi {
 

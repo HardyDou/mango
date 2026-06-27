@@ -1,5 +1,7 @@
 package io.mango.infra.realtime.starter.controller;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.realtime.api.RealtimeInboundReceiverApi;
 import io.mango.infra.realtime.api.dto.RealtimeInboundReceiverRegistration;
 import io.mango.infra.realtime.core.inbound.receiver.IRealtimeInboundReceiverService;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/realtime/receivers")
 @RequiredArgsConstructor
+@ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
 @Tag(name = "实时接收器", description = "实时消息接收器注册与注销接口")
 public class RealtimeInboundReceiverController implements RealtimeInboundReceiverApi {
 

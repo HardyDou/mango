@@ -1,5 +1,7 @@
 package io.mango.calendar.starter.controller;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.calendar.api.CalendarApi;
 import io.mango.calendar.api.query.AddWorkdaysQuery;
 import io.mango.calendar.api.query.BatchCheckWorkdayQuery;
@@ -34,6 +36,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/calendar")
 @RequiredArgsConstructor
+@ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "工作日历计算")
 @Tag(name = "工作日历计算", description = "按已维护年度日历提供工作日判断、日期偏移、区间统计和月份工作日查询")
 public class CalendarController implements CalendarApi {
 

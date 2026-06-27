@@ -314,16 +314,16 @@ public class NoticeController implements NoticeApi {
 
  @Override
  @GetMapping("/recipient-accounts")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:view")
- @Operation(summary = "查询通知接收账户", description = "查询当前用户或指定用户的通知接收账户")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询通知接收账户")
+ @Operation(summary = "查询通知接收账户", description = "登录接口。查询当前用户或指定用户的通知接收账户")
  public R<List<NoticeRecipientAccountVO>> listRecipientAccounts(@ParameterObject NoticeRecipientAccountQuery query) {
  return R.ok(noticeService.listRecipientAccounts(currentUserId(), query));
  }
 
  @Override
  @PostMapping("/recipient-accounts")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
- @Operation(summary = "保存通知接收账户", description = "新增或更新手机号、邮箱等通知接收账户")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "保存通知接收账户")
+ @Operation(summary = "保存通知接收账户", description = "登录接口。新增或更新手机号、邮箱等通知接收账户")
  public R<NoticeRecipientAccountVO> saveRecipientAccount(@RequestBody @Valid SaveNoticeRecipientAccountCommand command) {
  return R.ok(noticeService.saveRecipientAccount(currentUserId(), command));
  }
@@ -338,48 +338,48 @@ public class NoticeController implements NoticeApi {
 
  @Override
  @PostMapping("/recipient-accounts/{id}/disable")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
- @Operation(summary = "禁用通知接收账户", description = "禁用当前用户或指定用户的通知接收账户")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "禁用通知接收账户")
+ @Operation(summary = "禁用通知接收账户", description = "登录接口。禁用当前用户或指定用户的通知接收账户")
  public R<Boolean> disableRecipientAccount(@PathVariable Long id, @RequestParam(required = false) Long userId) {
  return R.ok(noticeService.disableRecipientAccount(currentUserId(), id, userId));
  }
 
  @Override
  @PostMapping("/recipient-accounts/{id}/default")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
- @Operation(summary = "设置默认通知接收账户", description = "设置同类型默认通知接收账户")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "设置默认通知接收账户")
+ @Operation(summary = "设置默认通知接收账户", description = "登录接口。设置同类型默认通知接收账户")
  public R<Boolean> setDefaultRecipientAccount(@PathVariable Long id, @RequestParam(required = false) Long userId) {
  return R.ok(noticeService.setDefaultRecipientAccount(currentUserId(), id, userId));
  }
 
  @Override
  @GetMapping("/receive-preferences")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:view")
- @Operation(summary = "查询通知接收偏好", description = "查询用户按全局、业务域或单消息维度配置的接收偏好")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询通知接收偏好")
+ @Operation(summary = "查询通知接收偏好", description = "登录接口。查询用户按全局、业务域或单消息维度配置的接收偏好")
  public R<List<NoticeReceivePreferenceVO>> listReceivePreferences(@ParameterObject NoticeReceivePreferenceQuery query) {
  return R.ok(noticeService.listReceivePreferences(currentUserId(), query));
  }
 
  @Override
  @PutMapping("/receive-preferences")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
- @Operation(summary = "保存通知接收偏好", description = "保存用户对业务域、单消息、渠道和接收账户的接收偏好")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "保存通知接收偏好")
+ @Operation(summary = "保存通知接收偏好", description = "登录接口。保存用户对业务域、单消息、渠道和接收账户的接收偏好")
  public R<NoticeReceivePreferenceVO> saveReceivePreference(@RequestBody @Valid SaveNoticeReceivePreferenceCommand command) {
  return R.ok(noticeService.saveReceivePreference(currentUserId(), command));
  }
 
  @Override
  @GetMapping("/site/my/messages")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
- @Operation(summary = "分页查询我的系统消息", description = "分页查询当前用户系统消息")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "分页查询我的系统消息")
+ @Operation(summary = "分页查询我的系统消息", description = "登录接口。分页查询当前用户系统消息")
  public R<PageResult<NoticeSiteMessageVO>> listSiteMessages(@ParameterObject NoticeSiteMessagePageQuery query) {
  return R.ok(noticeService.listSiteMessages(currentUserId(), query));
  }
 
  @Override
  @GetMapping("/site/my/messages/{id}")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
- @Operation(summary = "获取我的系统消息详情", description = "查询当前用户可见的系统消息详情")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取我的系统消息详情")
+ @Operation(summary = "获取我的系统消息详情", description = "登录接口。查询当前用户可见的系统消息详情")
  public R<NoticeSiteMessageVO> getSiteMessage(@Parameter(description = "系统消息ID") @PathVariable Long id) {
  NoticeSiteMessageVO message = noticeService.getSiteMessage(id, currentUserId());
  return message == null ? R.fail(404, "系统消息不存在") : R.ok(message);
@@ -387,40 +387,40 @@ public class NoticeController implements NoticeApi {
 
  @Override
  @GetMapping("/site/my/unread-count")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
- @Operation(summary = "获取我的系统消息未读数", description = "查询当前用户系统消息未读数量")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取我的系统消息未读数")
+ @Operation(summary = "获取我的系统消息未读数", description = "登录接口。查询当前用户系统消息未读数量")
  public R<NoticeUnreadCountVO> unreadCount() {
  return R.ok(noticeService.unreadCount(currentUserId()));
  }
 
  @Override
  @PostMapping("/site/my/messages/{id}/read")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
- @Operation(summary = "标记我的系统消息已读", description = "标记当前用户的一条系统消息为已读")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "标记我的系统消息已读")
+ @Operation(summary = "标记我的系统消息已读", description = "登录接口。标记当前用户的一条系统消息为已读")
  public R<Boolean> markSiteMessageRead(@Parameter(description = "系统消息ID") @PathVariable Long id) {
  return R.ok(noticeService.markSiteMessageRead(id, currentUserId()));
  }
 
  @Override
  @PostMapping("/site/my/messages/read-batch")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
- @Operation(summary = "批量标记我的系统消息已读", description = "批量标记当前用户系统消息为已读")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "批量标记我的系统消息已读")
+ @Operation(summary = "批量标记我的系统消息已读", description = "登录接口。批量标记当前用户系统消息为已读")
  public R<Boolean> markSiteMessagesRead(@RequestBody @Valid MarkNoticeReadCommand command) {
  return R.ok(noticeService.markSiteMessagesRead(command, currentUserId()));
  }
 
  @Override
  @PostMapping("/site/my/messages/read-all")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
- @Operation(summary = "全部标记已读", description = "标记当前用户全部未读系统消息为已读")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "全部标记已读")
+ @Operation(summary = "全部标记已读", description = "登录接口。标记当前用户全部未读系统消息为已读")
  public R<Boolean> markAllSiteMessagesRead() {
  return R.ok(noticeService.markAllSiteMessagesRead(currentUserId()));
  }
 
  @Override
  @PostMapping("/site/my/messages/{id}/delete")
- @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:delete")
- @Operation(summary = "删除我的系统消息", description = "删除当前用户的一条系统消息")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "删除我的系统消息")
+ @Operation(summary = "删除我的系统消息", description = "登录接口。删除当前用户的一条系统消息")
  public R<Boolean> deleteSiteMessage(@Parameter(description = "系统消息ID") @PathVariable Long id) {
  return R.ok(noticeService.deleteSiteMessage(id, currentUserId()));
  }

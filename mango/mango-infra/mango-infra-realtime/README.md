@@ -204,6 +204,21 @@ mango:
 ## 9. 管理入口
 本模块不创建管理菜单和权限。实时消息 DTO 支持 tenant 上下文和 TENANT target，但这只是投递维度；业务发布方和上行 listener 必须校验当前用户是否有权向目标用户、群组或租户发送消息。
 
+Realtime 建连和客户端传输属于登录用户基础能力，不需要为每个角色或用户单独配置权限。`mango-infra-realtime-starter` 会把以下客户端入口声明或注册为 `LOGIN`：
+
+| 入口 | 访问模式 | 说明 |
+|------|----------|------|
+| `/realtime/transports/negotiate` | `LOGIN` | 协商 WebSocket/SSE/Polling。 |
+| `/realtime/transports/websocket` | `LOGIN` | WebSocket 建连，支持通过配置改路径。 |
+| `/realtime/transports/sse` | `LOGIN` | SSE 建连。 |
+| `/realtime/transports/polling` | `LOGIN` | HTTP Polling 拉取。 |
+| `/realtime/messages/inbound/sse`、`/realtime/messages/inbound/polling` | `LOGIN` | 客户端上行传输入口。 |
+| `/realtime/transports/probe/**` | `LOGIN` | 客户端链路探测。 |
+
+服务间接口仍是 `INTERNAL`，包括 `/realtime/messages/publish`、`/realtime/receivers/register`、`/_realtime/messages/outbound` 和 `/_realtime/messages/inbound`。
+
+`LOGIN` 只表示允许建立实时通道，不表示允许订阅所有 topic、向任意业务对象发送消息或接收任意租户消息。订阅关系、上行消息类型、目标用户/群组/租户仍必须在业务 listener、receiver 或发布服务中继续校验。
+
 ## 10. 快速开始
 1. realtime 服务接入 starter，并配置 Redis KV store。
 2. 前端先调用 negotiate，再按返回能力选择 WebSocket、SSE 或 Polling。

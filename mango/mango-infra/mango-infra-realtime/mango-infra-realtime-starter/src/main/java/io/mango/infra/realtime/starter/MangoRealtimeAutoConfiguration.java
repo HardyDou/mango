@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import io.mango.authorization.api.ApiResourceApi;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.IOutboxPublisher;
@@ -360,6 +361,13 @@ public class MangoRealtimeAutoConfiguration {
                 properties.getWebsocket().getEndpoint(),
                 "/realtime/transports/probe/websocket",
                 properties.getWebsocket().getAllowedOrigins());
+    }
+
+    @Bean
+    @ConditionalOnBean({RealtimeWebSocketConfiguration.class, ApiResourceApi.class})
+    public RealtimeWebSocketResourceRegistrar realtimeWebSocketResourceRegistrar(ApiResourceApi apiResourceApi,
+                                                                                 MangoRealtimeProperties properties) {
+        return new RealtimeWebSocketResourceRegistrar(apiResourceApi, properties);
     }
 
     private List<RealtimeTransportCapability> transportCapabilities(MangoRealtimeProperties properties) {

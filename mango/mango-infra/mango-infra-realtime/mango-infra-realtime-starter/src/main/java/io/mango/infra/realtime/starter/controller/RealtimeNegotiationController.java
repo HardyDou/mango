@@ -1,5 +1,7 @@
 package io.mango.infra.realtime.starter.controller;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
 import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicket;
 import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicketService;
@@ -32,6 +34,7 @@ public class RealtimeNegotiationController {
     private final RealtimeConnectionTicketService ticketService;
 
     @GetMapping("${mango.infra.realtime.negotiate.endpoint:/realtime/transports/negotiate}")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "协商实时传输协议")
     @Operation(summary = "协商实时传输协议", description = "登录接口。根据客户端偏好协商实时消息传输协议")
     public RealtimeNegotiationResponse negotiate(
             @Parameter(description = "客户端偏好的传输协议，多个值用英文逗号分隔，例如 websocket,sse,polling")

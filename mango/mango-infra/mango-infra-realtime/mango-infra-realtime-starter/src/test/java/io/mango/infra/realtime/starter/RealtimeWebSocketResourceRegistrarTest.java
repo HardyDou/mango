@@ -1,4 +1,4 @@
-package io.mango.file.preview.starter;
+package io.mango.infra.realtime.starter;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
@@ -14,37 +14,37 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class FilePreviewEngineResourceRegistrarTest {
+class RealtimeWebSocketResourceRegistrarTest {
 
     @Test
-    void run_registersArchiveDirectoryEndpointAsPublicResource() {
+    void runShouldRegisterConfiguredWebSocketEndpointsAsLoginResources() {
         CapturingApiResourceApi api = new CapturingApiResourceApi();
+        MangoRealtimeProperties properties = new MangoRealtimeProperties();
+        properties.getWebsocket().setEndpoint("/custom/ws");
 
-        new FilePreviewEngineResourceRegistrar(api).run(null);
+        new RealtimeWebSocketResourceRegistrar(api, properties).run(null);
 
+        assertThat(api.resources).hasSize(2);
         assertThat(api.resources)
-                .anySatisfy(resource -> {
+                .extracting(ApiResourceRegisterCommand::getPathPattern)
+                .containsExactly("/custom/ws", "/realtime/transports/probe/websocket");
+        assertThat(api.resources)
+                .allSatisfy(resource -> {
+                    assertThat(resource.getModuleName()).isEqualTo(RealtimeWebSocketResourceRegistrar.MODULE_NAME);
                     assertThat(resource.getHttpMethod()).isEqualTo("GET");
-                    assertThat(resource.getPathPattern()).isEqualTo("/directory");
-                    assertThat(resource.getResourceCode()).isEqualTo("GET:/directory");
-                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
-                })
-                .anySatisfy(resource -> {
-                    assertThat(resource.getHttpMethod()).isEqualTo("GET");
-                    assertThat(resource.getPathPattern()).isEqualTo("/compressed-file");
-                    assertThat(resource.getResourceCode()).isEqualTo("GET:/compressed-file");
-                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+                    assertThat(resource.getPermissionCode()).isNull();
                 });
     }
 
-    private static class CapturingApiResourceApi implements ApiResourceApi {
+    private static final class CapturingApiResourceApi implements ApiResourceApi {
 
         private final List<ApiResourceRegisterCommand> resources = new ArrayList<>();
 
         @Override
         public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
             this.resources.addAll(resources);
-            return R.ok(new ApiResourceRegisterResultVO(resources.size(), resources.size(), 0));
+            return R.ok(ApiResourceRegisterResultVO.empty());
         }
 
         @Override
