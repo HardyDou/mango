@@ -92,6 +92,8 @@ Mango 是业务开发脚手架，组件会被发布到私有或公开 npm 仓库
 - 构建产物包含 ESM 和类型声明。
 - 变更必须有版本策略和迁移说明。
 - 发布前必须验证包在单体宿主和微前端业务包中都能使用。
+- 发布影响变更必须执行 `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`，确保受影响 npm 包、固定版本依赖、CLI release lock 和 starter 消费版本同步。
+- 发布后必须执行 `pnpm -C mango-ui release:verify-npm <package> --version=<version>` 回查公司内网 Nexus tarball；关键产物应登记到 `mango-ui/release-contracts.json`，防止源码已改但发布包缺文件。
 
 ## 8.1 独立消费要求
 

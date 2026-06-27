@@ -227,6 +227,26 @@ tar -tf /tmp/mango-pack/mango-common-*.tgz | grep 'package/README.md'
 
 所有 `mango-ui/packages/*/package.json` 的 `files` 都应显式包含 `README.md`。业务只拿到 npm 包时，可从包根目录的 `README.md` 阅读页面注册、接口、样式和依赖说明。
 
+发布防漏检查：
+
+```bash
+pnpm -C mango-ui release:impact --base=origin/main --head=HEAD
+pnpm -C mango-ui release:verify-npm grid-widgets --version=1.0.5
+pnpm -C mango-ui release:verify-npm system --version=1.0.11
+```
+
+`release:impact` 用于 PR 和发布前检查。脚本会根据 `packages/*` 的 `src`、`package.json`、`vite.config.ts`、`README.md` 和包内脚本变更计算需要发布的 npm 包，并要求这些包完成 `package.json` 升版、内部固定依赖升版和 `packages/mango-cli/release-versions.json` 同步。命令默认也会检查本地未提交改动；CI 只检查提交范围时可追加 `--committed-only`。
+
+`release:verify-npm` 用于发布后回查公司内网 Nexus tarball。默认 registry 是 `http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`，也可通过 `--registry=<url>` 指定。需要校验关键产物时维护 `release-contracts.json`，例如日历小组件、系统配置面板、样式入口或其它必须进入 npm 包的文件。
+
+正式发布单包仍使用：
+
+```bash
+pnpm -C mango-ui publish:pkg <package|short-name> --release-tag=<tag>
+```
+
+`publish:pkg` 发布后会同时回查 `npm-hosted` 和 `npm-group`，并复用 `release-contracts.json` 的 tarball 契约。
+
 ## 11. 快速开始
 1. 后端模块初始化菜单、权限和 API 资源。
 2. 前端业务包实现页面并调用 `registerModulePages`。
