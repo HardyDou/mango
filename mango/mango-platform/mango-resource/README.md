@@ -153,6 +153,40 @@ src/main/resources/META-INF/mango/resources/system-common-menu.json
 
 新增字典、系统参数、消息模板、编号规则、打印模板、文件配置等资源使用对应目标模块 README 中列出的资源类型和字段契约。
 
+### 6.1 当前已开放资源类型
+
+Resource Registry 能否同步某个资源类型，以运行时是否装配对应目标模块的 `ResourceHandler` 为准。`ResourceTypes` 中的常量不等于已经开放使用。
+
+当前代码中已有 handler 的资源类型如下：
+
+| 目标模块 | 已开放资源类型 |
+|----------|----------------|
+| `mango-system` | `SYSTEM_DICT`、`SYSTEM_CONFIG`、`I18N_MESSAGE` |
+| `mango-domain` | `BUSINESS_DOMAIN` |
+| `mango-authorization` | `AUTH_MENU`、`AUTH_ROLE`、`AUTH_ROLE_DATA_SCOPE`、`AUTH_SUBJECT_ROLE`、`API_RESOURCE`、`FRONTEND_APP_REGISTRY`、`FRONTEND_MODULE_RUNTIME_STRATEGY` |
+| `mango-org` | `ORG_UNIT`、`ORG_POST` |
+| `mango-identity` | `IDENTITY_USER`、`ORG_MEMBER_BINDING` |
+| `mango-notice` | `MESSAGE_CHANNEL`、`MESSAGE_TEMPLATE` |
+| `mango-workflow` | `WORKFLOW_CATEGORY`、`WORKFLOW_TEMPLATE_CATEGORY`、`WORKFLOW_NODE_DEFINITION` |
+| `mango-numgen` | `SEQUENCE_RULE` |
+| `mango-template` | `PRINT_TEMPLATE` |
+| `mango-job` | `JOB_DEFINITION` |
+| `mango-file` | `FILE_STORAGE_CONFIG`、`FILE_SETTINGS` |
+
+声明新资源前先确认：
+
+- 目标应用已经依赖对应目标模块 starter 或 core，并能装配该类型的 `ResourceHandler`。
+- 字段名和字段类型以目标 handler 暴露的 `ResourceHandlerSpec` 为准，可通过 `/resource/handler-specs` 查看当前应用实际装配结果。
+- 资源声明只能证明 Resource Registry 调用了目标 handler；是否覆盖目标模块业务语义，要由目标模块自己的 README、集成测试或验收用例说明。
+
+以下资源类型目前只是保留常量或设计预留，不能作为已支持能力使用：
+
+| 资源类型 | 当前状态 | 现阶段使用方式 |
+|----------|----------|----------------|
+| `MESSAGE_EVENT` | 无目标表字段契约和 `ResourceHandler`。 | 通知资源当前使用 `MESSAGE_CHANNEL` 和 `MESSAGE_TEMPLATE`。事件、路由或触发规则需要等 notice 模块补齐 handler 后再开放。 |
+| `WORKFLOW_DEFINITION` | 无 `ResourceHandler`。 | 工作流当前只开放分类、模板分类和节点定义资源；流程定义仍由 workflow 模块自身的发布、初始化或业务入口管理。 |
+| `AI_PROMPT` | 无 `mango-ai` 目标模块运行时和 `ResourceHandler`。 | 暂不通过 Resource Registry 声明 AI Prompt。 |
+
 ## 7. 声明文件示例
 
 ```yaml
