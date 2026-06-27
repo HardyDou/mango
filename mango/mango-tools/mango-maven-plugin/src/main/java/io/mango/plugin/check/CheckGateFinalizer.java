@@ -28,6 +28,16 @@ class CheckGateFinalizer {
     private static final String CURRENT_DIR_PREFIX = "./";
     private static final String CHANGED_FILE_SEPARATOR = ",";
     private static final String LINE_SEPARATOR_PATTERN = "\\R";
+    private static final Set<String> FILE_LEVEL_COUNT_RULES = Set.of("filelengthcheck");
+    private static final Set<String> REPOSITORY_ROOT_SEGMENTS = Set.of(
+            "mango-parent",
+            "mango-common",
+            "mango-tools",
+            "mango-infra",
+            "mango-platform",
+            "mango-admin-starter",
+            "mango-app",
+            "mango-extension");
     private static final Consumer<String> NO_WARNING_SINK = warning -> {
     };
 
@@ -54,8 +64,11 @@ class CheckGateFinalizer {
         initializeResultOptions(result);
         result.totalIssueCount = result.issues.size();
         result.toolFailureCount = result.toolFailures.size();
+        result.excludedIssueCount = result.excludedIssues.size();
         result.issuesBySource = countIssuesByField(result, FIELD_SOURCE);
         result.issuesByRule = countIssuesByField(result, FIELD_RULE);
+        result.excludedIssuesBySource = countIssuesByField(result.excludedIssues, FIELD_SOURCE);
+        result.excludedIssuesByRule = countIssuesByField(result.excludedIssues, FIELD_RULE);
 
         if (isNoNewViolationsGate(result)) {
             finalizeNoNewViolations(result);
@@ -72,12 +85,13 @@ class CheckGateFinalizer {
     private void finalizeNoNewViolations(CheckResult result) throws MojoExecutionException {
         Set<String> changedFileSet = resolveChangedFiles(result);
         result.changedFiles.addAll(changedFileSet);
-        Set<String> baselineFingerprints = loadBaselineFingerprints(result);
+        Map<String, Integer> baselineFingerprints = loadBaselineFingerprints(result);
+        boolean hasBaseline = !baselineFingerprints.isEmpty();
         for (CheckIssue issue : result.issues) {
             issue.fingerprint = fingerprint(issue);
             issue.inChangedFiles = isChangedIssue(issue, changedFileSet);
-            issue.baseline = baselineFingerprints.contains(issue.fingerprint);
-            if (issue.inChangedFiles && !issue.baseline) {
+            issue.baseline = consumeBaselineMatch(baselineFingerprints, issue);
+            if (isNewIssue(issue, changedFileSet, hasBaseline)) {
                 result.newIssues.add(issue);
             } else {
                 result.baselineIssues.add(issue);
@@ -87,13 +101,43 @@ class CheckGateFinalizer {
         result.baselineIssueCount = result.baselineIssues.size();
         result.passed = result.newIssues.isEmpty() && !hasBlockingToolFailure(result);
         result.gateStatus = statusFor(result.passed);
-        if (changedFileSet.isEmpty()) {
+        if (!hasBaseline && changedFileSet.isEmpty()) {
             result.gateStatus = STATUS_INCONCLUSIVE;
             result.passed = false;
             result.addGateMessage("no-new-violations gate requires changed files; set "
-                    + "-Dmango.check.changedFiles or -Dmango.check.baseRef");
+                    + "-Dmango.check.changedFiles, -Dmango.check.baseRef or -Dmango.check.baselineFile");
         }
         applyToolFailureMessages(result);
+    }
+
+    private boolean isNewIssue(CheckIssue issue, Set<String> changedFileSet, boolean hasBaseline) {
+        if (hasBaseline) {
+            if (issue.baseline) {
+                return false;
+            }
+            return changedFileSet.isEmpty() || issue.inChangedFiles;
+        }
+        return issue.inChangedFiles;
+    }
+
+    private boolean consumeBaselineMatch(Map<String, Integer> baselineFingerprints, CheckIssue issue) {
+        if (consumeFingerprint(baselineFingerprints, issue.fingerprint)) {
+            return true;
+        }
+        return consumeFingerprint(baselineFingerprints, stableFingerprint(issue));
+    }
+
+    private boolean consumeFingerprint(Map<String, Integer> baselineFingerprints, String fingerprint) {
+        Integer count = baselineFingerprints.get(fingerprint);
+        if (count == null || count <= 0) {
+            return false;
+        }
+        if (count == 1) {
+            baselineFingerprints.remove(fingerprint);
+        } else {
+            baselineFingerprints.put(fingerprint, count - 1);
+        }
+        return true;
     }
 
     private void finalizeAllIssuesGate(CheckResult result) {
@@ -219,8 +263,8 @@ class CheckGateFinalizer {
         }
     }
 
-    private Set<String> loadBaselineFingerprints(CheckResult result) throws MojoExecutionException {
-        LinkedHashSet<String> fingerprints = new LinkedHashSet<>();
+    private Map<String, Integer> loadBaselineFingerprints(CheckResult result) throws MojoExecutionException {
+        LinkedHashMap<String, Integer> fingerprints = new LinkedHashMap<>();
         Path baselinePath = baselinePath();
         if (baselinePath == null) {
             return fingerprints;
@@ -233,13 +277,21 @@ class CheckGateFinalizer {
             CheckResult baseline = objectMapper.readValue(baselinePath.toFile(), CheckResult.class);
             if (baseline.issues != null) {
                 for (CheckIssue issue : baseline.issues) {
-                    fingerprints.add(fingerprintForBaseline(issue));
+                    addFingerprint(fingerprints, fingerprintForBaseline(issue));
+                    addFingerprint(fingerprints, stableFingerprint(issue));
                 }
             }
             return fingerprints;
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to read mango check baseline: " + baselinePath, e);
         }
+    }
+
+    private void addFingerprint(Map<String, Integer> fingerprints, String fingerprint) {
+        if (fingerprint == null || fingerprint.isBlank()) {
+            return;
+        }
+        fingerprints.merge(fingerprint, 1, Integer::sum);
     }
 
     private Path baselinePath() {
@@ -292,6 +344,22 @@ class CheckGateFinalizer {
                 normalizeFingerprintText(issue.description));
     }
 
+    private String stableFingerprint(CheckIssue issue) {
+        return String.join("|",
+                safeLower(issue.source),
+                safeLower(issue.rule),
+                normalizeIssueFile(issue.file),
+                stableFingerprintText(issue));
+    }
+
+    private String stableFingerprintText(CheckIssue issue) {
+        String text = normalizeFingerprintText(issue.description);
+        if (FILE_LEVEL_COUNT_RULES.contains(safeLower(issue.rule))) {
+            return text.replaceAll("\\d+", "#");
+        }
+        return text;
+    }
+
     private String normalizeFingerprintText(String value) {
         if (value == null) {
             return "";
@@ -315,7 +383,34 @@ class CheckGateFinalizer {
         if (normalized.startsWith(root + PATH_SEPARATOR)) {
             return normalized.substring(root.length() + 1);
         }
-        return normalized;
+        return repositoryRelativePath(normalized);
+    }
+
+    private String repositoryRelativePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        String[] segments = path.split(PATH_SEPARATOR);
+        for (int i = 0; i < segments.length; i++) {
+            if (REPOSITORY_ROOT_SEGMENTS.contains(segments[i])) {
+                return joinSegments(segments, i);
+            }
+        }
+        return path;
+    }
+
+    private String joinSegments(String[] segments, int start) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = start; i < segments.length; i++) {
+            if (segments[i] == null || segments[i].isBlank()) {
+                continue;
+            }
+            if (!builder.isEmpty()) {
+                builder.append(PATH_SEPARATOR);
+            }
+            builder.append(segments[i]);
+        }
+        return builder.toString();
     }
 
     private String normalizePath(String path) {
@@ -337,8 +432,12 @@ class CheckGateFinalizer {
     }
 
     private Map<String, Integer> countIssuesByField(CheckResult result, String fieldName) {
+        return countIssuesByField(result.issues, fieldName);
+    }
+
+    private Map<String, Integer> countIssuesByField(Iterable<CheckIssue> issues, String fieldName) {
         Map<String, Integer> counts = new LinkedHashMap<>();
-        for (CheckIssue issue : result.issues) {
+        for (CheckIssue issue : issues) {
             String key = issueField(issue, fieldName);
             if (key == null || key.isBlank()) {
                 key = "unknown";

@@ -52,6 +52,7 @@ public class CheckMojo extends AbstractMojo {
     private static final String SOURCE_PMD = "pmd";
     private static final String SOURCE_CHECKSTYLE = "checkstyle";
     private static final String SOURCE_SPOTBUGS = "spotbugs";
+    private static final Set<String> CODE_LEVEL_SOURCES = Set.of(SOURCE_PMD, SOURCE_CHECKSTYLE, SOURCE_SPOTBUGS);
     private static final String DOC_AUTO_CHECK_MAPPING = "auto-check-mapping.md";
     private static final String DOC_NAMING_RULES = "naming-rules.md";
     private static final String DOC_MODULE_RULES = "module-rules.md";
@@ -216,6 +217,12 @@ public class CheckMojo extends AbstractMojo {
      */
     @Parameter(property = "mango.check.staticFailurePolicy", defaultValue = "block")
     private String staticFailurePolicy;
+
+    /**
+     * Comma-separated Maven module paths whose code-level static issues are reported but excluded from gate.
+     */
+    @Parameter(property = "mango.check.codeLevelExcludedModules")
+    private String codeLevelExcludedModules;
 
     /**
      * Explicit exceptions for Resource Registry starter dependencies.
@@ -632,8 +639,8 @@ public class CheckMojo extends AbstractMojo {
             int line = parseInteger(violation.getAttribute("beginline"));
             String ruleName = violation.getAttribute("rule");
             String description = normalizeWhitespace(violation.getTextContent());
-            result.addIssue(ruleName, mapPmdSeverity(violation.getAttribute("priority")), filename, line,
-                    description, ruleName, DOC_STATIC_ANALYSIS, SOURCE_PMD);
+            addStaticIssue(ruleName, mapPmdSeverity(violation.getAttribute("priority")), filename, line,
+                    description, ruleName, SOURCE_PMD);
         }
     }
 
@@ -663,13 +670,12 @@ public class CheckMojo extends AbstractMojo {
             for (int j = 0; j < errors.getLength(); j++) {
                 Element error = (Element) errors.item(j);
                 String ruleName = extractCheckstyleRule(error.getAttribute("source"));
-                result.addIssue(ruleName,
+                addStaticIssue(ruleName,
                         mapCheckstyleSeverity(error.getAttribute("severity")),
                         filename,
                         parseInteger(error.getAttribute("line")),
                         error.getAttribute("message"),
                         ruleName,
-                        DOC_STATIC_ANALYSIS,
                         SOURCE_CHECKSTYLE);
             }
         }
@@ -688,15 +694,66 @@ public class CheckMojo extends AbstractMojo {
             if (description == null || description.isBlank()) {
                 description = normalizeWhitespace(textOfFirstChild(bugInstance, "LongMessage"));
             }
-            result.addIssue(type,
+            addStaticIssue(type,
                     mapSpotbugsSeverity(bugInstance.getAttribute("priority"), bugInstance.getAttribute("rank")),
                     filename,
                     line,
                     description,
                     type,
-                    DOC_STATIC_ANALYSIS,
                     SOURCE_SPOTBUGS);
         }
+    }
+
+    private void addStaticIssue(String type, String severity, String file, int line, String description,
+                                String rule, String source) {
+        if (isCodeLevelExcludedIssue(file, source)) {
+            result.addExcludedIssue(type, severity, file, line, description, rule, DOC_STATIC_ANALYSIS, source);
+            return;
+        }
+        result.addIssue(type, severity, file, line, description, rule, DOC_STATIC_ANALYSIS, source);
+    }
+
+    private boolean isCodeLevelExcludedIssue(String file, String source) {
+        if (!CODE_LEVEL_SOURCES.contains(source)) {
+            return false;
+        }
+        String issuePath = normalizePathForMatch(file);
+        if (issuePath.isBlank()) {
+            return false;
+        }
+        for (String excludedModule : codeLevelExcludedModuleSet()) {
+            if (samePathOrUnder(issuePath, excludedModule)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<String> codeLevelExcludedModuleSet() {
+        Set<String> modules = new HashSet<>();
+        if (codeLevelExcludedModules == null || codeLevelExcludedModules.isBlank()) {
+            return modules;
+        }
+        for (String module : codeLevelExcludedModules.split(",")) {
+            String normalized = normalizePathForMatch(module);
+            if (!normalized.isBlank()) {
+                modules.add(normalized);
+            }
+        }
+        return modules;
+    }
+
+    private boolean samePathOrUnder(String issuePath, String modulePath) {
+        return issuePath.equals(modulePath)
+                || issuePath.startsWith(modulePath + "/")
+                || issuePath.contains("/" + modulePath + "/");
+    }
+
+    private String normalizePathForMatch(String path) {
+        if (path == null) {
+            return "";
+        }
+        return path.trim().replace('\\', '/').replaceAll("^\\./+", "");
     }
 
     private Document loadXml(Path report) throws MojoExecutionException {
@@ -3433,6 +3490,7 @@ public class CheckMojo extends AbstractMojo {
         getLog().info("Issues: " + result.issues.size());
         getLog().info("New issues: " + result.newIssues.size());
         getLog().info("Baseline issues: " + result.baselineIssues.size());
+        getLog().info("Excluded issues: " + result.excludedIssues.size());
         getLog().info("Tool failures: " + result.toolFailures.size());
         for (String message : result.gateMessages) {
             getLog().warn("  [GATE] " + message);
