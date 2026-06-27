@@ -1,5 +1,47 @@
 # Mango Changelog
 
+## v2026.06.27-workflow-history-dialog-release - 2026-06-27
+
+### Fixed
+
+- Published the workflow history dialog title fix from PR #281. Business approval history dialogs now avoid showing a duplicate inner title when opened from the reusable workflow UI components.
+- Updated the workflow package release batch and dependent aggregate packages so direct package consumers, admin shell consumers, grid widget consumers, workflow business examples, aggregate admin consumers, and newly generated business projects resolve the same workflow UI fix.
+
+### Published Packages
+
+- npm: `@mango/workflow@1.0.17` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin-shell@1.0.29`, `@mango/grid-widgets@1.0.6`, and `@mango/workflow-business-example@1.0.16` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.33` and `@mango/cli@1.0.46` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.27-workflow-history-dialog-release`.
+
+### Upgrade Notes
+
+- Business frontends that consume workflow UI components directly should upgrade to `@mango/workflow@1.0.17`.
+- Business frontends that consume admin shell, grid widgets, workflow business example, or the aggregate admin package should upgrade this release batch together: `@mango/admin-shell@1.0.29`, `@mango/grid-widgets@1.0.6`, `@mango/workflow-business-example@1.0.16`, and `@mango/admin@1.0.33`.
+- New or regenerated business projects must use `@mango/cli@1.0.46` so generated frontend dependency locks include the same workflow UI release batch.
+- No backend Maven dependency, database migration, menu data, permission code, or tenant configuration change is required for this release.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=c97c79be17a7cd9ecefff64e6c7dbbbdcc05b509 --head=HEAD`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui --filter @mango/workflow build`
+- `pnpm -C mango-ui --filter @mango/admin-shell build`
+- `pnpm -C mango-ui --filter @mango/grid-widgets build`
+- `pnpm -C mango-ui --filter @mango/workflow-business-example build`
+- `pnpm -C mango-ui --filter @mango/admin build`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `pnpm -C mango-ui release:verify-npm workflow --version=1.0.17`
+- `pnpm -C mango-ui release:verify-npm admin-shell --version=1.0.29`
+- `pnpm -C mango-ui release:verify-npm grid-widgets --version=1.0.6`
+- `pnpm -C mango-ui release:verify-npm workflow-business-example --version=1.0.16`
+- `pnpm -C mango-ui release:verify-npm admin --version=1.0.33`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.46`
+- `git diff --check`
+
 ## v2026.06.27-admin-shell-menu-redirect-release - 2026-06-27
 
 ### Fixed

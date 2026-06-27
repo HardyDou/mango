@@ -3,9 +3,9 @@
     "mangoBackend": "1.0.0-SNAPSHOT"
   },
   "npm": {
-    "@mango/admin": "1.0.32",
+    "@mango/admin": "1.0.33",
     "@mango/admin-pages": "1.0.12",
-    "@mango/admin-shell": "1.0.28",
+    "@mango/admin-shell": "1.0.29",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.9",
     "@mango/calendar": "1.0.13",
@@ -13,7 +13,7 @@
     "@mango/common": "1.0.11",
     "@mango/file": "1.0.13",
     "@mango/grid-layout": "1.0.2",
-    "@mango/grid-widgets": "1.0.5",
+    "@mango/grid-widgets": "1.0.6",
     "@mango/job": "1.0.5",
     "@mango/notice": "1.0.14",
     "@mango/numgen": "1.0.13",
@@ -23,8 +23,8 @@
     "@mango/site-shell": "1.0.0",
     "@mango/system": "1.0.11",
     "@mango/template": "1.0.13",
-    "@mango/workflow": "1.0.16",
-    "@mango/workflow-business-example": "1.0.15",
-    "@mango/cli": "1.0.45"
+    "@mango/workflow": "1.0.17",
+    "@mango/workflow-business-example": "1.0.16",
+    "@mango/cli": "1.0.46"
   }
 }
