@@ -1,5 +1,41 @@
 # Mango Changelog
 
+## v2026.06.29-payment-admin-check-release - 2026-06-29
+
+### Fixed
+
+- Published the payment administration menu and refund workflow initialization from PR #310. `支付管理` is now included in the platform admin package under `平台能力`, and monolith startup enables the payment refund approval workflow resource.
+- Published the authorization permission snapshot fix from PR #310. Subject permission aggregation now includes page-level menu permissions together with button permissions, while excluding directory menu permissions.
+- Published the `mango:check` persistence schema migration folding fix from PR #309. The Maven plugin can now fold module-scoped persistence migrations into the schema checks without requiring developers to duplicate migration paths.
+- Published the stale public documentation staging fix from PR #308 so deleted/deprecated `mango-seed` documentation entries no longer break GitHub Pages publishing.
+
+### Published Packages
+
+- Maven: `io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- Maven: Authorization backend batch `io.mango.platform.authorization:mango-authorization-api`, `mango-authorization-core`, `mango-authorization-support`, `mango-authorization-starter`, `mango-authorization-resource-sync-starter`, `mango-authorization-resource-access-starter`, and `mango-authorization-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- Maven: Payment backend batch `io.mango.platform.payment:mango-payment-api`, `mango-payment-core`, `mango-payment-starter`, and `mango-payment-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- Docs: GitHub Pages Documentation run `28332162284` published the current developer docs for commit `cb2046cfa`.
+- GitHub Release: `v2026.06.29-payment-admin-check-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies before using the payment management menu, refund workflow defaults, subject permission snapshots, or the updated `mango:check` persistence schema folding logic.
+- Environments that use payment refund approval must rerun resource initialization/synchronization after upgrading so the payment menu resources and refund workflow resource are present.
+- Admin roles must be granted the updated payment menu resources before users can see `平台能力 / 支付管理`.
+- Projects using `mvn mango:check` should refresh `mango-maven-plugin:1.0.0-SNAPSHOT` so migration folding checks use the current persistence schema behavior.
+- No npm package version change is required for this release.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-authorization/mango-authorization-core -Dtest=SubjectAuthorityServiceImplIntegrationTest test`
+- `mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -Dtest=CheckMojoTest test`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- Payment menu JSON validation for `payment-common-menu.json`: valid JSON, 25 menu nodes and 68 button permissions are assigned to `platform_admin`; root `支付管理` remains under `data`.
+- GitHub Pages Documentation run `28332162284` succeeded for commit `cb2046cfa`.
+- `scripts/publish-maven-batch.sh :mango-maven-plugin :mango-authorization-api :mango-authorization-core :mango-authorization-support :mango-authorization-starter :mango-authorization-resource-sync-starter :mango-authorization-resource-access-starter :mango-authorization-starter-remote :mango-payment-api :mango-payment-core :mango-payment-starter :mango-payment-starter-remote --revision 1.0.0-SNAPSHOT`
+- `git diff --check`
+
 ## v2026.06.29-workflow-return-cli-db-release - 2026-06-29
 
 ### New
