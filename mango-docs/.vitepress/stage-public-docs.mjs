@@ -120,7 +120,6 @@ const publicDocs = [
   'mango/mango-platform/mango-org/README.md',
   'mango/mango-platform/mango-payment/README.md',
   'mango/mango-platform/mango-resource/README.md',
-  'mango/mango-platform/mango-seed/README.md',
   'mango/mango-platform/mango-system/README.md',
   'mango/mango-platform/mango-template/README.md',
   'mango/mango-platform/mango-workflow/README.md',
@@ -265,7 +264,6 @@ const sidebar = [
           { text: 'Org 组织', link: '/mango/mango-platform/mango-org/README' },
           { text: 'Payment 支付', link: '/mango/mango-platform/mango-payment/README' },
           { text: 'Resource Registry 资源注册中心', link: '/mango/mango-platform/mango-resource/README' },
-          { text: 'Seed 初始化', link: '/mango/mango-platform/mango-seed/README' },
           { text: 'System 系统', link: '/mango/mango-platform/mango-system/README' },
           { text: 'Template 模板', link: '/mango/mango-platform/mango-template/README' },
           { text: 'Workflow 工作流', link: '/mango/mango-platform/mango-workflow/README' }
