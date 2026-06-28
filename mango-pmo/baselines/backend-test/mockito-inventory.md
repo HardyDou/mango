@@ -62,6 +62,9 @@ rg -n "Mockito|mock\(|@Mock|MockBean|mockito" \
 |---|---|---|---|---|---|
 | `AuthRoleResourceHandlerTest` | MIGRATE | 验证 `AUTH_ROLE` resource handler 将资源声明同步到 `authorization_role` | 原测试 mock `RoleMapper`，替换了关键落库链路 | 已改为 `AuthRoleResourceHandlerIntegrationTest`，使用 H2、MyBatis-Plus 和真实 `RoleMapper` 覆盖 create、business-key update、disable | DONE |
 | `RoleDataScopeServiceImplTest` | MIGRATE | 验证角色数据范围保存与解析 | 原测试 mock `RoleDataScopeMapper`、`RoleMapper`、`MenuMapper`、`RoleMenuMapper`、`SubjectRoleBindingMapper`，替换了权限数据范围核心链路 | 已改为 `RoleDataScopeServiceImplIntegrationTest`，使用 H2、MyBatis-Plus 和真实 Mapper 覆盖无角色 fallback、角色授权 list 资源后落库、主体角色与数据范围合并解析 | DONE |
+| `ApiResourceServiceImplTest` | MIGRATE | 验证 API resource 扫描注册、失效旧路径和运行时访问决策 | 原测试 spy 被测 `ApiResourceServiceImpl` 并 mock `list`、`saveBatch`、`updateBatchById`，替换了关键持久化链路 | 已改为 `ApiResourceServiceImplIntegrationTest`，使用 H2、MyBatis-Plus 和真实 `ApiResourceMapper` 覆盖旧路径禁用和访问决策解析 | DONE |
+| `SubjectAuthorityServiceImplTest` | MIGRATE | 验证主体角色到菜单权限解析 | 原测试 mock `SubjectRoleBindingMapper`、`RoleMenuMapper`、`MenuMapper`，替换了授权查询核心链路 | 已改为 `SubjectAuthorityServiceImplIntegrationTest`，使用 H2、MyBatis-Plus 和真实 Mapper 覆盖权限字段优先、legacy menuCode fallback、非法 tenant 过滤 | DONE |
+| `TenantMenuPackageBindingHandlerTest` | MIGRATE | 验证租户绑定套餐后管理员角色菜单授权重建 | 原测试 mock `RoleMapper`、`RoleMenuMapper`、`MenuMapper`，替换了角色菜单落库链路 | 已改为 `TenantMenuPackageBindingHandlerIntegrationTest`，使用 H2、MyBatis-Plus 和真实 Mapper 覆盖租户上下文切换、旧绑定清理、菜单父级展开和新绑定落库；套餐菜单列表保留测试替身作为外部输入 | DONE |
 
 ## 7. 后续文件级清单要求
 
@@ -71,3 +74,6 @@ rg -n "Mockito|mock\(|@Mock|MockBean|mockito" \
 |---|---|---|---|---|---|---|---|
 | 记录具体测试文件路径 | KEEP/MIGRATE/REWRITE/DELETE | 写明目标 | 写明替身对象 | 是/否 | 单元/组件/集成/E2E | H2/Testcontainers/rollback/显式清理/无数据库 | OPEN/DONE |
 | `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/RoleDataScopeServiceImplTest.java` | MIGRATE | 角色数据范围保存与解析 | `RoleDataScopeMapper`、`RoleMapper`、`MenuMapper`、`RoleMenuMapper`、`SubjectRoleBindingMapper` | 是 | 集成测试：`RoleDataScopeServiceImplIntegrationTest` 使用真实 H2/MyBatis-Plus Mapper | H2 内存库，`BeforeEach` 重建最小表结构 | DONE |
+| `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/ApiResourceServiceImplTest.java` | MIGRATE | API resource 扫描注册、旧路径禁用和访问决策 | spy 被测 service，替换 `list`、`saveBatch`、`updateBatchById` | 是 | 集成测试：`ApiResourceServiceImplIntegrationTest` 使用真实 H2/MyBatis-Plus Mapper | H2 内存库，`BeforeEach` 重建最小表结构 | DONE |
+| `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/SubjectAuthorityServiceImplTest.java` | MIGRATE | 主体角色到菜单权限解析 | `SubjectRoleBindingMapper`、`RoleMenuMapper`、`MenuMapper` | 是 | 集成测试：`SubjectAuthorityServiceImplIntegrationTest` 使用真实 H2/MyBatis-Plus Mapper | H2 内存库，`BeforeEach` 重建最小表结构 | DONE |
+| `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/TenantMenuPackageBindingHandlerTest.java` | MIGRATE | 套餐绑定后租户管理员角色菜单授权重建 | `RoleMapper`、`RoleMenuMapper`、`MenuMapper` | 是 | 集成测试：`TenantMenuPackageBindingHandlerIntegrationTest` 使用真实 H2/MyBatis-Plus Mapper，`IMenuPackageService` 仅作为套餐输入替身 | H2 内存库，`BeforeEach` 重建最小表结构 | DONE |
