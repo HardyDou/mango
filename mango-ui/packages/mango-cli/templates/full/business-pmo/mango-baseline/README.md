@@ -22,7 +22,7 @@
 npm install -g @mango/cli --registry {{npmRegistry}}
 ```
 
-业务项目日常开发正式入口是 `mango workspace/dev/frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim，不再承载端口分配、数据库分配或进程归属规则。
+业务项目日常开发正式入口是 `mango workspace`、`mango dev` 和 `mango frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim，不再承载端口分配、数据库分配或进程归属规则。
 
 历史项目升级时，可以先使用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell`，把 baseline、Agent 入口和兼容脚本升级到当前版本。升级后必须在每个 active worktree 执行 `mango workspace init`。
 

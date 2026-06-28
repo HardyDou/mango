@@ -71,7 +71,7 @@ mango dev plan
 mango dev start
 ```
 
-推荐全局安装 `@mango/cli`，这样可以在任意业务仓根目录直接执行 `mango ...`。业务仓日常开发也以 `mango workspace/dev/frontend` 命令为正式入口；生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。
+推荐全局安装 `@mango/cli`，这样可以在任意业务仓根目录直接执行 `mango ...`。业务仓日常开发也以 `mango workspace`、`mango dev` 和 `mango frontend` 命令为正式入口；生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。
 
 历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell` 或 `mango pmo sync --project-dir . --sync-shell`，再在每个 active worktree 执行 `mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
 

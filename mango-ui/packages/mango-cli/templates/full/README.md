@@ -54,7 +54,7 @@ mango dev plan
 mango dev start
 ```
 
-CLI 执行来源需要区分：首次创建、历史项目升级和临时诊断可以使用全局 `@mango/cli`；业务项目日常开发正式入口是 `mango workspace/dev/frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim。
+CLI 执行来源需要区分：首次创建、历史项目升级和临时诊断可以使用全局 `@mango/cli`；业务项目日常开发正式入口是 `mango workspace`、`mango dev` 和 `mango frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim。
 
 需要直接执行 `mango ...` 时，先确认本机全局 CLI 已安装且版本符合当前项目依赖：
 
