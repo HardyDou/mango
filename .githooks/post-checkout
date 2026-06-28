@@ -4,10 +4,16 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -n "${repo_root}" ]] || exit 0
 
-script="${repo_root}/scripts/dev-workspace.sh"
-[[ -f "${script}" ]] || exit 0
+cli="${repo_root}/mango-ui/packages/mango-cli/src/index.mjs"
+if [[ -f "${cli}" ]]; then
+  command=(node "${cli}" workspace init)
+elif command -v mango >/dev/null 2>&1; then
+  command=(mango workspace init)
+else
+  exit 0
+fi
 
-bash "${script}" init >/dev/null || {
-  echo "Mango workspace init failed. Run: ${script} init" >&2
+"${command[@]}" >/dev/null || {
+  echo "Mango workspace init failed. Run: mango workspace init" >&2
   exit 1
 }

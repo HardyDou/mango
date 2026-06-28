@@ -11,7 +11,7 @@
 - `business-docs`：业务交付契约和台账示例。
 - `topologies`：单体和微服务接入说明。
 - `mango.dev.json`：本地开发工作区 manifest。
-- `scripts`：兼容入口，优先使用前端项目内锁定的 `@mango/cli`；项目依赖未安装时回退到全局 `mango` CLI。
+- `scripts`：历史兼容入口，会把旧命令转发到 Mango CLI。
 
 ## 2. 功能清单
 
@@ -19,13 +19,13 @@
 |------|----------|------|
 | 后端业务应用 | `backend/app` | full preset 默认依赖 `io.mango:mango-admin-starter`。 |
 | 前端管理后台 | `frontend` | full preset 默认使用 `@mango/admin/full` 和 `@mango/admin/style-full.css`。 |
-| 本地开发编排 | `mango.dev.json`、`scripts/dev-workspace.sh` | 后端、前端启动、日志、状态和停止。 |
+| 本地开发编排 | `mango.dev.json`、`.mango/workspace.json`、Mango CLI | 后端、前端启动、日志、状态和停止。 |
 | 平台能力接入 | 后端 starter、前端 `@mango/*` 包 | 认证、授权、系统、文件、模板、通知、编号、日历、工作流、job 等。 |
 | 业务模块生成 | `mango module add` | 在业务项目内生成 backend module 和 frontend package。 |
 | PMO baseline | `business-pmo`、`AGENTS.md` | 脱离 Mango 源码后执行 preflight 和交付检查。 |
 
 ## 3. 能力边界
-- 不作为生产部署脚本；`mango start` 和 `scripts/dev-workspace.sh` 只面向本地开发。
+- 不作为生产部署脚本；`mango dev start` 只面向本地开发。
 - 不替代业务项目的数据库初始化 runbook、部署 runbook、E2E 和性能基准。
 - 不提供独立的运行时种子初始化；平台默认数据由 Flyway 和 Resource Registry 写入，生产业务数据由业务流程维护。
 - 不允许前端 dev proxy 指向任意主机；模板只允许本机后端代理。
@@ -35,7 +35,7 @@
 模板负责生成可运行的业务项目骨架和默认 Mango 平台依赖。生成后：
 
 - 平台能力由 Mango starter 和 `@mango/*` 包提供。
-- 本地启动由 `@mango/cli` 读取 `mango.dev.json` 执行；脚本优先使用 `frontend` 内的项目依赖，未安装项目依赖时使用全局 CLI。
+- 本地启动由 `@mango/cli` 读取 `mango.dev.json`、`.mango/workspace.json` 和 `.mango/dev-workspace.env` 执行。
 - 业务模块由业务仓库维护，CLI 只更新 managed block。
 - 生产部署、密钥、数据库、对象存储、网关域名和权限授权由业务项目自己治理。
 
@@ -47,14 +47,14 @@
 ```bash
 cd {{projectKebab}}
 cd frontend && pnpm install && cd ..
-scripts/dev-workspace.sh init
-scripts/dev-workspace.sh validate
-scripts/dev-workspace.sh doctor
-scripts/dev-workspace.sh plan
-scripts/dev-workspace.sh start
+mango workspace init
+mango validate
+mango dev doctor
+mango dev plan
+mango dev start
 ```
 
-CLI 执行来源需要区分：首次创建、历史项目升级和临时诊断可以使用全局 `@mango/cli`；生成后的业务项目日常开发应优先使用 `scripts/dev-workspace.sh`。该脚本会先调用 `frontend` 内锁定的项目 CLI，只有项目依赖未安装时才回退到全局 `mango`。
+CLI 执行来源需要区分：首次创建、历史项目升级和临时诊断可以使用全局 `@mango/cli`；业务项目日常开发正式入口是 `mango workspace/dev/frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim。
 
 需要直接执行 `mango ...` 时，先确认本机全局 CLI 已安装且版本符合当前项目依赖：
 
@@ -79,21 +79,20 @@ npm --prefix frontend run build
 
 | 命令 | 作用 |
 |------|------|
-| `scripts/dev-workspace.sh init` | 创建 `.mango/dev-workspace.env` 并打印 workspace |
-| `scripts/dev-workspace.sh start` | 委托 `mango start` 启动默认分组 |
-| `scripts/dev-workspace.sh backend` | 委托 `mango backend` 启动后端 |
-| `scripts/dev-workspace.sh frontend` | 委托 `mango frontend` 启动前端 |
-| `scripts/dev-workspace.sh validate` | 使用项目内 CLI 校验 `mango.dev.json` |
-| `scripts/dev-workspace.sh doctor` | 使用项目内 CLI 校验工具链、POM 和端口 |
-| `scripts/dev-workspace.sh plan` | 使用项目内 CLI 展开启动命令 |
+| `mango workspace init` | 创建 `.mango/workspace.json`，并补齐 `.mango/dev-workspace.env` |
+| `mango workspace status` | 打印当前 workspace、端口和应用配置 |
 | `mango validate` | 校验 `mango.dev.json` |
-| `mango doctor` | 校验工具链、POM 和端口 |
-| `mango plan` | 展开启动命令 |
-| `mango status` | 查看进程状态 |
-| `mango logs {{projectKebab}}-service` | 查看后端日志 |
-| `mango stop` | 停止默认分组 |
+| `mango dev doctor` | 校验工具链、POM 和端口 |
+| `mango dev plan` | 展开启动命令 |
+| `mango dev start` | 启动默认分组 |
+| `mango dev backend` | 启动后端 |
+| `mango dev frontend` | 启动前端 |
+| `mango dev status` | 查看进程状态 |
+| `mango dev logs {{projectKebab}}-service` | 查看后端日志 |
+| `mango dev stop` | 停止默认分组 |
+| `mango frontend prepare` | 准备前端 source 模式样式聚合文件 |
 
-`scripts/backend-dev.sh` 只是兼容入口，会委托到 `scripts/dev-workspace.sh backend`。
+`scripts/backend-dev.sh` 只是兼容入口，会委托到 `mango dev backend`。
 
 ## 6. 配置说明
 ### 6.1 本地开发工作区
@@ -101,21 +100,26 @@ npm --prefix frontend run build
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
 |----------|------------|--------|------|----------|----------|
 | `mango.dev.json` | `version` | `1` | manifest 版本 | 不是 1 时 CLI 校验失败 | `mango.dev.json` |
-| `mango.dev.json` | `groups.default` | `{{projectKebab}}-service`、`{{projectKebab}}-admin` | 默认启动分组 | `mango start` 的目标 | `mango.dev.json` |
+| `mango.dev.json` | `groups.default` | `{{projectKebab}}-service`、`{{projectKebab}}-admin` | 默认启动分组 | `mango dev start` 的目标 | `mango.dev.json` |
 | `mango.dev.json` | `apps.{{projectKebab}}-service.type` | `spring-boot-maven` | 后端应用类型 | 使用 Maven Spring Boot plugin 启动 | `mango.dev.json` |
 | `mango.dev.json` | `apps.{{projectKebab}}-service.health` | `/actuator/health` | 后端健康检查 | CLI 等待 ready 后再继续 | `mango.dev.json` |
 | `mango.dev.json` | `apps.{{projectKebab}}-admin.type` | `vite` | 前端应用类型 | 使用 NPM dev script 启动 | `mango.dev.json` |
-| `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | `5555` | 后端端口 | 注入 `server.port` | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | `5176` | 前端端口 | 注入 Vite `VITE_PORT` | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端 host | 注入 Vite `VITE_HOST` | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_CRYPTO_SM4_SECRET_KEY` | 随机 16 字节 hex | SM4 加密密钥 | 注入后端 `mango.crypto.sm4.secret-key` | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_DB_HOST` | `127.0.0.1` | 数据库 host | 拼接 datasource URL | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_DB_PORT` | `3306` | 数据库端口 | 拼接 datasource URL | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_DB_NAME` | `{{projectKebabSnake}}` | 数据库名 | 拼接 datasource URL | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_DB_USERNAME` | `root` | 数据库用户名 | 注入 datasource | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_DB_PASSWORD` | 空字符串 | 数据库密码 | 注入 datasource | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_OFFICE_PLUGIN_ENABLED` | `false` | Office 转 PDF 开关 | 影响 fileproc 和 office plugin | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_BACKEND_ADDITIONAL_ARGS` | 空字符串 | 后端额外参数 | 追加到 Spring Boot args | `scripts/dev-workspace.sh` |
+| `.mango/workspace.json` | `slot` | 本机稳定 slot | 推导端口和数据库名 | 避免多 worktree 互相串用 | `mango workspace init` |
+| `.mango/workspace.json` | `backendPort` | `18000+slot` | 后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `frontendPort` | `8600+slot*20` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `dbName` | `mango_dev_<slot>` | 数据库名 | 写入 `MANGO_DB_NAME` | `mango workspace init` |
+| `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 后端端口 | 注入 `server.port` | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | 来自 `.mango/workspace.json` | 前端端口 | 注入 Vite `VITE_PORT` | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端 host | 注入 Vite `VITE_HOST` | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_FRONTEND_MODE` | `source` | 前端模式 | source 模式启动源码，package 模式要求已构建包 | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_CRYPTO_SM4_SECRET_KEY` | 随机 16 字节 hex | SM4 加密密钥 | 注入后端 `mango.crypto.sm4.secret-key` | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_DB_HOST` | `127.0.0.1` | 数据库 host | 拼接 datasource URL | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_DB_PORT` | `3306` | 数据库端口 | 拼接 datasource URL | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_DB_NAME` | 来自 `.mango/workspace.json` | 数据库名 | 拼接 datasource URL | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_DB_USERNAME` | `root` | 数据库用户名 | 注入 datasource | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_DB_PASSWORD` | 空字符串 | 数据库密码 | 注入 datasource | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_OFFICE_PLUGIN_ENABLED` | `false` | Office 转 PDF 开关 | 影响 fileproc 和 office plugin | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_BACKEND_ADDITIONAL_ARGS` | 空字符串 | 后端额外参数 | 追加到 Spring Boot args | Mango CLI |
 
 ### 6.2 后端 application.yml
 
@@ -204,9 +208,9 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 租户默认值来自 `mango.persistence.mybatis-plus.tenant.default-tenant-id`。业务模块如果继承 `TenantEntity`，必须验证当前租户上下文、查询条件和写入字段。
 
 ## 10. 快速开始
-1. 生成项目后先执行 `scripts/dev-workspace.sh init`，修改 `.mango/dev-workspace.env` 中数据库、端口、文件目录和可选插件开关。
-2. 执行 `mango validate`、`mango doctor`、`mango plan`，确认启动计划。
-3. 执行 `mango start`，确认后端 health 和前端页面可访问。
+1. 生成项目后先执行 `mango workspace init`，修改 `.mango/dev-workspace.env` 中数据库、端口、文件目录和可选插件开关。
+2. 执行 `mango validate`、`mango dev doctor`、`mango dev plan`，确认启动计划。
+3. 执行 `mango dev start`，确认后端 health 和前端页面可访问。
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。
 5. 通过 `mango module add` 新增业务模块，然后补齐表结构、菜单权限、租户边界、页面交互和测试。
 6. 每个业务能力完成后，把模块 README、交付契约、验证证据和 E2E 更新到业务仓库。
@@ -215,9 +219,9 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
 | `mango CLI not found in project frontend dependencies or globally` | 前端依赖未安装或缺少 `@mango/cli`，且机器没有全局 CLI | 先执行 `cd frontend && pnpm install`，或安装全局 `@mango/cli` |
-| 前端请求后端失败 | `VITE_ADMIN_PROXY_PATH` 未指向本机后端，或后端未启动 | 用 `mango plan` 查看代理目标，用 `mango status` 查看后端 |
+| 前端请求后端失败 | `VITE_ADMIN_PROXY_PATH` 未指向本机后端，或后端未启动 | 用 `mango dev plan` 查看代理目标，用 `mango dev status` 查看后端 |
 | Vite proxy 报 host 不允许 | `vite.config.ts` 只允许本机代理 | 本地开发保持代理到 `127.0.0.1` 或 `localhost` |
-| 后端 health 访问失败 | 数据库、Flyway、端口或密钥配置错误 | 查 `mango logs {{projectKebab}}-service` |
+| 后端 health 访问失败 | 数据库、Flyway、端口或密钥配置错误 | 查 `mango dev logs {{projectKebab}}-service` |
 | 文件上传大小不符合预期 | multipart 上限仍是模板默认值 | 修改 `spring.servlet.multipart.max-file-size` 和 `max-request-size` |
 | Office 预览不可用 | `MANGO_OFFICE_PLUGIN_ENABLED=false` | 安装并确认 Office 插件后再启用 |
 | 菜单没有初始化 | 对应模块 migration 或资源同步未执行 | 查 Flyway history、资源同步日志和授权模块配置 |

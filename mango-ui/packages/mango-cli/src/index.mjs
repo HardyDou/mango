@@ -212,14 +212,17 @@ Usage:
   mango init <project> --preset full [options]
   mango init <project> --preset custom --modules workflow,template [options]
   mango add <module...> [options]
-  mango init-dev
-  mango validate
-  mango doctor
-  mango plan [group|app...]
-  mango start [group|app...]
-  mango stop [app...]
-  mango status
-  mango logs <app>
+  mango workspace init
+  mango workspace status
+  mango workspace doctor
+  mango workspace release [--workspace <path>]
+  mango dev start [group|app...]
+  mango dev stop [app...]
+  mango dev status
+  mango dev doctor
+  mango dev logs <app>
+  mango frontend prepare
+  mango frontend doctor
   mango changelog
   mango pmo status --project-dir <dir>
   mango pmo check --project-dir <dir>
@@ -252,7 +255,8 @@ Options:
 Development workspace:
   mango searches upward from the current directory for mango.dev.json.
   Project defaults stay in mango.dev.json. Local secrets and per-workspace
-  ports stay in .mango/dev-workspace.env and must not be committed.
+  ports stay in .mango/workspace.json and .mango/dev-workspace.env and must not be committed.
+  scripts/dev-workspace.sh is a deprecated compatibility entry; use mango workspace/dev/frontend commands.
 
 Upgrade:
   Run "mango changelog" after upgrading to review new features, upgrade notes, and verification steps.
@@ -270,6 +274,21 @@ async function main(argv = process.argv.slice(2)) {
 
   if (args[0] === 'changelog' || args[0] === 'changes' || args[0] === 'release-notes') {
     printChangelog();
+    return;
+  }
+
+  if (args[0] === 'workspace') {
+    await runWorkspaceCommand(args[1], args.slice(2));
+    return;
+  }
+
+  if (args[0] === 'dev') {
+    await runDevCommand(args[1], args.slice(2));
+    return;
+  }
+
+  if (args[0] === 'frontend') {
+    await runFrontendCommand(args[1], args.slice(2));
     return;
   }
 
@@ -619,12 +638,115 @@ function addBusinessModule(argv) {
 
 const DEV_WORKSPACE_COMMANDS = new Set(['init-dev', 'print', 'validate', 'doctor', 'plan', 'start', 'stop', 'status', 'logs', 'backend', 'frontend']);
 const DEFAULT_SPRING_BOOT_PLUGIN = `org.springframework.boot:spring-boot-maven-plugin:${defaultVersions.springBoot}:run`;
+const WORKSPACE_SLOT_COUNT = 200;
+const BACKEND_PORT_BASE = 18000;
+const FRONTEND_PORT_BASE = 8600;
+const FRONTEND_SLOT_SIZE = 20;
+const DEFAULT_FRONTEND_APP_PORT_OFFSETS = {
+  MANGO_ADMIN_SHELL_PORT: 1,
+  MANGO_ADMIN_RBAC_APP_PORT: 6,
+  MANGO_ADMIN_WORKFLOW_APP_PORT: 7,
+  MANGO_ADMIN_TEMPLATE_APP_PORT: 8,
+  MANGO_ADMIN_CMS_APP_PORT: 9,
+  MANGO_SITE_ENTERPRISE_APP_PORT: 16,
+  MANGO_SITE_HELP_APP_PORT: 17,
+  MANGO_SITE_DEMO_APP_PORT: 18,
+};
 
 function isDevWorkspaceCommand(command) {
   return DEV_WORKSPACE_COMMANDS.has(command);
 }
 
+async function runWorkspaceCommand(command = 'status', argv = []) {
+  const normalized = command === 'init-dev' ? 'init' : command;
+  if (normalized === 'list') {
+    listWorkspaceRegistry(process.cwd());
+    return;
+  }
+  const context = normalized === 'init'
+    ? loadDevWorkspaceContext({ allowMissingManifest: true })
+    : loadDevWorkspaceContext({ allowMissingManifest: false });
+
+  if (normalized === 'init') {
+    initDevWorkspace(context);
+    return;
+  }
+  if (normalized === 'status' || normalized === 'print') {
+    printDevWorkspace(context);
+    return;
+  }
+  if (normalized === 'doctor') {
+    doctorDevWorkspace(context);
+    return;
+  }
+  if (normalized === 'release') {
+    releaseWorkspaceCommand(context, argv);
+    return;
+  }
+  fail(`unknown workspace command: ${command || ''}`);
+}
+
+async function runDevCommand(command = 'start', argv = []) {
+  const normalized = command || 'start';
+  const context = loadDevWorkspaceContext({ allowMissingManifest: false });
+  if (normalized === 'start') {
+    await startDevWorkspace(context, argv);
+    return;
+  }
+  if (normalized === 'stop') {
+    await stopDevWorkspace(context, argv);
+    return;
+  }
+  if (normalized === 'status') {
+    printDevWorkspaceStatus(context);
+    return;
+  }
+  if (normalized === 'doctor') {
+    doctorDevWorkspace(context);
+    return;
+  }
+  if (normalized === 'plan') {
+    printDevWorkspacePlan(context, argv);
+    return;
+  }
+  if (normalized === 'logs') {
+    printDevWorkspaceLogs(context, argv);
+    return;
+  }
+  if (normalized === 'backend') {
+    await startDevWorkspace(context, ['backend', ...argv]);
+    return;
+  }
+  if (normalized === 'frontend') {
+    await startDevWorkspace(context, ['frontend', ...argv]);
+    return;
+  }
+  fail(`unknown dev command: ${command || ''}`);
+}
+
+async function runFrontendCommand(command = 'prepare', argv = []) {
+  const normalized = command || 'prepare';
+  const context = loadDevWorkspaceContext({ allowMissingManifest: false });
+  if (normalized === 'prepare') {
+    prepareFrontendWorkspace(context, { checkOnly: false });
+    return;
+  }
+  if (normalized === 'doctor') {
+    prepareFrontendWorkspace(context, { checkOnly: true });
+    return;
+  }
+  if (normalized === 'start') {
+    await startDevWorkspace(context, ['frontend', ...argv]);
+    return;
+  }
+  fail(`unknown frontend command: ${command || ''}`);
+}
+
 async function runDevWorkspaceCommand(command, argv) {
+  if (command === 'frontend') {
+    await runDevCommand('frontend', argv);
+    return;
+  }
   const context = command === 'init-dev'
     ? loadDevWorkspaceContext({ allowMissingManifest: true })
     : loadDevWorkspaceContext({ allowMissingManifest: false });
@@ -698,6 +820,7 @@ function loadDevWorkspaceContext({ allowMissingManifest }) {
         manifest: null,
         env: {},
         localConfig: {},
+        workspacePath: join(process.cwd(), '.mango/workspace.json'),
       };
     }
     fail('mango.dev.json not found. Run this command inside a Mango workspace or create mango.dev.json.');
@@ -715,6 +838,7 @@ function loadDevWorkspaceContext({ allowMissingManifest }) {
     env: { ...defaultEnv, ...env },
     localConfig,
     localConfigPath,
+    workspacePath: join(root, '.mango/workspace.json'),
     runDir: join(root, '.mango/run'),
     pidDir: join(root, '.mango/run/pids'),
     logDir: join(root, '.mango/run/logs'),
@@ -813,13 +937,15 @@ function initDevWorkspace(context) {
   const mangoDir = join(context.root, '.mango');
   const envPath = join(mangoDir, 'dev-workspace.env');
   mkdirSync(mangoDir, { recursive: true });
+  const workspace = ensureWorkspaceConfig(context.root);
   if (!existsSync(envPath)) {
-    writeFileSync(envPath, defaultDevWorkspaceEnv(context.root));
+    writeFileSync(envPath, defaultDevWorkspaceEnv(context.root, workspace));
     process.stdout.write(`Created local workspace env: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
   } else {
     ensureDevWorkspaceEnv(context);
     process.stdout.write(`Workspace env already exists: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
   }
+  process.stdout.write(`Workspace slot ${workspace.slot}: ${relativeOrAbsolute(process.cwd(), join(context.root, '.mango/workspace.json'))}\n`);
 
   if (!existsSync(context.manifestPath)) {
     const { manifest, warnings } = createBusinessDevManifest(context.root, basename(context.root));
@@ -831,8 +957,8 @@ function initDevWorkspace(context) {
   }
 }
 
-function defaultDevWorkspaceEnv(root) {
-  const workspace = allocateDevWorkspace(root);
+function defaultDevWorkspaceEnv(root, workspace = ensureWorkspaceConfig(root)) {
+  const frontendPorts = workspace.frontendApps || buildFrontendAppPorts(workspace.frontendPort);
   return [
     '# Mango local workspace configuration.',
     '# This file is generated once per workspace and must not be committed.',
@@ -840,9 +966,11 @@ function defaultDevWorkspaceEnv(root) {
     `MANGO_CRYPTO_SM4_SECRET_KEY=${randomBytes(16).toString('hex')}`,
     `MANGO_BACKEND_PORT=${workspace.backendPort}`,
     `MANGO_FRONTEND_PORT=${workspace.frontendPort}`,
+    ...Object.entries(frontendPorts).map(([key, value]) => `${key}=${value}`),
     'MANGO_FRONTEND_HOST=127.0.0.1',
     'MANGO_FRONTEND_OPEN=false',
     'MANGO_FRONTEND_AUTO_INSTALL=true',
+    'MANGO_FRONTEND_MODE=source',
     `MANGO_DB_NAME=${workspace.dbName}`,
     'MANGO_DB_HOST=127.0.0.1',
     'MANGO_DB_PORT=3306',
@@ -855,6 +983,19 @@ function defaultDevWorkspaceEnv(root) {
   ].join('\n');
 }
 
+function ensureWorkspaceConfig(root) {
+  const workspacePath = join(root, '.mango/workspace.json');
+  if (existsSync(workspacePath)) {
+    const workspace = readJsonFile(workspacePath);
+    registerWorkspace(root, workspace);
+    return workspace;
+  }
+  const workspace = allocateDevWorkspace(root);
+  mkdirSync(dirname(workspacePath), { recursive: true });
+  writeFileSync(workspacePath, `${JSON.stringify(workspace, null, 2)}\n`);
+  return workspace;
+}
+
 function allocateDevWorkspace(root) {
   const normalizedRoot = resolve(root);
   const registry = readWorkspaceRegistry(normalizedRoot);
@@ -862,30 +1003,62 @@ function allocateDevWorkspace(root) {
   if (existing) {
     return existing;
   }
-  const seed = numericHash(normalizedRoot);
-  const usedBackendPorts = new Set(registry.map(entry => Number(entry.backendPort)));
-  const usedFrontendPorts = new Set(registry.map(entry => Number(entry.frontendPort)));
+  const usedSlots = new Set(registry.map(entry => Number(entry.slot)).filter(Number.isFinite));
+  const usedPorts = new Set(registry.flatMap(entry => workspacePorts(entry)));
   const usedDbNames = new Set(registry.map(entry => entry.dbName));
-  for (let offset = 0; offset < 1000; offset += 1) {
-    const suffix = (seed + offset) % 1000;
-    const candidate = {
-      root: normalizedRoot,
-      workspaceId: `mango_${suffix.toString().padStart(3, '0')}`,
-      backendPort: 18080 + suffix,
-      frontendPort: 7770 + suffix,
-      dbName: `mango_dev_${suffix.toString().padStart(3, '0')}`,
-    };
-    if (usedBackendPorts.has(candidate.backendPort)
-      || usedFrontendPorts.has(candidate.frontendPort)
-      || usedDbNames.has(candidate.dbName)
-      || isPortInUse(candidate.backendPort)
-      || isPortInUse(candidate.frontendPort)) {
+  for (let slot = 1; slot <= WORKSPACE_SLOT_COUNT; slot += 1) {
+    const candidate = buildWorkspaceConfig(normalizedRoot, slot);
+    if (usedSlots.has(slot)
+      || workspacePorts(candidate).some(port => usedPorts.has(port) || isPortInUse(port))
+      || usedDbNames.has(candidate.dbName)) {
       continue;
     }
     writeWorkspaceRegistry(normalizedRoot, [...registry, candidate]);
     return candidate;
   }
-  fail('unable to allocate free Mango workspace ports. Edit MANGO_WORKSPACE_REGISTRY or stop conflicting services.');
+  fail('unable to allocate free Mango workspace slot. Run mango workspace list, stop conflicting services, or set MANGO_WORKSPACE_REGISTRY.');
+}
+
+function buildWorkspaceConfig(root, slot) {
+  const frontendPort = FRONTEND_PORT_BASE + slot * FRONTEND_SLOT_SIZE;
+  return {
+    version: 1,
+    root,
+    workspaceId: `mango_${slot.toString().padStart(3, '0')}`,
+    slot,
+    backendPort: BACKEND_PORT_BASE + slot,
+    frontendPort,
+    frontendApps: buildFrontendAppPorts(frontendPort),
+    dbName: `mango_dev_${slot.toString().padStart(3, '0')}`,
+  };
+}
+
+function buildFrontendAppPorts(frontendPort) {
+  return Object.fromEntries(
+    Object.entries(DEFAULT_FRONTEND_APP_PORT_OFFSETS)
+      .map(([key, offset]) => [key, frontendPort + offset]),
+  );
+}
+
+function workspacePorts(workspace) {
+  return [
+    Number(workspace.backendPort),
+    Number(workspace.frontendPort),
+    ...Object.values(workspace.frontendApps || {}).map(Number),
+  ].filter(Number.isFinite);
+}
+
+function registerWorkspace(root, workspace) {
+  const normalizedRoot = resolve(root);
+  const registry = readWorkspaceRegistry(normalizedRoot).filter(entry => entry.root !== normalizedRoot);
+  writeWorkspaceRegistry(normalizedRoot, [
+    ...registry,
+    {
+      ...workspace,
+      root: normalizedRoot,
+      lastActiveAt: new Date().toISOString(),
+    },
+  ]);
 }
 
 function workspaceRegistryPath(root) {
@@ -893,7 +1066,7 @@ function workspaceRegistryPath(root) {
     return resolve(process.env.MANGO_WORKSPACE_REGISTRY);
   }
   const home = process.env.HOME || root;
-  return join(home, '.mango/workspaces.tsv');
+  return join(home, '.mango/workspaces.json');
 }
 
 function readWorkspaceRegistry(root) {
@@ -901,29 +1074,78 @@ function readWorkspaceRegistry(root) {
   if (!existsSync(path)) {
     return [];
   }
-  return readFileSync(path, 'utf8')
+  const content = readFileSync(path, 'utf8').trim();
+  if (!content) {
+    return [];
+  }
+  if (content.startsWith('[')) {
+    return JSON.parse(content).filter(isValidWorkspaceRegistryEntry);
+  }
+  return content
     .split(/\r?\n/)
     .filter(Boolean)
     .map(line => {
       const [entryRoot, workspaceId, backendPort, frontendPort, dbName] = line.split('\t');
+      const slot = Number(String(workspaceId || '').replace(/\D/g, ''));
+      const migrated = buildWorkspaceConfig(entryRoot, Number.isFinite(slot) && slot > 0 ? slot : 1);
       return {
-        root: entryRoot,
-        workspaceId,
-        backendPort: Number(backendPort),
-        frontendPort: Number(frontendPort),
-        dbName,
+        ...migrated,
+        workspaceId: workspaceId || migrated.workspaceId,
+        backendPort: Number(backendPort) || migrated.backendPort,
+        frontendPort: Number(frontendPort) || migrated.frontendPort,
+        dbName: dbName || migrated.dbName,
       };
     })
-    .filter(entry => entry.root && entry.workspaceId && entry.backendPort && entry.frontendPort && entry.dbName);
+    .filter(isValidWorkspaceRegistryEntry);
+}
+
+function isValidWorkspaceRegistryEntry(entry) {
+  return Boolean(entry?.root && entry.workspaceId && entry.slot && entry.backendPort && entry.frontendPort && entry.dbName);
 }
 
 function writeWorkspaceRegistry(root, entries) {
   const path = workspaceRegistryPath(root);
   mkdirSync(dirname(path), { recursive: true });
-  const content = entries
-    .map(entry => [entry.root, entry.workspaceId, entry.backendPort, entry.frontendPort, entry.dbName].join('\t'))
-    .join('\n');
-  writeFileSync(path, `${content}\n`);
+  writeFileSync(path, `${JSON.stringify(entries, null, 2)}\n`);
+}
+
+function listWorkspaceRegistry(root) {
+  const registry = readWorkspaceRegistry(root);
+  if (registry.length === 0) {
+    process.stdout.write('No Mango workspaces registered on this machine.\n');
+    return;
+  }
+  for (const entry of registry.sort((left, right) => Number(left.slot) - Number(right.slot))) {
+    process.stdout.write([
+      `slot=${entry.slot}`,
+      `id=${entry.workspaceId}`,
+      `backend=${entry.backendPort}`,
+      `frontend=${entry.frontendPort}`,
+      `db=${entry.dbName}`,
+      entry.root,
+    ].join(' ') + '\n');
+  }
+}
+
+function releaseWorkspaceCommand(context, argv) {
+  const workspacePath = readOptionValue(argv, '--workspace') || context.root;
+  const targetRoot = resolve(workspacePath);
+  const registry = readWorkspaceRegistry(context.root);
+  const next = registry.filter(entry => resolve(entry.root) !== targetRoot);
+  writeWorkspaceRegistry(context.root, next);
+  process.stdout.write(`Released Mango workspace registration: ${targetRoot}\n`);
+}
+
+function readOptionValue(argv, name) {
+  const index = argv.indexOf(name);
+  if (index < 0) {
+    return '';
+  }
+  const value = argv[index + 1];
+  if (!value || value.startsWith('--')) {
+    fail(`missing value for ${name}`);
+  }
+  return value;
 }
 
 function numericHash(value) {
@@ -1257,8 +1479,11 @@ function toAppName(relativeDir, fallback) {
 
 function printDevWorkspace(context) {
   validateDevWorkspace(context, { verbose: false });
+  const workspace = ensureWorkspaceConfig(context.root);
   process.stdout.write(`Workspace: ${context.root}\n`);
+  process.stdout.write(`Workspace ID: ${workspace.workspaceId} slot=${workspace.slot}\n`);
   process.stdout.write(`Manifest:  ${context.manifestPath}\n`);
+  process.stdout.write(`Workspace: ${context.workspacePath}\n`);
   process.stdout.write(`Env file:  ${join(context.root, '.mango/dev-workspace.env')}\n`);
   for (const [name, app] of Object.entries(context.manifest.apps || {})) {
     const resolved = resolveDevApp(context, name, app);
@@ -1379,7 +1604,7 @@ function doctorDevWorkspace(context) {
       }
     }
     if (resolved.port && isPortInUse(resolved.port)) {
-      process.stdout.write(`warn    ${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}\n`);
+      process.stdout.write(`warn    ${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}\n`);
     } else if (resolved.port) {
       process.stdout.write(`ok      ${name} port ${resolved.port} is free\n`);
     }
@@ -1419,7 +1644,10 @@ async function startDevWorkspace(context, targets) {
       continue;
     }
     if (resolved.port && isPortInUse(resolved.port)) {
-      fail(`${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}. Stop the conflicting process or edit .mango/dev-workspace.env.`);
+      fail(`${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}.`);
+    }
+    if (resolved.type === 'vite') {
+      prepareFrontendWorkspace(context, { checkOnly: false });
     }
     startDevApp(context, name, resolved);
     if (resolved.health) {
@@ -1435,9 +1663,23 @@ function ensureDevWorkspaceEnv(context) {
     return;
   }
   const env = readEnvFile(envPath);
+  const workspace = ensureWorkspaceConfig(context.root);
   if (!env.MANGO_CRYPTO_SM4_SECRET_KEY) {
     appendFileSync(envPath, `\nMANGO_CRYPTO_SM4_SECRET_KEY=${randomBytes(16).toString('hex')}\n`);
     process.stdout.write(`Added MANGO_CRYPTO_SM4_SECRET_KEY to local workspace env: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
+  }
+  const requiredValues = {
+    MANGO_WORKSPACE_ID: workspace.workspaceId,
+    MANGO_BACKEND_PORT: workspace.backendPort,
+    MANGO_FRONTEND_PORT: workspace.frontendPort,
+    MANGO_DB_NAME: workspace.dbName,
+    MANGO_FRONTEND_MODE: 'source',
+    ...workspace.frontendApps,
+  };
+  const missing = Object.entries(requiredValues).filter(([key]) => !env[key]);
+  if (missing.length > 0) {
+    appendFileSync(envPath, `\n${missing.map(([key, value]) => `${key}=${value}`).join('\n')}\n`);
+    process.stdout.write(`Added workspace ownership values to local env: ${missing.map(([key]) => key).join(', ')}\n`);
   }
 }
 
@@ -1480,6 +1722,8 @@ function startDevApp(context, name, app) {
     logPath,
     port: app.port || null,
     url: app.url || null,
+    workspaceId: context.env.MANGO_WORKSPACE_ID || '',
+    workspaceRoot: context.root,
   });
   process.stdout.write(`${name}: started pid=${child.pid} log=${relativeOrAbsolute(process.cwd(), logPath)}\n`);
 }
@@ -1541,6 +1785,8 @@ function failWithDevAppLog(context, name, message) {
 
 function printDevWorkspaceStatus(context) {
   validateDevWorkspace(context, { verbose: false });
+  ensureDevWorkspaceEnv(context);
+  context.env = { ...parseEnvText(defaultDevWorkspaceEnv(context.root)), ...readEnvFile(join(context.root, '.mango/dev-workspace.env')) };
   for (const [name, app] of Object.entries(context.manifest.apps || {})) {
     const resolved = resolveDevApp(context, name, app);
     const pidInfo = readPidFile(context, name);
@@ -1549,8 +1795,9 @@ function printDevWorkspaceStatus(context) {
     const status = alive ? 'running' : occupied ? 'occupied' : 'stopped';
     const pidText = alive ? ` pid=${pidInfo.pid}` : '';
     const urlText = resolved.url ? ` ${resolved.url}` : '';
-    const occupantText = occupied ? formatPortOccupants(resolved.port) : '';
-    process.stdout.write(`${status.padEnd(8)} ${name}${pidText}${urlText}${occupantText}\n`);
+    const ownerText = alive && pidInfo.workspaceRoot ? ` owner=${relativeOrAbsolute(process.cwd(), pidInfo.workspaceRoot)}` : '';
+    const occupantText = occupied ? `${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}` : '';
+    process.stdout.write(`${status.padEnd(8)} ${name}${pidText}${urlText}${ownerText}${occupantText}\n`);
   }
 }
 
@@ -1567,6 +1814,95 @@ function printDevWorkspaceLogs(context, argv) {
     fail(`log file not found: ${relativeOrAbsolute(process.cwd(), logPath)}`);
   }
   process.stdout.write(tailFile(logPath, 200));
+}
+
+function prepareFrontendWorkspace(context, { checkOnly }) {
+  const frontendRoots = uniqueBy(
+    Object.values(context.manifest.apps || {})
+      .filter(app => app.type === 'vite')
+      .map(app => resolve(context.root, app.cwd || '.')),
+    item => item,
+  );
+  if (frontendRoots.length === 0) {
+    process.stdout.write('No Vite frontend apps found.\n');
+    return;
+  }
+  for (const appRoot of frontendRoots) {
+    const uiRoot = findFrontendWorkspaceRoot(appRoot, context.root);
+    const packageManager = detectPackageManager(appRoot, context.root);
+    const mode = context.env.MANGO_FRONTEND_MODE || 'source';
+    if (mode === 'package') {
+      process.stdout.write(`frontend package mode: ${relativeOrAbsolute(context.root, appRoot)} expects built package artifacts\n`);
+      continue;
+    }
+    if (!existsSync(join(uiRoot, 'package.json'))) {
+      process.stdout.write(`warn    frontend root not found for ${relativeOrAbsolute(context.root, appRoot)}\n`);
+      continue;
+    }
+    const adminStylesScript = packageJsonHasScript(join(uiRoot, 'package.json'), 'admin:styles');
+    if (adminStylesScript) {
+      if (checkOnly) {
+        process.stdout.write(`ok      frontend prepare can run ${packageManager} admin:styles in ${relativeOrAbsolute(process.cwd(), uiRoot)}\n`);
+      } else {
+        runCheckedCommand(uiRoot, packageManager, ['admin:styles'], 'frontend style aggregation');
+      }
+    }
+    const adminPackagePath = join(uiRoot, 'packages/admin/package.json');
+    if (existsSync(adminPackagePath)) {
+      const missing = requiredAdminSourceModeArtifacts(uiRoot).filter(path => !existsSync(path));
+      if (missing.length === 0) {
+        process.stdout.write(`ok      frontend source artifacts ready in ${relativeOrAbsolute(process.cwd(), uiRoot)}\n`);
+        continue;
+      }
+      if (checkOnly) {
+        process.stdout.write(`warn    missing source-mode artifacts:\n${missing.map(path => `        ${relativeOrAbsolute(process.cwd(), path)}`).join('\n')}\n`);
+      } else if (!adminStylesScript) {
+        fail('frontend source-mode artifacts are missing and admin:styles script is unavailable');
+      }
+    }
+  }
+}
+
+function findFrontendWorkspaceRoot(appRoot, stopRoot) {
+  let current = appRoot;
+  const boundary = resolve(stopRoot);
+  while (true) {
+    if (existsSync(join(current, 'pnpm-workspace.yaml')) || existsSync(join(current, 'packages/admin/package.json'))) {
+      return current;
+    }
+    if (current === boundary || current === dirname(current)) {
+      return appRoot;
+    }
+    current = dirname(current);
+  }
+}
+
+function packageJsonHasScript(packageJsonPath, scriptName) {
+  if (!existsSync(packageJsonPath)) {
+    return false;
+  }
+  const packageJson = readJsonFile(packageJsonPath);
+  return Boolean(packageJson.scripts?.[scriptName]);
+}
+
+function requiredAdminSourceModeArtifacts(uiRoot) {
+  return [
+    join(uiRoot, 'packages/admin/generated-package-styles.css'),
+    join(uiRoot, 'packages/admin/style-full.css'),
+  ];
+}
+
+function runCheckedCommand(cwd, command, args, label) {
+  requireCommand(command, label);
+  process.stdout.write(`${label}: ${command} ${args.join(' ')}\n`);
+  const result = spawnSync(command, args, {
+    cwd,
+    stdio: 'inherit',
+    env: { ...process.env },
+  });
+  if (result.status !== 0) {
+    fail(`${label} failed`);
+  }
 }
 
 async function stopDevWorkspace(context, targets) {
@@ -1888,6 +2224,19 @@ function formatPortOccupants(port) {
     .map(item => `pid=${item.pid}${item.command ? ` command=${item.command}` : ''}`)
     .join(', ');
   return ` (${text})`;
+}
+
+function formatPortOwnerHint(root, port) {
+  const owner = findRegisteredPortOwner(root, port);
+  if (!owner || resolve(owner.root) === resolve(root)) {
+    return '';
+  }
+  return ` owner=${owner.root}`;
+}
+
+function findRegisteredPortOwner(root, port) {
+  return readWorkspaceRegistry(root)
+    .find(entry => workspacePorts(entry).includes(Number(port)));
 }
 
 function httpOk(url) {
@@ -3106,8 +3455,8 @@ function printNextSteps(targetDir, variables) {
   process.stdout.write(`Created Mango ${variables.preset} project: ${relativeTarget}\n\n`);
   process.stdout.write('Next steps:\n');
   process.stdout.write(`  cd ${relativeTarget}\n`);
-  process.stdout.write('  scripts/dev-workspace.sh init\n');
-  process.stdout.write('  scripts/dev-workspace.sh start\n');
+  process.stdout.write('  mango workspace init\n');
+  process.stdout.write('  mango dev start\n');
   process.stdout.write(`  Review topologies/${variables.topology}/README.md\n`);
 }
 

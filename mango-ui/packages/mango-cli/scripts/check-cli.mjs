@@ -180,8 +180,9 @@ try {
     || devManifest.apps['mango-full-acceptance-admin'].dependsOn[0] !== 'mango-full-acceptance-service') {
     throw new Error('generated mango.dev.json must describe backend/frontend startup with explicit Spring Boot plugin and SM4 env propagation');
   }
-  if (!devWorkspaceScript.includes('The actual runner lives in the mango CLI')
-    || !devWorkspaceScript.includes('run_mango "${command}" "$@"')
+  if (!devWorkspaceScript.includes('scripts/dev-workspace.sh is deprecated')
+    || !devWorkspaceScript.includes('workspace init')
+    || !devWorkspaceScript.includes('dev start')
     || !devWorkspaceScript.includes('command -v mango')
     || !devWorkspaceScript.includes('exec pnpm exec mango "$@"')
     || !devWorkspaceScript.includes('cd frontend && pnpm install')
@@ -196,7 +197,7 @@ try {
   assertGeneratedDevWorkspaceUsesCliFallback(projectRoot);
   assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
   assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
-  if (!backendDevScript.includes('mango backend')
+  if (!backendDevScript.includes('mango dev backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
   }
@@ -226,7 +227,7 @@ try {
   if (!businessAgents.includes('mango-cli init --preset full')) {
     throw new Error('generated full AGENTS.md should record full preset');
   }
-  for (const expected of ['mango pmo check --project-dir .', 'git worktree list', 'scripts/dev-workspace.sh print', 'business-docs']) {
+  for (const expected of ['mango pmo check --project-dir .', 'git worktree list', 'mango workspace status', 'business-docs']) {
     if (!businessAgents.includes(expected)) {
       throw new Error(`generated AGENTS.md should mention governance workflow: ${expected}`);
     }
@@ -817,12 +818,18 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
     }
   }
   const backendPort = Number(envFile.match(/^MANGO_BACKEND_PORT=([0-9]+)$/m)?.[1] || 0);
-  if (backendPort < 18080 || backendPort > 19079) {
-    throw new Error(`generated backend port must be in allocated range 18080-19079:\n${envFile}`);
+  if (backendPort < 18001 || backendPort > 18200) {
+    throw new Error(`generated backend port must be in allocated range 18001-18200:\n${envFile}`);
   }
   const frontendPort = Number(envFile.match(/^MANGO_FRONTEND_PORT=([0-9]+)$/m)?.[1] || 0);
-  if (frontendPort < 7770 || frontendPort > 8769) {
-    throw new Error(`generated frontend port must be in allocated range 7770-8769:\n${envFile}`);
+  if (frontendPort < 8620 || frontendPort > 12600) {
+    throw new Error(`generated frontend port must be in allocated range 8620-12600:\n${envFile}`);
+  }
+  const workspaceConfig = JSON.parse(readFileSync(join(projectRoot, '.mango/workspace.json'), 'utf8'));
+  if (workspaceConfig.backendPort !== backendPort
+    || workspaceConfig.frontendPort !== frontendPort
+    || workspaceConfig.dbName !== envFile.match(/^MANGO_DB_NAME=(.+)$/m)?.[1]) {
+    throw new Error(`generated workspace.json must match dev-workspace.env:\n${JSON.stringify(workspaceConfig, null, 2)}\n${envFile}`);
   }
 }
 
@@ -1098,7 +1105,7 @@ function assertDevWorkspaceRunnerScenarios(tempRoot) {
       [cli, 'start'],
       occupiedRoot,
       'occupied start',
-      '.mango/dev-workspace.env'
+      'already in use'
     );
     const occupiedStartOutput = `${occupiedStart.stdout}\n${occupiedStart.stderr}`;
     if (!occupiedStartOutput.includes(`legacy-owned port ${occupiedPort} is already in use`)
@@ -1451,7 +1458,7 @@ function assertPmoSyncCommand(tempRoot) {
     throw new Error(`pmo sync --sync-shell failed:\n${shellSyncResult.stdout}\n${shellSyncResult.stderr}`);
   }
   if (!existsSync(join(shellSyncRoot, 'mango.dev.json'))
-    || !readFileSync(join(shellSyncRoot, 'scripts/dev-workspace.sh'), 'utf8').includes('The actual runner lives in the mango CLI')) {
+    || !readFileSync(join(shellSyncRoot, 'scripts/dev-workspace.sh'), 'utf8').includes('scripts/dev-workspace.sh is deprecated')) {
     throw new Error('pmo sync --sync-shell should install mango.dev.json and CLI shim scripts');
   }
   assertCommandOk([cli, 'validate'], shellSyncRoot, 'synced mango validate');
@@ -1564,7 +1571,7 @@ function assertPmoSyncCommand(tempRoot) {
 }
 
 function assertDevWorkspaceRegistryAllocation(tempRoot) {
-  const registryPath = join(tempRoot, 'workspace-registry.tsv');
+  const registryPath = join(tempRoot, 'workspaces.json');
   const roots = [join(tempRoot, 'workspace-a'), join(tempRoot, 'workspace-b')];
   for (const root of roots) {
     mkdirSync(root, { recursive: true });
@@ -1586,35 +1593,71 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
       `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
       process.execPath,
       cli,
-      'init-dev',
+      'workspace',
+      'init',
     ], {
       cwd: root,
       encoding: 'utf8',
     });
     if (result.status !== 0) {
-      throw new Error(`mango init-dev should allocate workspace env:\n${result.stdout}\n${result.stderr}`);
+      throw new Error(`mango workspace init should allocate workspace env:\n${result.stdout}\n${result.stderr}`);
     }
   }
+  const workspaces = roots.map(root => JSON.parse(readFileSync(join(root, '.mango/workspace.json'), 'utf8')));
   const envs = roots.map(root => parseSimpleEnv(readFileSync(join(root, '.mango/dev-workspace.env'), 'utf8')));
+  if (workspaces[0].slot === workspaces[1].slot
+    || workspaces[0].backendPort === workspaces[1].backendPort
+    || workspaces[0].frontendPort === workspaces[1].frontendPort
+    || workspaces[0].dbName === workspaces[1].dbName) {
+    throw new Error(`workspace allocation should isolate workspace.json values:\n${JSON.stringify(workspaces, null, 2)}`);
+  }
   if (envs[0].MANGO_BACKEND_PORT === envs[1].MANGO_BACKEND_PORT
     || envs[0].MANGO_FRONTEND_PORT === envs[1].MANGO_FRONTEND_PORT
     || envs[0].MANGO_DB_NAME === envs[1].MANGO_DB_NAME) {
     throw new Error(`workspace allocation should isolate ports and DBs:\n${JSON.stringify(envs, null, 2)}`);
   }
+  if (!/^mango_[0-9]{3}$/.test(workspaces[0].workspaceId)
+    || !String(workspaces[0].backendPort).startsWith('180')
+    || !String(workspaces[0].frontendPort).startsWith('86')) {
+    throw new Error(`workspace.json should contain stable slot allocation:\n${JSON.stringify(workspaces[0], null, 2)}`);
+  }
   const before = readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8');
+  const workspaceBefore = readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8');
   const repeat = spawnSync('env', [
     `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
     process.execPath,
     cli,
-    'init-dev',
+    'workspace',
+    'init',
   ], {
     cwd: roots[0],
     encoding: 'utf8',
   });
   if (repeat.status !== 0) {
-    throw new Error(`mango init-dev repeat should preserve existing env:\n${repeat.stdout}\n${repeat.stderr}`);
+    throw new Error(`mango workspace init repeat should preserve existing env:\n${repeat.stdout}\n${repeat.stderr}`);
   }
   assertEqual(readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8'), before, 'existing dev-workspace.env after repeat init');
+  assertEqual(readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8'), workspaceBefore, 'existing workspace.json after repeat init');
+
+  const legacyRegistryPath = join(tempRoot, 'legacy-workspaces.tsv');
+  writeFileSync(legacyRegistryPath, `${join(tempRoot, 'legacy-root')}\tmango_123\t18123\t11060\tmango_dev_123\n`);
+  const legacyList = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${legacyRegistryPath}`,
+    process.execPath,
+    cli,
+    'workspace',
+    'list',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (legacyList.status !== 0
+    || !legacyList.stdout.includes('slot=123')
+    || !legacyList.stdout.includes('backend=18123')
+    || !legacyList.stdout.includes('frontend=11060')
+    || !legacyList.stdout.includes('db=mango_dev_123')) {
+    throw new Error(`legacy workspace TSV registry should be readable during migration:\n${legacyList.stdout}\n${legacyList.stderr}`);
+  }
 }
 
 function parseSimpleEnv(content) {

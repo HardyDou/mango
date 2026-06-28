@@ -50,10 +50,10 @@ mango init {{projectKebab}} --preset {{preset}} --topology monolith
 本地启动：
 
 ```bash
-scripts/dev-workspace.sh init
+mango workspace init
 mango validate
-mango plan
-mango start
+mango dev plan
+mango dev start
 ```
 
 新增业务模块：
@@ -75,11 +75,13 @@ mango module add order --aggregate sales-order --project-dir .
 ## 6. 配置说明
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
 |----------|------------|--------|------|----------|----------|
-| `mango.dev.json` | `groups.default` | 后端 app、前端 app | 单体默认启动顺序 | `mango start` 同时启动后端和前端 | `mango.dev.json` |
+| `mango.dev.json` | `groups.default` | 后端 app、前端 app | 单体默认启动顺序 | `mango dev start` 同时启动后端和前端 | `mango.dev.json` |
 | `mango.dev.json` | 后端 app `type` | `spring-boot-maven` | 后端启动类型 | 使用 Spring Boot Maven plugin | `mango.dev.json` |
 | `mango.dev.json` | 前端 app `type` | `vite` | 前端启动类型 | 使用 NPM dev script | `mango.dev.json` |
-| `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | `5555` | 单体后端端口 | 前端 proxy 目标 | `scripts/dev-workspace.sh` |
-| `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | `5176` | 前端端口 | Vite dev server | `scripts/dev-workspace.sh` |
+| `.mango/workspace.json` | `backendPort` | `18000+slot` | 单体后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `frontendPort` | `8600+slot*20` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
+| `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 单体后端端口 | 前端 proxy 目标 | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | 来自 `.mango/workspace.json` | 前端端口 | Vite dev server | Mango CLI |
 | `frontend/src/main.ts` | `apiBaseUrl` | `/api` | 前端 API base URL | Vite dev proxy 转发到后端 | `frontend/src/main.ts` |
 | `frontend/vite.config.ts` | `/api` proxy | `http://127.0.0.1:5555` | 本地代理目标 | 只允许本机 host | `vite.config.ts` |
 | `application.yml` | `mango.persistence.flyway.modules.*.enabled` | 平台模块 true | 平台 migration 开关 | 后端启动执行平台表和基础数据 | `application.yml` |
@@ -126,7 +128,7 @@ mango module add order --aggregate sales-order --project-dir .
 |------|------|----------|
 | 单体 app 引入 remote starter | 混淆本地依赖和远程调用依赖 | app 改依赖 `<module>-starter` |
 | 页面菜单打开空白 | component key 与前端 registry 不一致 | 检查 resource manifest 和 `register<Module>Pages()` |
-| API 404 | Controller path、Vite proxy 或菜单路径不一致 | 用 `mango plan` 和浏览器 network 排查 |
+| API 404 | Controller path、Vite proxy 或菜单路径不一致 | 用 `mango dev plan` 和浏览器 network 排查 |
 | 业务表没创建 | business Flyway module 未启用 | 检查 `application.yml` managed block |
 | 租户数据串租 | 只建了 `tenant_id` 字段，未验证查询过滤 | 补租户上下文测试和数据权限断言 |
 

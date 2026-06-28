@@ -22,9 +22,9 @@
 npm install -g @mango/cli --registry {{npmRegistry}}
 ```
 
-生成后的业务项目仍以项目内锁定版本为准：先执行 `cd frontend && pnpm install` 安装 `frontend` 中声明的 `@mango/cli`，再通过 `scripts/dev-workspace.sh ...` 执行本地开发命令。脚本会优先使用项目内 CLI；项目依赖未安装时才回退到全局 `mango`。
+业务项目日常开发正式入口是 `mango workspace/dev/frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim，不再承载端口分配、数据库分配或进程归属规则。
 
-历史项目如果还没有兼容脚本或项目内 CLI，可以先使用全局 CLI 执行 `mango pmo upgrade --project-dir .`，把 baseline、Agent 入口和兼容脚本升级到当前版本。
+历史项目升级时，可以先使用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell`，把 baseline、Agent 入口和兼容脚本升级到当前版本。升级后必须在每个 active worktree 执行 `mango workspace init`。
 
 常用 baseline 命令：
 
@@ -73,7 +73,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | baseline 快照 | `business-pmo/mango-baseline` | `mango init` 或 `mango pmo sync/upgrade` |
 | baseline manifest | `business-pmo/mango-baseline/baseline.json` | `@mango/pmo` build 生成 |
 | 业务文档 | `business-docs/**` | 业务项目自行维护 |
-| 本地端口和 DB | `.mango/dev-workspace.env` | `mango init-dev` 分配 |
+| 本地端口和 DB | `.mango/workspace.json`、`.mango/dev-workspace.env` | `mango workspace init` 分配 |
 
 ## 7. 管理入口
 本目录没有页面菜单和后端管理接口。管理入口是 CLI 和 PMO 工具：

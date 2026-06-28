@@ -85,6 +85,7 @@ const BASE_PACKAGE_ENTRIES: PackageEntry[] = [
     name: 'app-runtime',
     entries: {
       '.': 'src/index.ts',
+      'vue-micro': 'src/vue-micro.ts',
     },
   },
 ];
@@ -191,6 +192,10 @@ function resolveSourceStylePath(repoRoot: string, packageName: string): string {
   }
   const packageStylePath = resolve(repoRoot, 'packages', packageName, 'style.css');
   if (existsSync(packageStylePath)) {
+    const styleContent = readFileSync(packageStylePath, 'utf8');
+    if (styleContent.includes('./dist/')) {
+      return resolve(repoRoot, 'build-config/source-package-style.css');
+    }
     return packageStylePath;
   }
   return resolve(repoRoot, 'build-config/source-package-style.css');
