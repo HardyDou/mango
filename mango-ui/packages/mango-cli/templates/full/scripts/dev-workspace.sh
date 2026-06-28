@@ -2,30 +2,25 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
-LOCAL_DIR="${REPO_ROOT}/.mango"
-ENV_FILE="${LOCAL_DIR}/dev-workspace.env"
-FRONTEND_ROOT="${REPO_ROOT}/frontend"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
+FRONTEND_ROOT="${ROOT_DIR}/frontend"
 
 usage() {
   cat <<'EOF'
 Usage: scripts/dev-workspace.sh <command>
 
-Commands:
-  init       Create .mango/dev-workspace.env if it does not exist
-  print      Print current workspace configuration
-  backend    Start backend app from mango.dev.json
-  frontend   Start frontend app from mango.dev.json
-  start      Start the default app group from mango.dev.json
-  stop       Stop apps recorded in .mango/run/pids
-  status     Show app process status
-  logs       Print app logs, for example: scripts/dev-workspace.sh logs app-name
-  doctor     Check manifest, commands and port availability
-  validate   Validate mango.dev.json
-  plan       Print resolved startup plan
-
-The actual runner lives in the mango CLI. This shell file is a compatibility entry.
+Deprecated compatibility entry. Use Mango CLI directly:
+  mango workspace init
+  mango dev start
+  mango dev stop
+  mango dev status
+  mango dev doctor
+  mango frontend prepare
 EOF
+}
+
+warn_deprecated() {
+  echo "scripts/dev-workspace.sh is deprecated. Use Mango CLI workspace/dev commands." >&2
 }
 
 run_mango() {
@@ -33,28 +28,56 @@ run_mango() {
     cd "${FRONTEND_ROOT}"
     exec pnpm exec mango "$@"
   fi
-
   if command -v mango >/dev/null 2>&1; then
     exec mango "$@"
   fi
-
-  echo "mango CLI not found in project frontend dependencies or globally."
-  echo "Install project dependencies: cd frontend && pnpm install"
-  echo "Or install globally: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}"
+  echo "mango CLI not found in project frontend dependencies or globally." >&2
+  echo "Install project dependencies: cd frontend && pnpm install" >&2
+  echo "Or install globally: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}" >&2
   exit 1
 }
 
 command="${1:-start}"
 case "${command}" in
-  init)
-    run_mango init-dev
-    ;;
-  init-dev)
-    run_mango init-dev
-    ;;
-  print|backend|frontend|start|stop|status|logs|doctor|validate|plan)
+  init|init-dev)
+    warn_deprecated
     shift || true
-    run_mango "${command}" "$@"
+    run_mango workspace init "$@"
+    ;;
+  print)
+    warn_deprecated
+    shift || true
+    run_mango workspace status "$@"
+    ;;
+  validate)
+    warn_deprecated
+    shift || true
+    run_mango validate "$@"
+    ;;
+  doctor)
+    warn_deprecated
+    shift || true
+    run_mango dev doctor "$@"
+    ;;
+  plan)
+    warn_deprecated
+    shift || true
+    run_mango dev plan "$@"
+    ;;
+  backend)
+    warn_deprecated
+    shift || true
+    run_mango dev backend "$@"
+    ;;
+  frontend)
+    warn_deprecated
+    shift || true
+    run_mango dev frontend "$@"
+    ;;
+  start|stop|status|logs)
+    warn_deprecated
+    shift || true
+    run_mango dev "${command}" "$@"
     ;;
   -h|--help|help)
     usage

@@ -37,7 +37,7 @@
     },
     "process.devEnvironment": {
       "path": "rules/02-dev-environment.md",
-      "reason": "开发环境与本地启动规范"
+      "reason": "开发环境、本地启动与 Mango CLI workspace/dev/frontend 入口规范"
     },
     "process.aiCodingRedlines": {
       "path": "rules/03-ai-coding-redlines.md",
@@ -287,7 +287,7 @@
     },
     "devEnvironment": {
       "paths": ["scripts/**", ".mango/**"],
-      "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "dev-workspace", "前后端", "数据库名称", "清理", "drop-db"],
+      "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "workspace", "mango workspace", "mango dev", "mango frontend", "dev-workspace", "前后端", "数据库名称", "清理", "drop-db"],
       "include": ["process.devEnvironment", "process.aiDeliveryQuality"]
     },
     "product": {

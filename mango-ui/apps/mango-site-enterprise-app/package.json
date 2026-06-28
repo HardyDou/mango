@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5191 --strictPort",
+    "dev": "vite --strictPort",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4191",
     "test:e2e": "playwright test"

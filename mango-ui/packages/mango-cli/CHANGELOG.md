@@ -1,5 +1,39 @@
 # @mango/cli Changelog
 
+## 1.0.50 - 2026-06-28
+
+### Breaking
+
+- Formal local development entry points moved from `scripts/dev-workspace.sh` to Mango CLI namespaces:
+  - `mango workspace init|status|list|doctor|release`
+  - `mango dev start|stop|status|doctor|plan|logs|backend|frontend`
+  - `mango frontend prepare|doctor`
+- Local workspace allocation now writes `.mango/workspace.json` and uses `~/.mango/workspaces.json` as the registry. The legacy `~/.mango/workspaces.tsv` registry is read only as migration input and is no longer the source of truth.
+- Generated Vite app `dev` scripts no longer hardcode ports. Mango CLI injects the main and child app ports from the workspace slot.
+- `scripts/dev-workspace.sh` is now a compatibility shim only. It no longer owns port allocation, frontend preparation, or process ownership rules.
+
+### Fixed
+
+- Added stable workspace slot allocation for backend port, frontend port, child frontend app ports, and local database name so new worktrees do not accidentally reuse another worktree's service or database.
+- Added port owner diagnostics that point to the registered worktree when a port is occupied.
+- Added `mango frontend prepare` to generate source-mode frontend style artifacts before starting Vite apps.
+- Fixed Mango source-mode aliases so `@mango/app-runtime/vue-micro` and package style imports do not require stale `dist` artifacts during local source startup.
+- Updated generated project, PMO baseline, hook, and compatibility script guidance to use Mango CLI commands first.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.50 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to refresh compatibility scripts and PMO guidance.
+- After upgrading, run `mango workspace init` in every active worktree. This creates `.mango/workspace.json` and backfills missing values in `.mango/dev-workspace.env`.
+- If a worktree was started with old scripts, stop it before starting through the new CLI. The new CLI fails on occupied ports and reports the registered owner instead of silently choosing another port.
+- If local tooling depended on hardcoded Vite ports, switch it to read `MANGO_FRONTEND_PORT` or the relevant child app env such as `MANGO_ADMIN_RBAC_APP_PORT`.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+
 ## 1.0.49 - 2026-06-28
 
 ### Fixed
@@ -316,10 +350,10 @@
 
 ### New
 
-- Added a unified generated project startup entry: `scripts/dev-workspace.sh start`.
+- Added a unified generated project startup entry: `mango dev start`.
 - Generated projects now start backend first, wait for backend health, then start frontend with `VITE_ADMIN_PROXY_PATH` pointing to the configured backend port.
 - Generated backend startup now uses the explicit Spring Boot Maven plugin goal `org.springframework.boot:spring-boot-maven-plugin:3.5.14:run`, avoiding Maven plugin prefix resolution failures.
-- Generated project guidance in `README.md` and `AGENTS.md` now points to `scripts/dev-workspace.sh start`.
+- Generated project guidance in `README.md` and `AGENTS.md` now points to `mango dev start`.
 
 ### Fixed
 
@@ -335,7 +369,7 @@
 
 ### Verification
 
-- `scripts/dev-workspace.sh start`
-- `scripts/dev-workspace.sh backend`
-- `scripts/dev-workspace.sh frontend`
+- `mango dev start`
+- `mango dev backend`
+- `mango dev frontend`
 - `bash -n scripts/dev-workspace.sh scripts/backend-dev.sh`

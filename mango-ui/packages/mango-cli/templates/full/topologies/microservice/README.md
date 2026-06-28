@@ -71,7 +71,7 @@ mango init {{projectKebab}} --preset {{preset}} --topology microservice
 </dependency>
 ```
 
-前端本地可继续用 `mango start`，但正式验收要改用真实网关 API 目标。
+前端本地可继续用 `mango dev start`，但正式验收要改用真实网关 API 目标。
 
 ## 6. 配置说明
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
