@@ -69,6 +69,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.06.29-workflow-return-cli-db-release 只发布 CLI/PMO 基线、工作流退回和前端聚合版本锁；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。
+
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和核心 service/resource handler 集成测试；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。
 
 - v2026.06.27-workflow-history-dialog-release 同步发布工作流 UI 修复批次和前端聚合版本锁；不改变租户绑定、字典配置、系统配置、默认数据初始化、后端公开 API、权限、菜单、页面入口、启动方式和本场景排障步骤。
