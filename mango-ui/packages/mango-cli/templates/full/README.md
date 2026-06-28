@@ -118,6 +118,7 @@ npm --prefix frontend run build
 | `.mango/dev-workspace.env` | `MANGO_DB_NAME` | 来自 `.mango/workspace.json` | 数据库名 | 拼接 datasource URL | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_DB_USERNAME` | `root` | 数据库用户名 | 注入 datasource | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_DB_PASSWORD` | 空字符串 | 数据库密码 | 注入 datasource | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_DB_AUTO_CREATE` | `true` | 数据库自动创建开关 | `mango dev start` 启动 Spring Boot app 前创建 `mango_dev_*` 工作区数据库 | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_OFFICE_PLUGIN_ENABLED` | `false` | Office 转 PDF 开关 | 影响 fileproc 和 office plugin | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_ADDITIONAL_ARGS` | 空字符串 | 后端额外参数 | 追加到 Spring Boot args | Mango CLI |
 
