@@ -24,6 +24,9 @@
 1. 测试目标是什么？
 2. 被测目标是否真实执行？
 3. mock 是否替换了关键验收链路？
+4. 如果需要真实数据库，采用哪种隔离物料和清理策略？
+
+数据库测试隔离和物料选择以 `mango-pmo/rules/backend/08-test.md` 为准。不能为了避免脏数据而 mock Mapper 或数据库结果；应使用 H2、Testcontainers、专用测试库、事务回滚或显式清理。
 
 ## 4. 初始扫描命令
 
@@ -64,7 +67,7 @@ rg -n "Mockito|mock\(|@Mock|MockBean|mockito" \
 
 后续迁移每个测试文件时必须补充文件级记录：
 
-| 测试文件 | 分类 | 测试目标 | mock 替换对象 | 是否替换关键链路 | 目标验证方式 | 状态 |
-|---|---|---|---|---|---|---|
-| 记录具体测试文件路径 | KEEP/MIGRATE/REWRITE/DELETE | 写明目标 | 写明替身对象 | 是/否 | 单元/组件/集成/E2E | OPEN/DONE |
-| `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/RoleDataScopeServiceImplTest.java` | MIGRATE | 角色数据范围保存与解析 | `RoleDataScopeMapper`、`RoleMapper`、`MenuMapper`、`RoleMenuMapper`、`SubjectRoleBindingMapper` | 是 | 集成测试：`RoleDataScopeServiceImplIntegrationTest` 使用真实 H2/MyBatis-Plus Mapper | DONE |
+| 测试文件 | 分类 | 测试目标 | mock 替换对象 | 是否替换关键链路 | 目标验证方式 | 数据隔离/清理 | 状态 |
+|---|---|---|---|---|---|---|---|
+| 记录具体测试文件路径 | KEEP/MIGRATE/REWRITE/DELETE | 写明目标 | 写明替身对象 | 是/否 | 单元/组件/集成/E2E | H2/Testcontainers/rollback/显式清理/无数据库 | OPEN/DONE |
+| `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/RoleDataScopeServiceImplTest.java` | MIGRATE | 角色数据范围保存与解析 | `RoleDataScopeMapper`、`RoleMapper`、`MenuMapper`、`RoleMenuMapper`、`SubjectRoleBindingMapper` | 是 | 集成测试：`RoleDataScopeServiceImplIntegrationTest` 使用真实 H2/MyBatis-Plus Mapper | H2 内存库，`BeforeEach` 重建最小表结构 | DONE |
