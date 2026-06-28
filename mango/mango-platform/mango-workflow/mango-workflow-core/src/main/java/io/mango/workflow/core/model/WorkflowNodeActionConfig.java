@@ -12,6 +12,7 @@ public class WorkflowNodeActionConfig {
     private String label;
     private Boolean requireComment;
     private String confirmText;
+    private String targetTaskDefinitionKey;
     private Boolean danger;
     private Integer order;
     private Boolean disabled;

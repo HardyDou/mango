@@ -5,6 +5,7 @@ export type WorkflowActionOverrides = Partial<Record<WorkflowTaskActionKey, {
   disabled?: boolean;
   label?: string;
   tooltip?: string;
+  targetTaskDefinitionKey?: string;
 }>>;
 
 export interface WorkflowResolvedAction extends WorkflowNodeActionConfig {
@@ -13,6 +14,7 @@ export interface WorkflowResolvedAction extends WorkflowNodeActionConfig {
   disabled: boolean;
   tooltip: string;
   visible: boolean;
+  targetTaskDefinitionKey?: string;
   buttonType: 'primary' | 'danger' | 'default';
 }
 
@@ -21,6 +23,7 @@ export const WORKFLOW_ACTION_DEFAULTS: Record<WorkflowTaskActionKey, WorkflowNod
   transfer: { enabled: false, label: '转办', order: 20 },
   addSign: { enabled: false, label: '加签', order: 30 },
   reject: { enabled: true, label: '驳回', requireComment: true, danger: true, order: 40 },
+  returnTask: { enabled: false, label: '退回', requireComment: true, order: 45 },
   complete: { enabled: true, label: '通过', requireComment: false, order: 50 },
   claim: { enabled: false, label: '认领', requireComment: false, order: 5 },
   unclaim: { enabled: false, label: '释放', requireComment: false, order: 6 },

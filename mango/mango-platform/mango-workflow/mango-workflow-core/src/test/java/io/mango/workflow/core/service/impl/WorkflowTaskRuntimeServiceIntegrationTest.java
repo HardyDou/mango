@@ -10,6 +10,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.workflow.api.WorkflowEventTypes;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
@@ -101,38 +102,10 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
 
     @Test
     void completeWithResultPublishesAdvancedEventAfterCurrentTasksRefresh() {
-        repositoryService.createDeployment()
-                .name("issue-233-runtime")
-                .addString("issue-233.bpmn20.xml", twoStepApprovalBpmn())
-                .deploy();
-        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
-                .processDefinitionKey("issue_233_runtime")
-                .latestVersion()
-                .singleResult();
-
-        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
-        applyCommand.setBusinessType("ISSUE_233");
-        applyCommand.setBusinessKey("BIZ-233");
-        applyCommand.setApplyTitle("Issue 233 集成测试");
-        applyCommand.setProcessDefinitionKey("issue_233_runtime");
-        Long applyId = businessApplyService.create(applyCommand).getData().getId();
-
-        ProcessInstance instance = runtimeService.startProcessInstanceByKey("issue_233_runtime", "BIZ-233", Map.of(
-                "businessType", "ISSUE_233",
-                "businessKey", "BIZ-233",
-                "applyId", String.valueOf(applyId),
-                "mangoInitiator", "admin"
-        ));
-        businessApplyService.markProcessStarted(
-                applyId,
-                233L,
-                "issue_233_runtime",
-                processDefinition.getId(),
-                processDefinition.getName(),
-                instance.getProcessInstanceId());
+        StartedWorkflow started = startIssue233Workflow("BIZ-233");
 
         Task managerTask = taskService.createTaskQuery()
-                .processInstanceId(instance.getProcessInstanceId())
+                .processInstanceId(started.processInstanceId())
                 .taskDefinitionKey("manager_approve")
                 .singleResult();
         assertThat(managerTask).isNotNull();
@@ -143,13 +116,13 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         var result = taskRuntimeService.completeWithResult(command).getData();
 
         assertThat(result.getEnded()).isFalse();
-        assertThat(result.getApplyId()).isEqualTo(applyId);
+        assertThat(result.getApplyId()).isEqualTo(started.applyId());
         assertThat(result.getApplyStatus()).isEqualTo(WorkflowApplyStatus.IN_APPROVAL);
         assertThat(result.getCurrentTasks()).singleElement()
                 .returns("finance_approve", task -> task.getTaskDefinitionKey())
                 .returns("finance", task -> task.getAssigneeName());
 
-        assertThat(currentTaskDefinitionKeys(applyId)).containsExactly("finance_approve");
+        assertThat(currentTaskDefinitionKeys(started.applyId())).containsExactly("finance_approve");
 
         List<String> eventTypes = eventPublisher.events().stream()
                 .map(DomainEvent::getEventType)
@@ -165,12 +138,101 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         assertThat(advancedEvent.getPayload())
                 .containsEntry("completedTaskDefinitionKey", "manager_approve")
                 .containsEntry("ended", false)
-                .containsEntry("applyId", applyId)
+                .containsEntry("applyId", started.applyId())
                 .containsEntry("currentTaskDefinitionKeys", "finance_approve")
                 .containsEntry("currentAssigneeNames", "finance");
         assertThat((List<?>) advancedEvent.getPayload().get("currentTasks")).singleElement()
                 .satisfies(currentTask -> assertThat(((Map<?, ?>) currentTask).get("taskDefinitionKey"))
                         .isEqualTo("finance_approve"));
+    }
+
+    @Test
+    void returnTaskMovesRuntimeExecutionBackToFinishedUserTaskAndRefreshesCurrentTasks() {
+        StartedWorkflow started = startIssue233Workflow("BIZ-296");
+        Task managerTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .singleResult();
+        CompleteWorkflowTaskCommand completeCommand = new CompleteWorkflowTaskCommand();
+        completeCommand.setTaskId(managerTask.getId());
+        completeCommand.setComment("提交财务");
+        taskRuntimeService.completeWithResult(completeCommand);
+        eventPublisher.clear();
+
+        Task financeTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .singleResult();
+        assertThat(financeTask).isNotNull();
+        switchUser(1002L, "finance");
+        ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
+        returnCommand.setTaskId(financeTask.getId());
+        returnCommand.setComment("退回经理补充");
+        var result = taskRuntimeService.returnTask(returnCommand).getData();
+
+        assertThat(result.getEnded()).isFalse();
+        assertThat(result.getApplyId()).isEqualTo(started.applyId());
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("manager_approve", task -> task.getTaskDefinitionKey())
+                .returns("admin", task -> task.getAssigneeName());
+        assertThat(currentTaskDefinitionKeys(started.applyId())).containsExactly("manager_approve");
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .count()).isEqualTo(1);
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .count()).isZero();
+
+        DomainEvent advancedEvent = eventPublisher.events().stream()
+                .filter(event -> WorkflowEventTypes.TASK_ADVANCED.equals(event.getEventType()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(advancedEvent.getPayload())
+                .containsEntry("completedTaskDefinitionKey", "finance_approve")
+                .containsEntry("ended", false)
+                .containsEntry("applyId", started.applyId())
+                .containsEntry("currentTaskDefinitionKeys", "manager_approve")
+                .containsEntry("currentAssigneeNames", "admin");
+    }
+
+    private void switchUser(Long userId, String principalName) {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(userId, "1", principalName, "default", "USER", "ORG", userId, principalName));
+    }
+
+    private StartedWorkflow startIssue233Workflow(String businessKey) {
+        repositoryService.createDeployment()
+                .name("issue-233-runtime")
+                .addString("issue-233.bpmn20.xml", twoStepApprovalBpmn())
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("issue_233_runtime")
+                .latestVersion()
+                .singleResult();
+
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("ISSUE_233");
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setApplyTitle("Issue 233 集成测试");
+        applyCommand.setProcessDefinitionKey("issue_233_runtime");
+        Long applyId = businessApplyService.create(applyCommand).getData().getId();
+
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey("issue_233_runtime", businessKey, Map.of(
+                "businessType", "ISSUE_233",
+                "businessKey", businessKey,
+                "applyId", String.valueOf(applyId),
+                "mangoInitiator", "admin"
+        ));
+        businessApplyService.markProcessStarted(
+                applyId,
+                233L,
+                "issue_233_runtime",
+                processDefinition.getId(),
+                processDefinition.getName(),
+                instance.getProcessInstanceId());
+        return new StartedWorkflow(applyId, instance.getProcessInstanceId());
     }
 
     private List<String> currentTaskDefinitionKeys(Long applyId) {
@@ -360,7 +422,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                     <sequenceFlow id="flow_manager_finance" sourceRef="manager_approve" targetRef="finance_approve"/>
                     <userTask id="finance_approve" name="财务审批" flowable:assignee="finance">
                       <extensionElements>
-                        <mango:mangoApprovalConfig><![CDATA[{"actions":{"complete":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                        <mango:mangoApprovalConfig><![CDATA[{"actions":{"complete":{"enabled":true},"returnTask":{"enabled":true,"requireComment":true}}}]]></mango:mangoApprovalConfig>
                       </extensionElements>
                     </userTask>
                     <sequenceFlow id="flow_finance_end" sourceRef="finance_approve" targetRef="end"/>
@@ -368,6 +430,9 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                   </process>
                 </definitions>
                 """;
+    }
+
+    private record StartedWorkflow(Long applyId, String processInstanceId) {
     }
 
     @SpringBootConfiguration

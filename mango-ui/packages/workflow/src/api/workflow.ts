@@ -11,7 +11,7 @@ export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 export type WorkflowId = string;
-export type WorkflowTaskActionKey = 'complete' | 'reject' | 'save' | 'transfer' | 'addSign' | 'claim' | 'unclaim' | 'read';
+export type WorkflowTaskActionKey = 'complete' | 'reject' | 'returnTask' | 'save' | 'transfer' | 'addSign' | 'claim' | 'unclaim' | 'read';
 
 export interface WorkflowEventNotifyConfig {
   enabled?: boolean;
@@ -28,6 +28,7 @@ export interface WorkflowNodeActionConfig {
   label?: string;
   requireComment?: boolean;
   confirmText?: string;
+  targetTaskDefinitionKey?: string;
   danger?: boolean;
   order?: number;
   disabled?: boolean;
@@ -472,6 +473,26 @@ export interface WorkflowTaskActionCommand {
   variables?: Record<string, any>;
 }
 
+export interface WorkflowTaskCompleteResult {
+  completedTaskId?: string;
+  completedTaskDefinitionKey?: string;
+  processInstanceId?: string;
+  ended?: boolean;
+  applyId?: WorkflowId;
+  businessType?: string;
+  businessKey?: string;
+  applyStatus?: WorkflowApplyStatus;
+  applyStatusName?: string;
+  currentTaskNames?: string;
+  currentTaskDefinitionKeys?: string;
+  currentAssigneeNames?: string;
+  currentTasks?: WorkflowBusinessApplyCurrentTask[];
+}
+
+export interface WorkflowTaskReturnCommand extends WorkflowTaskActionCommand {
+  targetTaskDefinitionKey?: string;
+}
+
 export interface WorkflowTaskTransferCommand {
   taskId: string;
   targetUserId: string;
@@ -550,6 +571,7 @@ export const workflowApi = {
     .then(normalizeTaskDetail),
   completeTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/complete', data),
   rejectTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/reject', data),
+  returnTask: (data: WorkflowTaskReturnCommand) => post<WorkflowTaskCompleteResult>('/workflow/tasks/return', data),
   saveTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/save', data),
   transferTask: (data: WorkflowTaskTransferCommand) => post<boolean>('/workflow/tasks/transfer', data),
   addSignTask: (data: WorkflowTaskAddSignCommand) => post<boolean>('/workflow/tasks/add-sign', data),
@@ -729,6 +751,7 @@ export function defaultNodeActions(): Record<WorkflowTaskActionKey, WorkflowNode
     transfer: { enabled: false, label: '转办', requireComment: false, order: 20 },
     addSign: { enabled: false, label: '加签', requireComment: false, order: 30 },
     reject: { enabled: true, label: '驳回', requireComment: true, danger: true, order: 40 },
+    returnTask: { enabled: false, label: '退回', requireComment: true, order: 45 },
     complete: { enabled: true, label: '通过', requireComment: false, order: 50 },
     claim: { enabled: false, label: '认领', requireComment: false, order: 5 },
     unclaim: { enabled: false, label: '释放', requireComment: false, order: 6 },

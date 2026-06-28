@@ -9,6 +9,7 @@ import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
+import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
@@ -105,6 +106,13 @@ public class WorkflowTaskController {
     @Operation(summary = "审批驳回")
     public R<Boolean> reject(@Valid @RequestBody RejectWorkflowTaskCommand command) {
         return workflowTaskRuntimeService.reject(command);
+    }
+
+    @PostMapping("/return")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:return")
+    @Operation(summary = "审批退回", description = "退回到最近一个已完成的不同用户任务节点或指定历史节点，并返回退回后的当前任务快照")
+    public R<WorkflowTaskCompleteResultVO> returnTask(@Valid @RequestBody ReturnWorkflowTaskCommand command) {
+        return workflowTaskRuntimeService.returnTask(command);
     }
 
     @PostMapping("/save")

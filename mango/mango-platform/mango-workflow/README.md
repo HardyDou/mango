@@ -36,7 +36,7 @@
 | 业务申请 | `WorkflowBusinessApplyApi` 或 `/workflow/business-applies`。 |
 | 发起流程 | `WorkflowProcessApi.start()` 或 `/workflow/processes/start`。 |
 | 待办和已办 | `/workflow/tasks/todo`、`/workflow/tasks/done`、任务列表页面。 |
-| 审批处理 | `/workflow/tasks/complete`、`/workflow/tasks/complete-result`、`/workflow/tasks/reject`、`/workflow/tasks/save`、`/workflow/tasks/transfer`、`/workflow/tasks/add-sign`。 |
+| 审批处理 | `/workflow/tasks/complete`、`/workflow/tasks/complete-result`、`/workflow/tasks/reject`、`/workflow/tasks/return`、`/workflow/tasks/save`、`/workflow/tasks/transfer`、`/workflow/tasks/add-sign`。 |
 | 抄送 | `/workflow/tasks/copied`、`/workflow/tasks/copied/read`。 |
 | 业务进度查询 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` 或 `/workflow/business-applies/progress/latest-batch`。 |
 
@@ -531,6 +531,7 @@ mango:
 | 审批通过 | `POST /workflow/tasks/complete` | `workflow:task:complete` |
 | 审批通过并返回推进结果 | `POST /workflow/tasks/complete-result` | `workflow:task:complete` |
 | 审批驳回 | `POST /workflow/tasks/reject` | `workflow:task:reject` |
+| 审批退回 | `POST /workflow/tasks/return` | `workflow:task:return` |
 | 暂存 | `POST /workflow/tasks/save` | `workflow:task:save` |
 | 转办 | `POST /workflow/tasks/transfer` | `workflow:task:transfer` |
 | 加签 | `POST /workflow/tasks/add-sign` | `workflow:task:add-sign` |
@@ -547,8 +548,8 @@ mango:
 
 | 字段 | 含义 |
 |------|------|
-| `completedTaskId` | 刚完成的 Flowable 任务 ID。 |
-| `completedTaskDefinitionKey` | 刚完成的 BPMN 任务定义 key。 |
+| `completedTaskId` | 刚完成或发起退回的源 Flowable 任务 ID。 |
+| `completedTaskDefinitionKey` | 刚完成或发起退回的源 BPMN 任务定义 key。 |
 | `processInstanceId` | 流程实例 ID。 |
 | `ended` | 流程是否已经结束。 |
 | `applyId` | 业务申请 ID。 |
@@ -561,18 +562,20 @@ mango:
 | `currentAssigneeNames` | 刷新后的当前处理人名称，多个任务用逗号拼接。 |
 | `currentTasks` | 刷新后的当前任务快照，来源于 `workflow_business_apply_current_task`。 |
 
+`POST /workflow/tasks/return` 用于把当前任务退回到历史用户任务节点，流程实例保持运行。入参支持 `targetTaskDefinitionKey`；不传时默认退回当前流程实例中最近一个已完成的不同用户任务节点。默认退回策略面向串行用户任务链路；并行、多实例、重复节点或需要固定业务语义的复杂流程，应在节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务审批页可以直接使用刷新后的 `currentTasks` 快照同步当前节点和当前办理人。退回场景也会发布 `workflow.task.advanced`，其中 `completedTask*` 表示发起退回的源任务。
+
 工作流领域事件：
 
 | 事件类型 | 发布时机 | 主要用途 |
 |----------|----------|----------|
 | `workflow.task.completed` | 当前任务完成记录写入后、流程推进快照刷新前 | 记录“哪个任务刚被完成”，不保证 `workflow_business_apply_current_task` 已是下一节点。 |
-| `workflow.task.advanced` | 完成任务后，流程运行时任务和业务申请当前任务快照刷新完成后 | 同步下一节点待办、刷新业务侧当前任务、发送 `workflow.task.assigned` 通知。 |
+| `workflow.task.advanced` | 完成或退回任务后，流程运行时任务和业务申请当前任务快照刷新完成后 | 同步下一节点待办、刷新业务侧当前任务、发送 `workflow.task.assigned` 通知。 |
 | `workflow.task.rejected` | 任务驳回并结束流程后 | 回写业务驳回状态和通知。 |
 | `workflow.process.completed` | 流程正常完成后 | 回写业务通过状态。 |
 | `workflow.process.rejected` | 流程被驳回后 | 回写业务驳回状态。 |
 | `workflow.process.ended` | 流程被驳回或终止后 | 做流程结束类清理。 |
 
-事件通过 `mango-infra-event` 的 `IDomainEventPublisher` 发布。单体单实例默认可使用内存总线；单体多实例、微服务或微服务多实例部署时，应启用 `mango.event.outbox.enabled=true`，跨进程分发再配置 `mango.event.transport=redis-stream`。事件是至少一次投递语义，订阅方必须按 `eventId`、`processInstanceId + completedTaskId` 或业务主键自做幂等。需要同步拿到刷新后快照的前端/业务调用，不要依赖异步事件回读，应使用 `complete-result`。
+事件通过 `mango-infra-event` 的 `IDomainEventPublisher` 发布。单体单实例默认可使用内存总线；单体多实例、微服务或微服务多实例部署时，应启用 `mango.event.outbox.enabled=true`，跨进程分发再配置 `mango.event.transport=redis-stream`。事件是至少一次投递语义，订阅方必须按 `eventId`、`processInstanceId + completedTaskId` 或业务主键自做幂等。需要同步拿到刷新后快照的前端/业务调用，不要依赖异步事件回读，应使用 `complete-result` 或 `return` 响应。
 
 `workflow.task.advanced` payload 字段：
 
@@ -583,9 +586,9 @@ mango:
 | `businessType` | 业务类型。 |
 | `businessKey` | 业务主键。 |
 | `applyId` | 业务申请 ID。 |
-| `completedTaskId` | 刚完成的任务 ID。 |
-| `completedTaskDefinitionKey` | 刚完成的任务定义 key。 |
-| `completedTaskName` | 刚完成的任务名称。 |
+| `completedTaskId` | 刚完成或发起退回的源任务 ID。 |
+| `completedTaskDefinitionKey` | 刚完成或发起退回的源任务定义 key。 |
+| `completedTaskName` | 刚完成或发起退回的源任务名称。 |
 | `comment` | 审批意见。 |
 | `ended` | 流程是否已经结束。 |
 | `applyStatus` | 刷新后的业务申请状态编码。 |
@@ -759,6 +762,7 @@ workflow:task:list
 workflow:task:detail
 workflow:task:complete
 workflow:task:reject
+workflow:task:return
 workflow:task:save
 workflow:task:transfer
 workflow:task:add-sign

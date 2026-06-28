@@ -16,6 +16,7 @@ import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
+import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
@@ -55,10 +56,12 @@ import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
+import org.flowable.engine.runtime.ChangeActivityStateBuilder;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.runtime.ProcessInstanceQuery;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.TaskQuery;
+import org.flowable.task.api.history.HistoricTaskInstance;
 import org.flowable.task.api.history.HistoricTaskInstanceQuery;
 import org.flowable.variable.api.history.HistoricVariableInstanceQuery;
 import org.mockito.Answers;
@@ -308,6 +311,45 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(records()).singleElement()
                 .returns("COMPLETE", WorkflowTaskRecord::getAction)
                 .returns("同意", WorkflowTaskRecord::getComment);
+        assertThat(operationLog.entries()).containsSubsequence(
+                "refreshCurrentTasksAndReturn:proc-1",
+                "publishTaskAdvanced:proc-1");
+    }
+
+    @Test
+    void returnTaskMovesToPreviousHistoricNodeAndRefreshesCurrentTasksWithoutEndingProcess() {
+        insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
+        Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
+        Task returnedTask = task("task-3", "risk_specialist_review", "proc-1", "pd-1", null);
+        TaskQuery query = taskQuery(currentTask, 1L, List.of(returnedTask));
+        when(taskService.createTaskQuery()).thenReturn(query);
+        HistoricTaskInstance historicTask = mock(HistoricTaskInstance.class);
+        when(historicTask.getTaskDefinitionKey()).thenReturn("risk_specialist_review");
+        HistoricTaskInstanceQuery historicTaskQuery = mock(HistoricTaskInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(historicTaskQuery);
+        when(historicTaskQuery.list()).thenReturn(List.of(historicTask));
+        ChangeActivityStateBuilder stateBuilder = mock(ChangeActivityStateBuilder.class, Answers.RETURNS_SELF);
+        when(runtimeService.createChangeActivityStateBuilder()).thenReturn(stateBuilder);
+        workflowBusinessApplyService.nextCurrentTask("task-3", "risk_specialist_review", "风控专员初审", "risk-specialist");
+        ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+        command.setTaskId("task-2");
+        command.setComment("退回专员补充材料");
+        command.setVariables(Map.of("returnReason", "缺少附件"));
+
+        WorkflowTaskCompleteResultVO result = service.returnTask(command).getData();
+
+        verify(stateBuilder).processInstanceId("proc-1");
+        verify(stateBuilder).moveActivityIdTo("supervisor_approve", "risk_specialist_review");
+        verify(stateBuilder).changeState();
+        verify(runtimeService, never()).deleteProcessInstance(any(), any());
+        assertThat(result.getEnded()).isFalse();
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("task-3", WorkflowBusinessApplyCurrentTaskVO::getTaskId)
+                .returns("risk_specialist_review", WorkflowBusinessApplyCurrentTaskVO::getTaskDefinitionKey);
+        assertThat(records()).singleElement()
+                .returns("RETURN", WorkflowTaskRecord::getAction)
+                .returns("退回专员补充材料", WorkflowTaskRecord::getComment)
+                .satisfies(record -> assertThat(record.getVariablesJson()).contains("risk_specialist_review"));
         assertThat(operationLog.entries()).containsSubsequence(
                 "refreshCurrentTasksAndReturn:proc-1",
                 "publishTaskAdvanced:proc-1");
@@ -604,11 +646,15 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         ExtensionElement element = new ExtensionElement();
         element.setName("mangoApprovalConfig");
         element.setElementText("""
-                {"actions":{"complete":{"enabled":%s,"requireComment":%s},"save":{"enabled":true},"transfer":{"enabled":true},"addSign":{"enabled":true},"reject":{"enabled":true}}}
+                {"actions":{"complete":{"enabled":%s,"requireComment":%s},"save":{"enabled":true},"transfer":{"enabled":true},"addSign":{"enabled":true},"reject":{"enabled":true},"returnTask":{"enabled":true}}}
                 """.formatted(completeEnabled, completeRequireComment));
         userTask.getExtensionElements().put("mangoApprovalConfig", List.of(element));
+        UserTask supervisorTask = new UserTask();
+        supervisorTask.setId("supervisor_approve");
+        supervisorTask.getExtensionElements().put("mangoApprovalConfig", List.of(element));
         Process process = new Process();
         process.addFlowElement(userTask);
+        process.addFlowElement(supervisorTask);
         model.addProcess(process);
         return model;
     }
@@ -712,6 +758,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     static class CapturingBusinessApplyService implements IWorkflowBusinessApplyService {
         private final OperationLog operationLog;
         private final List<String> refreshedProcessInstanceIds = new ArrayList<>();
+        private WorkflowBusinessApplyCurrentTaskVO nextCurrentTask;
 
         CapturingBusinessApplyService(OperationLog operationLog) {
             this.operationLog = operationLog;
@@ -719,10 +766,20 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
         void clear() {
             refreshedProcessInstanceIds.clear();
+            nextCurrentTask = null;
         }
 
         List<String> refreshedProcessInstanceIds() {
             return List.copyOf(refreshedProcessInstanceIds);
+        }
+
+        void nextCurrentTask(String taskId, String taskDefinitionKey, String taskName, String assigneeName) {
+            WorkflowBusinessApplyCurrentTaskVO currentTask = new WorkflowBusinessApplyCurrentTaskVO();
+            currentTask.setTaskId(taskId);
+            currentTask.setTaskDefinitionKey(taskDefinitionKey);
+            currentTask.setTaskName(taskName);
+            currentTask.setAssigneeName(assigneeName);
+            nextCurrentTask = currentTask;
         }
 
         @Override
@@ -807,20 +864,23 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         private WorkflowBusinessApplyVO advancedApply() {
-            WorkflowBusinessApplyCurrentTaskVO currentTask = new WorkflowBusinessApplyCurrentTaskVO();
-            currentTask.setTaskId("task-2");
-            currentTask.setTaskDefinitionKey("supervisor_approve");
-            currentTask.setTaskName("主管审批");
-            currentTask.setAssigneeName("supervisor");
+            WorkflowBusinessApplyCurrentTaskVO currentTask = nextCurrentTask;
+            if (currentTask == null) {
+                currentTask = new WorkflowBusinessApplyCurrentTaskVO();
+                currentTask.setTaskId("task-2");
+                currentTask.setTaskDefinitionKey("supervisor_approve");
+                currentTask.setTaskName("主管审批");
+                currentTask.setAssigneeName("supervisor");
+            }
             WorkflowBusinessApplyVO apply = new WorkflowBusinessApplyVO();
             apply.setId(1001L);
             apply.setBusinessType("GUARANTEE_RISK_REVIEW");
             apply.setBusinessKey("APP-1");
             apply.setApplyStatus(WorkflowApplyStatus.IN_APPROVAL);
             apply.setApplyStatusName("审批中");
-            apply.setCurrentTaskNames("主管审批");
-            apply.setCurrentTaskDefinitionKeys("supervisor_approve");
-            apply.setCurrentAssigneeNames("supervisor");
+            apply.setCurrentTaskNames(currentTask.getTaskName());
+            apply.setCurrentTaskDefinitionKeys(currentTask.getTaskDefinitionKey());
+            apply.setCurrentAssigneeNames(currentTask.getAssigneeName());
             apply.setCurrentTasks(List.of(currentTask));
             return apply;
         }
