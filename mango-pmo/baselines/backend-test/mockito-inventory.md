@@ -58,6 +58,7 @@ rg -n "Mockito|mock\(|@Mock|MockBean|mockito" \
 | 测试 | 分类 | 测试目标 | mock 边界 | 真实链路 | 处理状态 |
 |---|---|---|---|---|---|
 | `AuthRoleResourceHandlerTest` | MIGRATE | 验证 `AUTH_ROLE` resource handler 将资源声明同步到 `authorization_role` | 原测试 mock `RoleMapper`，替换了关键落库链路 | 已改为 `AuthRoleResourceHandlerIntegrationTest`，使用 H2、MyBatis-Plus 和真实 `RoleMapper` 覆盖 create、business-key update、disable | DONE |
+| `RoleDataScopeServiceImplTest` | MIGRATE | 验证角色数据范围保存与解析 | 原测试 mock `RoleDataScopeMapper`、`RoleMapper`、`MenuMapper`、`RoleMenuMapper`、`SubjectRoleBindingMapper`，替换了权限数据范围核心链路 | 已改为 `RoleDataScopeServiceImplIntegrationTest`，使用 H2、MyBatis-Plus 和真实 Mapper 覆盖无角色 fallback、角色授权 list 资源后落库、主体角色与数据范围合并解析 | DONE |
 
 ## 7. 后续文件级清单要求
 
@@ -66,3 +67,4 @@ rg -n "Mockito|mock\(|@Mock|MockBean|mockito" \
 | 测试文件 | 分类 | 测试目标 | mock 替换对象 | 是否替换关键链路 | 目标验证方式 | 状态 |
 |---|---|---|---|---|---|---|
 | 记录具体测试文件路径 | KEEP/MIGRATE/REWRITE/DELETE | 写明目标 | 写明替身对象 | 是/否 | 单元/组件/集成/E2E | OPEN/DONE |
+| `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/RoleDataScopeServiceImplTest.java` | MIGRATE | 角色数据范围保存与解析 | `RoleDataScopeMapper`、`RoleMapper`、`MenuMapper`、`RoleMenuMapper`、`SubjectRoleBindingMapper` | 是 | 集成测试：`RoleDataScopeServiceImplIntegrationTest` 使用真实 H2/MyBatis-Plus Mapper | DONE |
