@@ -93,7 +93,7 @@
     },
     "backend.test": {
       "path": "rules/backend/08-test.md",
-      "reason": "后端测试规范、有效测试、测试替身边界与 E2E 可组合执行"
+      "reason": "后端测试规范、有效测试、测试替身边界、数据库测试隔离与 E2E 可组合执行"
     },
     "backend.versioning": {
       "path": "rules/backend/09-versioning.md",
