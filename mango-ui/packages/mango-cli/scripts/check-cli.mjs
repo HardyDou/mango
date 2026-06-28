@@ -198,6 +198,7 @@ try {
   assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
   assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
   assertDevWorkspaceAutoCreatesDatabase(projectRoot);
+  assertDevWorkspaceReportsMissingMysql(projectRoot);
   if (!backendDevScript.includes('mango dev backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
@@ -909,6 +910,30 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
     || !calls[0].includes('CREATE DATABASE IF NOT EXISTS `mango_dev_')
     || !calls[1]?.includes('mvn:-f pom.xml -DskipTests install')) {
     throw new Error(`mango dev start must create workspace database before Maven install:\n${calls.join('\n')}`);
+  }
+}
+
+function assertDevWorkspaceReportsMissingMysql(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/db-missing-mysql-bin');
+  mkdirSync(fakeBinDir, { recursive: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const result = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/db-missing-mysql-workspaces.json')}`,
+    `PATH=${fakeBinDir}`,
+    process.execPath,
+    cli,
+    'dev',
+    'start',
+    'mango-full-acceptance-service',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0
+    || !output.includes('failed to auto-create database')
+    || !output.includes('spawnSync mysql ENOENT')) {
+    throw new Error(`missing mysql should report the spawn failure reason:\n${output}`);
   }
 }
 

@@ -1761,8 +1761,12 @@ function ensureWorkspaceDatabase(context, appName, logPath) {
   if (result.stderr) {
     appendFileSync(logPath, result.stderr);
   }
+  if (result.error) {
+    appendFileSync(logPath, `${result.error.message}\n`);
+  }
   if (result.status !== 0) {
-    fail(`${appName}: failed to auto-create database ${dbName}, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+    const reason = result.error ? `: ${result.error.message}` : '';
+    fail(`${appName}: failed to auto-create database ${dbName}${reason}, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
   }
   process.stdout.write(`${appName}: ensured database ${dbName}\n`);
 }
