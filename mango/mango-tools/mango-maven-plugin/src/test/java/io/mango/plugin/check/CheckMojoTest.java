@@ -14,7 +14,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +35,23 @@ class CheckMojoTest {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, String> applyAlterTableStatementToColumns(String statement,
+                                                                  Map<String, String> columns) throws Exception {
+        CheckMojo mojo = new CheckMojo();
+        Class<?> schemaClass = Class.forName("io.mango.plugin.check.CheckMojo$PersistenceTableSchema");
+        var constructor = schemaClass.getDeclaredConstructor(String.class, String.class, int.class, Map.class,
+                boolean.class);
+        constructor.setAccessible(true);
+        Object schema = constructor.newInstance("demo_user", "V1__init_demo.sql", 1, columns, true);
+        Method method = CheckMojo.class.getDeclaredMethod("applyAlterTableStatement", String.class, schemaClass);
+        method.setAccessible(true);
+        method.invoke(mojo, statement, schema);
+        Field columnDefinitions = schemaClass.getDeclaredField("columnDefinitions");
+        columnDefinitions.setAccessible(true);
+        return (Map<String, String>) columnDefinitions.get(schema);
     }
 
     private void createStarterModule(String artifactId, String moduleName,
@@ -2670,6 +2689,450 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterAlterTableAddColumn_passes() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `name` varchar(64) NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_audit_fields.sql"), """
+                ALTER TABLE `demo_user` ADD COLUMN `created_by` bigint DEFAULT NULL;
+                ALTER TABLE `demo_user` ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                ALTER TABLE `demo_user` ADD COLUMN `updated_by` bigint DEFAULT NULL;
+                ALTER TABLE `demo_user` ADD COLUMN `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                ALTER TABLE `demo_user` ADD COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT 'default';
+                ALTER TABLE `demo_user` ADD COLUMN `org_id` bigint DEFAULT NULL;
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterMultiAddColumnAlterTable_passes() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `name` varchar(64) NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_audit_fields.sql"), """
+                ALTER TABLE `demo_user`
+                  ADD COLUMN `created_by` bigint DEFAULT NULL,
+                  ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  ADD COLUMN `updated_by` bigint DEFAULT NULL,
+                  ADD COLUMN `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  ADD COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                  ADD COLUMN `org_id` bigint DEFAULT NULL;
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_ignoresLaterAddKeyAlterClause() throws Exception {
+        // given
+        Map<String, String> columns = new LinkedHashMap<>();
+        columns.put("id", "`id` bigint NOT NULL");
+        columns.put("created_by", "`created_by` bigint DEFAULT NULL");
+        columns.put("created_at", "`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP");
+        columns.put("updated_by", "`updated_by` bigint DEFAULT NULL");
+        columns.put("updated_at", "`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP");
+        columns.put("tenant_id", "`tenant_id` varchar(64) NOT NULL DEFAULT 'default'");
+        columns.put("org_id", "`org_id` bigint DEFAULT NULL");
+
+        Map<String, String> result = applyAlterTableStatementToColumns("""
+                ALTER TABLE `demo_user`
+                  ADD KEY `idx_demo_user_tenant_id` (`tenant_id`);
+                """, columns);
+
+        assertFalse(result.containsKey("key"));
+        assertEquals(7, result.size());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterDropRequiredColumn_reportsIssue() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_drop_audit_column.sql"), """
+                ALTER TABLE `demo_user`
+                  DROP COLUMN `created_by`;
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withInlineUppercasePrimaryKey_passes() throws Exception {
+        // given
+        Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `id` BIGINT NOT NULL PRIMARY KEY,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_ignoresAlterTableInsideSqlComments() throws Exception {
+        // given
+        Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                -- ALTER TABLE `demo_user` DROP COLUMN `created_by`;
+                /*
+                ALTER TABLE `demo_user` DROP COLUMN `created_at`;
+                */
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_ignoresAlterKeywordsInsideColumnComments() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_remark.sql"), """
+                ALTER TABLE `demo_user`
+                  ADD COLUMN `remark` varchar(64) DEFAULT NULL COMMENT 'drop column created_by';
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_appliesLaterAlterClausesInOrder() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `create_by` bigint DEFAULT NULL,
+                    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_rename_audit_fields.sql"), """
+                ALTER TABLE `demo_user`
+                  RENAME COLUMN `create_by` TO `created_by`,
+                  MODIFY COLUMN `created_by` bigint DEFAULT NULL,
+                  RENAME COLUMN `create_time` TO `created_at`,
+                  MODIFY COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  ADD KEY `idx_demo_user_tenant_id` (`tenant_id`);
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterPrimaryKeyFix_passes() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_primary_key.sql"), """
+                ALTER TABLE `demo_user`
+                  ADD PRIMARY KEY (`id`);
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterInlinePrimaryKeyIdAddColumn_passes() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_add_id.sql"), """
+                ALTER TABLE `demo_user`
+                  ADD COLUMN `id` bigint NOT NULL PRIMARY KEY;
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterInlinePrimaryKeyIdModifyColumn_passes() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_modify_id.sql"), """
+                ALTER TABLE `demo_user`
+                  MODIFY COLUMN `id` bigint NOT NULL PRIMARY KEY;
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterIdModifyWithoutPrimaryKey_keepsExistingPrimaryKey() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_modify_id.sql"), """
+                ALTER TABLE `demo_user`
+                  MODIFY COLUMN `id` bigint NOT NULL COMMENT '雪花主键';
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withDuplicateIdAddColumnDoesNotFixMissingPrimaryKey() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_duplicate_add_id.sql"), """
+                ALTER TABLE `demo_user`
+                  ADD COLUMN `id` bigint NOT NULL PRIMARY KEY;
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withLaterDynamicSqlAlterTableAddColumn_passes() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V1__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `name` varchar(64) NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Files.writeString(migrationDir.resolve("V2__demo_user_audit_fields.sql"), """
+                SET @add_created_by = (
+                  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `demo_user` ADD COLUMN `created_by` bigint DEFAULT NULL COMMENT ''创建人 ID'' AFTER `id`', 'SELECT 1')
+                );
+                SET @add_created_at = (
+                  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `demo_user` ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT ''创建时间'' AFTER `created_by`', 'SELECT 1')
+                );
+                SET @add_updated_by = (
+                  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `demo_user` ADD COLUMN `updated_by` bigint DEFAULT NULL COMMENT ''更新人 ID'' AFTER `created_at`', 'SELECT 1')
+                );
+                SET @add_updated_at = (
+                  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `demo_user` ADD COLUMN `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''更新时间'' AFTER `updated_by`', 'SELECT 1')
+                );
+                SET @add_tenant_id = (
+                  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `demo_user` ADD COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT ''default'' COMMENT ''租户 ID'' AFTER `updated_at`', 'SELECT 1')
+                );
+                SET @add_org_id = (
+                  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `demo_user` ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT ''组织 ID'' AFTER `tenant_id`', 'SELECT 1')
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_ordersMigrationVersionsNumerically() throws Exception {
+        // given
+        Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
+        Files.createDirectories(migrationDir);
+        Files.writeString(migrationDir.resolve("V10__demo_user_audit_fields.sql"), """
+                ALTER TABLE `demo_user` ADD COLUMN `created_by` bigint DEFAULT NULL;
+                ALTER TABLE `demo_user` ADD COLUMN `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                ALTER TABLE `demo_user` ADD COLUMN `updated_by` bigint DEFAULT NULL;
+                ALTER TABLE `demo_user` ADD COLUMN `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                ALTER TABLE `demo_user` ADD COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT 'default';
+                ALTER TABLE `demo_user` ADD COLUMN `org_id` bigint DEFAULT NULL;
+                """);
+        Files.writeString(migrationDir.resolve("V2__init_demo.sql"), """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `name` varchar(64) NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
     }
 
     @Test
