@@ -2,10 +2,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const REQUIRED_COLUMNS = ['ID', '来源', '要求', '设计决策', '交付物', '验收方式', '状态', '证据文件'];
+const BASE_REQUIRED_COLUMNS = ['ID', '来源', '要求', '设计决策', '验收方式', '状态', '证据文件'];
+const LEGACY_DELIVERY_COLUMN = '交付物';
+const MATERIAL_COLUMNS = ['代码交付物', 'README/使用说明', '需求/设计文档', 'E2E 脚本', '测试结果基线'];
 const DEFAULT_FORBIDDEN = ['TODO', 'FIXME', 'mock', 'Mock', 'virtual', 'Virtual', '模拟', '伪代码', '未来优化', '后续优化'];
 const DONE_STATUSES = new Set(['DONE', 'EXCEPTION']);
 const PLAN_STATUSES = new Set(['TODO', 'IN_PROGRESS', 'DONE', 'EXCEPTION']);
+const EMPTY_VALUES = new Set(['', '-']);
 
 function parseArgs(argv) {
   const args = {
@@ -15,12 +18,17 @@ function parseArgs(argv) {
     require: '',
     scan: '',
     forbidden: DEFAULT_FORBIDDEN.join(','),
+    requireMaterials: false,
     json: false
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--json') {
       args.json = true;
+      continue;
+    }
+    if (arg === '--require-materials') {
+      args.requireMaterials = true;
       continue;
     }
     if (arg.startsWith('--')) {
@@ -69,53 +77,94 @@ function isSeparatorRow(cells) {
 
 function parseLedgerRows(content) {
   const lines = content.split(/\r?\n/);
-  let headers = [];
-  const rows = [];
+  const tables = [];
   for (let i = 0; i < lines.length; i += 1) {
     const cells = splitMarkdownRow(lines[i]);
     if (cells.length === 0) {
       continue;
     }
     const nextCells = splitMarkdownRow(lines[i + 1] || '');
-    if (headers.length === 0 && isSeparatorRow(nextCells)) {
-      headers = cells;
+    if (isSeparatorRow(nextCells)) {
+      const headers = cells;
+      const rows = [];
       i += 1;
+      for (let rowIndex = i + 1; rowIndex < lines.length; rowIndex += 1) {
+        const rowCells = splitMarkdownRow(lines[rowIndex]);
+        if (rowCells.length === 0) {
+          break;
+        }
+        if (rowCells.length === headers.length && !isSeparatorRow(rowCells)) {
+          const row = {};
+          headers.forEach((header, index) => {
+            row[header] = rowCells[index] || '';
+          });
+          rows.push(row);
+        }
+        i = rowIndex;
+      }
+      tables.push({ headers, rows });
       continue;
     }
-    if (headers.length > 0 && cells.length === headers.length && !isSeparatorRow(cells)) {
-      const row = {};
-      headers.forEach((header, index) => {
-        row[header] = cells[index] || '';
-      });
-      rows.push(row);
-    }
   }
-  return { headers, rows };
+  const ledgerTable = tables.find((table) => {
+    const headers = table.headers;
+    return BASE_REQUIRED_COLUMNS.every((column) => headers.includes(column))
+      && (headers.includes(LEGACY_DELIVERY_COLUMN) || MATERIAL_COLUMNS.some((column) => headers.includes(column)));
+  });
+  return ledgerTable || { headers: [], rows: [] };
 }
 
 function rowText(row) {
   return Object.values(row).join(' ');
 }
 
-function checkRequiredColumns(headers, errors) {
-  for (const column of REQUIRED_COLUMNS) {
+function checkRequiredColumns(headers, requireMaterials, errors) {
+  for (const column of BASE_REQUIRED_COLUMNS) {
     if (!headers.includes(column)) {
       errors.push(`Ledger missing required column: ${column}`);
     }
   }
+  if (requireMaterials) {
+    for (const column of MATERIAL_COLUMNS) {
+      if (!headers.includes(column)) {
+        errors.push(`Ledger missing required material column: ${column}`);
+      }
+    }
+    return;
+  }
+  if (!headers.includes(LEGACY_DELIVERY_COLUMN) && !MATERIAL_COLUMNS.some((column) => headers.includes(column))) {
+    errors.push(`Ledger missing required column: ${LEGACY_DELIVERY_COLUMN} or material columns`);
+  }
 }
 
-function checkRows(rows, mode, errors) {
+function isEmptyCell(value) {
+  return EMPTY_VALUES.has(String(value || '').trim());
+}
+
+function hasExceptionText(value) {
+  return String(value || '').toUpperCase().includes('EXCEPTION');
+}
+
+function checkRows(rows, mode, requireMaterials, errors) {
   if (rows.length === 0) {
     errors.push('Ledger has no delivery rows');
     return;
   }
   rows.forEach((row, index) => {
     const rowNo = index + 1;
-    for (const column of REQUIRED_COLUMNS) {
-      if (!String(row[column] || '').trim()) {
+    for (const column of BASE_REQUIRED_COLUMNS) {
+      if (isEmptyCell(row[column])) {
         errors.push(`Row ${rowNo} missing value for column: ${column}`);
       }
+    }
+    if (requireMaterials) {
+      for (const column of MATERIAL_COLUMNS) {
+        if (isEmptyCell(row[column])) {
+          errors.push(`Row ${rowNo} missing value for material column: ${column}`);
+        }
+      }
+    } else if (row[LEGACY_DELIVERY_COLUMN] !== undefined && isEmptyCell(row[LEGACY_DELIVERY_COLUMN])) {
+      errors.push(`Row ${rowNo} missing value for column: ${LEGACY_DELIVERY_COLUMN}`);
     }
     const status = String(row['状态'] || '').trim();
     if (!PLAN_STATUSES.has(status)) {
@@ -126,8 +175,15 @@ function checkRows(rows, mode, errors) {
     }
     if (mode === 'verify' && status === 'EXCEPTION') {
       const evidence = String(row['证据文件'] || '').trim();
-      if (!evidence || evidence === '-') {
+      if (isEmptyCell(evidence)) {
         errors.push(`Row ${rowNo} is EXCEPTION but has no evidence or user confirmation`);
+      }
+    }
+    if (mode === 'verify' && requireMaterials && status !== 'EXCEPTION') {
+      for (const column of MATERIAL_COLUMNS) {
+        if (hasExceptionText(row[column]) && isEmptyCell(row['证据文件'])) {
+          errors.push(`Row ${rowNo} material column ${column} is EXCEPTION but has no evidence or user confirmation`);
+        }
       }
     }
   });
@@ -227,8 +283,8 @@ if (!['plan', 'verify'].includes(args.mode)) {
 
 const parsed = ledgerText ? parseLedgerRows(ledgerText) : { headers: [], rows: [] };
 if (ledgerText) {
-  checkRequiredColumns(parsed.headers, errors);
-  checkRows(parsed.rows, args.mode, errors);
+  checkRequiredColumns(parsed.headers, args.requireMaterials, errors);
+  checkRows(parsed.rows, args.mode, args.requireMaterials, errors);
   checkRequiredItems(parsed.rows, designText, requiredItems, errors);
 }
 
@@ -236,6 +292,7 @@ checkForbidden(scanPaths, forbiddenTerms, errors);
 
 const result = {
   mode: args.mode,
+  requireMaterials: args.requireMaterials,
   design: args.design,
   ledger: args.ledger,
   summary: buildSummary(parsed.rows),

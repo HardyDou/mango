@@ -182,7 +182,7 @@
   "bundles": {
     "deliveryContract": {
       "paths": ["mango-docs/designs/**", "mango-docs/sprints/**", "mango-docs/delivery/**", "business-docs/**"],
-      "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "delivery-ledger", "delivery-contract", "创建PR", "评审PR", "提交PR", "合并PR", "创建 PR", "评审 PR", "提交 PR", "合并 PR", "Pull Request", "验收", "正式交付"],
+      "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "交付物料", "E2E", "e2e", "测试结果基线", "结果基线", "验收证据", "delivery-ledger", "delivery-contract", "创建PR", "评审PR", "提交PR", "合并PR", "创建 PR", "评审 PR", "提交 PR", "合并 PR", "Pull Request", "验收", "正式交付"],
       "include": ["process.deliveryContract", "process.aiDeliveryQuality"]
     },
     "backendFlow": {
