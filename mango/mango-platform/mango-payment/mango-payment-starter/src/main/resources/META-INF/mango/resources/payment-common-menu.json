@@ -3,14 +3,14 @@
     "resource": {
       "schemaVersion": 1,
       "moduleCode": "payment",
-      "moduleName": "支付中心模块",
+      "moduleName": "支付管理模块",
       "declarations": {
         "AUTH_MENU": [
           {
             "id": "2951300000000009401",
-            "version": 1,
+            "version": 2,
             "bizKey": "payment.menu.internal-admin",
-            "name": "支付中心菜单",
+            "name": "支付管理菜单",
             "targetModule": "authorization",
             "fields": {
               "appCode": {
@@ -23,7 +23,7 @@
               },
               "moduleName": {
                 "type": "STRING",
-                "value": "支付中心"
+                "value": "支付管理"
               },
               "sort": {
                 "type": "INT",
@@ -42,8 +42,9 @@
                 "value": [
                   {
                     "menuType": 1,
-                    "menuName": "支付中心",
+                    "menuName": "支付管理",
                     "menuCode": "payment",
+                    "parentCode": "data",
                     "path": "/payment",
                     "icon": "CreditCard",
                     "sort": 8,
@@ -78,31 +79,41 @@
                                 "permissionName": "应用查询",
                                 "sort": 1,
                                 "remark": "支付应用详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:application:add",
                                 "permissionName": "应用新增",
                                 "sort": 2,
                                 "remark": "支付应用新增权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:application:edit",
                                 "permissionName": "应用编辑",
                                 "sort": 3,
                                 "remark": "支付应用编辑权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:application:delete",
                                 "permissionName": "应用删除",
                                 "sort": 4,
                                 "remark": "支付应用受控逻辑删除权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -122,34 +133,46 @@
                                 "permissionName": "收银台配置查询",
                                 "sort": 1,
                                 "remark": "收银台配置详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:cashier-config:add",
                                 "permissionName": "收银台配置新增",
                                 "sort": 2,
                                 "remark": "收银台配置新增权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:cashier-config:edit",
                                 "permissionName": "收银台配置编辑",
                                 "sort": 3,
                                 "remark": "收银台配置编辑权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:cashier-config:delete",
                                 "permissionName": "收银台配置删除",
                                 "sort": 4,
                                 "remark": "收银台配置受控逻辑删除权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           }
                         ],
-                        "packageCodes": []
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
                       },
                       {
                         "menuType": 1,
@@ -179,31 +202,41 @@
                                 "permissionName": "签约主体详情",
                                 "sort": 1,
                                 "remark": "签约主体详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:enterprise-subject:add",
                                 "permissionName": "签约主体新增",
                                 "sort": 2,
                                 "remark": "签约主体新增权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:enterprise-subject:edit",
                                 "permissionName": "签约主体编辑",
                                 "sort": 3,
                                 "remark": "签约主体编辑权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:enterprise-subject:delete",
                                 "permissionName": "签约主体删除",
                                 "sort": 4,
                                 "remark": "签约主体受控删除权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -223,45 +256,59 @@
                                 "permissionName": "通道签约详情",
                                 "sort": 1,
                                 "remark": "通道签约配置详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel-contract:add",
                                 "permissionName": "通道签约新增",
                                 "sort": 2,
                                 "remark": "通道签约配置新增权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel-contract:edit",
                                 "permissionName": "通道签约编辑",
                                 "sort": 3,
                                 "remark": "通道签约配置编辑权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel-contract:delete",
                                 "permissionName": "通道签约删除",
                                 "sort": 4,
                                 "remark": "通道签约配置受控删除权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel-contract:certificate-expiry",
                                 "permissionName": "证书到期提醒",
                                 "sort": 5,
                                 "remark": "通道签约证书到期提醒查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel-contract:certificate-rotate",
                                 "permissionName": "证书轮换登记",
                                 "sort": 6,
                                 "remark": "通道签约证书轮换登记权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -281,31 +328,41 @@
                                 "permissionName": "支付通道详情",
                                 "sort": 1,
                                 "remark": "支付通道详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel:add",
                                 "permissionName": "支付通道新增",
                                 "sort": 2,
                                 "remark": "支付通道新增权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel:edit",
                                 "permissionName": "支付通道编辑",
                                 "sort": 3,
                                 "remark": "支付通道编辑权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:channel:delete",
                                 "permissionName": "支付通道删除",
                                 "sort": 4,
                                 "remark": "支付通道受控删除权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -325,76 +382,100 @@
                                 "permissionName": "路由策略查询",
                                 "sort": 1,
                                 "remark": "支付方式路由规则详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method-route:add",
                                 "permissionName": "路由策略新增",
                                 "sort": 2,
                                 "remark": "支付方式路由规则新增权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method-route:edit",
                                 "permissionName": "路由策略编辑",
                                 "sort": 3,
                                 "remark": "支付方式路由规则编辑权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method-route:delete",
                                 "permissionName": "路由策略删除",
                                 "sort": 4,
                                 "remark": "支付方式路由规则受控删除权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method-route:trial",
                                 "permissionName": "路由试算",
                                 "sort": 5,
                                 "remark": "支付方式路由试算权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method-route:list",
                                 "permissionName": "路由策略列表",
                                 "sort": 6,
                                 "remark": "支付方式路由规则列表权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method:query",
                                 "permissionName": "支付方式详情",
                                 "sort": 7,
                                 "remark": "支付方式详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method:add",
                                 "permissionName": "支付方式新增",
                                 "sort": 8,
                                 "remark": "支付方式新增权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method:edit",
                                 "permissionName": "支付方式编辑",
                                 "sort": 9,
                                 "remark": "支付方式编辑权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:method:delete",
                                 "permissionName": "支付方式删除",
                                 "sort": 10,
                                 "remark": "支付方式受控删除权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           }
                         ],
-                        "packageCodes": []
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
                       },
                       {
                         "menuType": 1,
@@ -424,17 +505,23 @@
                                 "permissionName": "业务订单查询",
                                 "sort": 1,
                                 "remark": "业务订单详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:business-order:create",
                                 "permissionName": "业务订单新增",
                                 "sort": 2,
                                 "remark": "后台创建待支付业务订单权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -454,17 +541,23 @@
                                 "permissionName": "支付订单查询",
                                 "sort": 1,
                                 "remark": "支付订单详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:payment-order:sync-status",
                                 "permissionName": "支付订单同步状态",
                                 "sort": 2,
                                 "remark": "支付订单主动查单并同步状态权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -484,17 +577,23 @@
                                 "permissionName": "退款订单查询",
                                 "sort": 1,
                                 "remark": "退款订单详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:refund-order:query-channel",
                                 "permissionName": "退款订单主动查退款",
                                 "sort": 2,
                                 "remark": "退款订单主动查询通道退款结果权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -514,45 +613,59 @@
                                 "permissionName": "退款审批列表",
                                 "sort": 1,
                                 "remark": "后台退款审批列表权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:refund-approval:query",
                                 "permissionName": "退款审批详情",
                                 "sort": 2,
                                 "remark": "后台退款审批详情权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:refund-approval:create",
                                 "permissionName": "创建退款审批",
                                 "sort": 3,
                                 "remark": "后台发起退款审批权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:security:reencrypt-sensitive",
                                 "permissionName": "敏感字段重加密",
                                 "sort": 4,
                                 "remark": "支付历史明文敏感字段受控重加密权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:observability:query",
                                 "permissionName": "可观测性快照",
                                 "sort": 5,
                                 "remark": "支付可观测性指标和告警查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:mango-pay:scenario-control",
                                 "permissionName": "芒果支付场景控制",
                                 "sort": 6,
                                 "remark": "芒果支付内置通道异常场景控制权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -572,10 +685,14 @@
                                 "permissionName": "交易流水查询",
                                 "sort": 1,
                                 "remark": "交易流水详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -595,20 +712,28 @@
                                 "permissionName": "异常订单查询",
                                 "sort": 1,
                                 "remark": "异常订单详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:exception-order:handle",
                                 "permissionName": "异常订单处理",
                                 "sort": 2,
                                 "remark": "异常订单受控处理权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           }
                         ],
-                        "packageCodes": []
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
                       },
                       {
                         "menuType": 1,
@@ -638,38 +763,50 @@
                                 "permissionName": "通知记录查询",
                                 "sort": 1,
                                 "remark": "通知记录详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:notification-record:retry",
                                 "permissionName": "通知记录重推",
                                 "sort": 2,
                                 "remark": "通知记录人工重推权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:notification-record:deliver-due",
                                 "permissionName": "通知记录投递到期任务",
                                 "sort": 3,
                                 "remark": "人工触发投递已到期通知记录权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:task:expire-open-orders",
                                 "permissionName": "关闭已过期待支付订单任务",
                                 "sort": 4,
                                 "remark": "人工或平台调度触发关闭已过期且未成功支付订单权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:task:query-processing-orders",
                                 "permissionName": "批量主动查询支付中订单任务",
                                 "sort": 5,
                                 "remark": "人工或平台调度触发支付中订单主动查单权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -689,17 +826,23 @@
                                 "permissionName": "对账批次查询",
                                 "sort": 1,
                                 "remark": "对账批次详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:reconciliation:import",
                                 "permissionName": "通道账单导入",
                                 "sort": 2,
                                 "remark": "通道账单导入权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -719,17 +862,23 @@
                                 "permissionName": "差异详情查询",
                                 "sort": 1,
                                 "remark": "对账差异详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:difference:handle",
                                 "permissionName": "差异受控处理",
                                 "sort": 2,
                                 "remark": "对账差异受控处理权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -749,31 +898,41 @@
                                 "permissionName": "结算详情查询",
                                 "sort": 1,
                                 "remark": "结算汇总详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:settlement-summary:generate",
                                 "permissionName": "生成结算汇总",
                                 "sort": 2,
                                 "remark": "生成或重新生成结算汇总权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:settlement-summary:confirm",
                                 "permissionName": "确认结算汇总",
                                 "sort": 3,
                                 "remark": "确认结算汇总权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:settlement-summary:void",
                                 "permissionName": "作废结算汇总",
                                 "sort": 4,
                                 "remark": "作废结算汇总权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -787,10 +946,14 @@
                               "payment:operation-audit:list"
                             ],
                             "remark": "支付域操作审计",
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           }
                         ],
-                        "packageCodes": []
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
                       },
                       {
                         "menuType": 1,
@@ -823,52 +986,68 @@
                                 "permissionName": "线下收款查询",
                                 "sort": 1,
                                 "remark": "线下收款详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:offline-collection:confirm",
                                 "permissionName": "线下收款确认",
                                 "sort": 2,
                                 "remark": "线下收款确认到账权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:offline-collection:refund",
                                 "permissionName": "线下收款退款",
                                 "sort": 3,
                                 "remark": "线下收款发起线下退款权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:offline-collection:bank-statement:query",
                                 "permissionName": "线下银行流水查询",
                                 "sort": 4,
                                 "remark": "线下收款银行流水批次和明细查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:offline-collection:bank-statement:import",
                                 "permissionName": "线下银行流水导入",
                                 "sort": 5,
                                 "remark": "线下收款银行流水 Excel 导入权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:offline-collection:bank-statement:confirm",
                                 "permissionName": "线下银行流水确认",
                                 "sort": 6,
                                 "remark": "线下收款银行流水匹配确认权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               },
                               {
                                 "permissionCode": "payment:offline-collection:bank-statement:list",
                                 "permissionName": "线下银行流水列表",
                                 "sort": 7,
                                 "remark": "线下收款银行流水批次列表权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           },
                           {
                             "menuType": 2,
@@ -888,16 +1067,24 @@
                                 "permissionName": "线下退款查询",
                                 "sort": 1,
                                 "remark": "线下退款详情查询权限",
-                                "packageCodes": []
+                                "packageCodes": [
+                                  "platform_admin"
+                                ]
                               }
                             ],
-                            "packageCodes": []
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
                           }
                         ],
-                        "packageCodes": []
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
                       }
                     ],
-                    "packageCodes": []
+                    "packageCodes": [
+                      "platform_admin"
+                    ]
                   }
                 ]
               }
