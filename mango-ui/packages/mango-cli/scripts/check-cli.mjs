@@ -1456,6 +1456,91 @@ function assertPmoSyncCommand(tempRoot) {
   }
   assertCommandOk([cli, 'validate'], shellSyncRoot, 'synced mango validate');
 
+  const discoveredShellRoot = join(tempRoot, 'existing-business-discovered-shell-sync');
+  mkdirSync(join(discoveredShellRoot, 'baohan-backend'), { recursive: true });
+  mkdirSync(join(discoveredShellRoot, 'baohan-backend/apps/baohan-api'), { recursive: true });
+  mkdirSync(join(discoveredShellRoot, 'baohan-ui/apps/admin-console'), { recursive: true });
+  mkdirSync(join(discoveredShellRoot, 'baohan-ui/apps/portal-console'), { recursive: true });
+  writeFileSync(join(discoveredShellRoot, 'baohan-backend/pom.xml'), [
+    '<project>',
+    '  <packaging>pom</packaging>',
+    '  <modules><module>apps/baohan-api</module></modules>',
+    '</project>',
+  ].join('\n'));
+  writeFileSync(join(discoveredShellRoot, 'baohan-backend/apps/baohan-api/pom.xml'), [
+    '<project>',
+    '  <dependencies>',
+    '    <dependency>',
+    '      <groupId>org.springframework.boot</groupId>',
+    '      <artifactId>spring-boot-starter-web</artifactId>',
+    '    </dependency>',
+    '  </dependencies>',
+    '  <build><plugins><plugin>',
+    '    <groupId>org.springframework.boot</groupId>',
+    '    <artifactId>spring-boot-maven-plugin</artifactId>',
+    '  </plugin></plugins></build>',
+    '</project>',
+  ].join('\n'));
+  writeFileSync(join(discoveredShellRoot, 'baohan-ui/pnpm-lock.yaml'), 'lockfileVersion: 9.0\n');
+  for (const appPath of ['admin-console', 'portal-console']) {
+    writeFileSync(join(discoveredShellRoot, `baohan-ui/apps/${appPath}/package.json`), JSON.stringify({
+      scripts: { dev: 'vite --host 127.0.0.1' },
+      dependencies: { vite: '^4.3.3' },
+    }, null, 2));
+    writeFileSync(join(discoveredShellRoot, `baohan-ui/apps/${appPath}/vite.config.ts`), 'export default {};\n');
+  }
+  const discoveredDryRun = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    discoveredShellRoot,
+    '--sync-shell',
+    '--dry-run',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (discoveredDryRun.status !== 0
+    || !discoveredDryRun.stdout.includes('skipped aggregator POM')
+    || !discoveredDryRun.stdout.includes('confirm groups before starting')) {
+    throw new Error(`pmo sync --sync-shell dry-run should report discovered layout confirmation items:\n${discoveredDryRun.stdout}\n${discoveredDryRun.stderr}`);
+  }
+  const discoveredSync = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    discoveredShellRoot,
+    '--sync-shell',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (discoveredSync.status !== 0) {
+    throw new Error(`pmo sync --sync-shell discovered layout failed:\n${discoveredSync.stdout}\n${discoveredSync.stderr}`);
+  }
+  const discoveredManifest = JSON.parse(readFileSync(join(discoveredShellRoot, 'mango.dev.json'), 'utf8'));
+  if (!discoveredManifest.apps['baohan-api']
+    || discoveredManifest.apps['baohan-api'].cwd !== 'baohan-backend/apps/baohan-api'
+    || discoveredManifest.apps['baohan-api'].pom !== 'pom.xml'
+    || discoveredManifest.apps['baohan-api'].pom === 'baohan-backend/pom.xml'
+    || !discoveredManifest.apps['admin-console']
+    || discoveredManifest.apps['admin-console'].cwd !== 'baohan-ui/apps/admin-console'
+    || discoveredManifest.apps['admin-console'].packageManager !== 'pnpm'
+    || !discoveredManifest.apps['portal-console']
+    || discoveredManifest.groups.default.join(',') !== 'baohan-api,admin-console'
+    || discoveredManifest.groups.frontend.join(',') !== 'admin-console,portal-console') {
+    throw new Error(`discovered mango.dev.json did not match real business layout:\n${JSON.stringify(discoveredManifest, null, 2)}`);
+  }
+  assertCommandOk([cli, 'validate'], discoveredShellRoot, 'discovered mango validate');
+  const discoveredPlan = assertCommandOk([cli, 'plan', 'frontend'], discoveredShellRoot, 'discovered frontend plan');
+  if (!discoveredPlan.stdout.includes('baohan-ui/apps/admin-console')
+    || !discoveredPlan.stdout.includes('baohan-ui/apps/portal-console')
+    || discoveredPlan.stdout.includes('-f baohan-backend/pom.xml')) {
+    throw new Error(`discovered frontend plan should use detected Vite apps and not aggregator POM:\n${discoveredPlan.stdout}`);
+  }
+
   const ownedManifestRoot = join(tempRoot, 'existing-business-owned-manifest');
   mkdirSync(ownedManifestRoot, { recursive: true });
   const ownedManifest = '{"version":1,"groups":{"default":["custom-app"]},"apps":{"custom-app":{"type":"command","cwd":".","command":"node","args":["--version"]}}}\n';

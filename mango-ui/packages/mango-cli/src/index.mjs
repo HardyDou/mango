@@ -822,8 +822,12 @@ function initDevWorkspace(context) {
   }
 
   if (!existsSync(context.manifestPath)) {
-    writeFileSync(context.manifestPath, `${JSON.stringify(defaultBusinessDevManifest(basename(context.root)), null, 2)}\n`);
+    const { manifest, warnings } = createBusinessDevManifest(context.root, basename(context.root));
+    writeFileSync(context.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
     process.stdout.write(`Created development manifest: ${relativeOrAbsolute(process.cwd(), context.manifestPath)}\n`);
+    for (const warning of warnings) {
+      process.stdout.write(`warn    mango.dev.json ${warning}\n`);
+    }
   }
 }
 
@@ -966,7 +970,7 @@ function defaultBusinessDevManifest(projectName) {
         hostEnv: 'MANGO_FRONTEND_HOST',
         host: '127.0.0.1',
         env: {
-          VITE_ADMIN_PROXY_PATH: 'http://127.0.0.1:${backend.port}',
+          VITE_ADMIN_PROXY_PATH: 'http://127.0.0.1:${apps.backend.port}',
           VITE_PORT: '${port}',
           VITE_HOST: '${host}',
           VITE_OPEN: '${env.MANGO_FRONTEND_OPEN}',
@@ -978,6 +982,277 @@ function defaultBusinessDevManifest(projectName) {
       project: projectName,
     },
   };
+}
+
+function createBusinessDevManifest(targetDir, projectName) {
+  const discovery = discoverBusinessDevApps(targetDir);
+  if (discovery.apps.length === 0) {
+    return {
+      manifest: defaultBusinessDevManifest(projectName),
+      warnings: [
+        'used default backend/frontend layout; confirm backend/app/pom.xml and frontend exist before starting',
+      ],
+    };
+  }
+  const apps = Object.fromEntries(discovery.apps.map(app => [app.name, app.config]));
+  const backendNames = discovery.apps.filter(app => app.kind === 'backend').map(app => app.name);
+  const frontendNames = discovery.apps.filter(app => app.kind === 'frontend').map(app => app.name);
+  const defaultGroup = [
+    ...(backendNames.length > 0 ? [backendNames[0]] : []),
+    ...(frontendNames.length > 0 ? [frontendNames[0]] : []),
+  ];
+  const groups = {};
+  if (defaultGroup.length > 0) {
+    groups.default = defaultGroup;
+  }
+  if (backendNames.length > 0) {
+    groups.backend = backendNames;
+  }
+  if (frontendNames.length > 0) {
+    groups.frontend = frontendNames;
+  }
+  const warnings = [];
+  if (backendNames.length === 0) {
+    warnings.push('no Spring Boot Maven app POM detected; add backend app manually if needed');
+  }
+  if (frontendNames.length === 0) {
+    warnings.push('no Vite frontend app detected; add frontend app manually if needed');
+  }
+  if (backendNames.length > 1 || frontendNames.length > 1) {
+    warnings.push(`detected ${backendNames.length} backend app(s) and ${frontendNames.length} frontend app(s); confirm groups before starting`);
+  }
+  for (const warning of discovery.warnings) {
+    warnings.push(warning);
+  }
+  return {
+    manifest: {
+      version: 1,
+      groups,
+      apps,
+      metadata: {
+        project: projectName,
+        generatedFrom: 'discovered-project-layout',
+      },
+    },
+    warnings,
+  };
+}
+
+function discoverBusinessDevApps(root) {
+  const files = walkProjectFiles(root, {
+    fileNames: new Set(['pom.xml', 'package.json']),
+    maxDepth: 6,
+  });
+  const pomFiles = files.filter(file => basename(file) === 'pom.xml');
+  const packageFiles = files.filter(file => basename(file) === 'package.json');
+  const backendApps = discoverSpringBootApps(root, pomFiles);
+  const frontendApps = discoverViteApps(root, packageFiles);
+  const apps = [];
+  const usedNames = new Set();
+  backendApps.forEach((app, index) => {
+    const name = uniqueAppName(toAppName(app.relativeDir, 'backend'), usedNames);
+    apps.push({
+      kind: 'backend',
+      name,
+      config: buildSpringBootDevApp(app.relativeDir, index),
+    });
+  });
+  const firstBackend = apps.find(app => app.kind === 'backend')?.name || '';
+  frontendApps.forEach((app, index) => {
+    const name = uniqueAppName(toAppName(app.relativeDir, 'frontend'), usedNames);
+    apps.push({
+      kind: 'frontend',
+      name,
+      config: buildViteDevApp(root, app.relativeDir, index, firstBackend),
+    });
+  });
+  return {
+    apps,
+    warnings: buildDiscoveryWarnings(root, pomFiles, backendApps, packageFiles, frontendApps),
+  };
+}
+
+function discoverSpringBootApps(root, pomFiles) {
+  return pomFiles
+    .map(file => {
+      const content = readFileSync(file, 'utf8');
+      return {
+        file,
+        relativeDir: toPosix(relative(root, dirname(file))) || '.',
+        content,
+      };
+    })
+    .filter(item => isSpringBootAppPom(item.content))
+    .sort((left, right) => left.relativeDir.localeCompare(right.relativeDir));
+}
+
+function isSpringBootAppPom(content) {
+  if (isAggregatorPom(content)) {
+    return false;
+  }
+  return content.includes('<artifactId>spring-boot-maven-plugin</artifactId>')
+    || content.includes('<artifactId>spring-boot-starter-web</artifactId>')
+    || content.includes('<artifactId>spring-boot-starter-webflux</artifactId>')
+    || content.includes('<artifactId>mango-admin-starter</artifactId>')
+    || content.includes('<artifactId>mango-monolith-starter</artifactId>');
+}
+
+function isAggregatorPom(content) {
+  return content.includes('<packaging>pom</packaging>') && content.includes('<modules>');
+}
+
+function discoverViteApps(root, packageFiles) {
+  return packageFiles
+    .map(file => {
+      const directory = dirname(file);
+      const packageJson = readJsonFile(file);
+      return {
+        file,
+        relativeDir: toPosix(relative(root, directory)) || '.',
+        packageJson,
+        hasViteConfig: hasViteConfig(directory),
+      };
+    })
+    .filter(item => isVitePackage(item.packageJson, item.hasViteConfig))
+    .sort((left, right) => left.relativeDir.localeCompare(right.relativeDir));
+}
+
+function isVitePackage(packageJson, hasViteConfigFile) {
+  const scripts = packageJson.scripts || {};
+  const dependencies = {
+    ...(packageJson.dependencies || {}),
+    ...(packageJson.devDependencies || {}),
+  };
+  return Boolean(scripts.dev) && (Boolean(dependencies.vite) || hasViteConfigFile);
+}
+
+function hasViteConfig(directory) {
+  return ['vite.config.ts', 'vite.config.js', 'vite.config.mjs', 'vite.config.mts']
+    .some(file => existsSync(join(directory, file)));
+}
+
+function buildSpringBootDevApp(cwd, index) {
+  const app = {
+    type: 'spring-boot-maven',
+    cwd,
+    pom: 'pom.xml',
+    port: 5555 + index,
+    health: '/actuator/health',
+    env: {
+      MANGO_CRYPTO_SM4_SECRET_KEY: '${env.MANGO_CRYPTO_SM4_SECRET_KEY}',
+    },
+    args: [
+      '--server.port=${port}',
+      '--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai',
+      '--spring.datasource.username=${env.MANGO_DB_USERNAME}',
+      '--spring.datasource.password=${env.MANGO_DB_PASSWORD}',
+      '--office.plugin.enabled=${env.MANGO_OFFICE_PLUGIN_ENABLED}',
+      '${env.MANGO_BACKEND_ADDITIONAL_ARGS}',
+    ],
+  };
+  if (index === 0) {
+    app.portEnv = 'MANGO_BACKEND_PORT';
+  }
+  return app;
+}
+
+function buildViteDevApp(root, cwd, index, backendName) {
+  const appRoot = resolve(root, cwd);
+  const app = {
+    type: 'vite',
+    cwd,
+    packageManager: detectPackageManager(appRoot, root),
+    port: 5176 + index,
+    hostEnv: 'MANGO_FRONTEND_HOST',
+    host: '127.0.0.1',
+    env: {
+      VITE_PORT: '${port}',
+      VITE_HOST: '${host}',
+      VITE_OPEN: '${env.MANGO_FRONTEND_OPEN}',
+    },
+    args: ['run', 'dev', '--', '--host', '${host}', '--port', '${port}'],
+  };
+  if (backendName) {
+    app.dependsOn = [backendName];
+    app.env.VITE_ADMIN_PROXY_PATH = `http://127.0.0.1:\${apps.${backendName}.port}`;
+  }
+  if (index === 0) {
+    app.portEnv = 'MANGO_FRONTEND_PORT';
+  }
+  return app;
+}
+
+function buildDiscoveryWarnings(root, pomFiles, backendApps, packageFiles, frontendApps) {
+  const warnings = [];
+  const springAppPaths = new Set(backendApps.map(app => app.file));
+  const skippedAggregatorPoms = pomFiles
+    .filter(file => !springAppPaths.has(file))
+    .filter(file => isAggregatorPom(readFileSync(file, 'utf8')))
+    .map(file => toPosix(relative(root, file)));
+  if (skippedAggregatorPoms.length > 0) {
+    warnings.push(`skipped aggregator POM(s): ${skippedAggregatorPoms.join(', ')}`);
+  }
+  if (packageFiles.length > 0 && frontendApps.length === 0) {
+    warnings.push('package.json files exist but no Vite dev app was detected');
+  }
+  return warnings;
+}
+
+function walkProjectFiles(root, options) {
+  const result = [];
+  const excludedDirectories = new Set([
+    '.git',
+    '.mango',
+    '.runtime',
+    'node_modules',
+    'target',
+    'dist',
+    'build',
+    'coverage',
+    'business-pmo',
+    'business-docs',
+  ]);
+  const visit = (directory, depth) => {
+    if (depth > options.maxDepth) {
+      return;
+    }
+    for (const entry of readdirSync(directory)) {
+      const path = join(directory, entry);
+      const stats = statSync(path);
+      if (stats.isDirectory()) {
+        if (!excludedDirectories.has(entry)) {
+          visit(path, depth + 1);
+        }
+        continue;
+      }
+      if (stats.isFile() && options.fileNames.has(entry)) {
+        result.push(path);
+      }
+    }
+  };
+  visit(root, 0);
+  return result;
+}
+
+function uniqueAppName(baseName, usedNames) {
+  let name = baseName;
+  let index = 2;
+  while (usedNames.has(name)) {
+    name = `${baseName}-${index}`;
+    index += 1;
+  }
+  usedNames.add(name);
+  return name;
+}
+
+function toAppName(relativeDir, fallback) {
+  const normalized = relativeDir === '.' ? fallback : relativeDir.split('/').filter(Boolean).pop() || fallback;
+  const name = normalized
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[^a-zA-Z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+  return /^[a-zA-Z0-9]/.test(name) ? name : fallback;
 }
 
 function printDevWorkspace(context) {
@@ -1457,12 +1732,20 @@ function resolveDevCommand(context, app, vars) {
   fail(`${app.name}: unsupported app type ${app.type}`);
 }
 
-function detectPackageManager(root) {
-  if (existsSync(join(root, 'pnpm-lock.yaml'))) {
-    return 'pnpm';
-  }
-  if (existsSync(join(root, 'yarn.lock'))) {
-    return 'yarn';
+function detectPackageManager(start, stopRoot = start) {
+  let current = resolve(start);
+  const boundary = resolve(stopRoot);
+  while (true) {
+    if (existsSync(join(current, 'pnpm-lock.yaml'))) {
+      return 'pnpm';
+    }
+    if (existsSync(join(current, 'yarn.lock'))) {
+      return 'yarn';
+    }
+    if (current === boundary || current === dirname(current)) {
+      break;
+    }
+    current = dirname(current);
   }
   return 'npm';
 }
@@ -1948,11 +2231,20 @@ function planShellSync(targetDir, variables, syncShell) {
       targetPath: manifestPath,
     });
   } else {
+    const { manifest, warnings } = createBusinessDevManifest(targetDir, variables.projectKebab);
     plan.push(buildFilePlanItem(
       'mango.dev.json',
       manifestPath,
-      readRenderedTemplateFile(join(templateRoot, 'mango.dev.json'), variables),
+      `${JSON.stringify(manifest, null, 2)}\n`,
     ));
+    for (const warning of warnings) {
+      plan.push({
+        action: 'warn',
+        reason: warning,
+        path: 'mango.dev.json',
+        targetPath: manifestPath,
+      });
+    }
   }
   return plan;
 }
