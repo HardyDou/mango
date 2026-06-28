@@ -135,6 +135,19 @@ public class CheckMojo extends AbstractMojo {
             Pattern.DOTALL);
     private static final Pattern CREATE_TABLE_PATTERN = Pattern.compile(
             "(?is)create\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?(?:`?([a-zA-Z0-9_]+)`?\\.)?`?([a-zA-Z0-9_]+)`?\\s*\\(");
+    private static final Pattern ALTER_TABLE_PATTERN = Pattern.compile(
+            "(?is)alter\\s+table\\s+(?:`?([a-zA-Z0-9_]+)`?\\.)?`?([a-zA-Z0-9_]+)`?");
+    private static final Pattern ADD_COLUMN_CLAUSE_PATTERN = Pattern.compile(
+            "(?is)^\\s*add\\s+column\\s+`?([a-zA-Z][a-zA-Z0-9_]*)`?\\s+([^,;']+)");
+    private static final Pattern RENAME_COLUMN_CLAUSE_PATTERN = Pattern.compile(
+            "(?is)^\\s*rename\\s+column\\s+`?([a-zA-Z][a-zA-Z0-9_]*)`?\\s+to\\s+`?([a-zA-Z][a-zA-Z0-9_]*)`?");
+    private static final Pattern MODIFY_COLUMN_CLAUSE_PATTERN = Pattern.compile(
+            "(?is)^\\s*modify\\s+(?:column\\s+)?`?([a-zA-Z][a-zA-Z0-9_]*)`?\\s+([^,;']+)");
+    private static final Pattern DROP_COLUMN_CLAUSE_PATTERN = Pattern.compile(
+            "(?is)^\\s*drop\\s+column\\s+`?([a-zA-Z][a-zA-Z0-9_]*)`?");
+    private static final Pattern ADD_PRIMARY_KEY_CLAUSE_PATTERN = Pattern.compile(
+            "(?is)^\\s*add\\s+primary\\s+key\\s*\\(\\s*`?id`?\\s*\\)");
+    private static final Pattern DROP_PRIMARY_KEY_CLAUSE_PATTERN = Pattern.compile("(?is)^\\s*drop\\s+primary\\s+key\\b");
     private static final List<String> REQUIRED_PERSISTENCE_COLUMNS = List.of(
             "created_by", "created_at", "updated_by", "updated_at", "tenant_id", "org_id");
     private static final Set<String> DEFAULT_PERSISTENCE_EXCLUDED_TABLES = Set.of(
@@ -2454,13 +2467,13 @@ public class CheckMojo extends AbstractMojo {
             return;
         }
 
-        List<PersistenceSchemaIssue> issues = new ArrayList<>();
+        List<Path> migrationFiles = new ArrayList<>();
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMigrationSqlFile(file)) {
-                        analyzePersistenceSchema(file, issues);
+                        migrationFiles.add(file);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -2469,6 +2482,7 @@ public class CheckMojo extends AbstractMojo {
             getLog().error("Error walking file tree", e);
         }
 
+        List<PersistenceSchemaIssue> issues = analyzePersistenceSchemaMigrations(migrationFiles);
         if (!issues.isEmpty()) {
             for (PersistenceSchemaIssue issue : issues) {
                 result.addIssue("PERSISTENCE_SCHEMA", issue.severity, issue.file, issue.line,
@@ -2486,31 +2500,252 @@ public class CheckMojo extends AbstractMojo {
         return normalized.contains("/src/main/resources/db/migration/") && normalized.endsWith(".sql");
     }
 
-    private void analyzePersistenceSchema(Path file, List<PersistenceSchemaIssue> issues) {
+    private List<PersistenceSchemaIssue> analyzePersistenceSchemaMigrations(List<Path> migrationFiles) {
+        List<PersistenceSchemaIssue> issues = new ArrayList<>();
+        Map<Path, List<Path>> filesByDirectory = new LinkedHashMap<>();
+        for (Path file : migrationFiles) {
+            filesByDirectory.computeIfAbsent(file.getParent(), ignored -> new ArrayList<>()).add(file);
+        }
+        for (List<Path> files : filesByDirectory.values()) {
+            files.sort(this::compareMigrationFiles);
+            analyzePersistenceSchemaDirectory(files, issues);
+        }
+        return issues;
+    }
+
+    private int compareMigrationFiles(Path left, Path right) {
+        List<Integer> leftVersion = extractMigrationVersion(left);
+        List<Integer> rightVersion = extractMigrationVersion(right);
+        int max = Math.max(leftVersion.size(), rightVersion.size());
+        for (int i = 0; i < max; i++) {
+            int leftPart = i < leftVersion.size() ? leftVersion.get(i) : 0;
+            int rightPart = i < rightVersion.size() ? rightVersion.get(i) : 0;
+            int compared = Integer.compare(leftPart, rightPart);
+            if (compared != 0) {
+                return compared;
+            }
+        }
+        return left.getFileName().toString().compareToIgnoreCase(right.getFileName().toString());
+    }
+
+    private List<Integer> extractMigrationVersion(Path file) {
+        String fileName = file.getFileName().toString();
+        Matcher matcher = Pattern.compile("(?i)^v([0-9][0-9._-]*?)__").matcher(fileName);
+        if (!matcher.find()) {
+            return List.of();
+        }
+        List<Integer> parts = new ArrayList<>();
+        for (String part : matcher.group(1).split("[._-]")) {
+            if (!part.isBlank()) {
+                parts.add(Integer.parseInt(part));
+            }
+        }
+        return parts;
+    }
+
+    private void analyzePersistenceSchemaDirectory(List<Path> files, List<PersistenceSchemaIssue> issues) {
+        Map<String, PersistenceTableSchema> tables = new LinkedHashMap<>();
+        for (Path file : files) {
+            analyzePersistenceSchemaFile(file, tables, issues);
+        }
+        for (PersistenceTableSchema table : tables.values()) {
+            validatePersistenceTableSchema(table, issues);
+        }
+    }
+
+    private void analyzePersistenceSchemaFile(Path file, Map<String, PersistenceTableSchema> tables,
+                                              List<PersistenceSchemaIssue> issues) {
         try {
             String content = Files.readString(file);
-            Matcher matcher = CREATE_TABLE_PATTERN.matcher(content);
-            while (matcher.find()) {
-                String tableName = normalizeSqlName(matcher.group(2));
-                int statementEnd = findStatementEnd(content, matcher.end());
-                String statement = content.substring(matcher.start(), statementEnd);
-                int line = lineNumber(content, matcher.start());
-                if (shouldSkipPersistenceTable(tableName) || isPersistenceSchemaDisabled(content, matcher.start())) {
-                    continue;
-                }
-                Set<String> columns = extractSqlColumns(statement);
-                Map<String, String> columnDefinitions = extractSqlColumnDefinitions(statement);
-                validateStandardIdColumn(tableName, columnDefinitions, statement, file, line, issues);
-                for (String requiredColumn : REQUIRED_PERSISTENCE_COLUMNS) {
-                    if (!columns.contains(requiredColumn)) {
-                        issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
-                                "表 " + tableName + " 缺少标准持久化字段 " + requiredColumn));
-                    }
-                }
-            }
+            applyCreateTableStatements(file, content, tables);
+            applyAlterTableStatements(content, tables);
         } catch (IOException e) {
             issues.add(new PersistenceSchemaIssue("MAJOR", file.toString(), 0,
                     "持久化表结构检查失败: " + e.getMessage()));
+        }
+    }
+
+    private void applyCreateTableStatements(Path file, String content, Map<String, PersistenceTableSchema> tables) {
+        Matcher matcher = CREATE_TABLE_PATTERN.matcher(content);
+        while (matcher.find()) {
+            String tableName = normalizeSqlName(matcher.group(2));
+            int line = lineNumber(content, matcher.start());
+            if (shouldSkipPersistenceTable(tableName) || isPersistenceSchemaDisabled(content, matcher.start())) {
+                continue;
+            }
+            int statementEnd = findStatementEnd(content, matcher.end());
+            String statement = content.substring(matcher.start(), statementEnd);
+            Map<String, String> columnDefinitions = extractSqlColumnDefinitions(statement);
+            tables.putIfAbsent(tableName, new PersistenceTableSchema(tableName, file.toString(), line,
+                    columnDefinitions, hasIdPrimaryKey(statement, columnDefinitions.get("id"))));
+        }
+    }
+
+    private void applyAlterTableStatements(String content, Map<String, PersistenceTableSchema> tables) {
+        Matcher matcher = ALTER_TABLE_PATTERN.matcher(content);
+        while (matcher.find()) {
+            if (isSqlCommentOffset(content, matcher.start())) {
+                continue;
+            }
+            String tableName = normalizeSqlName(matcher.group(2));
+            PersistenceTableSchema table = tables.get(tableName);
+            if (table == null) {
+                continue;
+            }
+            int statementEnd = findStatementEnd(content, matcher.end());
+            applyAlterTableStatement(content.substring(matcher.start(), statementEnd), table);
+        }
+    }
+
+    private boolean isSqlCommentOffset(String content, int offset) {
+        boolean inBlockComment = false;
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        for (int i = 0; i < offset; i++) {
+            char ch = content.charAt(i);
+            char next = i + 1 < content.length() ? content.charAt(i + 1) : '\0';
+            if (inBlockComment) {
+                if (ch == '*' && next == '/') {
+                    inBlockComment = false;
+                    i++;
+                }
+                continue;
+            }
+            if (inSingleQuote) {
+                if (ch == '\'' && next == '\'') {
+                    i++;
+                } else if (ch == '\'') {
+                    inSingleQuote = false;
+                }
+                continue;
+            }
+            if (inDoubleQuote) {
+                if (ch == '"') {
+                    inDoubleQuote = false;
+                }
+                continue;
+            }
+            if (ch == '-' && next == '-') {
+                int lineEnd = content.indexOf('\n', i + 2);
+                if (lineEnd < 0 || lineEnd >= offset) {
+                    return true;
+                }
+                i = lineEnd;
+            } else if (ch == '/' && next == '*') {
+                inBlockComment = true;
+                i++;
+            } else if (ch == '\'') {
+                inSingleQuote = true;
+            } else if (ch == '"') {
+                inDoubleQuote = true;
+            }
+        }
+        return inBlockComment;
+    }
+
+    private void applyAlterTableStatement(String statement, PersistenceTableSchema table) {
+        for (String clause : splitAlterTableClauses(statement)) {
+            applyAlterTableClause(clause, table);
+        }
+    }
+
+    private List<String> splitAlterTableClauses(String statement) {
+        Matcher matcher = ALTER_TABLE_PATTERN.matcher(statement);
+        if (!matcher.find()) {
+            return List.of(statement);
+        }
+        String clauses = statement.substring(matcher.end()).strip();
+        if (clauses.endsWith(";")) {
+            clauses = clauses.substring(0, clauses.length() - 1).strip();
+        }
+        List<String> result = new ArrayList<>();
+        int start = 0;
+        int parenthesesDepth = 0;
+        boolean inSingleQuote = false;
+        for (int i = 0; i < clauses.length(); i++) {
+            char ch = clauses.charAt(i);
+            if (ch == '\'') {
+                if (inSingleQuote && i + 1 < clauses.length() && clauses.charAt(i + 1) == '\'') {
+                    i++;
+                    continue;
+                }
+                inSingleQuote = !inSingleQuote;
+            } else if (!inSingleQuote) {
+                if (ch == '(') {
+                    parenthesesDepth++;
+                } else if (ch == ')' && parenthesesDepth > 0) {
+                    parenthesesDepth--;
+                } else if (ch == ',' && parenthesesDepth == 0) {
+                    addAlterTableClause(result, clauses.substring(start, i));
+                    start = i + 1;
+                }
+            }
+        }
+        addAlterTableClause(result, clauses.substring(start));
+        return result;
+    }
+
+    private void addAlterTableClause(List<String> clauses, String clause) {
+        String trimmed = clause.strip();
+        if (!trimmed.isEmpty()) {
+            clauses.add(trimmed);
+        }
+    }
+
+    private void applyAlterTableClause(String clause, PersistenceTableSchema table) {
+        if (DROP_PRIMARY_KEY_CLAUSE_PATTERN.matcher(clause).find()) {
+            table.idPrimaryKey = false;
+        }
+        if (ADD_PRIMARY_KEY_CLAUSE_PATTERN.matcher(clause).find()) {
+            table.idPrimaryKey = true;
+        }
+        Matcher dropColumnMatcher = DROP_COLUMN_CLAUSE_PATTERN.matcher(clause);
+        if (dropColumnMatcher.find()) {
+            String columnName = normalizeSqlName(dropColumnMatcher.group(1));
+            table.columnDefinitions.remove(columnName);
+            return;
+        }
+        Matcher renameMatcher = RENAME_COLUMN_CLAUSE_PATTERN.matcher(clause);
+        if (renameMatcher.find()) {
+            String oldName = normalizeSqlName(renameMatcher.group(1));
+            String newName = normalizeSqlName(renameMatcher.group(2));
+            String definition = table.columnDefinitions.remove(oldName);
+            if (definition != null) {
+                table.columnDefinitions.put(newName, definition);
+            }
+            return;
+        }
+        Matcher addMatcher = ADD_COLUMN_CLAUSE_PATTERN.matcher(clause);
+        if (addMatcher.find()) {
+            String columnName = normalizeSqlName(addMatcher.group(1));
+            boolean added = !table.columnDefinitions.containsKey(columnName);
+            table.columnDefinitions.putIfAbsent(columnName, addMatcher.group(0));
+            if (added && "id".equals(columnName)) {
+                table.idPrimaryKey = hasIdPrimaryKey(clause, addMatcher.group(0));
+            }
+            return;
+        }
+        Matcher modifyMatcher = MODIFY_COLUMN_CLAUSE_PATTERN.matcher(clause);
+        if (modifyMatcher.find()) {
+            String columnName = normalizeSqlName(modifyMatcher.group(1));
+            if (table.columnDefinitions.containsKey(columnName)) {
+                table.columnDefinitions.put(columnName, modifyMatcher.group(0));
+            }
+            if ("id".equals(columnName) && hasIdPrimaryKey(clause, modifyMatcher.group(0))) {
+                table.idPrimaryKey = true;
+            }
+        }
+    }
+
+    private void validatePersistenceTableSchema(PersistenceTableSchema table, List<PersistenceSchemaIssue> issues) {
+        validateStandardIdColumn(table.tableName, table.columnDefinitions, table.idPrimaryKey,
+                table.file, table.line, issues);
+        Set<String> columns = table.columnDefinitions.keySet();
+        for (String requiredColumn : REQUIRED_PERSISTENCE_COLUMNS) {
+            if (!columns.contains(requiredColumn)) {
+                issues.add(new PersistenceSchemaIssue("CRITICAL", table.file, table.line,
+                        "表 " + table.tableName + " 缺少标准持久化字段 " + requiredColumn));
+            }
         }
     }
 
@@ -2869,31 +3104,34 @@ public class CheckMojo extends AbstractMojo {
         return prefix.contains("mango-check: disable persistence-audit-fields");
     }
 
-    private void validateStandardIdColumn(String tableName, Map<String, String> columnDefinitions, String statement,
-                                          Path file, int line, List<PersistenceSchemaIssue> issues) {
+    private void validateStandardIdColumn(String tableName, Map<String, String> columnDefinitions, boolean idPrimaryKey,
+                                          String file, int line, List<PersistenceSchemaIssue> issues) {
         String idDefinition = columnDefinitions.get("id");
         if (idDefinition == null) {
-            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file, line,
                     "表 " + tableName + " 必须使用标准主键字段 id"));
             return;
         }
         String normalizedDefinition = idDefinition.toLowerCase(Locale.ROOT);
         if (!normalizedDefinition.matches("(?s).*\\bbigint(?:\\s*\\(\\s*20\\s*\\))?\\b.*")) {
-            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file, line,
                     "表 " + tableName + " 标准主键 id 必须为 BIGINT"));
         }
         if (normalizedDefinition.contains("auto_increment")) {
-            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file, line,
                     "表 " + tableName + " 标准主键 id 必须使用雪花算法，不允许 AUTO_INCREMENT"));
         }
-        if (!hasIdPrimaryKey(statement, normalizedDefinition)) {
-            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+        if (!idPrimaryKey) {
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file, line,
                     "表 " + tableName + " 必须以 id 作为主键"));
         }
     }
 
     private boolean hasIdPrimaryKey(String statement, String idDefinition) {
-        if (idDefinition.contains("primary key")) {
+        if (idDefinition == null) {
+            return false;
+        }
+        if (idDefinition.toLowerCase(Locale.ROOT).contains("primary key")) {
             return true;
         }
         return Pattern.compile("(?is)primary\\s+key\\s*\\(\\s*`?id`?\\s*\\)").matcher(statement).find();
@@ -3667,6 +3905,23 @@ public class CheckMojo extends AbstractMojo {
             this.file = file;
             this.line = line;
             this.description = description;
+        }
+    }
+
+    private static class PersistenceTableSchema {
+        private final String tableName;
+        private final String file;
+        private final int line;
+        private final Map<String, String> columnDefinitions;
+        private boolean idPrimaryKey;
+
+        private PersistenceTableSchema(String tableName, String file, int line,
+                                       Map<String, String> columnDefinitions, boolean idPrimaryKey) {
+            this.tableName = tableName;
+            this.file = file;
+            this.line = line;
+            this.columnDefinitions = columnDefinitions;
+            this.idPrimaryKey = idPrimaryKey;
         }
     }
 
