@@ -96,6 +96,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 9. 变更影响记录
 
+- PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和 workflow core service 集成测试；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
+
 - Issue #233 明确审批任务完成后的流程推进时序：业务模块同步下一节点待办、当前办理人或业务状态时，使用 `workflow.task.advanced` 或 `POST /workflow/tasks/complete-result`；`workflow.task.completed` 只表示当前任务完成，不承诺当前任务快照已刷新。
 
 - v2026.06.27-workflow-history-dialog-release 发布 `@mango/workflow@1.0.17`、`@mango/admin-shell@1.0.29`、`@mango/grid-widgets@1.0.6`、`@mango/workflow-business-example@1.0.16`、`@mango/admin@1.0.33` 和 `@mango/cli@1.0.46`，仅对齐工作流历史弹窗标题修复的 npm 物料、聚合包和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。

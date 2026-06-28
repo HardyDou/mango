@@ -1,5 +1,6 @@
 package io.mango.identity.core.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.mango.common.exception.BizException;
 import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
@@ -71,8 +72,13 @@ public class IdentityUserSecurityService implements AuthIdentitySecurityProvider
             user.setLockedReason(LOCK_REASON_TOO_MANY_FAILURES);
             log.warn("Identity user locked after failed logins: userId={}, failedCount={}", userId, nextFailures);
         }
-        user.setUpdateTime(now);
-        identityUserMapper.updateById(user);
+        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
+                .eq(IdentityUser::getUserId, userId)
+                .set(IdentityUser::getFailedLoginCount, nextFailures)
+                .set(IdentityUser::getLastFailedLoginAt, now)
+                .set(IdentityUser::getLockedUntil, user.getLockedUntil())
+                .set(IdentityUser::getLockedReason, user.getLockedReason())
+                .set(IdentityUser::getUpdateTime, now));
     }
 
     @Override
@@ -83,13 +89,14 @@ public class IdentityUserSecurityService implements AuthIdentitySecurityProvider
             return;
         }
         LocalDateTime now = LocalDateTime.now();
-        user.setFailedLoginCount(0);
-        user.setLastFailedLoginAt(null);
-        user.setLockedUntil(null);
-        user.setLockedReason(null);
-        user.setLastLoginTime(now);
-        user.setUpdateTime(now);
-        identityUserMapper.updateById(user);
+        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
+                .eq(IdentityUser::getUserId, userId)
+                .set(IdentityUser::getFailedLoginCount, 0)
+                .set(IdentityUser::getLastFailedLoginAt, null)
+                .set(IdentityUser::getLockedUntil, null)
+                .set(IdentityUser::getLockedReason, null)
+                .set(IdentityUser::getLastLoginTime, now)
+                .set(IdentityUser::getUpdateTime, now));
     }
 
     @Override
@@ -104,15 +111,16 @@ public class IdentityUserSecurityService implements AuthIdentitySecurityProvider
             throw new IllegalArgumentException("用户不存在");
         }
         LocalDateTime now = LocalDateTime.now();
-        user.setPassword(passwordEncoder.encode(command.getNewPassword()));
-        user.setPasswordResetRequired(false);
-        user.setPasswordUpdatedAt(now);
-        user.setFailedLoginCount(0);
-        user.setLastFailedLoginAt(null);
-        user.setLockedUntil(null);
-        user.setLockedReason(null);
-        user.setUpdateTime(now);
-        identityUserMapper.updateById(user);
+        identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
+                .eq(IdentityUser::getUserId, command.getUserId())
+                .set(IdentityUser::getPassword, passwordEncoder.encode(command.getNewPassword()))
+                .set(IdentityUser::getPasswordResetRequired, false)
+                .set(IdentityUser::getPasswordUpdatedAt, now)
+                .set(IdentityUser::getFailedLoginCount, 0)
+                .set(IdentityUser::getLastFailedLoginAt, null)
+                .set(IdentityUser::getLockedUntil, null)
+                .set(IdentityUser::getLockedReason, null)
+                .set(IdentityUser::getUpdateTime, now));
     }
 
     @Transactional
@@ -121,12 +129,14 @@ public class IdentityUserSecurityService implements AuthIdentitySecurityProvider
         if (user == null) {
             return false;
         }
-        user.setFailedLoginCount(0);
-        user.setLastFailedLoginAt(null);
-        user.setLockedUntil(null);
-        user.setLockedReason(null);
-        user.setUpdateTime(LocalDateTime.now());
-        return identityUserMapper.updateById(user) > 0;
+        LocalDateTime now = LocalDateTime.now();
+        return identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
+                .eq(IdentityUser::getUserId, userId)
+                .set(IdentityUser::getFailedLoginCount, 0)
+                .set(IdentityUser::getLastFailedLoginAt, null)
+                .set(IdentityUser::getLockedUntil, null)
+                .set(IdentityUser::getLockedReason, null)
+                .set(IdentityUser::getUpdateTime, now)) > 0;
     }
 
     @Transactional
@@ -135,9 +145,10 @@ public class IdentityUserSecurityService implements AuthIdentitySecurityProvider
         if (user == null) {
             return false;
         }
-        user.setPasswordResetRequired(true);
-        user.setUpdateTime(LocalDateTime.now());
-        return identityUserMapper.updateById(user) > 0;
+        return identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUser>()
+                .eq(IdentityUser::getUserId, userId)
+                .set(IdentityUser::getPasswordResetRequired, true)
+                .set(IdentityUser::getUpdateTime, LocalDateTime.now())) > 0;
     }
 
     boolean isLocked(IdentityUser user) {

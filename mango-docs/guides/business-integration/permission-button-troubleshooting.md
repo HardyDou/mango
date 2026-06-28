@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和核心 service/resource handler 集成测试；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
+
 - PR #183 只治理后端测试规范、Mockito 审计和授权资源处理器测试样板；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
 
 - v2026.06.27-workflow-history-dialog-release 同步发布工作流 UI 修复批次和 `@mango/admin@1.0.33`、`@mango/cli@1.0.46` 版本锁；不改变按钮权限码、角色授权树、登录态权限聚合、按钮展示规则、菜单页面 key、租户绑定和本场景排障步骤。
