@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- 本次 PR 允许授权快照从页面菜单 `permissions` 读取权限码，页面级 `menuType=2` 权限和按钮级 `menuType=3` 权限都会进入登录态权限集合；不改变菜单 `component` key、菜单树接口、页面注册方式、租户应用绑定和页面路由。排查页面能打开但接口 403 时，需要同时确认角色是否授权页面菜单及其 `permissions` 是否包含目标接口权限码。
+
 - v2026.06.29-workflow-return-cli-db-release 只发布本地开发 CLI/PMO 基线、工作流退回和前端聚合版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、页面路由和本场景排障步骤。
 
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和核心 service/resource handler 集成测试；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。

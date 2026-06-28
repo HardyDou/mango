@@ -58,7 +58,7 @@ class SubjectAuthorityServiceImplIntegrationTest {
         seedSubjectRole(1L, 1L, 1001L, 10L);
         seedRoleMenu(1L, 1L, 10L, 100L);
         seedRoleMenu(2L, 1L, 10L, 101L);
-        seedMenu(100L, 1L, "workflow:start-process:definition-list", "workflow:definition:list", 3, 1);
+        seedMenu(100L, 1L, "workflow:start-process:definition-list", "workflow:definition:list", 2, 1);
         seedMenu(101L, 1L, "workflow:start-process", "workflow:definition:list,workflow:process:start", 3, 1);
 
         List<String> permissions = service.listSubjectPermissions(query("1"));

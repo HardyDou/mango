@@ -174,6 +174,19 @@ mango:
       root-path: ${MANGO_FILE_ROOT:./data/files}
   workflow:
     enabled: true
+  payment:
+    workflow:
+      refund-approval:
+        initializer:
+          enabled: true
+          system-tenant-id: 1
+          system-user-id: 1
+          principal-name: payment-workflow
+          realm: INTERNAL
+          actor-type: INTERNAL_USER
+          party-type: INTERNAL_ORG
+          party-id: 1
+          app-code: internal-admin
   job:
     enabled: true
     probe:

@@ -59,7 +59,6 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
         LambdaQueryWrapper<Menu> menuWrapper = new LambdaQueryWrapper<>();
         menuWrapper.in(Menu::getMenuId, menuIds)
                 .eq(StringUtils.hasText(query.systemCode()), Menu::getAppCode, query.systemCode())
-                .eq(Menu::getMenuType, 3)
                 .eq(Menu::getStatus, 1);
         return menuMapper.selectList(menuWrapper)
                 .stream()
