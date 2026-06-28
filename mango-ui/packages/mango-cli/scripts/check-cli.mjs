@@ -197,6 +197,7 @@ try {
   assertGeneratedDevWorkspaceUsesCliFallback(projectRoot);
   assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
   assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
+  assertDevWorkspaceAutoCreatesDatabase(projectRoot);
   if (!backendDevScript.includes('mango dev backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
@@ -861,6 +862,53 @@ function assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot) {
   const envFile = readFileSync(join(projectRoot, '.mango/dev-workspace.env'), 'utf8');
   if (!/^MANGO_CRYPTO_SM4_SECRET_KEY=[0-9a-f]{32}$/m.test(envFile)) {
     throw new Error(`generated dev-workspace env must backfill a random 16-byte SM4 key:\n${envFile}`);
+  }
+}
+
+function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/db-auto-create-bin');
+  const callLog = join(projectRoot, '.runtime/db-auto-create-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(join(fakeBinDir, 'mysql'), [
+    '#!/usr/bin/env sh',
+    `echo "mysql:$*" >> "${callLog}"`,
+    'exit 0',
+    '',
+  ].join('\n'));
+  writeFileSync(join(fakeBinDir, 'mvn'), [
+    '#!/usr/bin/env sh',
+    `echo "mvn:$*" >> "${callLog}"`,
+    'exit 17',
+    '',
+  ].join('\n'));
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  chmodExecutable(join(fakeBinDir, 'mvn'));
+  rmSync(callLog, { force: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const result = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/db-auto-create-workspaces.json')}`,
+    `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    process.execPath,
+    cli,
+    'dev',
+    'start',
+    'mango-full-acceptance-service',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0 || !output.includes('install command failed')) {
+    throw new Error(`database auto-create scenario should stop at fake Maven install:\n${output}`);
+  }
+  const calls = readFileSync(callLog, 'utf8').trim().split(/\r?\n/);
+  if (!calls[0]?.includes('mysql:--protocol=TCP')
+    || !calls[0].includes('-h 127.0.0.1')
+    || !calls[0].includes('-P 3306')
+    || !calls[0].includes('-u root')
+    || !calls[0].includes('CREATE DATABASE IF NOT EXISTS `mango_dev_')
+    || !calls[1]?.includes('mvn:-f pom.xml -DskipTests install')) {
+    throw new Error(`mango dev start must create workspace database before Maven install:\n${calls.join('\n')}`);
   }
 }
 

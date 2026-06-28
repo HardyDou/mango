@@ -1686,6 +1686,9 @@ function ensureDevWorkspaceEnv(context) {
 function startDevApp(context, name, app) {
   const logPath = join(context.logDir, `${name}.log`);
   appendFileSync(logPath, `\n--- ${new Date().toISOString()} start ${name} ---\n`);
+  if (app.type === 'spring-boot-maven') {
+    ensureWorkspaceDatabase(context, name, logPath);
+  }
   if (app.install) {
     requireCommand(app.install.command, name);
     process.stdout.write(`${name}: running install command\n`);
@@ -1726,6 +1729,46 @@ function startDevApp(context, name, app) {
     workspaceRoot: context.root,
   });
   process.stdout.write(`${name}: started pid=${child.pid} log=${relativeOrAbsolute(process.cwd(), logPath)}\n`);
+}
+
+function ensureWorkspaceDatabase(context, appName, logPath) {
+  if (!isTruthy(context.env.MANGO_DB_AUTO_CREATE)) {
+    return;
+  }
+  const dbName = context.env.MANGO_DB_NAME || '';
+  if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
+    fail(`${appName}: refuse to auto-create non-workspace database: ${dbName || '<empty>'}`);
+  }
+  const mysqlArgs = [
+    '--protocol=TCP',
+    '-h', context.env.MANGO_DB_HOST || '127.0.0.1',
+    '-P', String(context.env.MANGO_DB_PORT || '3306'),
+    '-u', context.env.MANGO_DB_USERNAME || 'root',
+    '-e', `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+  ];
+  const env = { ...process.env };
+  if (context.env.MANGO_DB_PASSWORD) {
+    env.MYSQL_PWD = context.env.MANGO_DB_PASSWORD;
+  }
+  const result = spawnSync('mysql', mysqlArgs, {
+    cwd: context.root,
+    env,
+    encoding: 'utf8',
+  });
+  if (result.stdout) {
+    appendFileSync(logPath, result.stdout);
+  }
+  if (result.stderr) {
+    appendFileSync(logPath, result.stderr);
+  }
+  if (result.status !== 0) {
+    fail(`${appName}: failed to auto-create database ${dbName}, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+  }
+  process.stdout.write(`${appName}: ensured database ${dbName}\n`);
+}
+
+function isTruthy(value) {
+  return ['1', 'true', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
 }
 
 function requireCommand(command, appName) {
