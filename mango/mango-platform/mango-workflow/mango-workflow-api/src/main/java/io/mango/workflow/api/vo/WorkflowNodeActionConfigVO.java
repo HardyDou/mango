@@ -22,6 +22,9 @@ public class WorkflowNodeActionConfigVO {
     @Schema(description = "确认提示文案")
     private String confirmText;
 
+    @Schema(description = "退回目标历史节点定义 key")
+    private String targetTaskDefinitionKey;
+
     @Schema(description = "是否危险动作")
     private Boolean danger;
 

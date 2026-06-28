@@ -354,6 +354,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         actions.put("transfer", Map.of("enabled", false, "label", "转办", "requireComment", false, "order", 20));
         actions.put("addSign", Map.of("enabled", false, "label", "加签", "requireComment", false, "order", 30));
         actions.put("reject", Map.of("enabled", true, "label", "驳回", "requireComment", true, "danger", true, "order", 40));
+        actions.put("returnTask", Map.of("enabled", false, "label", "退回", "requireComment", true, "order", 45));
         actions.put("complete", Map.of("enabled", true, "label", "通过", "requireComment", false, "order", 50));
         return actions;
     }

@@ -16,6 +16,7 @@ import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
+import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
@@ -424,6 +425,44 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command) {
+        Require.notNull(command, WorkflowCode.TASK_INVALID);
+        Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID.getCode(), "任务ID不能为空");
+        Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
+        Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
+        WorkflowNodeActionConfigVO action = ensureActionEnabled(task, "returnTask");
+        ensureCommentIfRequired(action, command.getComment());
+        ensureCurrentUserCanOperate(task);
+
+        String targetTaskDefinitionKey = resolveReturnTarget(task, command.getTargetTaskDefinitionKey());
+        Map<String, Object> variables = mergeVariables(task.getProcessInstanceId(), command.getVariables());
+        if (StringUtils.hasText(command.getComment())) {
+            taskService.addComment(task.getId(), task.getProcessInstanceId(), command.getComment().trim());
+        }
+        claimIfUnassigned(task);
+        runtimeService.setVariables(task.getProcessInstanceId(), variables);
+        runtimeService.createChangeActivityStateBuilder()
+                .processInstanceId(task.getProcessInstanceId())
+                .moveActivityIdTo(task.getTaskDefinitionKey(), targetTaskDefinitionKey)
+                .changeState();
+        saveRecord(task, WorkflowTaskAction.RETURN, command.getComment(),
+                returnVariables(command.getVariables(), targetTaskDefinitionKey));
+        updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.RUNNING);
+        triggerEventNotify(task, variables);
+        WorkflowTaskAdvanceResult advanceResult = advanceRuntimeTasks(task.getProcessInstanceId());
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        workflowEventPublisher.publishTaskAdvanced(
+                task,
+                formInstance,
+                variables,
+                command.getComment(),
+                advanceResult.ended(),
+                advanceResult.businessApply());
+        return R.ok(toCompleteResult(task, advanceResult));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public R<Boolean> transfer(TransferWorkflowTaskCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID.getCode(), "任务ID不能为空");
@@ -623,6 +662,45 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
                 ? List.<WorkflowBusinessApplyCurrentTaskVO>of()
                 : apply.getCurrentTasks());
         return vo;
+    }
+
+    private String resolveReturnTarget(Task task, String configuredTarget) {
+        String target = trim(configuredTarget);
+        if (StringUtils.hasText(target)) {
+            ensureHistoricTarget(task, target);
+            return target;
+        }
+        List<HistoricTaskInstance> historicTasks = historyService.createHistoricTaskInstanceQuery()
+                .processInstanceId(task.getProcessInstanceId())
+                .finished()
+                .orderByHistoricTaskInstanceEndTime()
+                .desc()
+                .list();
+        for (HistoricTaskInstance historicTask : historicTasks) {
+            String taskDefinitionKey = trim(historicTask.getTaskDefinitionKey());
+            if (StringUtils.hasText(taskDefinitionKey) && !taskDefinitionKey.equals(task.getTaskDefinitionKey())) {
+                return taskDefinitionKey;
+            }
+        }
+        Require.isTrue(false, WorkflowCode.TASK_INVALID.getCode(), "没有可退回的历史节点");
+        return "";
+    }
+
+    private void ensureHistoricTarget(Task task, String targetTaskDefinitionKey) {
+        long count = historyService.createHistoricTaskInstanceQuery()
+                .processInstanceId(task.getProcessInstanceId())
+                .taskDefinitionKey(targetTaskDefinitionKey)
+                .finished()
+                .count();
+        Require.isTrue(count > 0, WorkflowCode.TASK_INVALID.getCode(), "目标退回节点不在已完成历史中");
+        Require.isTrue(!targetTaskDefinitionKey.equals(task.getTaskDefinitionKey()),
+                WorkflowCode.TASK_INVALID.getCode(), "不能退回当前节点");
+    }
+
+    private Map<String, Object> returnVariables(Map<String, Object> variables, String targetTaskDefinitionKey) {
+        Map<String, Object> result = new LinkedHashMap<>(variables == null ? Map.of() : variables);
+        result.put("targetTaskDefinitionKey", targetTaskDefinitionKey);
+        return result;
     }
 
     @Override

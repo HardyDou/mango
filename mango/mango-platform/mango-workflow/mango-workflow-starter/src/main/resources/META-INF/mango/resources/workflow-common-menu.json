@@ -132,33 +132,39 @@
                                 "remark": "审批任务驳回权限"
                               },
                               {
+                                "permissionCode": "workflow:task:return",
+                                "permissionName": "退回任务",
+                                "sort": 5,
+                                "remark": "审批任务退回到历史节点权限"
+                              },
+                              {
                                 "permissionCode": "workflow:task:save",
                                 "permissionName": "暂存审批",
-                                "sort": 5,
+                                "sort": 6,
                                 "remark": "审批任务暂存权限"
                               },
                               {
                                 "permissionCode": "workflow:task:transfer",
                                 "permissionName": "转办任务",
-                                "sort": 6,
+                                "sort": 7,
                                 "remark": "审批任务转办权限"
                               },
                               {
                                 "permissionCode": "workflow:task:add-sign",
                                 "permissionName": "加签任务",
-                                "sort": 7,
+                                "sort": 8,
                                 "remark": "审批任务加签权限"
                               },
                               {
                                 "permissionCode": "workflow:task:claim",
                                 "permissionName": "认领任务",
-                                "sort": 8,
+                                "sort": 9,
                                 "remark": "候选任务认领权限"
                               },
                               {
                                 "permissionCode": "workflow:task:unclaim",
                                 "permissionName": "释放任务",
-                                "sort": 9,
+                                "sort": 10,
                                 "remark": "候选任务释放权限"
                               }
                             ]

@@ -42,6 +42,7 @@
 | 审批通过后业务侧仍显示上一节点 | 是否误用 `workflow.task.completed` 同步当前任务；当前任务刷新应使用 `workflow.task.advanced` 或 `complete-result` |
 | 审批页打开空白 | 前端 workflow 包是否引入，页面 key 是否注册，接口是否 401/403 |
 | 驳回后业务不可再次提交 | 业务状态流转是否覆盖驳回到草稿或重新提交 |
+| 退回后业务侧仍显示原审批节点 | 业务侧是否使用 `POST /workflow/tasks/return` 响应或 `workflow.task.advanced` 同步刷新后的 `currentTasks` |
 | 多租户流程串数据 | 流程定义、实例、任务和业务表 tenantId 是否一致 |
 
 ## 6. 事件接入
@@ -51,6 +52,7 @@
 | 业务目标 | 推荐方式 |
 |----------|----------|
 | 审批按钮点击后立即刷新当前节点、当前办理人和页面按钮状态 | 调用 `POST /workflow/tasks/complete-result` |
+| 审批退回后立即刷新当前节点、当前办理人和页面按钮状态 | 调用 `POST /workflow/tasks/return` |
 | 审批中同步下一节点办理人、业务列表当前节点、待办摘要 | 订阅 `workflow.task.advanced` |
 | 审计刚完成的任务和办理意见 | 订阅 `workflow.task.completed` |
 | 流程通过后回写业务通过状态 | 订阅 `workflow.process.completed` |
@@ -61,7 +63,9 @@
 | 事件 | 当前任务表是否已刷新 | 适合用途 |
 |------|----------------------|----------|
 | `workflow.task.completed` | 否 | 记录当前任务完成动作。 |
-| `workflow.task.advanced` | 是 | 同步下一节点、当前办理人和业务进度。 |
+| `workflow.task.advanced` | 是 | 同步下一节点或退回目标节点、当前办理人和业务进度。 |
+
+`POST /workflow/tasks/return` 会把当前任务退回到最近一个已完成的不同用户任务节点，或退回到 `targetTaskDefinitionKey` 指定的历史节点。串行流程可以不传目标节点；并行、多实例、重复审批节点或业务语义固定的流程，应在流程节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务侧应使用返回的 `currentTasks` 或订阅 `workflow.task.advanced` 刷新业务单据当前节点和当前办理人；退回不会发布 `workflow.task.completed`，也不会把流程状态改为驳回。
 
 单体多实例、微服务或微服务多实例部署时，事件应按至少一次投递处理。业务订阅方使用 `eventId`、`processInstanceId + completedTaskId` 或业务主键构造幂等键，避免重复回写状态、重复发通知或重复生成待办摘要。
 
@@ -99,6 +103,8 @@ pnpm -F @mango/workflow-business-example build
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和 workflow core service 集成测试；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
 
 - Issue #233 明确审批任务完成后的流程推进时序：业务模块同步下一节点待办、当前办理人或业务状态时，使用 `workflow.task.advanced` 或 `POST /workflow/tasks/complete-result`；`workflow.task.completed` 只表示当前任务完成，不承诺当前任务快照已刷新。
+
+- Issue #296 新增审批退回能力：`POST /workflow/tasks/return` 使用 `workflow:task:return` 权限，支持退回到最近历史用户任务节点或 `targetTaskDefinitionKey` 指定历史节点，并返回刷新后的当前任务快照。退回语义和驳回终止不同；业务模块可用接口响应或 `workflow.task.advanced` 同步业务当前节点、当前办理人和待办摘要。
 
 - v2026.06.27-workflow-history-dialog-release 发布 `@mango/workflow@1.0.17`、`@mango/admin-shell@1.0.29`、`@mango/grid-widgets@1.0.6`、`@mango/workflow-business-example@1.0.16`、`@mango/admin@1.0.33` 和 `@mango/cli@1.0.46`，仅对齐工作流历史弹窗标题修复的 npm 物料、聚合包和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
 

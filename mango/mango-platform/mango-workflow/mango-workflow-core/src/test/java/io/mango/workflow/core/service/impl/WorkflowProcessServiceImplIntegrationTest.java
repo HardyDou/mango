@@ -14,6 +14,7 @@ import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
+import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
@@ -520,6 +521,11 @@ class WorkflowProcessServiceImplIntegrationTest {
         @Override
         public R<Boolean> reject(RejectWorkflowTaskCommand command) {
             return R.ok(true);
+        }
+
+        @Override
+        public R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command) {
+            return R.ok(null);
         }
 
         @Override

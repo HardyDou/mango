@@ -266,7 +266,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | `/workflow/task/detail` | `workflow/task/detail/index` | `workflow:task:detail` |
 | `/workflow/custom-apply` | `workflow/custom-apply/index` | `workflow:custom-apply` |
 
-常用权限码来自后端 workflow 菜单和按钮权限，例如 `workflow:definition:list`、`workflow:definition:deploy`、`workflow:template:list`、`workflow:task:list`、`workflow:task:complete`。
+常用权限码来自后端 workflow 菜单和按钮权限，例如 `workflow:definition:list`、`workflow:definition:deploy`、`workflow:template:list`、`workflow:task:list`、`workflow:task:complete`、`workflow:task:return`。
 
 待办任务相关公开 API：
 
@@ -276,6 +276,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | `workflowApi.todoSummary()` | `GET /workflow/tasks/todo/summary` | 返回 `WorkflowTaskSummary`，字段为 `pendingApproval`、`pendingHandle`、`pendingConfirm`、`overdue`。 |
 | `workflowApi.myTaskSummary()` | `GET /workflow/tasks/my/summary` | 返回 `WorkflowMyTaskSummary`，字段为 `total`、`pending`、`processing`、`completed`、`overdue`。 |
 | `workflowApi.copiedTasks(params)` | `GET /workflow/tasks/copied` | 支持 `unread` 筛选未读抄送。 |
+| `workflowApi.returnTask(data)` | `POST /workflow/tasks/return` | 退回到最近已完成历史节点或 `targetTaskDefinitionKey` 指定节点，并返回刷新后的当前任务快照。复杂流程建议在退回动作配置中显式指定目标节点定义 key。 |
 | `workflowApi.businessApplyMySummary()` | `GET /workflow/business-applies/my/summary` | 返回 `WorkflowBusinessApplySummary`，字段为 `inReview`、`completed`、`rejected`、`withdrawn`。 |
 | `workflowApi.businessAppliesPage(params)` | `POST /workflow/business-applies/page` | 我的申请页面的业务申请数据源，支持 `statuses` 筛选申请状态。 |
 | `workflowApi.initiatedProcesses(params)` | `GET /workflow/processes/initiated` | 我的申请默认列表兼容直接发起的流程实例，并按流程实例 ID 与业务申请记录去重。 |

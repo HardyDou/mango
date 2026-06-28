@@ -16,7 +16,7 @@ class WorkflowNodeActionConfigResolverTest {
     void resolve_shouldReturnCompatibleDefaultsWhenNodeHasNoActions() {
         Map<String, WorkflowNodeActionConfigVO> actions = WorkflowNodeActionConfigResolver.resolve(null);
 
-        assertThat(actions.keySet()).containsExactly("save", "transfer", "addSign", "reject", "complete");
+        assertThat(actions.keySet()).containsExactly("save", "transfer", "addSign", "reject", "returnTask", "complete");
         assertThat(actions.get("complete"))
                 .returns(true, WorkflowNodeActionConfigVO::getEnabled)
                 .returns("通过", WorkflowNodeActionConfigVO::getLabel)
@@ -47,9 +47,14 @@ class WorkflowNodeActionConfigResolverTest {
         reject.setLabel("退回补充");
         reject.setRequireComment(false);
 
+        WorkflowNodeActionConfig returnTask = new WorkflowNodeActionConfig();
+        returnTask.setEnabled(true);
+        returnTask.setTargetTaskDefinitionKey(" risk_specialist_review ");
+
         config.setActions(new LinkedHashMap<>(Map.of(
                 "complete", complete,
-                "reject", reject
+                "reject", reject,
+                "returnTask", returnTask
         )));
 
         Map<String, WorkflowNodeActionConfigVO> actions = WorkflowNodeActionConfigResolver.resolve(config);
@@ -64,6 +69,9 @@ class WorkflowNodeActionConfigResolverTest {
                 .returns(false, WorkflowNodeActionConfigVO::getEnabled)
                 .returns("退回补充", WorkflowNodeActionConfigVO::getLabel)
                 .returns(false, WorkflowNodeActionConfigVO::getRequireComment);
+        assertThat(actions.get("returnTask"))
+                .returns(true, WorkflowNodeActionConfigVO::getEnabled)
+                .returns("risk_specialist_review", WorkflowNodeActionConfigVO::getTargetTaskDefinitionKey);
     }
 
     @Test

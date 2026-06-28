@@ -10,6 +10,7 @@ describe('workflow task actions', () => {
 
     expect(actions.complete).toMatchObject({ enabled: true, label: '通过', requireComment: false });
     expect(actions.reject).toMatchObject({ enabled: true, label: '驳回', requireComment: true, danger: true });
+    expect(actions.returnTask).toMatchObject({ enabled: false, label: '退回', requireComment: true });
     expect(actions.save).toMatchObject({ enabled: false, label: '暂存' });
     expect(actions.transfer).toMatchObject({ enabled: false, label: '转办' });
     expect(actions.claim).toMatchObject({ enabled: false, label: '认领' });

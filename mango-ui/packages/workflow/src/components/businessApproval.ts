@@ -35,6 +35,7 @@ export interface BusinessApprovalRegistration {
     disabled?: boolean;
     label?: string;
     tooltip?: string;
+    targetTaskDefinitionKey?: string;
   }>>;
 }
 

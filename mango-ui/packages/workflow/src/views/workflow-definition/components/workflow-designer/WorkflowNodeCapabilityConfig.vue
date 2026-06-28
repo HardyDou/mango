@@ -38,6 +38,16 @@
     </div>
 
     <el-collapse class="capability-extra-collapse">
+      <el-collapse-item title="退回目标" name="return-target">
+        <el-form-item label="目标节点定义 key">
+          <el-input
+            :model-value="actionConfig('returnTask').targetTaskDefinitionKey || ''"
+            clearable
+            placeholder="不填则退回最近已完成的不同用户任务节点"
+            @input="value => updateAction('returnTask', { targetTaskDefinitionKey: normalizeOptionalText(value) })"
+          />
+        </el-form-item>
+      </el-collapse-item>
       <el-collapse-item title="确认提示" name="confirm-text">
         <div class="confirm-text-list">
           <div v-for="action in actionOptions" :key="`${action.key}-confirm`" class="confirm-text-row">
@@ -69,10 +79,20 @@ const emit = defineEmits<{
 const actionOptions: Array<{ key: WorkflowTaskActionKey; defaultLabel: string }> = [
   { key: 'complete', defaultLabel: '通过' },
   { key: 'reject', defaultLabel: '驳回' },
+  { key: 'returnTask', defaultLabel: '退回' },
   { key: 'save', defaultLabel: '暂存' },
   { key: 'transfer', defaultLabel: '转办' },
   { key: 'addSign', defaultLabel: '加签' },
 ];
+
+const defaultActionOrders: Partial<Record<WorkflowTaskActionKey, number>> = {
+  save: 10,
+  transfer: 20,
+  addSign: 30,
+  reject: 40,
+  returnTask: 45,
+  complete: 50,
+};
 
 function actionConfig(key: WorkflowTaskActionKey): WorkflowNodeActionConfig {
   return props.config.actions?.[key] || defaultActionConfig(key);
@@ -103,10 +123,15 @@ function defaultActionConfig(key: WorkflowTaskActionKey, index = actionOptions.f
   return {
     enabled: key === 'complete' || key === 'reject',
     label,
-    requireComment: key === 'reject',
+    requireComment: key === 'reject' || key === 'returnTask',
     danger: key === 'reject',
-    order: (index + 1) * 10,
+    order: defaultActionOrders[key] || (index + 1) * 10,
   };
+}
+
+function normalizeOptionalText(value: unknown) {
+  const text = String(value || '').trim();
+  return text || undefined;
 }
 </script>
 

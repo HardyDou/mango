@@ -15,7 +15,7 @@ export default defineConfig({
     alias: {
       '@mango/workflow': resolve(repoRoot, 'packages/workflow'),
       '@mango/common': resolve(repoRoot, 'packages/common'),
-      '@mango/file': resolve(repoRoot, 'packages/file'),
+      '@mango/file': resolve(repoRoot, 'packages/file/src/index.ts'),
       '@mango/rbac': resolve(repoRoot, 'packages/rbac'),
       '@mango/system': resolve(repoRoot, 'packages/system'),
       '@mango/api-schema': resolve(repoRoot, 'packages/api-schema'),

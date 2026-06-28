@@ -57,6 +57,11 @@ vi.mock('../../../api/workflow', async () => {
       definitionDetail: vi.fn(),
       definitionsPage: vi.fn(),
       completeTask: vi.fn(() => Promise.resolve(true)),
+      returnTask: vi.fn(() => Promise.resolve({
+        processInstanceId: 'proc-1',
+        ended: false,
+        currentTasks: [],
+      })),
       transferTask: vi.fn(() => Promise.resolve(true)),
       addSignTask: vi.fn(() => Promise.resolve(true)),
       claimTask: vi.fn(() => Promise.resolve(true)),
@@ -313,6 +318,39 @@ describe('workflow task detail', () => {
     await flushPromises();
     expect(el.querySelector('.mock-user-selector')?.textContent).toContain('选择加签人员');
     expect(el.querySelector('.mock-user-selector')?.getAttribute('data-multiple')).toBe('true');
+    unmount();
+  });
+
+  it('submits return task action without rejecting the process', async () => {
+    vi.mocked(workflowApi.taskDetail).mockResolvedValueOnce(taskDetail({
+      renderConfig: {
+        nodeExtension: {
+          returnTargetTaskDefinitionKey: 'legacy-draft',
+        },
+        nodeActions: {
+          returnTask: {
+            enabled: true,
+            label: '退回专员',
+            requireComment: false,
+            order: 1,
+            targetTaskDefinitionKey: 'draft',
+          },
+        },
+      },
+    }) as any);
+    vi.mocked(workflowApi.businessApplyByProcessInstance).mockRejectedValue(new Error('no apply'));
+    const { el, unmount } = await mountTaskDetail();
+
+    clickButton(el, '退回专员');
+    await flushPromises();
+
+    expect(workflowApi.returnTask).toHaveBeenCalledWith({
+      taskId: 'task-1',
+      comment: '',
+      variables: {},
+      targetTaskDefinitionKey: 'draft',
+    });
+    expect(workflowApi.completeTask).not.toHaveBeenCalled();
     unmount();
   });
 

@@ -25,6 +25,7 @@ public final class WorkflowNodeActionConfigResolver {
         result.put("transfer", nodeAction("转办", false, false, false, 20, configured.get("transfer")));
         result.put("addSign", nodeAction("加签", false, false, false, 30, configured.get("addSign")));
         result.put("reject", nodeAction("驳回", true, true, true, 40, configured.get("reject")));
+        result.put("returnTask", nodeAction("退回", false, true, false, 45, configured.get("returnTask")));
         result.put("complete", nodeAction("通过", true, false, false, 50, configured.get("complete")));
         return result;
     }
@@ -42,6 +43,9 @@ public final class WorkflowNodeActionConfigResolver {
         vo.setConfirmText(StringUtils.hasText(configured == null ? null : configured.getConfirmText())
                 ? configured.getConfirmText()
                 : "确认" + vo.getLabel() + "当前任务？");
+        vo.setTargetTaskDefinitionKey(StringUtils.hasText(configured == null ? null : configured.getTargetTaskDefinitionKey())
+                ? configured.getTargetTaskDefinitionKey().trim()
+                : null);
         vo.setDanger(configured == null || configured.getDanger() == null ? defaultDanger : configured.getDanger());
         vo.setOrder(configured == null || configured.getOrder() == null ? defaultOrder : configured.getOrder());
         vo.setDisabled(configured != null && Boolean.TRUE.equals(configured.getDisabled()));

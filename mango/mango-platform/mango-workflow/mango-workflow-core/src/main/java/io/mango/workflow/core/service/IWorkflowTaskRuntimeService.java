@@ -7,6 +7,7 @@ import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
+import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
@@ -39,6 +40,8 @@ public interface IWorkflowTaskRuntimeService {
     R<WorkflowTaskCompleteResultVO> completeWithResult(CompleteWorkflowTaskCommand command);
 
     R<Boolean> reject(RejectWorkflowTaskCommand command);
+
+    R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command);
 
     R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command);
 

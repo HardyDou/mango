@@ -387,7 +387,7 @@ async function submitAction(action: WorkflowTaskActionKey) {
     ElMessage.warning(error instanceof Error ? error.message : '请检查审批信息');
     return;
   }
-  const extraPayload = await collectExtraActionPayload(action);
+  const extraPayload = await collectExtraActionPayload(action, actionConfig);
   if (extraPayload === false) {
     return;
   }
@@ -419,7 +419,7 @@ async function submitAction(action: WorkflowTaskActionKey) {
   }
 }
 
-async function collectExtraActionPayload(action: WorkflowTaskActionKey) {
+async function collectExtraActionPayload(action: WorkflowTaskActionKey, actionConfig: { targetTaskDefinitionKey?: string }) {
   if (action === 'transfer') {
     const targetUserId = await pickTransferUser();
     return targetUserId ? { targetUserId } : false;
@@ -427,6 +427,11 @@ async function collectExtraActionPayload(action: WorkflowTaskActionKey) {
   if (action === 'addSign') {
     const targetUserIds = await pickAddSignUsers();
     return targetUserIds.length ? { targetUserIds } : false;
+  }
+  if (action === 'returnTask') {
+    return {
+      targetTaskDefinitionKey: returnTargetTaskDefinitionKey(actionConfig),
+    };
   }
   return {};
 }
@@ -489,6 +494,12 @@ async function executeTaskAction(
 ) {
   if (action === 'complete') return workflowApi.completeTask({ taskId, comment, variables });
   if (action === 'reject') return workflowApi.rejectTask({ taskId, comment, variables });
+  if (action === 'returnTask') return workflowApi.returnTask({
+    taskId,
+    comment,
+    variables,
+    targetTaskDefinitionKey: extraPayload.targetTaskDefinitionKey || undefined,
+  });
   if (action === 'save') return workflowApi.saveTask({ taskId, comment, variables });
   if (action === 'transfer') return workflowApi.transferTask({ taskId, comment, targetUserId: extraPayload.targetUserId });
   if (action === 'addSign') return workflowApi.addSignTask({ taskId, comment, targetUserIds: extraPayload.targetUserIds });
@@ -529,6 +540,15 @@ function collectActionComment(action: WorkflowTaskActionKey) {
     return '';
   }
   return collectBusinessApprovalComment(businessRegistration.value, businessContext.value, action, actionForm.value.comment);
+}
+
+function returnTargetTaskDefinitionKey(actionConfig: { targetTaskDefinitionKey?: string }) {
+  return String(
+    actionConfig.targetTaskDefinitionKey
+    || renderConfig.value?.nodeExtension?.returnTargetTaskDefinitionKey
+    || renderConfig.value?.nodeExtension?.returnTargetNodeKey
+    || '',
+  ).trim();
 }
 
 function isKnownRequestError(error: unknown) {
