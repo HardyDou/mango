@@ -1,5 +1,73 @@
 # Mango Changelog
 
+## v2026.06.29-workflow-return-cli-db-release - 2026-06-29
+
+### New
+
+- Published Mango Workflow task return support from Issue #296. `POST /workflow/tasks/return` can move an active approval task back to a historical user task, emit refreshed current task snapshots, record RETURN audit history, and expose the `workflow:task:return` permission.
+- Published the matching `@mango/workflow@1.0.18` frontend action, task detail handling, designer action configuration, and business approval integration guidance for return-to-node flows.
+
+### Fixed
+
+- Published the Mango CLI local database auto-create fix from Issue #297. `mango dev start` now creates local `mango_dev_*` workspace databases before starting Spring Boot Maven apps when `MANGO_DB_AUTO_CREATE=true`, while Flyway remains responsible for schema and seed data.
+- Published the CLI development workspace runtime ownership and manifest discovery updates accumulated since the previous release so generated and upgraded business projects use the current Mango CLI workspace/dev/frontend entry points.
+
+### Breaking / Required Actions
+
+- Mango local development is now CLI-owned. Mango source developers and business project developers should use `mango workspace init` and `mango dev start`; `scripts/dev-workspace.sh` remains a compatibility shim and should not be treated as the owner of workspace allocation, ports, frontend preparation, or process lifecycle.
+- Existing business projects must upgrade to `@mango/cli@1.0.51`, sync the versioned PMO baseline with `mango pmo upgrade --project-dir . --sync-shell` or `mango pmo sync --project-dir . --sync-shell`, and then run `mango workspace init` in each active worktree so `.mango/workspace.json`, `.mango/dev-workspace.env`, and `mango.dev.json` follow the current runtime model.
+- Local database names are workspace-owned and must stay under the `mango_dev_*` prefix when `MANGO_DB_AUTO_CREATE=true`. The CLI refuses to auto-create arbitrary database names; teams using custom local databases must create them manually or turn off auto-create.
+- Workflow return actions add the `workflow:task:return` permission. Environments must rerun resource synchronization and grant this permission explicitly before users can return approval tasks.
+
+### Published Packages
+
+- Maven: Workflow backend batch `io.mango.platform.workflow:mango-workflow-api`, `mango-workflow-core`, `mango-workflow-starter`, and `mango-workflow-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- npm: `@mango/pmo@1.0.4`, `@mango/workflow@1.0.18`, `@mango/grid-widgets@1.0.7`, `@mango/workflow-business-example@1.0.17`, `@mango/admin-shell@1.0.30`, `@mango/admin@1.0.34`, and `@mango/cli@1.0.51` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.29-workflow-return-cli-db-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies before using workflow task return. Existing databases do not need a new workflow schema migration for this release, but resource synchronization must run so `workflow:task:return` is available to roles.
+- Workflow frontends should upgrade `@mango/workflow` to `1.0.18`. Dashboard/widget consumers should upgrade `@mango/grid-widgets@1.0.7`. Projects consuming the aggregate admin package should upgrade `@mango/admin@1.0.34`; shell consumers should upgrade `@mango/admin-shell@1.0.30`.
+- New or regenerated business projects should upgrade `@mango/cli` to `1.0.51`, then run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` and `mango workspace init` in active worktrees.
+- Complex workflow definitions with parallel, multi-instance, or repeated user task nodes should configure `targetTaskDefinitionKey` explicitly for return actions instead of relying on the nearest-history default.
+
+### Adoption Verification Plan
+
+- Mango source developer path: install the released CLI, run `mango workspace init`, `mango dev plan`, and `mango dev start` in a clean Mango worktree, then confirm the allocated ports, `.mango/workspace.json`, `.mango/dev-workspace.env`, and source-mode frontend aliases match `mango-pmo/rules/02-dev-environment.md`.
+- Existing business project path: upgrade to `@mango/cli@1.0.51`, run `mango pmo upgrade --project-dir . --sync-shell`, verify `mango pmo status --project-dir .` reports `@mango/pmo@1.0.4`, rerun `mango workspace init`, and confirm `mango dev plan` shows the discovered backend/frontend apps and a `mango_dev_*` database.
+- Fresh business project path: generate a new project with `@mango/cli@1.0.51`, verify generated `README.md`, `AGENTS.md`, `business-pmo/mango-baseline`, `release-versions.json`, and `mango.dev.json` all reference the CLI-owned workflow, then run `mango workspace init` and `mango dev plan`.
+- Permission/resource path: after syncing resources, verify roles can see or grant `workflow:task:return`; without that permission, return actions must remain inaccessible.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `mvn -q -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core -am -Dtest=WorkflowNodeActionConfigResolverTest,WorkflowTaskRuntimeServiceIntegrationTest,WorkflowTaskRuntimeServiceImplIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -q -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-starter -am -DskipTests compile`
+- `pnpm -C mango-ui --filter @mango/workflow build`
+- `pnpm -C mango-ui --filter @mango/grid-widgets build`
+- `pnpm -C mango-ui --filter @mango/workflow-business-example build`
+- `pnpm -C mango-ui --filter @mango/admin-shell build`
+- `pnpm -C mango-ui --filter @mango/admin build`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui release:impact --base=v2026.06.27-notice-check-release --head=HEAD`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `scripts/publish-maven-batch.sh :mango-workflow-api :mango-workflow-core :mango-workflow-starter :mango-workflow-starter-remote --revision 1.0.0-SNAPSHOT`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg pmo --release-tag=v2026.06.29-workflow-return-cli-db-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg workflow --release-tag=v2026.06.29-workflow-return-cli-db-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg grid-widgets --release-tag=v2026.06.29-workflow-return-cli-db-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg workflow-business-example --release-tag=v2026.06.29-workflow-return-cli-db-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg admin-shell --release-tag=v2026.06.29-workflow-return-cli-db-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg admin --release-tag=v2026.06.29-workflow-return-cli-db-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.29-workflow-return-cli-db-release --skip-shared-gates`
+- `git diff --check`
+
 ## v2026.06.28-cli-dev-manifest-discovery - 2026-06-28
 
 ### Fixed

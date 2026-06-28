@@ -148,6 +148,44 @@ function readWorkspacePackageJson(rootDir, expectedName) {
   return findWorkspacePackageJson(rootDir, expectedName)?.packageJson || null;
 }
 
+function sortWorkspaceBuildPackages(packageNames, rootDir) {
+  const uniquePackageNames = [...new Set(packageNames)];
+  const packageNameSet = new Set(uniquePackageNames);
+  const packageJsonByName = new Map(
+    uniquePackageNames.map((packageName) => [packageName, readWorkspacePackageJson(rootDir, packageName)]),
+  );
+  const visiting = new Set();
+  const visited = new Set();
+  const sorted = [];
+
+  function visit(packageName) {
+    if (visited.has(packageName)) {
+      return;
+    }
+    if (visiting.has(packageName)) {
+      fail(`Circular workspace build dependency detected at ${packageName}.`);
+    }
+    visiting.add(packageName);
+
+    const packageJson = packageJsonByName.get(packageName);
+    for (const dependencyName of Object.keys(packageJson?.dependencies || {})) {
+      if (packageNameSet.has(dependencyName)) {
+        visit(dependencyName);
+      }
+    }
+
+    visiting.delete(packageName);
+    visited.add(packageName);
+    sorted.push(packageName);
+  }
+
+  for (const packageName of uniquePackageNames) {
+    visit(packageName);
+  }
+
+  return sorted;
+}
+
 function readStyleExportTarget(packageJson) {
   const styleExport = packageJson.exports?.['./style.css'];
   if (typeof styleExport === 'string') {
@@ -350,15 +388,17 @@ function renderFullTypes(defaultPackages, fullPackages, options) {
 }
 
 function renderBuildDepsScript(defaultPackages, fullPackages, consumerPackageJson, options) {
-  const packageNames = [
-    ...Object.keys(consumerPackageJson.dependencies || {}),
-    ...defaultPackages.map((item) => item.packageName),
-    ...fullPackages.map((item) => item.packageName),
-  ].filter((packageName, index, packages) =>
-    packageName.startsWith('@mango/') &&
-    packageName !== '@mango/admin' &&
-    packages.indexOf(packageName) === index &&
-    Boolean(readWorkspacePackageJson(options.root, packageName)?.scripts?.build),
+  const packageNames = sortWorkspaceBuildPackages(
+    [
+      ...Object.keys(consumerPackageJson.dependencies || {}),
+      ...defaultPackages.map((item) => item.packageName),
+      ...fullPackages.map((item) => item.packageName),
+    ].filter((packageName) =>
+      packageName.startsWith('@mango/') &&
+      packageName !== '@mango/admin' &&
+      Boolean(readWorkspacePackageJson(options.root, packageName)?.scripts?.build),
+    ),
+    options.root,
   );
 
   return [

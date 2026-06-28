@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.06.29-workflow-return-cli-db-release 发布 `workflow:task:return` 权限和前端聚合版本锁；不改变既有按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。新增工作流退回按钮需在资源同步后按常规按钮权限流程授权。
+
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和核心 service/resource handler 集成测试；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
 
 - PR #183 只治理后端测试规范、Mockito 审计和授权资源处理器测试样板；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。

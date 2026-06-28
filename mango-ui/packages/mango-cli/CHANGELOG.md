@@ -1,5 +1,40 @@
 # @mango/cli Changelog
 
+## 1.0.51 - 2026-06-29
+
+### Fixed
+
+- Created local `mango_dev_*` workspace databases before starting Spring Boot Maven apps when `MANGO_DB_AUTO_CREATE=true`; Flyway still owns schema and seed migrations.
+- Refused automatic creation of database names outside the `mango_dev_*` local workspace prefix.
+- Updated generated project release locks for the current Mango release batch:
+  - `@mango/pmo@1.0.4`
+  - `@mango/workflow@1.0.18`
+  - `@mango/grid-widgets@1.0.7`
+  - `@mango/workflow-business-example@1.0.17`
+  - `@mango/admin-shell@1.0.30`
+  - `@mango/admin@1.0.34`
+
+### Breaking / Required Actions
+
+- Existing business projects should upgrade the global CLI with `npm install -g @mango/cli@1.0.51 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- After upgrading, run `mango pmo upgrade --project-dir . --sync-shell` or `mango pmo sync --project-dir . --sync-shell` so the project receives `@mango/pmo@1.0.4`, the current generated startup guidance, and the CLI-owned development entry points.
+- Run `mango workspace init` in every active worktree before `mango dev start`; this writes `.mango/workspace.json`, backfills `.mango/dev-workspace.env`, and creates `mango.dev.json` when a discovered project is missing one.
+- Local database auto-create requires a reachable MySQL client and a database name under `mango_dev_*`. Custom database names must be created manually or used with `MANGO_DB_AUTO_CREATE=false`.
+
+### Adoption Verification Plan
+
+- Existing business project: run `mango pmo status --project-dir .` after upgrade and confirm it reports `@mango/pmo@1.0.4`, then run `mango dev plan` and confirm discovered apps, ports, and database name match the generated workspace files.
+- Fresh business project: generate a new project with this CLI, verify `release-versions.json`, `README.md`, `AGENTS.md`, and `business-pmo/mango-baseline` describe the CLI-owned workflow, then run `mango workspace init` and `mango dev plan`.
+
+### Verification
+
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+
 ## 1.0.50 - 2026-06-28
 
 ### Breaking
