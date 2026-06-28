@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.49 - 2026-06-28
+
+### Fixed
+
+- Generated `mango.dev.json` for existing business projects from discovered Spring Boot Maven apps and Vite apps instead of assuming fixed `backend` and `frontend` folders.
+- Skipped Maven aggregator POMs during development workspace discovery and emitted confirmation warnings when multiple backend or frontend apps are detected.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.49 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects with renamed backend or frontend folders can run `mango pmo sync --project-dir . --sync-shell` or `mango init-dev` to generate a discovered `mango.dev.json` when no project-owned manifest exists.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm release:impact --base=origin/main --head=HEAD`
+
 ## 1.0.48 - 2026-06-27
 
 ### Fixed

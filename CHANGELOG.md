@@ -1,5 +1,37 @@
 # Mango Changelog
 
+## v2026.06.28-cli-dev-manifest-discovery - 2026-06-28
+
+### Fixed
+
+- Published `@mango/cli@1.0.49` with development workspace manifest discovery for existing business projects. `mango pmo sync --sync-shell` and `mango init-dev` can now generate `mango.dev.json` from discovered Spring Boot Maven app POMs and Vite apps instead of assuming fixed `backend` and `frontend` folders.
+- Skipped Maven aggregator POMs during CLI manifest generation and emitted confirmation warnings for skipped aggregators or multiple detected backend/frontend apps.
+- Documented the discovery rules and troubleshooting path in the `@mango/cli` README.
+
+### Published Packages
+
+- npm: `@mango/cli@1.0.49` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.28-cli-dev-manifest-discovery`.
+
+### Upgrade Notes
+
+- Existing business projects with renamed backend or frontend folders should upgrade to `@mango/cli@1.0.49`, then run `mango pmo sync --project-dir . --sync-shell` or `mango init-dev` when no project-owned `mango.dev.json` exists.
+- Projects with custom Spring Boot or frontend commands can keep their committed `mango.dev.json` or override local paths through `.mango/dev-workspace.local.json`.
+- No backend Maven dependency, database migration, menu data, permission code, tenant configuration, or frontend runtime page change is required for this release.
+
+### Verification
+
+- `node --check mango-ui/packages/mango-cli/src/index.mjs`
+- `node --check mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/pr/pr-294-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `git diff --check`
+
 ## v2026.06.27-notice-check-release - 2026-06-27
 
 ### Fixed
