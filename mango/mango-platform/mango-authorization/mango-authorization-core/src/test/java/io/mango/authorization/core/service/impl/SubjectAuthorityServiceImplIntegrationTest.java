@@ -79,6 +79,20 @@ class SubjectAuthorityServiceImplIntegrationTest {
     }
 
     @Test
+    @DisplayName("listSubjectPermissions should ignore directory menu permissions")
+    void listSubjectPermissionsIgnoresDirectoryMenuPermissions() {
+        seedSubjectRole(1L, 1L, 1001L, 10L);
+        seedRoleMenu(1L, 1L, 10L, 100L);
+        seedRoleMenu(2L, 1L, 10L, 101L);
+        seedMenu(100L, 1L, "payment:directory", "payment:directory", 1, 1);
+        seedMenu(101L, 1L, "payment:orders", "payment:order:list", 2, 1);
+
+        List<String> permissions = service.listSubjectPermissions(query("1"));
+
+        assertThat(permissions).containsExactly("payment:order:list");
+    }
+
+    @Test
     @DisplayName("listSubjectPermissions should return empty for invalid tenant id without mapper shortcuts")
     void listSubjectPermissionsInvalidTenantReturnsEmpty() {
         seedSubjectRole(1L, 1L, 1001L, 10L);
