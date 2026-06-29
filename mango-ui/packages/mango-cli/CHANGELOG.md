@@ -1,5 +1,23 @@
 # @mango/cli Changelog
 
+## 1.0.52 - 2026-06-29
+
+### Fixed
+
+- Added Mango backend public API artifacts to generated business backend parent POM `dependencyManagement`, including File, File Preview, Template, Workflow, Notice, Job, Numgen, System, Resource, Authorization, Identity, Org, Calendar, Domain, Captcha, Payment, CMS, Grid Layout, and Access API artifacts.
+- Kept generated app POM direct dependencies on starters only, so business core modules can depend on API artifacts without depending on runtime starter assembly.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.52 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New or regenerated business projects receive the updated backend `dependencyManagement` automatically.
+- Existing business projects can regenerate from the current starter or manually align their parent POM dependency management if business core modules need direct API dependencies such as `mango-file-api`.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.51 - 2026-06-29
 
 ### Fixed
