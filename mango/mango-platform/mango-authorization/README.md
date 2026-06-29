@@ -697,7 +697,7 @@ Resource Registry 还支持授权基线声明：
 |----------|------|
 | `AUTH_ROLE` | 按 `tenantId + appCode + realm + actorType + roleCode` 幂等创建或更新角色，禁用时停用角色。 |
 | `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组。 |
-| `AUTH_SUBJECT_ROLE` | 按 `subjectId + roleCodes` 确保成员主体绑定角色，禁用时移除声明中的角色绑定。 |
+| `AUTH_SUBJECT_ROLE` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析成员主体，并通过 `roleCodes` 确保角色绑定；禁用时移除声明中的角色绑定。 |
 
 启动同步入口：
 

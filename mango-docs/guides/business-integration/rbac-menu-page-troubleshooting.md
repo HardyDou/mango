@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #327 扩展 `AUTH_SUBJECT_ROLE` 基线声明，支持通过 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析租户成员后绑定角色；不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权关系、按钮权限关系、租户应用绑定和页面路由。排查清库初始化后的菜单可见性时，如依赖成员角色绑定基线，需要额外确认声明中的稳定主体键能解析到未离租的 `tenant_member`。
+
 - PR #314 修复授权 API 资源运行时匹配和同步覆盖：同 method + path 的旧模块 active 资源会在新扫描结果注册时被禁用，精确路径优先于通配符或路径变量匹配。菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定和页面路由不变。排查页面能打开但基础接口 403 时，除角色菜单授权外，需要确认基础接口是否声明为 `LOGIN`/`PUBLIC`、资源同步是否已执行、`authorization_api_resource` 中同路由旧 `PERMISSION` 记录是否已禁用，并刷新 API 资源运行时缓存。
 
 - 本次 PR 允许授权快照从页面菜单 `permissions` 读取权限码，页面级 `menuType=2` 权限和按钮级 `menuType=3` 权限都会进入登录态权限集合；不改变菜单 `component` key、菜单树接口、页面注册方式、租户应用绑定和页面路由。排查页面能打开但接口 403 时，需要同时确认角色是否授权页面菜单及其 `permissions` 是否包含目标接口权限码。
