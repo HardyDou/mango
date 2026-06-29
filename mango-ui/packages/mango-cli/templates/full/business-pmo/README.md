@@ -147,8 +147,8 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 |------|------|----------|
 | Must read 为空或不符合预期 | `--task` 和 `--paths` 太空泛 | 写清任务关键词和影响路径 |
 | preflight 报 Missing PMO file | `rules/index.json` 指向不存在文件 | 通过 baseline 同步修复 |
-| verify 模式台账失败 | 台账状态仍是 `TODO` 或 `IN_PROGRESS` | 完成验收后改为 `DONE`，例外写 `EXCEPTION` 和证据 |
-| 禁用词扫描失败 | 代码或文档仍有 mock、TODO 等标记 | 删除临时实现或登记明确例外 |
+| verify 模式台账失败 | 台账状态仍是待处理或进行中 | 完成验收后改为 `DONE`，例外写 `EXCEPTION` 和证据 |
+| 禁用词扫描失败 | 代码或文档仍有临时实现标记 | 删除临时实现或登记明确例外 |
 | 验收证据被判弱表达 | 只写了“接口 200”“页面无异常”等泛化句 | 写具体测试数据、关键断言、UI 检查、network/console 结果和截图路径 |
 | 普通需求改了 baseline | 把规则当成业务文档改了 | 还原 baseline，业务说明放入 `business-docs` |
 

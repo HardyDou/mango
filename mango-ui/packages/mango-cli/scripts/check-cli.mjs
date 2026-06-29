@@ -198,8 +198,9 @@ try {
   assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
   assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
   assertDevWorkspaceAutoCreatesDatabase(projectRoot);
+  assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
   assertDevWorkspaceReportsMissingMysql(projectRoot);
-  if (!backendDevScript.includes('mango dev backend')
+  if (!backendDevScript.includes('mango dev start backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
   }
@@ -737,7 +738,7 @@ function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
   });
   if (result.status !== 0
     || !result.stdout.includes('local-pnpm-runner cwd=')
-    || !result.stdout.includes('/frontend exec mango validate')) {
+    || !result.stdout.includes('/frontend exec mango workspace doctor')) {
     throw new Error(`generated dev-workspace should use project-local pnpm exec mango first:\n${result.stdout}\n${result.stderr}`);
   }
 
@@ -755,7 +756,7 @@ function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
     cwd: projectRoot,
     encoding: 'utf8',
   });
-  if (globalResult.status !== 0 || !globalResult.stdout.includes('global-mango-runner validate')) {
+  if (globalResult.status !== 0 || !globalResult.stdout.includes('global-mango-runner workspace doctor')) {
     throw new Error(`generated dev-workspace should fallback to global mango CLI:\n${globalResult.stdout}\n${globalResult.stderr}`);
   }
 
@@ -910,6 +911,71 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
     || !calls[0].includes('CREATE DATABASE IF NOT EXISTS `mango_dev_')
     || !calls[1]?.includes('mvn:-f pom.xml -DskipTests install')) {
     throw new Error(`mango dev start must create workspace database before Maven install:\n${calls.join('\n')}`);
+  }
+}
+
+function assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot) {
+  const manifestPath = join(projectRoot, 'mango.dev.json');
+  const originalManifest = readFileSync(manifestPath, 'utf8');
+  const manifest = JSON.parse(originalManifest);
+  manifest.groups.commandDb = ['command-db-backend'];
+  manifest.apps['command-db-backend'] = {
+    type: 'command',
+    cwd: '.',
+    command: 'run-backend',
+    portEnv: 'MANGO_BACKEND_PORT',
+    port: 5555,
+    health: '/actuator/health',
+    args: [
+      '--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}',
+      '--server.port=${port}',
+    ],
+  };
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  try {
+    const fakeBinDir = join(projectRoot, '.runtime/db-auto-create-command-bin');
+    const callLog = join(projectRoot, '.runtime/db-auto-create-command-calls.log');
+    mkdirSync(fakeBinDir, { recursive: true });
+    writeFileSync(join(fakeBinDir, 'mysql'), [
+      '#!/usr/bin/env sh',
+      `echo "mysql:$*" >> "${callLog}"`,
+      'exit 0',
+      '',
+    ].join('\n'));
+    writeFileSync(join(fakeBinDir, 'run-backend'), [
+      '#!/usr/bin/env sh',
+      `echo "run-backend:$*" >> "${callLog}"`,
+      'exit 17',
+      '',
+    ].join('\n'));
+    chmodExecutable(join(fakeBinDir, 'mysql'));
+    chmodExecutable(join(fakeBinDir, 'run-backend'));
+    rmSync(callLog, { force: true });
+    rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+    const result = spawnSync('env', [
+      `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/db-auto-create-command-workspaces.json')}`,
+      `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+      process.execPath,
+      cli,
+      'dev',
+      'start',
+      'command-db-backend',
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    const output = `${result.stdout}\n${result.stderr}`;
+    if (result.status === 0 || !output.includes('exited before becoming healthy')) {
+      throw new Error(`command backend scenario should stop after fake backend exits:\n${output}`);
+    }
+    const calls = readFileSync(callLog, 'utf8').trim().split(/\r?\n/);
+    if (!calls[0]?.includes('mysql:--protocol=TCP')
+      || !calls[0].includes('CREATE DATABASE IF NOT EXISTS `mango_dev_')
+      || !calls[1]?.includes('run-backend:--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/mango_dev_')) {
+      throw new Error(`command backend must create workspace database before starting:\n${calls.join('\n')}`);
+    }
+  } finally {
+    writeFileSync(manifestPath, originalManifest);
   }
 }
 

@@ -11,7 +11,8 @@
 
 - 禁止写伪代码。
 - 禁止写 TODO、FIXME、未来再优化、临时方案。
-- 禁止写 mock、fake、dummy、hardcode 数据作为最终交付。
+- 禁止在业务实现、接口返回、页面交互、持久化数据或交付数据中写 mock、fake、dummy、hardcode 内容作为最终交付。
+- 测试中的 mock、stub、fake、spy 必须遵循对应测试规范，禁止替代被测目标或冒充真实链路验收。
 - 禁止写空实现。
 - 禁止用 `UnsupportedOperationException`、空方法、固定返回值或接口壳子冒充已实现。
 - 禁止 catch 后吞异常。

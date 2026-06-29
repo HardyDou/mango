@@ -144,7 +144,7 @@ case "${command}" in
   validate)
     warn_deprecated
     shift || true
-    run_mango validate "$@"
+    run_mango workspace doctor "$@"
     ;;
   doctor)
     warn_deprecated
@@ -154,17 +154,17 @@ case "${command}" in
   plan)
     warn_deprecated
     shift || true
-    run_mango dev plan "$@"
+    run_mango workspace status "$@"
     ;;
   backend)
     warn_deprecated
     shift || true
-    run_mango dev backend "$@"
+    run_mango dev start backend "$@"
     ;;
   frontend)
     warn_deprecated
     shift || true
-    run_mango dev frontend "$@"
+    run_mango dev start frontend "$@"
     ;;
   start|stop|status|logs)
     warn_deprecated

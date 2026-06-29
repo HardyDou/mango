@@ -82,7 +82,7 @@ MANGO_JOB_DB_URL=jdbc:mysql://127.0.0.1:3306/mango_job?useUnicode=true\&characte
 MANGO_JOB_DB_USERNAME=root \
 MANGO_JOB_DB_PASSWORD= \
 MANGO_JOB_PROBE_ENABLED=true \
-scripts/dev-workspace.sh backend
+mango dev start backend
 ```
 
 `application-job-native.yml` 会把 `mango.persistence.modules.mango-job.datasource` 指向 `job` 数据源。未提供 `MANGO_JOB_DB_*` 时会回退到主库 `MANGO_DB_*`。

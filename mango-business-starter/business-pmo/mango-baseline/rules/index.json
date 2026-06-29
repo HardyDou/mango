@@ -37,11 +37,11 @@
     },
     "process.devEnvironment": {
       "path": "rules/02-dev-environment.md",
-      "reason": "开发环境与本地启动规范"
+      "reason": "开发环境、本地启动与 Mango CLI workspace/dev start/frontend 入口规范"
     },
     "process.aiCodingRedlines": {
       "path": "rules/03-ai-coding-redlines.md",
-      "reason": "AI 编码红线"
+      "reason": "AI 编码红线、最终交付真实实现与测试替身边界"
     },
     "process.testAssets": {
       "path": "rules/04-test-assets.md",
@@ -57,7 +57,7 @@
     },
     "process.mangoIssueRunbook": {
       "path": "rules/07-mango-issue-runbook.md",
-      "reason": "Mango Issue 登记 Runbook"
+      "reason": "Mango Issue 登记与处理 Runbook"
     },
     "process.capabilityDocs": {
       "path": "rules/08-capability-docs.md",
@@ -93,7 +93,7 @@
     },
     "backend.test": {
       "path": "rules/backend/08-test.md",
-      "reason": "后端测试规范"
+      "reason": "后端测试规范、有效测试、测试替身边界、数据库测试隔离与 E2E 可组合执行"
     },
     "backend.versioning": {
       "path": "rules/backend/09-versioning.md",
@@ -182,7 +182,7 @@
   "bundles": {
     "deliveryContract": {
       "paths": ["mango-docs/designs/**", "mango-docs/sprints/**", "mango-docs/delivery/**", "business-docs/**"],
-      "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "delivery-ledger", "delivery-contract", "创建PR", "评审PR", "提交PR", "合并PR", "创建 PR", "评审 PR", "提交 PR", "合并 PR", "Pull Request", "验收", "正式交付"],
+      "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "交付物料", "E2E", "e2e", "测试结果基线", "结果基线", "验收证据", "delivery-ledger", "delivery-contract", "创建PR", "评审PR", "提交PR", "合并PR", "创建 PR", "评审 PR", "提交 PR", "合并 PR", "Pull Request", "验收", "正式交付"],
       "include": ["process.deliveryContract", "process.aiDeliveryQuality"]
     },
     "backendFlow": {
@@ -194,7 +194,7 @@
     "mangoIssueRegistration": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "paths": ["business-pmo/**", "mango-pmo/**"],
-      "keywords": ["Mango Issue", "提交ISSUE", "提交 Issue", "登记 Issue", "mango缺陷", "Mango缺陷", "框架问题", "业务消费 Mango"],
+      "keywords": ["Mango Issue", "GitHub Issue", "Issue #", "issue #", "issue：", "issue:", "处理 Issue", "处理 issue", "修复 Issue", "修复 issue", "关闭 Issue", "关闭 issue", "提交ISSUE", "提交 Issue", "登记 Issue", "mango缺陷", "Mango缺陷", "框架问题", "业务消费 Mango"],
       "include": ["process.mangoIssueRunbook"]
     },
     "backendModule": {
@@ -287,7 +287,7 @@
     },
     "devEnvironment": {
       "paths": ["scripts/**", ".mango/**"],
-      "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "dev-workspace", "前后端", "数据库名称", "清理", "drop-db"],
+      "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "workspace", "mango workspace", "mango dev", "mango frontend", "dev-workspace", "前后端", "数据库名称", "清理", "drop-db"],
       "include": ["process.devEnvironment", "process.aiDeliveryQuality"]
     },
     "product": {

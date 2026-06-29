@@ -57,8 +57,19 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 mango pmo status --project-dir .
 mango pmo check --project-dir .
 mango pmo upgrade --project-dir . --dry-run
-mango pmo upgrade --project-dir .
+mango pmo upgrade --project-dir . --sync-shell
 ```
+
+升级后每个 active worktree 都要重新确认本地工作区：
+
+```bash
+mango workspace init
+mango workspace status
+mango dev doctor
+mango dev start
+```
+
+只启动后端或前端时使用 `mango dev start backend`、`mango dev start frontend`；`scripts/dev-workspace.sh` 只作为旧命令兼容 shim。
 
 命令会生成：
 

@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "groups": {
+    "default": [
+      "project-kebab--admin"
+    ],
+    "frontend": [
+      "project-kebab--admin"
+    ]
+  },
+  "apps": {
+    "project-kebab--admin": {
+      "type": "vite",
+      "cwd": "frontend/apps/{{projectKebab}}-admin",
+      "packageManager": "npm",
+      "port": 5176,
+      "hostEnv": "MANGO_FRONTEND_HOST",
+      "host": "127.0.0.1",
+      "env": {
+        "VITE_PORT": "${port}",
+        "VITE_HOST": "${host}",
+        "VITE_OPEN": "${env.MANGO_FRONTEND_OPEN}"
+      },
+      "args": [
+        "run",
+        "dev",
+        "--",
+        "--host",
+        "${host}",
+        "--port",
+        "${port}"
+      ],
+      "portEnv": "MANGO_FRONTEND_PORT"
+    }
+  },
+  "metadata": {
+    "project": "mango-business-starter",
+    "generatedFrom": "discovered-project-layout"
+  }
+}

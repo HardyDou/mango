@@ -65,7 +65,7 @@ mvn -f mango/pom.xml -pl :mango-business-app -am spring-boot:run
 | `.env.development` | `MANGO_BACKEND_PORT` | 单体本地端口。 |
 | `.env.development` | `MANGO_DB_URL`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD` | 单体本地数据库。 |
 | `.env.development` | `MANGO_FILE_ROOT` | 本地文件存储根目录。 |
-| `.env.development` | `MANGO_CRYPTO_SM4_SECRET_KEY` | SM4 密钥，`scripts/dev-workspace.sh` 可生成。 |
+| `.env.development` | `MANGO_CRYPTO_SM4_SECRET_KEY` | SM4 密钥，`mango workspace init` 会写入本地工作区环境。 |
 | `mango-monolith-app/application.yml` | `mango.persistence.flyway.modules.*.enabled` | 控制单体各能力模块 migration。 |
 | `mango-gateway-app/application.yml` | `spring.cloud.gateway.routes` | 微服务路由到 platform 和 business。 |
 | `mango-platform-app/application.yml` | YAML 中 `mango` -> `flyway` -> `enabled` | 当前微服务示例默认关闭 Flyway。 |

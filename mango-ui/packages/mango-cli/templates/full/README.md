@@ -48,9 +48,8 @@
 cd {{projectKebab}}
 cd frontend && pnpm install && cd ..
 mango workspace init
-mango validate
 mango dev doctor
-mango dev plan
+mango workspace status
 mango dev start
 ```
 
@@ -81,18 +80,16 @@ npm --prefix frontend run build
 |------|------|
 | `mango workspace init` | 创建 `.mango/workspace.json`，并补齐 `.mango/dev-workspace.env` |
 | `mango workspace status` | 打印当前 workspace、端口和应用配置 |
-| `mango validate` | 校验 `mango.dev.json` |
 | `mango dev doctor` | 校验工具链、POM 和端口 |
-| `mango dev plan` | 展开启动命令 |
 | `mango dev start` | 启动默认分组 |
-| `mango dev backend` | 启动后端 |
-| `mango dev frontend` | 启动前端 |
+| `mango dev start backend` | 启动后端 |
+| `mango dev start frontend` | 启动前端 |
 | `mango dev status` | 查看进程状态 |
 | `mango dev logs {{projectKebab}}-service` | 查看后端日志 |
 | `mango dev stop` | 停止默认分组 |
 | `mango frontend prepare` | 准备前端 source 模式样式聚合文件 |
 
-`scripts/backend-dev.sh` 只是兼容入口，会委托到 `mango dev backend`。
+`scripts/backend-dev.sh` 只是兼容入口，会委托到 `mango dev start backend`。
 
 ## 6. 配置说明
 ### 6.1 本地开发工作区
@@ -118,7 +115,7 @@ npm --prefix frontend run build
 | `.mango/dev-workspace.env` | `MANGO_DB_NAME` | 来自 `.mango/workspace.json` | 数据库名 | 拼接 datasource URL | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_DB_USERNAME` | `root` | 数据库用户名 | 注入 datasource | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_DB_PASSWORD` | 空字符串 | 数据库密码 | 注入 datasource | Mango CLI |
-| `.mango/dev-workspace.env` | `MANGO_DB_AUTO_CREATE` | `true` | 数据库自动创建开关 | `mango dev start` 启动 Spring Boot app 前创建 `mango_dev_*` 工作区数据库 | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_DB_AUTO_CREATE` | `true` | 数据库自动创建开关 | `mango dev start` 启动 Spring Boot app 前调用本机 `mysql` 创建 `mango_dev_*` 工作区数据库 | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_OFFICE_PLUGIN_ENABLED` | `false` | Office 转 PDF 开关 | 影响 fileproc 和 office plugin | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_ADDITIONAL_ARGS` | 空字符串 | 后端额外参数 | 追加到 Spring Boot args | Mango CLI |
 
@@ -210,7 +207,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 
 ## 10. 快速开始
 1. 生成项目后先执行 `mango workspace init`，修改 `.mango/dev-workspace.env` 中数据库、端口、文件目录和可选插件开关。
-2. 执行 `mango validate`、`mango dev doctor`、`mango dev plan`，确认启动计划。
+2. 执行 `mango workspace status`、`mango dev doctor`，确认工作区和启动条件。
 3. 执行 `mango dev start`，确认后端 health 和前端页面可访问。
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。
 5. 通过 `mango module add` 新增业务模块，然后补齐表结构、菜单权限、租户边界、页面交互和测试。
@@ -220,9 +217,10 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
 | `mango CLI not found in project frontend dependencies or globally` | 前端依赖未安装或缺少 `@mango/cli`，且机器没有全局 CLI | 先执行 `cd frontend && pnpm install`，或安装全局 `@mango/cli` |
-| 前端请求后端失败 | `VITE_ADMIN_PROXY_PATH` 未指向本机后端，或后端未启动 | 用 `mango dev plan` 查看代理目标，用 `mango dev status` 查看后端 |
+| 前端请求后端失败 | `VITE_ADMIN_PROXY_PATH` 未指向本机后端，或后端未启动 | 用 `mango workspace status` 查看端口，用 `mango dev status` 查看后端 |
 | Vite proxy 报 host 不允许 | `vite.config.ts` 只允许本机代理 | 本地开发保持代理到 `127.0.0.1` 或 `localhost` |
 | 后端 health 访问失败 | 数据库、Flyway、端口或密钥配置错误 | 查 `mango dev logs {{projectKebab}}-service` |
+| 后端 health 卡住且 `mango_dev_*` 数据库不存在 | `MANGO_DB_AUTO_CREATE` 未启用、本机缺少 `mysql` 命令，或 `.mango/dev-workspace.env` 中 MySQL 连接配置不可用 | 查 `command -v mysql`、`MANGO_DB_AUTO_CREATE`、`MANGO_DB_HOST`、`MANGO_DB_PORT`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD` 和 `.mango/run/logs/{{projectKebab}}-service.log`；如果 CLI 没有输出 `ensured database` 或 `failed to auto-create database`，按 Mango issue runbook 登记 |
 | 文件上传大小不符合预期 | multipart 上限仍是模板默认值 | 修改 `spring.servlet.multipart.max-file-size` 和 `max-request-size` |
 | Office 预览不可用 | `MANGO_OFFICE_PLUGIN_ENABLED=false` | 安装并确认 Office 插件后再启用 |
 | 菜单没有初始化 | 对应模块 migration 或资源同步未执行 | 查 Flyway history、资源同步日志和授权模块配置 |

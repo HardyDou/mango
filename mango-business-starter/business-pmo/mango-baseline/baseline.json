@@ -1,0 +1,294 @@
+{
+  "packageName": "@mango/pmo",
+  "packageVersion": "1.0.4",
+  "schemaVersion": 1,
+  "source": "mango-pmo",
+  "generatedAt": "2026-06-29T01:01:21.766Z",
+  "files": [
+    {
+      "path": "agents/01-pm-agent.md",
+      "sha256": "6e395087612ec5635e9d45c6b22fa1fcd7aecb5f247030587c034dd5985a758c",
+      "size": 400
+    },
+    {
+      "path": "agents/02-tech-lead-agent.md",
+      "sha256": "f597e1d1d84edc6e93785d10746f0134640d068fd08c74ce1dc9d909894739e4",
+      "size": 514
+    },
+    {
+      "path": "agents/03-dev-agent.md",
+      "sha256": "1262cdeec7f87a94c7b819790c100fff364c7dd8b291fadafcffac34dc9906ff",
+      "size": 757
+    },
+    {
+      "path": "agents/04-qa-agent.md",
+      "sha256": "3323529684006d755c59f83a918179097d3956cafff204fa9bd3431ad307a358",
+      "size": 936
+    },
+    {
+      "path": "agents/05-pmo-agent.md",
+      "sha256": "6ff2d9060893be13c4f7c311d25508361fb09326ceded17d06bcd155112695d0",
+      "size": 442
+    },
+    {
+      "path": "README.md",
+      "sha256": "3b8398456e80a0ce8dfc449e2b914f360fdd0ec35ec8f91365b37076b3d52367",
+      "size": 5618
+    },
+    {
+      "path": "rules/00-dev-flow.md",
+      "sha256": "bd8b9ab6939da0223df0fbda2d5fdfcd6ae132dfd2f18c179bf7fa1c7bb9dd99",
+      "size": 12257
+    },
+    {
+      "path": "rules/01-delivery-contract.md",
+      "sha256": "027625d23e0a42ee8e43e5a7b8282ebff07c5f4cb35707e6270ea5e3e4010966",
+      "size": 4897
+    },
+    {
+      "path": "rules/02-dev-environment.md",
+      "sha256": "c6c8e0a44558100ae93d12d2b9f44b172d7b35add54723ae58c43de211927f2f",
+      "size": 8311
+    },
+    {
+      "path": "rules/03-ai-coding-redlines.md",
+      "sha256": "13d8174e53aa578553a0a21f229f477d710d73c9024245e5462d03b149237237",
+      "size": 2472
+    },
+    {
+      "path": "rules/04-test-assets.md",
+      "sha256": "32a2be0a9a76216b09b688324aa4ba69bc7b5ffe4dfe6b00af49d6c313fac562",
+      "size": 3191
+    },
+    {
+      "path": "rules/05-ai-delivery-quality.md",
+      "sha256": "94c266f797a228afdea8a058cfa06e482ee66fa8d9a3046a010916ee550d2503",
+      "size": 6410
+    },
+    {
+      "path": "rules/06-document-assets.md",
+      "sha256": "04bd3d050e5e719f44670562ecc0fb7abf7d75e0d5f939968da7057fad98b67f",
+      "size": 4455
+    },
+    {
+      "path": "rules/07-mango-issue-runbook.md",
+      "sha256": "d9ee120e4753142a912092ba810bee7f3942c3fe10b8cb2e795971f6f8a5ca32",
+      "size": 4388
+    },
+    {
+      "path": "rules/08-capability-docs.md",
+      "sha256": "652f6c8f9f65647ad70f4e5010552f41a0e8ab5ba98b54218974c823b3710b7f",
+      "size": 5666
+    },
+    {
+      "path": "rules/backend/01-code.md",
+      "sha256": "fdca30b5538040efd3cfa948b0daba3a28050f774b6babf460a464c540d4beda",
+      "size": 3373
+    },
+    {
+      "path": "rules/backend/02-naming.md",
+      "sha256": "69b35e32cfd20d55305cf27acfc323818c77ae9febdb6c2a335eb8150b572a9e",
+      "size": 2151
+    },
+    {
+      "path": "rules/backend/03-api.md",
+      "sha256": "0e14d36250a4dda0760fc4dce903aa255ac28aef15720210b263a3ffbeecfee7",
+      "size": 6817
+    },
+    {
+      "path": "rules/backend/04-db.md",
+      "sha256": "c356bc4b7ee7b75362e5af3e46d616e60368a3c576b6056e0880a19dcf2b8ad6",
+      "size": 1859
+    },
+    {
+      "path": "rules/backend/05-module.md",
+      "sha256": "fb181f690201b88bbfc52629542cc082760baa49be1eef74e4a769083ca2f8e8",
+      "size": 9571
+    },
+    {
+      "path": "rules/backend/06-security.md",
+      "sha256": "4dcb539d0208df0ddbaa5d30f39c7048bafca31e23fc3d910c0b480390eddff8",
+      "size": 951
+    },
+    {
+      "path": "rules/backend/07-persistence.md",
+      "sha256": "fd2ef75f073abab671b350df27c4f4a85693d647393333517fbd10638cdfd753",
+      "size": 6266
+    },
+    {
+      "path": "rules/backend/08-test.md",
+      "sha256": "34768818b5c3917a65bd39aaf2aa08ff79632dc41a2251f59d1a5dd1095a35bd",
+      "size": 10616
+    },
+    {
+      "path": "rules/backend/09-versioning.md",
+      "sha256": "6fb3aede2da560206612137bc1d04f5f897aa388daddc7c610474f6659a7ee65",
+      "size": 2948
+    },
+    {
+      "path": "rules/backend/10-dev-flow.md",
+      "sha256": "b3c73b505127542f05fc66c53f77cc09b4035276821b2db8a7619b4e33ac3306",
+      "size": 2560
+    },
+    {
+      "path": "rules/backend/11-module-menu.md",
+      "sha256": "593207b2bd136d987bb1ac170169248d763c608b3e525fd90d15483ddba143dc",
+      "size": 3914
+    },
+    {
+      "path": "rules/frontend/01-vue-code.md",
+      "sha256": "08e57804931243fcbee0cabe7f8e732a170b14b60878c042fa83dfb669da2bc3",
+      "size": 5634
+    },
+    {
+      "path": "rules/frontend/02-element-plus-ui.md",
+      "sha256": "e574d7d8a360e33391e0666a639e552f37fafde39865105c20c2c1948dba0d77",
+      "size": 9204
+    },
+    {
+      "path": "rules/frontend/03-component-development.md",
+      "sha256": "ce731df0b742046ffc737f761081cdc961bacf28aae890a749ea98d6eb238f86",
+      "size": 10874
+    },
+    {
+      "path": "rules/frontend/04-test.md",
+      "sha256": "34bd4b0622bce793147f79cb172a566f7413527405d9c15bf70e58f10df1ac6e",
+      "size": 3682
+    },
+    {
+      "path": "rules/frontend/05-dev-flow.md",
+      "sha256": "bc1b223cc29d7c3b2ac7a040517aa45e5a71028047df3a9d22195659f5822322",
+      "size": 958
+    },
+    {
+      "path": "rules/frontend/06-monorepo-architecture.md",
+      "sha256": "736b4842eb62177c1a79f542fd3ad23d14c1f3a900aec0538bcfdcafe0bc2d1d",
+      "size": 4427
+    },
+    {
+      "path": "rules/frontend/07-admin-ui-common.md",
+      "sha256": "74156dc9aa8c9b47d0dac8827d71db388d5136294f246f51ccfff92ddd12b068",
+      "size": 2076
+    },
+    {
+      "path": "rules/frontend/08-list-page.md",
+      "sha256": "bb52587a6f5cccb83ec984a8d6fe032c0f0399bfc6893e34f3aef63b8ea689ee",
+      "size": 1923
+    },
+    {
+      "path": "rules/frontend/09-detail-page.md",
+      "sha256": "415b764f4d05796fbef30c3448c499876a50bc9ca2f159b81530b8055cdf153e",
+      "size": 1824
+    },
+    {
+      "path": "rules/frontend/10-form-page.md",
+      "sha256": "5617e65a22c8b07d4b212b8c49d9fd67d14db3cb7751fe0ca20fd2b9401a5d11",
+      "size": 2757
+    },
+    {
+      "path": "rules/frontend/11-dialog-drawer.md",
+      "sha256": "acc2f718698192e46b84c930f1dc91e95be24409456849de3bfb826923ee5e47",
+      "size": 1361
+    },
+    {
+      "path": "rules/index.json",
+      "sha256": "cddfd532d34617d73147a97995e2160a8b13f800971b470af77879c406b90200",
+      "size": 16849
+    },
+    {
+      "path": "rules/product/01-prd-template.md",
+      "sha256": "46154b96a98a33b481f93c37ffb5d97228073d0c9a7e75d80ce3d7c45b3bb5f1",
+      "size": 18989
+    },
+    {
+      "path": "rules/product/02-sprint.md",
+      "sha256": "4da75b7eafc3cf5dfade3e7cfcad053f7b5587cf3368014e54e14d49169f7300",
+      "size": 989
+    },
+    {
+      "path": "rules/product/03-detailed-design-template.md",
+      "sha256": "cc009488c2b577151a1725dec5f5913cd8ea0f6c2b53b72ff5da9ee3f2da765e",
+      "size": 20934
+    },
+    {
+      "path": "templates/acceptance-evidence.md",
+      "sha256": "1d835d44a48616219b058602a4ee7a12cf4f58b63c965396b133df7cc12cf883",
+      "size": 779
+    },
+    {
+      "path": "templates/delivery-contract.md",
+      "sha256": "8df6e66a275b79882594ef62caf734ce9321c044d5dc6e6c1d2ebd2ce3e838aa",
+      "size": 1568
+    },
+    {
+      "path": "templates/detailed-design.md",
+      "sha256": "4ff5236b2d79ffcc27e0921bd7db70955fd8330c7d3ee3afa24eb2b4b16daefd",
+      "size": 9692
+    },
+    {
+      "path": "templates/frontend-entry-readme.md",
+      "sha256": "477f9e042769efd879ea9a0268d324994c6296c8c4452dc76bfa09e3d1af91d4",
+      "size": 2171
+    },
+    {
+      "path": "templates/module-readme.md",
+      "sha256": "f1ef51433b3e66b68b841cb150a129f03cd388b5f9bb87dda32843177ba1cd87",
+      "size": 3869
+    },
+    {
+      "path": "templates/prd.md",
+      "sha256": "550ef590ec152ce9135eb427af413a45643aad47b8956d83cf628516d248f602",
+      "size": 8497
+    },
+    {
+      "path": "tools/acceptance-evidence-check.mjs",
+      "sha256": "c0ef5a10ae29e0272e204bb08ca4138c3dc5c9fcab683a4bb94f8c065971772d",
+      "size": 5681
+    },
+    {
+      "path": "tools/audit-backend-test-mocks.mjs",
+      "sha256": "86397778b71f7bf6ef9b8be01c57b75dd18eb5d53b896ea98afb55b0c0c9da2b",
+      "size": 7507
+    },
+    {
+      "path": "tools/audit-module-readmes.mjs",
+      "sha256": "c187dc1ae23fa09a2744334a56d28116b4462a6b67e96c99262490ec456b5f13",
+      "size": 21473
+    },
+    {
+      "path": "tools/audit-readme-source-facts.mjs",
+      "sha256": "88eaa18c7fea304b6da518893a3724448aa240f153a5fd6092ab35bd90b320bf",
+      "size": 16349
+    },
+    {
+      "path": "tools/check-business-guides.mjs",
+      "sha256": "847598f37dc4ff43907f7b75bb578adf451dbafb714185f5d4f7bf0087bfec39",
+      "size": 5250
+    },
+    {
+      "path": "tools/check-capability-docs.mjs",
+      "sha256": "8fa07b874f34266acda9a1e6f29cd836e4a0a1bc4b71f9823fbbcae92bbeb7ba",
+      "size": 27110
+    },
+    {
+      "path": "tools/check-governance-intent.mjs",
+      "sha256": "770c3521d747206efdb0c02ccd6554cbebf04c86021c77cfa6259111ef914d2b",
+      "size": 7303
+    },
+    {
+      "path": "tools/check-pmo-preflight.mjs",
+      "sha256": "acecaec5ca2be75ff1c2fe0ae2157daa61ab4a319b4dbad4d5f92667447e3189",
+      "size": 4821
+    },
+    {
+      "path": "tools/delivery-contract-check.mjs",
+      "sha256": "1f19b907aa001ff01d0675710b7e60e77bf7ed901a40894fe4f8b167c71485a6",
+      "size": 14010
+    },
+    {
+      "path": "tools/pmo-preflight.mjs",
+      "sha256": "0fe72f8fbc8564583ffc2d9194eebe6c685112a4e1d4e317f09c4b0a2c2525bb",
+      "size": 10855
+    }
+  ]
+}

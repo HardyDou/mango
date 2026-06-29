@@ -45,17 +45,17 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 
 ## 3. Mango Baseline 版本
 
-本 starter 携带的 baseline 快照来自 Mango commit：
+本 starter 携带的 baseline 快照版本记录在：
 
 ```text
-7bca6b8f
+business-pmo/mango-baseline/baseline.json
 ```
 
 业务项目升级 Mango 版本时，应同时更新：
 
 - Maven 依赖版本。
 - npm 依赖版本。
-- 通过 `mango pmo upgrade --project-dir .` 更新 `business-pmo/mango-baseline/` 快照。
+- 通过 `mango pmo upgrade --project-dir . --sync-shell` 更新 `business-pmo/mango-baseline/` 快照和兼容脚本。
 - 业务验证命令和交付台账。
 
 ## 4. 业务边界
@@ -71,15 +71,15 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 
 AI 可以参与实现，但 owner 和验收责任不转移。前端使用 AI 修改后端代码时，必须由后端 owner review。
 
-本地启动只使用：
+本地启动只使用 Mango CLI：
 
 ```bash
-scripts/dev-workspace.sh init
-scripts/dev-workspace.sh print
-scripts/dev-workspace.sh start
+mango workspace init
+mango workspace status
+mango dev start
 ```
 
-启动前必须确认并在交付记录中报告 `.mango/dev-workspace.env` 中的 `MANGO_WORKSPACE_ID`、`MANGO_BACKEND_PORT`、`MANGO_FRONTEND_PORT`、`MANGO_DB_NAME`。不要交叉使用其它 worktree 的服务、端口或数据库。
+启动前必须确认并在交付记录中报告 `.mango/workspace.json` 和 `.mango/dev-workspace.env` 中的 `MANGO_WORKSPACE_ID`、`MANGO_BACKEND_PORT`、`MANGO_FRONTEND_PORT`、`MANGO_DB_NAME`。不要交叉使用其它 worktree 的服务、端口或数据库。
 
 正式交付的最终报告必须包含：
 
