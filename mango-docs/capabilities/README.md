@@ -27,6 +27,12 @@
 | 业务项目创建到 PR | [CLI](../../mango-ui/packages/mango-cli/README.md) -> [Business Starter](../../mango-business-starter/README.md) -> [Business PMO](../../mango-business-starter/business-pmo/README.md) -> [Topology](../../mango-business-starter/topologies/monolith/README.md) | [CLI README](../../mango-ui/packages/mango-cli/README.md)、[Business Starter README](../../mango-business-starter/README.md) |
 | 业务配置资源注入 | [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> 目标模块 README | [Resource README](../../mango/mango-platform/mango-resource/README.md)，支持授权、组织、身份等基线资源类型 |
 
+## 3.1 近期能力变更
+
+| 日期 | 能力 | 入口 | 设计与交付 |
+|------|------|------|------------|
+| 2026-06-29 | File 支持按目录结构清单打包多个文件为 ZIP，生成后写回存储层并返回新的 `FileRecordVO` | [File README](../../mango/mango-platform/mango-file/README.md) | [计划](../plans/2026-06-29-issue-316-file-package-plan.md)、[详细设计](../designs/2026-06-29-issue-316-file-package-design.md)、[交付台账](../plans/2026-06-29-issue-316-file-package-ledger.md) |
+
 ## 4. 后端平台能力
 
 | 能力 | 模块 | README | 排障入口 |

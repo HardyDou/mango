@@ -7,6 +7,7 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -28,6 +29,8 @@ public interface IFileService {
     R<List<FileRecordVO>> uploadBatch(MultipartFile[] files, String purpose, String accessLevel, String bizType, String bizId, String bizMeta, Long directoryId);
 
     R<FileRecordVO> save(SaveFileCommand command);
+
+    R<FileRecordVO> packageFiles(FilePackageCommand command);
 
     R<FileRecordVO> saveGenerated(byte[] content,
                                   String fileName,
