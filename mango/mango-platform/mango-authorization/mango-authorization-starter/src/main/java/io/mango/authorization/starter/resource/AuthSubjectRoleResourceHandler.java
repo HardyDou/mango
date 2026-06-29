@@ -5,6 +5,10 @@ import io.mango.authorization.core.entity.Role;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
+import io.mango.identity.core.entity.IdentityUser;
+import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.mapper.IdentityUserMapper;
+import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.model.ResourceDeclaration;
@@ -12,6 +16,7 @@ import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -30,6 +35,8 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
 
     private final RoleMapper roleMapper;
     private final SubjectRoleBindingMapper bindingMapper;
+    private final TenantMemberMapper memberMapper;
+    private final IdentityUserMapper userMapper;
     private final ResourceFieldReader fields = new ResourceFieldReader(ResourceTypes.AUTH_SUBJECT_ROLE);
 
     @Override
@@ -42,9 +49,11 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())
                 .requiredField("tenantId")
-                .requiredField("subjectId")
                 .requiredField("roleCodes")
-                .fieldDescription("subjectId", "主体 ID，第一版不按 subjectCode 猜测解析。")
+                .fieldDescription("subjectId", "主体 ID。subjectId、subjectCode、memberNo、username 四选一。")
+                .fieldDescription("subjectCode", "主体编码，按租户成员 memberNo 解析。")
+                .fieldDescription("memberNo", "租户成员编号。")
+                .fieldDescription("username", "用户名，先解析 identity_user，再解析同租户成员。")
                 .fieldDescription("subjectType", "主体类型，默认 TENANT_MEMBER。")
                 .fieldDescription("roleCodes", "要确保绑定的角色编码列表。")
                 .build();
@@ -53,7 +62,7 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         Long tenantId = fields.requiredLong(resource, "tenantId");
-        Long subjectId = fields.requiredLong(resource, "subjectId");
+        Long subjectId = requiredSubjectId(resource, tenantId);
         String subjectType = fields.stringField(resource, "subjectType", DEFAULT_SUBJECT_TYPE);
         List<String> roleCodes = fields.stringListField(resource, "roleCodes");
         if (roleCodes.isEmpty()) {
@@ -74,7 +83,7 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         Long tenantId = fields.requiredLong(resource, "tenantId");
-        Long subjectId = fields.requiredLong(resource, "subjectId");
+        Long subjectId = requiredSubjectId(resource, tenantId);
         String subjectType = fields.stringField(resource, "subjectType", DEFAULT_SUBJECT_TYPE);
         List<String> roleCodes = fields.stringListField(resource, "roleCodes");
         int changed = 0;
@@ -84,6 +93,51 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
         }
         return ResourceSyncResult.of(null, TARGET_TABLE,
                 "Auth subject roles disabled: subjectId=" + subjectId + ", changed=" + changed);
+    }
+
+    private Long requiredSubjectId(ResourceDeclaration resource, Long tenantId) {
+        Long subjectId = fields.longField(resource, "subjectId");
+        if (subjectId != null) {
+            return subjectId;
+        }
+        TenantMember member = memberByNo(tenantId, firstText(
+                fields.stringField(resource, "subjectCode"),
+                fields.stringField(resource, "memberNo")));
+        if (member != null) {
+            return member.getMemberId();
+        }
+        String username = fields.stringField(resource, "username");
+        if (StringUtils.hasText(username)) {
+            IdentityUser user = userMapper.selectOne(new LambdaQueryWrapper<IdentityUser>()
+                    .eq(IdentityUser::getUsername, username.trim())
+                    .last("LIMIT 1"));
+            if (user != null) {
+                member = memberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
+                        .eq(TenantMember::getTenantId, tenantId)
+                        .eq(TenantMember::getUserId, user.getUserId())
+                        .isNull(TenantMember::getLeftAt)
+                        .last("LIMIT 1"));
+                if (member != null) {
+                    return member.getMemberId();
+                }
+            }
+        }
+        throw new IllegalStateException("AUTH_SUBJECT_ROLE referenced subject does not exist");
+    }
+
+    private TenantMember memberByNo(Long tenantId, String memberNo) {
+        if (!StringUtils.hasText(memberNo)) {
+            return null;
+        }
+        return memberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
+                .eq(TenantMember::getTenantId, tenantId)
+                .eq(TenantMember::getMemberNo, memberNo.trim())
+                .isNull(TenantMember::getLeftAt)
+                .last("LIMIT 1"));
+    }
+
+    private String firstText(String first, String second) {
+        return StringUtils.hasText(first) ? first : second;
     }
 
     private SubjectRoleBinding ensureBinding(ResourceDeclaration resource, Long tenantId, Long subjectId,
