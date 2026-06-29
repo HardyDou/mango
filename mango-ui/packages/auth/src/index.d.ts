@@ -14,6 +14,7 @@ export interface MangoAuthLoginDefaults {
   partyType?: string;
   appCode?: string;
   redirectPath?: string;
+  redirectQueryKey?: string;
 }
 
 export interface MangoAuthConfig {

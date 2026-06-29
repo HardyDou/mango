@@ -35,8 +35,11 @@ export function createMangoAdminApp(options: MangoAdminShellOptions = {}): Mango
   app.use(router);
 
   async function redirectToLogin() {
+    const currentRoute = router.currentRoute.value;
     Session.clearSession();
-    await router.push('/login');
+    await router.push(currentRoute.path === '/login'
+      ? { path: '/login' }
+      : { path: '/login', query: { redirect: currentRoute.fullPath } });
   }
 
   registerUnauthorizedHandler(redirectToLogin);

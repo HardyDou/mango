@@ -213,7 +213,7 @@
 
 <script setup lang="ts" name="Login">
 import { computed, onMounted, ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   defaultPasswordPolicy,
@@ -236,6 +236,7 @@ import { useUserInfo } from '../store/userInfo';
 import { useAuthConfig } from '../composables/useAuthConfig';
 
 const router = useRouter();
+const route = useRoute();
 const loginFormRef = ref();
 const userInfoStore = useUserInfo();
 const authConfig = useAuthConfig();
@@ -246,6 +247,9 @@ const loginBrand = computed(() => ({
   subtitle: authConfig.value.login?.brand?.subtitle || '企业级管理平台',
   panelTitle: authConfig.value.login?.brand?.panelTitle,
 }));
+const loginRedirectTarget = computed(() => normalizeLoginRedirect(
+  route.query[loginDefaults.value.redirectQueryKey || 'redirect']
+));
 
 // 表单数据
 const form = reactive({
@@ -390,6 +394,26 @@ function parseWecomState(rawState: string | null): WecomCallbackState {
   }
 }
 
+function normalizeLoginRedirect(value: unknown): string {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  if (typeof rawValue !== 'string') {
+    return '';
+  }
+  const target = rawValue.trim();
+  if (!target || !target.startsWith('/') || target.startsWith('//')) {
+    return '';
+  }
+  const targetPath = target.split('?')[0].split('#')[0];
+  if (targetPath === '/login') {
+    return '';
+  }
+  return target;
+}
+
+function resolveLoginRedirectPath(): string {
+  return loginRedirectTarget.value || loginDefaults.value.redirectPath || '/home';
+}
+
 function readWecomCallback() {
   const params = new URLSearchParams(window.location.search);
   const hashQueryStart = window.location.hash.indexOf('?');
@@ -531,7 +555,7 @@ async function handleChangeRequiredPassword() {
     passwordResetDialogVisible.value = false;
     passwordResetTicket.value = '';
     ElMessage.success('密码已修改');
-    await router.push(loginDefaults.value.redirectPath || '/home');
+    await router.push(resolveLoginRedirectPath());
   } catch (error) {
     console.error('强制改密失败:', error);
     ElMessage.error('密码修改失败，请确认密码符合复杂度要求');
@@ -583,7 +607,7 @@ async function handleWecomLogin() {
       appCode: loginData.appCode,
     });
     ElMessage.success('登录成功');
-    await router.push(loginDefaults.value.redirectPath || '/home');
+    await router.push(resolveLoginRedirectPath());
   } catch (error) {
     console.error('企业微信登录失败:', error);
     ElMessage.error('企业微信登录失败，请确认账号已绑定');
@@ -670,7 +694,7 @@ const handleLogin = async () => {
       persistLoginResult(res, fallback);
 
       ElMessage.success('登录成功');
-      await router.push(loginDefaults.value.redirectPath || '/home');
+      await router.push(resolveLoginRedirectPath());
     } catch {
       // Business errors are already displayed by the request interceptor.
     } finally {
