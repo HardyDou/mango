@@ -56,9 +56,11 @@ import { computed } from 'vue';
 import { ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { useUserInfo } from '../../../stores/userInfo';
+import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
 
 const router = useRouter();
 const storesUserInfo = useUserInfo();
+const storesTagsViewRoutes = useTagsViewRoutes();
 const currentUser = computed(() => storesUserInfo.userInfos);
 
 const institutionLabel = computed(() => {
@@ -80,6 +82,7 @@ const handleCommand = (command: string) => {
         cancelButtonText: '取消',
         type: 'warning',
       }).then(() => {
+        storesTagsViewRoutes.clearTagsView();
         storesUserInfo.clearUserInfo();
         router.push('/login');
       }).catch(() => {
