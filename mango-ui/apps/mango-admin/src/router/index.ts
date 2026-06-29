@@ -116,7 +116,10 @@ router.beforeEach(async (to, from, next) => {
   // 检查 Token
   const token = Session.getToken();
   if (!token) {
-    next('/login');
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath },
+    });
     return;
   }
 
@@ -148,7 +151,10 @@ router.beforeEach(async (to, from, next) => {
     isNavigatingAfterInit = false;
     Session.clearSession();
     mangoMessage.error(error instanceof Error ? error.message : '登录已过期，请重新登录');
-    next('/login');
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath },
+    });
   }
 });
 

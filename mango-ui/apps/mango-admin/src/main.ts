@@ -88,7 +88,10 @@ initThemeBeforeRender();
 registerAuthDirectives(app);
 
 registerUnauthorizedHandler(async () => {
-  await router.push('/login');
+  const currentRoute = router.currentRoute.value;
+  await router.push(currentRoute.path === '/login'
+    ? { path: '/login' }
+    : { path: '/login', query: { redirect: currentRoute.fullPath } });
 });
 
 // 启用 Mock（如果配置了）
