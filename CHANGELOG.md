@@ -1,5 +1,43 @@
 # Mango Changelog
 
+## v2026.06.29-file-package-cli-release - 2026-06-29
+
+### New
+
+- Published File ZIP packaging from Issue #316. `FileApi.packageFiles(FilePackageCommand)` and `POST /file/files/package` can create a ZIP from existing completed file records, preserve nested relative paths, replace `${fileName}` from source file records, save the generated ZIP through the existing file storage flow, and return a new `FileRecordVO`.
+
+### Fixed
+
+- Published the business project generator dependency management fix from Issue #315. Generated backend parent POMs now manage Mango public API artifacts consistently, so business core modules can depend on API artifacts such as `mango-file-api` without declaring versions or depending on runtime starters.
+
+### Published Packages
+
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- npm: `@mango/cli@1.0.52` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.29-file-package-cli-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies before using `FileApi.packageFiles` or `POST /file/files/package`.
+- File ZIP packaging does not require a database migration, new menu resource, frontend package, or tenant configuration change. Existing file visibility, download, and save rules still apply to source files and generated ZIP records.
+- Business code should pass safe ZIP-relative `entries.path` values. The file service rejects empty paths, directory entries, absolute paths, path traversal, and duplicate ZIP paths.
+- New or regenerated business projects should use `@mango/cli@1.0.52` so generated backend parent POMs include the current Mango API dependency management. Existing projects can manually align parent POM dependency management if needed.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -am -Dtest=FileServicePackageFilesTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-api,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter,mango-platform/mango-file/mango-file-starter-remote -am test -DskipITs`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui release:impact --base=v2026.06.29-payment-admin-check-release --head=HEAD`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.runtime/pr-320-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.29-file-package-cli-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.52`
+- `git diff --check`
+
 ## v2026.06.29-payment-admin-check-release - 2026-06-29
 
 ### Fixed
