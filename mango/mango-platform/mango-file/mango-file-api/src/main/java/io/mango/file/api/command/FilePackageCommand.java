@@ -47,6 +47,13 @@ public class FilePackageCommand implements Serializable {
     @Schema(description = "逻辑目录ID。根目录为0")
     private Long directoryId;
 
+    @Schema(description = "打包内文件默认压缩档位：NONE、LOW、MEDIUM、HIGH。默认 NONE")
+    @Size(max = 16, message = "压缩档位长度不能超过16")
+    private String compression;
+
+    @Schema(description = "打包内每个可压缩文件的默认目标大小，单位字节；不表示 ZIP 总大小")
+    private Long perFileTargetSizeBytes;
+
     @Valid
     @NotEmpty(message = "打包文件清单不能为空")
     @Schema(description = "打包文件清单", requiredMode = Schema.RequiredMode.REQUIRED)

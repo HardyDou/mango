@@ -30,4 +30,11 @@ public class FilePackageEntryCommand implements Serializable {
     @NotBlank(message = "ZIP内路径不能为空")
     @Size(max = 500, message = "ZIP内路径长度不能超过500")
     private String path;
+
+    @Schema(description = "当前文件压缩档位：NONE、LOW、MEDIUM、HIGH；为空时使用打包命令默认值")
+    @Size(max = 16, message = "压缩档位长度不能超过16")
+    private String compression;
+
+    @Schema(description = "当前文件目标大小，单位字节；覆盖打包命令 perFileTargetSizeBytes")
+    private Long targetSizeBytes;
 }
