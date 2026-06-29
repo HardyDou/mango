@@ -56,6 +56,7 @@ function mountNoticeBell() {
       runtimeConfig: {
         soundEnabled: true,
         soundText: '您有新的系统消息，请及时查看',
+        reminderMode: 'VOICE',
         popupEnabled: true,
         desktopNotificationEnabled: true,
       },
@@ -124,28 +125,40 @@ describe('NoticeBell', () => {
     wrapper.unmount();
   });
 
-  it('收到 realtime 消息后按接口结果刷新角标且不重复累加', async () => {
-    apiMock.getMyUnreadCount
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 2 });
+  it('收到 realtime 消息后按事件未读数量刷新角标且不重复请求未读数接口', async () => {
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 1 });
 
     const wrapper = mountNoticeBell();
     await flushPromises();
 
-    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批' });
+    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批', unreadCount: 2 });
     await flushPromises();
 
-    expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(2);
+    expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(1);
     expect(apiMock.getMySiteMessageDetail).toHaveBeenCalledWith('1002');
     expect(wrapper.get('[data-test="badge-count"]').text()).toBe('2');
     expect(realtimeMock.speakNoticeText).toHaveBeenCalledWith('您有新的系统消息，请及时查看');
     wrapper.unmount();
   });
 
+  it('收到仅包含未读数量的 realtime 事件时只更新角标', async () => {
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 2 });
+
+    const wrapper = mountNoticeBell();
+    await flushPromises();
+
+    await realtimeMock.handler?.({ title: '', unreadCount: 1 });
+    await flushPromises();
+
+    expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(1);
+    expect(apiMock.getMySiteMessageDetail).not.toHaveBeenCalled();
+    expect(notificationMock.ElNotification).not.toHaveBeenCalled();
+    expect(wrapper.get('[data-test="badge-count"]').text()).toBe('1');
+    wrapper.unmount();
+  });
+
   it('系统消息通道关闭声音提醒时不执行 TTS 播报', async () => {
-    apiMock.getMyUnreadCount
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 2 });
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 1 });
     const wrapper = mount(NoticeClientBell, {
       props: {
         runtimeConfig: { soundEnabled: false, popupEnabled: true, desktopNotificationEnabled: true },
@@ -182,22 +195,22 @@ describe('NoticeBell', () => {
     });
 
     await flushPromises();
-    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批' });
+    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批', unreadCount: 2 });
     await flushPromises();
 
+    expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(1);
     expect(realtimeMock.speakNoticeText).not.toHaveBeenCalled();
     expect(notificationMock.ElNotification).toHaveBeenCalledTimes(1);
     wrapper.unmount();
   });
 
   it('收到消息后按提醒设置显示右下弹窗并使用列表单条格式', async () => {
-    apiMock.getMyUnreadCount
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 2 });
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 1 });
     const wrapper = mount(NoticeClientBell, {
       props: {
         runtimeConfig: {
           voiceEnabled: true,
+          reminderMode: 'VOICE',
           voiceText: '新的系统消息',
           popupEnabled: true,
           popupPlacement: 'bottom-right',
@@ -236,10 +249,11 @@ describe('NoticeBell', () => {
     });
 
     await flushPromises();
-    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批' });
+    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批', unreadCount: 2 });
     await flushPromises();
 
     const notificationOptions = notificationMock.ElNotification.mock.calls[0][0];
+    expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(1);
     expect(realtimeMock.speakNoticeText).toHaveBeenCalledWith('新的系统消息');
     expect(realtimeMock.showDesktopNotice).not.toHaveBeenCalled();
     expect(notificationOptions.title).toBe('测试系统消息');
@@ -251,15 +265,12 @@ describe('NoticeBell', () => {
 
   it('点击系统消息提醒后打开详情并标记已读', async () => {
     const detail = { ...testMessage, id: '1002', title: '新的审批', content: '审批详情' };
-    apiMock.getMyUnreadCount
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 2 })
-      .mockResolvedValueOnce({ count: 1 });
+    apiMock.getMyUnreadCount.mockResolvedValue({ count: 1 });
     apiMock.getMySiteMessageDetail.mockResolvedValue(detail);
 
     const wrapper = mountNoticeBell();
     await flushPromises();
-    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批' });
+    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批', unreadCount: 2 });
     await flushPromises();
 
     const notificationOptions = notificationMock.ElNotification.mock.calls[0][0];
@@ -267,6 +278,7 @@ describe('NoticeBell', () => {
     await flushPromises();
 
     expect(apiMock.markMySiteMessageRead).toHaveBeenCalledWith('1002');
+    expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(1);
     expect(wrapper.get('[data-test="detail-dialog"]').attributes('data-visible')).toBe('true');
     expect(wrapper.get('[data-test="detail-dialog"]').text()).toContain('审批详情');
     wrapper.unmount();

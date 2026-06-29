@@ -21,6 +21,8 @@ import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxMessageQuery;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.infra.realtime.api.RealtimeApi;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
@@ -134,12 +136,16 @@ class NoticeServiceIntegrationTest {
     private TestOutboxStore outboxStore;
 
     @Autowired
+    private TestRealtimeApi realtimeApi;
+
+    @Autowired
     private TestIdentityUserApi identityUserApi;
 
     @BeforeEach
     void setUp() {
         resetSchema();
         outboxStore.clear();
+        realtimeApi.clear();
         identityUserApi.clear();
         identityUserApi.addUser(1L, "张三", "zhangsan@example.com", "13800000001");
         identityUserApi.addUser(2L, "李四", "lisi@example.com", "13800000002");
@@ -247,6 +253,8 @@ class NoticeServiceIntegrationTest {
         assertThat(own.getDeleteStatus()).isEqualTo(NoticeDeleteStatus.DELETED);
         assertThat(other.getReadStatus()).isEqualTo(NoticeReadStatus.UNREAD);
         assertThat(other.getDeleteStatus()).isEqualTo(NoticeDeleteStatus.NORMAL);
+        assertThat(realtimeApi.messages).hasSize(1);
+        assertThat(realtimeApi.messages.get(0).content()).contains("\"unreadCount\":0");
     }
 
     @Test
@@ -694,6 +702,11 @@ class NoticeServiceIntegrationTest {
         }
 
         @Bean
+        TestRealtimeApi realtimeApi() {
+            return new TestRealtimeApi();
+        }
+
+        @Bean
         TestIdentityUserApi identityUserApi() {
             return new TestIdentityUserApi();
         }
@@ -734,8 +747,21 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public ChannelSendResult send(ChannelSendCommand command) {
-            Long messageId = messageWriter.write(command);
-            return ChannelSendResult.success(messageId);
+            return ChannelSendResult.success(messageWriter.write(command).messageId());
+        }
+    }
+
+    static class TestRealtimeApi implements RealtimeApi {
+
+        private final List<RealtimeOutboundMessage> messages = new ArrayList<>();
+
+        @Override
+        public void publish(RealtimeOutboundMessage realtimeOutboundMessage) {
+            messages.add(realtimeOutboundMessage);
+        }
+
+        void clear() {
+            messages.clear();
         }
     }
 

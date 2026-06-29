@@ -3,10 +3,11 @@ import type { RealtimeClient, RealtimeMessage, RealtimeOptions } from '@mango/co
 import type { NoticeSiteMessage, NoticeSoundType } from '../types/notice';
 
 export interface NoticeRealtimeEvent {
-  messageId: string;
+  messageId?: string;
   title: string;
   bizType?: string;
   contentPreview?: string;
+  unreadCount?: number;
 }
 
 export type NoticeRealtimeHandler = (event: NoticeRealtimeEvent) => void | Promise<void>;
@@ -106,7 +107,7 @@ export function createNoticeRealtime(handler: NoticeRealtimeHandler, options: No
   let client: RealtimeClient | undefined;
   const listener = (event: Event) => {
     const detail = (event as CustomEvent<NoticeRealtimeEvent>).detail;
-    if (detail?.messageId) {
+    if (detail?.messageId || typeof detail?.unreadCount === 'number') {
       notifyHandler(handler, detail);
     }
   };
@@ -115,7 +116,7 @@ export function createNoticeRealtime(handler: NoticeRealtimeHandler, options: No
     client = createRealtimeClient({ ...(options.realtimeOptions || {}), autoConnect: true });
     client.subscribe('notice', message => {
       const event = toNoticeRealtimeEvent(message);
-      if (event?.messageId) {
+      if (event?.messageId || typeof event?.unreadCount === 'number') {
         notifyHandler(handler, event);
       }
     });
@@ -135,15 +136,28 @@ function notifyHandler(handler: NoticeRealtimeHandler, event: NoticeRealtimeEven
 function toNoticeRealtimeEvent(message: RealtimeMessage): NoticeRealtimeEvent | undefined {
   const payload = normalizePayload(message.payload ?? message.content);
   const messageId = payload.messageId ?? payload.id;
-  if (!messageId) {
+  const unreadCount = normalizeUnreadCount(payload.unreadCount ?? payload.count);
+  if (!messageId && typeof unreadCount !== 'number') {
     return undefined;
   }
   return {
-    messageId: String(messageId),
+    messageId: messageId ? String(messageId) : undefined,
     title: String(payload.title || ''),
     bizType: payload.bizType ? String(payload.bizType) : undefined,
     contentPreview: payload.contentPreview ? String(payload.contentPreview) : undefined,
+    unreadCount,
   };
+}
+
+function normalizeUnreadCount(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.trunc(value));
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : undefined;
+  }
+  return undefined;
 }
 
 function normalizePayload(payload: unknown): Record<string, unknown> {
