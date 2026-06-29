@@ -1,5 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { Session } from '@mango/common/utils/storage';
+import { getShellPinia } from './appBootstrap';
+import { useTagsViewRoutes } from './stores/tagsViewRoutes';
 
 export function createMangoAdminRouter() {
   const router = createRouter({
@@ -27,6 +29,7 @@ export function createMangoAdminRouter() {
 
   router.beforeEach((to) => {
     if (to.path === '/login') {
+      useTagsViewRoutes(getShellPinia()).clearTagsView();
       return true;
     }
     if (!Session.getToken()) {

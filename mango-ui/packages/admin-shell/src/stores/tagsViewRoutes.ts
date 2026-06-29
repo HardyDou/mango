@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import type { RouteRecordRaw } from 'vue-router';
 import { Session } from '@mango/common/utils/storage';
 import { normalizeTagsViewRoutes } from '@mango/common/utils/tagsView';
+import { resetPersistedTagsView } from '../runtime/tagsViewSession';
 
 export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
   state: (): {
@@ -30,6 +31,8 @@ export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
     },
     clearTagsView() {
       this.tagsViewRoutes = normalizeTagsViewRoutes([]);
+      this.isTagsViewCurrenFull = false;
+      resetPersistedTagsView();
     },
   },
   persist: {
