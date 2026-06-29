@@ -326,6 +326,10 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (args[0] === 'init-dev') {
+    fail('mango init-dev has been removed. Use "mango workspace init".');
+  }
+
   if (isDevWorkspaceCommand(args[0])) {
     await runDevWorkspaceCommand(args[0], args.slice(1));
     return;
@@ -670,7 +674,7 @@ function addBusinessModule(argv) {
   process.stdout.write(`Added business module: ${moduleKebab} (${aggregateKebab})\n`);
 }
 
-const DEV_WORKSPACE_COMMANDS = new Set(['init-dev', 'print', 'validate', 'doctor', 'plan', 'start', 'stop', 'status', 'logs', 'backend', 'frontend']);
+const DEV_WORKSPACE_COMMANDS = new Set(['print', 'validate', 'doctor', 'plan', 'start', 'stop', 'status', 'logs', 'backend', 'frontend']);
 const DEFAULT_SPRING_BOOT_PLUGIN = `org.springframework.boot:spring-boot-maven-plugin:${defaultVersions.springBoot}:run`;
 const WORKSPACE_SLOT_COUNT = 200;
 const BACKEND_PORT_BASE = 18000;
@@ -692,10 +696,13 @@ function isDevWorkspaceCommand(command) {
 }
 
 async function runWorkspaceCommand(command = 'status', argv = []) {
-  const normalized = command === 'init-dev' ? 'init' : command;
+  const normalized = command;
   if (normalized === 'list') {
     listWorkspaceRegistry(process.cwd());
     return;
+  }
+  if (!['init', 'status', 'print', 'doctor', 'release'].includes(normalized)) {
+    fail(`unknown workspace command: ${command || ''}`);
   }
   const context = normalized === 'init'
     ? loadDevWorkspaceContext({ allowMissingManifest: true })
@@ -717,7 +724,6 @@ async function runWorkspaceCommand(command = 'status', argv = []) {
     releaseWorkspaceCommand(context, argv);
     return;
   }
-  fail(`unknown workspace command: ${command || ''}`);
 }
 
 async function runDevCommand(command = 'start', argv = []) {
@@ -781,15 +787,8 @@ async function runDevWorkspaceCommand(command, argv) {
     await runDevCommand('frontend', argv);
     return;
   }
-  const context = command === 'init-dev'
-    ? loadDevWorkspaceContext({ allowMissingManifest: true })
-    : loadDevWorkspaceContext({ allowMissingManifest: false });
+  const context = loadDevWorkspaceContext({ allowMissingManifest: false });
   const normalizedCommand = normalizeDevWorkspaceCommand(command);
-
-  if (normalizedCommand === 'init-dev') {
-    initDevWorkspace(context);
-    return;
-  }
 
   if (normalizedCommand === 'print') {
     printDevWorkspace(context);

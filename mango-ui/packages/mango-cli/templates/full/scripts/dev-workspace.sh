@@ -39,11 +39,6 @@ run_mango() {
 
 command="${1:-start}"
 case "${command}" in
-  init|init-dev)
-    warn_deprecated
-    shift || true
-    run_mango workspace init "$@"
-    ;;
   print)
     warn_deprecated
     shift || true
