@@ -55,6 +55,8 @@ describe('noticeRealtime', () => {
     class FakeNotification {
       static permission = 'granted';
       onclick?: () => void;
+      onclose?: () => void;
+      close = vi.fn(() => this.onclose?.());
 
       constructor(public title: string, public options?: NotificationOptions) {
         notifications.push(this);
@@ -66,23 +68,41 @@ describe('noticeRealtime', () => {
     showDesktopNotice(message, onClick);
     notifications[0].onclick?.();
 
-    expect(notifications[0].title).toBe('您有新消息了');
-    expect(notifications[0].options?.body).toBe('新的审批消息');
+    expect(notifications[0].title).toBe('新的审批消息');
+    expect(notifications[0].options?.body).toBe('审批内容');
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('playNoticeSound 播放内置提示音并吞掉浏览器拒播异常', async () => {
-    const play = vi.fn().mockRejectedValue(new Error('autoplay denied'));
-    class FakeAudio {
-      constructor(public src: string) {}
-      play = play;
+  it('playNoticeSound 使用 AudioContext 播放内置提示音', async () => {
+    const oscillator = {
+      type: 'sine',
+      frequency: { setValueAtTime: vi.fn() },
+      connect: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const gain = {
+      gain: {
+        setValueAtTime: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
+      },
+      connect: vi.fn(),
+    };
+    const close = vi.fn().mockResolvedValue(undefined);
+    class FakeAudioContext {
+      currentTime = 10;
+      destination = {};
+      createOscillator = vi.fn(() => oscillator);
+      createGain = vi.fn(() => gain);
+      close = close;
     }
-    vi.stubGlobal('Audio', FakeAudio as unknown as typeof Audio);
+    vi.stubGlobal('AudioContext', FakeAudioContext);
 
     playNoticeSound();
     await Promise.resolve();
 
-    expect(play).toHaveBeenCalledTimes(1);
+    expect(oscillator.start).toHaveBeenCalled();
+    expect(oscillator.stop).toHaveBeenCalled();
   });
 
   it('speakNoticeText 使用浏览器语音 API 播报自定义内容', () => {
@@ -126,6 +146,26 @@ describe('noticeRealtime', () => {
     expect(handler).toHaveBeenCalledWith({ messageId: '1001', title: '新的审批消息' });
   });
 
+  it('createNoticeRealtime 支持只包含未读数的数量变更事件', async () => {
+    const handler = vi.fn();
+    const stop = createNoticeRealtime(handler);
+
+    realtimeMock.subscribeHandler?.({
+      event: { domain: 'default', name: 'notice' },
+      payload: { type: 'text', text: '{"unreadCount":0}' },
+    });
+    await Promise.resolve();
+    stop();
+
+    expect(handler).toHaveBeenCalledWith({
+      messageId: undefined,
+      title: '',
+      bizType: undefined,
+      contentPreview: undefined,
+      unreadCount: 0,
+    });
+  });
+
   it('createNoticeRealtime 将调用方 realtime 配置透传并解析文本 payload', async () => {
     const handler = vi.fn();
     const stop = createNoticeRealtime(handler, {
@@ -137,7 +177,7 @@ describe('noticeRealtime', () => {
 
     realtimeMock.subscribeHandler?.({
       event: { domain: 'default', name: 'notice' },
-      payload: { type: 'text', text: '{"messageId":"2001","title":"实时消息"}' },
+      payload: { type: 'text', text: '{"messageId":"2001","title":"实时消息","unreadCount":"3"}' },
     });
     await Promise.resolve();
     stop();
@@ -147,7 +187,13 @@ describe('noticeRealtime', () => {
       mode: 'polling',
       autoConnect: true,
     });
-    expect(handler).toHaveBeenCalledWith({ messageId: '2001', title: '实时消息', bizType: undefined, contentPreview: undefined });
+    expect(handler).toHaveBeenCalledWith({
+      messageId: '2001',
+      title: '实时消息',
+      bizType: undefined,
+      contentPreview: undefined,
+      unreadCount: 3,
+    });
     expect(realtimeMock.disconnect).toHaveBeenCalledWith('notice-bell-destroyed');
   });
 });
