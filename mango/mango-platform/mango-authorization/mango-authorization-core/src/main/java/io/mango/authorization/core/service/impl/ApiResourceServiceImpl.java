@@ -71,6 +71,9 @@ public class ApiResourceServiceImpl
                         resource.getHttpMethod(),
                         resource.getPathPattern()))
                 .collect(Collectors.toSet());
+        Set<String> currentRouteKeys = validResources.stream()
+                .map(resource -> routeKey(resource.getHttpMethod(), resource.getPathPattern()))
+                .collect(Collectors.toSet());
         Map<String, ApiResource> existingIndex = loadExistingIndex(validResources);
         List<ApiResource> creates = new ArrayList<>();
         List<ApiResource> updates = new ArrayList<>();
@@ -87,8 +90,12 @@ public class ApiResourceServiceImpl
             }
         }
         List<ApiResource> staleResources = loadStaleAutoScannedResources(validResources, currentResourceKeys);
+        List<ApiResource> duplicateRouteResources = loadDuplicateRouteResources(validResources, currentResourceKeys, currentRouteKeys);
         staleResources.forEach(resource -> resource.setStatus(0));
+        duplicateRouteResources.forEach(resource -> resource.setStatus(0));
         updates.addAll(staleResources);
+        updates.addAll(duplicateRouteResources);
+        updates = deduplicateEntities(updates);
         if (!creates.isEmpty()) {
             saveBatch(creates);
         }
@@ -97,6 +104,9 @@ public class ApiResourceServiceImpl
         }
         if (!staleResources.isEmpty()) {
             log.info("API resource stale entries disabled: count={}", staleResources.size());
+        }
+        if (!duplicateRouteResources.isEmpty()) {
+            log.info("API resource duplicate route entries disabled: count={}", duplicateRouteResources.size());
         }
         clearRuntimeCache();
         return new ApiResourceRegisterResultVO(validResources.size(), creates.size(), updates.size());
@@ -115,7 +125,7 @@ public class ApiResourceServiceImpl
         }
         ApiResourceAccessDecisionVO decision = activeResources().stream()
                 .filter(resource -> methodMatches(resource.getHttpMethod(), method))
-                .sorted(Comparator.comparingInt((ApiResource resource) -> resource.getPathPattern().length()).reversed())
+                .sorted(resourceMatchComparator(path))
                 .filter(resource -> pathMatches(resource.getPathPattern(), path))
                 .findFirst()
                 .map(this::toDecision)
@@ -171,12 +181,42 @@ public class ApiResourceServiceImpl
                 .collect(Collectors.toList());
     }
 
+    private List<ApiResource> loadDuplicateRouteResources(
+            List<ApiResourceRegisterCommand> resources,
+            Set<String> currentResourceKeys,
+            Set<String> currentRouteKeys) {
+        List<String> pathPatterns = resources.stream()
+                .map(ApiResourceRegisterCommand::getPathPattern)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (pathPatterns.isEmpty()) {
+            return List.of();
+        }
+        return list(new LambdaQueryWrapper<ApiResource>()
+                .in(ApiResource::getPathPattern, pathPatterns)
+                .eq(ApiResource::getStatus, 1))
+                .stream()
+                .filter(resource -> currentRouteKeys.contains(routeKey(resource.getHttpMethod(), resource.getPathPattern())))
+                .filter(resource -> !currentResourceKeys.contains(resourceKey(
+                        resource.getModuleName(),
+                        resource.getHttpMethod(),
+                        resource.getPathPattern())))
+                .collect(Collectors.toList());
+    }
+
     private List<ApiResourceRegisterCommand> deduplicate(List<ApiResourceRegisterCommand> resources) {
         Map<String, ApiResourceRegisterCommand> index = new LinkedHashMap<>();
         resources.forEach(resource -> index.put(resourceKey(
                 resource.getModuleName(),
                 resource.getHttpMethod(),
                 resource.getPathPattern()), resource));
+        return new ArrayList<>(index.values());
+    }
+
+    private List<ApiResource> deduplicateEntities(List<ApiResource> resources) {
+        Map<Long, ApiResource> index = new LinkedHashMap<>();
+        resources.forEach(resource -> index.put(resource.getId(), resource));
         return new ArrayList<>(index.values());
     }
 
@@ -225,6 +265,10 @@ public class ApiResourceServiceImpl
 
     private String resourceKey(String moduleName, String httpMethod, String pathPattern) {
         return moduleName + "\n" + httpMethod + "\n" + pathPattern;
+    }
+
+    private String routeKey(String httpMethod, String pathPattern) {
+        return httpMethod + "\n" + pathPattern;
     }
 
     private boolean isValid(ApiResourceRegisterCommand resource) {
@@ -293,5 +337,24 @@ public class ApiResourceServiceImpl
             return true;
         }
         return PATH_MATCHER.match(pattern, path);
+    }
+
+    private Comparator<ApiResource> resourceMatchComparator(String path) {
+        return Comparator
+                .comparingInt((ApiResource resource) -> exactPathScore(resource.getPathPattern(), path))
+                .reversed()
+                .thenComparing(Comparator.comparingInt((ApiResource resource) -> wildcardScore(resource.getPathPattern()))
+                        .reversed())
+                .thenComparing(Comparator.comparingInt((ApiResource resource) -> resource.getPathPattern().length())
+                        .reversed())
+                .thenComparing(ApiResource::getId, Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    private int exactPathScore(String pattern, String path) {
+        return pattern != null && pattern.equals(path) ? 1 : 0;
+    }
+
+    private int wildcardScore(String pattern) {
+        return pattern != null && !pattern.contains("*") && !pattern.contains("{") ? 1 : 0;
     }
 }
