@@ -94,7 +94,32 @@ create table biz_contract_attachment (
 4. 点击预览或下载，后端鉴权和文件读取返回正常结果。
 5. 删除或编辑业务单据后，附件关系符合业务预期。
 
-## 7. 常见失败
+## 7. 后端打包附件
+
+业务需要把表单附件、合同材料或归档材料按目录结构导出为一个 ZIP 时，业务后端依赖 `mango-file-api`，调用 `FileApi.packageFiles(FilePackageCommand)`，或通过文件服务 HTTP 入口 `POST /file/files/package` 发起打包。打包完成后文件中心会生成新的 ZIP 文件记录，业务表只保存返回的 ZIP `fileId` 或自己的归档记录。
+
+`entries.path` 表示 ZIP 内部相对路径，可以使用 `${fileName}` 引用源文件记录的文件名，避免业务侧为了拼目录额外查询文件名。路径按安全相对文件路径填写，不传绝对路径、`..`、目录项、空路径或重复路径。
+
+最小后端调用：
+
+```java
+FilePackageCommand command = new FilePackageCommand();
+command.setFileName("contract-materials.zip");
+command.setPurpose("contract-material-package");
+command.setAccessLevel("PRIVATE");
+command.setBizType("CONTRACT_MATERIAL_PACKAGE");
+command.setBizId(contractId.toString());
+command.setEntries(List.of(
+        new FilePackageEntryCommand(fileId1, "01_签约资料/${fileName}"),
+        new FilePackageEntryCommand(fileId2, "02_资料清单/配置的资料清单.xlsx")
+));
+
+FileRecordVO zipFile = fileApi.packageFiles(command).getData();
+```
+
+验收时除上传、回显、下载闭环外，还应确认 ZIP 中的目录结构、文件名、租户可见性和下载权限符合业务预期。
+
+## 8. 常见失败
 
 | 现象 | 优先检查 |
 |------|----------|
@@ -103,8 +128,9 @@ create table biz_contract_attachment (
 | 预览失败 | file-preview 依赖、转换配置、预览 token 和源文件读取权限 |
 | 多租户下看不到文件 | 文件记录 tenantId、业务数据 tenantId、当前登录上下文是否一致 |
 | 图片能下载但不能预览 | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配 |
+| ZIP 打包失败 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态 |
 
-## 8. 验证命令
+## 9. 验证命令
 
 ```bash
 mvn -f mango/pom.xml -pl mango-platform/mango-file -am test
@@ -119,7 +145,7 @@ pnpm -F @mango/file build
 - [Frontend File 验证方式](../../../mango-ui/packages/file/README.md#10-验证方式)
 - [File Components 验证方式](../../../mango-ui/packages/file/src/components/README.md#8-验证方式)
 
-## 9. 关联规则
+## 10. 关联规则
 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
@@ -127,7 +153,9 @@ pnpm -F @mango/file build
 - [后端 API 文件字段规则](../../../mango-pmo/rules/backend/03-api.md#22-文件字段规则)
 - [前端文件上传与回显规则](../../../mango-pmo/rules/frontend/01-vue-code.md#41-文件上传与回显规则)
 
-## 10. 变更影响记录
+## 11. 变更影响记录
+
+- PR #319 新增 `FileApi.packageFiles` 和 `POST /file/files/package`，业务后端可以把多个已存在文件按 `entries.path` 生成 ZIP 并保存为新的文件记录；文件上传、预览、下载、前端组件、菜单、权限和租户基础规则不变。业务验收需要额外确认 ZIP 内部目录结构、`${fileName}` 替换结果、路径安全校验和生成 ZIP 的下载权限。
 
 - PR #280 将文件详情、下载、预览和设置读取等已登录用户可用接口标记为 `LOGIN` 资源，业务表单不需要再为这些通用文件读取接口配置角色或用户授权；业务页面入口、业务数据可见性、上传、归档、删除和设置保存仍按原有业务权限、租户与数据权限控制。文件上传表单的 fileId 持久化、详情回显、预览和下载验收步骤不变。
 

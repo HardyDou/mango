@@ -10,6 +10,7 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -119,6 +120,14 @@ public class FileController implements FileApi {
     @Override
     public R<FileRecordVO> save(SaveFileCommand command) {
         return fileService.save(command);
+    }
+
+    @PostMapping("/package")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "打包文件", description = "权限接口。按当前租户可见文件清单生成 ZIP，并保存为新的文件记录")
+    @Override
+    public R<FileRecordVO> packageFiles(@Valid @RequestBody FilePackageCommand command) {
+        return fileService.packageFiles(command);
     }
 
     @Override

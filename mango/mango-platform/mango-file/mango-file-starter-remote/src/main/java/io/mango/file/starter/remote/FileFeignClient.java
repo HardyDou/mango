@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -13,6 +14,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,6 +53,10 @@ public interface FileFeignClient extends FileApi {
                            @RequestParam(value = "bizId", required = false) String bizId,
                            @RequestParam(value = "bizMeta", required = false) String bizMeta,
                            @RequestParam(value = "directoryId", required = false) Long directoryId);
+
+    @Override
+    @PostMapping("/package")
+    R<FileRecordVO> packageFiles(@RequestBody FilePackageCommand command);
 
     @Override
     @GetMapping("/page")

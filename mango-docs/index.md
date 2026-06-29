@@ -31,6 +31,14 @@
 | [tenant-model-research-guarantee-business.md](./tenant-model-research-guarantee-business.md) | 保函业务系统租户模型调研与 Mango 差距分析 |
 | [business-project-development-guide.md](./designs/business-project-development-guide.md) | 基于 Mango 开启业务项目的 starter、CLI、PMO baseline 和协作说明 |
 
+## 近期交付设计
+
+| 文档 | 状态 | 说明 |
+|------|------|------|
+| [Issue #316 文件服务 ZIP 打包实施计划](./plans/2026-06-29-issue-316-file-package-plan.md) | 已实施 | File 服务按目录结构清单生成 ZIP 并写回存储层。 |
+| [Issue #316 文件服务 ZIP 打包详细设计](./designs/2026-06-29-issue-316-file-package-design.md) | 已实施 | API、服务流程、路径安全和异步扩展设计。 |
+| [Issue #316 文件服务 ZIP 打包交付台账](./plans/2026-06-29-issue-316-file-package-ledger.md) | 已完成 | 需求、API、实现、文档和测试交付登记。 |
+
 ## Sprint 计划
 
 | 计划 | 状态 | 说明 |
