@@ -113,6 +113,40 @@ const BUSINESS_BACKEND_MANAGED_DEPENDENCIES = [
   },
 ];
 
+const BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES = [
+  { groupId: 'io.mango.infra.context', artifactId: 'mango-infra-context-api' },
+  { groupId: 'io.mango.infra.event', artifactId: 'mango-infra-event-api' },
+  { groupId: 'io.mango.infra.fileproc', artifactId: 'mango-infra-fileproc-api' },
+  { groupId: 'io.mango.infra.ip.location', artifactId: 'mango-infra-ip-location-api' },
+  { groupId: 'io.mango.infra.kv', artifactId: 'mango-infra-kv-api' },
+  { groupId: 'io.mango.infra.log', artifactId: 'mango-infra-log-api' },
+  { groupId: 'io.mango.infra.module', artifactId: 'mango-infra-module-api' },
+  { groupId: 'io.mango.infra.persistence', artifactId: 'mango-infra-persistence-api' },
+  { groupId: 'io.mango.infra.realtime', artifactId: 'mango-infra-realtime-api' },
+  { groupId: 'io.mango.infra.sensitive', artifactId: 'mango-infra-sensitive-api' },
+  { groupId: 'io.mango.infra.web', artifactId: 'mango-infra-web-api' },
+  { groupId: 'io.mango.platform.access', artifactId: 'mango-access-api' },
+  { groupId: 'io.mango.platform.auth', artifactId: 'mango-auth-api' },
+  { groupId: 'io.mango.platform.authorization', artifactId: 'mango-authorization-api' },
+  { groupId: 'io.mango.platform.calendar', artifactId: 'mango-calendar-api' },
+  { groupId: 'io.mango.platform.captcha', artifactId: 'mango-captcha-api' },
+  { groupId: 'io.mango.platform.cms', artifactId: 'mango-cms-api' },
+  { groupId: 'io.mango.platform.domain', artifactId: 'mango-domain-api' },
+  { groupId: 'io.mango.platform.file', artifactId: 'mango-file-api' },
+  { groupId: 'io.mango.platform.file.preview', artifactId: 'mango-file-preview-api' },
+  { groupId: 'io.mango.platform.gridlayout', artifactId: 'mango-grid-layout-api' },
+  { groupId: 'io.mango.platform.identity', artifactId: 'mango-identity-api' },
+  { groupId: 'io.mango.platform.job', artifactId: 'mango-job-api' },
+  { groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-api' },
+  { groupId: 'io.mango.platform.numgen', artifactId: 'mango-numgen-api' },
+  { groupId: 'io.mango.platform.org', artifactId: 'mango-org-api' },
+  { groupId: 'io.mango.platform.payment', artifactId: 'mango-payment-api' },
+  { groupId: 'io.mango.platform.resource', artifactId: 'mango-resource-api' },
+  { groupId: 'io.mango.platform.system', artifactId: 'mango-system-api' },
+  { groupId: 'io.mango.platform.template', artifactId: 'mango-template-api' },
+  { groupId: 'io.mango.platform.workflow', artifactId: 'mango-workflow-api' },
+];
+
 const OPTIONAL_MODULE_OVERLAYS = [
   {
     code: 'file',
@@ -3214,6 +3248,7 @@ function renderBackendManagedDependencies(preset, selectedModules) {
     return renderDependencyXml(
       [
         { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
+        ...BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES,
         ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
       ],
       true,
@@ -3221,7 +3256,12 @@ function renderBackendManagedDependencies(preset, selectedModules) {
     );
   }
   return renderDependencyXml(
-    [...CORE_BACKEND_DEPENDENCIES, ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES, ...selectedModules.flatMap(module => module.backend || [])],
+    [
+      ...CORE_BACKEND_DEPENDENCIES,
+      ...BUSINESS_BACKEND_API_MANAGED_DEPENDENCIES,
+      ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
+      ...selectedModules.flatMap(module => module.backend || []),
+    ],
     true,
     12,
   );
