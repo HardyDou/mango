@@ -29,6 +29,9 @@ import io.mango.file.core.storage.FileObject;
 import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.infra.fileproc.compress.FileCompressApi;
+import io.mango.infra.fileproc.compress.command.CompressFileCommand;
+import io.mango.infra.fileproc.compress.vo.CompressFileResultVO;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,7 +135,8 @@ class FileServicePackageFilesTest {
                 fileUploadPartMapper,
                 fileDirectoryMapper,
                 new com.fasterxml.jackson.databind.ObjectMapper(),
-                accessUrlAssembler);
+                accessUrlAssembler,
+                List.of(new StubFileCompressApi()));
         sourceFile(11L, 101L, "source/contract.pdf", "合同正文".getBytes(StandardCharsets.UTF_8), "application/pdf");
         sourceFile(12L, 102L, "source/license.pdf", "营业执照".getBytes(StandardCharsets.UTF_8), "application/pdf");
     }
@@ -181,6 +185,39 @@ class FileServicePackageFilesTest {
         byte[] zipContent = storage.get(objects.get(savedRecord.getObjectId()).getObjectName());
         assertThat(unzip(zipContent)).containsEntry("01_签约资料/contract.pdf", "合同正文")
                 .containsEntry("01_签约资料/企业资料/license.pdf", "营业执照");
+    }
+
+    @Test
+    void packageFiles_全局压缩参数生效且Entry可覆盖为不压缩_保存新Zip并返回文件记录() throws Exception {
+        FilePackageCommand command = command("compressed.zip",
+                entry(11L, "资料/${fileName}"),
+                entry(12L, "资料/license.pdf"));
+        command.setCompression("MEDIUM");
+        command.setPerFileTargetSizeBytes(10L);
+        command.getEntries().get(1).setCompression("NONE");
+        sourceLookupIds.addAll(List.of(11L, 12L));
+
+        R<FileRecordVO> result = fileService.packageFiles(command);
+
+        assertThat(result.isSuccess()).isTrue();
+        FileRecord savedRecord = records.get(result.getData().getId());
+        byte[] zipContent = storage.get(objects.get(savedRecord.getObjectId()).getObjectName());
+        assertThat(unzip(zipContent)).containsEntry("资料/contract.pdf", "compressed:合同正文:MEDIUM:10")
+                .containsEntry("资料/license.pdf", "营业执照");
+    }
+
+    @Test
+    void packageFiles_压缩档位非法_拒绝生成文件记录() {
+        FilePackageCommand command = command("bad-compression.zip", entry(11L, "资料/合同.pdf"));
+        command.setCompression("BAD");
+        long beforeRecordCount = records.size();
+        sourceLookupIds.add(11L);
+
+        assertThatThrownBy(() -> fileService.packageFiles(command))
+                .isInstanceOf(BizException.class)
+                .extracting("code")
+                .isEqualTo(FileCode.FILE_COMPRESSION_INVALID.getCode());
+        assertThat(records).hasSize((int) beforeRecordCount);
     }
 
     @Test
@@ -314,5 +351,24 @@ class FileServicePackageFilesTest {
             }
         }
         return result;
+    }
+
+    private static final class StubFileCompressApi implements FileCompressApi {
+
+        @Override
+        public boolean supports(String fileName, String contentType) {
+            return "application/pdf".equals(contentType);
+        }
+
+        @Override
+        public CompressFileResultVO compress(CompressFileCommand command) {
+            byte[] source = command.readAllBytes();
+            String content = "compressed:" + new String(source, StandardCharsets.UTF_8)
+                    + ":" + command.resolvedCompression()
+                    + ":" + command.targetSizeBytes();
+            byte[] compressed = content.getBytes(StandardCharsets.UTF_8);
+            return new CompressFileResultVO(command.fileName(), command.contentType(), compressed,
+                    source.length, compressed.length, command.targetSizeBytes(), true);
+        }
     }
 }

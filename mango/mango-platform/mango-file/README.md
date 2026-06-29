@@ -33,6 +33,8 @@
 | 存储配置 | 配置本地、MinIO、S3、OSS、COS、七牛等存储 | `/file/storage-configs/**` |
 | 文件配置 | 配置大小、扩展名、MIME、秒传、直传、访问、预览、归档策略 | `GET/PUT /file/settings` |
 
+下载入口支持图片/PDF 下载副本压缩。压缩只影响本次下载或 ZIP 内条目内容，不覆盖原始文件记录。
+
 ## 3. 后端接入
 
 ### 3.0 权限边界
@@ -75,6 +77,7 @@ business_id / file_id / purpose / sort
 | `FileApi.get(Long id)` | 查询文件详情。 |
 | `FileApi.preview(Long id)` | 获取预览元数据。 |
 | `FileApi.download(Long id)` | 读取文件流。 |
+| `FileApi.download(Long id, String compression, Long perFileTargetSizeBytes)` | 读取文件流，可对图片/PDF 返回压缩后的下载副本。 |
 | `FileApi.downloadTo(Long id, Path directory)` | 下载文件到指定目录。 |
 | `FileApi.save(SaveFileCommand)` | 保存后端生成的文件。 |
 | `FileApi.packageFiles(FilePackageCommand)` | 按目录结构清单生成 ZIP 并保存为新文件记录。 |
@@ -118,6 +121,30 @@ Long zipFileId = zipFile.getId();
 
 打包入口会复用文件中心的可见性、下载和保存规则。`entries.path` 是 ZIP 内部相对路径，禁止空路径、目录项、绝对路径、`..` 路径穿越和重复路径；生成的 ZIP 会写入当前存储层，并返回新的 `FileRecordVO`。
 
+打包入口支持对 ZIP 内图片/PDF 条目做下载压缩。顶层参数作为默认值，entry 参数可覆盖当前文件：
+
+| 参数 | 位置 | 含义 |
+|------|------|------|
+| `compression` | 顶层或 entry | 压缩档位：`NONE`、`LOW`、`MEDIUM`、`HIGH`。entry 为空时使用顶层默认值。 |
+| `perFileTargetSizeBytes` | 顶层 | ZIP 内每个可压缩文件的默认目标大小，单位字节，不表示 ZIP 总大小。 |
+| `targetSizeBytes` | entry | 当前文件的目标大小，覆盖顶层 `perFileTargetSizeBytes`。 |
+
+示例：
+
+```java
+command.setCompression("MEDIUM");
+command.setPerFileTargetSizeBytes(5_000_000L);
+
+FilePackageEntryCommand image = new FilePackageEntryCommand(imageFileId, "图片/${fileName}");
+image.setCompression("HIGH");
+image.setTargetSizeBytes(2_000_000L);
+
+FilePackageEntryCommand original = new FilePackageEntryCommand(wordFileId, "原件/${fileName}");
+original.setCompression("NONE");
+```
+
+当前仅图片和 PDF 会被压缩；Word、PPT、Excel 等其它文件会按原内容写入 ZIP。需要 Office 转 PDF 后再压缩时，应先使用 `mango-infra-fileproc` 转换能力生成 PDF，再通过文件中心保存或下载。
+
 `entries.path` 支持变量，业务不需要为了拼 ZIP 路径额外查询文件名；文件服务在读取源文件记录时会替换变量，然后再做路径安全校验。当前支持的变量：
 
 | 变量 | 含义 | 示例 |
@@ -146,6 +173,14 @@ Long zipFileId = zipFile.getId();
 ```java
 Path localFile = fileApi.downloadTo(fileId, workDirectory);
 ```
+
+HTTP 单文件下载压缩：
+
+```http
+GET /file/files/download?id=123&compression=MEDIUM&perFileTargetSizeBytes=5000000
+```
+
+`perFileTargetSizeBytes` 在单文件下载中表示当前文件目标大小；在打包下载中表示 ZIP 内每个可压缩文件的默认目标大小。
 
 ### 3.2 部署依赖
 

@@ -136,6 +136,11 @@ public class FileController implements FileApi {
     }
 
     @Override
+    public FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes) {
+        return fileService.download(id, compression, perFileTargetSizeBytes);
+    }
+
+    @Override
     public FileDownloadVO downloadForService(Long id) {
         return fileService.downloadForService(id);
     }
@@ -155,8 +160,12 @@ public class FileController implements FileApi {
     @Operation(summary = "下载文件", description = "登录用户基础接口。按文件ID下载当前租户可见文件")
     public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadResponse(
             @Parameter(description = "文件ID", required = true)
-            @RequestParam Long id) {
-        FileDownloadVO download = fileService.download(id);
+            @RequestParam Long id,
+            @Parameter(description = "压缩档位：NONE、LOW、MEDIUM、HIGH。默认 NONE")
+            @RequestParam(required = false) String compression,
+            @Parameter(description = "单文件目标大小，单位字节。打包下载时该语义由打包接口 perFileTargetSizeBytes 表达")
+            @RequestParam(required = false) Long perFileTargetSizeBytes) {
+        FileDownloadVO download = fileService.download(id, compression, perFileTargetSizeBytes);
         String filename = UriUtils.encode(download.fileName(), StandardCharsets.UTF_8);
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(filename, StandardCharsets.UTF_8)
