@@ -232,6 +232,12 @@ Mango API 资源按访问模式分为三类：
 - 日历计算只读取已维护的日历数据；日历定义、年度初始化和日期维护仍是管理权限。
 - 个人通知只操作当前登录人的站内信、接收账号和接收偏好；通知配置、渠道、任务、记录和后台发送仍是权限接口。
 
+运行时匹配和资源同步规则：
+
+- 同一个 HTTP method + path 只应保留当前扫描模块的有效访问模式。资源同步发现旧模块遗留的 active API 资源与当前扫描结果同路由但 module/resource key 不一致时，会禁用旧资源，避免旧 `PERMISSION` 覆盖当前 Controller 上声明的 `LOGIN` 或 `PUBLIC`。
+- 运行时查询访问决策时优先匹配精确路径，再匹配非通配路径，最后才按路径长度匹配通配符或路径变量模式。例如 `/notice/site/my/messages/read-all` 的精确 `LOGIN` 声明优先于 `/notice/site/my/messages/**` 的 `PERMISSION` 声明。
+- 如果业务升级后基础接口仍返回 403，先确认资源同步是否已重新执行，再检查 `authorization_api_resource` 中同 method + path 的旧 active 记录是否已被禁用，最后刷新 API 资源运行时缓存。
+
 业务接入方式：
 
 1. 业务管理员只给角色配置菜单和 `PERMISSION` 按钮权限。
