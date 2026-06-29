@@ -1,5 +1,31 @@
 # Mango Changelog
 
+## v2026.06.29-auth-subject-role-release - 2026-06-29
+
+### New
+
+- Published the authorization Resource Registry `AUTH_SUBJECT_ROLE` stable subject binding support from PR #327. Member role baseline declarations can now resolve tenant members by `subjectId`, `subjectCode`, `memberNo`, or `username`, while keeping direct `subjectId` compatibility and ignoring members that have left the tenant.
+
+### Published Packages
+
+- Maven: Authorization backend batch `io.mango.platform.authorization:mango-authorization-api`, `mango-authorization-core`, `mango-authorization-support`, `mango-authorization-starter`, `mango-authorization-resource-sync-starter`, `mango-authorization-resource-access-starter`, and `mango-authorization-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.29-auth-subject-role-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` authorization dependencies before using stable keys in `AUTH_SUBJECT_ROLE` declarations.
+- Existing `subjectId` declarations remain compatible. New `subjectCode` and `memberNo` declarations resolve against active `tenant_member.member_no`; `username` declarations resolve `identity_user.username` and then the active tenant member for the target tenant.
+- Environments that initialize roles through Resource Registry should rerun resource synchronization after upgrading so member-role binding baselines are applied with the new stable subject keys.
+- No npm package version change, database migration, menu resource, button permission, tenant binding, or frontend route change is required for this release.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-authorization/mango-authorization-starter -am -Dtest=AuthSubjectRoleResourceHandlerIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `scripts/publish-maven-batch.sh :mango-authorization-api :mango-authorization-core :mango-authorization-support :mango-authorization-starter :mango-authorization-resource-sync-starter :mango-authorization-resource-access-starter :mango-authorization-starter-remote --revision 1.0.0-SNAPSHOT`
+- `git diff --check`
+
 ## v2026.06.29-file-package-cli-release - 2026-06-29
 
 ### New
