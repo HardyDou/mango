@@ -11,6 +11,8 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -75,6 +77,7 @@ class ApiResourceServiceImplIntegrationTest {
                     deleted tinyint not null default 0
                 )
                 """);
+        service.refreshRuntimeCache();
     }
 
     @Test
@@ -107,6 +110,83 @@ class ApiResourceServiceImplIntegrationTest {
         assertThat(decision.matched()).isTrue();
         assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
         assertThat(decision.permissionCode()).isEqualTo("workflow:definition:list");
+    }
+
+    @Test
+    @DisplayName("registerApiResources should disable duplicate route from stale module")
+    void registerApiResourcesDisablesDuplicateRouteFromStaleModule() {
+        seedResource(20L, "mango-admin-app", "POST", "/notice/site/my/messages/read-all",
+                "io.mango.notice.starter.controller.NoticeController", 1, "notice:site:edit",
+                ApiResourceAccessMode.PERMISSION);
+
+        ApiResourceRegisterCommand command = command("mango-notice", "POST",
+                "/notice/site/my/messages/read-all",
+                "io.mango.notice.starter.controller.NoticeController");
+        command.setHandlerMethod("markAllSiteMessagesRead");
+        ApiResourceRegisterResultVO result = service.registerApiResources(List.of(command));
+
+        ApiResourceAccessDecisionVO decision = service.resolveAccessDecision("POST",
+                "/notice/site/my/messages/read-all");
+
+        assertThat(result.created()).isEqualTo(1);
+        assertThat(result.updated()).isEqualTo(1);
+        assertThat(apiResourceMapper.selectById(20L).getStatus()).isZero();
+        assertThat(decision.matched()).isTrue();
+        assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+        assertThat(decision.permissionCode()).isNull();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "POST,/notice/site/my/messages/read-all,notice:site:edit,LOGIN",
+            "GET,/notice/site/my/messages,notice:site:view,LOGIN",
+            "GET,/notice/site/my/unread-count,notice:site:view,LOGIN",
+            "GET,/file/files/detail,file:files:query,LOGIN",
+            "GET,/file/files/preview,file:files:query,LOGIN",
+            "GET,/file/files/download,file:files:download,LOGIN",
+            "GET,/file/settings,file:settings:query,LOGIN",
+            "GET,/file-preview/files/preview-link,file:files:query,LOGIN",
+            "GET,/file-preview/files/preview,file:files:query,LOGIN",
+            "GET,/file-preview/files/preview-entry,file:files:query,PUBLIC",
+            "GET,/file-preview/sources/{token},file:files:download,PUBLIC"
+    })
+    @DisplayName("registerApiResources should keep basic login and token endpoints from stale permission routes")
+    void registerApiResourcesKeepsBasicEndpointsFromStalePermissionRoutes(
+            String httpMethod,
+            String path,
+            String stalePermission,
+            ApiResourceAccessMode expectedMode) {
+        seedResource(40L, "mango-admin-app", httpMethod, path,
+                "io.mango.legacy.LegacyController", 1, stalePermission, ApiResourceAccessMode.PERMISSION);
+
+        ApiResourceRegisterCommand command = command("mango-platform", httpMethod, path,
+                "io.mango.platform.CurrentController");
+        command.setHandlerMethod("currentEndpoint");
+        command.setAccessMode(expectedMode);
+
+        service.registerApiResources(List.of(command));
+        ApiResourceAccessDecisionVO decision = service.resolveAccessDecision(httpMethod, path);
+
+        assertThat(apiResourceMapper.selectById(40L).getStatus()).isZero();
+        assertThat(decision.matched()).isTrue();
+        assertThat(decision.accessMode()).isEqualTo(expectedMode);
+        assertThat(decision.permissionCode()).isNull();
+    }
+
+    @Test
+    @DisplayName("resolveAccessDecision should prefer exact login route over wildcard permission route")
+    void resolveAccessDecisionPrefersExactLoginRouteOverWildcardPermissionRoute() {
+        seedResource(30L, "mango-notice", "POST", "/notice/site/my/messages/**",
+                "configuration", 1, "notice:site:edit", ApiResourceAccessMode.PERMISSION);
+        seedResource(31L, "mango-notice", "POST", "/notice/site/my/messages/read-all",
+                "io.mango.notice.starter.controller.NoticeController", 1, null, ApiResourceAccessMode.LOGIN);
+
+        ApiResourceAccessDecisionVO decision = service.resolveAccessDecision("POST",
+                "/notice/site/my/messages/read-all");
+
+        assertThat(decision.matched()).isTrue();
+        assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+        assertThat(decision.permissionCode()).isNull();
     }
 
     private ApiResourceRegisterCommand command(String moduleName, String httpMethod, String path, String handlerClass) {
