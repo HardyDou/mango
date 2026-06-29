@@ -1,5 +1,37 @@
 # Mango Changelog
 
+## v2026.06.29-file-compression-release - 2026-06-29
+
+### New
+
+- Published compressed file downloads from PR #329. `mango-infra-fileproc` now exposes `FileCompressApi` with image and rasterized PDF compression providers, and `mango-file` can apply compression to single downloads and ZIP package entries.
+- `FileApi.packageFiles(FilePackageCommand)` and `POST /file/files/package` now support package-level `compression` / `perFileTargetSizeBytes` and entry-level `compression` / `targetSizeBytes`; unsupported file types remain unchanged in the ZIP.
+
+### Published Packages
+
+- Maven: Fileproc backend batch `io.mango.infra.fileproc:mango-infra-fileproc-api`, `mango-infra-fileproc-core`, and `mango-infra-fileproc-starter` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.29-file-compression-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` fileproc and file dependencies before using compressed file downloads or ZIP entry compression.
+- `perFileTargetSizeBytes` and entry-level `targetSizeBytes` are single-file targets, not ZIP total-size targets.
+- Office original-format image recompression is not implemented in this release. Word, PPT, and Excel entries remain original unless business code converts them before download.
+- No database migration, menu resource, button permission, tenant binding, frontend package, or route change is required for this release.
+
+### Verification
+
+- `mvn -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core -am -Dtest=FileCompressApiTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core,mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter -am test`
+- `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-infra-fileproc-api :mango-infra-fileproc-core :mango-infra-fileproc-starter :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `git diff --check`
+
 ## v2026.06.29-auth-subject-role-release - 2026-06-29
 
 ### New
