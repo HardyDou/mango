@@ -52,7 +52,7 @@
 
 .mango-grid-widget-calendar__date-row strong {
   color: #20344b;
-  font-size: 56px;
+  font-size: 48px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: 0;
@@ -113,26 +113,6 @@
   font-size: 16px;
   font-weight: 500;
   line-height: 1.55;
-}
-
-.mango-grid-widget-calendar__error {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 0;
-  color: var(--mango-text-color-secondary, #909399);
-  font-size: 13px;
-}
-
-.mango-grid-widget-calendar__error button {
-  padding: 0;
-  color: var(--mango-color-primary, #409eff);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
 }
 
 .mango-grid-widget-quick-entry {
@@ -358,10 +338,6 @@
   line-height: 28px;
 }
 
-.mango-grid-widget-message-center__error {
-  margin-top: 10px;
-}
-
 .mango-grid-widget-my-todo {
   display: flex;
   flex-direction: column;
@@ -469,27 +445,6 @@
   white-space: nowrap;
 }
 
-.mango-grid-widget-my-todo__error {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 0;
-  padding: 12px;
-  color: var(--mango-text-color-secondary, #909399);
-  font-size: 13px;
-}
-
-.mango-grid-widget-my-todo__error button {
-  padding: 0;
-  color: var(--mango-color-primary, #409eff);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-}
-
 .mango-grid-widget-my-process {
   display: flex;
   flex-direction: column;
@@ -595,27 +550,6 @@
   line-height: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.mango-grid-widget-my-process__error {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 0;
-  padding: 12px;
-  color: var(--mango-text-color-secondary, #909399);
-  font-size: 13px;
-}
-
-.mango-grid-widget-my-process__error button {
-  padding: 0;
-  color: var(--mango-color-primary, #409eff);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
 }
 
 .mango-grid-widget-my-task {
@@ -867,27 +801,6 @@
   line-height: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.mango-grid-widget-my-task__error {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 0;
-  padding: 12px;
-  color: var(--mango-text-color-secondary, #909399);
-  font-size: 13px;
-}
-
-.mango-grid-widget-my-task__error button {
-  padding: 0;
-  color: var(--mango-color-primary, #409eff);
-  cursor: pointer;
-  background: transparent;
-  border: 0;
 }
 
 .mango-grid-widget-user-profile {

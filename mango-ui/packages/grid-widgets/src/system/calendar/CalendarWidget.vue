@@ -1,20 +1,6 @@
 <template>
   <section class="mango-grid-widget-calendar">
     <div
-      v-if="loadError"
-      class="mango-grid-widget-calendar__error"
-    >
-      <span>日历加载失败</span>
-      <button
-        type="button"
-        @click="loadCalendar"
-      >
-        重试
-      </button>
-    </div>
-
-    <div
-      v-else
       class="mango-grid-widget-calendar__body"
       :class="{ 'is-loading': loading }"
     >
@@ -59,6 +45,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { ElMessage } from 'element-plus';
 import { calendarApi, type CalendarDayVO, type LunarDayInfoVO, type MonthWorkdaySummaryVO } from '@mango/calendar';
 import type { CalendarWidgetProps } from '../../types';
 
@@ -71,7 +58,6 @@ const props = withDefaults(defineProps<CalendarWidgetProps>(), {
 });
 
 const loading = ref(false);
-const loadError = ref(false);
 const today = ref<CalendarDayVO | null>(null);
 const lunarDay = ref<LunarDayInfoVO | null>(null);
 const monthSummary = ref<MonthWorkdaySummaryVO | null>(null);
@@ -135,7 +121,6 @@ onMounted(() => {
 
 async function loadCalendar(): Promise<void> {
   loading.value = true;
-  loadError.value = false;
   try {
     // 小组件内部自行完成日历查询，消费页面只需要提供运行时上下文。
     const date = getToday();
@@ -155,7 +140,7 @@ async function loadCalendar(): Promise<void> {
     lunarDay.value = lunar;
     monthSummary.value = summary;
   } catch {
-    loadError.value = true;
+    ElMessage.error('日历加载失败，请稍后重试');
   } finally {
     loading.value = false;
   }

@@ -12,20 +12,6 @@
     </header>
 
     <div
-      v-if="loadError"
-      class="mango-grid-widget-my-process__error"
-    >
-      <span>申请加载失败</span>
-      <button
-        type="button"
-        @click="loadSummary"
-      >
-        重试
-      </button>
-    </div>
-
-    <div
-      v-else
       class="mango-grid-widget-my-process__grid"
       :class="{ 'is-loading': loading }"
     >
@@ -45,6 +31,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { ElMessage } from 'element-plus';
 import { workflowApi, type WorkflowBusinessApplySummary } from '@mango/workflow';
 import type { MangoWidgetNavigateTarget, MyProcessWidgetProps } from '../../types';
 
@@ -57,7 +44,6 @@ const props = withDefaults(defineProps<MyProcessWidgetProps>(), {
 });
 
 const loading = ref(false);
-const loadError = ref(false);
 const summary = ref<WorkflowBusinessApplySummary>(createEmptySummary());
 
 const processItems = computed(() => [
@@ -93,11 +79,10 @@ onMounted(() => {
 
 async function loadSummary(): Promise<void> {
   loading.value = true;
-  loadError.value = false;
   try {
     summary.value = await workflowApi.businessApplyMySummary();
   } catch {
-    loadError.value = true;
+    ElMessage.error('申请加载失败，请稍后重试');
   } finally {
     loading.value = false;
   }

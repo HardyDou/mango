@@ -501,3 +501,7 @@ import { MyProcessWidget, systemMyProcessWidgets } from '@mango/grid-widgets/my-
 ```ts
 import { MyTaskWidget, systemMyTaskWidgets } from '@mango/grid-widgets/my-task';
 ```
+
+## 本次变更影响记录
+
+- 本次 PR 仅调整系统小组件的卡片空状态、错误提示方式、消息中心文案、快捷入口排布和日历日期字号；不改变 `@mango/grid-widgets` 的公开导出、组件 props、小组件注册聚合 API、后端接口、菜单权限、租户隔离、启动方式和数据来源。
