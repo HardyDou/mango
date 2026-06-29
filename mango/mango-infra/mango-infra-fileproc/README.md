@@ -102,7 +102,7 @@ CompressFileResultVO result = fileCompressApi.compress(new CompressFileCommand(
 
 自动注册的压缩能力：
 
-- `ImageFileCompressProvider`：支持 `jpg/jpeg/png` 图片压缩。
+- `ImageFileCompressProvider`：支持 JPG、JPEG 和 PNG 图片压缩。
 - `PdfRasterFileCompressProvider`：支持 PDF 页面栅格化后重新封装压缩，适合扫描件 PDF。
 
 压缩档位：
