@@ -148,6 +148,12 @@ try {
     || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
   }
+  assertManagedDependency(pom, 'io.mango.platform.file', 'mango-file-api');
+  assertManagedDependency(pom, 'io.mango.platform.file.preview', 'mango-file-preview-api');
+  assertManagedDependency(pom, 'io.mango.platform.notice', 'mango-notice-api');
+  assertManagedDependency(pom, 'io.mango.platform.workflow', 'mango-workflow-api');
+  assertNoDirectDependency(appPom, 'mango-file-api', 'full backend app pom');
+  assertNoDirectDependency(appPom, 'mango-file-preview-api', 'full backend app pom');
   if (appPom.includes('<artifactId>mango-seed-starter</artifactId>')
     || pom.includes('<artifactId>mango-seed-starter</artifactId>')) {
     throw new Error('full backend must not require removed mango-seed-starter');
@@ -358,6 +364,12 @@ try {
       throw new Error(`custom backend missing dependency: ${expected}`);
     }
   }
+  assertManagedDependency(customPom, 'io.mango.platform.file', 'mango-file-api');
+  assertManagedDependency(customPom, 'io.mango.platform.file.preview', 'mango-file-preview-api');
+  assertManagedDependency(customPom, 'io.mango.platform.template', 'mango-template-api');
+  assertManagedDependency(customPom, 'io.mango.platform.workflow', 'mango-workflow-api');
+  assertNoDirectDependency(customAppPom, 'mango-file-api', 'custom backend app pom');
+  assertNoDirectDependency(customAppPom, 'mango-template-api', 'custom backend app pom');
   if (customAppPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
     throw new Error('custom backend added unselected notice dependency');
   }
@@ -1808,6 +1820,27 @@ function parseSimpleEnv(content) {
     }
   }
   return result;
+}
+
+function assertManagedDependency(pom, groupId, artifactId) {
+  const expected = [
+    '<dependency>',
+    `            <groupId>${groupId}</groupId>`,
+    `            <artifactId>${artifactId}</artifactId>`,
+    '            <version>${mango.version}</version>',
+    '</dependency>',
+  ];
+  for (const line of expected) {
+    if (!pom.includes(line)) {
+      throw new Error(`generated backend parent pom missing managed dependency ${groupId}:${artifactId}`);
+    }
+  }
+}
+
+function assertNoDirectDependency(pom, artifactId, label) {
+  if (pom.includes(`<artifactId>${artifactId}</artifactId>`)) {
+    throw new Error(`${label} should not directly depend on managed API artifact: ${artifactId}`);
+  }
 }
 
 function assertNoUnrenderedPlaceholders(projectRoot) {
