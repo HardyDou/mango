@@ -55,8 +55,8 @@
 ## 4. 启动规则
 
 - 默认使用 `mango dev start` 启动本地前后端。
-- 只启动后端使用 `mango dev backend`。
-- 只启动前端使用 `mango dev frontend`。
+- 只启动后端使用 `mango dev start backend`。
+- 只启动前端使用 `mango dev start frontend`。
 - 停止当前工作区服务使用 `mango dev stop`。
 - 查看当前工作区配置使用 `mango workspace status`。
 - 诊断当前工作区使用 `mango dev doctor`。
@@ -82,7 +82,10 @@
 ## 5. 数据库规则
 
 - 本地开发数据库名必须来自 `MANGO_DB_NAME`。
-- 脚本可以在 `MANGO_DB_AUTO_CREATE=true` 时创建本地数据库。
+- `MANGO_DB_AUTO_CREATE=true` 只表示允许 Mango CLI 在启动 Spring Boot app 前创建本地工作区数据库，不表示绕过本机 MySQL 连接前置条件。
+- 自动创建数据库依赖本机 `mysql` 命令可用，并且 `MANGO_DB_HOST`、`MANGO_DB_PORT`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD` 能连接到目标 MySQL。
+- Mango CLI 只能自动创建名称匹配 `mango_dev_*` 的工作区数据库；数据库名不匹配时必须拒绝启动。
+- 自动建库失败必须在 CLI 输出和应用日志中暴露具体失败原因，禁止继续静默等待 health 超时。
 - 删除 worktree 时默认不删除数据库。
 - 删除数据库必须显式执行受控清理命令，且只能删除名称匹配 `mango_dev_*` 的本地工作区数据库。
 - 数据库结构和初始数据仍由 Flyway migration 管理。
@@ -101,7 +104,7 @@
 
 ## 7. Agent 执行要求
 
-- 需要启动本地服务时，Agent 必须使用 `mango dev start`、`mango dev backend` 或 `mango dev frontend`。
+- 需要启动本地服务时，Agent 必须使用 `mango dev start`、`mango dev start backend` 或 `mango dev start frontend`。
 - 需要修复验收、Review、CI 或 PR 门禁发现的问题时，Agent 必须先复用当前任务或 PR 的既有 worktree。
 - 需要删除本地开发 worktree 时，Agent 必须先停止服务并释放 workspace 注册。
 - 启动前必须说明本次使用的后端端口、前端端口和数据库名。

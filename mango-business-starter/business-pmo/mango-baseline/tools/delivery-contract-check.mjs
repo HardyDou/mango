@@ -2,10 +2,29 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const REQUIRED_COLUMNS = ['ID', '来源', '要求', '设计决策', '交付物', '验收方式', '状态', '证据文件'];
+const BASE_REQUIRED_COLUMNS = ['ID', '来源', '要求', '设计决策', '验收方式', '状态', '证据文件'];
+const LEGACY_DELIVERY_COLUMN = '交付物';
+const MATERIAL_COLUMNS = ['代码交付物', 'README/使用说明', '需求/设计文档', 'E2E 脚本', '测试结果基线'];
+const E2E_COLUMN = 'E2E 脚本';
+const BASELINE_COLUMN = '测试结果基线';
+const BASELINE_COLUMNS = [
+  '基线 ID',
+  '覆盖台账 ID',
+  'E2E 脚本',
+  '测试命令',
+  '环境/版本',
+  '数据库或数据集',
+  '账号/租户标识',
+  '结果摘要',
+  '失败/阻塞/例外',
+  '报告/截图/日志路径',
+  '行为变化'
+];
 const DEFAULT_FORBIDDEN = ['TODO', 'FIXME', 'mock', 'Mock', 'virtual', 'Virtual', '模拟', '伪代码', '未来优化', '后续优化'];
 const DONE_STATUSES = new Set(['DONE', 'EXCEPTION']);
 const PLAN_STATUSES = new Set(['TODO', 'IN_PROGRESS', 'DONE', 'EXCEPTION']);
+const EMPTY_VALUES = new Set(['', '-']);
+const NOT_APPLICABLE_VALUES = new Set(['n/a', 'na', 'none', 'not applicable', '不适用', '无需', '无']);
 
 function parseArgs(argv) {
   const args = {
@@ -15,12 +34,17 @@ function parseArgs(argv) {
     require: '',
     scan: '',
     forbidden: DEFAULT_FORBIDDEN.join(','),
+    requireMaterials: false,
     json: false
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--json') {
       args.json = true;
+      continue;
+    }
+    if (arg === '--require-materials') {
+      args.requireMaterials = true;
       continue;
     }
     if (arg.startsWith('--')) {
@@ -67,55 +91,199 @@ function isSeparatorRow(cells) {
   return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell.trim()));
 }
 
-function parseLedgerRows(content) {
+function parseMarkdownTables(content) {
   const lines = content.split(/\r?\n/);
-  let headers = [];
-  const rows = [];
+  const tables = [];
   for (let i = 0; i < lines.length; i += 1) {
     const cells = splitMarkdownRow(lines[i]);
     if (cells.length === 0) {
       continue;
     }
     const nextCells = splitMarkdownRow(lines[i + 1] || '');
-    if (headers.length === 0 && isSeparatorRow(nextCells)) {
-      headers = cells;
+    if (isSeparatorRow(nextCells)) {
+      const headers = cells;
+      const rows = [];
       i += 1;
+      for (let rowIndex = i + 1; rowIndex < lines.length; rowIndex += 1) {
+        const rowCells = splitMarkdownRow(lines[rowIndex]);
+        if (rowCells.length === 0) {
+          break;
+        }
+        if (rowCells.length === headers.length && !isSeparatorRow(rowCells)) {
+          const row = {};
+          headers.forEach((header, index) => {
+            row[header] = rowCells[index] || '';
+          });
+          rows.push(row);
+        }
+        i = rowIndex;
+      }
+      tables.push({ headers, rows });
       continue;
     }
-    if (headers.length > 0 && cells.length === headers.length && !isSeparatorRow(cells)) {
-      const row = {};
-      headers.forEach((header, index) => {
-        row[header] = cells[index] || '';
-      });
-      rows.push(row);
-    }
   }
-  return { headers, rows };
+  return tables;
+}
+
+function parseLedgerRows(content) {
+  const tables = parseMarkdownTables(content);
+  const ledgerTable = tables.find((table) => {
+    const headers = table.headers;
+    return BASE_REQUIRED_COLUMNS.every((column) => headers.includes(column))
+      && (headers.includes(LEGACY_DELIVERY_COLUMN) || MATERIAL_COLUMNS.some((column) => headers.includes(column)));
+  });
+  return ledgerTable || { headers: [], rows: [] };
+}
+
+function parseBaselineRows(content) {
+  const tables = parseMarkdownTables(content);
+  const baselineTable = tables.find((table) => BASELINE_COLUMNS.every((column) => table.headers.includes(column)));
+  return baselineTable || { headers: [], rows: [] };
 }
 
 function rowText(row) {
   return Object.values(row).join(' ');
 }
 
-function checkRequiredColumns(headers, errors) {
-  for (const column of REQUIRED_COLUMNS) {
+function checkRequiredColumns(headers, requireMaterials, errors) {
+  for (const column of BASE_REQUIRED_COLUMNS) {
     if (!headers.includes(column)) {
       errors.push(`Ledger missing required column: ${column}`);
     }
   }
+  if (requireMaterials) {
+    for (const column of MATERIAL_COLUMNS) {
+      if (!headers.includes(column)) {
+        errors.push(`Ledger missing required material column: ${column}`);
+      }
+    }
+    return;
+  }
+  if (!headers.includes(LEGACY_DELIVERY_COLUMN) && !MATERIAL_COLUMNS.some((column) => headers.includes(column))) {
+    errors.push(`Ledger missing required column: ${LEGACY_DELIVERY_COLUMN} or material columns`);
+  }
 }
 
-function checkRows(rows, mode, errors) {
+function isEmptyCell(value) {
+  return EMPTY_VALUES.has(String(value || '').trim());
+}
+
+function hasExceptionText(value) {
+  return String(value || '').toUpperCase().includes('EXCEPTION');
+}
+
+function hasPathLikeText(value) {
+  const text = String(value || '').trim();
+  return /[`'"]?\/?[\w.@-]+\/[\w./@-]+[`'"]?/.test(text) || /\b[\w.@-]+\.(md|mjs|js|ts|tsx|vue|java|xml|json|yaml|yml|sql|sh|feature|spec)\b/.test(text);
+}
+
+function extractPathLikeText(value) {
+  const text = String(value || '').trim();
+  const match = text.match(/`?(\/?[\w.@-]+\/[\w./@-]+)`?/) || text.match(/`?([\w.@-]+\.(?:md|mjs|js|ts|tsx|vue|java|xml|json|yaml|yml|sql|sh|feature|spec))`?/);
+  return match ? match[1] : '';
+}
+
+function isNotApplicableText(value) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[。；;,.，\s]+$/g, '');
+  return NOT_APPLICABLE_VALUES.has(normalized);
+}
+
+function isFormalTestPath(filePath) {
+  return /(^|\/)(tests?|__tests__|e2e|playwright|cypress|src\/test)(\/|$)/.test(filePath);
+}
+
+function checkMaterialException(rowNo, column, value, errors) {
+  if (!hasExceptionText(value)) {
+    return;
+  }
+  const reason = String(value || '').replace(/EXCEPTION:?/i, '').trim();
+  if (reason.length < 8 || isNotApplicableText(reason)) {
+    errors.push(`Row ${rowNo} material column ${column} has EXCEPTION but no concrete reason`);
+  }
+}
+
+function checkMaterialPath(rowNo, column, value, errors) {
+  if (hasExceptionText(value)) {
+    return;
+  }
+  if (isNotApplicableText(value)) {
+    errors.push(`Row ${rowNo} material column ${column} is not applicable but does not contain EXCEPTION`);
+    return;
+  }
+  if (!hasPathLikeText(value)) {
+    errors.push(`Row ${rowNo} material column ${column} must contain a path or EXCEPTION reason`);
+  }
+}
+
+function checkE2ePath(rowNo, value, errors) {
+  if (hasExceptionText(value)) {
+    return;
+  }
+  const filePath = extractPathLikeText(value);
+  if (!filePath) {
+    return;
+  }
+  if (!isFormalTestPath(filePath)) {
+    errors.push(`Row ${rowNo} material column ${E2E_COLUMN} must point to a formal test directory or use EXCEPTION`);
+  }
+  if (!fs.existsSync(filePath)) {
+    errors.push(`Row ${rowNo} material column ${E2E_COLUMN} path does not exist: ${filePath}`);
+  }
+}
+
+function checkBaselineTable(baselineRows, mode, errors) {
+  if (baselineRows.length === 0) {
+    errors.push('Test result baseline table has no rows');
+    return;
+  }
+  baselineRows.forEach((row, index) => {
+    const rowNo = index + 1;
+    for (const column of BASELINE_COLUMNS) {
+      if (isEmptyCell(row[column])) {
+        errors.push(`Baseline row ${rowNo} missing value for column: ${column}`);
+      }
+    }
+    if (mode === 'verify' && !String(row['报告/截图/日志路径'] || '').trim().includes('EXCEPTION')) {
+      const evidencePath = extractPathLikeText(row['报告/截图/日志路径']);
+      if (!evidencePath) {
+        errors.push(`Baseline row ${rowNo} report column must contain a path or EXCEPTION reason`);
+      }
+    }
+  });
+}
+
+function checkRows(rows, mode, requireMaterials, baselineRows, errors) {
   if (rows.length === 0) {
     errors.push('Ledger has no delivery rows');
     return;
   }
   rows.forEach((row, index) => {
     const rowNo = index + 1;
-    for (const column of REQUIRED_COLUMNS) {
-      if (!String(row[column] || '').trim()) {
+    for (const column of BASE_REQUIRED_COLUMNS) {
+      if (isEmptyCell(row[column])) {
         errors.push(`Row ${rowNo} missing value for column: ${column}`);
       }
+    }
+    if (requireMaterials) {
+      for (const column of MATERIAL_COLUMNS) {
+        if (!(column in row)) {
+          continue;
+        }
+        if (isEmptyCell(row[column])) {
+          errors.push(`Row ${rowNo} missing value for material column: ${column}`);
+          continue;
+        }
+        checkMaterialException(rowNo, column, row[column], errors);
+        checkMaterialPath(rowNo, column, row[column], errors);
+        if (column === E2E_COLUMN) {
+          checkE2ePath(rowNo, row[column], errors);
+        }
+      }
+    } else if (row[LEGACY_DELIVERY_COLUMN] !== undefined && isEmptyCell(row[LEGACY_DELIVERY_COLUMN])) {
+      errors.push(`Row ${rowNo} missing value for column: ${LEGACY_DELIVERY_COLUMN}`);
     }
     const status = String(row['状态'] || '').trim();
     if (!PLAN_STATUSES.has(status)) {
@@ -126,11 +294,21 @@ function checkRows(rows, mode, errors) {
     }
     if (mode === 'verify' && status === 'EXCEPTION') {
       const evidence = String(row['证据文件'] || '').trim();
-      if (!evidence || evidence === '-') {
+      if (isEmptyCell(evidence)) {
         errors.push(`Row ${rowNo} is EXCEPTION but has no evidence or user confirmation`);
       }
     }
+    if (mode === 'verify' && requireMaterials && status !== 'EXCEPTION') {
+      for (const column of MATERIAL_COLUMNS) {
+        if (hasExceptionText(row[column]) && isEmptyCell(row['证据文件'])) {
+          errors.push(`Row ${rowNo} material column ${column} is EXCEPTION but has no evidence or user confirmation`);
+        }
+      }
+    }
   });
+  if (requireMaterials && rows.some((row) => row[BASELINE_COLUMN] !== undefined && !hasExceptionText(row[BASELINE_COLUMN]))) {
+    checkBaselineTable(baselineRows, mode, errors);
+  }
 }
 
 function checkRequiredItems(rows, sourceText, requiredItems, errors) {
@@ -226,9 +404,10 @@ if (!['plan', 'verify'].includes(args.mode)) {
 }
 
 const parsed = ledgerText ? parseLedgerRows(ledgerText) : { headers: [], rows: [] };
+const baselineParsed = ledgerText ? parseBaselineRows(ledgerText) : { headers: [], rows: [] };
 if (ledgerText) {
-  checkRequiredColumns(parsed.headers, errors);
-  checkRows(parsed.rows, args.mode, errors);
+  checkRequiredColumns(parsed.headers, args.requireMaterials, errors);
+  checkRows(parsed.rows, args.mode, args.requireMaterials, baselineParsed.rows, errors);
   checkRequiredItems(parsed.rows, designText, requiredItems, errors);
 }
 
@@ -236,6 +415,7 @@ checkForbidden(scanPaths, forbiddenTerms, errors);
 
 const result = {
   mode: args.mode,
+  requireMaterials: args.requireMaterials,
   design: args.design,
   ledger: args.ledger,
   summary: buildSummary(parsed.rows),

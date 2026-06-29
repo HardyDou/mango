@@ -71,9 +71,8 @@
       "args": [
         "-F",
         "mango-admin",
-        "exec",
-        "vite",
-        "--force",
+        "dev",
+        "--",
         "--host",
         "${host}",
         "--port",

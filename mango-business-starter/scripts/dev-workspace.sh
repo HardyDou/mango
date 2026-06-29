@@ -33,7 +33,7 @@ run_mango() {
   fi
   echo "mango CLI not found in project frontend dependencies or globally." >&2
   echo "Install project dependencies: cd frontend && pnpm install" >&2
-  echo "Or install globally: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}" >&2
+  echo "Or install globally: npm install -g @mango/cli@1.0.51 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/" >&2
   exit 1
 }
 

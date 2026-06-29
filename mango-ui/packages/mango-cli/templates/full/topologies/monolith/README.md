@@ -51,8 +51,8 @@ mango init {{projectKebab}} --preset {{preset}} --topology monolith
 
 ```bash
 mango workspace init
-mango validate
-mango dev plan
+mango workspace status
+mango dev doctor
 mango dev start
 ```
 
@@ -128,7 +128,7 @@ mango module add order --aggregate sales-order --project-dir .
 |------|------|----------|
 | 单体 app 引入 remote starter | 混淆本地依赖和远程调用依赖 | app 改依赖 `<module>-starter` |
 | 页面菜单打开空白 | component key 与前端 registry 不一致 | 检查 resource manifest 和 `register<Module>Pages()` |
-| API 404 | Controller path、Vite proxy 或菜单路径不一致 | 用 `mango dev plan` 和浏览器 network 排查 |
+| API 404 | Controller path、Vite proxy 或菜单路径不一致 | 用 `mango workspace status` 和浏览器 network 排查 |
 | 业务表没创建 | business Flyway module 未启用 | 检查 `application.yml` managed block |
 | 租户数据串租 | 只建了 `tenant_id` 字段，未验证查询过滤 | 补租户上下文测试和数据权限断言 |
 

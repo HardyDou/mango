@@ -1686,7 +1686,7 @@ function ensureDevWorkspaceEnv(context) {
 function startDevApp(context, name, app) {
   const logPath = join(context.logDir, `${name}.log`);
   appendFileSync(logPath, `\n--- ${new Date().toISOString()} start ${name} ---\n`);
-  if (app.type === 'spring-boot-maven') {
+  if (shouldEnsureWorkspaceDatabase(context, app)) {
     ensureWorkspaceDatabase(context, name, logPath);
   }
   if (app.install) {
@@ -1729,6 +1729,24 @@ function startDevApp(context, name, app) {
     workspaceRoot: context.root,
   });
   process.stdout.write(`${name}: started pid=${child.pid} log=${relativeOrAbsolute(process.cwd(), logPath)}\n`);
+}
+
+function shouldEnsureWorkspaceDatabase(context, app) {
+  if (app.type === 'spring-boot-maven') {
+    return true;
+  }
+  const dbName = context.env.MANGO_DB_NAME || '';
+  const values = [
+    app.command,
+    ...(app.args || []),
+    ...Object.values(app.env || {}),
+    app.install?.command,
+    ...(app.install?.args || []),
+  ].filter(Boolean);
+  return values.some(value => {
+    const text = String(value);
+    return text.includes('MANGO_DB_NAME') || (dbName && text.includes(dbName));
+  });
 }
 
 function ensureWorkspaceDatabase(context, appName, logPath) {
