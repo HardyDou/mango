@@ -13,6 +13,7 @@ const REQUIRED_COLUMNS = [
   '截图/trace/日志',
   '结论',
 ];
+const CASE_ID_COLUMN = '用例 ID';
 const DONE_STATUSES = new Set(['DONE', 'PASS', '通过']);
 const EXCEPTION_STATUSES = new Set(['EXCEPTION', 'BLOCKED', '未验证']);
 const ALLOWED_STATUSES = new Set([...DONE_STATUSES, ...EXCEPTION_STATUSES]);
@@ -122,6 +123,13 @@ function checkRow(row, index, errors) {
   for (const column of REQUIRED_COLUMNS) {
     if (isPlaceholder(row[column])) {
       errors.push(`Row ${rowNo} missing concrete value for column: ${column}`);
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(row, CASE_ID_COLUMN)) {
+    if (isPlaceholder(row[CASE_ID_COLUMN])) {
+      errors.push(`Row ${rowNo} missing concrete value for column: ${CASE_ID_COLUMN}`);
+    } else if (!/^TC-\d{3,}$/.test(String(row[CASE_ID_COLUMN] || '').trim())) {
+      errors.push(`Row ${rowNo} has invalid ${CASE_ID_COLUMN} "${row[CASE_ID_COLUMN]}", expected TC-001 style`);
     }
   }
 
