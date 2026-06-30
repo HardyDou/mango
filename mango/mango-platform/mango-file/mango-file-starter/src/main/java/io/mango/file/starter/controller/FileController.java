@@ -31,7 +31,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -166,9 +165,8 @@ public class FileController implements FileApi {
             @Parameter(description = "单文件目标大小，单位字节。打包下载时该语义由打包接口 perFileTargetSizeBytes 表达")
             @RequestParam(required = false) Long perFileTargetSizeBytes) {
         FileDownloadVO download = fileService.download(id, compression, perFileTargetSizeBytes);
-        String filename = UriUtils.encode(download.fileName(), StandardCharsets.UTF_8);
         ContentDisposition disposition = ContentDisposition.attachment()
-                .filename(filename, StandardCharsets.UTF_8)
+                .filename(download.fileName(), StandardCharsets.UTF_8)
                 .build();
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (download.contentType() != null && !download.contentType().isBlank()) {
