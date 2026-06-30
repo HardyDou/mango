@@ -37,6 +37,30 @@ npm --prefix mango-docs run docs:build
 
 后端 Maven 运行时 jar 不承载 README；jar 只包含运行所需类和资源。前端 npm 包继续保留包根 `README.md`，这是 npm 生态的标准文档入口。
 
+## 1.2 文档版本选择
+
+GitHub Pages 根路径 `/mango/` 永远发布当前 `main` 的最新文档，导航栏中的 `Latest` 表示最新文档。
+
+业务开发需要锁定文档版本时，选择与后端 Maven、前端 npm 发布版本一致的 release tag。版本快照路径固定为 `/mango/versions/<release-tag>/`，例如：
+
+```text
+/mango/versions/v2026.06.30-maven-1.0.1-admin-branding-cli-release/
+```
+
+新增发布版本时，在 `mango-docs` 下生成版本快照：
+
+```bash
+npm --prefix mango-docs run docs:snapshot -- v2026.06.30-maven-1.0.1-admin-branding-cli-release
+```
+
+生成后再执行常规构建：
+
+```bash
+npm --prefix mango-docs run docs:build
+```
+
+`docs:build` 会构建 Latest，并把 `mango-docs/versions` 下的历史快照一起复制到 GitHub Pages artifact。业务开发按 release tag 选择文档版本；没有锁定版本时使用 Latest。
+
 ## 2. 示例场景
 
 - [文件上传表单接入](./guides/business-integration/file-upload-form.md)

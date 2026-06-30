@@ -5,7 +5,12 @@ import { fileURLToPath } from 'node:url';
 const docsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(docsRoot, '..');
 const stageRoot = resolve(docsRoot, '.vitepress/public-src');
+const versionsRoot = resolve(docsRoot, 'versions');
+const versionsManifestPath = resolve(versionsRoot, 'manifest.json');
 const githubBlobBase = process.env.MANGO_DOCS_GITHUB_BLOB_BASE || 'https://github.com/HardyDou/mango/blob/main';
+const docsPublicBase = normalizePublicBase(process.env.MANGO_DOCS_PUBLIC_BASE || 'https://hardydou.github.io/mango/');
+const latestDocsLabel = process.env.MANGO_DOCS_LATEST_LABEL || 'Latest';
+const docsVersionLabel = process.env.MANGO_DOCS_VERSION_LABEL || latestDocsLabel;
 
 const publicDocs = [
   'mango-docs/index.md',
@@ -474,6 +479,18 @@ const orderedSidebar = sidebar
   })
   .map(({ item }) => item);
 
+const versionNavItems = await loadVersionNavItems();
+const nav = [
+  { text: '开始', link: '/' },
+  { text: '示例场景', link: '/mango-docs/guides/business-integration/README' },
+  { text: '产品文档输出', link: '/mango-pmo/templates/prd' },
+  { text: '基础能力', link: '/mango/mango-infra/mango-infra-context/README' },
+  { text: '平台能力', link: '/mango-docs/capabilities/README' },
+  { text: '架构设计', link: '/mango-docs/mango-architecture-design' },
+  { text: 'PMO 规范', link: '/mango-pmo/rules/00-dev-flow' },
+  ...(versionNavItems.length > 0 ? [{ text: docsVersionLabel, items: versionNavItems }] : [])
+];
+
 const config = `import { defineConfig } from 'vitepress';
 
 export default defineConfig({
@@ -483,15 +500,7 @@ export default defineConfig({
   cleanUrls: true,
   ignoreDeadLinks: [/^https?:\\/\\//],
   themeConfig: {
-    nav: [
-      { text: '开始', link: '/' },
-      { text: '示例场景', link: '/mango-docs/guides/business-integration/README' },
-      { text: '产品文档输出', link: '/mango-pmo/templates/prd' },
-      { text: '基础能力', link: '/mango/mango-infra/mango-infra-context/README' },
-      { text: '平台能力', link: '/mango-docs/capabilities/README' },
-      { text: '架构设计', link: '/mango-docs/mango-architecture-design' },
-      { text: 'PMO 规范', link: '/mango-pmo/rules/00-dev-flow' }
-    ],
+    nav: ${JSON.stringify(nav, null, 6)},
     sidebar: ${JSON.stringify(orderedSidebar, null, 6)},
     search: {
       provider: 'local'
@@ -660,4 +669,39 @@ function isExternalOrAnchor(href) {
 
 function normalizePath(path) {
   return path.split('\\').join('/');
+}
+
+async function loadVersionNavItems() {
+  try {
+    const manifest = JSON.parse(await readFile(versionsManifestPath, 'utf8'));
+    const versions = Array.isArray(manifest.versions) ? manifest.versions : [];
+    const items = [
+      {
+        text: manifest.latest?.label || latestDocsLabel,
+        link: toPublicDocsLink(manifest.latest?.path || '/')
+      },
+      ...versions
+        .filter((version) => version && typeof version.version === 'string')
+        .map((version) => ({
+          text: version.label || version.version,
+          link: toPublicDocsLink(version.path || `/versions/${version.version}/`)
+        }))
+    ];
+
+    return items.length > 1 ? items : [];
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
+}
+
+function toPublicDocsLink(path) {
+  return new URL(path.replace(/^\/+/, ''), docsPublicBase).toString();
+}
+
+function normalizePublicBase(base) {
+  const normalized = base.endsWith('/') ? base : `${base}/`;
+  return new URL(normalized).toString();
 }
