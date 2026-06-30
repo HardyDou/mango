@@ -1,5 +1,6 @@
 package io.mango.infra.persistence.starter;
 
+import com.sun.net.httpserver.HttpServer;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
@@ -14,6 +15,10 @@ import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoCo
 
 import javax.sql.DataSource;
 
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -231,7 +236,7 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(ctx.getStartupFailure())
                             .hasMessageContaining("Mango Flyway module migration failed: module=another-test")
                             .hasMessageContaining("historyTable=flyway_history_shared_test")
-                            .hasMessageContaining("location=classpath:db/migration/another-test")
+                            .hasMessageContaining("locations=[classpath:db/migration/another-test]")
                             .hasMessageContaining("outOfOrder=false");
                 });
     }
@@ -255,10 +260,66 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(ctx.getStartupFailure())
                             .hasMessageContaining("Mango Flyway module migration failed: module=persistence-test")
                             .hasMessageContaining("historyTable=<unresolved>")
-                            .hasMessageContaining("location=classpath:db/migration/persistence-test")
+                            .hasMessageContaining("locations=[classpath:db/migration/persistence-test]")
                             .hasMessageContaining("datasource=missing")
                             .hasMessageContaining("outOfOrder=false");
                 });
+    }
+
+    @Test
+    void customFilesystemLocation_shouldRunExternalMigrationDirectory() throws Exception {
+        Path directory = Files.createTempDirectory("mango-flyway-filesystem-");
+        Files.writeString(directory.resolve("V9__external_file.sql"), """
+                create table external_file_migration (
+                    id bigint primary key
+                );
+                """);
+
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.external-file.enabled=true",
+                        "mango.persistence.flyway.modules.external-file.locations[0]=filesystem:" + directory.toAbsolutePath()
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "external_file_migration")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "flyway_schema_history_external_file")).isTrue();
+                });
+    }
+
+    @Test
+    void customUrlLocation_shouldDownloadAndRunExternalSqlFile() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        byte[] sql = """
+                create table external_url_migration (
+                    id bigint primary key
+                );
+                """.getBytes(StandardCharsets.UTF_8);
+        server.createContext("/V8__external_url.sql", exchange -> {
+            exchange.sendResponseHeaders(200, sql.length);
+            exchange.getResponseBody().write(sql);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/V8__external_url.sql";
+            contextRunner
+                    .withPropertyValues(
+                            "mango.persistence.flyway.enabled=true",
+                            "mango.persistence.flyway.modules.external-url.enabled=true",
+                            "mango.persistence.flyway.modules.external-url.locations[0]=" + url
+                    )
+                    .withUserConfiguration(H2DataSourceConfig.class)
+                    .run(ctx -> {
+                        JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                        assertThat(tableExists(jdbcTemplate, "external_url_migration")).isTrue();
+                        assertThat(tableExists(jdbcTemplate, "flyway_schema_history_external_url")).isTrue();
+                    });
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test

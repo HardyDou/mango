@@ -22,6 +22,12 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -55,6 +61,7 @@ import java.util.Set;
 @EnableConfigurationProperties(PersistenceFlywayProperties.class)
 public class PersistenceFlywayAutoConfiguration {
 
+    private static final int URL_TIMEOUT_MILLIS = 30_000;
     private static final String MIGRATION_LOCATION_PREFIX = "classpath:db/migration/";
     private static final String MIGRATION_SCAN_PATTERN = "classpath*:db/migration/*/V*.sql";
     private static final String NOOP_LOCATION = "classpath:db/migration/_noop";
@@ -100,6 +107,7 @@ public class PersistenceFlywayAutoConfiguration {
                 PersistenceModuleDataSourceResolver resolver = resolverProvider.getIfAvailable();
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
                     ResolvedDataSource resolvedDataSource = null;
+                    ResolvedLocations resolvedLocations = null;
                     String historyTable = "<unresolved>";
                     boolean outOfOrder = resolveOutOfOrder(module);
                     boolean validateOnMigrate = module.config().isValidateOnMigrate();
@@ -110,9 +118,10 @@ public class PersistenceFlywayAutoConfiguration {
                         DataSource moduleDataSource = resolvedDataSource.dataSource();
                         datasource = resolvedDataSource.description();
                         historyTable = resolveHistoryTable(module);
+                        resolvedLocations = resolveLocations(module);
                         configuration
                                 .dataSource(moduleDataSource)
-                                .locations(module.location())
+                                .locations(resolvedLocations.locations().toArray(String[]::new))
                                 .table(historyTable)
                                 .baselineOnMigrate(module.config().isBaselineOnMigrate())
                                 .baselineVersion("0")
@@ -126,7 +135,7 @@ public class PersistenceFlywayAutoConfiguration {
                         throw new IllegalStateException(
                                 "Mango Flyway module migration failed: module=" + module.name()
                                         + ", historyTable=" + historyTable
-                                        + ", location=" + module.location()
+                                        + ", locations=" + module.locations()
                                         + ", datasource=" + datasource
                                         + ", validateOnMigrate=" + validateOnMigrate
                                         + ", outOfOrder=" + outOfOrder
@@ -135,6 +144,9 @@ public class PersistenceFlywayAutoConfiguration {
                     } finally {
                         if (resolvedDataSource != null) {
                             closeModuleDataSource(resolvedDataSource);
+                        }
+                        if (resolvedLocations != null) {
+                            cleanResolvedLocations(resolvedLocations);
                         }
                     }
                 }
@@ -156,7 +168,7 @@ public class PersistenceFlywayAutoConfiguration {
                 if (config == null || config.isEnabled()) {
                     migrations.add(new ModuleMigration(
                             module,
-                            MIGRATION_LOCATION_PREFIX + module,
+                            resolveConfiguredLocations(module, config),
                             config == null ? new PersistenceFlywayProperties.ModuleConfig() : config));
                 }
             });
@@ -168,10 +180,23 @@ public class PersistenceFlywayAutoConfiguration {
         for (String module : modules) {
             migrations.add(new ModuleMigration(
                     module,
-                    MIGRATION_LOCATION_PREFIX + module,
+                    List.of(MIGRATION_LOCATION_PREFIX + module),
                     new PersistenceFlywayProperties.ModuleConfig()));
         }
         return migrations;
+    }
+
+    private List<String> resolveConfiguredLocations(String module, PersistenceFlywayProperties.ModuleConfig config) {
+        if (config != null && config.getLocations() != null && !config.getLocations().isEmpty()) {
+            List<String> locations = config.getLocations().stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .toList();
+            if (!locations.isEmpty()) {
+                return locations;
+            }
+        }
+        return List.of(MIGRATION_LOCATION_PREFIX + module);
     }
 
     private Set<String> discoverMigrationModules() throws Exception {
@@ -252,11 +277,80 @@ public class PersistenceFlywayAutoConfiguration {
         closeable.close();
     }
 
+    private ResolvedLocations resolveLocations(ModuleMigration module) throws IOException {
+        List<String> locations = new ArrayList<>();
+        List<Path> tempDirectories = new ArrayList<>();
+        Path urlDirectory = null;
+        for (String location : module.locations()) {
+            if (!isHttpLocation(location)) {
+                locations.add(location);
+                continue;
+            }
+            if (urlDirectory == null) {
+                urlDirectory = Files.createTempDirectory("mango-flyway-" + sanitizeModuleName(module.name()) + "-");
+                tempDirectories.add(urlDirectory);
+            }
+            downloadSql(location, urlDirectory);
+        }
+        if (urlDirectory != null) {
+            locations.add("filesystem:" + urlDirectory.toAbsolutePath());
+        }
+        return new ResolvedLocations(locations, tempDirectories);
+    }
+
+    private boolean isHttpLocation(String location) {
+        return location.startsWith("http://") || location.startsWith("https://");
+    }
+
+    private void downloadSql(String location, Path targetDirectory) throws IOException {
+        URI uri = URI.create(location);
+        String path = uri.getPath();
+        int lastSlashIndex = path == null ? -1 : path.lastIndexOf('/');
+        String filename = lastSlashIndex >= 0 ? path.substring(lastSlashIndex + 1) : path;
+        if (!StringUtils.hasText(filename) || !filename.endsWith(".sql")) {
+            throw new IllegalStateException("Mango Flyway URL migration must point to a .sql file: " + location);
+        }
+        Path target = targetDirectory.resolve(filename).normalize();
+        if (!target.startsWith(targetDirectory)) {
+            throw new IllegalStateException("Mango Flyway URL migration filename is invalid: " + location);
+        }
+        if (Files.exists(target)) {
+            throw new IllegalStateException("Mango Flyway URL migration filename is duplicated: " + filename);
+        }
+        var connection = uri.toURL().openConnection();
+        connection.setConnectTimeout(URL_TIMEOUT_MILLIS);
+        connection.setReadTimeout(URL_TIMEOUT_MILLIS);
+        try (InputStream inputStream = connection.getInputStream()) {
+            Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private void cleanResolvedLocations(ResolvedLocations locations) throws IOException {
+        for (Path tempDirectory : locations.tempDirectories()) {
+            if (!Files.exists(tempDirectory)) {
+                continue;
+            }
+            try (var paths = Files.walk(tempDirectory)) {
+                paths.sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException e) {
+                                throw new IllegalStateException("Clean Mango Flyway temp location failed: " + path, e);
+                            }
+                        });
+            }
+        }
+    }
+
     private record ModuleMigration(String name,
-                                   String location,
+                                   List<String> locations,
                                    PersistenceFlywayProperties.ModuleConfig config) {
     }
 
     private record ResolvedDataSource(DataSource dataSource, boolean closeAfterUse, String description) {
+    }
+
+    private record ResolvedLocations(List<String> locations, List<Path> tempDirectories) {
     }
 }

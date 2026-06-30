@@ -245,6 +245,8 @@ mango:
           validate-on-migrate: true
           ignore-missing-migrations: false
           history-table: flyway_schema_history_mango_system
+          locations:
+            - classpath:db/migration/mango-system
         mango-job:
           enabled: true
 ```
@@ -256,12 +258,30 @@ mango:
 | `modules.<module>.baseline-on-migrate` | `true` | 存量库无 history table 时是否从 baseline 接管 |
 | `modules.<module>.out-of-order` | `false` | 是否允许非顺序版本补跑 |
 | `modules.<module>.history-table` | `flyway_schema_history_<module>` | 当前模块 history table，模块名会把非字母数字下划线替换成 `_` |
+| `modules.<module>.locations` | `classpath:db/migration/<module>` | 当前模块迁移脚本位置，支持 `classpath:`、`filesystem:` 和 `http(s)` 单个 SQL 文件 |
 | `modules.<module>.validate-on-migrate` | `true` | 迁移前是否校验历史记录 |
 | `modules.<module>.ignore-missing-migrations` | `false` | 是否忽略数据库存在但代码已移除的历史迁移 |
 | `modules.<module>.datasource.url` | 空 | 当前模块迁移使用独立 JDBC URL |
 | `modules.<module>.datasource.driver-class-name` | 空 | 当前模块迁移独立驱动 |
 | `modules.<module>.datasource.username` | 空 | 当前模块迁移独立用户名 |
 | `modules.<module>.datasource.password` | 空 | 当前模块迁移独立密码 |
+
+停机升级需要执行不随应用 jar 发布的 SQL 时，不新增裸 SQL 执行器，仍把脚本作为 Flyway migration 管理：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        payment:
+          enabled: true
+          locations:
+            - classpath:db/migration/payment
+            - filesystem:/opt/mango/upgrade/payment
+            - https://artifact.example.com/mango/payment/V2026070101__fix_channel_data.sql
+```
+
+`filesystem:` 应指向包含 `V*.sql` 的目录。`http(s)` 只支持单个 `.sql` 文件，启动迁移前会下载到临时目录再交给 Flyway；执行结果仍写入该模块的 `flyway_schema_history_<module>`。
 
 模块迁移数据源解析顺序：
 
@@ -777,7 +797,7 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 | 标准字段 | 默认要求 `tenant_id`、`org_id`、`created_by`、`created_at`、`updated_by`、`updated_at` |
 | 租户字段 | `tenant_id` 参与租户行级过滤 |
 | 组织字段 | `org_id` 作为组织数据权限默认归属字段 |
-| Flyway 路径 | 模块脚本放在 `db/migration/<module>/V*.sql` |
+| Flyway 路径 | 模块默认脚本放在 `db/migration/<module>/V*.sql`；停机升级可通过模块 `locations` 指向磁盘目录或远程 SQL 文件 |
 
 普通租户业务表建议直接继承 `TenantEntity` 并保留这些标准字段。全局配置表、平台资源表、历史日志表、基础设施表和第三方表不适用时，应加入 `schema-validation.excluded-tables`；如果某个查询声明了数据权限但表缺少对应字段，查询会 fail-fast。
 
