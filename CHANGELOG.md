@@ -6,15 +6,17 @@
 
 - Started fixed backend Maven jar version management for business projects. Generated projects now lock Mango backend dependencies through `<mango.version>1.0.1</mango.version>` and `dependencyManagement` instead of defaulting to `1.0.0-SNAPSHOT`.
 - Added admin branding configuration in the System module. The backend exposes branding configuration contracts and controller support, while the admin shell, login page, footer, and logo rendering can consume file-center-backed branding images and text.
+- Polished workspace grid widgets and grid layout styling in the admin home page batch.
 
 ### Fixed
 
 - Updated the File upload component image回显 behavior used by admin branding so file-center IDs can be resolved back to previewable image data instead of relying on persisted access URLs.
+- Split file preview and download URL handling so preview panels no longer fall back to download endpoints for inline rendering.
 
 ### Published Packages
 
 - Maven: full Mango backend platform reactor at `1.0.1` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
-- npm: `@mango/admin@1.0.35`, `@mango/admin-pages@1.0.13`, `@mango/admin-shell@1.0.31`, `@mango/auth@1.0.10`, `@mango/calendar@1.0.14`, `@mango/cms@1.0.3`, `@mango/file@1.0.14`, `@mango/grid-widgets@1.0.8`, `@mango/job@1.0.6`, `@mango/notice@1.0.15`, `@mango/numgen@1.0.14`, `@mango/payment@1.0.5`, `@mango/system@1.0.12`, `@mango/template@1.0.14`, `@mango/workflow@1.0.19`, `@mango/workflow-business-example@1.0.18`, and `@mango/cli@1.0.54` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/admin@1.0.35`, `@mango/admin-pages@1.0.13`, `@mango/admin-shell@1.0.31`, `@mango/auth@1.0.10`, `@mango/calendar@1.0.14`, `@mango/cms@1.0.3`, `@mango/file@1.0.14`, `@mango/grid-layout@1.0.3`, `@mango/grid-widgets@1.0.8`, `@mango/job@1.0.6`, `@mango/notice@1.0.15`, `@mango/numgen@1.0.14`, `@mango/payment@1.0.5`, `@mango/system@1.0.12`, `@mango/template@1.0.14`, `@mango/workflow@1.0.19`, `@mango/workflow-business-example@1.0.18`, and `@mango/cli@1.0.54` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
 - GitHub Release: `v2026.06.30-maven-1.0.1-admin-branding-cli-release`.
 
 ### Upgrade Notes
@@ -28,6 +30,7 @@
 
 - `mvn -f mango/pom.xml -pl mango-platform/mango-system/mango-system-core -am -Drevision=1.0.1 -Dtest=AdminBrandingServiceTest -Dsurefire.failIfNoSpecifiedTests=false test`
 - `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/file test`
 - `pnpm --filter @mango/cli run check:release-versions`
 - `pnpm admin:styles:check`
 - `pnpm admin:module-styles:check`

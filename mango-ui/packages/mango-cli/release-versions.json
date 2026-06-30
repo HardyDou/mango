@@ -12,7 +12,7 @@
     "@mango/cms": "1.0.3",
     "@mango/common": "1.0.11",
     "@mango/file": "1.0.14",
-    "@mango/grid-layout": "1.0.2",
+    "@mango/grid-layout": "1.0.3",
     "@mango/grid-widgets": "1.0.8",
     "@mango/job": "1.0.6",
     "@mango/notice": "1.0.15",

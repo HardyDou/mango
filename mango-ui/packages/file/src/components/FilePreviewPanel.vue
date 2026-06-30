@@ -61,6 +61,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
 import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview, type FileReference } from '../api/file';
+import { isPreviewDisplayUrl } from '../utils/previewUrl';
 import type { ApiId } from '@mango/api-schema';
 
 type PreviewActionsState = {
@@ -121,7 +122,7 @@ const documentPreviewUrl = computed(() => {
   if (!item || isImage.value || isPdf.value || isVideo.value || isAudio.value) return '';
   if (externalPreviewUrl.value) return externalPreviewUrl.value;
   if (isDefaultPreviewProviderUrl(item.previewUrl)) return '';
-  if (item.previewUrl) return item.previewUrl;
+  if (isPreviewDisplayUrl(item.previewUrl)) return item.previewUrl;
   const providerUrl = props.previewProviderUrl || import.meta.env.VITE_FILE_PREVIEW_PROVIDER_URL;
   if (!providerUrl) return '';
   const url = new URL(providerUrl, window.location.origin);
@@ -169,7 +170,7 @@ async function loadInlinePreview() {
     externalPreviewUrl.value = await resolveExternalPreviewUrl(item);
     return;
   }
-  inlinePreviewUrl.value = item.directPreviewUrl || item.directDownloadUrl || item.downloadUrl || fileApi.downloadUrl(item.id);
+  inlinePreviewUrl.value = resolveInlinePreviewUrl(item);
 }
 
 async function openDownload() {
@@ -200,9 +201,15 @@ async function openPreviewInNewWindow() {
 async function resolveExternalPreviewUrl(item: FilePreview) {
   if (isDefaultPreviewProviderUrl(item.previewUrl)) {
     const link = await fileApi.previewLink(item.id);
-    return link.previewUrl || item.previewUrl;
+    return isPreviewDisplayUrl(link.previewUrl) ? link.previewUrl : '';
   }
-  return item.previewUrl || '';
+  return isPreviewDisplayUrl(item.previewUrl) ? item.previewUrl : '';
+}
+
+function resolveInlinePreviewUrl(item: FilePreview) {
+  if (isPreviewDisplayUrl(item.directPreviewUrl)) return item.directPreviewUrl;
+  if (isPreviewDisplayUrl(item.previewUrl)) return item.previewUrl;
+  return '';
 }
 
 function isDefaultPreviewProviderUrl(value?: string) {

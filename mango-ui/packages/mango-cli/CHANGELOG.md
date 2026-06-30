@@ -13,6 +13,8 @@
   - `@mango/admin-shell@1.0.31`
   - `@mango/auth@1.0.10`
   - `@mango/file@1.0.14`
+  - `@mango/grid-layout@1.0.3`
+  - `@mango/grid-widgets@1.0.8`
   - `@mango/system@1.0.12`
 
 ### Upgrade Notes

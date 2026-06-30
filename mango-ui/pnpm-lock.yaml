@@ -636,7 +636,7 @@ importers:
         specifier: 1.0.14
         version: link:../file
       '@mango/grid-layout':
-        specifier: 1.0.2
+        specifier: 1.0.3
         version: link:../grid-layout
       '@mango/grid-widgets':
         specifier: 1.0.8
@@ -740,7 +740,7 @@ importers:
         specifier: 1.0.14
         version: link:../file
       '@mango/grid-layout':
-        specifier: 1.0.2
+        specifier: 1.0.3
         version: link:../grid-layout
       '@mango/grid-widgets':
         specifier: 1.0.8
@@ -1016,12 +1016,18 @@ importers:
       '@vitejs/plugin-vue':
         specifier: ^4.0.0
         version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      happy-dom:
+        specifier: ^14.12.0
+        version: 14.12.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
       vite:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(sass@1.58.3)(terser@5.46.1)
 
   packages/grid-layout:
     dependencies:
@@ -1060,7 +1066,7 @@ importers:
         specifier: 1.0.11
         version: link:../common
       '@mango/grid-layout':
-        specifier: 1.0.2
+        specifier: 1.0.3
         version: link:../grid-layout
       '@mango/notice':
         specifier: 1.0.15

@@ -37,7 +37,7 @@
 
 - `MUpload` 负责选择文件、前端预检查、调用文件上传接口并回写文件 ID、token 或完整记录。
 - `MUpload` 缩略图优先使用 `directPreviewUrl`、`directDownloadUrl` 或 `url` 等直连地址；没有直连地址时，通过鉴权下载生成临时 `blob:` 地址用于图片回显，不会把预览地址写入业务表单值。
-- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作。
+- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作；预览区域只使用 `directPreviewUrl`、有效 `previewUrl` 或文档预览服务地址，`directDownloadUrl`、`downloadUrl` 和 `fileApi.downloadUrl(id)` 只用于下载动作。
 
 `api-client`：
 
@@ -246,6 +246,10 @@ import { FilePreviewPanel } from '@mango/file';
 **文档预览打不开**
 
 检查 `mango-file-preview`、`previewProviderUrl` 和 `/file-preview/files/preview-link`。
+
+**点击预览却触发浏览器下载**
+
+检查业务侧是否把 `/api/file/files/download` 或 `/file/files/download` 这类下载接口写入了 `previewUrl`。`FilePreviewPanel` 会拒绝把下载接口作为预览地址；没有可用预览地址时，页面展示下载查看提示，由用户手动点击下载。
 
 ## 11. 相关文档
 

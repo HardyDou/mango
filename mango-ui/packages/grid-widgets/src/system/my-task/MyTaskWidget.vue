@@ -12,20 +12,6 @@
     </header>
 
     <div
-      v-if="loadError"
-      class="mango-grid-widget-my-task__error"
-    >
-      <span>任务加载失败</span>
-      <button
-        type="button"
-        @click="loadSummary"
-      >
-        重试
-      </button>
-    </div>
-
-    <div
-      v-else
       class="mango-grid-widget-my-task__body"
       :class="{ 'is-loading': loading }"
     >
@@ -75,6 +61,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { ElMessage } from 'element-plus';
 import { workflowApi, type WorkflowMyTaskSummary } from '@mango/workflow';
 import type { MangoWidgetNavigateTarget, MyTaskWidgetProps } from '../../types';
 
@@ -87,7 +74,6 @@ const props = withDefaults(defineProps<MyTaskWidgetProps>(), {
 });
 
 const loading = ref(false);
-const loadError = ref(false);
 const summary = ref<WorkflowMyTaskSummary>(createEmptySummary());
 
 const taskItems = computed(() => {
@@ -131,11 +117,10 @@ onMounted(() => {
 
 async function loadSummary(): Promise<void> {
   loading.value = true;
-  loadError.value = false;
   try {
     summary.value = await workflowApi.myTaskSummary();
   } catch {
-    loadError.value = true;
+    ElMessage.error('任务加载失败，请稍后重试');
   } finally {
     loading.value = false;
   }
