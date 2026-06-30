@@ -47,6 +47,15 @@ const BASELINE_COLUMNS = [
   '行为变化'
 ];
 const BASELINE_CASE_COLUMN = '覆盖用例 ID';
+const BUSINESS_OUTPUT_COLUMNS = [
+  '输出对象',
+  '交接内容',
+  '材料路径',
+  '执行入口',
+  '数据/账号边界',
+  '失败/例外处理',
+  '状态'
+];
 const DEFAULT_FORBIDDEN = ['TODO', 'FIXME', 'mock', 'Mock', 'virtual', 'Virtual', '模拟', '伪代码', '未来优化', '后续优化'];
 const DONE_STATUSES = new Set(['DONE', 'EXCEPTION']);
 const PLAN_STATUSES = new Set(['TODO', 'IN_PROGRESS', 'DONE', 'EXCEPTION']);
@@ -184,6 +193,12 @@ function parseEvidenceRows(content) {
   return evidenceTable || { headers: [], rows: [] };
 }
 
+function parseBusinessOutputRows(content) {
+  const tables = parseMarkdownTables(content);
+  const businessOutputTable = tables.find((table) => BUSINESS_OUTPUT_COLUMNS.every((column) => table.headers.includes(column)));
+  return businessOutputTable || { headers: [], rows: [] };
+}
+
 function rowText(row) {
   return Object.values(row).join(' ');
 }
@@ -223,6 +238,11 @@ function hasExceptionText(value) {
 function hasPathLikeText(value) {
   const text = String(value || '').trim();
   return /[`'"]?\/?[\w.@-]+\/[\w./@-]+[`'"]?/.test(text) || /\b[\w.@-]+\.(md|mjs|js|ts|tsx|vue|java|xml|json|yaml|yml|sql|sh|feature|spec)\b/.test(text);
+}
+
+function hasCommandLikeText(value) {
+  const text = String(value || '').trim();
+  return /\b(node|npm|pnpm|yarn|mvn|gradle|java|npx|playwright|vitest|jest|bash|sh)\b/.test(text);
 }
 
 function extractPathLikeText(value) {
@@ -388,6 +408,38 @@ function checkBaselineTable(baselineRows, mode, testCaseRows, errors) {
   });
 }
 
+function checkBusinessOutputTable(businessOutputRows, requireMaterials, mode, errors) {
+  if (!requireMaterials) {
+    return;
+  }
+  if (businessOutputRows.length === 0) {
+    errors.push('Business developer handoff table has no rows');
+    return;
+  }
+  businessOutputRows.forEach((row, index) => {
+    const rowNo = index + 1;
+    for (const column of BUSINESS_OUTPUT_COLUMNS) {
+      if (isPlaceholderCell(row[column])) {
+        errors.push(`Business handoff row ${rowNo} missing concrete value for column: ${column}`);
+      }
+    }
+    for (const column of ['材料路径', '执行入口']) {
+      if (hasExceptionText(row[column])) {
+        checkMaterialException(rowNo, column, row[column], errors);
+      } else if (!hasPathLikeText(row[column]) && !hasCommandLikeText(row[column])) {
+        errors.push(`Business handoff row ${rowNo} column ${column} must contain a path, command, or EXCEPTION reason`);
+      }
+    }
+    const status = String(row['状态'] || '').trim();
+    if (!PLAN_STATUSES.has(status)) {
+      errors.push(`Business handoff row ${rowNo} has invalid status "${status}", expected TODO, IN_PROGRESS, DONE, or EXCEPTION`);
+    }
+    if (mode === 'verify' && !DONE_STATUSES.has(status)) {
+      errors.push(`Business handoff row ${rowNo} is not complete in verify mode: ${status}`);
+    }
+  });
+}
+
 function checkRows(rows, mode, requireMaterials, baselineRows, testCaseRows, errors) {
   if (rows.length === 0) {
     errors.push('Ledger has no delivery rows');
@@ -540,10 +592,12 @@ const parsed = ledgerText ? parseLedgerRows(ledgerText) : { headers: [], rows: [
 const baselineParsed = ledgerText ? parseBaselineRows(ledgerText) : { headers: [], rows: [] };
 const testCaseParsed = ledgerText ? parseTestCaseRows(ledgerText) : { headers: [], rows: [] };
 const evidenceParsed = ledgerText ? parseEvidenceRows(ledgerText) : { headers: [], rows: [] };
+const businessOutputParsed = ledgerText ? parseBusinessOutputRows(ledgerText) : { headers: [], rows: [] };
 if (ledgerText) {
   checkRequiredColumns(parsed.headers, args.requireMaterials, errors);
   checkTestCaseTable(testCaseParsed.rows, evidenceParsed.rows, baselineParsed.rows, errors);
   checkRows(parsed.rows, args.mode, args.requireMaterials, baselineParsed.rows, testCaseParsed.rows, errors);
+  checkBusinessOutputTable(businessOutputParsed.rows, args.requireMaterials, args.mode, errors);
   checkRequiredItems(parsed.rows, designText, requiredItems, errors);
 }
 
