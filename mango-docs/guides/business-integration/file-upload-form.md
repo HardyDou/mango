@@ -81,7 +81,7 @@ create table biz_contract_attachment (
 | 存储配置 | 目标环境已配置可用存储，上传接口能写入文件记录 |
 | 权限资源 | 下载和预览相关权限已授权给测试角色 |
 | 租户数据 | 文件记录、业务单据和当前登录用户处于同一租户上下文 |
-| 前端组件 | `MUpload` 返回 `fileId`、`fileIds` 或 token，详情页按文件 ID 回显；不要把 `previewUrl`、`downloadUrl` 或临时 `blob:` 地址提交给业务接口 |
+| 前端组件 | `MUpload` 返回 `fileId`、`fileIds` 或 token，详情页按文件 ID 回显；不要把 `previewUrl`、`downloadUrl` 或临时 `blob:` 地址提交给业务接口；`FilePreviewPanel` 不会把下载地址当作预览地址 |
 | 菜单页面 | 使用文件中心管理页时，页面 key 和菜单 component 对齐 |
 | 预览链路 | 启用预览时，file-preview 和 fileproc 依赖可用 |
 | 业务语义 | 编辑、删除业务单据时，附件解绑或物理清理策略清晰 |
@@ -129,6 +129,7 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 | 多租户下看不到文件 | 文件记录 tenantId、业务数据 tenantId、当前登录上下文是否一致 |
 | 图片能下载但缩略图裂图 | 是否把受保护的 `previewUrl` 或 `downloadUrl` 直接交给 `<img>`；应升级并使用 `MUpload`，由组件优先使用直连地址，没有直连地址时通过鉴权下载生成临时 `blob:` 地址 |
 | 图片能下载但不能在线预览 | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配 |
+| 点击预览触发下载 | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用 `directPreviewUrl`、有效 `previewUrl` 或 file-preview 链接，没有可用预览地址时展示下载查看提示 |
 | ZIP 打包失败 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态 |
 
 ## 9. 验证命令
@@ -137,6 +138,7 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 mvn -f mango/pom.xml -pl mango-platform/mango-file -am test
 mvn -f mango/pom.xml -pl mango-platform/mango-file-preview -am test
 pnpm -F @mango/file build
+pnpm -F @mango/file test
 ```
 
 模块验证入口：
@@ -155,6 +157,8 @@ pnpm -F @mango/file build
 - [前端文件上传与回显规则](../../../mango-pmo/rules/frontend/01-vue-code.md#41-文件上传与回显规则)
 
 ## 11. 变更影响记录
+
+- Issue #337 修复 `FilePreviewPanel` 预览地址与下载地址混用问题：详情预览区域只使用 `directPreviewUrl`、有效 `previewUrl` 或文档预览服务链接，不再使用 `directDownloadUrl`、`downloadUrl` 或 `/api/file/files/download` 作为内联预览兜底；下载入口和上传回显策略不变。业务验收需要额外确认图片/PDF/音视频可正常预览，只有下载地址时页面展示下载查看提示，点击预览不再触发浏览器自动下载。
 
 - Issue #332 修复文件下载响应头文件名二次编码问题，中文、`+` 等字符在浏览器下载保存时应显示为原始文件名；不改变上传、fileId 持久化、详情回显、预览/下载 API、权限、租户、页面入口、启动方式和表单验收步骤。业务验收仍按本指南最小闭环执行，涉及中文附件名或 ZIP 文件名时确认下载后的本地文件名可读。
 
