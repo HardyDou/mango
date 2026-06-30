@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和后台品牌配置前端批次；不改变既有按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。品牌配置保存权限使用 `system:admin-branding:edit`，授权后需重新登录刷新权限集合。
+
 - PR #327 扩展 `AUTH_SUBJECT_ROLE` 基线声明，支持通过 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析租户成员后绑定角色；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和前端判断方式。排查清库初始化后的按钮缺失时，如依赖成员角色绑定基线，需要额外确认声明中的稳定主体键能解析到未离租的 `tenant_member`。
 
 - PR #314 修复授权 API 资源运行时匹配和同步覆盖：同 method + path 的旧模块 active 资源会在新扫描结果注册时被禁用，精确路径优先于通配符或路径变量匹配。按钮 `permissionCode`、按钮展示规则、角色按钮授权关系、接口鉴权注解、租户边界和前端判断方式不变。排查按钮显示但基础接口 403 时，需要区分接口是否应为 `LOGIN`/`PUBLIC` 基础入口；若是基础入口，确认资源同步已执行、同路由旧 `PERMISSION` 记录已禁用，并刷新 API 资源运行时缓存；真正的业务动作接口仍按按钮权限码授权。

@@ -158,6 +158,8 @@ pnpm -F @mango/file test
 
 ## 11. 变更影响记录
 
+- v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和 `@mango/file@1.0.14` 前端批次，仅对齐文件组件回显修复、npm 物料和 CLI/starter 版本锁；不改变文件上传、下载、预览 API、业务表保存方式、权限、租户、页面入口、启动方式和表单验收步骤。业务项目应成组升级本发布批次的后端 `<mango.version>` 和前端 `@mango/*` 包。
+
 - Issue #337 修复 `FilePreviewPanel` 预览地址与下载地址混用问题：详情预览区域只使用 `directPreviewUrl`、有效 `previewUrl` 或文档预览服务链接，不再使用 `directDownloadUrl`、`downloadUrl` 或 `/api/file/files/download` 作为内联预览兜底；下载入口和上传回显策略不变。业务验收需要额外确认图片/PDF/音视频可正常预览，只有下载地址时页面展示下载查看提示，点击预览不再触发浏览器自动下载。
 
 - Issue #332 修复文件下载响应头文件名二次编码问题，中文、`+` 等字符在浏览器下载保存时应显示为原始文件名；不改变上传、fileId 持久化、详情回显、预览/下载 API、权限、租户、页面入口、启动方式和表单验收步骤。业务验收仍按本指南最小闭环执行，涉及中文附件名或 ZIP 文件名时确认下载后的本地文件名可读。
