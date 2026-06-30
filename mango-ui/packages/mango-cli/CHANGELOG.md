@@ -7,12 +7,20 @@
 - Locked generated business backend projects to Mango Maven backend `1.0.1` instead of the previous `1.0.0-SNAPSHOT` default.
 - Added release-version validation so formal CLI release locks reject `maven.mangoBackend` snapshot values.
 - Documented how generated projects choose the CLI-owned Maven jar version and how business projects override it with `--mango-version`.
+- Updated generated frontend release locks for the admin branding batch:
+  - `@mango/admin@1.0.35`
+  - `@mango/admin-pages@1.0.13`
+  - `@mango/admin-shell@1.0.31`
+  - `@mango/auth@1.0.10`
+  - `@mango/file@1.0.14`
+  - `@mango/system@1.0.12`
 
 ### Upgrade Notes
 
 - Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.54 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
 - New business projects generated with this CLI receive `<mango.version>1.0.1</mango.version>` in `backend/pom.xml`.
 - Existing business projects can align manually by setting their backend parent POM `<mango.version>` to `1.0.1` after the matching Mango Maven artifacts are published.
+- Existing business frontends should refresh Mango npm packages as a batch using the versions from this CLI release lock.
 
 ### Verification
 

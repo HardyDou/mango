@@ -1,5 +1,47 @@
 # Mango Changelog
 
+## v2026.06.30-maven-1.0.1-admin-branding-cli-release - 2026-06-30
+
+### New
+
+- Started fixed backend Maven jar version management for business projects. Generated projects now lock Mango backend dependencies through `<mango.version>1.0.1</mango.version>` and `dependencyManagement` instead of defaulting to `1.0.0-SNAPSHOT`.
+- Added admin branding configuration in the System module. The backend exposes branding configuration contracts and controller support, while the admin shell, login page, footer, and logo rendering can consume file-center-backed branding images and text.
+
+### Fixed
+
+- Updated the File upload component image回显 behavior used by admin branding so file-center IDs can be resolved back to previewable image data instead of relying on persisted access URLs.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.1` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin@1.0.35`, `@mango/admin-pages@1.0.13`, `@mango/admin-shell@1.0.31`, `@mango/auth@1.0.10`, `@mango/calendar@1.0.14`, `@mango/cms@1.0.3`, `@mango/file@1.0.14`, `@mango/grid-widgets@1.0.8`, `@mango/job@1.0.6`, `@mango/notice@1.0.15`, `@mango/numgen@1.0.14`, `@mango/payment@1.0.5`, `@mango/system@1.0.12`, `@mango/template@1.0.14`, `@mango/workflow@1.0.19`, `@mango/workflow-business-example@1.0.18`, and `@mango/cli@1.0.54` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.30-maven-1.0.1-admin-branding-cli-release`.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.1</mango.version>` in the generated backend parent POM, or regenerate/upgrade with `@mango/cli@1.0.54` so the CLI writes the same Maven lock.
+- Business frontend projects should consume the npm versions listed above as a batch. Do not mix the new admin shell/system/file branding packages with older `@mango/admin` or CLI release locks.
+- After upgrading backend artifacts, start the application with the normal Resource Registry and configuration initialization path so the new System admin branding menu and default configuration resources are synchronized before assigning permissions.
+- No manual database DDL is required by this release beyond normal Flyway execution.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-system/mango-system-core -am -Drevision=1.0.1 -Dtest=AdminBrandingServiceTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm -C mango-ui release:impact --base=v2026.06.30-file-download-cli-pmo-release --head=HEAD`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-maven-1.0.1-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `mvn -f mango/pom.xml -Drevision=1.0.1 -DskipTests deploy`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.06.30-maven-1.0.1-admin-branding-cli-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `mvn -q dependency:get -Dartifact=io.mango:mango-admin-starter:1.0.1 -Dtransitive=false -DremoteRepositories=mango-public::default::http://nexus.inner.yunxinbaokeji.com/repository/maven-public/`
+- `git diff --check`
+
 ## v2026.06.30-file-download-cli-pmo-release - 2026-06-30
 
 ### Fixed

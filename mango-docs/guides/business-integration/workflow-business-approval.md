@@ -71,6 +71,8 @@
 
 ## 7. 变更影响记录
 
+- v2026.06.30-maven-1.0.1-admin-branding-cli-release 只对齐固定后端 Maven `1.0.1`、前端 npm 批次和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目应成组升级本发布批次的后端 `<mango.version>` 和前端 `@mango/*` 包，避免新旧前端依赖混装。
+
 - v2026.06.29-workflow-return-cli-db-release 发布工作流退回能力和前端聚合版本锁。既有审批发起、通过、驳回、撤回和事件订阅流程保持兼容；使用退回动作前，先完成资源同步并给角色授予 `workflow:task:return` 权限。
 
 部署配置示例：
