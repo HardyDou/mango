@@ -29,6 +29,18 @@ const ignoredRegistryPackages = new Set(process.argv
   .map((arg) => arg.slice('--ignore-registry-package='.length)));
 const mismatches = [];
 
+const mangoBackendVersion = releaseVersions.maven?.mangoBackend;
+if (!mangoBackendVersion) {
+  mismatches.push('maven.mangoBackend: missing Mango backend Maven version lock');
+} else {
+  if (mangoBackendVersion.toUpperCase().endsWith('-SNAPSHOT')) {
+    mismatches.push(`maven.mangoBackend: ${mangoBackendVersion} must be a fixed release version, not SNAPSHOT`);
+  }
+  if (!/^[0-9]+(?:\.[0-9]+){2,}(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)?$/.test(mangoBackendVersion)) {
+    mismatches.push(`maven.mangoBackend: ${mangoBackendVersion} is not a supported release version format`);
+  }
+}
+
 for (const [packageName, lockedVersion] of Object.entries(releaseVersions.npm ?? {})) {
   const workspacePackage = packageIndex.get(packageName);
   if (!workspacePackage) {
@@ -97,6 +109,7 @@ if (mismatches.length > 0) {
   process.exit(1);
 }
 
+console.log(`release-versions.json locks Mango Maven backend ${mangoBackendVersion}.`);
 console.log(`release-versions.json matches ${Object.keys(releaseVersions.npm ?? {}).length} local package versions.`);
 if (checkRegistry) {
   console.log(`release-versions.json also matches registry ${registry}.`);
