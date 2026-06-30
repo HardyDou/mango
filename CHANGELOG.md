@@ -1,5 +1,54 @@
 # Mango Changelog
 
+## v2026.06.30-file-download-cli-pmo-release - 2026-06-30
+
+### Fixed
+
+- Published the file download filename fix from Issue #332 / PR #333. `Content-Disposition` filenames are no longer double-encoded, so Chinese names and `+` characters are presented correctly by browser downloads.
+- Published the Mango CLI dev-workspace cleanup from PR #331. Generated and root compatibility scripts no longer keep the legacy `init` shim as an owning entry point; business projects should use Mango CLI workspace commands.
+
+### New
+
+- Published the PMO test case automation governance flow from PR #334. Mango delivery rules, templates, and checkers now require test case registration, automation layer decisions, result baselines, and business-developer-facing handoff output.
+
+### Published Packages
+
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- npm: `@mango/pmo@1.0.5` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.53` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.30-file-download-cli-pmo-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` file dependencies before relying on corrected browser download filenames for non-ASCII file names.
+- Business developers should install `@mango/cli@1.0.53` with `npm install -g @mango/cli@1.0.53 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to receive `@mango/pmo@1.0.5`, updated PMO governance, and aligned compatibility scripts.
+- No database migration, menu resource, button permission, tenant binding, frontend runtime package, or route change is required for this release.
+
+### Verification
+
+- `mvn -pl mango-platform/mango-file/mango-file-starter -am -Dtest=FileControllerDownloadResponseTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-platform/mango-file/mango-file-starter -am test`
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm run package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node mango-pmo/tools/check-pmo-preflight.mjs`
+- `node mango-pmo/tools/check-governance-intent.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg pmo --release-tag=v2026.06.30-file-download-cli-pmo-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.30-file-download-cli-pmo-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm pmo --version=1.0.5`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.53`
+- `git diff --check`
+
 ## v2026.06.29-file-compression-release - 2026-06-29
 
 ### New

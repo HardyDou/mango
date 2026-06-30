@@ -1,5 +1,22 @@
 # @mango/cli Changelog
 
+## 1.0.53 - 2026-06-30
+
+### Fixed
+
+- Removed the legacy generated `scripts/dev-workspace.sh init` shim so business projects use Mango CLI workspace commands as the owning development entry point.
+- Updated generated project release locks to consume `@mango/pmo@1.0.5` and `@mango/cli@1.0.53`.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.53 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` so generated compatibility scripts and PMO baseline content stay aligned.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.52 - 2026-06-29
 
 ### Fixed
