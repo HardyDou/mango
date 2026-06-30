@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "docs:stage": "node .vitepress/stage-public-docs.mjs",
-    "docs:build": "npm run docs:stage && vitepress build .vitepress/public-src",
-    "docs:dev": "npm run docs:stage && vitepress dev .vitepress/public-src --host 127.0.0.1"
+    "docs:build": "npm run docs:stage && vitepress build .vitepress/public-src && node .vitepress/copy-versioned-docs.mjs",
+    "docs:dev": "npm run docs:stage && vitepress dev .vitepress/public-src --host 127.0.0.1",
+    "docs:snapshot": "node .vitepress/build-version-snapshot.mjs"
   },
   "devDependencies": {
     "vitepress": "1.6.4"

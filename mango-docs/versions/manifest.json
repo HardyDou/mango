@@ -1,0 +1,13 @@
+{
+  "latest": {
+    "label": "Latest",
+    "path": "/"
+  },
+  "versions": [
+    {
+      "version": "v2026.06.30-maven-1.0.1-admin-branding-cli-release",
+      "label": "v2026.06.30-maven-1.0.1-admin-branding-cli-release",
+      "path": "/versions/v2026.06.30-maven-1.0.1-admin-branding-cli-release/"
+    }
+  ]
+}
