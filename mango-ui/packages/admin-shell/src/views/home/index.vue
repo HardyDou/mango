@@ -188,7 +188,7 @@ async function resetLayout(): Promise<void> {
 function defaultLayoutItems(): GridLayoutItem[] {
   // 工作台默认布局由页面直接传入自定义布局组件，无个人配置或恢复默认时使用。
   return [
-    gridItem('message-center', 'system.message-center', 0, 0, 6, 18, '消息中心'),
+    gridItem('message-center', 'system.message-center', 0, 0, 6, 18, '我的消息'),
     gridItem('quick', 'system.quick-entry', 6, 0, 3, 18, '快捷入口'),
     gridItem('calendar', 'system.calendar', 9, 0, 3, 14, '日历'),
     gridItem('user-profile', 'system.user-profile', 9, 15, 3, 28, '用户信息', {

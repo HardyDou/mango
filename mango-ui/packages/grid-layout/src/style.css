@@ -70,11 +70,11 @@
 }
 
 .mango-grid-designer__library {
-  flex: 0 0 280px;
+  flex: 0 0 248px;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 16px;
+  padding: 14px;
   border: 1px solid var(--mango-border-color, #e4e7ed);
   border-radius: 8px;
   background: var(--mango-bg-color, #fff);
@@ -115,9 +115,9 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
-  margin-bottom: 10px;
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
   border: 1px dashed var(--mango-border-color, #dcdfe6);
   border-radius: 8px;
   background: var(--mango-bg-color-page, #f7f8fa);
@@ -136,12 +136,12 @@
 }
 
 .mango-grid-designer__library-icon {
-  flex: 0 0 34px;
+  flex: 0 0 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   background: var(--mango-bg-color, #fff);
   color: var(--mango-color-primary, #409eff);

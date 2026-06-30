@@ -8,7 +8,7 @@ export type { MessageCenterCategory, MessageCenterWidgetProps } from '../../type
 export const systemMessageCenterWidgets: MangoGridWidgetDefinition[] = [
   {
     type: 'system.message-center',
-    title: '消息中心',
+    title: '我的消息',
     description: '展示当前登录人的未读消息、最新未读摘要和消息分类统计',
     category: '系统组件',
     source: 'mango',

@@ -218,3 +218,7 @@ pnpm.cmd -F @mango/admin build
 - [工作台自定义布局设计方案](../../../mango-docs/designs/mango-grid-layout-workbench-design.md)
 - [工作台自定义布局交付台账](../../../mango-docs/plans/2026-06-15-grid-layout-workbench-delivery-ledger.md)
 - [Grid Layout 后端模块 README](../../../mango/mango-platform/mango-grid-layout/README.md)
+
+## 12. 本次变更影响记录
+
+- 本次 PR 仅收窄编辑态左侧组件库列表宽度；不改变 `@mango/grid-layout` 的公开组件 API、布局数据结构、拖拽算法、个人布局接口、菜单权限、租户隔离、启动方式和校验方式。
