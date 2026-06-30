@@ -11,8 +11,20 @@
           v-else
           class="login-title"
         >
+          <img
+            v-if="loginBrand.logoUrl"
+            class="login-logo"
+            :src="loginBrand.logoUrl"
+            alt="logo"
+          />
           <h1>{{ loginBrand.title }}</h1>
           <p>{{ loginBrand.subtitle }}</p>
+          <img
+            v-if="loginBrand.imageUrl"
+            class="login-brand-image"
+            :src="loginBrand.imageUrl"
+            alt="login brand"
+          />
         </div>
       </div>
       <div class="login-form">
@@ -245,6 +257,8 @@ const loginBrand = computed(() => ({
   title: authConfig.value.login?.brand?.title || 'Mango Admin',
   subtitle: authConfig.value.login?.brand?.subtitle || '企业级管理平台',
   panelTitle: authConfig.value.login?.brand?.panelTitle,
+  logoUrl: authConfig.value.login?.brand?.logoUrl || '',
+  imageUrl: authConfig.value.login?.brand?.imageUrl || '',
 }));
 
 // 表单数据
@@ -715,6 +729,13 @@ const handleLogin = async () => {
   .login-title {
     color: #fff;
 
+    .login-logo {
+      width: 56px;
+      height: 56px;
+      margin-bottom: 18px;
+      object-fit: contain;
+    }
+
     h1 {
       font-size: 36px;
       font-weight: 700;
@@ -724,6 +745,13 @@ const handleLogin = async () => {
     p {
       font-size: 18px;
       opacity: 0.9;
+    }
+
+    .login-brand-image {
+      width: 100%;
+      max-height: 180px;
+      margin-top: 28px;
+      object-fit: contain;
     }
   }
 }
