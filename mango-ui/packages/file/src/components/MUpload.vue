@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { ElMessage, type UploadProps, type UploadRequestOptions, type UploadUserFile } from 'element-plus';
 import type { AxiosProgressEvent } from 'axios';
 import { Plus, Upload as UploadIcon, UploadFilled } from '@element-plus/icons-vue';
@@ -182,6 +182,7 @@ const emit = defineEmits<{
 const internalFiles = ref<InternalUploadFile[]>([]);
 const syncing = ref(false);
 const uploadRef = ref();
+const objectUrls = new Map<string, string>();
 
 const multiple = computed(() => props.count > 1);
 const accept = computed(() => normalizeFormats(props.fmt).map(item => `.${item}`).join(','));
@@ -257,6 +258,7 @@ const handleChange: UploadProps['onChange'] = (_file, files) => {
 
 const handleRemove: UploadProps['onRemove'] = (_file, files) => {
   internalFiles.value = files.map(normalizeUploadFile);
+  cleanupUnusedObjectUrls();
   syncValue();
 };
 
@@ -269,6 +271,9 @@ const handleSuccess: UploadProps['onSuccess'] = (response, file, files) => {
     return normalizeUploadFile(item);
   });
   syncValue();
+  if (record?.id) {
+    void hydratePreviewUrl(record);
+  }
 };
 
 const handleError: UploadProps['onError'] = (_error, file, files) => {
@@ -366,6 +371,7 @@ function progressPercent(loaded: number, total: number) {
 
 function removeAt(index: number) {
   internalFiles.value.splice(index, 1);
+  cleanupUnusedObjectUrls();
   syncValue();
 }
 
@@ -460,8 +466,8 @@ function normalizeUploadResponse(response: unknown): FileRecord | undefined {
   return record?.id ? record : undefined;
 }
 
-function recordToFile(record: FileRecord, uid?: number): InternalUploadFile {
-  const url = displayUrl(record);
+function recordToFile(record: FileRecord, uid?: number, runtimeUrl?: string): InternalUploadFile {
+  const url = runtimeUrl ?? displayUrl(record);
   return {
     ...record,
     uid: uid ?? Number(Date.now()),
@@ -486,14 +492,12 @@ function previewUrl(record: Partial<FileRecord>) {
 }
 
 function displayUrl(record: Partial<FileRecord>) {
-  const directUrl = directDisplayUrl(record.directPreviewUrl)
-    || directDisplayUrl(record.directDownloadUrl)
-    || directDisplayUrl(record.url)
+  const directUrl = thumbnailDirectUrl(record)
     || directDisplayUrl(record.previewUrl)
     || directDisplayUrl(record.downloadUrl)
     || '';
   if (normalizedDisplay.value === 'thumbnail') {
-    return directUrl;
+    return thumbnailDirectUrl(record);
   }
   return directUrl || (record.id ? fileApi.downloadUrl(record.id) : '');
 }
@@ -504,10 +508,11 @@ function directDisplayUrl(value?: string) {
 }
 
 async function hydratePreviewUrl(record: FileRecord, shouldSyncValue = false) {
-  if (!record.id || record.directPreviewUrl || record.previewUrl || record.directDownloadUrl) return;
+  if (!record.id) return;
   try {
     let hydrated = false;
-    const preview = await fileApi.preview(record.id);
+    const nextRecord = await loadPreviewRecord(record);
+    const runtimeUrl = await resolveThumbnailRuntimeUrl(nextRecord);
     internalFiles.value = internalFiles.value.map((file) => {
       const current = fileToRecord(file);
       if (!current || String(current.id) !== String(record.id)) {
@@ -516,20 +521,100 @@ async function hydratePreviewUrl(record: FileRecord, shouldSyncValue = false) {
       hydrated = true;
       return recordToFile({
         ...current,
-        previewUrl: preview.previewUrl,
-        downloadUrl: preview.downloadUrl || current.downloadUrl,
-        directPreviewUrl: preview.directPreviewUrl,
-        directDownloadUrl: preview.directDownloadUrl,
-        directPreviewExpireSeconds: preview.directPreviewExpireSeconds,
-        directDownloadExpireSeconds: preview.directDownloadExpireSeconds,
-      }, file.uid);
+        ...nextRecord,
+      }, file.uid, runtimeUrl);
     });
+    cleanupUnusedObjectUrls();
     if (hydrated && shouldSyncValue) {
       syncValue();
     }
   } catch {
-    // 预览地址补齐失败时保留上传返回地址，避免影响表单值同步。
+    // 预览地址补齐失败时保留原文件记录，避免影响表单值同步。
   }
+}
+
+async function loadPreviewRecord(record: FileRecord): Promise<FileRecord> {
+  if (record.previewUrl || record.downloadUrl || record.directPreviewUrl || record.directDownloadUrl) {
+    return record;
+  }
+  const preview = await fileApi.preview(record.id);
+  return {
+    ...record,
+    fileName: preview.fileName || record.fileName,
+    fileSize: preview.fileSize || record.fileSize,
+    contentType: preview.contentType || record.contentType,
+    fileExt: preview.fileExt || record.fileExt,
+    previewUrl: preview.previewUrl,
+    downloadUrl: preview.downloadUrl || record.downloadUrl,
+    directPreviewUrl: preview.directPreviewUrl,
+    directDownloadUrl: preview.directDownloadUrl,
+    directPreviewExpireSeconds: preview.directPreviewExpireSeconds,
+    directDownloadExpireSeconds: preview.directDownloadExpireSeconds,
+  };
+}
+
+async function resolveThumbnailRuntimeUrl(record: FileRecord) {
+  if (normalizedDisplay.value !== 'thumbnail') {
+    return displayUrl(record);
+  }
+  const directUrl = thumbnailDirectUrl(record);
+  if (directUrl) {
+    return directUrl;
+  }
+  if (!isImageRecord(record)) {
+    return '';
+  }
+  return objectUrlForRecord(record);
+}
+
+async function objectUrlForRecord(record: FileRecord) {
+  const key = String(record.id);
+  const existing = objectUrls.get(key);
+  if (existing) {
+    return existing;
+  }
+  const response = await fileApi.download(record.id);
+  const blob = response.data instanceof Blob
+    ? response.data
+    : new Blob([response.data], { type: record.contentType || response.headers?.['content-type'] || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  objectUrls.set(key, url);
+  return url;
+}
+
+function thumbnailDirectUrl(record: Partial<FileRecord>) {
+  return directDisplayUrl(record.directPreviewUrl)
+    || directDisplayUrl(record.directDownloadUrl)
+    || directDisplayUrl(record.url)
+    || '';
+}
+
+function isImageRecord(record: Partial<FileRecord>) {
+  const contentType = record.contentType?.toLowerCase() || '';
+  if (contentType.startsWith('image/')) {
+    return true;
+  }
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'].includes(fileExt(record.fileName));
+}
+
+function cleanupUnusedObjectUrls() {
+  const activeIds = new Set(
+    internalFiles.value
+      .map(fileToRecord)
+      .filter((item): item is FileRecord => Boolean(item?.id))
+      .map(item => String(item.id)),
+  );
+  objectUrls.forEach((url, id) => {
+    if (!activeIds.has(id)) {
+      URL.revokeObjectURL(url);
+      objectUrls.delete(id);
+    }
+  });
+}
+
+function revokeAllObjectUrls() {
+  objectUrls.forEach(url => URL.revokeObjectURL(url));
+  objectUrls.clear();
 }
 
 function fileToRecord(file: InternalUploadFile): FileRecord | null {
@@ -655,6 +740,8 @@ function safeJson(value: string) {
     return {};
   }
 }
+
+onBeforeUnmount(revokeAllObjectUrls);
 </script>
 
 <style scoped>

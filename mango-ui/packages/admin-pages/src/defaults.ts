@@ -45,6 +45,7 @@ export function registerDefaultAdminPages(options: RegisterDefaultAdminPagesOpti
         'system/login-log/index': () => import('@mango/system').then(m => m.LoginLogView),
         'system/tenant/index': () => import('@mango/system').then(m => m.TenantView),
         'system/config/index': () => import('@mango/system').then(m => m.ConfigView),
+        'system/admin-branding/index': () => import('@mango/system').then(m => m.AdminBrandingView),
         'system/public-path/index': () => import('@mango/system').then(m => m.PublicPathView),
         'system/area/index': () => import('@mango/system').then(m => m.AreaView),
         'system/domain/index': () => import('@mango/system').then(m => m.DomainView),

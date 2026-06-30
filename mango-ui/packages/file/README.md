@@ -36,6 +36,7 @@
 `business-component`：
 
 - `MUpload` 负责选择文件、前端预检查、调用文件上传接口并回写文件 ID、token 或完整记录。
+- `MUpload` 缩略图优先使用 `directPreviewUrl`、`directDownloadUrl` 或 `url` 等直连地址；没有直连地址时，通过鉴权下载生成临时 `blob:` 地址用于图片回显，不会把预览地址写入业务表单值。
 - `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作。
 
 `api-client`：

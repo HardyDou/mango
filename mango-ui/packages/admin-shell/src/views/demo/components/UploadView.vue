@@ -235,7 +235,7 @@
 
       <section id="response" class="doc-section api-section">
         <h2>接口返回报文</h2>
-        <p>上传接口返回 FileRecord。组件用于缩略图和预览的显示地址按 directPreviewUrl、previewUrl、directDownloadUrl、downloadUrl、url、下载接口兜底的顺序选择；上传返回缺少直连预览地址时会自动调用 preview 接口补齐。</p>
+        <p>上传接口返回 FileRecord。组件用于预览的显示地址按 directPreviewUrl、previewUrl、directDownloadUrl、downloadUrl、url、下载接口兜底的顺序选择；缩略图优先使用直连地址，缺少直连地址时会通过鉴权下载生成临时 blob 地址回显，不会把访问地址写入业务值。</p>
         <el-table :data="responseTable" size="small" border>
           <el-table-column prop="name" label="字段" width="180" />
           <el-table-column prop="description" label="说明" min-width="260" />

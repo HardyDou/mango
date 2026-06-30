@@ -1,9 +1,11 @@
-import type { App, Component, InjectionKey } from 'vue';
+import { reactive, type App, type Component, type InjectionKey } from 'vue';
 
 export interface MangoAuthLoginBrandConfig {
   title?: string;
   subtitle?: string;
   panelTitle?: string;
+  logoUrl?: string;
+  imageUrl?: string;
 }
 
 export interface MangoAuthLoginSlots {
@@ -57,11 +59,11 @@ export interface MangoAuthConfig {
 
 export const mangoAuthConfigKey: InjectionKey<MangoAuthConfig> = Symbol('mangoAuthConfig');
 
-let globalMangoAuthConfig: MangoAuthConfig = {};
+const globalMangoAuthConfig = reactive<MangoAuthConfig>({});
 
-export function installMangoAuth(app: App, config: MangoAuthConfig = {}) {
-  globalMangoAuthConfig = mergeAuthConfig(globalMangoAuthConfig, config);
-  app.provide(mangoAuthConfigKey, globalMangoAuthConfig);
+export function installMangoAuth(app?: App, config: MangoAuthConfig = {}) {
+  Object.assign(globalMangoAuthConfig, mergeAuthConfig(globalMangoAuthConfig, config));
+  app?.provide(mangoAuthConfigKey, globalMangoAuthConfig);
 }
 
 export function getMangoAuthConfig() {
