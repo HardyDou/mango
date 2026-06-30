@@ -1,0 +1,12 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: demo-module
+    module-name: Demo 模块
+    declarations:
+      MESSAGE_TEMPLATE:
+        - id: "1900000000000000901"
+          version: 1
+          biz-key: demo.message
+          name: Demo 消息
+          target-module: notice

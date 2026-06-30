@@ -13,8 +13,10 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 加载 classpath JSON/YAML 资源声明。
@@ -31,13 +33,30 @@ public class ResourceDeclarationLoader {
 
     public List<ResourceDeclaration> load() {
         List<ResourceDeclaration> declarations = new ArrayList<>();
-        for (String location : properties.getLocations()) {
-            if (!StringUtils.hasText(location)) {
-                continue;
-            }
+        for (String location : resolveLocations()) {
             declarations.addAll(loadLocation(location));
         }
         return declarations;
+    }
+
+    private List<String> resolveLocations() {
+        Set<String> locations = new LinkedHashSet<>();
+        addLocations(locations, properties.getLocations());
+        if (properties.isDemoEnabled()) {
+            addLocations(locations, properties.getDemoLocations());
+        }
+        return new ArrayList<>(locations);
+    }
+
+    private void addLocations(Set<String> target, List<String> locations) {
+        if (locations == null || locations.isEmpty()) {
+            return;
+        }
+        for (String location : locations) {
+            if (StringUtils.hasText(location)) {
+                target.add(location);
+            }
+        }
     }
 
     private List<ResourceDeclaration> loadLocation(String location) {

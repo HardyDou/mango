@@ -45,6 +45,37 @@ class ResourceDeclarationLoaderTest {
     }
 
     @Test
+    void loadDoesNotReadDemoDeclarationsByDefault() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of("classpath*:META-INF/mango/resources/test-resource.*"));
+
+        List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties).load();
+
+        assertThat(declarations)
+                .extracting(ResourceDeclaration::getBizKey)
+                .doesNotContain("demo.message");
+    }
+
+    @Test
+    void loadReadsDemoDeclarationsWhenEnabled() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of("classpath*:META-INF/mango/resources/test-resource.*"));
+        properties.setDemoEnabled(true);
+
+        List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties).load();
+
+        assertThat(declarations).hasSize(3);
+        ResourceDeclaration demo = declarations.stream()
+                .filter(resource -> "demo.message".equals(resource.getBizKey()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(demo.getId()).isEqualTo("1900000000000000901");
+        assertThat(demo.getResourceType()).isEqualTo("MESSAGE_TEMPLATE");
+        assertThat(demo.getModuleCode()).isEqualTo("demo-module");
+        assertThat(demo.getTargetModule()).isEqualTo("notice");
+    }
+
+    @Test
     void loadReadsAuthMenuJsonDeclaration() {
         ResourceRegistryProperties properties = new ResourceRegistryProperties();
         Path workflowMenu = findRepositoryFile(
