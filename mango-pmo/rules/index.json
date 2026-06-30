@@ -47,6 +47,10 @@
       "path": "rules/04-test-assets.md",
       "reason": "测试资产目录规范"
     },
+    "process.testCaseAutomation": {
+      "path": "rules/09-test-case-automation-flow.md",
+      "reason": "测试用例登记、自动化层级、稳定锚点、执行策略和结果基线流程"
+    },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
       "reason": "AI 交付质量门禁"
@@ -166,17 +170,17 @@
   },
   "roles": {
     "pm": ["agent.pm", "product.prd"],
-    "tech-lead": ["agent.techLead", "product.detailedDesign"],
-    "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.aiDeliveryQuality"],
-    "qa": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
+    "tech-lead": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation"],
+    "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "qa": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
     "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
-    "requirement": ["product.prd"],
-    "design": ["agent.techLead", "product.detailedDesign"],
-    "develop": ["agent.dev", "process.devEnvironment", "process.aiDeliveryQuality"],
-    "verify": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
-    "release": ["process.aiDeliveryQuality"],
+    "requirement": ["product.prd", "process.testCaseAutomation"],
+    "design": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation"],
+    "develop": ["agent.dev", "process.devEnvironment", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "verify": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "release": ["process.testCaseAutomation", "process.aiDeliveryQuality"],
     "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "bundles": {
@@ -261,13 +265,19 @@
       "roles": ["dev", "qa"],
       "paths": ["mango-ui/**/__tests__/**", "mango-ui/**/*.spec.*", "mango-ui/**/*.test.*", "mango-ui/**/e2e/**", "mango-ui/**/playwright/**", "mango-ui/**/playwright.config.*", "frontend/**/__tests__/**", "frontend/**/*.spec.*", "frontend/**/*.test.*", "frontend/**/e2e/**", "frontend/**/playwright/**", "frontend/**/playwright.config.*"],
       "keywords": ["前端测试", "E2E", "Playwright", "组件测试", "pnpm test", "pnpm build", "pnpm lint", "测试资产", "回归脚本", "验收证据", "evidence"],
-      "include": ["frontend.test", "process.testAssets", "process.aiDeliveryQuality"]
+      "include": ["frontend.test", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"]
+    },
+    "testCaseAutomation": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango-pmo/templates/delivery-contract.md", "mango-pmo/rules/09-test-case-automation-flow.md"],
+      "keywords": ["测试用例", "用例登记", "用例管理", "自动化测试", "E2E 稳定", "E2E稳定", "稳定定位器", "语义锚点", "执行策略", "测试结果基线", "flaky", "Playwright"],
+      "include": ["process.testCaseAutomation", "process.testAssets", "process.aiDeliveryQuality"]
     },
     "testAssets": {
       "roles": ["dev", "qa", "pmo"],
       "paths": ["mango-docs/evidence/**", "business-docs/evidence/**", ".runtime/**", "mango-ui/packages/mango-cli/tests/**"],
       "keywords": ["测试目录", "测试资产", "回归脚本", "验收证据", "evidence", ".runtime", "runtime", "临时项目", "生成项目", "mango-cli 验证", "CLI 回归"],
-      "include": ["process.testAssets", "process.devEnvironment", "process.aiDeliveryQuality"]
+      "include": ["process.testAssets", "process.testCaseAutomation", "process.devEnvironment", "process.aiDeliveryQuality"]
     },
     "pmo": {
       "paths": ["mango-pmo/**", "rules/**", "agents/**"],
@@ -292,8 +302,8 @@
     },
     "product": {
       "paths": ["mango-docs/**"],
-      "keywords": ["需求", "PRD", "原型", "详细设计", "设计文档", "关键对象", "关键业务流程", "业务规则", "状态机", "数据流图", "Sprint", "验收标准"],
-      "include": ["agent.pm", "product.prd", "product.detailedDesign", "product.sprint"]
+      "keywords": ["需求", "PRD", "原型", "详细设计", "设计文档", "关键对象", "关键业务流程", "业务规则", "状态机", "数据流图", "Sprint", "验收标准", "测试用例", "用例登记"],
+      "include": ["agent.pm", "product.prd", "product.detailedDesign", "product.sprint", "process.testCaseAutomation"]
     },
     "releaseBackend": {
       "paths": [],
