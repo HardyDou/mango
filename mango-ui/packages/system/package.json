@@ -29,9 +29,15 @@
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {
+    "@mango/file": "1.0.13",
     "element-plus": "2.14.1",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"
+  },
+  "peerDependenciesMeta": {
+    "@mango/file": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",

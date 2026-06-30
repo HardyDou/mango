@@ -7,7 +7,8 @@
 
 - 模板渲染：TEXT、HTML、DOCX、XLSX 等输入渲染为目标格式。
 - 格式转换：HTML/TEXT、Office/PDF、PDF/图片、TIFF/PDF、同格式透传。
-- PDF 操作：合并、加水印、压缩、压缩到目标大小。
+- 文件压缩：图片、扫描件 PDF 按档位或目标大小压缩。
+- PDF 操作：合并、加水印、结构压缩、压缩到目标大小。
 - Aspose license 装载：Words、Cells、Slides、PDF、Imaging。
 - LibreOffice/JODConverter Office 转 PDF。
 
@@ -17,7 +18,7 @@
 |------|----------|
 | 模板模块需要把模板和变量渲染为文档 | Maven 依赖 / starter / Java API |
 | 文件预览需要把 Office、PDF、图片等转换成预览引擎可处理的格式 | Maven 依赖 / starter / Java API |
-| 业务后台需要压缩 PDF、合并 PDF、加水印或导出文档 | Maven 依赖 / starter / Java API |
+| 业务后台需要压缩图片/PDF、合并 PDF、加水印或导出文档 | Maven 依赖 / starter / Java API |
 | 平台模块需要统一 Aspose license 装载方式 | Maven 依赖 / starter / Java API |
 
 
@@ -30,15 +31,16 @@
 ## 4. 模块入口
 子模块：
 
-- `mango-infra-fileproc-api`：`RenderApi`、`ConvertApi`、`AsposeLicenseApi`、命令、枚举和 VO。
-- `mango-infra-fileproc-core`：渲染器、转换器、注册表、Aspose 和 LibreOffice 适配。
+- `mango-infra-fileproc-api`：`FileCompressApi`、`RenderApi`、`ConvertApi`、`AsposeLicenseApi`、命令、枚举和 VO。
+- `mango-infra-fileproc-core`：压缩器、渲染器、转换器、注册表、Aspose 和 LibreOffice 适配。
 - `mango-infra-fileproc-starter`：自动配置和配置属性。
 
 命令边界：
 
 - `ConvertCommand` 只描述 `sourceFormat`、`targetFormat`、输入流或源路径、目标路径、文件名和 options。
 - `RenderCommand` 只描述渲染输入、变量、变量定义、目标格式和目标路径。
-- 两个命令都不包含文件中心 ID、存储位置、权限或租户信息。调用方必须先完成业务鉴权，再把输入交给 fileproc。
+- `CompressFileCommand` 只描述文件名、内容类型、输入流、压缩档位和单文件目标大小。
+- 这些命令都不包含文件中心 ID、存储位置、权限或租户信息。调用方必须先完成业务鉴权，再把输入交给 fileproc。
 
 ## 5. 接入方式
 启用渲染、转换和 Aspose：
@@ -80,8 +82,41 @@ RenderResultVO result = renderApi.render(RenderCommand.builder()
         .build());
 ```
 
+```java
+CompressFileResultVO result = fileCompressApi.compress(new CompressFileCommand(
+        "scan.pdf",
+        "application/pdf",
+        inputStream,
+        FileCompression.MEDIUM,
+        5_000_000L));
+```
+
 ## 6. 配置说明
-### 6.1 渲染
+### 6.1 文件压缩
+
+前缀：`mango.fileproc.compress`。
+
+| 配置项 | 默认值 | 含义 |
+|--------|--------|------|
+| `enabled` | `true` | 是否启用文件压缩自动配置。 |
+
+自动注册的压缩能力：
+
+- `ImageFileCompressProvider`：支持 JPG、JPEG 和 PNG 图片压缩。
+- `PdfRasterFileCompressProvider`：支持 PDF 页面栅格化后重新封装压缩，适合扫描件 PDF。
+
+压缩档位：
+
+| 档位 | 语义 |
+|------|------|
+| `NONE` | 不压缩。 |
+| `LOW` | 轻度压缩，优先清晰度。 |
+| `MEDIUM` | 中度压缩，平衡清晰度与体积。 |
+| `HIGH` | 强压缩，优先体积。 |
+
+`targetSizeBytes` 表示单个输入文件的目标大小，不表示批量任务或 ZIP 总大小。若文件已经小于等于目标大小，压缩器直接返回原内容。
+
+### 6.2 渲染
 
 前缀：`mango.fileproc.render`。
 
@@ -100,7 +135,7 @@ RenderResultVO result = renderApi.render(RenderCommand.builder()
 - `OoxmlRenderProvider` for XLSX
 - `AsposePdfRenderApi` for PDF 操作
 
-### 6.2 转换
+### 6.3 转换
 
 前缀：`mango.fileproc.convert`。
 
@@ -141,7 +176,7 @@ mango:
 
 `LocalOfficeHomeResolver` 会尝试常见安装目录，包括项目目录下的 `LibreOfficePortable`、Linux 的 LibreOffice 目录和 OpenOffice 目录。
 
-### 6.3 Aspose
+### 6.4 Aspose
 
 前缀：`mango.fileproc.aspose`。
 
@@ -162,6 +197,7 @@ mango:
 
 - `RenderApi`：`render()`、`supportedFormats()`、`mergePdf()`、`addPdfWatermark()`、`compressPdf()`、`compressPdfToTarget()`。
 - `ConvertApi`：`convert()`、`supportedFormats()`。
+- `FileCompressApi`：`supports()`、`compress()`。
 - `AsposeLicenseApi`：按 Aspose 产品装载 license。
 
 格式枚举：
@@ -173,6 +209,7 @@ mango:
 
 - 新增转换器实现 `IConvertProvider`，注册为 Spring Bean 后进入 `ConvertRegistry`。
 - 新增渲染器实现 `IRenderProvider`，注册为 Spring Bean 后进入 `RenderRegistry`。
+- 新增压缩器实现 `IFileCompressProvider`，注册为 Spring Bean 后进入 `FileCompressApi`。
 - 替换默认能力时提供同名或同类型 Bean，自动配置使用 `@ConditionalOnMissingBean`。
 
 ## 8. 数据与初始化
@@ -181,6 +218,7 @@ mango:
 初始化来自 Spring Boot 自动配置：
 
 - `AsposeAutoConfiguration`
+- `FileCompressAutoConfiguration`
 - `ConvertAutoConfiguration`
 - `RenderAutoConfiguration`
 

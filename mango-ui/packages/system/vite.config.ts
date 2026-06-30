@@ -16,6 +16,7 @@ export default defineConfig({
         '@mango/api-schema',
         '@mango/common',
         '@mango/common/utils/request',
+        '@mango/file',
         '@mango/rbac',
         'element-plus',
         'form-create-designer',

@@ -5,6 +5,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -36,6 +37,11 @@ public interface FileApi {
     /** 通过对外下载语义读取文件内容。 */
     FileDownloadVO download(Long id);
 
+    /** 通过对外下载语义读取文件内容，可按参数返回压缩后的下载副本。 */
+    default FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes) {
+        return download(id);
+    }
+
     /** 通过服务内语义读取文件内容。 */
     default FileDownloadVO downloadForService(Long id) {
         return download(id);
@@ -44,6 +50,11 @@ public interface FileApi {
     /** 保存内部生成的文件内容。 */
     default R<FileRecordVO> save(SaveFileCommand command) {
         throw new UnsupportedOperationException("当前文件 API 实现不支持保存文件");
+    }
+
+    /** 按目录结构清单打包多个文件为 ZIP，并保存为新的文件记录。 */
+    default R<FileRecordVO> packageFiles(FilePackageCommand command) {
+        throw new UnsupportedOperationException("当前文件 API 实现不支持文件打包");
     }
 
     /**

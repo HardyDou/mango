@@ -320,7 +320,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | `API_RESOURCE` | `mango-authorization` | 由接口权限 Provider 扫描生成，见 `mango-authorization` README。 |
 | `AUTH_ROLE` | `mango-authorization` | 按租户和应用声明角色基线。 |
 | `AUTH_ROLE_DATA_SCOPE` | `mango-authorization` | 按角色声明数据权限基线。 |
-| `AUTH_SUBJECT_ROLE` | `mango-authorization` | 按成员主体声明角色绑定基线。 |
+| `AUTH_SUBJECT_ROLE` | `mango-authorization` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 声明成员角色绑定基线。 |
 | `ORG_UNIT` | `mango-org` | 按组织编码声明租户内组织基线。 |
 | `ORG_POST` | `mango-org` | 按岗位编码声明租户内岗位基线。 |
 | `ORG_MEMBER_BINDING` | `mango-identity` | 声明租户成员和组织、岗位的绑定关系。 |

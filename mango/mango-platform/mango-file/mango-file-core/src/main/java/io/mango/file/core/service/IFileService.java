@@ -7,6 +7,7 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -29,6 +30,8 @@ public interface IFileService {
 
     R<FileRecordVO> save(SaveFileCommand command);
 
+    R<FileRecordVO> packageFiles(FilePackageCommand command);
+
     R<FileRecordVO> saveGenerated(byte[] content,
                                   String fileName,
                                   String contentType,
@@ -43,6 +46,8 @@ public interface IFileService {
     R<FilePreviewVO> preview(Long id);
 
     FileDownloadVO download(Long id);
+
+    FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes);
 
     FileDownloadVO downloadForService(Long id);
 

@@ -26,11 +26,14 @@
 | 下载 | 按 `fileId` 下载当前账号有权访问的文件 | `GET /file/files/download`、`FileApi.download()` |
 | 预览 | 获取预览地址、下载地址和直连地址 | `GET /file/files/preview` |
 | 后端保存文件 | 后端生成 PDF、Excel、归档包后写入文件中心 | `FileApi.save(SaveFileCommand)` |
+| 后端打包文件 | 按目录结构清单把多个已存在文件打成 ZIP，并保存为新文件记录 | `POST /file/files/package`、`FileApi.packageFiles(FilePackageCommand)` |
 | 秒传 | 相同文件命中后不再上传文件内容 | `POST /file/files/uploads` |
 | 分片上传 | 大文件按会话和分片上传 | `/file/files/uploads/**` |
 | 逻辑目录 | 管理文件中心目录树 | `/file/directories/**` |
 | 存储配置 | 配置本地、MinIO、S3、OSS、COS、七牛等存储 | `/file/storage-configs/**` |
 | 文件配置 | 配置大小、扩展名、MIME、秒传、直传、访问、预览、归档策略 | `GET/PUT /file/settings` |
+
+下载入口支持图片/PDF 下载副本压缩。压缩只影响本次下载或 ZIP 内条目内容，不覆盖原始文件记录。
 
 ## 3. 后端接入
 
@@ -74,8 +77,10 @@ business_id / file_id / purpose / sort
 | `FileApi.get(Long id)` | 查询文件详情。 |
 | `FileApi.preview(Long id)` | 获取预览元数据。 |
 | `FileApi.download(Long id)` | 读取文件流。 |
+| `FileApi.download(Long id, String compression, Long perFileTargetSizeBytes)` | 读取文件流，可对图片/PDF 返回压缩后的下载副本。 |
 | `FileApi.downloadTo(Long id, Path directory)` | 下载文件到指定目录。 |
 | `FileApi.save(SaveFileCommand)` | 保存后端生成的文件。 |
+| `FileApi.packageFiles(FilePackageCommand)` | 按目录结构清单生成 ZIP 并保存为新文件记录。 |
 | `FileApi.archive(FileArchiveCommand)` | 归档文件记录。 |
 
 保存后端生成文件：
@@ -95,11 +100,87 @@ FileRecordVO file = fileApi.save(command).getData();
 Long fileId = file.getId();
 ```
 
+按目录结构打包已存在文件：
+
+```java
+FilePackageCommand command = new FilePackageCommand();
+command.setFileName("contract-materials.zip");
+command.setPurpose("contract-material-package");
+command.setAccessLevel("PRIVATE");
+command.setBizType("CONTRACT_MATERIAL_PACKAGE");
+command.setBizId(contractId.toString());
+command.setEntries(List.of(
+        new FilePackageEntryCommand(fileId1, "01_签约资料/${fileName}"),
+        new FilePackageEntryCommand(fileId2, "01_签约资料/企业资料/${fileName}"),
+        new FilePackageEntryCommand(fileId3, "02_资料清单/配置的资料清单.xlsx")
+));
+
+FileRecordVO zipFile = fileApi.packageFiles(command).getData();
+Long zipFileId = zipFile.getId();
+```
+
+打包入口会复用文件中心的可见性、下载和保存规则。`entries.path` 是 ZIP 内部相对路径，禁止空路径、目录项、绝对路径、`..` 路径穿越和重复路径；生成的 ZIP 会写入当前存储层，并返回新的 `FileRecordVO`。
+
+打包入口支持对 ZIP 内图片/PDF 条目做下载压缩。顶层参数作为默认值，entry 参数可覆盖当前文件：
+
+| 参数 | 位置 | 含义 |
+|------|------|------|
+| `compression` | 顶层或 entry | 压缩档位：`NONE`、`LOW`、`MEDIUM`、`HIGH`。entry 为空时使用顶层默认值。 |
+| `perFileTargetSizeBytes` | 顶层 | ZIP 内每个可压缩文件的默认目标大小，单位字节，不表示 ZIP 总大小。 |
+| `targetSizeBytes` | entry | 当前文件的目标大小，覆盖顶层 `perFileTargetSizeBytes`。 |
+
+示例：
+
+```java
+command.setCompression("MEDIUM");
+command.setPerFileTargetSizeBytes(5_000_000L);
+
+FilePackageEntryCommand image = new FilePackageEntryCommand(imageFileId, "图片/${fileName}");
+image.setCompression("HIGH");
+image.setTargetSizeBytes(2_000_000L);
+
+FilePackageEntryCommand original = new FilePackageEntryCommand(wordFileId, "原件/${fileName}");
+original.setCompression("NONE");
+```
+
+当前仅图片和 PDF 会被压缩；Word、PPT、Excel 等其它文件会按原内容写入 ZIP。需要 Office 转 PDF 后再压缩时，应先使用 `mango-infra-fileproc` 转换能力生成 PDF，再通过文件中心保存或下载。
+
+`entries.path` 支持变量，业务不需要为了拼 ZIP 路径额外查询文件名；文件服务在读取源文件记录时会替换变量，然后再做路径安全校验。当前支持的变量：
+
+| 变量 | 含义 | 示例 |
+|------|------|------|
+| `${fileName}` | 源文件记录里的文件名，也就是文件上传或保存时进入文件中心的 `fileName` | `01_签约资料/${fileName}` |
+
+未在上表登记的变量不会被替换，业务不要传 `${fileId}`、`${fileExt}`、`${bizId}` 等未定义变量。
+
+`entries.path` 支持多级嵌套目录，不需要单独传目录项；ZIP 会按路径自动形成目录结构。例如：
+
+```text
+项目名称+被保人名称+保函金额.zip
+├── 01_签约资料
+│   ├── 保函申请书.pdf
+│   └── 企业资料
+│       └── 营业执照.pdf
+├── 02_资料清单
+│   └── 配置的资料清单.xlsx
+└── 04_反担保资料
+    └── 合同
+        └── 反担保合同.pdf
+```
+
 下载文件到工作目录：
 
 ```java
 Path localFile = fileApi.downloadTo(fileId, workDirectory);
 ```
+
+HTTP 单文件下载压缩：
+
+```http
+GET /file/files/download?id=123&compression=MEDIUM&perFileTargetSizeBytes=5000000
+```
+
+`perFileTargetSizeBytes` 在单文件下载中表示当前文件目标大小；在打包下载中表示 ZIP 内每个可压缩文件的默认目标大小。
 
 ### 3.2 部署依赖
 

@@ -19,7 +19,7 @@
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。推荐在开发机全局安装 CLI，用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm install -g @mango/cli --registry {{npmRegistry}}
+npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}
 ```
 
 业务项目日常开发正式入口是 `mango workspace`、`mango dev` 和 `mango frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim，不再承载端口分配、数据库分配或进程归属规则。

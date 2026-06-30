@@ -1,5 +1,59 @@
 # @mango/cli Changelog
 
+## 1.0.54 - 2026-06-30
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.1` instead of the previous `1.0.0-SNAPSHOT` default.
+- Added release-version validation so formal CLI release locks reject `maven.mangoBackend` snapshot values.
+- Documented how generated projects choose the CLI-owned Maven jar version and how business projects override it with `--mango-version`.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.54 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New business projects generated with this CLI receive `<mango.version>1.0.1</mango.version>` in `backend/pom.xml`.
+- Existing business projects can align manually by setting their backend parent POM `<mango.version>` to `1.0.1` after the matching Mango Maven artifacts are published.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
+## 1.0.53 - 2026-06-30
+
+### Fixed
+
+- Removed the legacy generated `scripts/dev-workspace.sh init` shim so business projects use Mango CLI workspace commands as the owning development entry point.
+- Updated generated project release locks to consume `@mango/pmo@1.0.5` and `@mango/cli@1.0.53`.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.53 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` so generated compatibility scripts and PMO baseline content stay aligned.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
+## 1.0.52 - 2026-06-29
+
+### Fixed
+
+- Added Mango backend public API artifacts to generated business backend parent POM `dependencyManagement`, including File, File Preview, Template, Workflow, Notice, Job, Numgen, System, Resource, Authorization, Identity, Org, Calendar, Domain, Captcha, Payment, CMS, Grid Layout, and Access API artifacts.
+- Kept generated app POM direct dependencies on starters only, so business core modules can depend on API artifacts without depending on runtime starter assembly.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.52 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New or regenerated business projects receive the updated backend `dependencyManagement` automatically.
+- Existing business projects can regenerate from the current starter or manually align their parent POM dependency management if business core modules need direct API dependencies such as `mango-file-api`.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.51 - 2026-06-29
 
 ### Fixed

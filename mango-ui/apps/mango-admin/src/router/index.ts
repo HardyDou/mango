@@ -102,9 +102,10 @@ function resetRoutesForContextChange(nextContextKey: string): void {
 router.beforeEach(async (to, from, next) => {
   const storesUserInfo = useUserInfo();
   const title = (to.meta.title as string) || '';
+  const appTitle = usePreferencesStore().globalTitle || 'Mango Admin';
 
   // 设置页面标题
-  document.title = title ? `${title} - Mango Admin` : 'Mango Admin';
+  document.title = title ? `${title} - ${appTitle}` : appTitle;
 
   // 白名单路由直接放行
   const whiteList = ['/login', '/404', '/401', '/payment/gateway-result'];

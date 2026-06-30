@@ -12,6 +12,7 @@ const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versi
 const packagedAdminModules = JSON.parse(readFileSync(join(packageRoot, 'admin-modules.json'), 'utf8'));
 const sourceAdminModules = JSON.parse(readFileSync(join(packageRoot, '../admin/admin-modules.json'), 'utf8'));
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-cli-'));
+process.env.MANGO_WORKSPACE_REGISTRY = join(tempRoot, 'workspaces.json');
 const fullProjectName = 'mango-full-acceptance';
 const customProjectName = 'mango-custom-acceptance';
 
@@ -84,6 +85,7 @@ try {
   assertIncludes(config.modules.optional, 'template', 'full optional modules');
   assertIncludes(config.modules.optional, 'notice', 'full optional modules');
   assertIncludes(config.modules.optional, 'payment', 'full optional modules');
+  assertEqual(config.mangoBackendVersion, releaseVersions.maven.mangoBackend, 'Mango backend Maven version lock');
 
   const mainTs = readFileSync(join(projectRoot, 'frontend/src/main.ts'), 'utf8');
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
@@ -148,6 +150,15 @@ try {
     || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
   }
+  if (!pom.includes(`<mango.version>${releaseVersions.maven.mangoBackend}</mango.version>`)) {
+    throw new Error('generated backend parent pom must use the CLI-owned fixed Mango Maven version lock');
+  }
+  assertManagedDependency(pom, 'io.mango.platform.file', 'mango-file-api');
+  assertManagedDependency(pom, 'io.mango.platform.file.preview', 'mango-file-preview-api');
+  assertManagedDependency(pom, 'io.mango.platform.notice', 'mango-notice-api');
+  assertManagedDependency(pom, 'io.mango.platform.workflow', 'mango-workflow-api');
+  assertNoDirectDependency(appPom, 'mango-file-api', 'full backend app pom');
+  assertNoDirectDependency(appPom, 'mango-file-preview-api', 'full backend app pom');
   if (appPom.includes('<artifactId>mango-seed-starter</artifactId>')
     || pom.includes('<artifactId>mango-seed-starter</artifactId>')) {
     throw new Error('full backend must not require removed mango-seed-starter');
@@ -188,6 +199,8 @@ try {
     || !devWorkspaceScript.includes('cd frontend && pnpm install')
     || !devWorkspaceScript.includes('npm install -g @mango/cli@')
     || !devWorkspaceScript.includes('FRONTEND_ROOT}/node_modules/.bin/mango')
+    || devWorkspaceScript.includes('init|init-dev')
+    || devWorkspaceScript.includes('run_mango workspace init')
     || devWorkspaceScript.includes('npx --yes')
     || devWorkspaceScript.includes('mango-ui/packages/mango-cli/src/index.mjs')
     || devWorkspaceScript.includes('spring-boot:run')
@@ -195,6 +208,7 @@ try {
     throw new Error('generated dev-workspace script must be a thin mango CLI shim');
   }
   assertGeneratedDevWorkspaceUsesCliFallback(projectRoot);
+  assertGeneratedDevWorkspaceRejectsInitShim(projectRoot);
   assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
   assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
   assertDevWorkspaceAutoCreatesDatabase(projectRoot);
@@ -358,6 +372,12 @@ try {
       throw new Error(`custom backend missing dependency: ${expected}`);
     }
   }
+  assertManagedDependency(customPom, 'io.mango.platform.file', 'mango-file-api');
+  assertManagedDependency(customPom, 'io.mango.platform.file.preview', 'mango-file-preview-api');
+  assertManagedDependency(customPom, 'io.mango.platform.template', 'mango-template-api');
+  assertManagedDependency(customPom, 'io.mango.platform.workflow', 'mango-workflow-api');
+  assertNoDirectDependency(customAppPom, 'mango-file-api', 'custom backend app pom');
+  assertNoDirectDependency(customAppPom, 'mango-template-api', 'custom backend app pom');
   if (customAppPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
     throw new Error('custom backend added unselected notice dependency');
   }
@@ -779,6 +799,19 @@ function assertGeneratedDevWorkspaceUsesCliFallback(projectRoot) {
   }
 }
 
+function assertGeneratedDevWorkspaceRejectsInitShim(projectRoot) {
+  const result = spawnSync('scripts/dev-workspace.sh', ['init'], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0
+    || !output.includes('Usage: scripts/dev-workspace.sh <command>')
+    || output.includes('run_mango workspace init')) {
+    throw new Error(`generated dev-workspace init shim should be removed:\n${output}`);
+  }
+}
+
 function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
   const fakeBinDir = join(projectRoot, '.runtime/init-fake-bin');
   mkdirSync(fakeBinDir, { recursive: true });
@@ -792,15 +825,18 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
   chmodExecutable(fakePnpmPath);
   rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
   const result = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/init-workspaces.json')}`,
     `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
-    'scripts/dev-workspace.sh',
+    process.execPath,
+    cli,
+    'workspace',
     'init',
   ], {
     cwd: projectRoot,
     encoding: 'utf8',
   });
   if (result.status !== 0) {
-    throw new Error(`generated dev-workspace init should succeed with project-local mango:\n${result.stdout}\n${result.stderr}`);
+    throw new Error(`mango workspace init should succeed for generated project:\n${result.stdout}\n${result.stderr}`);
   }
   const envFile = readFileSync(join(projectRoot, '.mango/dev-workspace.env'), 'utf8');
   const match = envFile.match(/^MANGO_CRYPTO_SM4_SECRET_KEY=([0-9a-f]{32})$/m);
@@ -851,15 +887,18 @@ function assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot) {
     '',
   ].join('\n'));
   const result = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/backfill-workspaces.json')}`,
     `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
-    'scripts/dev-workspace.sh',
+    process.execPath,
+    cli,
+    'workspace',
     'init',
   ], {
     cwd: projectRoot,
     encoding: 'utf8',
   });
   if (result.status !== 0) {
-    throw new Error(`generated dev-workspace init should backfill SM4 key for existing env:\n${result.stdout}\n${result.stderr}`);
+    throw new Error(`mango workspace init should backfill SM4 key for existing env:\n${result.stdout}\n${result.stderr}`);
   }
   const envFile = readFileSync(join(projectRoot, '.mango/dev-workspace.env'), 'utf8');
   if (!/^MANGO_CRYPTO_SM4_SECRET_KEY=[0-9a-f]{32}$/m.test(envFile)) {
@@ -903,7 +942,7 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
   if (result.status === 0 || !output.includes('install command failed')) {
     throw new Error(`database auto-create scenario should stop at fake Maven install:\n${output}`);
   }
-  const calls = readFileSync(callLog, 'utf8').trim().split(/\r?\n/);
+  const calls = waitForCallLogLines(callLog, 2);
   if (!calls[0]?.includes('mysql:--protocol=TCP')
     || !calls[0].includes('-h 127.0.0.1')
     || !calls[0].includes('-P 3306')
@@ -968,7 +1007,7 @@ function assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot) {
     if (result.status === 0 || !output.includes('exited before becoming healthy')) {
       throw new Error(`command backend scenario should stop after fake backend exits:\n${output}`);
     }
-    const calls = readFileSync(callLog, 'utf8').trim().split(/\r?\n/);
+    const calls = waitForCallLogLines(callLog, 2);
     if (!calls[0]?.includes('mysql:--protocol=TCP')
       || !calls[0].includes('CREATE DATABASE IF NOT EXISTS `mango_dev_')
       || !calls[1]?.includes('run-backend:--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/mango_dev_')) {
@@ -1418,6 +1457,23 @@ function waitForPort(port) {
   throw new Error(`port did not become occupied: ${port}`);
 }
 
+function waitForCallLogLines(callLog, expectedCount) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < 5000) {
+    if (existsSync(callLog)) {
+      const lines = readFileSync(callLog, 'utf8').trim().split(/\r?\n/).filter(Boolean);
+      if (lines.length >= expectedCount) {
+        return lines;
+      }
+    }
+    spawnSync('sleep', ['0.1']);
+  }
+  if (!existsSync(callLog)) {
+    return [];
+  }
+  return readFileSync(callLog, 'utf8').trim().split(/\r?\n/).filter(Boolean);
+}
+
 function assertPmoCommands(projectRoot) {
   const status = assertCommandOk([cli, 'pmo', 'status', '--project-dir', projectRoot], projectRoot, 'generated mango pmo status');
   if (!status.stdout.includes('Baseline: @mango/pmo@') || !status.stdout.includes('PMO baseline is current.')) {
@@ -1808,6 +1864,27 @@ function parseSimpleEnv(content) {
     }
   }
   return result;
+}
+
+function assertManagedDependency(pom, groupId, artifactId) {
+  const expected = [
+    '<dependency>',
+    `            <groupId>${groupId}</groupId>`,
+    `            <artifactId>${artifactId}</artifactId>`,
+    '            <version>${mango.version}</version>',
+    '</dependency>',
+  ];
+  for (const line of expected) {
+    if (!pom.includes(line)) {
+      throw new Error(`generated backend parent pom missing managed dependency ${groupId}:${artifactId}`);
+    }
+  }
+}
+
+function assertNoDirectDependency(pom, artifactId, label) {
+  if (pom.includes(`<artifactId>${artifactId}</artifactId>`)) {
+    throw new Error(`${label} should not directly depend on managed API artifact: ${artifactId}`);
+  }
 }
 
 function assertNoUnrenderedPlaceholders(projectRoot) {

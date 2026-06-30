@@ -14,6 +14,8 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FilePackageCommand;
+import io.mango.file.api.command.FilePackageEntryCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
@@ -54,6 +56,10 @@ import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.file.core.storage.MultipartUpload;
 import io.mango.file.core.storage.UploadPartSign;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.fileproc.compress.FileCompressApi;
+import io.mango.infra.fileproc.compress.command.CompressFileCommand;
+import io.mango.infra.fileproc.compress.enums.FileCompression;
+import io.mango.infra.fileproc.compress.vo.CompressFileResultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,13 +80,17 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 文件服务实现。
@@ -108,6 +118,7 @@ public class FileServiceImpl implements IFileService {
     private final FileDirectoryMapper fileDirectoryMapper;
     private final ObjectMapper objectMapper;
     private final FileAccessUrlAssembler fileAccessUrlAssembler;
+    private final List<FileCompressApi> fileCompressApis;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -137,6 +148,52 @@ public class FileServiceImpl implements IFileService {
                     command.getDirectoryId());
         } catch (IOException e) {
             return Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<FileRecordVO> packageFiles(FilePackageCommand command) {
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        Require.notEmpty(command.getEntries(), FileCode.FILE_EMPTY);
+        String zipFileName = normalizeZipFileName(command.getFileName());
+        byte[] content = buildZipPackage(command);
+        SaveFileCommand saveCommand = new SaveFileCommand();
+        saveCommand.setInputStream(new ByteArrayInputStream(content));
+        saveCommand.setFileName(zipFileName);
+        saveCommand.setFileSize((long) content.length);
+        saveCommand.setContentType("application/zip");
+        saveCommand.setPurpose(command.getPurpose());
+        saveCommand.setAccessLevel(command.getAccessLevel());
+        saveCommand.setBizType(command.getBizType());
+        saveCommand.setBizId(command.getBizId());
+        saveCommand.setBizMeta(command.getBizMeta());
+        saveCommand.setDirectoryId(command.getDirectoryId());
+        return save(saveCommand);
+    }
+
+    private byte[] buildZipPackage(FilePackageCommand command) {
+        Set<String> paths = new HashSet<>();
+        try (java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+             ZipOutputStream zipOutput = new ZipOutputStream(output)) {
+            for (FilePackageEntryCommand entry : command.getEntries()) {
+                Require.notNull(entry, FileCode.FILE_EMPTY);
+                Require.notNull(entry.getFileId(), FileCode.FILE_NOT_FOUND);
+                FileDownloadVO download = compressDownload(downloadForService(entry.getFileId()),
+                        entryCompression(command, entry),
+                        entryTargetSize(command, entry));
+                String path = normalizeZipEntryPath(resolveZipEntryPath(entry.getPath(), download.fileName()));
+                Require.isTrue(paths.add(path), FileCode.FILE_NAME_DUPLICATED);
+                zipOutput.putNextEntry(new ZipEntry(path));
+                try (InputStream inputStream = download.inputStream()) {
+                    inputStream.transferTo(zipOutput);
+                }
+                zipOutput.closeEntry();
+            }
+            zipOutput.finish();
+            return output.toByteArray();
+        } catch (IOException e) {
+            return Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
 
@@ -301,12 +358,69 @@ public class FileServiceImpl implements IFileService {
     }
 
     @Override
+    public FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes) {
+        return compressDownload(downloadForService(id), compression, perFileTargetSizeBytes);
+    }
+
+    @Override
     public FileDownloadVO downloadForService(Long id) {
         FileRecord record = selectVisible(id);
+        Require.isTrue(FileRecordStatus.COMPLETED.value() == record.getStatus(), FileCode.FILE_STATUS_INVALID);
         StoredObject storedObject = resolveStoredObject(record);
         FileObject object = fileStorageRouter.getObject(storedObject.storageConfig(), storedObject.objectName());
         String contentType = StringUtils.hasText(record.getContentType()) ? record.getContentType() : object.contentType();
         return new FileDownloadVO(object.inputStream(), record.getFileName(), contentType, object.contentLength());
+    }
+
+    private FileDownloadVO compressDownload(FileDownloadVO download, String compressionValue, Long targetSizeBytes) {
+        FileCompression compression = resolveCompression(compressionValue);
+        validateTargetSize(targetSizeBytes);
+        if (!compression.enabled() || download == null || download.inputStream() == null || fileCompressApis.isEmpty()) {
+            return download;
+        }
+        FileCompressApi compressApi = fileCompressApis.stream()
+                .filter(api -> api.supports(download.fileName(), download.contentType()))
+                .findFirst()
+                .orElse(null);
+        if (compressApi == null) {
+            return download;
+        }
+        try (InputStream inputStream = download.inputStream()) {
+            CompressFileResultVO result = compressApi.compress(new CompressFileCommand(
+                    download.fileName(),
+                    download.contentType(),
+                    inputStream,
+                    compression,
+                    targetSizeBytes));
+            return new FileDownloadVO(new ByteArrayInputStream(result.content()),
+                    result.fileName(),
+                    result.contentType(),
+                    result.compressedSize());
+        } catch (Exception ex) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    private String entryCompression(FilePackageCommand command, FilePackageEntryCommand entry) {
+        return StringUtils.hasText(entry.getCompression()) ? entry.getCompression() : command.getCompression();
+    }
+
+    private Long entryTargetSize(FilePackageCommand command, FilePackageEntryCommand entry) {
+        return entry.getTargetSizeBytes() == null ? command.getPerFileTargetSizeBytes() : entry.getTargetSizeBytes();
+    }
+
+    private FileCompression resolveCompression(String compression) {
+        try {
+            return FileCompression.of(compression);
+        } catch (IllegalArgumentException ex) {
+            return Require.fail(FileCode.FILE_COMPRESSION_INVALID);
+        }
+    }
+
+    private void validateTargetSize(Long targetSizeBytes) {
+        if (targetSizeBytes != null) {
+            Require.isTrue(targetSizeBytes > 0, FileCode.FILE_COMPRESSION_INVALID);
+        }
     }
 
     @Override
@@ -1346,6 +1460,35 @@ public class FileServiceImpl implements IFileService {
             return "unnamed";
         }
         return PathSanitizer.fileName(fileName.trim());
+    }
+
+    private String normalizeZipFileName(String fileName) {
+        String normalized = normalizeFileName(fileName);
+        return normalized.toLowerCase(Locale.ROOT).endsWith(".zip") ? normalized : normalized + ".zip";
+    }
+
+    private String normalizeZipEntryPath(String value) {
+        Require.notBlank(value, FileCode.STORAGE_PATH_INVALID);
+        String path = value.trim().replace('\\', '/');
+        Require.isFalse(path.isBlank() || path.endsWith("/"), FileCode.STORAGE_PATH_INVALID);
+        Require.isFalse(path.startsWith("/") || path.contains("//"), FileCode.STORAGE_PATH_INVALID);
+        Require.isFalse(path.length() > 2 && Character.isLetter(path.charAt(0))
+                && path.charAt(1) == ':' && path.charAt(2) == '/', FileCode.STORAGE_PATH_INVALID);
+        String[] segments = path.split("/");
+        for (String segment : segments) {
+            Require.isFalse(segment.isBlank()
+                    || ".".equals(segment)
+                    || "..".equals(segment)
+                    || segment.contains("\u0000"), FileCode.STORAGE_PATH_INVALID);
+        }
+        return path;
+    }
+
+    private String resolveZipEntryPath(String path, String fileName) {
+        if (path == null || !path.contains("${fileName}")) {
+            return path;
+        }
+        return path.replace("${fileName}", normalizeFileName(fileName));
     }
 
     private String fileExt(String fileName) {

@@ -43,6 +43,9 @@ public enum FileCode implements BizCode {
     /** 文件读取失败。 */
     FILE_READ_FAILED(3502, "文件读取失败"),
 
+    /** 文件压缩参数非法。 */
+    FILE_COMPRESSION_INVALID(3519, "文件压缩参数非法"),
+
     /** 同目录文件名重复。 */
     FILE_NAME_DUPLICATED(3503, "同目录下文件名已存在"),
 

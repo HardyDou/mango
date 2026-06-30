@@ -10,6 +10,7 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -30,7 +31,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -121,9 +121,22 @@ public class FileController implements FileApi {
         return fileService.save(command);
     }
 
+    @PostMapping("/package")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "打包文件", description = "权限接口。按当前租户可见文件清单生成 ZIP，并保存为新的文件记录")
+    @Override
+    public R<FileRecordVO> packageFiles(@Valid @RequestBody FilePackageCommand command) {
+        return fileService.packageFiles(command);
+    }
+
     @Override
     public FileDownloadVO download(Long id) {
         return fileService.download(id);
+    }
+
+    @Override
+    public FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes) {
+        return fileService.download(id, compression, perFileTargetSizeBytes);
     }
 
     @Override
@@ -146,11 +159,14 @@ public class FileController implements FileApi {
     @Operation(summary = "下载文件", description = "登录用户基础接口。按文件ID下载当前租户可见文件")
     public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadResponse(
             @Parameter(description = "文件ID", required = true)
-            @RequestParam Long id) {
-        FileDownloadVO download = fileService.download(id);
-        String filename = UriUtils.encode(download.fileName(), StandardCharsets.UTF_8);
+            @RequestParam Long id,
+            @Parameter(description = "压缩档位：NONE、LOW、MEDIUM、HIGH。默认 NONE")
+            @RequestParam(required = false) String compression,
+            @Parameter(description = "单文件目标大小，单位字节。打包下载时该语义由打包接口 perFileTargetSizeBytes 表达")
+            @RequestParam(required = false) Long perFileTargetSizeBytes) {
+        FileDownloadVO download = fileService.download(id, compression, perFileTargetSizeBytes);
         ContentDisposition disposition = ContentDisposition.attachment()
-                .filename(filename, StandardCharsets.UTF_8)
+                .filename(download.fileName(), StandardCharsets.UTF_8)
                 .build();
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (download.contentType() != null && !download.contentType().isBlank()) {

@@ -9,6 +9,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.kv.api.IOutboxStore;
+import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
@@ -120,6 +121,7 @@ import io.mango.org.api.command.UpdateOrgCommand;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -149,6 +151,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class NoticeService implements INoticeService {
 
@@ -182,6 +185,7 @@ public class NoticeService implements INoticeService {
  private final List<NoticeChannelSender> channelSenders;
  private final ObjectMapper objectMapper;
  private final IOutboxStore outboxStore;
+ private final RealtimeApi realtimeApi;
  private final IdentityUserApi identityUserApi;
  private final SysOrgApi sysOrgApi;
  private final WecomDirectoryClient wecomDirectoryClient;
@@ -1193,7 +1197,13 @@ public class NoticeService implements INoticeService {
  NoticeSiteMessageEntity entity = new NoticeSiteMessageEntity();
  entity.setReadStatus(NoticeReadStatus.READ);
  entity.setReadTime(LocalDateTime.now());
- return messageMapper.update(entity, userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getId, id)) > 0;
+ int updated = messageMapper.update(entity, userVisibleWrapper(userId)
+ .eq(NoticeSiteMessageEntity::getId, id)
+ .eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
+ if (updated > 0) {
+ publishUnreadCount(userId);
+ }
+ return updated > 0;
  }
 
  @Override
@@ -1201,7 +1211,13 @@ public class NoticeService implements INoticeService {
  NoticeSiteMessageEntity entity = new NoticeSiteMessageEntity();
  entity.setReadStatus(NoticeReadStatus.READ);
  entity.setReadTime(LocalDateTime.now());
- return messageMapper.update(entity, userVisibleWrapper(userId).in(NoticeSiteMessageEntity::getId, command.getIds())) >= 0;
+ int updated = messageMapper.update(entity, userVisibleWrapper(userId)
+ .in(NoticeSiteMessageEntity::getId, command.getIds())
+ .eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
+ if (updated > 0) {
+ publishUnreadCount(userId);
+ }
+ return updated >= 0;
  }
 
  @Override
@@ -1209,14 +1225,33 @@ public class NoticeService implements INoticeService {
  NoticeSiteMessageEntity entity = new NoticeSiteMessageEntity();
  entity.setReadStatus(NoticeReadStatus.READ);
  entity.setReadTime(LocalDateTime.now());
- return messageMapper.update(entity, userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD)) >= 0;
+ int updated = messageMapper.update(entity, userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
+ if (updated > 0) {
+ publishUnreadCount(userId);
+ }
+ return updated >= 0;
  }
 
  @Override
  public boolean deleteSiteMessage(Long id, Long userId) {
+ NoticeSiteMessageEntity existing = messageMapper.selectOne(userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getId, id));
  NoticeSiteMessageEntity entity = new NoticeSiteMessageEntity();
  entity.setDeleteStatus(NoticeDeleteStatus.DELETED);
- return messageMapper.update(entity, userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getId, id)) > 0;
+ int updated = messageMapper.update(entity, userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getId, id));
+ if (updated > 0 && existing != null && existing.getReadStatus() == NoticeReadStatus.UNREAD) {
+ publishUnreadCount(userId);
+ }
+ return updated > 0;
+ }
+
+ private void publishUnreadCount(Long userId) {
+ Long unreadCount = messageMapper.selectCount(userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
+ try {
+ Map<String, Object> payload = Map.of("unreadCount", unreadCount == null ? 0L : unreadCount);
+ realtimeApi.publishToUser(userId, "notice", objectMapper.writeValueAsString(payload));
+ } catch (JsonProcessingException | RuntimeException ex) {
+ log.warn("Failed to publish notice unread count realtime message: userId={}", userId, ex);
+ }
  }
 
  private NoticeBusinessTypeVO toBusinessTypeVO(NoticeBusinessTypeEntity entity) {

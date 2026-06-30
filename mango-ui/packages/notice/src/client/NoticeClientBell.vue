@@ -37,6 +37,7 @@ import { iconMap, type RealtimeOptions } from '@mango/common';
 import { getMySiteMessageDetail, getMySiteMessages, getMyUnreadCount, markAllMySiteMessagesRead, markMySiteMessageRead } from '../api/notice';
 import NoticeDetailDialog from '../components/NoticeDetailDialog.vue';
 import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../realtime/noticeRealtime';
+import type { NoticeRealtimeEvent } from '../realtime/noticeRealtime';
 import type { NoticeSiteMessage } from '../types/notice';
 import type { NoticeClientBellRuntimeConfig } from './types';
 
@@ -72,14 +73,22 @@ const BellIcon = iconMap.Bell;
 let stopRealtime: (() => void) | undefined;
 let pollingTimer: ReturnType<typeof window.setInterval> | undefined;
 
+function updateUnreadCount(count: number, options: { forceEmit?: boolean } = {}) {
+ const next = Math.max(0, Math.trunc(count));
+ const changed = unreadCount.value !== next;
+ unreadCount.value = next;
+ if (changed || options.forceEmit) {
+ emit('unread-change', unreadCount.value);
+ }
+}
+
 async function loadUnreadCount() {
  try {
  const result = await getMyUnreadCount();
- unreadCount.value = result.count || 0;
+ updateUnreadCount(result.count || 0, { forceEmit: true });
  } catch {
- unreadCount.value = 0;
+ updateUnreadCount(0, { forceEmit: true });
  }
- emit('unread-change', unreadCount.value);
 }
 
 async function loadMessages() {
@@ -95,13 +104,19 @@ async function openDetail(id: string) {
  currentMessage.value = await getMySiteMessageDetail(id);
  detailVisible.value = true;
  await markMySiteMessageRead(id);
- await loadUnreadCount();
+ if (!props.enableRealtime) {
+  await loadUnreadCount();
+ }
  emit('message-open', currentMessage.value);
 }
 
 async function markAllRead() {
  await markAllMySiteMessagesRead();
- await loadUnreadCount();
+ if (props.enableRealtime) {
+  updateUnreadCount(0);
+ } else {
+  await loadUnreadCount();
+ }
  await loadMessages();
 }
 
@@ -189,10 +204,20 @@ async function notifyNewMessage(message: NoticeSiteMessage) {
  }
 }
 
+async function handleRealtimeEvent(event: NoticeRealtimeEvent) {
+ if (typeof event.unreadCount === 'number') {
+  updateUnreadCount(event.unreadCount);
+ }
+ const message = event.messageId ? await getMySiteMessageDetail(event.messageId) : undefined;
+ if (message) {
+  await notifyNewMessage(message);
+ }
+}
+
 onMounted(() => {
  requestDesktopPermission();
  void loadUnreadCount();
- if (props.enablePolling) {
+ if (props.enablePolling && !props.enableRealtime) {
  pollingTimer = window.setInterval(() => {
  void loadUnreadCount();
  }, props.pollingInterval);
@@ -200,13 +225,7 @@ onMounted(() => {
  if (!props.enableRealtime) {
  return;
  }
- stopRealtime = createNoticeRealtime(async event => {
- await loadUnreadCount();
- const message = event.messageId ? await getMySiteMessageDetail(event.messageId) : undefined;
- if (message) {
-  await notifyNewMessage(message);
- }
- }, { realtimeOptions: props.realtimeOptions });
+ stopRealtime = createNoticeRealtime(handleRealtimeEvent, { realtimeOptions: props.realtimeOptions });
 });
 
 onUnmounted(() => {

@@ -108,7 +108,7 @@ test.describe('通知中心 E2E', () => {
       bizId: 'RT-1',
       createTime: '2026-05-26 12:00:00',
     };
-    let unreadCountOverride: number | undefined;
+    let unreadCountRequestCount = 0;
     const channelConfigs = [
       {
         id: '270501',
@@ -575,7 +575,8 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ successCount: 1, failCount: 0 }) });
     });
     await page.route('**/api/notice/site/my/unread-count**', async (route) => {
-      const count = unreadCountOverride ?? messages.filter(item => item.readStatus === 'UNREAD').length;
+      unreadCountRequestCount += 1;
+      const count = messages.filter(item => item.readStatus === 'UNREAD').length;
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ count }) });
     });
     await page.route('**/api/notice/site/my/messages**', async (route) => {
@@ -620,17 +621,17 @@ test.describe('通知中心 E2E', () => {
     const noticeBell = page.locator('.notice-bell');
     await expect(page.getByLabel('消息提醒')).toBeVisible();
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('1');
-    unreadCountOverride = 2;
+    expect(unreadCountRequestCount).toBe(1);
     await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('mango-notice-message', {
-        detail: { messageId: '2002', title: '实时系统消息' },
+        detail: { messageId: '2002', title: '实时系统消息', unreadCount: 2 },
       }));
     });
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('2');
+    expect(unreadCountRequestCount).toBe(1);
     await expect(page.getByText('实时系统消息')).toBeVisible();
     await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeSpokenTexts?: string[] }).__noticeSpokenTexts?.[0] || '')).toBe('您有新的系统消息，请及时查看');
     await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeDesktopNotifications?: Array<unknown> }).__noticeDesktopNotifications?.length ?? 0)).toBe(1);
-    unreadCountOverride = undefined;
     await page.locator('.el-notification').click();
     const realtimeDetailDialog = page.getByRole('dialog', { name: '实时系统消息' });
     await expect(realtimeDetailDialog).toBeVisible();

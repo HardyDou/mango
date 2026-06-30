@@ -1,5 +1,150 @@
 # Mango Changelog
 
+## v2026.06.30-file-download-cli-pmo-release - 2026-06-30
+
+### Fixed
+
+- Published the file download filename fix from Issue #332 / PR #333. `Content-Disposition` filenames are no longer double-encoded, so Chinese names and `+` characters are presented correctly by browser downloads.
+- Published the Mango CLI dev-workspace cleanup from PR #331. Generated and root compatibility scripts no longer keep the legacy `init` shim as an owning entry point; business projects should use Mango CLI workspace commands.
+
+### New
+
+- Published the PMO test case automation governance flow from PR #334. Mango delivery rules, templates, and checkers now require test case registration, automation layer decisions, result baselines, and business-developer-facing handoff output.
+
+### Published Packages
+
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- npm: `@mango/pmo@1.0.5` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.53` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.30-file-download-cli-pmo-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` file dependencies before relying on corrected browser download filenames for non-ASCII file names.
+- Business developers should install `@mango/cli@1.0.53` with `npm install -g @mango/cli@1.0.53 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to receive `@mango/pmo@1.0.5`, updated PMO governance, and aligned compatibility scripts.
+- No database migration, menu resource, button permission, tenant binding, frontend runtime package, or route change is required for this release.
+
+### Verification
+
+- `mvn -pl mango-platform/mango-file/mango-file-starter -am -Dtest=FileControllerDownloadResponseTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-platform/mango-file/mango-file-starter -am test`
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm run package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node mango-pmo/tools/check-pmo-preflight.mjs`
+- `node mango-pmo/tools/check-governance-intent.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg pmo --release-tag=v2026.06.30-file-download-cli-pmo-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.30-file-download-cli-pmo-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm pmo --version=1.0.5`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.53`
+- `git diff --check`
+
+## v2026.06.29-file-compression-release - 2026-06-29
+
+### New
+
+- Published compressed file downloads from PR #329. `mango-infra-fileproc` now exposes `FileCompressApi` with image and rasterized PDF compression providers, and `mango-file` can apply compression to single downloads and ZIP package entries.
+- `FileApi.packageFiles(FilePackageCommand)` and `POST /file/files/package` now support package-level `compression` / `perFileTargetSizeBytes` and entry-level `compression` / `targetSizeBytes`; unsupported file types remain unchanged in the ZIP.
+
+### Published Packages
+
+- Maven: Fileproc backend batch `io.mango.infra.fileproc:mango-infra-fileproc-api`, `mango-infra-fileproc-core`, and `mango-infra-fileproc-starter` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.29-file-compression-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` fileproc and file dependencies before using compressed file downloads or ZIP entry compression.
+- `perFileTargetSizeBytes` and entry-level `targetSizeBytes` are single-file targets, not ZIP total-size targets.
+- Office original-format image recompression is not implemented in this release. Word, PPT, and Excel entries remain original unless business code converts them before download.
+- No database migration, menu resource, button permission, tenant binding, frontend package, or route change is required for this release.
+
+### Verification
+
+- `mvn -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core -am -Dtest=FileCompressApiTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core,mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter -am test`
+- `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-infra-fileproc-api :mango-infra-fileproc-core :mango-infra-fileproc-starter :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `git diff --check`
+
+## v2026.06.29-auth-subject-role-release - 2026-06-29
+
+### New
+
+- Published the authorization Resource Registry `AUTH_SUBJECT_ROLE` stable subject binding support from PR #327. Member role baseline declarations can now resolve tenant members by `subjectId`, `subjectCode`, `memberNo`, or `username`, while keeping direct `subjectId` compatibility and ignoring members that have left the tenant.
+
+### Published Packages
+
+- Maven: Authorization backend batch `io.mango.platform.authorization:mango-authorization-api`, `mango-authorization-core`, `mango-authorization-support`, `mango-authorization-starter`, `mango-authorization-resource-sync-starter`, `mango-authorization-resource-access-starter`, and `mango-authorization-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.29-auth-subject-role-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` authorization dependencies before using stable keys in `AUTH_SUBJECT_ROLE` declarations.
+- Existing `subjectId` declarations remain compatible. New `subjectCode` and `memberNo` declarations resolve against active `tenant_member.member_no`; `username` declarations resolve `identity_user.username` and then the active tenant member for the target tenant.
+- Environments that initialize roles through Resource Registry should rerun resource synchronization after upgrading so member-role binding baselines are applied with the new stable subject keys.
+- No npm package version change, database migration, menu resource, button permission, tenant binding, or frontend route change is required for this release.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-authorization/mango-authorization-starter -am -Dtest=AuthSubjectRoleResourceHandlerIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `scripts/publish-maven-batch.sh :mango-authorization-api :mango-authorization-core :mango-authorization-support :mango-authorization-starter :mango-authorization-resource-sync-starter :mango-authorization-resource-access-starter :mango-authorization-starter-remote --revision 1.0.0-SNAPSHOT`
+- `git diff --check`
+
+## v2026.06.29-file-package-cli-release - 2026-06-29
+
+### New
+
+- Published File ZIP packaging from Issue #316. `FileApi.packageFiles(FilePackageCommand)` and `POST /file/files/package` can create a ZIP from existing completed file records, preserve nested relative paths, replace `${fileName}` from source file records, save the generated ZIP through the existing file storage flow, and return a new `FileRecordVO`.
+
+### Fixed
+
+- Published the business project generator dependency management fix from Issue #315. Generated backend parent POMs now manage Mango public API artifacts consistently, so business core modules can depend on API artifacts such as `mango-file-api` without declaring versions or depending on runtime starters.
+
+### Published Packages
+
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- npm: `@mango/cli@1.0.52` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.29-file-package-cli-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` dependencies before using `FileApi.packageFiles` or `POST /file/files/package`.
+- File ZIP packaging does not require a database migration, new menu resource, frontend package, or tenant configuration change. Existing file visibility, download, and save rules still apply to source files and generated ZIP records.
+- Business code should pass safe ZIP-relative `entries.path` values. The file service rejects empty paths, directory entries, absolute paths, path traversal, and duplicate ZIP paths.
+- New or regenerated business projects should use `@mango/cli@1.0.52` so generated backend parent POMs include the current Mango API dependency management. Existing projects can manually align parent POM dependency management if needed.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -am -Dtest=FileServicePackageFilesTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-api,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter,mango-platform/mango-file/mango-file-starter-remote -am test -DskipITs`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui release:impact --base=v2026.06.29-payment-admin-check-release --head=HEAD`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.runtime/pr-320-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.29-file-package-cli-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.52`
+- `git diff --check`
+
 ## v2026.06.29-payment-admin-check-release - 2026-06-29
 
 ### Fixed
