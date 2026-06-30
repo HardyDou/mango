@@ -297,7 +297,7 @@
     },
     "devEnvironment": {
       "paths": ["scripts/**", ".mango/**"],
-      "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "workspace", "mango workspace", "mango dev", "mango frontend", "dev-workspace", "前后端", "数据库名称", "清理", "drop-db"],
+      "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "workspace", "mango workspace", "mango dev", "mango frontend", "dev-workspace", "前后端", "数据库名称", "清理", "workspace release", "keep-db"],
       "include": ["process.devEnvironment", "process.aiDeliveryQuality"]
     },
     "product": {

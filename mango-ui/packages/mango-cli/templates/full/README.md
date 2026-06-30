@@ -103,10 +103,10 @@ npm --prefix frontend run build
 | `mango.dev.json` | `apps.{{projectKebab}}-service.type` | `spring-boot-maven` | 后端应用类型 | 使用 Maven Spring Boot plugin 启动 | `mango.dev.json` |
 | `mango.dev.json` | `apps.{{projectKebab}}-service.health` | `/actuator/health` | 后端健康检查 | CLI 等待 ready 后再继续 | `mango.dev.json` |
 | `mango.dev.json` | `apps.{{projectKebab}}-admin.type` | `vite` | 前端应用类型 | 使用 NPM dev script 启动 | `mango.dev.json` |
-| `.mango/workspace.json` | `slot` | 本机稳定 slot | 推导端口和数据库名 | 避免多 worktree 互相串用 | `mango workspace init` |
-| `.mango/workspace.json` | `backendPort` | `18000+slot` | 后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
-| `.mango/workspace.json` | `frontendPort` | `8600+slot*20` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
-| `.mango/workspace.json` | `dbName` | `mango_dev_<slot>` | 数据库名 | 写入 `MANGO_DB_NAME` | `mango workspace init` |
+| `.mango/workspace.json` | `slot` | 本机稳定工作区号 `NNN` | 推导端口和数据库名 | 避免多 worktree 互相串用 | `mango workspace init` |
+| `.mango/workspace.json` | `backendPort` | `18NNN` | 后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `frontendPort` | `30NNN` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `dbName` | `mango_dev_<projectSlug>_<NNN>` | 数据库名 | 写入 `MANGO_DB_NAME` | `mango workspace init` |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 后端端口 | 注入 `server.port` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | 来自 `.mango/workspace.json` | 前端端口 | 注入 Vite `VITE_PORT` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端 host | 注入 Vite `VITE_HOST` | Mango CLI |
@@ -208,7 +208,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 租户默认值来自 `mango.persistence.mybatis-plus.tenant.default-tenant-id`。业务模块如果继承 `TenantEntity`，必须验证当前租户上下文、查询条件和写入字段。
 
 ## 10. 快速开始
-1. 生成项目后先执行 `mango workspace init`，修改 `.mango/dev-workspace.env` 中数据库、端口、文件目录和可选插件开关。
+1. 生成项目后先执行 `mango workspace init`。端口和 `MANGO_DB_NAME` 由 `.mango/workspace.json` 派生，不手工改；只按需修改 `.mango/dev-workspace.env` 中数据库连接、文件目录和可选插件开关。
 2. 执行 `mango workspace status`、`mango dev doctor`，确认工作区和启动条件。
 3. 执行 `mango dev start`，确认后端 health 和前端页面可访问。
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。

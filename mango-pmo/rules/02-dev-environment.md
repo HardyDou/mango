@@ -23,8 +23,12 @@
 - `.mango/workspace.json` 记录当前 worktree 的稳定 slot、端口、数据库名和 workspace id，禁止提交到 Git。
 - `.mango/dev-workspace.env` 只属于当前工作区，禁止提交到 Git。
 - Mango CLI 应维护本机工作区注册表，避免同一台机器上不同 worktree 分配到相同端口或数据库名。
-- Mango CLI 首次初始化时按稳定 slot 分配端口和数据库名。
-- 已存在 `.mango/dev-workspace.env` 时，脚本禁止覆盖。
+- Mango CLI 首次初始化时按稳定工作区号 `NNN` 分配端口和数据库名。
+- 工作区号 `NNN` 必须同时体现在后端端口、前端端口、子前端端口和数据库名中。
+- 后端端口固定为 `18NNN`，前端主端口固定为 `30NNN`，子前端端口固定为 `31NNN`、`32NNN`、`33NNN` 递增表达子应用类型。
+- 数据库名固定为 `mango_dev_<projectSlug>_<NNN>`。
+- Mango CLI 分配工作区号时必须跳过本机已监听端口、注册表已占用端口、注册表已占用数据库名，以及本机 MySQL 中已存在的目标 `MANGO_DB_NAME`。
+- 已存在 `.mango/dev-workspace.env` 时，脚本禁止覆盖本机数据库连接、插件开关等人工配置；但 `MANGO_WORKSPACE_ID`、`MANGO_BACKEND_PORT`、`MANGO_FRONTEND_PORT`、子前端端口和 `MANGO_DB_NAME` 必须同步为 `.mango/workspace.json` 的当前值。
 - 同一个工作区必须复用同一组端口和数据库名。
 - 不同工作区应使用不同的端口和数据库名。
 - 新工作区首次生成 `.mango/dev-workspace.env` 时，禁止选择本机已存在的 `MANGO_DB_NAME`，避免误复用旧库数据。
@@ -72,11 +76,11 @@
 - 原生 `git worktree remove` 不负责停止服务，也不负责删除数据库。
 - 删除开发 worktree 必须先使用 `mango dev stop` 停止服务，再使用 `mango workspace release --workspace <path>` 释放本机注册。
 - 任务 PR 合并前禁止删除对应 worktree，除非用户明确取消该任务或要求重建 worktree。
-- PR 合并后必须清理对应 worktree；需要删除本地开发数据库时显式追加 `--drop-db`。
+- PR 合并后必须清理对应 worktree；需要保留本地开发数据库时显式追加 `--keep-db`。
 - 删除 worktree 前必须按目标 worktree 的 `.mango/workspace.json` 和 `.mango/dev-workspace.env` 停止对应端口上的前后端服务。
-- `worktree-remove` 默认保留数据库。
-- 只有显式传入 `--drop-db` 时才允许删除数据库。
-- 脚本只允许删除名称匹配 `mango_dev_*` 的本地工作区数据库。
+- `mango workspace release --workspace <path>` 默认删除当前 workspace 拥有的本地开发数据库。
+- 只有显式传入 `--keep-db` 时才允许保留数据库。
+- 脚本只允许删除 `.mango/workspace.json` 或本机 workspace 注册表记录中归属于目标 worktree 且名称匹配 `mango_dev_*` 的本地工作区数据库。
 - 需要强制移除 dirty worktree 时，必须显式传入 `--force`。
 
 ## 5. 数据库规则
@@ -86,8 +90,8 @@
 - 自动创建数据库依赖本机 `mysql` 命令可用，并且 `MANGO_DB_HOST`、`MANGO_DB_PORT`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD` 能连接到目标 MySQL。
 - Mango CLI 只能自动创建名称匹配 `mango_dev_*` 的工作区数据库；数据库名不匹配时必须拒绝启动。
 - 自动建库失败必须在 CLI 输出和应用日志中暴露具体失败原因，禁止继续静默等待 health 超时。
-- 删除 worktree 时默认不删除数据库。
-- 删除数据库必须显式执行受控清理命令，且只能删除名称匹配 `mango_dev_*` 的本地工作区数据库。
+- 释放 workspace 时默认删除当前 workspace 拥有的本地开发数据库；保留数据库必须显式传入 `--keep-db`。
+- 删除数据库必须执行受控清理命令，且只能删除目标 worktree 记录的、名称匹配 `mango_dev_*` 的本地工作区数据库。
 - 数据库结构和初始数据仍由 Flyway migration 管理。
 - 禁止用本地启动脚本替代正式 migration。
 - 禁止把本地数据库名写死到应用配置或代码中。
