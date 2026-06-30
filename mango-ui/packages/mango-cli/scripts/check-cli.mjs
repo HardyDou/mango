@@ -85,6 +85,7 @@ try {
   assertIncludes(config.modules.optional, 'template', 'full optional modules');
   assertIncludes(config.modules.optional, 'notice', 'full optional modules');
   assertIncludes(config.modules.optional, 'payment', 'full optional modules');
+  assertEqual(config.mangoBackendVersion, releaseVersions.maven.mangoBackend, 'Mango backend Maven version lock');
 
   const mainTs = readFileSync(join(projectRoot, 'frontend/src/main.ts'), 'utf8');
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
@@ -148,6 +149,9 @@ try {
     || pom.includes('{{')
     || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
+  }
+  if (!pom.includes(`<mango.version>${releaseVersions.maven.mangoBackend}</mango.version>`)) {
+    throw new Error('generated backend parent pom must use the CLI-owned fixed Mango Maven version lock');
   }
   assertManagedDependency(pom, 'io.mango.platform.file', 'mango-file-api');
   assertManagedDependency(pom, 'io.mango.platform.file.preview', 'mango-file-preview-api');

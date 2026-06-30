@@ -31,7 +31,7 @@ registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 配置用户级 `~/.npmrc` 后安装 CLI：
 
 ```bash
-npm install -g @mango/cli@1.0.20
+npm install -g @mango/cli@1.0.54
 
 mango init guarantee-platform \
   --preset custom \
@@ -44,7 +44,7 @@ mango init guarantee-platform \
 一次性执行也必须指定 scoped package：
 
 ```bash
-npm exec --package @mango/cli@1.0.20 -- \
+npm exec --package @mango/cli@1.0.54 -- \
   mango init guarantee-platform \
   --preset custom \
   --modules workflow,template,file \
@@ -56,6 +56,8 @@ npm exec --package @mango/cli@1.0.20 -- \
 不要安装或执行未 scoped 的 `mango-cli` npm 包。
 
 Mango 包发布到 `npm-hosted`，消费从 `npm-group` 安装。`@mango/cli` 包内 `publishConfig` 已指向 `npm-hosted`，框架维护者发布 CLI 时不需要在命令里重复写 registry。
+
+CLI 内置 `release-versions.json` 负责锁定业务项目默认消费的 Mango 后端 Maven 版本和前端 NPM 包版本。生成项目会把后端平台版本写入 `backend/pom.xml` 的 `<mango.version>`，例如 `1.0.1`；业务项目选择版本时优先选择固定的 `@mango/cli` 版本，只有明确需要验证其它后端平台版本时才使用 `--mango-version <version>` 覆盖。正式业务项目不要把 `<mango.version>` 长期设为 `*-SNAPSHOT`。
 
 需要全量 Mango 管理端能力时使用 full preset：
 
