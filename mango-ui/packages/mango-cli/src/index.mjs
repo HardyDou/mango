@@ -249,7 +249,7 @@ Usage:
   mango workspace init
   mango workspace status
   mango workspace doctor
-  mango workspace release [--workspace <path>]
+  mango workspace release [--workspace <path>] [--keep-db]
   mango dev start [group|app...]
   mango dev stop [app...]
   mango dev status
@@ -678,17 +678,16 @@ const DEV_WORKSPACE_COMMANDS = new Set(['print', 'validate', 'doctor', 'plan', '
 const DEFAULT_SPRING_BOOT_PLUGIN = `org.springframework.boot:spring-boot-maven-plugin:${defaultVersions.springBoot}:run`;
 const WORKSPACE_SLOT_COUNT = 200;
 const BACKEND_PORT_BASE = 18000;
-const FRONTEND_PORT_BASE = 8600;
-const FRONTEND_SLOT_SIZE = 20;
+const FRONTEND_PORT_BASE = 30000;
 const DEFAULT_FRONTEND_APP_PORT_OFFSETS = {
-  MANGO_ADMIN_SHELL_PORT: 1,
-  MANGO_ADMIN_RBAC_APP_PORT: 6,
-  MANGO_ADMIN_WORKFLOW_APP_PORT: 7,
-  MANGO_ADMIN_TEMPLATE_APP_PORT: 8,
-  MANGO_ADMIN_CMS_APP_PORT: 9,
-  MANGO_SITE_ENTERPRISE_APP_PORT: 16,
-  MANGO_SITE_HELP_APP_PORT: 17,
-  MANGO_SITE_DEMO_APP_PORT: 18,
+  MANGO_ADMIN_SHELL_PORT: 1000,
+  MANGO_ADMIN_RBAC_APP_PORT: 2000,
+  MANGO_ADMIN_WORKFLOW_APP_PORT: 3000,
+  MANGO_ADMIN_TEMPLATE_APP_PORT: 4000,
+  MANGO_ADMIN_CMS_APP_PORT: 5000,
+  MANGO_SITE_ENTERPRISE_APP_PORT: 6000,
+  MANGO_SITE_HELP_APP_PORT: 7000,
+  MANGO_SITE_DEMO_APP_PORT: 8000,
 };
 
 function isDevWorkspaceCommand(command) {
@@ -1043,7 +1042,8 @@ function allocateDevWorkspace(root) {
     const candidate = buildWorkspaceConfig(normalizedRoot, slot);
     if (usedSlots.has(slot)
       || workspacePorts(candidate).some(port => usedPorts.has(port) || isPortInUse(port))
-      || usedDbNames.has(candidate.dbName)) {
+      || usedDbNames.has(candidate.dbName)
+      || workspaceDatabaseExists(candidate.dbName, readEnvFile(join(normalizedRoot, '.mango/dev-workspace.env')))) {
       continue;
     }
     writeWorkspaceRegistry(normalizedRoot, [...registry, candidate]);
@@ -1053,17 +1053,27 @@ function allocateDevWorkspace(root) {
 }
 
 function buildWorkspaceConfig(root, slot) {
-  const frontendPort = FRONTEND_PORT_BASE + slot * FRONTEND_SLOT_SIZE;
+  const frontendPort = FRONTEND_PORT_BASE + slot;
+  const slotText = slot.toString().padStart(3, '0');
   return {
     version: 1,
     root,
-    workspaceId: `mango_${slot.toString().padStart(3, '0')}`,
+    workspaceId: `mango_${slotText}`,
     slot,
     backendPort: BACKEND_PORT_BASE + slot,
     frontendPort,
     frontendApps: buildFrontendAppPorts(frontendPort),
-    dbName: `mango_dev_${slot.toString().padStart(3, '0')}`,
+    dbName: `mango_dev_${workspaceProjectSlug(root)}_${slotText}`,
   };
+}
+
+function workspaceProjectSlug(root) {
+  const slug = basename(resolve(root))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_');
+  return slug || 'workspace';
 }
 
 function buildFrontendAppPorts(frontendPort) {
@@ -1164,9 +1174,38 @@ function releaseWorkspaceCommand(context, argv) {
   const workspacePath = readOptionValue(argv, '--workspace') || context.root;
   const targetRoot = resolve(workspacePath);
   const registry = readWorkspaceRegistry(context.root);
+  const workspace = readReleaseWorkspace(targetRoot, registry);
+  if (!argv.includes('--keep-db')) {
+    dropWorkspaceDatabase(targetRoot, workspace);
+  }
   const next = registry.filter(entry => resolve(entry.root) !== targetRoot);
   writeWorkspaceRegistry(context.root, next);
   process.stdout.write(`Released Mango workspace registration: ${targetRoot}\n`);
+}
+
+function readReleaseWorkspace(targetRoot, registry) {
+  const workspacePath = join(targetRoot, '.mango/workspace.json');
+  if (existsSync(workspacePath)) {
+    return readJsonFile(workspacePath);
+  }
+  return registry.find(entry => resolve(entry.root) === targetRoot) || null;
+}
+
+function dropWorkspaceDatabase(targetRoot, workspace) {
+  const dbName = workspace?.dbName || '';
+  if (!dbName) {
+    process.stdout.write(`No Mango workspace database recorded for ${targetRoot}; skipped DB cleanup.\n`);
+    return;
+  }
+  if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
+    fail(`refuse to drop non-workspace database: ${dbName}`);
+  }
+  const env = readEnvFile(join(targetRoot, '.mango/dev-workspace.env'));
+  runMysqlStatement(env, `DROP DATABASE IF EXISTS \`${dbName}\`;`, {
+    cwd: targetRoot,
+    errorMessage: `failed to drop workspace database ${dbName}`,
+  });
+  process.stdout.write(`Dropped Mango workspace database: ${dbName}\n`);
 }
 
 function readOptionValue(argv, name) {
@@ -1709,11 +1748,48 @@ function ensureDevWorkspaceEnv(context) {
     MANGO_FRONTEND_MODE: 'source',
     ...workspace.frontendApps,
   };
-  const missing = Object.entries(requiredValues).filter(([key]) => !env[key]);
-  if (missing.length > 0) {
-    appendFileSync(envPath, `\n${missing.map(([key, value]) => `${key}=${value}`).join('\n')}\n`);
-    process.stdout.write(`Added workspace ownership values to local env: ${missing.map(([key]) => key).join(', ')}\n`);
+  const changes = syncEnvFileValues(envPath, requiredValues);
+  if (changes.added.length > 0) {
+    process.stdout.write(`Added workspace ownership values to local env: ${changes.added.join(', ')}\n`);
   }
+  if (changes.updated.length > 0) {
+    process.stdout.write(`Synchronized workspace ownership values in local env: ${changes.updated.join(', ')}\n`);
+  }
+}
+
+function syncEnvFileValues(envPath, requiredValues) {
+  const original = existsSync(envPath) ? readFileSync(envPath, 'utf8') : '';
+  const lines = original.split(/\r?\n/);
+  const seen = new Set();
+  const updated = [];
+  const nextLines = lines.map(line => {
+    const match = line.match(/^(\s*([A-Za-z_][A-Za-z0-9_]*)\s*=)(.*)$/);
+    if (!match) {
+      return line;
+    }
+    const key = match[2];
+    if (!Object.prototype.hasOwnProperty.call(requiredValues, key)) {
+      return line;
+    }
+    seen.add(key);
+    const value = String(requiredValues[key]);
+    if (unquoteEnvValue(match[3].trim()) !== value) {
+      updated.push(key);
+      return `${key}=${value}`;
+    }
+    return line;
+  });
+  const added = [];
+  for (const [key, value] of Object.entries(requiredValues)) {
+    if (!seen.has(key)) {
+      added.push(key);
+      nextLines.push(`${key}=${value}`);
+    }
+  }
+  if (added.length > 0 || updated.length > 0 || !original.endsWith('\n')) {
+    writeFileSync(envPath, `${nextLines.join('\n').replace(/\n+$/u, '')}\n`);
+  }
+  return { added, updated };
 }
 
 function startDevApp(context, name, app) {
@@ -1790,36 +1866,67 @@ function ensureWorkspaceDatabase(context, appName, logPath) {
   if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
     fail(`${appName}: refuse to auto-create non-workspace database: ${dbName || '<empty>'}`);
   }
+  runMysqlStatement(
+    context.env,
+    `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+    {
+      cwd: context.root,
+      logPath,
+      errorMessage: `${appName}: failed to auto-create database ${dbName}`,
+    },
+  );
+  process.stdout.write(`${appName}: ensured database ${dbName}\n`);
+}
+
+function workspaceDatabaseExists(dbName, env = {}) {
+  if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
+    return false;
+  }
+  const statement = [
+    'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA',
+    `WHERE SCHEMA_NAME = '${dbName.replace(/'/g, "''")}'`,
+  ].join(' ');
+  const result = runMysqlStatement(env, statement, {
+    cwd: process.cwd(),
+    capture: true,
+    allowFailure: true,
+  });
+  return result.status === 0 && String(result.stdout || '').trim() === dbName;
+}
+
+function runMysqlStatement(dbEnv = {}, statement, options = {}) {
   const mysqlArgs = [
     '--protocol=TCP',
-    '-h', context.env.MANGO_DB_HOST || '127.0.0.1',
-    '-P', String(context.env.MANGO_DB_PORT || '3306'),
-    '-u', context.env.MANGO_DB_USERNAME || 'root',
-    '-e', `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+    '-h', dbEnv.MANGO_DB_HOST || '127.0.0.1',
+    '-P', String(dbEnv.MANGO_DB_PORT || '3306'),
+    '-u', dbEnv.MANGO_DB_USERNAME || 'root',
+    '-e', statement,
   ];
   const env = { ...process.env };
-  if (context.env.MANGO_DB_PASSWORD) {
-    env.MYSQL_PWD = context.env.MANGO_DB_PASSWORD;
+  if (dbEnv.MANGO_DB_PASSWORD) {
+    env.MYSQL_PWD = dbEnv.MANGO_DB_PASSWORD;
   }
   const result = spawnSync('mysql', mysqlArgs, {
-    cwd: context.root,
+    cwd: options.cwd || process.cwd(),
     env,
+    stdio: 'pipe',
     encoding: 'utf8',
   });
-  if (result.stdout) {
-    appendFileSync(logPath, result.stdout);
+  if (options.logPath && result.stdout) {
+    appendFileSync(options.logPath, result.stdout);
   }
-  if (result.stderr) {
-    appendFileSync(logPath, result.stderr);
+  if (options.logPath && result.stderr) {
+    appendFileSync(options.logPath, result.stderr);
   }
-  if (result.error) {
-    appendFileSync(logPath, `${result.error.message}\n`);
+  if (options.logPath && result.error) {
+    appendFileSync(options.logPath, `${result.error.message}\n`);
   }
-  if (result.status !== 0) {
+  if (!options.allowFailure && result.status !== 0) {
     const reason = result.error ? `: ${result.error.message}` : '';
-    fail(`${appName}: failed to auto-create database ${dbName}${reason}, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+    const logHint = options.logPath ? `, see ${relativeOrAbsolute(process.cwd(), options.logPath)}` : '';
+    fail(`${options.errorMessage || 'mysql command failed'}${reason}${logHint}`);
   }
-  process.stdout.write(`${appName}: ensured database ${dbName}\n`);
+  return result;
 }
 
 function isTruthy(value) {

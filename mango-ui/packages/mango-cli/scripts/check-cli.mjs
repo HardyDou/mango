@@ -850,7 +850,7 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
     /^MANGO_WORKSPACE_ID=mango_[0-9]{3}$/m,
     /^MANGO_BACKEND_PORT=[0-9]+$/m,
     /^MANGO_FRONTEND_PORT=[0-9]+$/m,
-    /^MANGO_DB_NAME=mango_dev_[0-9]{3}$/m,
+    /^MANGO_DB_NAME=mango_dev_mango_full_acceptance_[0-9]{3}$/m,
   ]) {
     if (!expected.test(envFile)) {
       throw new Error(`generated dev-workspace env must contain allocated workspace values matching ${expected}:\n${envFile}`);
@@ -861,14 +861,20 @@ function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
     throw new Error(`generated backend port must be in allocated range 18001-18200:\n${envFile}`);
   }
   const frontendPort = Number(envFile.match(/^MANGO_FRONTEND_PORT=([0-9]+)$/m)?.[1] || 0);
-  if (frontendPort < 8620 || frontendPort > 12600) {
-    throw new Error(`generated frontend port must be in allocated range 8620-12600:\n${envFile}`);
+  if (frontendPort < 30001 || frontendPort > 30200) {
+    throw new Error(`generated frontend port must be in allocated range 30001-30200:\n${envFile}`);
   }
   const workspaceConfig = JSON.parse(readFileSync(join(projectRoot, '.mango/workspace.json'), 'utf8'));
   if (workspaceConfig.backendPort !== backendPort
     || workspaceConfig.frontendPort !== frontendPort
     || workspaceConfig.dbName !== envFile.match(/^MANGO_DB_NAME=(.+)$/m)?.[1]) {
     throw new Error(`generated workspace.json must match dev-workspace.env:\n${JSON.stringify(workspaceConfig, null, 2)}\n${envFile}`);
+  }
+  if (workspaceConfig.backendPort !== 18000 + workspaceConfig.slot
+    || workspaceConfig.frontendPort !== 30000 + workspaceConfig.slot
+    || workspaceConfig.frontendApps.MANGO_ADMIN_SHELL_PORT !== 31000 + workspaceConfig.slot
+    || workspaceConfig.frontendApps.MANGO_ADMIN_RBAC_APP_PORT !== 32000 + workspaceConfig.slot) {
+    throw new Error(`generated workspace ports must share the workspace number:\n${JSON.stringify(workspaceConfig, null, 2)}`);
   }
 }
 
@@ -903,6 +909,16 @@ function assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot) {
   const envFile = readFileSync(join(projectRoot, '.mango/dev-workspace.env'), 'utf8');
   if (!/^MANGO_CRYPTO_SM4_SECRET_KEY=[0-9a-f]{32}$/m.test(envFile)) {
     throw new Error(`generated dev-workspace env must backfill a random 16-byte SM4 key:\n${envFile}`);
+  }
+  if (envFile.includes('MANGO_BACKEND_PORT=5555')
+    || envFile.includes('MANGO_FRONTEND_PORT=5176')
+    || envFile.includes('MANGO_DB_NAME=mango_full_acceptance')) {
+    throw new Error(`generated dev-workspace env must synchronize stale workspace ownership values:\n${envFile}`);
+  }
+  if (!/^MANGO_BACKEND_PORT=180[0-9]{2}$/m.test(envFile)
+    || !/^MANGO_FRONTEND_PORT=30[0-9]{3}$/m.test(envFile)
+    || !/^MANGO_DB_NAME=mango_dev_mango_full_acceptance_[0-9]{3}$/m.test(envFile)) {
+    throw new Error(`generated dev-workspace env must contain current workspace ownership values:\n${envFile}`);
   }
 }
 
@@ -942,13 +958,15 @@ function assertDevWorkspaceAutoCreatesDatabase(projectRoot) {
   if (result.status === 0 || !output.includes('install command failed')) {
     throw new Error(`database auto-create scenario should stop at fake Maven install:\n${output}`);
   }
-  const calls = waitForCallLogLines(callLog, 2);
-  if (!calls[0]?.includes('mysql:--protocol=TCP')
-    || !calls[0].includes('-h 127.0.0.1')
-    || !calls[0].includes('-P 3306')
-    || !calls[0].includes('-u root')
-    || !calls[0].includes('CREATE DATABASE IF NOT EXISTS `mango_dev_')
-    || !calls[1]?.includes('mvn:-f pom.xml -DskipTests install')) {
+  const calls = waitForCallLogLines(callLog, 3);
+  const createCall = calls.find(line => line.includes('CREATE DATABASE IF NOT EXISTS `mango_dev_mango_full_acceptance_'));
+  const mavenCall = calls.find(line => line.includes('mvn:-f pom.xml -DskipTests install'));
+  if (!calls.some(line => line.includes('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA'))
+    || !createCall?.includes('mysql:--protocol=TCP')
+    || !createCall.includes('-h 127.0.0.1')
+    || !createCall.includes('-P 3306')
+    || !createCall.includes('-u root')
+    || !mavenCall) {
     throw new Error(`mango dev start must create workspace database before Maven install:\n${calls.join('\n')}`);
   }
 }
@@ -1007,10 +1025,12 @@ function assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot) {
     if (result.status === 0 || !output.includes('exited before becoming healthy')) {
       throw new Error(`command backend scenario should stop after fake backend exits:\n${output}`);
     }
-    const calls = waitForCallLogLines(callLog, 2);
-    if (!calls[0]?.includes('mysql:--protocol=TCP')
-      || !calls[0].includes('CREATE DATABASE IF NOT EXISTS `mango_dev_')
-      || !calls[1]?.includes('run-backend:--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/mango_dev_')) {
+    const calls = waitForCallLogLines(callLog, 3);
+    const createCall = calls.find(line => line.includes('CREATE DATABASE IF NOT EXISTS `mango_dev_mango_full_acceptance_'));
+    const runCall = calls.find(line => line.includes('run-backend:--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/mango_dev_mango_full_acceptance_'));
+    if (!calls.some(line => line.includes('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA'))
+      || !createCall?.includes('mysql:--protocol=TCP')
+      || !runCall) {
       throw new Error(`command backend must create workspace database before starting:\n${calls.join('\n')}`);
     }
   } finally {
@@ -1238,6 +1258,16 @@ function assertDevWorkspaceRunnerScenarios(tempRoot) {
   const legacyEnvFile = readFileSync(join(legacyEnvRoot, '.mango/dev-workspace.env'), 'utf8');
   if (!/^MANGO_CRYPTO_SM4_SECRET_KEY=[0-9a-f]{32}$/m.test(legacyEnvFile)) {
     throw new Error(`CLI start must backfill SM4 key for legacy workspace env:\n${legacyEnvFile}`);
+  }
+  if (legacyEnvFile.includes('MANGO_BACKEND_PORT=5555')
+    || legacyEnvFile.includes('MANGO_FRONTEND_PORT=5176')
+    || legacyEnvFile.includes('MANGO_DB_NAME=legacy_env')) {
+    throw new Error(`CLI start must synchronize stale legacy workspace env values:\n${legacyEnvFile}`);
+  }
+  if (!/^MANGO_BACKEND_PORT=180[0-9]{2}$/m.test(legacyEnvFile)
+    || !/^MANGO_FRONTEND_PORT=30[0-9]{3}$/m.test(legacyEnvFile)
+    || !/^MANGO_DB_NAME=mango_dev_dev_workspace_legacy_env_[0-9]{3}$/m.test(legacyEnvFile)) {
+    throw new Error(`CLI start must write current workspace env values:\n${legacyEnvFile}`);
   }
   assertCommandOk([cli, 'stop'], legacyEnvRoot, 'legacy env stop');
 
@@ -1813,8 +1843,18 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
   }
   if (!/^mango_[0-9]{3}$/.test(workspaces[0].workspaceId)
     || !String(workspaces[0].backendPort).startsWith('180')
-    || !String(workspaces[0].frontendPort).startsWith('86')) {
+    || !String(workspaces[0].frontendPort).startsWith('300')) {
     throw new Error(`workspace.json should contain stable slot allocation:\n${JSON.stringify(workspaces[0], null, 2)}`);
+  }
+  for (const workspace of workspaces) {
+    const slotText = String(workspace.slot).padStart(3, '0');
+    if (workspace.backendPort !== 18000 + workspace.slot
+      || workspace.frontendPort !== 30000 + workspace.slot
+      || workspace.frontendApps.MANGO_ADMIN_SHELL_PORT !== 31000 + workspace.slot
+      || workspace.frontendApps.MANGO_ADMIN_RBAC_APP_PORT !== 32000 + workspace.slot
+      || !workspace.dbName.endsWith(`_${slotText}`)) {
+      throw new Error(`workspace ports and DB suffix must share the same workspace number:\n${JSON.stringify(workspace, null, 2)}`);
+    }
   }
   const before = readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8');
   const workspaceBefore = readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8');
@@ -1834,8 +1874,123 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
   assertEqual(readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8'), before, 'existing dev-workspace.env after repeat init');
   assertEqual(readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8'), workspaceBefore, 'existing workspace.json after repeat init');
 
+  writeFileSync(join(roots[0], '.mango/dev-workspace.env'), [
+    'MANGO_BACKEND_PORT=5555',
+    'MANGO_FRONTEND_PORT=5176',
+    'MANGO_DB_NAME=old_business_db',
+    'MANGO_DB_USERNAME=root',
+    "MANGO_DB_PASSWORD=''",
+    '',
+  ].join('\n'));
+  const syncRepeat = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
+    process.execPath,
+    cli,
+    'workspace',
+    'init',
+  ], {
+    cwd: roots[0],
+    encoding: 'utf8',
+  });
+  if (syncRepeat.status !== 0) {
+    throw new Error(`mango workspace init repeat should synchronize stale env:\n${syncRepeat.stdout}\n${syncRepeat.stderr}`);
+  }
+  const syncedEnv = parseSimpleEnv(readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8'));
+  if (syncedEnv.MANGO_BACKEND_PORT !== String(workspaces[0].backendPort)
+    || syncedEnv.MANGO_FRONTEND_PORT !== String(workspaces[0].frontendPort)
+    || syncedEnv.MANGO_DB_NAME !== workspaces[0].dbName
+    || syncedEnv.MANGO_DB_USERNAME !== 'root') {
+    throw new Error(`mango workspace init repeat should sync ownership fields but preserve DB connection fields:\n${JSON.stringify(syncedEnv, null, 2)}`);
+  }
+
+  const fakeBinDir = join(tempRoot, 'release-fake-bin');
+  const releaseCallLog = join(tempRoot, 'release-db-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(join(fakeBinDir, 'mysql'), [
+    '#!/usr/bin/env sh',
+    `echo "mysql:$*" >> "${releaseCallLog}"`,
+    'exit 0',
+    '',
+  ].join('\n'));
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  const release = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
+    `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    process.execPath,
+    cli,
+    'workspace',
+    'release',
+    '--workspace',
+    roots[1],
+  ], {
+    cwd: roots[1],
+    encoding: 'utf8',
+  });
+  if (release.status !== 0) {
+    throw new Error(`mango workspace release should drop workspace DB by default:\n${release.stdout}\n${release.stderr}`);
+  }
+  const releaseCalls = waitForCallLogLines(releaseCallLog, 1);
+  if (!releaseCalls.some(line => line.includes(`DROP DATABASE IF EXISTS \`${workspaces[1].dbName}\``))) {
+    throw new Error(`mango workspace release should drop the owned workspace database:\n${releaseCalls.join('\n')}`);
+  }
+  const registryAfterRelease = JSON.parse(readFileSync(registryPath, 'utf8'));
+  if (registryAfterRelease.some(entry => entry.root === roots[1])) {
+    throw new Error(`mango workspace release should remove the workspace registry entry:\n${JSON.stringify(registryAfterRelease, null, 2)}`);
+  }
+
+  const existingDbRoot = join(tempRoot, 'db-existing-root');
+  const existingDbRegistryPath = join(tempRoot, 'db-existing-workspaces.json');
+  const existingDbFakeBinDir = join(tempRoot, 'db-existing-fake-bin');
+  const existingDbCallLog = join(tempRoot, 'db-existing-calls.log');
+  mkdirSync(existingDbRoot, { recursive: true });
+  mkdirSync(existingDbFakeBinDir, { recursive: true });
+  writeFileSync(join(existingDbRoot, 'mango.dev.json'), `${JSON.stringify({
+    version: 1,
+    groups: { default: ['backend'] },
+    apps: {
+      backend: {
+        type: 'command',
+        cwd: '.',
+        command: 'node',
+        args: ['--version'],
+        portEnv: 'MANGO_BACKEND_PORT',
+      },
+    },
+  }, null, 2)}\n`);
+  writeFileSync(join(existingDbFakeBinDir, 'mysql'), [
+    '#!/usr/bin/env sh',
+    `echo "mysql:$*" >> "${existingDbCallLog}"`,
+    `case "$*" in *mango_dev_db_existing_root_001*) echo "mango_dev_db_existing_root_001";; esac`,
+    'exit 0',
+    '',
+  ].join('\n'));
+  chmodExecutable(join(existingDbFakeBinDir, 'mysql'));
+  const existingDbInit = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${existingDbRegistryPath}`,
+    `PATH=${existingDbFakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    process.execPath,
+    cli,
+    'workspace',
+    'init',
+  ], {
+    cwd: existingDbRoot,
+    encoding: 'utf8',
+  });
+  if (existingDbInit.status !== 0) {
+    throw new Error(`mango workspace init should skip existing local MySQL DB names:\n${existingDbInit.stdout}\n${existingDbInit.stderr}`);
+  }
+  const existingDbWorkspace = JSON.parse(readFileSync(join(existingDbRoot, '.mango/workspace.json'), 'utf8'));
+  if (existingDbWorkspace.slot <= 1 || existingDbWorkspace.dbName === 'mango_dev_db_existing_root_001') {
+    throw new Error(`mango workspace init should skip workspace number 001 when DB 001 already exists:\n${JSON.stringify(existingDbWorkspace, null, 2)}`);
+  }
+  const existingDbCalls = waitForCallLogLines(existingDbCallLog, 2);
+  if (!existingDbCalls.some(line => line.includes('mango_dev_db_existing_root_001'))
+    || !existingDbCalls.some(line => line.includes(existingDbWorkspace.dbName))) {
+    throw new Error(`mango workspace init should probe DB names before allocation:\n${existingDbCalls.join('\n')}`);
+  }
+
   const legacyRegistryPath = join(tempRoot, 'legacy-workspaces.tsv');
-  writeFileSync(legacyRegistryPath, `${join(tempRoot, 'legacy-root')}\tmango_123\t18123\t11060\tmango_dev_123\n`);
+  writeFileSync(legacyRegistryPath, `${join(tempRoot, 'legacy-root')}\tmango_123\t18123\t30123\tmango_dev_legacy_root_123\n`);
   const legacyList = spawnSync('env', [
     `MANGO_WORKSPACE_REGISTRY=${legacyRegistryPath}`,
     process.execPath,
@@ -1849,8 +2004,8 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
   if (legacyList.status !== 0
     || !legacyList.stdout.includes('slot=123')
     || !legacyList.stdout.includes('backend=18123')
-    || !legacyList.stdout.includes('frontend=11060')
-    || !legacyList.stdout.includes('db=mango_dev_123')) {
+    || !legacyList.stdout.includes('frontend=30123')
+    || !legacyList.stdout.includes('db=mango_dev_legacy_root_123')) {
     throw new Error(`legacy workspace TSV registry should be readable during migration:\n${legacyList.stdout}\n${legacyList.stderr}`);
   }
 }
