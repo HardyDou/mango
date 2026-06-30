@@ -3,6 +3,7 @@ package io.mango.resource.support.declaration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import org.junit.jupiter.api.Test;
@@ -73,6 +74,68 @@ class ResourceDeclarationLoaderTest {
         assertThat(demo.getResourceType()).isEqualTo("MESSAGE_TEMPLATE");
         assertThat(demo.getModuleCode()).isEqualTo("demo-module");
         assertThat(demo.getTargetModule()).isEqualTo("notice");
+    }
+
+    @Test
+    void loadAcceptsKebabCaseSyncMode() throws Exception {
+        Path declaration = Files.createTempFile("mango-resource-sync-mode", ".yml");
+        Files.writeString(declaration, """
+                mango:
+                  resource:
+                    schema-version: 1
+                    module-code: test
+                    module-name: 测试
+                    declarations:
+                      MESSAGE_TEMPLATE:
+                        - id: "1900000000000000103"
+                          version: 1
+                          biz-key: test.init-only
+                          name: 初始化一次消息
+                          target-module: notice
+                          sync-mode: init-only
+                """);
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of(declaration.toUri().toString()));
+
+        List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties).load();
+
+        assertThat(declarations).hasSize(1);
+        assertThat(declarations.get(0).getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+    }
+
+    @Test
+    void loadAcceptsSnakeCaseSyncMode() throws Exception {
+        Path declaration = Files.createTempFile("mango-resource-sync-mode", ".json");
+        Files.writeString(declaration, """
+                {
+                  "mango": {
+                    "resource": {
+                      "schemaVersion": 1,
+                      "moduleCode": "test",
+                      "moduleName": "测试",
+                      "declarations": {
+                        "MESSAGE_TEMPLATE": [
+                          {
+                            "id": "1900000000000000104",
+                            "version": 1,
+                            "bizKey": "test.init_only",
+                            "name": "初始化一次消息",
+                            "targetModule": "notice",
+                            "syncMode": "init_only"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """);
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of(declaration.toUri().toString()));
+
+        List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties).load();
+
+        assertThat(declarations).hasSize(1);
+        assertThat(declarations.get(0).getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
     }
 
     @Test

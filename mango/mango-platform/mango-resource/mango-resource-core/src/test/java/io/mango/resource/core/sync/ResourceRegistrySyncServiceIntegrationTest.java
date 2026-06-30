@@ -146,6 +146,44 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void syncCreatesInitOnlyResourceOnFirstSync() {
+        ResourceDeclaration declaration = activeDeclaration(1, "初始化标题");
+        declaration.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        provider.setDeclaration(declaration);
+
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(1);
+        assertThat(registry.getSyncMode()).isEqualTo("INIT_ONLY");
+        assertThat(stringValue("message_template", "title")).isEqualTo("初始化标题");
+    }
+
+    @Test
+    void syncKeepsRuntimeTargetWhenInitOnlyDeclarationChanges() {
+        ResourceDeclaration first = activeDeclaration(1, "初始化标题");
+        first.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        provider.setDeclaration(first);
+        syncService.sync();
+        jdbcTemplate.update("update message_template set title = '运行时修改' where id = 91001");
+
+        ResourceDeclaration upgraded = activeDeclaration(2, "升级包标题");
+        upgraded.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        provider.setDeclaration(upgraded);
+        syncService.sync();
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
+        assertThat(registry.getResourceVersion()).isEqualTo(2);
+        assertThat(registry.getSyncMode()).isEqualTo("INIT_ONLY");
+        assertThat(stringValue("message_template", "title")).isEqualTo("运行时修改");
+        assertThat(count("resource_sync_log")).isEqualTo(2);
+        assertThat(count("resource_change_log")).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject(
+                "select sync_type from resource_sync_log order by created_at desc limit 1", String.class))
+                .isEqualTo("SKIP");
+    }
+
+    @Test
     void syncRejectsResourceVersionRollback() {
         provider.setDeclaration(activeDeclaration(2, "提交申请新版"));
         syncService.sync();
