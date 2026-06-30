@@ -283,6 +283,45 @@ mango:
 
 `filesystem:` 应指向包含 `V*.sql` 的目录。`http(s)` 只支持单个 `.sql` 文件，启动迁移前会下载到临时目录再交给 Flyway；执行结果仍写入该模块的 `flyway_schema_history_<module>`。
 
+### 6.5 Schema Baseline Pack
+
+模块历史 migration 很多时，新数据库可以使用 baseline pack 初始化当前完整结构，避免从 V1 执行所有历史 SQL。baseline pack 仍然是 Flyway migration，不绕过模块 history table。
+
+推荐目录：
+
+```text
+/opt/mango/baseline/<module>/
+  V2026070100__baseline_<module>_schema.sql
+  V2026070101__add_after_baseline_change.sql
+```
+
+新数据库配置：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        payment:
+          locations:
+            - filesystem:/opt/mango/baseline/payment
+```
+
+旧数据库升级继续使用历史 migration 或升级包：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        payment:
+          locations:
+            - classpath:db/migration/payment
+            - filesystem:/opt/mango/upgrade/payment
+```
+
+不要在同一个新库配置中同时放入 baseline pack 和该模块历史 V1...Vn 目录；这会重复建表或造成版本冲突。旧库切换到 baseline pack 前必须做单独升级评审，确认 history table、已执行版本和 baseline 版本关系。
+
 模块迁移数据源解析顺序：
 
 1. 多数据源 registry 中的模块映射。
