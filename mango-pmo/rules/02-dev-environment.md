@@ -71,7 +71,15 @@
 - 端口冲突时必须失败并提示占用进程或 owner worktree，禁止静默随机换端口。
 - 前端 Vite 端口必须由 Mango CLI 注入；前端 app 不得在 `dev` 脚本中写死本地端口。
 
-## 4.1 Worktree 删除规则
+## 4.1 CLI 版本来源
+
+- 全局安装的 `@mango/cli` 只用于创建项目、历史项目升级和跨仓库临时诊断。
+- 业务项目日常开发、验证和交付命令必须优先使用项目内锁定的 `@mango/cli`。
+- 业务项目存在 `frontend/package.json` 且声明 `@mango/cli` 时，进入 `frontend` 后使用 `pnpm exec mango ...` 执行 `mango workspace`、`mango dev` 和 `mango frontend` 命令。
+- 系统 `PATH` 上的 `mango` 不能作为业务项目 CLI 版本依据，也不能用来判断项目依赖批次是否已升级。
+- 历史项目缺少项目内 `@mango/cli` 或兼容脚本时，才允许先用全局 `mango pmo upgrade --project-dir . --sync-shell` 补齐项目入口，再执行项目内依赖安装和 `mango workspace init`。
+
+## 4.2 Worktree 删除规则
 
 - 原生 `git worktree remove` 不负责停止服务，也不负责删除数据库。
 - 删除开发 worktree 必须先使用 `mango dev stop` 停止服务，再使用 `mango workspace release --workspace <path>` 释放本机注册。
