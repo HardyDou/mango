@@ -14,20 +14,21 @@ one Maven artifact. This single-module helper is for one-off module publication.
 
 Options:
   --also-make       Also build and deploy required upstream reactor modules
-  --revision <ver>  Maven CI-friendly version; default is 1.0.0-SNAPSHOT
+  --revision <ver>  Maven CI-friendly version; required unless MANGO_MAVEN_REVISION is set
   --release-version <ver>
-                    Alias for --revision; publish a non-SNAPSHOT release version
+                    Alias for --revision
+  --allow-snapshot  Allow an explicit *-SNAPSHOT revision
   --run-tests       Run tests; default is -DskipTests
   --skip-verify     Skip clean-repository dependency:get verification after deploy
   --dry-run         Print the Maven command without running it
   -h, --help        Show help
 
 Examples:
-  scripts/publish-maven-module.sh mango-file-api
-  scripts/publish-maven-module.sh :mango-file-api
-  scripts/publish-maven-module.sh mango-platform/mango-file/mango-file-api
-  scripts/publish-maven-module.sh mango-file-core --also-make
-  scripts/publish-maven-module.sh mango-platform/mango-payment/mango-payment-api --also-make --revision 1.0.0
+  scripts/publish-maven-module.sh mango-file-api --release-version 1.0.2
+  scripts/publish-maven-module.sh :mango-file-api --release-version 1.0.2-rc.20250701113000
+  scripts/publish-maven-module.sh mango-platform/mango-file/mango-file-api --release-version 1.0.2
+  scripts/publish-maven-module.sh mango-file-core --also-make --release-version 1.0.2
+  scripts/publish-maven-module.sh mango-platform/mango-payment/mango-payment-api --also-make --revision 1.0.2-SNAPSHOT --allow-snapshot
 EOF
 }
 
@@ -41,7 +42,27 @@ also_make=false
 skip_tests=true
 dry_run=false
 verify_publish=true
-revision="${MANGO_MAVEN_REVISION:-1.0.0-SNAPSHOT}"
+allow_snapshot=false
+revision="${MANGO_MAVEN_REVISION:-}"
+
+validate_revision() {
+  local value="$1"
+  if [[ -z "${value}" ]]; then
+    echo "Maven revision is required. Pass --release-version <version> or set MANGO_MAVEN_REVISION." >&2
+    echo "Examples: 1.0.2, 1.0.2-rc.20250701113000, 1.0.2-dev.20250701113000" >&2
+    exit 1
+  fi
+  if [[ ! "${value}" =~ ^[0-9]+(\.[0-9]+){2,}([-+][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+    echo "Invalid Maven revision: ${value}" >&2
+    echo "Use a stable SemVer-like version such as 1.0.2 or an explicit prerelease such as 1.0.2-rc.20250701113000." >&2
+    exit 1
+  fi
+  if [[ "${value}" == *-SNAPSHOT && "${allow_snapshot}" != "true" ]]; then
+    echo "SNAPSHOT publish is blocked by default: ${value}" >&2
+    echo "Use a release/prerelease version, or pass --allow-snapshot when publishing an intentional Maven snapshot." >&2
+    exit 1
+  fi
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -75,6 +96,9 @@ while [[ $# -gt 0 ]]; do
     --release-version=*)
       revision="${1#--release-version=}"
       ;;
+    --allow-snapshot)
+      allow_snapshot=true
+      ;;
     --dry-run)
       dry_run=true
       ;;
@@ -107,10 +131,7 @@ if [[ -z "${target}" ]]; then
   usage
   exit 1
 fi
-if [[ -z "${revision}" ]]; then
-  echo "Revision must not be empty." >&2
-  exit 1
-fi
+validate_revision "${revision}"
 
 project_list="${target}"
 if [[ "${target}" != :* && ! -d "${MAVEN_ROOT}/${target}" ]]; then
@@ -130,6 +151,7 @@ fi
 echo "Maven root: ${MAVEN_ROOT}"
 echo "Publishing module: ${project_list}"
 echo "Revision: ${revision}"
+echo "Allow SNAPSHOT: ${allow_snapshot}"
 if [[ "${also_make}" == "true" ]]; then
   echo "Mode: deploy selected module and required upstream modules"
 else
