@@ -315,7 +315,7 @@ mango:
 
 ## 14. 文档入口
 
-- Resource 使用说明：[mango-resource README](../../../mango/mango-platform/mango-resource/README.md)
-- Flyway 外部 locations 和 baseline pack：[mango-infra-persistence README](../../../mango/mango-infra/mango-infra-persistence/README.md)
+- Resource 使用说明：[mango-resource README](../../mango/mango-platform/mango-resource/README.md)
+- Flyway 外部 locations 和 baseline pack：[mango-infra-persistence README](../../mango/mango-infra/mango-infra-persistence/README.md)
 - 当前物料清理清单：[S5 数据物料清理清单](../plans/2026-07-01-issue-184-s5-data-material-audit.md)
 - 能力地图：[Mango 能力地图](../capabilities/README.md)
