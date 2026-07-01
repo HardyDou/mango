@@ -256,6 +256,7 @@ Usage:
   mango workspace release [--workspace <path>] [--keep-db]
   mango dev start [group|app...]
   mango dev stop [app...]
+  mango dev restart [group|app...]
   mango dev status
   mango dev doctor
   mango dev logs <app>
@@ -746,6 +747,11 @@ async function runDevCommand(command = 'start', argv = []) {
   }
   if (normalized === 'stop') {
     await stopDevWorkspace(context, argv);
+    return;
+  }
+  if (normalized === 'restart') {
+    await stopDevWorkspace(context, argv);
+    await startDevWorkspace(context, argv);
     return;
   }
   if (normalized === 'status') {
