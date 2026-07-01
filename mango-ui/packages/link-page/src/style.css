@@ -31,10 +31,12 @@
 }
 
 .mango-link-page__brand {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 72px;
+  max-width: min(760px, 92vw);
 }
 
 .mango-link-page__brand img {
@@ -46,10 +48,77 @@
 }
 
 .mango-link-page__brand span {
+  display: block;
+  max-width: min(640px, 88vw);
+  overflow: hidden;
   color: var(--mango-link-page-text);
   font-size: clamp(54px, 7vw, 82px);
   font-weight: 600;
   line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-link-page__brand-edit {
+  position: absolute;
+  top: -8px;
+  right: -34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #dadce0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #5f6368;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: .72;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, .14);
+  transition:
+    opacity .14s ease,
+    color .14s ease,
+    border-color .14s ease,
+    box-shadow .14s ease,
+    transform .08s ease;
+}
+
+.mango-link-page__brand-edit:hover {
+  border-color: color-mix(in srgb, var(--mango-link-page-primary) 32%, #dadce0);
+  color: var(--mango-link-page-primary);
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(60, 64, 67, .18);
+}
+
+.mango-link-page__brand-edit:active {
+  transform: translateY(1px) scale(.96);
+}
+
+.mango-link-page__brand-edit:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--mango-link-page-primary) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.mango-link-page__brand-input {
+  width: min(640px, 88vw);
+  height: clamp(64px, 8vw, 92px);
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--mango-link-page-text);
+  font: inherit;
+  font-size: clamp(54px, 7vw, 82px);
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  outline: none;
+  box-shadow: 0 2px 0 var(--mango-link-page-primary);
+}
+
+.mango-link-page__brand-input::selection {
+  background: color-mix(in srgb, var(--mango-link-page-primary) 20%, transparent);
 }
 
 .mango-link-page__searchbar {
@@ -583,6 +652,16 @@
   }
 
   .mango-link-page__brand span {
+    font-size: 54px;
+  }
+
+  .mango-link-page__brand-edit {
+    top: -6px;
+    right: -18px;
+  }
+
+  .mango-link-page__brand-input {
+    height: 64px;
     font-size: 54px;
   }
 

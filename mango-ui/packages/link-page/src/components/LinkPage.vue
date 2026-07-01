@@ -2,9 +2,24 @@
   <section class="mango-link-page" data-component="mango-link-page">
     <header class="mango-link-page__header">
       <h2 class="mango-link-page__title">{{ title }}</h2>
-      <div class="mango-link-page__brand">
-        <img v-if="logoUrl" :src="logoUrl" :alt="logoAlt || logoText || title" />
-        <span v-else>{{ logoText || title }}</span>
+      <div class="mango-link-page__brand" :class="{ 'is-editing': brandEditing }">
+        <input
+          v-if="brandEditing"
+          ref="brandInputRef"
+          v-model="brandDraft"
+          class="mango-link-page__brand-input"
+          maxlength="24"
+          aria-label="编辑 Logo 文本"
+          @keyup.enter="confirmBrandEdit"
+          @keyup.esc="cancelBrandEdit"
+        />
+        <template v-else>
+          <img v-if="displayLogoUrl" :src="displayLogoUrl" :alt="logoAlt || effectiveBrandText || title" />
+          <span v-else>{{ effectiveBrandText }}</span>
+          <button class="mango-link-page__brand-edit" type="button" title="编辑 Logo" @click="startBrandEdit">
+            <el-icon><Edit /></el-icon>
+          </button>
+        </template>
       </div>
       <div class="mango-link-page__searchbar">
         <el-input
@@ -194,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, Search, Star, StarFilled } from '@element-plus/icons-vue';
+import { Edit, Plus, Search, Star, StarFilled } from '@element-plus/icons-vue';
 import {
   createFavorite,
   createPersonalCategory,
@@ -208,7 +223,7 @@ import {
   type LinkPublicItem,
 } from '@mango/link-openapi';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import type { LinkPageLoginInput, LinkPageProps, LinkPageSearchEngine } from '../types';
 
 type LinkGroup = {
@@ -252,6 +267,7 @@ type MangoResult<T> = {
 };
 
 const localFavoritesKey = 'mango-link-page:favorites';
+const localBrandTextKey = 'mango-link-page:brand-text';
 const mangoTokenKey = 'MANGO_TOKEN';
 const mangoRefreshTokenKey = 'MANGO_REFRESH_TOKEN';
 const mangoTokenExpiresAtKey = 'MANGO_TOKEN_EXPIRES_AT';
@@ -282,6 +298,9 @@ const detectedLogin = ref(false);
 const errorMessage = ref('');
 const keyword = ref('');
 const activeSearchEngine = ref(props.defaultSearchEngine);
+const storedBrandText = ref(readStoredBrandText());
+const brandEditing = ref(false);
+const brandDraft = ref('');
 const mangoAuthToken = ref(readMangoToken());
 const mangoUserInfo = ref<Record<string, unknown>>(readStoredMangoUserInfo());
 const links = ref<LinkPublicItem[]>([]);
@@ -296,6 +315,7 @@ const loginDialogVisible = ref(false);
 const categoryFormRef = ref<FormInstance>();
 const linkFormRef = ref<FormInstance>();
 const loginFormRef = ref<FormInstance>();
+const brandInputRef = ref<HTMLInputElement>();
 const categoryForm = reactive({ name: '' });
 const linkForm = reactive<CreateLinkPersonalItemInput>({ name: '', url: '', categoryId: '' });
 const loginForm = reactive<LinkPageLoginInput>({ username: '', password: '' });
@@ -318,6 +338,8 @@ const requestOptions = computed<LinkOpenApiClientOptions>(() => ({
   credentials: props.credentials,
 }));
 const availableSearchEngines = computed(() => props.searchEngines?.length ? props.searchEngines : defaultSearchEngines);
+const effectiveBrandText = computed(() => storedBrandText.value || props.logoText || 'Mango');
+const displayLogoUrl = computed(() => storedBrandText.value ? '' : props.logoUrl);
 const displayUserName = computed(() => props.userName
   || props.userAccount
   || mangoUserText(['nickname', 'name', 'realName', 'username', 'account'])
@@ -439,6 +461,26 @@ function openSearch(engineCode: string) {
     ? engine.searchUrl.replace('{keyword}', encodeURIComponent(term))
     : `${engine.searchUrl}${encodeURIComponent(term)}`;
   window.open(target, '_blank', 'noopener,noreferrer');
+}
+
+async function startBrandEdit() {
+  brandDraft.value = effectiveBrandText.value;
+  brandEditing.value = true;
+  await nextTick();
+  brandInputRef.value?.focus();
+  brandInputRef.value?.select();
+}
+
+function confirmBrandEdit() {
+  const nextValue = brandDraft.value.trim() || 'Mango';
+  storedBrandText.value = nextValue;
+  saveStoredBrandText(nextValue);
+  brandEditing.value = false;
+}
+
+function cancelBrandEdit() {
+  brandDraft.value = effectiveBrandText.value;
+  brandEditing.value = false;
 }
 
 function searchHomeUrl(searchUrl: string) {
@@ -877,6 +919,20 @@ function saveLocalFavorites() {
     return;
   }
   window.localStorage.setItem(localFavoritesKey, JSON.stringify(localFavorites.value));
+}
+
+function readStoredBrandText() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return window.localStorage.getItem(localBrandTextKey) || '';
+}
+
+function saveStoredBrandText(value: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.localStorage.setItem(localBrandTextKey, value);
 }
 
 function isFavoritePending(item: LinkPublicItem) {
