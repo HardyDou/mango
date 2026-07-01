@@ -82,13 +82,22 @@ registerMangoLinkAdminPages();
 - [@mango/link-page](../../../mango-ui/packages/link-page/README.md)
 - [@mango/link-panel](../../../mango-ui/packages/link-panel/README.md)
 
-## 5. 数据与初始化
+## 5. 配置说明
+
+| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 |
+|----------|------------|--------|------|----------|
+| Resource Registry 系统配置 | `mango.link.open.jump.enabled` | `false` | 网址跳转统计开关 | `true` 时 Open API 返回 `redirectUrl`，点击网址经过 `/link/open/jump` 并记录访问；`false` 时前端直连原始 `url`。 |
+| 前端 `@mango/link-page` | `jumpEnabled` | - | 组件侧跳转开关 | 未传时尊重后端 `redirectUrl`；`false` 强制直连；`true` 在后端未返回时补出 `/link/open/jump` 地址。 |
+
+系统配置声明位于 `mango-link-starter/src/main/resources/META-INF/mango/resources/link-common-config.yml`，由 Resource Registry 同步为可编辑配置。
+
+## 6. 数据与初始化
 
 | 数据 | 初始化来源 | 说明 |
 |------|------------|------|
 | 表结构 | `mango-link-core/src/main/resources/db/migration/link` | 创建 `link_category`、`link_item`、`link_visibility_target`、`link_favorite`、`link_access_record`。 |
 | 默认导航数据 | `mango-link-core/src/main/resources/db/migration/link/V4__seed_default_navigation.sql` | 固化 `企业导航` 分组，以及 Mango 管理后台、百度、GitHub、Maven Central 默认网址。 |
-| 菜单与权限 | `mango-link-starter/src/main/resources/META-INF/mango/resources/link-common-menu.json` | 通过 resource 注入到授权模块。 |
+| 菜单与权限资源清单 | `mango-link-starter/src/main/resources/META-INF/mango/resources/link-common-menu.json` | 通过 Resource Registry resource 声明注入到授权模块，`moduleCode` 为 `mango-link`。 |
 | 前端页面 | `@mango/link/admin-pages` | 菜单 `component` 通过 admin-pages 映射到 Vue 页面。 |
 | 系统配置 | `mango-link-starter/src/main/resources/META-INF/mango/resources/link-common-config.yml` | 初始化 `mango.link.open.jump.enabled`，控制 Open API 是否返回系统跳转地址。 |
 
@@ -118,21 +127,21 @@ registerMangoLinkAdminPages();
 | 企业导航 | GitHub | `PUBLIC` | 匿名和登录用户均可见。 |
 | 企业导航 | Maven Central | `PUBLIC` | 匿名和登录用户均可见。 |
 
-## 6. 菜单与权限
+## 7. 管理入口
 
-| 菜单 | 路由 | 页面 key | 权限码 |
-|------|------|----------|--------|
-| 网址导航 / 公司网址 | `/link/company` | `link/company/index` | `link:navigation:view` |
-| 网址导航 / 我的收藏 | `/link/favorites` | `link/favorites/index` | `link:favorite:view` |
-| 网址导航 / 我的网址 | `/link/my-links` | `link/my-links/index` | `link:personal:view` |
-| 平台能力 / 网址管理 / 网址分类 | `/data/link/categories` | `link/categories/index` | `link:category:view`、`link:category:create`、`link:category:update`、`link:category:status`、`link:category:delete` |
-| 平台能力 / 网址管理 / 网址列表 | `/data/link/items` | `link/items/index` | `link:item:view`、`link:item:create`、`link:item:update`、`link:item:status`、`link:item:delete` |
+| 菜单 / 页面 | 路由 | component key | permissionCode | 入库来源 | 默认套餐 / 角色 | 租户边界 |
+|-------------|------|---------------|----------------|----------|-----------------|----------|
+| 网址导航 / 公司网址 | `/link/company` | `link/company/index` | `link:navigation:view` | `META-INF/mango/resources/link-common-menu.json` | `platform_admin`、`institution_collaboration` / 无默认角色 | 当前租户内登录用户。 |
+| 网址导航 / 我的收藏 | `/link/favorites` | `link/favorites/index` | `link:favorite:view` | `META-INF/mango/resources/link-common-menu.json` | `platform_admin`、`institution_collaboration` / 无默认角色 | 当前租户内当前用户。 |
+| 网址导航 / 我的网址 | `/link/my-links` | `link/my-links/index` | `link:personal:view` | `META-INF/mango/resources/link-common-menu.json` | `platform_admin`、`institution_collaboration` / 无默认角色 | 当前租户内当前用户。 |
+| 平台能力 / 网址管理 / 网址分类 | `/data/link/categories` | `link/categories/index` | `link:category:view`、`link:category:create`、`link:category:update`、`link:category:status`、`link:category:delete` | `META-INF/mango/resources/link-common-menu.json` | `platform_admin`、`institution_collaboration` / 无默认角色 | 当前租户内管理员。 |
+| 平台能力 / 网址管理 / 网址列表 | `/data/link/items` | `link/items/index` | `link:item:view`、`link:item:create`、`link:item:update`、`link:item:status`、`link:item:delete` | `META-INF/mango/resources/link-common-menu.json` | `platform_admin`、`institution_collaboration` / 无默认角色 | 当前租户内管理员。 |
 
-菜单来自 resource 声明，初始化或重建工作区后应通过授权菜单接口确认能看到 `网址导航` 和 `网址管理`。
+菜单来自 Resource Registry resource 声明，`appCode` 为 `internal-admin`，`moduleCode` 为 `mango-link`，菜单幂等键来自 `menuCode`。初始化或重建工作区后应通过授权菜单接口确认能看到 `网址导航` 和 `网址管理`。
 
-## 7. 接口入口
+## 8. API 与扩展
 
-### 7.1 Open API
+### 8.1 Open API
 
 | 方法 | 路径 | 登录态 | 说明 |
 |------|------|--------|------|
@@ -141,13 +150,13 @@ registerMangoLinkAdminPages();
 
 `/link/open/public-links/list` 返回项包含 `source`。当系统配置 `mango.link.open.jump.enabled=true` 时，返回项还包含 `redirectUrl`，形式为 `/link/open/jump?url=...`；前端打开网址优先使用 `redirectUrl`。配置关闭时不返回 `redirectUrl`，前端直接打开原始 `url`。
 
-### 7.1.1 系统配置
+### 8.2 系统配置
 
 | 配置 key | 默认值 | 说明 |
 |----------|--------|------|
 | `mango.link.open.jump.enabled` | `false` | `true`：Open API 返回 `redirectUrl`，点击网址经过 `/link/open/jump` 并写访问记录；`false`：Open API 不返回 `redirectUrl`，前端直连原始网址，不记录跳转访问。 |
 
-### 7.2 用户侧接口
+### 8.3 用户侧接口
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -162,7 +171,7 @@ registerMangoLinkAdminPages();
 | GET | `/link/personal-categories/list` | 查询我的网址分组。 |
 | POST | `/link/personal-categories/create` | 新增我的网址分组。 |
 
-### 7.3 管理接口
+### 8.4 管理接口
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -176,7 +185,7 @@ registerMangoLinkAdminPages();
 | PUT | `/link/items/update` | 编辑网址。 |
 | POST / PUT / DELETE | `/link/items/*` | 网址启停、状态更新、删除。 |
 
-## 8. 关键字段
+## 9. 关键字段
 
 | 对象 | 字段 | 说明 |
 |------|------|------|
@@ -195,7 +204,7 @@ registerMangoLinkAdminPages();
 | 网址 | `recommended` | 是否推荐。 |
 | 访问记录 | `linkId`、`userId`、`source`、`clientIp`、`userAgent`、`referer`、`accessTime` | 系统跳转时写入。 |
 
-## 9. 验收
+## 10. 快速开始
 
 本地默认验收地址：
 
@@ -226,7 +235,7 @@ mvn -q -DskipTests mango:check -Drule=api-contract
 mvn -q -DskipTests mango:check -Drule=persistence-schema
 ```
 
-## 10. 排障
+## 11. 问题排查
 
 | 问题 | 优先检查 |
 |------|----------|
@@ -236,3 +245,13 @@ mvn -q -DskipTests mango:check -Drule=persistence-schema
 | 登录后看不到公司网址 | 当前用户是否属于租户/公司，部门或用户可见目标是否匹配。 |
 | 打开网址没有统计 | 系统配置 `mango.link.open.jump.enabled` 是否为 `true`，前端是否使用接口返回的 `redirectUrl`。 |
 | 跳转返回不可见 | 当前用户不满足该链接可见范围，或分类/网址已停用。 |
+
+## 12. 相关文档
+
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+- [模块菜单资源规范](../../../mango-pmo/rules/backend/11-module-menu.md)
+- [数据库规范](../../../mango-pmo/rules/backend/04-db.md)
+- [网址导航设计说明](../../../mango-docs/designs/2026-06-30-url-navigation-design.md)
+- [网址导航交付台账](../../../mango-docs/evidence/2026-07-01-link-navigation-delivery-contract.md)
+- [@mango/link 前端管理包](../../../mango-ui/packages/link/README.md)
+- [@mango/link-page 独立页面包](../../../mango-ui/packages/link-page/README.md)

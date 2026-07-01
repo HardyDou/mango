@@ -6,7 +6,18 @@
 
 它适合门户首页、工作台、小组件区域或单页导航站，不依赖 Mango 管理后台菜单运行时。
 
-## 2. 安装
+## 2. 功能清单
+
+| 能力 | 说明 |
+|------|------|
+| 导航展示 | 按我的收藏、企业导航、个人分组展示网址。 |
+| 外部搜索 | 支持默认搜索引擎和可配置搜索引擎列表。 |
+| 登录/退出 | 可使用内置 Mango 登录接口，也可由宿主通过 handler 接管。 |
+| 收藏网址 | 登录用户走后端收藏接口，匿名用户写入本地 `localStorage`。 |
+| 个人网址 | 登录用户可新增个人分组和个人网址。 |
+| Logo 展示 | 支持图片 Logo、文字 Logo 和可配置 alt 文案。 |
+
+## 3. 接入方式
 
 ```bash
 pnpm add @mango/link-page @mango/link-openapi
@@ -14,7 +25,19 @@ pnpm add @mango/link-page @mango/link-openapi
 
 宿主应用需要提供 `vue` 和 `element-plus`。
 
-## 3. 使用
+## 4. 配置说明
+
+| 配置入口 | 字段 / Key | 默认值 | 含义 |
+|----------|------------|--------|------|
+| 组件 props | `baseUrl` | `''` | 后端 API 前缀，例如 `/api`。 |
+| 组件 props | `authenticated` | `false` | 宿主已知的登录状态。 |
+| 组件 props | `headers` | - | 登录态请求头。 |
+| 组件 props | `jumpEnabled` | - | 控制组件侧是否补出 `/link/open/jump` 跳转地址。 |
+| 后端配置 | `mango.link.open.jump.enabled` | `false` | 控制 Open API 是否返回 `redirectUrl`。 |
+
+## 5. 快速开始
+
+在宿主页面引入组件和样式，传入后端 API 前缀、登录态、Logo 和搜索引擎配置后即可渲染网址导航页。
 
 ```ts
 import { MangoLinkPage } from '@mango/link-page';
@@ -37,7 +60,7 @@ import '@mango/link-page/style.css';
 </template>
 ```
 
-## 4. 数据与登录态
+## 6. 数据与初始化
 
 | 状态 | 数据来源 | 页面能力 |
 |------|----------|----------|
@@ -54,7 +77,11 @@ import '@mango/link-page/style.css';
 mango-link-page:favorites
 ```
 
-## 5. 界面能力
+## 7. 管理入口
+
+`@mango/link-page` 没有后台菜单和权限资源。公司网址、公开网址、个人网址和收藏数据由后端 `mango-link` 提供；需要在管理后台维护网址分类和网址列表时，使用 `@mango/link` 注册的管理页面及后端 resource 注入的菜单、component key 和权限码。
+
+## 8. API 与扩展
 
 | 区域 | 说明 |
 |------|------|
@@ -67,7 +94,7 @@ mango-link-page:favorites
 | 退出操作 | 默认调用 Mango `/auth/logout` 并清理本地 token、用户信息和个人分组状态；也可以通过 `logoutHandler` 接管。 |
 | 收藏操作 | 网址卡片默认不显示收藏按钮，悬浮到卡片后显示；收藏成功后状态更新，已收藏图标为高亮星标。 |
 
-## 6. Props
+## 9. Props
 
 | 名称 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
@@ -110,7 +137,7 @@ const searchEngines = [
 ];
 ```
 
-## 7. 事件
+## 10. 事件
 
 | 事件 | 参数 | 说明 |
 |------|------|------|
@@ -119,7 +146,7 @@ const searchEngines = [
 | `created` | - | 新增分组或新增网址成功后触发。 |
 | `opened` | `LinkPublicItem` | 打开网址后触发。 |
 
-## 8. 后端接口
+## 11. 后端依赖
 
 | 能力 | 后端路径 |
 |------|----------|
@@ -134,7 +161,7 @@ const searchEngines = [
 | 收藏网址 | `POST /link/favorites/create` |
 | 取消收藏 | `DELETE /link/favorites/delete` |
 
-## 9. 排障
+## 12. 问题排查
 
 | 问题 | 优先检查 |
 |------|----------|
@@ -144,7 +171,8 @@ const searchEngines = [
 | 新增分组失败 | 当前用户是否已登录，后端是否启用 `/link/personal-categories/create`。 |
 | 添加网址失败 | URL、名称、分组和登录态是否满足后端校验。 |
 
-## 10. 相关文档
+## 13. 相关文档
 
 - [mango-link 后端模块](../../../mango/mango-platform/mango-link/README.md)
 - [@mango/link-openapi](../link-openapi/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

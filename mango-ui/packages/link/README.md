@@ -13,7 +13,18 @@
 
 它不是独立门户组件。非管理后台页面应使用 `@mango/link-panel` 或 `@mango/link-openapi`。
 
-## 2. 安装
+## 2. 功能清单
+
+| 能力 | 入口 | 说明 |
+|------|------|------|
+| 公司网址 | `link/company/index` | 展示当前用户可见的公司网址，支持打开和收藏。 |
+| 我的收藏 | `link/favorites/index` | 展示、打开和取消收藏当前用户收藏的网址。 |
+| 我的网址 | `link/my-links/index` | 维护当前用户的个人网址。 |
+| 网址分类管理 | `link/categories/index` | 管理公司网址分类。 |
+| 网址列表管理 | `link/items/index` | 管理公司、部门、指定人可见的网址。 |
+| 前端 API | `linkApi` | 封装后台管理和用户侧网址接口。 |
+
+## 3. 接入方式
 
 ```bash
 pnpm add @mango/link @mango/link-openapi
@@ -21,7 +32,15 @@ pnpm add @mango/link @mango/link-openapi
 
 宿主应用需要提供 `vue`、`element-plus`、`@mango/common` 和 `@mango/admin-pages`。
 
-## 3. 注册页面
+## 4. 配置说明
+
+| 配置入口 | 字段 / Key | 默认值 | 含义 |
+|----------|------------|--------|------|
+| 页面注册 | `registerMangoLinkAdminPages()` | - | 把 `link/*/index` 页面 key 注册到 admin-pages。 |
+| 样式入口 | `@mango/link/style.css` | - | 加载网址导航管理页样式。 |
+| 后端配置 | `mango.link.open.jump.enabled` | `false` | 控制打开网址时是否经过后端跳转并记录访问。 |
+
+## 5. 快速开始
 
 ```ts
 import { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
@@ -40,7 +59,7 @@ registerMangoLinkAdminPages();
 | `link/categories/index` | 网址分类 |
 | `link/items/index` | 网址列表 |
 
-## 4. 菜单入口
+## 6. 管理入口
 
 | 菜单 | 路由 | 页面 key |
 |------|------|----------|
@@ -52,7 +71,15 @@ registerMangoLinkAdminPages();
 
 菜单和权限由后端 `mango-link` 的 resource 文件注入。页面注册只解决 component key 到 Vue 页面之间的映射。
 
-## 5. 页面能力
+## 7. 数据与初始化
+
+| 数据 | 来源 | 说明 |
+|------|------|------|
+| 菜单和权限 | `mango-link-starter` resource 声明 | 注入 `网址导航` 和 `网址管理` 菜单。 |
+| 页面 key | `@mango/link/admin-pages` | 注册 `link/company/index`、`link/items/index` 等 Vue 页面。 |
+| 网址数据 | `mango-link` 后端 | 页面不持久化业务数据，所有列表、收藏和个人网址操作来自后端接口。 |
+
+## 8. API 与扩展
 
 | 页面 | 查询条件 | 主要字段 | 操作 |
 |------|----------|----------|------|
@@ -98,7 +125,7 @@ registerMangoLinkAdminPages();
 | `openLinkWithRedirect(item, source)` | 新窗口打开系统跳转地址。 |
 | `navigationSourceOf(scope)` | 根据可见范围推导跳转来源。 |
 
-## 7. 后端依赖
+## 9. 后端依赖
 
 | 依赖 | 说明 |
 |------|------|
@@ -106,7 +133,7 @@ registerMangoLinkAdminPages();
 | `mango-authorization` | 提供菜单、权限和角色授权。 |
 | `mango-identity` | 提供登录用户、租户和成员关系。 |
 
-## 8. 排障
+## 10. 问题排查
 
 | 问题 | 优先检查 |
 |------|----------|
@@ -116,8 +143,9 @@ registerMangoLinkAdminPages();
 | 页面请求 401/403 | 登录态、角色权限、网址可见范围是否满足。 |
 | 打开网址没有访问记录 | 页面是否走 `openLinkWithRedirect`，请求路径是否为 `/api/link/open/redirect/{id}`。 |
 
-## 9. 相关文档
+## 11. 相关文档
 
 - [mango-link 后端模块](../../../mango/mango-platform/mango-link/README.md)
 - [@mango/link-openapi](../link-openapi/README.md)
 - [@mango/link-panel](../link-panel/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
