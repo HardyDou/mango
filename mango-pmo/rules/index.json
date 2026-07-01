@@ -81,7 +81,7 @@
     },
     "backend.db": {
       "path": "rules/backend/04-db.md",
-      "reason": "数据库与 migration 规范"
+      "reason": "数据库、migration、初始化数据与默认 Flyway 禁止项规范"
     },
     "backend.module": {
       "path": "rules/backend/05-module.md",
@@ -216,7 +216,7 @@
     "dataInitializationGovernance": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "paths": ["mango/**/db/migration/**", "mango/**/META-INF/mango/resources/**", "mango/**/META-INF/mango/demo/**", "backend/**/db/migration/**", "backend/**/META-INF/mango/resources/**", "backend/**/META-INF/mango/demo/**"],
-      "keywords": ["初始化数据", "默认数据", "预置数据", "种子数据", "seed", "demo 数据", "demo数据", "测试数据", "字典", "菜单", "角色", "权限", "工作流初始化", "流程定义初始化", "Flyway", "migration", "历史 SQL", "历史sql", "旧字典", "升级数据", "停机升级", "baseline pack", "外部 SQL", "URL SQL", "Resource Registry", "INIT_ONLY"],
+      "keywords": ["初始化数据", "默认数据", "预置数据", "种子数据", "seed", "demo 数据", "demo数据", "测试数据", "simulated runtime seed", "模拟运行时数据", "模拟订单", "模拟流水", "示例站点", "示例内容", "字典", "菜单", "角色", "权限", "工作流初始化", "流程定义初始化", "Flyway", "migration", "历史 SQL", "历史sql", "旧字典", "升级数据", "停机升级", "baseline pack", "外部 SQL", "URL SQL", "Resource Registry", "INIT_ONLY"],
       "include": ["process.capabilityDocs", "process.documentAssets", "backend.db", "backend.moduleMenu", "backend.persistence"]
     },
     "backendApi": {
