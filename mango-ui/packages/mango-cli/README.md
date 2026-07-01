@@ -8,7 +8,7 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.54` |
+| 当前版本 | `1.0.55` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
