@@ -1,6 +1,6 @@
 {
   "maven": {
-    "mangoBackend": "1.0.1"
+    "mangoBackend": "1.0.2"
   },
   "npm": {
     "@mango/admin": "1.0.35",
