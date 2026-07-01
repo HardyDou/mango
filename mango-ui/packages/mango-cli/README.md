@@ -59,7 +59,7 @@ CLI 不负责：
 使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
 
 ```bash
-npm install -g @mango/cli@1.0.54 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.55 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 生成 full 项目：

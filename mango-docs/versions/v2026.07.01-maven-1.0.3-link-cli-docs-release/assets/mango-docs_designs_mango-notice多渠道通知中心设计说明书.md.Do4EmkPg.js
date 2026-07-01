@@ -1,0 +1,479 @@
+import{_ as a,o as n,c as p,a2 as t}from"./chunks/framework.CE5oItKu.js";const _=JSON.parse('{"title":"mango-notice 通知中心设计方案","description":"","frontmatter":{},"headers":[],"relativePath":"mango-docs/designs/mango-notice多渠道通知中心设计说明书.md","filePath":"mango-docs/designs/mango-notice多渠道通知中心设计说明书.md"}'),e={name:"mango-docs/designs/mango-notice多渠道通知中心设计说明书.md"};function l(i,s,d,c,o,r){return n(),p("div",null,[...s[0]||(s[0]=[t(`<h1 id="mango-notice-通知中心设计方案" tabindex="-1">mango-notice 通知中心设计方案 <a class="header-anchor" href="#mango-notice-通知中心设计方案" aria-label="Permalink to &quot;mango-notice 通知中心设计方案&quot;">​</a></h1><p>文档状态：待审阅 基线日期：2026-05-26 设计口径：通知中心是统一消息编排中心，不是短信系统。</p><h2 id="_1-系统定位" tabindex="-1">1. 系统定位 <a class="header-anchor" href="#_1-系统定位" aria-label="Permalink to &quot;1. 系统定位&quot;">​</a></h2><p>通知中心负责把业务事件转成可配置、可追踪、可重试的多渠道消息。</p><p>核心职责：</p><ul><li>业务消息定义。</li><li>多渠道消息发送。</li><li>模板渲染。</li><li>用户接收控制。</li><li>发送记录。</li><li>失败重试。</li><li>平台运行监控。</li></ul><p>系统不按短信、邮件、微信拆业务模型。短信、邮件、系统消息、微信公众号、企业微信、钉钉、飞书、Webhook 都是同一条业务消息的投递渠道。</p><h2 id="_2-目标" tabindex="-1">2. 目标 <a class="header-anchor" href="#_2-目标" aria-label="Permalink to &quot;2. 目标&quot;">​</a></h2><p>建设 <code>mango-notice</code> 统一消息编排中心。业务系统发送消息时只关心 <code>bizCode</code>、业务单号、参数和接收人，通知中心根据消息定义、渠道配置、接收设置和模板版本完成发送、记录、失败重试和监控。</p><p>一句话目标：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>业务事件 -&gt; 消息定义 -&gt; 参数渲染 -&gt; 渠道发送 -&gt; 接收控制 -&gt; 发送记录 -&gt; 失败重试</span></span></code></pre></div><h2 id="_3-交付契约" tabindex="-1">3. 交付契约 <a class="header-anchor" href="#_3-交付契约" aria-label="Permalink to &quot;3. 交付契约&quot;">​</a></h2><table tabindex="0"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td>目标</td><td>重新基线化通知中心产品、菜单、领域模型、接口、数据和验收口径</td></tr><tr><td>范围</td><td>消息定义、通知渠道、接收设置、发送记录、失败重试、系统监控、用户侧系统消息入口</td></tr><tr><td>不做</td><td>IM 聊天、营销旅程、费用结算、三方账号生命周期管理、内容风控平台、通用 MQ 平台</td></tr><tr><td>设计输入</td><td>用户提供的《通知中心设计方案》、现有 <code>mango-notice</code> 实现、Mango PMO 规范</td></tr><tr><td>交付物</td><td>设计文档、Sprint 计划、交付台账；用户审阅通过后再进入代码调整</td></tr><tr><td>验收方式</td><td>文档审阅、交付台账 plan 检查；实施后再执行后端、前端、E2E 和台账 verify</td></tr><tr><td>风险与限制</td><td>当前代码和菜单仍按旧口径实现，需要在实施阶段迁移命名、路由、权限、数据和页面结构</td></tr></tbody></table><h2 id="_4-核心设计思想" tabindex="-1">4. 核心设计思想 <a class="header-anchor" href="#_4-核心设计思想" aria-label="Permalink to &quot;4. 核心设计思想&quot;">​</a></h2><p>一个业务消息对应：</p><ul><li>一套参数定义。</li><li>多个发送渠道。</li><li>多套渠道模板。</li><li>一个统一发送流程。</li><li>一套发送记录和失败重试机制。</li></ul><p>示例：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>guarantee.issue_success</span></span>
+<span class="line"><span>├── 参数：guaranteeNo、projectName、amount、userName、mobile</span></span>
+<span class="line"><span>├── 系统消息模板</span></span>
+<span class="line"><span>├── 短信模板</span></span>
+<span class="line"><span>├── 邮件模板</span></span>
+<span class="line"><span>└── 微信公众号模板</span></span></code></pre></div><p>业务模块调用发送接口时，不直接拼短信内容，也不直接选择供应商账号。业务模块只传业务事实，通知中心按配置完成后续动作。</p><h2 id="_5-核心流程" tabindex="-1">5. 核心流程 <a class="header-anchor" href="#_5-核心流程" aria-label="Permalink to &quot;5. 核心流程&quot;">​</a></h2><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>发送消息（bizCode）</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>查消息定义（bizCode + 生效版本）</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>获取开启渠道</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>检查发送条件（消息启用、渠道启用、接收设置允许、有接收地址）</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>渲染模板</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>逐渠道发送</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>记录发送结果</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>失败进入重试池</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>监控统计发送量、成功率、失败率和队列堆积</span></span></code></pre></div><p>发送流程要求：</p><ol><li><code>bizCode</code> 是业务消息唯一编码。</li><li>生效版本决定运行时参数、渠道状态、模板内容、变量映射和发送策略。</li><li>用户接收设置在发送前生效；用户关闭的渠道不生成发送记录，或生成已取消记录，具体由实施方案统一。</li><li>渲染内容、发送参数、渠道响应、失败原因和耗时必须可追踪。</li><li>外部渠道失败必须进入失败重试，不允许只记录失败后结束。</li></ol><h2 id="_6-菜单规划" tabindex="-1">6. 菜单规划 <a class="header-anchor" href="#_6-菜单规划" aria-label="Permalink to &quot;6. 菜单规划&quot;">​</a></h2><p>一级菜单：<code>通知中心</code>。</p><p>最终菜单：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>通知中心</span></span>
+<span class="line"><span>├── 消息定义</span></span>
+<span class="line"><span>├── 发送任务</span></span>
+<span class="line"><span>├── 通知渠道</span></span>
+<span class="line"><span>├── 接收设置</span></span>
+<span class="line"><span>├── 发送记录</span></span>
+<span class="line"><span>├── 失败重试</span></span>
+<span class="line"><span>└── 系统监控</span></span></code></pre></div><p>菜单原则：</p><ul><li><code>消息定义</code> 是核心菜单，承载业务消息、参数、渠道启停和模板配置。</li><li><code>发送任务</code> 是管理端人工触发入口，用于运营、客服或管理员按已发布消息定义补发一次业务消息。</li><li><code>通知渠道</code> 管理系统可用的渠道账号、供应商和发送能力。</li><li><code>接收设置</code> 管理用户是否接收某类消息。</li><li><code>发送记录</code> 记录所有发送历史。</li><li><code>失败重试</code> 独立处理失败消息。</li><li><code>系统监控</code> 监控渠道状态、队列堆积和发送统计。</li><li>系统消息、短信、邮件、微信不是后台一级菜单；它们是渠道类型。</li><li>右上角小铃铛和用户侧消息列表属于用户消息入口，不作为后台配置一级菜单。</li></ul><h2 id="_7-菜单详细设计" tabindex="-1">7. 菜单详细设计 <a class="header-anchor" href="#_7-菜单详细设计" aria-label="Permalink to &quot;7. 菜单详细设计&quot;">​</a></h2><h3 id="_7-1-消息定义" tabindex="-1">7.1 消息定义 <a class="header-anchor" href="#_7-1-消息定义" aria-label="Permalink to &quot;7.1 消息定义&quot;">​</a></h3><p>定位：定义什么业务消息、使用哪些参数、开启哪些渠道、每个渠道发送什么内容。</p><p>业务域分类：</p><ul><li>消息定义左侧显示业务域分类，右侧显示当前分类下的消息定义列表。</li><li>支持新增、编辑、停用、启用和删除业务域分类。</li><li>分类编码创建后不可修改。</li><li>已被消息定义引用的分类不能删除，只能停用。</li><li>停用分类后，历史消息仍可查看；新增消息定义不能再选择该分类。</li><li>消息归属业务域变更会影响接收设置和统计口径，必须保存为草稿并发布后生效。</li></ul><p>业务域分类字段：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>分类名称</td><td>保函、基础、订单等</td></tr><tr><td>分类编码</td><td><code>guarantee</code>、<code>basic</code></td></tr><tr><td>描述</td><td>分类用途说明</td></tr><tr><td>消息数量</td><td>当前分类下消息定义数量</td></tr><tr><td>状态</td><td>启用、停用</td></tr><tr><td>排序</td><td>左侧展示顺序</td></tr><tr><td>更新时间</td><td>最后更新时间</td></tr><tr><td>操作</td><td>编辑、启用/停用、删除</td></tr></tbody></table><p>列表字段：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>业务域</td><td>基础、保函、订单、财务、风控、营销、系统</td></tr><tr><td>消息编码</td><td>全局唯一编码，例如 <code>guarantee.issue_success</code></td></tr><tr><td>消息名称</td><td>出函成功、退款成功等</td></tr><tr><td>开启渠道</td><td>系统消息、短信、邮件、微信公众号等</td></tr><tr><td>启用状态</td><td>开启、关闭</td></tr><tr><td>同步状态</td><td>已同步、待发布；待发布时提示已保存但未发布的变更原因</td></tr><tr><td>生效版本</td><td>当前生效配置版本，例如 <code>V3</code>；未发布时显示未发布</td></tr><tr><td>最后发布</td><td>最近一次发布成功时间</td></tr><tr><td>更新时间</td><td>最后更新时间</td></tr><tr><td>操作</td><td>详情、编辑、发布、更多</td></tr></tbody></table><p>推荐编码：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>basic.login_code</span></span>
+<span class="line"><span>basic.reset_password</span></span>
+<span class="line"><span>guarantee.issue_success</span></span>
+<span class="line"><span>guarantee.issue_fail</span></span>
+<span class="line"><span>guarantee.refund_success</span></span></code></pre></div><p>编辑页结构：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>基础信息</span></span>
+<span class="line"><span>├── 业务域</span></span>
+<span class="line"><span>├── 消息编码</span></span>
+<span class="line"><span>├── 消息名称</span></span>
+<span class="line"><span>├── 描述</span></span>
+<span class="line"><span>├── 启用状态</span></span>
+<span class="line"><span>└── 是否允许用户关闭</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>参数定义</span></span>
+<span class="line"><span>├── 参数名</span></span>
+<span class="line"><span>├── 参数说明</span></span>
+<span class="line"><span>├── 示例值</span></span>
+<span class="line"><span>└── 是否必填</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>渠道配置</span></span>
+<span class="line"><span>├── 系统消息</span></span>
+<span class="line"><span>├── 短信</span></span>
+<span class="line"><span>├── 邮件</span></span>
+<span class="line"><span>├── 微信公众号</span></span>
+<span class="line"><span>├── 企业微信</span></span>
+<span class="line"><span>├── 钉钉</span></span>
+<span class="line"><span>├── 飞书</span></span>
+<span class="line"><span>└── Webhook</span></span></code></pre></div><p>参数定义示例：</p><table tabindex="0"><thead><tr><th>参数名</th><th>参数说明</th><th>示例值</th><th>是否必填</th></tr></thead><tbody><tr><td><code>guaranteeNo</code></td><td>保函编号</td><td><code>BH20260001</code></td><td>是</td></tr><tr><td><code>projectName</code></td><td>项目名称</td><td><code>某某项目</code></td><td>是</td></tr><tr><td><code>amount</code></td><td>金额</td><td><code>100000.00</code></td><td>是</td></tr><tr><td><code>userName</code></td><td>用户姓名</td><td><code>张三</code></td><td>否</td></tr><tr><td><code>mobile</code></td><td>手机号</td><td><code>13800000000</code></td><td>否</td></tr></tbody></table><p>渠道卡片示例：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>系统消息</span></span>
+<span class="line"><span>[√] 启用</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>标题模板：</span></span>
+<span class="line"><span>您的保函已出函成功</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>内容模板：</span></span>
+<span class="line"><span>保函编号：\${guaranteeNo}</span></span>
+<span class="line"><span>项目名称：\${projectName}</span></span></code></pre></div><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>短信</span></span>
+<span class="line"><span>[√] 启用</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>短信模板：</span></span>
+<span class="line"><span>您的保函 \${guaranteeNo} 已出函成功</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>第三方模板 ID：</span></span>
+<span class="line"><span>SMS_001</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>变量映射：</span></span>
+<span class="line"><span>guaranteeNo -&gt; guarantee_no</span></span></code></pre></div><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>邮件</span></span>
+<span class="line"><span>[ ] 启用</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>邮件标题：</span></span>
+<span class="line"><span>保函出函成功通知</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>邮件内容：</span></span>
+<span class="line"><span>...</span></span></code></pre></div><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>微信公众号</span></span>
+<span class="line"><span>[√] 启用</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>模板 ID：</span></span>
+<span class="line"><span>xxxxx</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>模板内容：</span></span>
+<span class="line"><span>...</span></span></code></pre></div><p>版本控制：</p><ul><li>消息编码创建后不可修改。</li><li>只要修改消息定义信息，都必须先形成草稿，再发布后生效。</li><li>需要发布的变更包括基础信息、描述、启用状态、是否允许用户关闭、参数定义、渠道启停、模板内容、第三方模板 ID、变量映射和默认发送策略。</li><li>列表通过同步状态区分已同步和待发布，待发布记录不能被误认为线上已生效。</li><li>消息名称如果进入用户可见内容，应通过渠道模板表达，而不是依赖名称字段。</li><li>发送记录必须保存实际使用的版本号和渲染快照。</li></ul><h3 id="_7-2-通知渠道" tabindex="-1">7.2 通知渠道 <a class="header-anchor" href="#_7-2-通知渠道" aria-label="Permalink to &quot;7.2 通知渠道&quot;">​</a></h3><p>定位：管理真正执行发送的通道账号和供应商接入。消息定义决定发哪些渠道类型，通知渠道决定 AUTO 模式下具体使用哪个通道。</p><p>支持渠道：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>系统消息</span></span>
+<span class="line"><span>短信</span></span>
+<span class="line"><span>邮件</span></span>
+<span class="line"><span>微信公众号</span></span>
+<span class="line"><span>企业微信</span></span>
+<span class="line"><span>钉钉</span></span>
+<span class="line"><span>飞书</span></span>
+<span class="line"><span>Webhook</span></span></code></pre></div><p>通用字段：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>渠道类型</td><td>SITE、SMS、EMAIL、WECHAT_OFFICIAL、WECOM、DINGTALK、FEISHU、WEBHOOK</td></tr><tr><td>渠道名称</td><td>业务可识别名称，例如“阿里云短信”、“腾讯云短信”、“默认企业邮箱”</td></tr><tr><td>供应商</td><td>阿里云短信、腾讯云短信、自定义 SMTP、阿里云邮件推送、企业微信等</td></tr><tr><td>权重</td><td>AUTO 模式下权重轮换使用，必须大于 0</td></tr><tr><td>启用状态</td><td>开启、关闭</td></tr><tr><td>配置状态</td><td>已配置、未完整</td></tr><tr><td>最近发送状态</td><td>正常、异常</td></tr><tr><td>最近发送时间</td><td>最近一次发送时间</td></tr><tr><td>限流配置</td><td>每秒、每分钟、每日限制</td></tr><tr><td>超时配置</td><td>连接超时、读取超时</td></tr><tr><td>失败重试</td><td>当前通道失败后最多尝试 3 次</td></tr><tr><td>并发限制</td><td>单渠道并发发送上限</td></tr></tbody></table><p>核心规则：</p><ol><li>每个渠道类型允许配置多个具体通道。</li><li>不设置默认通道。</li><li>消息定义的渠道选择默认是 <code>AUTO</code>。</li><li>消息定义可在高级配置中绑定具体通道；绑定后不参与 AUTO 权重轮换。</li><li>AUTO 模式下，系统按渠道类型查询启用且配置完整的通道，并按权重轮换选择。</li><li>没有可用通道时，发送记录失败，失败码为 <code>CHANNEL_UNAVAILABLE</code>。</li><li>当前通道发送失败后，先在同一通道最多尝试 3 次。</li><li>3 次仍失败时，切换同渠道类型下的下一个可用通道。</li><li>所有可用通道均失败后，进入失败重试。</li><li>第一版不做按业务域、按优先级、按地区、按成本的复杂路由策略，只做权重轮换和失败切换。</li></ol><p>短信配置必须参考阿里云、腾讯云短信服务对接要求，并直接完成阿里云和腾讯云接入：</p><table tabindex="0"><thead><tr><th>字段</th><th>阿里云短信</th><th>腾讯云短信</th></tr></thead><tbody><tr><td>供应商</td><td><code>ALIYUN_SMS</code></td><td><code>TENCENT_SMS</code></td></tr><tr><td>访问密钥</td><td>AccessKey ID</td><td>SecretId</td></tr><tr><td>访问密钥 Secret</td><td>AccessKey Secret</td><td>SecretKey</td></tr><tr><td>Region</td><td>RegionId</td><td>Region</td></tr><tr><td>Endpoint</td><td><code>dysmsapi.aliyuncs.com</code></td><td><code>sms.tencentcloudapi.com</code></td></tr><tr><td>应用 ID</td><td>不需要</td><td>SmsSdkAppId</td></tr><tr><td>签名</td><td>SignName</td><td>SignName</td></tr><tr><td>模板标识</td><td>TemplateCode</td><td>TemplateId</td></tr><tr><td>扩展字段</td><td>SmsUpExtendCode</td><td>ExtendCode、SessionContext</td></tr></tbody></table><p>邮件配置：</p><p>邮件供应商不是 SMTP；SMTP 是自定义 SMTP 供应商下的配置项。 第一版只开放已明确结构化表单和接入边界的供应商；暂未接入的邮件平台不在下拉选项中展示，后续需要接入时再补设计、字段和发送适配。</p><table tabindex="0"><thead><tr><th>供应商</th><th>说明</th></tr></thead><tbody><tr><td><code>CUSTOM_SMTP</code></td><td>自定义 SMTP，企业邮箱或自建 SMTP</td></tr><tr><td><code>ALIYUN_DM</code></td><td>阿里云邮件推送</td></tr></tbody></table><p>自定义 SMTP 配置：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>SMTP 主机</td><td><code>smtp.example.com</code></td></tr><tr><td>SMTP 端口</td><td><code>465</code>、<code>587</code></td></tr><tr><td>安全协议</td><td>SSL、TLS、STARTTLS、NONE</td></tr><tr><td>账号</td><td>SMTP 用户名</td></tr><tr><td>密码</td><td>SMTP 密码</td></tr><tr><td>发件人邮箱</td><td><code>notice@example.com</code></td></tr><tr><td>发件人名称</td><td>例如“芒果通知中心”</td></tr></tbody></table><p>阿里云邮件推送配置：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>AccessKey</td><td>阿里云 AccessKey ID</td></tr><tr><td>Secret</td><td>阿里云 AccessKey Secret</td></tr><tr><td>区域</td><td>例如 <code>cn-hangzhou</code></td></tr><tr><td>Endpoint</td><td>例如 <code>dm.aliyuncs.com</code></td></tr><tr><td>发信地址</td><td>已在阿里云邮件推送中配置的发信地址</td></tr><tr><td>地址类型</td><td>随机账号或发信地址</td></tr><tr><td>发信别名</td><td>展示给收件人的发件人名称</td></tr><tr><td>回信地址</td><td>可选回信邮箱</td></tr></tbody></table><p>系统消息配置：</p><p>系统消息为系统内置通道，不配置第三方账号；在渠道配置中只维护投递运行参数。</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>默认发送人</td><td>系统消息展示的默认发送来源</td></tr><tr><td>保留天数</td><td>系统消息保留周期</td></tr><tr><td>实时推送</td><td>是否通过实时通道推送到前端</td></tr><tr><td>弹窗提醒</td><td>是否触发前端弹窗提示</td></tr><tr><td>声音提醒</td><td>是否播放提醒音</td></tr><tr><td>桌面提醒</td><td>是否触发浏览器桌面通知</td></tr><tr><td>未读计数</td><td>是否计入未读数量</td></tr></tbody></table><p>微信公众号配置：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>AppId</span></span>
+<span class="line"><span>Secret</span></span>
+<span class="line"><span>模板配置</span></span>
+<span class="line"><span>Token</span></span>
+<span class="line"><span>EncodingAESKey</span></span></code></pre></div><p>企业微信、钉钉、飞书和 Webhook 配置按各自官方接入参数建结构化表单。</p><p>配置保存：</p><ul><li>页面按渠道类型展示不同表单。</li><li>底层仍保存 JSON 配置，便于扩展供应商字段。</li><li>敏感字段必须输出脱敏。</li><li>内部发送调用必须使用原始配置，不使用脱敏后的展示值。</li><li>存储加密是否启用由安全方案单独确认；本设计先明确字段敏感性和输出边界。</li></ul><p>失败码：</p><table tabindex="0"><thead><tr><th>失败码</th><th>说明</th></tr></thead><tbody><tr><td><code>CHANNEL_UNAVAILABLE</code></td><td>没有可用通道</td></tr><tr><td><code>CHANNEL_DISABLED</code></td><td>指定通道已停用</td></tr><tr><td><code>CHANNEL_CONFIG_INVALID</code></td><td>通道配置不完整</td></tr><tr><td><code>TEMPLATE_INVALID</code></td><td>模板 ID、模板内容或变量映射错误</td></tr><tr><td><code>RECIPIENT_INVALID</code></td><td>接收地址无效</td></tr><tr><td><code>PROVIDER_REJECTED</code></td><td>供应商明确拒绝</td></tr><tr><td><code>PROVIDER_TIMEOUT</code></td><td>供应商超时</td></tr><tr><td><code>PROVIDER_ERROR</code></td><td>供应商返回失败</td></tr><tr><td><code>RATE_LIMITED</code></td><td>通道限流</td></tr><tr><td><code>SEND_EXCEPTION</code></td><td>本地发送异常</td></tr></tbody></table><h3 id="_7-3-接收设置" tabindex="-1">7.3 接收设置 <a class="header-anchor" href="#_7-3-接收设置" aria-label="Permalink to &quot;7.3 接收设置&quot;">​</a></h3><p>定位：控制用户是否接收某类消息。</p><p>支持维度：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>全局关闭</span></span>
+<span class="line"><span>├── 关闭所有短信</span></span>
+<span class="line"><span>└── 关闭所有邮件</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>业务域关闭</span></span>
+<span class="line"><span>├── 关闭保函短信</span></span>
+<span class="line"><span>└── 关闭基础邮件</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>单消息关闭</span></span>
+<span class="line"><span>└── 关闭“出函成功”短信</span></span></code></pre></div><p>用户端设置：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>短信通知</span></span>
+<span class="line"><span>邮件通知</span></span>
+<span class="line"><span>公众号通知</span></span>
+<span class="line"><span>企业微信通知</span></span>
+<span class="line"><span>钉钉通知</span></span>
+<span class="line"><span>飞书通知</span></span></code></pre></div><p>后台能力：</p><ul><li>查询用户接收设置。</li><li>按业务域配置默认接收策略。</li><li>按消息定义配置是否允许用户关闭。</li><li>管理端可查看某个用户为什么没有收到某条消息。</li></ul><p>发送前检查顺序：</p><ol><li>消息定义是否启用。</li><li>渠道模板是否启用。</li><li>通知渠道是否启用。</li><li>用户接收设置是否允许。</li><li>接收人是否具备该渠道地址。</li><li>限流、免打扰和发送窗口是否允许。</li></ol><h3 id="_7-4-发送记录" tabindex="-1">7.4 发送记录 <a class="header-anchor" href="#_7-4-发送记录" aria-label="Permalink to &quot;7.4 发送记录&quot;">​</a></h3><p>定位：记录所有消息发送历史。</p><p>列表字段：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>消息名称</td><td>出函成功</td></tr><tr><td>消息编码</td><td><code>guarantee.issue_success</code></td></tr><tr><td>业务单号</td><td>保函编号、订单号等</td></tr><tr><td>渠道</td><td>短信、邮件、系统消息等</td></tr><tr><td>接收人</td><td>手机号、邮箱、用户 ID、openid</td></tr><tr><td>发送状态</td><td>待发送、发送中、成功、失败、已取消</td></tr><tr><td>发送时间</td><td>时间</td></tr></tbody></table><p>详情支持查看：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>渲染内容</span></span>
+<span class="line"><span>发送参数</span></span>
+<span class="line"><span>渠道响应</span></span>
+<span class="line"><span>失败原因</span></span>
+<span class="line"><span>耗时</span></span>
+<span class="line"><span>模板版本</span></span>
+<span class="line"><span>渠道配置快照</span></span>
+<span class="line"><span>重试历史</span></span></code></pre></div><p>敏感信息要求：</p><ul><li>页面展示的请求、响应、渠道配置快照必须脱敏。</li><li>内部重试和发送逻辑使用原始快照。</li><li>日志不得输出密码、Secret、Token、AccessKey、Webhook 地址等敏感值。</li></ul><h3 id="_7-5-失败重试" tabindex="-1">7.5 失败重试 <a class="header-anchor" href="#_7-5-失败重试" aria-label="Permalink to &quot;7.5 失败重试&quot;">​</a></h3><p>定位：独立管理发送失败消息。</p><p>功能：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>自动重试</span></span>
+<span class="line"><span>手动重试</span></span>
+<span class="line"><span>批量重试</span></span>
+<span class="line"><span>忽略失败</span></span>
+<span class="line"><span>查看失败原因</span></span>
+<span class="line"><span>查看重试历史</span></span></code></pre></div><p>列表字段：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>消息名称</td><td>出函成功</td></tr><tr><td>消息编码</td><td><code>guarantee.issue_success</code></td></tr><tr><td>渠道</td><td>短信</td></tr><tr><td>失败原因</td><td>模板错误、供应商限流、网络超时等</td></tr><tr><td>失败次数</td><td>3</td></tr><tr><td>下次重试时间</td><td>时间</td></tr><tr><td>最后失败时间</td><td>时间</td></tr></tbody></table><p>状态：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>等待重试</span></span>
+<span class="line"><span>重试中</span></span>
+<span class="line"><span>重试成功</span></span>
+<span class="line"><span>重试失败</span></span>
+<span class="line"><span>已忽略</span></span>
+<span class="line"><span>达到上限</span></span></code></pre></div><h3 id="_7-6-系统监控" tabindex="-1">7.6 系统监控 <a class="header-anchor" href="#_7-6-系统监控" aria-label="Permalink to &quot;7.6 系统监控&quot;">​</a></h3><p>定位：监控通知平台运行状态。</p><p>渠道状态：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>短信是否正常</span></span>
+<span class="line"><span>邮件是否正常</span></span>
+<span class="line"><span>公众号是否正常</span></span>
+<span class="line"><span>企业微信是否正常</span></span>
+<span class="line"><span>钉钉是否正常</span></span>
+<span class="line"><span>飞书是否正常</span></span>
+<span class="line"><span>Webhook 是否正常</span></span></code></pre></div><p>队列监控：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>待发送数量</span></span>
+<span class="line"><span>失败数量</span></span>
+<span class="line"><span>消费速度</span></span>
+<span class="line"><span>消息堆积</span></span>
+<span class="line"><span>最老待处理时间</span></span></code></pre></div><p>统计分析：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>发送量</span></span>
+<span class="line"><span>成功率</span></span>
+<span class="line"><span>失败率</span></span>
+<span class="line"><span>渠道占比</span></span>
+<span class="line"><span>业务占比</span></span>
+<span class="line"><span>业务域占比</span></span>
+<span class="line"><span>平均耗时</span></span>
+<span class="line"><span>P95 耗时</span></span></code></pre></div><p>系统监控只展示平台运行状态，不替代发送记录和失败重试。</p><h2 id="_8-推荐领域模型" tabindex="-1">8. 推荐领域模型 <a class="header-anchor" href="#_8-推荐领域模型" aria-label="Permalink to &quot;8. 推荐领域模型&quot;">​</a></h2><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>业务域</span></span>
+<span class="line"><span>  └── 消息定义</span></span>
+<span class="line"><span>        ├── 参数定义</span></span>
+<span class="line"><span>        ├── 渠道配置</span></span>
+<span class="line"><span>        ├── 模板内容</span></span>
+<span class="line"><span>        └── 用户接收控制</span></span></code></pre></div><p>核心对象：</p><table tabindex="0"><thead><tr><th>对象</th><th>说明</th></tr></thead><tbody><tr><td><code>NoticeMessageDefinition</code></td><td>消息定义，表达业务消息语义</td></tr><tr><td><code>NoticeMessageDefinitionVersion</code></td><td>消息定义生效版本，承载参数、渠道启停、模板和运行时策略</td></tr><tr><td><code>NoticeChannelTemplate</code></td><td>某消息在某渠道上的模板内容</td></tr><tr><td><code>NoticeChannelConfig</code></td><td>通知渠道账号、供应商和通用发送配置</td></tr><tr><td><code>NoticeReceiveSetting</code></td><td>用户、业务域、消息、渠道维度的接收控制</td></tr><tr><td><code>NoticeSendTask</code></td><td>一次业务消息发送任务，后台不作为一级菜单展示</td></tr><tr><td><code>NoticeSendRecord</code></td><td>某接收人某渠道的一次发送结果</td></tr><tr><td><code>NoticeRetryRecord</code></td><td>失败重试池中的记录</td></tr><tr><td><code>NoticeSiteMessage</code></td><td>用户可见系统消息</td></tr><tr><td><code>NoticeMonitorMetric</code></td><td>平台监控指标</td></tr></tbody></table><p>推荐业务域：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>基础</span></span>
+<span class="line"><span>保函</span></span>
+<span class="line"><span>订单</span></span>
+<span class="line"><span>财务</span></span>
+<span class="line"><span>风控</span></span>
+<span class="line"><span>营销</span></span>
+<span class="line"><span>系统</span></span></code></pre></div><h2 id="_9-数据设计" tabindex="-1">9. 数据设计 <a class="header-anchor" href="#_9-数据设计" aria-label="Permalink to &quot;9. 数据设计&quot;">​</a></h2><p>新增或调整表：</p><table tabindex="0"><thead><tr><th>表</th><th>说明</th></tr></thead><tbody><tr><td><code>notice_message_definition</code></td><td>消息定义主表</td></tr><tr><td><code>notice_message_definition_version</code></td><td>消息定义版本表</td></tr><tr><td><code>notice_message_channel_template</code></td><td>版本内的渠道模板配置</td></tr><tr><td><code>notice_channel_config</code></td><td>通知渠道配置</td></tr><tr><td><code>notice_receive_setting</code></td><td>接收设置</td></tr><tr><td><code>notice_send_task</code></td><td>发送任务</td></tr><tr><td><code>notice_send_record</code></td><td>发送记录</td></tr><tr><td><code>notice_retry_record</code></td><td>失败重试记录</td></tr><tr><td><code>notice_retry_log</code></td><td>重试日志</td></tr><tr><td><code>notice_site_message</code></td><td>用户系统消息</td></tr><tr><td><code>notice_callback_log</code></td><td>三方回调日志</td></tr><tr><td><code>notice_monitor_metric</code></td><td>监控指标快照</td></tr><tr><td><code>notice_audit_log</code></td><td>管理端操作审计</td></tr></tbody></table><p>兼容迁移建议：</p><table tabindex="0"><thead><tr><th>旧概念</th><th>新概念</th></tr></thead><tbody><tr><td>业务通知配置、通知模板</td><td>消息定义</td></tr><tr><td>业务类型编码</td><td>消息编码</td></tr><tr><td>通知计划</td><td>内部发送任务，不作为一级菜单</td></tr><tr><td>通知偏好</td><td>接收设置</td></tr><tr><td>消息中心后台菜单</td><td>用户侧小铃铛和系统消息入口</td></tr><tr><td>发送记录</td><td>发送记录</td></tr><tr><td>Outbox 失败记录</td><td>失败重试</td></tr></tbody></table><p>实施阶段不得直接修改已执行的历史 migration；需要新增 migration 做结构调整和菜单迁移。</p><h2 id="_10-api-设计" tabindex="-1">10. API 设计 <a class="header-anchor" href="#_10-api-设计" aria-label="Permalink to &quot;10. API 设计&quot;">​</a></h2><p>业务发送：</p><table tabindex="0"><thead><tr><th>能力</th><th>路径</th><th>方法</th></tr></thead><tbody><tr><td>发送业务消息</td><td><code>/notice/send</code></td><td>POST</td></tr></tbody></table><p>管理端：</p><table tabindex="0"><thead><tr><th>菜单</th><th>路径</th><th>方法</th></tr></thead><tbody><tr><td>消息定义</td><td><code>/notice/message-definitions</code>、<code>/notice/message-definitions/{id}</code></td><td>GET/POST/PUT</td></tr><tr><td>消息定义版本</td><td><code>/notice/message-definitions/{id}/versions</code>、<code>/publish</code></td><td>GET/POST</td></tr><tr><td>发送消息</td><td><code>/notice/send</code></td><td>POST</td></tr><tr><td>通知渠道</td><td><code>/notice/channels</code>、<code>/notice/channels/{id}</code></td><td>GET/POST/PUT</td></tr><tr><td>渠道测试</td><td><code>/notice/channels/{id}/test-send</code></td><td>POST</td></tr><tr><td>接收设置</td><td><code>/notice/receive-settings</code></td><td>GET/PUT</td></tr><tr><td>发送记录</td><td><code>/notice/send-records</code>、<code>/notice/send-records/{id}</code></td><td>GET</td></tr><tr><td>失败重试</td><td><code>/notice/retry-records</code>、<code>/retry</code>、<code>/ignore</code></td><td>GET/POST</td></tr><tr><td>系统监控</td><td><code>/notice/monitor/summary</code>、<code>/notice/monitor/channels</code>、<code>/notice/monitor/queues</code></td><td>GET</td></tr></tbody></table><p>用户侧：</p><table tabindex="0"><thead><tr><th>能力</th><th>路径</th><th>方法</th></tr></thead><tbody><tr><td>我的系统消息</td><td><code>/notice/site/my/messages</code></td><td>GET</td></tr><tr><td>我的系统消息详情</td><td><code>/notice/site/my/messages/{id}</code></td><td>GET</td></tr><tr><td>我的未读数</td><td><code>/notice/site/my/unread-count</code></td><td>GET</td></tr><tr><td>标记已读</td><td><code>/notice/site/my/messages/{id}/read</code></td><td>POST</td></tr><tr><td>批量已读</td><td><code>/notice/site/my/messages/read-batch</code></td><td>POST</td></tr><tr><td>全部已读</td><td><code>/notice/site/my/messages/read-all</code></td><td>POST</td></tr><tr><td>删除系统消息</td><td><code>/notice/site/my/messages/{id}/delete</code></td><td>POST</td></tr></tbody></table><p>发送入参核心字段：</p><table tabindex="0"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td><code>bizCode</code></td><td>消息编码</td></tr><tr><td><code>params</code></td><td>业务参数</td></tr><tr><td><code>userIds</code></td><td>接收系统用户 ID 列表</td></tr><tr><td><code>sendMode</code></td><td>立即或定时</td></tr><tr><td><code>scheduledTime</code></td><td>定时发送时间</td></tr></tbody></table><h2 id="_11-模块边界" tabindex="-1">11. 模块边界 <a class="header-anchor" href="#_11-模块边界" aria-label="Permalink to &quot;11. 模块边界&quot;">​</a></h2><table tabindex="0"><thead><tr><th>模块</th><th>职责</th></tr></thead><tbody><tr><td><code>mango-notice-api</code></td><td>API 契约、Command、Query、VO、枚举</td></tr><tr><td><code>mango-notice-core</code></td><td>消息定义、发送编排、记录、重试、接收设置、监控聚合</td></tr><tr><td><code>mango-notice-support</code></td><td>渠道 sender SPI、模板渲染、公共支持</td></tr><tr><td><code>mango-notice-starter</code></td><td>本地装配、Controller、模块声明</td></tr><tr><td><code>mango-notice-starter-remote</code></td><td>远程调用适配</td></tr><tr><td><code>mango-notice-channel-*</code></td><td>具体渠道实现</td></tr><tr><td><code>mango-infra-realtime</code></td><td>在线投递基础设施，不持久化业务消息</td></tr><tr><td><code>mango-infra-kv</code></td><td>缓存、幂等、限流、重试调度所需基础能力</td></tr><tr><td><code>mango-infra-sensitive</code></td><td>输出脱敏能力</td></tr></tbody></table><p>边界要求：</p><ul><li><code>mango-infra-realtime</code> 不承担消息定义、发送记录、未读数和离线消息职责。</li><li>渠道 sender 不访问业务表，只接收渲染后的发送命令和原始渠道配置。</li><li>管理端 API 只返回 VO，不暴露 Entity。</li><li>敏感字段展示脱敏，内部发送可读取原始配置。</li></ul><h2 id="_12-前端设计" tabindex="-1">12. 前端设计 <a class="header-anchor" href="#_12-前端设计" aria-label="Permalink to &quot;12. 前端设计&quot;">​</a></h2><p>菜单路由：</p><table tabindex="0"><thead><tr><th>菜单</th><th>路由</th><th>页面</th></tr></thead><tbody><tr><td>消息定义</td><td><code>/notice/message-definition</code></td><td>消息定义列表和编辑</td></tr><tr><td>通知渠道</td><td><code>/notice/channel</code></td><td>渠道配置</td></tr><tr><td>接收设置</td><td><code>/notice/receive-setting</code></td><td>用户和业务维度接收控制</td></tr><tr><td>发送记录</td><td><code>/notice/send-record</code></td><td>发送历史</td></tr><tr><td>失败重试</td><td><code>/notice/retry</code></td><td>失败池和重试操作</td></tr><tr><td>系统监控</td><td><code>/notice/monitor</code></td><td>渠道、队列、统计监控</td></tr></tbody></table><p>前端包结构：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>mango-ui/packages/notice/</span></span>
+<span class="line"><span>├── api</span></span>
+<span class="line"><span>├── components</span></span>
+<span class="line"><span>│   ├── NoticeBell</span></span>
+<span class="line"><span>│   ├── NoticeDetailDialog</span></span>
+<span class="line"><span>│   ├── channel-forms</span></span>
+<span class="line"><span>│   ├── template-editor</span></span>
+<span class="line"><span>│   └── metric-widgets</span></span>
+<span class="line"><span>├── realtime</span></span>
+<span class="line"><span>├── types</span></span>
+<span class="line"><span>└── views</span></span>
+<span class="line"><span>    ├── message-definition</span></span>
+<span class="line"><span>    ├── channel</span></span>
+<span class="line"><span>    ├── receive-setting</span></span>
+<span class="line"><span>    ├── send-record</span></span>
+<span class="line"><span>    ├── retry</span></span>
+<span class="line"><span>    └── monitor</span></span></code></pre></div><p>交互要求：</p><ul><li>消息定义新增和编辑使用上下结构，不做单个大 JSON 输入框。</li><li>参数定义使用结构化表单，支持参数名、参数说明、示例值、是否必填。</li><li>渠道模板按渠道卡片展示，底层可保存 JSON。</li><li>通知渠道按渠道类型展示不同表单。</li><li>发送记录详情中的 JSON 内容只作为结果查看，不作为主要配置入口。</li><li>右上角小铃铛保持无背景图标风格，与其他顶部图标一致。</li></ul><h2 id="_13-ui-交互与布局规范" tabindex="-1">13. UI 交互与布局规范 <a class="header-anchor" href="#_13-ui-交互与布局规范" aria-label="Permalink to &quot;13. UI 交互与布局规范&quot;">​</a></h2><p>本节是后续前端实现的约束。页面不允许为了赶进度临时拼接、卡片套卡片、字段无分组、按钮散落或用大 JSON 输入框替代结构化表单。</p><h3 id="_13-1-通用页面布局" tabindex="-1">13.1 通用页面布局 <a class="header-anchor" href="#_13-1-通用页面布局" aria-label="Permalink to &quot;13.1 通用页面布局&quot;">​</a></h3><p>所有后台页面采用同一布局骨架：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>页面标题区</span></span>
+<span class="line"><span>├── 标题</span></span>
+<span class="line"><span>├── 必要的主操作按钮</span></span>
+<span class="line"><span>└── 可选的状态说明</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>筛选区</span></span>
+<span class="line"><span>├── 常用筛选项</span></span>
+<span class="line"><span>└── 查询、重置</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>内容区</span></span>
+<span class="line"><span>├── 表格 / 结构化列表 / 监控指标</span></span>
+<span class="line"><span>└── 分页 / 批量操作</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>弹窗或抽屉</span></span>
+<span class="line"><span>├── 表单</span></span>
+<span class="line"><span>├── 校验反馈</span></span>
+<span class="line"><span>└── 取消、保存、发布等操作</span></span></code></pre></div><p>布局要求：</p><ul><li>页面左、上边距必须与 Mango 后台其他标准页面一致。</li><li>页面内容区域不再额外包一层大卡片；只有表格、表单块、监控指标和重复列表项可以使用局部容器。</li><li>筛选区字段最多两行；字段过多时折叠高级筛选。</li><li>主按钮固定在标题区右侧，表格行内只放当前行操作。</li><li>弹窗宽度按内容控制，不能让字段挤压或换行错乱。</li><li>表单使用清晰分组，上下结构优先；复杂配置使用步骤条、Tab 或折叠面板。</li><li>字段标签统一中文，能让业务人员看懂；不展示数据库字段名。</li><li>所有 JSON 内容默认只读格式化展示；配置入口必须是结构化表单。</li><li>表格列过多时使用详情抽屉承载次要信息，列表保留核心识别字段和状态。</li><li>空态、加载态、错误态必须明确，不允许页面空白。</li></ul><h3 id="_13-2-消息定义交互" tabindex="-1">13.2 消息定义交互 <a class="header-anchor" href="#_13-2-消息定义交互" aria-label="Permalink to &quot;13.2 消息定义交互&quot;">​</a></h3><p>列表页：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区：消息定义 + 新增消息定义</span></span>
+<span class="line"><span>筛选区：关键字、业务域、生命周期、同步状态、渠道类型</span></span>
+<span class="line"><span>表格列：消息名称、消息编码、业务域、生命周期、同步状态、开启渠道、生效版本、最后发布、更新时间、操作</span></span>
+<span class="line"><span>行操作：详情、编辑、发布、更多</span></span></code></pre></div><p>列表布局参考工作流流程定义列表：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>左侧：可选业务域分类列表</span></span>
+<span class="line"><span>右侧：消息定义列表面板</span></span>
+<span class="line"><span>  ├── 面板标题：当前业务域名称</span></span>
+<span class="line"><span>  ├── 面板说明：消息保存后先形成草稿，发布后才用于线上发送</span></span>
+<span class="line"><span>  ├── 右上角主操作：新增消息定义</span></span>
+<span class="line"><span>  ├── 筛选区：关键字、生命周期、同步状态、渠道类型、查询、重置</span></span>
+<span class="line"><span>  ├── 表格区：核心字段 + 操作</span></span>
+<span class="line"><span>  └── 分页区：页码、每页条数</span></span></code></pre></div><p>消息定义页面 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 消息定义                                                        [新增消息定义]     |</span></span>
+<span class="line"><span>| 消息保存后先形成草稿，发布后才用于线上发送。                                      |</span></span>
+<span class="line"><span>+----------------------+-----------------------------------------------------------+</span></span>
+<span class="line"><span>| 业务域               | 关键字 [ 消息名称/编码________________ ]  生命周期 [全部 v] |</span></span>
+<span class="line"><span>| + 新增分类           | 同步状态 [全部 v]  渠道类型 [全部 v]   [查询] [重置]       |</span></span>
+<span class="line"><span>|----------------------|-----------------------------------------------------------|</span></span>
+<span class="line"><span>| 全部消息             |                                                           |</span></span>
+<span class="line"><span>| 基础                 |  消息名称 | 消息编码 | 业务域 | 生命周期 | 同步状态 | ...  |</span></span>
+<span class="line"><span>| 保函        ...      |  出函成功 | guarantee.issue_success | 保函 | 启用 | 待发布 | |</span></span>
+<span class="line"><span>| 订单        ...      |  登录验证码 | basic.login_code | 基础 | 启用 | 已同步 |     |</span></span>
+<span class="line"><span>| 财务        ...      |                                                           |</span></span>
+<span class="line"><span>| 系统        ...      |  操作：详情 | 编辑 | 发布 | 更多                              |</span></span>
+<span class="line"><span>|                      |                                                           |</span></span>
+<span class="line"><span>|                      |                                      &lt; 1 2 3 ... &gt;        |</span></span>
+<span class="line"><span>+----------------------+-----------------------------------------------------------+</span></span></code></pre></div><p>业务域分类弹窗 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>+--------------------------------------+</span></span>
+<span class="line"><span>| 新增业务域分类                       |</span></span>
+<span class="line"><span>+--------------------------------------+</span></span>
+<span class="line"><span>| 分类名称 *  [ 保函________________ ]  |</span></span>
+<span class="line"><span>| 分类编码 *  [ guarantee___________ ]  |  创建后不可修改</span></span>
+<span class="line"><span>| 描述        [ ____________________ ]  |</span></span>
+<span class="line"><span>| 排序        [ 10__________________ ]  |</span></span>
+<span class="line"><span>| 状态        (o) 启用  ( ) 停用        |</span></span>
+<span class="line"><span>+--------------------------------------+</span></span>
+<span class="line"><span>|                         [取消] [保存] |</span></span>
+<span class="line"><span>+--------------------------------------+</span></span></code></pre></div><p>消息定义编辑页 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 编辑消息定义：出函成功通知                                      [保存草稿] [发布] |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 步骤：  1 基础信息  -&gt;  2 参数定义  -&gt;  3 渠道配置  -&gt;  4 预览与发布             |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 基础信息                                                                         |</span></span>
+<span class="line"><span>| 业务域 *     [ 保函 v ]            消息编码 *  [ guarantee.issue_success ]        |</span></span>
+<span class="line"><span>| 消息名称 *   [ 出函成功通知______________________________ ]                       |</span></span>
+<span class="line"><span>| 描述         [ __________________________________________________________ ]       |</span></span>
+<span class="line"><span>| 生命周期     (o) 启用  ( ) 停用     允许用户关闭  [开关]                          |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 底部操作：                                                        [取消] [下一步] |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span></code></pre></div><p>消息定义参数定义 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 参数定义                                                        [添加参数]        |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 参数名              | 参数说明       | 示例值          | 必填 | 操作              |</span></span>
+<span class="line"><span>| guaranteeNo         | 保函编号       | BH20260001      | 是   | 删除              |</span></span>
+<span class="line"><span>| projectName         | 项目名称       | 某某项目        | 是   | 删除              |</span></span>
+<span class="line"><span>| amount              | 金额           | 100000.00       | 是   | 删除              |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 底部操作：                                             [上一步] [保存草稿] [下一步] |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span></code></pre></div><p>消息定义渠道配置 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 渠道配置                                                                         |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| [系统消息]                                                                         |</span></span>
+<span class="line"><span>| 启用 [开关]   通道选择 [AUTO v]                                                  |</span></span>
+<span class="line"><span>| 标题模板 [ 您的保函已出函成功____________________________ ]                       |</span></span>
+<span class="line"><span>| 内容模板 [ 保函编号：\${guaranteeNo}  项目名称：\${projectName}________ ]           |</span></span>
+<span class="line"><span>| 预览：您的保函已出函成功 / 保函编号：BH20260001                                  |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| [短信]                                                                           |</span></span>
+<span class="line"><span>| 启用 [开关]   通道选择 [AUTO v]                                                  |</span></span>
+<span class="line"><span>| 短信模板 [ 您的保函 \${guaranteeNo} 已出函成功___________________ ]                |</span></span>
+<span class="line"><span>| 第三方模板 ID [ SMS_001________ ]                                                 |</span></span>
+<span class="line"><span>| 变量映射                                                                         |</span></span>
+<span class="line"><span>| 系统参数 [ guaranteeNo v ] -&gt; 三方变量 [ guarantee_no________ ]  [添加]           |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 底部操作：                                             [上一步] [保存草稿] [下一步] |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span></code></pre></div><p>消息定义详情抽屉 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 消息定义详情                         [关闭] |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 基础信息                                    |</span></span>
+<span class="line"><span>                                      | 消息编码：guarantee.issue_success           |</span></span>
+<span class="line"><span>                                      | 消息名称：出函成功通知                      |</span></span>
+<span class="line"><span>                                      | 同步状态：待发布                            |</span></span>
+<span class="line"><span>                                      | 生效版本：V3                                |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 参数定义                                    |</span></span>
+<span class="line"><span>                                      | guaranteeNo / 保函编号 / 必填               |</span></span>
+<span class="line"><span>                                      | projectName / 项目名称 / 必填               |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 渠道模板                                    |</span></span>
+<span class="line"><span>                                      | 系统消息：启用 / AUTO                         |</span></span>
+<span class="line"><span>                                      | 短信：启用 / AUTO / SMS_001                 |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 历史版本                                    |</span></span>
+<span class="line"><span>                                      | V3  2026-05-26  已发布                      |</span></span>
+<span class="line"><span>                                      | V2  2026-05-20  历史                        |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span></code></pre></div><p>同步状态展示：</p><ul><li><code>已同步</code>：草稿内容与当前生效版本一致。</li><li><code>待发布</code>：存在已保存但未发布的修改；鼠标悬停显示变更原因，例如基础信息、参数定义、渠道模板。</li><li>未发布的新消息定义生效版本显示 <code>未发布</code>，发布后显示版本号。</li></ul><p>新增和编辑采用上下结构，不使用一个大表单平铺到底。</p><p>推荐交互：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>第一步：基础信息</span></span>
+<span class="line"><span>├── 业务域</span></span>
+<span class="line"><span>├── 消息编码</span></span>
+<span class="line"><span>├── 消息名称</span></span>
+<span class="line"><span>├── 描述</span></span>
+<span class="line"><span>├── 启用状态</span></span>
+<span class="line"><span>└── 是否允许用户关闭</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>第二步：参数定义</span></span>
+<span class="line"><span>├── 参数表格</span></span>
+<span class="line"><span>│   ├── 参数名</span></span>
+<span class="line"><span>│   ├── 参数说明</span></span>
+<span class="line"><span>│   ├── 示例值</span></span>
+<span class="line"><span>│   └── 是否必填</span></span>
+<span class="line"><span>└── 添加参数、删除参数、排序</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>第三步：渠道配置</span></span>
+<span class="line"><span>├── 系统消息卡片</span></span>
+<span class="line"><span>├── 短信卡片</span></span>
+<span class="line"><span>├── 邮件卡片</span></span>
+<span class="line"><span>├── 微信公众号卡片</span></span>
+<span class="line"><span>├── 企业微信卡片</span></span>
+<span class="line"><span>├── 钉钉卡片</span></span>
+<span class="line"><span>├── 飞书卡片</span></span>
+<span class="line"><span>└── Webhook 卡片</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>第四步：预览与发布</span></span>
+<span class="line"><span>├── 参数示例</span></span>
+<span class="line"><span>├── 各渠道渲染预览</span></span>
+<span class="line"><span>└── 保存草稿、发布版本</span></span></code></pre></div><p>渠道卡片布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>卡片头：渠道名称 + 启用开关 + 状态标签</span></span>
+<span class="line"><span>主体：该渠道专属字段</span></span>
+<span class="line"><span>底部：预览、保存草稿</span></span></code></pre></div><p>交互规则：</p><ul><li>新增消息定义时，第一步保存后才能进入参数和渠道配置。</li><li>消息编码创建后不可编辑。</li><li>编辑入口同时包含基础信息、参数定义和渠道配置，不再单独提供“配置渠道”操作。</li><li>详情入口只读展示基础信息、当前生效版本、待发布变更、参数定义、渠道模板和历史版本。</li><li>任意保存动作只保存草稿，不直接影响线上发送。</li><li>参数被渠道模板引用时，删除参数必须提示影响的渠道模板。</li><li>参数定义支持表格形式编辑，不把 JSON 作为默认输入。</li><li>渠道模板中的变量选择必须来自参数定义，不让用户手写不存在的变量。</li><li>模板编辑区域旁边提供实时预览；预览使用示例值渲染。</li><li>发布前必须校验基础信息、必填参数、启用渠道模板和第三方模板 ID。</li><li>发布后生成新版本，历史版本只读查看。</li><li>若存在待发布变更，列表必须显示待发布；发布成功后变为已同步。</li><li>更多菜单包含历史版本、撤回修改、启用/停用、删除。</li><li>取消编辑时如果有未保存变更，需要二次确认。</li></ul><h3 id="_13-3-通知渠道交互" tabindex="-1">13.3 通知渠道交互 <a class="header-anchor" href="#_13-3-通知渠道交互" aria-label="Permalink to &quot;13.3 通知渠道交互&quot;">​</a></h3><p>列表页：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区：通知渠道 + 新增通知渠道</span></span>
+<span class="line"><span>筛选区：渠道类型、渠道名称、供应商、启用状态、配置状态、最近发送状态</span></span>
+<span class="line"><span>表格列：渠道类型、渠道名称、供应商、权重、启用状态、配置状态、最近发送状态、最近发送时间、更新时间、操作</span></span>
+<span class="line"><span>行操作：详情、编辑、启用/停用</span></span></code></pre></div><p>页面采用传统后台布局，不做创新式看板：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区</span></span>
+<span class="line"><span>├── 标题：通知渠道</span></span>
+<span class="line"><span>└── 主按钮：新增通知渠道</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>筛选区</span></span>
+<span class="line"><span>├── 渠道类型</span></span>
+<span class="line"><span>├── 供应商</span></span>
+<span class="line"><span>├── 启用状态</span></span>
+<span class="line"><span>├── 配置状态</span></span>
+<span class="line"><span>├── 最近发送状态</span></span>
+<span class="line"><span>└── 查询、重置</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>表格区</span></span>
+<span class="line"><span>├── 固定高度表格</span></span>
+<span class="line"><span>├── 行内操作</span></span>
+<span class="line"><span>└── 分页</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>详情 / 编辑抽屉</span></span>
+<span class="line"><span>├── 基础信息</span></span>
+<span class="line"><span>├── 供应商配置</span></span>
+<span class="line"><span>├── 发送策略</span></span>
+<span class="line"><span>└── 最近发送记录</span></span></code></pre></div><p>通知渠道页面 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 通知渠道                                                        [新增通知渠道]     |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 渠道类型 [全部 v]  供应商 [全部 v]  启用状态 [全部 v]  配置状态 [全部 v]          |</span></span>
+<span class="line"><span>| 最近发送状态 [全部 v]                                      [查询] [重置]          |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>| 渠道类型 | 渠道名称       | 供应商       | 权重 | 启用 | 配置状态 | 最近状态 | 操作 |</span></span>
+<span class="line"><span>| 短信     | 阿里云短信     | 阿里云短信   | 80   | 启用 | 已配置   | 正常     |详情 编辑 停用|</span></span>
+<span class="line"><span>| 短信     | 腾讯云短信     | 腾讯云短信   | 20   | 启用 | 已配置   | 异常     |详情 编辑 停用|</span></span>
+<span class="line"><span>| 邮件     | 默认企业邮箱   | 自定义 SMTP  | 100  | 启用 | 已配置   | 正常     |详情 编辑 停用|</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span>
+<span class="line"><span>|                                                                  &lt; 1 2 3 ... &gt;   |</span></span>
+<span class="line"><span>+----------------------------------------------------------------------------------+</span></span></code></pre></div><p>通知渠道新增/编辑抽屉 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 新增通知渠道                         [关闭] |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 基础信息                                    |</span></span>
+<span class="line"><span>                                      | 渠道类型 * [ 短信 v ]                       |</span></span>
+<span class="line"><span>                                      | 供应商   * [ 阿里云短信 v ]                 |</span></span>
+<span class="line"><span>                                      | 渠道名称 * [ 阿里云短信________________ ]   |</span></span>
+<span class="line"><span>                                      | 权重     * [ 80________ ]                   |</span></span>
+<span class="line"><span>                                      | 启用状态   [开关]                           |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 供应商配置                                  |</span></span>
+<span class="line"><span>                                      | AccessKey ID     [ ____________________ ]   |</span></span>
+<span class="line"><span>                                      | AccessKey Secret [ ******************** ]   |</span></span>
+<span class="line"><span>                                      | Region           [ cn-hangzhou________ ]    |</span></span>
+<span class="line"><span>                                      | Endpoint         [ dysmsapi.aliyuncs.com ]  |</span></span>
+<span class="line"><span>                                      | 短信签名         [ 芒果通知____________ ]   |</span></span>
+<span class="line"><span>                                      | 模板 Code        [ SMS_001____________ ]    |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 发送策略                                    |</span></span>
+<span class="line"><span>                                      | 超时时间      [ 5000 ] ms                   |</span></span>
+<span class="line"><span>                                      | 当前通道重试  [ 3 ] 次                      |</span></span>
+<span class="line"><span>                                      | 并发限制      [ 10 ]                        |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      |                         [取消] [保存]       |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span></code></pre></div><p>通知渠道详情抽屉 ASCII 布局：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 通知渠道详情                         [编辑] |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 基础信息                                    |</span></span>
+<span class="line"><span>                                      | 渠道类型：短信                              |</span></span>
+<span class="line"><span>                                      | 渠道名称：阿里云短信                        |</span></span>
+<span class="line"><span>                                      | 供应商：阿里云短信                          |</span></span>
+<span class="line"><span>                                      | 权重：80                                    |</span></span>
+<span class="line"><span>                                      | 启用状态：启用                              |</span></span>
+<span class="line"><span>                                      | 配置状态：已配置                            |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 配置摘要                                    |</span></span>
+<span class="line"><span>                                      | AccessKey ID：LTAI********                  |</span></span>
+<span class="line"><span>                                      | AccessKey Secret：******                    |</span></span>
+<span class="line"><span>                                      | Region：cn-hangzhou                         |</span></span>
+<span class="line"><span>                                      | Endpoint：dysmsapi.aliyuncs.com             |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 最近发送状态                                |</span></span>
+<span class="line"><span>                                      | 最近状态：正常                              |</span></span>
+<span class="line"><span>                                      | 最近发送时间：2026-05-26 15:20:00           |</span></span>
+<span class="line"><span>                                      | 最近失败原因：-                             |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span>
+<span class="line"><span>                                      | 最近发送记录                                |</span></span>
+<span class="line"><span>                                      | 2026-05-26 15:20:00  成功  guarantee.xxx    |</span></span>
+<span class="line"><span>                                      | 2026-05-26 15:18:00  失败  PROVIDER_TIMEOUT |</span></span>
+<span class="line"><span>                                      +---------------------------------------------+</span></span></code></pre></div><p>新增和编辑交互：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>基础信息</span></span>
+<span class="line"><span>├── 渠道类型</span></span>
+<span class="line"><span>├── 渠道名称</span></span>
+<span class="line"><span>├── 供应商</span></span>
+<span class="line"><span>├── 权重</span></span>
+<span class="line"><span>└── 启用状态</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>渠道专属配置</span></span>
+<span class="line"><span>├── 短信-阿里云：AccessKey ID、AccessKey Secret、Region、Endpoint、签名、模板 Code、上行扩展码</span></span>
+<span class="line"><span>├── 短信-腾讯云：SecretId、SecretKey、Region、Endpoint、SmsSdkAppId、签名、模板 ID、扩展码、SessionContext</span></span>
+<span class="line"><span>├── 邮件-自定义 SMTP：SMTP 主机、端口、安全协议、账号、密码、发件人邮箱、发件人名称</span></span>
+<span class="line"><span>├── 邮件-阿里云邮件推送：AccessKey、Secret、区域、Endpoint、发信地址、地址类型、发信别名、回信地址</span></span>
+<span class="line"><span>├── 微信公众号：AppId、Secret、Token、EncodingAESKey</span></span>
+<span class="line"><span>├── 企业微信：CorpId、AgentId、Secret、Webhook</span></span>
+<span class="line"><span>├── 钉钉：AgentId、AppKey、AppSecret、Webhook</span></span>
+<span class="line"><span>├── 飞书：AppId、AppSecret、Webhook</span></span>
+<span class="line"><span>└── Webhook：URL、请求方法、鉴权方式、Header 配置</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>通用发送配置</span></span>
+<span class="line"><span>├── 限流配置</span></span>
+<span class="line"><span>├── 超时配置</span></span>
+<span class="line"><span>├── 当前通道重试次数，第一版固定为 3 次</span></span>
+<span class="line"><span>└── 并发限制</span></span></code></pre></div><p>新增过程：</p><ol><li>点击 <code>新增通知渠道</code>。</li><li>选择渠道类型。</li><li>选择供应商。</li><li>填写渠道名称和权重。</li><li>填写该供应商对应的结构化配置表单。</li><li>设置启用状态。</li><li>保存。</li><li>保存成功后刷新列表；启用且配置完整的通道可参与 AUTO 权重轮换。</li></ol><p>编辑过程：</p><ol><li>点击列表行 <code>编辑</code>。</li><li>打开右侧抽屉或标准弹窗。</li><li>可修改渠道名称、权重、启用状态、供应商配置、限流、超时、并发限制。</li><li>不建议修改渠道类型和供应商；需要更换供应商时新增通道。</li><li>敏感字段不回显明文；未填写新值时保存应保留原值。</li><li>保存后立即影响后续发送，历史发送记录保留当时快照。</li></ol><p>详情过程：</p><ol><li>点击列表行 <code>详情</code>。</li><li>右侧抽屉只读展示基础信息、供应商配置摘要、发送策略、最近发送状态、最近失败原因和最近发送记录。</li><li>敏感字段统一脱敏展示。</li><li>详情内不提供编辑输入框，只提供跳转编辑操作。</li></ol><p>启用和停用：</p><ol><li>启用后，配置完整的通道可参与 AUTO 权重轮换，也可被消息定义指定。</li><li>停用后，通道不参与 AUTO。</li><li>若消息定义指定了该通道，停用前必须提示影响范围。</li><li>指定通道已停用时，发送失败码为 <code>CHANNEL_DISABLED</code>。</li></ol><p>AUTO 发送过程：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>消息定义启用某渠道类型</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>若消息定义指定具体通道，使用指定通道</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>若未指定，进入 AUTO</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>查询该渠道类型下启用且配置完整的通道</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>按权重轮换选择一个通道</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>当前通道发送失败后最多尝试 3 次</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>仍失败则切换下一个可用通道</span></span>
+<span class="line"><span>↓</span></span>
+<span class="line"><span>全部通道失败后进入失败重试</span></span></code></pre></div><p>交互规则：</p><ul><li>选择渠道类型后动态切换表单，不显示无关字段。</li><li>选择供应商后动态切换供应商配置字段。</li><li>敏感字段编辑时可输入新值；详情和列表展示必须脱敏。</li><li>已保存的敏感字段不回显明文，未修改时保存应保留原值。</li><li>权重必须大于 0。</li><li>没有启用且配置完整的通道时，发送失败码为 <code>CHANNEL_UNAVAILABLE</code>。</li><li>限流、超时、失败重试使用数字输入、选择器和开关，不让用户手写 JSON。</li></ul><h3 id="_13-4-发送任务交互" tabindex="-1">13.4 发送任务交互 <a class="header-anchor" href="#_13-4-发送任务交互" aria-label="Permalink to &quot;13.4 发送任务交互&quot;">​</a></h3><p>页面结构：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区：发送任务</span></span>
+<span class="line"><span>  右侧按钮：新增任务</span></span>
+<span class="line"><span>主体区：发送列表</span></span>
+<span class="line"><span>  列表字段：任务ID、消息类型、渠道、状态、发送标题、发送内容、接收人、请求流水号、失败原因、发送时间</span></span>
+<span class="line"><span>弹窗：新增任务</span></span>
+<span class="line"><span>  发送给：远程搜索并选择接收用户</span></span>
+<span class="line"><span>  消息模板：选择消息模板，展示业务域、消息名称、生效版本、启用渠道</span></span>
+<span class="line"><span>  自定义字段：按消息定义参数 schema 动态生成结构化表单</span></span>
+<span class="line"><span>弹窗操作区：暂存、发送、取消</span></span></code></pre></div><p>交互规则：</p><ul><li>页面主体是发送列表，用于查看每次点击发送后产生的发送内容和状态。</li><li>点击右上角“新增任务”打开弹窗，不在页面主体直接展示发送表单。</li><li>弹窗字段顺序固定为：发送给、消息模板、自定义字段。</li><li>消息模板只允许选择已启用的消息定义。</li><li>选择消息模板后，页面根据该消息的参数 schema 生成自定义字段输入项，必填参数必须校验。</li><li>接收对象只能选择系统用户，支持按用户名、姓名、手机号或邮箱远程搜索。</li><li>点击“暂存”只保存当前弹窗草稿，不触发发送。</li><li>页面不提供业务单号、优先级、幂等键、手工联系方式和手工渠道选择。</li><li>点击发送后调用 <code>/notice/send</code>，管理端只提交 <code>bizType</code>、<code>params</code> 和 <code>userIds</code>。</li><li>后端根据消息模板启用渠道、用户联系方式和通道路由策略决定实际发送明细；用户没有对应联系方式的渠道不发送。</li><li>最低必须发送系统消息；当消息模板未显式配置系统消息但业务消息存在时，后端生成系统消息兜底。</li><li>发送成功只表示任务已提交；实际每个渠道、每个接收人的结果在发送记录中查看。</li><li>发送任务页面不提供“测试发送”概念，不允许绕过消息定义直接拼模板内容。</li></ul><h3 id="_13-5-接收设置交互" tabindex="-1">13.5 接收设置交互 <a class="header-anchor" href="#_13-5-接收设置交互" aria-label="Permalink to &quot;13.5 接收设置交互&quot;">​</a></h3><p>页面结构：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区：接收设置</span></span>
+<span class="line"><span>分段控制：全局设置 / 业务域设置 / 单消息设置 / 用户设置</span></span>
+<span class="line"><span>内容区：对应设置表格或表单</span></span></code></pre></div><p>全局设置：</p><ul><li>展示短信、邮件、公众号、企业微信、钉钉、飞书等渠道开关。</li><li>修改后保存全局默认策略。</li></ul><p>业务域设置：</p><ul><li>筛选业务域。</li><li>表格展示业务域、渠道、默认接收状态、更新时间。</li><li>支持批量开启和关闭。</li></ul><p>单消息设置：</p><ul><li>选择业务域和消息定义。</li><li>展示该消息支持的渠道。</li><li>只能配置消息定义允许用户关闭的渠道。</li></ul><p>用户设置：</p><ul><li>管理端可按用户查询接收设置。</li><li>用户端只展示自己可配置的渠道和消息。</li></ul><p>交互规则：</p><ul><li>修改设置必须展示影响范围，例如“将影响保函域所有短信通知”。</li><li>关闭渠道时如存在强制通知，需要提示该消息不可关闭。</li><li>保存后发送流程立即按新设置判断。</li></ul><h3 id="_13-6-发送记录交互" tabindex="-1">13.6 发送记录交互 <a class="header-anchor" href="#_13-6-发送记录交互" aria-label="Permalink to &quot;13.6 发送记录交互&quot;">​</a></h3><p>列表页：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区：发送记录</span></span>
+<span class="line"><span>筛选区：消息编码、业务单号、渠道、接收人、发送状态、时间范围</span></span>
+<span class="line"><span>表格列：消息名称、业务单号、渠道、接收人、发送状态、发送时间、耗时、操作</span></span>
+<span class="line"><span>行操作：详情、重试</span></span></code></pre></div><p>详情抽屉：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>基础信息</span></span>
+<span class="line"><span>├── 消息编码</span></span>
+<span class="line"><span>├── 消息名称</span></span>
+<span class="line"><span>├── 业务单号</span></span>
+<span class="line"><span>├── 接收人</span></span>
+<span class="line"><span>├── 渠道</span></span>
+<span class="line"><span>└── 状态</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>渲染内容</span></span>
+<span class="line"><span>├── 标题</span></span>
+<span class="line"><span>└── 内容</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>发送参数</span></span>
+<span class="line"><span>└── 格式化只读 JSON，敏感字段脱敏</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>渠道响应</span></span>
+<span class="line"><span>└── 格式化只读 JSON，敏感字段脱敏</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>失败信息</span></span>
+<span class="line"><span>├── 失败原因</span></span>
+<span class="line"><span>├── 错误码</span></span>
+<span class="line"><span>└── 耗时</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>重试历史</span></span>
+<span class="line"><span>└── 重试时间、结果、失败原因</span></span></code></pre></div><p>交互规则：</p><ul><li>列表不展示大段内容，避免表格错乱。</li><li>详情使用抽屉而不是超长弹窗。</li><li>失败记录提供进入失败重试页面的链接。</li><li>请求、响应、快照只读展示，不允许在发送记录中编辑。</li><li>发送记录记录发送明细；一次发送请求命中多个渠道或多个接收人时，会产生多条发送记录。</li></ul><h3 id="_13-7-失败重试交互" tabindex="-1">13.7 失败重试交互 <a class="header-anchor" href="#_13-7-失败重试交互" aria-label="Permalink to &quot;13.7 失败重试交互&quot;">​</a></h3><p>列表页：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区：失败重试 + 批量重试 + 批量忽略</span></span>
+<span class="line"><span>筛选区：消息编码、渠道、失败原因、失败次数、状态、最后失败时间</span></span>
+<span class="line"><span>表格列：消息名称、渠道、失败原因、失败次数、下次重试时间、最后失败时间、状态、操作</span></span>
+<span class="line"><span>行操作：重试、忽略、详情</span></span></code></pre></div><p>详情抽屉：</p><ul><li>展示关联发送记录。</li><li>展示失败原因、错误码、渠道响应。</li><li>展示每次重试时间、结果和操作人。</li></ul><p>交互规则：</p><ul><li>批量重试前必须二次确认。</li><li>忽略失败必须填写原因。</li><li>达到上限的记录允许人工重试或忽略。</li><li>正在重试中的记录禁用重复操作。</li></ul><h3 id="_13-7-系统监控交互" tabindex="-1">13.7 系统监控交互 <a class="header-anchor" href="#_13-7-系统监控交互" aria-label="Permalink to &quot;13.7 系统监控交互&quot;">​</a></h3><p>页面结构：</p><div class="language-text vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>标题区：系统监控 + 时间范围选择</span></span>
+<span class="line"><span>指标区：发送量、成功率、失败率、待发送、失败数、平均耗时</span></span>
+<span class="line"><span>渠道状态区：各渠道健康状态</span></span>
+<span class="line"><span>队列监控区：堆积、消费速度、最老待处理时间</span></span>
+<span class="line"><span>统计分析区：渠道占比、业务域占比、趋势图</span></span>
+<span class="line"><span>异常列表区：最近失败和异常渠道</span></span></code></pre></div><p>交互规则：</p><ul><li>监控页面以扫描为主，减少表单输入。</li><li>指标卡片只展示关键数字，不堆长文案。</li><li>异常状态必须有明确颜色和可点击入口。</li><li>点击失败数量跳转到失败重试并带筛选条件。</li><li>点击渠道异常跳转到通知渠道详情。</li></ul><h3 id="_13-8-用户系统消息入口交互" tabindex="-1">13.8 用户系统消息入口交互 <a class="header-anchor" href="#_13-8-用户系统消息入口交互" aria-label="Permalink to &quot;13.8 用户系统消息入口交互&quot;">​</a></h3><p>右上角小铃铛：</p><ul><li>使用无背景铃铛图标，与顶部其他图标同风格。</li><li>未读数使用角标。</li><li>点击后展示最近消息列表。</li><li>列表项展示标题、业务类型、时间和未读状态。</li><li>点击消息打开详情。</li><li>提供“全部已读”和“查看全部”入口。</li></ul><p>用户系统消息列表：</p><ul><li>筛选未读、业务域、消息类型、时间。</li><li>支持详情、单条已读、批量已读、全部已读、删除。</li><li>用户只能操作自己的消息。</li></ul><h2 id="_14-权限设计" tabindex="-1">14. 权限设计 <a class="header-anchor" href="#_14-权限设计" aria-label="Permalink to &quot;14. 权限设计&quot;">​</a></h2><table tabindex="0"><thead><tr><th>菜单</th><th>权限码</th></tr></thead><tbody><tr><td>消息定义</td><td><code>notice:message-definition:view/create/edit/publish/enable/delete/test</code></td></tr><tr><td>通知渠道</td><td><code>notice:channel:view/create/edit/enable/test</code></td></tr><tr><td>接收设置</td><td><code>notice:receive-setting:view/edit</code></td></tr><tr><td>发送记录</td><td><code>notice:send-record:view/export</code></td></tr><tr><td>失败重试</td><td><code>notice:retry:view/retry/ignore</code></td></tr><tr><td>系统监控</td><td><code>notice:monitor:view</code></td></tr><tr><td>用户系统消息</td><td><code>notice:site:view/read/delete</code></td></tr></tbody></table><p>菜单必须由后端入库菜单提供，前端只做页面映射，不做临时逃逸菜单。</p><h2 id="_15-验收标准" tabindex="-1">15. 验收标准 <a class="header-anchor" href="#_15-验收标准" aria-label="Permalink to &quot;15. 验收标准&quot;">​</a></h2><p>文档审阅验收：</p><ol><li>菜单规划只包含消息定义、通知渠道、接收设置、发送记录、失败重试、系统监控。</li><li>明确通知中心定位为统一消息编排中心。</li><li>明确系统消息、短信、邮件、微信等是渠道类型，不是一级菜单。</li><li>明确消息定义是核心入口。</li><li>明确接收设置控制用户是否接收某类消息。</li><li>明确发送记录和失败重试独立管理。</li><li>明确系统监控负责渠道、队列和统计。</li><li>明确接口、数据、前端页面、权限和测试范围。</li><li>明确每个菜单的交互过程、页面结构、表单分组、详情查看、空态、错误态和操作反馈。</li><li>明确 UI 布局必须清晰、对齐、结构化，不允许乱布局、卡片套卡片、字段无分组或用大 JSON 输入框替代表单。</li></ol><p>实施验收：</p><ol><li>后端菜单入库和前端页面映射使用新版菜单。</li><li>旧菜单名称不再展示给用户。</li><li>消息定义可完成基础信息、参数定义和渠道模板配置。</li><li>通知渠道表单按渠道类型结构化展示。</li><li>接收设置可按全局、业务域、单消息维度控制渠道。</li><li>发送记录可查看渲染内容、发送参数、渠道响应、失败原因和耗时。</li><li>失败重试支持自动重试、手动重试、批量重试、忽略失败。</li><li>系统监控可展示渠道状态、待发送数量、失败数量、发送量、成功率、失败率。</li><li>右上角小铃铛可展示用户未读系统消息。</li><li>所有页面左、上边距与 Mango 后台标准页面一致。</li><li>所有页面有清晰标题区、筛选区、内容区和操作区。</li><li>所有新增和编辑表单按业务含义分组，不出现字段无序堆叠。</li><li>所有复杂详情使用抽屉或分组详情，不把大段 JSON 直接塞进表格。</li><li>所有页面具备加载态、空态、错误态和保存反馈。</li><li>后端、前端、E2E 和交付台账验证通过。</li></ol><h2 id="_16-测试范围" tabindex="-1">16. 测试范围 <a class="header-anchor" href="#_16-测试范围" aria-label="Permalink to &quot;16. 测试范围&quot;">​</a></h2><p>后端：</p><ul><li>消息定义版本发布。</li><li>参数校验。</li><li>渠道启停。</li><li>接收设置过滤。</li><li>模板渲染。</li><li>发送记录状态机。</li><li>失败重试状态机。</li><li>渠道配置脱敏输出和内部原始配置读取。</li><li>系统监控聚合。</li></ul><p>前端：</p><ul><li>六个后台菜单可访问。</li><li>消息定义新增、编辑、发布。</li><li>参数定义结构化编辑。</li><li>渠道卡片配置。</li><li>通知渠道不同类型表单。</li><li>接收设置保存。</li><li>发送记录详情。</li><li>失败重试操作。</li><li>系统监控展示。</li><li>小铃铛未读消息入口。</li></ul><p>E2E：</p><ul><li>管理员登录后能看到新版菜单。</li><li>新增消息定义并配置系统消息和短信模板。</li><li>配置短信渠道。</li><li>发送一条业务消息。</li><li>查看发送记录。</li><li>失败记录可进入重试池。</li><li>用户侧能看到系统消息和未读数。</li></ul><h2 id="_17-pmo-加载记录" tabindex="-1">17. PMO 加载记录 <a class="header-anchor" href="#_17-pmo-加载记录" aria-label="Permalink to &quot;17. PMO 加载记录&quot;">​</a></h2><p>本次文档重写已加载：</p><ul><li><code>mango-pmo/rules/00-dev-flow.md</code></li><li><code>mango-pmo/rules/01-delivery-contract.md</code></li><li><code>mango-pmo/agents/01-pm-agent.md</code></li><li><code>mango-pmo/rules/product/01-prd-template.md</code></li><li><code>mango-pmo/rules/product/02-sprint.md</code></li><li><code>mango-pmo/rules/backend/10-dev-flow.md</code></li><li><code>mango-pmo/rules/backend/01-code.md</code></li><li><code>mango-pmo/rules/backend/02-naming.md</code></li><li><code>mango-pmo/rules/backend/05-module.md</code></li><li><code>mango-pmo/rules/backend/03-api.md</code></li><li><code>mango-pmo/rules/backend/04-db.md</code></li><li><code>mango-pmo/rules/backend/08-test.md</code></li><li><code>mango-pmo/rules/frontend/05-dev-flow.md</code></li><li><code>mango-pmo/rules/frontend/01-vue-code.md</code></li><li><code>mango-pmo/rules/frontend/06-monorepo-architecture.md</code></li><li><code>mango-pmo/rules/frontend/04-test.md</code></li></ul>`,263)])])}const u=a(e,[["render",l]]);export{_ as __pageData,u as default};

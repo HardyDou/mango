@@ -1,0 +1,1 @@
+import{_ as a,o as e,c as d,a2 as o}from"./chunks/framework.CE5oItKu.js";const m=JSON.parse('{"title":"Mango Docs","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md"}'),r={name:"index.md"};function n(i,t,s,h,c,g){return e(),d("div",null,[...t[0]||(t[0]=[o("",7)])])}const p=a(r,[["render",n]]);export{m as __pageData,p as default};
