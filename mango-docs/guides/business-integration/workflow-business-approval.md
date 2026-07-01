@@ -106,6 +106,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 9. 变更影响记录
 
+- PR #356 新增 `WORKFLOW_DEFINITION` 资源声明处理器和 `WorkflowTaskRuntimeApi` 公共任务运行时 API。业务模块可通过资源声明随模块同步流程定义，也可依赖 `mango-workflow-api` 调用待办、已办、抄送、详情、签收、办理、驳回、保存、转办、加签和流程详情能力；既有 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()` 审批发起方式保持兼容，不改变流程页面 key、菜单、权限码、租户隔离、业务状态回写和页面验收入口。
+
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和 workflow core service 集成测试；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
 
 - Issue #233 明确审批任务完成后的流程推进时序：业务模块同步下一节点待办、当前办理人或业务状态时，使用 `workflow.task.advanced` 或 `POST /workflow/tasks/complete-result`；`workflow.task.completed` 只表示当前任务完成，不承诺当前任务快照已刷新。
