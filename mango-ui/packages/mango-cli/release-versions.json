@@ -1,6 +1,6 @@
 {
   "maven": {
-    "mangoBackend": "1.0.4"
+    "mangoBackend": "1.0.5"
   },
   "npm": {
     "@mango/admin": "1.0.36",
@@ -18,17 +18,17 @@
     "@mango/link": "1.0.0",
     "@mango/link-openapi": "1.0.0",
     "@mango/link-page": "1.0.0",
-    "@mango/link-panel": "1.0.0",
+    "@mango/link-panel": "1.0.1",
     "@mango/notice": "1.0.15",
     "@mango/numgen": "1.0.14",
     "@mango/payment": "1.0.5",
-    "@mango/pmo": "1.0.5",
+    "@mango/pmo": "1.0.6",
     "@mango/rbac": "1.0.9",
     "@mango/site-shell": "1.0.0",
     "@mango/system": "1.0.12",
     "@mango/template": "1.0.14",
     "@mango/workflow": "1.0.19",
     "@mango/workflow-business-example": "1.0.18",
-    "@mango/cli": "1.0.55"
+    "@mango/cli": "1.0.56"
   }
 }

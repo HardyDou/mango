@@ -1,5 +1,62 @@
 # Mango Changelog
 
+## v2026.07.01-maven-1.0.5-data-governance-release - 2026-07-01
+
+### New
+
+- Published Issue #184 data initialization governance. Resource Registry demo declarations are now isolated behind explicit demo resource locations instead of loading through the default runtime path.
+- Added `INIT_ONLY` Resource Registry sync mode so built-in initialization data can create missing records without overwriting operator-maintained records.
+- Added external Flyway module locations for persistence migrations, allowing controlled schema baseline and comparison packs outside the default classpath migration path.
+- Published PMO governance that forbids default runtime seeds for sample/demo/test data and documents where explicit release materials should live.
+- Published a versioned Mango Docs snapshot for this release, including the Resource Registry and persistence README updates plus the shortened docs version labels.
+
+### Fixed
+
+- Fixed `@mango/link-panel` so its package entry imports the package-owned `style.css` export instead of relying on the `@mango/link-page` style entry.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.5</mango.version>` to consume the Resource Registry and persistence initialization governance changes.
+- Demo/sample Resource Registry declarations are no longer part of the default production declaration path. Enable demo material only through explicit demo resource locations or test resources.
+- Use `ResourceSyncMode.INIT_ONLY` for idempotent initial data that must not overwrite operator changes. Use the existing sync modes only when the target data is intentionally owned by Mango declarations.
+- Persistence Flyway modules can now declare external `file:` or `classpath:` locations for controlled release or comparison packs; default runtime migrations should remain module-owned and production-safe.
+- Existing business projects should upgrade to `@mango/cli@1.0.56` and run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to receive `@mango/pmo@1.0.6`.
+- Frontend projects that consume the compatibility URL navigation package should upgrade `@mango/link-panel` to `1.0.1`.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.5` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/pmo@1.0.6`, `@mango/link-panel@1.0.1`, and `@mango/cli@1.0.56` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.01-maven-1.0.5-data-governance-release` for GitHub Pages.
+- GitHub Release: `v2026.07.01-maven-1.0.5-data-governance-release`.
+
+### Verification
+
+- `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase release --task "发布 PR 363 合并后的最新版本" --paths "CHANGELOG.md,mango/pom.xml,mango-ui/packages/mango-cli/package.json,mango-docs,mango-business-starter"`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base v2026.07.01-maven-1.0.4-link-cli-docs-release --head HEAD`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-resource/mango-resource-api,mango-platform/mango-resource/mango-resource-core -am test`
+- `mvn -f mango/pom.xml -pl mango-infra/mango-infra-persistence/mango-infra-persistence-starter -am test`
+- `pnpm -C mango-ui release:impact --base=v2026.07.01-maven-1.0.4-link-cli-docs-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.01-maven-1.0.5-data-governance-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.5 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.5 -Dartifact=io.mango:mango-admin-starter:1.0.5 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.5 -Dartifact=io.mango.platform.resource:mango-resource-starter:1.0.5 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.5 -Dartifact=io.mango.infra:mango-infra-persistence-starter:1.0.5 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.01-maven-1.0.5-data-governance-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.01-maven-1.0.5-data-governance-release`
+- `git diff --check`
+
 ## v2026.07.01-maven-1.0.4-link-cli-docs-release - 2026-07-01
 
 ### New
