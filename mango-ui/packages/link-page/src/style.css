@@ -75,7 +75,8 @@
   color: #5f6368;
   cursor: pointer;
   font-size: 14px;
-  opacity: .72;
+  opacity: 0;
+  pointer-events: none;
   box-shadow: 0 1px 3px rgba(60, 64, 67, .14);
   transition:
     opacity .14s ease,
@@ -83,6 +84,12 @@
     border-color .14s ease,
     box-shadow .14s ease,
     transform .08s ease;
+}
+
+.mango-link-page__brand:hover .mango-link-page__brand-edit,
+.mango-link-page__brand:focus-within .mango-link-page__brand-edit {
+  opacity: .72;
+  pointer-events: auto;
 }
 
 .mango-link-page__brand-edit:hover {
