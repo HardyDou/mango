@@ -160,6 +160,55 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void syncAutoAndInitOnlyFirstSyncWriteSameTargetRowsForFiveDeclarations() {
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.AUTO, 1, "初始化标题"));
+        syncService.sync();
+        List<MessageTemplateRow> autoRows = messageTemplateRows();
+
+        rebuildTables();
+        dispatcher.reset();
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 1, "初始化标题"));
+        syncService.sync();
+
+        assertThat(messageTemplateRows()).containsExactlyElementsOf(autoRows);
+        assertThat(registryRows()).containsExactly(
+                new RegistryRow("1900000000000000001", 1, "guarantee.apply.case-1", "INIT_ONLY", "ACTIVE", 91001L),
+                new RegistryRow("1900000000000000002", 1, "guarantee.apply.case-2", "INIT_ONLY", "ACTIVE", 91002L),
+                new RegistryRow("1900000000000000003", 1, "guarantee.apply.case-3", "INIT_ONLY", "ACTIVE", 91003L),
+                new RegistryRow("1900000000000000004", 1, "guarantee.apply.case-4", "INIT_ONLY", "ACTIVE", 91004L),
+                new RegistryRow("1900000000000000005", 1, "guarantee.apply.case-5", "INIT_ONLY", "ACTIVE", 91005L)
+        );
+    }
+
+    @Test
+    void syncKeepsRuntimeTargetRowsForFiveInitOnlyDeclarationsWhenUpgraded() {
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 1, "初始化标题"));
+        syncService.sync();
+        jdbcTemplate.update("update message_template set title = '运行时修改-1' where id = 91001");
+        jdbcTemplate.update("update message_template set title = '运行时修改-2' where id = 91002");
+        jdbcTemplate.update("update message_template set title = '运行时修改-3' where id = 91003");
+        jdbcTemplate.update("update message_template set title = '运行时修改-4' where id = 91004");
+        jdbcTemplate.update("update message_template set title = '运行时修改-5' where id = 91005");
+        List<MessageTemplateRow> runtimeRows = messageTemplateRows();
+
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 2, "升级标题"));
+        syncService.sync();
+
+        assertThat(messageTemplateRows()).containsExactlyElementsOf(runtimeRows);
+        assertThat(registryRows()).containsExactly(
+                new RegistryRow("1900000000000000001", 2, "guarantee.apply.case-1", "INIT_ONLY", "ACTIVE", 91001L),
+                new RegistryRow("1900000000000000002", 2, "guarantee.apply.case-2", "INIT_ONLY", "ACTIVE", 91002L),
+                new RegistryRow("1900000000000000003", 2, "guarantee.apply.case-3", "INIT_ONLY", "ACTIVE", 91003L),
+                new RegistryRow("1900000000000000004", 2, "guarantee.apply.case-4", "INIT_ONLY", "ACTIVE", 91004L),
+                new RegistryRow("1900000000000000005", 2, "guarantee.apply.case-5", "INIT_ONLY", "ACTIVE", 91005L)
+        );
+        assertThat(jdbcTemplate.queryForList(
+                "select sync_type from resource_sync_log order by id", String.class))
+                .containsExactly("CREATE", "CREATE", "CREATE", "CREATE", "CREATE",
+                        "SKIP", "SKIP", "SKIP", "SKIP", "SKIP");
+    }
+
+    @Test
     void syncKeepsRuntimeTargetWhenInitOnlyDeclarationChanges() {
         ResourceDeclaration first = activeDeclaration(1, "初始化标题");
         first.setSyncMode(ResourceSyncMode.INIT_ONLY);
@@ -347,12 +396,16 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     private ResourceDeclaration activeDeclaration(int version, String titleValue) {
+        return activeDeclaration("1900000000000000001", version, "guarantee.apply.submit", titleValue);
+    }
+
+    private ResourceDeclaration activeDeclaration(String id, int version, String bizKey, String titleValue) {
         ResourceDeclaration declaration = new ResourceDeclaration();
-        declaration.setId("1900000000000000001");
+        declaration.setId(id);
         declaration.setVersion(version);
         declaration.setResourceType("MESSAGE_TEMPLATE");
         declaration.setModuleCode("guarantee");
-        declaration.setBizKey("guarantee.apply.submit");
+        declaration.setBizKey(bizKey);
         declaration.setName("提交申请通知");
         declaration.setTargetModule("notice");
         declaration.setFields(new LinkedHashMap<>());
@@ -360,6 +413,28 @@ class ResourceRegistrySyncServiceIntegrationTest {
         title.setType(ResourceFieldType.STRING);
         title.setValue(titleValue);
         declaration.getFields().put("title", title);
+        return declaration;
+    }
+
+    private List<ResourceDeclaration> fiveDeclarations(ResourceSyncMode syncMode, int version, String titlePrefix) {
+        return List.of(
+                declarationWithMode("1900000000000000001", version, "guarantee.apply.case-1", titlePrefix + "-1",
+                        syncMode),
+                declarationWithMode("1900000000000000002", version, "guarantee.apply.case-2", titlePrefix + "-2",
+                        syncMode),
+                declarationWithMode("1900000000000000003", version, "guarantee.apply.case-3", titlePrefix + "-3",
+                        syncMode),
+                declarationWithMode("1900000000000000004", version, "guarantee.apply.case-4", titlePrefix + "-4",
+                        syncMode),
+                declarationWithMode("1900000000000000005", version, "guarantee.apply.case-5", titlePrefix + "-5",
+                        syncMode)
+        );
+    }
+
+    private ResourceDeclaration declarationWithMode(String id, int version, String bizKey, String titleValue,
+                                                    ResourceSyncMode syncMode) {
+        ResourceDeclaration declaration = activeDeclaration(id, version, bizKey, titleValue);
+        declaration.setSyncMode(syncMode);
         return declaration;
     }
 
@@ -459,6 +534,34 @@ class ResourceRegistrySyncServiceIntegrationTest {
         return value == null ? 0 : value;
     }
 
+    private List<MessageTemplateRow> messageTemplateRows() {
+        return jdbcTemplate.query("""
+                select id, biz_key, title, enabled
+                from message_template
+                order by id
+                """, (rs, rowNum) -> new MessageTemplateRow(
+                rs.getLong("id"),
+                rs.getString("biz_key"),
+                rs.getString("title"),
+                rs.getInt("enabled")
+        ));
+    }
+
+    private List<RegistryRow> registryRows() {
+        return jdbcTemplate.query("""
+                select resource_id, resource_version, biz_key, sync_mode, status, target_id
+                from resource_registry
+                order by resource_id
+                """, (rs, rowNum) -> new RegistryRow(
+                rs.getString("resource_id"),
+                rs.getInt("resource_version"),
+                rs.getString("biz_key"),
+                rs.getString("sync_mode"),
+                rs.getString("status"),
+                rs.getLong("target_id")
+        ));
+    }
+
     @Configuration
     @MapperScan(basePackageClasses = {
             ResourceRegistryMapper.class,
@@ -520,14 +623,18 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
     static class MutableResourceProvider implements ResourceProvider {
 
-        private final AtomicReference<ResourceDeclaration> declaration = new AtomicReference<>();
+        private final AtomicReference<List<ResourceDeclaration>> declarations = new AtomicReference<>(List.of());
 
         void setDeclaration(ResourceDeclaration declaration) {
-            this.declaration.set(declaration);
+            this.declarations.set(List.of(declaration));
+        }
+
+        void setDeclarations(List<ResourceDeclaration> declarations) {
+            this.declarations.set(List.copyOf(declarations));
         }
 
         void clear() {
-            this.declaration.set(null);
+            this.declarations.set(List.of());
         }
 
         @Override
@@ -537,8 +644,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         @Override
         public List<ResourceDeclaration> provide() {
-            ResourceDeclaration current = declaration.get();
-            return current == null ? List.of() : List.of(current);
+            return declarations.get();
         }
     }
 
@@ -557,7 +663,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         @Override
         public ResourceSyncResult upsert(ResourceDeclaration resource) {
-            Long id = 91001L;
+            Long id = targetId(resource);
             String title = String.valueOf(resource.getFields().get("title").getValue());
             TestMessageTemplateEntity entity = messageTemplateMapper.selectById(id);
             if (entity == null) {
@@ -577,18 +683,25 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         @Override
         public ResourceSyncResult disable(ResourceDeclaration resource) {
-            TestMessageTemplateEntity entity = messageTemplateMapper.selectById(91001L);
+            Long id = targetId(resource);
+            TestMessageTemplateEntity entity = messageTemplateMapper.selectById(id);
             if (entity != null) {
                 entity.setEnabled(0);
                 messageTemplateMapper.updateById(entity);
             }
-            return ResourceSyncResult.of(91001L, "message_template", "disabled");
+            return ResourceSyncResult.of(id, "message_template", "disabled");
         }
 
         @Override
         public ResourceSyncResult delete(ResourceDeclaration resource) {
-            messageTemplateMapper.deleteById(91001L);
-            return ResourceSyncResult.of(91001L, "message_template", "deleted");
+            Long id = targetId(resource);
+            messageTemplateMapper.deleteById(id);
+            return ResourceSyncResult.of(id, "message_template", "deleted");
+        }
+
+        private Long targetId(ResourceDeclaration resource) {
+            String id = resource.getId();
+            return 91000L + Long.parseLong(id.substring(id.length() - 4));
         }
     }
 
@@ -677,4 +790,11 @@ class TestMessageTemplateEntity {
     public void setEnabled(Integer enabled) {
         this.enabled = enabled;
     }
+}
+
+record MessageTemplateRow(Long id, String bizKey, String title, Integer enabled) {
+}
+
+record RegistryRow(String resourceId, Integer resourceVersion, String bizKey, String syncMode, String status,
+                   Long targetId) {
 }
