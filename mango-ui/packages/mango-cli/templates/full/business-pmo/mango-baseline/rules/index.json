@@ -37,7 +37,7 @@
     },
     "process.devEnvironment": {
       "path": "rules/02-dev-environment.md",
-      "reason": "开发环境与本地启动规范"
+      "reason": "开发环境、本地启动、Mango CLI 项目内锁定版本与 workspace/dev start/frontend 入口规范"
     },
     "process.aiCodingRedlines": {
       "path": "rules/03-ai-coding-redlines.md",
