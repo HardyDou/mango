@@ -2,10 +2,15 @@
 
 ## Unreleased
 
+- No unreleased changes.
+
+## v2026.07.01-maven-1.0.2-workflow-runtime-release - 2026-07-01
+
 ### New
 
 - Added `WORKFLOW_DEFINITION` Resource Registry support for Issue #344. Workflow declarations can now be consumed by `mango-workflow` through a target `ResourceHandler`, create or update definitions by `tenantId + definitionKey`, load inline or classpath JSON, and publish deployable Flowable process definitions.
 - Added `WorkflowTaskRuntimeApi` for Issue #345 so business modules can call workflow task runtime operations through `mango-workflow-api` instead of depending on `mango-workflow-core`.
+- Hardened Maven release tooling so backend publishes must pass an explicit `--release-version`/`--revision`; implicit `1.0.0-SNAPSHOT` publishes are blocked, and intentional snapshots require `--allow-snapshot`.
 
 ### Fixed
 
@@ -13,9 +18,15 @@
 
 ### Upgrade Notes
 
+- Business backends should set `<mango.version>1.0.2</mango.version>` when consuming the new workflow runtime API or workflow definition Resource Registry handler.
 - Backend consumers that bootstrap workflow definitions through Resource Registry should refresh Mango workflow dependencies and declare `WORKFLOW_DEFINITION` resources under `META-INF/mango/resources`.
 - Business modules should depend on `mango-workflow-api` for task runtime operations. Only the host application that provides the workflow runtime should include `mango-workflow-starter`.
 - No database migration or frontend package change is required by this PR.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.2` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- GitHub Release: `v2026.07.01-maven-1.0.2-workflow-runtime-release`.
 
 ### Verification
 
@@ -25,6 +36,15 @@
 - `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am mango:check -Drule=api-contract` failed on existing repository-wide API contract debt; the current-task `WorkflowTaskController -> WorkflowTaskRuntimeApi` violation was removed.
 - `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am mango:check -Drule=all` failed on existing repository-wide rule debt unrelated to the new workflow handler/API files.
 - Real E2E smoke: monolith backend on isolated MySQL database, mango-admin frontend, workflow definition page, workflow todo page, `/resource/handler-specs`, and workflow definition/task APIs returned `200` with no browser console errors.
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-maven-1.0.2-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `mvn -f mango/pom.xml -Drevision=1.0.2 -DskipTests deploy`
+- `mvn -q dependency:get -Dartifact=io.mango:mango-admin-starter:1.0.2 -Dtransitive=false -DremoteRepositories=mango-public::default::http://nexus.inner.yunxinbaokeji.com/repository/maven-public/`
 - `git diff --check`
 
 ## v2026.06.30-maven-1.0.1-admin-branding-cli-release - 2026-06-30
