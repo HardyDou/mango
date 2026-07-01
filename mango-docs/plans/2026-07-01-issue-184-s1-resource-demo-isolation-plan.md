@@ -1,5 +1,9 @@
 # Issue #184 S1 Resource Demo 隔离计划
 
+状态：已完成。
+
+当前使用入口见 [mango-resource README](../../mango/mango-platform/mango-resource/README.md) 和 [Issue #184 总设计](../designs/2026-07-01-issue-184-data-governance-design.md)。
+
 ## 目标
 
 让 Resource 能区分正式资源和 demo 资源。正式资源继续默认扫描 `META-INF/mango/resources/`，demo 资源放入 `META-INF/mango/demo/`，只有显式启用后才会扫描。
@@ -32,7 +36,7 @@ mango:
         - classpath*:META-INF/mango/demo/*.yaml
 ```
 
-默认 `demo-enabled=false`，因此生产或普通启动不会读 demo 资源。演示环境、演示应用或本地 demo profile 可以显式打开该开关。
+默认 `demo-enabled=false`，因此生产或普通启动不会读 demo 资源。需要演示数据的最终应用显式打开该开关；不通过更换依赖包、单独 demo starter 或环境目录实现。
 
 ## 验收计划
 

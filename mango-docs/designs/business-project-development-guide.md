@@ -69,7 +69,15 @@ mango init guarantee-platform \
   --topology monolith
 ```
 
-full preset 后端依赖 `mango-admin-starter`，不再内置独立的运行时种子初始化。平台表结构、默认资源和菜单权限基线由各模块 Flyway、Resource Registry 和模块自身的 TenantProvisioner 写入；租户、组织架构、账号、岗位等生产数据应通过业务开通、后台维护、导入任务或明确的初始化 runbook 管理。
+full preset 后端依赖 `mango-admin-starter`，不再内置独立的运行时种子初始化。业务 Agent 判断初始化数据时按以下顺序处理：
+
+- 表结构、索引、约束和停机升级 SQL 归模块化 Flyway；大 SQL、磁盘 SQL、远程 URL SQL 使用 `mango.persistence.flyway.modules.<module>.locations` 显式配置。
+- 菜单、字典、系统配置、消息模板、任务、号段、文件配置等正式资源归 Resource Registry，默认放 `META-INF/mango/resources/`。
+- 初始化后允许用户或业务运行时修改的数据使用 Resource `sync-mode: INIT_ONLY`。
+- demo/sample 数据放 `META-INF/mango/demo/`，默认不加载，只有显式 `mango.resource.registry.demo-enabled=true` 才扫描。
+- 租户、组织架构、账号、岗位等生产数据应通过业务开通、后台维护、导入任务或明确的初始化 runbook 管理。
+
+不要在业务项目里新增 Data Package/task 编排器，也不要把 demo 数据或运行时数据混入默认 Flyway migration。
 
 只需要必选系统能力时使用 custom preset 且不选择可选模块：
 

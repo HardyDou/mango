@@ -213,6 +213,12 @@
       "keywords": ["菜单初始化", "资源清单", "AUTH_MENU", "*-common-menu.json", "*-common-menu.yml", "*-common-menu.yaml", "ResourceHandler", "resource-manifest", "菜单包", "roleCodes", "packageCodes", "默认菜单", "默认权限", "Flyway 禁止菜单", "菜单人工验收", "菜单截图", "授权模块归口"],
       "include": ["backend.moduleMenu", "backend.module", "backend.db", "backend.security"]
     },
+    "dataInitializationGovernance": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango/**/db/migration/**", "mango/**/META-INF/mango/resources/**", "mango/**/META-INF/mango/demo/**", "backend/**/db/migration/**", "backend/**/META-INF/mango/resources/**", "backend/**/META-INF/mango/demo/**"],
+      "keywords": ["初始化数据", "默认数据", "预置数据", "种子数据", "seed", "demo 数据", "demo数据", "测试数据", "字典", "菜单", "角色", "权限", "工作流初始化", "流程定义初始化", "Flyway", "migration", "历史 SQL", "历史sql", "旧字典", "升级数据", "停机升级", "baseline pack", "外部 SQL", "URL SQL", "Resource Registry", "INIT_ONLY"],
+      "include": ["process.capabilityDocs", "process.documentAssets", "backend.db", "backend.moduleMenu", "backend.persistence"]
+    },
     "backendApi": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango/**/*Api.java", "mango/**/*Command.java", "mango/**/*Query.java", "mango/**/*VO.java", "mango/**/controller/**", "backend/**/*Api.java", "backend/**/*Command.java", "backend/**/*Query.java", "backend/**/*VO.java", "backend/**/controller/**"],

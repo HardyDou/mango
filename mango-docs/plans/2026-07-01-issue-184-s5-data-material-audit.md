@@ -1,5 +1,9 @@
 # Issue #184 S5 Mango 数据物料清理清单与适配推演
 
+状态：已完成。
+
+当前总入口见 [Issue #184 总设计](../designs/2026-07-01-issue-184-data-governance-design.md)。本清单只做当前 Mango 物料盘点和后续清理优先级，不定义新的平台能力。
+
 ## 目标
 
 基于 S1-S4 已落地能力，梳理 Mango 现有初始化、demo、运行时、升级数据物料的归属，给后续模块开发和存量清理提供执行边界。
@@ -100,7 +104,7 @@ S5 不新增平台能力，重点回答三个问题：
 目标：
 
 - 新增 CMS demo 数据进入 `mango-cms-starter/src/main/resources/META-INF/mango/demo/`。
-- 只有 demo profile 显式 `mango.resource.registry.demo-enabled=true` 时加载。
+- 只有最终应用显式配置 `mango.resource.registry.demo-enabled=true` 时加载。
 - 正式环境默认不安装 demo 站点、demo 新闻、demo 广告。
 
 后续清理：
@@ -235,7 +239,7 @@ S5 不新增平台能力，重点回答三个问题：
 | 优先级 | 任务 | 验收标准 |
 | --- | --- | --- |
 | P0 | 新增规范：禁止新增 menu/permission/demo/simulated runtime seed 到默认 Flyway | PR review 能按规则拦截。 |
-| P1 | CMS demo 数据迁入 `META-INF/mango/demo/` | 默认启动不安装 CMS demo，demo profile 安装。 |
+| P1 | CMS demo 数据迁入 `META-INF/mango/demo/` | 默认启动不安装 CMS demo；显式 demo 开关才安装。 |
 | P1 | authorization 菜单权限 SQL 收敛到 Resource | 新增菜单权限不再增加 authorization migration。 |
 | P1 | job sample/payment job 种子归类 | demo job 走 demo，必需 job 走 Resource `INIT_ONLY`。 |
 | P1 | notice template/channel/job message 收敛 | 可声明通知数据进入 Resource，运行时发送数据不受影响。 |

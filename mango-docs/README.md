@@ -8,6 +8,7 @@
 
 - [Mango 能力地图](./capabilities/README.md)：按模块查 README、接入入口和组合使用顺序。
 - [业务接入场景手册](./guides/business-integration/README.md)：按业务问题查接入路径和排障入口。
+- [数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md)：说明 Flyway、Resource、demo、`INIT_ONLY`、外部 SQL 和 baseline pack 的边界。
 - [PRD 模板](../mango-pmo/templates/prd.md)：输出业务开发可读、AI 可继续设计的需求文档。
 - [详细设计模板](../mango-pmo/templates/detailed-design.md)：把 PRD 转成可开发、可验证、可交付的设计文档。
 - [交付契约模板](../mango-pmo/templates/delivery-contract.md)：把 PRD、设计、开发和验收项拆成逐项可核验台账。
@@ -68,6 +69,7 @@ npm --prefix mango-docs run docs:build
 - [菜单页面打不开排障](./guides/business-integration/rbac-menu-page-troubleshooting.md)
 - [按钮权限不显示排障](./guides/business-integration/permission-button-troubleshooting.md)
 - [租户字典配置为空排障](./guides/business-integration/tenant-dict-config-empty.md)
+- [数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md)
 - [Workflow 业务示例前端包](../mango-ui/packages/workflow-business-example/README.md)
 - [Job 部署与生产参数](../deploy/job/README.md)
 

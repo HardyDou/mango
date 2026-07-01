@@ -1,5 +1,9 @@
 # Issue #184 S3 Flyway 外部升级脚本计划
 
+状态：已完成。
+
+当前使用入口见 [mango-infra-persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) 和 [Issue #184 总设计](../designs/2026-07-01-issue-184-data-governance-design.md)。
+
 ## 背景
 
 当前 Mango 已经按模块执行 Flyway migration，每个模块独立 history table。DDL 和版本化 SQL 已由 Flyway 管理，但脚本来源固定为 `classpath:db/migration/<module>`，不能覆盖停机升级时由运维指定磁盘目录或远程 URL SQL 的场景。
@@ -11,6 +15,8 @@
 - 默认行为不变：未配置时仍执行 `classpath:db/migration/<module>`。
 - 支持 `filesystem:/path/to/migrations`，用于磁盘升级包。
 - 支持 `http://.../Vxxx__name.sql` 和 `https://.../Vxxx__name.sql`，启动迁移前下载到临时目录后交给 Flyway。
+
+外部 SQL 仍是 Flyway migration，不是裸 SQL 执行器。脚本必须符合 `V*.sql` 版本命名，执行结果写入当前模块 history table。
 
 ## 范围
 

@@ -1,5 +1,9 @@
 # Issue #184 S4 Schema Baseline Pack 计划
 
+状态：已完成设计说明，基于 S3 的外部 `filesystem:` locations 使用。
+
+当前使用入口见 [mango-infra-persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) 和 [Issue #184 总设计](../designs/2026-07-01-issue-184-data-governance-design.md)。
+
 ## 背景
 
 模块历史 migration 持续增长后，新数据库会从 V1 开始执行所有历史 SQL，启动慢、排查困难，也很难直接看到当前完整表结构。旧数据库又不能删除历史 migration，否则已有 Flyway history 会失去可追溯性。

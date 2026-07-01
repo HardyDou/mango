@@ -13,6 +13,8 @@
 3. 查看关联 PMO 链接；正式交付规则以 preflight 输出和 `mango-pmo/rules/**` 为准。
 4. 能力说明维护要求见 [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)。
 
+处理 Mango 升级、初始化数据、字典、菜单、角色、工作流、Flyway 或 demo 数据时，先看本页“近期能力变更”，再看对应模块 README。历史 migration、历史设计和旧会话上下文只能作为历史证据；如果它们和当前 README 或本页冲突，以当前 README、本页和明确标注为当前口径的设计为准。
+
 ## 3. 组合接入入口
 
 | 目标 | 阅读顺序 | 排障入口 |
@@ -22,15 +24,17 @@
 | 数据权限闭环 | [Authorization](../../mango/mango-platform/mango-authorization/README.md) -> [Persistence](../../mango/mango-infra/mango-infra-persistence/README.md) -> [RBAC Frontend](../../mango-ui/packages/rbac/README.md) | [Authorization README](../../mango/mango-platform/mango-authorization/README.md)、[Persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) |
 | 文件上传到预览闭环 | [File](../../mango/mango-platform/mango-file/README.md) -> [Fileproc](../../mango/mango-infra/mango-infra-fileproc/README.md) -> [File Preview](../../mango/mango-platform/mango-file-preview/README.md) -> [Frontend File](../../mango-ui/packages/file/README.md) | [File README](../../mango/mango-platform/mango-file/README.md)、[文件上传表单接入](../guides/business-integration/file-upload-form.md) |
 | 业务审批闭环 | [Workflow](../../mango/mango-platform/mango-workflow/README.md) -> [Workflow Frontend](../../mango-ui/packages/workflow/README.md) -> [Workflow Example](../../mango-ui/packages/workflow-business-example/README.md) | [Workflow README](../../mango/mango-platform/mango-workflow/README.md)、[业务审批接入](../guides/business-integration/workflow-business-approval.md) |
-| 租户基础数据和字典闭环 | [Identity](../../mango/mango-platform/mango-identity/README.md) -> [Org](../../mango/mango-platform/mango-org/README.md) -> [System](../../mango/mango-platform/mango-system/README.md) -> [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> [Access](../../mango/mango-platform/mango-access/README.md) | [System README](../../mango/mango-platform/mango-system/README.md)、[租户字典配置为空排障](../guides/business-integration/tenant-dict-config-empty.md)；demo/bootstrap 数据可用 `IDENTITY_USER`、`ORG_UNIT`、`ORG_POST`、`ORG_MEMBER_BINDING` 声明 |
+| 租户基础数据和字典闭环 | [Issue #184 数据治理设计](../designs/2026-07-01-issue-184-data-governance-design.md) -> [Identity](../../mango/mango-platform/mango-identity/README.md) -> [Org](../../mango/mango-platform/mango-org/README.md) -> [System](../../mango/mango-platform/mango-system/README.md) -> [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> [Access](../../mango/mango-platform/mango-access/README.md) | [System README](../../mango/mango-platform/mango-system/README.md)、[租户字典配置为空排障](../guides/business-integration/tenant-dict-config-empty.md)；新增字典优先确认当前 Resource handler 和 `sync-mode`，不要照搬历史 Flyway seed |
 | 定时任务闭环 | [Job](../../mango/mango-platform/mango-job/README.md) -> [Job Frontend](../../mango-ui/packages/job/README.md) -> [Notice](../../mango/mango-platform/mango-notice/README.md) | [Job README](../../mango/mango-platform/mango-job/README.md)、[Job Frontend README](../../mango-ui/packages/job/README.md) |
 | 业务项目创建到 PR | [CLI](../../mango-ui/packages/mango-cli/README.md) -> [Business Starter](../../mango-business-starter/README.md) -> [Business PMO](../../mango-business-starter/business-pmo/README.md) -> [Topology](../../mango-business-starter/topologies/monolith/README.md) | [CLI README](../../mango-ui/packages/mango-cli/README.md)、[Business Starter README](../../mango-business-starter/README.md) |
 | 业务配置资源注入 | [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> 目标模块 README | [Resource README](../../mango/mango-platform/mango-resource/README.md)，支持授权、组织、身份等基线资源类型 |
+| 数据初始化与停机升级治理 | [Issue #184 数据治理设计](../designs/2026-07-01-issue-184-data-governance-design.md) -> [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> [Persistence](../../mango/mango-infra/mango-infra-persistence/README.md) -> [S5 数据物料清单](../plans/2026-07-01-issue-184-s5-data-material-audit.md) | Resource 负责正式/demo/`INIT_ONLY`；Persistence 负责 DDL、外部 SQL、baseline pack |
 
 ## 3.1 近期能力变更
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-01 | 数据治理第一版：Resource demo 隔离、`INIT_ONLY`、Flyway 外部 locations、schema baseline pack | [Resource README](../../mango/mango-platform/mango-resource/README.md)、[Persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) | [Issue #184 设计](../designs/2026-07-01-issue-184-data-governance-design.md)、[S5 清单](../plans/2026-07-01-issue-184-s5-data-material-audit.md) |
 | 2026-06-29 | File 支持按目录结构清单打包多个文件为 ZIP，生成后写回存储层并返回新的 `FileRecordVO` | [File README](../../mango/mango-platform/mango-file/README.md) | [计划](../plans/2026-06-29-issue-316-file-package-plan.md)、[详细设计](../designs/2026-06-29-issue-316-file-package-design.md)、[交付台账](../plans/2026-06-29-issue-316-file-package-ledger.md) |
 
 ## 4. 后端平台能力

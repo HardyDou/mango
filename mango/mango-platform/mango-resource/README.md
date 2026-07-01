@@ -6,6 +6,22 @@
 
 它不保存目标资源内容。字典、系统参数、消息模板、工作流配置、编号规则、打印模板、文件配置等真实数据仍由各目标模块自己的表维护。
 
+## 1.1 数据治理快速判断
+
+业务 Agent 和 Mango 框架开发 Agent 处理初始化数据时，先按下面判断：
+
+| 场景 | 入口 | 关键配置 |
+|------|------|----------|
+| 正式内置资源，例如菜单、字典、系统配置、消息模板、任务、号段、文件配置 | `META-INF/mango/resources/` | 默认扫描。 |
+| 演示站点、演示角色、演示流程、演示日历、sample job | `META-INF/mango/demo/` | 只有 `mango.resource.registry.demo-enabled=true` 才扫描。 |
+| 首次初始化后用户或业务运行时会改的数据 | Resource 声明 | 使用 `sync-mode: INIT_ONLY`。 |
+| 表结构、索引、约束、大 SQL、停机升级 SQL | Flyway | 见 `mango-infra-persistence` README。 |
+| 用户创建的业务单据、流程实例、任务实例、日历事件、用户改的角色授权 | 业务 Owner Service | 不进入 Resource 声明。 |
+
+Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在线升级。大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence` 的模块化 Flyway `locations`。
+
+历史 Flyway 中如果保留旧字典、旧菜单或旧 demo seed，只能作为历史库兼容证据，不能作为新增资源声明模板。新增或调整字典、菜单、角色、工作流等小资源时，先看当前 handler 是否开放，再按本 README 的 Resource 声明和 `sync-mode` 处理。
+
 ## 2. 模块结构
 
 | 模块 | 职责 |
@@ -22,7 +38,8 @@
 - 采集 classpath JSON/YAML 资源声明和 Java `ResourceProvider` 声明。
 - 将声明写入 `resource_registry`，并记录同步日志和变更日志。
 - 按资源类型调用目标模块 `ResourceHandler` 完成创建、更新、禁用和删除。
-- 支持 `AUTO`、`MANUAL`、`LOCKED` 同步模式和强制同步。
+- 支持 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 同步模式和强制同步。
+- 支持正式资源和 demo 资源目录隔离，demo 默认不扫描。
 - 支持本地单体注册中心和微服务远程上报两种拓扑。
 - 提供后台管理接口查询注册资源、同步日志、变更日志和处理器字段契约。
 
@@ -127,10 +144,21 @@ classpath*:META-INF/mango/resources/*.yml
 classpath*:META-INF/mango/resources/*.yaml
 ```
 
+demo 资源默认扫描路径：
+
+```text
+classpath*:META-INF/mango/demo/*.json
+classpath*:META-INF/mango/demo/*.yml
+classpath*:META-INF/mango/demo/*.yaml
+```
+
+demo 路径只有 `mango.resource.registry.demo-enabled=true` 时才会追加扫描。默认启动只读取正式资源目录。demo 数据跟随所属模块发布，但不进入默认包扫描结果，也不要求单独 demo starter。
+
 推荐命名：
 
 ```text
 META-INF/mango/resources/{module}-common-{resource}.{json,yml,yaml}
+META-INF/mango/demo/{module}-demo-{resource}.{json,yml,yaml}
 ```
 
 示例：
@@ -144,6 +172,8 @@ template-common-dict.yml
 ```
 
 菜单树等大资源优先使用 JSON，减少重复缩进和视觉噪音；少量配置可使用 YAML。
+
+大 SQL、全国行政区划、年度日历等大数据不要写成 Resource YAML/JSON。它们应使用 `mango-infra-persistence` 的 `filesystem:` 或 `http(s)` Flyway locations，或由模块 Owner Service 提供批量导入。
 
 声明文件必须包含 `schemaVersion`、`moduleCode`、`moduleName` 和 `declarations`。loader 会校验 schema 版本和结构完整性；错误信息包含来源路径，方便定位坏文件。
 

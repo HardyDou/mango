@@ -21,7 +21,7 @@
 | [业务审批接入](./workflow-business-approval.md) | 业务单据发起审批、处理审批结果、查看流程记录 | Workflow、Workflow Frontend、Workflow Example |
 | [菜单页面打不开排障](./rbac-menu-page-troubleshooting.md) | 登录后菜单空白、404、页面组件找不到 | Authorization、RBAC、Admin Shell |
 | [按钮权限不显示排障](./permission-button-troubleshooting.md) | 菜单可见但新增、编辑、删除按钮不显示 | Authorization、Access、RBAC Frontend |
-| [租户字典配置为空排障](./tenant-dict-config-empty.md) | 业务下拉、字典、配置或基础数据为空 | Identity、Org、System、Seed |
+| [租户字典配置为空排障](./tenant-dict-config-empty.md) | 业务下拉、字典、配置或基础数据为空 | Identity、Org、System、Resource、Persistence |
 
 ## 4. 新场景登记门禁
 
@@ -32,6 +32,7 @@
 - 前端需要引入哪些包，是否只适用于管理后台。
 - 配置项在哪里配置，默认值是什么。
 - 菜单、权限、租户、初始化数据由谁负责。
+- 涉及初始化数据、字典、菜单、角色、demo、Flyway 或升级数据时，链接 [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md)，说明它属于 Resource、Persistence、demo、`INIT_ONLY` 还是业务运行时数据。
 - 最小验收闭环是什么，失败时先查哪张表或哪个接口。
 
 ## 5. 关联入口
