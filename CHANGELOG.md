@@ -1,6 +1,6 @@
 # Mango Changelog
 
-## v2026.07.01-maven-1.0.3-link-cli-docs-release - 2026-07-01
+## v2026.07.01-maven-1.0.4-link-cli-docs-release - 2026-07-01
 
 ### New
 
@@ -12,18 +12,19 @@
 
 ### Upgrade Notes
 
-- Business backends should set `<mango.version>1.0.3</mango.version>` to consume the new `mango-link` backend artifacts.
+- Business backends should set `<mango.version>1.0.4</mango.version>` to consume the new `mango-link` backend artifacts.
 - Monolith deployments that need URL navigation should add `mango-link-starter`; remote or split deployments should use the matching `mango-link-starter-remote` dependency pattern.
 - Business admin frontends should consume the npm package versions listed in this release as a batch. Do not mix `@mango/admin@1.0.36` with older CLI release locks when enabling Link pages.
 - For standalone URL navigation pages, install `@mango/link-page@1.0.0` and import `@mango/link-page/style.css`; existing consumers of the compatibility package can use `@mango/link-panel@1.0.0`.
 - Developers should install `@mango/cli@1.0.55` from the company npm group registry before relying on `mango dev restart`.
+- Do not consume Mango Maven `1.0.3`; that attempted release was superseded before completion after verification found an invalid `mango-file-preview-engine` jar.
 
 ### Published Packages
 
-- Maven: full Mango backend platform reactor at `1.0.3` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- Maven: full Mango backend platform reactor at `1.0.4` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
 - npm: `@mango/link-openapi@1.0.0`, `@mango/link-page@1.0.0`, `@mango/link-panel@1.0.0`, `@mango/link@1.0.0`, `@mango/admin@1.0.36`, and `@mango/cli@1.0.55` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
-- Docs: Mango Docs snapshot `v2026.07.01-maven-1.0.3-link-cli-docs-release` for GitHub Pages.
-- GitHub Release: `v2026.07.01-maven-1.0.3-link-cli-docs-release`.
+- Docs: Mango Docs snapshot `v2026.07.01-maven-1.0.4-link-cli-docs-release` for GitHub Pages.
+- GitHub Release: `v2026.07.01-maven-1.0.4-link-cli-docs-release`.
 
 ### Verification
 
@@ -31,14 +32,14 @@
 - `pnpm --filter @mango/cli run check:release-versions`
 - `pnpm admin:styles:check`
 - `pnpm admin:module-styles:check`
-- `npm --prefix mango-docs run docs:snapshot -- v2026.07.01-maven-1.0.3-link-cli-docs-release`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.01-maven-1.0.4-link-cli-docs-release`
 - `npm --prefix mango-docs run docs:build`
-- `mvn -f mango/pom.xml -Drevision=1.0.3 -DskipTests deploy`
-- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.3 -Dartifact=io.mango:mango-admin-starter:1.0.3 -Dtransitive=false`
-- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.3 -Dartifact=io.mango.platform.link:mango-link-starter:1.0.3 -Dtransitive=false`
-- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.01-maven-1.0.3-link-cli-docs-release --skip-shared-gates`
+- `mvn -f mango/pom.xml -Drevision=1.0.4 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.4 -Dartifact=io.mango:mango-admin-starter:1.0.4 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.4 -Dartifact=io.mango.platform.link:mango-link-starter:1.0.4 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.01-maven-1.0.4-link-cli-docs-release --skip-shared-gates`
 - `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
-- `gh release view v2026.07.01-maven-1.0.3-link-cli-docs-release`
+- `gh release view v2026.07.01-maven-1.0.4-link-cli-docs-release`
 - `git diff --check`
 
 ## Unreleased
