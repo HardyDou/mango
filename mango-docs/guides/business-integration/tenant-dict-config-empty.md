@@ -11,10 +11,11 @@
 | 1 | [Identity 后端 README](../../../mango/mango-platform/mango-identity/README.md) | 用户、账号、租户身份 |
 | 2 | [Org 后端 README](../../../mango/mango-platform/mango-org/README.md) | 组织、岗位、组织树 |
 | 3 | [System 后端 README](../../../mango/mango-platform/mango-system/README.md) | 系统配置、字典、参数 |
-| 4 | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md) | 资源声明同步和模块初始化 |
-| 5 | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md) | 接口访问和数据权限上下文 |
-| 6 | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源 |
-| 7 | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md) | 登录态、租户切换、上下文透传 |
+| 4 | [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md) | Flyway、Resource、demo、`INIT_ONLY` 和外部 SQL 边界 |
+| 5 | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md) | 资源声明同步、demo 隔离和运行时保留策略 |
+| 6 | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md) | 接口访问和数据权限上下文 |
+| 7 | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源 |
+| 8 | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md) | 登录态、租户切换、上下文透传 |
 
 ## 3. 接入检查点
 
@@ -25,7 +26,7 @@
 | 基础数据 | 目标租户已初始化所需字典、配置、组织或岗位数据 |
 | 数据过滤 | 查询接口没有被数据权限、组织范围或状态字段过滤掉 |
 | 前端参数 | 前端查询参数没有带错 appCode、dictCode、domainCode 或 status |
-| 初始化边界 | 平台默认资源由 Flyway、Resource Registry 和模块 TenantProvisioner 处理；生产租户数据由业务开通、后台维护或导入流程补齐 |
+| 初始化边界 | DDL 和大 SQL 由 Flyway 处理；正式小资源由 Resource `META-INF/mango/resources/` 处理；demo 资源由 `META-INF/mango/demo/` 且默认禁用；运行时可修改但升级要保留的数据使用 `INIT_ONLY` 或业务开通/导入流程 |
 
 ## 4. 最小闭环
 
@@ -61,6 +62,7 @@ pnpm -F @mango/admin-shell build
 - [Resource 同步规则](../../../mango/mango-platform/mango-resource/README.md#10-同步规则)
 - [Access 验证方式](../../../mango/mango-platform/mango-access/README.md#10-验证方式)
 - [Authorization 验证方式](../../../mango/mango-platform/mango-authorization/README.md#10-验证方式)
+- [数据初始化与停机升级治理](../../designs/2026-07-01-issue-184-data-governance-design.md)
 
 ## 7. 关联规则
 
@@ -68,6 +70,8 @@ pnpm -F @mango/admin-shell build
 - [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
 ## 8. 变更影响记录
+
+- Issue #184 明确数据初始化与停机升级治理边界：结构和版本化 SQL 继续归 Flyway，正式小资源归 `META-INF/mango/resources/`，demo 数据归 `META-INF/mango/demo/` 且默认不启用，运行时会被用户修改且升级要保留的数据使用 Resource `INIT_ONLY` 或业务开通/导入流程，大 SQL、磁盘 SQL、远程 URL SQL 和新库 schema baseline pack 走 `mango-infra-persistence` 的模块化 Flyway `locations`。排查租户基础数据为空时，应先判断缺失数据属于正式资源、demo、运行时租户数据还是停机升级 SQL，避免把 demo 或运行时数据混入默认 migration。
 
 - v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和后台品牌配置前端批次；品牌配置复用系统配置资源和文件中心 ID，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。排查品牌图片为空时，同时确认配置资源同步、文件 ID 有效和文件读取权限。
 

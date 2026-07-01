@@ -22,9 +22,28 @@
 - 租户隔离：默认注册 `TenantLineInnerInterceptor`，从 `MangoContextHolder.tenantId()` 读取租户。
 - 审计填充：新增和修改时自动填充创建人、创建时间、更新人、更新时间、租户字段。
 - Flyway：按 `db/migration/<module>/V*.sql` 分模块迁移，每个模块独立 history table。
+- Flyway 外部 locations：停机升级可按模块加载 `filesystem:` 目录或 `http(s)` 单个 SQL 文件。
+- Schema baseline pack：新数据库可显式使用当前完整结构包，避免从 V1 执行全部历史 SQL。
 - 多数据源：支持定义多个数据源、按模块映射、按 `@PersistenceDataSource` 或代码作用域切换。
 - Schema 校验：启动时检查业务表主键和审计租户字段。
 - Web CRUD：提供标准 `/create`、`/update`、`/delete`、`/batch-delete`、`/detail`、`/page`、`/export`、`/import`、`/import-template` 入口。
+
+## 1.1 数据治理快速判断
+
+业务 Agent 和 Mango 框架开发 Agent 处理 SQL 或大数据物料时，先按下面判断：
+
+| 场景 | 入口 | 关键要求 |
+|------|------|----------|
+| 新表、改表、索引、约束 | `db/migration/<module>/V*.sql` | 只用 Flyway 管理 DDL。 |
+| 停机升级修复历史数据 | `mango.persistence.flyway.modules.<module>.locations` | 使用 `filesystem:` 目录或 `http(s)` 单个 SQL 文件，仍写模块 history table。 |
+| 新库当前完整结构 | baseline pack 目录 | 只给新库显式配置，不和历史 V1...Vn 混用。 |
+| 菜单、字典、配置、消息模板、任务、号段等结构化资源 | `mango-resource` | 不写默认 Flyway DML。 |
+| demo/sample 数据 | `META-INF/mango/demo/` | 默认不加载，见 `mango-resource` README。 |
+| 500MB/1GB 行政区划、年度日历等大数据 | 外部 SQL 包或模块批量导入服务 | 不放 YAML，不打进默认 jar classpath。 |
+
+本模块不提供裸 SQL 执行器，不提供 Data Package/task 编排，不执行任意 bean 方法。需要可追溯的 SQL 升级时，仍使用 Flyway 版本号、模块 history table 和停机升级 runbook。
+
+历史 Flyway migration 中保留的 DML 只代表老库升级历史，不能作为新增字典、菜单、角色、demo 或业务 seed 的当前模板。新增小资源优先看 `mango-resource` README；确实属于结构、大 SQL 或停机升级 SQL 时，才放到本模块管理的 Flyway migration 或外部 locations。
 
 ## 2. 功能清单
 
@@ -34,6 +53,8 @@
 | 业务实体需要统一 Long 雪花主键、审计字段和租户字段 | Maven 依赖 / starter / Java API |
 | 单表或薄业务逻辑资源需要快速实现 CRUD API | Maven 依赖 / starter / Java API |
 | 模块需要在启动时自动执行自己的 Flyway migration | Maven 依赖 / starter / Java API |
+| 停机升级时需要按模块执行外部 SQL 包 | YAML 配置 / 运维升级包 |
+| 新数据库需要使用当前完整 schema baseline | YAML 配置 / baseline pack |
 | 应用需要把不同模块路由到不同数据库 | Maven 依赖 / starter / Java API |
 | 非 Web 任务、定时任务或测试环境需要显式配置默认租户 | Maven 依赖 / starter / Java API |
 | 管理端资源需要复用标准导入导出入口，但 Excel 解析实现由其他模块提供 | Maven 依赖 / starter / Java API |
@@ -245,6 +266,8 @@ mango:
           validate-on-migrate: true
           ignore-missing-migrations: false
           history-table: flyway_schema_history_mango_system
+          locations:
+            - classpath:db/migration/mango-system
         mango-job:
           enabled: true
 ```
@@ -256,12 +279,90 @@ mango:
 | `modules.<module>.baseline-on-migrate` | `true` | 存量库无 history table 时是否从 baseline 接管 |
 | `modules.<module>.out-of-order` | `false` | 是否允许非顺序版本补跑 |
 | `modules.<module>.history-table` | `flyway_schema_history_<module>` | 当前模块 history table，模块名会把非字母数字下划线替换成 `_` |
+| `modules.<module>.locations` | `classpath:db/migration/<module>` | 当前模块迁移脚本位置，支持 `classpath:`、`filesystem:` 和 `http(s)` 单个 SQL 文件 |
 | `modules.<module>.validate-on-migrate` | `true` | 迁移前是否校验历史记录 |
 | `modules.<module>.ignore-missing-migrations` | `false` | 是否忽略数据库存在但代码已移除的历史迁移 |
 | `modules.<module>.datasource.url` | 空 | 当前模块迁移使用独立 JDBC URL |
 | `modules.<module>.datasource.driver-class-name` | 空 | 当前模块迁移独立驱动 |
 | `modules.<module>.datasource.username` | 空 | 当前模块迁移独立用户名 |
 | `modules.<module>.datasource.password` | 空 | 当前模块迁移独立密码 |
+
+停机升级需要执行不随应用 jar 发布的 SQL 时，不新增裸 SQL 执行器，仍把脚本作为 Flyway migration 管理：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        payment:
+          enabled: true
+          locations:
+            - classpath:db/migration/payment
+            - filesystem:/opt/mango/upgrade/payment
+            - https://artifact.example.com/mango/payment/V2026070101__fix_channel_data.sql
+```
+
+`filesystem:` 应指向包含 `V*.sql` 的目录。`http(s)` 只支持单个 `.sql` 文件，启动迁移前会下载到临时目录再交给 Flyway；执行结果仍写入该模块的 `flyway_schema_history_<module>`。
+
+停机升级时，一个模块可以同时配置默认 classpath migration 和外部升级目录。Flyway 会按版本号决定执行顺序，已在当前模块 history table 中成功记录的版本不会重复执行。外部 SQL 必须使用高于已发布历史版本的版本号，避免和 jar 内 migration 冲突。
+
+推荐升级顺序：
+
+```text
+1. 停应用并备份数据库。
+2. 配置 classpath 历史 migration 和必要的 filesystem/http(s) 外部升级 SQL。
+3. 启动迁移入口，让 Flyway 写入模块 history table。
+4. 启动应用后由 Resource 同步正式资源；INIT_ONLY 不覆盖目标业务表运行时修改。
+5. 校验业务关键数据。
+```
+
+### 6.5 Schema Baseline Pack
+
+模块历史 migration 很多时，新数据库可以使用 baseline pack 初始化当前完整结构，避免从 V1 执行所有历史 SQL。baseline pack 仍然是 Flyway migration，不绕过模块 history table。
+
+推荐目录：
+
+```text
+<baseline-root>/<module>/
+  V2026070100__baseline_<module>_schema.sql
+  V2026070101__add_after_baseline_change.sql
+```
+
+新数据库配置：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        payment:
+          locations:
+            - filesystem:${MANGO_BASELINE_DIR}/payment
+```
+
+旧数据库升级继续使用历史 migration 或升级包：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        payment:
+          locations:
+            - classpath:db/migration/payment
+            - filesystem:/opt/mango/upgrade/payment
+```
+
+不要在同一个新库配置中同时放入 baseline pack 和该模块历史 V1...Vn 目录；这会重复建表或造成版本冲突。旧库切换到 baseline pack 前必须做单独升级评审，确认 history table、已执行版本和 baseline 版本关系。
+
+Agent 判断口径：
+
+| 数据库状态 | 推荐 locations | 说明 |
+|------------|----------------|------|
+| 全新空库，决定使用 baseline | `filesystem:${MANGO_BASELINE_DIR}/<module>` | baseline 目录必须包含当前完整结构和 baseline 之后的新 migration。 |
+| 全新空库，未准备 baseline | 默认 `classpath:db/migration/<module>` | 从 V1 执行完整历史。 |
+| 已有旧库，有模块 history table | `classpath:db/migration/<module>` + 必要的 `filesystem:/opt/mango/upgrade/<module>` | 继续增量升级。 |
+| 已有旧库，想切 baseline | 不直接切 | 先单独评审 history table、已执行版本和 baseline 覆盖版本。 |
 
 模块迁移数据源解析顺序：
 
@@ -777,7 +878,7 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 | 标准字段 | 默认要求 `tenant_id`、`org_id`、`created_by`、`created_at`、`updated_by`、`updated_at` |
 | 租户字段 | `tenant_id` 参与租户行级过滤 |
 | 组织字段 | `org_id` 作为组织数据权限默认归属字段 |
-| Flyway 路径 | 模块脚本放在 `db/migration/<module>/V*.sql` |
+| Flyway 路径 | 模块默认脚本放在 `db/migration/<module>/V*.sql`；停机升级可通过模块 `locations` 指向磁盘目录或远程 SQL 文件 |
 
 普通租户业务表建议直接继承 `TenantEntity` 并保留这些标准字段。全局配置表、平台资源表、历史日志表、基础设施表和第三方表不适用时，应加入 `schema-validation.excluded-tables`；如果某个查询声明了数据权限但表缺少对应字段，查询会 fail-fast。
 
