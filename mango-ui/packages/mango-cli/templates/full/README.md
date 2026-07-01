@@ -86,6 +86,7 @@ npm --prefix frontend run build
 | `mango dev start` | 启动默认分组 |
 | `mango dev start backend` | 启动后端 |
 | `mango dev start frontend` | 启动前端 |
+| `mango dev restart` | 按 stop + start 重启默认分组 |
 | `mango dev status` | 查看进程状态 |
 | `mango dev logs {{projectKebab}}-service` | 查看后端日志 |
 | `mango dev stop` | 停止默认分组 |
