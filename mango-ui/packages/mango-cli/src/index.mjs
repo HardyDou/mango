@@ -38,6 +38,7 @@ const defaultVersions = {
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
   mangoGridWidgets: readReleasedMangoPackageVersion('grid-widgets', '1.0.0'),
   mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
+  mangoLink: readReleasedMangoPackageVersion('link', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
   mangoPayment: readReleasedMangoPackageVersion('payment', '1.0.1'),

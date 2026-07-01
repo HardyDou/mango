@@ -145,6 +145,8 @@ mango:
           enabled: true
           out-of-order: true
           ignore-missing-migrations: true
+        link:
+          enabled: true
         domain:
           enabled: true
           out-of-order: true

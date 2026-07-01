@@ -36,6 +36,10 @@
     {
       "name": "@mango/cms",
       "style": "@mango/cms/style.css"
+    },
+    {
+      "name": "@mango/link",
+      "style": "@mango/link/style.css"
     }
   ]
 }

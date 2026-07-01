@@ -19,6 +19,7 @@ const packages = [
   '@mango/admin-shell',
   '@mango/cms',
   '@mango/job',
+  '@mango/link',
   '@mango/template',
   '@mango/numgen',
   '@mango/payment',

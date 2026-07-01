@@ -4,6 +4,7 @@ export { createMangoAdminApp } from '@mango/admin-shell';
 export type { MangoAdminShellOptions, MangoAdminAppInstance } from '@mango/admin-shell';
 export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
+export { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
 export { registerMangoFileAdminPages } from '@mango/file/admin-pages';
 export { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 export { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
