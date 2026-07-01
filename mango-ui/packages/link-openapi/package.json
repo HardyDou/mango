@@ -1,0 +1,30 @@
+{
+  "name": "@mango/link-openapi",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && node ../../scripts/generate-package-types.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  }
+}

@@ -215,6 +215,7 @@ try {
   assertDevWorkspaceAutoCreatesDatabase(projectRoot);
   assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
   assertDevWorkspaceReportsMissingMysql(projectRoot);
+  assertDevWorkspaceRestartUsesStopThenStart(projectRoot);
   if (!backendDevScript.includes('mango dev start backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
@@ -1137,6 +1138,80 @@ function assertDevWorkspaceReportsMissingMysql(projectRoot) {
     || !output.includes('failed to auto-create database')
     || !output.includes('spawnSync mysql ENOENT')) {
     throw new Error(`missing mysql should report the spawn failure reason:\n${output}`);
+  }
+}
+
+function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
+  const manifestPath = join(projectRoot, 'mango.dev.json');
+  const originalManifest = readFileSync(manifestPath, 'utf8');
+  const manifest = JSON.parse(originalManifest);
+  manifest.groups.restart = ['restart-worker'];
+  manifest.apps['restart-worker'] = {
+    type: 'command',
+    cwd: '.',
+    command: process.execPath,
+    args: ['-e', 'setInterval(() => {}, 1000)'],
+  };
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  try {
+    rmSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), { force: true });
+    const start = spawnSync(process.execPath, [
+      cli,
+      'dev',
+      'start',
+      'restart',
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    if (start.status !== 0 || !start.stdout.includes('restart-worker: started pid=')) {
+      throw new Error(`restart fixture start should create a running process:\n${start.stdout}\n${start.stderr}`);
+    }
+    const firstPid = JSON.parse(readFileSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), 'utf8')).pid;
+    const restart = spawnSync(process.execPath, [
+      cli,
+      'dev',
+      'restart',
+      'restart',
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    if (restart.status !== 0
+      || !restart.stdout.includes(`restart-worker: stopped pid=${firstPid}`)
+      || !restart.stdout.includes('restart-worker: started pid=')) {
+      throw new Error(`mango dev restart should stop then start selected targets:\n${restart.stdout}\n${restart.stderr}`);
+    }
+    const secondPid = JSON.parse(readFileSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), 'utf8')).pid;
+    if (secondPid === firstPid) {
+      throw new Error(`mango dev restart should replace the running pid: ${firstPid}`);
+    }
+    const stop = spawnSync(process.execPath, [
+      cli,
+      'dev',
+      'stop',
+      'restart',
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    if (stop.status !== 0 || !stop.stdout.includes(`restart-worker: stopped pid=${secondPid}`)) {
+      throw new Error(`restart fixture cleanup should stop the restarted process:\n${stop.stdout}\n${stop.stderr}`);
+    }
+  } finally {
+    if (existsSync(join(projectRoot, '.mango/run/pids/restart-worker.json'))) {
+      spawnSync(process.execPath, [
+        cli,
+        'dev',
+        'stop',
+        'restart',
+      ], {
+        cwd: projectRoot,
+        encoding: 'utf8',
+      });
+    }
+    writeFileSync(manifestPath, originalManifest);
+    rmSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), { force: true });
   }
 }
 

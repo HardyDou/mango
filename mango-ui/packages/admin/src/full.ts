@@ -4,6 +4,7 @@ export { createMangoAdminApp } from '@mango/admin-shell';
 export type { MangoAdminShellOptions, MangoAdminAppInstance } from '@mango/admin-shell';
 export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
+export { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
 export { registerMangoFileAdminPages } from '@mango/file/admin-pages';
 export { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 export { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
@@ -17,6 +18,7 @@ export { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-
 import type { MangoAdminFeatureRegistrar } from '@mango/admin-shell';
 import { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 import { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
+import { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
 import { registerMangoFileAdminPages } from '@mango/file/admin-pages';
 import { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 import { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
@@ -30,6 +32,7 @@ import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-
 export const mangoFullAdminFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
   registerMangoJobAdminPages,
   registerMangoCmsAdminPages,
+  registerMangoLinkAdminPages,
   registerMangoFileAdminPages,
   registerMangoTemplateAdminPages,
   registerMangoNoticeAdminPages,

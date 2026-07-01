@@ -1,6 +1,6 @@
 {
   "maven": {
-    "mangoBackend": "1.0.1"
+    "mangoBackend": "1.0.2"
   },
   "npm": {
     "@mango/admin": "1.0.35",
@@ -15,6 +15,8 @@
     "@mango/grid-layout": "1.0.3",
     "@mango/grid-widgets": "1.0.8",
     "@mango/job": "1.0.6",
+    "@mango/link": "1.0.0",
+    "@mango/link-openapi": "1.0.0",
     "@mango/notice": "1.0.15",
     "@mango/numgen": "1.0.14",
     "@mango/payment": "1.0.5",

@@ -38,6 +38,7 @@ const defaultVersions = {
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
   mangoGridWidgets: readReleasedMangoPackageVersion('grid-widgets', '1.0.0'),
   mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
+  mangoLink: readReleasedMangoPackageVersion('link', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
   mangoPayment: readReleasedMangoPackageVersion('payment', '1.0.1'),
@@ -255,6 +256,7 @@ Usage:
   mango workspace release [--workspace <path>] [--keep-db]
   mango dev start [group|app...]
   mango dev stop [app...]
+  mango dev restart [group|app...]
   mango dev status
   mango dev doctor
   mango dev logs <app>
@@ -745,6 +747,11 @@ async function runDevCommand(command = 'start', argv = []) {
   }
   if (normalized === 'stop') {
     await stopDevWorkspace(context, argv);
+    return;
+  }
+  if (normalized === 'restart') {
+    await stopDevWorkspace(context, argv);
+    await startDevWorkspace(context, argv);
     return;
   }
   if (normalized === 'status') {

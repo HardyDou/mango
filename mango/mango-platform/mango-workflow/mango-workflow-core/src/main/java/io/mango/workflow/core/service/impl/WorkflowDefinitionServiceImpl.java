@@ -307,7 +307,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                 .eq(WorkflowDefinition::getTenantId, resolveTenantId())
                 .eq(WorkflowDefinition::getDefinitionKey, command.getDefinitionKey().trim())
                 .last("limit 1"));
-        if (isPublishedAndDeployable(definition)) {
+        if (isPublishedAndDeployable(definition) && isEnsuredDefinitionCurrent(definition, command, categoryId)) {
             WorkflowDeployVO vo = new WorkflowDeployVO();
             vo.setDeploymentId(definition.getDeploymentId());
             vo.setProcessDefinitionId(definition.getProcessDefinitionId());
@@ -315,7 +315,9 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
             vo.setVersionNo(definition.getPublishedVersionNo());
             return R.ok(vo);
         }
-        Long definitionId = definition == null ? createEnsuredDefinition(command, categoryId) : definition.getId();
+        Long definitionId = definition == null
+                ? createEnsuredDefinition(command, categoryId)
+                : updateEnsuredDefinition(command, categoryId, definition);
         return deployInternal(definitionId);
     }
 
@@ -493,6 +495,52 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         Require.isTrue(createResult != null && createResult.isSuccess(), WorkflowCode.DEFINITION_INVALID.getCode(),
                 createResult == null ? "流程定义创建失败" : createResult.getMsg());
         return Long.valueOf(createResult.getData());
+    }
+
+    private Long updateEnsuredDefinition(EnsureWorkflowDefinitionCommand command, Long categoryId,
+                                         WorkflowDefinition definition) {
+        SaveWorkflowDefinitionCommand updated = new SaveWorkflowDefinitionCommand();
+        updated.setId(definition.getId());
+        updated.setCategoryId(categoryId);
+        updated.setDomainCode(command.getDomainCode());
+        updated.setOrgId(command.getOrgId());
+        updated.setAdminUsers(command.getAdminUsers());
+        updated.setStartEntryVisible(command.getStartEntryVisible());
+        updated.setIcon(command.getIcon());
+        updated.setDefinitionName(command.getDefinitionName());
+        updated.setDefinitionKey(command.getDefinitionKey());
+        updated.setDesignerJson(command.getDesignerJson());
+        updated.setFormCode(command.getFormCode());
+        updated.setFormJson(command.getFormJson());
+        updated.setStatus(WorkflowDefinitionStatus.DRAFT.name());
+        updated.setRemark(command.getRemark());
+        validate(updated, true);
+        copy(updated, definition);
+        definition.setUpdatedBy(MangoContextHolder.userId());
+        definition.setUpdatedTime(LocalDateTime.now());
+        definition.setUpdatedAt(LocalDateTime.now());
+        mapper.updateById(definition);
+        return definition.getId();
+    }
+
+    private boolean isEnsuredDefinitionCurrent(WorkflowDefinition definition, EnsureWorkflowDefinitionCommand command,
+                                               Long categoryId) {
+        if (definition == null) {
+            return false;
+        }
+        return sameNumber(definition.getCategoryId(), categoryId)
+                && sameText(definition.getDomainCode(), command.getDomainCode())
+                && sameNumber(definition.getOrgId(), command.getOrgId())
+                && sameText(definition.getAdminUsers(), toJsonList(command.getAdminUsers()))
+                && defaultStartEntryVisible(definition.getStartEntryVisible())
+                == defaultStartEntryVisible(command.getStartEntryVisible())
+                && sameText(definition.getIcon(), command.getIcon())
+                && sameText(definition.getDefinitionName(), command.getDefinitionName())
+                && sameText(definition.getDefinitionKey(), command.getDefinitionKey())
+                && sameText(definition.getDesignerJson(), command.getDesignerJson())
+                && sameText(definition.getFormCode(), command.getFormCode())
+                && sameText(definition.getFormJson(), command.getFormJson())
+                && sameText(definition.getRemark(), command.getRemark());
     }
 
     private boolean isPublishedAndDeployable(WorkflowDefinition definition) {

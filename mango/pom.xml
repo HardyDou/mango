@@ -589,6 +589,26 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.org</groupId>
                 <artifactId>mango-org-starter</artifactId>
                 <version>${project.version}</version>

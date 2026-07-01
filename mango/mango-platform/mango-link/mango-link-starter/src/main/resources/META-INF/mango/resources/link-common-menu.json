@@ -1,0 +1,220 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "link",
+      "moduleName": "网址导航",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951600000000000001",
+            "version": 1,
+            "bizKey": "link.menu.internal-admin",
+            "name": "网址导航菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-link"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "网址导航"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 11
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin",
+                  "institution_collaboration"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "网址导航",
+                    "menuCode": "link:navigation",
+                    "path": "/link",
+                    "icon": "Link",
+                    "sort": 5,
+                    "redirect": "/link/company",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "公司网址",
+                        "menuCode": "link:navigation:company",
+                        "path": "/link/company",
+                        "icon": "OfficeBuilding",
+                        "component": "link/company/index",
+                        "sort": 1,
+                        "permissions": [
+                          "link:navigation:view"
+                        ],
+                        "permissionItems": [
+                          {
+                            "permissionCode": "link:navigation:view",
+                            "permissionName": "公司网址查看",
+                            "sort": 1,
+                            "remark": "查看公司网址导航"
+                          }
+                        ],
+                        "remark": "用户侧公司网址入口"
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "我的收藏",
+                        "menuCode": "link:navigation:favorites",
+                        "path": "/link/favorites",
+                        "icon": "Star",
+                        "component": "link/favorites/index",
+                        "sort": 2,
+                        "permissions": [
+                          "link:favorite:view"
+                        ],
+                        "permissionItems": [
+                          {
+                            "permissionCode": "link:favorite:view",
+                            "permissionName": "我的收藏查看",
+                            "sort": 1,
+                            "remark": "查看我的网址收藏"
+                          }
+                        ],
+                        "remark": "用户侧网址收藏入口"
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "我的网址",
+                        "menuCode": "link:navigation:personal",
+                        "path": "/link/my-links",
+                        "icon": "Collection",
+                        "component": "link/my-links/index",
+                        "sort": 3,
+                        "permissions": [
+                          "link:personal:view"
+                        ],
+                        "permissionItems": [
+                          {
+                            "permissionCode": "link:personal:view",
+                            "permissionName": "我的网址查看",
+                            "sort": 1,
+                            "remark": "查看和维护我的网址"
+                          }
+                        ],
+                        "remark": "用户侧个人网址入口"
+                      }
+                    ]
+                  },
+                  {
+                    "menuType": 1,
+                    "menuName": "网址管理",
+                    "menuCode": "data:link",
+                    "parentCode": "data",
+                    "path": "/data/link",
+                    "icon": "Connection",
+                    "sort": 6,
+                    "redirect": "/data/link/items",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "网址分类",
+                        "menuCode": "data:link:category",
+                        "path": "/data/link/categories",
+                        "icon": "FolderOpened",
+                        "component": "link/categories/index",
+                        "sort": 1,
+                        "permissions": [
+                          "link:category:view"
+                        ],
+                        "permissionItems": [
+                          {
+                            "permissionCode": "link:category:view",
+                            "permissionName": "网址分类查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "link:category:create",
+                            "permissionName": "新增网址分类",
+                            "sort": 2
+                          },
+                          {
+                            "permissionCode": "link:category:update",
+                            "permissionName": "编辑网址分类",
+                            "sort": 3
+                          },
+                          {
+                            "permissionCode": "link:category:status",
+                            "permissionName": "网址分类启停",
+                            "sort": 4
+                          },
+                          {
+                            "permissionCode": "link:category:delete",
+                            "permissionName": "删除网址分类",
+                            "sort": 5
+                          }
+                        ],
+                        "remark": "维护公司网址分类"
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "网址列表",
+                        "menuCode": "data:link:item",
+                        "path": "/data/link/items",
+                        "icon": "Tickets",
+                        "component": "link/items/index",
+                        "sort": 2,
+                        "permissions": [
+                          "link:item:view"
+                        ],
+                        "permissionItems": [
+                          {
+                            "permissionCode": "link:item:view",
+                            "permissionName": "网址查询",
+                            "sort": 1
+                          },
+                          {
+                            "permissionCode": "link:item:create",
+                            "permissionName": "新增网址",
+                            "sort": 2
+                          },
+                          {
+                            "permissionCode": "link:item:update",
+                            "permissionName": "编辑网址",
+                            "sort": 3
+                          },
+                          {
+                            "permissionCode": "link:item:status",
+                            "permissionName": "网址启停",
+                            "sort": 4
+                          },
+                          {
+                            "permissionCode": "link:item:delete",
+                            "permissionName": "删除网址",
+                            "sort": 5
+                          }
+                        ],
+                        "remark": "维护公司、部门、指定人可见的网址"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
