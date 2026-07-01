@@ -53,7 +53,7 @@ async function upsertVersionManifest(nextVersion) {
   const versions = Array.isArray(manifest.versions) ? manifest.versions : [];
   const nextEntry = {
     version: nextVersion,
-    label: nextVersion,
+    label: formatVersionLabel(nextVersion),
     path: `/versions/${nextVersion}/`
   };
   const deduped = versions.filter((entry) => entry?.version !== nextVersion);
@@ -99,6 +99,11 @@ function run(command, args, extraEnv) {
 
 function resolveBin(name) {
   return resolve(docsRoot, 'node_modules/.bin', process.platform === 'win32' ? `${name}.cmd` : name);
+}
+
+function formatVersionLabel(label) {
+  const match = String(label).match(/(?:^|-)maven-(\d+\.\d+\.\d+)(?:-|$)/);
+  return match ? match[1] : label;
 }
 
 function normalizeBase(base) {
