@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
@@ -20,6 +20,9 @@ const businessStarterRoot = existsSync(businessModuleTemplateRoot)
   : resolve(repoRoot, 'mango-business-starter');
 const releaseVersions = readReleaseVersions();
 const adminModulesManifest = readAdminModulesManifest();
+const DEFAULT_MAVEN_REPOSITORY = 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
+const DOCS_BUNDLE_GROUP_ID = 'io.mango';
+const DOCS_BUNDLE_ARTIFACT_ID = 'mango-docs-bundle';
 
 const defaultVersions = {
   mangoBackend: releaseVersions.maven?.mangoBackend || '1.0.0-SNAPSHOT',
@@ -259,6 +262,9 @@ Usage:
   mango frontend prepare
   mango frontend doctor
   mango changelog
+  mango docs pull [--project-dir <dir>] [--version <version>] [--maven-repository <url>] [--force]
+  mango docs status [--project-dir <dir>]
+  mango docs path [--project-dir <dir>]
   mango pmo status --project-dir <dir>
   mango pmo check --project-dir <dir>
   mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]
@@ -324,6 +330,11 @@ async function main(argv = process.argv.slice(2)) {
 
   if (args[0] === 'frontend') {
     await runFrontendCommand(args[1], args.slice(2));
+    return;
+  }
+
+  if (args[0] === 'docs') {
+    await runDocsCommand(args[1], args.slice(2));
     return;
   }
 
@@ -394,7 +405,7 @@ function parseArgs(argv) {
     version: '1.0.0-SNAPSHOT',
     mangoVersion: defaultVersions.mangoBackend,
     npmRegistry: 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
-    mavenRepository: 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+    mavenRepository: DEFAULT_MAVEN_REPOSITORY,
     modules: '',
     force: false,
   };
@@ -2460,6 +2471,282 @@ function httpOk(url) {
   });
 }
 
+async function runDocsCommand(command = 'status', argv = []) {
+  const normalized = command || 'status';
+  if (!['pull', 'status', 'path'].includes(normalized)) {
+    fail(`unknown docs command: ${command || ''}`);
+  }
+  const options = parseDocsArgs(argv);
+  const context = resolveDocsContext(options);
+  if (normalized === 'pull') {
+    await pullDocsBundle(context, options);
+    return;
+  }
+  if (normalized === 'path') {
+    printDocsPath(context);
+    return;
+  }
+  printDocsStatus(context);
+}
+
+function parseDocsArgs(argv) {
+  const result = {
+    projectDir: '.',
+    version: '',
+    mavenRepository: '',
+    force: false,
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--force') {
+      result.force = true;
+      continue;
+    }
+    if (['--project-dir', '--version', '--maven-repository'].includes(arg)) {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) {
+        fail(`missing value for ${arg}`);
+      }
+      if (arg === '--project-dir') {
+        result.projectDir = next;
+      } else if (arg === '--version') {
+        result.version = next;
+      } else {
+        result.mavenRepository = next;
+      }
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      fail(`unknown option: ${arg}`);
+    }
+    fail(`unexpected argument: ${arg}`);
+  }
+  return result;
+}
+
+function resolveDocsContext(options) {
+  const projectDir = resolve(process.cwd(), options.projectDir);
+  if (!existsSync(projectDir) || !statSync(projectDir).isDirectory()) {
+    fail(`project directory not found: ${projectDir}`);
+  }
+  const config = readOptionalJson(join(projectDir, 'mango.config.json'));
+  const version = options.version
+    || config?.mangoBackendVersion
+    || readMangoVersionFromPom(projectDir)
+    || defaultVersions.mangoBackend;
+  if (!version || /[\\/]/.test(version)) {
+    fail(`invalid Mango docs version: ${version || ''}`);
+  }
+  const mavenRepository = ensureTrailingSlash(options.mavenRepository
+    || config?.mavenRepository
+    || DEFAULT_MAVEN_REPOSITORY);
+  const docsBaseDir = join(projectDir, '.mango/docs');
+  const currentPath = join(docsBaseDir, 'current.json');
+  const current = readOptionalJson(currentPath);
+  const installRoot = join(docsBaseDir, version);
+  const docsRoot = resolveDocsContentRoot(installRoot);
+  return {
+    projectDir,
+    version,
+    mavenRepository,
+    docsBaseDir,
+    currentPath,
+    current,
+    installRoot,
+    docsRoot,
+    sourceUrl: buildMavenArtifactUrl(mavenRepository, DOCS_BUNDLE_GROUP_ID, DOCS_BUNDLE_ARTIFACT_ID, version),
+  };
+}
+
+async function pullDocsBundle(context, options) {
+  mkdirSync(context.docsBaseDir, { recursive: true });
+  if (existsSync(context.installRoot) && !options.force) {
+    writeCurrentDocsMetadata(context, {
+      status: 'available',
+      sourceUrl: context.current?.sourceUrl || context.sourceUrl,
+      sha256: context.current?.sha256 || '',
+    });
+    process.stdout.write(`Mango docs ${context.version} already available: ${resolveDocsContentRoot(context.installRoot)}\n`);
+    return;
+  }
+
+  const tempSuffix = randomBytes(6).toString('hex');
+  const tempArchive = join(context.docsBaseDir, `${DOCS_BUNDLE_ARTIFACT_ID}-${context.version}-${tempSuffix}.jar`);
+  const tempExtractRoot = join(context.docsBaseDir, `${context.version}.tmp-${tempSuffix}`);
+  await downloadFile(context.sourceUrl, tempArchive);
+  rmSync(tempExtractRoot, { recursive: true, force: true });
+  mkdirSync(tempExtractRoot, { recursive: true });
+  extractArchive(tempArchive, tempExtractRoot);
+  const extractedDocsRoot = resolveDocsContentRoot(tempExtractRoot);
+  assertDocsBundleContent(extractedDocsRoot, context.sourceUrl);
+  rmSync(context.installRoot, { recursive: true, force: true });
+  renameSync(tempExtractRoot, context.installRoot);
+  writeCurrentDocsMetadata(context, {
+    status: 'available',
+    sourceUrl: context.sourceUrl,
+    sha256: hashFile(tempArchive),
+  });
+  rmSync(tempArchive, { force: true });
+  process.stdout.write(`Pulled Mango docs ${context.version}: ${resolveDocsContentRoot(context.installRoot)}\n`);
+}
+
+function printDocsStatus(context) {
+  const installed = existsSync(context.installRoot);
+  const currentVersion = context.current?.version || '';
+  process.stdout.write(`projectDir: ${context.projectDir}\n`);
+  process.stdout.write(`mangoVersion: ${context.version}\n`);
+  process.stdout.write(`mavenRepository: ${context.mavenRepository}\n`);
+  process.stdout.write(`docsBundle: ${DOCS_BUNDLE_GROUP_ID}:${DOCS_BUNDLE_ARTIFACT_ID}:${context.version}\n`);
+  process.stdout.write(`installed: ${installed ? 'yes' : 'no'}\n`);
+  process.stdout.write(`currentVersion: ${currentVersion || 'none'}\n`);
+  if (installed) {
+    process.stdout.write(`path: ${resolveDocsContentRoot(context.installRoot)}\n`);
+  } else {
+    process.stdout.write(`path: none\n`);
+    process.stdout.write(`next: mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}\n`);
+  }
+  if (currentVersion && currentVersion !== context.version) {
+    process.stdout.write(`warning: current docs version ${currentVersion} differs from project Mango version ${context.version}\n`);
+  }
+}
+
+function printDocsPath(context) {
+  if (!existsSync(context.installRoot)) {
+    fail(`Mango docs ${context.version} are not installed. Run "mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}".`);
+  }
+  process.stdout.write(`${resolveDocsContentRoot(context.installRoot)}\n`);
+}
+
+function writeCurrentDocsMetadata(context, extra) {
+  mkdirSync(context.docsBaseDir, { recursive: true });
+  const metadata = {
+    version: context.version,
+    artifact: `${DOCS_BUNDLE_GROUP_ID}:${DOCS_BUNDLE_ARTIFACT_ID}:${context.version}`,
+    sourceUrl: extra.sourceUrl,
+    sha256: extra.sha256 || '',
+    path: resolveDocsContentRoot(context.installRoot),
+    status: extra.status,
+    fetchedAt: new Date().toISOString(),
+  };
+  writeFileSync(context.currentPath, `${JSON.stringify(metadata, null, 2)}\n`);
+}
+
+function buildMavenArtifactUrl(repository, groupId, artifactId, version) {
+  const base = ensureTrailingSlash(repository);
+  const groupPath = groupId.replaceAll('.', '/');
+  return `${base}${groupPath}/${artifactId}/${version}/${artifactId}-${version}.jar`;
+}
+
+async function downloadFile(url, targetPath) {
+  if (url.startsWith('file:')) {
+    const sourcePath = fileURLToPath(url);
+    if (!existsSync(sourcePath)) {
+      fail(`docs bundle not found: ${sourcePath}`);
+    }
+    copyFileSync(sourcePath, targetPath);
+    return;
+  }
+  if (!/^https?:\/\//.test(url)) {
+    fail(`unsupported docs bundle URL: ${url}`);
+  }
+  await downloadHttpFile(url, targetPath);
+}
+
+function downloadHttpFile(url, targetPath, redirects = 0) {
+  return new Promise((resolvePromise, reject) => {
+    const client = url.startsWith('https:') ? https : http;
+    const request = client.get(url, response => {
+      const statusCode = response.statusCode || 0;
+      const location = response.headers.location;
+      if ([301, 302, 303, 307, 308].includes(statusCode) && location) {
+        response.resume();
+        if (redirects >= 5) {
+          reject(new Error(`too many redirects while downloading ${url}`));
+          return;
+        }
+        const nextUrl = new URL(location, url).toString();
+        downloadHttpFile(nextUrl, targetPath, redirects + 1).then(resolvePromise, reject);
+        return;
+      }
+      if (statusCode < 200 || statusCode >= 300) {
+        response.resume();
+        reject(new Error(`download failed ${statusCode}: ${url}`));
+        return;
+      }
+      const file = openSync(targetPath, 'w');
+      response.on('data', chunk => {
+        writeFileSync(file, chunk);
+      });
+      response.on('end', () => {
+        closeSync(file);
+        resolvePromise();
+      });
+      response.on('error', error => {
+        closeSync(file);
+        reject(error);
+      });
+    });
+    request.on('error', reject);
+  }).catch(error => fail(error.message));
+}
+
+function extractArchive(archivePath, targetDir) {
+  const jarResult = spawnSync('jar', ['xf', archivePath], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  if (jarResult.status === 0) {
+    return;
+  }
+  const unzipResult = spawnSync('unzip', ['-q', archivePath, '-d', targetDir], {
+    encoding: 'utf8',
+  });
+  if (unzipResult.status === 0) {
+    return;
+  }
+  fail(`cannot extract docs bundle. jar: ${jarResult.stderr || jarResult.stdout}; unzip: ${unzipResult.stderr || unzipResult.stdout}`);
+}
+
+function resolveDocsContentRoot(installRoot) {
+  const nestedRoot = join(installRoot, 'META-INF/mango-docs');
+  return existsSync(nestedRoot) ? nestedRoot : installRoot;
+}
+
+function assertDocsBundleContent(docsRoot, sourceUrl) {
+  if (!existsSync(docsRoot) || !statSync(docsRoot).isDirectory()) {
+    fail(`docs bundle has no docs root: ${sourceUrl}`);
+  }
+  const hasReadme = existsSync(join(docsRoot, 'README.md'));
+  const hasManifest = existsSync(join(docsRoot, 'index.json'));
+  const hasCapabilities = existsSync(join(docsRoot, 'capabilities/README.md'));
+  if (!hasReadme && !hasManifest && !hasCapabilities) {
+    fail(`docs bundle does not look like Mango docs: ${sourceUrl}`);
+  }
+}
+
+function readOptionalJson(path) {
+  if (!existsSync(path)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(path, 'utf8'));
+}
+
+function readMangoVersionFromPom(projectDir) {
+  for (const relativePath of ['backend/pom.xml', 'pom.xml']) {
+    const pomPath = join(projectDir, relativePath);
+    if (!existsSync(pomPath)) {
+      continue;
+    }
+    const content = readFileSync(pomPath, 'utf8');
+    const match = content.match(/<mango\.version>\s*([^<\s]+)\s*<\/mango\.version>/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return '';
+}
+
 function tailFile(path, lineCount) {
   if (!existsSync(path)) {
     return '';
@@ -2508,7 +2795,7 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     version: '1.0.0-SNAPSHOT',
     mangoVersion: defaultVersions.mangoBackend,
     npmRegistry: 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
-    mavenRepository: 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+    mavenRepository: DEFAULT_MAVEN_REPOSITORY,
     modules: 'none',
   });
   const baseline = loadPmoPackageBaseline();

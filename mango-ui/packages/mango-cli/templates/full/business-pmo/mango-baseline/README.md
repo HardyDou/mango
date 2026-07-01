@@ -16,15 +16,15 @@
 | 模板资产 | `templates/**` | PRD、详细设计、交付契约、验收证据模板 |
 
 ## 3. 接入方式
-业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。推荐在开发机全局安装 CLI，用于创建项目、历史项目升级和临时诊断：
+业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
 npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}
 ```
 
-业务项目日常开发正式入口是 `mango workspace`、`mango dev` 和 `mango frontend` 命令。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim，不再承载端口分配、数据库分配或进程归属规则。
+生成后的业务项目以项目内锁定版本为准：先执行 `cd frontend && pnpm install` 安装 `frontend` 中声明的 `@mango/cli`，再通过 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能落后，不能作为业务项目版本依据。`scripts/dev-workspace.sh` 只作为旧命令兼容 shim，不再承载端口分配、数据库分配或进程归属规则。
 
-历史项目升级时，可以先使用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell`，把 baseline、Agent 入口和兼容脚本升级到当前版本。升级后必须在每个 active worktree 执行 `mango workspace init`。
+历史项目升级时，可以先使用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell`，把 baseline、Agent 入口和兼容脚本升级到当前版本。升级后回到 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init`。
 
 常用 baseline 命令：
 
