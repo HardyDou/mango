@@ -120,6 +120,7 @@ npm --prefix mango-docs run docs:build
 - [Grid Layout 自定义栅格布局](../mango/mango-platform/mango-grid-layout/README.md)
 - [Identity 身份](../mango/mango-platform/mango-identity/README.md)
 - [Job 任务调度](../mango/mango-platform/mango-job/README.md)
+- [Link 网址导航](../mango/mango-platform/mango-link/README.md)
 - [Notice 通知](../mango/mango-platform/mango-notice/README.md)
 - [Numgen 编号生成](../mango/mango-platform/mango-numgen/README.md)
 - [Org 组织](../mango/mango-platform/mango-org/README.md)

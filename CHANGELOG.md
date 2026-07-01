@@ -1,5 +1,94 @@
 # Mango Changelog
 
+## v2026.07.01-maven-1.0.4-link-cli-docs-release - 2026-07-01
+
+### New
+
+- Published the `mango-link` URL navigation capability. The backend adds link category, company link, personal link, favorites, jump tracking, menu resources, and Flyway migrations under `mango-link`.
+- Published the Link frontend package set: `@mango/link@1.0.0`, `@mango/link-openapi@1.0.0`, `@mango/link-page@1.0.0`, and `@mango/link-panel@1.0.0`.
+- Added Link module integration to the full admin package and CLI release lock through `@mango/admin@1.0.36`.
+- Published `@mango/cli@1.0.55` with `mango dev restart`, which runs the existing stop and start flow for a selected app or group.
+- Added a versioned Mango Docs snapshot for this release tag so business developers can read docs that match the Maven and npm artifacts.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.4</mango.version>` to consume the new `mango-link` backend artifacts.
+- Monolith deployments that need URL navigation should add `mango-link-starter`; remote or split deployments should use the matching `mango-link-starter-remote` dependency pattern.
+- Business admin frontends should consume the npm package versions listed in this release as a batch. Do not mix `@mango/admin@1.0.36` with older CLI release locks when enabling Link pages.
+- For standalone URL navigation pages, install `@mango/link-page@1.0.0` and import `@mango/link-page/style.css`; existing consumers of the compatibility package can use `@mango/link-panel@1.0.0`.
+- Developers should install `@mango/cli@1.0.55` from the company npm group registry before relying on `mango dev restart`.
+- Do not consume Mango Maven `1.0.3`; that attempted release was superseded before completion after verification found an invalid `mango-file-preview-engine` jar.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.4` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/link-openapi@1.0.0`, `@mango/link-page@1.0.0`, `@mango/link-panel@1.0.0`, `@mango/link@1.0.0`, `@mango/admin@1.0.36`, and `@mango/cli@1.0.55` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.01-maven-1.0.4-link-cli-docs-release` for GitHub Pages.
+- GitHub Release: `v2026.07.01-maven-1.0.4-link-cli-docs-release`.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=v2026.07.01-maven-1.0.2-workflow-runtime-release --head=HEAD`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.01-maven-1.0.4-link-cli-docs-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.4 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.4 -Dartifact=io.mango:mango-admin-starter:1.0.4 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.4 -Dartifact=io.mango.platform.link:mango-link-starter:1.0.4 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.01-maven-1.0.4-link-cli-docs-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.01-maven-1.0.4-link-cli-docs-release`
+- `git diff --check`
+
+## Unreleased
+
+- No unreleased changes.
+
+## v2026.07.01-maven-1.0.2-workflow-runtime-release - 2026-07-01
+
+### New
+
+- Added `WORKFLOW_DEFINITION` Resource Registry support for Issue #344. Workflow declarations can now be consumed by `mango-workflow` through a target `ResourceHandler`, create or update definitions by `tenantId + definitionKey`, load inline or classpath JSON, and publish deployable Flowable process definitions.
+- Added `WorkflowTaskRuntimeApi` for Issue #345 so business modules can call workflow task runtime operations through `mango-workflow-api` instead of depending on `mango-workflow-core`.
+- Hardened Maven release tooling so backend publishes must pass an explicit `--release-version`/`--revision`; implicit `1.0.0-SNAPSHOT` publishes are blocked, and intentional snapshots require `--allow-snapshot`.
+
+### Fixed
+
+- Updated workflow definition ensure-publish behavior so changed built-in declarations update the existing ensured definition and create a new published version instead of being skipped when an older published definition exists.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.2</mango.version>` when consuming the new workflow runtime API or workflow definition Resource Registry handler.
+- Backend consumers that bootstrap workflow definitions through Resource Registry should refresh Mango workflow dependencies and declare `WORKFLOW_DEFINITION` resources under `META-INF/mango/resources`.
+- Business modules should depend on `mango-workflow-api` for task runtime operations. Only the host application that provides the workflow runtime should include `mango-workflow-starter`.
+- No database migration or frontend package change is required by this PR.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.2` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- GitHub Release: `v2026.07.01-maven-1.0.2-workflow-runtime-release`.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am test -DskipTests=false`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am checkstyle:check`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am pmd:check`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am mango:check -Drule=api-contract` failed on existing repository-wide API contract debt; the current-task `WorkflowTaskController -> WorkflowTaskRuntimeApi` violation was removed.
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am mango:check -Drule=all` failed on existing repository-wide rule debt unrelated to the new workflow handler/API files.
+- Real E2E smoke: monolith backend on isolated MySQL database, mango-admin frontend, workflow definition page, workflow todo page, `/resource/handler-specs`, and workflow definition/task APIs returned `200` with no browser console errors.
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-maven-1.0.2-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `mvn -f mango/pom.xml -Drevision=1.0.2 -DskipTests deploy`
+- `mvn -q dependency:get -Dartifact=io.mango:mango-admin-starter:1.0.2 -Dtransitive=false -DremoteRepositories=mango-public::default::http://nexus.inner.yunxinbaokeji.com/repository/maven-public/`
+- `git diff --check`
+
 ## v2026.06.30-maven-1.0.1-admin-branding-cli-release - 2026-06-30
 
 ### New

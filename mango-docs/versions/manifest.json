@@ -5,8 +5,13 @@
   },
   "versions": [
     {
+      "version": "v2026.07.01-maven-1.0.4-link-cli-docs-release",
+      "label": "1.0.4",
+      "path": "/versions/v2026.07.01-maven-1.0.4-link-cli-docs-release/"
+    },
+    {
       "version": "v2026.06.30-maven-1.0.1-admin-branding-cli-release",
-      "label": "v2026.06.30-maven-1.0.1-admin-branding-cli-release",
+      "label": "1.0.1",
       "path": "/versions/v2026.06.30-maven-1.0.1-admin-branding-cli-release/"
     }
   ]

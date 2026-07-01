@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.35",
+  "version": "1.0.36",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -46,6 +46,7 @@
     "@mango/grid-layout": "1.0.3",
     "@mango/grid-widgets": "1.0.8",
     "@mango/job": "1.0.6",
+    "@mango/link": "1.0.0",
     "@mango/rbac": "1.0.9",
     "@mango/system": "1.0.12",
     "element-plus": "2.14.1"

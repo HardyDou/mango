@@ -68,6 +68,19 @@
       ],
       "cliVersionKey": "mangoCms",
       "cliOptional": false
+    },
+    {
+      "code": "link",
+      "packageName": "@mango/link",
+      "style": "@mango/link/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoLinkAdminPages",
+          "import": "@mango/link/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoLink",
+      "cliOptional": false
     }
   ],
   "fullPackages": [

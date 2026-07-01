@@ -2,6 +2,7 @@ import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rea
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
@@ -214,6 +215,7 @@ try {
   assertDevWorkspaceAutoCreatesDatabase(projectRoot);
   assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
   assertDevWorkspaceReportsMissingMysql(projectRoot);
+  assertDevWorkspaceRestartUsesStopThenStart(projectRoot);
   if (!backendDevScript.includes('mango dev start backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
@@ -297,6 +299,7 @@ try {
   assertBusinessAcceptanceBaseline(projectRoot);
   assertPmoCommands(projectRoot);
   assertPmoSyncCommand(tempRoot);
+  assertDocsBundleCommands(projectRoot, tempRoot);
 
   const customResult = spawnSync(process.execPath, [
     cli,
@@ -726,6 +729,82 @@ function assertPublishedPnpmPmoResolution(tempRoot) {
   assertCommandOk([publishedCli, 'pmo', 'check', '--project-dir', projectRoot], projectRoot, 'published pnpm mango pmo check');
 }
 
+function assertDocsBundleCommands(projectRoot, tempRoot) {
+  const config = JSON.parse(readFileSync(join(projectRoot, 'mango.config.json'), 'utf8'));
+  const version = config.mangoBackendVersion;
+  const docsRepoRoot = join(tempRoot, 'docs-maven-repo');
+  const expectedFiles = createFakeDocsBundle(docsRepoRoot, version);
+  const repositoryUrl = pathToFileURL(`${docsRepoRoot}/`).toString();
+
+  const statusBefore = assertCommandOk([cli, 'docs', 'status', '--project-dir', projectRoot], projectRoot, 'mango docs status before pull');
+  if (!statusBefore.stdout.includes(`mangoVersion: ${version}`) || !statusBefore.stdout.includes('installed: no')) {
+    throw new Error(`mango docs status should report the project docs version before pull:\n${statusBefore.stdout}`);
+  }
+
+  const pull = assertCommandOk([
+    cli,
+    'docs',
+    'pull',
+    '--project-dir',
+    projectRoot,
+    '--maven-repository',
+    repositoryUrl,
+  ], projectRoot, 'mango docs pull');
+  if (!pull.stdout.includes(`Pulled Mango docs ${version}`)) {
+    throw new Error(`mango docs pull did not report the pulled version:\n${pull.stdout}`);
+  }
+
+  const pathResult = assertCommandOk([cli, 'docs', 'path', '--project-dir', projectRoot], projectRoot, 'mango docs path');
+  const docsPath = pathResult.stdout.trim();
+  if (!docsPath.endsWith('META-INF/mango-docs') || !existsSync(docsPath)) {
+    throw new Error(`mango docs path should point at extracted META-INF/mango-docs:\n${pathResult.stdout}`);
+  }
+  for (const [relativePath, expectedContent] of Object.entries(expectedFiles)) {
+    assertEqual(readFileSync(join(docsPath, relativePath), 'utf8'), expectedContent, `docs bundle file ${relativePath}`);
+  }
+
+  const current = JSON.parse(readFileSync(join(projectRoot, '.mango/docs/current.json'), 'utf8'));
+  assertEqual(current.version, version, 'docs current version');
+  assertEqual(current.artifact, `io.mango:mango-docs-bundle:${version}`, 'docs current artifact');
+  if (!current.sourceUrl.includes(`/io/mango/mango-docs-bundle/${version}/mango-docs-bundle-${version}.jar`)) {
+    throw new Error(`docs current sourceUrl should point at Maven artifact:\n${current.sourceUrl}`);
+  }
+
+  const statusAfter = assertCommandOk([cli, 'docs', 'status', '--project-dir', projectRoot], projectRoot, 'mango docs status after pull');
+  if (!statusAfter.stdout.includes('installed: yes') || !statusAfter.stdout.includes(`currentVersion: ${version}`)) {
+    throw new Error(`mango docs status should report installed docs after pull:\n${statusAfter.stdout}`);
+  }
+}
+
+function createFakeDocsBundle(repoRoot, version) {
+  const stagingRoot = join(repoRoot, 'staging');
+  const docsRoot = join(stagingRoot, 'META-INF/mango-docs');
+  const artifactDir = join(repoRoot, 'io/mango/mango-docs-bundle', version);
+  const jarPath = join(artifactDir, `mango-docs-bundle-${version}.jar`);
+  const files = {
+    'README.md': `# Mango Docs ${version}\n\nBusiness project docs entry.\n`,
+    'capabilities/README.md': '# Capability Index\n\nUse local versioned capability docs first.\n',
+    'agents/context.md': 'AI agents must prefer this local docs bundle over stale conversation context.\n',
+    'rules/dev-flow.md': 'Development flow facts come from the versioned docs bundle.\n',
+    'examples/workflow.md': 'Workflow initialization examples are packaged with the matching Mango version.\n',
+  };
+  rmSync(stagingRoot, { recursive: true, force: true });
+  mkdirSync(docsRoot, { recursive: true });
+  for (const [relativePath, content] of Object.entries(files)) {
+    const target = join(docsRoot, relativePath);
+    mkdirSync(resolve(target, '..'), { recursive: true });
+    writeFileSync(target, content);
+  }
+  mkdirSync(artifactDir, { recursive: true });
+  const jar = spawnSync('jar', ['cf', jarPath, '-C', stagingRoot, '.'], {
+    encoding: 'utf8',
+  });
+  if (jar.status !== 0) {
+    throw new Error(`failed to create fake docs bundle jar:\n${jar.stdout}\n${jar.stderr}`);
+  }
+  return files;
+}
+
 function assertCommandOk(args, cwd, label) {
   const result = spawnSync(process.execPath, args, {
     cwd,
@@ -1059,6 +1138,80 @@ function assertDevWorkspaceReportsMissingMysql(projectRoot) {
     || !output.includes('failed to auto-create database')
     || !output.includes('spawnSync mysql ENOENT')) {
     throw new Error(`missing mysql should report the spawn failure reason:\n${output}`);
+  }
+}
+
+function assertDevWorkspaceRestartUsesStopThenStart(projectRoot) {
+  const manifestPath = join(projectRoot, 'mango.dev.json');
+  const originalManifest = readFileSync(manifestPath, 'utf8');
+  const manifest = JSON.parse(originalManifest);
+  manifest.groups.restart = ['restart-worker'];
+  manifest.apps['restart-worker'] = {
+    type: 'command',
+    cwd: '.',
+    command: process.execPath,
+    args: ['-e', 'setInterval(() => {}, 1000)'],
+  };
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  try {
+    rmSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), { force: true });
+    const start = spawnSync(process.execPath, [
+      cli,
+      'dev',
+      'start',
+      'restart',
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    if (start.status !== 0 || !start.stdout.includes('restart-worker: started pid=')) {
+      throw new Error(`restart fixture start should create a running process:\n${start.stdout}\n${start.stderr}`);
+    }
+    const firstPid = JSON.parse(readFileSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), 'utf8')).pid;
+    const restart = spawnSync(process.execPath, [
+      cli,
+      'dev',
+      'restart',
+      'restart',
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    if (restart.status !== 0
+      || !restart.stdout.includes(`restart-worker: stopped pid=${firstPid}`)
+      || !restart.stdout.includes('restart-worker: started pid=')) {
+      throw new Error(`mango dev restart should stop then start selected targets:\n${restart.stdout}\n${restart.stderr}`);
+    }
+    const secondPid = JSON.parse(readFileSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), 'utf8')).pid;
+    if (secondPid === firstPid) {
+      throw new Error(`mango dev restart should replace the running pid: ${firstPid}`);
+    }
+    const stop = spawnSync(process.execPath, [
+      cli,
+      'dev',
+      'stop',
+      'restart',
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    if (stop.status !== 0 || !stop.stdout.includes(`restart-worker: stopped pid=${secondPid}`)) {
+      throw new Error(`restart fixture cleanup should stop the restarted process:\n${stop.stdout}\n${stop.stderr}`);
+    }
+  } finally {
+    if (existsSync(join(projectRoot, '.mango/run/pids/restart-worker.json'))) {
+      spawnSync(process.execPath, [
+        cli,
+        'dev',
+        'stop',
+        'restart',
+      ], {
+        cwd: projectRoot,
+        encoding: 'utf8',
+      });
+    }
+    writeFileSync(manifestPath, originalManifest);
+    rmSync(join(projectRoot, '.mango/run/pids/restart-worker.json'), { force: true });
   }
 }
 

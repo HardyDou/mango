@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #358 新增 `mango-link` 网址导航能力，后端通过 `META-INF/mango/resources/link-common-menu.json` 注入 `网址导航` 和 `网址管理` 菜单，前端通过 `@mango/link/admin-pages` 注册 `link/company/index`、`link/favorites/index`、`link/my-links/index`、`link/categories/index`、`link/items/index` 页面 key。本场景排障步骤不变；排查网址导航页面空白、404 或 403 时，额外确认 `mango-link-starter` 是否启用、resource 是否同步、角色是否获得 `platform_admin` 或 `institution_collaboration` 菜单套餐，以及 `@mango/link` 是否随 admin 聚合入口注册。
+
 - v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和后台品牌配置前端批次；不改变菜单 `component` key 解析、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。业务项目排查品牌配置页面时，额外确认资源同步和 `system:admin-branding:query`、`system:admin-branding:edit` 授权。
 
 - PR #327 扩展 `AUTH_SUBJECT_ROLE` 基线声明，支持通过 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析租户成员后绑定角色；不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权关系、按钮权限关系、租户应用绑定和页面路由。排查清库初始化后的菜单可见性时，如依赖成员角色绑定基线，需要额外确认声明中的稳定主体键能解析到未离租的 `tenant_member`。

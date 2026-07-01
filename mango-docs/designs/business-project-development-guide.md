@@ -31,7 +31,7 @@ registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 配置用户级 `~/.npmrc` 后安装 CLI：
 
 ```bash
-npm install -g @mango/cli@1.0.54
+npm install -g @mango/cli@1.0.55
 
 mango init guarantee-platform \
   --preset custom \
@@ -44,7 +44,7 @@ mango init guarantee-platform \
 一次性执行也必须指定 scoped package：
 
 ```bash
-npm exec --package @mango/cli@1.0.54 -- \
+npm exec --package @mango/cli@1.0.55 -- \
   mango init guarantee-platform \
   --preset custom \
   --modules workflow,template,file \
