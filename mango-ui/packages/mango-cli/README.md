@@ -8,7 +8,7 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.53` |
+| 当前版本 | `1.0.54` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
@@ -52,7 +52,7 @@ CLI 不负责：
 - 业务项目已有文件的语义合并；没有 managed block 的文件不会被 CLI 猜测修改。
 
 ## 5. 接入方式
-全局安装用于创建项目、历史项目升级和跨仓库临时诊断：
+全局安装只用于创建项目、历史项目升级和跨仓库临时诊断：
 
 使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
 
@@ -64,16 +64,17 @@ npm install -g @mango/cli@1.0.54 --registry http://nexus.inner.yunxinbaokeji.com
 
 ```bash
 mango init demo-admin --preset full --topology monolith
-cd demo-admin
-mango workspace init
-mango workspace status
-mango dev doctor
-mango dev start
+cd demo-admin/frontend
+pnpm install
+pnpm exec mango workspace init
+pnpm exec mango workspace status
+pnpm exec mango dev doctor
+pnpm exec mango dev start
 ```
 
-推荐全局安装 `@mango/cli`，这样可以在任意业务仓根目录直接执行 `mango ...`。业务仓日常开发也以 `mango workspace`、`mango dev` 和 `mango frontend` 命令为正式入口；生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。
+业务仓日常开发以项目内锁定的 `@mango/cli` 为准。进入生成项目的 `frontend` 后先安装依赖，再用 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能是旧全局入口，不能作为业务项目 CLI 版本依据。
 
-历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell` 或 `mango pmo sync --project-dir . --sync-shell`，再在每个 active worktree 执行 `mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
+生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell` 或 `mango pmo sync --project-dir . --sync-shell`，再进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
 
 生成 custom 项目：
 
