@@ -121,16 +121,16 @@ test.describe('首页小组件-网址导航', () => {
   });
 
   test('组件库按链接业务域展示网址导航小组件', async ({ page }) => {
-    await expect(page.getByText('工作台', { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: '编辑布局' })).toBeVisible({ timeout: 15000 });
 
     await page.getByRole('button', { name: '编辑布局' }).click();
 
     const library = page.locator('[data-surface="grid-designer.widget-library"]');
     await expect(library).toBeVisible();
-    await expect(library.getByRole('tab', { name: '导航域' })).toBeVisible();
-    await library.getByRole('tab', { name: '导航域' }).click();
+    await expect(library.locator('[data-record-key="LINK"]')).toContainText('导航域');
+    await library.locator('[data-record-key="LINK"]').click();
 
-    const linkWidgetEntry = library.locator('[data-record-key="system.link-navigation"]');
+    const linkWidgetEntry = library.locator('[data-record-key="link.link-navigation"]');
     await expect(linkWidgetEntry).toBeVisible();
     await expect(linkWidgetEntry).toHaveAttribute('data-domain-code', 'LINK');
     await expect(linkWidgetEntry).toHaveAttribute('data-domain-name', '导航域');
@@ -231,7 +231,7 @@ test.describe('首页小组件-网址导航', () => {
       }
     });
 
-    await expect(page.getByText('工作台', { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: '编辑布局' })).toBeVisible({ timeout: 15000 });
 
     const linkWidget = page.locator('[data-surface="home.link-navigation"]');
     await expect(linkWidget).toBeVisible({ timeout: 15000 });

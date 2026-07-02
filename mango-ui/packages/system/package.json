@@ -5,10 +5,34 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
+  "mangoAdmin": {
+    "businessDomainCode": "SYSTEM",
+    "businessDomainName": "系统管理",
+    "groupName": "系统管理",
+    "style": "@mango/system/style.css",
+    "registrars": [
+      {
+        "name": "registerMangoSystemAdminPages",
+        "import": "@mango/system/admin-pages"
+      }
+    ]
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./admin-pages": {
+      "types": "./dist/admin-pages.d.ts",
+      "import": "./dist/admin-pages.js"
+    },
+    "./widgets/quick-entry": {
+      "types": "./dist/widgets/quick-entry.d.ts",
+      "import": "./dist/widgets/quick-entry.js"
+    },
+    "./widgets/user-profile": {
+      "types": "./dist/widgets/user-profile.d.ts",
+      "import": "./dist/widgets/user-profile.js"
     },
     "./style.css": "./dist/style.css"
   },
@@ -25,6 +49,7 @@
     "@form-create/element-ui": "3.2.42",
     "@mango/api-schema": "1.0.2",
     "@mango/common": "1.0.11",
+    "@mango/grid-widgets": "1.0.8",
     "@mango/rbac": "1.0.9",
     "form-create-designer": "3.2.11-oem"
   },

@@ -7,54 +7,62 @@
           <div class="mango-grid-designer__library-subtitle">搜索后拖入或点击添加</div>
         </div>
       </div>
-      <el-input
-        v-model="keyword"
-        clearable
-        placeholder="搜索组件"
-      >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-      </el-input>
-      <el-tabs
-        v-model="activeDomain"
-        class="mango-grid-designer__library-tabs"
-      >
-        <el-tab-pane
-          v-for="tab in domainTabs"
-          :key="tab.value"
-          :label="tab.label"
-          :name="tab.value"
-        />
-      </el-tabs>
-      <div class="mango-grid-designer__library-list">
-        <button
-          v-for="widget in filteredWidgets"
-          :key="widget.type"
-          class="mango-grid-designer__library-item"
-          data-action="grid-designer.widget.add"
-          :data-record-key="widget.type"
-          :data-domain-code="widgetDomainKey(widget)"
-          :data-domain-name="widgetDomainLabel(widget)"
-          :data-group-name="widget.groupName || ''"
-          :disabled="widget.disabled"
-          draggable="true"
-          type="button"
-          @click="addWidget(widget)"
-          @dragstart="handleWidgetDragStart($event, widget)"
-          @dragend="handleWidgetDragEnd"
-        >
-          <span class="mango-grid-designer__library-icon">
-            <el-icon v-if="widget.icon">
-              <component :is="widget.icon" />
-            </el-icon>
-          </span>
-          <span class="mango-grid-designer__library-info">
-            <span class="mango-grid-designer__library-meta">{{ widgetLibraryPath(widget) }}</span>
-            <span class="mango-grid-designer__library-name">{{ widget.title }}</span>
-            <span class="mango-grid-designer__library-desc">{{ widget.description || '可添加到当前布局' }}</span>
-          </span>
-        </button>
+      <div class="mango-grid-designer__library-content">
+        <nav class="mango-grid-designer__library-domain-list" aria-label="组件分类">
+          <button
+            v-for="tab in domainTabs"
+            :key="tab.value"
+            class="mango-grid-designer__library-domain"
+            :class="{ 'is-active': activeDomain === tab.value }"
+            type="button"
+            :title="tab.label"
+            :data-record-key="tab.value"
+            @click="activeDomain = tab.value"
+          >
+            <span>{{ tab.label }}</span>
+          </button>
+        </nav>
+
+        <div class="mango-grid-designer__library-main">
+          <el-input
+            v-model="keyword"
+            clearable
+            placeholder="搜索组件"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <div class="mango-grid-designer__library-list">
+            <button
+              v-for="widget in filteredWidgets"
+              :key="widget.type"
+              class="mango-grid-designer__library-item"
+              data-action="grid-designer.widget.add"
+              :data-record-key="widget.type"
+              :data-domain-code="widgetDomainKey(widget)"
+              :data-domain-name="widgetDomainLabel(widget)"
+              :data-group-name="widget.groupName || ''"
+              :disabled="widget.disabled"
+              draggable="true"
+              type="button"
+              @click="addWidget(widget)"
+              @dragstart="handleWidgetDragStart($event, widget)"
+              @dragend="handleWidgetDragEnd"
+            >
+              <span class="mango-grid-designer__library-icon">
+                <el-icon v-if="widget.icon">
+                  <component :is="widget.icon" />
+                </el-icon>
+              </span>
+              <span class="mango-grid-designer__library-info">
+                <span class="mango-grid-designer__library-meta">{{ widgetLibraryPath(widget) }}</span>
+                <span class="mango-grid-designer__library-name">{{ widget.title }}</span>
+                <span class="mango-grid-designer__library-desc">{{ widget.description || '可添加到当前布局' }}</span>
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
     </aside>
 

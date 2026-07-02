@@ -208,12 +208,13 @@
   --mango-link-nav-item-icon-size: clamp(24px, calc(20px + 0.8cqw), 30px);
   --mango-link-nav-item-icon-image-size: clamp(20px, calc(17px + 0.65cqw), 26px);
   --mango-link-nav-favorite-size: clamp(16px, calc(14px + 0.45cqw), 20px);
+  --mango-link-nav-items-stable-height: clamp(40px, 16cqh, 132px);
   --mango-link-nav-visual-anchor: 33%;
 
   container-type: size;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: clamp(8px, calc(6px + 0.8cqw), 12px);
   height: 100%;
   min-height: 0;
@@ -225,13 +226,15 @@
 
 .mango-grid-widget-link-navigation__content {
   position: relative;
-  top: calc(var(--mango-link-nav-visual-anchor) - 50%);
   display: flex;
   width: 100%;
+  height: 100%;
   min-height: 0;
   max-height: 100%;
+  box-sizing: border-box;
   flex-direction: column;
   gap: clamp(8px, calc(6px + 0.8cqw), 12px);
+  padding-top: clamp(18px, 13cqh, 58px);
 }
 
 .mango-grid-widget-link-navigation__hero {
@@ -570,17 +573,17 @@
 }
 
 .mango-grid-widget-link-navigation__items {
-  flex: 0 1 auto;
+  flex: 1 1 var(--mango-link-nav-items-stable-height);
   display: flex;
   align-items: flex-start;
   align-content: flex-start;
   justify-content: center;
   gap: clamp(8px, calc(6px + 0.8cqw), 12px) clamp(8px, calc(6px + 0.8cqw), 14px);
-  min-height: 0;
-  max-height: clamp(40px, 34cqh, 168px);
+  min-height: var(--mango-link-nav-items-stable-height);
   padding: clamp(4px, calc(2px + 0.6cqw), 8px) clamp(0px, 0.6cqw, 10px) 0;
   overflow: auto;
   flex-wrap: wrap;
+  scrollbar-gutter: stable;
 }
 
 .mango-grid-widget-link-navigation__item {
@@ -740,9 +743,27 @@
   }
 }
 
+@container (max-height: 300px) {
+  .mango-grid-widget-link-navigation {
+    --mango-link-nav-visual-anchor: 38%;
+
+    padding-top: clamp(18px, 7cqh, 24px);
+  }
+
+  .mango-grid-widget-link-navigation__hero {
+    gap: clamp(14px, 4cqh, 18px);
+  }
+
+  .mango-grid-widget-link-navigation__header {
+    min-height: clamp(34px, 16cqh, 50px);
+  }
+}
+
 @container (max-height: 220px) {
   .mango-grid-widget-link-navigation {
-    padding-top: 12px;
+    --mango-link-nav-visual-anchor: 42%;
+
+    padding-top: clamp(18px, 9cqh, 22px);
   }
 
   .mango-grid-widget-link-navigation__hero {

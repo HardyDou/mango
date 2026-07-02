@@ -74,7 +74,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Lock, User } from '@element-plus/icons-vue';
-import type { UserProfileWidgetProps } from '../../types';
+import type { UserProfileWidgetProps } from '../types';
 
 defineOptions({
   name: 'MangoUserProfileWidget',

@@ -1,17 +1,21 @@
 import { UserFilled } from '@element-plus/icons-vue';
-import type { MangoGridWidgetDefinition } from '../../types';
+import type { MangoGridWidgetDefinition } from '@mango/grid-widgets';
 import UserProfileWidget from './UserProfileWidget.vue';
 
 export { default as UserProfileWidget } from './UserProfileWidget.vue';
-export type { UserProfileWidgetProps } from '../../types';
+export type { UserProfileWidgetProps } from '../types';
 
 export const systemUserProfileWidgets: MangoGridWidgetDefinition[] = [
   {
     type: 'system.user-profile',
     title: '用户信息',
     description: '展示当前登录用户信息，并跳转到个人中心和修改密码。',
-    category: '系统组件',
-    source: 'mango',
+    source: 'business',
+    businessDomainCode: 'SYSTEM',
+    businessDomainName: '系统管理',
+    domainCode: 'SYSTEM',
+    domainName: '系统管理',
+    groupName: '系统管理',
     moduleCode: 'user-profile',
     order: 90,
     icon: UserFilled,

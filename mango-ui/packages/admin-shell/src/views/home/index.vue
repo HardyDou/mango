@@ -1,32 +1,26 @@
 <template>
   <div v-loading="loading" class="home-container">
-    <section class="home-hero">
-      <div>
-        <div class="home-hero__title">工作台</div>
-        <div class="home-hero__desc">欢迎{{ displayName }}登录，按你的使用习惯排列首页组件。</div>
-      </div>
-      <div class="home-hero__actions">
-        <template v-if="editing">
-          <el-button :loading="saving" type="primary" @click="saveLayout">
-            保存布局
-          </el-button>
-          <el-button @click="cancelEdit">取消</el-button>
-          <el-popconfirm
-            title="确认恢复默认布局？当前个人布局会被清空。"
-            confirm-button-text="恢复默认"
-            cancel-button-text="取消"
-            @confirm="resetLayout"
-          >
-            <template #reference>
-              <el-button>恢复默认</el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-        <el-button v-else type="primary" @click="startEdit">
-          编辑布局
+    <div class="home-toolbar">
+      <template v-if="editing">
+        <el-button :loading="saving" type="primary" @click="saveLayout">
+          保存布局
         </el-button>
-      </div>
-    </section>
+        <el-button @click="cancelEdit">取消</el-button>
+        <el-popconfirm
+          title="确认恢复默认布局？当前个人布局会被清空。"
+          confirm-button-text="恢复默认"
+          cancel-button-text="取消"
+          @confirm="resetLayout"
+        >
+          <template #reference>
+            <el-button>恢复默认</el-button>
+          </template>
+        </el-popconfirm>
+      </template>
+      <el-button v-else type="primary" @click="startEdit">
+        编辑布局
+      </el-button>
+    </div>
 
     <el-alert
       v-if="errorMessage"
@@ -101,6 +95,10 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
     nickname: userInfo.userInfos.nickname,
     avatar: userInfo.userInfos.photo,
     roles: userInfo.userInfos.roles,
+    permissions: Array.from(new Set([
+      ...(userInfo.userInfos.permissions || []),
+      ...(userInfo.userInfos.authBtnList || []),
+    ])),
     appCode: userInfo.userInfos.appCode,
   },
   tenant: {
@@ -116,11 +114,6 @@ const workbenchWidgets = computed(() => mergeGridWidgets({
   systemWidgets: systemGridWidgets,
   businessWidgets: businessHomeWidgets.value,
 }));
-
-const displayName = computed(() => {
-  const nickname = userInfo.userInfos.nickname || userInfo.userInfos.username;
-  return nickname ? `，${nickname}` : '';
-});
 
 onMounted(() => {
   initializeHome();
@@ -200,23 +193,23 @@ async function resetLayout(): Promise<void> {
 function defaultLayoutItems(): GridLayoutItem[] {
   // 工作台默认布局由页面直接传入自定义布局组件，无个人配置或恢复默认时使用。
   return [
-    gridItem('link-navigation', 'system.link-navigation', 0, 0, 12, 20, '网址导航', {
+    gridItem('link-navigation', 'link.link-navigation', 0, 0, 12, 20, '网址导航', {
       minW: 6,
       minH: 18,
       showTitle: false,
       padding: false,
     }),
-    gridItem('message-center', 'system.message-center', 0, 21, 6, 18, '我的消息'),
+    gridItem('message-center', 'notice.message-center', 0, 21, 6, 18, '我的消息'),
     gridItem('quick', 'system.quick-entry', 6, 21, 3, 18, '快捷入口'),
-    gridItem('calendar', 'system.calendar', 9, 21, 3, 14, '日历'),
+    gridItem('calendar', 'calendar.calendar', 9, 21, 3, 14, '日历'),
     gridItem('user-profile', 'system.user-profile', 9, 36, 3, 28, '用户信息', {
       minH: 16,
       showTitle: false,
       padding: false,
     }),
-    gridItem('my-process', 'system.my-process', 0, 40, 3, 24, '我的申请'),
-    gridItem('my-task', 'system.my-task', 3, 40, 3, 24, '我的任务'),
-    gridItem('my-todo', 'system.my-todo', 6, 40, 3, 24, '我的待办', {
+    gridItem('my-process', 'workflow.my-process', 0, 40, 3, 24, '我的申请'),
+    gridItem('my-task', 'workflow.my-task', 3, 40, 3, 24, '我的任务'),
+    gridItem('my-todo', 'workflow.my-todo', 6, 40, 3, 24, '我的待办', {
       showTitle: false,
       padding: false,
     }),
@@ -253,7 +246,7 @@ function gridItem(
     widgetType,
     title,
     layout: { x, y, w, h, minW, minH, maxW, maxH },
-    props: widgetType === 'system.link-navigation'
+    props: widgetType === 'link.link-navigation'
       ? { maxGroups: 24, maxItemsPerGroup: 200 }
       : undefined,
     showTitle,
@@ -295,38 +288,21 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
 
 <style scoped lang="scss">
 .home-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 0;
 }
 
-.home-hero {
+.home-toolbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
-  border: 1px solid var(--mango-border-color);
-  border-radius: 8px;
-  background: var(--mango-bg-color);
-}
-
-.home-hero__title {
-  color: var(--mango-text-color);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.home-hero__desc {
-  margin-top: 6px;
-  color: var(--mango-text-color-regular);
-  font-size: 14px;
-}
-
-.home-hero__actions {
-  display: flex;
-  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 

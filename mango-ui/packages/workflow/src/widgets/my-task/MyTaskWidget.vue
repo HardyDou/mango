@@ -62,8 +62,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { workflowApi, type WorkflowMyTaskSummary } from '@mango/workflow';
-import type { MangoWidgetNavigateTarget, MyTaskWidgetProps } from '../../types';
+import { workflowApi, type WorkflowMyTaskSummary } from '../../api/workflow';
+import type { MangoWidgetNavigateTarget, MyTaskWidgetProps } from '../types';
 
 defineOptions({
   name: 'MangoMyTaskWidget',

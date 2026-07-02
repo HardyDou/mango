@@ -70,7 +70,8 @@
 }
 
 .mango-grid-designer__library {
-  flex: 0 0 248px;
+  flex: 0 0 240px;
+  width: 240px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -81,7 +82,10 @@
 }
 
 .mango-grid-designer__library-header {
-  margin-bottom: 14px;
+  flex: 0 0 auto;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mango-border-color-light, #ebeef5);
+  margin-bottom: 12px;
 }
 
 .mango-grid-designer__library-title {
@@ -96,19 +100,72 @@
   font-size: 12px;
 }
 
+.mango-grid-designer__library-content {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 12px;
+  min-height: 0;
+}
+
+.mango-grid-designer__library-domain-list {
+  flex: 0 0 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+  border-right: 1px solid var(--mango-border-color-lighter, #ebeef5);
+}
+
+.mango-grid-designer__library-domain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  height: auto;
+  padding: 7px 5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mango-text-color-secondary, #606266);
+  font-size: 13px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.mango-grid-designer__library-domain span {
+  max-width: 2em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.mango-grid-designer__library-domain:hover {
+  background: var(--mango-fill-color-light, #f5f7fa);
+  color: var(--mango-color-primary, #409eff);
+}
+
+.mango-grid-designer__library-domain.is-active {
+  background: var(--mango-color-primary-light-9, #ecf5ff);
+  color: var(--mango-color-primary, #409eff);
+  font-weight: 600;
+}
+
+.mango-grid-designer__library-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
 .mango-grid-designer__library-list {
   flex: 1 1 auto;
   min-height: 0;
   margin-top: 10px;
   overflow: auto;
-}
-
-.mango-grid-designer__library-tabs {
-  margin-top: 12px;
-}
-
-.mango-grid-designer__library-tabs .el-tabs__header {
-  margin-bottom: 0;
 }
 
 .mango-grid-designer__library-item {
@@ -171,9 +228,13 @@
 .mango-grid-designer__library-desc {
   color: var(--mango-text-color-secondary, #909399);
   font-size: 12px;
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .mango-grid-designer__canvas {

@@ -13,9 +13,12 @@ export type {
 
 export const linkNavigationWidgets: MangoGridWidgetDefinition[] = [
   {
-    type: 'system.link-navigation',
+    type: 'link.link-navigation',
     title: '网址导航',
     description: '在工作台首页提供百度、谷歌搜索和我的收藏网址',
+    businessDomainCode: 'LINK',
+    businessDomainName: '导航域',
+    groupName: '导航域',
     order: 95,
     icon: Search,
     component: LinkNavigationWidget,

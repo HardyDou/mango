@@ -33,22 +33,69 @@ function withRuntime(widget: MangoGridWidgetDefinition, runtime?: MangoWidgetRun
   }
   return {
     ...widget,
-    component: createRuntimeWidget(widget.component, runtime),
+    component: createRuntimeWidget(widget, runtime),
   };
 }
 
-function createRuntimeWidget(component: Component, runtime: MangoWidgetRuntimeContext): Component {
+function createRuntimeWidget(widget: MangoGridWidgetDefinition, runtime: MangoWidgetRuntimeContext): Component {
   return defineComponent({
     name: 'MangoGridRuntimeWidget',
     inheritAttrs: false,
     setup(_, { attrs }) {
       // runtime 是页面运行态上下文，不能进入 defaultProps，避免被布局组件保存到个人布局 JSON。
-      return () => h(component, {
-        ...attrs,
-        runtime,
-      });
+      return () => {
+        if (!hasWidgetPermission(widget, runtime)) {
+          return h(MangoWidgetPermissionFallback, {
+            widgetTitle: widget.title,
+            permissionCodes: widget.visibility?.widgetPermissionCodes || [],
+          });
+        }
+        return h(widget.component as Component, {
+          ...attrs,
+          runtime,
+        });
+      };
     },
   });
+}
+
+const MangoWidgetPermissionFallback = defineComponent({
+  name: 'MangoWidgetPermissionFallback',
+  props: {
+    widgetTitle: {
+      type: String,
+      default: '小组件',
+    },
+    permissionCodes: {
+      type: Array as () => string[],
+      default: () => [],
+    },
+  },
+  setup(props) {
+    return () => h('div', {
+      class: 'mango-grid-widget-permission-fallback',
+      'data-state': 'missing-permission',
+    }, [
+      h('div', { class: 'mango-grid-widget-permission-fallback__badge' }, '缺少权限'),
+      h('strong', props.widgetTitle),
+      h('span', props.permissionCodes.length
+        ? `需要权限：${props.permissionCodes.join(' / ')}`
+        : '当前账号无权使用该小组件'),
+    ]);
+  },
+});
+
+function hasWidgetPermission(widget: MangoGridWidgetDefinition, runtime: MangoWidgetRuntimeContext): boolean {
+  const permissionCodes = widget.visibility?.widgetPermissionCodes?.filter(Boolean) || [];
+  if (!permissionCodes.length) {
+    return true;
+  }
+  const permissions = new Set(runtime.user?.permissions || []);
+  const mode = widget.visibility?.mode || 'any';
+  if (mode === 'all') {
+    return permissionCodes.every(code => permissions.has(code));
+  }
+  return permissionCodes.some(code => permissions.has(code));
 }
 
 function compareWidget(left: MangoGridWidgetDefinition, right: MangoGridWidgetDefinition): number {

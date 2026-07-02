@@ -46,8 +46,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { calendarApi, type CalendarDayVO, type LunarDayInfoVO, type MonthWorkdaySummaryVO } from '@mango/calendar';
-import type { CalendarWidgetProps } from '../../types';
+import { calendarApi, type CalendarDayVO, type LunarDayInfoVO, type MonthWorkdaySummaryVO } from '../../api/calendar';
+import type { CalendarWidgetProps } from '../types';
 
 defineOptions({
   name: 'MangoCalendarWidget',

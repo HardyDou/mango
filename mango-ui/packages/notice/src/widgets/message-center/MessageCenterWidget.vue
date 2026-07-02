@@ -61,9 +61,9 @@ import {
   getMySiteMessages,
   getMyUnreadCount,
   markAllMySiteMessagesRead,
-} from '@mango/notice';
-import type { NoticeSiteMessage } from '@mango/notice';
-import type { MessageCenterCategory, MessageCenterWidgetProps } from '../../types';
+} from '../../api/notice';
+import type { NoticeSiteMessage } from '../../api/notice';
+import type { MessageCenterCategory, MessageCenterWidgetProps } from '../types';
 
 defineOptions({
   name: 'MangoMessageCenterWidget',

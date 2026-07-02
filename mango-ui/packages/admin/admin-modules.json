@@ -41,7 +41,14 @@
       "code": "system",
       "packageName": "@mango/system",
       "style": "@mango/system/style.css",
-      "cliVersionKey": "mangoSystem"
+      "registrars": [
+        {
+          "name": "registerMangoSystemAdminPages",
+          "import": "@mango/system/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoSystem",
+      "cliOptional": false
     },
     {
       "code": "job",

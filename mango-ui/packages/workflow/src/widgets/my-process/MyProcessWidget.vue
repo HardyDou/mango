@@ -32,8 +32,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { workflowApi, type WorkflowBusinessApplySummary } from '@mango/workflow';
-import type { MangoWidgetNavigateTarget, MyProcessWidgetProps } from '../../types';
+import { workflowApi, type WorkflowBusinessApplySummary } from '../../api/workflow';
+import type { MangoWidgetNavigateTarget, MyProcessWidgetProps } from '../types';
 
 defineOptions({
   name: 'MangoMyProcessWidget',

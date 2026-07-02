@@ -35,6 +35,7 @@ export interface MangoWidgetRuntimeUser {
   deptName?: string;
   orgName?: string;
   roles?: string[];
+  permissions?: string[];
   appCode?: string;
   lastLoginTime?: string;
 }

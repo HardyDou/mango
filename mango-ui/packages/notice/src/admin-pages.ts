@@ -1,4 +1,5 @@
 import { registerModulePages } from '@mango/admin-pages/core';
+import { noticeMessageCenterWidgets } from './widgets/message-center';
 
 let registered = false;
 
@@ -25,4 +26,11 @@ export function registerMangoNoticeAdminPages() {
       'notice/retry/index': () => import('./admin').then(m => m.NoticeRetryView),
     },
   });
+
+  return {
+    businessDomainCode: 'NOTICE',
+    businessDomainName: '通知中心',
+    groupName: '通知中心',
+    widgets: noticeMessageCenterWidgets,
+  };
 }
