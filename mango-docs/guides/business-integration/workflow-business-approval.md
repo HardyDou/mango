@@ -147,3 +147,5 @@ pnpm -F @mango/workflow-business-example build
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变业务审批的公开 API、配置、权限、租户、页面和运行时行为。
 - PR #157 支付异常单依赖环修复和 workflow API/core 边界收敛只调整内部 Bean 依赖，不改变业务审批接入的公开 API、配置、权限、租户、页面和运行时行为。
 - PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、启动和运行时行为。
+
+- Issue #354 为 Resource Registry 增加资源类型依赖排序，仅改变同一同步批次内 handler 执行顺序，例如 `WORKFLOW_CATEGORY` 和 `WORKFLOW_NODE_DEFINITION` 先于 `WORKFLOW_DEFINITION` 同步；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。排查流程定义或节点定义缺失时仍确认对应资源声明同步成功、目标 handler 消费成功以及流程定义发布结果。
