@@ -28,7 +28,7 @@
 ## 4. 接入方式
 后端应用通过 `backend/app/pom.xml` 依赖 `{{moduleKebab}}-starter`。Flyway 模块开关在 `backend/app/src/main/resources/application.yml` 中启用。
 
-前端应用通过 `frontend/src/main.ts` 调用 `register{{modulePascal}}Pages()` 注册页面。菜单资源中的 component key 是 `{{moduleKebab}}/{{aggregateKebab}}/index`。
+前端应用通过 `frontend/src/main.ts` 的 `mangoBusinessFeatureRegistrars` 接入业务 UI 包 `register{{modulePascal}}Pages`。该注册函数负责注册页面，并可以返回 `businessDomainCode`、`businessDomainName`、`groupName` 和首页小组件定义。菜单资源中的 component key 是 `{{moduleKebab}}/{{aggregateKebab}}/index`。
 
 ## 5. 数据与初始化
 | 类型 | 位置 | 初始化内容 | 生效时机 |
@@ -50,6 +50,7 @@
 |------|----------|
 | 分页、租户、数据权限写法不确定 | Mango 文档站 -> 能力地图 -> Persistence 持久化 |
 | 菜单存在但页面打不开 | `resource-manifest.json` 的 component key 和前端 `register{{modulePascal}}Pages()` |
+| 首页组件库没有业务小组件 | `frontend/src/main.ts` 的 `mangoBusinessFeatureRegistrars`、业务 UI 包 `mangoAdmin` 元数据和 `register{{modulePascal}}Pages()` 返回值 |
 | 权限按钮不显示 | `resource-manifest.json` permissionItems、角色授权和前端权限控制 |
 | migration 没执行 | `application.yml` Flyway 模块开关和 Flyway history |
 

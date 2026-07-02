@@ -5,6 +5,18 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
+  "mangoAdmin": {
+    "businessDomainCode": "LINK",
+    "businessDomainName": "导航域",
+    "groupName": "导航域",
+    "style": "@mango/link/style.css",
+    "registrars": [
+      {
+        "name": "registerMangoLinkAdminPages",
+        "import": "@mango/link/admin-pages"
+      }
+    ]
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

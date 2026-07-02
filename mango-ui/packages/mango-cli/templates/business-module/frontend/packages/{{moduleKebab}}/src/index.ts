@@ -7,8 +7,20 @@ export const {{moduleCamel}}PageRegistry = {
   },
 };
 
+let registered = false;
+
 export function register{{modulePascal}}Pages() {
-  registerModulePages({{moduleCamel}}PageRegistry);
+  if (!registered) {
+    registered = true;
+    registerModulePages({{moduleCamel}}PageRegistry);
+  }
+
+  return {
+    businessDomainCode: '{{moduleBusinessDomainCode}}',
+    businessDomainName: '{{moduleName}}',
+    groupName: '{{moduleName}}',
+    widgets: [],
+  };
 }
 
 export * from '@{{projectKebab}}/{{moduleKebab}}-api';

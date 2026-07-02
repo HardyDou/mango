@@ -113,7 +113,7 @@ import '@mango/admin/style-full.css';
 2. 引入 `@mango/admin/style.css` 或 `@mango/admin/style-full.css`。
 3. 调用 `createMangoAdminApp()`。
 4. 配置 `apiBaseUrl`。
-5. 需要可选能力时，从具体能力包或 `full` 子入口注册对应页面。使用 `@mango/admin/style-full.css` 时，官方 full 模块样式已由聚合入口带入。
+5. 需要可选能力时，从具体能力包或 `full` 子入口注册对应页面。使用 Mango CLI 生成的 full/custom app 时，官方默认模块和已选模块的 `featureRegistrars` 与样式入口会自动生成。
 
 ## 9. 问题排查
 
@@ -123,7 +123,7 @@ import '@mango/admin/style-full.css';
 
 **某个可选能力页面打不开**
 
-`@mango/admin` 不会自动注册所有可选包。需要集成对应业务 UI 包的 `registerMangoXxxAdminPages()`，并确保后端菜单存在。业务 UI 包可以在同一个注册函数中返回 `businessDomainCode`、`businessDomainName`、可选 `groupName` 和首页 `widgets`，Shell 首页会自动把这些小组件加入组件库，并按“业务域 / 组名 / 组件名称”展示；未集成该 UI 包时，对应业务小组件不会注册，也不能被新增使用。
+`@mango/admin` 不会运行时扫描 `node_modules`。Mango CLI 生成的 app 会根据模块清单生成静态 imports、`featureRegistrars` 和样式 imports；手写宿主需要把对应业务 UI 包的 `registerMangoXxxAdminPages()` 放入 `featureRegistrars`，并确保后端菜单存在。业务 UI 包可以在同一个注册函数中返回 `businessDomainCode`、`businessDomainName`、可选 `groupName` 和首页 `widgets`，Shell 首页会自动把这些小组件加入组件库，并按“业务域 / 组名 / 组件名称”展示；未集成该 UI 包时，对应业务小组件不会注册，也不能被新增使用。
 
 **包体过大**
 

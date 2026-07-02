@@ -665,6 +665,7 @@ function addBusinessModule(argv) {
     modulePascal: toPascalCase(moduleKebab),
     moduleCamel: toCamelCase(moduleKebab),
     moduleName: options.moduleName || `${toPascalCase(moduleKebab)}模块`,
+    moduleBusinessDomainCode: toSnakeCase(moduleKebab).toUpperCase(),
     moduleKebabSnake: toSnakeCase(moduleKebab),
     aggregateKebab,
     aggregateKebabSnake: toSnakeCase(aggregateKebab),
@@ -3419,18 +3420,67 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
   const entryPath = join(targetDir, 'frontend/src/main.ts');
   const content = readFileSync(entryPath, 'utf8');
   const importLine = `import { register${variables.modulePascal}Pages } from '@${variables.projectKebab}/${variables.moduleKebab}';`;
-  const registerLine = `register${variables.modulePascal}Pages();`;
-  const withImport = content.includes(importLine)
-    ? content
-    : content.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
-  const marker = '// mango-cli:business-registrars';
-  const withMarker = withImport.includes(marker)
+  const styleImportLine = `import '@${variables.projectKebab}/${variables.moduleKebab}/style.css';`;
+  const registrarLine = `  register${variables.modulePascal}Pages,`;
+  const preparedContent = ensureFrontendBusinessRegistrars(content);
+  const withImport = preparedContent.includes(importLine)
+    ? preparedContent
+    : preparedContent.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
+  const withStyleImport = withImport.includes(styleImportLine)
     ? withImport
-    : withImport.replace('createMangoAdminApp({', `${marker}\n\ncreateMangoAdminApp({`);
-  const next = withMarker.includes(registerLine)
-    ? withMarker
-    : withMarker.replace(marker, `${marker}\n${registerLine}`);
+    : withImport.replace('// mango-cli:imports:end', `${styleImportLine}\n// mango-cli:imports:end`);
+  const next = appendBusinessFeatureRegistrar(withStyleImport, registrarLine);
   writeFileSync(entryPath, next);
+}
+
+function ensureFrontendBusinessRegistrars(content) {
+  if (content.includes('// mango-cli:business-feature-registrars:start')
+    && content.includes('// mango-cli:business-feature-registrars:end')) {
+    return ensureAllFeatureRegistrarsUsage(content);
+  }
+
+  const block = [
+    '// mango-cli:business-feature-registrars:start',
+    'const mangoBusinessFeatureRegistrars = [',
+    '];',
+    '// mango-cli:business-feature-registrars:end',
+    '',
+    'const mangoAllFeatureRegistrars = [',
+    '  ...mangoFeatureRegistrars,',
+    '  ...mangoBusinessFeatureRegistrars,',
+    '];',
+    '',
+  ].join('\n');
+  const featureEnd = '// mango-cli:features:end';
+  const withBlock = content.includes(featureEnd)
+    ? content.replace(featureEnd, `${featureEnd}\n\n${block.trimEnd()}`)
+    : `${block}${content}`;
+  return ensureAllFeatureRegistrarsUsage(withBlock);
+}
+
+function ensureAllFeatureRegistrarsUsage(content) {
+  return content.replace(
+    'featureRegistrars: mangoFeatureRegistrars,',
+    'featureRegistrars: mangoAllFeatureRegistrars,',
+  );
+}
+
+function appendBusinessFeatureRegistrar(content, registrarLine) {
+  const start = '// mango-cli:business-feature-registrars:start';
+  const end = '// mango-cli:business-feature-registrars:end';
+  const startIndex = content.indexOf(start);
+  const endIndex = content.indexOf(end);
+  if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
+    fail('managed block not found in frontend/src/main.ts: business-feature-registrars');
+  }
+  const startLineEnd = content.indexOf('\n', startIndex);
+  const endLineStart = content.lastIndexOf('\n', endIndex) + 1;
+  const currentBlock = content.slice(startLineEnd + 1, endLineStart);
+  if (currentBlock.includes(registrarLine.trim())) {
+    return content;
+  }
+  const nextBlock = currentBlock.replace('\n];', `\n${registrarLine}\n];`);
+  return `${content.slice(0, startLineEnd + 1)}${nextBlock}${content.slice(endLineStart)}`;
 }
 
 function updateBusinessConfig(targetDir, config, variables) {
@@ -3613,6 +3663,9 @@ function renderFrontendEntryImports(preset, selectedModules) {
     ].join('\n');
   }
   const imports = ["import { createMangoAdminApp } from '@mango/admin';", "import '@mango/admin/style.css';"];
+  for (const module of ADMIN_DEFAULT_MODULES) {
+    imports.push(...module.registrars.map(registrar => `import { ${registrar.name} } from '${registrar.import}';`));
+  }
   for (const module of selectedModules) {
     imports.push(...toArray(module.registrarImport));
   }
@@ -3636,7 +3689,10 @@ function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
   if (preset === 'full') {
     return 'mangoFullAdminFeatureRegistrars';
   }
-  const registrars = selectedModules.flatMap(module => toArray(module.registrar));
+  const registrars = [
+    ...ADMIN_DEFAULT_MODULES.flatMap(module => module.registrars.map(registrar => registrar.name)),
+    ...selectedModules.flatMap(module => toArray(module.registrar)),
+  ];
   if (registrars.length === 0) {
     return '[]';
   }

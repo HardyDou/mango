@@ -55,6 +55,8 @@ registerMangoLinkAdminPages();
 
 在 admin-shell 中，推荐把 `registerMangoLinkAdminPages` 放入 `featureRegistrars`。集成 `@mango/link` 后，首页组件面板会自动出现 `导航域 / 导航域 / 网址导航`；未集成该包时不会注册该小组件，历史布局中保存的 `system.link-navigation` 会按布局组件的失效组件逻辑处理。
 
+使用 Mango CLI 生成的 full/custom 管理端时，`@mango/link` 是默认管理模块，CLI 会把 `registerMangoLinkAdminPages` 和 `@mango/link/style.css` 自动接入应用入口；手写宿主仍需按上面的方式显式接入。
+
 独立消费小组件类型或定义时使用子入口：
 
 ```ts
@@ -154,7 +156,7 @@ import { LinkNavigationWidget, linkNavigationWidgets } from '@mango/link/widgets
 |------|----------|
 | 菜单看不到 | 后端 resource 是否同步，角色是否获得菜单套餐或权限。 |
 | 页面打不开 | 是否调用 `registerMangoLinkAdminPages()`，菜单 component 是否匹配页面 key。 |
-| 首页组件面板没有网址导航 | 检查宿主是否集成 `@mango/link`，并把 `registerMangoLinkAdminPages` 传入 admin-shell `featureRegistrars`。 |
+| 首页组件面板没有网址导航 | 检查宿主是否集成 `@mango/link`。CLI full/custom app 应确认生成入口包含 `registerMangoLinkAdminPages`；手写宿主需要把它传入 admin-shell `featureRegistrars`。 |
 | 页面请求 404 | 后端是否启用 `mango-link-starter`，网关是否代理 `/link/**`。 |
 | 页面请求 401/403 | 登录态、角色权限、网址可见范围是否满足。 |
 | 打开网址没有访问记录 | 页面是否走 `openLinkWithRedirect`，请求路径是否为 `/api/link/open/redirect/{id}`。 |

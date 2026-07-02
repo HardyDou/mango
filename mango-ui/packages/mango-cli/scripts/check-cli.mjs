@@ -92,6 +92,11 @@ try {
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
     throw new Error('frontend entry does not consume @mango/admin/full');
   }
+  if (!mainTs.includes('const mangoBusinessFeatureRegistrars = [')
+    || !mainTs.includes('const mangoAllFeatureRegistrars = [')
+    || !mainTs.includes('featureRegistrars: mangoAllFeatureRegistrars')) {
+    throw new Error('frontend entry does not provide business feature registrar aggregation');
+  }
   if (mainTs.includes('{{')) {
     throw new Error('frontend entry contains unrendered placeholders');
   }
@@ -350,6 +355,9 @@ try {
     throw new Error('custom frontend entry should preserve literal feature types');
   }
   for (const expected of [
+    "registerMangoJobAdminPages",
+    "registerMangoCmsAdminPages",
+    "registerMangoLinkAdminPages",
     "registerMangoWorkflowAdminPages",
     "registerMangoWorkflowBusinessExampleAdminPages",
     "registerMangoTemplateAdminPages",
@@ -478,6 +486,7 @@ try {
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/mapper/SealMapper.java',
     'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json',
     'frontend/packages/contract-api/src/api.ts',
+    'frontend/packages/contract/style.css',
     'frontend/packages/contract/src/index.ts',
     'frontend/packages/contract/src/views/contract/seal/index.vue',
   ]) {
@@ -629,8 +638,12 @@ try {
     }
   }
   const moduleMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
-  if (!moduleMain.includes("from '@mango-custom-acceptance/contract'") || !moduleMain.includes('registerContractPages();')) {
-    throw new Error('module add did not register frontend pages');
+  if (!moduleMain.includes("import { registerContractPages } from '@mango-custom-acceptance/contract';")
+    || !moduleMain.includes("import '@mango-custom-acceptance/contract/style.css';")
+    || !moduleMain.includes('  registerContractPages,')
+    || moduleMain.includes('registerContractPages();')
+    || !moduleMain.includes('featureRegistrars: mangoAllFeatureRegistrars')) {
+    throw new Error('module add did not register frontend feature registrar and style entry');
   }
   const moduleConfig = JSON.parse(readFileSync(join(customRoot, 'mango.config.json'), 'utf8'));
   if (!Array.isArray(moduleConfig.businessModules) || moduleConfig.businessModules[0]?.module !== 'contract') {
@@ -642,6 +655,28 @@ try {
   const modulePackageJson = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
   if (!Array.isArray(modulePackageJson.workspaces) || !modulePackageJson.workspaces.includes('packages/*')) {
     throw new Error('module add did not configure frontend workspaces');
+  }
+  const businessUiPackageJson = JSON.parse(readFileSync(join(customRoot, 'frontend/packages/contract/package.json'), 'utf8'));
+  if (businessUiPackageJson.style !== './style.css'
+    || businessUiPackageJson.exports?.['./style.css'] !== './style.css'
+    || businessUiPackageJson.mangoAdmin?.businessDomainCode !== 'CONTRACT'
+    || businessUiPackageJson.mangoAdmin?.businessDomainName !== '合同管理'
+    || businessUiPackageJson.mangoAdmin?.registrars?.[0]?.name !== 'registerContractPages'
+    || businessUiPackageJson.mangoAdmin?.registrars?.[0]?.import !== '@mango-custom-acceptance/contract') {
+    throw new Error('module add did not generate business UI package admin manifest');
+  }
+  if (!existsSync(join(customRoot, 'frontend/packages/contract/style.css'))) {
+    throw new Error('module add did not generate business UI package style entry');
+  }
+  const businessUiIndex = readFileSync(join(customRoot, 'frontend/packages/contract/src/index.ts'), 'utf8');
+  for (const expected of [
+    "businessDomainCode: 'CONTRACT'",
+    "businessDomainName: '合同管理'",
+    'widgets: []',
+  ]) {
+    if (!businessUiIndex.includes(expected)) {
+      throw new Error(`module add did not generate feature registration metadata: ${expected}`);
+    }
   }
   assertNoUnrenderedPlaceholders(customRoot);
   assertDevWorkspaceRunnerScenarios(tempRoot);
