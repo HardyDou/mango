@@ -10,7 +10,7 @@
 - 后台管理页面：网址分类、网址列表。
 - 前端 API 封装：`linkApi`。
 - admin-pages 页面注册入口：`registerMangoLinkAdminPages`。
-- 首页网址导航小组件：`@mango/link/widgets/link-navigation`。
+- 首页网址导航小组件：包内公开子路径 `./widgets/link-navigation`。
   小组件由 `registerMangoLinkAdminPages()` 返回注册信息，业务域为 `LINK / 导航域`，分组为 `导航域`。
 
 它不是独立门户组件。非管理后台页面应使用 `@mango/link-page` 或 `@mango/link-openapi`。
@@ -25,7 +25,7 @@
 | 网址分类管理 | `link/categories/index` | 管理公司网址分类。 |
 | 网址列表管理 | `link/items/index` | 管理公司、部门、指定人可见的网址。 |
 | 前端 API | `linkApi` | 封装后台管理和用户侧网址接口。 |
-| 首页网址导航小组件 | `@mango/link/widgets/link-navigation` | 工作台首页搜索与网址入口小组件，组件实现和样式归属 link 包。 |
+| 首页网址导航小组件 | `./widgets/link-navigation` | 工作台首页搜索与网址入口小组件，组件实现和样式归属 link 包。 |
 
 ## 3. 接入方式
 
@@ -40,7 +40,7 @@ pnpm add @mango/link @mango/link-openapi
 | 配置入口 | 字段 / Key | 默认值 | 含义 |
 |----------|------------|--------|------|
 | 页面注册 | `registerMangoLinkAdminPages()` | - | 把 `link/*/index` 页面 key 注册到 admin-pages，并返回首页组件注册信息（`system.link-navigation`）。 |
-| 小组件子入口 | `@mango/link/widgets/link-navigation` | - | 导出 `LinkNavigationWidget`、`linkNavigationWidgets` 和小组件 props 类型。 |
+| 小组件子入口 | `./widgets/link-navigation` | - | 导出 `LinkNavigationWidget`、`linkNavigationWidgets` 和小组件 props 类型。 |
 | 样式入口 | `@mango/link/style.css` | - | 加载网址导航管理页样式。 |
 | 后端配置 | `mango.link.open.jump.enabled` | `false` | 控制打开网址时是否经过后端跳转并记录访问。 |
 
@@ -57,11 +57,7 @@ registerMangoLinkAdminPages();
 
 使用 Mango CLI 生成的 full/custom 管理端时，`@mango/link` 是默认管理模块，CLI 会把 `registerMangoLinkAdminPages` 和 `@mango/link/style.css` 自动接入应用入口；手写宿主仍需按上面的方式显式接入。
 
-独立消费小组件类型或定义时使用子入口：
-
-```ts
-import { LinkNavigationWidget, linkNavigationWidgets } from '@mango/link/widgets/link-navigation';
-```
+业务应用不需要直接消费小组件子入口；集成 `registerMangoLinkAdminPages()` 后，admin-shell 会读取返回的 `widgets` 并注册首页网址导航小组件。需要做包级二次封装时，再从 `@mango/link` 的公开 export `./widgets/link-navigation` 引入对应类型或定义。
 
 页面 key：
 
@@ -91,7 +87,7 @@ import { LinkNavigationWidget, linkNavigationWidgets } from '@mango/link/widgets
 |------|------|------|
 | 菜单和权限 | `mango-link-starter` resource 声明 | 注入 `网址导航` 和 `网址管理` 菜单。 |
 | 页面 key | `@mango/link/admin-pages` | 注册 `link/company/index`、`link/items/index` 等 Vue 页面。 |
-| 首页小组件 | `@mango/link/widgets/link-navigation` | 通过 `registerMangoLinkAdminPages()` 返回给 admin-shell，按 `LINK / 导航域` 业务域展示。 |
+| 首页小组件 | `./widgets/link-navigation` | 通过 `registerMangoLinkAdminPages()` 返回给 admin-shell，按 `LINK / 导航域` 业务域展示。 |
 | 网址数据 | `mango-link` 后端 | 页面不持久化业务数据，所有列表、收藏和个人网址操作来自后端接口。 |
 
 ## 8. API 与扩展
