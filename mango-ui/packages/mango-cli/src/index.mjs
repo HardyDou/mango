@@ -96,6 +96,7 @@ const CORE_BACKEND_DEPENDENCIES = [
   { groupId: 'io.mango.platform.access', artifactId: 'mango-access-web-starter' },
   { groupId: 'io.mango.platform.org', artifactId: 'mango-org-starter' },
   { groupId: 'io.mango.platform.captcha', artifactId: 'mango-captcha-starter' },
+  { groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-starter' },
   { groupId: 'io.mango.platform.system', artifactId: 'mango-system-starter' },
 ];
 

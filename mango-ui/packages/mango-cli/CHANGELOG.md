@@ -1,5 +1,11 @@
 # @mango/cli Changelog
 
+## Unreleased
+
+### Fixed
+
+- Added `mango-notice-starter` to custom generated backend baseline dependencies so `custom --modules none` projects that include `mango-auth-starter` can provide the required `NoticeApi` bean during Spring Boot startup.
+
 ## 1.0.56 - 2026-07-01
 
 ### Changed

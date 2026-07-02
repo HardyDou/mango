@@ -16,6 +16,7 @@ const tempRoot = mkdtempSync(join(tmpdir(), 'mango-cli-'));
 process.env.MANGO_WORKSPACE_REGISTRY = join(tempRoot, 'workspaces.json');
 const fullProjectName = 'mango-full-acceptance';
 const customProjectName = 'mango-custom-acceptance';
+const customNoneProjectName = 'mango-custom-none-acceptance';
 
 try {
   assertPmoPackageBuilt();
@@ -378,7 +379,7 @@ try {
   if (customAppPom.includes('<artifactId>mango-admin-starter</artifactId>')) {
     throw new Error('custom backend should not depend on full mango-admin-starter');
   }
-  for (const expected of ['mango-system-starter', 'mango-workflow-starter', 'mango-template-starter']) {
+  for (const expected of ['mango-system-starter', 'mango-notice-starter', 'mango-workflow-starter', 'mango-template-starter']) {
     if (!customAppPom.includes(`<artifactId>${expected}</artifactId>`)) {
       throw new Error(`custom backend missing dependency: ${expected}`);
     }
@@ -389,8 +390,37 @@ try {
   assertManagedDependency(customPom, 'io.mango.platform.workflow', 'mango-workflow-api');
   assertNoDirectDependency(customAppPom, 'mango-file-api', 'custom backend app pom');
   assertNoDirectDependency(customAppPom, 'mango-template-api', 'custom backend app pom');
-  if (customAppPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
-    throw new Error('custom backend added unselected notice dependency');
+
+  const customNoneResult = spawnSync(process.execPath, [
+    cli,
+    'init',
+    customNoneProjectName,
+    '--preset',
+    'custom',
+    '--modules',
+    'none',
+    '--topology',
+    'monolith',
+    '--package',
+    'com.example.customnone',
+    '--group-id',
+    'com.example',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (customNoneResult.status !== 0) {
+    throw new Error(`custom none CLI failed:\n${customNoneResult.stdout}\n${customNoneResult.stderr}`);
+  }
+  const customNoneRoot = join(tempRoot, customNoneProjectName);
+  const customNoneMain = readFileSync(join(customNoneRoot, 'frontend/src/main.ts'), 'utf8');
+  if (customNoneMain.includes('registerMangoNoticeAdminPages')) {
+    throw new Error('custom none frontend registered notice admin pages');
+  }
+  const customNoneAppPom = readFileSync(join(customNoneRoot, 'backend/app/pom.xml'), 'utf8');
+  if (!customNoneAppPom.includes('<artifactId>mango-auth-starter</artifactId>')
+    || !customNoneAppPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
+    throw new Error('custom none backend should include auth and notice starters for a bootable baseline');
   }
   const businessReadmePath = join(customRoot, 'README.md');
   const businessReadmeBeforeAdd = '# business-owned readme\n';
