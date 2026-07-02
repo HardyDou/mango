@@ -264,7 +264,7 @@ import type {
   LinkNavigationItem,
   LinkNavigationSearchEngineCode,
   LinkNavigationWidgetProps,
-} from '../../types';
+} from './types';
 
 defineOptions({
   name: 'MangoLinkNavigationWidget',
@@ -417,7 +417,7 @@ async function openItem(item: LinkNavigationItem): Promise<void> {
     return;
   }
   if (item.id && (item.source === 'FAVORITE' || !item.path)) {
-    openExternalUrl(`/api/link/open/redirect/${encodeURIComponent(item.id)}?source=FAVORITE`);
+    openExternalUrl(`/api/link/open/redirect/${encodeURIComponent(item.id)}?source=${encodeURIComponent(openSourceOf(item))}`);
     return;
   }
   if (item.pageType === 'EXTERNAL_LINK' && item.url) {
@@ -612,14 +612,17 @@ async function loadDefaultWidgetData(): Promise<LinkNavigationWidgetData> {
       categories: [],
     };
   }
-  const result = await requestJson<LinkNavigationWidgetApiResult>('/api/link/navigation-widget/data', {
-    method: 'GET',
-  });
+  const [companyItems, personalPage, favoriteItems, categories] = await Promise.all([
+    requestJson<LinkCompanyApiItem[]>('/api/link/company-links/list', { method: 'GET' }),
+    requestJson<LinkPageResult<LinkPersonalApiItem>>('/api/link/personal-links/page?page=1&size=500', { method: 'GET' }),
+    requestJson<LinkFavoriteApiItem[]>('/api/link/favorites/list', { method: 'GET' }),
+    requestJson<LinkCategoryApiItem[]>('/api/link/personal-categories/list', { method: 'GET' }),
+  ]);
   return {
-    companyItems: (result.companyItems || []).map(toCompanyNavigationItem),
-    personalItems: (result.personalItems || []).map(toPersonalNavigationItem),
-    favoriteItems: (result.favoriteItems || []).map(toFavoriteNavigationItem),
-    categories: (result.categories || []).map(toCategoryGroup).filter(group => group.key),
+    companyItems: companyItems.map(toCompanyNavigationItem),
+    personalItems: pageItemsOf(personalPage).map(toPersonalNavigationItem),
+    favoriteItems: favoriteItems.map(toFavoriteNavigationItem),
+    categories: categories.map(toCategoryGroup).filter(group => group.key),
   };
 }
 
@@ -873,18 +876,16 @@ interface LinkPersonalApiItem {
   favorited?: boolean;
 }
 
-interface LinkNavigationWidgetApiResult {
-  companyItems?: LinkCompanyApiItem[];
-  personalItems?: LinkPersonalApiItem[];
-  favoriteItems?: LinkFavoriteApiItem[];
-  categories?: LinkCategoryApiItem[];
-}
-
 interface LinkNavigationWidgetData {
   companyItems: LinkNavigationItem[];
   personalItems: LinkNavigationItem[];
   favoriteItems: LinkNavigationItem[];
   categories: LinkNavigationGroup[];
+}
+
+interface LinkPageResult<T> {
+  list?: T[];
+  records?: T[];
 }
 
 interface LinkCategoryApiItem {
@@ -971,6 +972,17 @@ function resolveIconUrl(item: LinkNavigationItem): string {
   }
   const domain = resolveDomain(item.url);
   return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64` : '';
+}
+
+function pageItemsOf<T>(page: LinkPageResult<T>): T[] {
+  return page.list || page.records || [];
+}
+
+function openSourceOf(item: LinkNavigationItem): string {
+  if (item.source === 'PUBLIC' || item.source === 'COMPANY' || item.source === 'PERSONAL' || item.source === 'FAVORITE') {
+    return item.source;
+  }
+  return item.source || 'COMPANY';
 }
 
 function resolveDomain(url?: string): string {

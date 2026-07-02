@@ -14,6 +14,10 @@
       "types": "./dist/admin-pages.d.ts",
       "import": "./dist/admin-pages.js"
     },
+    "./widgets/link-navigation": {
+      "types": "./dist/widgets/link-navigation.d.ts",
+      "import": "./dist/widgets/link-navigation.js"
+    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {

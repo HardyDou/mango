@@ -14,10 +14,6 @@
       "types": "./dist/calendar.d.ts",
       "import": "./dist/calendar.js"
     },
-    "./link-navigation": {
-      "types": "./dist/link-navigation.d.ts",
-      "import": "./dist/link-navigation.js"
-    },
     "./quick-entry": {
       "types": "./dist/quick-entry.d.ts",
       "import": "./dist/quick-entry.js"

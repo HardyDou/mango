@@ -8,7 +8,6 @@ export default defineConfig({
       entry: {
         index: 'src/index.ts',
         calendar: 'src/system/calendar/calendar.ts',
-        'link-navigation': 'src/system/link-navigation/link-navigation.ts',
         'my-task': 'src/system/my-task/my-task.ts',
         'my-todo': 'src/system/my-todo/my-todo.ts',
         'my-process': 'src/system/my-process/my-process.ts',

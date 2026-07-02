@@ -1,23 +1,21 @@
 import { Search } from '@element-plus/icons-vue';
-import type { MangoGridWidgetDefinition } from '../../types';
+import type { MangoGridWidgetDefinition } from '@mango/grid-widgets';
 import LinkNavigationWidget from './LinkNavigationWidget.vue';
 
 export { default as LinkNavigationWidget } from './LinkNavigationWidget.vue';
 export type {
   LinkNavigationGroup,
   LinkNavigationItem,
+  LinkNavigationItemLoader,
   LinkNavigationSearchEngineCode,
   LinkNavigationWidgetProps,
-} from '../../types';
+} from './types';
 
-export const systemLinkNavigationWidgets: MangoGridWidgetDefinition[] = [
+export const linkNavigationWidgets: MangoGridWidgetDefinition[] = [
   {
     type: 'system.link-navigation',
     title: '网址导航',
     description: '在工作台首页提供百度、谷歌搜索和我的收藏网址',
-    category: '系统组件',
-    source: 'mango',
-    moduleCode: 'link-navigation',
     order: 95,
     icon: Search,
     component: LinkNavigationWidget,

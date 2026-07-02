@@ -1,6 +1,6 @@
 <template>
-  <div class="mango-grid-designer">
-    <aside class="mango-grid-designer__library">
+  <div class="mango-grid-designer" data-surface="grid-designer">
+    <aside class="mango-grid-designer__library" data-surface="grid-designer.widget-library">
       <div class="mango-grid-designer__library-header">
         <div>
           <div class="mango-grid-designer__library-title">组件库</div>
@@ -32,6 +32,11 @@
           v-for="widget in filteredWidgets"
           :key="widget.type"
           class="mango-grid-designer__library-item"
+          data-action="grid-designer.widget.add"
+          :data-record-key="widget.type"
+          :data-domain-code="widgetDomainKey(widget)"
+          :data-domain-name="widgetDomainLabel(widget)"
+          :data-group-name="widget.groupName || ''"
           :disabled="widget.disabled"
           draggable="true"
           type="button"

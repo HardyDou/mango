@@ -8,6 +8,7 @@ export default defineConfig({
       entry: {
         index: 'src/index.ts',
         'admin-pages': 'src/admin-pages.ts',
+        'widgets/link-navigation': 'src/widgets/link-navigation/link-navigation.ts',
       },
       formats: ['es'],
     },
@@ -17,8 +18,8 @@ export default defineConfig({
         '@mango/admin-pages/core',
         '@mango/common',
         '@mango/common/utils/request',
+        '@mango/grid-widgets',
         '@mango/link-openapi',
-        /^@mango\/grid-widgets(?:\/.*)?$/,
         'element-plus',
         'vue',
       ],

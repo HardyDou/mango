@@ -15,7 +15,6 @@
 | 排序策略 | 按 `order`、业务域、`groupName`、`title` 排序，保证组件库展示稳定 | `mergeGridWidgets` |
 | 运行时注入 | 把宿主传入的用户、租户、菜单、跳转函数注入小组件 | `MangoWidgetRuntimeContext` |
 | 系统小组件集合 | 汇总 Mango 预制系统小组件，便于工作台一次性接入 | `systemGridWidgets` |
-| 网址导航小组件 | 在工作台首页提供百度、谷歌搜索和 link 模块我的收藏网址 | `systemLinkNavigationWidgets` |
 | 用户信息小组件 | 展示当前登录人信息，并跳转到个人中心和修改密码 | `systemUserProfileWidgets` |
 | 快捷入口小组件 | 选择可见菜单并保存到浏览器本地，点击后跳转到对应模块 | `systemQuickEntryWidgets` |
 | 消息中心小组件 | 展示当前登录人的未读消息、最新未读摘要和消息分类统计 | `systemMessageCenterWidgets` |
@@ -23,7 +22,7 @@
 | 我的待办小组件 | 展示当前登录人的工作流待办统计，并跳转到对应任务列表 | `systemMyTodoWidgets` |
 | 我的申请小组件 | 展示当前登录人发起的工作流申请统计，并跳转到我的申请列表 | `systemMyProcessWidgets` |
 | 样式入口 | 独立消费系统小组件样式 | `@mango/grid-widgets/style.css` |
-| 类型导出 | 业务侧声明小组件、运行时上下文、网址导航、快捷入口菜单、消息中心分类、日历、待办和申请小组件参数 | `MangoGridWidgetDefinition`、`LinkNavigationWidgetProps`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps`、`CalendarWidgetProps`、`MyTodoWidgetProps`、`MyProcessWidgetProps` |
+| 类型导出 | 业务侧声明小组件、运行时上下文、快捷入口菜单、消息中心分类、日历、待办和申请小组件参数 | `MangoGridWidgetDefinition`、`QuickEntryWidgetProps`、`MessageCenterWidgetProps`、`CalendarWidgetProps`、`MyTodoWidgetProps`、`MyProcessWidgetProps` |
 
 ## 3. 接入方式
 
@@ -65,13 +64,6 @@ const widgets = mergeGridWidgets({
 | `mergeGridWidgets` | `businessWidgets` | `[]` | 业务系统小组件列表 | 排在系统小组件之后参与合并 | `src/registry.ts` |
 | `mergeGridWidgets` | `runtime` | `undefined` | 小组件运行时上下文 | 注入到小组件 props，不进入个人布局 JSON | `src/registry.ts` |
 | `mergeGridWidgets` | `onDuplicate` | `undefined` | 重复 `type` 回调 | 发现重复注册时可记录或提示 | `src/registry.ts` |
-| `LinkNavigationWidget` | `items` | `[]` | 外部直接传入的网址收藏项 | 优先于接口加载结果使用 | `src/system/link-navigation/LinkNavigationWidget.vue` |
-| `LinkNavigationWidget` | `groups` | `[]` | 外部直接传入的分组 | 决定分组标签和入口归属 | `src/system/link-navigation/LinkNavigationWidget.vue` |
-| `LinkNavigationWidget` | `loadItems` | `undefined` | 自定义收藏网址加载函数 | 未传入时默认请求 `/link/favorites/list` | `src/system/link-navigation/LinkNavigationWidget.vue` |
-| `LinkNavigationWidget` | `maxGroups` | `4` | 最多展示分组数 | 控制工作台小组件高度和标签数量 | `src/system/link-navigation/LinkNavigationWidget.vue` |
-| `LinkNavigationWidget` | `maxItemsPerGroup` | `8` | 单组最多入口数 | 控制快捷入口单行密度 | `src/system/link-navigation/LinkNavigationWidget.vue` |
-| `LinkNavigationWidget` | `defaultSearchEngine` | `baidu` | 默认搜索引擎 | 决定回车搜索和按钮选中态 | `src/system/link-navigation/LinkNavigationWidget.vue` |
-| `LinkNavigationWidget` | `navigate` | `undefined` | 小组件级跳转函数 | 优先于 `runtime.navigate` 调用 | `src/system/link-navigation/LinkNavigationWidget.vue` |
 | `QuickEntryWidget` | `menus` | `[]` | 快捷入口可选菜单来源 | 优先于 `runtime.menus` 使用 | `src/system/quick-entry/QuickEntryWidget.vue` |
 | `QuickEntryWidget` | `resolveMenus` | `undefined` | 自定义菜单解析函数 | 覆盖默认菜单过滤和映射规则 | `src/system/quick-entry/QuickEntryWidget.vue` |
 | `QuickEntryWidget` | `storageKey` | 按页面、租户、用户生成 | 本地保存 key | 决定快捷入口选择保存位置 | `src/system/quick-entry/QuickEntryWidget.vue` |
@@ -99,7 +91,7 @@ const widgets = mergeGridWidgets({
 | 参数 | 说明 |
 |------|------|
 | `widgets` | 直接传入的小组件定义，适合消费页面临时补充 |
-| `systemWidgets` | Mango 系统预制小组件，当前包含网址导航、日历、用户信息、快捷入口、消息中心、我的待办、我的申请和我的任务小组件 |
+| `systemWidgets` | Mango 系统预制小组件，当前包含日历、用户信息、快捷入口、消息中心、我的待办、我的申请和我的任务小组件 |
 | `businessWidgets` | 业务系统自定义小组件 |
 | `runtime` | 当前页面运行时上下文，会通过包装组件注入到每个小组件 |
 | `onDuplicate` | 重复 `type` 处理回调，当前策略保留先注册项、忽略后注册项 |
@@ -129,10 +121,6 @@ src/system/
 │  ├─ CalendarWidget.vue
 │  ├─ index.ts
 │  └─ calendar.ts
-├─ link-navigation/
-│  ├─ LinkNavigationWidget.vue
-│  ├─ index.ts
-│  └─ link-navigation.ts
 ├─ quick-entry/
 │  ├─ QuickEntryWidget.vue
 │  ├─ index.ts
@@ -158,26 +146,6 @@ src/system/
 │  ├─ index.ts
 │  └─ user-profile.ts
 └─ index.ts
-```
-
-### 网址导航小组件
-
-网址导航小组件是工作台首页的轻量工具型小组件，提供百度、谷歌两个搜索入口，并默认从 link 模块 `GET /link/favorites/list` 展示当前登录人的收藏网址。它不依赖 `@mango/link-page` 或历史 link-panel，也不提供网址管理页面。
-
-默认行为：
-
-| 能力 | 行为 |
-|------|------|
-| 回车搜索 | 使用当前选中的搜索引擎搜索关键词 |
-| 百度按钮 | 使用百度搜索当前输入；输入为 URL 时直接打开 URL |
-| 谷歌按钮 | 使用谷歌搜索当前输入；输入为 URL 时直接打开 URL |
-| 收藏分组 | 默认按 link 收藏项的 `categoryName/categoryId` 聚合，最多展示 4 组 |
-| 收藏点击 | 优先打开 `redirectUrl`；没有时使用 `/api/link/open/redirect/{id}?source=FAVORITE`；再没有时回退原始 `url` |
-
-独立引入：
-
-```ts
-import { LinkNavigationWidget, systemLinkNavigationWidgets } from '@mango/grid-widgets/link-navigation';
 ```
 
 ### 用户信息小组件
@@ -270,8 +238,6 @@ const widgets = mergeGridWidgets({
 ## 6. 数据与初始化
 
 本包不维护数据库 migration、后端接口、菜单资源清单、字典或默认权限数据。
-
-网址导航小组件不新增后端接口、本地存储或管理入口。默认数据来自后端 `mango-link` 的我的收藏接口，搜索引擎固定为百度和谷歌；业务项目需要固定网址入口时，应通过 `items`、`groups` 或 `loadItems` 显式传入，不应把示例网址写入组件内部。
 
 快捷入口小组件第一版把用户选择保存在浏览器 `localStorage`，默认 key 由 `pageCode`、`tenantId` 和 `username` 或 `userId` 组成：
 
@@ -371,11 +337,6 @@ pnpm.cmd admin:module-styles:check
 | `MessageCenterCategory.priority` | 消息分类优先级 | 不建议单独入库，可由消费页面 props 覆盖 |
 | `MessageCenterWidgetProps.messageCenterPath` | 消息中心页面跳转路径 | 不建议单独入库，可由消费页面 props 覆盖 |
 | `CalendarWidgetProps.calendarCode` | 日历小组件使用的工作日历编码 | 不建议单独入库，可由消费页面 props 覆盖 |
-| `LinkNavigationItem.id` | 收藏网址唯一 ID | 跟随 link 收藏数据或消费页面 props |
-| `LinkNavigationItem.title` | 收藏网址展示名称 | 跟随 link 收藏数据或消费页面 props |
-| `LinkNavigationItem.url` | 收藏网址原始地址 | 跟随 link 收藏数据或消费页面 props |
-| `LinkNavigationItem.redirectUrl` | link 模块跳转地址，优先用于打开并记录访问 | 跟随 link 收藏数据或消费页面 props |
-| `LinkNavigationGroup.key` | 收藏网址分组唯一 key | 跟随 link 分类或消费页面 props |
 | `QuickEntryMenuItem.id` | 快捷入口菜单唯一 ID | 本版仅保存到 `localStorage` |
 | `QuickEntryMenuItem.title` | 快捷入口展示名称 | 跟随菜单数据，不单独保存 |
 | `QuickEntryMenuItem.path` | 快捷入口路由路径 | 跟随菜单数据，不单独保存 |
@@ -387,10 +348,6 @@ pnpm.cmd admin:module-styles:check
 |------|----------|
 | 组件库里没有系统小组件 | 检查是否把 `systemGridWidgets` 传给 `mergeGridWidgets` |
 | 卡片内容不显示 | 检查布局项 `widgetType` 是否等于 `system.calendar`、`system.user-profile`、`system.quick-entry`、`system.message-center` 或业务小组件 `type` |
-| 网址导航没有收藏网址 | 检查 `/link/favorites/list` 返回、登录态、link 模块是否启用，或通过 `items/loadItems` 显式传入 |
-| 网址导航分组不符合预期 | 检查 link 收藏返回的 `categoryName/categoryId`，或通过 `groups` 显式传入分组 |
-| 网址导航点击不跳转 | 检查收藏项 `redirectUrl`、`id` 或 `url` 是否完整，后端 `/link/open/redirect/{id}` 是否可访问 |
-| 网址导航搜索没有反应 | 检查输入框是否有关键词，空关键词不会打开搜索页 |
 | 日历加载失败 | 检查 `/calendar/workdays/day` 和 `/calendar/workdays/month/summary` 接口权限、登录态、日历编码和后端错误日志 |
 | 日历节假日显示为空 | 检查日历日期数据中 `dayName`、`solarTerm`、`remark` 和农历初始化是否完整 |
 | 用户信息显示为空 | 检查 `runtime.user`、`runtime.tenant` 是否传入 |

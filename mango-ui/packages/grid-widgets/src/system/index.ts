@@ -7,7 +7,6 @@ import { systemMessageCenterWidgets } from './message-center';
 import { systemUserProfileWidgets } from './user-profile';
 export * from './calendar';
 export * from './message-center';
-export * from './link-navigation';
 export * from './my-process';
 export * from './my-task';
 export * from './my-todo';

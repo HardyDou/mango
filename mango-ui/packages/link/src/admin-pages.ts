@@ -1,5 +1,5 @@
 import { registerModulePages } from '@mango/admin-pages/core';
-import { systemLinkNavigationWidgets } from '@mango/grid-widgets';
+import { linkNavigationWidgets } from './widgets/link-navigation';
 
 let registered = false;
 
@@ -23,6 +23,6 @@ export function registerMangoLinkAdminPages() {
     businessDomainCode: 'mango-link',
     businessDomainName: '链接',
     groupName: '工作台',
-    widgets: systemLinkNavigationWidgets,
+    widgets: linkNavigationWidgets,
   };
 }

@@ -53,8 +53,10 @@ function normalizeHomeWidget(
   widget: MangoGridWidgetDefinition,
   options: RegisterMangoAdminHomeWidgetsOptions,
 ): MangoGridWidgetDefinition {
-  const businessDomainCode = widget.businessDomainCode || widget.domainCode || widget.moduleCode || options.businessDomainCode || options.moduleCode;
-  const businessDomainName = widget.businessDomainName || widget.domainName || options.businessDomainName || options.moduleName || businessDomainCode;
+  const injectedDomainCode = options.businessDomainCode || options.moduleCode;
+  const injectedDomainName = options.businessDomainName || options.moduleName;
+  const businessDomainCode = widget.businessDomainCode || widget.domainCode || injectedDomainCode || widget.moduleCode;
+  const businessDomainName = widget.businessDomainName || widget.domainName || injectedDomainName || widget.category || businessDomainCode;
   const groupName = widget.groupName || options.groupName || widget.category;
   return {
     ...widget,
@@ -63,8 +65,8 @@ function normalizeHomeWidget(
     businessDomainName,
     domainCode: widget.domainCode || businessDomainCode,
     domainName: widget.domainName || businessDomainName,
-    moduleCode: widget.moduleCode || businessDomainCode,
+    moduleCode: businessDomainCode || widget.moduleCode,
     groupName,
-    category: widget.category || businessDomainName || groupName,
+    category: businessDomainName || widget.category || groupName,
   };
 }

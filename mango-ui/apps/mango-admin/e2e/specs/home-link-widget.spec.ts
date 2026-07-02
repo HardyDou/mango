@@ -68,6 +68,36 @@ async function expectPersonalLinkFavorited(page: Page, linkId: string, keyword: 
   expect(item.favorited).toBe(expected);
 }
 
+async function fetchWidgetSourceData(page: Page) {
+  return page.evaluate(async () => {
+    async function read(path: string) {
+      const response = await fetch(`/api${path}`);
+      const result = await response.json();
+      if (!response.ok || !(result.success || result.code === 200 || result.code === '200')) {
+        throw new Error(`接口请求失败：${path} ${response.status} ${JSON.stringify(result)}`);
+      }
+      return result.data;
+    }
+    const [companyItems, personalPage, favoriteItems, categories] = await Promise.all([
+      read('/link/company-links/list'),
+      read('/link/personal-links/page?page=1&size=500'),
+      read('/link/favorites/list'),
+      read('/link/personal-categories/list'),
+    ]);
+    return {
+      companyItems,
+      personalItems: personalPage.list || personalPage.records || [],
+      favoriteItems,
+      categories,
+    } as {
+      companyItems: Array<{ id: string | number; name?: string }>;
+      personalItems: Array<{ id: string | number; name?: string; categoryId?: string | number }>;
+      favoriteItems: Array<{ id: string | number; name?: string }>;
+      categories: Array<{ id: string | number; name?: string }>;
+    };
+  });
+}
+
 test.describe('首页小组件-网址导航', () => {
   test.setTimeout(60 * 1000);
 
@@ -87,6 +117,64 @@ test.describe('首页小组件-网址导航', () => {
     }, token);
 
     await page.goto('/#/home');
+  });
+
+  test('组件库按链接业务域展示网址导航小组件', async ({ page }) => {
+    await expect(page.getByText('工作台', { exact: true })).toBeVisible({ timeout: 15000 });
+
+    await page.getByRole('button', { name: '编辑布局' }).click();
+
+    const library = page.locator('[data-surface="grid-designer.widget-library"]');
+    await expect(library).toBeVisible();
+    await expect(library.getByRole('tab', { name: '链接' })).toBeVisible();
+    await library.getByRole('tab', { name: '链接' }).click();
+
+    const linkWidgetEntry = library.locator('[data-record-key="system.link-navigation"]');
+    await expect(linkWidgetEntry).toBeVisible();
+    await expect(linkWidgetEntry).toHaveAttribute('data-domain-code', 'mango-link');
+    await expect(linkWidgetEntry).toHaveAttribute('data-domain-name', '链接');
+    await expect(linkWidgetEntry).toHaveAttribute('data-group-name', '工作台');
+    await expect(linkWidgetEntry).toContainText('链接 / 工作台');
+    await expect(linkWidgetEntry).toContainText('网址导航');
+  });
+
+  test('首页小组件默认数据与网址导航菜单接口一致', async ({ page }) => {
+    const requestedPaths = new Set<string>();
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname.startsWith('/api/link/')) {
+        requestedPaths.add(`${url.pathname}${url.search}`);
+      }
+    });
+
+    await page.reload();
+    const linkWidget = page.locator('[data-surface="home.link-navigation"]');
+    await expect(linkWidget).toBeVisible({ timeout: 15000 });
+    await expect(linkWidget.locator('.mango-grid-widget-link-navigation__items')).toHaveAttribute('data-state', /ready|empty/);
+
+    expect([...requestedPaths].some(path => path.startsWith('/api/link/company-links/list'))).toBeTruthy();
+    expect([...requestedPaths].some(path => path.startsWith('/api/link/personal-links/page'))).toBeTruthy();
+    expect([...requestedPaths].some(path => path.startsWith('/api/link/favorites/list'))).toBeTruthy();
+    expect([...requestedPaths].some(path => path.startsWith('/api/link/personal-categories/list'))).toBeTruthy();
+    expect([...requestedPaths].some(path => path.startsWith('/api/link/navigation-widget/data'))).toBeFalsy();
+
+    const data = await fetchWidgetSourceData(page);
+
+    await linkWidget.locator('[data-record-key="favorites"]').click();
+    for (const item of data.favoriteItems.slice(0, 3)) {
+      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
+    }
+
+    await linkWidget.locator('[data-record-key="enterprise"]').click();
+    for (const item of data.companyItems.slice(0, 3)) {
+      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
+    }
+
+    for (const item of data.personalItems.slice(0, 3)) {
+      const groupKey = item.categoryId ? String(item.categoryId) : 'personal-ungrouped';
+      await linkWidget.locator(`[data-record-key="${groupKey}"]`).click();
+      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
+    }
   });
 
   test('管理员首页可看到网址导航小组件并可执行基础交互', async ({ page }) => {
