@@ -1,5 +1,26 @@
 # Mango Changelog
 
+## Unreleased
+
+### Changed
+
+- Modularized home workbench widgets so concrete widgets now live in their owning business UI packages: `@mango/link`, `@mango/system`, `@mango/calendar`, `@mango/notice`, and `@mango/workflow`.
+- Reduced `@mango/grid-widgets` to the shared widget registry/runtime/types boundary and removed the deleted `@mango/link-panel` compatibility package from the CLI release lock.
+- Updated the admin home workbench UI by removing the welcome header, floating the round layout action at the bottom-right corner, and refining the widget library panel.
+- Added the Link navigation home widget under `@mango/link`, including its package-owned styles and admin registrar integration.
+
+### Upgrade Notes
+
+- Business frontends should stop depending on `@mango/link-panel`; use `@mango/link` for Link admin pages and the Link navigation home widget.
+- Custom admin integrations must include the business UI packages that own the widgets they want to expose. `@mango/grid-widgets` no longer provides concrete business widget implementations.
+- Admin package consumers should keep package styles synchronized through the generated admin style aggregation; do not rely on `@mango/grid-widgets/style.css` to carry Link, System, Calendar, Notice, or Workflow widget styles.
+
+### Verification
+
+- PR #365 validation reported `pnpm admin:styles:check`, `pnpm admin:module-styles:check`, affected package builds, `pnpm --filter @mango/admin-shell build`, and the Link home widget Playwright scenario as passed.
+- Follow-up documentation gate: `node mango-pmo/tools/audit-module-readmes.mjs`.
+- Follow-up documentation gate: `node mango-pmo/tools/audit-readme-source-facts.mjs`.
+
 ## v2026.07.01-maven-1.0.5-data-governance-release - 2026-07-01
 
 ### New
@@ -98,10 +119,6 @@
 - `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
 - `gh release view v2026.07.01-maven-1.0.4-link-cli-docs-release`
 - `git diff --check`
-
-## Unreleased
-
-- No unreleased changes.
 
 ## v2026.07.01-maven-1.0.2-workflow-runtime-release - 2026-07-01
 
