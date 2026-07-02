@@ -1133,6 +1133,9 @@ importers:
       '@mango/common':
         specifier: 1.0.11
         version: link:../common
+      '@mango/grid-widgets':
+        specifier: 1.0.8
+        version: link:../grid-widgets
       '@mango/link-openapi':
         specifier: 1.0.0
         version: link:../link-openapi
@@ -1189,12 +1192,6 @@ importers:
       vite:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
-
-  packages/link-panel:
-    dependencies:
-      '@mango/link-page':
-        specifier: 1.0.0
-        version: link:../link-page
 
   packages/mango-cli:
     dependencies:

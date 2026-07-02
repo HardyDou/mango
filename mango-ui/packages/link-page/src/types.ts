@@ -40,7 +40,3 @@ export interface LinkPageProps {
   searchEngines?: LinkPageSearchEngine[];
   defaultSearchEngine?: string;
 }
-
-export type LinkPanelSearchEngine = LinkPageSearchEngine;
-export type LinkPanelLoginInput = LinkPageLoginInput;
-export type LinkPanelProps = LinkPageProps;

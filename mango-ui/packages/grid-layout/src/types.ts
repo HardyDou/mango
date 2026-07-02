@@ -35,6 +35,12 @@ export interface GridWidgetDefinition {
   title: string;
   description?: string;
   category?: string;
+  businessDomainCode?: string;
+  businessDomainName?: string;
+  domainCode?: string;
+  domainName?: string;
+  moduleCode?: string;
+  groupName?: string;
   icon?: Component;
   component?: Component;
   defaultLayout?: Partial<GridLayoutRect>;

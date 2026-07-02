@@ -216,6 +216,7 @@ test.describe('网址导航菜单 E2E', () => {
     const unique = `E2E_LINK_NAV_${testInfo.project.name}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const tag = `e2e-${testInfo.project.name}`;
     let categoryId: string | undefined;
+    let personalCategoryId: string | undefined;
     let companyLinkId: string | undefined;
     let personalLinkId: string | undefined;
 
@@ -243,12 +244,20 @@ test.describe('网址导航菜单 E2E', () => {
         },
       }));
 
+      personalCategoryId = await expectApiData<string>(await request.post('/api/link/personal-categories/create', {
+        headers: authHeaders,
+        data: {
+          name: `${unique}_PERSONAL_CATEGORY`,
+          sortNo: 0,
+        },
+      }));
+
       personalLinkId = await expectApiData<string>(await request.post('/api/link/personal-links/create', {
         headers: authHeaders,
         data: {
           name: `${unique}_PERSONAL`,
           url: `https://example.com/${unique.toLowerCase()}/personal`,
-          categoryId,
+          categoryId: personalCategoryId,
           summary: unique,
           tags: [tag],
         },
@@ -288,11 +297,11 @@ test.describe('网址导航菜单 E2E', () => {
       ]));
 
       const companyEntry = visibleLinks.find((item) => item.id === String(companyLinkId) && item.source === 'COMPANY');
-      expect(companyEntry?.redirectUrl).toBe(`/link/open/jump?url=${encodeURIComponent(companyEntry?.url || '')}&source=COMPANY`);
+      expect(companyEntry?.url).toBe(`https://example.com/${unique.toLowerCase()}/company`);
       const beforeAccessCount = Number(mysqlScalar(
         `SELECT COUNT(*) FROM link_access_record WHERE link_id = ${companyLinkId} AND source = 'COMPANY'`,
       ));
-      const redirectResponse = await request.get(`/api${companyEntry?.redirectUrl}`, {
+      const redirectResponse = await request.get(`/api/link/open/redirect/${companyLinkId}?source=COMPANY`, {
         headers: authHeaders,
         maxRedirects: 0,
       });
@@ -312,6 +321,9 @@ test.describe('网址导航菜单 E2E', () => {
       }
       if (personalLinkId) {
         await request.delete(`/api/link/personal-links/delete?id=${personalLinkId}`, { headers: authHeaders });
+      }
+      if (personalCategoryId) {
+        await request.delete(`/api/link/personal-categories/delete?id=${personalCategoryId}`, { headers: authHeaders });
       }
       if (categoryId) {
         await request.delete(`/api/link/categories/delete?id=${categoryId}`, { headers: authHeaders });
@@ -334,7 +346,7 @@ test.describe('网址导航菜单 E2E', () => {
     const menuBody = await (await page.request.get('/api/authorization/menus/user?fmt=tree')).json();
     const menuNames = collectMenuNames(menuBody.data || []);
     expect(menuNames).toContain('网址导航');
-    expect(menuNames).toContain('公司网址');
+    expect(menuNames).toContain('我的分类');
     expect(menuNames).toContain('我的收藏');
     expect(menuNames).toContain('我的网址');
     expect(menuNames).toContain('网址管理');
@@ -349,6 +361,58 @@ test.describe('网址导航菜单 E2E', () => {
 
     await page.goto('/#/link/company');
     await expect(page.locator('[data-page="link-company"]')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('heading', { name: '公司网址' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '我的分类' })).toBeVisible();
+  });
+
+  test('@p0 @mango-link 我的分类和我的网址页面回显真实数据', async ({ page, request }, testInfo) => {
+    const token = await loginByApi(request);
+    const authHeaders = { Authorization: `Bearer ${token}` };
+    const unique = `E2E_LINK_PAGE_${testInfo.project.name}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    let personalCategoryId: string | undefined;
+    let personalLinkId: string | undefined;
+
+    try {
+      personalCategoryId = await expectApiData<string>(await request.post('/api/link/personal-categories/create', {
+        headers: authHeaders,
+        data: {
+          name: `${unique}_分类`,
+          sortNo: 10,
+        },
+      }));
+
+      personalLinkId = await expectApiData<string>(await request.post('/api/link/personal-links/create', {
+        headers: authHeaders,
+        data: {
+          name: `${unique}_网址`,
+          url: `https://example.com/${unique.toLowerCase()}`,
+          categoryId: personalCategoryId,
+          summary: `${unique}_说明`,
+          tags: ['e2e', 'link'],
+        },
+      }));
+
+      await login(page);
+      await waitForLinkMenuReady(page);
+
+      await page.goto('/#/link/company');
+      await expect(page.locator('[data-page="link-company"]')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: '我的分类' })).toBeVisible();
+      await expect(page.getByText('企业导航')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(`${unique}_分类`)).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('[data-page="link-company"] .el-tag', { hasText: /^个人$/ }).first()).toBeVisible();
+
+      await page.goto('/#/link/my-links');
+      await expect(page.locator('[data-page="link-my-links"]')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: '我的网址' })).toBeVisible();
+      await expect(page.getByText(`${unique}_网址`)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(`${unique}_说明`)).toBeVisible();
+    } finally {
+      if (personalLinkId) {
+        await request.delete(`/api/link/personal-links/delete?id=${personalLinkId}`, { headers: authHeaders });
+      }
+      if (personalCategoryId) {
+        await request.delete(`/api/link/personal-categories/delete?id=${personalCategoryId}`, { headers: authHeaders });
+      }
+    }
   });
 });

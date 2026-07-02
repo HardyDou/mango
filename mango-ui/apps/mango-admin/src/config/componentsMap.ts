@@ -5,13 +5,19 @@ import {
 } from '@mango/admin-pages';
 import {
   configureMangoAdminShell,
+  ensureFeatureRegistrars,
 } from '@mango/admin-shell';
 import { registerMangoAdminShellBaseDevPages } from '@mango/admin-shell/dev-base-pages';
 import { registerMangoAdminShellDevPages } from '@mango/admin-shell/dev-pages';
-import { registerFullMangoAdminFeaturePages } from './adminFeatureRegistrars';
+import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
 
 configureMangoAdminShell({
   features: 'full',
+  featureRegistrars: mangoFullAdminFeatureRegistrars,
+});
+
+void ensureFeatureRegistrars().catch((error) => {
+  console.error('[mango-admin] failed to register admin feature modules', error);
 });
 
 registerDefaultAdminPages({
@@ -21,8 +27,6 @@ registerDefaultAdminPages({
     notFound: () => import('@/views/error/404.vue'),
   },
 });
-registerFullMangoAdminFeaturePages();
-
 if (import.meta.env.DEV) {
   registerMangoAdminShellBaseDevPages();
   registerMangoAdminShellDevPages();

@@ -86,14 +86,14 @@ Mango 前端包默认服务管理后台。标记为 `Admin Shell` 或 `Admin Pag
 | 能力 | 包 | 适用端 / 集成形态 | 官网类站点建议 | README | 排障入口 |
 |------|----|-------------------|----------------|--------|----------|
 | 单体管理端 | `@mango/admin` | Admin Shell，后台应用聚合入口 | 不使用 | [README](../../mango-ui/packages/admin/README.md) | [README](../../mango-ui/packages/admin/README.md) |
-| 后台 Shell | `@mango/admin-shell` | Admin Shell，后台布局、菜单、路由和运行时 | 不使用，除非官网就是内部后台 | [README](../../mango-ui/packages/admin-shell/README.md) | [README](../../mango-ui/packages/admin-shell/README.md) |
+| 后台 Shell | `@mango/admin-shell` | Admin Shell，后台布局、菜单、路由、运行时和首页业务小组件自动注册 | 不使用，除非官网就是内部后台 | [README](../../mango-ui/packages/admin-shell/README.md) | [README](../../mango-ui/packages/admin-shell/README.md) |
 | 页面注册表 | `@mango/admin-pages` | Admin Pages，后台页面注册和 component key 映射 | 不使用 | [README](../../mango-ui/packages/admin-pages/README.md) | [README](../../mango-ui/packages/admin-pages/README.md) |
 | 认证前端 | `@mango/auth` | Admin Pages，后台登录、用户与认证页面 | 不直接复用官网登录页 | [README](../../mango-ui/packages/auth/README.md) | [README](../../mango-ui/packages/auth/README.md) |
 | 日历前端 | `@mango/calendar` | Admin Pages，后台日历管理页面 | 不直接复用整页 | [README](../../mango-ui/packages/calendar/README.md) | [README](../../mango-ui/packages/calendar/README.md) |
 | 任务前端 | `@mango/job` | Admin Pages，后台任务管理页面 | 不使用 | [README](../../mango-ui/packages/job/README.md) | [README](../../mango-ui/packages/job/README.md) |
-| 网址导航前端 | `@mango/link` | Admin Pages，后台网址导航和网址管理页面 | 不直接复用整页；门户导航使用 `@mango/link-panel` | [README](../../mango-ui/packages/link/README.md) | [README](../../mango-ui/packages/link/README.md) |
+| 网址导航前端 | `@mango/link` | Admin Pages，后台网址导航和网址管理页面 | 不直接复用整页；门户导航使用 `@mango/link-page` | [README](../../mango-ui/packages/link/README.md) | [README](../../mango-ui/packages/link/README.md) |
 | 网址导航 Open API | `@mango/link-openapi` | 通用能力，网址导航 API client | 可评估使用，需确认登录态和 `/api` 前缀 | [README](../../mango-ui/packages/link-openapi/README.md) | [README](../../mango-ui/packages/link-openapi/README.md) |
-| 网址导航面板 | `@mango/link-panel` | 通用组件，分组展示网址并支持个人操作 | 可评估使用，需确认 Element Plus、登录态和后端 `mango-link` | [README](../../mango-ui/packages/link-panel/README.md) | [README](../../mango-ui/packages/link-panel/README.md) |
+| 网址导航页面 | `@mango/link-page` | 通用页面，分组展示网址并支持个人操作 | 可评估使用，需确认 Element Plus、登录态和后端 `mango-link` | [README](../../mango-ui/packages/link-page/README.md) | [README](../../mango-ui/packages/link-page/README.md) |
 | 通知前端 | `@mango/notice` | Admin Pages，后台通知管理页面 | 不直接复用整页 | [README](../../mango-ui/packages/notice/README.md) | [README](../../mango-ui/packages/notice/README.md) |
 | 编号前端 | `@mango/numgen` | Admin Pages，后台编号规则管理页面 | 不使用 | [README](../../mango-ui/packages/numgen/README.md) | [README](../../mango-ui/packages/numgen/README.md) |
 | 支付前端 | `@mango/payment` | Admin Pages，后台支付配置、订单和对账页面 | 不直接复用后台管理页；收银台另按业务评估 | [README](../../mango-ui/packages/payment/README.md) | [README](../../mango-ui/packages/payment/README.md) |
@@ -106,8 +106,8 @@ Mango 前端包默认服务管理后台。标记为 `Admin Shell` 或 `Admin Pag
 | 应用运行时 | `@mango/app-runtime` | 通用/运行时能力，应用装配基础 | 可评估使用，但需确认是否绑定后台运行模型 | [README](../../mango-ui/packages/app-runtime/README.md) | [README](../../mango-ui/packages/app-runtime/README.md) |
 | 公共组件 | `@mango/common` | 通用能力，请求、消息、选择器、编辑器等 | 可评估使用，需核对 Element Plus、主题和后台依赖 | [README](../../mango-ui/packages/common/README.md) | [README](../../mango-ui/packages/common/README.md) |
 | 文件前端 | `@mango/file` | 混合能力，包含后台页面和上传/预览组件 | 只评估组件级能力，不直接复用后台页面 | [README](../../mango-ui/packages/file/README.md) | [README](../../mango-ui/packages/file/README.md) |
-| 自定义栅格布局前端 | `@mango/grid-layout` | 通用能力，自定义栅格展示与编辑器 | 可评估使用，需确认 Element Plus、主题和个人布局接口边界 | [README](../../mango-ui/packages/grid-layout/README.md) | [README](../../mango-ui/packages/grid-layout/README.md) |
-| 栅格系统小组件 | `@mango/grid-widgets` | 通用能力，系统小组件集合、日历、用户信息、快捷入口、消息中心与业务小组件注册聚合 | 可评估使用，需确认运行时用户、菜单、跳转适配和小组件数据权限边界 | [README](../../mango-ui/packages/grid-widgets/README.md) | [README](../../mango-ui/packages/grid-widgets/README.md) |
+| 自定义栅格布局前端 | `@mango/grid-layout` | 通用能力，自定义栅格展示与编辑器，支持失效组件查看态隐藏和编辑态清理 | 可评估使用，需确认 Element Plus、主题和个人布局接口边界 | [README](../../mango-ui/packages/grid-layout/README.md) | [README](../../mango-ui/packages/grid-layout/README.md) |
+| 栅格系统小组件 | `@mango/grid-widgets` | 通用能力，系统小组件集合、网址导航、日历、用户信息、快捷入口、消息中心与业务小组件注册聚合 | 可评估使用，需确认运行时用户、菜单、跳转适配和小组件数据权限边界 | [README](../../mango-ui/packages/grid-widgets/README.md) | [README](../../mango-ui/packages/grid-widgets/README.md) |
 | CLI | `@mango/cli` | 开发工具，项目生成、模块追加和 PMO baseline 同步 | 可用于生成项目，不是运行时组件 | [README](../../mango-ui/packages/mango-cli/README.md) | [README](../../mango-ui/packages/mango-cli/README.md) |
 
 ## 7. 后端装配与工具

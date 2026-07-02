@@ -7,7 +7,7 @@
       </div>
       <el-form :model="query" class="link-search" inline @submit.prevent>
         <el-form-item label="关键字" class="link-search-item">
-          <el-input v-model="query.keyword" clearable placeholder="分类名称/编码" @keyup.enter="loadRows" />
+          <el-input v-model="query.keyword" clearable placeholder="分类名称" @keyup.enter="loadRows" />
         </el-form-item>
         <el-form-item label="状态" class="link-search-item">
           <el-select v-model="query.status" clearable placeholder="全部">
@@ -31,11 +31,20 @@
           <template #default="{ row }">
             <div class="link-name-cell">
               <strong>{{ row.name || '-' }}</strong>
-              <span>{{ row.code || '-' }}</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="summary" label="说明" min-width="220" show-overflow-tooltip />
+        <el-table-column label="范围" width="110">
+          <template #default="{ row }">
+            <el-tag :type="row.scope === 'PERSONAL' ? 'warning' : 'success'" size="small" effect="plain">
+              {{ categoryScopeText(row.scope) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="归属用户" width="140">
+          <template #default="{ row }">{{ ownerText(row) }}</template>
+        </el-table-column>
+        <el-table-column prop="remark" label="说明" min-width="220" show-overflow-tooltip />
         <el-table-column prop="sortNo" label="排序" width="90" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
@@ -75,11 +84,8 @@
         <el-form-item label="分类名称" prop="name">
           <el-input v-model="form.name" maxlength="64" show-word-limit placeholder="例如：办公系统" />
         </el-form-item>
-        <el-form-item label="分类编码" prop="code">
-          <el-input v-model="form.code" maxlength="64" show-word-limit placeholder="例如：office" />
-        </el-form-item>
         <el-form-item label="说明">
-          <el-input v-model="form.summary" type="textarea" maxlength="200" show-word-limit :rows="3" />
+          <el-input v-model="form.remark" type="textarea" maxlength="256" show-word-limit :rows="3" />
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="form.sortNo" :min="0" :max="999999" style="width: 100%" />
@@ -107,14 +113,24 @@ const editorVisible = ref(false);
 const errorMessage = ref('');
 const formRef = ref<FormInstance>();
 const query = reactive<LinkPageQuery>({ pageNum: 1, pageSize: 10, keyword: '', status: '' });
-const form = reactive<LinkCategory>({ name: '', code: '', summary: '', sortNo: 0 });
+const form = reactive<LinkCategory>({ name: '', remark: '', sortNo: 0 });
 const rules: FormRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
 };
 
 function statusText(status?: LinkStatus) {
   return status === 'DISABLED' ? '停用' : '启用';
+}
+
+function categoryScopeText(scope?: LinkCategory['scope']) {
+  return scope === 'PERSONAL' ? '个人分组' : '企业分类';
+}
+
+function ownerText(row: LinkCategory) {
+  if (row.scope !== 'PERSONAL') {
+    return '企业';
+  }
+  return row.ownerDisplayName || row.ownerUserId || '-';
 }
 
 async function loadRows() {
@@ -142,8 +158,7 @@ function openEditor(row?: LinkCategory) {
   Object.assign(form, {
     id: row?.id,
     name: row?.name || '',
-    code: row?.code || '',
-    summary: row?.summary || '',
+    remark: row?.remark || '',
     sortNo: row?.sortNo || 0,
   });
   editorVisible.value = true;

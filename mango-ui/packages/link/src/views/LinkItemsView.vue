@@ -11,7 +11,7 @@
         </el-form-item>
         <el-form-item label="分类" class="link-search-item">
           <el-select v-model="query.categoryId" clearable filterable placeholder="全部分类">
-            <el-option v-for="item in categoryOptions" :key="String(item.id)" :label="item.name || item.code" :value="item.id" />
+            <el-option v-for="item in categoryOptions" :key="String(item.id)" :label="categoryOptionLabel(item)" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="可见范围" class="link-search-item">
@@ -36,13 +36,16 @@
       <el-table v-loading="loading" :data="rows" stripe empty-text="暂无网址">
         <el-table-column label="网址" min-width="280">
           <template #default="{ row }">
-            <div class="link-name-cell">
+            <a class="link-name-cell link-name-cell--link" :href="linkHref(row)" target="_blank" rel="noopener noreferrer">
               <strong>{{ row.name || '-' }}</strong>
               <span>{{ row.url || '-' }}</span>
-            </div>
+            </a>
           </template>
         </el-table-column>
         <el-table-column prop="categoryName" label="分类" width="150" />
+        <el-table-column label="归属用户" width="140">
+          <template #default="{ row }">{{ ownerText(row) }}</template>
+        </el-table-column>
         <el-table-column label="可见范围" width="120">
           <template #default="{ row }">
             <el-tag size="small" effect="plain">{{ visibilityText(row.visibilityScope) }}</el-tag>
@@ -64,10 +67,9 @@
         <el-table-column label="更新时间" width="170">
           <template #default="{ row }">{{ row.updateTime || row.createTime || '-' }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="260" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <div class="link-actions">
-              <el-button link type="primary" :icon="Position" @click="openLinkWithRedirect(row, navigationSourceOf(row.visibilityScope))">打开</el-button>
               <el-button link type="primary" :icon="Edit" @click="openEditor(row)">编辑</el-button>
               <el-button v-if="row.status === 'ENABLED'" link type="warning" @click="changeStatus(row, 'DISABLED')">停用</el-button>
               <el-button v-else link type="success" @click="changeStatus(row, 'ENABLED')">启用</el-button>
@@ -101,7 +103,7 @@
           <el-col :span="12">
             <el-form-item label="分类" prop="categoryId">
               <el-select v-model="form.categoryId" filterable placeholder="请选择分类">
-                <el-option v-for="item in categoryOptions" :key="String(item.id)" :label="item.name || item.code" :value="item.id" />
+                <el-option v-for="item in editableCategoryOptions" :key="String(item.id)" :label="categoryOptionLabel(item)" :value="item.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -111,7 +113,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="简介">
+            <el-form-item label="说明">
               <el-input v-model="form.summary" type="textarea" maxlength="256" show-word-limit :rows="3" />
             </el-form-item>
           </el-col>
@@ -134,8 +136,8 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="可见范围" prop="visibilityScope">
-              <el-select v-model="form.visibilityScope" @change="syncTargetType">
-                <el-option v-for="item in visibilityOptions" :key="item.value" :label="item.label" :value="item.value" />
+              <el-select v-model="form.visibilityScope" :disabled="isPersonalForm" @change="syncTargetType">
+                <el-option v-for="item in formVisibilityOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -144,14 +146,14 @@
               <el-switch v-model="form.recommended" />
             </el-form-item>
           </el-col>
-          <el-col v-if="form.visibilityScope === 'DEPARTMENT' || form.visibilityScope === 'USER'" :span="24">
-            <el-form-item :label="form.visibilityScope === 'DEPARTMENT' ? '部门 ID' : '用户 ID'" prop="targetIdsText">
-              <el-input v-model="form.targetIdsText" placeholder="多个 ID 用英文逗号分隔，例如：1001,1002" />
+          <el-col v-if="form.visibilityScope === 'DEPARTMENT'" :span="24">
+            <el-form-item label="部门" prop="targetIds">
+              <OrgSelector v-model="form.targetIds" multiple title="选择可见部门" placeholder="请选择部门" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item label="备注">
-              <el-input v-model="form.remark" type="textarea" maxlength="256" show-word-limit :rows="2" />
+          <el-col v-if="form.visibilityScope === 'USER'" :span="24">
+            <el-form-item label="用户" prop="targetIds">
+              <UserSelector v-model="form.targetIds" mode="dialog" multiple title="选择可见用户" placeholder="请选择用户" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -165,14 +167,15 @@
 </template>
 
 <script setup lang="ts">
-import { Delete, Edit, Plus, Position, Refresh, Search } from '@element-plus/icons-vue';
+import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { OrgSelector, UserSelector } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import {
   linkApi,
+  linkRedirectUrl,
   navigationSourceOf,
   normalizeApiId,
-  openLinkWithRedirect,
   type ApiId,
   type LinkCategory,
   type LinkItem,
@@ -184,7 +187,7 @@ import {
 } from '../api/link';
 
 interface LinkItemForm extends LinkItem {
-  targetIdsText?: string;
+  targetIds: ApiId[];
 }
 
 const visibilityOptions: Array<{ label: string; value: LinkVisibilityScope }> = [
@@ -192,7 +195,9 @@ const visibilityOptions: Array<{ label: string; value: LinkVisibilityScope }> = 
   { label: '公司内', value: 'COMPANY' },
   { label: '指定部门', value: 'DEPARTMENT' },
   { label: '指定用户', value: 'USER' },
+  { label: '个人', value: 'PERSONAL' },
 ];
+const creatableVisibilityOptions = visibilityOptions.filter(item => item.value !== 'PERSONAL');
 
 const rows = ref<LinkItem[]>([]);
 const categoryOptions = ref<LinkCategory[]>([]);
@@ -213,17 +218,58 @@ const form = reactive<LinkItemForm>({
   recommended: false,
   sortNo: 0,
   remark: '',
-  targetIdsText: '',
+  targetIds: [],
 });
 const rules: FormRules = {
   name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   url: [{ required: true, message: '请输入网址', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   visibilityScope: [{ required: true, message: '请选择可见范围', trigger: 'change' }],
+  targetIds: [{
+    validator: (_rule, value: unknown, callback: (error?: Error) => void) => {
+      if ((form.visibilityScope === 'DEPARTMENT' || form.visibilityScope === 'USER') && (!Array.isArray(value) || value.length === 0)) {
+        callback(new Error(form.visibilityScope === 'DEPARTMENT' ? '请选择部门' : '请选择用户'));
+        return;
+      }
+      callback();
+    },
+    trigger: 'change',
+  }],
 };
+
+const isPersonalForm = computed(() => form.visibilityScope === 'PERSONAL');
+const formVisibilityOptions = computed(() => {
+  if (!isPersonalForm.value) {
+    return creatableVisibilityOptions;
+  }
+  return visibilityOptions;
+});
+const editableCategoryOptions = computed(() => {
+  if (isPersonalForm.value) {
+    const ownerUserId = normalizeApiId(form.ownerUserId);
+    return categoryOptions.value.filter(item => item.scope === 'PERSONAL' && normalizeApiId(item.ownerUserId) === ownerUserId);
+  }
+  return categoryOptions.value.filter(item => item.scope !== 'PERSONAL');
+});
 
 function visibilityText(scope?: LinkVisibilityScope) {
   return visibilityOptions.find(item => item.value === scope)?.label || '-';
+}
+
+function linkHref(row: Pick<LinkItem, 'id' | 'url' | 'visibilityScope'>) {
+  const id = normalizeApiId(row.id);
+  return id ? linkRedirectUrl(id, navigationSourceOf(row.visibilityScope)) : row.url || '#';
+}
+
+function categoryOptionLabel(item: LinkCategory) {
+  const scope = item.scope === 'PERSONAL' ? '个人' : '企业';
+  return `${item.name || '-'}（${scope}${item.scope === 'PERSONAL' ? ` / ${item.ownerDisplayName || item.ownerUserId || '-'}` : ''}）`;
+}
+
+function ownerText(row: LinkItem) {
+  return row.visibilityScope === 'PERSONAL'
+    ? row.ownerDisplayName || row.ownerUserId || '-'
+    : '企业';
 }
 
 async function loadCategories() {
@@ -250,19 +296,22 @@ function resetQuery() {
   void loadRows();
 }
 
-function targetIdsText(targets?: LinkVisibilityTarget[]) {
-  return (targets || []).map(item => item.targetId).filter(Boolean).join(',');
+function targetIds(targets?: LinkVisibilityTarget[]) {
+  return (targets || []).map(item => item.targetId).filter((id): id is ApiId => Boolean(id));
 }
 
 function syncTargetType() {
   if (form.visibilityScope !== 'DEPARTMENT' && form.visibilityScope !== 'USER') {
-    form.targetIdsText = '';
+    form.targetIds = [];
   }
+  formRef.value?.clearValidate('targetIds');
 }
 
 function openEditor(row?: LinkItem) {
   Object.assign(form, {
     id: row?.id,
+    ownerUserId: row?.ownerUserId,
+    ownerDisplayName: row?.ownerDisplayName,
     name: row?.name || '',
     url: row?.url || '',
     categoryId: row?.categoryId || '',
@@ -273,19 +322,18 @@ function openEditor(row?: LinkItem) {
     recommended: Boolean(row?.recommended),
     sortNo: row?.sortNo || 0,
     remark: row?.remark || '',
-    targetIdsText: targetIdsText(row?.visibilityTargets),
+    targetIds: targetIds(row?.visibilityTargets),
   });
   editorVisible.value = true;
 }
 
-function parseTargets(scope?: LinkVisibilityScope, idsText?: string): LinkVisibilityTarget[] {
+function parseTargets(scope?: LinkVisibilityScope, ids?: ApiId[]): LinkVisibilityTarget[] {
   if (scope !== 'DEPARTMENT' && scope !== 'USER') {
     return [];
   }
   const targetType: LinkVisibilityTargetType = scope === 'DEPARTMENT' ? 'DEPARTMENT' : 'USER';
-  return (idsText || '')
-    .split(',')
-    .map(value => value.trim())
+  return (ids || [])
+    .map(value => String(value).trim())
     .filter(Boolean)
     .map(targetId => ({ targetType, targetId: targetId as ApiId }));
 }
@@ -293,7 +341,7 @@ function parseTargets(scope?: LinkVisibilityScope, idsText?: string): LinkVisibi
 function toPayload(): LinkItem {
   return {
     ...form,
-    visibilityTargets: parseTargets(form.visibilityScope, form.targetIdsText),
+    visibilityTargets: parseTargets(form.visibilityScope, form.targetIds),
   };
 }
 

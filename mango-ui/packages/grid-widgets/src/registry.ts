@@ -56,9 +56,17 @@ function compareWidget(left: MangoGridWidgetDefinition, right: MangoGridWidgetDe
   if (orderDiff !== 0) {
     return orderDiff;
   }
-  const categoryDiff = (left.category || '').localeCompare(right.category || '', 'zh-CN');
-  if (categoryDiff !== 0) {
-    return categoryDiff;
+  const domainDiff = widgetDomainLabel(left).localeCompare(widgetDomainLabel(right), 'zh-CN');
+  if (domainDiff !== 0) {
+    return domainDiff;
+  }
+  const groupDiff = (left.groupName || '').localeCompare(right.groupName || '', 'zh-CN');
+  if (groupDiff !== 0) {
+    return groupDiff;
   }
   return left.title.localeCompare(right.title, 'zh-CN');
+}
+
+function widgetDomainLabel(widget: MangoGridWidgetDefinition): string {
+  return widget.businessDomainName || widget.domainName || widget.category || widget.businessDomainCode || widget.domainCode || widget.moduleCode || '';
 }

@@ -1,8 +1,21 @@
 import type { MangoAuthConfig } from '@mango/auth';
 import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
 import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
+import type { MangoGridWidgetDefinition } from '@mango/grid-widgets';
 
-export type MangoAdminFeatureRegistrar = () => void | Promise<void>;
+export interface MangoAdminFeatureRegistration {
+  businessDomainCode?: string;
+  businessDomainName?: string;
+  groupName?: string;
+  /** @deprecated use businessDomainCode. */
+  moduleCode?: string;
+  /** @deprecated use businessDomainName. */
+  moduleName?: string;
+  widgets?: MangoGridWidgetDefinition[];
+}
+
+export type MangoAdminFeatureRegistrar = () =>
+  void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 export type MangoAdminDevCenterRegistrar = () => void | Promise<void>;
 
 export interface MangoAdminDevCenterPage {
@@ -27,6 +40,7 @@ export interface MangoAdminShellOptions {
   localApps?: MangoFrontendApp[];
   features?: MangoAdminFeatures;
   featureRegistrars?: MangoAdminFeatureRegistrar[];
+  widgets?: MangoGridWidgetDefinition[];
   runtimeConfigUrl?: string;
   runtimeConfigLoadOptions?: Partial<MangoRuntimeConfigLoadOptions>;
 }
@@ -81,6 +95,7 @@ export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
       ...options.modules,
     },
     featureRegistrars: options.featureRegistrars || mangoAdminShellOptions.featureRegistrars,
+    widgets: options.widgets || mangoAdminShellOptions.widgets,
     runtimeConfigLoadOptions: {
       ...mangoAdminShellOptions.runtimeConfigLoadOptions,
       ...options.runtimeConfigLoadOptions,

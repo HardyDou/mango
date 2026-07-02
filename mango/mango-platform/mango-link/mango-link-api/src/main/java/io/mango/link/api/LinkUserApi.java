@@ -6,6 +6,7 @@ import io.mango.link.api.command.CreateLinkFavoriteCommand;
 import io.mango.link.api.command.CreateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.CreateLinkPersonalItemCommand;
 import io.mango.link.api.command.DeleteLinkFavoriteCommand;
+import io.mango.link.api.command.UpdateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.UpdateLinkPersonalItemCommand;
 import io.mango.link.api.query.LinkCompanyItemQuery;
 import io.mango.link.api.query.LinkFavoriteQuery;
@@ -13,6 +14,7 @@ import io.mango.link.api.query.LinkPersonalItemPageQuery;
 import io.mango.link.api.vo.LinkFavoriteVO;
 import io.mango.link.api.vo.LinkCategoryVO;
 import io.mango.link.api.vo.LinkNavigationItemVO;
+import io.mango.link.api.vo.LinkNavigationWidgetDataVO;
 import io.mango.link.api.vo.LinkPersonalItemVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -28,9 +30,15 @@ public interface LinkUserApi {
 
     R<List<LinkNavigationItemVO>> listCompanyItems(@Valid LinkCompanyItemQuery query);
 
+    R<LinkNavigationWidgetDataVO> getNavigationWidgetData();
+
     R<List<LinkCategoryVO>> listPersonalCategories();
 
     R<Long> createPersonalCategory(@Valid CreateLinkPersonalCategoryCommand command);
+
+    R<Boolean> updatePersonalCategory(@Valid UpdateLinkPersonalCategoryCommand command);
+
+    R<Boolean> deletePersonalCategory(@NotNull(message = "分组 ID 不能为空") Long id);
 
     R<Boolean> createFavorite(@Valid CreateLinkFavoriteCommand command);
 

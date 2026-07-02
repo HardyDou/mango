@@ -6,18 +6,19 @@
 
 它提供：
 
-- 用户侧页面：公司网址、我的收藏、我的网址。
+- 用户侧页面：我的分类、我的收藏、我的网址。
 - 后台管理页面：网址分类、网址列表。
 - 前端 API 封装：`linkApi`。
 - admin-pages 页面注册入口：`registerMangoLinkAdminPages`。
+  （同时会返回首页组件（`system.link-navigation`）注册信息）。
 
-它不是独立门户组件。非管理后台页面应使用 `@mango/link-panel` 或 `@mango/link-openapi`。
+它不是独立门户组件。非管理后台页面应使用 `@mango/link-page` 或 `@mango/link-openapi`。
 
 ## 2. 功能清单
 
 | 能力 | 入口 | 说明 |
 |------|------|------|
-| 公司网址 | `link/company/index` | 展示当前用户可见的公司网址，支持打开和收藏。 |
+| 我的分类 | `link/company/index` | 展示当前用户可见的分类，支持查看可见的网址分组。 |
 | 我的收藏 | `link/favorites/index` | 展示、打开和取消收藏当前用户收藏的网址。 |
 | 我的网址 | `link/my-links/index` | 维护当前用户的个人网址。 |
 | 网址分类管理 | `link/categories/index` | 管理公司网址分类。 |
@@ -36,7 +37,7 @@ pnpm add @mango/link @mango/link-openapi
 
 | 配置入口 | 字段 / Key | 默认值 | 含义 |
 |----------|------------|--------|------|
-| 页面注册 | `registerMangoLinkAdminPages()` | - | 把 `link/*/index` 页面 key 注册到 admin-pages。 |
+| 页面注册 | `registerMangoLinkAdminPages()` | - | 把 `link/*/index` 页面 key 注册到 admin-pages，并返回首页组件注册信息（`system.link-navigation`）。 |
 | 样式入口 | `@mango/link/style.css` | - | 加载网址导航管理页样式。 |
 | 后端配置 | `mango.link.open.jump.enabled` | `false` | 控制打开网址时是否经过后端跳转并记录访问。 |
 
@@ -53,7 +54,7 @@ registerMangoLinkAdminPages();
 
 | key | 页面 |
 |-----|------|
-| `link/company/index` | 公司网址 |
+| `link/company/index` | 我的分类 |
 | `link/favorites/index` | 我的收藏 |
 | `link/my-links/index` | 我的网址 |
 | `link/categories/index` | 网址分类 |
@@ -63,7 +64,7 @@ registerMangoLinkAdminPages();
 
 | 菜单 | 路由 | 页面 key |
 |------|------|----------|
-| 网址导航 / 公司网址 | `/link/company` | `link/company/index` |
+| 网址导航 / 我的分类 | `/link/company` | `link/company/index` |
 | 网址导航 / 我的收藏 | `/link/favorites` | `link/favorites/index` |
 | 网址导航 / 我的网址 | `/link/my-links` | `link/my-links/index` |
 | 平台能力 / 网址管理 / 网址分类 | `/data/link/categories` | `link/categories/index` |
@@ -83,7 +84,7 @@ registerMangoLinkAdminPages();
 
 | 页面 | 查询条件 | 主要字段 | 操作 |
 |------|----------|----------|------|
-| 公司网址 | 关键字 | 名称、简介/URL、推荐、标签 | 打开、收藏 |
+| 我的分类 | 关键字 | 分类名称/分类说明 | 查看分类列表 |
 | 我的收藏 | 关键字 | 名称、URL、分类、标签、收藏时间 | 打开、取消收藏 |
 | 我的网址 | 关键字 | 名称、URL、说明、标签、更新时间 | 新增、编辑、删除、打开 |
 | 网址分类 | 关键字、状态 | 分类名称、说明、排序、状态、更新时间 | 新增、编辑、启停、删除 |
@@ -147,5 +148,5 @@ registerMangoLinkAdminPages();
 
 - [mango-link 后端模块](../../../mango/mango-platform/mango-link/README.md)
 - [@mango/link-openapi](../link-openapi/README.md)
-- [@mango/link-panel](../link-panel/README.md)
+- [@mango/link-page](../link-page/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

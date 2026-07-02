@@ -62,6 +62,8 @@ import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
 import { useUserInfo } from '../../stores/userInfo';
 import { useRoutesList } from '../../stores/routesList';
+import { ensureFeatureRegistrars } from '../../runtime/featureRegistrars';
+import { useMangoAdminHomeWidgets } from '../../runtime/homeWidgets';
 import {
   MangoGridDesigner,
   MangoGridLayout,
@@ -88,6 +90,7 @@ const editing = ref(false);
 const errorMessage = ref('');
 const layoutItems = ref<GridLayoutItem[]>(defaultLayoutItems());
 const draftItems = ref<GridLayoutItem[]>([]);
+const businessHomeWidgets = useMangoAdminHomeWidgets();
 
 const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   pageCode: PAGE_CODE,
@@ -111,7 +114,7 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
 const workbenchWidgets = computed(() => mergeGridWidgets({
   runtime: widgetRuntime.value,
   systemWidgets: systemGridWidgets,
-  businessWidgets: [],
+  businessWidgets: businessHomeWidgets.value,
 }));
 
 const displayName = computed(() => {
@@ -120,8 +123,17 @@ const displayName = computed(() => {
 });
 
 onMounted(() => {
-  loadLayout();
+  initializeHome();
 });
+
+async function initializeHome(): Promise<void> {
+  try {
+    await ensureFeatureRegistrars();
+  } catch (error) {
+    console.error('[mango-shell] failed to register shell features', error);
+  }
+  await loadLayout();
+}
 
 async function loadLayout(): Promise<void> {
   loading.value = true;
@@ -188,17 +200,23 @@ async function resetLayout(): Promise<void> {
 function defaultLayoutItems(): GridLayoutItem[] {
   // 工作台默认布局由页面直接传入自定义布局组件，无个人配置或恢复默认时使用。
   return [
-    gridItem('message-center', 'system.message-center', 0, 0, 6, 18, '我的消息'),
-    gridItem('quick', 'system.quick-entry', 6, 0, 3, 18, '快捷入口'),
-    gridItem('calendar', 'system.calendar', 9, 0, 3, 14, '日历'),
-    gridItem('user-profile', 'system.user-profile', 9, 15, 3, 28, '用户信息', {
+    gridItem('link-navigation', 'system.link-navigation', 0, 0, 12, 20, '网址导航', {
+      minW: 6,
+      minH: 18,
+      showTitle: false,
+      padding: false,
+    }),
+    gridItem('message-center', 'system.message-center', 0, 21, 6, 18, '我的消息'),
+    gridItem('quick', 'system.quick-entry', 6, 21, 3, 18, '快捷入口'),
+    gridItem('calendar', 'system.calendar', 9, 21, 3, 14, '日历'),
+    gridItem('user-profile', 'system.user-profile', 9, 36, 3, 28, '用户信息', {
       minH: 16,
       showTitle: false,
       padding: false,
     }),
-    gridItem('my-process', 'system.my-process', 0, 19, 3, 24, '我的申请'),
-    gridItem('my-task', 'system.my-task', 3, 19, 3, 24, '我的任务'),
-    gridItem('my-todo', 'system.my-todo', 6, 19, 3, 24, '我的待办', {
+    gridItem('my-process', 'system.my-process', 0, 40, 3, 24, '我的申请'),
+    gridItem('my-task', 'system.my-task', 3, 40, 3, 24, '我的任务'),
+    gridItem('my-todo', 'system.my-todo', 6, 40, 3, 24, '我的待办', {
       showTitle: false,
       padding: false,
     }),
@@ -235,6 +253,9 @@ function gridItem(
     widgetType,
     title,
     layout: { x, y, w, h, minW, minH, maxW, maxH },
+    props: widgetType === 'system.link-navigation'
+      ? { maxGroups: 24, maxItemsPerGroup: 200 }
+      : undefined,
     showTitle,
     padding,
   };

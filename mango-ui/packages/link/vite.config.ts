@@ -18,6 +18,7 @@ export default defineConfig({
         '@mango/common',
         '@mango/common/utils/request',
         '@mango/link-openapi',
+        /^@mango\/grid-widgets(?:\/.*)?$/,
         'element-plus',
         'vue',
       ],

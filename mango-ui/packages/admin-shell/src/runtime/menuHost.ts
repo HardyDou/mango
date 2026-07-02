@@ -510,6 +510,9 @@ function resolveAccessibleMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefine
   if (!menu) {
     return undefined;
   }
+  if (!menu.sourceMenu) {
+    return resolvePlainRouteMenu(menu);
+  }
   if (isRunnableMenu(menu)) {
     return menu;
   }
@@ -518,6 +521,20 @@ function resolveAccessibleMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefine
     return redirectMenu;
   }
   return resolveFirstMenu(menu);
+}
+
+function resolvePlainRouteMenu(menu: ShellRouteMenu): ShellRouteMenu | undefined {
+  if (!menu.children || menu.children.length === 0) {
+    return menu.path ? menu : undefined;
+  }
+  const redirect = typeof menu.redirect === 'string' ? menu.redirect.trim() : '';
+  if (redirect) {
+    const target = findMenuByPath(menu.children as ShellRouteMenu[], redirect);
+    if (target?.path) {
+      return target;
+    }
+  }
+  return resolveFirstMenuNode(menu, item => Boolean(item.path && (!item.children || item.children.length === 0))) as ShellRouteMenu | undefined;
 }
 
 function resolveRunnableRedirectMenu(menu: ShellRouteMenu): ShellRouteMenu | undefined {

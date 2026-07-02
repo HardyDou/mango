@@ -114,5 +114,4 @@ interface LinkPublicItem {
 
 - [mango-link 后端模块](../../../mango/mango-platform/mango-link/README.md)
 - [@mango/link-page](../link-page/README.md)
-- [@mango/link-panel 兼容包](../link-panel/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

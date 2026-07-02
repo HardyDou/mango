@@ -73,14 +73,12 @@ registerMangoLinkAdminPages();
 |----|------|
 | `@mango/link-openapi` | TypeScript API client，调用 `/link/open/**` 和登录用户个人操作接口。 |
 | `@mango/link-page` | 独立网址导航页面，包含 Logo、搜索、登录/退出、分组、网址和个人操作。 |
-| `@mango/link-panel` | 兼容包，继续导出 `@mango/link-page` 能力。 |
 
 详见：
 
 - [@mango/link](../../../mango-ui/packages/link/README.md)
 - [@mango/link-openapi](../../../mango-ui/packages/link-openapi/README.md)
 - [@mango/link-page](../../../mango-ui/packages/link-page/README.md)
-- [@mango/link-panel](../../../mango-ui/packages/link-panel/README.md)
 
 ## 5. 配置说明
 
@@ -221,7 +219,6 @@ registerMangoLinkAdminPages();
 pnpm --dir mango-ui --filter mango-admin test:e2e -- e2e/specs/link-navigation.spec.ts
 pnpm --dir mango-ui --filter @mango/link-openapi build
 pnpm --dir mango-ui --filter @mango/link-page build
-pnpm --dir mango-ui --filter @mango/link-panel build
 pnpm --dir mango-ui --filter @mango/link build
 mvn -q -pl :mango-link-api,:mango-link-core,:mango-link-starter,:mango-link-starter-remote -am test -DskipTests=false
 ```

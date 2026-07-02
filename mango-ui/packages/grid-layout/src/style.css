@@ -154,6 +154,14 @@
   gap: 3px;
 }
 
+.mango-grid-designer__library-meta {
+  color: var(--mango-text-color-placeholder, #a8abb2);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mango-grid-designer__library-name {
   color: var(--mango-text-color, #303133);
   font-size: 14px;
@@ -218,6 +226,16 @@
 
 .mango-grid-designer__item.is-moving .mango-grid-designer__card {
   box-shadow: 0 12px 28px rgb(31 45 61 / 14%);
+}
+
+.mango-grid-designer__item.is-missing-widget .mango-grid-designer__card {
+  border-color: var(--mango-color-warning-light-5, #eebe77);
+  background: var(--mango-color-warning-light-9, #fdf6ec);
+}
+
+.mango-grid-designer__item.is-missing-widget .mango-grid-designer__card-title {
+  color: var(--mango-color-warning-dark-2, #b88230);
+  border-bottom-color: var(--mango-color-warning-light-7, #f3d19e);
 }
 
 .mango-grid-designer__drag-mask {

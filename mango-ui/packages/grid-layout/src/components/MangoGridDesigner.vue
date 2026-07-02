@@ -17,11 +17,11 @@
         </template>
       </el-input>
       <el-tabs
-        v-model="activeCategory"
+        v-model="activeDomain"
         class="mango-grid-designer__library-tabs"
       >
         <el-tab-pane
-          v-for="tab in categoryTabs"
+          v-for="tab in domainTabs"
           :key="tab.value"
           :label="tab.label"
           :name="tab.value"
@@ -45,6 +45,7 @@
             </el-icon>
           </span>
           <span class="mango-grid-designer__library-info">
+            <span class="mango-grid-designer__library-meta">{{ widgetLibraryPath(widget) }}</span>
             <span class="mango-grid-designer__library-name">{{ widget.title }}</span>
             <span class="mango-grid-designer__library-desc">{{ widget.description || '可添加到当前布局' }}</span>
           </span>
@@ -65,7 +66,11 @@
           v-for="item in localItems"
           :key="item.id"
           class="mango-grid-designer__item"
-          :class="{ 'is-active': activeId === item.id, 'is-moving': draggingItemId === item.id }"
+          :class="{
+            'is-active': activeId === item.id,
+            'is-moving': draggingItemId === item.id,
+            'is-missing-widget': !widgetMap[item.widgetType]?.component,
+          }"
           :style="itemStyle(item)"
           @mousedown.left="startMove($event, item)"
         >
@@ -111,7 +116,7 @@
                 />
                 <el-empty
                   v-else
-                  description="组件不存在"
+                  description="组件已失效，可删除后保存布局"
                   :image-size="72"
                 />
               </slot>
@@ -207,7 +212,7 @@ const emit = defineEmits<{
 }>();
 
 const keyword = ref('');
-const activeCategory = ref('全部');
+const activeDomain = ref('全部');
 const localItems = ref<GridLayoutItem[]>([]);
 const activeId = ref('');
 const draggingItemId = ref('');
@@ -254,25 +259,55 @@ const widgetMap = computed<Record<string, GridWidgetDefinition>>(() => {
   }, {});
 });
 
-const categoryTabs = computed(() => {
-  const categories = Array.from(new Set(props.widgets.map(widget => widget.category || '业务')));
-  return ['全部', ...categories].map(value => ({ value, label: value }));
+const domainTabs = computed(() => {
+  const tabs = new Map<string, string>();
+  props.widgets.forEach((widget) => {
+    tabs.set(widgetDomainKey(widget), widgetDomainLabel(widget));
+  });
+  return [
+    { value: '全部', label: '全部' },
+    ...Array.from(tabs.entries()).map(([value, label]) => ({ value, label })),
+  ];
 });
 
 const filteredWidgets = computed(() => {
   const value = keyword.value.trim().toLowerCase();
   return props.widgets.filter((widget) => {
-    const category = widget.category || '业务';
-    if (activeCategory.value !== '全部' && category !== activeCategory.value) {
+    if (activeDomain.value !== '全部' && widgetDomainKey(widget) !== activeDomain.value) {
       return false;
     }
     if (!value) {
       return true;
     }
-    const fields = [widget.title, widget.description, widget.category, widget.type, ...(widget.tags || [])];
+    const fields = [
+      widget.title,
+      widget.description,
+      widget.businessDomainCode,
+      widget.businessDomainName,
+      widget.domainCode,
+      widget.domainName,
+      widget.moduleCode,
+      widget.groupName,
+      widget.category,
+      widget.type,
+      ...(widget.tags || []),
+    ];
     return fields.some(field => String(field || '').toLowerCase().includes(value));
   });
 });
+
+function widgetDomainKey(widget: GridWidgetDefinition): string {
+  return widget.businessDomainCode || widget.domainCode || widget.businessDomainName || widget.domainName || widget.category || widget.moduleCode || '业务';
+}
+
+function widgetDomainLabel(widget: GridWidgetDefinition): string {
+  return widget.businessDomainName || widget.domainName || widget.category || widget.businessDomainCode || widget.domainCode || widget.moduleCode || '业务';
+}
+
+function widgetLibraryPath(widget: GridWidgetDefinition): string {
+  const groupName = widget.groupName;
+  return groupName ? `${widgetDomainLabel(widget)} / ${groupName}` : widgetDomainLabel(widget);
+}
 
 const totalRows = computed(() => {
   const rows = placeholder.value ? [...localItems.value, placeholderItem()] : localItems.value;

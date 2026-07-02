@@ -18,6 +18,7 @@ public class LinkCategoryVO {
     private String name;
     private LinkCategoryScope scope;
     private Long ownerUserId;
+    private String ownerDisplayName;
     private Integer sortNo;
     private LinkStatus status;
     private String remark;

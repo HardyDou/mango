@@ -7,6 +7,7 @@ export type LinkVisibilityScope = 'PUBLIC' | 'COMPANY' | 'DEPARTMENT' | 'USER' |
 export type LinkVisibilityTargetType = 'DEPARTMENT' | 'USER';
 export type LinkOpenMode = 'NEW_WINDOW';
 export type LinkNavigationSource = NonNullable<LinkPublicItem['source']>;
+export type LinkCategoryScope = 'COMPANY' | 'PERSONAL';
 
 export interface PageResult<T> {
   list: T[];
@@ -29,8 +30,12 @@ export interface LinkCategory {
   tenantId?: ApiId;
   parentId?: ApiId | '';
   name?: string;
+  scope?: LinkCategoryScope;
+  ownerUserId?: ApiId;
+  ownerDisplayName?: string;
   code?: string;
   summary?: string;
+  remark?: string;
   sortNo?: number;
   status?: LinkStatus;
   createTime?: string;
@@ -49,6 +54,7 @@ export interface LinkItem extends LinkPublicItem {
   visibilityScope?: LinkVisibilityScope;
   visibilityTargets?: LinkVisibilityTarget[];
   ownerUserId?: ApiId;
+  ownerDisplayName?: string;
   status?: LinkStatus;
   remark?: string;
   createTime?: string;
@@ -90,9 +96,25 @@ export function normalizeApiId(id: unknown): ApiId | undefined {
 
 function requestErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) {
-    return error.message;
+    return normalizeErrorText(error.message);
   }
   return fallback;
+}
+
+function normalizeErrorText(message: string) {
+  const text = message.trim();
+  if (!text.startsWith('{') && !text.startsWith('[')) {
+    return message;
+  }
+  try {
+    const parsed = JSON.parse(text) as { message?: string; msg?: string; error?: string } | Array<{ message?: string; msg?: string }>;
+    if (Array.isArray(parsed)) {
+      return parsed.map(item => item.message || item.msg).filter(Boolean).join('；') || message;
+    }
+    return parsed.message || parsed.msg || parsed.error || message;
+  } catch {
+    return message;
+  }
 }
 
 function toBackendParams(params: object = {}) {
@@ -126,6 +148,27 @@ function normalizePageResult<T>(result: BackendPageResult<T>): PageResult<T> {
 
 function pageGet<T>(url: string, params: LinkPageQuery) {
   return get<BackendPageResult<T>>(url, { params: toBackendParams(params) }).then(normalizePageResult);
+}
+
+function toPersonalCategoryPayload(data: LinkCategory) {
+  return {
+    id: data.id,
+    name: data.name,
+    sortNo: data.sortNo,
+  };
+}
+
+function toPersonalItemPayload(data: LinkPersonalItem) {
+  return {
+    id: data.id,
+    name: data.name,
+    url: data.url,
+    categoryId: data.categoryId,
+    summary: data.summary,
+    iconUrl: data.iconUrl,
+    tags: data.tags,
+    remark: data.remark,
+  };
 }
 
 export function linkRedirectUrl(linkId: ApiId, source: LinkNavigationSource = 'COMPANY') {
@@ -168,13 +211,17 @@ export const linkApi = {
   deleteItem: (id: ApiId) => del<boolean>('/link/items/delete', { params: { id } }),
 
   listCompanyLinks: (params: LinkPublicItemQuery = {}) => get<LinkItem[]>('/link/company-links/list', { params: toBackendParams(params) }),
+  listPersonalCategories: () => get<LinkCategory[]>('/link/personal-categories/list'),
+  createPersonalCategory: (data: LinkCategory) => post<ApiId>('/link/personal-categories/create', toPersonalCategoryPayload(data)),
+  updatePersonalCategory: (data: LinkCategory) => put<boolean>('/link/personal-categories/update', toPersonalCategoryPayload(data)),
+  deletePersonalCategory: (id: ApiId) => del<boolean>('/link/personal-categories/delete', { params: { id } }),
   createFavorite: (linkId: ApiId) => post<boolean>('/link/favorites/create', { linkId }),
   deleteFavorite: (linkId: ApiId) => del<boolean>('/link/favorites/delete', { data: { linkId } }),
   listFavorites: (params: LinkListQuery = {}) => get<LinkFavorite[]>('/link/favorites/list', { params: toBackendParams(params) }),
 
   pagePersonalItems: (params: LinkPageQuery) => pageGet<LinkPersonalItem>('/link/personal-links/page', params),
-  createPersonalItem: (data: LinkPersonalItem) => post<ApiId>('/link/personal-links/create', data),
-  updatePersonalItem: (data: LinkPersonalItem) => put<boolean>('/link/personal-links/update', data),
+  createPersonalItem: (data: LinkPersonalItem) => post<ApiId>('/link/personal-links/create', toPersonalItemPayload(data)),
+  updatePersonalItem: (data: LinkPersonalItem) => put<boolean>('/link/personal-links/update', toPersonalItemPayload(data)),
   deletePersonalItem: (id: ApiId) => del<boolean>('/link/personal-links/delete', { params: { id } }),
 };
 

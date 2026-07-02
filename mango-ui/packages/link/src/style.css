@@ -79,6 +79,25 @@
   white-space: nowrap;
 }
 
+.link-name-cell--link {
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+  letter-spacing: 0;
+  text-align: left;
+  text-decoration: none;
+}
+
+.link-name-cell--link:hover strong,
+.link-name-cell--link:focus-visible strong {
+  color: var(--el-color-primary);
+}
+
+.link-name-cell--link:focus-visible {
+  outline: 2px solid var(--el-color-primary-light-5);
+  outline-offset: 2px;
+}
+
 .link-tags,
 .link-actions {
   display: flex;
