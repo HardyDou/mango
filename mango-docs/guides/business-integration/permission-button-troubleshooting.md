@@ -92,6 +92,8 @@ pnpm -F @mango/admin-shell build
 
 - PR #267 新增通知公告管理和用户公告确认能力，公告管理页面会使用 `notice:announcement:*` 类权限控制新增、编辑、发布、下线等动作；不改变按钮 `permissionCode` 机制、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。若公告管理按钮不可见或接口报无权限，按角色是否授权对应 `notice:announcement:*` 权限、登录态是否刷新、页面 `v-auth`/接口鉴权是否一致的顺序排查。
 
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅调整首页小组件 package 归属、`@mango/admin@1.0.37` / `@mango/admin-shell@1.0.32` 版本锁和 generated backend baseline；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
+
 - PR #256 将后台工作台默认布局调整为页面内固定配置，仅影响没有个人工作台配置或恢复默认后的首页卡片排布；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面路由和本场景排障步骤。
 
 - PR #253 新增 Resource Registry 的 `AUTH_ROLE`、`AUTH_ROLE_DATA_SCOPE`、`AUTH_SUBJECT_ROLE` 基线声明，可让角色和成员角色绑定随资源同步注入；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。排查清库初始化后的按钮缺失时，可额外确认角色基线和主体角色绑定声明是否同步成功。
