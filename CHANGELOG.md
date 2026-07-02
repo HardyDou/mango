@@ -4,19 +4,36 @@
 
 ### Changed
 
+- Added Resource Registry resource-type dependency ordering for Issue #354. Resource handlers can now declare
+  `dependsOnResourceTypes()`, and active resource sync batches are topologically ordered before target handlers run.
 - Modularized home workbench widgets so concrete widgets now live in their owning business UI packages: `@mango/link`, `@mango/system`, `@mango/calendar`, `@mango/notice`, and `@mango/workflow`.
 - Reduced `@mango/grid-widgets` to the shared widget registry/runtime/types boundary and removed the deleted `@mango/link-panel` compatibility package from the CLI release lock.
 - Updated the admin home workbench UI by removing the welcome header, floating the round layout action at the bottom-right corner, and refining the widget library panel.
 - Added the Link navigation home widget under `@mango/link`, including its package-owned styles and admin registrar integration.
 
+### Fixed
+
+- Fixed clean database Resource Registry bootstrap ordering for cross-type declarations such as `IDENTITY_USER` before
+  `ORG_MEMBER_BINDING`, `AUTH_ROLE` before `AUTH_SUBJECT_ROLE`, and workflow categories/nodes before
+  `WORKFLOW_DEFINITION`. Cyclic type dependencies now fail before any target handler is called.
+
 ### Upgrade Notes
 
+- Business projects can keep Resource Registry declarations split across files and modules; file scan order is no longer
+  the ordering contract for resource types that declare handler dependencies.
 - Business frontends should stop depending on `@mango/link-panel`; use `@mango/link` for Link admin pages and the Link navigation home widget.
 - Custom admin integrations must include the business UI packages that own the widgets they want to expose. `@mango/grid-widgets` no longer provides concrete business widget implementations.
 - Admin package consumers should keep package styles synchronized through the generated admin style aggregation; do not rely on `@mango/grid-widgets/style.css` to carry Link, System, Calendar, Notice, or Workflow widget styles.
 
 ### Verification
 
+- `mvn -pl mango-platform/mango-resource/mango-resource-core -am -Dtest=ResourceRegistrySyncServiceIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-platform/mango-identity/mango-identity-starter,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-workflow/mango-workflow-core -am -DskipTests compile`
+- `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/pr-354-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `git diff --check`
 - PR #365 validation reported `pnpm admin:styles:check`, `pnpm admin:module-styles:check`, affected package builds, `pnpm --filter @mango/admin-shell build`, and the Link home widget Playwright scenario as passed.
 - Follow-up documentation gate: `node mango-pmo/tools/audit-module-readmes.mjs`.
 - Follow-up documentation gate: `node mango-pmo/tools/audit-readme-source-facts.mjs`.

@@ -21,6 +21,18 @@ public interface ResourceHandler {
     String resourceType();
 
     /**
+     * 当前资源类型在批量同步前依赖的资源类型。
+     * <p>
+     * Resource Registry 会在同一批次内按这些依赖做拓扑排序。未出现在本批次内的依赖不强制同步，
+     * 目标资源是否已存在仍由具体 handler 校验。
+     *
+     * @return 前置资源类型列表。
+     */
+    default List<String> dependsOnResourceTypes() {
+        return List.of();
+    }
+
+    /**
      * 处理器支持的字段契约。
      *
      * @return 字段契约。

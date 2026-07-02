@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,11 +85,15 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Autowired
     private RecordingResourceTargetDispatcher dispatcher;
 
+    @Autowired
+    private ResourceSyncOrderRecorder syncOrderRecorder;
+
     @BeforeEach
     void setUp() {
         rebuildTables();
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
         dispatcher.reset();
+        syncOrderRecorder.clear();
     }
 
     @Test
@@ -129,6 +134,37 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         assertThat(stringValue("message_template", "title")).isEqualTo("提交申请");
         assertThat(dispatcher.upsertBatchCount()).isZero();
+    }
+
+    @Test
+    void syncOrdersActiveDeclarationsByResourceTypeDependencies() {
+        ResourceDeclaration binding = genericDeclaration("1900000000000000101",
+                "TEST_BINDING", "guarantee.binding", "test-binding");
+        ResourceDeclaration user = genericDeclaration("1900000000000000102",
+                "TEST_USER", "guarantee.user", "test-user");
+        provider.setDeclarations(List.of(binding, user));
+
+        syncService.sync();
+
+        assertThat(syncOrderRecorder.resourceTypes()).containsExactly("TEST_USER", "TEST_BINDING");
+        assertThat(registryMapper.selectByResourceId("1900000000000000101")).isNotNull();
+        assertThat(registryMapper.selectByResourceId("1900000000000000102")).isNotNull();
+    }
+
+    @Test
+    void syncFailsWhenResourceTypeDependenciesHaveCycle() {
+        ResourceDeclaration cycleA = genericDeclaration("1900000000000000201",
+                "CYCLE_A", "guarantee.cycle-a", "cycle-a");
+        ResourceDeclaration cycleB = genericDeclaration("1900000000000000202",
+                "CYCLE_B", "guarantee.cycle-b", "cycle-b");
+        provider.setDeclarations(List.of(cycleA, cycleB));
+
+        assertThatThrownBy(() -> syncService.sync())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Resource type dependency cycle detected: CYCLE_A -> CYCLE_B -> CYCLE_A");
+
+        assertThat(count("resource_registry")).isZero();
+        assertThat(syncOrderRecorder.resourceTypes()).isEmpty();
     }
 
     @Test
@@ -399,6 +435,19 @@ class ResourceRegistrySyncServiceIntegrationTest {
         return activeDeclaration("1900000000000000001", version, "guarantee.apply.submit", titleValue);
     }
 
+    private ResourceDeclaration genericDeclaration(String id, String resourceType, String bizKey, String targetModule) {
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setId(id);
+        declaration.setVersion(1);
+        declaration.setResourceType(resourceType);
+        declaration.setModuleCode("guarantee");
+        declaration.setBizKey(bizKey);
+        declaration.setName(bizKey);
+        declaration.setTargetModule(targetModule);
+        declaration.setFields(new LinkedHashMap<>());
+        return declaration;
+    }
+
     private ResourceDeclaration activeDeclaration(String id, int version, String bizKey, String titleValue) {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId(id);
@@ -619,6 +668,48 @@ class ResourceRegistrySyncServiceIntegrationTest {
         RecordingResourceTargetDispatcher recordingResourceTargetDispatcher() {
             return new RecordingResourceTargetDispatcher();
         }
+
+        @Bean
+        ResourceSyncOrderRecorder resourceSyncOrderRecorder() {
+            return new ResourceSyncOrderRecorder();
+        }
+
+        @Bean
+        OrderedTestResourceHandler testUserResourceHandler(ResourceSyncOrderRecorder recorder) {
+            return new OrderedTestResourceHandler("TEST_USER", List.of(), recorder);
+        }
+
+        @Bean
+        OrderedTestResourceHandler testBindingResourceHandler(ResourceSyncOrderRecorder recorder) {
+            return new OrderedTestResourceHandler("TEST_BINDING", List.of("TEST_USER"), recorder);
+        }
+
+        @Bean
+        OrderedTestResourceHandler cycleAResourceHandler(ResourceSyncOrderRecorder recorder) {
+            return new OrderedTestResourceHandler("CYCLE_A", List.of("CYCLE_B"), recorder);
+        }
+
+        @Bean
+        OrderedTestResourceHandler cycleBResourceHandler(ResourceSyncOrderRecorder recorder) {
+            return new OrderedTestResourceHandler("CYCLE_B", List.of("CYCLE_A"), recorder);
+        }
+    }
+
+    static class ResourceSyncOrderRecorder {
+
+        private final List<String> resourceTypes = new ArrayList<>();
+
+        void add(String resourceType) {
+            resourceTypes.add(resourceType);
+        }
+
+        List<String> resourceTypes() {
+            return List.copyOf(resourceTypes);
+        }
+
+        void clear() {
+            resourceTypes.clear();
+        }
     }
 
     static class MutableResourceProvider implements ResourceProvider {
@@ -645,6 +736,50 @@ class ResourceRegistrySyncServiceIntegrationTest {
         @Override
         public List<ResourceDeclaration> provide() {
             return declarations.get();
+        }
+    }
+
+    static class OrderedTestResourceHandler implements ResourceHandler {
+
+        private final String resourceType;
+        private final List<String> dependencies;
+        private final ResourceSyncOrderRecorder recorder;
+
+        OrderedTestResourceHandler(String resourceType, List<String> dependencies, ResourceSyncOrderRecorder recorder) {
+            this.resourceType = resourceType;
+            this.dependencies = dependencies;
+            this.recorder = recorder;
+        }
+
+        @Override
+        public String resourceType() {
+            return resourceType;
+        }
+
+        @Override
+        public List<String> dependsOnResourceTypes() {
+            return dependencies;
+        }
+
+        @Override
+        public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            recorder.add(resourceType);
+            return ResourceSyncResult.of(targetId(resource), resourceType.toLowerCase(), "ok");
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(targetId(resource), resourceType.toLowerCase(), "disabled");
+        }
+
+        @Override
+        public ResourceSyncResult delete(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(targetId(resource), resourceType.toLowerCase(), "deleted");
+        }
+
+        private Long targetId(ResourceDeclaration resource) {
+            String id = resource.getId();
+            return 93000L + Long.parseLong(id.substring(id.length() - 4));
         }
     }
 

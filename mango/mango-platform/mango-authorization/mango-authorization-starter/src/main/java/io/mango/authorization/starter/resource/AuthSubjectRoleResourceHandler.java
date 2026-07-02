@@ -45,6 +45,11 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public List<String> dependsOnResourceTypes() {
+        return List.of(ResourceTypes.IDENTITY_USER, ResourceTypes.AUTH_ROLE);
+    }
+
+    @Override
     public ResourceHandlerSpec spec() {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())
