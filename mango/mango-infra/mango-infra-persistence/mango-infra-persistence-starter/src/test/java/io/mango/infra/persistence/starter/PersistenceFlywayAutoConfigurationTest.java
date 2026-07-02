@@ -1,5 +1,6 @@
 package io.mango.infra.persistence.starter;
 
+import com.sun.net.httpserver.HttpServer;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
@@ -14,8 +15,15 @@ import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoCo
 
 import javax.sql.DataSource;
 
+import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -231,7 +239,7 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(ctx.getStartupFailure())
                             .hasMessageContaining("Mango Flyway module migration failed: module=another-test")
                             .hasMessageContaining("historyTable=flyway_history_shared_test")
-                            .hasMessageContaining("location=classpath:db/migration/another-test")
+                            .hasMessageContaining("locations=[classpath:db/migration/another-test]")
                             .hasMessageContaining("outOfOrder=false");
                 });
     }
@@ -255,10 +263,141 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(ctx.getStartupFailure())
                             .hasMessageContaining("Mango Flyway module migration failed: module=persistence-test")
                             .hasMessageContaining("historyTable=<unresolved>")
-                            .hasMessageContaining("location=classpath:db/migration/persistence-test")
+                            .hasMessageContaining("locations=[classpath:db/migration/persistence-test]")
                             .hasMessageContaining("datasource=missing")
                             .hasMessageContaining("outOfOrder=false");
                 });
+    }
+
+    @Test
+    void customFilesystemLocation_shouldRunExternalMigrationDirectory() throws Exception {
+        Path directory = Files.createTempDirectory("mango-flyway-filesystem-");
+        Files.writeString(directory.resolve("V9__external_file.sql"), """
+                create table external_file_migration (
+                    id bigint primary key,
+                    data_code varchar(64) not null,
+                    data_name varchar(128) not null,
+                    data_value int not null
+                );
+
+                insert into external_file_migration (id, data_code, data_name, data_value) values
+                    (1, 'TC184-FS-001', '文件数据-1', 201),
+                    (2, 'TC184-FS-002', '文件数据-2', 202),
+                    (3, 'TC184-FS-003', '文件数据-3', 203),
+                    (4, 'TC184-FS-004', '文件数据-4', 204),
+                    (5, 'TC184-FS-005', '文件数据-5', 205);
+                """);
+
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.external-file.enabled=true",
+                        "mango.persistence.flyway.modules.external-file.locations[0]=filesystem:" + directory.toAbsolutePath()
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "external_file_migration")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "flyway_schema_history_external_file")).isTrue();
+                    assertThat(migrationRows(jdbcTemplate, "external_file_migration")).containsExactly(
+                            new MigrationDataRow(1L, "TC184-FS-001", "文件数据-1", 201),
+                            new MigrationDataRow(2L, "TC184-FS-002", "文件数据-2", 202),
+                            new MigrationDataRow(3L, "TC184-FS-003", "文件数据-3", 203),
+                            new MigrationDataRow(4L, "TC184-FS-004", "文件数据-4", 204),
+                            new MigrationDataRow(5L, "TC184-FS-005", "文件数据-5", 205)
+                    );
+                });
+    }
+
+    @Test
+    void classpathAndFilesystemLocations_shouldWriteSameRowsForFiveDatasets() throws Exception {
+        AtomicReference<List<MigrationDataRow>> classpathRows = new AtomicReference<>();
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.comparison-data.enabled=true"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "flyway_comparison_data")).isTrue();
+                    classpathRows.set(migrationRows(jdbcTemplate, "flyway_comparison_data"));
+                    assertThat(classpathRows.get()).containsExactly(
+                            new MigrationDataRow(1L, "TC184-OLD-001", "旧模式对比数据-1", 101),
+                            new MigrationDataRow(2L, "TC184-OLD-002", "旧模式对比数据-2", 102),
+                            new MigrationDataRow(3L, "TC184-OLD-003", "旧模式对比数据-3", 103),
+                            new MigrationDataRow(4L, "TC184-OLD-004", "旧模式对比数据-4", 104),
+                            new MigrationDataRow(5L, "TC184-OLD-005", "旧模式对比数据-5", 105)
+                    );
+                });
+
+        Path directory = Files.createTempDirectory("mango-flyway-comparison-");
+        Files.writeString(directory.resolve("V1__create_comparison_data.sql"), classpathComparisonSql());
+
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.comparison-data.enabled=true",
+                        "mango.persistence.flyway.modules.comparison-data.locations[0]=filesystem:"
+                                + directory.toAbsolutePath()
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "flyway_comparison_data")).isTrue();
+                    assertThat(migrationRows(jdbcTemplate, "flyway_comparison_data"))
+                            .containsExactlyElementsOf(classpathRows.get());
+                });
+    }
+
+    @Test
+    void customUrlLocation_shouldDownloadAndRunExternalSqlFile() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        byte[] sql = """
+                create table external_url_migration (
+                    id bigint primary key,
+                    data_code varchar(64) not null,
+                    data_name varchar(128) not null,
+                    data_value int not null
+                );
+
+                insert into external_url_migration (id, data_code, data_name, data_value) values
+                    (1, 'TC184-URL-001', 'URL数据-1', 301),
+                    (2, 'TC184-URL-002', 'URL数据-2', 302),
+                    (3, 'TC184-URL-003', 'URL数据-3', 303),
+                    (4, 'TC184-URL-004', 'URL数据-4', 304),
+                    (5, 'TC184-URL-005', 'URL数据-5', 305);
+                """.getBytes(StandardCharsets.UTF_8);
+        server.createContext("/V8__external_url.sql", exchange -> {
+            exchange.sendResponseHeaders(200, sql.length);
+            exchange.getResponseBody().write(sql);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/V8__external_url.sql";
+            contextRunner
+                    .withPropertyValues(
+                            "mango.persistence.flyway.enabled=true",
+                            "mango.persistence.flyway.modules.external-url.enabled=true",
+                            "mango.persistence.flyway.modules.external-url.locations[0]=" + url
+                    )
+                    .withUserConfiguration(H2DataSourceConfig.class)
+                    .run(ctx -> {
+                        JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                        assertThat(tableExists(jdbcTemplate, "external_url_migration")).isTrue();
+                        assertThat(tableExists(jdbcTemplate, "flyway_schema_history_external_url")).isTrue();
+                        assertThat(migrationRows(jdbcTemplate, "external_url_migration")).containsExactly(
+                                new MigrationDataRow(1L, "TC184-URL-001", "URL数据-1", 301),
+                                new MigrationDataRow(2L, "TC184-URL-002", "URL数据-2", 302),
+                                new MigrationDataRow(3L, "TC184-URL-003", "URL数据-3", 303),
+                                new MigrationDataRow(4L, "TC184-URL-004", "URL数据-4", 304),
+                                new MigrationDataRow(5L, "TC184-URL-005", "URL数据-5", 305)
+                        );
+                    });
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test
@@ -373,6 +512,31 @@ class PersistenceFlywayAutoConfigurationTest {
         return count != null && count > 0;
     }
 
+    private static List<MigrationDataRow> migrationRows(JdbcTemplate jdbcTemplate, String tableName) {
+        return jdbcTemplate.query("""
+                select id, data_code, data_name, data_value
+                from %s
+                order by id
+                """.formatted(tableName), (rs, rowNum) -> new MigrationDataRow(
+                rs.getLong("id"),
+                rs.getString("data_code"),
+                rs.getString("data_name"),
+                rs.getInt("data_value")
+        ));
+    }
+
+    private static String classpathComparisonSql() {
+        try {
+            Path path = Path.of(Objects.requireNonNull(PersistenceFlywayAutoConfigurationTest.class.getResource(
+                    "/db/migration/comparison-data/V1__create_comparison_data.sql")).toURI());
+            return Files.readString(path);
+        } catch (URISyntaxException ex) {
+            throw new IllegalStateException("Invalid comparison migration resource URI", ex);
+        } catch (java.io.IOException ex) {
+            throw new IllegalStateException("Failed to read comparison migration resource", ex);
+        }
+    }
+
     private static DataSource h2DataSource(String url) {
         org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
         ds.setURL(url);
@@ -380,4 +544,7 @@ class PersistenceFlywayAutoConfigurationTest {
         ds.setPassword("");
         return ds;
     }
+}
+
+record MigrationDataRow(Long id, String dataCode, String dataName, Integer dataValue) {
 }

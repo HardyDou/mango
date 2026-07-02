@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.56 - 2026-07-01
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.5`.
+- Updated generated project release locks for the data initialization governance batch:
+  - `@mango/pmo@1.0.6`
+  - `@mango/link-panel@1.0.1`
+  - `@mango/cli@1.0.56`
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.56 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to receive the updated PMO baseline.
+- Business backends should set `<mango.version>1.0.5</mango.version>` when consuming the Resource Registry and persistence initialization governance changes.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.54 - 2026-06-30
 
 ### Changed

@@ -286,6 +286,10 @@ public class ResourceRegistrySyncService {
                     : withEffectiveSyncMode(declaration, row.getSyncMode());
             allDeclarationsByType.computeIfAbsent(declaration.getResourceType(), key -> new ArrayList<>())
                     .add(effectiveDeclaration);
+            if (shouldPreserveInitOnlyTarget(row, declaration)) {
+                skipInitOnlyTargetUpdate(row, declaration, hash);
+                continue;
+            }
             if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
                 repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
                 continue;
@@ -355,6 +359,23 @@ public class ResourceRegistrySyncService {
             repository.insertSyncLog(row.getId(), "UPDATE", "SUCCESS", result.getMessage());
             repository.insertChangeLog(row.getId(), "UPDATE", toJson(row), toJson(declaration));
         }
+    }
+
+    private void skipInitOnlyTargetUpdate(ResourceRegistryRow row, ResourceDeclaration declaration, String hash) {
+        if (hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource declaration is unchanged");
+            return;
+        }
+        repository.update(row, declaration, hash, row.getTargetId(), row.getTargetTable());
+        repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is INIT_ONLY");
+        repository.insertChangeLog(row.getId(), "UPDATE", toJson(row), toJson(declaration));
+    }
+
+    private boolean shouldPreserveInitOnlyTarget(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        if (row == null || declaration.getSyncMode() != ResourceSyncMode.INIT_ONLY) {
+            return false;
+        }
+        return row.getSyncMode() == ResourceSyncMode.AUTO || row.getSyncMode() == ResourceSyncMode.INIT_ONLY;
     }
 
     private ResourceDeclaration withEffectiveSyncMode(ResourceDeclaration declaration, ResourceSyncMode syncMode) {

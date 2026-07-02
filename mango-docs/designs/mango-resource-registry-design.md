@@ -33,6 +33,8 @@
 
 当前可直接使用的资源类型以 `mango/mango-platform/mango-resource/README.md` 的“当前已开放资源类型”为准。本文中的目标模块接入策略和示例包含早期规划项，不能单独作为已实现 handler 清单。
 
+Issue #184 之后，数据初始化与停机升级的当前口径以 [Issue #184 数据治理设计](./2026-07-01-issue-184-data-governance-design.md)、`mango-resource` README 和 `mango-infra-persistence` README 为准：Resource 负责正式资源、demo 隔离和 `INIT_ONLY`；Flyway 负责 DDL、外部 SQL 和 schema baseline pack；第一版不引入 Data Package、任务编排、管理页面或在线升级平台。
+
 ## 3. 模块结构
 
 新增平台能力模块：
@@ -821,6 +823,8 @@ Flyway 允许：
 Flyway 不作为业务资源注入通道。业务模块不得通过自己的 Flyway 直接写入消息模板、工作流定义、编码规则、打印模板、AI Prompt、字典、菜单权限等公共资源表。
 
 目标模块如需初始化自身内置资源，可以使用目标模块自己的 migration 或转换为 Resource Provider；发布后仍需遵守已发布 migration 不修改、只前进的规则。
+
+大 SQL、磁盘 SQL、远程 URL SQL 和新库 schema baseline pack 归 `mango-infra-persistence` 的模块化 Flyway `locations` 管理；小而结构化、需要目标模块 handler 校验合并的数据归 Resource 管理。demo 数据使用 `META-INF/mango/demo/` 并由最终应用显式开启，不进入默认资源目录。
 
 ## 19. 验证范围
 

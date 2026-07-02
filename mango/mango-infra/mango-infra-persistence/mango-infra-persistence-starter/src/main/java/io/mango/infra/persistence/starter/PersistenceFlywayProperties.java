@@ -3,7 +3,9 @@ package io.mango.infra.persistence.starter;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,6 +67,12 @@ public class PersistenceFlywayProperties {
          * 未配置时使用 flyway_schema_history_{module}。
          */
         private String historyTable;
+
+        /**
+         * 当前模块迁移脚本位置。为空时使用 classpath:db/migration/{module}。
+         * 支持 classpath:、filesystem:，以及 http(s) 单个 SQL 文件。
+         */
+        private List<String> locations = new ArrayList<>();
 
         /**
          * 当前模块独立迁移数据源。

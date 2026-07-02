@@ -83,12 +83,14 @@ class PersistenceFlywayPropertiesTest {
     void moduleConfig_shouldAcceptHistoryTableAndDatasource() {
         PersistenceFlywayProperties.ModuleConfig config = new PersistenceFlywayProperties.ModuleConfig();
         config.setHistoryTable("flyway_schema_history_identity");
+        config.getLocations().add("filesystem:/opt/mango/upgrade/identity");
         config.getDatasource().setUrl("jdbc:mysql://127.0.0.1:3306/mango_identity");
         config.getDatasource().setUsername("root");
         config.getDatasource().setPassword("secret");
         config.getDatasource().setDriverClassName("com.mysql.cj.jdbc.Driver");
 
         assertThat(config.getHistoryTable()).isEqualTo("flyway_schema_history_identity");
+        assertThat(config.getLocations()).containsExactly("filesystem:/opt/mango/upgrade/identity");
         assertThat(config.getDatasource().getUrl()).isEqualTo("jdbc:mysql://127.0.0.1:3306/mango_identity");
         assertThat(config.getDatasource().getUsername()).isEqualTo("root");
         assertThat(config.getDatasource().getPassword()).isEqualTo("secret");

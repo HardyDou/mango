@@ -10,7 +10,7 @@ const versionsManifestPath = resolve(versionsRoot, 'manifest.json');
 const githubBlobBase = process.env.MANGO_DOCS_GITHUB_BLOB_BASE || 'https://github.com/HardyDou/mango/blob/main';
 const docsPublicBase = normalizePublicBase(process.env.MANGO_DOCS_PUBLIC_BASE || 'https://hardydou.github.io/mango/');
 const latestDocsLabel = process.env.MANGO_DOCS_LATEST_LABEL || 'Latest';
-const docsVersionLabel = process.env.MANGO_DOCS_VERSION_LABEL || latestDocsLabel;
+const docsVersionLabel = formatVersionLabel(process.env.MANGO_DOCS_VERSION_LABEL || latestDocsLabel);
 
 const publicDocs = [
   'mango-docs/index.md',
@@ -685,7 +685,7 @@ async function loadVersionNavItems() {
       ...versions
         .filter((version) => version && typeof version.version === 'string')
         .map((version) => ({
-          text: version.label || version.version,
+          text: formatVersionLabel(version.label || version.version),
           link: toPublicDocsLink(version.path || `/versions/${version.version}/`)
         }))
     ];
@@ -701,6 +701,11 @@ async function loadVersionNavItems() {
 
 function toPublicDocsLink(path) {
   return new URL(path.replace(/^\/+/, ''), docsPublicBase).toString();
+}
+
+function formatVersionLabel(label) {
+  const match = String(label).match(/(?:^|-)maven-(\d+\.\d+\.\d+)(?:-|$)/);
+  return match ? match[1] : label;
 }
 
 function normalizePublicBase(base) {
