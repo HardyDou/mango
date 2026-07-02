@@ -2,10 +2,28 @@
   <div v-loading="loading" class="home-container">
     <div class="home-toolbar">
       <template v-if="editing">
-        <el-button :loading="saving" type="primary" @click="saveLayout">
-          保存布局
-        </el-button>
-        <el-button @click="cancelEdit">取消</el-button>
+        <el-tooltip content="保存布局" placement="left">
+          <el-button
+            :loading="saving"
+            class="home-toolbar__button"
+            type="primary"
+            circle
+            aria-label="保存布局"
+            @click="saveLayout"
+          >
+            <el-icon><Check /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip content="取消" placement="left">
+          <el-button
+            class="home-toolbar__button"
+            circle
+            aria-label="取消"
+            @click="cancelEdit"
+          >
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </el-tooltip>
         <el-popconfirm
           title="确认恢复默认布局？当前个人布局会被清空。"
           confirm-button-text="恢复默认"
@@ -13,13 +31,27 @@
           @confirm="resetLayout"
         >
           <template #reference>
-            <el-button>恢复默认</el-button>
+            <el-button
+              class="home-toolbar__button"
+              circle
+              aria-label="恢复默认"
+            >
+              <el-icon><RefreshLeft /></el-icon>
+            </el-button>
           </template>
         </el-popconfirm>
       </template>
-      <el-button v-else type="primary" @click="startEdit">
-        编辑布局
-      </el-button>
+      <el-tooltip v-else content="编辑布局" placement="left">
+        <el-button
+          class="home-toolbar__button"
+          type="primary"
+          circle
+          aria-label="编辑布局"
+          @click="startEdit"
+        >
+          <el-icon><EditPen /></el-icon>
+        </el-button>
+      </el-tooltip>
     </div>
 
     <el-alert
@@ -54,6 +86,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
+import { Check, Close, EditPen, RefreshLeft } from '@element-plus/icons-vue';
 import { useUserInfo } from '../../stores/userInfo';
 import { useRoutesList } from '../../stores/routesList';
 import { ensureFeatureRegistrars } from '../../runtime/featureRegistrars';
@@ -296,14 +329,25 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
 }
 
 .home-toolbar {
-  position: absolute;
-  right: 0;
-  bottom: 0;
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
   z-index: 10;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
+}
+
+.home-toolbar__button {
+  width: 44px;
+  height: 44px;
+  box-shadow: 0 8px 18px rgb(31 45 61 / 16%);
+}
+
+.home-toolbar :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
 .home-alert {
