@@ -58,8 +58,10 @@ export { default as MangoAdminParentView } from './layout/routerView/parent.vue'
 export { createMangoAdminRouter } from './router';
 export { getShellPinia, installShellApp } from './appBootstrap';
 export { configureMangoAdminShell, getMangoAdminShellOptions };
-export type { MangoAdminShellOptions };
+export { ensureFeatureRegistrars };
+export type { MangoAdminFeatureRegistrar, MangoAdminFeatureRegistration, MangoAdminShellOptions };
 export * from './stores';
 export * from './runtime/menuHost';
 export * from './runtime/runtimeConfig';
 export * from './runtime/runtimeHost';
+export * from './runtime/homeWidgets';

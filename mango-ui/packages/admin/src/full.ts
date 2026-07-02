@@ -2,6 +2,7 @@
 /* Edit packages/admin/admin-modules.json, then run the package style generation command. */
 export { createMangoAdminApp } from '@mango/admin-shell';
 export type { MangoAdminShellOptions, MangoAdminAppInstance } from '@mango/admin-shell';
+export { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
 export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
 export { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
@@ -16,6 +17,7 @@ export { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
 export { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 
 import type { MangoAdminFeatureRegistrar } from '@mango/admin-shell';
+import { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
 import { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 import { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
 import { registerMangoLinkAdminPages } from '@mango/link/admin-pages';
@@ -30,6 +32,7 @@ import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
 import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 
 export const mangoFullAdminFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
+  registerMangoSystemAdminPages,
   registerMangoJobAdminPages,
   registerMangoCmsAdminPages,
   registerMangoLinkAdminPages,

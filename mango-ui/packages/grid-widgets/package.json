@@ -10,34 +10,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./calendar": {
-      "types": "./dist/calendar.d.ts",
-      "import": "./dist/calendar.js"
-    },
-    "./quick-entry": {
-      "types": "./dist/quick-entry.d.ts",
-      "import": "./dist/quick-entry.js"
-    },
-    "./message-center": {
-      "types": "./dist/message-center.d.ts",
-      "import": "./dist/message-center.js"
-    },
-    "./my-task": {
-      "types": "./dist/my-task.d.ts",
-      "import": "./dist/my-task.js"
-    },
-    "./my-todo": {
-      "types": "./dist/my-todo.d.ts",
-      "import": "./dist/my-todo.js"
-    },
-    "./my-process": {
-      "types": "./dist/my-process.d.ts",
-      "import": "./dist/my-process.js"
-    },
-    "./user-profile": {
-      "types": "./dist/user-profile.d.ts",
-      "import": "./dist/user-profile.js"
-    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {
@@ -49,12 +21,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@element-plus/icons-vue": "2.3.2",
-    "@mango/calendar": "1.0.14",
-    "@mango/common": "1.0.11",
-    "@mango/grid-layout": "1.0.3",
-    "@mango/notice": "1.0.15",
-    "@mango/workflow": "1.0.19"
+    "@mango/grid-layout": "1.0.3"
   },
   "peerDependencies": {
     "element-plus": "2.14.1",

@@ -29,7 +29,7 @@ test.describe('工作台快捷入口小组件', () => {
   test('服务代理和工作台默认快捷入口可用', async ({ page, request }) => {
     const healthResponse = await request.get('/api/actuator/health');
     expect(healthResponse.ok()).toBeTruthy();
-    await expect(page.getByText('工作台', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '编辑布局' })).toBeVisible();
     await expect(page.getByText('快捷入口', { exact: true })).toBeVisible();
     await expect(page.locator('.mango-grid-widget-quick-entry__setting')).toBeVisible();
 

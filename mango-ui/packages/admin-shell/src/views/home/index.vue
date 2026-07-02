@@ -1,32 +1,58 @@
 <template>
   <div v-loading="loading" class="home-container">
-    <section class="home-hero">
-      <div>
-        <div class="home-hero__title">工作台</div>
-        <div class="home-hero__desc">欢迎{{ displayName }}登录，按你的使用习惯排列首页组件。</div>
-      </div>
-      <div class="home-hero__actions">
-        <template v-if="editing">
-          <el-button :loading="saving" type="primary" @click="saveLayout">
-            保存布局
-          </el-button>
-          <el-button @click="cancelEdit">取消</el-button>
-          <el-popconfirm
-            title="确认恢复默认布局？当前个人布局会被清空。"
-            confirm-button-text="恢复默认"
-            cancel-button-text="取消"
-            @confirm="resetLayout"
+    <div class="home-toolbar">
+      <template v-if="editing">
+        <el-tooltip content="保存布局" placement="left">
+          <el-button
+            :loading="saving"
+            class="home-toolbar__button"
+            type="primary"
+            circle
+            aria-label="保存布局"
+            @click="saveLayout"
           >
-            <template #reference>
-              <el-button>恢复默认</el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-        <el-button v-else type="primary" @click="startEdit">
-          编辑布局
+            <el-icon><Check /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip content="取消" placement="left">
+          <el-button
+            class="home-toolbar__button"
+            circle
+            aria-label="取消"
+            @click="cancelEdit"
+          >
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-popconfirm
+          title="确认恢复默认布局？当前个人布局会被清空。"
+          confirm-button-text="恢复默认"
+          cancel-button-text="取消"
+          @confirm="resetLayout"
+        >
+          <template #reference>
+            <el-button
+              class="home-toolbar__button"
+              circle
+              aria-label="恢复默认"
+            >
+              <el-icon><RefreshLeft /></el-icon>
+            </el-button>
+          </template>
+        </el-popconfirm>
+      </template>
+      <el-tooltip v-else content="编辑布局" placement="left">
+        <el-button
+          class="home-toolbar__button"
+          type="primary"
+          circle
+          aria-label="编辑布局"
+          @click="startEdit"
+        >
+          <el-icon><EditPen /></el-icon>
         </el-button>
-      </div>
-    </section>
+      </el-tooltip>
+    </div>
 
     <el-alert
       v-if="errorMessage"
@@ -60,8 +86,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
+import { Check, Close, EditPen, RefreshLeft } from '@element-plus/icons-vue';
 import { useUserInfo } from '../../stores/userInfo';
 import { useRoutesList } from '../../stores/routesList';
+import { ensureFeatureRegistrars } from '../../runtime/featureRegistrars';
+import { useMangoAdminHomeWidgets } from '../../runtime/homeWidgets';
 import {
   MangoGridDesigner,
   MangoGridLayout,
@@ -88,6 +117,7 @@ const editing = ref(false);
 const errorMessage = ref('');
 const layoutItems = ref<GridLayoutItem[]>(defaultLayoutItems());
 const draftItems = ref<GridLayoutItem[]>([]);
+const businessHomeWidgets = useMangoAdminHomeWidgets();
 
 const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   pageCode: PAGE_CODE,
@@ -98,6 +128,10 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
     nickname: userInfo.userInfos.nickname,
     avatar: userInfo.userInfos.photo,
     roles: userInfo.userInfos.roles,
+    permissions: Array.from(new Set([
+      ...(userInfo.userInfos.permissions || []),
+      ...(userInfo.userInfos.authBtnList || []),
+    ])),
     appCode: userInfo.userInfos.appCode,
   },
   tenant: {
@@ -111,17 +145,21 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
 const workbenchWidgets = computed(() => mergeGridWidgets({
   runtime: widgetRuntime.value,
   systemWidgets: systemGridWidgets,
-  businessWidgets: [],
+  businessWidgets: businessHomeWidgets.value,
 }));
 
-const displayName = computed(() => {
-  const nickname = userInfo.userInfos.nickname || userInfo.userInfos.username;
-  return nickname ? `，${nickname}` : '';
+onMounted(() => {
+  initializeHome();
 });
 
-onMounted(() => {
-  loadLayout();
-});
+async function initializeHome(): Promise<void> {
+  try {
+    await ensureFeatureRegistrars();
+  } catch (error) {
+    console.error('[mango-shell] failed to register shell features', error);
+  }
+  await loadLayout();
+}
 
 async function loadLayout(): Promise<void> {
   loading.value = true;
@@ -188,17 +226,23 @@ async function resetLayout(): Promise<void> {
 function defaultLayoutItems(): GridLayoutItem[] {
   // 工作台默认布局由页面直接传入自定义布局组件，无个人配置或恢复默认时使用。
   return [
-    gridItem('message-center', 'system.message-center', 0, 0, 6, 18, '我的消息'),
-    gridItem('quick', 'system.quick-entry', 6, 0, 3, 18, '快捷入口'),
-    gridItem('calendar', 'system.calendar', 9, 0, 3, 14, '日历'),
-    gridItem('user-profile', 'system.user-profile', 9, 15, 3, 28, '用户信息', {
+    gridItem('link-navigation', 'link.link-navigation', 0, 0, 12, 20, '网址导航', {
+      minW: 6,
+      minH: 18,
+      showTitle: false,
+      padding: false,
+    }),
+    gridItem('message-center', 'notice.message-center', 0, 21, 6, 18, '我的消息'),
+    gridItem('quick', 'system.quick-entry', 6, 21, 3, 18, '快捷入口'),
+    gridItem('calendar', 'calendar.calendar', 9, 21, 3, 14, '日历'),
+    gridItem('user-profile', 'system.user-profile', 9, 36, 3, 28, '用户信息', {
       minH: 16,
       showTitle: false,
       padding: false,
     }),
-    gridItem('my-process', 'system.my-process', 0, 19, 3, 24, '我的申请'),
-    gridItem('my-task', 'system.my-task', 3, 19, 3, 24, '我的任务'),
-    gridItem('my-todo', 'system.my-todo', 6, 19, 3, 24, '我的待办', {
+    gridItem('my-process', 'workflow.my-process', 0, 40, 3, 24, '我的申请'),
+    gridItem('my-task', 'workflow.my-task', 3, 40, 3, 24, '我的任务'),
+    gridItem('my-todo', 'workflow.my-todo', 6, 40, 3, 24, '我的待办', {
       showTitle: false,
       padding: false,
     }),
@@ -235,6 +279,9 @@ function gridItem(
     widgetType,
     title,
     layout: { x, y, w, h, minW, minH, maxW, maxH },
+    props: widgetType === 'link.link-navigation'
+      ? { maxGroups: 24, maxItemsPerGroup: 200 }
+      : undefined,
     showTitle,
     padding,
   };
@@ -274,39 +321,33 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
 
 <style scoped lang="scss">
 .home-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 0;
 }
 
-.home-hero {
+.home-toolbar {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
-  border: 1px solid var(--mango-border-color);
-  border-radius: 8px;
-  background: var(--mango-bg-color);
-}
-
-.home-hero__title {
-  color: var(--mango-text-color);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.home-hero__desc {
-  margin-top: 6px;
-  color: var(--mango-text-color-regular);
-  font-size: 14px;
-}
-
-.home-hero__actions {
-  display: flex;
-  align-items: center;
+  justify-content: center;
   gap: 8px;
+}
+
+.home-toolbar__button {
+  width: 44px;
+  height: 44px;
+  box-shadow: 0 8px 18px rgb(31 45 61 / 16%);
+}
+
+.home-toolbar :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
 .home-alert {

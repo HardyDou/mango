@@ -4,6 +4,23 @@
   "private": false,
   "type": "module",
   "main": "src/index.ts",
+  "style": "./style.css",
+  "exports": {
+    ".": "./src/index.ts",
+    "./style.css": "./style.css"
+  },
+  "mangoAdmin": {
+    "businessDomainCode": "{{moduleBusinessDomainCode}}",
+    "businessDomainName": "{{moduleName}}",
+    "groupName": "{{moduleName}}",
+    "style": "@{{projectKebab}}/{{moduleKebab}}/style.css",
+    "registrars": [
+      {
+        "name": "register{{modulePascal}}Pages",
+        "import": "@{{projectKebab}}/{{moduleKebab}}"
+      }
+    ]
+  },
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}-api": "{{projectVersion}}",
     "@mango/admin-pages": "{{mangoAdminPagesVersion}}",

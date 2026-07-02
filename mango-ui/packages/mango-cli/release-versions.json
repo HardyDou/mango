@@ -18,7 +18,6 @@
     "@mango/link": "1.0.0",
     "@mango/link-openapi": "1.0.0",
     "@mango/link-page": "1.0.0",
-    "@mango/link-panel": "1.0.1",
     "@mango/notice": "1.0.15",
     "@mango/numgen": "1.0.14",
     "@mango/payment": "1.0.5",

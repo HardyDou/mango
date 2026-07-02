@@ -5,6 +5,18 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
+  "mangoAdmin": {
+    "businessDomainCode": "WORKFLOW",
+    "businessDomainName": "工作流",
+    "groupName": "工作流",
+    "style": "@mango/workflow/style.css",
+    "registrars": [
+      {
+        "name": "registerMangoWorkflowAdminPages",
+        "import": "@mango/workflow/admin-pages"
+      }
+    ]
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -13,6 +25,18 @@
     "./admin-pages": {
       "types": "./dist/admin-pages.d.ts",
       "import": "./dist/admin-pages.js"
+    },
+    "./widgets/my-process": {
+      "types": "./dist/widgets/my-process.d.ts",
+      "import": "./dist/widgets/my-process.js"
+    },
+    "./widgets/my-task": {
+      "types": "./dist/widgets/my-task.d.ts",
+      "import": "./dist/widgets/my-task.js"
+    },
+    "./widgets/my-todo": {
+      "types": "./dist/widgets/my-todo.d.ts",
+      "import": "./dist/widgets/my-todo.js"
     },
     "./style.css": "./dist/style.css"
   },
@@ -32,6 +56,7 @@
     "@mango/api-schema": "1.0.2",
     "@mango/common": "1.0.11",
     "@mango/file": "1.0.14",
+    "@mango/grid-widgets": "1.0.8",
     "@mango/system": "1.0.12",
     "form-create-designer": "3.2.11-oem"
   },

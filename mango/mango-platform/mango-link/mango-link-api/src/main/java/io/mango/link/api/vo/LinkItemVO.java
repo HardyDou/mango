@@ -18,6 +18,8 @@ import java.util.List;
 public class LinkItemVO extends LinkNavigationItemVO {
 
     private LinkVisibilityScope visibilityScope;
+    private Long ownerUserId;
+    private String ownerDisplayName;
     private List<LinkVisibilityTargetVO> visibilityTargets;
     private LinkStatus status;
     private String remark;

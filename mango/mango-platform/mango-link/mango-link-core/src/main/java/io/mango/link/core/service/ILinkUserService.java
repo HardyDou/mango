@@ -5,6 +5,7 @@ import io.mango.link.api.command.CreateLinkFavoriteCommand;
 import io.mango.link.api.command.CreateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.CreateLinkPersonalItemCommand;
 import io.mango.link.api.command.DeleteLinkFavoriteCommand;
+import io.mango.link.api.command.UpdateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.UpdateLinkPersonalItemCommand;
 import io.mango.link.api.query.LinkCompanyItemQuery;
 import io.mango.link.api.query.LinkFavoriteQuery;
@@ -12,6 +13,7 @@ import io.mango.link.api.query.LinkPersonalItemPageQuery;
 import io.mango.link.api.vo.LinkFavoriteVO;
 import io.mango.link.api.vo.LinkCategoryVO;
 import io.mango.link.api.vo.LinkNavigationItemVO;
+import io.mango.link.api.vo.LinkNavigationWidgetDataVO;
 import io.mango.link.api.vo.LinkPersonalItemVO;
 
 import java.util.List;
@@ -20,9 +22,15 @@ public interface ILinkUserService {
 
     List<LinkNavigationItemVO> listCompanyItems(LinkCompanyItemQuery query);
 
+    LinkNavigationWidgetDataVO getNavigationWidgetData();
+
     List<LinkCategoryVO> listPersonalCategories();
 
     Long createPersonalCategory(CreateLinkPersonalCategoryCommand command);
+
+    boolean updatePersonalCategory(UpdateLinkPersonalCategoryCommand command);
+
+    boolean deletePersonalCategory(Long id);
 
     boolean createFavorite(CreateLinkFavoriteCommand command);
 

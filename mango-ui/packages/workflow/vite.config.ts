@@ -8,6 +8,9 @@ export default defineConfig({
       entry: {
         index: 'src/index.ts',
         'admin-pages': 'src/admin-pages.ts',
+        'widgets/my-process': 'src/widgets/my-process/my-process.ts',
+        'widgets/my-task': 'src/widgets/my-task/my-task.ts',
+        'widgets/my-todo': 'src/widgets/my-todo/my-todo.ts',
       },
       formats: ['es'],
     },
@@ -20,6 +23,7 @@ export default defineConfig({
         '@mango/common',
         '@mango/common/utils/request',
         '@mango/file',
+        '@mango/grid-widgets',
         '@mango/system',
         'element-plus',
         'form-create-designer',

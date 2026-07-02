@@ -9,6 +9,7 @@ import io.mango.link.api.command.CreateLinkFavoriteCommand;
 import io.mango.link.api.command.CreateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.CreateLinkPersonalItemCommand;
 import io.mango.link.api.command.DeleteLinkFavoriteCommand;
+import io.mango.link.api.command.UpdateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.UpdateLinkPersonalItemCommand;
 import io.mango.link.api.query.LinkCompanyItemQuery;
 import io.mango.link.api.query.LinkFavoriteQuery;
@@ -16,6 +17,7 @@ import io.mango.link.api.query.LinkPersonalItemPageQuery;
 import io.mango.link.api.vo.LinkCategoryVO;
 import io.mango.link.api.vo.LinkFavoriteVO;
 import io.mango.link.api.vo.LinkNavigationItemVO;
+import io.mango.link.api.vo.LinkNavigationWidgetDataVO;
 import io.mango.link.api.vo.LinkPersonalItemVO;
 import io.mango.link.core.service.ILinkUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,6 +57,14 @@ public class LinkUserController implements LinkUserApi {
     }
 
     @Override
+    @GetMapping("/navigation-widget/data")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询首页网址导航小组件数据")
+    @Operation(summary = "查询首页网址导航小组件数据")
+    public R<LinkNavigationWidgetDataVO> getNavigationWidgetData() {
+        return R.ok(linkUserService.getNavigationWidgetData());
+    }
+
+    @Override
     @GetMapping("/personal-categories/list")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "查询我的网址分组")
@@ -68,6 +78,25 @@ public class LinkUserController implements LinkUserApi {
     @Operation(summary = "新增我的网址分组")
     public R<Long> createPersonalCategory(@Valid @RequestBody CreateLinkPersonalCategoryCommand command) {
         return R.ok(linkUserService.createPersonalCategory(command));
+    }
+
+    @Override
+    @PutMapping("/personal-categories/update")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
+    @Operation(summary = "编辑我的网址分组")
+    public R<Boolean> updatePersonalCategory(@Valid @RequestBody UpdateLinkPersonalCategoryCommand command) {
+        return R.ok(linkUserService.updatePersonalCategory(command));
+    }
+
+    @Override
+    @DeleteMapping("/personal-categories/delete")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
+    @Operation(summary = "删除我的网址分组")
+    public R<Boolean> deletePersonalCategory(
+            @Parameter(description = "分组 ID", required = true)
+            @NotNull(message = "分组 ID 不能为空")
+            @RequestParam Long id) {
+        return R.ok(linkUserService.deletePersonalCategory(id));
     }
 
     @Override

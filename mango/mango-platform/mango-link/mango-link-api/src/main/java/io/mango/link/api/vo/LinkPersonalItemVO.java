@@ -24,6 +24,7 @@ public class LinkPersonalItemVO {
     private List<String> tags;
     private String remark;
     private LinkOpenMode openMode;
+    private Boolean favorited;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

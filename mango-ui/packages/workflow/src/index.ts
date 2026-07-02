@@ -1,3 +1,5 @@
+import './style.css';
+
 export { default as WorkflowDefinitionView } from './views/workflow-definition/index.vue';
 export { default as WorkflowTemplateView } from './views/workflow-template/index.vue';
 export { default as WorkflowTaskListView } from './views/task-list/index.vue';
@@ -23,3 +25,6 @@ export * from './components/runtimeForm';
 export * from './components/businessApply';
 export * from './components/businessApproval';
 export * from './components/business-ui/types';
+export * from './widgets/my-process';
+export * from './widgets/my-task';
+export * from './widgets/my-todo';

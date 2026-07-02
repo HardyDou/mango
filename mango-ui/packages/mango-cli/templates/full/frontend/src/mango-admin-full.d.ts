@@ -2,8 +2,17 @@ declare module '@mango/admin/full' {
   import type { App as VueApp } from 'vue';
   import type { Router } from 'vue-router';
 
+  export interface MangoAdminFeatureRegistration {
+    businessDomainCode?: string;
+    businessDomainName?: string;
+    groupName?: string;
+    moduleCode?: string;
+    moduleName?: string;
+    widgets?: unknown[];
+  }
+
   export interface MangoAdminFeatureRegistrar {
-    (): void | Promise<void>;
+    (): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
   }
 
   export interface MangoAdminShellOptions {

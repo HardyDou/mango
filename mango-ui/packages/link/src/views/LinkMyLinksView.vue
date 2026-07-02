@@ -17,6 +17,9 @@
     </section>
 
     <section class="link-panel">
+      <el-alert v-if="errorMessage" class="link-error" type="error" :closable="false" show-icon>
+        <template #title>{{ errorMessage }}</template>
+      </el-alert>
       <el-table v-loading="loading" :data="rows" stripe empty-text="暂无我的网址">
         <el-table-column label="网址" min-width="280">
           <template #default="{ row }">
@@ -90,13 +93,14 @@
 import { Delete, Edit, Plus, Position, Refresh, Search } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
-import { linkApi, normalizeApiId, openLinkWithRedirect, type LinkPageQuery, type LinkPersonalItem } from '../api/link';
+import { linkApi, normalizeApiId, openLinkWithRedirect, requestErrorMessage, type LinkPageQuery, type LinkPersonalItem } from '../api/link';
 
 const rows = ref<LinkPersonalItem[]>([]);
 const total = ref(0);
 const loading = ref(false);
 const saving = ref(false);
 const editorVisible = ref(false);
+const errorMessage = ref('');
 const formRef = ref<FormInstance>();
 const query = reactive<LinkPageQuery>({ pageNum: 1, pageSize: 10, keyword: '' });
 const form = reactive<LinkPersonalItem>({ name: '', url: '', summary: '', tags: [] });
@@ -107,10 +111,13 @@ const rules: FormRules = {
 
 async function loadRows() {
   loading.value = true;
+  errorMessage.value = '';
   try {
     const page = await linkApi.pagePersonalItems(query);
     rows.value = page.list;
     total.value = page.total;
+  } catch (error) {
+    errorMessage.value = requestErrorMessage(error, '我的网址加载失败');
   } finally {
     loading.value = false;
   }

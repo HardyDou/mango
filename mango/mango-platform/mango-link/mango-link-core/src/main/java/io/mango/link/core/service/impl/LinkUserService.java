@@ -10,6 +10,7 @@ import io.mango.link.api.command.CreateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.CreateLinkFavoriteCommand;
 import io.mango.link.api.command.CreateLinkPersonalItemCommand;
 import io.mango.link.api.command.DeleteLinkFavoriteCommand;
+import io.mango.link.api.command.UpdateLinkPersonalCategoryCommand;
 import io.mango.link.api.command.UpdateLinkPersonalItemCommand;
 import io.mango.link.api.enums.LinkVisibilityScope;
 import io.mango.link.api.query.LinkCompanyItemQuery;
@@ -18,6 +19,7 @@ import io.mango.link.api.query.LinkPersonalItemPageQuery;
 import io.mango.link.api.vo.LinkCategoryVO;
 import io.mango.link.api.vo.LinkFavoriteVO;
 import io.mango.link.api.vo.LinkNavigationItemVO;
+import io.mango.link.api.vo.LinkNavigationWidgetDataVO;
 import io.mango.link.api.vo.LinkPersonalItemVO;
 import io.mango.link.core.entity.LinkCategoryEntity;
 import io.mango.link.core.entity.LinkFavoriteEntity;
@@ -71,6 +73,19 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
     }
 
     @Override
+    public LinkNavigationWidgetDataVO getNavigationWidgetData() {
+        LinkPersonalItemPageQuery personalQuery = new LinkPersonalItemPageQuery();
+        personalQuery.setPage(1);
+        personalQuery.setSize(200);
+        LinkNavigationWidgetDataVO data = new LinkNavigationWidgetDataVO();
+        data.setCompanyItems(listCompanyItems(new LinkCompanyItemQuery()));
+        data.setPersonalItems(pagePersonalItems(personalQuery).getList());
+        data.setFavoriteItems(listFavorites(new LinkFavoriteQuery()));
+        data.setCategories(listPersonalCategories());
+        return data;
+    }
+
+    @Override
     public List<LinkCategoryVO> listPersonalCategories() {
         Long tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
@@ -112,12 +127,46 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public boolean updatePersonalCategory(UpdateLinkPersonalCategoryCommand command) {
+        Long tenantId = LinkContextSupport.currentTenantId();
+        Long userId = LinkContextSupport.currentUserId();
+        LinkCategoryEntity category = requireOwnedPersonalCategory(tenantId, userId, command.getId());
+        String name = LinkContextSupport.trimRequired(command.getName(), "分组名称不能为空");
+        LinkCategoryEntity exists = categoryMapper.selectByScopeOwnerAndName(tenantId,
+                LinkSupport.personalCategory(), userId, name);
+        Require.isTrue(exists == null || category.getId().equals(exists.getId()), "分组名称已存在");
+        category.setName(name);
+        category.setSortNo(command.getSortNo() == null ? category.getSortNo() : command.getSortNo());
+        category.setUpdatedBy(userId);
+        category.setUpdatedAt(LocalDateTime.now());
+        return categoryMapper.updateById(category) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deletePersonalCategory(Long id) {
+        Long tenantId = LinkContextSupport.currentTenantId();
+        Long userId = LinkContextSupport.currentUserId();
+        LinkCategoryEntity category = requireOwnedPersonalCategory(tenantId, userId, id);
+        Long itemCount = itemMapper.selectCount(new LambdaQueryWrapper<LinkItemEntity>()
+                .eq(LinkItemEntity::getTenantId, tenantId)
+                .eq(LinkItemEntity::getCategoryId, category.getId())
+                .eq(LinkItemEntity::getVisibilityScope, LinkVisibilityScope.PERSONAL.name())
+                .eq(LinkItemEntity::getOwnerUserId, userId));
+        Require.isTrue(itemCount == null || itemCount.longValue() == 0L, "分组下存在网址，请先删除或移动网址");
+        return categoryMapper.deleteById(category.getId()) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean createFavorite(CreateLinkFavoriteCommand command) {
         Long tenantId = LinkContextSupport.currentTenantId();
         Long userId = LinkContextSupport.currentUserId();
         LinkItemEntity item = selectItemRequired(tenantId, command.getLinkId());
-        LinkCategoryEntity category = categoryMapper.selectByTenantAndId(tenantId, item.getCategoryId());
-        Require.isTrue(enabledCategory(category), "网址不可见");
+        LinkCategoryEntity category = item.getCategoryId() == null
+                ? null
+                : categoryMapper.selectByTenantAndId(tenantId, item.getCategoryId());
+        Require.isTrue(visibleCategoryForItem(userId, item, category), "网址不可见");
         List<LinkVisibilityTargetEntity> targets = targetMapper.selectList(new LambdaQueryWrapper<LinkVisibilityTargetEntity>()
                 .eq(LinkVisibilityTargetEntity::getTenantId, tenantId)
                 .eq(LinkVisibilityTargetEntity::getLinkId, item.getId()));
@@ -189,8 +238,9 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
                 personalWrapper(tenantId, userId, resolved));
         Map<Long, LinkCategoryEntity> categories = categoriesById(tenantId,
                 page.getRecords().stream().map(LinkItemEntity::getCategoryId).toList());
+        Set<Long> favorites = favoriteLinkIds(tenantId, userId, page.getRecords().stream().map(LinkItemEntity::getId).toList());
         return PageResult.of(page.getRecords().stream()
-                        .map(item -> toPersonalVO(item, categories.get(item.getCategoryId())))
+                        .map(item -> toPersonalVO(item, categories.get(item.getCategoryId()), favorites.contains(item.getId())))
                         .toList(),
                 page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -300,7 +350,7 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
                                              Map<Long, List<LinkVisibilityTargetEntity>> targets,
                                              LinkFavoriteQuery query) {
         LinkCategoryEntity category = categories.get(item.getCategoryId());
-        if (!enabledCategory(category)
+        if (!visibleCategoryForItem(userId, item, category)
                 || !keywordMatched(item, query.getKeyword())
                 || (query.getCategoryId() != null && !query.getCategoryId().equals(item.getCategoryId()))
                 || !isVisibleToUser(tenantId, userId, item, targets.get(item.getId()))) {
@@ -313,12 +363,28 @@ public class LinkUserService extends LinkBaseService implements ILinkUserService
         if (categoryId != null) {
             LinkCategoryEntity category = selectCategoryRequired(tenantId, categoryId);
             Long userId = LinkContextSupport.currentUserId();
-            boolean companyCategory = LinkSupport.companyCategory().equals(category.getScope())
-                    && Long.valueOf(0L).equals(category.getOwnerUserId());
             boolean personalCategory = LinkSupport.personalCategory().equals(category.getScope())
                     && userId.equals(category.getOwnerUserId());
-            Require.isTrue(enabledCategory(category) && (companyCategory || personalCategory), "网址分组不存在或已停用");
+            Require.isTrue(enabledCategory(category) && personalCategory, "网址分组不存在或已停用");
         }
+    }
+
+    private LinkCategoryEntity requireOwnedPersonalCategory(Long tenantId, Long userId, Long categoryId) {
+        LinkCategoryEntity category = selectCategoryRequired(tenantId, categoryId);
+        Require.isTrue(LinkSupport.personalCategory().equals(category.getScope())
+                && userId.equals(category.getOwnerUserId())
+                && LinkSupport.enabled().equals(category.getStatus()), "个人分组不存在或已停用");
+        return category;
+    }
+
+    private boolean visibleCategoryForItem(Long userId, LinkItemEntity item, LinkCategoryEntity category) {
+        return enabledCategory(category) || personalUngroupedItemVisibleToOwner(userId, item);
+    }
+
+    private boolean personalUngroupedItemVisibleToOwner(Long userId, LinkItemEntity item) {
+        return item.getCategoryId() == null
+                && LinkVisibilityScope.PERSONAL.name().equals(item.getVisibilityScope())
+                && userId.equals(item.getOwnerUserId());
     }
 
     private Comparator<LinkItemEntity> navigationComparator() {

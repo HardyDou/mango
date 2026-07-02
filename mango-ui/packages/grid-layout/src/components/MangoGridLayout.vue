@@ -70,7 +70,7 @@ const normalizedItems = computed(() => normalizeLayoutItems(props.items, {
   defaultHeight: 10,
   compact: false,
   verticalGapRows: verticalGapRows.value,
-}));
+}).filter(item => Boolean(widgetMap.value[item.widgetType]?.component)));
 
 const widgetMap = computed<Record<string, GridWidgetDefinition>>(() => {
   return props.widgets.reduce<Record<string, GridWidgetDefinition>>((result, widget) => {

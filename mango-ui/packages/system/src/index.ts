@@ -1,3 +1,5 @@
+import './style.css';
+
 export { default as DictView } from './views/dict/index.vue';
 export { default as OperationLogView } from './views/operation-log/index.vue';
 export { default as LoginLogView } from './views/login-log/index.vue';
@@ -30,3 +32,5 @@ export * from './api/publicPath';
 export * from './api/param';
 export * from './api/domain';
 export * from './api/event';
+export * from './widgets/quick-entry';
+export * from './widgets/user-profile';

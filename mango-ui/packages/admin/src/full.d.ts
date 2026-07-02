@@ -2,6 +2,7 @@
 /* Edit packages/admin/admin-modules.json, then run the package style generation command. */
 export { createMangoAdminApp } from '@mango/admin-shell';
 export type { MangoAdminShellOptions, MangoAdminAppInstance } from '@mango/admin-shell';
+export { registerMangoSystemAdminPages } from '@mango/system/admin-pages';
 export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
 export { registerMangoLinkAdminPages } from '@mango/link/admin-pages';

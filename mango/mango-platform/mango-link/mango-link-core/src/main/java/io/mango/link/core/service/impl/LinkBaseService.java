@@ -31,6 +31,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,11 +66,18 @@ abstract class LinkBaseService {
 
     protected Map<Long, LinkCategoryEntity> categoriesById(Long tenantId, Collection<Long> categoryIds) {
         if (categoryIds == null || categoryIds.isEmpty()) {
-            return Map.of();
+            return Collections.emptyMap();
+        }
+        List<Long> resolvedIds = categoryIds.stream()
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (resolvedIds.isEmpty()) {
+            return Collections.emptyMap();
         }
         List<LinkCategoryEntity> categories = categoryMapper.selectList(new LambdaQueryWrapper<LinkCategoryEntity>()
                 .eq(LinkCategoryEntity::getTenantId, tenantId)
-                .in(LinkCategoryEntity::getId, categoryIds));
+                .in(LinkCategoryEntity::getId, resolvedIds));
         Map<Long, LinkCategoryEntity> result = new HashMap<>();
         for (LinkCategoryEntity category : categories) {
             result.put(category.getId(), category);
@@ -166,6 +174,7 @@ abstract class LinkBaseService {
         vo.setName(entity.getName());
         vo.setScope(LinkSupport.toCategoryScope(entity.getScope()));
         vo.setOwnerUserId(entity.getOwnerUserId());
+        vo.setOwnerDisplayName(ownerDisplayName(entity.getTenantId(), entity.getOwnerUserId()));
         vo.setSortNo(entity.getSortNo());
         vo.setStatus(LinkSupport.toStatus(entity.getStatus()));
         vo.setRemark(entity.getRemark());
@@ -180,6 +189,8 @@ abstract class LinkBaseService {
         LinkItemVO vo = new LinkItemVO();
         fillNavigationFields(vo, item, category);
         vo.setVisibilityScope(LinkSupport.toScope(item.getVisibilityScope()));
+        vo.setOwnerUserId(item.getOwnerUserId());
+        vo.setOwnerDisplayName(ownerDisplayName(item.getTenantId(), item.getOwnerUserId()));
         vo.setVisibilityTargets(toTargetVOs(targets));
         vo.setStatus(LinkSupport.toStatus(item.getStatus()));
         vo.setRemark(item.getRemark());
@@ -208,7 +219,9 @@ abstract class LinkBaseService {
         return vo;
     }
 
-    protected LinkPersonalItemVO toPersonalVO(LinkItemEntity item, LinkCategoryEntity category) {
+    protected LinkPersonalItemVO toPersonalVO(LinkItemEntity item,
+                                             LinkCategoryEntity category,
+                                             boolean favorited) {
         LinkPersonalItemVO vo = new LinkPersonalItemVO();
         vo.setId(item.getId());
         vo.setCategoryId(item.getCategoryId());
@@ -220,6 +233,7 @@ abstract class LinkBaseService {
         vo.setTags(LinkSupport.splitTags(item.getTags()));
         vo.setRemark(item.getRemark());
         vo.setOpenMode(LinkSupport.toOpenMode(item.getOpenMode()));
+        vo.setFavorited(favorited);
         vo.setCreateTime(item.getCreatedAt());
         vo.setUpdateTime(item.getUpdatedAt());
         return vo;
@@ -280,6 +294,20 @@ abstract class LinkBaseService {
         vo.setOpenMode(LinkSupport.toOpenMode(item.getOpenMode()));
         vo.setRecommended(item.getRecommended());
         vo.setSortNo(item.getSortNo());
+    }
+
+    protected String ownerDisplayName(Long tenantId, Long ownerUserId) {
+        if (ownerUserId == null || ownerUserId == 0L) {
+            return "企业";
+        }
+        TenantMemberProvider provider = tenantMemberProvider.getIfAvailable();
+        if (provider == null) {
+            return String.valueOf(ownerUserId);
+        }
+        TenantMemberInfo member = provider.getEnabledMember(ownerUserId, tenantId);
+        return member == null || !StringUtils.hasText(member.getDisplayName())
+                ? String.valueOf(ownerUserId)
+                : member.getDisplayName();
     }
 
     private boolean contains(String value, String keyword) {

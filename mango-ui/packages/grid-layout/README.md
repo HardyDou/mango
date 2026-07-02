@@ -51,7 +51,7 @@ import type { GridLayoutItem, GridWidgetDefinition } from '@mango/grid-layout';
 | `MangoGridDesigner` | `defaultWidth` | `3` | 新增卡片默认宽度 | 从组件库添加时生成默认宽度 | `src/components/MangoGridDesigner.vue` |
 | `MangoGridDesigner` | `defaultHeight` | `10` | 新增卡片默认高度行数 | 从组件库添加时生成默认高度 | `src/components/MangoGridDesigner.vue` |
 
-卡片是否展示标题和是否有默认内边距由布局项字段覆盖，也可以由小组件定义提供默认值。具体业务数据、权限和按钮行为由宿主页面负责。
+卡片是否展示标题和是否有默认内边距由布局项字段覆盖，也可以由小组件定义提供默认值。具体业务数据、权限和按钮行为由宿主页面负责。查看态遇到已保存但当前 `widgets` 中不存在的组件时不渲染该布局项；编辑态保留失效组件占位并提示用户删除后保存布局。
 
 ## 5. API 与扩展
 
@@ -128,7 +128,7 @@ interface GridLayoutItem {
 }
 ```
 
-`showTitle` 和 `padding` 可由布局项覆盖，也可由 `GridWidgetDefinition` 元数据提供默认值。`GridWidgetDefinition.category` 用于编辑器组件库分组展示，未传入时归入“未分组”。
+`showTitle` 和 `padding` 可由布局项覆盖，也可由 `GridWidgetDefinition` 元数据提供默认值。组件库按 `businessDomainName/businessDomainCode/domainName/domainCode/moduleCode` 识别业务域，按 `groupName` 展示可选组名，组件名称来自 `title`；旧的 `category` 仅作为兼容展示字段。
 
 后端持久化由 `mango-grid-layout` 模块负责，详情见 [Grid Layout 后端模块 README](../../../mango/mango-platform/mango-grid-layout/README.md)。
 
@@ -203,7 +203,8 @@ pnpm.cmd -F @mango/admin build
 
 | 问题 | 排查方向 |
 |------|----------|
-| 卡片内容不显示 | 检查 `items[].widgetType` 是否能在 `widgets` 中匹配到定义 |
+| 卡片内容不显示 | 检查 `items[].widgetType` 是否能在 `widgets` 中匹配到定义；查看态会隐藏失效组件 |
+| 编辑布局看到组件已失效 | 当前业务 UI 包未集成或已移除该组件，删除失效组件后保存布局 |
 | 编辑器组件库为空 | 检查业务页面是否传入 `widgets`，以及权限过滤后是否还有可用小组件 |
 | 保存后刷新仍是默认布局 | 检查 `pageCode` 是否稳定，保存接口是否成功，返回的 `layoutJson` 是否可解析 |
 | 样式缺失 | 检查业务入口是否引入 `@mango/grid-layout/style.css` |

@@ -95,6 +95,20 @@ describe('admin-shell menu contract', () => {
     expect(resolveDirectoryRouteRedirect(menu, '/guarantee')).toBe('/guarantee/risk-review');
   });
 
+  it('resolves plain backend routes to their configured redirect child', () => {
+    const menu = {
+      path: '/link',
+      redirect: '/link/favorites',
+      children: [
+        { path: '/link/favorites' },
+        { path: '/link/company' },
+        { path: '/link/my-links' },
+      ],
+    } as ShellRouteMenu;
+
+    expect(resolveAccessibleMenuPath(menu)).toBe('/link/favorites');
+  });
+
   it('falls back from a direct directory route to the first runnable child route', () => {
     const menu = createRouteMenu({
       menuType: MenuTypeEnum.DIRECTORY,

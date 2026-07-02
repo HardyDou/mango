@@ -5,9 +5,13 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        'admin-pages': 'src/admin-pages.ts',
+        'widgets/quick-entry': 'src/widgets/quick-entry/quick-entry.ts',
+        'widgets/user-profile': 'src/widgets/user-profile/user-profile.ts',
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
     },
     rollupOptions: {
       external: [
@@ -17,12 +21,16 @@ export default defineConfig({
         '@mango/common',
         '@mango/common/utils/request',
         '@mango/file',
+        '@mango/grid-widgets',
         '@mango/rbac',
         'element-plus',
         'form-create-designer',
         'vue',
         'vue-router',
       ],
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
   },
 });
