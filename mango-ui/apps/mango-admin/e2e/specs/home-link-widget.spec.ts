@@ -126,15 +126,15 @@ test.describe('首页小组件-网址导航', () => {
 
     const library = page.locator('[data-surface="grid-designer.widget-library"]');
     await expect(library).toBeVisible();
-    await expect(library.getByRole('tab', { name: '链接' })).toBeVisible();
-    await library.getByRole('tab', { name: '链接' }).click();
+    await expect(library.getByRole('tab', { name: '导航域' })).toBeVisible();
+    await library.getByRole('tab', { name: '导航域' }).click();
 
     const linkWidgetEntry = library.locator('[data-record-key="system.link-navigation"]');
     await expect(linkWidgetEntry).toBeVisible();
-    await expect(linkWidgetEntry).toHaveAttribute('data-domain-code', 'mango-link');
-    await expect(linkWidgetEntry).toHaveAttribute('data-domain-name', '链接');
-    await expect(linkWidgetEntry).toHaveAttribute('data-group-name', '工作台');
-    await expect(linkWidgetEntry).toContainText('链接 / 工作台');
+    await expect(linkWidgetEntry).toHaveAttribute('data-domain-code', 'LINK');
+    await expect(linkWidgetEntry).toHaveAttribute('data-domain-name', '导航域');
+    await expect(linkWidgetEntry).toHaveAttribute('data-group-name', '导航域');
+    await expect(linkWidgetEntry).toContainText('导航域 / 导航域');
     await expect(linkWidgetEntry).toContainText('网址导航');
   });
 
@@ -151,6 +151,27 @@ test.describe('首页小组件-网址导航', () => {
     const linkWidget = page.locator('[data-surface="home.link-navigation"]');
     await expect(linkWidget).toBeVisible({ timeout: 15000 });
     await expect(linkWidget.locator('.mango-grid-widget-link-navigation__items')).toHaveAttribute('data-state', /ready|empty/);
+    const linkWidgetStyle = await linkWidget.evaluate((element) => {
+      const rootStyle = window.getComputedStyle(element);
+      const searchElement = element.querySelector('.mango-grid-widget-link-navigation__search');
+      const searchStyle = searchElement ? window.getComputedStyle(searchElement) : null;
+      const tabsElement = element.querySelector('.mango-grid-widget-link-navigation__tabs');
+      const tabsStyle = tabsElement ? window.getComputedStyle(tabsElement) : null;
+      return {
+        rootDisplay: rootStyle.display,
+        rootFlexDirection: rootStyle.flexDirection,
+        rootPaddingTop: rootStyle.paddingTop,
+        searchDisplay: searchStyle?.display || '',
+        searchBorderRadius: searchStyle?.borderRadius || '',
+        tabsDisplay: tabsStyle?.display || '',
+      };
+    });
+    expect(linkWidgetStyle.rootDisplay).toBe('flex');
+    expect(linkWidgetStyle.rootFlexDirection).toBe('column');
+    expect(linkWidgetStyle.rootPaddingTop).not.toBe('0px');
+    expect(linkWidgetStyle.searchDisplay).toBe('grid');
+    expect(linkWidgetStyle.searchBorderRadius).not.toBe('0px');
+    expect(linkWidgetStyle.tabsDisplay).toBe('flex');
 
     expect([...requestedPaths].some(path => path.startsWith('/api/link/company-links/list'))).toBeTruthy();
     expect([...requestedPaths].some(path => path.startsWith('/api/link/personal-links/page'))).toBeTruthy();

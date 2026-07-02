@@ -190,6 +190,10 @@ function resolveSourceStylePath(repoRoot: string, packageName: string): string {
   if (packageName === 'common') {
     return resolve(repoRoot, 'packages/common/theme/index.css');
   }
+  const packageSourceStylePath = resolve(repoRoot, 'packages', packageName, 'src/style.css');
+  if (existsSync(packageSourceStylePath)) {
+    return packageSourceStylePath;
+  }
   const packageStylePath = resolve(repoRoot, 'packages', packageName, 'style.css');
   if (existsSync(packageStylePath)) {
     const styleContent = readFileSync(packageStylePath, 'utf8');

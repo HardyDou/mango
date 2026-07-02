@@ -53,22 +53,22 @@ describe('feature registrars', () => {
       component: {},
     };
     const registrar = vi.fn(() => ({
-      businessDomainCode: 'mango-link',
-      businessDomainName: '链接',
-      groupName: '工作台',
+      businessDomainCode: 'LINK',
+      businessDomainName: '导航域',
+      groupName: '导航域',
       widgets: [widget],
     }));
     configureMangoAdminShell({ featureRegistrars: [registrar], widgets: [] });
 
     await ensureFeatureRegistrars();
 
-    expect(getMangoAdminHomeWidgets()[0]?.businessDomainCode).toBe('mango-link');
-    expect(getMangoAdminHomeWidgets()[0]?.businessDomainName).toBe('链接');
-    expect(getMangoAdminHomeWidgets()[0]?.domainCode).toBe('mango-link');
-    expect(getMangoAdminHomeWidgets()[0]?.domainName).toBe('链接');
-    expect(getMangoAdminHomeWidgets()[0]?.moduleCode).toBe('mango-link');
-    expect(getMangoAdminHomeWidgets()[0]?.groupName).toBe('工作台');
-    expect(getMangoAdminHomeWidgets()[0]?.category).toBe('链接');
+    expect(getMangoAdminHomeWidgets()[0]?.businessDomainCode).toBe('LINK');
+    expect(getMangoAdminHomeWidgets()[0]?.businessDomainName).toBe('导航域');
+    expect(getMangoAdminHomeWidgets()[0]?.domainCode).toBe('LINK');
+    expect(getMangoAdminHomeWidgets()[0]?.domainName).toBe('导航域');
+    expect(getMangoAdminHomeWidgets()[0]?.moduleCode).toBe('LINK');
+    expect(getMangoAdminHomeWidgets()[0]?.groupName).toBe('导航域');
+    expect(getMangoAdminHomeWidgets()[0]?.category).toBe('导航域');
   });
 
   it('dedupes directly configured and manually registered home widgets by type', async () => {

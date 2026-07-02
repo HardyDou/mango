@@ -20,9 +20,9 @@ export function registerMangoLinkAdminPages() {
   });
 
   return {
-    businessDomainCode: 'mango-link',
-    businessDomainName: '链接',
-    groupName: '工作台',
+    businessDomainCode: 'LINK',
+    businessDomainName: '导航域',
+    groupName: '导航域',
     widgets: linkNavigationWidgets,
   };
 }
