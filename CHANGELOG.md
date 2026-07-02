@@ -1,25 +1,63 @@
 # Mango Changelog
 
-## Unreleased
+## v2026.07.02-maven-1.0.6-home-widgets-cli-release - 2026-07-02
 
-### Changed
+### New
 
 - Modularized home workbench widgets so concrete widgets now live in their owning business UI packages: `@mango/link`, `@mango/system`, `@mango/calendar`, `@mango/notice`, and `@mango/workflow`.
-- Reduced `@mango/grid-widgets` to the shared widget registry/runtime/types boundary and removed the deleted `@mango/link-panel` compatibility package from the CLI release lock.
 - Updated the admin home workbench UI by removing the welcome header, floating the round layout action at the bottom-right corner, and refining the widget library panel.
 - Added the Link navigation home widget under `@mango/link`, including its package-owned styles and admin registrar integration.
 
+### Changed
+
+- Reduced `@mango/grid-widgets` to the shared widget registry/runtime/types boundary and moved business widget styles out to their owning packages.
+- Updated the CLI generated project release lock to Mango backend `1.0.6` and the home-widget package batch.
+- Removed the deleted `@mango/link-panel` compatibility package from generated project release locks.
+
+### Fixed
+
+- Added `mango-notice-starter` to custom generated backend baseline dependencies so `custom --modules none` projects that include `mango-auth-starter` can provide the required `NoticeApi` bean during Spring Boot startup.
+- Added explicit `MangoAdminFeatureRegistrar[]` types to generated admin frontend feature registrar arrays so custom projects pass strict `vue-tsc` when no business modules have been added yet.
+
 ### Upgrade Notes
 
+- Business backends should set `<mango.version>1.0.6</mango.version>` to consume this backend and generated-project baseline batch.
 - Business frontends should stop depending on `@mango/link-panel`; use `@mango/link` for Link admin pages and the Link navigation home widget.
 - Custom admin integrations must include the business UI packages that own the widgets they want to expose. `@mango/grid-widgets` no longer provides concrete business widget implementations.
 - Admin package consumers should keep package styles synchronized through the generated admin style aggregation; do not rely on `@mango/grid-widgets/style.css` to carry Link, System, Calendar, Notice, or Workflow widget styles.
+- Existing generated projects should upgrade to `@mango/cli@1.0.57` and run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` when they need the refreshed PMO shell baseline.
+- Business developers can read version-matched docs from GitHub Pages at `/mango/versions/v2026.07.02-maven-1.0.6-home-widgets-cli-release/`, or run `mango docs pull` in a generated project to download `io.mango:mango-docs-bundle:1.0.6` into `.mango/docs/1.0.6`.
+
+### Published Packages
+
+- Maven: Mango backend platform artifacts at `1.0.6` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin-shell@1.0.32`, `@mango/admin@1.0.37`, `@mango/calendar@1.0.15`, `@mango/grid-layout@1.0.4`, `@mango/grid-widgets@1.0.9`, `@mango/link-openapi@1.0.1`, `@mango/link-page@1.0.1`, `@mango/link@1.0.1`, `@mango/cli@1.0.57`, `@mango/notice@1.0.16`, `@mango/system@1.0.13`, `@mango/workflow@1.0.20`, `@mango/admin-pages@1.0.14`, `@mango/cms@1.0.4`, `@mango/file@1.0.15`, `@mango/job@1.0.7`, `@mango/numgen@1.0.15`, `@mango/payment@1.0.6`, `@mango/template@1.0.15`, and `@mango/workflow-business-example@1.0.19` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.02-maven-1.0.6-home-widgets-cli-release` for GitHub Pages and Maven docs bundle `io.mango:mango-docs-bundle:1.0.6`.
+- GitHub Release: `v2026.07.02-maven-1.0.6-home-widgets-cli-release`.
 
 ### Verification
 
-- PR #365 validation reported `pnpm admin:styles:check`, `pnpm admin:module-styles:check`, affected package builds, `pnpm --filter @mango/admin-shell build`, and the Link home widget Playwright scenario as passed.
-- Follow-up documentation gate: `node mango-pmo/tools/audit-module-readmes.mjs`.
-- Follow-up documentation gate: `node mango-pmo/tools/audit-readme-source-facts.mjs`.
+- `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase release --task "发布 PR 365 和 PR 367 合并后的最新版本" --paths "CHANGELOG.md,mango/pom.xml,mango-ui/packages/mango-cli/package.json,mango-docs,mango-ui/packages/*/package.json"`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base v2026.07.01-maven-1.0.5-data-governance-release --head HEAD`
+- `pnpm -C mango-ui release:impact --base=v2026.07.01-maven-1.0.5-data-governance-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.02-maven-1.0.6-home-widgets-cli-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.6 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.6 -Dartifact=io.mango:mango-admin-starter:1.0.6 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.6 -Dartifact=io.mango.platform.link:mango-link-starter:1.0.6 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.6 -Dartifact=io.mango:mango-docs-bundle:1.0.6 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.02-maven-1.0.6-home-widgets-cli-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.02-maven-1.0.6-home-widgets-cli-release`
+- `git diff --check`
 
 ## v2026.07.01-maven-1.0.5-data-governance-release - 2026-07-01
 

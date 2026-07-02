@@ -1,10 +1,47 @@
 # @mango/cli Changelog
 
-## Unreleased
+## 1.0.57 - 2026-07-02
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.6`.
+- Updated generated project release locks for the home-widget modularization batch:
+  - `@mango/admin-shell@1.0.32`
+  - `@mango/admin@1.0.37`
+  - `@mango/calendar@1.0.15`
+  - `@mango/grid-layout@1.0.4`
+  - `@mango/grid-widgets@1.0.9`
+  - `@mango/link-openapi@1.0.1`
+  - `@mango/link-page@1.0.1`
+  - `@mango/link@1.0.1`
+  - `@mango/notice@1.0.16`
+  - `@mango/system@1.0.13`
+  - `@mango/workflow@1.0.20`
+  - `@mango/admin-pages@1.0.14`
+  - `@mango/cms@1.0.4`
+  - `@mango/file@1.0.15`
+  - `@mango/job@1.0.7`
+  - `@mango/numgen@1.0.15`
+  - `@mango/payment@1.0.6`
+  - `@mango/template@1.0.15`
+  - `@mango/workflow-business-example@1.0.19`
+  - `@mango/cli@1.0.57`
 
 ### Fixed
 
 - Added `mango-notice-starter` to custom generated backend baseline dependencies so `custom --modules none` projects that include `mango-auth-starter` can provide the required `NoticeApi` bean during Spring Boot startup.
+- Added explicit `MangoAdminFeatureRegistrar[]` types to generated admin frontend feature registrar arrays so custom projects pass strict `vue-tsc` when no business modules have been added yet.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.57 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New generated business projects receive `<mango.version>1.0.6</mango.version>` and the current home-widget package versions.
+- Existing business projects should remove any direct `@mango/link-panel` dependency and use `@mango/link` for Link admin pages and the Link navigation home widget.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
 
 ## 1.0.56 - 2026-07-01
 

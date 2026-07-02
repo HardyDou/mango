@@ -1,6 +1,6 @@
 {
   "name": "@mango/system",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -49,12 +49,12 @@
     "@form-create/element-ui": "3.2.42",
     "@mango/api-schema": "1.0.2",
     "@mango/common": "1.0.11",
-    "@mango/grid-widgets": "1.0.8",
+    "@mango/grid-widgets": "1.0.9",
     "@mango/rbac": "1.0.9",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {
-    "@mango/file": "1.0.14",
+    "@mango/file": "1.0.15",
     "element-plus": "2.14.1",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"

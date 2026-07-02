@@ -1,5 +1,6 @@
 // mango-cli:imports:start
 {{frontendEntryImports}}
+import type { MangoAdminFeatureRegistrar } from '@mango/admin';
 // mango-cli:imports:end
 
 function splitEnvList(value?: string) {
@@ -11,15 +12,15 @@ function splitEnvList(value?: string) {
 
 // mango-cli:features:start
 const mangoFeatures = {{frontendFeaturesExpression}};
-const mangoFeatureRegistrars = {{frontendFeatureRegistrarsExpression}};
+const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = {{frontendFeatureRegistrarsExpression}};
 // mango-cli:features:end
 
 // mango-cli:business-feature-registrars:start
-const mangoBusinessFeatureRegistrars = [
+const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
 ];
 // mango-cli:business-feature-registrars:end
 
-const mangoAllFeatureRegistrars = [
+const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
   ...mangoFeatureRegistrars,
   ...mangoBusinessFeatureRegistrars,
 ];
