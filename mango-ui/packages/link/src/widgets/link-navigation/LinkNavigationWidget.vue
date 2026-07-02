@@ -3,50 +3,74 @@
     class="mango-grid-widget-link-navigation"
     data-surface="home.link-navigation"
   >
-    <header class="mango-grid-widget-link-navigation__header">
-      <div class="mango-grid-widget-link-navigation__heading">
-        <strong>网址导航</strong>
-        <span>搜索与常用入口</span>
-      </div>
-    </header>
+    <div class="mango-grid-widget-link-navigation__content">
+      <div class="mango-grid-widget-link-navigation__hero">
+        <header class="mango-grid-widget-link-navigation__header">
+          <div class="mango-grid-widget-link-navigation__heading">
+            <input
+              v-if="brandEditing"
+              ref="brandInputRef"
+              v-model="brandDraft"
+              class="mango-grid-widget-link-navigation__brand-input"
+              maxlength="24"
+              data-field="link-navigation.brand"
+              @blur="commitBrandTitle"
+              @keydown.enter.prevent="commitBrandTitle"
+              @keydown.esc.prevent="cancelBrandTitle"
+            >
+            <strong v-else>{{ brandTitle }}</strong>
+            <button
+              v-if="!brandEditing"
+              class="mango-grid-widget-link-navigation__brand-edit"
+              type="button"
+              title="编辑标题"
+              aria-label="编辑标题"
+              data-action="link-navigation.brand.edit"
+              @click="beginBrandEdit"
+            >
+              <el-icon><Edit /></el-icon>
+            </button>
+          </div>
+        </header>
 
-    <form
-      class="mango-grid-widget-link-navigation__search"
-      data-action="link-navigation.search"
-      @submit.prevent="handleSearchEnter"
-    >
-      <label class="mango-grid-widget-link-navigation__input">
-        <el-icon><Search /></el-icon>
-        <input
-          v-model="keyword"
-          :placeholder="placeholder"
-          autocomplete="off"
-          data-field="link-navigation.keyword"
+        <form
+          class="mango-grid-widget-link-navigation__search"
+          data-action="link-navigation.search"
+          @submit.prevent="handleSearchEnter"
         >
-      </label>
-      <div
-        class="mango-grid-widget-link-navigation__engines"
-        role="group"
-        aria-label="搜索引擎"
+          <label class="mango-grid-widget-link-navigation__input">
+            <el-icon><Search /></el-icon>
+            <input
+              v-model="keyword"
+              :placeholder="placeholder"
+              autocomplete="off"
+              data-field="link-navigation.keyword"
+            >
+          </label>
+          <div
+            class="mango-grid-widget-link-navigation__engines"
+            role="group"
+            aria-label="搜索引擎"
+          >
+            <button
+              v-for="engine in searchEngines"
+              :key="engine.code"
+              :class="{ 'is-active': activeEngine === engine.code }"
+              type="button"
+              :data-action="`link-navigation.search.${engine.code}`"
+              @click="searchWith(engine.code)"
+            >
+              {{ engine.label }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <nav
+        v-if="effectiveGroups.length > 0"
+        class="mango-grid-widget-link-navigation__tabs"
+        aria-label="收藏分组"
       >
-        <button
-          v-for="engine in searchEngines"
-          :key="engine.code"
-          :class="{ 'is-active': activeEngine === engine.code }"
-          type="button"
-          :data-action="`link-navigation.search.${engine.code}`"
-          @click="searchWith(engine.code)"
-        >
-          {{ engine.label }}
-        </button>
-      </div>
-    </form>
-
-    <nav
-      v-if="effectiveGroups.length > 0"
-      class="mango-grid-widget-link-navigation__tabs"
-      aria-label="收藏分组"
-    >
       <div class="mango-grid-widget-link-navigation__tabs-fixed">
         <button
           v-for="group in fixedGroups"
@@ -113,21 +137,21 @@
       >
         +
       </button>
-    </nav>
+      </nav>
 
-    <div
-      v-if="loading"
-      class="mango-grid-widget-link-navigation__loading"
-      data-state="loading"
-    >
-      加载收藏网址...
-    </div>
+      <div
+        v-if="loading"
+        class="mango-grid-widget-link-navigation__loading"
+        data-state="loading"
+      >
+        加载收藏网址...
+      </div>
 
-    <div
-      v-else
-      class="mango-grid-widget-link-navigation__items"
-      :data-state="visibleItems.length > 0 ? 'ready' : 'empty'"
-    >
+      <div
+        v-else
+        class="mango-grid-widget-link-navigation__items"
+        :data-state="visibleItems.length > 0 ? 'ready' : 'empty'"
+      >
       <div
         v-for="item in visibleItems"
         :key="item.id"
@@ -181,6 +205,7 @@
       >
         <span class="mango-grid-widget-link-navigation__item-icon">+</span>
       </button>
+      </div>
     </div>
 
     <el-dialog
@@ -256,7 +281,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { Delete, Edit, Search, Star, StarFilled } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type {
@@ -289,6 +314,8 @@ interface ResolvedGroup {
 
 const UNGROUPED_GROUP_KEY = 'personal-ungrouped';
 const UNGROUPED_GROUP_TITLE = '未分组';
+const BRAND_STORAGE_KEY = 'mango.linkNavigation.brandTitle';
+const DEFAULT_BRAND_TITLE = 'Mango';
 
 const props = withDefaults(defineProps<LinkNavigationWidgetProps>(), {
   items: () => [],
@@ -317,6 +344,10 @@ const searchEngines: SearchEngine[] = [
 const keyword = ref('');
 const activeEngine = ref<LinkNavigationSearchEngineCode>(props.defaultSearchEngine);
 const activeGroupKey = ref('');
+const brandTitle = ref(DEFAULT_BRAND_TITLE);
+const brandDraft = ref(DEFAULT_BRAND_TITLE);
+const brandEditing = ref(false);
+const brandInputRef = ref<HTMLInputElement>();
 const remoteFavoriteItems = ref<LinkNavigationItem[]>([]);
 const remoteNavigationItems = ref<LinkNavigationItem[]>([]);
 const remoteGroups = ref<LinkNavigationGroup[]>([]);
@@ -391,8 +422,50 @@ watch(
 );
 
 onMounted(() => {
+  brandTitle.value = readBrandTitle();
+  brandDraft.value = brandTitle.value;
   void loadFavorites();
 });
+
+function beginBrandEdit(): void {
+  brandDraft.value = brandTitle.value;
+  brandEditing.value = true;
+  void nextTick(() => {
+    brandInputRef.value?.focus();
+    brandInputRef.value?.select();
+  });
+}
+
+function commitBrandTitle(): void {
+  if (!brandEditing.value) {
+    return;
+  }
+  const nextTitle = brandDraft.value.trim() || DEFAULT_BRAND_TITLE;
+  brandTitle.value = nextTitle.slice(0, 24);
+  brandDraft.value = brandTitle.value;
+  brandEditing.value = false;
+  writeBrandTitle(brandTitle.value);
+}
+
+function cancelBrandTitle(): void {
+  brandDraft.value = brandTitle.value;
+  brandEditing.value = false;
+}
+
+function readBrandTitle(): string {
+  if (typeof window === 'undefined') {
+    return DEFAULT_BRAND_TITLE;
+  }
+  const value = window.localStorage.getItem(BRAND_STORAGE_KEY)?.trim();
+  return value || DEFAULT_BRAND_TITLE;
+}
+
+function writeBrandTitle(value: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.localStorage.setItem(BRAND_STORAGE_KEY, value);
+}
 
 function handleSearchEnter(): void {
   searchWith(activeEngine.value);

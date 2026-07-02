@@ -45,6 +45,7 @@ async function login(page: Page) {
     sessionStorage.setItem('MANGO_TOKEN_EXPIRES_AT', String(Date.now() + Number(data.expiresIn || 7200) * 1000));
     sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
     sessionStorage.setItem('tenantId', String(userInfo.tenantId));
+    localStorage.removeItem('mango.linkNavigation.brandTitle');
     document.cookie = `MANGO_TOKEN=${encodeURIComponent(data.accessToken)}; path=/; SameSite=Lax`;
   }, loginData);
 
@@ -153,16 +154,27 @@ test.describe('首页小组件-网址导航', () => {
     await expect(linkWidget.locator('.mango-grid-widget-link-navigation__items')).toHaveAttribute('data-state', /ready|empty/);
     const linkWidgetStyle = await linkWidget.evaluate((element) => {
       const rootStyle = window.getComputedStyle(element);
+      const heroElement = element.querySelector('.mango-grid-widget-link-navigation__hero');
       const searchElement = element.querySelector('.mango-grid-widget-link-navigation__search');
       const searchStyle = searchElement ? window.getComputedStyle(searchElement) : null;
       const tabsElement = element.querySelector('.mango-grid-widget-link-navigation__tabs');
       const tabsStyle = tabsElement ? window.getComputedStyle(tabsElement) : null;
+      const rootRect = element.getBoundingClientRect();
+      const heroRect = heroElement?.getBoundingClientRect();
+      const searchRect = searchElement?.getBoundingClientRect();
       return {
         rootDisplay: rootStyle.display,
         rootFlexDirection: rootStyle.flexDirection,
         rootPaddingTop: rootStyle.paddingTop,
+        rootWidth: rootRect.width,
+        rootHeight: rootRect.height,
+        heroHeight: heroRect?.height || 0,
         searchDisplay: searchStyle?.display || '',
         searchBorderRadius: searchStyle?.borderRadius || '',
+        searchWidth: searchRect?.width || 0,
+        searchTop: searchRect ? searchRect.top - rootRect.top : 0,
+        searchLeft: searchRect ? searchRect.left - rootRect.left : 0,
+        searchRight: searchRect ? rootRect.right - searchRect.right : 0,
         tabsDisplay: tabsStyle?.display || '',
       };
     });
@@ -171,6 +183,13 @@ test.describe('首页小组件-网址导航', () => {
     expect(linkWidgetStyle.rootPaddingTop).not.toBe('0px');
     expect(linkWidgetStyle.searchDisplay).toBe('grid');
     expect(linkWidgetStyle.searchBorderRadius).not.toBe('0px');
+    expect(linkWidgetStyle.searchWidth).toBeGreaterThan(500);
+    expect(linkWidgetStyle.searchWidth).toBeLessThan(linkWidgetStyle.rootWidth - 120);
+    expect(linkWidgetStyle.heroHeight).toBeGreaterThan(60);
+    expect(linkWidgetStyle.heroHeight).toBeLessThan(120);
+    expect(linkWidgetStyle.heroHeight).toBeLessThan(linkWidgetStyle.rootHeight * 0.45);
+    expect(linkWidgetStyle.searchTop).toBeGreaterThan(40);
+    expect(Math.abs(linkWidgetStyle.searchLeft - linkWidgetStyle.searchRight)).toBeLessThanOrEqual(2);
     expect(linkWidgetStyle.tabsDisplay).toBe('flex');
 
     expect([...requestedPaths].some(path => path.startsWith('/api/link/company-links/list'))).toBeTruthy();
@@ -217,11 +236,15 @@ test.describe('首页小组件-网址导航', () => {
     const linkWidget = page.locator('[data-surface="home.link-navigation"]');
     await expect(linkWidget).toBeVisible({ timeout: 15000 });
 
+    await expect(linkWidget.getByText('Mango', { exact: true })).toBeVisible();
+    await expect(linkWidget.getByText('网址导航', { exact: true })).toBeHidden();
+    await expect(linkWidget.getByText('搜索与常用入口', { exact: true })).toBeHidden();
+
     // 校验核心分组与入口
     await expect(linkWidget.getByRole('button', { name: '我的收藏' })).toBeVisible();
     await expect(linkWidget.getByRole('button', { name: '企业导航' })).toBeVisible();
-    await expect(linkWidget.getByRole('button', { name: '百度' })).toBeVisible();
-    await expect(linkWidget.getByRole('button', { name: '谷歌' })).toBeVisible();
+    await expect(linkWidget.locator('[data-action="link-navigation.search.baidu"]')).toBeVisible();
+    await expect(linkWidget.locator('[data-action="link-navigation.search.google"]')).toBeVisible();
 
     // 搜索输入与按钮可交互
     const keywordInput = page.locator('[data-field="link-navigation.keyword"]');
@@ -229,8 +252,17 @@ test.describe('首页小组件-网址导航', () => {
     await keywordInput.fill('example');
 
     // 搜索按钮文案可见
-    await expect(linkWidget.getByRole('button', { name: '百度' })).toBeVisible();
-    await expect(linkWidget.getByRole('button', { name: '谷歌' })).toBeVisible();
+    await expect(linkWidget.locator('[data-action="link-navigation.search.baidu"]')).toContainText('百度');
+    await expect(linkWidget.locator('[data-action="link-navigation.search.google"]')).toContainText('谷歌');
+
+    const heading = linkWidget.locator('.mango-grid-widget-link-navigation__heading');
+    await heading.hover();
+    await linkWidget.locator('[data-action="link-navigation.brand.edit"]').click();
+    const brandInput = linkWidget.locator('[data-field="link-navigation.brand"]');
+    await expect(brandInput).toBeVisible();
+    await brandInput.fill('Mango Admin');
+    await brandInput.press('Enter');
+    await expect(linkWidget.getByText('Mango Admin', { exact: true })).toBeVisible();
 
     // 非个人分组不允许新增网址。
     const addLinkButton = page.locator('[data-action="link-navigation.link.create"]');
