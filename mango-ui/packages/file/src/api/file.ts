@@ -53,6 +53,7 @@ export interface FilePreview {
   previewable: boolean;
   previewUrl: string;
   downloadUrl: string;
+  documentPreviewUrl?: string;
   directAccess?: boolean;
   directPreviewUrl?: string;
   directDownloadUrl?: string;
@@ -138,6 +139,7 @@ export const fileApi = {
     previewable: Boolean(item.previewable),
     previewUrl: normalizeApiUrl(item.previewUrl),
     downloadUrl: normalizeApiUrl(item.downloadUrl),
+    documentPreviewUrl: normalizeApiUrl(item.documentPreviewUrl),
     directAccess: Boolean(item.directAccess),
     directPreviewUrl: normalizeApiUrl(item.directPreviewUrl),
     directDownloadUrl: normalizeApiUrl(item.directDownloadUrl),

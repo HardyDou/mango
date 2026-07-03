@@ -72,7 +72,7 @@ public class FileProperties {
     @Data
     public static class Access {
 
-        /** 文件访问模式：PROXY-通过 Java 服务转发，DIRECT-直连底层存储。 */
+        /** 文件访问模式：PROXY-通过 Java 服务转发，DIRECT-使用存储公开访问地址。 */
         private String mode = "PROXY";
 
         /** 是否启用带时效的访问令牌。 */

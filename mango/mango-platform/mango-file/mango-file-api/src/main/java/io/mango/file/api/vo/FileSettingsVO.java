@@ -70,7 +70,7 @@ public class FileSettingsVO implements Serializable {
     @Schema(description = "公开读取文件是否仍强制签名访问")
     private Boolean publicReadRequiresToken;
 
-    @Schema(description = "文件访问模式：PROXY-通过Java服务转发，DIRECT-直连底层存储公开地址")
+    @Schema(description = "文件访问模式：PROXY-通过Java服务转发，DIRECT-使用存储公开访问地址")
     private String accessMode;
 
     @Schema(description = "下载/访问令牌有效期，单位秒")

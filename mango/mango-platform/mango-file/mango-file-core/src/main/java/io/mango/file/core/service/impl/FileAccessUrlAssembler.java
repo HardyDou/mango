@@ -21,19 +21,28 @@ import java.net.URI;
 public class FileAccessUrlAssembler {
 
     private static final String FILE_DOWNLOAD_PATH = "/file/files/download";
+    private static final String FILE_PREVIEW_CONTENT_PATH = "/file/files/preview-content";
 
     private final FileProperties properties;
 
     public String downloadUrl(Long fileId) {
+        return fileUrl(FILE_DOWNLOAD_PATH, fileId);
+    }
+
+    public String previewContentUrl(Long fileId) {
+        return fileUrl(FILE_PREVIEW_CONTENT_PATH, fileId);
+    }
+
+    private String fileUrl(String path, Long fileId) {
         String externalBaseUrl = externalBaseUrl();
         if (StringUtils.hasText(externalBaseUrl)) {
             return UriComponentsBuilder.fromUriString(externalBaseUrl)
-                    .path(FILE_DOWNLOAD_PATH)
+                    .path(path)
                     .queryParam("id", fileId)
                     .build()
                     .toUriString();
         }
-        return FILE_DOWNLOAD_PATH + "?id=" + fileId;
+        return path + "?id=" + fileId;
     }
 
     public String externalize(String url) {

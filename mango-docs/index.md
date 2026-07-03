@@ -39,6 +39,9 @@
 | [Issue #316 文件服务 ZIP 打包实施计划](./plans/2026-06-29-issue-316-file-package-plan.md) | 已实施 | File 服务按目录结构清单生成 ZIP 并写回存储层。 |
 | [Issue #316 文件服务 ZIP 打包详细设计](./designs/2026-06-29-issue-316-file-package-design.md) | 已实施 | API、服务流程、路径安全和异步扩展设计。 |
 | [Issue #316 文件服务 ZIP 打包交付台账](./plans/2026-06-29-issue-316-file-package-ledger.md) | 已完成 | 需求、API、实现、文档和测试交付登记。 |
+| [Issue #382 文件服务合并生成 PDF 实施计划](./plans/2026-07-03-issue-382-file-merge-pdf-plan.md) | 实施中 | File 服务按多个 fileId 生成单个 PDF 并写回存储层。 |
+| [Issue #382 文件服务合并生成 PDF 详细设计](./designs/2026-07-03-issue-382-file-merge-pdf-design.md) | 实施中 | API、服务流程、格式边界、异常和测试映射设计。 |
+| [Issue #382 文件服务合并生成 PDF 交付台账](./plans/2026-07-03-issue-382-file-merge-pdf-ledger.md) | 实施中 | 需求、API、实现、文档和测试交付登记。 |
 
 ## Sprint 计划
 

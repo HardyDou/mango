@@ -10,6 +10,7 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
@@ -129,6 +130,14 @@ public class FileController implements FileApi {
         return fileService.packageFiles(command);
     }
 
+    @PostMapping("/merge-pdf")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "合并生成 PDF", description = "权限接口。按当前租户可见文件清单生成 PDF，并保存为新的文件记录")
+    @Override
+    public R<FileRecordVO> mergeToPdf(@Valid @RequestBody FileMergePdfCommand command) {
+        return fileService.mergeToPdf(command);
+    }
+
     @Override
     public FileDownloadVO download(Long id) {
         return fileService.download(id);
@@ -166,6 +175,27 @@ public class FileController implements FileApi {
             @RequestParam(required = false) Long perFileTargetSizeBytes) {
         FileDownloadVO download = fileService.download(id, compression, perFileTargetSizeBytes);
         ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(download.fileName(), StandardCharsets.UTF_8)
+                .build();
+        MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        if (download.contentType() != null && !download.contentType().isBlank()) {
+            mediaType = MediaType.parseMediaType(download.contentType());
+        }
+        return ResponseEntity.ok()
+                .contentLength(download.contentLength())
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(new org.springframework.core.io.InputStreamResource(download.inputStream()));
+    }
+
+    @GetMapping("/preview-content")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "预览文件原始内容")
+    @Operation(summary = "预览文件原始内容", description = "登录用户基础接口。按文件ID以内联方式读取当前租户可见文件内容")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> previewContentResponse(
+            @Parameter(description = "文件ID", required = true)
+            @RequestParam Long id) {
+        FileDownloadVO download = fileService.download(id);
+        ContentDisposition disposition = ContentDisposition.inline()
                 .filename(download.fileName(), StandardCharsets.UTF_8)
                 .build();
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;

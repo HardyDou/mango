@@ -136,7 +136,9 @@ class FileServicePackageFilesTest {
                 fileDirectoryMapper,
                 new com.fasterxml.jackson.databind.ObjectMapper(),
                 accessUrlAssembler,
-                List.of(new StubFileCompressApi()));
+                List.of(new StubFileCompressApi()),
+                List.of(),
+                List.of());
         sourceFile(11L, 101L, "source/contract.pdf", "合同正文".getBytes(StandardCharsets.UTF_8), "application/pdf");
         sourceFile(12L, 102L, "source/license.pdf", "营业执照".getBytes(StandardCharsets.UTF_8), "application/pdf");
     }

@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
@@ -57,6 +58,10 @@ public interface FileFeignClient extends FileApi {
     @Override
     @PostMapping("/package")
     R<FileRecordVO> packageFiles(@RequestBody FilePackageCommand command);
+
+    @Override
+    @PostMapping("/merge-pdf")
+    R<FileRecordVO> mergeToPdf(@RequestBody FileMergePdfCommand command);
 
     @Override
     @GetMapping("/page")

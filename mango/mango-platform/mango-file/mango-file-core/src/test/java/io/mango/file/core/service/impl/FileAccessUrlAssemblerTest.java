@@ -58,6 +58,17 @@ class FileAccessUrlAssemblerTest {
     }
 
     @Test
+    void previewContentUrl_publicBaseUrlConfigured_usesInlinePreviewPath() {
+        FileProperties properties = new FileProperties();
+        properties.setPublicBaseUrl("https://files.example.com/api/");
+        FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(properties);
+
+        String url = assembler.previewContentUrl(100L);
+
+        assertThat(url).isEqualTo("https://files.example.com/api/file/files/preview-content?id=100");
+    }
+
+    @Test
     void externalize_publicBaseUrlConfigured_prefixesRelativePathWithoutDuplicatingBasePath() {
         FileProperties properties = new FileProperties();
         properties.setPublicBaseUrl("https://files.example.com/api/");

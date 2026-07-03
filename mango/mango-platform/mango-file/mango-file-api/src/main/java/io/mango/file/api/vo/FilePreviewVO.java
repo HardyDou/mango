@@ -32,24 +32,27 @@ public class FilePreviewVO implements Serializable {
     @Schema(description = "是否可在线预览")
     private Boolean previewable;
 
-    @Schema(description = "预览地址")
+    @Schema(description = "文件原始内容预览地址")
     private String previewUrl;
 
     @Schema(description = "下载地址")
     private String downloadUrl;
 
-    @Schema(description = "是否支持对象存储直连访问")
+    @Schema(description = "文档预览服务地址")
+    private String documentPreviewUrl;
+
+    @Schema(description = "是否支持存储公开访问")
     private Boolean directAccess;
 
-    @Schema(description = "对象存储直连预览地址")
+    @Schema(description = "存储公开预览地址")
     private String directPreviewUrl;
 
-    @Schema(description = "对象存储直连下载地址")
+    @Schema(description = "存储公开下载地址")
     private String directDownloadUrl;
 
-    @Schema(description = "直连预览地址有效期，单位秒")
+    @Schema(description = "存储公开预览地址有效期，单位秒")
     private Long directPreviewExpireSeconds;
 
-    @Schema(description = "直连下载地址有效期，单位秒")
+    @Schema(description = "存储公开下载地址有效期，单位秒")
     private Long directDownloadExpireSeconds;
 }

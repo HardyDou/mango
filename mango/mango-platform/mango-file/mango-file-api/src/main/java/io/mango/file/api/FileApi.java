@@ -5,6 +5,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
@@ -55,6 +56,11 @@ public interface FileApi {
     /** 按目录结构清单打包多个文件为 ZIP，并保存为新的文件记录。 */
     default R<FileRecordVO> packageFiles(FilePackageCommand command) {
         throw new UnsupportedOperationException("当前文件 API 实现不支持文件打包");
+    }
+
+    /** 合并多个文件为 PDF，并保存为新的文件记录。 */
+    default R<FileRecordVO> mergeToPdf(FileMergePdfCommand command) {
+        throw new UnsupportedOperationException("当前文件 API 实现不支持文件合并生成 PDF");
     }
 
     /**

@@ -11,6 +11,7 @@ import io.mango.infra.fileproc.convert.convert.AsposePdfToImageConvertProvider;
 import io.mango.infra.fileproc.convert.convert.AsposeSlideToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.AsposeWordToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.HtmlToTextConverter;
+import io.mango.infra.fileproc.convert.convert.ImageToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.OfficeManagerHolder;
 import io.mango.infra.fileproc.convert.convert.OfficeToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.PdfToImageConvertProvider;
@@ -41,6 +42,7 @@ class ConvertAutoConfigurationTest {
             assertThat(context).hasSingleBean(AsposeSlideToPdfConvertProvider.class);
             assertThat(context).hasSingleBean(AsposePdfToImageConvertProvider.class);
             assertThat(context).hasSingleBean(AsposeImagingConvertProvider.class);
+            assertThat(context).hasSingleBean(ImageToPdfConvertProvider.class);
             assertThat(context).hasSingleBean(OfficeManagerHolder.class);
             assertThat(context).hasSingleBean(OfficeToPdfConvertProvider.class);
             assertThat(context).hasSingleBean(PdfToImageConvertProvider.class);
@@ -112,6 +114,7 @@ class ConvertAutoConfigurationTest {
                         "mango.fileproc.convert.aspose-slide-to-pdf-enabled=false",
                         "mango.fileproc.convert.aspose-pdf-to-image-enabled=false",
                         "mango.fileproc.convert.aspose-imaging-enabled=false",
+                        "mango.fileproc.convert.image-to-pdf-enabled=false",
                         "mango.fileproc.convert.pdf-to-image-enabled=false",
                         "mango.fileproc.convert.tiff-to-pdf-enabled=false")
                 .run(context -> {
@@ -134,11 +137,13 @@ class ConvertAutoConfigurationTest {
                         "mango.fileproc.convert.aspose-slide-to-pdf-enabled=false",
                         "mango.fileproc.convert.aspose-pdf-to-image-enabled=false",
                         "mango.fileproc.convert.aspose-imaging-enabled=false",
+                        "mango.fileproc.convert.image-to-pdf-enabled=false",
                         "mango.fileproc.convert.pdf-to-image-enabled=false",
                         "mango.fileproc.convert.tiff-to-pdf-enabled=false")
                 .run(context -> {
                     assertThat(context).doesNotHaveBean(OfficeManagerHolder.class);
                     assertThat(context).doesNotHaveBean(OfficeToPdfConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(ImageToPdfConvertProvider.class);
                     assertThat(context).doesNotHaveBean(PdfToImageConvertProvider.class);
                     assertThat(context).doesNotHaveBean(TiffToPdfConvertProvider.class);
                     ConvertApi service = context.getBean(ConvertApi.class);
@@ -160,6 +165,7 @@ class ConvertAutoConfigurationTest {
                     assertThat(context).doesNotHaveBean(AsposePdfToImageConvertProvider.class);
                     assertThat(context).doesNotHaveBean(AsposeImagingConvertProvider.class);
                     assertThat(context).hasSingleBean(HtmlToTextConverter.class);
+                    assertThat(context).hasSingleBean(ImageToPdfConvertProvider.class);
                     assertThat(context).hasSingleBean(OfficeToPdfConvertProvider.class);
                     assertThat(context).hasSingleBean(PdfToImageConvertProvider.class);
                     assertThat(context).hasSingleBean(TiffToPdfConvertProvider.class);
@@ -169,6 +175,8 @@ class ConvertAutoConfigurationTest {
                     assertThat(service.canConvert(ConvertFormat.HTML, ConvertFormat.TEXT)).isTrue();
                     assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.PDF)).isTrue();
                     assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.PNG)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.PNG, ConvertFormat.PDF)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.JPEG, ConvertFormat.PDF)).isTrue();
                     assertThat(service.canConvert(ConvertFormat.TIFF, ConvertFormat.PDF)).isTrue();
                     assertThat(service.canConvert(ConvertFormat.PNG, ConvertFormat.JPEG)).isFalse();
                 });
