@@ -3,6 +3,7 @@ package io.mango.infra.realtime.starter.outbox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.core.outbound.IRealtimePublishService;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +58,7 @@ public class RealtimeOutboxDispatcher implements AutoCloseable {
 
     public void dispatchReadyMessages() {
         Instant now = Instant.now();
-        List<OutboxMessage> messages = outboxStore.claim(workerId, RealtimeOutboxPublisher.EVENT_TYPE, batchSize, now);
+        List<OutboxMessage> messages = outboxStore.claimByTopic(workerId, OutboxTopics.REALTIME, batchSize, now);
         for (OutboxMessage message : messages) {
             dispatch(message);
         }

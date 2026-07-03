@@ -11,6 +11,7 @@ import java.util.UUID;
 public class OutboxMessage {
 
     private String messageId = UUID.randomUUID().toString();
+    private String topic;
     private String eventType;
     private String businessType;
     private String businessKey;
@@ -35,6 +36,7 @@ public class OutboxMessage {
     public Builder toBuilder() {
         return builder()
                 .messageId(messageId)
+                .topic(topic)
                 .eventType(eventType)
                 .businessType(businessType)
                 .businessKey(businessKey)
@@ -56,6 +58,14 @@ public class OutboxMessage {
 
     public void setMessageId(String messageId) {
         this.messageId = messageId;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 
     public String getEventType() {
@@ -170,6 +180,11 @@ public class OutboxMessage {
 
         public Builder messageId(String messageId) {
             message.setMessageId(messageId);
+            return this;
+        }
+
+        public Builder topic(String topic) {
+            message.setTopic(topic);
             return this;
         }
 

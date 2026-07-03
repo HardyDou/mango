@@ -1,6 +1,7 @@
 package io.mango.notice.core.outbox;
 
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.context.api.MangoContextHeaders;
 import io.mango.infra.context.api.MangoContextHolder;
 
@@ -28,6 +29,7 @@ public final class NoticeOutboxMessageMapper {
             headers.put(MangoContextHeaders.TENANT_ID, tenantId);
         }
         return OutboxMessage.builder()
+                .topic(OutboxTopics.NOTICE)
                 .eventType(EVENT_TYPE)
                 .businessType("notice")
                 .businessKey(String.valueOf(taskId))

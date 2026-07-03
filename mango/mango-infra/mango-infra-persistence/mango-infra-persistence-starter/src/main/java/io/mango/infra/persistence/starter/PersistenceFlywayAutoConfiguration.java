@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -152,8 +153,7 @@ public class PersistenceFlywayAutoConfiguration {
                 }
             } catch (Exception e) {
                 if (e instanceof IllegalStateException illegalStateException
-                        && illegalStateException.getMessage() != null
-                        && illegalStateException.getMessage().startsWith("Mango Flyway module migration failed:")) {
+                        && shouldExposeFlywayFailure(illegalStateException)) {
                     throw illegalStateException;
                 }
                 throw new IllegalStateException("Mango Flyway module migration failed", e);
@@ -161,8 +161,16 @@ public class PersistenceFlywayAutoConfiguration {
         });
     }
 
+    private boolean shouldExposeFlywayFailure(IllegalStateException exception) {
+        String message = exception.getMessage();
+        return message != null && (message.startsWith("Mango Flyway module migration failed:")
+                || message.startsWith("Mango Flyway classpath migration modules are not fully declared:"));
+    }
+
     private List<ModuleMigration> resolveModuleMigrations(PersistenceFlywayProperties properties) throws Exception {
         if (!properties.getModules().isEmpty()) {
+            Set<String> discoveredModules = discoverMigrationModules();
+            validateConfiguredClasspathModules(properties.getModules(), discoveredModules);
             List<ModuleMigration> migrations = new ArrayList<>();
             properties.getModules().forEach((module, config) -> {
                 if (config == null || config.isEnabled()) {
@@ -184,6 +192,36 @@ public class PersistenceFlywayAutoConfiguration {
                     new PersistenceFlywayProperties.ModuleConfig()));
         }
         return migrations;
+    }
+
+    private void validateConfiguredClasspathModules(
+            Map<String, PersistenceFlywayProperties.ModuleConfig> configuredModules,
+            Set<String> discoveredModules) {
+        List<String> missingModules = new ArrayList<>();
+        List<String> disabledWithoutSkipReason = new ArrayList<>();
+        for (String module : discoveredModules) {
+            if (!configuredModules.containsKey(module)) {
+                missingModules.add(module);
+                continue;
+            }
+            PersistenceFlywayProperties.ModuleConfig config = configuredModules.get(module);
+            if (config != null && !config.isEnabled() && !StringUtils.hasText(config.getSkipReason())) {
+                disabledWithoutSkipReason.add(module);
+            }
+        }
+        if (missingModules.isEmpty() && disabledWithoutSkipReason.isEmpty()) {
+            return;
+        }
+        List<String> migrationPaths = discoveredModules.stream()
+                .map(module -> MIGRATION_LOCATION_PREFIX + module)
+                .toList();
+        throw new IllegalStateException(
+                "Mango Flyway classpath migration modules are not fully declared: missingModules="
+                        + missingModules
+                        + ", disabledWithoutSkipReason=" + disabledWithoutSkipReason
+                        + ", migrationPaths=" + migrationPaths
+                        + ". Declare mango.persistence.flyway.modules.<module>.enabled=true, "
+                        + "or set enabled=false with skip-reason for intentional skips.");
     }
 
     private List<String> resolveConfiguredLocations(String module, PersistenceFlywayProperties.ModuleConfig config) {

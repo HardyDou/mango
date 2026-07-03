@@ -734,6 +734,71 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkModuleMenu_withChangedOnly_reportsSiblingDebtAsOutOfScope() throws Exception {
+        Path workflowResource = tempDir.resolve(
+                "mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json");
+        Files.createDirectories(workflowResource.getParent());
+        Files.writeString(workflowResource, """
+                {
+                  "mango": {
+                    "resource": {
+                      "moduleCode": "workflow",
+                      "declarations": {
+                        "AUTH_MENU": [ {
+                          "id": "2951300000000009001",
+                          "bizKey": "workflow.menu.internal-admin",
+                          "fields": {
+                            "appCode": { "type": "STRING", "value": "internal-admin" },
+                            "menus": { "type": "LIST", "value": [ { "menuCode": "workflow" } ] }
+                          }
+                        } ]
+                      }
+                    }
+                  }
+                }
+                """);
+        Path legacySql = tempDir.resolve(
+                "mango-cms-core/src/main/resources/db/migration/mango-cms/V4__remove_cms_banner_menu.sql");
+        Files.createDirectories(legacySql.getParent());
+        Files.writeString(legacySql, "DELETE FROM authorization_menu WHERE menu_code = 'cms:banner';");
+        Path reportFile = tempDir.resolve("target/module-menu-scope-report.json");
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "changedOnly", true);
+        setField(mojo, "changedFiles",
+                "mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-common-menu.json");
+        setField(mojo, "reportFile", reportFile.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+        CheckResult result = new ObjectMapper().readValue(reportFile.toFile(), CheckResult.class);
+        assertEquals(0, result.issues.size());
+        assertEquals(1, result.excludedIssues.size());
+        assertTrue(result.excludedIssues.get(0).description.contains("out-of-scope existing issue"));
+    }
+
+    @Test
+    void checkModuleMenu_withChangedOnlyFailsForCurrentScopeSql() throws Exception {
+        Path sqlFile = tempDir.resolve(
+                "mango-demo-core/src/main/resources/db/migration/demo/V2__demo_menu.sql");
+        Files.createDirectories(sqlFile.getParent());
+        Files.writeString(sqlFile, "INSERT INTO authorization_menu (id, menu_code) VALUES (1, 'demo');");
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-menu");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "changedOnly", true);
+        setField(mojo, "changedFiles",
+                "mango-demo-core/src/main/resources/db/migration/demo/V2__demo_menu.sql");
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("issues=1"));
+    }
+
+    @Test
     void checkModuleMenu_withMenuFlywaySql_fails() throws Exception {
         Path sqlFile = tempDir.resolve(
                 "mango-authorization-core/src/main/resources/db/migration/authorization/V2__menu.sql");

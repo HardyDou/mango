@@ -20,15 +20,30 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PersistenceFlywayAutoConfigurationTest {
+
+    private static final String MODULE_PROPERTY_PREFIX = "mango.persistence.flyway.modules.";
+
+    private static final String TEST_SKIP_REASON = "test fixture is not part of this scenario";
+
+    private static final List<String> TEST_CLASSPATH_MIGRATION_MODULES = List.of(
+            "another-test",
+            "business-upgrade",
+            "comparison-data",
+            "payment",
+            "persistence-test"
+    );
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
@@ -40,10 +55,10 @@ class PersistenceFlywayAutoConfigurationTest {
     @Test
     void whenEnabled_shouldCreateFlywayBean() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.user.enabled=true"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
@@ -54,10 +69,10 @@ class PersistenceFlywayAutoConfigurationTest {
     @Test
     void flywayBean_shouldUseNoopLocationBecauseInitializerMigratesModules() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     Flyway flyway = ctx.getBean(Flyway.class);
@@ -73,10 +88,11 @@ class PersistenceFlywayAutoConfigurationTest {
     @Test
     void disabledModule_shouldNotRunMigration() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
-                        "mango.persistence.flyway.modules.persistence-test.enabled=false"
-                )
+                        "mango.persistence.flyway.modules.persistence-test.enabled=false",
+                        "mango.persistence.flyway.modules.persistence-test.skip-reason=not used by this app"
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -88,8 +104,7 @@ class PersistenceFlywayAutoConfigurationTest {
     void whenNoModulesSpecified_shouldDiscoverClasspathMigrationModules() {
         contextRunner
                 .withPropertyValues(
-                        "mango.persistence.flyway.enabled=true",
-                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                        "mango.persistence.flyway.enabled=true"
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
@@ -99,13 +114,49 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
-    void baselineOnMigrate_shouldBeAcceptedByModuleInitializer() {
+    void configuredModules_shouldFailWhenClasspathModuleIsNotDeclared() {
         contextRunner
                 .withPropertyValues(
                         "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    assertThat(ctx).hasFailed();
+                    assertThat(ctx.getStartupFailure())
+                            .hasMessageContaining("Mango Flyway classpath migration modules are not fully declared")
+                            .hasMessageContaining("missingModules=[another-test, business-upgrade, comparison-data, payment]")
+                            .hasMessageContaining("classpath:db/migration/another-test")
+                            .hasMessageContaining("mango.persistence.flyway.modules.<module>.enabled=true")
+                            .hasMessageContaining("enabled=false with skip-reason");
+                });
+    }
+
+    @Test
+    void disabledClasspathModule_shouldRequireSkipReason() {
+        contextRunner
+                .withPropertyValues(flywayProperties(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=false"
+                ))
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    assertThat(ctx).hasFailed();
+                    assertThat(ctx.getStartupFailure())
+                            .hasMessageContaining("Mango Flyway classpath migration modules are not fully declared")
+                            .hasMessageContaining("disabledWithoutSkipReason=[persistence-test]")
+                            .hasMessageContaining("enabled=false with skip-reason");
+                });
+    }
+
+    @Test
+    void baselineOnMigrate_shouldBeAcceptedByModuleInitializer() {
+        contextRunner
+                .withPropertyValues(flywayProperties(
+                        "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.baseline-on-migrate=true"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -116,11 +167,11 @@ class PersistenceFlywayAutoConfigurationTest {
     @Test
     void customHistoryTable_shouldBeUsedByModuleInitializer() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.history-table=flyway_history_custom_test"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -133,11 +184,11 @@ class PersistenceFlywayAutoConfigurationTest {
     @Test
     void outOfOrder_shouldBeAcceptedByModuleInitializer() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.out-of-order=true"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -157,10 +208,10 @@ class PersistenceFlywayAutoConfigurationTest {
                 .migrate();
 
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.payment.enabled=true"
-                )
+                ))
                 .withBean(DataSource.class, () -> h2DataSource(url))
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(h2DataSource(url));
@@ -184,11 +235,11 @@ class PersistenceFlywayAutoConfigurationTest {
                 .migrate();
 
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.payment.enabled=true",
                         "mango.persistence.flyway.modules.payment.out-of-order=false"
-                )
+                ))
                 .withBean(DataSource.class, () -> h2DataSource(url))
                 .run(ctx -> {
                     assertThat(ctx).hasFailed();
@@ -210,10 +261,10 @@ class PersistenceFlywayAutoConfigurationTest {
                 .migrate();
 
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.business-upgrade.enabled=true"
-                )
+                ))
                 .withBean(DataSource.class, () -> h2DataSource(url))
                 .run(ctx -> {
                     assertThat(ctx).hasFailed();
@@ -226,13 +277,13 @@ class PersistenceFlywayAutoConfigurationTest {
     @Test
     void migrationFailure_shouldReportModuleLocationAndHistoryTable() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.history-table=flyway_history_shared_test",
                         "mango.persistence.flyway.modules.another-test.enabled=true",
                         "mango.persistence.flyway.modules.another-test.history-table=flyway_history_shared_test"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasFailed();
@@ -248,7 +299,7 @@ class PersistenceFlywayAutoConfigurationTest {
     void missingMappedDatasource_shouldReportModuleAndDatasourceContext() {
         String primaryUrl = "jdbc:h2:mem:flyway_primary_missing_mapping;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
         multiDataSourceContextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.datasources.primary.primary=true",
                         "mango.persistence.datasources.primary.url=" + primaryUrl,
                         "mango.persistence.datasources.primary.username=sa",
@@ -257,7 +308,7 @@ class PersistenceFlywayAutoConfigurationTest {
                         "mango.persistence.modules.persistence-test.datasource=missing",
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true"
-                )
+                ))
                 .run(ctx -> {
                     assertThat(ctx).hasFailed();
                     assertThat(ctx.getStartupFailure())
@@ -289,11 +340,11 @@ class PersistenceFlywayAutoConfigurationTest {
                 """);
 
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.external-file.enabled=true",
                         "mango.persistence.flyway.modules.external-file.locations[0]=filesystem:" + directory.toAbsolutePath()
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -313,10 +364,10 @@ class PersistenceFlywayAutoConfigurationTest {
     void classpathAndFilesystemLocations_shouldWriteSameRowsForFiveDatasets() throws Exception {
         AtomicReference<List<MigrationDataRow>> classpathRows = new AtomicReference<>();
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.comparison-data.enabled=true"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -335,12 +386,12 @@ class PersistenceFlywayAutoConfigurationTest {
         Files.writeString(directory.resolve("V1__create_comparison_data.sql"), classpathComparisonSql());
 
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.comparison-data.enabled=true",
                         "mango.persistence.flyway.modules.comparison-data.locations[0]=filesystem:"
                                 + directory.toAbsolutePath()
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -377,11 +428,11 @@ class PersistenceFlywayAutoConfigurationTest {
         try {
             String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/V8__external_url.sql";
             contextRunner
-                    .withPropertyValues(
+                    .withPropertyValues(flywayProperties(
                             "mango.persistence.flyway.enabled=true",
                             "mango.persistence.flyway.modules.external-url.enabled=true",
                             "mango.persistence.flyway.modules.external-url.locations[0]=" + url
-                    )
+                    ))
                     .withUserConfiguration(H2DataSourceConfig.class)
                     .run(ctx -> {
                         JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -404,14 +455,14 @@ class PersistenceFlywayAutoConfigurationTest {
     void moduleDatasource_shouldRunMigrationAgainstIndependentDatabase() {
         String moduleUrl = "jdbc:h2:mem:module_flyway_independent;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.datasource.url=" + moduleUrl,
                         "mango.persistence.flyway.modules.persistence-test.datasource.username=sa",
                         "mango.persistence.flyway.modules.persistence-test.datasource.password=",
                         "mango.persistence.flyway.modules.persistence-test.datasource.driver-class-name=org.h2.Driver"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate defaultJdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -428,7 +479,7 @@ class PersistenceFlywayAutoConfigurationTest {
         String primaryUrl = "jdbc:h2:mem:flyway_primary_registry;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
         String jobUrl = "jdbc:h2:mem:flyway_job_registry;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
         multiDataSourceContextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.datasources.primary.primary=true",
                         "mango.persistence.datasources.primary.url=" + primaryUrl,
                         "mango.persistence.datasources.primary.username=sa",
@@ -441,7 +492,7 @@ class PersistenceFlywayAutoConfigurationTest {
                         "mango.persistence.modules.persistence-test.datasource=job",
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true"
-                )
+                ))
                 .run(ctx -> {
                     JdbcTemplate primaryJdbcTemplate = new JdbcTemplate(h2DataSource(primaryUrl));
                     assertThat(tableExists(primaryJdbcTemplate, "persistence_flyway_user")).isFalse();
@@ -482,6 +533,34 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(ctx).hasSingleBean(Flyway.class);
                     assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
                 });
+    }
+
+    private static String[] flywayProperties(String... properties) {
+        Set<String> configuredModules = Arrays.stream(properties)
+                .map(PersistenceFlywayAutoConfigurationTest::extractConfiguredModule)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        List<String> result = new ArrayList<>(Arrays.asList(properties));
+        for (String module : TEST_CLASSPATH_MIGRATION_MODULES) {
+            if (configuredModules.contains(module)) {
+                continue;
+            }
+            result.add(MODULE_PROPERTY_PREFIX + module + ".enabled=false");
+            result.add(MODULE_PROPERTY_PREFIX + module + ".skip-reason=" + TEST_SKIP_REASON);
+        }
+        return result.toArray(String[]::new);
+    }
+
+    private static String extractConfiguredModule(String property) {
+        if (!property.startsWith(MODULE_PROPERTY_PREFIX)) {
+            return null;
+        }
+        String tail = property.substring(MODULE_PROPERTY_PREFIX.length());
+        int dotIndex = tail.indexOf('.');
+        if (dotIndex <= 0) {
+            return null;
+        }
+        return tail.substring(0, dotIndex);
     }
 
     @Configuration

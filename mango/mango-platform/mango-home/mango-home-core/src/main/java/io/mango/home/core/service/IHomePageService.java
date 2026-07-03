@@ -3,9 +3,12 @@ package io.mango.home.core.service;
 import io.mango.home.api.command.CreateHomePageCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
+import io.mango.home.api.command.SetDefaultHomePageCommand;
 import io.mango.home.api.command.SortHomePagesCommand;
 import io.mango.home.api.query.ResolveHomePageQuery;
+import io.mango.home.api.query.UserHomePageQuery;
 import io.mango.home.api.vo.HomePageVO;
+import io.mango.common.vo.PageResult;
 
 import java.util.List;
 
@@ -17,6 +20,14 @@ public interface IHomePageService {
      * @return 当前用户首页列表
      */
     List<HomePageVO> listMyPages();
+
+    /**
+     * 分页查询当前租户下的用户自定义首页。
+     *
+     * @param query 查询条件
+     * @return 用户自定义首页分页列表
+     */
+    PageResult<HomePageVO> pageUserPages(UserHomePageQuery query);
 
     /**
      * 解析当前用户要打开的首页。
@@ -74,7 +85,7 @@ public interface IHomePageService {
      * @param id 首页ID
      * @return 首页信息
      */
-    HomePageVO setDefault(Long id);
+    HomePageVO setDefault(SetDefaultHomePageCommand command);
 
     /**
      * 删除首页。

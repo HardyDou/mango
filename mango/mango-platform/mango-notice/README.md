@@ -220,6 +220,10 @@ mango:
 
 腾讯云短信的 `{1}`、`{2}` 这类序号变量也使用同一映射方式，例如 `{ "1": "verifyCode" }`。没有配置 `variableMapping` 时，通知参数 `params` 会原样作为短信模板参数传递。
 
+### 7.2 Outbox Topic
+
+通知 outbox 写入 `topic=notice`、`eventType=notice.send`，后台 worker 只通过 `claimByTopic(..., OutboxTopics.NOTICE, ...)` 获取通知发送任务。历史无 topic 的 `notice.send` 消息会被 KV outbox 推断为通知消息，升级时不需要额外数据迁移。
+
 ## 8. 资源注入
 
 通知中心内置站内信渠道通过 `mango-resource` 注入。通知模块也会声明自己的业务域，业务模块可用同一资源协议向通知中心注入消息模板。资源文件放在：
@@ -462,11 +466,14 @@ Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
 
 通知异步分发依赖 `mango-infra-kv` outbox。部署时要确认 outbox 存储可用，否则任务可能创建成功但不会被后台 worker 分发。
 
+升级到 topic 隔离版本时，业务方正常调用 `NoticeApi.send` 或 `/notice/send` 不需要改代码。需要同步升级 `mango-infra-kv`、`mango-infra-event` 和 `mango-notice` 相关依赖，并重启所有旧实例，避免旧进程继续使用无 topic 的 claim API。
+
 ## 13. 问题排查
 
 | 问题 | 优先检查 |
 |------|----------|
 | 任务创建了但没有发送 | `mango.notice.outbox.enabled`、`dispatch-enabled`、outbox 存储、worker 日志。 |
+| 通知 outbox 被 `domain-event-dispatcher` 锁定 | 是否已同步升级 topic 隔离版本并重启旧实例；自定义 worker 是否仍调用旧 claim API。 |
 | 站内信未出现 | 是否引入 `mango-notice-channel-site`，业务配置和站内信渠道模板是否已发布。 |
 | 第三方渠道失败 | `notice_send_record` 的失败码、失败原因、请求快照、响应快照和渠道配置 JSON。 |
 | 用户收不到短信或邮件 | `notice_recipient_account` 是否有手机号或邮箱，接收偏好是否关闭渠道。 |

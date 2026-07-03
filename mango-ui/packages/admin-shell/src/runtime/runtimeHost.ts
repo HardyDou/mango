@@ -243,6 +243,15 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
             home: () => import('../views/home/index.vue'),
             notFound: () => import('../views/error/404.vue'),
           },
+          registries: [{
+            moduleCode: 'mango-shell',
+            pages: {
+              'home/management/index': () => import('../views/home/management/index.vue'),
+              'home/templates/index': () => import('../views/home/templates/index.vue'),
+              'home/list/index': () => import('../views/home/list/index.vue'),
+              'home/user/index': () => import('../views/home/user/index.vue'),
+            },
+          }],
         });
         await ensureFeatureRegistrars();
         return ensureDevCenterPagesRegistered();

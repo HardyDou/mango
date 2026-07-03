@@ -5,6 +5,7 @@ import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxMessageQuery;
 import io.mango.infra.kv.api.OutboxStatus;
+import io.mango.infra.kv.api.OutboxTopics;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -94,13 +95,14 @@ class OutboxAutoConfigurationTest {
     }
 
     @Test
-    void outboxStore_shouldClaimByEventTypeWithoutLockingOtherMessages() {
+    void outboxStore_shouldClaimByTopicWithoutLockingOtherTopics() {
         runner.withPropertyValues(
                         "mango.kv.capability.enabled=true",
                         "mango.kv.capability.outbox=true")
                 .run(context -> {
                     IOutboxStore store = context.getBean(IOutboxStore.class);
                     OutboxMessage realtimeMessage = OutboxMessage.builder()
+                            .topic(OutboxTopics.REALTIME)
                             .eventType("realtime.message.dispatch")
                             .businessType("realtime")
                             .businessKey("RT-1")
@@ -108,6 +110,7 @@ class OutboxAutoConfigurationTest {
                             .occurredAt(Instant.parse("2026-05-16T02:00:00Z"))
                             .build();
                     OutboxMessage workflowMessage = OutboxMessage.builder()
+                            .topic(OutboxTopics.DOMAIN_EVENT)
                             .eventType("workflow.process.completed")
                             .businessType("workflow")
                             .businessKey("EXP-3")
@@ -118,9 +121,9 @@ class OutboxAutoConfigurationTest {
                     store.enqueue(realtimeMessage);
                     store.enqueue(workflowMessage);
 
-                    var realtimeClaimed = store.claim(
+                    var realtimeClaimed = store.claimByTopic(
                             "realtime-worker",
-                            "realtime.message.dispatch",
+                            OutboxTopics.REALTIME,
                             10,
                             Instant.parse("2026-05-16T02:01:00Z"));
                     assertThat(realtimeClaimed)
@@ -131,12 +134,87 @@ class OutboxAutoConfigurationTest {
 
                     store.ack(realtimeMessage.getMessageId(), "realtime-worker", Instant.parse("2026-05-16T02:02:00Z"));
 
-                    var remaining = store.claim("workflow-worker", 10, Instant.parse("2026-05-16T02:03:00Z"));
+                    var remaining = store.claimByTopic("workflow-worker", OutboxTopics.DOMAIN_EVENT, 10, Instant.parse("2026-05-16T02:03:00Z"));
                     assertThat(remaining)
                             .hasSize(1)
                             .first()
                             .extracting(OutboxMessage::getMessageId)
                             .isEqualTo(workflowMessage.getMessageId());
+                });
+    }
+
+    @Test
+    void outboxStore_shouldIsolateTopicPendingQueuesFromUnscopedClaim() {
+        runner.withPropertyValues(
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.outbox=true")
+                .run(context -> {
+                    IOutboxStore store = context.getBean(IOutboxStore.class);
+                    OutboxMessage noticeMessage = OutboxMessage.builder()
+                            .topic(OutboxTopics.NOTICE)
+                            .eventType("notice.send")
+                            .businessType("notice")
+                            .businessKey("TASK-1")
+                            .aggregateId("TASK-1")
+                            .occurredAt(Instant.parse("2026-05-16T02:10:00Z"))
+                            .build();
+
+                    store.enqueue(noticeMessage);
+
+                    assertThat(store.claim("legacy-worker", 10, Instant.parse("2026-05-16T02:11:00Z"))).isEmpty();
+
+                    var noticeClaimed = store.claimByTopic(
+                            "notice-worker",
+                            OutboxTopics.NOTICE,
+                            10,
+                            Instant.parse("2026-05-16T02:12:00Z"));
+                    assertThat(noticeClaimed)
+                            .hasSize(1)
+                            .first()
+                            .satisfies(message -> {
+                                assertThat(message.getMessageId()).isEqualTo(noticeMessage.getMessageId());
+                                assertThat(message.getTopic()).isEqualTo(OutboxTopics.NOTICE);
+                                assertThat(message.getLockedBy()).isEqualTo("notice-worker");
+                            });
+                });
+    }
+
+    @Test
+    void outboxStore_shouldInferTopicWhenClaimingLegacyMessagesByTopic() {
+        runner.withPropertyValues(
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.outbox=true")
+                .run(context -> {
+                    IOutboxStore store = context.getBean(IOutboxStore.class);
+                    OutboxMessage legacyNoticeMessage = OutboxMessage.builder()
+                            .eventType(OutboxTopics.NOTICE_SEND_EVENT_TYPE)
+                            .businessType("notice")
+                            .businessKey("TASK-LEGACY")
+                            .aggregateId("TASK-LEGACY")
+                            .occurredAt(Instant.parse("2026-05-16T02:20:00Z"))
+                            .build();
+
+                    store.enqueue(legacyNoticeMessage);
+
+                    assertThat(store.claimByTopic(
+                            "domain-worker",
+                            OutboxTopics.DOMAIN_EVENT,
+                            10,
+                            Instant.parse("2026-05-16T02:21:00Z"))).isEmpty();
+
+                    var noticeClaimed = store.claimByTopic(
+                            "notice-worker",
+                            OutboxTopics.NOTICE,
+                            10,
+                            Instant.parse("2026-05-16T02:22:00Z"));
+                    assertThat(noticeClaimed)
+                            .hasSize(1)
+                            .first()
+                            .satisfies(message -> {
+                                assertThat(message.getMessageId()).isEqualTo(legacyNoticeMessage.getMessageId());
+                                assertThat(message.getTopic()).isEqualTo(OutboxTopics.NOTICE);
+                                assertThat(message.getLockedBy()).isEqualTo("notice-worker");
+                            });
                 });
     }
 

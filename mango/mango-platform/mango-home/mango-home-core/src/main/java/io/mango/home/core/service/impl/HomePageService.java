@@ -1,28 +1,52 @@
 package io.mango.home.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.IAuthorizationProvider;
+import io.mango.common.result.R;
 import io.mango.common.result.Require;
+import io.mango.common.vo.PageResult;
 import io.mango.home.api.command.CreateHomePageCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
+import io.mango.home.api.command.SetDefaultHomePageCommand;
 import io.mango.home.api.command.SortHomePagesCommand;
+import io.mango.home.api.enums.HomePageSourceType;
+import io.mango.home.api.enums.HomeTemplateAuthorizationSubjectType;
+import io.mango.home.api.enums.HomeTemplateVersionStatus;
 import io.mango.home.api.query.ResolveHomePageQuery;
+import io.mango.home.api.query.UserHomePageQuery;
 import io.mango.home.api.vo.HomePageVO;
+import io.mango.home.core.entity.HomeTemplateAuthorizationEntity;
+import io.mango.home.core.entity.HomeTemplateEntity;
+import io.mango.home.core.entity.HomeTemplateVersionEntity;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
+import io.mango.home.core.mapper.HomeTemplateAuthorizationMapper;
+import io.mango.home.core.mapper.HomeTemplateMapper;
+import io.mango.home.core.mapper.HomeTemplateVersionMapper;
 import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
 import io.mango.home.core.service.IHomePageService;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.org.api.SysOrgApi;
+import io.mango.org.api.entity.SysOrg;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -31,41 +55,49 @@ public class HomePageService implements IHomePageService {
 
     private static final String BUILT_IN_NAME = "系统工作台";
     private static final String DUPLICATE_SUFFIX = " 副本";
-    private static final int SCHEMA_VERSION = 1;
-    private static final int MAX_ITEMS = 100;
-    private static final int MAX_COLUMNS = 12;
-    private static final int MAX_ROWS = 1000;
-    private static final int MAX_COORDINATE = 999;
     private static final int DEFAULT_SORT_STEP = 10;
-    private static final int BAD_REQUEST_CODE = 400;
 
     private final UserHomePageMapper homePageMapper;
     private final UserHomePreferenceMapper preferenceMapper;
+    private final HomeTemplateMapper templateMapper;
+    private final HomeTemplateVersionMapper templateVersionMapper;
+    private final HomeTemplateAuthorizationMapper templateAuthorizationMapper;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<IAuthorizationProvider> authorizationProvider;
+    private final ObjectProvider<SysOrgApi> sysOrgApiProvider;
 
     @Override
     public List<HomePageVO> listMyPages() {
-        Long defaultId = currentDefaultHomePageId();
-        List<UserHomePageEntity> pages = listEnabledEntities();
-        List<HomePageVO> result = new ArrayList<>(pages.size());
-        for (UserHomePageEntity page : pages) {
-            result.add(toVO(page, isSameId(defaultId, page.getId())));
-        }
-        return result;
+        return visiblePages(currentPreference());
+    }
+
+    @Override
+    public PageResult<HomePageVO> pageUserPages(UserHomePageQuery query) {
+        UserHomePageQuery resolved = query == null ? new UserHomePageQuery() : query;
+        IPage<UserHomePageEntity> page = homePageMapper.selectPage(
+                new Page<>(resolved.getPage(), resolved.getSize()),
+                userHomePageWrapper(resolved));
+        return PageResult.of(page.getRecords().stream()
+                        .map(entity -> toVO(entity, false))
+                        .toList(),
+                page.getTotal(), page.getCurrent(), page.getSize());
     }
 
     @Override
     public HomePageVO resolve(ResolveHomePageQuery query) {
-        if (query != null && query.getHomeId() != null) {
-            UserHomePageEntity specified = selectOwnedEnabled(query.getHomeId());
+        String routeKey = query == null ? null : query.getHomeId();
+        UserHomePreferenceEntity preference = currentPreference();
+        List<HomePageVO> pages = visiblePages(preference);
+        if (routeKey != null && !routeKey.isBlank()) {
+            HomePageVO specified = pages.stream()
+                    .filter(page -> routeKey.equals(page.getRouteKey()) || routeKey.equals(String.valueOf(page.getId())))
+                    .findFirst()
+                    .orElse(null);
             Require.notNull(specified, "首页不存在或无权访问");
-            return toVO(specified, isSameId(currentDefaultHomePageId(), specified.getId()));
+            return specified;
         }
-        UserHomePageEntity resolved = resolveDefaultEntity();
-        if (resolved == null) {
-            return builtInDefault();
-        }
-        return toVO(resolved, true);
+        HomePageVO resolved = resolveDefaultPage(pages, preference);
+        return resolved == null ? builtInDefault() : resolved;
     }
 
     @Override
@@ -73,7 +105,7 @@ public class HomePageService implements IHomePageService {
     public HomePageVO create(CreateHomePageCommand command) {
         Require.notNull(command, "创建命令不能为空");
         Require.notBlank(command.getName(), "首页名称不能为空");
-        String layoutJson = normalizeLayoutJson(command.getLayoutJson());
+        String layoutJson = HomeLayoutSupport.normalize(objectMapper, command.getLayoutJson());
         int nextSort = nextSort();
         UserHomePageEntity entity = new UserHomePageEntity();
         entity.setTenantId(HomeContextSupport.currentTenantId());
@@ -83,10 +115,10 @@ public class HomePageService implements IHomePageService {
         entity.setLayoutJson(layoutJson);
         entity.setSort(nextSort);
         entity.setEnabled(true);
-        boolean setAsDefault = Boolean.TRUE.equals(command.getSetDefault()) || currentDefaultHomePageId() == null;
+        boolean setAsDefault = Boolean.TRUE.equals(command.getSetDefault()) || currentDefaultHomeRef() == null;
         homePageMapper.insert(entity);
         if (setAsDefault) {
-            saveDefaultHomePageId(entity.getId());
+            saveDefaultHomeRef(HomeRouteKeys.user(entity.getId()), entity.getId());
         }
         return toVO(entity, setAsDefault);
     }
@@ -100,7 +132,7 @@ public class HomePageService implements IHomePageService {
         entity.setName(command.getName().trim());
         entity.setUpdatedBy(MangoContextHolder.userId());
         homePageMapper.updateById(entity);
-        return toVO(entity, isSameId(currentDefaultHomePageId(), entity.getId()));
+        return toVO(entity, isDefaultRoute(HomeRouteKeys.user(entity.getId()), currentPreference()));
     }
 
     @Override
@@ -124,12 +156,12 @@ public class HomePageService implements IHomePageService {
     public HomePageVO saveLayout(Long id, SaveHomePageLayoutCommand command) {
         Require.notNull(command, "布局保存命令不能为空");
         Require.notBlank(command.getLayoutJson(), "layoutJson不能为空");
-        validateLayoutJson(command.getLayoutJson());
+        HomeLayoutSupport.validate(objectMapper, command.getLayoutJson());
         UserHomePageEntity entity = requiredOwnedEnabled(id);
         entity.setLayoutJson(command.getLayoutJson());
         entity.setUpdatedBy(MangoContextHolder.userId());
         homePageMapper.updateById(entity);
-        return toVO(entity, isSameId(currentDefaultHomePageId(), entity.getId()));
+        return toVO(entity, isDefaultRoute(HomeRouteKeys.user(entity.getId()), currentPreference()));
     }
 
     @Override
@@ -138,7 +170,7 @@ public class HomePageService implements IHomePageService {
         Require.notNull(command, "排序命令不能为空");
         Require.notEmpty(command.getIds(), "首页排序不能为空");
         List<UserHomePageEntity> pages = listEnabledEntities();
-        Set<Long> ownedIds = new HashSet<>();
+        Set<Long> ownedIds = new LinkedHashSet<>();
         for (UserHomePageEntity page : pages) {
             ownedIds.add(page.getId());
         }
@@ -156,10 +188,19 @@ public class HomePageService implements IHomePageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public HomePageVO setDefault(Long id) {
-        UserHomePageEntity entity = requiredOwnedEnabled(id);
-        saveDefaultHomePageId(entity.getId());
-        return toVO(entity, true);
+    public HomePageVO setDefault(SetDefaultHomePageCommand command) {
+        Require.notNull(command, "默认首页命令不能为空");
+        Require.notBlank(command.getHomeId(), "首页标识不能为空");
+        List<HomePageVO> pages = visiblePages(currentPreference());
+        HomePageVO page = pages.stream()
+                .filter(item -> command.getHomeId().equals(item.getRouteKey()))
+                .findFirst()
+                .orElse(null);
+        Require.notNull(page, "首页不存在或无权访问");
+        Long personalId = HomeRouteKeys.parseUserPageId(page.getRouteKey());
+        saveDefaultHomeRef(page.getRouteKey(), personalId);
+        page.setDefaultPage(true);
+        return page;
     }
 
     @Override
@@ -169,67 +210,230 @@ public class HomePageService implements IHomePageService {
         entity.setEnabled(false);
         entity.setUpdatedBy(MangoContextHolder.userId());
         homePageMapper.updateById(entity);
-        if (isSameId(currentDefaultHomePageId(), id)) {
-            UserHomePageEntity fallback = firstEnabledEntity();
-            saveDefaultHomePageId(fallback == null ? null : fallback.getId());
+        UserHomePreferenceEntity preference = currentPreference();
+        if (isDefaultRoute(HomeRouteKeys.user(id), preference)) {
+            List<HomePageVO> pages = visiblePages(preference).stream()
+                    .filter(page -> !HomeRouteKeys.user(id).equals(page.getRouteKey()))
+                    .toList();
+            HomePageVO fallback = pages.isEmpty() ? null : pages.get(0);
+            saveDefaultHomeRef(fallback == null ? null : fallback.getRouteKey(),
+                    fallback == null ? null : HomeRouteKeys.parseUserPageId(fallback.getRouteKey()));
         }
         return resolve(new ResolveHomePageQuery());
     }
 
-    private String normalizeLayoutJson(String layoutJson) {
-        if (layoutJson == null || layoutJson.isBlank()) {
-            return defaultLayoutJson();
+    private List<HomePageVO> visiblePages(UserHomePreferenceEntity preference) {
+        List<HomePageVO> result = new ArrayList<>();
+        for (UserHomePageEntity page : listEnabledEntities()) {
+            result.add(toVO(page, isDefaultRoute(HomeRouteKeys.user(page.getId()), preference)));
         }
-        validateLayoutJson(layoutJson);
-        return layoutJson;
+        result.addAll(authorizedPages(preference));
+        if (result.isEmpty()) {
+            result.add(builtInDefault());
+        }
+        applyDefaultSelection(result, preference);
+        return result;
     }
 
-    private String defaultLayoutJson() {
-        return "{\"schemaVersion\":1,\"items\":[]}";
-    }
-
-    private void validateLayoutJson(String layoutJson) {
-        try {
-            JsonNode root = objectMapper.readTree(layoutJson);
-            Require.isTrue(root.path("schemaVersion").asInt() == SCHEMA_VERSION, "布局结构版本不支持");
-            JsonNode items = root.path("items");
-            Require.isTrue(items.isArray(), "布局 items 必须是数组");
-            Require.isTrue(items.size() <= MAX_ITEMS, "布局组件数量不能超过100个");
-            for (JsonNode item : items) {
-                validateItem(item);
+    private List<HomePageVO> authorizedPages(UserHomePreferenceEntity preference) {
+        String tenantId = HomeContextSupport.currentTenantId();
+        Map<Long, AuthorizedTemplateMatch> matches = new LinkedHashMap<>();
+        addAuthorizationMatches(matches, listUserAuthorizations(tenantId));
+        addAuthorizationMatches(matches, listOrgAuthorizations(tenantId));
+        addAuthorizationMatches(matches, listRoleAuthorizations(tenantId));
+        List<HomePageVO> result = new ArrayList<>();
+        for (AuthorizedTemplateMatch match : matches.values()) {
+            HomeTemplateEntity template = templateMapper.selectOne(new LambdaQueryWrapper<HomeTemplateEntity>()
+                    .eq(HomeTemplateEntity::getTenantId, tenantId)
+                    .eq(HomeTemplateEntity::getId, match.templateId())
+                    .eq(HomeTemplateEntity::getEnabled, true));
+            if (template == null || template.getActiveVersionId() == null) {
+                continue;
             }
-        } catch (RuntimeException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            Require.fail(BAD_REQUEST_CODE, "布局 JSON 格式不正确");
+            HomeTemplateVersionEntity version = templateVersionMapper.selectOne(new LambdaQueryWrapper<HomeTemplateVersionEntity>()
+                    .eq(HomeTemplateVersionEntity::getTenantId, tenantId)
+                    .eq(HomeTemplateVersionEntity::getId, template.getActiveVersionId())
+                    .eq(HomeTemplateVersionEntity::getStatus, HomeTemplateVersionStatus.ACTIVE.name()));
+            if (version == null) {
+                continue;
+            }
+            result.add(toAuthorizedVO(template, version, match, isDefaultRoute(HomeRouteKeys.template(template.getId()), preference)));
+        }
+        result.sort(Comparator.comparing(HomePageVO::getSort, Comparator.nullsLast(Integer::compareTo))
+                .thenComparing(HomePageVO::getName, Comparator.nullsLast(String::compareTo)));
+        return result;
+    }
+
+    private List<HomeTemplateAuthorizationEntity> listUserAuthorizations(String tenantId) {
+        return templateAuthorizationMapper.selectList(baseAuthorizationWrapper(tenantId)
+                .eq(HomeTemplateAuthorizationEntity::getSubjectType, HomeTemplateAuthorizationSubjectType.USER.name())
+                .eq(HomeTemplateAuthorizationEntity::getSubjectId, HomeContextSupport.currentUserId()));
+    }
+
+    private List<HomeTemplateAuthorizationEntity> listOrgAuthorizations(String tenantId) {
+        Set<Long> orgIds = currentOrgAndAncestors();
+        if (orgIds.isEmpty()) {
+            return List.of();
+        }
+        return templateAuthorizationMapper.selectList(baseAuthorizationWrapper(tenantId)
+                .eq(HomeTemplateAuthorizationEntity::getSubjectType, HomeTemplateAuthorizationSubjectType.ORG.name())
+                .in(HomeTemplateAuthorizationEntity::getSubjectId, orgIds));
+    }
+
+    private List<HomeTemplateAuthorizationEntity> listRoleAuthorizations(String tenantId) {
+        Set<String> roleCodes = currentRoleCodes();
+        if (roleCodes.isEmpty()) {
+            return List.of();
+        }
+        return templateAuthorizationMapper.selectList(baseAuthorizationWrapper(tenantId)
+                .eq(HomeTemplateAuthorizationEntity::getSubjectType, HomeTemplateAuthorizationSubjectType.ROLE.name())
+                .in(HomeTemplateAuthorizationEntity::getSubjectCode, roleCodes));
+    }
+
+    private LambdaQueryWrapper<HomeTemplateAuthorizationEntity> baseAuthorizationWrapper(String tenantId) {
+        return new LambdaQueryWrapper<HomeTemplateAuthorizationEntity>()
+                .eq(HomeTemplateAuthorizationEntity::getTenantId, tenantId)
+                .eq(HomeTemplateAuthorizationEntity::getEnabled, true)
+                .orderByAsc(HomeTemplateAuthorizationEntity::getSort)
+                .orderByAsc(HomeTemplateAuthorizationEntity::getCreatedAt);
+    }
+
+    private void addAuthorizationMatches(Map<Long, AuthorizedTemplateMatch> matches,
+                                         List<HomeTemplateAuthorizationEntity> authorizations) {
+        for (HomeTemplateAuthorizationEntity authorization : authorizations) {
+            matches.compute(authorization.getTemplateId(), (templateId, existing) -> {
+                AuthorizedTemplateMatch match = existing == null
+                        ? new AuthorizedTemplateMatch(templateId, authorization.getDefaultFlag(), new ArrayList<>())
+                        : existing;
+                match.sourceLabels().add(sourceLabel(authorization));
+                if (Boolean.TRUE.equals(authorization.getDefaultFlag())) {
+                    match = new AuthorizedTemplateMatch(templateId, true, match.sourceLabels());
+                }
+                return match;
+            });
         }
     }
 
-    private void validateItem(JsonNode item) {
-        Require.notBlank(item.path("id").asText(null), "布局项 id 不能为空");
-        Require.notBlank(item.path("widgetType").asText(null), "布局项 widgetType 不能为空");
-        JsonNode layout = item.path("layout");
-        Require.isTrue(layout.isObject(), "布局项 layout 不能为空");
-        int x = layout.path("x").asInt(-1);
-        int y = layout.path("y").asInt(-1);
-        int w = layout.path("w").asInt(-1);
-        int h = layout.path("h").asInt(-1);
-        Require.inRange(x, 0, MAX_COORDINATE, "布局项 x 超出范围");
-        Require.inRange(y, 0, MAX_COORDINATE, "布局项 y 超出范围");
-        Require.inRange(w, 1, MAX_COLUMNS, "布局项 w 超出范围");
-        Require.inRange(h, 1, MAX_ROWS, "布局项 h 超出范围");
-        Require.isTrue(x + w <= MAX_COLUMNS, "布局项宽度超出12栅格");
-        validateOptionalSize(layout, "minW", MAX_COLUMNS);
-        validateOptionalSize(layout, "minH", MAX_ROWS);
-        validateOptionalSize(layout, "maxW", MAX_COLUMNS);
-        validateOptionalSize(layout, "maxH", MAX_ROWS);
+    private String sourceLabel(HomeTemplateAuthorizationEntity authorization) {
+        String name = authorization.getSubjectName();
+        if (name == null || name.isBlank()) {
+            name = authorization.getSubjectCode() != null ? authorization.getSubjectCode() : String.valueOf(authorization.getSubjectId());
+        }
+        return switch (HomeTemplateAuthorizationSubjectType.valueOf(authorization.getSubjectType())) {
+            case USER -> "个人授权：" + name;
+            case ORG -> "部门授权：" + name;
+            case ROLE -> "角色授权：" + name;
+        };
     }
 
-    private void validateOptionalSize(JsonNode layout, String fieldName, int maxValue) {
-        JsonNode node = layout.get(fieldName);
-        if (node != null && !node.isNull()) {
-            Require.inRange(node.asInt(-1), 1, maxValue, "布局项 " + fieldName + " 超出范围");
+    private Set<Long> currentOrgAndAncestors() {
+        LinkedHashSet<Long> orgIds = new LinkedHashSet<>();
+        Long currentOrgId = HomeContextSupport.currentOrgId();
+        if (currentOrgId == null) {
+            return orgIds;
         }
+        orgIds.add(currentOrgId);
+        SysOrgApi sysOrgApi = sysOrgApiProvider.getIfAvailable();
+        if (sysOrgApi == null) {
+            return orgIds;
+        }
+        Long cursor = currentOrgId;
+        while (cursor != null && cursor > 0) {
+            R<SysOrg> response = sysOrgApi.getById(cursor);
+            SysOrg org = response == null ? null : response.getData();
+            if (org == null || org.getPid() == null || org.getPid() <= 0 || orgIds.contains(org.getPid())) {
+                break;
+            }
+            orgIds.add(org.getPid());
+            cursor = org.getPid();
+        }
+        return orgIds;
+    }
+
+    private Set<String> currentRoleCodes() {
+        IAuthorizationProvider provider = authorizationProvider.getIfAvailable();
+        if (provider == null || MangoContextHolder.memberId() == null) {
+            return Set.of();
+        }
+        AuthorizationQuery query = AuthorizationQuery.member(MangoContextHolder.memberId())
+                .withTenantId(MangoContextHolder.tenantId())
+                .withSystemCode(MangoContextHolder.appCode())
+                .withRealm(MangoContextHolder.get().realm())
+                .withActorType(MangoContextHolder.get().actorType())
+                .withParty(MangoContextHolder.get().partyType(), MangoContextHolder.get().partyId());
+        AuthorizationSnapshot snapshot = provider.load(query);
+        return snapshot == null ? Set.of() : snapshot.roleCodes();
+    }
+
+    private HomePageVO resolveDefaultPage(List<HomePageVO> pages, UserHomePreferenceEntity preference) {
+        applyDefaultSelection(pages, preference);
+        return pages.stream()
+                .filter(page -> Boolean.TRUE.equals(page.getDefaultPage()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void applyDefaultSelection(List<HomePageVO> pages, UserHomePreferenceEntity preference) {
+        if (pages.isEmpty()) {
+            return;
+        }
+        Set<String> authorizationDefaultRoutes = pages.stream()
+                .filter(page -> Boolean.TRUE.equals(page.getDefaultPage()))
+                .map(HomePageVO::getRouteKey)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        pages.forEach(page -> page.setDefaultPage(false));
+        if (preference != null && preference.getDefaultHomeRef() != null) {
+            HomePageVO preferred = findByRoute(pages, preference.getDefaultHomeRef());
+            if (preferred != null) {
+                preferred.setDefaultPage(true);
+                return;
+            }
+        }
+        if (preference != null && preference.getDefaultHomePageId() != null) {
+            HomePageVO preferred = findByRoute(pages, HomeRouteKeys.user(preference.getDefaultHomePageId()));
+            if (preferred != null) {
+                preferred.setDefaultPage(true);
+                return;
+            }
+        }
+        HomePageVO authDefault = pages.stream()
+                .filter(page -> HomePageSourceType.PERSONAL_AUTH.name().equals(page.getSourceType()))
+                .filter(page -> authorizationDefaultRoutes.contains(page.getRouteKey()))
+                .findFirst()
+                .orElse(null);
+        if (authDefault == null) {
+            authDefault = pages.stream()
+                    .filter(page -> HomePageSourceType.ORG_AUTH.name().equals(page.getSourceType()))
+                    .filter(page -> authorizationDefaultRoutes.contains(page.getRouteKey()))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (authDefault == null) {
+            authDefault = pages.stream()
+                    .filter(page -> HomePageSourceType.ROLE_AUTH.name().equals(page.getSourceType()))
+                    .filter(page -> authorizationDefaultRoutes.contains(page.getRouteKey()))
+                    .findFirst()
+                    .orElse(null);
+        }
+        HomePageVO selected = authDefault == null ? pages.get(0) : authDefault;
+        selected.setDefaultPage(true);
+    }
+
+    private HomePageVO findByRoute(List<HomePageVO> pages, String routeKey) {
+        return pages.stream()
+                .filter(page -> routeKey.equals(page.getRouteKey()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isDefaultRoute(String routeKey, UserHomePreferenceEntity preference) {
+        if (routeKey == null || preference == null) {
+            return false;
+        }
+        if (preference.getDefaultHomeRef() != null) {
+            return routeKey.equals(preference.getDefaultHomeRef());
+        }
+        return routeKey.equals(HomeRouteKeys.user(preference.getDefaultHomePageId()));
     }
 
     private UserHomePageEntity requiredOwnedEnabled(Long id) {
@@ -243,29 +447,6 @@ public class HomePageService implements IHomePageService {
         return homePageMapper.selectOne(baseWrapper()
                 .eq(UserHomePageEntity::getId, id)
                 .eq(UserHomePageEntity::getEnabled, true));
-    }
-
-    private UserHomePageEntity resolveDefaultEntity() {
-        Long defaultId = currentDefaultHomePageId();
-        if (defaultId != null) {
-            UserHomePageEntity entity = selectOwnedEnabled(defaultId);
-            if (entity != null) {
-                return entity;
-            }
-        }
-        UserHomePageEntity fallback = firstEnabledEntity();
-        if (fallback != null) {
-            saveDefaultHomePageId(fallback.getId());
-        }
-        return fallback;
-    }
-
-    private UserHomePageEntity firstEnabledEntity() {
-        List<UserHomePageEntity> pages = listEnabledEntities();
-        if (pages.isEmpty()) {
-            return null;
-        }
-        return pages.get(0);
     }
 
     private List<UserHomePageEntity> listEnabledEntities() {
@@ -290,15 +471,45 @@ public class HomePageService implements IHomePageService {
                 .eq(UserHomePageEntity::getUserId, HomeContextSupport.currentUserId());
     }
 
-    private Long currentDefaultHomePageId() {
-        UserHomePreferenceEntity preference = preferenceMapper.selectOne(preferenceWrapper());
+    private LambdaQueryWrapper<UserHomePageEntity> userHomePageWrapper(UserHomePageQuery query) {
+        String keyword = query.getKeyword() == null ? null : query.getKeyword().trim();
+        String routeKeyword = routeKeyword(keyword);
+        LambdaQueryWrapper<UserHomePageEntity> wrapper = new LambdaQueryWrapper<UserHomePageEntity>()
+                .eq(UserHomePageEntity::getTenantId, HomeContextSupport.currentTenantId())
+                .eq(query.getUserId() != null, UserHomePageEntity::getUserId, query.getUserId())
+                .eq(query.getEnabled() != null, UserHomePageEntity::getEnabled, query.getEnabled());
+        wrapper.and(StringUtils.hasText(keyword), nested -> nested
+                .like(UserHomePageEntity::getName, keyword)
+                .or(StringUtils.hasText(routeKeyword))
+                .like(StringUtils.hasText(routeKeyword), UserHomePageEntity::getId, routeKeyword));
+        wrapper.orderByDesc(UserHomePageEntity::getUpdatedAt)
+                .orderByDesc(UserHomePageEntity::getCreatedAt)
+                .orderByDesc(UserHomePageEntity::getId);
+        return wrapper;
+    }
+
+    private String routeKeyword(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return null;
+        }
+        return keyword.startsWith("user:") ? keyword.substring("user:".length()) : keyword;
+    }
+
+    private UserHomePreferenceEntity currentPreference() {
+        return preferenceMapper.selectOne(preferenceWrapper());
+    }
+
+    private String currentDefaultHomeRef() {
+        UserHomePreferenceEntity preference = currentPreference();
         if (preference == null) {
             return null;
         }
-        return preference.getDefaultHomePageId();
+        return preference.getDefaultHomeRef() == null
+                ? HomeRouteKeys.user(preference.getDefaultHomePageId())
+                : preference.getDefaultHomeRef();
     }
 
-    private void saveDefaultHomePageId(Long homePageId) {
+    private void saveDefaultHomeRef(String homeRef, Long homePageId) {
         UserHomePreferenceEntity preference = preferenceMapper.selectOne(preferenceWrapper());
         if (preference == null) {
             preference = new UserHomePreferenceEntity();
@@ -306,10 +517,12 @@ public class HomePageService implements IHomePageService {
             preference.setOrgId(HomeContextSupport.currentOrgId());
             preference.setUserId(HomeContextSupport.currentUserId());
             preference.setDefaultHomePageId(homePageId);
+            preference.setDefaultHomeRef(homeRef);
             preferenceMapper.insert(preference);
             return;
         }
         preference.setDefaultHomePageId(homePageId);
+        preference.setDefaultHomeRef(homeRef);
         preference.setUpdatedBy(MangoContextHolder.userId());
         preferenceMapper.updateById(preference);
     }
@@ -322,18 +535,25 @@ public class HomePageService implements IHomePageService {
 
     private HomePageVO builtInDefault() {
         HomePageVO vo = new HomePageVO();
+        vo.setRouteKey("__built_in__");
         vo.setName(BUILT_IN_NAME);
-        vo.setLayoutJson(defaultLayoutJson());
+        vo.setLayoutJson(HomeLayoutSupport.defaultLayoutJson());
         vo.setSort(0);
         vo.setEnabled(true);
         vo.setDefaultPage(true);
         vo.setBuiltIn(true);
+        vo.setSourceType(HomePageSourceType.SYSTEM.name());
+        vo.setSourceLabel("系统默认");
+        vo.setSourceLabels(List.of("系统默认"));
+        vo.setReadOnly(true);
+        vo.setCanCopy(true);
         return vo;
     }
 
     private HomePageVO toVO(UserHomePageEntity entity, boolean defaultPage) {
         HomePageVO vo = new HomePageVO();
         vo.setId(entity.getId());
+        vo.setRouteKey(HomeRouteKeys.user(entity.getId()));
         vo.setTenantId(entity.getTenantId());
         vo.setUserId(entity.getUserId());
         vo.setName(entity.getName());
@@ -342,12 +562,54 @@ public class HomePageService implements IHomePageService {
         vo.setEnabled(entity.getEnabled());
         vo.setDefaultPage(defaultPage);
         vo.setBuiltIn(false);
+        vo.setSourceType(HomePageSourceType.USER.name());
+        vo.setSourceLabel("自建");
+        vo.setSourceLabels(List.of("自建"));
+        vo.setReadOnly(false);
+        vo.setCanCopy(true);
         vo.setCreatedAt(entity.getCreatedAt());
         vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
     }
 
-    private boolean isSameId(Long left, Long right) {
-        return left != null && left.equals(right);
+    private HomePageVO toAuthorizedVO(HomeTemplateEntity template,
+                                      HomeTemplateVersionEntity version,
+                                      AuthorizedTemplateMatch match,
+                                      boolean defaultPage) {
+        HomePageVO vo = new HomePageVO();
+        vo.setRouteKey(HomeRouteKeys.template(template.getId()));
+        vo.setTenantId(template.getTenantId());
+        vo.setTemplateId(template.getId());
+        vo.setTemplateVersionId(version.getId());
+        vo.setName(template.getName());
+        vo.setLayoutJson(version.getLayoutJson());
+        vo.setSort(template.getSort());
+        vo.setEnabled(template.getEnabled());
+        vo.setDefaultPage(defaultPage || Boolean.TRUE.equals(match.defaultFlag()));
+        vo.setBuiltIn(false);
+        vo.setSourceType(resolveSourceType(match.sourceLabels()));
+        vo.setSourceLabels(List.copyOf(match.sourceLabels()));
+        vo.setSourceLabel(String.join("，", match.sourceLabels()));
+        vo.setReadOnly(true);
+        vo.setCanCopy(true);
+        vo.setCreatedAt(version.getCreatedAt());
+        vo.setUpdatedAt(version.getUpdatedAt());
+        return vo;
+    }
+
+    private String resolveSourceType(List<String> labels) {
+        if (labels.stream().anyMatch(label -> label.startsWith("个人授权"))) {
+            return HomePageSourceType.PERSONAL_AUTH.name();
+        }
+        if (labels.stream().anyMatch(label -> label.startsWith("部门授权"))) {
+            return HomePageSourceType.ORG_AUTH.name();
+        }
+        if (labels.stream().anyMatch(label -> label.startsWith("角色授权"))) {
+            return HomePageSourceType.ROLE_AUTH.name();
+        }
+        return HomePageSourceType.SYSTEM.name();
+    }
+
+    private record AuthorizedTemplateMatch(Long templateId, Boolean defaultFlag, List<String> sourceLabels) {
     }
 }

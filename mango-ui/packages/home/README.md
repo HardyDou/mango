@@ -2,7 +2,7 @@
 
 ## 1. 概览
 
-`@mango/home` 提供 Mango 用户多首页工作台的前端 API 契约，负责调用 `mango-home` 后端的首页列表、默认首页解析、创建、重命名、复制、排序、删除和布局保存能力。
+`@mango/home` 提供 Mango 用户多首页工作台的前端 API 契约，负责调用 `mango-home` 后端的个人首页、模板草稿、模板发布、授权和用户最终视图能力。
 
 本包不渲染首页宿主，不注册工作台小组件。后台 Shell 使用本包配合 `@mango/grid-layout` 和 `@mango/grid-widgets` 完成首页展示与布局编辑。
 
@@ -19,13 +19,18 @@
 | 首页排序 | 保存首页页签顺序 | `homePageApi.sort` |
 | 设置默认首页 | 设置登录后默认首页 | `homePageApi.setDefault` |
 | 删除首页 | 删除当前用户首页 | `homePageApi.delete` |
+| 查询模板 | 获取后台首页模板列表 | `homeTemplateApi.list` |
+| 编辑模板草稿 | 新建或保存模板草稿布局 | `homeTemplateApi.create` / `homeTemplateApi.updateDraft` |
+| 发布模板 | 发布草稿，授权用户生效 | `homeTemplateApi.publish` |
+| 模板授权 | 保存个人、部门、角色授权 | `homeTemplateApi.saveAuthorizations` |
+| 用户最终视图 | 查询指定用户可见首页集合 | `homeTemplateApi.resolveUserPages` |
 
 ## 3. 接入方式
 
 在前端包或应用中引入：
 
 ```ts
-import { homePageApi } from '@mango/home';
+import { homePageApi, homeTemplateApi } from '@mango/home';
 ```
 
 `@mango/admin-shell` 已集成本包。业务应用只需要依赖 `@mango/admin-shell` 首页宿主时，无需直接操作 API；需要自定义首页入口时，可复用本包的类型和请求方法。
@@ -44,6 +49,7 @@ import { homePageApi } from '@mango/home';
 await homePageApi.resolve();
 await homePageApi.create({ name: '项目工作台', layoutJson, setDefault: true });
 await homePageApi.saveLayout(homeId, { layoutJson });
+await homeTemplateApi.publish(templateId);
 ```
 
 主要类型：
@@ -55,15 +61,25 @@ await homePageApi.saveLayout(homeId, { layoutJson });
 | `RenameHomePageCommand` | 重命名首页入参 |
 | `SaveHomePageLayoutCommand` | 保存布局入参 |
 | `SortHomePagesCommand` | 首页排序入参 |
+| `SetDefaultHomePageCommand` | 默认首页入参，`homeId` 支持个人首页 ID 或 `template:{id}` |
 | `ResolveHomePageQuery` | 解析首页入参 |
+| `HomeTemplateVO` | 首页模板视图 |
+| `HomeTemplateAuthorizationVO` | 首页模板授权视图 |
+| `UserHomeViewQuery` | 后台用户最终首页查询入参 |
 
 ## 6. 数据与初始化
 
-本包只传输前端布局 JSON 和首页元数据，不在浏览器本地持久化首页列表或默认首页偏好。首页数据由后端 `mango-home-starter` 写入 `sys_user_home_page` 和 `sys_user_home_preference`。
+本包只传输前端布局 JSON 和首页元数据，不在浏览器本地持久化首页列表或默认首页偏好。首页数据由后端 `mango-home-starter` 写入 `sys_user_home_page`、`sys_user_home_preference`、`sys_home_template`、`sys_home_template_version` 和 `sys_home_template_authorization`。
 
 ## 7. 管理入口
 
-本包不注册菜单和路由。后台首页入口由 `@mango/admin-shell` 提供，默认首页路由用于解析当前用户默认首页，带 `homeId` 参数的首页路由用于打开当前用户拥有的指定首页。
+本包不注册菜单和路由。后台首页入口由 `@mango/admin-shell` 提供，默认首页路由用于解析当前用户默认首页，带 `homeId` 参数的首页路由用于打开当前用户拥有的指定首页。模板管理、首页列表和用户首页菜单由后端资源注册到 `平台能力 / 首页管理`：
+
+| 菜单 | 组件 key | 用途 |
+|------|----------|------|
+| 首页模板 | `home/templates/index` | 管理模板草稿、复制、发布、启停和授权 |
+| 首页列表 | `home/list/index` | 查询所有用户自定义首页 |
+| 用户首页 | `home/user/index` | 输入或选择用户后查看该用户最终可见首页 |
 
 ## 8. 快速开始
 

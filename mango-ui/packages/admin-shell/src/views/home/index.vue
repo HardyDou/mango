@@ -30,9 +30,11 @@
             </el-tooltip>
             <span class="home-page-tabs__name">{{ pageTab.name }}</span>
             <el-tag v-if="pageTab.builtIn" class="home-page-tabs__tag" type="info" effect="light" round>内置</el-tag>
+            <el-tag v-else-if="pageTab.readOnly" class="home-page-tabs__tag" type="success" effect="light" round>授权</el-tag>
           </button>
         </div>
         <el-tag v-if="currentPage?.builtIn" type="info" effect="light">内置</el-tag>
+        <el-tag v-else-if="currentPage?.readOnly" type="success" effect="light">{{ currentPage.sourceLabel || '授权首页' }}</el-tag>
       </div>
 
       <div class="home-page-bar__actions">
@@ -47,7 +49,7 @@
           </el-button>
         </el-tooltip>
         <el-tooltip content="复制" placement="bottom">
-          <el-button circle data-action="home.duplicate" :disabled="editing || !canManageCurrentPage" @click="duplicateCurrentPage">
+          <el-button circle data-action="home.duplicate" :disabled="editing || !canCopyCurrentPage" @click="duplicateCurrentPage">
             <el-icon><CopyDocument /></el-icon>
           </el-button>
         </el-tooltip>
@@ -125,13 +127,14 @@
           </template>
         </el-popconfirm>
       </template>
-      <el-tooltip v-else content="编辑布局" placement="left">
+        <el-tooltip v-else content="编辑布局" placement="left">
         <el-button
           class="home-toolbar__button"
           type="primary"
           circle
           aria-label="编辑布局"
           data-action="home.layout.edit"
+          :disabled="!canEditCurrentLayout"
           @click="startEdit"
         >
           <el-icon><EditPen /></el-icon>
@@ -272,8 +275,11 @@ const pageState = computed(() => {
   if (loading.value) return 'loading';
   return 'ready';
 });
-const canManageCurrentPage = computed(() => Boolean(currentPage.value?.id && !currentPage.value.builtIn));
-const canSetDefault = computed(() => canManageCurrentPage.value && !currentPage.value?.defaultPage);
+const currentRouteKey = computed(() => pageRouteKey(currentPage.value));
+const canManageCurrentPage = computed(() => Boolean(currentPage.value?.id && !currentPage.value.builtIn && !currentPage.value.readOnly));
+const canCopyCurrentPage = computed(() => Boolean(currentPage.value && !currentPage.value.builtIn && currentPage.value.canCopy !== false));
+const canSetDefault = computed(() => Boolean(currentRouteKey.value && currentRouteKey.value !== BUILT_IN_HOME_ID && !currentPage.value?.defaultPage));
+const canEditCurrentLayout = computed(() => Boolean(!currentPage.value?.readOnly || currentPage.value?.builtIn));
 const currentPageIndex = computed(() => {
   const id = currentPage.value?.id;
   return id ? pages.value.findIndex(pageItem => String(pageItem.id) === String(id)) : -1;
@@ -281,29 +287,38 @@ const currentPageIndex = computed(() => {
 const canMoveCurrentPageUp = computed(() => currentPageIndex.value > 0);
 const canMoveCurrentPageDown = computed(() => currentPageIndex.value >= 0 && currentPageIndex.value < pages.value.length - 1);
 const pageTabs = computed(() => {
-  const tabs = pages.value.map(pageItem => {
-    const id = String(pageItem.id);
-    return {
+  const tabMap = new Map<string, {
+    id: string;
+    name: string;
+    defaultPage?: boolean;
+    builtIn: boolean;
+    readOnly?: boolean;
+    active: boolean;
+  }>();
+  pages.value.forEach(pageItem => {
+    const id = pageRouteKey(pageItem);
+    if (tabMap.has(id)) {
+      return;
+    }
+    tabMap.set(id, {
       id,
       name: pageItem.name,
       defaultPage: pageItem.defaultPage,
-      builtIn: false,
+      builtIn: Boolean(pageItem.builtIn),
+      readOnly: Boolean(pageItem.readOnly),
       active: selectedHomeId.value === id,
-    };
+    });
   });
-  if (currentPage.value?.builtIn) {
-    return [
-      {
+  if (currentPage.value?.builtIn && !tabMap.has(BUILT_IN_HOME_ID)) {
+    tabMap.set(BUILT_IN_HOME_ID, {
         id: BUILT_IN_HOME_ID,
         name: '系统工作台',
         defaultPage: currentPage.value.defaultPage,
         builtIn: true,
         active: selectedHomeId.value === BUILT_IN_HOME_ID,
-      },
-      ...tabs,
-    ];
+    });
   }
-  return tabs;
+  return Array.from(tabMap.values());
 });
 
 const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
@@ -364,7 +379,7 @@ async function loadPagesAndResolve(): Promise<void> {
   try {
     pages.value = await homePageApi.listMyPages();
     currentPage.value = await homePageApi.resolve({ homeId: routeHomeId() });
-    selectedHomeId.value = currentPage.value.id ? String(currentPage.value.id) : BUILT_IN_HOME_ID;
+    selectedHomeId.value = pageRouteKey(currentPage.value);
     layoutItems.value = resolveLayoutItems(currentPage.value.layoutJson);
   } catch (error) {
     errorMessage.value = '首页工作台加载失败，已使用系统默认布局。';
@@ -390,6 +405,9 @@ async function handleHomeSelect(value: string): Promise<void> {
 }
 
 function startEdit(): void {
+  if (!canEditCurrentLayout.value) {
+    return;
+  }
   draftItems.value = cloneItems(layoutItems.value);
   editing.value = true;
 }
@@ -405,7 +423,7 @@ async function saveLayout(): Promise<void> {
   try {
     const layoutJson = stringifyHomeLayout(draftItems.value);
     let savedPage: HomePageVO;
-    if (currentPage.value?.id) {
+    if (currentPage.value?.id && !currentPage.value.readOnly) {
       savedPage = await homePageApi.saveLayout(String(currentPage.value.id), { layoutJson });
     } else {
       savedPage = await homePageApi.create({
@@ -474,13 +492,19 @@ async function submitNameDialog(): Promise<void> {
 }
 
 async function duplicateCurrentPage(): Promise<void> {
-  if (!currentPage.value?.id) {
+  if (!currentPage.value || !canCopyCurrentPage.value) {
     return;
   }
   saving.value = true;
   errorMessage.value = '';
   try {
-    const page = await homePageApi.duplicate(String(currentPage.value.id));
+    const page = currentPage.value.id && !currentPage.value.readOnly
+      ? await homePageApi.duplicate(String(currentPage.value.id))
+      : await homePageApi.create({
+        name: `${currentPage.value.name} 副本`,
+        layoutJson: stringifyHomeLayout(layoutItems.value),
+        setDefault: false,
+      });
     await refreshPagesAndNavigate(page);
   } catch (error) {
     errorMessage.value = '复制首页失败，请稍后重试。';
@@ -513,13 +537,14 @@ async function moveCurrentPage(offset: -1 | 1): Promise<void> {
 }
 
 async function setCurrentPageDefault(): Promise<void> {
-  if (!currentPage.value?.id) {
+  const routeKey = currentRouteKey.value;
+  if (!routeKey || routeKey === BUILT_IN_HOME_ID) {
     return;
   }
   saving.value = true;
   errorMessage.value = '';
   try {
-    const page = await homePageApi.setDefault(String(currentPage.value.id));
+    const page = await homePageApi.setDefault(routeKey);
     await refreshPagesAndNavigate(page);
   } catch (error) {
     errorMessage.value = '设置默认首页失败，请稍后重试。';
@@ -547,9 +572,16 @@ async function deleteCurrentPage(): Promise<void> {
 async function refreshPagesAndNavigate(page: HomePageVO): Promise<void> {
   pages.value = await homePageApi.listMyPages();
   currentPage.value = page;
-  selectedHomeId.value = page.id ? String(page.id) : BUILT_IN_HOME_ID;
+  selectedHomeId.value = pageRouteKey(page);
   layoutItems.value = resolveLayoutItems(page.layoutJson);
-  await router.replace(page.id ? `/home/${page.id}` : '/home');
+  await router.replace(pageRouteKey(page) === BUILT_IN_HOME_ID ? '/home' : `/home/${pageRouteKey(page)}`);
+}
+
+function pageRouteKey(page?: HomePageVO | null): string {
+  if (!page) {
+    return BUILT_IN_HOME_ID;
+  }
+  return page.routeKey || (page.id ? String(page.id) : BUILT_IN_HOME_ID);
 }
 
 function resolveLayoutItems(layoutJson?: string | null): GridLayoutItem[] {

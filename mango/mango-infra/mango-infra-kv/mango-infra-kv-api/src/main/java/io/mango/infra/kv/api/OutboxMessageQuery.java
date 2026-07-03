@@ -24,6 +24,9 @@ public class OutboxMessageQuery {
     @Schema(description = "状态")
     private OutboxStatus status;
 
+    @Schema(description = "消费归属主题")
+    private String topic;
+
     @Schema(description = "事件类型")
     private String eventType;
 

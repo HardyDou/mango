@@ -4,6 +4,7 @@ import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxStatus;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.kv.core.memory.MemoryKvStore;
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
@@ -45,10 +46,11 @@ class RealtimeOutboxAutoConfigurationTest {
                     realtimeApi.broadcast("chat.message", "hello-outbox");
 
                     assertThat(sender.messages).isEmpty();
-                    assertThat(outboxStore.claim("assert-worker", 10, Instant.now()))
+                    assertThat(outboxStore.claimByTopic("assert-worker", OutboxTopics.REALTIME, 10, Instant.now()))
                             .hasSize(1)
                             .first()
                             .satisfies(message -> {
+                                assertThat(message.getTopic()).isEqualTo(OutboxTopics.REALTIME);
                                 assertThat(message.getEventType()).isEqualTo("realtime.message.dispatch");
                                 assertThat(message.getPayload()).containsKey("message");
                             });
@@ -83,6 +85,7 @@ class RealtimeOutboxAutoConfigurationTest {
                     RealtimeApi realtimeApi = context.getBean(RealtimeApi.class);
                     RealtimeOutboxDispatcher dispatcher = context.getBean(RealtimeOutboxDispatcher.class);
                     OutboxMessage workflowMessage = OutboxMessage.builder()
+                            .topic(OutboxTopics.DOMAIN_EVENT)
                             .eventType("workflow.process.completed")
                             .businessType("workflow")
                             .businessKey("EXP-1")
@@ -98,11 +101,12 @@ class RealtimeOutboxAutoConfigurationTest {
                     assertThat(sender.messages)
                             .extracting(RealtimeOutboundMessage::content)
                             .containsExactly("hello-realtime-only");
-                    assertThat(outboxStore.claim("assert-worker", 10, Instant.now()))
+                    assertThat(outboxStore.claimByTopic("assert-worker", OutboxTopics.DOMAIN_EVENT, 10, Instant.now()))
                             .hasSize(1)
                             .first()
                             .satisfies(message -> {
                                 assertThat(message.getMessageId()).isEqualTo(workflowMessage.getMessageId());
+                                assertThat(message.getTopic()).isEqualTo(OutboxTopics.DOMAIN_EVENT);
                                 assertThat(message.getEventType()).isEqualTo("workflow.process.completed");
                                 assertThat(message.getStatus()).isEqualTo(OutboxStatus.PROCESSING);
                             });
