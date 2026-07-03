@@ -81,7 +81,7 @@ const publicDocs = [
   'mango-pmo/templates/frontend-entry-readme.md',
   'mango-pmo/templates/module-readme.md',
   'mango-pmo/templates/prd.md',
-  'mango-pmo/tmp/2026-05-28-codex-history-governance-review.md',
+  'mango-docs/evidence/2026-05-28-codex-history-governance-review/README.md',
   'mango-business-starter/README.md',
   'mango-business-starter/business-pmo/README.md',
   'mango-business-starter/business-pmo/mango-baseline/README.md',
@@ -438,7 +438,7 @@ const sidebar = [
         text: 'PMO 归档',
         collapsed: true,
         items: [
-          { text: 'Codex 协作复盘', link: '/mango-pmo/tmp/2026-05-28-codex-history-governance-review' }
+          { text: 'Codex 协作复盘', link: '/mango-docs/evidence/2026-05-28-codex-history-governance-review/' }
         ]
       },
       {
