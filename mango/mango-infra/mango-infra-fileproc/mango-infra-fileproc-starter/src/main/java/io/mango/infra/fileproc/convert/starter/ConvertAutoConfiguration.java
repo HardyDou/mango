@@ -11,6 +11,7 @@ import io.mango.infra.fileproc.convert.convert.ConvertRegistry;
 import io.mango.infra.fileproc.convert.convert.DefaultConvertApi;
 import io.mango.infra.fileproc.convert.convert.HtmlToTextConverter;
 import io.mango.infra.fileproc.convert.convert.IConvertProvider;
+import io.mango.infra.fileproc.convert.convert.ImageToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.OfficeManagerHolder;
 import io.mango.infra.fileproc.convert.convert.OfficeToPdfConvertProvider;
 import io.mango.infra.fileproc.convert.convert.PdfToImageConvertProvider;
@@ -47,6 +48,15 @@ public class ConvertAutoConfiguration {
             havingValue = "true", matchIfMissing = true)
     public HtmlToTextConverter htmlToTextConverter() {
         return new HtmlToTextConverter();
+    }
+
+    @Bean
+    @Order(9)
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "image-to-pdf-enabled",
+            havingValue = "true", matchIfMissing = true)
+    public ImageToPdfConvertProvider imageToPdfConvertProvider() {
+        return new ImageToPdfConvertProvider();
     }
 
     @Bean

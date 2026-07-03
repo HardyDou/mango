@@ -7,6 +7,7 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
@@ -31,6 +32,8 @@ public interface IFileService {
     R<FileRecordVO> save(SaveFileCommand command);
 
     R<FileRecordVO> packageFiles(FilePackageCommand command);
+
+    R<FileRecordVO> mergeToPdf(FileMergePdfCommand command);
 
     R<FileRecordVO> saveGenerated(byte[] content,
                                   String fileName,

@@ -6,7 +6,7 @@
 核心能力：
 
 - 模板渲染：TEXT、HTML、DOCX、XLSX 等输入渲染为目标格式。
-- 格式转换：HTML/TEXT、Office/PDF、PDF/图片、TIFF/PDF、同格式透传。
+- 格式转换：HTML/TEXT、Office/PDF、图片/PDF、PDF/图片、TIFF/PDF、同格式透传。
 - 文件压缩：图片、扫描件 PDF 按档位或目标大小压缩。
 - PDF 操作：合并、加水印、结构压缩、压缩到目标大小。
 - Aspose license 装载：Words、Cells、Slides、PDF、Imaging。
@@ -151,6 +151,7 @@ mango:
       aspose-slide-to-pdf-enabled: true
       aspose-pdf-to-image-enabled: true
       aspose-imaging-enabled: true
+      image-to-pdf-enabled: true
       pdf-to-image-enabled: true
       tiff-to-pdf-enabled: true
       office-home:
@@ -168,6 +169,7 @@ mango:
 | `aspose-slide-to-pdf-enabled` | `true` | 注册 Aspose PPT 转 PDF。 |
 | `aspose-pdf-to-image-enabled` | `true` | 注册 Aspose PDF 转图片。 |
 | `aspose-imaging-enabled` | `true` | 注册 Aspose 图片格式转换。 |
+| `image-to-pdf-enabled` | `true` | 注册 ImageIO/PDFBox 图片转 PDF 转换器，支持 PNG、JPG/JPEG，默认优先用于手机照片等图片合 PDF 场景。 |
 | `pdf-to-image-enabled` | `true` | 注册 PDF 转图片转换器。 |
 | `tiff-to-pdf-enabled` | `true` | 注册 TIFF 转 PDF 转换器。 |
 | `office-home` | 空 | Office 安装目录；为空时由 `LocalOfficeHomeResolver` 和 JODConverter 查找。 |

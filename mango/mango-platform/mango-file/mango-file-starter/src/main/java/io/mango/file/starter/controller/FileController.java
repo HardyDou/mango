@@ -10,6 +10,7 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
@@ -127,6 +128,14 @@ public class FileController implements FileApi {
     @Override
     public R<FileRecordVO> packageFiles(@Valid @RequestBody FilePackageCommand command) {
         return fileService.packageFiles(command);
+    }
+
+    @PostMapping("/merge-pdf")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "合并生成 PDF", description = "权限接口。按当前租户可见文件清单生成 PDF，并保存为新的文件记录")
+    @Override
+    public R<FileRecordVO> mergeToPdf(@Valid @RequestBody FileMergePdfCommand command) {
+        return fileService.mergeToPdf(command);
     }
 
     @Override

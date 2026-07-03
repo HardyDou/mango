@@ -27,6 +27,7 @@
 | 预览 | 获取预览地址、下载地址和直连地址 | `GET /file/files/preview` |
 | 后端保存文件 | 后端生成 PDF、Excel、归档包后写入文件中心 | `FileApi.save(SaveFileCommand)` |
 | 后端打包文件 | 按目录结构清单把多个已存在文件打成 ZIP，并保存为新文件记录 | `POST /file/files/package`、`FileApi.packageFiles(FilePackageCommand)` |
+| 后端合并 PDF | 把多个已存在图片、PDF、Word 文件按顺序合并为一个 PDF，并保存为新文件记录 | `POST /file/files/merge-pdf`、`FileApi.mergeToPdf(FileMergePdfCommand)` |
 | 秒传 | 相同文件命中后不再上传文件内容 | `POST /file/files/uploads` |
 | 分片上传 | 大文件按会话和分片上传 | `/file/files/uploads/**` |
 | 逻辑目录 | 管理文件中心目录树 | `/file/directories/**` |
@@ -81,6 +82,7 @@ business_id / file_id / purpose / sort
 | `FileApi.downloadTo(Long id, Path directory)` | 下载文件到指定目录。 |
 | `FileApi.save(SaveFileCommand)` | 保存后端生成的文件。 |
 | `FileApi.packageFiles(FilePackageCommand)` | 按目录结构清单生成 ZIP 并保存为新文件记录。 |
+| `FileApi.mergeToPdf(FileMergePdfCommand)` | 按文件清单顺序生成 PDF 并保存为新文件记录。 |
 | `FileApi.archive(FileArchiveCommand)` | 归档文件记录。 |
 
 保存后端生成文件：
@@ -120,6 +122,28 @@ Long zipFileId = zipFile.getId();
 ```
 
 打包入口会复用文件中心的可见性、下载和保存规则。`entries.path` 是 ZIP 内部相对路径，禁止空路径、目录项、绝对路径、`..` 路径穿越和重复路径；生成的 ZIP 会写入当前存储层，并返回新的 `FileRecordVO`。
+
+按清单顺序合并生成 PDF：
+
+```java
+FileMergePdfCommand command = new FileMergePdfCommand();
+command.setFileName("contract-materials.pdf");
+command.setPurpose("contract-material-pdf");
+command.setAccessLevel("PRIVATE");
+command.setBizType("CONTRACT_MATERIAL_PDF");
+command.setBizId(contractId.toString());
+command.setTargetFormat("PDF");
+command.setEntries(List.of(
+        new FileMergePdfEntryCommand(photoFileId, "现场照片"),
+        new FileMergePdfEntryCommand(contractPdfFileId, "合同正文"),
+        new FileMergePdfEntryCommand(wordFileId, "补充说明")
+));
+
+FileRecordVO pdfFile = fileApi.mergeToPdf(command).getData();
+Long pdfFileId = pdfFile.getId();
+```
+
+PDF 合并入口会复用文件中心的可见性、下载和保存规则。源文件必须是当前租户可见且已完成的文件，首期支持 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX，输出目标格式仅支持 `PDF`。图片和 Word 会先通过 `mango-infra-fileproc` 转为 PDF，再与原 PDF 按 `entries` 顺序合并；不支持格式、转换失败或合并失败时不会生成半成品文件记录。
 
 打包入口支持对 ZIP 内图片/PDF 条目做下载压缩。顶层参数作为默认值，entry 参数可覆盖当前文件：
 

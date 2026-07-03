@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
@@ -14,6 +15,8 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.FileDeleteCommand;
+import io.mango.file.api.command.FileMergePdfCommand;
+import io.mango.file.api.command.FileMergePdfEntryCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageEntryCommand;
 import io.mango.file.api.command.SaveFileCommand;
@@ -21,6 +24,7 @@ import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
 import io.mango.file.api.enums.FileDuplicateNameStrategy;
 import io.mango.file.api.enums.FileInstantUploadScope;
+import io.mango.file.api.enums.FileMergeTargetFormat;
 import io.mango.file.api.enums.FileObjectStatus;
 import io.mango.file.api.enums.FileObjectNameStrategy;
 import io.mango.file.api.enums.FileRecordStatus;
@@ -56,10 +60,18 @@ import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.file.core.storage.MultipartUpload;
 import io.mango.file.core.storage.UploadPartSign;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.fileproc.convert.ConvertApi;
+import io.mango.infra.fileproc.convert.command.ConvertCommand;
+import io.mango.infra.fileproc.convert.enums.ConvertFormat;
+import io.mango.infra.fileproc.convert.vo.ConvertResultVO;
 import io.mango.infra.fileproc.compress.FileCompressApi;
 import io.mango.infra.fileproc.compress.command.CompressFileCommand;
 import io.mango.infra.fileproc.compress.enums.FileCompression;
 import io.mango.infra.fileproc.compress.vo.CompressFileResultVO;
+import io.mango.infra.fileproc.render.RenderApi;
+import io.mango.infra.fileproc.render.command.MergePdfCommand;
+import io.mango.infra.fileproc.render.vo.PdfOperationResultVO;
+import io.mango.infra.fileproc.render.vo.PdfSourceVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,6 +91,7 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -119,6 +132,8 @@ public class FileServiceImpl implements IFileService {
     private final ObjectMapper objectMapper;
     private final FileAccessUrlAssembler fileAccessUrlAssembler;
     private final List<FileCompressApi> fileCompressApis;
+    private final List<ConvertApi> convertApis;
+    private final List<RenderApi> renderApis;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -172,6 +187,28 @@ public class FileServiceImpl implements IFileService {
         return save(saveCommand);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<FileRecordVO> mergeToPdf(FileMergePdfCommand command) {
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        Require.notEmpty(command.getEntries(), FileCode.FILE_EMPTY);
+        FileMergeTargetFormat targetFormat = resolveMergeTargetFormat(command.getTargetFormat());
+        String pdfFileName = normalizePdfFileName(command.getFileName());
+        byte[] content = buildMergedPdf(command, pdfFileName);
+        SaveFileCommand saveCommand = new SaveFileCommand();
+        saveCommand.setInputStream(new ByteArrayInputStream(content));
+        saveCommand.setFileName(pdfFileName);
+        saveCommand.setFileSize((long) content.length);
+        saveCommand.setContentType(targetFormat.contentType());
+        saveCommand.setPurpose(command.getPurpose());
+        saveCommand.setAccessLevel(command.getAccessLevel());
+        saveCommand.setBizType(command.getBizType());
+        saveCommand.setBizId(command.getBizId());
+        saveCommand.setBizMeta(command.getBizMeta());
+        saveCommand.setDirectoryId(command.getDirectoryId());
+        return save(saveCommand);
+    }
+
     private byte[] buildZipPackage(FilePackageCommand command) {
         Set<String> paths = new HashSet<>();
         try (java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
@@ -194,6 +231,102 @@ public class FileServiceImpl implements IFileService {
             return output.toByteArray();
         } catch (IOException e) {
             return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    private byte[] buildMergedPdf(FileMergePdfCommand command, String pdfFileName) {
+        List<PdfSourceVO> sources = new ArrayList<>();
+        for (FileMergePdfEntryCommand entry : command.getEntries()) {
+            Require.notNull(entry, FileCode.FILE_EMPTY);
+            Require.notNull(entry.getFileId(), FileCode.FILE_NOT_FOUND);
+            FileDownloadVO download = downloadForService(entry.getFileId());
+            byte[] pdfContent = convertToPdf(download);
+            sources.add(new PdfSourceVO(resolvePdfSourceName(entry, download), new ByteArrayInputStream(pdfContent)));
+        }
+        RenderApi renderApi = renderApis.stream()
+                .findFirst()
+                .orElseGet(() -> Require.fail(FileCode.FILE_READ_FAILED));
+        try {
+            PdfOperationResultVO result = renderApi.mergePdf(new MergePdfCommand(
+                    pdfFileName,
+                    sources,
+                    Boolean.TRUE.equals(command.getRebuildBookmark()),
+                    Boolean.TRUE.equals(command.getAddPageNumber())));
+            return result.content();
+        } catch (RuntimeException ex) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    private byte[] convertToPdf(FileDownloadVO download) {
+        Require.notNull(download, FileCode.FILE_NOT_FOUND);
+        ConvertFormat sourceFormat = resolveSourceFormat(download);
+        try (InputStream inputStream = download.inputStream()) {
+            if (sourceFormat == ConvertFormat.PDF) {
+                return inputStream.readAllBytes();
+            }
+            ConvertApi convertApi = convertApis.stream()
+                    .filter(api -> api.canConvert(sourceFormat, ConvertFormat.PDF))
+                    .findFirst()
+                    .orElseGet(() -> Require.fail(FileCode.FILE_EXTENSION_NOT_ALLOWED));
+            ConvertResultVO result = convertApi.convert(ConvertCommand.builder()
+                    .sourceFormat(sourceFormat)
+                    .targetFormat(ConvertFormat.PDF)
+                    .inputStream(inputStream)
+                    .fileName(download.fileName())
+                    .build());
+            return result.content();
+        } catch (IOException ex) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
+        } catch (BizException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    private ConvertFormat resolveSourceFormat(FileDownloadVO download) {
+        String extension = fileExt(normalizeFileName(download.fileName()));
+        ConvertFormat format = ConvertFormat.parse(extension)
+                .orElseGet(() -> parseContentType(download.contentType()));
+        Require.notNull(format, FileCode.FILE_EXTENSION_NOT_ALLOWED);
+        Require.isTrue(format == ConvertFormat.PDF
+                || format == ConvertFormat.JPEG
+                || format == ConvertFormat.PNG
+                || format == ConvertFormat.TIFF
+                || format == ConvertFormat.DOC
+                || format == ConvertFormat.DOCX, FileCode.FILE_EXTENSION_NOT_ALLOWED);
+        return format;
+    }
+
+    private ConvertFormat parseContentType(String contentType) {
+        if (!StringUtils.hasText(contentType)) {
+            return null;
+        }
+        String normalized = contentType.toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "application/pdf" -> ConvertFormat.PDF;
+            case "image/jpeg" -> ConvertFormat.JPEG;
+            case "image/png" -> ConvertFormat.PNG;
+            case "image/tiff" -> ConvertFormat.TIFF;
+            case "application/msword" -> ConvertFormat.DOC;
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ConvertFormat.DOCX;
+            default -> null;
+        };
+    }
+
+    private String resolvePdfSourceName(FileMergePdfEntryCommand entry, FileDownloadVO download) {
+        if (StringUtils.hasText(entry.getTitle())) {
+            return normalizeFileName(entry.getTitle());
+        }
+        return normalizeFileName(download.fileName());
+    }
+
+    private FileMergeTargetFormat resolveMergeTargetFormat(String targetFormat) {
+        try {
+            return FileMergeTargetFormat.of(targetFormat);
+        } catch (IllegalArgumentException ex) {
+            return Require.fail(FileCode.FILE_EXTENSION_NOT_ALLOWED);
         }
     }
 
@@ -1465,6 +1598,11 @@ public class FileServiceImpl implements IFileService {
     private String normalizeZipFileName(String fileName) {
         String normalized = normalizeFileName(fileName);
         return normalized.toLowerCase(Locale.ROOT).endsWith(".zip") ? normalized : normalized + ".zip";
+    }
+
+    private String normalizePdfFileName(String fileName) {
+        String normalized = normalizeFileName(fileName);
+        return normalized.toLowerCase(Locale.ROOT).endsWith(".pdf") ? normalized : normalized + ".pdf";
     }
 
     private String normalizeZipEntryPath(String value) {

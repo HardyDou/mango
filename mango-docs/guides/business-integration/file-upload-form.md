@@ -119,7 +119,34 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 验收时除上传、回显、下载闭环外，还应确认 ZIP 中的目录结构、文件名、租户可见性和下载权限符合业务预期。
 
-## 8. 常见失败
+## 8. 后端合并 PDF 归档
+
+业务需要把手机拍照上传的多张图片，或图片、PDF、Word 材料按顺序归档为一个 PDF 时，业务后端依赖 `mango-file-api`，调用 `FileApi.mergeToPdf(FileMergePdfCommand)`，或通过文件服务 HTTP 入口 `POST /file/files/merge-pdf` 发起合并。合并完成后文件中心会生成新的 PDF 文件记录，业务表只保存返回的 PDF `fileId` 或自己的归档记录。
+
+首期输出目标格式固定为 `PDF`。源文件必须是当前租户可见且已完成的文件，支持 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX；图片和 Word 会先转换为 PDF，再按 `entries` 顺序合并。
+
+最小后端调用：
+
+```java
+FileMergePdfCommand command = new FileMergePdfCommand();
+command.setFileName("contract-materials.pdf");
+command.setPurpose("contract-material-pdf");
+command.setAccessLevel("PRIVATE");
+command.setBizType("CONTRACT_MATERIAL_PDF");
+command.setBizId(contractId.toString());
+command.setTargetFormat("PDF");
+command.setEntries(List.of(
+        new FileMergePdfEntryCommand(photoFileId, "现场照片"),
+        new FileMergePdfEntryCommand(contractPdfFileId, "合同正文"),
+        new FileMergePdfEntryCommand(wordFileId, "补充说明")
+));
+
+FileRecordVO pdfFile = fileApi.mergeToPdf(command).getData();
+```
+
+验收时除上传、回显、下载闭环外，还应确认 PDF 页面顺序、源文件租户可见性、生成 PDF 的预览/下载权限、以及不支持格式失败时不会生成半成品文件记录。
+
+## 9. 常见失败
 
 | 现象 | 优先检查 |
 |------|----------|
@@ -131,8 +158,9 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 | 图片能下载但不能在线预览 | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配 |
 | 点击预览触发下载 | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用 `directPreviewUrl`、有效 `previewUrl` 或 file-preview 链接，没有可用预览地址时展示下载查看提示 |
 | ZIP 打包失败 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态 |
+| PDF 合并失败 | `targetFormat` 是否为 `PDF`，源文件是否为 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX，fileproc 转换和 PDF 合并能力是否已配置，源文件是否处于可下载的已完成状态 |
 
-## 9. 验证命令
+## 10. 验证命令
 
 ```bash
 mvn -f mango/pom.xml -pl mango-platform/mango-file -am test
@@ -148,7 +176,7 @@ pnpm -F @mango/file test
 - [Frontend File 验证方式](../../../mango-ui/packages/file/README.md#10-验证方式)
 - [File Components 验证方式](../../../mango-ui/packages/file/src/components/README.md#8-验证方式)
 
-## 10. 关联规则
+## 11. 关联规则
 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
@@ -156,7 +184,9 @@ pnpm -F @mango/file test
 - [后端 API 文件字段规则](../../../mango-pmo/rules/backend/03-api.md#22-文件字段规则)
 - [前端文件上传与回显规则](../../../mango-pmo/rules/frontend/01-vue-code.md#41-文件上传与回显规则)
 
-## 11. 变更影响记录
+## 12. 变更影响记录
+
+- Issue #382 新增 `FileApi.mergeToPdf` 和 `POST /file/files/merge-pdf`，业务后端可以把多个已存在图片、PDF、Word 文件按顺序生成 PDF 并保存为新的文件记录；输出目标格式首期仅支持 `PDF`。文件上传、预览、下载、前端组件、菜单、权限和租户基础规则不变。业务验收需要额外确认 PDF 页面顺序、源文件状态隔离、生成 PDF 的预览/下载权限，以及不支持格式失败时不会生成半成品。
 
 - v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅发布首页小组件归属拆分、CLI 版本锁和 generated backend baseline 修复；`@mango/file@1.0.15` 只是随批次对齐依赖版本，不改变文件上传、下载、预览 API、组件用法、业务表保存方式、权限、租户、页面入口、启动方式和本场景验收步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
 

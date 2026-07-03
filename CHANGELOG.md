@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### New
+
+- Added file service PDF merge support for Issue #382. Backends can call `FileApi.mergeToPdf(...)` or
+  `POST /file/files/merge-pdf` to combine existing file IDs into a new PDF file record in entry order.
+- Added an ImageIO/PDFBox PNG/JPEG to PDF converter in `mango-infra-fileproc`, so mobile photo upload scenarios can
+  generate mergeable PDF pages without depending on Aspose.Imaging reflection behavior on Java 21.
+
+### Upgrade Notes
+
+- The first PDF merge version only accepts `targetFormat=PDF`; Word output is intentionally out of scope.
+- PDF merge source files must be current-tenant visible and completed. Supported source formats are PDF, JPG/JPEG, PNG,
+  TIFF, DOC, and DOCX.
+- `mango.fileproc.convert.image-to-pdf-enabled=true` is enabled by default. Set it to `false` only when a project
+  intentionally wants image-to-PDF conversion to fall through to another custom provider.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core,mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter,mango-platform/mango-file/mango-file-core -am -Dtest=ImageToPdfConvertProviderTest,ConvertAutoConfigurationTest,FileServiceMergeToPdfTest -Dsurefire.failIfNoSpecifiedTests=false test`
+
 ## v2026.07.03-maven-1.0.7-platform-release - 2026-07-03
 
 ### New
