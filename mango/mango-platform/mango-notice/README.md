@@ -175,6 +175,53 @@ mango:
 | `mango.notice.outbox.initial-delay-millis` | `1000` | worker 启动后第一次执行延迟。 |
 | `mango.notice.outbox.fixed-delay-millis` | `1000` | worker 两次执行之间的固定延迟。 |
 
+### 7.1 短信渠道配置
+
+`mango-notice-channel-sms` 支持阿里云短信和腾讯云短信。渠道配置通过 `notice_channel_config.provider_code` 选择供应商，未显式配置 provider 时按阿里云兼容处理。
+
+| providerCode | 供应商 | 必填配置 |
+|--------------|--------|----------|
+| `ALIYUN` / `ALIYUN_SMS` | 阿里云短信 | `accessKeyId`、`accessKeySecret`、`signName` |
+| `TENCENT` / `TENCENT_SMS` | 腾讯云短信 | `secretId`、`secretKey`、`smsSdkAppId`、`signName` |
+
+阿里云配置示例：
+
+```json
+{
+  "accessKeyId": "example-ak",
+  "accessKeySecret": "example-secret",
+  "signName": "Mango",
+  "endpoint": "dysmsapi.aliyuncs.com"
+}
+```
+
+腾讯云配置示例：
+
+```json
+{
+  "secretId": "example-secret-id",
+  "secretKey": "example-secret-key",
+  "smsSdkAppId": "1400000001",
+  "signName": "Mango",
+  "region": "ap-guangzhou",
+  "endpoint": "sms.tencentcloudapi.com",
+  "countryCode": "+86"
+}
+```
+
+短信模板 Code 保存在渠道模板的 `channelTemplateId`，发送时会作为第三方短信模板 ID 使用。模板变量映射保存在 `variableMapping`，格式为第三方模板变量到通知参数名的 JSON，例如：
+
+```json
+{
+  "code": "verifyCode",
+  "expire": "expireMinutes"
+}
+```
+
+腾讯云短信的 `{1}`、`{2}` 这类序号变量也使用同一映射方式，例如 `{ "1": "verifyCode" }`。没有配置 `variableMapping` 时，通知参数 `params` 会原样作为短信模板参数传递。
+
+### 7.2 Outbox Topic
+
 通知 outbox 写入 `topic=notice`、`eventType=notice.send`，后台 worker 只通过 `claimByTopic(..., OutboxTopics.NOTICE, ...)` 获取通知发送任务。历史无 topic 的 `notice.send` 消息会被 KV outbox 推断为通知消息，升级时不需要额外数据迁移。
 
 ## 8. 资源注入
