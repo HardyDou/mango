@@ -55,9 +55,9 @@
   },
   "peerDependencies": {
     "@mango/file": "1.0.15",
-    "element-plus": "2.14.1",
-    "vue": "3.5.13",
-    "vue-router": "^4.1.6"
+    "element-plus": ">=2.14.1 <3",
+    "vue": ">=3.5.13 <4",
+    "vue-router": ">=4.1.6 <5"
   },
   "peerDependenciesMeta": {
     "@mango/file": {

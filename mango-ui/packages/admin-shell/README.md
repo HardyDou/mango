@@ -214,10 +214,11 @@ Shell 会安装管理端基础指令和权限相关运行时。业务包新增�
 
 | 依赖 | 兼容版本 |
 |------|----------|
-| Vue | `3.5.13` |
-| Vue Router | `^4.1.6` |
-| Pinia | `2.0.32` |
-| Element Plus | `2.14.1` |
+| Vue | `>=3.5.13 <4` |
+| Vue Router | `>=4.1.6 <5` |
+| Pinia | `>=2.0.32 <3` |
+| Element Plus | `>=2.14.1 <3` |
+| vue-i18n | `>=9.2.2 <10` |
 | `@mango/common` | 与 `@mango/cli` 的 `release-versions.json` 保持一致 |
 | `@mango/home` | `1.0.0` |
 | `@mango/grid-layout` | `1.0.0` |
