@@ -123,7 +123,7 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 业务需要把手机拍照上传的多张图片，或图片、PDF、Word 材料按顺序归档为一个 PDF 时，业务后端依赖 `mango-file-api`，调用 `FileApi.mergeToPdf(FileMergePdfCommand)`，或通过文件服务 HTTP 入口 `POST /file/files/merge-pdf` 发起合并。合并完成后文件中心会生成新的 PDF 文件记录，业务表只保存返回的 PDF `fileId` 或自己的归档记录。
 
-首期输出目标格式固定为 `PDF`。源文件必须是当前租户可见且已完成的文件，支持 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX；图片和 Word 会先转换为 PDF，再按 `entries` 顺序合并。
+首期输出目标格式固定为 `PDF`。文件服务会校验源文件属于当前租户可见且已完成状态；当前支持 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX，图片和 Word 会先转换为 PDF，再按 `entries` 顺序合并。
 
 最小后端调用：
 
