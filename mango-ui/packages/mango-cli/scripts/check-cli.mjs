@@ -7,7 +7,6 @@ import { pathToFileURL } from 'node:url';
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
 const pmoPackageRoot = resolve(packageRoot, '../mango-pmo');
-const templateBaselineRoot = join(packageRoot, 'templates/full/business-pmo/mango-baseline');
 const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const packagedAdminModules = JSON.parse(readFileSync(join(packageRoot, 'admin-modules.json'), 'utf8'));
@@ -20,7 +19,7 @@ const customNoneProjectName = 'mango-custom-none-acceptance';
 
 try {
   assertPmoPackageBuilt();
-  assertNoTrailingBlankLinesAtEof(templateBaselineRoot, 'CLI template PMO baseline');
+  assertNoBundledTemplatePmoBaseline();
   assertPublishedPnpmPmoResolution(tempRoot);
   assertNoWorkspacePackageJsonInTemplates();
   assertPackagedAdminModules();
@@ -747,6 +746,13 @@ function assertNoTrailingBlankLinesAtEof(root, label) {
     if (content.endsWith('\n\n')) {
       throw new Error(`${label} file has trailing blank line at EOF: ${file}`);
     }
+  }
+}
+
+function assertNoBundledTemplatePmoBaseline() {
+  const templateBaselineRoot = join(packageRoot, 'templates/full/business-pmo/mango-baseline');
+  if (existsSync(templateBaselineRoot)) {
+    throw new Error('CLI templates must not bundle business-pmo/mango-baseline; use @mango/pmo as the single baseline source');
   }
 }
 
