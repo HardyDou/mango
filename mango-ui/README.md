@@ -154,7 +154,21 @@ runtime config 例子：
 
 官网或普通网站不要直接集成 `admin-pages` 页面包。
 
-## 8. 数据与初始化
+## 8. Peer 兼容策略
+
+Mango 前端包的 `peerDependencies` 表达已验证的主版本兼容范围，不跟随 registry latest 自动跨主版本放宽。业务项目升级公共前端栈时，按以下范围选择版本：
+
+| 依赖 | 支持范围 |
+|------|----------|
+| Vue | `>=3.5.13 <4` |
+| Element Plus | `>=2.14.1 <3` |
+| Vue Router | `>=4.1.6 <5` |
+| Pinia | `>=2.0.32 <3` |
+| vue-i18n | `>=9.2.2 <10` |
+
+`pinia@3`、`vue-i18n@10+` 和 `vue-router@5` 属于尚未纳入当前认证范围的跨主版本升级。业务项目执行 `pnpm update --latest` 时，如果 registry latest 已跨出上表范围，建议固定到 Mango 已认证范围；需要声明新的跨主版本支持时，按 [PMO 前端组件发布要求](../mango-pmo/rules/frontend/03-component-development.md) 完成独立兼容验证和发布影响评估。
+
+## 9. 数据与初始化
 前端没有数据库 migration。前端依赖后端已经初始化的数据：
 
 | 类型 | 后端来源 | 前端消费方式 | 验证方式 |
@@ -165,7 +179,7 @@ runtime config 例子：
 | 租户 | identity / system / context | 请求头、用户上下文、后端过滤 | 不串租 |
 | 字典、区域、组织 | system / org | `@mango/common` API 和组件 | 下拉、树、选择器可用 |
 
-## 9. 管理入口
+## 10. 管理入口
 菜单打开链路：
 
 ```text
@@ -184,7 +198,7 @@ runtime config 例子：
 
 前端可以隐藏按钮，但不能把隐藏按钮当成权限控制。所有写操作、查询范围和租户隔离都要由后端接口校验。
 
-## 10. 质量检查
+## 11. 质量检查
 单体构建：
 
 ```bash
@@ -247,7 +261,7 @@ pnpm -C mango-ui publish:pkg <package|short-name> --release-tag=<tag>
 
 `publish:pkg` 发布后会同时回查 `npm-hosted` 和 `npm-group`，并复用 `release-contracts.json` 的 tarball 契约。
 
-## 11. 快速开始
+## 12. 快速开始
 1. 后端模块初始化菜单、权限和 API 资源。
 2. 前端业务包实现页面并调用 `registerModulePages`。
 3. 后台入口引入业务包，执行页面注册函数。
@@ -256,7 +270,7 @@ pnpm -C mango-ui publish:pkg <package|short-name> --release-tag=<tag>
 6. 页面调用真实后端 API，验证按钮权限、接口权限和租户数据。
 7. 执行构建、E2E 和交付台账登记。
 
-## 12. 问题排查
+## 13. 问题排查
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
 | 菜单不显示 | 后端未授权、appCode 不一致或 feature 被关闭 | 查 authorization 菜单接口和 Shell 配置 |
@@ -265,7 +279,7 @@ pnpm -C mango-ui publish:pkg <package|short-name> --release-tag=<tag>
 | 官网想复用后台页面包 | admin-pages 页面强依赖管理后台上下文 | 只抽取真正公共组件，避免引入后台壳 |
 | 按钮隐藏但接口仍可调用 | 前端隐藏不是权限控制 | 后端接口补权限校验 |
 
-## 13. 相关文档
+## 14. 相关文档
 - [前端代码规范](../mango-pmo/rules/frontend/01-vue-code.md)
 - [Element Plus UI 规范](../mango-pmo/rules/frontend/02-element-plus-ui.md)
 - [前端组件规范](../mango-pmo/rules/frontend/03-component-development.md)
@@ -274,7 +288,7 @@ pnpm -C mango-ui publish:pkg <package|short-name> --release-tag=<tag>
 - [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
 - [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史资料
+## 15. 历史资料
 - [微前端运行说明](./docs/micro-frontend-runtime.md)
 - [Mango 能力地图](../mango-docs/capabilities/README.md)
 - [@mango/admin-pages](./packages/admin-pages/README.md)
