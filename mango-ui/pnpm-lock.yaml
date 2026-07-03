@@ -50,6 +50,9 @@ importers:
       '@mango/file':
         specifier: workspace:*
         version: link:../../packages/file
+      '@mango/home':
+        specifier: workspace:*
+        version: link:../../packages/home
       '@mango/job':
         specifier: workspace:*
         version: link:../../packages/job
@@ -748,6 +751,9 @@ importers:
       '@mango/grid-widgets':
         specifier: 1.0.9
         version: link:../grid-widgets
+      '@mango/home':
+        specifier: 1.0.0
+        version: link:../home
       '@mango/notice':
         specifier: 1.0.16
         version: link:../notice
@@ -1071,6 +1077,25 @@ importers:
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
+  packages/home:
+    dependencies:
+      '@mango/api-schema':
+        specifier: 1.0.0
+        version: 1.0.0
+      '@mango/common':
+        specifier: 1.0.11
+        version: link:../common
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^4.0.0
@@ -2002,6 +2027,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@mango/api-schema@1.0.0':
+    resolution: {integrity: sha512-pNiarqo1KIwB6XwnZ+ZUGZdR10r/XizytkDcmexx35JN66uuODzaQOROuL49e1CD5UAw8Ssm9exFcM97yPDoMA==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/api-schema/-/api-schema-1.0.0.tgz}
 
   '@microsoft/fetch-event-source@2.0.1':
     resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
@@ -5119,6 +5147,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@mango/api-schema@1.0.0':
+    dependencies:
+      typescript: 5.9.3
 
   '@microsoft/fetch-event-source@2.0.1': {}
 

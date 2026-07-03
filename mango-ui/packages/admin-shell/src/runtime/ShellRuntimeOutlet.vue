@@ -91,6 +91,13 @@ function findTopPath(path: string) {
   return menus.value.find(menu => containsMenuPath(menu, path))?.path;
 }
 
+function resolveMenuPath(path: string): string {
+  if (path.startsWith('/home/')) {
+    return '/home';
+  }
+  return path;
+}
+
 function ensureTag(menu: ShellRouteMenu) {
   const exists = tagsViewStore.tagsViewRoutes.some(tag => tag.path === menu.path);
   if (exists) {
@@ -111,8 +118,9 @@ function ensureTag(menu: ShellRouteMenu) {
 }
 
 async function renderCurrentRoute() {
-  const currentMenu = selectMenu(route.path);
-  const redirectPath = resolveDirectoryRouteRedirect(currentMenu, route.path);
+  const menuPath = resolveMenuPath(route.path);
+  const currentMenu = selectMenu(menuPath);
+  const redirectPath = resolveDirectoryRouteRedirect(currentMenu, menuPath);
   if (redirectPath) {
     await router.replace(redirectPath);
     return;

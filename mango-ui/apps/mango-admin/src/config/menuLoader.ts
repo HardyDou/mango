@@ -368,6 +368,7 @@ export class MenuLoader {
         redirect: '/home',
         children: [
           ...menuItems.map((item) => this.menuItemToRoute(item)),
+          this.homeDetailRoute(),
           this.paymentCashierRoute(),
         ],
       },
@@ -439,6 +440,7 @@ export class MenuLoader {
         meta: { title: '主布局', permissions: ['admin'] },
         children: [
           ...menuItems.map(menuToRouteWithPermissions),
+          this.homeDetailRoute(),
           this.paymentCashierRoute(),
         ],
       },
@@ -447,8 +449,18 @@ export class MenuLoader {
 
   getHiddenRuntimeRoutes(): RouteRecordRaw[] {
     return [
+      this.homeDetailRoute(),
       this.paymentCashierRoute(),
     ];
+  }
+
+  private homeDetailRoute(): RouteRecordRaw {
+    return {
+      path: '/home/:homeId',
+      name: 'HomeDetail',
+      component: () => import('@/views/home/index.vue'),
+      meta: { title: '首页', isHide: true, isAffix: true },
+    };
   }
 
   private paymentCashierRoute(): RouteRecordRaw {

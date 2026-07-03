@@ -123,10 +123,20 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
       redirect: '/home',
       children: [
         ...menuItems.map((item) => menuItemToRoute(item)),
+        homeDetailRoute(),
         paymentCashierRoute(),
       ],
     },
   ];
+}
+
+function homeDetailRoute(): RouteRecordRaw {
+  return {
+    path: '/home/:homeId',
+    name: 'HomeDetail',
+    component: () => import('@/views/home/index.vue'),
+    meta: { title: '首页', isHide: true, isAffix: true },
+  };
 }
 
 function paymentCashierRoute(): RouteRecordRaw {

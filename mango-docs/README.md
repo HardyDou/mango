@@ -118,6 +118,7 @@ npm --prefix mango-docs run docs:build
 - [File 文件](../mango/mango-platform/mango-file/README.md)
 - [File Preview 文件预览](../mango/mango-platform/mango-file-preview/README.md)
 - [Grid Layout 自定义栅格布局](../mango/mango-platform/mango-grid-layout/README.md)
+- [Home 用户首页工作台](../mango/mango-platform/mango-home/README.md)
 - [Identity 身份](../mango/mango-platform/mango-identity/README.md)
 - [Job 任务调度](../mango/mango-platform/mango-job/README.md)
 - [Link 网址导航](../mango/mango-platform/mango-link/README.md)
