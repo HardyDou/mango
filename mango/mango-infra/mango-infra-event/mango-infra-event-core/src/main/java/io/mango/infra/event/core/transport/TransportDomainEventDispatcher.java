@@ -5,6 +5,7 @@ import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.kv.api.IOutboxDispatcher;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -52,7 +53,7 @@ public class TransportDomainEventDispatcher implements IOutboxDispatcher {
             return 0;
         }
         Instant now = clock.instant();
-        List<OutboxMessage> messages = outboxStore.claim(workerId, batchSize, now);
+        List<OutboxMessage> messages = outboxStore.claimByTopic(workerId, OutboxTopics.DOMAIN_EVENT, batchSize, now);
         int handled = 0;
         for (OutboxMessage message : messages) {
             try {

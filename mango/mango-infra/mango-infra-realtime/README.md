@@ -199,6 +199,7 @@ mango:
 
 - presence 需要支持 sorted set 的 KV store。
 - realtime outbox 需要 `mango.kv.capability.outbox=true` 注册 `IOutboxStore` 和 `IOutboxPublisher`。
+- realtime outbox 写入 `topic=realtime`、`eventType=realtime.message.dispatch`，dispatcher 只通过 `claimByTopic(..., OutboxTopics.REALTIME, ...)` 获取实时消息。
 - JDBC KV store 场景需要执行 KV 模块的 `infra_kv_entry` migration。
 
 ## 9. 管理入口

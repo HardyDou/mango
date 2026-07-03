@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.kv.api.IOutboxPublisher;
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.core.outbound.IRealtimeReliablePublishService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class RealtimeOutboxPublisher implements IRealtimeReliablePublishService 
         String targetId = message.resolvedTarget().id();
         return OutboxMessage.builder()
                 .messageId(message.id())
+                .topic(OutboxTopics.REALTIME)
                 .eventType(EVENT_TYPE)
                 .businessType(BUSINESS_TYPE)
                 .businessKey(message.id())

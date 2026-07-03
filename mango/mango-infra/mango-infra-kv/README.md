@@ -156,7 +156,7 @@ mango:
 - Store：`IKvStore`、`IKvSortedSet`。
 - Capability：`ICache`、`ILocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator`。
 - 支撑：`ISerializer`、`IConverter`、`KvContext`、`KvContextContributor`。
-- Outbox：`IOutboxPublisher`、`IOutboxStore`、`IOutboxDispatcher`、`OutboxMessage`、`OutboxStatus`。
+- Outbox：`IOutboxPublisher`、`IOutboxStore`、`IOutboxDispatcher`、`OutboxMessage`、`OutboxStatus`、`OutboxTopics`。
 - 注解：`@Cacheable`、`@Locker`、`@RateLimit`、`@Idempotent`。
 
 注解字段：
@@ -167,6 +167,24 @@ mango:
 - `@Idempotent(key, window)`：执行前先标记幂等 key，默认窗口 60 秒；方法抛异常后同 key 也会被视为重复，直到窗口过期。
 
 key 表达式支持 SpEL 模板，例如 `order:#{#orderId}`、`user:#{#req.headers['X-Tenant']}:#{#userId}`。
+
+### Outbox 消费归属
+
+Outbox 消息必须声明消费归属 `topic`。不同后台 worker 只 claim 自己 topic 下的消息，避免多个 outbox 场景共用 KV store 时互相抢占。
+
+| topic | 默认 worker | 典型 event type |
+|-------|-------------|-----------------|
+| `domain-event` | `domain-event-dispatcher` | 业务领域事件 |
+| `notice` | `notice-outbox-worker` | `notice.send` |
+| `realtime` | realtime outbox dispatcher | `realtime.message.dispatch` |
+
+自定义 dispatcher 必须使用带 topic 的 claim API：
+
+```java
+outboxStore.claimByTopic(workerId, OutboxTopics.DOMAIN_EVENT, batchSize, now);
+```
+
+旧的 `claim(workerId, batchSize, now)` 和按 `eventType` claim 的重载仅保留兼容，新增代码不要继续使用。KV outbox 内部队列按 `pending:<topic>` 隔离；历史无 topic 消息会按 event type 推断归属，`notice.send` 归为 `notice`，`realtime.message.dispatch` 归为 `realtime`，其他消息归为 `domain-event`。
 
 ## 8. 数据与初始化
 Flyway 路径：`mango-infra-kv-core/src/main/resources/db/migration/kv`。
@@ -187,6 +205,7 @@ JDBC store 依赖该表。Redis 和 Memory store 不需要 SQL 初始化。
 3. 设计 key：包含业务域、租户、用户或请求幂等键。
 4. 对写接口使用幂等时，明确 mark-before 语义是否符合业务重试要求。
 5. 需要可靠事件或 realtime outbox 时，同时开启 KV outbox 和对应上层模块 outbox。
+6. 自定义 outbox publisher 写入 `OutboxMessage.topic`，自定义 dispatcher 使用 `claimByTopic`。
 
 ## 11. 问题排查
 - 已配置 Redis 但仍是 memory：检查是否存在 `RedissonClient`，以及 `store.type` 是否为 `redis` 或 `auto`。
@@ -194,6 +213,7 @@ JDBC store 依赖该表。Redis 和 Memory store 不需要 SQL 初始化。
 - 幂等后不能重试失败请求：当前 `@Idempotent` 是执行前标记，需要业务侧按窗口过期或新 key 重试。
 - JDBC store 报表不存在：执行 `db/migration/kv` 下的 Flyway migration。
 - Outbox 重复投递：消费者必须按 message id 或业务键幂等。
+- Outbox 被非本业务 worker 处理：检查消息是否设置 `topic`，以及 worker 是否仍在使用无 topic 的旧 claim API。
 
 ## 12. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)

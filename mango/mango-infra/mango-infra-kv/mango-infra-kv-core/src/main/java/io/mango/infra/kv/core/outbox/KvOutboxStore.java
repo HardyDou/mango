@@ -9,6 +9,7 @@ import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxMessageQuery;
 import io.mango.infra.kv.api.OutboxStatus;
+import io.mango.infra.kv.api.OutboxTopics;
 import lombok.RequiredArgsConstructor;
 
 import java.io.UncheckedIOException;
@@ -43,52 +44,108 @@ public class KvOutboxStore implements IOutboxStore {
         validateMessage(message);
         kvStore.set(messageKey(message.getMessageId()), write(message), pendingTtlSeconds);
         if (kvStore instanceof IKvSortedSet sortedSet) {
-            sortedSet.add(pendingIndexKey(), message.getMessageId(), message.getOccurredAt().toEpochMilli(), pendingTtlSeconds);
+            sortedSet.add(pendingIndexKey(message), message.getMessageId(), message.getOccurredAt().toEpochMilli(), pendingTtlSeconds);
             sortedSet.add(allIndexKey(), message.getMessageId(), message.getOccurredAt().toEpochMilli(), pendingTtlSeconds);
         }
     }
 
     @Override
     public List<OutboxMessage> claim(String workerId, int batchSize, Instant now) {
-        return claim(workerId, null, batchSize, now);
+        return claim(workerId, null, null, batchSize, now);
+    }
+
+    @Override
+    public List<OutboxMessage> claimByTopic(String workerId, String topic, int batchSize, Instant now) {
+        Require.notBlank(topic, "topic cannot be blank");
+        return claimByTopic(workerId, normalizeTopic(topic), batchSize, now, List.of(pendingIndexKey(topic), pendingIndexKey()));
     }
 
     @Override
     public List<OutboxMessage> claim(String workerId, String eventType, int batchSize, Instant now) {
+        return claim(workerId, null, eventType, batchSize, now);
+    }
+
+    private List<OutboxMessage> claim(String workerId, String topic, String eventType, int batchSize, Instant now) {
         validateWorker(workerId);
         if (batchSize <= 0) {
             return List.of();
         }
         List<OutboxMessage> claimed = new ArrayList<>();
         if (kvStore instanceof IKvSortedSet sortedSet) {
-            for (String messageId : sortedSet.rangeByScore(pendingIndexKey(), Double.NEGATIVE_INFINITY, now.toEpochMilli(), batchSize)) {
+            for (String messageId : sortedSet.rangeByScore(pendingIndexKey(topic), Double.NEGATIVE_INFINITY, now.toEpochMilli(), batchSize)) {
                 OutboxMessage message = read(messageId);
-                if (message == null) {
-                    continue;
-                }
-                if (message.getStatus() == OutboxStatus.SUCCESS) {
-                    continue;
-                }
-                if (message.getNextAttemptAt() != null && message.getNextAttemptAt().isAfter(now)) {
-                    continue;
-                }
-                if (eventType != null && !eventType.equals(message.getEventType())) {
-                    continue;
-                }
-                OutboxMessage locked = message.toBuilder()
-                        .status(OutboxStatus.PROCESSING)
-                        .lockedBy(workerId)
-                        .lockedAt(now)
-                        .attemptCount(message.getAttemptCount() + 1)
-                        .nextAttemptAt(now.plusSeconds(lockTtlSeconds))
-                        .build();
-                kvStore.set(messageKey(messageId), write(locked), pendingTtlSeconds);
-                sortedSet.add(pendingIndexKey(), messageId, locked.getNextAttemptAt().toEpochMilli(), pendingTtlSeconds);
-                claimed.add(locked);
+                claimMessage(workerId, topic, eventType, now, claimed, messageId, message);
             }
         }
         claimed.sort(Comparator.comparing(OutboxMessage::getOccurredAt));
         return claimed;
+    }
+
+    private List<OutboxMessage> claimByTopic(String workerId, String topic, int batchSize, Instant now, List<String> indexKeys) {
+        validateWorker(workerId);
+        if (batchSize <= 0) {
+            return List.of();
+        }
+        List<OutboxMessage> claimed = new ArrayList<>();
+        if (kvStore instanceof IKvSortedSet sortedSet) {
+            for (String indexKey : indexKeys) {
+                if (claimed.size() >= batchSize) {
+                    break;
+                }
+                int remaining = batchSize - claimed.size();
+                for (String messageId : sortedSet.rangeByScore(indexKey, Double.NEGATIVE_INFINITY, now.toEpochMilli(), remaining)) {
+                    OutboxMessage message = read(messageId);
+                    claimMessage(workerId, topic, null, now, claimed, messageId, message);
+                    if (claimed.size() >= batchSize) {
+                        break;
+                    }
+                }
+            }
+        }
+        claimed.sort(Comparator.comparing(OutboxMessage::getOccurredAt));
+        return claimed;
+    }
+
+    private void claimMessage(String workerId,
+                              String topic,
+                              String eventType,
+                              Instant now,
+                              List<OutboxMessage> claimed,
+                              String messageId,
+                              OutboxMessage message) {
+        if (message == null) {
+            return;
+        }
+        if (message.getStatus() == OutboxStatus.SUCCESS) {
+            return;
+        }
+        if (message.getNextAttemptAt() != null && message.getNextAttemptAt().isAfter(now)) {
+            return;
+        }
+        String effectiveTopic = effectiveTopic(message);
+        if (topic != null && !topic.equals(effectiveTopic)) {
+            return;
+        }
+        if (eventType != null && !eventType.equals(message.getEventType())) {
+            return;
+        }
+        String lockedTopic = topic == null ? normalizeTopic(message.getTopic()) : effectiveTopic;
+        OutboxMessage locked = message.toBuilder()
+                .topic(lockedTopic)
+                .status(OutboxStatus.PROCESSING)
+                .lockedBy(workerId)
+                .lockedAt(now)
+                .attemptCount(message.getAttemptCount() + 1)
+                .nextAttemptAt(now.plusSeconds(lockTtlSeconds))
+                .build();
+        kvStore.set(messageKey(messageId), write(locked), pendingTtlSeconds);
+        if (kvStore instanceof IKvSortedSet sortedSet) {
+            if (lockedTopic != null) {
+                sortedSet.remove(pendingIndexKey(), messageId);
+            }
+            sortedSet.add(pendingIndexKey(locked), messageId, locked.getNextAttemptAt().toEpochMilli(), pendingTtlSeconds);
+        }
+        claimed.add(locked);
     }
 
     @Override
@@ -109,7 +166,7 @@ public class KvOutboxStore implements IOutboxStore {
                 .errorMessage(null)
                 .build();
         kvStore.set(messageKey(messageId), write(done), pendingTtlSeconds);
-        removeFromIndex(messageId);
+        removeFromIndex(messageId, done);
     }
 
     @Override
@@ -131,7 +188,7 @@ public class KvOutboxStore implements IOutboxStore {
                 .build();
         kvStore.set(messageKey(messageId), write(failed), pendingTtlSeconds);
         if (kvStore instanceof IKvSortedSet sortedSet) {
-            sortedSet.add(pendingIndexKey(), messageId, failed.getNextAttemptAt().toEpochMilli(), pendingTtlSeconds);
+            sortedSet.add(pendingIndexKey(failed), messageId, failed.getNextAttemptAt().toEpochMilli(), pendingTtlSeconds);
         }
     }
 
@@ -153,7 +210,7 @@ public class KvOutboxStore implements IOutboxStore {
                 .nextAttemptAt(null)
                 .build();
         kvStore.set(messageKey(messageId), write(failed), pendingTtlSeconds);
-        removeFromIndex(messageId);
+        removeFromIndex(messageId, failed);
         addToAllIndex(messageId, failed);
     }
 
@@ -174,7 +231,7 @@ public class KvOutboxStore implements IOutboxStore {
                 .build();
         kvStore.set(messageKey(messageId), write(requeued), pendingTtlSeconds);
         if (kvStore instanceof IKvSortedSet sortedSet) {
-            sortedSet.add(pendingIndexKey(), messageId, readyAt.toEpochMilli(), pendingTtlSeconds);
+            sortedSet.add(pendingIndexKey(requeued), messageId, readyAt.toEpochMilli(), pendingTtlSeconds);
             sortedSet.add(allIndexKey(), messageId, requeued.getOccurredAt().toEpochMilli(), pendingTtlSeconds);
         }
     }
@@ -205,8 +262,9 @@ public class KvOutboxStore implements IOutboxStore {
         return loadAllMessages().stream().filter(message -> matches(message, normalized)).count();
     }
 
-    private void removeFromIndex(String messageId) {
+    private void removeFromIndex(String messageId, OutboxMessage message) {
         if (kvStore instanceof IKvSortedSet sortedSet) {
+            sortedSet.remove(pendingIndexKey(message), messageId);
             sortedSet.remove(pendingIndexKey(), messageId);
         }
     }
@@ -242,6 +300,9 @@ public class KvOutboxStore implements IOutboxStore {
         if (query.getStatus() != null && message.getStatus() != query.getStatus()) {
             return false;
         }
+        if (!matchesText(message.getTopic(), query.getTopic(), false)) {
+            return false;
+        }
         if (!matchesText(message.getEventType(), query.getEventType(), false)) {
             return false;
         }
@@ -265,6 +326,7 @@ public class KvOutboxStore implements IOutboxStore {
             return true;
         }
         return matchesText(message.getMessageId(), keyword, true)
+                || matchesText(message.getTopic(), keyword, true)
                 || matchesText(message.getEventType(), keyword, true)
                 || matchesText(message.getBusinessType(), keyword, true)
                 || matchesText(message.getBusinessKey(), keyword, true)
@@ -311,8 +373,41 @@ public class KvOutboxStore implements IOutboxStore {
         return OutboxKeys.PENDING;
     }
 
+    private String pendingIndexKey(OutboxMessage message) {
+        return pendingIndexKey(normalizeTopic(message.getTopic()));
+    }
+
+    private String pendingIndexKey(String topic) {
+        String normalized = normalizeTopic(topic);
+        if (normalized == null) {
+            return OutboxKeys.PENDING;
+        }
+        return OutboxKeys.PENDING + OutboxKeys.TOPIC_SEPARATOR + normalized;
+    }
+
     private String allIndexKey() {
         return OutboxKeys.ALL;
+    }
+
+    private String normalizeTopic(String topic) {
+        if (topic == null || topic.isBlank()) {
+            return null;
+        }
+        return topic.trim();
+    }
+
+    private String effectiveTopic(OutboxMessage message) {
+        String topic = normalizeTopic(message.getTopic());
+        if (topic != null) {
+            return topic;
+        }
+        if (OutboxTopics.NOTICE_SEND_EVENT_TYPE.equals(message.getEventType())) {
+            return OutboxTopics.NOTICE;
+        }
+        if (OutboxTopics.REALTIME_DISPATCH_EVENT_TYPE.equals(message.getEventType())) {
+            return OutboxTopics.REALTIME;
+        }
+        return OutboxTopics.DOMAIN_EVENT;
     }
 
     private void validateMessage(OutboxMessage message) {
