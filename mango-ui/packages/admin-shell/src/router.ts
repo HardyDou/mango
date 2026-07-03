@@ -33,7 +33,10 @@ export function createMangoAdminRouter() {
       return true;
     }
     if (!Session.getToken()) {
-      return '/login';
+      return {
+        path: '/login',
+        query: { redirect: to.fullPath },
+      };
     }
     if (to.path === '/') {
       return '/home';

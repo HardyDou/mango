@@ -43,6 +43,7 @@ export interface MangoAuthConfig {
       partyType?: string;
       appCode?: string;
       redirectPath?: string;
+      redirectQueryKey?: string;
     };
   };
   profile?: {

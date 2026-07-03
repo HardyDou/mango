@@ -18,7 +18,10 @@ function createTestRouter() {
       return true;
     }
     if (!token) {
-      return '/login';
+      return {
+        path: '/login',
+        query: { redirect: to.fullPath },
+      };
     }
     if (to.path === '/') {
       return '/home';
@@ -49,5 +52,15 @@ describe('admin shell router', () => {
     await router.push('/');
 
     expect(router.currentRoute.value.path).toBe('/login');
+    expect(router.currentRoute.value.query.redirect).toBe('/home');
+  });
+
+  it('preserves unauthenticated deep links as login redirect query', async () => {
+    const router = createTestRouter();
+
+    await router.push('/procurement/issues/register?source=dashboard');
+
+    expect(router.currentRoute.value.path).toBe('/login');
+    expect(router.currentRoute.value.query.redirect).toBe('/procurement/issues/register?source=dashboard');
   });
 });

@@ -100,6 +100,7 @@ await logout();
 | `login.defaults` | `partyType` | 登录参与方类型。 |
 | `login.defaults` | `appCode` | 登录应用编码，管理端通常是 `internal-admin`。 |
 | `login.defaults` | `redirectPath` | 登录成功后的默认跳转路径。 |
+| `login.defaults` | `redirectQueryKey` | 登录页读取的回跳 query 参数名，默认 `redirect`；值必须是站内路径。 |
 | `profile` | `avatarUrl` | 个人中心默认头像地址。 |
 | `profile` | `roleLabel` | 个人中心角色标签展示值。 |
 | `profile` | `fields` | 个人资料展示字段列表。 |
