@@ -81,6 +81,8 @@ pnpm -F @mango/admin-shell build
 
 - v2026.06.27-workflow-history-dialog-release 同步发布工作流 UI 修复批次和前端聚合版本锁；不改变租户绑定、字典配置、系统配置、默认数据初始化、后端公开 API、权限、菜单、页面入口、启动方式和本场景排障步骤。
 
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅调整首页小组件 package 归属、`@mango/system@1.0.13`、`@mango/admin@1.0.37`、`@mango/admin-shell@1.0.32` 版本锁和 generated backend baseline；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
+
 - v2026.06.27-admin-shell-menu-redirect-release 发布 `@mango/admin-shell@1.0.28`、`@mango/admin@1.0.32` 和 `@mango/cli@1.0.45`，仅让业务项目可通过 npm 包消费 Issue #274 的目录菜单 redirect 修复；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。
 
 - Issue #274 修复 `@mango/admin-shell` 目录型菜单 redirect 解析，仅影响目录菜单在当前用户可见菜单树中的落点选择；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。排查租户基础数据为空时，仍以当前实际打开页面的请求、tenantId 和数据过滤链路为准。

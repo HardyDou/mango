@@ -93,8 +93,9 @@ try {
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
     throw new Error('frontend entry does not consume @mango/admin/full');
   }
-  if (!mainTs.includes('const mangoBusinessFeatureRegistrars = [')
-    || !mainTs.includes('const mangoAllFeatureRegistrars = [')
+  if (!mainTs.includes("import type { MangoAdminFeatureRegistrar } from '@mango/admin';")
+    || !mainTs.includes('const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [')
+    || !mainTs.includes('const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [')
     || !mainTs.includes('featureRegistrars: mangoAllFeatureRegistrars')) {
     throw new Error('frontend entry does not provide business feature registrar aggregation');
   }
@@ -670,6 +671,9 @@ try {
   const moduleMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!moduleMain.includes("import { registerContractPages } from '@mango-custom-acceptance/contract';")
     || !moduleMain.includes("import '@mango-custom-acceptance/contract/style.css';")
+    || !moduleMain.includes("import type { MangoAdminFeatureRegistrar } from '@mango/admin';")
+    || !moduleMain.includes('const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [')
+    || !moduleMain.includes('const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [')
     || !moduleMain.includes('  registerContractPages,')
     || moduleMain.includes('registerContractPages();')
     || !moduleMain.includes('featureRegistrars: mangoAllFeatureRegistrars')) {

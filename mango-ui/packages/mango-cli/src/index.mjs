@@ -3338,14 +3338,21 @@ function updateFrontendEntry(targetDir, variables) {
   const entryPath = join(targetDir, 'frontend/src/main.ts');
   const content = readFileSync(entryPath, 'utf8');
   const nextContent = replaceManagedBlock(
-    replaceManagedBlock(content, 'imports', variables.frontendEntryImports),
+    replaceManagedBlock(content, 'imports', ensureFrontendTypeImport(variables.frontendEntryImports)),
     'features',
     [
       `const mangoFeatures = ${variables.frontendFeaturesExpression};`,
-      `const mangoFeatureRegistrars = ${variables.frontendFeatureRegistrarsExpression};`,
+      `const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = ${variables.frontendFeatureRegistrarsExpression};`,
     ].join('\n'),
   );
   writeFileSync(entryPath, nextContent);
+}
+
+function ensureFrontendTypeImport(importsBlock) {
+  const typeImport = "import type { MangoAdminFeatureRegistrar } from '@mango/admin';";
+  return importsBlock.includes(typeImport)
+    ? importsBlock
+    : `${importsBlock.trimEnd()}\n${typeImport}`;
 }
 
 function updateRuntimeConfigFiles(targetDir, variables) {
@@ -3435,28 +3442,57 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
 }
 
 function ensureFrontendBusinessRegistrars(content) {
+  const preparedContent = ensureFrontendMainRegistrarTypes(ensureFrontendMainTypeImport(content));
   if (content.includes('// mango-cli:business-feature-registrars:start')
     && content.includes('// mango-cli:business-feature-registrars:end')) {
-    return ensureAllFeatureRegistrarsUsage(content);
+    return ensureAllFeatureRegistrarsUsage(preparedContent);
   }
 
   const block = [
     '// mango-cli:business-feature-registrars:start',
-    'const mangoBusinessFeatureRegistrars = [',
+    'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
     '];',
     '// mango-cli:business-feature-registrars:end',
     '',
-    'const mangoAllFeatureRegistrars = [',
+    'const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
     '  ...mangoFeatureRegistrars,',
     '  ...mangoBusinessFeatureRegistrars,',
     '];',
     '',
   ].join('\n');
   const featureEnd = '// mango-cli:features:end';
-  const withBlock = content.includes(featureEnd)
-    ? content.replace(featureEnd, `${featureEnd}\n\n${block.trimEnd()}`)
-    : `${block}${content}`;
+  const withBlock = preparedContent.includes(featureEnd)
+    ? preparedContent.replace(featureEnd, `${featureEnd}\n\n${block.trimEnd()}`)
+    : `${block}${preparedContent}`;
   return ensureAllFeatureRegistrarsUsage(withBlock);
+}
+
+function ensureFrontendMainTypeImport(content) {
+  const typeImport = "import type { MangoAdminFeatureRegistrar } from '@mango/admin';";
+  if (content.includes(typeImport)) {
+    return content;
+  }
+  const importsEnd = '// mango-cli:imports:end';
+  if (content.includes(importsEnd)) {
+    return content.replace(importsEnd, `${typeImport}\n${importsEnd}`);
+  }
+  return `${typeImport}\n${content}`;
+}
+
+function ensureFrontendMainRegistrarTypes(content) {
+  return content
+    .replace(
+      /const mangoFeatureRegistrars = /,
+      'const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = ',
+    )
+    .replace(
+      /const mangoBusinessFeatureRegistrars = \[/,
+      'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
+    )
+    .replace(
+      /const mangoAllFeatureRegistrars = \[/,
+      'const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
+    );
 }
 
 function ensureAllFeatureRegistrarsUsage(content) {

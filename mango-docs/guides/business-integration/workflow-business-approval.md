@@ -106,6 +106,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 9. 变更影响记录
 
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 将工作流首页小组件归属到 `@mango/workflow@1.0.20` 并更新 CLI 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
+
 - PR #356 新增 `WORKFLOW_DEFINITION` 资源声明处理器和 `WorkflowTaskRuntimeApi` 公共任务运行时 API。业务模块可通过资源声明随模块同步流程定义，也可依赖 `mango-workflow-api` 调用待办、已办、抄送、详情、签收、办理、驳回、保存、转办、加签和流程详情能力；既有 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()` 审批发起方式保持兼容，不改变流程页面 key、菜单、权限码、租户隔离、业务状态回写和页面验收入口。
 
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和 workflow core service 集成测试；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。

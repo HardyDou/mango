@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-pages",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -47,7 +47,7 @@
     "@mango/auth": "1.0.10",
     "@mango/common": "1.0.11",
     "@mango/rbac": "1.0.9",
-    "@mango/system": "1.0.12"
+    "@mango/system": "1.0.13"
   },
   "peerDependencies": {
     "vue": "3.5.13"

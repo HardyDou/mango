@@ -5,6 +5,11 @@
   },
   "versions": [
     {
+      "version": "v2026.07.02-maven-1.0.6-home-widgets-cli-release",
+      "label": "1.0.6",
+      "path": "/versions/v2026.07.02-maven-1.0.6-home-widgets-cli-release/"
+    },
+    {
       "version": "v2026.07.01-maven-1.0.5-data-governance-release",
       "label": "1.0.5",
       "path": "/versions/v2026.07.01-maven-1.0.5-data-governance-release/"

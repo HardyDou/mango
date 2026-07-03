@@ -102,6 +102,8 @@ pnpm -F @mango/admin-shell build
 
 - PR #256 将后台工作台默认布局调整为页面内固定配置，仅影响没有个人工作台配置或恢复默认后的首页卡片排布；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
 
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅调整首页小组件 package 归属、`@mango/admin@1.0.37` / `@mango/admin-shell@1.0.32` 版本锁和 generated backend baseline；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
+
 - PR #253 新增 Resource Registry 的 `AUTH_ROLE`、`AUTH_ROLE_DATA_SCOPE`、`AUTH_SUBJECT_ROLE` 基线声明，可让角色、角色数据权限和成员角色绑定随资源同步注入；不改变菜单 `component` key、菜单树接口、页面注册方式、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。排查清库初始化后的菜单可见性时，可额外确认角色基线声明是否先于 `AUTH_MENU.roleCodes` 完成同步。
 
 - Issue #264 发布 `@mango/grid-widgets@1.0.3`、`@mango/system@1.0.10`、`@mango/admin-pages@1.0.11`、`@mango/admin-shell@1.0.25`、`@mango/admin@1.0.29`、`@mango/cli@1.0.42`，补齐此前未进入 npm 物料的工作台日历小组件和新版系统配置页面；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。业务项目排查首页日历缺失或系统配置页面旧版时，应先确认前端包和 CLI/starter 锁已升级到本批次。
