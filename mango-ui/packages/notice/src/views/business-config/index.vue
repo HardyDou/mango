@@ -273,9 +273,9 @@
                     </div>
                   </div>
                   <el-table :data="templateMappingRows" border size="small" class="template-mapping-table" empty-text="无需映射">
-                    <el-table-column label="阿里云变量名" min-width="160">
+                    <el-table-column label="模板变量名" min-width="160">
                       <template #default="{ row }">
-                        <el-input v-model="row.paramName" placeholder="code" />
+                        <el-input v-model="row.paramName" placeholder="code 或 1" />
                       </template>
                     </el-table-column>
                     <el-table-column label="系统参数" min-width="180">
@@ -1187,7 +1187,7 @@ function validateEnabledTemplates() {
       return false;
     }
     if (channel === 'SMS' && draft.enabled && !draft.channelTemplateId?.trim()) {
-      ElMessage.error('短信已启用，请填写阿里云模板 Code');
+      ElMessage.error('短信已启用，请填写短信模板 Code');
       activeChannel.value = channel;
       applyTemplate();
       return false;
@@ -1505,10 +1505,10 @@ function generateSmsMappingRows() {
 
 function extractTemplateVariables(content: string) {
   const names: string[] = [];
-  const pattern = /\{\{\s*([A-Za-z_][\w.-]*)\s*\}\}|\$\{\s*([A-Za-z_][\w.-]*)\s*\}/g;
+  const pattern = /\{\{\s*([A-Za-z_][\w.-]*)\s*\}\}|\$\{\s*([A-Za-z_][\w.-]*)\s*\}|\{\s*([1-9]\d*)\s*\}/g;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(content)) !== null) {
-    names.push(match[1] || match[2]);
+    names.push(match[1] || match[2] || match[3]);
   }
   return names;
 }

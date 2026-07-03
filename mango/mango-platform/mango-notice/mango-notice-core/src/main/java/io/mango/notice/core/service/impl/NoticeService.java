@@ -1322,9 +1322,7 @@ public class NoticeService implements INoticeService {
  return NoticeChannelConfigStatus.INCOMPLETE;
  }
  return switch (channelType) {
- case SMS -> hasAnyText(config, "accessKeyId", "accessKey", "secretId")
- && hasAnyText(config, "accessKeySecret", "accessSecret", "secretKey")
- && hasAnyText(config, "signName", "sign") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
+ case SMS -> resolveSmsConfigStatus(providerCode, config);
  case EMAIL -> resolveEmailConfigStatus(providerCode, config);
  case WECHAT_OFFICIAL -> hasAnyText(config, "appId") && hasAnyText(config, "appSecret", "secret")
  ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
@@ -1335,6 +1333,18 @@ public class NoticeService implements INoticeService {
  && hasAnyText(config, "appSecret", "webhookUrl") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
  case SITE -> NoticeChannelConfigStatus.COMPLETE;
  };
+ }
+
+ private NoticeChannelConfigStatus resolveSmsConfigStatus(String providerCode, Map<String, Object> config) {
+ if ("TENCENT_SMS".equals(providerCode)) {
+ return hasAnyText(config, "secretId")
+ && hasAnyText(config, "secretKey")
+ && hasAnyText(config, "smsSdkAppId", "appId")
+ && hasAnyText(config, "signName", "sign") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
+ }
+ return hasAnyText(config, "accessKeyId", "accessKey", "secretId")
+ && hasAnyText(config, "accessKeySecret", "accessSecret", "secretKey")
+ && hasAnyText(config, "signName", "sign") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
  }
 
  private NoticeChannelConfigStatus resolveEmailConfigStatus(String providerCode, Map<String, Object> config) {

@@ -36,13 +36,14 @@ class SmsNoticeChannelSenderTest {
     @Test
     void send_validAliyunConfig_sendsWithTemplateParams() {
         SmsNoticeChannelSender sender = new SmsNoticeChannelSender(request -> {
+            AliyunSmsConfig config = (AliyunSmsConfig) request.config();
             assertEquals("13800138000", request.mobile());
             assertEquals("芒果", request.signName());
             assertEquals("SMS_10001", request.templateCode());
             assertEquals("{\"code\":\"123456\",\"product\":\"Mango\"}", request.templateParam());
-            assertEquals("ak", request.config().accessKeyId());
-            assertEquals("sk", request.config().accessKeySecret());
-            assertEquals("dysmsapi.aliyuncs.com", request.config().endpoint());
+            assertEquals("ak", config.accessKeyId());
+            assertEquals("sk", config.accessKeySecret());
+            assertEquals("dysmsapi.aliyuncs.com", config.endpoint());
             return SmsGatewayResponse.success("biz-1001",
                     "{\"provider\":\"ALIYUN\",\"code\":\"OK\",\"bizId\":\"biz-1001\"}");
         });
@@ -62,6 +63,42 @@ class SmsNoticeChannelSenderTest {
     }
 
     @Test
+    void send_validTencentConfig_sendsWithTemplateParams() {
+        SmsNoticeChannelSender sender = new SmsNoticeChannelSender(successGateway(), request -> {
+            TencentSmsConfig config = (TencentSmsConfig) request.config();
+            assertEquals("13800138000", request.mobile());
+            assertEquals("芒果科技", request.signName());
+            assertEquals("498790758", request.templateCode());
+            assertEquals("{\"code\":\"654321\",\"product\":\"Mango\"}", request.templateParam());
+            assertEquals("sid", config.secretId());
+            assertEquals("skey", config.secretKey());
+            assertEquals("1400000001", config.smsSdkAppId());
+            assertEquals("ap-guangzhou", config.region());
+            assertEquals("sms.tencentcloudapi.com", config.endpoint());
+            assertEquals("+86", config.countryCode());
+            return SmsGatewayResponse.success("tencent-1001",
+                    "{\"provider\":\"TENCENT\",\"code\":\"Ok\",\"serialNo\":\"tencent-1001\"}");
+        });
+        ChannelSendCommand command = new ChannelSendCommand();
+        command.setSendRecordId(1001L);
+        command.setMobile("13800138000");
+        command.setChannelProviderCode("TENCENT_SMS");
+        command.setChannelConfigJson("""
+                {"secretId":"sid","secretKey":"skey","smsSdkAppId":"1400000001","signName":"芒果科技"}
+                """);
+        command.setChannelTemplateId("498790758");
+        command.setVariableMapping("{\"code\":\"captchaCode\",\"product\":\"productName\"}");
+        command.setParams(Map.of("captchaCode", "654321", "productName", "Mango"));
+
+        ChannelSendResult result = sender.send(command);
+
+        assertTrue(result.isSuccess());
+        assertEquals("tencent-1001", result.getProviderMessageId());
+        assertEquals("{\"provider\":\"TENCENT\",\"code\":\"Ok\",\"serialNo\":\"tencent-1001\"}",
+                result.getResponseSnapshot());
+    }
+
+    @Test
     void send_missingTemplateCode_returnsNonRetryableFailure() {
         SmsNoticeChannelSender sender = new SmsNoticeChannelSender(successGateway());
         ChannelSendCommand command = new ChannelSendCommand();
@@ -73,6 +110,23 @@ class SmsNoticeChannelSenderTest {
         assertFalse(result.isSuccess());
         assertEquals(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), result.getFailCode());
         assertEquals("阿里云短信模板 Code 不能为空", result.getFailReason());
+        assertFalse(result.isRetryable());
+    }
+
+    @Test
+    void send_tencentMissingSmsSdkAppId_returnsNonRetryableFailure() {
+        SmsNoticeChannelSender sender = new SmsNoticeChannelSender(successGateway(), successGateway());
+        ChannelSendCommand command = new ChannelSendCommand();
+        command.setMobile("13800138000");
+        command.setChannelProviderCode("TENCENT_SMS");
+        command.setChannelConfigJson("{\"secretId\":\"sid\",\"secretKey\":\"skey\",\"signName\":\"芒果\"}");
+        command.setChannelTemplateId("498790758");
+
+        ChannelSendResult result = sender.send(command);
+
+        assertFalse(result.isSuccess());
+        assertEquals(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), result.getFailCode());
+        assertEquals("腾讯云 SmsSdkAppId 不能为空", result.getFailReason());
         assertFalse(result.isRetryable());
     }
 
@@ -91,6 +145,26 @@ class SmsNoticeChannelSenderTest {
         assertFalse(result.isSuccess());
         assertEquals("ALIYUN_SMS_isv.INVALID_PARAMETERS", result.getFailCode());
         assertEquals("阿里云短信发送失败：参数非法", result.getFailReason());
+        assertFalse(result.isRetryable());
+    }
+
+    @Test
+    void send_whenTencentProviderRejects_mapsFailure() {
+        SmsNoticeChannelSender sender = new SmsNoticeChannelSender(successGateway(), request -> SmsGatewayResponse.failed(
+                "TENCENT_SMS_FailedOperation.TemplateIncorrect", "腾讯云短信发送失败：模板错误", false,
+                "{\"provider\":\"TENCENT\",\"code\":\"FailedOperation.TemplateIncorrect\"}"));
+        ChannelSendCommand command = new ChannelSendCommand();
+        command.setMobile("13800138000");
+        command.setChannelProviderCode("TENCENT_SMS");
+        command.setChannelConfigJson(
+                "{\"secretId\":\"sid\",\"secretKey\":\"skey\",\"smsSdkAppId\":\"1400000001\",\"signName\":\"芒果\"}");
+        command.setChannelTemplateId("498790758");
+
+        ChannelSendResult result = sender.send(command);
+
+        assertFalse(result.isSuccess());
+        assertEquals("TENCENT_SMS_FailedOperation.TemplateIncorrect", result.getFailCode());
+        assertEquals("腾讯云短信发送失败：模板错误", result.getFailReason());
         assertFalse(result.isRetryable());
     }
 

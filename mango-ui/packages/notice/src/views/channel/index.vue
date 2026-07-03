@@ -193,16 +193,40 @@
               </template>
               <template v-else-if="form.channelType === 'SMS'">
                 <el-row :gutter="16">
-                  <el-col :xs="24" :sm="12">
-                    <el-form-item label="AccessKey" required>
-                      <el-input v-model="channelConfig.accessKeyId" autocomplete="off" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :sm="12">
-                    <el-form-item label="Secret" required>
-                      <el-input v-model="channelConfig.accessKeySecret" show-password autocomplete="new-password" />
-                    </el-form-item>
-                  </el-col>
+                  <template v-if="isTencentSmsProvider(form.providerCode)">
+                    <el-col :xs="24" :sm="12">
+                      <el-form-item label="SecretId" required>
+                        <el-input v-model="channelConfig.secretId" autocomplete="off" />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :xs="24" :sm="12">
+                      <el-form-item label="SecretKey" required>
+                        <el-input v-model="channelConfig.secretKey" show-password autocomplete="new-password" />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :xs="24" :sm="12">
+                      <el-form-item label="短信应用 ID" required>
+                        <el-input v-model="channelConfig.smsSdkAppId" placeholder="例如：1400000001" />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :xs="24" :sm="12">
+                      <el-form-item label="地域">
+                        <el-input v-model="channelConfig.region" placeholder="ap-guangzhou" />
+                      </el-form-item>
+                    </el-col>
+                  </template>
+                  <template v-else>
+                    <el-col :xs="24" :sm="12">
+                      <el-form-item label="AccessKey" required>
+                        <el-input v-model="channelConfig.accessKeyId" autocomplete="off" />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :xs="24" :sm="12">
+                      <el-form-item label="Secret" required>
+                        <el-input v-model="channelConfig.accessKeySecret" show-password autocomplete="new-password" />
+                      </el-form-item>
+                    </el-col>
+                  </template>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="短信签名" required>
                       <el-input v-model="channelConfig.signName" />
@@ -213,9 +237,17 @@
                       <el-input v-model="channelConfig.templatePlatform" />
                     </el-form-item>
                   </el-col>
+                  <el-col v-if="isTencentSmsProvider(form.providerCode)" :xs="24" :sm="12">
+                    <el-form-item label="国家码">
+                      <el-input v-model="channelConfig.countryCode" placeholder="+86" />
+                    </el-form-item>
+                  </el-col>
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="接入地址">
-                      <el-input v-model="channelConfig.endpoint" placeholder="dysmsapi.aliyuncs.com" />
+                      <el-input
+                        v-model="channelConfig.endpoint"
+                        :placeholder="isTencentSmsProvider(form.providerCode) ? 'sms.tencentcloudapi.com' : 'dysmsapi.aliyuncs.com'"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
@@ -655,14 +687,7 @@ function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
     };
   }
   if (channelType === 'SMS') {
-    return {
-      accessKeyId: '',
-      accessKeySecret: '',
-      signName: '',
-      templatePlatform: providerLabel('SMS', form.providerCode),
-      endpoint: '',
-      callbackUrl: '',
-    };
+    return defaultSmsConfig(form.providerCode);
   }
   if (channelType === 'EMAIL') return defaultEmailConfig(form.providerCode);
   if (channelType === 'WECHAT_OFFICIAL') return { appId: '', appSecret: '' };
@@ -670,6 +695,30 @@ function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
     return { corpId: '', agentId: '', secret: '', webhookUrl: '', loginEnabled: false, loginRedirectUri: '' };
   }
   return { appKey: '', appSecret: '', agentId: '', webhookUrl: '' };
+}
+
+function defaultSmsConfig(providerCode?: string): ChannelConfigForm {
+  if (isTencentSmsProvider(providerCode)) {
+    return {
+      secretId: '',
+      secretKey: '',
+      smsSdkAppId: '',
+      signName: '',
+      templatePlatform: providerLabel('SMS', providerCode),
+      region: 'ap-guangzhou',
+      endpoint: 'sms.tencentcloudapi.com',
+      countryCode: '+86',
+      callbackUrl: '',
+    };
+  }
+  return {
+    accessKeyId: '',
+    accessKeySecret: '',
+    signName: '',
+    templatePlatform: providerLabel('SMS', providerCode),
+    endpoint: 'dysmsapi.aliyuncs.com',
+    callbackUrl: '',
+  };
 }
 
 function defaultEmailConfig(providerCode?: string): ChannelConfigForm {
@@ -703,6 +752,19 @@ function configFieldLabels(channelType: NoticeChannelType, providerCode?: string
     ];
   }
   if (channelType === 'SMS') {
+    if (isTencentSmsProvider(normalizedProvider)) {
+      return [
+        { key: 'secretId', label: 'SecretId' },
+        { key: 'secretKey', label: 'SecretKey' },
+        { key: 'smsSdkAppId', label: '短信应用 ID' },
+        { key: 'signName', label: '短信签名' },
+        { key: 'templatePlatform', label: '模板平台' },
+        { key: 'region', label: '地域' },
+        { key: 'endpoint', label: '接入地址' },
+        { key: 'countryCode', label: '国家码' },
+        { key: 'callbackUrl', label: '通知地址' },
+      ];
+    }
     return [
       { key: 'accessKeyId', label: 'AccessKey' },
       { key: 'accessKeySecret', label: 'Secret' },
@@ -816,6 +878,10 @@ function normalizeProviderCode(channelType: NoticeChannelType, providerCode?: st
     return 'CUSTOM_SMTP';
   }
   return providerCode;
+}
+
+function isTencentSmsProvider(providerCode?: string) {
+  return normalizeProviderCode('SMS', providerCode) === 'TENCENT_SMS';
 }
 
 function sendStatusLabel(status?: NoticeChannelSendHealthStatus) {

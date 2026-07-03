@@ -5,9 +5,14 @@ import org.springframework.util.StringUtils;
 import java.util.Map;
 
 record AliyunSmsConfig(String accessKeyId, String accessKeySecret, String signName, String templateCode,
-                       String endpoint) {
+                       String endpoint) implements SmsProviderConfig {
 
     private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";
+
+    @Override
+    public String providerCode() {
+        return "ALIYUN";
+    }
 
     static AliyunSmsConfig from(Map<String, Object> config, String commandTemplateCode) {
         String accessKeyId = secret(config, "accessKeyId", "accessKeyIdEnv", "阿里云 AccessKey ID");

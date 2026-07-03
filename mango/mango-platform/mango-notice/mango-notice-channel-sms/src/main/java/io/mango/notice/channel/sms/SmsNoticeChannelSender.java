@@ -18,22 +18,29 @@ import java.util.Map;
 public class SmsNoticeChannelSender implements NoticeChannelSender {
 
     private static final String PROVIDER_ALIYUN = "ALIYUN";
+    private static final String PROVIDER_TENCENT = "TENCENT";
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
 
     private final SmsGateway aliyunGateway;
+    private final SmsGateway tencentGateway;
     private final ObjectMapper objectMapper;
 
     public SmsNoticeChannelSender() {
-        this(new AliyunSmsGateway(), new ObjectMapper());
+        this(new AliyunSmsGateway(), new TencentSmsGateway(), new ObjectMapper());
     }
 
-    SmsNoticeChannelSender(SmsGateway aliyunGateway) {
-        this(aliyunGateway, new ObjectMapper());
+    SmsNoticeChannelSender(SmsGateway gateway) {
+        this(gateway, gateway, new ObjectMapper());
     }
 
-    SmsNoticeChannelSender(SmsGateway aliyunGateway, ObjectMapper objectMapper) {
+    SmsNoticeChannelSender(SmsGateway aliyunGateway, SmsGateway tencentGateway) {
+        this(aliyunGateway, tencentGateway, new ObjectMapper());
+    }
+
+    SmsNoticeChannelSender(SmsGateway aliyunGateway, SmsGateway tencentGateway, ObjectMapper objectMapper) {
         this.aliyunGateway = aliyunGateway;
+        this.tencentGateway = tencentGateway;
         this.objectMapper = objectMapper;
     }
 
@@ -58,14 +65,14 @@ public class SmsNoticeChannelSender implements NoticeChannelSender {
         }
         String provider = firstText(command.getChannelProviderCode(), text(configMap, "providerCode"),
                 text(configMap, "provider"));
-        if (StringUtils.hasText(provider) && !PROVIDER_ALIYUN.equalsIgnoreCase(provider)
-                && !"ALIYUN_SMS".equalsIgnoreCase(provider)) {
+        String normalizedProvider = normalizeProvider(provider);
+        if (!PROVIDER_ALIYUN.equals(normalizedProvider) && !PROVIDER_TENCENT.equals(normalizedProvider)) {
             return ChannelSendResult.failed(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(),
                     "暂不支持短信供应商：" + provider, false);
         }
-        AliyunSmsConfig config;
+        SmsProviderConfig config;
         try {
-            config = AliyunSmsConfig.from(configMap, command.getChannelTemplateId());
+            config = buildConfig(normalizedProvider, configMap, command.getChannelTemplateId());
         } catch (IllegalArgumentException ex) {
             return ChannelSendResult.failed(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), ex.getMessage(), false);
         }
@@ -76,19 +83,51 @@ public class SmsNoticeChannelSender implements NoticeChannelSender {
             return ChannelSendResult.failed("SMS_TEMPLATE_PARAM_INVALID", ex.getMessage(), false);
         }
         try {
-            SmsGatewayResponse response = aliyunGateway.send(new SmsGatewayRequest(command.getMobile(),
+            SmsGatewayResponse response = gateway(normalizedProvider).send(new SmsGatewayRequest(command.getMobile(),
                     config.signName(), config.templateCode(), templateParam, config));
             if (response.success()) {
                 return ChannelSendResult.providerSuccess(
-                        StringUtils.hasText(response.messageId()) ? response.messageId() : "aliyun-" + command.getSendRecordId(),
+                        StringUtils.hasText(response.messageId()) ? response.messageId()
+                                : normalizedProvider.toLowerCase() + "-" + command.getSendRecordId(),
                         response.responseSnapshot());
             }
             return ChannelSendResult.failed(response.failCode(), response.failReason(), response.retryable());
         } catch (SmsGatewayException ex) {
             return ChannelSendResult.failed(ex.failCode(), ex.failReason(), ex.retryable());
         } catch (RuntimeException ex) {
-            return ChannelSendResult.failed("ALIYUN_SMS_SEND_ERROR", "阿里云短信发送异常", true);
+            return ChannelSendResult.failed(normalizedProvider + "_SMS_SEND_ERROR",
+                    providerName(normalizedProvider) + "短信发送异常", true);
         }
+    }
+
+    private SmsProviderConfig buildConfig(String provider, Map<String, Object> configMap, String templateCode) {
+        if (PROVIDER_TENCENT.equals(provider)) {
+            return TencentSmsConfig.from(configMap, templateCode);
+        }
+        return AliyunSmsConfig.from(configMap, templateCode);
+    }
+
+    private SmsGateway gateway(String provider) {
+        return PROVIDER_TENCENT.equals(provider) ? tencentGateway : aliyunGateway;
+    }
+
+    private String normalizeProvider(String provider) {
+        if (!StringUtils.hasText(provider)) {
+            return PROVIDER_ALIYUN;
+        }
+        String value = provider.trim().toUpperCase();
+        if (PROVIDER_ALIYUN.equals(value) || "ALIYUN_SMS".equals(value)) {
+            return PROVIDER_ALIYUN;
+        }
+        if (PROVIDER_TENCENT.equals(value) || "TENCENT_SMS".equals(value) || "TENCENT_CLOUD".equals(value)
+                || "TENCENT_CLOUD_SMS".equals(value) || "QCLOUD_SMS".equals(value)) {
+            return PROVIDER_TENCENT;
+        }
+        return value;
+    }
+
+    private String providerName(String provider) {
+        return PROVIDER_TENCENT.equals(provider) ? "腾讯云" : "阿里云";
     }
 
     private Map<String, Object> readMap(String json) {

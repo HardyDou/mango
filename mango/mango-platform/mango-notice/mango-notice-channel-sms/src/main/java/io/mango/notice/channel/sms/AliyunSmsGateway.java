@@ -13,11 +13,12 @@ final class AliyunSmsGateway implements SmsGateway {
 
     @Override
     public SmsGatewayResponse send(SmsGatewayRequest request) {
+        AliyunSmsConfig config = (AliyunSmsConfig) request.config();
         try {
             Client client = new Client(new Config()
-                    .setAccessKeyId(request.config().accessKeyId())
-                    .setAccessKeySecret(request.config().accessKeySecret())
-                    .setEndpoint(request.config().endpoint()));
+                    .setAccessKeyId(config.accessKeyId())
+                    .setAccessKeySecret(config.accessKeySecret())
+                    .setEndpoint(config.endpoint()));
             SendSmsRequest sendSmsRequest = new SendSmsRequest()
                     .setPhoneNumbers(request.mobile())
                     .setSignName(request.signName())
