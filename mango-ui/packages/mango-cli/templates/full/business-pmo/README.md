@@ -1,7 +1,7 @@
 # Business PMO
 
 ## 1. 概览
-`business-pmo` 是生成业务项目内置的 PMO 工作区，用来承载当前业务仓可执行的 Mango baseline 快照、业务交付规则入口、Agent 路由和交付检查工具。
+`business-pmo` 是生成业务项目内置的 PMO 工作区，用来承载当前业务仓可执行的 Mango baseline 快照、业务交付规则入口、Agent 路由和交付检查工具。baseline 由 `@mango/pmo` 安装或同步，不在 CLI 模板中维护第二份规则。
 
 目录定位：
 
@@ -22,7 +22,7 @@
 | 交付契约检查 | `delivery-contract-check.mjs` | 校验设计说明和交付台账。 |
 | 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
 | baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
-| baseline 同步 | `mango pmo sync` | 从 CLI 模板同步 baseline、入口和兼容脚本。 |
+| baseline 同步 | `mango pmo sync` | 从 `@mango/pmo` 同步 baseline、入口和兼容脚本。 |
 
 ## 3. 能力边界
 - 不作为 Mango 主仓长期规范源；长期规范仍由 Mango PMO 维护。

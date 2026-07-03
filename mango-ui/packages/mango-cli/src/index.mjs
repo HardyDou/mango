@@ -2891,11 +2891,7 @@ function loadPmoPackageBaseline() {
       };
     }
   }
-  const templateBaselineRoot = join(templateRoot, 'business-pmo/mango-baseline');
-  return {
-    root: templateBaselineRoot,
-    manifest: buildLegacyPmoManifest(templateBaselineRoot),
-  };
+  fail('@mango/pmo baseline package is missing. Install @mango/pmo or rebuild the Mango CLI workspace before running mango pmo commands.');
 }
 
 function resolveInstalledPmoPackageBaseline() {
@@ -2914,26 +2910,6 @@ function resolveInstalledPmoPackageBaseline() {
     }
   }
   return null;
-}
-
-function buildLegacyPmoManifest(root) {
-  return {
-    packageName: '@mango/cli-template',
-    packageVersion: readCliVersion(),
-    schemaVersion: 1,
-    source: 'mango-cli-template',
-    generatedAt: new Date().toISOString(),
-    files: walkFiles(root)
-      .map(file => {
-        const content = readFileSync(file);
-        return {
-          path: toPosix(relative(root, file)),
-          sha256: createHash('sha256').update(content).digest('hex'),
-          size: content.length,
-        };
-      })
-      .sort((left, right) => left.path.localeCompare(right.path)),
-  };
 }
 
 function planPmoBaselineSync(targetDir, baseline) {
