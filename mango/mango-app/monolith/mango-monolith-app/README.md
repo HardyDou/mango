@@ -80,8 +80,10 @@ mvn -f mango/pom.xml -pl :mango-monolith-app -am spring-boot:run \
 - `org`
 - `captcha`
 - `file`
+- `resource`
 - `template`
 - `workflow`
+- `home`
 - `mango-job`
 - `kv`
 - `notification`
@@ -89,7 +91,22 @@ mvn -f mango/pom.xml -pl :mango-monolith-app -am spring-boot:run \
 - `numgen`
 - `notice`
 - `payment`
+- `link`
 - `domain`
+- `grid-layout`
+- `mango-cms`
+
+配置了 `modules` 后，Mango 会继续扫描 classpath 中的 `db/migration/<module>/V*.sql`。如果新增 starter 带入了 migration，但这里没有声明对应模块，启动会直接失败并输出缺失模块和 `classpath:db/migration/<module>` 路径。有意装配 starter 但不执行某模块 migration 时，必须配置：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        link:
+          enabled: false
+          skip-reason: 当前单体暂不启用网址导航模块
+```
 
 正常开发不要关闭 Flyway。清库后，表结构、菜单、权限、字典、租户、默认用户、编号规则和业务模块基础数据都依赖 migration 或初始化器恢复。
 
@@ -127,6 +144,7 @@ zation/menus/user?fmt=tree&appCode=internal-admin` 能返回当前用户菜单�
 
 ## 8. 问题排查
 - 表或菜单缺失：检查数据库是否连错、Flyway 是否关闭、starter 是否进入 classpath。
+- 启动提示 Flyway classpath migration 未声明：补齐 `mango.persistence.flyway.modules.<module>.enabled=true`，或确认有意跳过后配置 `enabled=false` 和 `skip-reason`。
 - 文件上传失败：检查 `MANGO_FILE_ROOT` 是否可写，以及请求大小是否超过配置。
 - IP 定位失败：检查 `config/ip-location/ip2region_v4.xdb` 是否存在。
 - 登录成功但菜单为空：检查 authorization 初始化、角色授权、租户绑定和前端页面 key。
