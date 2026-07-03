@@ -76,7 +76,7 @@ stop();
 3. Shell 注册 `@mango/notice/admin-shell`。
 4. 给角色授予通知业务配置、渠道、任务、记录、站内信和接收设置权限。
 5. 创建业务类型，保存并发布配置版本和渠道模板。
-6. 保存渠道配置。
+6. 保存渠道配置；短信渠道按 provider 选择阿里云或腾讯云并填写密钥、签名和接入地址。
 7. 发送站内信，确认任务记录、未读数、铃铛和消息中心都正常。
 
 ## 6. 配置说明
@@ -109,6 +109,26 @@ stop();
 |------|------|
 | dependencies | `@mango/admin-pages`、`@mango/common`、`@mango/system`、`@element-plus/icons-vue` |
 | peerDependencies | `vue`、`vue-router`、`element-plus` |
+
+### 6.1 短信配置
+
+渠道管理页在 `channelType = SMS` 时按 provider 展示短信配置字段：
+
+| providerCode | 页面字段 |
+|--------------|----------|
+| `ALIYUN` / `ALIYUN_SMS` | AccessKey、Secret、短信签名、模板平台、接入地址、通知地址 |
+| `TENCENT` / `TENCENT_SMS` | SecretId、SecretKey、短信应用 ID、短信签名、模板平台、地域、接入地址、国家码、通知地址 |
+
+消息配置页启用短信渠道时需要填写短信模板 Code。模板 Code 会保存到渠道模板 `channelTemplateId`，后端发送时作为阿里云 TemplateCode 或腾讯云 TemplateId 使用。
+
+短信变量映射用于把第三方模板变量绑定到 Mango 通知参数：
+
+| 模板写法 | 变量名示例 | 映射示例 |
+|----------|------------|----------|
+| 阿里云 `${code}` 或 `{{code}}` | `code` | `code -> verifyCode` |
+| 腾讯云 `{1}` | `1` | `1 -> verifyCode` |
+
+点击“按参数生成”会从模板内容或业务参数 schema 生成映射行。保存后映射会写入渠道模板 `variableMapping`，格式为 JSON。
 
 ## 7. API 与扩展
 

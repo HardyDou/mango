@@ -203,7 +203,7 @@
                         active-text="启用"
                         inactive-text="停用"
                         inline-prompt
-                        @change="value => setChannelEnabled(activeChannel, Boolean(value))"
+                        @change="handleTemplateEnabledChange"
                       />
                     </el-form-item>
                   </el-col>
@@ -223,6 +223,15 @@
                           :value="item.id"
                         />
                       </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col v-if="activeChannel === 'SMS'" :span="24">
+                    <el-form-item label="模板 Code" required>
+                      <el-input
+                        v-model="templateForm.channelTemplateId"
+                        class="template-code-input"
+                        placeholder="例如：SMS_123456789"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col v-if="showTemplateTitle" :span="24">
@@ -255,6 +264,48 @@
                     </el-form-item>
                   </el-col>
                 </el-row>
+                <div v-if="activeChannel === 'SMS'" class="template-mapping-panel">
+                  <div class="template-mapping-head">
+                    <span>变量映射</span>
+                    <div class="template-mapping-actions">
+                      <el-button size="small" @click="generateSmsMappingRows">按参数生成</el-button>
+                      <el-button size="small" type="primary" :icon="Plus" @click="addMappingRow">新增映射</el-button>
+                    </div>
+                  </div>
+                  <el-table :data="templateMappingRows" border size="small" class="template-mapping-table" empty-text="无需映射">
+                    <el-table-column label="模板变量名" min-width="160">
+                      <template #default="{ row }">
+                        <el-input v-model="row.paramName" placeholder="code 或 1" />
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="系统参数" min-width="180">
+                      <template #default="{ row }">
+                        <el-select v-model="row.targetName" filterable allow-create default-first-option placeholder="请选择参数">
+                          <el-option
+                            v-for="item in templateParamOptions"
+                            :key="item.name"
+                            :label="`${item.label}（${item.name}）`"
+                            :value="item.name"
+                          />
+                        </el-select>
+                      </template>
+                    </el-table-column>
+                    <el-table-column width="56" align="center">
+                      <template #default="{ $index }">
+                        <el-tooltip content="删除" placement="top">
+                          <el-button
+                            class="table-icon-button"
+                            text
+                            type="danger"
+                            :icon="Delete"
+                            aria-label="删除映射"
+                            @click="removeMappingRow($index)"
+                          />
+                        </el-tooltip>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
                 <div class="param-variable-panel">
                   <span class="notice-muted">参数变量</span>
                   <el-tag
@@ -351,11 +402,27 @@
                   </el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item label="通道">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
+                <el-descriptions-item v-if="activeChannel === 'SMS'" label="模板 Code" :span="2">
+                  {{ templateForm.channelTemplateId || '-' }}
+                </el-descriptions-item>
                 <el-descriptions-item v-if="showTemplateTitle" :label="templateTitleLabel" :span="2">
                   {{ templateForm.titleTemplate || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item :label="templateContentLabel" :span="2">
                   <div class="readonly-content">{{ templateForm.contentTemplate || '-' }}</div>
+                </el-descriptions-item>
+                <el-descriptions-item v-if="activeChannel === 'SMS'" label="变量映射" :span="2">
+                  <div class="readonly-mapping">
+                    <el-tag
+                      v-for="item in templateMappingRows"
+                      :key="`${item.paramName}:${item.targetName}`"
+                      class="notice-tag"
+                      effect="plain"
+                    >
+                      {{ item.paramName }} -> {{ item.targetName }}
+                    </el-tag>
+                    <span v-if="templateMappingRows.length === 0" class="notice-muted">无</span>
+                  </div>
                 </el-descriptions-item>
               </el-descriptions>
             </section>
@@ -469,11 +536,27 @@
                       </el-tag>
                     </el-descriptions-item>
                     <el-descriptions-item label="通道">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
+                    <el-descriptions-item v-if="activeChannel === 'SMS'" label="模板 Code" :span="2">
+                      {{ templateForm.channelTemplateId || '-' }}
+                    </el-descriptions-item>
                     <el-descriptions-item v-if="showTemplateTitle" :label="templateTitleLabel" :span="2">
                       {{ templateForm.titleTemplate || '-' }}
                     </el-descriptions-item>
                     <el-descriptions-item :label="templateContentLabel" :span="2">
                       <div class="readonly-content">{{ templateForm.contentTemplate || '-' }}</div>
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="activeChannel === 'SMS'" label="变量映射" :span="2">
+                      <div class="readonly-mapping">
+                        <el-tag
+                          v-for="item in templateMappingRows"
+                          :key="`${item.paramName}:${item.targetName}`"
+                          class="notice-tag"
+                          effect="plain"
+                        >
+                          {{ item.paramName }} -> {{ item.targetName }}
+                        </el-tag>
+                        <span v-if="templateMappingRows.length === 0" class="notice-muted">无</span>
+                      </div>
                     </el-descriptions-item>
                   </el-descriptions>
                 </section>
@@ -624,15 +707,7 @@ const businessConfigVersionText = computed(() => {
   return version ? `V${version.version}` : '未发布';
 });
 const currentTemplate = computed(() => {
-  const version = pageMode.value === 'HISTORY' ? selectedHistoryVersion.value?.version : undefined;
-  if (version) {
-    return templates.value.find(item => item.channelType === activeChannel.value && item.version === version)
-      || templates.value.find(item => item.channelType === activeChannel.value && item.versionStatus === 'ACTIVE')
-      || templates.value.find(item => item.channelType === activeChannel.value);
-  }
-  return templates.value.find(item => item.channelType === activeChannel.value && item.versionStatus === 'DRAFT')
-    || templates.value.find(item => item.channelType === activeChannel.value && item.versionStatus === 'ACTIVE')
-    || templates.value.find(item => item.channelType === activeChannel.value);
+  return resolveTemplateForChannel(activeChannel.value);
 });
 const showTemplateTitle = computed(() => activeChannel.value !== 'SMS');
 const templateTitleLabel = computed(() => {
@@ -1077,6 +1152,18 @@ function channelRouteText(channelConfigId?: string) {
   return config?.configName || config?.providerCode || channelConfigId;
 }
 
+function resolveTemplateForChannel(channel: NoticeChannelType) {
+  const version = pageMode.value === 'HISTORY' ? selectedHistoryVersion.value?.version : undefined;
+  if (version) {
+    return templates.value.find(item => item.channelType === channel && item.version === version)
+      || templates.value.find(item => item.channelType === channel && item.versionStatus === 'ACTIVE')
+      || templates.value.find(item => item.channelType === channel);
+  }
+  return templates.value.find(item => item.channelType === channel && item.versionStatus === 'DRAFT')
+    || templates.value.find(item => item.channelType === channel && item.versionStatus === 'ACTIVE')
+    || templates.value.find(item => item.channelType === channel);
+}
+
 function setChannelEnabled(channel: NoticeChannelType, enabled: boolean) {
   if (activeChannel.value !== channel) {
     snapshotTemplateForm(activeChannel.value);
@@ -1084,6 +1171,10 @@ function setChannelEnabled(channel: NoticeChannelType, enabled: boolean) {
   }
   templateForm.enabled = enabled;
   snapshotTemplateForm(channel);
+}
+
+function handleTemplateEnabledChange(value: string | number | boolean) {
+  setChannelEnabled(activeChannel.value, Boolean(value));
 }
 
 function validateEnabledTemplates() {
@@ -1095,6 +1186,15 @@ function validateEnabledTemplates() {
       applyTemplate();
       return false;
     }
+    if (channel === 'SMS' && draft.enabled && !draft.channelTemplateId?.trim()) {
+      ElMessage.error('短信已启用，请填写短信模板 Code');
+      activeChannel.value = channel;
+      applyTemplate();
+      return false;
+    }
+  }
+  if (!validateTemplateMappings()) {
+    return false;
   }
   return true;
 }
@@ -1136,8 +1236,8 @@ async function quickPublish(row: NoticeBusinessType) {
   await publishBusinessConfigDraft(row.id);
   const templatesToPublish = await getChannelTemplates(row.id);
   await Promise.all(templatesToPublish
-    .filter(item => item.versionStatus === 'DRAFT')
-    .map(item => publishChannelTemplate(row.id, item.channelType)));
+    .filter((item: NoticeChannelTemplate) => item.versionStatus === 'DRAFT')
+    .map((item: NoticeChannelTemplate) => publishChannelTemplate(row.id, item.channelType)));
   ElMessage.success('已发布');
   await loadBusinessTypes();
 }
@@ -1256,23 +1356,33 @@ function validateBaseForm() {
 
 function applyTemplate() {
   const channel = activeChannel.value;
-  const draft = channelDrafts[channel] || currentTemplate.value || createEmptyTemplate(channel);
+  const draft = channelDrafts[channel] || resolveTemplateForChannel(channel) || createEmptyTemplate(channel);
   Object.assign(templateForm, draft);
   templateMappingRows.value = cloneMappingRows(channelMappingDrafts[channel] || parseVariableMapping(templateForm.variableMapping));
 }
 
-function snapshotTemplateForm(channel = activeChannel.value) {
+function snapshotTemplateForm(channel = activeChannel.value, useCurrentForm = channel === activeChannel.value) {
   if (pageMode.value !== 'MAINTAIN') {
     return;
   }
-  const existing = channelDrafts[channel] || currentTemplate.value || createEmptyTemplate(channel);
+  const existing = channelDrafts[channel] || resolveTemplateForChannel(channel) || createEmptyTemplate(channel);
+  if (!useCurrentForm) {
+    channelDrafts[channel] = {
+      ...existing,
+      channelType: channel,
+      variableMapping: existing.variableMapping || '',
+    };
+    channelMappingDrafts[channel] = cloneMappingRows(channelMappingDrafts[channel] || parseVariableMapping(existing.variableMapping));
+    return;
+  }
+  const variableMapping = buildVariableMappingJson(templateMappingRows.value);
   channelDrafts[channel] = {
     ...existing,
     ...templateForm,
     channelType: channel,
     channelConfigId: templateForm.channelConfigId || undefined,
-    channelTemplateId: '',
-    variableMapping: '',
+    channelTemplateId: templateForm.channelTemplateId?.trim() || '',
+    variableMapping,
   };
   channelMappingDrafts[channel] = cloneMappingRows(templateMappingRows.value);
 }
@@ -1354,6 +1464,8 @@ function hasTemplateDraft(draft?: Partial<NoticeChannelTemplate>) {
   return Boolean(
     draft.titleTemplate?.trim()
     || draft.contentTemplate?.trim()
+    || draft.channelTemplateId?.trim()
+    || draft.variableMapping?.trim()
     || draft.channelConfigId
     || draft.enabled === true
     || draft.enabled === false,
@@ -1373,6 +1485,72 @@ function clearChannelDraft(channel: NoticeChannelType) {
 
 function cloneMappingRows(rows: TemplateMappingRow[]) {
   return rows.map(item => ({ ...item }));
+}
+
+function addMappingRow() {
+  templateMappingRows.value.push({ paramName: '', targetName: '' });
+}
+
+function removeMappingRow(index: number) {
+  templateMappingRows.value.splice(index, 1);
+}
+
+function generateSmsMappingRows() {
+  const variables = extractTemplateVariables(templateForm.contentTemplate || '');
+  const source = variables.length > 0 ? variables : templateParamOptions.value.map(item => item.name);
+  templateMappingRows.value = Array.from(new Set(source))
+    .filter(Boolean)
+    .map(name => ({ paramName: name, targetName: name }));
+}
+
+function extractTemplateVariables(content: string) {
+  const names: string[] = [];
+  const pattern = /\{\{\s*([A-Za-z_][\w.-]*)\s*\}\}|\$\{\s*([A-Za-z_][\w.-]*)\s*\}|\{\s*([1-9]\d*)\s*\}/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(content)) !== null) {
+    names.push(match[1] || match[2] || match[3]);
+  }
+  return names;
+}
+
+function buildVariableMappingJson(rows: TemplateMappingRow[]) {
+  const mapping = rows
+    .map(row => ({ paramName: row.paramName.trim(), targetName: row.targetName.trim() }))
+    .filter(row => row.paramName && row.targetName)
+    .reduce<Record<string, string>>((result, row) => {
+      result[row.paramName] = row.targetName;
+      return result;
+    }, {});
+  return Object.keys(mapping).length > 0 ? JSON.stringify(mapping) : '';
+}
+
+function validateTemplateMappings() {
+  const availableParams = new Set(templateParamOptions.value.map(item => item.name));
+  for (const channel of channels) {
+    const rows = channel === activeChannel.value
+      ? templateMappingRows.value
+      : channelMappingDrafts[channel] || parseVariableMapping(channelDrafts[channel]?.variableMapping);
+    for (const row of rows) {
+      const paramName = row.paramName.trim();
+      const targetName = row.targetName.trim();
+      if (!paramName && !targetName) {
+        continue;
+      }
+      if (!paramName || !targetName) {
+        ElMessage.error(`${channelLabel(channel)}变量映射请填写完整`);
+        activeChannel.value = channel;
+        applyTemplate();
+        return false;
+      }
+      if (availableParams.size > 0 && !availableParams.has(targetName)) {
+        ElMessage.error(`${channelLabel(channel)}变量映射参数不存在：${targetName}`);
+        activeChannel.value = channel;
+        applyTemplate();
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 function resolveParamsSchemaForOptions() {
@@ -1417,7 +1595,7 @@ function parseVariableMapping(value?: string): TemplateMappingRow[] {
 
 watch(activeChannel, (_channel, oldChannel) => {
   if (oldChannel && pageMode.value === 'MAINTAIN') {
-    snapshotTemplateForm(oldChannel);
+    snapshotTemplateForm(oldChannel, true);
   }
   applyTemplate();
 });
@@ -1701,6 +1879,11 @@ onMounted(() => {
   max-width: 100%;
 }
 
+.template-code-input {
+  width: 320px;
+  max-width: 100%;
+}
+
 .template-content-item {
   width: 100%;
 }
@@ -1763,12 +1946,54 @@ onMounted(() => {
   border-top: 1px solid var(--el-border-color-lighter);
 }
 
+.template-mapping-panel {
+  margin: -2px 0 18px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  background: var(--el-fill-color-lighter);
+}
+
+.template-mapping-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.template-mapping-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.template-mapping-actions :deep(.el-button) {
+  margin-left: 0;
+}
+
+.template-mapping-table {
+  width: 100%;
+}
+
+.template-mapping-table :deep(.el-table__cell) {
+  padding: 5px 0;
+}
+
 .param-variable-panel > .notice-muted {
   line-height: 24px;
 }
 
 .param-variable-tag {
   cursor: pointer;
+}
+
+.readonly-mapping {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .history-layout {
