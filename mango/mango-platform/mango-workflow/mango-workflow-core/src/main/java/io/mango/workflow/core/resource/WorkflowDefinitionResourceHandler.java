@@ -61,6 +61,11 @@ public class WorkflowDefinitionResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public List<String> dependsOnResourceTypes() {
+        return List.of(ResourceTypes.WORKFLOW_CATEGORY, ResourceTypes.WORKFLOW_NODE_DEFINITION);
+    }
+
+    @Override
     public ResourceHandlerSpec spec() {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())

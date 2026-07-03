@@ -44,6 +44,11 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public List<String> dependsOnResourceTypes() {
+        return List.of(ResourceTypes.AUTH_ROLE, ResourceTypes.ORG_UNIT);
+    }
+
+    @Override
     public ResourceHandlerSpec spec() {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())

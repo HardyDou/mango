@@ -1,5 +1,33 @@
 # Mango Changelog
 
+## Unreleased
+
+### New
+
+- Added Resource Registry resource-type dependency ordering for Issue #354. Resource handlers can now declare
+  `dependsOnResourceTypes()`, and active resource sync batches are topologically ordered before target handlers run.
+
+### Fixed
+
+- Fixed clean database Resource Registry bootstrap ordering for cross-type declarations such as `IDENTITY_USER` before
+  `ORG_MEMBER_BINDING`, `AUTH_ROLE` before `AUTH_SUBJECT_ROLE`, and workflow categories/nodes before
+  `WORKFLOW_DEFINITION`. Cyclic type dependencies now fail before any target handler is called.
+
+### Upgrade Notes
+
+- Business projects can keep Resource Registry declarations split across files and modules; file scan order is no longer
+  the ordering contract for resource types that declare handler dependencies.
+
+### Verification
+
+- `mvn -pl mango-platform/mango-resource/mango-resource-core -am -Dtest=ResourceRegistrySyncServiceIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-platform/mango-identity/mango-identity-starter,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-workflow/mango-workflow-core -am -DskipTests compile`
+- `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/pr-354-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `git diff --check`
+
 ## v2026.07.02-maven-1.0.6-home-widgets-cli-release - 2026-07-02
 
 ### New
