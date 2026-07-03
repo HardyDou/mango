@@ -233,6 +233,45 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         assertThat(version.getProcessDefinitionId()).isEqualTo("proc-created");
     }
 
+    @Test
+    void ensurePublishedUpdatesChangedDefinitionAndCreatesNewVersionThroughRealMappers() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(9001L, "1", "admin", "default", "USER", "ORG", 100L, "internal-admin"));
+        stubDeployment("PAYMENT_REFUND_APPROVAL", "退款审批", "1", "deploy-created", "proc-created", 1);
+        service.ensurePublished(ensureCommand());
+        WorkflowDefinition created = definitionMapper.selectOne(new QueryWrapper<WorkflowDefinition>()
+                .eq("definition_key", "PAYMENT_REFUND_APPROVAL")
+                .last("limit 1"));
+
+        reset(repositoryService, bpmnConverter);
+        stubDeployableAndDeployment("proc-created", "PAYMENT_REFUND_APPROVAL", "退款审批-新版",
+                "1", "deploy-updated", "proc-updated", 2);
+        EnsureWorkflowDefinitionCommand changed = ensureCommand();
+        changed.setDefinitionName("退款审批-新版");
+        changed.setStartEntryVisible(false);
+        changed.setFormJson("{\"mode\":\"UPDATED\"}");
+
+        var result = service.ensurePublished(changed).getData();
+
+        assertThat(result.getDeploymentId()).isEqualTo("deploy-updated");
+        assertThat(result.getProcessDefinitionId()).isEqualTo("proc-updated");
+        WorkflowDefinition updated = definitionMapper.selectById(created.getId());
+        assertThat(updated.getDefinitionName()).isEqualTo("退款审批-新版");
+        assertThat(updated.getStartEntryVisible()).isFalse();
+        assertThat(updated.getFormJson()).isEqualTo("{\"mode\":\"UPDATED\"}");
+        assertThat(updated.getPublishedVersionNo()).isEqualTo(2);
+        assertThat(updated.getDeploymentId()).isEqualTo("deploy-updated");
+        assertThat(versionMapper.selectCount(new QueryWrapper<WorkflowDefinitionVersion>()
+                .eq("definition_id", created.getId()))).isEqualTo(2L);
+        WorkflowDefinitionVersion latest = versionMapper.selectOne(new QueryWrapper<WorkflowDefinitionVersion>()
+                .eq("definition_id", created.getId())
+                .eq("version_no", 2)
+                .last("limit 1"));
+        assertThat(latest.getPublishStatus()).isEqualTo("SUCCESS");
+        assertThat(latest.getDefinitionName()).isEqualTo("退款审批-新版");
+        assertThat(latest.getProcessDefinitionId()).isEqualTo("proc-updated");
+    }
+
     private void stubDeployment(String definitionKey, String definitionName, String tenantId,
                                 String deploymentId, String processDefinitionId, int processVersion) {
         BpmnModel bpmnModel = new BpmnModel();
@@ -256,6 +295,36 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         when(processDefinitionQuery.singleResult()).thenReturn(processDefinition);
         when(processDefinition.getId()).thenReturn(processDefinitionId);
         when(processDefinition.getVersion()).thenReturn(processVersion);
+    }
+
+    private void stubDeployableAndDeployment(String existingProcessDefinitionId, String definitionKey,
+                                             String definitionName, String tenantId, String deploymentId,
+                                             String processDefinitionId, int processVersion) {
+        BpmnModel bpmnModel = new BpmnModel();
+        when(bpmnConverter.toModel(anyString(), eq(definitionKey), eq(definitionName))).thenReturn(bpmnModel);
+        when(bpmnConverter.toXml(anyString(), eq(definitionKey), eq(definitionName))).thenReturn("<definitions />");
+        ProcessDefinitionQuery deployableQuery = mock(ProcessDefinitionQuery.class);
+        ProcessDefinition existingProcessDefinition = mock(ProcessDefinition.class);
+        DeploymentBuilder builder = mock(DeploymentBuilder.class);
+        Deployment deployment = mock(Deployment.class);
+        ProcessDefinitionQuery deploymentQuery = mock(ProcessDefinitionQuery.class);
+        ProcessDefinition deployedProcessDefinition = mock(ProcessDefinition.class);
+        when(repositoryService.createProcessDefinitionQuery()).thenReturn(deployableQuery, deploymentQuery);
+        when(deployableQuery.processDefinitionId(existingProcessDefinitionId)).thenReturn(deployableQuery);
+        when(deployableQuery.singleResult()).thenReturn(existingProcessDefinition);
+        when(repositoryService.createDeployment()).thenReturn(builder);
+        when(builder.name(definitionName)).thenReturn(builder);
+        when(builder.key(definitionKey)).thenReturn(builder);
+        when(builder.tenantId(tenantId)).thenReturn(builder);
+        when(builder.addBpmnModel(definitionKey + ".bpmn20.xml", bpmnModel)).thenReturn(builder);
+        when(builder.deploy()).thenReturn(deployment);
+        when(deployment.getId()).thenReturn(deploymentId);
+        when(deploymentQuery.deploymentId(deploymentId)).thenReturn(deploymentQuery);
+        when(deploymentQuery.processDefinitionKey(definitionKey)).thenReturn(deploymentQuery);
+        when(deploymentQuery.latestVersion()).thenReturn(deploymentQuery);
+        when(deploymentQuery.singleResult()).thenReturn(deployedProcessDefinition);
+        when(deployedProcessDefinition.getId()).thenReturn(processDefinitionId);
+        when(deployedProcessDefinition.getVersion()).thenReturn(processVersion);
     }
 
     private void rebuildTables() {

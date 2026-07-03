@@ -6,6 +6,22 @@
 
 它不保存目标资源内容。字典、系统参数、消息模板、工作流配置、编号规则、打印模板、文件配置等真实数据仍由各目标模块自己的表维护。
 
+## 1.1 数据治理快速判断
+
+业务 Agent 和 Mango 框架开发 Agent 处理初始化数据时，先按下面判断：
+
+| 场景 | 入口 | 关键配置 |
+|------|------|----------|
+| 正式内置资源，例如菜单、字典、系统配置、消息模板、任务、号段、文件配置 | `META-INF/mango/resources/` | 默认扫描。 |
+| 演示站点、演示角色、演示流程、演示日历、sample job | `META-INF/mango/demo/` | 只有 `mango.resource.registry.demo-enabled=true` 才扫描。 |
+| 首次初始化后用户或业务运行时会改的数据 | Resource 声明 | 使用 `sync-mode: INIT_ONLY`。 |
+| 表结构、索引、约束、大 SQL、停机升级 SQL | Flyway | 见 `mango-infra-persistence` README。 |
+| 用户创建的业务单据、流程实例、任务实例、日历事件、用户改的角色授权 | 业务 Owner Service | 不进入 Resource 声明。 |
+
+Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在线升级。大 SQL、磁盘 SQL 和远程 URL SQL 统一走 `mango-infra-persistence` 的模块化 Flyway `locations`。
+
+历史 Flyway 中如果保留旧字典、旧菜单或旧 demo seed，只能作为历史库兼容证据，不能作为新增资源声明模板。新增或调整字典、菜单、角色、工作流等小资源时，先看当前 handler 是否开放，再按本 README 的 Resource 声明和 `sync-mode` 处理。
+
 ## 2. 模块结构
 
 | 模块 | 职责 |
@@ -22,7 +38,8 @@
 - 采集 classpath JSON/YAML 资源声明和 Java `ResourceProvider` 声明。
 - 将声明写入 `resource_registry`，并记录同步日志和变更日志。
 - 按资源类型调用目标模块 `ResourceHandler` 完成创建、更新、禁用和删除。
-- 支持 `AUTO`、`MANUAL`、`LOCKED` 同步模式和强制同步。
+- 支持 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 同步模式和强制同步。
+- 支持正式资源和 demo 资源目录隔离，demo 默认不扫描。
 - 支持本地单体注册中心和微服务远程上报两种拓扑。
 - 提供后台管理接口查询注册资源、同步日志、变更日志和处理器字段契约。
 
@@ -90,6 +107,8 @@
 | `instance-id` | 空 | 同步锁持有者标识，为空时使用当前 JVM 进程名。 |
 | `lock-ttl-seconds` | `300` | 多实例同步锁 TTL。 |
 | `locations` | `classpath*:META-INF/mango/resources/*.{json,yml,yaml}` | 声明文件扫描路径。 |
+| `demo-enabled` | `false` | 是否额外扫描 demo 资源声明。 |
+| `demo-locations` | `classpath*:META-INF/mango/demo/*.{json,yml,yaml}` | demo 资源声明扫描路径。 |
 | `remote.enabled` | `true` | `mango-resource-sync-starter` 是否向注册中心上报声明。 |
 | `remote.app-code` | 空 | 远程上报应用编码，空时取 `spring.application.name`。 |
 | `remote.service-code` | 空 | 远程上报服务编码，空时取 `spring.application.name`。 |
@@ -106,6 +125,11 @@
 | `ResourceHandler` | 目标模块消费资源声明并落库。 |
 | `ResourceRegistryApi` | 本地或远程注册资源声明。 |
 | `ResourceHandlerSpec` | 暴露资源处理器字段契约，供后台和文档查看。 |
+
+`ResourceHandler` 可以通过 `dependsOnResourceTypes()` 声明当前资源类型在同一同步批次内依赖的其它资源类型。
+Resource Registry 会在批量同步 active 声明前做资源类型拓扑排序，保证例如 `IDENTITY_USER`
+先于 `ORG_MEMBER_BINDING`、`AUTH_ROLE` 先于 `AUTH_SUBJECT_ROLE`。依赖资源类型未出现在本批次时不会强制失败，
+目标资源是否已存在仍由具体 handler 校验。出现循环依赖时，同步会在调用目标 handler 前失败，并输出循环路径。
 
 资源声明来源支持：
 
@@ -125,10 +149,21 @@ classpath*:META-INF/mango/resources/*.yml
 classpath*:META-INF/mango/resources/*.yaml
 ```
 
+demo 资源默认扫描路径：
+
+```text
+classpath*:META-INF/mango/demo/*.json
+classpath*:META-INF/mango/demo/*.yml
+classpath*:META-INF/mango/demo/*.yaml
+```
+
+demo 路径只有 `mango.resource.registry.demo-enabled=true` 时才会追加扫描。默认启动只读取正式资源目录。demo 数据跟随所属模块发布，但不进入默认包扫描结果，也不要求单独 demo starter。
+
 推荐命名：
 
 ```text
 META-INF/mango/resources/{module}-common-{resource}.{json,yml,yaml}
+META-INF/mango/demo/{module}-demo-{resource}.{json,yml,yaml}
 ```
 
 示例：
@@ -142,6 +177,8 @@ template-common-dict.yml
 ```
 
 菜单树等大资源优先使用 JSON，减少重复缩进和视觉噪音；少量配置可使用 YAML。
+
+大 SQL、全国行政区划、年度日历等大数据不要写成 Resource YAML/JSON。它们应使用 `mango-infra-persistence` 的 `filesystem:` 或 `http(s)` Flyway locations，或由模块 Owner Service 提供批量导入。
 
 声明文件必须包含 `schemaVersion`、`moduleCode`、`moduleName` 和 `declarations`。loader 会校验 schema 版本和结构完整性；错误信息包含来源路径，方便定位坏文件。
 
@@ -167,7 +204,7 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 | `mango-org` | `ORG_UNIT`、`ORG_POST` |
 | `mango-identity` | `IDENTITY_USER`、`ORG_MEMBER_BINDING` |
 | `mango-notice` | `MESSAGE_CHANNEL`、`MESSAGE_TEMPLATE` |
-| `mango-workflow` | `WORKFLOW_CATEGORY`、`WORKFLOW_TEMPLATE_CATEGORY`、`WORKFLOW_NODE_DEFINITION` |
+| `mango-workflow` | `WORKFLOW_CATEGORY`、`WORKFLOW_TEMPLATE_CATEGORY`、`WORKFLOW_NODE_DEFINITION`、`WORKFLOW_DEFINITION` |
 | `mango-numgen` | `SEQUENCE_RULE` |
 | `mango-template` | `PRINT_TEMPLATE` |
 | `mango-job` | `JOB_DEFINITION` |
@@ -184,7 +221,6 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 | 资源类型 | 当前状态 | 现阶段使用方式 |
 |----------|----------|----------------|
 | `MESSAGE_EVENT` | 无目标表字段契约和 `ResourceHandler`。 | 通知资源当前使用 `MESSAGE_CHANNEL` 和 `MESSAGE_TEMPLATE`。事件、路由或触发规则需要等 notice 模块补齐 handler 后再开放。 |
-| `WORKFLOW_DEFINITION` | 无 `ResourceHandler`。 | 工作流当前只开放分类、模板分类和节点定义资源；流程定义仍由 workflow 模块自身的发布、初始化或业务入口管理。 |
 | `AI_PROMPT` | 无 `mango-ai` 目标模块运行时和 `ResourceHandler`。 | 暂不通过 Resource Registry 声明 AI Prompt。 |
 
 ## 7. 声明文件示例
@@ -223,9 +259,20 @@ mango:
 | `biz-key` | `STRING` | 是 | 资源业务稳定键，推荐 `业务域.对象.动作`。 |
 | `name` | `STRING` | 否 | 资源显示名。 |
 | `target-module` | `STRING` | 是 | 消费资源的目标模块。 |
-| `sync-mode` | `ENUM` | 否 | `AUTO`、`MANUAL`、`LOCKED`，默认 `AUTO`。 |
+| `sync-mode` | `ENUM` | 否 | `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED`，默认 `AUTO`。 |
 | `status` | `ENUM` | 否 | `ACTIVE`、`DISABLED`、`DEPRECATED`、`REMOVED`，默认 `ACTIVE`。 |
 | `fields` | `MAP` | 是 | 目标模块定义的字段。 |
+
+`sync-mode` 语义：
+
+| 模式 | 行为 | 适用场景 |
+|------|------|----------|
+| `AUTO` | 声明版本或内容变化时自动调用目标 handler 覆盖目标数据。 | 后续升级应由模块持续维护的数据。 |
+| `INIT_ONLY` | 首次同步创建目标数据；目标已存在后只更新 registry 声明元数据，不覆盖目标业务表。 | 菜单、角色、流程模板等初始化后允许用户或业务运行时修改的数据。 |
+| `MANUAL` | registry 已接管为人工维护后跳过声明同步。 | 运维或管理员临时接管的资源。 |
+| `LOCKED` | registry 锁定后跳过声明同步。 | 禁止声明继续改动的保护资源。 |
+
+声明文件中 `sync-mode` 支持 `INIT_ONLY`、`init-only` 和 `init_only` 写法。
 
 字段类型支持：
 
@@ -262,12 +309,16 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 | 场景 | 行为 |
 |------|------|
 | 新资源 | 写入 `resource_registry`，调用目标模块 `ResourceHandler.upsert`。 |
-| hash 或 version 变化 | `AUTO` 允许覆盖目标资源；`MANUAL`、`LOCKED` 跳过。 |
+| hash 或 version 变化 | `AUTO` 允许覆盖目标资源；`INIT_ONLY` 已存在时只更新 registry 元数据；`MANUAL`、`LOCKED` 跳过。 |
 | version 回退 | 拒绝同步，避免旧声明覆盖新资源。 |
 | 声明状态为 `DISABLED` | 调用目标模块 `disable`，目标模块负责逻辑禁用。 |
 | 声明状态为 `DEPRECATED` | 只更新注册中心声明状态和审计，目标资源继续可读，不调用 `upsert` 或 `disable`。 |
 | 声明状态为 `REMOVED` | 调用目标模块 `delete`；目标模块不支持物理删除时降级为 `disable`。 |
 | 强制同步 | 后台 `/resource/sync/force` 触发，跳过 hash 未变化限制。 |
+
+同一批 active 声明如果包含跨类型依赖，Resource Registry 按目标 `ResourceHandler.dependsOnResourceTypes()`
+声明的依赖图排序后再调用各 handler。声明文件顺序、文件扫描顺序和 jar 加载顺序不作为同步顺序语义。
+如果依赖图存在环，例如 `A -> B -> A`，同步会失败并提示 `Resource type dependency cycle detected`。
 
 多实例启动时通过 `mango-infra-kv` 的 `ILocker` 抢占 `mango-resource-sync` 锁，抢到锁的实例执行同步，其它实例跳过。
 
@@ -331,6 +382,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | `WORKFLOW_CATEGORY` | `mango-workflow` | 见 `mango-workflow` README。 |
 | `WORKFLOW_TEMPLATE_CATEGORY` | `mango-workflow` | 见 `mango-workflow` README。 |
 | `WORKFLOW_NODE_DEFINITION` | `mango-workflow` | 见 `mango-workflow` README。 |
+| `WORKFLOW_DEFINITION` | `mango-workflow` | 见 `mango-workflow` README。 |
 | `SEQUENCE_RULE` | `mango-numgen` | 见 `mango-numgen` README。 |
 | `PRINT_TEMPLATE` | `mango-template` | 见 `mango-template` README。 |
 | `JOB_DEFINITION` | `mango-job` | 见 `mango-job` README。 |

@@ -16,6 +16,7 @@
 |------|------|----------|
 | 字典 | 维护字典类型、字典数据，给表单下拉、筛选项、标签展示提供选项 | `DictApi`、`/system/dict`、`dictTypeApi`、`dictDataApi` |
 | 系统配置 | 维护运行时配置键值和业务域配置控制面板，例如安全开关、业务开关、上传/邮件/短信分组参数 | `SysConfigApi`、`/system/config`、`configApi`、`SystemConfigPanel` |
+| 后台品牌配置 | 维护 Admin 登录页、后台框架 Logo、浏览器标题、favicon 和页脚展示信息 | `/system/admin-branding`、`AdminBrandingView`、`adminBrandingApi` |
 | 机构 | 维护机构空间、机构类型、机构状态、机构套餐绑定，登录页读取启用机构选项 | `SysTenantApi`、`/system/tenant`、`tenantApi` |
 | 行政区划 | 查询省市区树、子级区划、adcode 详情和启用区划 | `SysAreaApi`、`/system/area`、`areaApi` |
 | 国际化 | 读取公开语言包、语言列表和指定国际化条目 | `SysI18nApi`、`/system/i18n` |
@@ -266,6 +267,9 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | 修改配置值 | `PUT /system/config/value` | `system:config:edit` |
 | 配置分组 | `GET /system/config/groups` | `system:config:list` |
 | 配置展示类型 | `GET /system/config/value-types` | `system:config:list` |
+| 后台品牌配置 | `GET /system/admin-branding` | `system:admin-branding:query` |
+| 后台品牌公共配置 | `GET /system/admin-branding/public` | 公开接口 |
+| 保存后台品牌配置 | `PUT /system/admin-branding` | `system:admin-branding:edit` |
 | 机构列表 | `GET /system/tenant/list` | `system:tenant:list` |
 | 登录机构选项 | `GET /system/tenant/login-options` | 公开接口 |
 | 机构详情 | `GET /system/tenant/detail` | `system:tenant:query` |
@@ -306,6 +310,7 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | `DictDataPo` | `dictLabel`、`dictValue`、`dictType` | `id`、`dictType`、`dictLabel`、`dictValue`、`sort`、`status` |
 | `DictOptionVO` | 无 | `label`、`value` |
 | `SysConfigPo` | `configKey`、`configValue`、`configName`、`type` | `id`、`configKey`、`configValue`、`configName`、`type`、`domainCode`、`valueType`、`options`、`editable`、`status` |
+| `AdminBrandingVO` | 无 | `enabled`、`title`、`shortTitle`、`subtitle`、`loginTitle`、`loginSubtitle`、`logoFile`、`faviconFile`、`loginImageFile`、`footerCopyright`、`icp`、`contact` |
 | `SysTenantPo` | `tenantName`、`tenantCode`、`packageId`、`status` | `id`、`tenantName`、`tenantCode`、`institutionType`、`packageId`、`capabilityCodes`、`status` |
 | `SysArea` | 新增时传 `pid`、`name` | `id`、`pid`、`name`、`letter`、`adcode`、`location`、`areaSort`、`areaStatus`、`areaType`、`hot`、`cityCode`、`tenantId` |
 | `SysI18n` | 无 | `id`、`name`、`zhCn`、`en`、`description` |
@@ -342,6 +347,8 @@ Flyway 路径：`mango-system-core/src/main/resources/db/migration/system`。
 
 系统默认字典和系统默认配置通过 `mango-resource` 注入，资源文件是 `system-common-dict.yml` 和 `system-common-config.yml`。
 
+后台品牌配置复用 `sys_config`，配置 key 统一使用 `admin.branding.*`。`admin.branding.enabled` 控制是否启用自定义后台外观；图片类字段只保存文件中心 ID，例如 `{id}`，不能保存预览 URL、下载 URL 或对象存储直连地址。运行时由 Admin Shell 根据文件 ID 调用文件中心派生临时展示地址。
+
 菜单、按钮和 API 权限不是在 `mango-system` 自己的 SQL 中维护，统一由 `mango-authorization` 的资源采集和 manifest 入库能力维护。`mango-system-starter` 的 `module.properties` 只登记模块扫描信息：
 
 ```properties
@@ -360,6 +367,7 @@ module-path=/system
 | 字典类型 | `system:dict:type:list`、`system:dict:type:query`、`system:dict:type:add`、`system:dict:type:edit`、`system:dict:type:delete` |
 | 字典数据 | `system:dict:data:list`、`system:dict:data:query`、`system:dict:data:add`、`system:dict:data:edit`、`system:dict:data:delete` |
 | 系统配置 | `system:config:list`、`system:config:query`、`system:config:add`、`system:config:edit`、`system:config:delete` |
+| 后台品牌配置 | `system:admin-branding:query`、`system:admin-branding:edit` |
 | 机构 | `system:tenant:list`、`system:tenant:query`、`system:tenant:add`、`system:tenant:edit`、`system:tenant:delete` |
 | 行政区划 | `system:area:query`、`system:area:add`、`system:area:edit`、`system:area:delete` |
 | 登录日志 | `system:log:login:list`、`system:log:login:query`、`system:log:login:delete` |
@@ -378,6 +386,7 @@ module-path=/system
 | 公共路径 | `PublicPathView` |
 | 业务域 | `DomainView` |
 | 系统事件 | `SystemEventView` |
+| 后台品牌配置 | `AdminBrandingView` |
 
 `PublicPathView`、`DomainView`、`SystemEventView` 使用的是其他后端能力的接口封装，接入这些页面时要同时确认对应后端模块已启用。
 

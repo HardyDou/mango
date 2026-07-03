@@ -1,5 +1,115 @@
 # @mango/cli Changelog
 
+## 1.0.57 - 2026-07-02
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.6`.
+- Updated generated project release locks for the home-widget modularization batch:
+  - `@mango/admin-shell@1.0.32`
+  - `@mango/admin@1.0.37`
+  - `@mango/calendar@1.0.15`
+  - `@mango/grid-layout@1.0.4`
+  - `@mango/grid-widgets@1.0.9`
+  - `@mango/link-openapi@1.0.1`
+  - `@mango/link-page@1.0.1`
+  - `@mango/link@1.0.1`
+  - `@mango/notice@1.0.16`
+  - `@mango/system@1.0.13`
+  - `@mango/workflow@1.0.20`
+  - `@mango/admin-pages@1.0.14`
+  - `@mango/cms@1.0.4`
+  - `@mango/file@1.0.15`
+  - `@mango/job@1.0.7`
+  - `@mango/numgen@1.0.15`
+  - `@mango/payment@1.0.6`
+  - `@mango/template@1.0.15`
+  - `@mango/workflow-business-example@1.0.19`
+  - `@mango/cli@1.0.57`
+
+### Fixed
+
+- Added `mango-notice-starter` to custom generated backend baseline dependencies so `custom --modules none` projects that include `mango-auth-starter` can provide the required `NoticeApi` bean during Spring Boot startup.
+- Added explicit `MangoAdminFeatureRegistrar[]` types to generated admin frontend feature registrar arrays so custom projects pass strict `vue-tsc` when no business modules have been added yet.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.57 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New generated business projects receive `<mango.version>1.0.6</mango.version>` and the current home-widget package versions.
+- Existing business projects should remove any direct `@mango/link-panel` dependency and use `@mango/link` for Link admin pages and the Link navigation home widget.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
+## 1.0.56 - 2026-07-01
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.5`.
+- Updated generated project release locks for the data initialization governance batch:
+  - `@mango/pmo@1.0.6`
+  - `@mango/link-panel@1.0.1`
+  - `@mango/cli@1.0.56`
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.56 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to receive the updated PMO baseline.
+- Business backends should set `<mango.version>1.0.5</mango.version>` when consuming the Resource Registry and persistence initialization governance changes.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
+## 1.0.54 - 2026-06-30
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.1` instead of the previous `1.0.0-SNAPSHOT` default.
+- Added release-version validation so formal CLI release locks reject `maven.mangoBackend` snapshot values.
+- Documented how generated projects choose the CLI-owned Maven jar version and how business projects override it with `--mango-version`.
+- Updated generated frontend release locks for the admin branding batch:
+  - `@mango/admin@1.0.35`
+  - `@mango/admin-pages@1.0.13`
+  - `@mango/admin-shell@1.0.31`
+  - `@mango/auth@1.0.10`
+  - `@mango/file@1.0.14`
+  - `@mango/grid-layout@1.0.3`
+  - `@mango/grid-widgets@1.0.8`
+  - `@mango/system@1.0.12`
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.54 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New business projects generated with this CLI receive `<mango.version>1.0.1</mango.version>` in `backend/pom.xml`.
+- Existing business projects can align manually by setting their backend parent POM `<mango.version>` to `1.0.1` after the matching Mango Maven artifacts are published.
+- Existing business frontends should refresh Mango npm packages as a batch using the versions from this CLI release lock.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
+## 1.0.53 - 2026-06-30
+
+### Fixed
+
+- Removed the legacy generated `scripts/dev-workspace.sh init` shim so business projects use Mango CLI workspace commands as the owning development entry point.
+- Updated generated project release locks to consume `@mango/pmo@1.0.5` and `@mango/cli@1.0.53`.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.53 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` so generated compatibility scripts and PMO baseline content stay aligned.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.52 - 2026-06-29
 
 ### Fixed

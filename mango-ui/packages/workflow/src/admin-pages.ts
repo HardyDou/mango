@@ -1,4 +1,13 @@
 import { registerModulePages } from '@mango/admin-pages/core';
+import { workflowMyProcessWidgets } from './widgets/my-process';
+import { workflowMyTaskWidgets } from './widgets/my-task';
+import { workflowMyTodoWidgets } from './widgets/my-todo';
+
+const workflowWidgets = [
+  ...workflowMyTaskWidgets,
+  ...workflowMyTodoWidgets,
+  ...workflowMyProcessWidgets,
+];
 
 let registered = false;
 
@@ -40,4 +49,11 @@ export function registerMangoWorkflowAdminPages() {
       },
     ],
   });
+
+  return {
+    businessDomainCode: 'WORKFLOW',
+    businessDomainName: '工作流',
+    groupName: '工作流',
+    widgets: workflowWidgets,
+  };
 }

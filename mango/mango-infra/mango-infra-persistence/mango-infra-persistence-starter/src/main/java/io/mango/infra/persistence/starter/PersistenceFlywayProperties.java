@@ -3,7 +3,9 @@ package io.mango.infra.persistence.starter;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,6 +50,12 @@ public class PersistenceFlywayProperties {
         private boolean enabled = true;
 
         /**
+         * 当前模块有 classpath migration 但本应用有意不执行时的原因。
+         * enabled=false 时必须填写，避免误跳过已进入 classpath 的模块 migration。
+         */
+        private String skipReason;
+
+        /**
          * 是否对当前模块启用基线迁移。
          * 适用于数据库已有表结构、Flyway 需要从指定基线开始接管的场景。
          */
@@ -65,6 +73,12 @@ public class PersistenceFlywayProperties {
          * 未配置时使用 flyway_schema_history_{module}。
          */
         private String historyTable;
+
+        /**
+         * 当前模块迁移脚本位置。为空时使用 classpath:db/migration/{module}。
+         * 支持 classpath:、filesystem:，以及 http(s) 单个 SQL 文件。
+         */
+        private List<String> locations = new ArrayList<>();
 
         /**
          * 当前模块独立迁移数据源。

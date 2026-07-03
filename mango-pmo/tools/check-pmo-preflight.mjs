@@ -13,6 +13,12 @@ const cases = [
     mode: 'main-direct-allowed'
   },
   {
+    name: 'pmo test process governance can use main workspace and loads test automation',
+    args: ['--role', 'pmo', '--phase', 'governance', '--task', '完善测试用例自动化测试流程规范', '--paths', 'mango-pmo/rules/09-test-case-automation-flow.md,mango-pmo/templates/delivery-contract.md'],
+    mode: 'main-direct-allowed',
+    mustRead: ['rules/09-test-case-automation-flow.md']
+  },
+  {
     name: 'backend code requires worktree',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '修复后端代码', '--paths', 'mango/mango-platform/mango-job/mango-job-core/src/main/java'],
     mode: 'worktree-required',
@@ -68,6 +74,18 @@ const cases = [
     args: ['--role', 'dev', '--phase', 'develop', '--task', '修复 Payment 支付中心 header 样式丢失并接入 admin full', '--paths', 'mango-ui/packages/admin/src/full.ts,mango-ui/packages/payment/style.css,mango-ui/packages/mango-cli/src/index.mjs'],
     mode: 'worktree-required',
     requiredChecks: ['pnpm admin:styles:check', 'pnpm admin:module-styles:check']
+  },
+  {
+    name: 'design phase loads test case automation flow',
+    args: ['--role', 'tech-lead', '--phase', 'design', '--task', '设计订单管理', '--paths', ''],
+    mode: 'needs-human-check',
+    mustRead: ['rules/09-test-case-automation-flow.md']
+  },
+  {
+    name: 'frontend e2e task loads test case automation flow',
+    args: ['--role', 'qa', '--phase', 'verify', '--task', '验证 Playwright E2E 自动化测试', '--paths', 'mango-ui/apps/mango-admin/e2e/specs/menu-management.spec.ts'],
+    mode: 'worktree-required',
+    mustRead: ['rules/09-test-case-automation-flow.md']
   }
 ];
 

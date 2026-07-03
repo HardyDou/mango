@@ -549,6 +549,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.home</groupId>
+                <artifactId>mango-home-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.numgen</groupId>
                 <artifactId>mango-numgen-api</artifactId>
                 <version>${project.version}</version>
@@ -586,6 +591,26 @@
             <dependency>
                 <groupId>io.mango.platform.payment</groupId>
                 <artifactId>mango-payment-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.link</groupId>
+                <artifactId>mango-link-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -71,6 +71,8 @@
 
 ## 7. 变更影响记录
 
+- v2026.06.30-maven-1.0.1-admin-branding-cli-release 只对齐固定后端 Maven `1.0.1`、前端 npm 批次和 CLI/starter 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目应成组升级本发布批次的后端 `<mango.version>` 和前端 `@mango/*` 包，避免新旧前端依赖混装。
+
 - v2026.06.29-workflow-return-cli-db-release 发布工作流退回能力和前端聚合版本锁。既有审批发起、通过、驳回、撤回和事件订阅流程保持兼容；使用退回动作前，先完成资源同步并给角色授予 `workflow:task:return` 权限。
 
 部署配置示例：
@@ -103,6 +105,10 @@ pnpm -F @mango/workflow-business-example build
 - [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
 ## 9. 变更影响记录
+
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 将工作流首页小组件归属到 `@mango/workflow@1.0.20` 并更新 CLI 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
+
+- PR #356 新增 `WORKFLOW_DEFINITION` 资源声明处理器和 `WorkflowTaskRuntimeApi` 公共任务运行时 API。业务模块可通过资源声明随模块同步流程定义，也可依赖 `mango-workflow-api` 调用待办、已办、抄送、详情、签收、办理、驳回、保存、转办、加签和流程详情能力；既有 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()` 审批发起方式保持兼容，不改变流程页面 key、菜单、权限码、租户隔离、业务状态回写和页面验收入口。
 
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和 workflow core service 集成测试；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。
 
@@ -143,3 +149,7 @@ pnpm -F @mango/workflow-business-example build
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变业务审批的公开 API、配置、权限、租户、页面和运行时行为。
 - PR #157 支付异常单依赖环修复和 workflow API/core 边界收敛只调整内部 Bean 依赖，不改变业务审批接入的公开 API、配置、权限、租户、页面和运行时行为。
 - PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变业务审批发起、审批回调、状态回写、流程页面 key、权限、租户隔离、启动和运行时行为。
+
+- Issue #354 为 Resource Registry 增加资源类型依赖排序，仅改变同一同步批次内 handler 执行顺序，例如 `WORKFLOW_CATEGORY` 和 `WORKFLOW_NODE_DEFINITION` 先于 `WORKFLOW_DEFINITION` 同步；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。排查流程定义或节点定义缺失时仍确认对应资源声明同步成功、目标 handler 消费成功以及流程定义发布结果。
+
+- Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，审批业务异常仍按流程定义、任务运行时接口、权限和业务回调链路排查。

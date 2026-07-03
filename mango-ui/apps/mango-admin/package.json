@@ -22,6 +22,7 @@
     "@mango/calendar": "workspace:*",
     "@mango/cms": "workspace:*",
     "@mango/file": "workspace:*",
+    "@mango/home": "workspace:*",
     "@mango/job": "workspace:*",
     "@mango/numgen": "workspace:*",
     "@mango/notice": "workspace:*",

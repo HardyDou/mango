@@ -20,6 +20,8 @@
 | 菜单运行时 | `useMenuHost()` |
 | 页面运行时 | `useRuntimeHost()` |
 | 运行时配置 | `loadShellRuntimeConfig()` |
+| 用户多首页工作台 | 默认首页路由、带 `homeId` 参数的首页路由、授权首页复制、`@mango/home` |
+| 首页管理页面 | 平台级首页模板、首页列表和用户首页页面，注册 key 为 `home/templates/index`、`home/list/index`、`home/user/index` |
 | store 导出 | `stores` 子入口 |
 | 开发中心页面 | `dev-pages`、`dev-base-pages` 等子入口 |
 
@@ -80,7 +82,8 @@ admin.mount();
 | `modules` | 空 | 模块运行时配置，结构来自 `@mango/app-runtime`。 |
 | `localApps` | 空 | 本地应用配置。 |
 | `features` | `core` | 内置能力开关。 |
-| `featureRegistrars` | 空 | 额外能力注册函数。 |
+| `featureRegistrars` | 空 | 额外能力注册函数，可注册页面并返回首页小组件。 |
+| `widgets` | 空 | 宿主直接传入的首页业务小组件定义。 |
 | `runtimeConfigUrl` | 空 | 运行时配置地址。 |
 | `runtimeConfigLoadOptions` | 空 | 运行时配置加载选项。 |
 
@@ -119,12 +122,47 @@ admin.mount();
 | `stores` | 用户、布局、主题、偏好等 store。 |
 | `router` | Shell 路由。 |
 | `home` | 首页组件。 |
+| `home-management` | 首页管理兼容页面组件。 |
+| `home-templates` | 首页模板页面组件。 |
+| `home-list` | 首页列表页面组件。 |
+| `home-user` | 用户首页视图页面组件。 |
 | `dev-pages` | 开发中心页面注册。 |
 | `dev-base-pages` | 基础能力开发页注册。 |
 
 ### Feature Registrars
 
-`featureRegistrars` 用于把能力包的页面注册到 Shell。推荐由业务入口集中传入，例如 `registerMangoWorkflowAdminPages`、`registerMangoFileAdminPages`。注册函数只声明前端页面，不负责创建后端菜单；菜单仍以授权中心返回的数据为准。
+`featureRegistrars` 用于把能力包的页面和首页小组件注册到 Shell。推荐由业务入口集中传入，例如 `registerMangoWorkflowAdminPages`、`registerMangoFileAdminPages`。注册函数负责声明前端页面，也可以返回 `widgets`；不负责创建后端菜单，菜单仍以授权中心返回的数据为准。
+
+业务 UI 包的小组件应放在自己的包内，随模块注册函数一起暴露：
+
+```ts
+export function registerMangoRiskControlAdminPages() {
+  registerModulePages({
+    moduleCode: 'risk-control',
+    pages: {
+      'risk-control/workbench/index': () => import('./index').then(m => m.RiskControlWorkbenchView),
+    },
+  });
+  return {
+    businessDomainCode: 'RISK_CONTROL',
+    businessDomainName: '风控',
+    groupName: '工作台',
+    widgets: riskControlWidgets,
+  };
+}
+```
+
+宿主集成该 UI 包后只需要传入模块注册函数：
+
+```ts
+createMangoAdminApp({
+  featureRegistrars: [
+    registerMangoRiskControlAdminPages,
+  ],
+});
+```
+
+Shell 首页会自动把模块返回的 `widgets` 合并进组件库。`businessDomainCode` 必须使用系统中已经存在的业务域编码或本业务模块约定的稳定业务域编码，不能用 UI 包名临时造一个编码；`businessDomainName` 只用于展示业务域名称；`groupName` 是该业务域下的可选组件分组；组件名称来自每个 widget 的 `title`。组件库展示顺序是“业务域 / 组名 / 组件名称”。没有集成对应 UI 包时，该包的小组件不会注册，也不能被新增使用。若用户历史布局中保存了已移除业务包的小组件，查看态会隐藏该布局项；编辑布局时会显示“组件已失效，可删除后保存布局”。
 
 ### Runtime Modules
 
@@ -132,11 +170,17 @@ admin.mount();
 
 ### Home Widget Runtime
 
-Shell 首页会为工作台小组件注入当前用户、租户、菜单树和 `navigate` 跳转函数。小组件可通过 `navigate({ path, raw: { query } })` 交给 Shell 跳转，Shell 只透传 `raw.query` 到 Vue Router，不会把业务小组件的路由细节写入布局组件或持久化布局 JSON。
+Shell 首页通过 `@mango/home` 接入用户多首页能力。默认首页路由会解析当前用户默认首页；带 `homeId` 参数的首页路由会打开当前用户拥有的指定首页或授权模板首页。用户可在首页宿主中创建、重命名、复制、排序、删除个人首页，设置默认首页，并把工作台布局 JSON 保存到后端 `mango-home`。授权模板首页只读，但可复制为个人首页副本。
+
+Shell 同时注册 `home/templates/index`、`home/list/index` 和 `home/user/index` 页面，供后端菜单资源 `平台能力 / 首页管理` 挂载。`首页模板` 用于平台级首页模板草稿编辑、复制、发布、启停和授权维护；`首页列表` 用于查看所有用户自定义首页；`用户首页` 用于按用户渲染最终可见首页并切换不同首页。
+
+Shell 首页会为工作台小组件注入当前用户、租户、菜单树和 `navigate` 跳转函数。小组件可通过 `navigate({ path, raw: { query } })` 交给 Shell 跳转，Shell 只透传 `raw.query` 到 Vue Router，不会把业务小组件的路由细节写入布局组件或持久化布局 JSON。业务小组件通过模块注册函数返回或通过 `widgets` 选项传入，Shell 只做聚合和运行时注入，不承载业务组件实现。
 
 ### Home Default Widgets
 
-Shell 首页默认布局会接入 `@mango/grid-widgets` 的系统预制小组件。当前默认包含用户信息、快捷入口、我的申请和消息中心；其中 `system.my-process` 通过工作流统计接口展示当前登录人的申请状态，并通过 `navigate` 跳转到已有工作流页面，不改变菜单、角色、按钮权限和页面注册协议。
+Shell 首页默认布局会接入 `@mango/grid-widgets` 的系统预制小组件和已注册的业务小组件。
+
+`系统预制小组件` 当前包含用户信息、快捷入口、我的申请、我的待办、我的任务、消息中心和日历；`system.link-navigation` 由 `@mango/link` 的 `registerMangoLinkAdminPages()` 在返回的 feature 注册信息中提供，不依赖 `@mango/link-page` 或历史 link-panel，也不改变菜单、角色、按钮权限和页面注册协议。
 
 ### Notice Entry
 
@@ -170,11 +214,13 @@ Shell 会安装管理端基础指令和权限相关运行时。业务包新增�
 
 | 依赖 | 兼容版本 |
 |------|----------|
-| Vue | `3.5.13` |
-| Vue Router | `^4.1.6` |
-| Pinia | `2.0.32` |
-| Element Plus | `2.14.1` |
+| Vue | `>=3.5.13 <4` |
+| Vue Router | `>=4.1.6 <5` |
+| Pinia | `>=2.0.32 <3` |
+| Element Plus | `>=2.14.1 <3` |
+| vue-i18n | `>=9.2.2 <10` |
 | `@mango/common` | 与 `@mango/cli` 的 `release-versions.json` 保持一致 |
+| `@mango/home` | `1.0.0` |
 | `@mango/grid-layout` | `1.0.0` |
 
 运行时菜单请求：
@@ -182,6 +228,7 @@ Shell 会安装管理端基础指令和权限相关运行时。业务包新增�
 | 接口 | 用途 |
 |------|------|
 | `GET /authorization/menus/user` | 按当前用户读取 `internal-admin` 菜单树。 |
+| `GET /home/pages/resolve` | 解析当前用户默认或指定首页。 |
 
 ## 6. 数据与初始化
 
@@ -246,6 +293,11 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 - PR #267 调整顶部通知铃铛的公告详情跳转目标到用户端 `消息中心 / 公告`，即 `/message-center/announcement?id=公告ID`；不改变 Shell 菜单加载接口、菜单 `component` key 归一化、页面注册协议、角色授权、按钮权限、租户绑定、登录态装配和运行时页面加载协议。公告管理、用户公告列表和菜单拆分由 `@mango/notice` 负责。
 
+- 本次 PR 扩展 Shell 能力注册机制，业务 UI 包的 `featureRegistrar` 可以返回首页 `widgets`，Shell 首页自动聚合这些业务小组件；未集成的 UI 包不会注册对应小组件。历史布局中的失效小组件查看态隐藏，编辑态提示“组件已失效，可删除后保存布局”。
+
+- `system.link-navigation` 由 `@mango/link` 通过 `registerMangoLinkAdminPages()` 返回首页小组件注册信息，并在工作台默认布局首行展示；不改变 Shell 菜单 `component` key、菜单树接口、页面注册方式、角色授权、按钮权限、租户绑定、登录态装配和运行时页面加载协议。网址导航小组件默认消费 link 模块接口，并提供百度、谷歌外部搜索入口。
+
 - 本次 PR 新增 `@mango/grid-widgets` 我的申请系统小组件，并在工作台默认布局中展示；不改变 Shell 菜单 `component` key、菜单树接口、页面注册方式、角色授权、按钮权限、租户绑定、登录态装配和运行时页面加载协议。我的申请小组件仅消费 `@mango/workflow` 的申请统计接口和已有工作流页面跳转能力。
 
+- 本次 PR 仅调整后台首页接入 `@mango/grid-widgets` 后的小组件标题展示和工作台卡片观感；不改变 Shell 菜单加载接口、动态路由匹配、页面注册方式、角色授权、按钮权限、租户绑定、登录态装配、启动方式和运行时页面加载协议。
 - 本次 PR 修复切换账号后 TagsView 仍保留上一账号标签的问题：进入登录页或退出登录时，Shell 会清空当前打开标签并保留首页固定标签；不改变登录接口、菜单加载接口、动态路由匹配、页面注册方式、角色授权、按钮权限、租户绑定、启动方式和运行时页面加载协议。

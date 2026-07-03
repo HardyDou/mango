@@ -58,8 +58,10 @@ CLI 执行来源需要区分：首次创建、历史项目升级和临时诊断�
 需要直接执行 `mango ...` 时，先确认本机全局 CLI 已安装且版本符合当前项目依赖：
 
 ```bash
-npm install -g @mango/cli --registry {{npmRegistry}}
+npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}
 ```
+
+生成项目的后端 Mango jar 版本由 `backend/pom.xml` 中的 `<mango.version>{{mangoBackendVersion}}</mango.version>` 统一锁定。默认值来自生成时使用的 `@mango/cli@{{mangoCliVersion}}` 内置 `release-versions.json`；业务项目升级后端平台能力时，应成组升级 CLI 或在重新生成/迁移时显式指定 `--mango-version <version>`，不要长期使用 `*-SNAPSHOT` 作为业务默认依赖。
 
 后端健康检查：
 
@@ -84,6 +86,7 @@ npm --prefix frontend run build
 | `mango dev start` | 启动默认分组 |
 | `mango dev start backend` | 启动后端 |
 | `mango dev start frontend` | 启动前端 |
+| `mango dev restart` | 按 stop + start 重启默认分组 |
 | `mango dev status` | 查看进程状态 |
 | `mango dev logs {{projectKebab}}-service` | 查看后端日志 |
 | `mango dev stop` | 停止默认分组 |
@@ -101,10 +104,10 @@ npm --prefix frontend run build
 | `mango.dev.json` | `apps.{{projectKebab}}-service.type` | `spring-boot-maven` | 后端应用类型 | 使用 Maven Spring Boot plugin 启动 | `mango.dev.json` |
 | `mango.dev.json` | `apps.{{projectKebab}}-service.health` | `/actuator/health` | 后端健康检查 | CLI 等待 ready 后再继续 | `mango.dev.json` |
 | `mango.dev.json` | `apps.{{projectKebab}}-admin.type` | `vite` | 前端应用类型 | 使用 NPM dev script 启动 | `mango.dev.json` |
-| `.mango/workspace.json` | `slot` | 本机稳定 slot | 推导端口和数据库名 | 避免多 worktree 互相串用 | `mango workspace init` |
-| `.mango/workspace.json` | `backendPort` | `18000+slot` | 后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
-| `.mango/workspace.json` | `frontendPort` | `8600+slot*20` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
-| `.mango/workspace.json` | `dbName` | `mango_dev_<slot>` | 数据库名 | 写入 `MANGO_DB_NAME` | `mango workspace init` |
+| `.mango/workspace.json` | `slot` | 本机稳定工作区号 `NNN` | 推导端口和数据库名 | 避免多 worktree 互相串用 | `mango workspace init` |
+| `.mango/workspace.json` | `backendPort` | `18NNN` | 后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `frontendPort` | `30NNN` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `dbName` | `mango_dev_<projectSlug>_<NNN>` | 数据库名 | 写入 `MANGO_DB_NAME` | `mango workspace init` |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 后端端口 | 注入 `server.port` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | 来自 `.mango/workspace.json` | 前端端口 | 注入 Vite `VITE_PORT` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端 host | 注入 Vite `VITE_HOST` | Mango CLI |
@@ -175,11 +178,11 @@ full preset 默认后端 app 依赖 `io.mango:mango-admin-starter`。平台默�
 |------|---------------------|------|
 | `frontend/src/main.ts` | `imports` | CLI 写入 Mango 包和业务页面包 import |
 | `frontend/src/main.ts` | `features` | CLI 写入 full 或 custom feature registrars |
-| `frontend/src/main.ts` | `business-registrars` | `mango module add` 写入业务页面注册 |
+| `frontend/src/main.ts` | `business-feature-registrars` | `mango module add` 写入业务 UI 包 feature registrar，页面和首页小组件随业务包自动注册 |
 | `frontend` 下的 `public` runtime config 文件 | `modules` | runtime module 配置 |
 | `frontend/package.json` | `workspaces` | 业务前端包默认放在 `packages/*` |
 
-full preset 前端入口使用 `createMangoAdminApp` 和 `mangoFullAdminFeatureRegistrars`。custom preset 会按模块生成独立 registrar import。
+full preset 前端入口使用 `createMangoAdminApp` 和 `mangoFullAdminFeatureRegistrars`。custom preset 会按默认模块和已选模块生成独立 registrar import。`mango module add` 生成的业务 UI 包会追加到 `mangoBusinessFeatureRegistrars`，业务包后续新增首页小组件时不需要再改宿主入口。
 
 ## 8. 数据与初始化
 模板自身不直接写生产业务数据；数据库结构、平台默认资源和业务模块基线由后端启动时的 Flyway 模块、Resource Registry 和模块自身初始化流程处理。
@@ -206,7 +209,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 租户默认值来自 `mango.persistence.mybatis-plus.tenant.default-tenant-id`。业务模块如果继承 `TenantEntity`，必须验证当前租户上下文、查询条件和写入字段。
 
 ## 10. 快速开始
-1. 生成项目后先执行 `mango workspace init`，修改 `.mango/dev-workspace.env` 中数据库、端口、文件目录和可选插件开关。
+1. 生成项目后先执行 `mango workspace init`。端口和 `MANGO_DB_NAME` 由 `.mango/workspace.json` 派生，不手工改；只按需修改 `.mango/dev-workspace.env` 中数据库连接、文件目录和可选插件开关。
 2. 执行 `mango workspace status`、`mango dev doctor`，确认工作区和启动条件。
 3. 执行 `mango dev start`，确认后端 health 和前端页面可访问。
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。

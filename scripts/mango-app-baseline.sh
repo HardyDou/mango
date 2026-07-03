@@ -29,6 +29,7 @@ APPS=(
   "job:mango-job-capability-app:io.mango.app.platformcapability:mango-app/platform-capability/mango-job-capability-app:18622:openapi"
   "calendar:mango-calendar-capability-app:io.mango.app.platformcapability:mango-app/platform-capability/mango-calendar-capability-app:18623:openapi"
   "grid-layout:mango-grid-layout-capability-app:io.mango.app.platformcapability:mango-app/platform-capability/mango-grid-layout-capability-app:18624:openapi"
+  "home:mango-home-capability-app:io.mango.app.platformcapability:mango-app/platform-capability/mango-home-capability-app:18628:openapi"
   "numgen:mango-numgen-capability-app:io.mango.app.platformcapability:mango-app/platform-capability/mango-numgen-capability-app:18625:openapi"
   "template:mango-template-capability-app:io.mango.app.platformcapability:mango-app/platform-capability/mango-template-capability-app:18626:openapi"
   "payment:mango-payment-capability-app:io.mango.app.platformcapability:mango-app/platform-capability/mango-payment-capability-app:18627:openapi"

@@ -21,6 +21,7 @@ import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +44,11 @@ public class ResourceRegistrySyncService {
     private final ResourceRegistryRepository repository;
     private final ResourceRegistryLock lock;
     private final ObjectMapper objectMapper;
+
+    private enum VisitState {
+        VISITING,
+        VISITED
+    }
 
     public void sync() {
         sync(false);
@@ -275,8 +281,8 @@ public class ResourceRegistrySyncService {
 
     private void syncActiveBatch(List<ResourceDeclaration> declarations, Map<String, ResourceHandler> handlerMap,
                                  boolean force) {
-        Map<String, List<ResourceDeclaration>> allDeclarationsByType = new HashMap<>();
-        Map<String, List<ResourceDeclaration>> declarationsByType = new HashMap<>();
+        Map<String, List<ResourceDeclaration>> allDeclarationsByType = new LinkedHashMap<>();
+        Map<String, List<ResourceDeclaration>> declarationsByType = new LinkedHashMap<>();
         for (ResourceDeclaration declaration : declarations) {
             String hash = hasher.hash(declaration);
             ResourceRegistryRow row = repository.findByResourceId(declaration.getId());
@@ -286,6 +292,10 @@ public class ResourceRegistrySyncService {
                     : withEffectiveSyncMode(declaration, row.getSyncMode());
             allDeclarationsByType.computeIfAbsent(declaration.getResourceType(), key -> new ArrayList<>())
                     .add(effectiveDeclaration);
+            if (shouldPreserveInitOnlyTarget(row, declaration)) {
+                skipInitOnlyTargetUpdate(row, declaration, hash);
+                continue;
+            }
             if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
                 repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
                 continue;
@@ -296,17 +306,18 @@ public class ResourceRegistrySyncService {
             }
             declarationsByType.computeIfAbsent(declaration.getResourceType(), key -> new ArrayList<>()).add(declaration);
         }
-        for (Map.Entry<String, List<ResourceDeclaration>> entry : declarationsByType.entrySet()) {
-            ResourceHandler handler = handlerMap.get(entry.getKey());
-            if (handler == null && !canDispatchAll(entry.getValue())) {
-                throw new IllegalStateException("No resource handler found: " + entry.getKey());
+        for (String resourceType : orderResourceTypesForSync(declarationsByType, handlerMap)) {
+            List<ResourceDeclaration> changedDeclarations = declarationsByType.get(resourceType);
+            ResourceHandler handler = handlerMap.get(resourceType);
+            if (handler == null && !canDispatchAll(changedDeclarations)) {
+                throw new IllegalStateException("No resource handler found: " + resourceType);
             }
-            List<ResourceDeclaration> completeBatch = allDeclarationsByType.get(entry.getKey());
+            List<ResourceDeclaration> completeBatch = allDeclarationsByType.get(resourceType);
             Map<String, ResourceSyncResult> results = syncActiveBatchByTarget(
                     handler,
-                    entry.getValue(),
+                    changedDeclarations,
                     completeBatch);
-            for (ResourceDeclaration declaration : entry.getValue()) {
+            for (ResourceDeclaration declaration : changedDeclarations) {
                 ResourceSyncResult result = results.get(declaration.getId());
                 if (result == null) {
                     throw new IllegalStateException("Resource handler did not return sync result: " + declaration.getId());
@@ -314,6 +325,54 @@ public class ResourceRegistrySyncService {
                 saveActiveSyncResult(declaration, result);
             }
         }
+    }
+
+    private List<String> orderResourceTypesForSync(Map<String, List<ResourceDeclaration>> declarationsByType,
+                                                   Map<String, ResourceHandler> handlerMap) {
+        Set<String> activeTypes = declarationsByType.keySet();
+        Map<String, VisitState> states = new HashMap<>();
+        List<String> orderedTypes = new ArrayList<>();
+        List<String> path = new ArrayList<>();
+        for (String resourceType : declarationsByType.keySet()) {
+            visitResourceType(resourceType, activeTypes, handlerMap, states, path, orderedTypes);
+        }
+        return orderedTypes;
+    }
+
+    private void visitResourceType(String resourceType, Set<String> activeTypes,
+                                   Map<String, ResourceHandler> handlerMap,
+                                   Map<String, VisitState> states,
+                                   List<String> path,
+                                   List<String> orderedTypes) {
+        VisitState state = states.get(resourceType);
+        if (state == VisitState.VISITED) {
+            return;
+        }
+        if (state == VisitState.VISITING) {
+            throw new IllegalStateException("Resource type dependency cycle detected: "
+                    + cyclePath(path, resourceType));
+        }
+        states.put(resourceType, VisitState.VISITING);
+        path.add(resourceType);
+        ResourceHandler handler = handlerMap.get(resourceType);
+        List<String> dependencyTypes = handler == null ? List.of() : handler.dependsOnResourceTypes();
+        if (dependencyTypes != null) {
+            for (String dependencyType : dependencyTypes) {
+                if (StringUtils.hasText(dependencyType) && activeTypes.contains(dependencyType.trim())) {
+                    visitResourceType(dependencyType.trim(), activeTypes, handlerMap, states, path, orderedTypes);
+                }
+            }
+        }
+        path.remove(path.size() - 1);
+        states.put(resourceType, VisitState.VISITED);
+        orderedTypes.add(resourceType);
+    }
+
+    private String cyclePath(List<String> path, String repeatedType) {
+        int start = path.indexOf(repeatedType);
+        List<String> cycle = new ArrayList<>(path.subList(Math.max(start, 0), path.size()));
+        cycle.add(repeatedType);
+        return String.join(" -> ", cycle);
     }
 
     private void validateVersion(ResourceRegistryRow row, ResourceDeclaration declaration) {
@@ -355,6 +414,23 @@ public class ResourceRegistrySyncService {
             repository.insertSyncLog(row.getId(), "UPDATE", "SUCCESS", result.getMessage());
             repository.insertChangeLog(row.getId(), "UPDATE", toJson(row), toJson(declaration));
         }
+    }
+
+    private void skipInitOnlyTargetUpdate(ResourceRegistryRow row, ResourceDeclaration declaration, String hash) {
+        if (hash.equals(row.getSourceHash()) && declaration.getStatus().name().equals(row.getStatus())) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource declaration is unchanged");
+            return;
+        }
+        repository.update(row, declaration, hash, row.getTargetId(), row.getTargetTable());
+        repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is INIT_ONLY");
+        repository.insertChangeLog(row.getId(), "UPDATE", toJson(row), toJson(declaration));
+    }
+
+    private boolean shouldPreserveInitOnlyTarget(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        if (row == null || declaration.getSyncMode() != ResourceSyncMode.INIT_ONLY) {
+            return false;
+        }
+        return row.getSyncMode() == ResourceSyncMode.AUTO || row.getSyncMode() == ResourceSyncMode.INIT_ONLY;
     }
 
     private ResourceDeclaration withEffectiveSyncMode(ResourceDeclaration declaration, ResourceSyncMode syncMode) {

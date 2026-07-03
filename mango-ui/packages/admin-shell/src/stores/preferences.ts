@@ -16,6 +16,12 @@ export interface PreferencesState {
   globalI18n: string;
   globalComponentSize: string;
   globalTitle: string;
+  shortTitle: string;
+  logoUrl: string;
+  faviconUrl: string;
+  footerCopyright: string;
+  footerIcp: string;
+  footerContact: string;
   footerAuthor: string;
 }
 
@@ -51,6 +57,12 @@ export const usePreferencesStore = defineStore('preferences', {
     globalI18n: 'zh-cn',
     globalComponentSize: 'default',
     globalTitle: import.meta.env.VITE_APP_TITLE || 'Mango',
+    shortTitle: 'Mango',
+    logoUrl: '',
+    faviconUrl: '',
+    footerCopyright: '© Mango',
+    footerIcp: '',
+    footerContact: '',
     footerAuthor: 'Mango',
   }),
   actions: {

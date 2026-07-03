@@ -35,6 +35,7 @@
 
 | 文档 | 状态 | 说明 |
 |------|------|------|
+| [Issue #184 数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md) | 已实施第一版 | Resource 负责正式/demo/`INIT_ONLY` 资源；Persistence 负责 DDL、外部 SQL 和 schema baseline pack。 |
 | [Issue #316 文件服务 ZIP 打包实施计划](./plans/2026-06-29-issue-316-file-package-plan.md) | 已实施 | File 服务按目录结构清单生成 ZIP 并写回存储层。 |
 | [Issue #316 文件服务 ZIP 打包详细设计](./designs/2026-06-29-issue-316-file-package-design.md) | 已实施 | API、服务流程、路径安全和异步扩展设计。 |
 | [Issue #316 文件服务 ZIP 打包交付台账](./plans/2026-06-29-issue-316-file-package-ledger.md) | 已完成 | 需求、API、实现、文档和测试交付登记。 |

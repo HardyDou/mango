@@ -1,6 +1,10 @@
 <template>
   <footer class="layout-footer">
-    <span class="layout-footer-text">{{ footerText }}</span>
+    <span
+      v-for="item in footerItems"
+      :key="item"
+      class="layout-footer-text"
+    >{{ item }}</span>
   </footer>
 </template>
 
@@ -10,17 +14,22 @@ import { storeToRefs } from 'pinia';
 import { usePreferencesStore } from '../../stores/preferences';
 
 const preferencesStore = usePreferencesStore();
-const { footerAuthor, globalTitle } = storeToRefs(preferencesStore);
+const {
+  footerAuthor,
+  footerContact,
+  footerCopyright,
+  footerIcp,
+  globalTitle,
+} = storeToRefs(preferencesStore);
 
-const footerText = computed(() => {
+const footerItems = computed(() => {
+  const copyright = footerCopyright.value?.trim();
+  const icp = footerIcp.value?.trim();
+  const contact = footerContact.value?.trim();
   const author = footerAuthor.value?.trim();
   const title = globalTitle.value?.trim();
 
-  if (author && title && author !== title) {
-    return `${title} · ${author}`;
-  }
-
-  return author || title || 'Mango';
+  return [copyright || author || title || 'Mango', icp, contact].filter(Boolean);
 });
 </script>
 
@@ -30,6 +39,8 @@ const footerText = computed(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 12px;
   height: var(--mango-layout-footer-height);
   padding: 0 16px;
   border-top: 1px solid var(--mango-border-color);

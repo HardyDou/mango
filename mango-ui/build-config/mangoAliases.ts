@@ -57,6 +57,10 @@ const BASE_PACKAGE_ENTRIES: PackageEntry[] = [
       stores: 'src/stores/index.ts',
       router: 'src/router.ts',
       home: 'src/views/home/index.vue',
+      'home-management': 'src/views/home/management/index.vue',
+      'home-templates': 'src/views/home/templates/index.vue',
+      'home-list': 'src/views/home/list/index.vue',
+      'home-user': 'src/views/home/user/index.vue',
       'dev-pages': 'src/views/demo/registerDevPages.ts',
       'dev-base-pages': 'src/views/demo/registerBaseDevPages.ts',
       'dev-upload-page': 'src/views/demo/components/UploadView.vue',
@@ -189,6 +193,10 @@ function createPackageEntryMatcher(packageName: string, entryName: string): stri
 function resolveSourceStylePath(repoRoot: string, packageName: string): string {
   if (packageName === 'common') {
     return resolve(repoRoot, 'packages/common/theme/index.css');
+  }
+  const packageSourceStylePath = resolve(repoRoot, 'packages', packageName, 'src/style.css');
+  if (existsSync(packageSourceStylePath)) {
+    return packageSourceStylePath;
   }
   const packageStylePath = resolve(repoRoot, 'packages', packageName, 'style.css');
   if (existsSync(packageStylePath)) {

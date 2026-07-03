@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: link
+    module-name: 网址导航
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026070103060000101"
+          version: 1
+          biz-key: link.domain.link
+          name: 导航域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 2026070103060000101
+            domainCode:
+              type: STRING
+              value: LINK
+            domainShortCode:
+              type: STRING
+              value: LINK
+            domainName:
+              type: STRING
+              value: 导航域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 11
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 网址导航业务域

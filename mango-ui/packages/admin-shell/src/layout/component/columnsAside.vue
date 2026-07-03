@@ -40,6 +40,7 @@ import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
 import { mittBus } from '@mango/common/utils/mitt';
 import { iconMap } from '@mango/common/utils/iconConfig';
+import { resolveAccessibleMenuPath, type ShellRouteMenu } from '../../runtime/menuHost';
 
 interface MenuItem {
   path: string;
@@ -94,6 +95,10 @@ const onColumnsAsideMenuClick = (v: MenuItem, k: number) => {
   storesRoutesList.setActiveTopRoutePath(v.path);
   if (v.children && v.children.length > 0) {
     mittBus.emit('setSendColumnsChildren', setSendChildren(v.path));
+    const targetPath = resolveAccessibleMenuPath(v as ShellRouteMenu);
+    if (targetPath && targetPath !== route.path) {
+      router.push(targetPath);
+    }
     return;
   }
   router.push(v.path);

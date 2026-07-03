@@ -277,6 +277,42 @@
                         ]
                       },
                       {
+                        "menuType": 2,
+                        "menuName": "后台品牌配置",
+                        "menuCode": "system:admin-branding",
+                        "path": "/system/admin-branding",
+                        "icon": "Monitor",
+                        "component": "system/admin-branding/index",
+                        "sort": 5,
+                        "permissions": [
+                          "system:admin-branding:query"
+                        ],
+                        "remark": "Admin 登录页与后台框架品牌展示配置",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "system:admin-branding:query",
+                            "permissionName": "查询后台品牌配置",
+                            "sort": 0,
+                            "remark": "后台品牌配置查询权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          },
+                          {
+                            "permissionCode": "system:admin-branding:edit",
+                            "permissionName": "保存后台品牌配置",
+                            "sort": 1,
+                            "remark": "后台品牌配置保存权限",
+                            "packageCodes": [
+                              "platform_admin"
+                            ]
+                          }
+                        ],
+                        "packageCodes": [
+                          "platform_admin"
+                        ]
+                      },
+                      {
                         "menuType": 1,
                         "menuName": "租户与组织",
                         "menuCode": "system:tenant-org",

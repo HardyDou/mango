@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Resource handler for member organization and post bindings.
@@ -41,6 +42,11 @@ public class OrgMemberBindingResourceHandler implements ResourceHandler {
     @Override
     public String resourceType() {
         return ResourceTypes.ORG_MEMBER_BINDING;
+    }
+
+    @Override
+    public List<String> dependsOnResourceTypes() {
+        return List.of(ResourceTypes.IDENTITY_USER, ResourceTypes.ORG_UNIT, ResourceTypes.ORG_POST);
     }
 
     @Override

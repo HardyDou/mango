@@ -1373,3 +1373,615 @@ mango:
             remark:
               type: STRING
               value: 内容通过审核后默认同步发布的前台渠道
+        - id: "2026062902590000000"
+          version: 1
+          biz-key: system.config.admin-branding-enabled
+          name: 后台品牌配置启用状态
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000000
+            configKey:
+              type: STRING
+              value: admin.branding.enabled
+            configValue:
+              type: STRING
+              value: "true"
+            configName:
+              type: STRING
+              value: 后台品牌配置启用状态
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: "true"
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 5
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 启用后后台外观配置覆盖系统默认展示
+        - id: "2026062902590000001"
+          version: 1
+          biz-key: system.config.admin-branding-title
+          name: 后台名称
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000001
+            configKey:
+              type: STRING
+              value: admin.branding.title
+            configValue:
+              type: STRING
+              value: Mango Admin
+            configName:
+              type: STRING
+              value: 后台名称
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: Mango Admin
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 10
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 后台浏览器标题和框架展示名称
+        - id: "2026062902590000002"
+          version: 1
+          biz-key: system.config.admin-branding-short-title
+          name: 后台简称
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000002
+            configKey:
+              type: STRING
+              value: admin.branding.shortTitle
+            configValue:
+              type: STRING
+              value: Mango
+            configName:
+              type: STRING
+              value: 后台简称
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: Mango
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 20
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 后台折叠 Logo 和短文案展示
+        - id: "2026062902590000003"
+          version: 1
+          biz-key: system.config.admin-branding-subtitle
+          name: 后台副标题
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000003
+            configKey:
+              type: STRING
+              value: admin.branding.subtitle
+            configValue:
+              type: STRING
+              value: 企业级管理平台
+            configName:
+              type: STRING
+              value: 后台副标题
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: 企业级管理平台
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 30
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 后台品牌副标题
+        - id: "2026062902590000004"
+          version: 1
+          biz-key: system.config.admin-branding-login-title
+          name: 登录页标题
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000004
+            configKey:
+              type: STRING
+              value: admin.branding.loginTitle
+            configValue:
+              type: STRING
+              value: Mango Admin
+            configName:
+              type: STRING
+              value: 登录页标题
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: Mango Admin
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 40
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 登录页左侧主标题
+        - id: "2026062902590000005"
+          version: 1
+          biz-key: system.config.admin-branding-login-subtitle
+          name: 登录页副标题
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000005
+            configKey:
+              type: STRING
+              value: admin.branding.loginSubtitle
+            configValue:
+              type: STRING
+              value: 企业级管理平台
+            configName:
+              type: STRING
+              value: 登录页副标题
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: 企业级管理平台
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 50
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 登录页左侧副标题
+        - id: "2026062902590000006"
+          version: 1
+          biz-key: system.config.admin-branding-logo-file
+          name: 后台 Logo 文件
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000006
+            configKey:
+              type: STRING
+              value: admin.branding.logoFile
+            configValue:
+              type: STRING
+              value: ""
+            configName:
+              type: STRING
+              value: 后台 Logo 文件
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: ""
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 60
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 保存文件中心 token，不保存预览地址
+        - id: "2026062902590000007"
+          version: 1
+          biz-key: system.config.admin-branding-favicon-file
+          name: 浏览器 favicon 文件
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000007
+            configKey:
+              type: STRING
+              value: admin.branding.faviconFile
+            configValue:
+              type: STRING
+              value: ""
+            configName:
+              type: STRING
+              value: 浏览器 favicon 文件
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: ""
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 70
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 保存文件中心 token，不保存预览地址
+        - id: "2026062902590000008"
+          version: 1
+          biz-key: system.config.admin-branding-login-image-file
+          name: 登录页图片文件
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000008
+            configKey:
+              type: STRING
+              value: admin.branding.loginImageFile
+            configValue:
+              type: STRING
+              value: ""
+            configName:
+              type: STRING
+              value: 登录页图片文件
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: ""
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 80
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 保存文件中心 token，不保存预览地址
+        - id: "2026062902590000009"
+          version: 1
+          biz-key: system.config.admin-branding-footer-copyright
+          name: 页脚版权
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000009
+            configKey:
+              type: STRING
+              value: admin.branding.footerCopyright
+            configValue:
+              type: STRING
+              value: © Mango
+            configName:
+              type: STRING
+              value: 页脚版权
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: © Mango
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 90
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 后台框架页脚版权信息
+        - id: "2026062902590000010"
+          version: 1
+          biz-key: system.config.admin-branding-icp
+          name: 备案号
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000010
+            configKey:
+              type: STRING
+              value: admin.branding.icp
+            configValue:
+              type: STRING
+              value: ""
+            configName:
+              type: STRING
+              value: 备案号
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: ""
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 100
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 后台页脚备案号
+        - id: "2026062902590000011"
+          version: 1
+          biz-key: system.config.admin-branding-contact
+          name: 联系方式
+          target-module: system
+          fields:
+            configId:
+              type: LONG
+              value: 2026062902590000011
+            configKey:
+              type: STRING
+              value: admin.branding.contact
+            configValue:
+              type: STRING
+              value: ""
+            configName:
+              type: STRING
+              value: 联系方式
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: COMMON
+            valueType:
+              type: STRING
+              value: STRING
+            groupCode:
+              type: STRING
+              value: admin-branding
+            groupName:
+              type: STRING
+              value: 后台品牌配置
+            defaultValue:
+              type: STRING
+              value: ""
+            optionSource:
+              type: STRING
+              value: CUSTOM
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 110
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 后台页脚联系方式

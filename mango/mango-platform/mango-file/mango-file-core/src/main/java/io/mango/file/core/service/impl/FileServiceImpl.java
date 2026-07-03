@@ -56,6 +56,10 @@ import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.file.core.storage.MultipartUpload;
 import io.mango.file.core.storage.UploadPartSign;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.fileproc.compress.FileCompressApi;
+import io.mango.infra.fileproc.compress.command.CompressFileCommand;
+import io.mango.infra.fileproc.compress.enums.FileCompression;
+import io.mango.infra.fileproc.compress.vo.CompressFileResultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,6 +118,7 @@ public class FileServiceImpl implements IFileService {
     private final FileDirectoryMapper fileDirectoryMapper;
     private final ObjectMapper objectMapper;
     private final FileAccessUrlAssembler fileAccessUrlAssembler;
+    private final List<FileCompressApi> fileCompressApis;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -152,7 +157,7 @@ public class FileServiceImpl implements IFileService {
         Require.notNull(command, FileCode.FILE_EMPTY);
         Require.notEmpty(command.getEntries(), FileCode.FILE_EMPTY);
         String zipFileName = normalizeZipFileName(command.getFileName());
-        byte[] content = buildZipPackage(command.getEntries());
+        byte[] content = buildZipPackage(command);
         SaveFileCommand saveCommand = new SaveFileCommand();
         saveCommand.setInputStream(new ByteArrayInputStream(content));
         saveCommand.setFileName(zipFileName);
@@ -167,14 +172,16 @@ public class FileServiceImpl implements IFileService {
         return save(saveCommand);
     }
 
-    private byte[] buildZipPackage(List<FilePackageEntryCommand> entries) {
+    private byte[] buildZipPackage(FilePackageCommand command) {
         Set<String> paths = new HashSet<>();
         try (java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
              ZipOutputStream zipOutput = new ZipOutputStream(output)) {
-            for (FilePackageEntryCommand entry : entries) {
+            for (FilePackageEntryCommand entry : command.getEntries()) {
                 Require.notNull(entry, FileCode.FILE_EMPTY);
                 Require.notNull(entry.getFileId(), FileCode.FILE_NOT_FOUND);
-                FileDownloadVO download = downloadForService(entry.getFileId());
+                FileDownloadVO download = compressDownload(downloadForService(entry.getFileId()),
+                        entryCompression(command, entry),
+                        entryTargetSize(command, entry));
                 String path = normalizeZipEntryPath(resolveZipEntryPath(entry.getPath(), download.fileName()));
                 Require.isTrue(paths.add(path), FileCode.FILE_NAME_DUPLICATED);
                 zipOutput.putNextEntry(new ZipEntry(path));
@@ -351,6 +358,11 @@ public class FileServiceImpl implements IFileService {
     }
 
     @Override
+    public FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes) {
+        return compressDownload(downloadForService(id), compression, perFileTargetSizeBytes);
+    }
+
+    @Override
     public FileDownloadVO downloadForService(Long id) {
         FileRecord record = selectVisible(id);
         Require.isTrue(FileRecordStatus.COMPLETED.value() == record.getStatus(), FileCode.FILE_STATUS_INVALID);
@@ -358,6 +370,57 @@ public class FileServiceImpl implements IFileService {
         FileObject object = fileStorageRouter.getObject(storedObject.storageConfig(), storedObject.objectName());
         String contentType = StringUtils.hasText(record.getContentType()) ? record.getContentType() : object.contentType();
         return new FileDownloadVO(object.inputStream(), record.getFileName(), contentType, object.contentLength());
+    }
+
+    private FileDownloadVO compressDownload(FileDownloadVO download, String compressionValue, Long targetSizeBytes) {
+        FileCompression compression = resolveCompression(compressionValue);
+        validateTargetSize(targetSizeBytes);
+        if (!compression.enabled() || download == null || download.inputStream() == null || fileCompressApis.isEmpty()) {
+            return download;
+        }
+        FileCompressApi compressApi = fileCompressApis.stream()
+                .filter(api -> api.supports(download.fileName(), download.contentType()))
+                .findFirst()
+                .orElse(null);
+        if (compressApi == null) {
+            return download;
+        }
+        try (InputStream inputStream = download.inputStream()) {
+            CompressFileResultVO result = compressApi.compress(new CompressFileCommand(
+                    download.fileName(),
+                    download.contentType(),
+                    inputStream,
+                    compression,
+                    targetSizeBytes));
+            return new FileDownloadVO(new ByteArrayInputStream(result.content()),
+                    result.fileName(),
+                    result.contentType(),
+                    result.compressedSize());
+        } catch (Exception ex) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    private String entryCompression(FilePackageCommand command, FilePackageEntryCommand entry) {
+        return StringUtils.hasText(entry.getCompression()) ? entry.getCompression() : command.getCompression();
+    }
+
+    private Long entryTargetSize(FilePackageCommand command, FilePackageEntryCommand entry) {
+        return entry.getTargetSizeBytes() == null ? command.getPerFileTargetSizeBytes() : entry.getTargetSizeBytes();
+    }
+
+    private FileCompression resolveCompression(String compression) {
+        try {
+            return FileCompression.of(compression);
+        } catch (IllegalArgumentException ex) {
+            return Require.fail(FileCode.FILE_COMPRESSION_INVALID);
+        }
+    }
+
+    private void validateTargetSize(Long targetSizeBytes) {
+        if (targetSizeBytes != null) {
+            Require.isTrue(targetSizeBytes > 0, FileCode.FILE_COMPRESSION_INVALID);
+        }
     }
 
     @Override

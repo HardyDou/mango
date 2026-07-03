@@ -14,7 +14,7 @@ class FileControllerAccessModeTest {
     void basicFileReadEndpointsUseLoginBaselineAccess() throws NoSuchMethodException {
         assertLoginBaseline("get", Long.class);
         assertLoginBaseline("preview", Long.class);
-        assertLoginBaseline("downloadResponse", Long.class);
+        assertLoginBaseline("downloadResponse", Long.class, String.class, Long.class);
         assertLoginBaseline(FileSettingsController.class, "get");
     }
 

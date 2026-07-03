@@ -1,10 +1,22 @@
 {
   "name": "@mango/notice",
-  "version": "1.0.14",
+  "version": "1.0.16",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
+  "mangoAdmin": {
+    "businessDomainCode": "NOTICE",
+    "businessDomainName": "通知中心",
+    "groupName": "通知中心",
+    "style": "@mango/notice/style.css",
+    "registrars": [
+      {
+        "name": "registerMangoNoticeAdminPages",
+        "import": "@mango/notice/admin-pages"
+      }
+    ]
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -38,6 +50,10 @@
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js"
     },
+    "./widgets/message-center": {
+      "types": "./dist/widgets/message-center.d.ts",
+      "import": "./dist/widgets/message-center.js"
+    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {
@@ -50,14 +66,15 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.12",
+    "@mango/admin-pages": "1.0.14",
     "@mango/common": "1.0.11",
-    "@mango/system": "1.0.11"
+    "@mango/grid-widgets": "1.0.9",
+    "@mango/system": "1.0.13"
   },
   "peerDependencies": {
-    "element-plus": "2.14.1",
-    "vue": "3.5.13",
-    "vue-router": "^4.1.6"
+    "element-plus": ">=2.14.1 <3",
+    "vue": ">=3.5.13 <4",
+    "vue-router": ">=4.1.6 <5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",

@@ -9,6 +9,7 @@ const externalPackages = [
   '@mango/file/admin-pages',
   '@mango/grid-layout',
   '@mango/job/admin-pages',
+  '@mango/link/admin-pages',
   '@mango/notice/admin-pages',
   '@mango/notice/admin-shell',
   '@mango/numgen/admin-pages',

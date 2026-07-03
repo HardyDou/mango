@@ -1,0 +1,28 @@
+import { registerModulePages } from '@mango/admin-pages/core';
+import { linkNavigationWidgets } from './widgets/link-navigation';
+
+let registered = false;
+
+export function registerMangoLinkAdminPages() {
+  if (registered) {
+    return;
+  }
+  registered = true;
+  registerModulePages({
+    moduleCode: 'mango-link',
+    pages: {
+      'link/company/index': () => import('./index').then(m => m.LinkCompanyLinksView),
+      'link/favorites/index': () => import('./index').then(m => m.LinkFavoritesView),
+      'link/my-links/index': () => import('./index').then(m => m.LinkMyLinksView),
+      'link/categories/index': () => import('./index').then(m => m.LinkCategoriesView),
+      'link/items/index': () => import('./index').then(m => m.LinkItemsView),
+    },
+  });
+
+  return {
+    businessDomainCode: 'LINK',
+    businessDomainName: '导航域',
+    groupName: '导航域',
+    widgets: linkNavigationWidgets,
+  };
+}

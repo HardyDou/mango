@@ -9,7 +9,9 @@ import io.mango.infra.event.core.outbox.OutboxDomainEventPublisher;
 import io.mango.infra.event.core.system.SystemEventService;
 import io.mango.infra.kv.api.IOutboxDispatcher;
 import io.mango.infra.kv.api.IOutboxStore;
+import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxStatus;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.kv.starter.KvStoreAutoConfiguration;
 import io.mango.infra.kv.starter.OutboxAutoConfiguration;
 import org.redisson.api.RStream;
@@ -19,6 +21,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -81,6 +84,65 @@ class DomainEventOutboxAutoConfigurationTest {
                     assertThat(handled.get(0).getBusinessKey()).isEqualTo("EXP-20260516-001");
                     assertThat(handled.get(0).getPayload()).containsEntry("amount", 1200);
                     assertThat(handled.get(0).getHeaders()).containsEntry("tenantId", "1");
+                });
+    }
+
+    @Test
+    void domainEventDispatcher_shouldNotClaimNoticeOutboxMessages() {
+        runner.withPropertyValues(
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.outbox=true",
+                        "mango.event.outbox.enabled=true",
+                        "mango.event.outbox.worker-id=test-event-worker",
+                        "mango.event.outbox.batch-size=10")
+                .run(context -> {
+                    IOutboxStore store = context.getBean(IOutboxStore.class);
+                    OutboxMessage noticeMessage = OutboxMessage.builder()
+                            .messageId("notice-message-issue-375")
+                            .topic(OutboxTopics.NOTICE)
+                            .eventType("notice.send")
+                            .businessType("notice")
+                            .businessKey("2072945203782348802")
+                            .aggregateId("2072945203782348802")
+                            .payload(Map.of("taskId", "2072945203782348802"))
+                            .build();
+                    store.enqueue(noticeMessage);
+
+                    int dispatched = context.getBean(IOutboxDispatcher.class).dispatchOnce();
+
+                    assertThat(dispatched).isZero();
+                    OutboxMessage stored = store.findById(noticeMessage.getMessageId());
+                    assertThat(stored.getStatus()).isEqualTo(OutboxStatus.PENDING);
+                    assertThat(stored.getLockedBy()).isNull();
+                });
+    }
+
+    @Test
+    void domainEventDispatcher_shouldNotClaimLegacyNoticeSendMessagesWithoutTopic() {
+        runner.withPropertyValues(
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.outbox=true",
+                        "mango.event.outbox.enabled=true",
+                        "mango.event.outbox.worker-id=test-event-worker",
+                        "mango.event.outbox.batch-size=10")
+                .run(context -> {
+                    IOutboxStore store = context.getBean(IOutboxStore.class);
+                    OutboxMessage legacyNoticeMessage = OutboxMessage.builder()
+                            .messageId("legacy-notice-message-issue-375")
+                            .eventType(OutboxTopics.NOTICE_SEND_EVENT_TYPE)
+                            .businessType("notice")
+                            .businessKey("2072945203782348802")
+                            .aggregateId("2072945203782348802")
+                            .payload(Map.of("taskId", "2072945203782348802"))
+                            .build();
+                    store.enqueue(legacyNoticeMessage);
+
+                    int dispatched = context.getBean(IOutboxDispatcher.class).dispatchOnce();
+
+                    assertThat(dispatched).isZero();
+                    OutboxMessage stored = store.findById(legacyNoticeMessage.getMessageId());
+                    assertThat(stored.getStatus()).isEqualTo(OutboxStatus.PENDING);
+                    assertThat(stored.getLockedBy()).isNull();
                 });
     }
 

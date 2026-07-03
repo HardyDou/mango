@@ -148,6 +148,19 @@ function classifyWorkspacePolicy(args) {
     requiredHits.push('task matches service/code/build keywords');
   }
 
+  if (
+    requiredHits.length > 0 &&
+    inputPaths.length > 0 &&
+    inputPaths.every((inputPath) => directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) &&
+    requiredHits.every((hit) => hit === 'task matches service/code/build keywords')
+  ) {
+    return {
+      mode: 'main-direct-allowed',
+      summary: '可在主工作区直接修改并提交。',
+      reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
+    };
+  }
+
   if (requiredHits.length > 0) {
     return {
       mode: 'worktree-required',

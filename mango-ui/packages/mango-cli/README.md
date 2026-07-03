@@ -8,7 +8,7 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.51` |
+| 当前版本 | `1.0.57` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
@@ -24,6 +24,7 @@
 | 生成业务模块骨架 | `mango module add order --aggregate sales-order --project-dir <dir>` | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置 |
 | 检查和同步业务 PMO baseline | `mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
 | 初始化和启动本地开发工作区 | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start` | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run` |
+| 拉取当前 Mango 版本文档包 | `mango docs pull`、`mango docs status`、`mango docs path` | `.mango/docs/<mango.version>` |
 | 查看发布说明 | `mango changelog` | 不改文件 |
 
 ## 3. 能力边界
@@ -37,12 +38,13 @@
 CLI 负责：
 
 - 从 `templates/full` 渲染业务项目。
-- 根据 `release-versions.json` 锁定 Mango Maven 和 NPM 包版本。
+- 根据 `release-versions.json` 锁定 Mango 后端 Maven 版本和 NPM 包版本。
 - 根据随包发布的 `admin-modules.json`、preset 和 module code 生成前端依赖、页面注册、样式入口、运行时模块配置和后端 Maven 依赖。
 - 读取 `mango.dev.json`、`.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/dev-workspace.local.json`，启动本地开发应用。
 - 维护受 `mango-cli` marker 保护的代码块，例如 `backend/pom.xml`、`backend/app/pom.xml`、`frontend/src/main.ts`、`application.yml` 中的 managed block。
 - 同步业务 PMO baseline、兼容脚本和 Agent 入口。
 - 通过 `@mango/pmo` 安装版本化 PMO baseline，并用 `baseline.json` 校验业务仓是否漂移。
+- 按业务项目锁定的 Mango 后端版本，从 Maven 仓库拉取 `io.mango:mango-docs-bundle:<version>`，解包到 `.mango/docs/<version>`，供业务开发和 AI 优先读取同版本 README、能力文档、规则和示例。
 
 CLI 不负责：
 
@@ -52,28 +54,29 @@ CLI 不负责：
 - 业务项目已有文件的语义合并；没有 managed block 的文件不会被 CLI 猜测修改。
 
 ## 5. 接入方式
-全局安装用于创建项目、历史项目升级和跨仓库临时诊断：
+全局安装只用于创建项目、历史项目升级和跨仓库临时诊断：
 
 使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
 
 ```bash
-npm install -g @mango/cli --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.57 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 生成 full 项目：
 
 ```bash
 mango init demo-admin --preset full --topology monolith
-cd demo-admin
-mango workspace init
-mango workspace status
-mango dev doctor
-mango dev start
+cd demo-admin/frontend
+pnpm install
+pnpm exec mango workspace init
+pnpm exec mango workspace status
+pnpm exec mango dev doctor
+pnpm exec mango dev start
 ```
 
-推荐全局安装 `@mango/cli`，这样可以在任意业务仓根目录直接执行 `mango ...`。业务仓日常开发也以 `mango workspace`、`mango dev` 和 `mango frontend` 命令为正式入口；生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。
+业务仓日常开发以项目内锁定的 `@mango/cli` 为准。进入生成项目的 `frontend` 后先安装依赖，再用 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能是旧全局入口，不能作为业务项目 CLI 版本依据。
 
-历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell` 或 `mango pmo sync --project-dir . --sync-shell`，再在每个 active worktree 执行 `mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
+生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell` 或 `mango pmo sync --project-dir . --sync-shell`，再进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
 
 生成 custom 项目：
 
@@ -101,6 +104,20 @@ mango pmo check --project-dir demo-custom
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
 mango pmo upgrade --project-dir demo-custom
+```
+
+拉取当前项目对应版本的 Mango 文档包：
+
+```bash
+mango docs status --project-dir demo-custom
+mango docs pull --project-dir demo-custom
+mango docs path --project-dir demo-custom
+```
+
+`mango docs pull` 默认从项目 `mango.config.json.mavenRepository` 拉取 `io.mango:mango-docs-bundle:<mangoBackendVersion>:jar`。业务仓没有 Mango 源码时，AI 和开发者应先读取 `mango docs path` 输出目录下的同版本文档，再参考在线文档或历史上下文。需要临时验证其它版本或仓库时使用：
+
+```bash
+mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository http://nexus.inner.yunxinbaokeji.com/repository/maven-public/ --force
 ```
 
 ## 6. 配置说明
@@ -132,7 +149,7 @@ mango pmo upgrade --project-dir demo-custom
 | `basePackage` | `com.example.mango` | Java 根包名 | `writeMangoConfig` |
 | `groupId` | `com.example.mango` | Maven groupId | `writeMangoConfig` |
 | `projectVersion` | `1.0.0-SNAPSHOT` | 业务项目版本 | `writeMangoConfig` |
-| `mangoBackendVersion` | `1.0.0-SNAPSHOT` | Mango 后端版本 | `writeMangoConfig` |
+| `mangoBackendVersion` | `release-versions.json` 的 `maven.mangoBackend` | Mango 后端固定 Maven 版本 | `writeMangoConfig` |
 | `modules.required` | `authorization`、`system` | 必选 Mango 平台能力 | `writeMangoConfig` |
 | `modules.optional` | `workflow`、`template` | 已启用的 Mango 可选能力 | `writeMangoConfig`、`addModules` |
 | `mangoFrontendVersions` | `@mango/admin` 等 | 前端 Mango 包版本锁 | `writeMangoConfig` |
@@ -140,7 +157,21 @@ mango pmo upgrade --project-dir demo-custom
 | `mavenRepository` | Maven public URL | 项目 Maven 仓库 | `writeMangoConfig` |
 | `businessModules` | 业务模块列表 | `mango module add` 追加的业务模块登记 | `updateBusinessConfig` |
 
-### 6.3 本地开发工作区
+生成项目的后端 Mango jar 版本由 `backend/pom.xml` 中的 `<mango.version>` 统一锁定。默认值来自当前 CLI 随包发布的 `release-versions.json.maven.mangoBackend`，业务项目选择版本时优先固定 `@mango/cli` 版本；需要验证其它后端平台版本时，再通过 `mango init --mango-version <version>` 或项目内 `mango.config.json` 的 `mangoBackendVersion` 明确覆盖。
+
+### 6.3 docs bundle
+
+`mango docs` 解决业务仓不下载 Mango 源码时的文档可达性问题。版本解析顺序为：命令参数 `--version`、`mango.config.json.mangoBackendVersion`、`backend/pom.xml` 或 `pom.xml` 中的 `<mango.version>`、CLI 随包 `release-versions.json.maven.mangoBackend`。
+
+文档包 Maven 坐标固定为 `io.mango:mango-docs-bundle:<version>:jar`，推荐包内目录为 `META-INF/mango-docs`。CLI 会把 jar 解包到 `.mango/docs/<version>`，并写入 `.mango/docs/current.json` 记录版本、坐标、来源 URL、SHA-256 和本地路径。
+
+| 命令 | 作用 | 关键参数 | 修改范围 |
+|------|------|----------|----------|
+| `mango docs pull` | 下载并解包同版本文档包 | `--project-dir`、`--version`、`--maven-repository`、`--force` | `.mango/docs/<version>`、`.mango/docs/current.json` |
+| `mango docs status` | 查看项目 Mango 版本、文档包坐标和本地安装状态 | `--project-dir` | 不改文件 |
+| `mango docs path` | 输出当前项目版本的本地文档目录 | `--project-dir` | 不改文件 |
+
+### 6.4 本地开发工作区
 
 CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实来自 `.mango/workspace.json`，本地私有运行配置来自 `.mango/dev-workspace.env`，局部覆盖来自 `.mango/dev-workspace.local.json`。本机全局注册表为 `~/.mango/workspaces.json`。
 
@@ -161,11 +192,11 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `mango.dev.json` | `apps.<name>.health` | `/actuator/health` | 健康检查路径 | `start` 等待后端 ready | `waitForDevApp` |
 | `mango.dev.json` | `apps.<name>.portEnv` | `MANGO_BACKEND_PORT` 或 `MANGO_FRONTEND_PORT` | 端口环境变量名 | 覆盖默认端口 | `resolveDevApp` |
 | `.mango/workspace.json` | `workspaceId` | `mango_<slot>` | 当前 worktree 标识 | 进程归属和诊断 | `ensureWorkspaceConfig` |
-| `.mango/workspace.json` | `slot` | `1..200` 稳定槽位 | 本机工作区分配槽 | 推导端口和数据库名 | `buildWorkspaceConfig` |
-| `.mango/workspace.json` | `backendPort` | `18000+slot` | 后端端口 | 写入 `MANGO_BACKEND_PORT` | `workspacePorts` |
-| `.mango/workspace.json` | `frontendPort` | `8600+slot*20` | 前端主端口 | 写入 `MANGO_FRONTEND_PORT` | `workspacePorts` |
-| `.mango/workspace.json` | `frontendApps` | 按 app offset 分配 | 前端子应用端口 | 写入 `MANGO_ADMIN_*_PORT` | `buildFrontendAppPorts` |
-| `.mango/workspace.json` | `dbName` | `mango_dev_<slot>` | 本地数据库名 | 写入 `MANGO_DB_NAME` | `buildWorkspaceConfig` |
+| `.mango/workspace.json` | `slot` | `1..200` 稳定工作区号 `NNN` | 本机工作区分配号 | 推导端口和数据库名 | `buildWorkspaceConfig` |
+| `.mango/workspace.json` | `backendPort` | `18NNN` | 后端端口 | 写入 `MANGO_BACKEND_PORT` | `workspacePorts` |
+| `.mango/workspace.json` | `frontendPort` | `30NNN` | 前端主端口 | 写入 `MANGO_FRONTEND_PORT` | `workspacePorts` |
+| `.mango/workspace.json` | `frontendApps` | `31NNN`、`32NNN`、`33NNN`... | 前端子应用端口 | 写入 `MANGO_ADMIN_*_PORT` | `buildFrontendAppPorts` |
+| `.mango/workspace.json` | `dbName` | `mango_dev_<projectSlug>_<NNN>` | 本地数据库名 | 写入 `MANGO_DB_NAME` | `buildWorkspaceConfig` |
 | `.mango/dev-workspace.env` | `MANGO_CRYPTO_SM4_SECRET_KEY` | 随机 16 字节 hex | Mango 加密密钥 | 注入后端环境变量；缺失时自动补写 | `defaultDevWorkspaceEnv`、`ensureDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_WORKSPACE_ID` | 来自 `.mango/workspace.json` | 当前本地 worktree 标识 | 用于区分同机多业务工作区 | `ensureDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 后端端口 | 后端 `server.port` 和前端代理目标；同机 registry 分配避免冲突 | `ensureDevWorkspaceEnv` |
@@ -184,6 +215,8 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_ADDITIONAL_ARGS` | 空字符串 | 后端额外启动参数 | 追加到 Spring Boot args | `defaultDevWorkspaceEnv` |
 | `.mango/dev-workspace.local.json` | `groups`、`apps` | 空 | 本机覆盖 manifest | 与 `mango.dev.json` 深合并 | `mergeDevWorkspaceManifest` |
 
+示例：项目目录名为 `baohan-system` 且分配到 `slot=7` 时，后端端口为 `18007`，前端主端口为 `30007`，子前端按 `31007`、`32007`、`33007` 递增，数据库名为 `mango_dev_baohan_system_007`。
+
 本地运行文件：
 
 | 路径 | 内容 | 生成时机 | 排查用途 |
@@ -200,6 +233,9 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `mango init <project>` | 生成业务项目 | `--preset`、`--modules`、`--topology`、`--package` | 新项目目录 |
 | `mango add <module...>` | custom 项目追加 Mango 可选能力 | `--project-dir` | `frontend/package.json`、`frontend/src/main.ts`、runtime config、后端 POM、`mango.config.json` |
 | `mango module add <module>` | 生成业务模块骨架 | `--aggregate`、`--aggregate-name`、`--module-name`、`--project-dir`、`--force` | `backend/modules`、`frontend/packages`、POM、前端入口、Flyway 模块配置、`mango.config.json` |
+| `mango docs pull` | 拉取当前 Mango 版本文档包 | `--project-dir`、`--version`、`--maven-repository`、`--force` | `.mango/docs/<version>`、`.mango/docs/current.json` |
+| `mango docs status` | 查看当前 Mango 版本文档包状态 | `--project-dir` | 不改文件 |
+| `mango docs path` | 输出本地文档包目录 | `--project-dir` | 不改文件 |
 | `mango pmo sync` | 同步 PMO baseline | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
 | `mango pmo status` | 查看业务仓 PMO baseline 状态 | `--project-dir` | 不改文件 |
 | `mango pmo check` | 校验业务仓 PMO baseline 是否等于当前 `@mango/pmo` | `--project-dir` | 不改文件 |
@@ -207,12 +243,13 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `mango workspace init` | 初始化本地开发工作区 | 无 | `.mango/workspace.json`、`.mango/dev-workspace.env`、缺失时创建 `mango.dev.json` |
 | `mango workspace status` | 打印 workspace 应用和端口 | 无 | 不改文件 |
 | `mango workspace list` | 查看本机 workspace registry | 无 | 不改文件 |
-| `mango workspace release` | 释放 workspace registry | `--workspace <path>` | `~/.mango/workspaces.json` |
+| `mango workspace release` | 释放 workspace registry 并默认删除该 workspace 本地开发库 | `--workspace <path>`、`--keep-db` | `~/.mango/workspaces.json`、本机 MySQL |
 | `mango workspace doctor` | 校验 workspace manifest | 无 | 不改文件 |
 | `mango dev doctor` | 校验工具链、POM、端口 | 无 | 不改文件 |
 | `mango dev start` | 启动本地开发应用 | group 或 app | `.mango/run` |
 | `mango dev start backend` | 启动后端分组 | 无 | `.mango/run` |
 | `mango dev start frontend` | 启动前端分组 | 无 | `.mango/run` |
+| `mango dev restart` | 按 stop + start 重启本地开发应用 | group 或 app | `.mango/run` |
 | `mango dev status` | 查看进程状态 | 无 | 不改文件 |
 | `mango dev logs <app>` | 查看最近 200 行日志 | app name | 不改文件 |
 | `mango dev stop` | 停止本地开发应用 | group 或 app | 删除 pid file |
@@ -229,7 +266,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `file` | 文件中心 | `@mango/file` | `mango-file-starter`、`mango-file-preview-starter` | 注册文件管理页面，不生成 runtime module |
 | `template` | 模板管理 | `@mango/template` | `mango-template-starter` | runtime module 为 `mango-template` |
 | `cms` | 内容中心 | `@mango/cms` | `mango-cms-starter` | runtime module 为 `mango-cms` |
-| `notice` | 通知中心 | `@mango/notice` | `mango-notice-starter` | 注册 admin pages 和 admin shell |
+| `notice` | 通知中心 | `@mango/notice` | `mango-notice-starter` | custom 后端基础依赖已包含 `mango-notice-starter` 以满足认证通知接口；选择本模块时额外注册 admin pages 和 admin shell |
 | `numgen` | 编号规则 | `@mango/numgen` | `mango-numgen-starter` | 注册编号规则页面 |
 | `calendar` | 工作日历 | `@mango/calendar` | `mango-calendar-starter` | 注册工作日历页面 |
 | `workflow` | 审批中心 | `@mango/workflow` | `mango-workflow-starter` | runtime module 为 `mango-workflow` |
@@ -251,7 +288,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 |------|------|----------|
 | `templates/full` | `mango init` 的项目模板 | 发布包包含该目录 |
 | `templates/full/mango.dev.json` | 新项目开发工作区 manifest 模板 | 历史业务项目执行 `pmo sync --sync-shell` 时优先按真实目录探测生成；业务项目可用 `.mango/dev-workspace.local.json` 本机覆盖 |
-| `release-versions.json` | 锁定 Mango 后端 Maven 版本和前端 NPM 包版本 | 修改发布版本后必须跑 release version 检查 |
+| `release-versions.json` | 锁定 Mango 后端固定 Maven 版本和前端 NPM 包版本 | 修改发布版本后必须跑 release version 检查 |
 | `scripts/check-cli.mjs` | CLI 生成契约自测 | 会生成 full 和 custom 项目并校验关键文件 |
 | `scripts/check-release-versions.mjs` | 版本锁自测 | 可加 registry 检查已发布包 |
 | `templates/business-module` | 业务模块模板优先路径 | 当前包内没有该目录；源码运行时会回退到仓库根目录 `mango-business-starter` |
@@ -292,9 +329,9 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 1. 安装 CLI。
 2. 用 `mango init` 生成项目，优先按业务需要选择 `custom` 和明确模块列表；需要一次性体验全部平台能力时才使用 `full`。
-3. 进入项目后执行 `mango workspace init`，修改 `.mango/dev-workspace.env` 中数据库、端口和本机开关。
+3. 进入项目后执行 `mango workspace init`。端口和 `MANGO_DB_NAME` 由 `.mango/workspace.json` 派生，不手工改；只按需修改 `.mango/dev-workspace.env` 中数据库连接、文件目录和本机开关。
 4. 执行 `mango workspace status`、`mango workspace doctor`、`mango dev doctor`，确认 manifest、工具链和端口。
-5. 执行 `mango dev start`，或用 `mango dev start <group|app>` 启动指定分组 / 应用；通过 `mango dev status`、`mango dev logs <app>` 查看状态。
+5. 执行 `mango dev start`，或用 `mango dev start <group|app>` 启动指定分组 / 应用；需要重启时执行 `mango dev restart [group|app...]`；通过 `mango dev status`、`mango dev logs <app>` 查看状态。
 6. 需要新增业务能力时执行 `mango module add`，然后补充业务领域代码、菜单权限、租户字段、测试和 README。
 
 已有业务项目同步：

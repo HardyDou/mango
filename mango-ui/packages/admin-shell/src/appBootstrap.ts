@@ -9,6 +9,7 @@ import { mangoMessage } from '@mango/common/utils/message';
 import { installMangoAuth } from '@mango/auth';
 import type { MangoAdminShellOptions } from './config';
 import { getMangoAdminShellOptions } from './config';
+import { DEFAULT_ADMIN_BRANDING, useAdminBrandingStore } from './stores/adminBranding';
 
 let shellPinia: Pinia | undefined;
 let shellI18n: I18n | undefined;
@@ -81,11 +82,14 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
   app.use(getShellI18n());
   installMangoAuth(app, {
     login: {
-      brand: {
-        title: options.title || 'Mango Admin',
-        subtitle: '企业级管理平台',
-      },
       ...options.login,
+      brand: {
+        title: options.login?.brand?.title || options.title || DEFAULT_ADMIN_BRANDING.loginTitle,
+        subtitle: options.login?.brand?.subtitle || DEFAULT_ADMIN_BRANDING.loginSubtitle,
+        panelTitle: options.login?.brand?.panelTitle,
+        logoUrl: options.login?.brand?.logoUrl,
+        imageUrl: options.login?.brand?.imageUrl,
+      },
       defaults: {
         tenantCode: 'default',
         realm: 'INTERNAL',
@@ -103,6 +107,7 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
       minLength: 6,
     },
   });
+  void useAdminBrandingStore().loadPublicConfig();
   app.config.errorHandler = (err, instance, info) => {
     console.error('[mango-shell] Vue error:', err);
     console.error('[mango-shell] component:', instance);

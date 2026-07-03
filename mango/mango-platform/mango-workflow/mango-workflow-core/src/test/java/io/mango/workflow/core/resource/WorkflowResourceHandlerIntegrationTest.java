@@ -1,14 +1,35 @@
 package io.mango.workflow.core.resource;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.result.R;
+import io.mango.common.vo.PageResult;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
+import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
+import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
+import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
+import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
+import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
+import io.mango.workflow.api.vo.WorkflowDefinitionVO;
+import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
+import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
+import io.mango.workflow.core.entity.WorkflowDefinition;
 import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
+import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
+import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowNodeDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowTemplateCategoryMapper;
+import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +37,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.MapPropertySource;
@@ -36,6 +58,8 @@ class WorkflowResourceHandlerIntegrationTest {
     private WorkflowCategoryResourceHandler categoryHandler;
     private WorkflowTemplateCategoryResourceHandler templateCategoryHandler;
     private WorkflowNodeDefinitionResourceHandler nodeDefinitionHandler;
+    private WorkflowDefinitionResourceHandler definitionHandler;
+    private CapturingWorkflowDefinitionService definitionService;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -54,6 +78,8 @@ class WorkflowResourceHandlerIntegrationTest {
         categoryHandler = context.getBean(WorkflowCategoryResourceHandler.class);
         templateCategoryHandler = context.getBean(WorkflowTemplateCategoryResourceHandler.class);
         nodeDefinitionHandler = context.getBean(WorkflowNodeDefinitionResourceHandler.class);
+        definitionHandler = context.getBean(WorkflowDefinitionResourceHandler.class);
+        definitionService = context.getBean(CapturingWorkflowDefinitionService.class);
         rebuildTables();
     }
 
@@ -62,6 +88,7 @@ class WorkflowResourceHandlerIntegrationTest {
         if (context != null) {
             context.close();
         }
+        MangoContextHolder.clear();
     }
 
     @Test
@@ -102,6 +129,42 @@ class WorkflowResourceHandlerIntegrationTest {
         assertThat(count("workflow_category")).isZero();
     }
 
+    @Test
+    void upsertDisableAndDeleteUpdateWorkflowDefinition() throws Exception {
+        ResourceDeclaration declaration = workflowDefinitionDeclaration("保函优惠审批");
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("2"));
+
+        ResourceSyncResult result = definitionHandler.upsert(declaration);
+
+        assertThat(result.getTargetId()).isNotNull();
+        assertThat(count("workflow_definition")).isOne();
+        assertThat(definitionService.tenantIdDuringCall()).isEqualTo("7");
+        assertThat(definitionService.lastCommand().getAdminUsers()).containsExactly("admin", "risk-manager");
+        assertThat(definitionService.lastCommand().getStartEntryVisible()).isFalse();
+        assertThat(definitionService.lastCommand().getDesignerJson()).isEqualTo("{\"nodes\":[]}");
+        assertThat(definitionService.lastCommand().getFormJson()).isEqualTo("{\"fields\":[]}");
+        assertThat(stringValue("workflow_definition", "definition_name",
+                "definition_key = 'WF_GUARANTEE_ORDER_DISCOUNT'")).isEqualTo("保函优惠审批");
+        assertThat(MangoContextHolder.tenantId()).isEqualTo("2");
+
+        declaration.getFields().get("definitionName").setValue("保函优惠审批-更新");
+        definitionHandler.upsert(declaration);
+
+        assertThat(count("workflow_definition")).isOne();
+        assertThat(stringValue("workflow_definition", "definition_name",
+                "definition_key = 'WF_GUARANTEE_ORDER_DISCOUNT'")).isEqualTo("保函优惠审批-更新");
+
+        definitionHandler.disable(declaration);
+
+        assertThat(stringValue("workflow_definition", "status",
+                "definition_key = 'WF_GUARANTEE_ORDER_DISCOUNT'"))
+                .isEqualTo(WorkflowDefinitionStatus.DISABLED.name());
+
+        definitionHandler.delete(declaration);
+
+        assertThat(count("workflow_definition")).isZero();
+    }
+
     private ResourceDeclaration categoryDeclaration(String categoryName, int status) {
         ResourceDeclaration declaration = declaration(ResourceTypes.WORKFLOW_CATEGORY,
                 "2951300000000000001", "workflow.category.common", "通用流程分类");
@@ -127,6 +190,25 @@ class WorkflowResourceHandlerIntegrationTest {
         field(declaration, "sort", ResourceFieldType.INT, 1);
         field(declaration, "status", ResourceFieldType.INT, 1);
         field(declaration, "remark", ResourceFieldType.STRING, "系统默认通用流程模板分类");
+        return declaration;
+    }
+
+    private ResourceDeclaration workflowDefinitionDeclaration(String definitionName) {
+        ResourceDeclaration declaration = declaration(ResourceTypes.WORKFLOW_DEFINITION,
+                "2026070100010001", "guarantee.workflow.order-discount", definitionName);
+        field(declaration, "tenantId", ResourceFieldType.LONG, 7L);
+        field(declaration, "domainCode", ResourceFieldType.STRING, "guarantee");
+        field(declaration, "categoryCode", ResourceFieldType.STRING, "GUARANTEE_APPLICATION");
+        field(declaration, "categoryName", ResourceFieldType.STRING, "保函业务流程");
+        field(declaration, "categorySort", ResourceFieldType.INT, 20);
+        field(declaration, "orgId", ResourceFieldType.LONG, 1L);
+        field(declaration, "adminUsers", ResourceFieldType.LIST, List.of("admin", "risk-manager"));
+        field(declaration, "startEntryVisible", ResourceFieldType.BOOLEAN, false);
+        field(declaration, "definitionKey", ResourceFieldType.STRING, "WF_GUARANTEE_ORDER_DISCOUNT");
+        field(declaration, "definitionName", ResourceFieldType.STRING, definitionName);
+        field(declaration, "designerJson", ResourceFieldType.JSON, Map.of("nodes", List.of()));
+        fileField(declaration, "formJson", "classpath:workflow-definition-resource-handler-form.json");
+        field(declaration, "remark", ResourceFieldType.STRING, "业务员申请优惠，部门领导审批，总经理审批。");
         return declaration;
     }
 
@@ -211,7 +293,18 @@ class WorkflowResourceHandlerIntegrationTest {
         declaration.getFields().put(name, field);
     }
 
+    private void fileField(ResourceDeclaration declaration, String name, String location) {
+        ResourceField field = new ResourceField();
+        field.setType(ResourceFieldType.FILE);
+        field.setLocation(location);
+        field.setEncoding("UTF-8");
+        field.setMediaType("application/json");
+        declaration.getFields().put(name, field);
+    }
+
     private void rebuildTables() throws Exception {
+        execute("drop table if exists workflow_definition_version");
+        execute("drop table if exists workflow_definition");
         execute("drop table if exists workflow_node_definition");
         execute("drop table if exists workflow_template_category");
         execute("drop table if exists workflow_category");
@@ -284,6 +377,76 @@ class WorkflowResourceHandlerIntegrationTest {
                     unique key uk_workflow_node_definition_code (tenant_id, node_definition_code)
                 )
                 """);
+        execute("""
+                create table workflow_definition (
+                    id bigint not null,
+                    tenant_id bigint not null default 1,
+                    category_id bigint not null default 0,
+                    domain_code varchar(64) not null,
+                    org_id bigint,
+                    admin_users text,
+                    start_entry_visible boolean not null default true,
+                    icon varchar(512),
+                    definition_name varchar(128) not null,
+                    definition_key varchar(128) not null,
+                    deployment_id varchar(128),
+                    process_definition_id varchar(128),
+                    process_definition_version int,
+                    published_version_no int,
+                    source_template_id bigint,
+                    source_template_code varchar(128),
+                    source_template_version int,
+                    designer_json text,
+                    bpmn_xml text,
+                    form_code varchar(128),
+                    form_json text,
+                    status varchar(32) not null,
+                    last_deploy_time timestamp,
+                    remark varchar(255),
+                    created_by bigint,
+                    created_time timestamp not null default current_timestamp,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_time timestamp not null default current_timestamp,
+                    updated_at timestamp not null default current_timestamp,
+                    primary key (id),
+                    unique key uk_workflow_definition_key (tenant_id, definition_key)
+                )
+                """);
+        execute("""
+                create table workflow_definition_version (
+                    id bigint not null,
+                    tenant_id bigint not null default 1,
+                    definition_id bigint not null,
+                    version_no int not null,
+                    category_id bigint not null default 0,
+                    domain_code varchar(64) not null,
+                    org_id bigint,
+                    admin_users text,
+                    start_entry_visible boolean not null default true,
+                    icon varchar(512),
+                    definition_name varchar(128) not null,
+                    definition_key varchar(128) not null,
+                    remark varchar(255),
+                    form_code varchar(128),
+                    designer_json text,
+                    form_json text,
+                    bpmn_xml text,
+                    deployment_id varchar(128),
+                    process_definition_id varchar(128),
+                    process_definition_version int,
+                    publish_status varchar(32),
+                    publish_message varchar(500),
+                    created_by bigint,
+                    publish_time timestamp,
+                    created_time timestamp not null default current_timestamp,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_time timestamp not null default current_timestamp,
+                    updated_at timestamp not null default current_timestamp,
+                    primary key (id)
+                )
+                """);
     }
 
     private void execute(String sql) throws Exception {
@@ -330,13 +493,139 @@ class WorkflowResourceHandlerIntegrationTest {
             PersistenceMybatisPlusAutoConfiguration.class,
             WorkflowCategoryResourceHandler.class,
             WorkflowTemplateCategoryResourceHandler.class,
-            WorkflowNodeDefinitionResourceHandler.class
+            WorkflowNodeDefinitionResourceHandler.class,
+            WorkflowDefinitionResourceHandler.class
     })
     @MapperScan(basePackageClasses = {
             WorkflowCategoryMapper.class,
             WorkflowTemplateCategoryMapper.class,
-            WorkflowNodeDefinitionMapper.class
+            WorkflowNodeDefinitionMapper.class,
+            WorkflowDefinitionMapper.class,
+            WorkflowDefinitionVersionMapper.class
     })
     static class TestConfig {
+
+        @Bean
+        ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+
+        @Bean
+        CapturingWorkflowDefinitionService workflowDefinitionService(WorkflowDefinitionMapper definitionMapper) {
+            return new CapturingWorkflowDefinitionService(definitionMapper);
+        }
+    }
+
+    static class CapturingWorkflowDefinitionService implements IWorkflowDefinitionService {
+
+        private final WorkflowDefinitionMapper definitionMapper;
+        private EnsureWorkflowDefinitionCommand lastCommand;
+        private String tenantIdDuringCall;
+
+        CapturingWorkflowDefinitionService(WorkflowDefinitionMapper definitionMapper) {
+            this.definitionMapper = definitionMapper;
+        }
+
+        EnsureWorkflowDefinitionCommand lastCommand() {
+            return lastCommand;
+        }
+
+        String tenantIdDuringCall() {
+            return tenantIdDuringCall;
+        }
+
+        @Override
+        public R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command) {
+            lastCommand = command;
+            tenantIdDuringCall = MangoContextHolder.tenantId();
+            Long tenantId = Long.valueOf(tenantIdDuringCall);
+            WorkflowDefinition definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinition>()
+                    .eq(WorkflowDefinition::getTenantId, tenantId)
+                    .eq(WorkflowDefinition::getDefinitionKey, command.getDefinitionKey())
+                    .last("limit 1"));
+            if (definition == null) {
+                definition = new WorkflowDefinition();
+                definition.setTenantId(tenantId);
+                definition.setCategoryId(1L);
+                definition.setDefinitionKey(command.getDefinitionKey());
+            }
+            definition.setDomainCode(command.getDomainCode());
+            definition.setOrgId(command.getOrgId());
+            definition.setStartEntryVisible(command.getStartEntryVisible());
+            definition.setDefinitionName(command.getDefinitionName());
+            definition.setDesignerJson(command.getDesignerJson());
+            definition.setFormJson(command.getFormJson());
+            definition.setStatus(WorkflowDefinitionStatus.PUBLISHED.name());
+            if (definition.getId() == null) {
+                definitionMapper.insert(definition);
+            } else {
+                definitionMapper.updateById(definition);
+            }
+            return R.ok(new WorkflowDeployVO());
+        }
+
+        @Override
+        public R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query) {
+            return unused();
+        }
+
+        @Override
+        public R<WorkflowDefinitionVO> get(Long id) {
+            return unused();
+        }
+
+        @Override
+        public R<String> create(SaveWorkflowDefinitionCommand command) {
+            return unused();
+        }
+
+        @Override
+        public R<Boolean> update(SaveWorkflowDefinitionCommand command) {
+            return unused();
+        }
+
+        @Override
+        public R<Boolean> delete(Long id) {
+            return unused();
+        }
+
+        @Override
+        public R<Boolean> updateStatus(UpdateWorkflowDefinitionStatusCommand command) {
+            return unused();
+        }
+
+        @Override
+        public R<Boolean> discardDraft(Long id) {
+            return unused();
+        }
+
+        @Override
+        public R<WorkflowDeployVO> deploy(Long id) {
+            return unused();
+        }
+
+        @Override
+        public R<WorkflowDeployVO> deployInternal(Long id) {
+            return unused();
+        }
+
+        @Override
+        public R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query) {
+            return unused();
+        }
+
+        @Override
+        public R<WorkflowDefinitionVersionVO> versionDetail(Long id) {
+            return unused();
+        }
+
+        @Override
+        public R<List<WorkflowNodeCatalogVO>> nodeCatalog() {
+            return unused();
+        }
+
+        private static <T> R<T> unused() {
+            return R.fail("unused test service method");
+        }
     }
 }

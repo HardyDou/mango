@@ -11,10 +11,11 @@
 | 1 | [Identity 后端 README](../../../mango/mango-platform/mango-identity/README.md) | 用户、账号、租户身份 |
 | 2 | [Org 后端 README](../../../mango/mango-platform/mango-org/README.md) | 组织、岗位、组织树 |
 | 3 | [System 后端 README](../../../mango/mango-platform/mango-system/README.md) | 系统配置、字典、参数 |
-| 4 | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md) | 资源声明同步和模块初始化 |
-| 5 | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md) | 接口访问和数据权限上下文 |
-| 6 | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源 |
-| 7 | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md) | 登录态、租户切换、上下文透传 |
+| 4 | [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md) | Flyway、Resource、demo、`INIT_ONLY` 和外部 SQL 边界 |
+| 5 | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md) | 资源声明同步、demo 隔离和运行时保留策略 |
+| 6 | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md) | 接口访问和数据权限上下文 |
+| 7 | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源 |
+| 8 | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md) | 登录态、租户切换、上下文透传 |
 
 ## 3. 接入检查点
 
@@ -25,7 +26,7 @@
 | 基础数据 | 目标租户已初始化所需字典、配置、组织或岗位数据 |
 | 数据过滤 | 查询接口没有被数据权限、组织范围或状态字段过滤掉 |
 | 前端参数 | 前端查询参数没有带错 appCode、dictCode、domainCode 或 status |
-| 初始化边界 | 平台默认资源由 Flyway、Resource Registry 和模块 TenantProvisioner 处理；生产租户数据由业务开通、后台维护或导入流程补齐 |
+| 初始化边界 | DDL 和大 SQL 由 Flyway 处理；正式小资源由 Resource `META-INF/mango/resources/` 处理；demo 资源由 `META-INF/mango/demo/` 且默认禁用；运行时可修改但升级要保留的数据使用 `INIT_ONLY` 或业务开通/导入流程 |
 
 ## 4. 最小闭环
 
@@ -61,6 +62,7 @@ pnpm -F @mango/admin-shell build
 - [Resource 同步规则](../../../mango/mango-platform/mango-resource/README.md#10-同步规则)
 - [Access 验证方式](../../../mango/mango-platform/mango-access/README.md#10-验证方式)
 - [Authorization 验证方式](../../../mango/mango-platform/mango-authorization/README.md#10-验证方式)
+- [数据初始化与停机升级治理](../../designs/2026-07-01-issue-184-data-governance-design.md)
 
 ## 7. 关联规则
 
@@ -69,11 +71,17 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- Issue #184 明确数据初始化与停机升级治理边界：结构和版本化 SQL 继续归 Flyway，正式小资源归 `META-INF/mango/resources/`，demo 数据归 `META-INF/mango/demo/` 且默认不启用，运行时会被用户修改且升级要保留的数据使用 Resource `INIT_ONLY` 或业务开通/导入流程，大 SQL、磁盘 SQL、远程 URL SQL 和新库 schema baseline pack 走 `mango-infra-persistence` 的模块化 Flyway `locations`。排查租户基础数据为空时，应先判断缺失数据属于正式资源、demo、运行时租户数据还是停机升级 SQL，避免把 demo 或运行时数据混入默认 migration。
+
+- v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和后台品牌配置前端批次；品牌配置复用系统配置资源和文件中心 ID，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。排查品牌图片为空时，同时确认配置资源同步、文件 ID 有效和文件读取权限。
+
 - v2026.06.29-workflow-return-cli-db-release 只发布 CLI/PMO 基线、工作流退回和前端聚合版本锁；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。
 
 - PR #295 只治理 Issue #183 后端测试规范、Mockito 审计和核心 service/resource handler 集成测试；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。
 
 - v2026.06.27-workflow-history-dialog-release 同步发布工作流 UI 修复批次和前端聚合版本锁；不改变租户绑定、字典配置、系统配置、默认数据初始化、后端公开 API、权限、菜单、页面入口、启动方式和本场景排障步骤。
+
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅调整首页小组件 package 归属、`@mango/system@1.0.13`、`@mango/admin@1.0.37`、`@mango/admin-shell@1.0.32` 版本锁和 generated backend baseline；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
 
 - v2026.06.27-admin-shell-menu-redirect-release 发布 `@mango/admin-shell@1.0.28`、`@mango/admin@1.0.32` 和 `@mango/cli@1.0.45`，仅让业务项目可通过 npm 包消费 Issue #274 的目录菜单 redirect 修复；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由、启动方式和运行时数据行为。
 
@@ -130,5 +138,15 @@ pnpm -F @mango/admin-shell build
 - 本次用户信息小组件视觉优化 PR 仅调整 `@mango/grid-widgets` 中用户信息卡片展示和后台工作台默认布局高度；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面入口、页面路由和运行时数据行为。
 - PR 本次新增 `@mango/grid-widgets` 日历系统小组件，并在工作台默认布局中展示；小组件仅读取日历公开接口，不写入租户基础数据、字典或系统配置；不改变租户字典、组织、用户、系统配置的公开 API、配置、权限、租户隔离方式、页面、启动和运行时行为。
 - 本次 PR 隐藏后台布局配置抽屉中的深色模式、组件大小、缓存 Tagsview 和页面动画入口，仅收口未开放或未完整生效的个人偏好配置展示；不改变租户字典、组织、用户、系统配置的公开查询 API、配置、权限、租户隔离方式、页面、启动和运行时行为。
+- 本次 PR 仅调整工作台系统小组件展示文案、提示方式、卡片排布和字号；不改变租户字典、组织、用户、系统配置公开查询 API、配置、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。
 - 本次 PR 仅在进入登录页或退出登录时清理后台 TagsView 当前打开标签缓存，避免换账号后访问上一账号页面导致 404；不改变租户字典、组织、用户、系统配置公开查询 API、配置、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。
 - 本次 PR 修复未登录访问管理端深链后登录成功回跳原站内路径；不改变租户字典、组织、用户、系统配置公开查询 API、配置、权限、租户隔离、页面入口、启动方式和运行时数据行为。排查租户基础数据为空时仍以实际回跳后的页面请求、tenantId 和数据过滤链路为准。
+
+- Issue #259 复用 `sys_config` 保存后台品牌配置，不新增租户、字典、组织、用户基础数据表；不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。品牌图片字段仅保存文件中心 ID，不保存文件 preview、download 或 direct URL，排查图片不可见时应同时确认文件 ID 对应文件是否仍可访问。
+- Issue #354 为 Resource Registry 增加资源类型依赖排序，仅改变同一同步批次内 handler 执行顺序，例如用户、组织、角色先于成员组织绑定和角色绑定同步；不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。排查基础数据为空时仍确认资源声明已同步、目标模块 handler 消费成功、租户上下文和角色/租户绑定有效。
+
+- Issue #368 新增 `sys_user_home_page` 和 `sys_user_home_preference` 保存当前用户个人首页与默认首页偏好，不写入租户字典、组织、用户或系统配置基础数据；不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口和运行时数据行为。若首页列表为空属于个人首页尚未创建，系统会回退内置工作台，可排除租户字典配置为空这一原因。
+
+- Issue #372 新增 `sys_home_template`、`sys_home_template_version` 和 `sys_home_template_authorization` 等首页模板管理数据，模板授权可面向个人、部门和角色解析用户最终首页；不写入租户字典、组织、用户或系统配置基础数据，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口和运行时数据行为。排查用户首页为空时，可区分为尚未创建个人首页、尚未发布或授权首页模板、当前用户不在模板授权范围内，而不是租户字典配置为空。
+
+- Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，基础数据为空仍按资源声明同步、租户上下文和角色/租户绑定排查。

@@ -52,6 +52,7 @@ mvn -f mango/pom.xml mango:gen-permission
 | `reportFile` | `-DreportFile=target/mango-check-report.json` | JSON 报告路径。 |
 | `mango.check.gate` | `all` 或 `no-new-violations` | `all` 阻断所有问题；`no-new-violations` 只阻断新增问题。 |
 | `mango.check.changedFiles` | `path1,path2` | 显式指定变更文件。 |
+| `mango.check.changedOnly` | `true` | 对支持作用域的 Mango 自有规则只阻断变更文件内的问题，未命中变更文件的既有问题写入 `excludedIssues`。 |
 | `mango.check.baseRef` | `origin/main` | 未传 `changedFiles` 时用 Git diff 解析变更。 |
 | `mango.check.baselineFile` | `target/baseline.json` | 存量问题基线报告。 |
 | `mango.check.codeLevelExcludedModules` | `mango-platform/mango-file-preview` | 仅从 PMD、Checkstyle、SpotBugs 等代码级静态分析门禁中排除指定模块；Mango 自有规则仍会执行。 |
@@ -89,6 +90,19 @@ mvn mango:check \
 ```
 
 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只记录既有问题。更新基线前必须确认报告中的 `newIssueCount` 为 `0`，不能把本次新增问题写入基线。
+
+检查当前变更文件内的模块菜单声明：
+
+```bash
+mvn mango:check \
+  -Drule=module-menu \
+  -Dmango.check.changedOnly=true \
+  -Dmango.check.changedFiles=mango-platform/mango-demo/mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql \
+  -Doutput=json \
+  -DreportFile=target/module-menu-check-report.json
+```
+
+`module-menu` 的 `changedOnly` 模式仍会扫描 `baseDir` 下的菜单声明问题，但只有变更文件命中的问题进入阻断结果；未命中的历史问题会写入 JSON 报告的 `excludedIssues`，用于区分当前范围失败和历史参考问题。
 
 ## 7. API 与扩展
 当前 Maven goals：

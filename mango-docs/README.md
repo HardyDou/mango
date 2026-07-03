@@ -8,6 +8,7 @@
 
 - [Mango 能力地图](./capabilities/README.md)：按模块查 README、接入入口和组合使用顺序。
 - [业务接入场景手册](./guides/business-integration/README.md)：按业务问题查接入路径和排障入口。
+- [数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md)：说明 Flyway、Resource、demo、`INIT_ONLY`、外部 SQL 和 baseline pack 的边界。
 - [PRD 模板](../mango-pmo/templates/prd.md)：输出业务开发可读、AI 可继续设计的需求文档。
 - [详细设计模板](../mango-pmo/templates/detailed-design.md)：把 PRD 转成可开发、可验证、可交付的设计文档。
 - [交付契约模板](../mango-pmo/templates/delivery-contract.md)：把 PRD、设计、开发和验收项拆成逐项可核验台账。
@@ -37,6 +38,30 @@ npm --prefix mango-docs run docs:build
 
 后端 Maven 运行时 jar 不承载 README；jar 只包含运行所需类和资源。前端 npm 包继续保留包根 `README.md`，这是 npm 生态的标准文档入口。
 
+## 1.2 文档版本选择
+
+GitHub Pages 根路径 `/mango/` 永远发布当前 `main` 的最新文档，导航栏中的 `Latest` 表示最新文档。
+
+业务开发需要锁定文档版本时，选择与后端 Maven、前端 npm 发布版本一致的 release tag。版本快照路径固定为 `/mango/versions/<release-tag>/`，例如：
+
+```text
+/mango/versions/v2026.06.30-maven-1.0.1-admin-branding-cli-release/
+```
+
+新增发布版本时，在 `mango-docs` 下生成版本快照：
+
+```bash
+npm --prefix mango-docs run docs:snapshot -- v2026.06.30-maven-1.0.1-admin-branding-cli-release
+```
+
+生成后再执行常规构建：
+
+```bash
+npm --prefix mango-docs run docs:build
+```
+
+`docs:build` 会构建 Latest，并把 `mango-docs/versions` 下的历史快照一起复制到 GitHub Pages artifact。业务开发按 release tag 选择文档版本；没有锁定版本时使用 Latest。
+
 ## 2. 示例场景
 
 - [文件上传表单接入](./guides/business-integration/file-upload-form.md)
@@ -44,6 +69,7 @@ npm --prefix mango-docs run docs:build
 - [菜单页面打不开排障](./guides/business-integration/rbac-menu-page-troubleshooting.md)
 - [按钮权限不显示排障](./guides/business-integration/permission-button-troubleshooting.md)
 - [租户字典配置为空排障](./guides/business-integration/tenant-dict-config-empty.md)
+- [数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md)
 - [Workflow 业务示例前端包](../mango-ui/packages/workflow-business-example/README.md)
 - [Job 部署与生产参数](../deploy/job/README.md)
 
@@ -92,8 +118,10 @@ npm --prefix mango-docs run docs:build
 - [File 文件](../mango/mango-platform/mango-file/README.md)
 - [File Preview 文件预览](../mango/mango-platform/mango-file-preview/README.md)
 - [Grid Layout 自定义栅格布局](../mango/mango-platform/mango-grid-layout/README.md)
+- [Home 用户首页工作台](../mango/mango-platform/mango-home/README.md)
 - [Identity 身份](../mango/mango-platform/mango-identity/README.md)
 - [Job 任务调度](../mango/mango-platform/mango-job/README.md)
+- [Link 网址导航](../mango/mango-platform/mango-link/README.md)
 - [Notice 通知](../mango/mango-platform/mango-notice/README.md)
 - [Numgen 编号生成](../mango/mango-platform/mango-numgen/README.md)
 - [Org 组织](../mango/mango-platform/mango-org/README.md)

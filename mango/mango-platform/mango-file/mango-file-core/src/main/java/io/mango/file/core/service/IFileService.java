@@ -47,6 +47,8 @@ public interface IFileService {
 
     FileDownloadVO download(Long id);
 
+    FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes);
+
     FileDownloadVO downloadForService(Long id);
 
     R<Boolean> archive(FileArchiveCommand command);

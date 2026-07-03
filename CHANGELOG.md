@@ -1,5 +1,360 @@
 # Mango Changelog
 
+## Unreleased
+
+### New
+
+- Added Resource Registry resource-type dependency ordering for Issue #354. Resource handlers can now declare
+  `dependsOnResourceTypes()`, and active resource sync batches are topologically ordered before target handlers run.
+
+### Fixed
+
+- Fixed clean database Resource Registry bootstrap ordering for cross-type declarations such as `IDENTITY_USER` before
+  `ORG_MEMBER_BINDING`, `AUTH_ROLE` before `AUTH_SUBJECT_ROLE`, and workflow categories/nodes before
+  `WORKFLOW_DEFINITION`. Cyclic type dependencies now fail before any target handler is called.
+
+### Upgrade Notes
+
+- Business projects can keep Resource Registry declarations split across files and modules; file scan order is no longer
+  the ordering contract for resource types that declare handler dependencies.
+
+### Verification
+
+- `mvn -pl mango-platform/mango-resource/mango-resource-core -am -Dtest=ResourceRegistrySyncServiceIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-platform/mango-identity/mango-identity-starter,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-workflow/mango-workflow-core -am -DskipTests compile`
+- `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/pr-354-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `git diff --check`
+
+## v2026.07.02-maven-1.0.6-home-widgets-cli-release - 2026-07-02
+
+### New
+
+- Modularized home workbench widgets so concrete widgets now live in their owning business UI packages: `@mango/link`, `@mango/system`, `@mango/calendar`, `@mango/notice`, and `@mango/workflow`.
+- Updated the admin home workbench UI by removing the welcome header, floating the round layout action at the bottom-right corner, and refining the widget library panel.
+- Added the Link navigation home widget under `@mango/link`, including its package-owned styles and admin registrar integration.
+
+### Changed
+
+- Reduced `@mango/grid-widgets` to the shared widget registry/runtime/types boundary and moved business widget styles out to their owning packages.
+- Updated the CLI generated project release lock to Mango backend `1.0.6` and the home-widget package batch.
+- Removed the deleted `@mango/link-panel` compatibility package from generated project release locks.
+
+### Fixed
+
+- Added `mango-notice-starter` to custom generated backend baseline dependencies so `custom --modules none` projects that include `mango-auth-starter` can provide the required `NoticeApi` bean during Spring Boot startup.
+- Added explicit `MangoAdminFeatureRegistrar[]` types to generated admin frontend feature registrar arrays so custom projects pass strict `vue-tsc` when no business modules have been added yet.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.6</mango.version>` to consume this backend and generated-project baseline batch.
+- Business frontends should stop depending on `@mango/link-panel`; use `@mango/link` for Link admin pages and the Link navigation home widget.
+- Custom admin integrations must include the business UI packages that own the widgets they want to expose. `@mango/grid-widgets` no longer provides concrete business widget implementations.
+- Admin package consumers should keep package styles synchronized through the generated admin style aggregation; do not rely on `@mango/grid-widgets/style.css` to carry Link, System, Calendar, Notice, or Workflow widget styles.
+- Existing generated projects should upgrade to `@mango/cli@1.0.57` and run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` when they need the refreshed PMO shell baseline.
+- Business developers can read version-matched docs from GitHub Pages at `/mango/versions/v2026.07.02-maven-1.0.6-home-widgets-cli-release/`, or run `mango docs pull` in a generated project to download `io.mango:mango-docs-bundle:1.0.6` into `.mango/docs/1.0.6`.
+
+### Published Packages
+
+- Maven: Mango backend platform artifacts at `1.0.6` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin-shell@1.0.32`, `@mango/admin@1.0.37`, `@mango/calendar@1.0.15`, `@mango/grid-layout@1.0.4`, `@mango/grid-widgets@1.0.9`, `@mango/link-openapi@1.0.1`, `@mango/link-page@1.0.1`, `@mango/link@1.0.1`, `@mango/cli@1.0.57`, `@mango/notice@1.0.16`, `@mango/system@1.0.13`, `@mango/workflow@1.0.20`, `@mango/admin-pages@1.0.14`, `@mango/cms@1.0.4`, `@mango/file@1.0.15`, `@mango/job@1.0.7`, `@mango/numgen@1.0.15`, `@mango/payment@1.0.6`, `@mango/template@1.0.15`, and `@mango/workflow-business-example@1.0.19` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.02-maven-1.0.6-home-widgets-cli-release` for GitHub Pages and Maven docs bundle `io.mango:mango-docs-bundle:1.0.6`.
+- GitHub Release: `v2026.07.02-maven-1.0.6-home-widgets-cli-release`.
+
+### Verification
+
+- `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase release --task "发布 PR 365 和 PR 367 合并后的最新版本" --paths "CHANGELOG.md,mango/pom.xml,mango-ui/packages/mango-cli/package.json,mango-docs,mango-ui/packages/*/package.json"`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base v2026.07.01-maven-1.0.5-data-governance-release --head HEAD`
+- `pnpm -C mango-ui release:impact --base=v2026.07.01-maven-1.0.5-data-governance-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.02-maven-1.0.6-home-widgets-cli-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.6 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.6 -Dartifact=io.mango:mango-admin-starter:1.0.6 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.6 -Dartifact=io.mango.platform.link:mango-link-starter:1.0.6 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.6 -Dartifact=io.mango:mango-docs-bundle:1.0.6 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.02-maven-1.0.6-home-widgets-cli-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.02-maven-1.0.6-home-widgets-cli-release`
+- `git diff --check`
+
+## v2026.07.01-maven-1.0.5-data-governance-release - 2026-07-01
+
+### New
+
+- Published Issue #184 data initialization governance. Resource Registry demo declarations are now isolated behind explicit demo resource locations instead of loading through the default runtime path.
+- Added `INIT_ONLY` Resource Registry sync mode so built-in initialization data can create missing records without overwriting operator-maintained records.
+- Added external Flyway module locations for persistence migrations, allowing controlled schema baseline and comparison packs outside the default classpath migration path.
+- Published PMO governance that forbids default runtime seeds for sample/demo/test data and documents where explicit release materials should live.
+- Published a versioned Mango Docs snapshot for this release, including the Resource Registry and persistence README updates plus the shortened docs version labels.
+
+### Fixed
+
+- Fixed `@mango/link-panel` so its package entry imports the package-owned `style.css` export instead of relying on the `@mango/link-page` style entry.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.5</mango.version>` to consume the Resource Registry and persistence initialization governance changes.
+- Demo/sample Resource Registry declarations are no longer part of the default production declaration path. Enable demo material only through explicit demo resource locations or test resources.
+- Use `ResourceSyncMode.INIT_ONLY` for idempotent initial data that must not overwrite operator changes. Use the existing sync modes only when the target data is intentionally owned by Mango declarations.
+- Persistence Flyway modules can now declare external `file:` or `classpath:` locations for controlled release or comparison packs; default runtime migrations should remain module-owned and production-safe.
+- Existing business projects should upgrade to `@mango/cli@1.0.56` and run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to receive `@mango/pmo@1.0.6`.
+- Frontend projects that consume the compatibility URL navigation package should upgrade `@mango/link-panel` to `1.0.1`.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.5` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/pmo@1.0.6`, `@mango/link-panel@1.0.1`, and `@mango/cli@1.0.56` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.01-maven-1.0.5-data-governance-release` for GitHub Pages.
+- GitHub Release: `v2026.07.01-maven-1.0.5-data-governance-release`.
+
+### Verification
+
+- `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase release --task "发布 PR 363 合并后的最新版本" --paths "CHANGELOG.md,mango/pom.xml,mango-ui/packages/mango-cli/package.json,mango-docs,mango-business-starter"`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base v2026.07.01-maven-1.0.4-link-cli-docs-release --head HEAD`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-resource/mango-resource-api,mango-platform/mango-resource/mango-resource-core -am test`
+- `mvn -f mango/pom.xml -pl mango-infra/mango-infra-persistence/mango-infra-persistence-starter -am test`
+- `pnpm -C mango-ui release:impact --base=v2026.07.01-maven-1.0.4-link-cli-docs-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.01-maven-1.0.5-data-governance-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.5 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.5 -Dartifact=io.mango:mango-admin-starter:1.0.5 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.5 -Dartifact=io.mango.platform.resource:mango-resource-starter:1.0.5 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.5 -Dartifact=io.mango.infra:mango-infra-persistence-starter:1.0.5 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.01-maven-1.0.5-data-governance-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.01-maven-1.0.5-data-governance-release`
+- `git diff --check`
+
+## v2026.07.01-maven-1.0.4-link-cli-docs-release - 2026-07-01
+
+### New
+
+- Published the `mango-link` URL navigation capability. The backend adds link category, company link, personal link, favorites, jump tracking, menu resources, and Flyway migrations under `mango-link`.
+- Published the Link frontend package set: `@mango/link@1.0.0`, `@mango/link-openapi@1.0.0`, `@mango/link-page@1.0.0`, and `@mango/link-panel@1.0.0`.
+- Added Link module integration to the full admin package and CLI release lock through `@mango/admin@1.0.36`.
+- Published `@mango/cli@1.0.55` with `mango dev restart`, which runs the existing stop and start flow for a selected app or group.
+- Added a versioned Mango Docs snapshot for this release tag so business developers can read docs that match the Maven and npm artifacts.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.4</mango.version>` to consume the new `mango-link` backend artifacts.
+- Monolith deployments that need URL navigation should add `mango-link-starter`; remote or split deployments should use the matching `mango-link-starter-remote` dependency pattern.
+- Business admin frontends should consume the npm package versions listed in this release as a batch. Do not mix `@mango/admin@1.0.36` with older CLI release locks when enabling Link pages.
+- For standalone URL navigation pages, install `@mango/link-page@1.0.0` and import `@mango/link-page/style.css`; existing consumers of the compatibility package can use `@mango/link-panel@1.0.0`.
+- Developers should install `@mango/cli@1.0.55` from the company npm group registry before relying on `mango dev restart`.
+- Do not consume Mango Maven `1.0.3`; that attempted release was superseded before completion after verification found an invalid `mango-file-preview-engine` jar.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.4` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/link-openapi@1.0.0`, `@mango/link-page@1.0.0`, `@mango/link-panel@1.0.0`, `@mango/link@1.0.0`, `@mango/admin@1.0.36`, and `@mango/cli@1.0.55` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.01-maven-1.0.4-link-cli-docs-release` for GitHub Pages.
+- GitHub Release: `v2026.07.01-maven-1.0.4-link-cli-docs-release`.
+
+### Verification
+
+- `pnpm -C mango-ui release:impact --base=v2026.07.01-maven-1.0.2-workflow-runtime-release --head=HEAD`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.01-maven-1.0.4-link-cli-docs-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.4 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.4 -Dartifact=io.mango:mango-admin-starter:1.0.4 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.4 -Dartifact=io.mango.platform.link:mango-link-starter:1.0.4 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.01-maven-1.0.4-link-cli-docs-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.01-maven-1.0.4-link-cli-docs-release`
+- `git diff --check`
+
+## v2026.07.01-maven-1.0.2-workflow-runtime-release - 2026-07-01
+
+### New
+
+- Added `WORKFLOW_DEFINITION` Resource Registry support for Issue #344. Workflow declarations can now be consumed by `mango-workflow` through a target `ResourceHandler`, create or update definitions by `tenantId + definitionKey`, load inline or classpath JSON, and publish deployable Flowable process definitions.
+- Added `WorkflowTaskRuntimeApi` for Issue #345 so business modules can call workflow task runtime operations through `mango-workflow-api` instead of depending on `mango-workflow-core`.
+- Hardened Maven release tooling so backend publishes must pass an explicit `--release-version`/`--revision`; implicit `1.0.0-SNAPSHOT` publishes are blocked, and intentional snapshots require `--allow-snapshot`.
+
+### Fixed
+
+- Updated workflow definition ensure-publish behavior so changed built-in declarations update the existing ensured definition and create a new published version instead of being skipped when an older published definition exists.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.2</mango.version>` when consuming the new workflow runtime API or workflow definition Resource Registry handler.
+- Backend consumers that bootstrap workflow definitions through Resource Registry should refresh Mango workflow dependencies and declare `WORKFLOW_DEFINITION` resources under `META-INF/mango/resources`.
+- Business modules should depend on `mango-workflow-api` for task runtime operations. Only the host application that provides the workflow runtime should include `mango-workflow-starter`.
+- No database migration or frontend package change is required by this PR.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.2` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- GitHub Release: `v2026.07.01-maven-1.0.2-workflow-runtime-release`.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am test -DskipTests=false`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am checkstyle:check`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am pmd:check`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am mango:check -Drule=api-contract` failed on existing repository-wide API contract debt; the current-task `WorkflowTaskController -> WorkflowTaskRuntimeApi` violation was removed.
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter -am mango:check -Drule=all` failed on existing repository-wide rule debt unrelated to the new workflow handler/API files.
+- Real E2E smoke: monolith backend on isolated MySQL database, mango-admin frontend, workflow definition page, workflow todo page, `/resource/handler-specs`, and workflow definition/task APIs returned `200` with no browser console errors.
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-maven-1.0.2-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `mvn -f mango/pom.xml -Drevision=1.0.2 -DskipTests deploy`
+- `mvn -q dependency:get -Dartifact=io.mango:mango-admin-starter:1.0.2 -Dtransitive=false -DremoteRepositories=mango-public::default::http://nexus.inner.yunxinbaokeji.com/repository/maven-public/`
+- `git diff --check`
+
+## v2026.06.30-maven-1.0.1-admin-branding-cli-release - 2026-06-30
+
+### New
+
+- Started fixed backend Maven jar version management for business projects. Generated projects now lock Mango backend dependencies through `<mango.version>1.0.1</mango.version>` and `dependencyManagement` instead of defaulting to `1.0.0-SNAPSHOT`.
+- Added admin branding configuration in the System module. The backend exposes branding configuration contracts and controller support, while the admin shell, login page, footer, and logo rendering can consume file-center-backed branding images and text.
+- Polished workspace grid widgets and grid layout styling in the admin home page batch.
+
+### Fixed
+
+- Updated the File upload component image回显 behavior used by admin branding so file-center IDs can be resolved back to previewable image data instead of relying on persisted access URLs.
+- Split file preview and download URL handling so preview panels no longer fall back to download endpoints for inline rendering.
+
+### Published Packages
+
+- Maven: full Mango backend platform reactor at `1.0.1` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin@1.0.35`, `@mango/admin-pages@1.0.13`, `@mango/admin-shell@1.0.31`, `@mango/auth@1.0.10`, `@mango/calendar@1.0.14`, `@mango/cms@1.0.3`, `@mango/file@1.0.14`, `@mango/grid-layout@1.0.3`, `@mango/grid-widgets@1.0.8`, `@mango/job@1.0.6`, `@mango/notice@1.0.15`, `@mango/numgen@1.0.14`, `@mango/payment@1.0.5`, `@mango/system@1.0.12`, `@mango/template@1.0.14`, `@mango/workflow@1.0.19`, `@mango/workflow-business-example@1.0.18`, and `@mango/cli@1.0.54` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.30-maven-1.0.1-admin-branding-cli-release`.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.1</mango.version>` in the generated backend parent POM, or regenerate/upgrade with `@mango/cli@1.0.54` so the CLI writes the same Maven lock.
+- Business frontend projects should consume the npm versions listed above as a batch. Do not mix the new admin shell/system/file branding packages with older `@mango/admin` or CLI release locks.
+- After upgrading backend artifacts, start the application with the normal Resource Registry and configuration initialization path so the new System admin branding menu and default configuration resources are synchronized before assigning permissions.
+- No manual database DDL is required by this release beyond normal Flyway execution.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-platform/mango-system/mango-system-core -am -Drevision=1.0.1 -Dtest=AdminBrandingServiceTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/file test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm -C mango-ui release:impact --base=v2026.06.30-file-download-cli-pmo-release --head=HEAD`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-maven-1.0.1-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `mvn -f mango/pom.xml -Drevision=1.0.1 -DskipTests deploy`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.06.30-maven-1.0.1-admin-branding-cli-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `mvn -q dependency:get -Dartifact=io.mango:mango-admin-starter:1.0.1 -Dtransitive=false -DremoteRepositories=mango-public::default::http://nexus.inner.yunxinbaokeji.com/repository/maven-public/`
+- `git diff --check`
+
+## v2026.06.30-file-download-cli-pmo-release - 2026-06-30
+
+### Fixed
+
+- Published the file download filename fix from Issue #332 / PR #333. `Content-Disposition` filenames are no longer double-encoded, so Chinese names and `+` characters are presented correctly by browser downloads.
+- Published the Mango CLI dev-workspace cleanup from PR #331. Generated and root compatibility scripts no longer keep the legacy `init` shim as an owning entry point; business projects should use Mango CLI workspace commands.
+
+### New
+
+- Published the PMO test case automation governance flow from PR #334. Mango delivery rules, templates, and checkers now require test case registration, automation layer decisions, result baselines, and business-developer-facing handoff output.
+
+### Published Packages
+
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- npm: `@mango/pmo@1.0.5` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- npm: `@mango/cli@1.0.53` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.06.30-file-download-cli-pmo-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` file dependencies before relying on corrected browser download filenames for non-ASCII file names.
+- Business developers should install `@mango/cli@1.0.53` with `npm install -g @mango/cli@1.0.53 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business projects should run `mango pmo sync --project-dir . --sync-shell` or `mango pmo upgrade --project-dir . --sync-shell` to receive `@mango/pmo@1.0.5`, updated PMO governance, and aligned compatibility scripts.
+- No database migration, menu resource, button permission, tenant binding, frontend runtime package, or route change is required for this release.
+
+### Verification
+
+- `mvn -pl mango-platform/mango-file/mango-file-starter -am -Dtest=FileControllerDownloadResponseTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-platform/mango-file/mango-file-starter -am test`
+- `pnpm --filter @mango/pmo build`
+- `pnpm --filter @mango/pmo check`
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm run package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node mango-pmo/tools/check-pmo-preflight.mjs`
+- `node mango-pmo/tools/check-governance-intent.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=/tmp/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg pmo --release-tag=v2026.06.30-file-download-cli-pmo-release --skip-shared-gates`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg cli --release-tag=v2026.06.30-file-download-cli-pmo-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm pmo --version=1.0.5`
+- `pnpm -C mango-ui release:verify-npm cli --version=1.0.53`
+- `git diff --check`
+
+## v2026.06.29-file-compression-release - 2026-06-29
+
+### New
+
+- Published compressed file downloads from PR #329. `mango-infra-fileproc` now exposes `FileCompressApi` with image and rasterized PDF compression providers, and `mango-file` can apply compression to single downloads and ZIP package entries.
+- `FileApi.packageFiles(FilePackageCommand)` and `POST /file/files/package` now support package-level `compression` / `perFileTargetSizeBytes` and entry-level `compression` / `targetSizeBytes`; unsupported file types remain unchanged in the ZIP.
+
+### Published Packages
+
+- Maven: Fileproc backend batch `io.mango.infra.fileproc:mango-infra-fileproc-api`, `mango-infra-fileproc-core`, and `mango-infra-fileproc-starter` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- Maven: File backend batch `io.mango.platform.file:mango-file-api`, `mango-file-core`, `mango-file-starter`, and `mango-file-starter-remote` at `1.0.0-SNAPSHOT` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/`.
+- GitHub Release: `v2026.06.29-file-compression-release`.
+
+### Upgrade Notes
+
+- Backend consumers should refresh Mango `1.0.0-SNAPSHOT` fileproc and file dependencies before using compressed file downloads or ZIP entry compression.
+- `perFileTargetSizeBytes` and entry-level `targetSizeBytes` are single-file targets, not ZIP total-size targets.
+- Office original-format image recompression is not implemented in this release. Word, PPT, and Excel entries remain original unless business code converts them before download.
+- No database migration, menu resource, button permission, tenant binding, frontend package, or route change is required for this release.
+
+### Verification
+
+- `mvn -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core -am -Dtest=FileCompressApiTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core,mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter -am test`
+- `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `scripts/publish-maven-batch.sh :mango-infra-fileproc-api :mango-infra-fileproc-core :mango-infra-fileproc-starter :mango-file-api :mango-file-core :mango-file-starter :mango-file-starter-remote --revision 1.0.0-SNAPSHOT`
+- `git diff --check`
+
 ## v2026.06.29-auth-subject-role-release - 2026-06-29
 
 ### New

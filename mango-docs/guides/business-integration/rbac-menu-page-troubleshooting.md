@@ -74,6 +74,10 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #358 新增 `mango-link` 网址导航能力，后端通过 `META-INF/mango/resources/link-common-menu.json` 注入 `网址导航` 和 `网址管理` 菜单，前端通过 `@mango/link/admin-pages` 注册 `link/company/index`、`link/favorites/index`、`link/my-links/index`、`link/categories/index`、`link/items/index` 页面 key。本场景排障步骤不变；排查网址导航页面空白、404 或 403 时，额外确认 `mango-link-starter` 是否启用、resource 是否同步、角色是否获得 `platform_admin` 或 `institution_collaboration` 菜单套餐，以及 `@mango/link` 是否随 admin 聚合入口注册。
+
+- v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和后台品牌配置前端批次；不改变菜单 `component` key 解析、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。业务项目排查品牌配置页面时，额外确认资源同步和 `system:admin-branding:query`、`system:admin-branding:edit` 授权。
+
 - PR #327 扩展 `AUTH_SUBJECT_ROLE` 基线声明，支持通过 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析租户成员后绑定角色；不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权关系、按钮权限关系、租户应用绑定和页面路由。排查清库初始化后的菜单可见性时，如依赖成员角色绑定基线，需要额外确认声明中的稳定主体键能解析到未离租的 `tenant_member`。
 
 - PR #314 修复授权 API 资源运行时匹配和同步覆盖：同 method + path 的旧模块 active 资源会在新扫描结果注册时被禁用，精确路径优先于通配符或路径变量匹配。菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定和页面路由不变。排查页面能打开但基础接口 403 时，除角色菜单授权外，需要确认基础接口是否声明为 `LOGIN`/`PUBLIC`、资源同步是否已执行、`authorization_api_resource` 中同路由旧 `PERMISSION` 记录是否已禁用，并刷新 API 资源运行时缓存。
@@ -97,6 +101,8 @@ pnpm -F @mango/admin-shell build
 - PR #267 将通知公告能力拆分为管理端 `通知中心` 和用户端 `消息中心`：管理端 `通知中心` 下包含公告管理、消息配置、发送任务、渠道配置、发送记录、失败重试，用户端 `消息中心` 下包含我的消息、公告，`接收设置` 保留为隐藏辅助路由。排查通知相关菜单时，需要确认后端菜单资源、当前用户角色授权、`component` key 和前端 `@mango/notice` 页面注册是否匹配；这次不改变菜单树接口、页面注册机制、角色授权关系、登录态权限聚合、租户绑定和通用排障步骤。
 
 - PR #256 将后台工作台默认布局调整为页面内固定配置，仅影响没有个人工作台配置或恢复默认后的首页卡片排布；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
+
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅调整首页小组件 package 归属、`@mango/admin@1.0.37` / `@mango/admin-shell@1.0.32` 版本锁和 generated backend baseline；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
 
 - PR #253 新增 Resource Registry 的 `AUTH_ROLE`、`AUTH_ROLE_DATA_SCOPE`、`AUTH_SUBJECT_ROLE` 基线声明，可让角色、角色数据权限和成员角色绑定随资源同步注入；不改变菜单 `component` key、菜单树接口、页面注册方式、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。排查清库初始化后的菜单可见性时，可额外确认角色基线声明是否先于 `AUTH_MENU.roleCodes` 完成同步。
 
@@ -154,5 +160,15 @@ pnpm -F @mango/admin-shell build
 - 本次用户信息小组件视觉优化 PR 仅调整 `@mango/grid-widgets` 中用户信息卡片展示和后台工作台默认布局高度；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。
 - PR 本次新增 `@mango/grid-widgets` 日历系统小组件，并在工作台默认布局中展示；不改变菜单页面 component key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。
 - 本次 PR 隐藏后台布局配置抽屉中的深色模式、组件大小、缓存 Tagsview 和页面动画入口，仅收口未开放或未完整生效的个人偏好配置展示；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。
+- 本次 PR 仅优化工作台系统小组件视觉、提示文案、组件库宽度、快捷入口排布和日历日期字号；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
 - 本次 PR 仅在进入登录页或退出登录时清理后台 TagsView 当前打开标签缓存，避免换账号后点击上一账号标签出现 404；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。
 - 本次 PR 修复未登录访问管理端深链后登录成功回跳原站内路径；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定和本场景排障步骤。排查菜单页面不可见或 404 时仍按当前实际落地页面、菜单授权和页面注册链路定位。
+
+- Issue #259 新增后台品牌配置页面 `system/admin-branding/index`、菜单和语义化接口，仅影响后台 Logo、系统标题、版权、favicon、登录页背景等品牌展示配置；不改变菜单 `component` key 解析、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。若后台品牌配置页面出现 404 或 403，按菜单资源同步、角色授权、页面 key 注册和接口权限 `system:admin-branding:query`、`system:admin-branding:edit` 顺序排查。
+- Issue #354 为 Resource Registry 增加资源类型依赖排序，仅改变同一同步批次内 handler 执行顺序，例如身份用户、角色、组织资源先于其绑定关系同步；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。清库重建时仍按资源声明同步日志、目标 handler 消费结果、角色授权和页面 key 注册顺序排查。
+
+- Issue #368 新增用户多首页工作台能力，固定首页菜单仍使用 `/home` 和原有 `home` component key；新增 `/home/:homeId` 是隐藏运行时路由，复用同一个首页宿主并由 `mango-home` 校验当前用户是否拥有该首页。不改变菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合和租户绑定。若指定首页路由出现 404，除原排障步骤外，额外确认 admin app 是否注册隐藏路由 `/home/:homeId`，以及后端是否启用 `mango-home-starter` 和 `home` Flyway migration。
+
+- Issue #372 新增 `平台能力 / 首页管理` 菜单目录和 `home/templates/index`、`home/list/index`、`home/user/index` 页面注册，用于首页模板、首页列表和用户首页管理；不改变菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合和租户绑定。排查首页管理菜单不可见、页面 404 或 403 时，除本指南原闭环外，额外确认 `mango-home-starter` 的 `AUTH_MENU` 资源已同步、角色已授权首页管理菜单/按钮资源、前端已注册三个页面 key。
+
+- Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变菜单树接口、页面 `component` key、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，再回到本指南排查菜单、页面和权限链路。

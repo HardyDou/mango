@@ -13,9 +13,11 @@ Publish multiple Maven reactor modules in one deploy command and verify the
 published artifacts with one shared temporary Maven local repository.
 
 Options:
-  --revision <ver>      Maven CI-friendly version; default is 1.0.0-SNAPSHOT
+  --revision <ver>      Maven CI-friendly version; required unless
+                        MANGO_MAVEN_REVISION is set
   --release-version <ver>
-                        Alias for --revision; publish a non-SNAPSHOT release version
+                        Alias for --revision
+  --allow-snapshot      Allow an explicit *-SNAPSHOT revision
   --run-tests           Run tests; default is -DskipTests
   --skip-verify         Skip dependency:get verification after deploy
   --verify-transitive   Resolve transitive dependencies during verification
@@ -25,9 +27,9 @@ Options:
   -h, --help            Show help
 
 Examples:
-  scripts/publish-maven-batch.sh mango-auth-starter mango-auth-starter-remote
-  scripts/publish-maven-batch.sh :mango-cms-starter :mango-cms-starter-remote
-  scripts/publish-maven-batch.sh mango-platform/mango-cms/mango-cms-starter --revision 1.0.0
+  scripts/publish-maven-batch.sh mango-auth-starter mango-auth-starter-remote --release-version 1.0.2
+  scripts/publish-maven-batch.sh :mango-cms-starter :mango-cms-starter-remote --release-version 1.0.2-rc.20250701113000
+  scripts/publish-maven-batch.sh mango-platform/mango-cms/mango-cms-starter --revision 1.0.2-SNAPSHOT --allow-snapshot
 EOF
 }
 
@@ -36,8 +38,28 @@ skip_tests=true
 dry_run=false
 verify_publish=true
 verify_transitive=false
-revision="${MANGO_MAVEN_REVISION:-1.0.0-SNAPSHOT}"
+allow_snapshot=false
+revision="${MANGO_MAVEN_REVISION:-}"
 verify_repo="${MANGO_MAVEN_VERIFY_REPO:-${REPO_ROOT}/.runtime/maven-publish-verify-batch}"
+
+validate_revision() {
+  local value="$1"
+  if [[ -z "${value}" ]]; then
+    echo "Maven revision is required. Pass --release-version <version> or set MANGO_MAVEN_REVISION." >&2
+    echo "Examples: 1.0.2, 1.0.2-rc.20250701113000, 1.0.2-dev.20250701113000" >&2
+    exit 1
+  fi
+  if [[ ! "${value}" =~ ^[0-9]+(\.[0-9]+){2,}([-+][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+    echo "Invalid Maven revision: ${value}" >&2
+    echo "Use a stable SemVer-like version such as 1.0.2 or an explicit prerelease such as 1.0.2-rc.20250701113000." >&2
+    exit 1
+  fi
+  if [[ "${value}" == *-SNAPSHOT && "${allow_snapshot}" != "true" ]]; then
+    echo "SNAPSHOT publish is blocked by default: ${value}" >&2
+    echo "Use a release/prerelease version, or pass --allow-snapshot when publishing an intentional Maven snapshot." >&2
+    exit 1
+  fi
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -67,6 +89,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --release-version=*)
       revision="${1#--release-version=}"
+      ;;
+    --allow-snapshot)
+      allow_snapshot=true
       ;;
     --skip-verify)
       verify_publish=false
@@ -110,10 +135,7 @@ if [[ ${#targets[@]} -eq 0 ]]; then
   usage
   exit 1
 fi
-if [[ -z "${revision}" ]]; then
-  echo "Revision must not be empty." >&2
-  exit 1
-fi
+validate_revision "${revision}"
 
 mvn_eval() {
   local pom_file="$1"
@@ -168,6 +190,7 @@ fi
 echo "Maven root: ${MAVEN_ROOT}"
 echo "Publishing modules: ${project_list}"
 echo "Revision: ${revision}"
+echo "Allow SNAPSHOT: ${allow_snapshot}"
 echo "Mode: one reactor deploy for all selected modules and required upstream modules"
 printf 'Command: mvn'
 printf ' %q' "${mvn_args[@]}"

@@ -4,6 +4,8 @@
 
 形成并落地 `mango-resource` Resource Registry，明确资源声明协议、稳定 ID、版本、字段类型、消费者注册、启动同步、冲突处理、多实例锁和过程记录，并完成系统字典和授权 API 资源接入验证。
 
+当前能力补充：Issue #184 已在 Resource Registry 基础上补齐 demo 资源目录隔离和 `INIT_ONLY` 同步模式，并把大 SQL、外部 SQL、schema baseline pack 收敛到 `mango-infra-persistence` 的模块化 Flyway。业务 Agent 和框架开发 Agent 判断当前数据初始化边界时，应优先阅读 [Issue #184 数据治理设计](./2026-07-01-issue-184-data-governance-design.md)、`mango-resource` README 和 `mango-infra-persistence` README；本文保留 Resource Registry 原始交付契约和验收台账。
+
 ## 2. 范围
 
 - 资源注册中心定位。

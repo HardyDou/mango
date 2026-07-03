@@ -13,6 +13,8 @@
 3. 查看关联 PMO 链接；正式交付规则以 preflight 输出和 `mango-pmo/rules/**` 为准。
 4. 能力说明维护要求见 [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)。
 
+处理 Mango 升级、初始化数据、字典、菜单、角色、工作流、Flyway 或 demo 数据时，先看本页“近期能力变更”，再看对应模块 README。历史 migration、历史设计和旧会话上下文只能作为历史证据；如果它们和当前 README 或本页冲突，以当前 README、本页和明确标注为当前口径的设计为准。
+
 ## 3. 组合接入入口
 
 | 目标 | 阅读顺序 | 排障入口 |
@@ -22,15 +24,19 @@
 | 数据权限闭环 | [Authorization](../../mango/mango-platform/mango-authorization/README.md) -> [Persistence](../../mango/mango-infra/mango-infra-persistence/README.md) -> [RBAC Frontend](../../mango-ui/packages/rbac/README.md) | [Authorization README](../../mango/mango-platform/mango-authorization/README.md)、[Persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) |
 | 文件上传到预览闭环 | [File](../../mango/mango-platform/mango-file/README.md) -> [Fileproc](../../mango/mango-infra/mango-infra-fileproc/README.md) -> [File Preview](../../mango/mango-platform/mango-file-preview/README.md) -> [Frontend File](../../mango-ui/packages/file/README.md) | [File README](../../mango/mango-platform/mango-file/README.md)、[文件上传表单接入](../guides/business-integration/file-upload-form.md) |
 | 业务审批闭环 | [Workflow](../../mango/mango-platform/mango-workflow/README.md) -> [Workflow Frontend](../../mango-ui/packages/workflow/README.md) -> [Workflow Example](../../mango-ui/packages/workflow-business-example/README.md) | [Workflow README](../../mango/mango-platform/mango-workflow/README.md)、[业务审批接入](../guides/business-integration/workflow-business-approval.md) |
-| 租户基础数据和字典闭环 | [Identity](../../mango/mango-platform/mango-identity/README.md) -> [Org](../../mango/mango-platform/mango-org/README.md) -> [System](../../mango/mango-platform/mango-system/README.md) -> [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> [Access](../../mango/mango-platform/mango-access/README.md) | [System README](../../mango/mango-platform/mango-system/README.md)、[租户字典配置为空排障](../guides/business-integration/tenant-dict-config-empty.md)；demo/bootstrap 数据可用 `IDENTITY_USER`、`ORG_UNIT`、`ORG_POST`、`ORG_MEMBER_BINDING` 声明 |
+| 租户基础数据和字典闭环 | [Issue #184 数据治理设计](../designs/2026-07-01-issue-184-data-governance-design.md) -> [Identity](../../mango/mango-platform/mango-identity/README.md) -> [Org](../../mango/mango-platform/mango-org/README.md) -> [System](../../mango/mango-platform/mango-system/README.md) -> [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> [Access](../../mango/mango-platform/mango-access/README.md) | [System README](../../mango/mango-platform/mango-system/README.md)、[租户字典配置为空排障](../guides/business-integration/tenant-dict-config-empty.md)；新增字典优先确认当前 Resource handler 和 `sync-mode`，不要照搬历史 Flyway seed |
 | 定时任务闭环 | [Job](../../mango/mango-platform/mango-job/README.md) -> [Job Frontend](../../mango-ui/packages/job/README.md) -> [Notice](../../mango/mango-platform/mango-notice/README.md) | [Job README](../../mango/mango-platform/mango-job/README.md)、[Job Frontend README](../../mango-ui/packages/job/README.md) |
 | 业务项目创建到 PR | [CLI](../../mango-ui/packages/mango-cli/README.md) -> [Business Starter](../../mango-business-starter/README.md) -> [Business PMO](../../mango-business-starter/business-pmo/README.md) -> [Topology](../../mango-business-starter/topologies/monolith/README.md) | [CLI README](../../mango-ui/packages/mango-cli/README.md)、[Business Starter README](../../mango-business-starter/README.md) |
 | 业务配置资源注入 | [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> 目标模块 README | [Resource README](../../mango/mango-platform/mango-resource/README.md)，支持授权、组织、身份等基线资源类型 |
+| 数据初始化与停机升级治理 | [Issue #184 数据治理设计](../designs/2026-07-01-issue-184-data-governance-design.md) -> [Resource Registry](../../mango/mango-platform/mango-resource/README.md) -> [Persistence](../../mango/mango-infra/mango-infra-persistence/README.md) -> [S5 数据物料清单](../plans/2026-07-01-issue-184-s5-data-material-audit.md) | Resource 负责正式/demo/`INIT_ONLY`；Persistence 负责 DDL、外部 SQL、baseline pack |
 
 ## 3.1 近期能力变更
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-03 | 首页管理：平台级首页模板、草稿复制、发布生效、个人/部门/角色授权、部门继承和用户最终首页视图 | [Home README](../../mango/mango-platform/mango-home/README.md)、[Home Frontend README](../../mango-ui/packages/home/README.md)、[Admin Shell README](../../mango-ui/packages/admin-shell/README.md) | GitHub Issue #372 |
+| 2026-07-02 | 用户多首页工作台：个人首页列表、默认首页、带 `homeId` 参数的指定首页、布局 JSON 持久化 | [Home README](../../mango/mango-platform/mango-home/README.md)、[Home Frontend README](../../mango-ui/packages/home/README.md)、[Admin Shell README](../../mango-ui/packages/admin-shell/README.md) | GitHub Issue #368 |
+| 2026-07-01 | 数据治理第一版：Resource demo 隔离、`INIT_ONLY`、Flyway 外部 locations、schema baseline pack | [Resource README](../../mango/mango-platform/mango-resource/README.md)、[Persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) | [Issue #184 设计](../designs/2026-07-01-issue-184-data-governance-design.md)、[S5 清单](../plans/2026-07-01-issue-184-s5-data-material-audit.md) |
 | 2026-06-29 | File 支持按目录结构清单打包多个文件为 ZIP，生成后写回存储层并返回新的 `FileRecordVO` | [File README](../../mango/mango-platform/mango-file/README.md) | [计划](../plans/2026-06-29-issue-316-file-package-plan.md)、[详细设计](../designs/2026-06-29-issue-316-file-package-design.md)、[交付台账](../plans/2026-06-29-issue-316-file-package-ledger.md) |
 
 ## 4. 后端平台能力
@@ -46,8 +52,10 @@
 | 文件 File | `mango/mango-platform/mango-file` | [README](../../mango/mango-platform/mango-file/README.md) | [README](../../mango/mango-platform/mango-file/README.md) |
 | 文件预览 File Preview | `mango/mango-platform/mango-file-preview` | [README](../../mango/mango-platform/mango-file-preview/README.md) | [README](../../mango/mango-platform/mango-file-preview/README.md) |
 | 自定义栅格布局 Grid Layout | `mango/mango-platform/mango-grid-layout` | [README](../../mango/mango-platform/mango-grid-layout/README.md) | [README](../../mango/mango-platform/mango-grid-layout/README.md) |
+| 用户首页工作台 Home | `mango/mango-platform/mango-home` | [README](../../mango/mango-platform/mango-home/README.md) | [README](../../mango/mango-platform/mango-home/README.md) |
 | 身份 Identity | `mango/mango-platform/mango-identity` | [README](../../mango/mango-platform/mango-identity/README.md) | [README](../../mango/mango-platform/mango-identity/README.md) |
 | 任务调度 Job | `mango/mango-platform/mango-job` | [README](../../mango/mango-platform/mango-job/README.md) | [README](../../mango/mango-platform/mango-job/README.md) |
+| 网址导航 Link | `mango/mango-platform/mango-link` | [README](../../mango/mango-platform/mango-link/README.md) | [README](../../mango/mango-platform/mango-link/README.md) |
 | 通知 Notice | `mango/mango-platform/mango-notice` | [README](../../mango/mango-platform/mango-notice/README.md) | [README](../../mango/mango-platform/mango-notice/README.md) |
 | 编号生成 Numgen | `mango/mango-platform/mango-numgen` | [README](../../mango/mango-platform/mango-numgen/README.md) | [README](../../mango/mango-platform/mango-numgen/README.md) |
 | 组织 Org | `mango/mango-platform/mango-org` | [README](../../mango/mango-platform/mango-org/README.md) | [README](../../mango/mango-platform/mango-org/README.md) |
@@ -85,11 +93,14 @@ Mango 前端包默认服务管理后台。标记为 `Admin Shell` 或 `Admin Pag
 | 能力 | 包 | 适用端 / 集成形态 | 官网类站点建议 | README | 排障入口 |
 |------|----|-------------------|----------------|--------|----------|
 | 单体管理端 | `@mango/admin` | Admin Shell，后台应用聚合入口 | 不使用 | [README](../../mango-ui/packages/admin/README.md) | [README](../../mango-ui/packages/admin/README.md) |
-| 后台 Shell | `@mango/admin-shell` | Admin Shell，后台布局、菜单、路由和运行时 | 不使用，除非官网就是内部后台 | [README](../../mango-ui/packages/admin-shell/README.md) | [README](../../mango-ui/packages/admin-shell/README.md) |
+| 后台 Shell | `@mango/admin-shell` | Admin Shell，后台布局、菜单、路由、运行时和首页业务小组件自动注册 | 不使用，除非官网就是内部后台 | [README](../../mango-ui/packages/admin-shell/README.md) | [README](../../mango-ui/packages/admin-shell/README.md) |
 | 页面注册表 | `@mango/admin-pages` | Admin Pages，后台页面注册和 component key 映射 | 不使用 | [README](../../mango-ui/packages/admin-pages/README.md) | [README](../../mango-ui/packages/admin-pages/README.md) |
 | 认证前端 | `@mango/auth` | Admin Pages，后台登录、用户与认证页面 | 不直接复用官网登录页 | [README](../../mango-ui/packages/auth/README.md) | [README](../../mango-ui/packages/auth/README.md) |
 | 日历前端 | `@mango/calendar` | Admin Pages，后台日历管理页面 | 不直接复用整页 | [README](../../mango-ui/packages/calendar/README.md) | [README](../../mango-ui/packages/calendar/README.md) |
 | 任务前端 | `@mango/job` | Admin Pages，后台任务管理页面 | 不使用 | [README](../../mango-ui/packages/job/README.md) | [README](../../mango-ui/packages/job/README.md) |
+| 网址导航前端 | `@mango/link` | Admin Pages，后台网址导航和网址管理页面 | 不直接复用整页；门户导航使用 `@mango/link-page` | [README](../../mango-ui/packages/link/README.md) | [README](../../mango-ui/packages/link/README.md) |
+| 网址导航 Open API | `@mango/link-openapi` | 通用能力，网址导航 API client | 可评估使用，需确认登录态和 `/api` 前缀 | [README](../../mango-ui/packages/link-openapi/README.md) | [README](../../mango-ui/packages/link-openapi/README.md) |
+| 网址导航页面 | `@mango/link-page` | 通用页面，分组展示网址并支持个人操作 | 可评估使用，需确认 Element Plus、登录态和后端 `mango-link` | [README](../../mango-ui/packages/link-page/README.md) | [README](../../mango-ui/packages/link-page/README.md) |
 | 通知前端 | `@mango/notice` | Admin Pages，后台通知管理页面 | 不直接复用整页 | [README](../../mango-ui/packages/notice/README.md) | [README](../../mango-ui/packages/notice/README.md) |
 | 编号前端 | `@mango/numgen` | Admin Pages，后台编号规则管理页面 | 不使用 | [README](../../mango-ui/packages/numgen/README.md) | [README](../../mango-ui/packages/numgen/README.md) |
 | 支付前端 | `@mango/payment` | Admin Pages，后台支付配置、订单和对账页面 | 不直接复用后台管理页；收银台另按业务评估 | [README](../../mango-ui/packages/payment/README.md) | [README](../../mango-ui/packages/payment/README.md) |
@@ -102,8 +113,9 @@ Mango 前端包默认服务管理后台。标记为 `Admin Shell` 或 `Admin Pag
 | 应用运行时 | `@mango/app-runtime` | 通用/运行时能力，应用装配基础 | 可评估使用，但需确认是否绑定后台运行模型 | [README](../../mango-ui/packages/app-runtime/README.md) | [README](../../mango-ui/packages/app-runtime/README.md) |
 | 公共组件 | `@mango/common` | 通用能力，请求、消息、选择器、编辑器等 | 可评估使用，需核对 Element Plus、主题和后台依赖 | [README](../../mango-ui/packages/common/README.md) | [README](../../mango-ui/packages/common/README.md) |
 | 文件前端 | `@mango/file` | 混合能力，包含后台页面和上传/预览组件 | 只评估组件级能力，不直接复用后台页面 | [README](../../mango-ui/packages/file/README.md) | [README](../../mango-ui/packages/file/README.md) |
-| 自定义栅格布局前端 | `@mango/grid-layout` | 通用能力，自定义栅格展示与编辑器 | 可评估使用，需确认 Element Plus、主题和个人布局接口边界 | [README](../../mango-ui/packages/grid-layout/README.md) | [README](../../mango-ui/packages/grid-layout/README.md) |
-| 栅格系统小组件 | `@mango/grid-widgets` | 通用能力，系统小组件集合、日历、用户信息、快捷入口、消息中心与业务小组件注册聚合 | 可评估使用，需确认运行时用户、菜单、跳转适配和小组件数据权限边界 | [README](../../mango-ui/packages/grid-widgets/README.md) | [README](../../mango-ui/packages/grid-widgets/README.md) |
+| 用户首页 API | `@mango/home` | Admin Shell/API，用户多首页、模板管理、授权、默认首页和布局持久化接口封装 | 不直接复用为官网页面；API 封装需配合后端 `mango-home` 和登录态 | [README](../../mango-ui/packages/home/README.md) | [README](../../mango-ui/packages/home/README.md) |
+| 自定义栅格布局前端 | `@mango/grid-layout` | 通用能力，自定义栅格展示与编辑器，支持失效组件查看态隐藏和编辑态清理 | 可评估使用，需确认 Element Plus、主题和个人布局接口边界 | [README](../../mango-ui/packages/grid-layout/README.md) | [README](../../mango-ui/packages/grid-layout/README.md) |
+| 栅格系统小组件 | `@mango/grid-widgets` | 通用能力，系统小组件集合、网址导航、日历、用户信息、快捷入口、消息中心与业务小组件注册聚合 | 可评估使用，需确认运行时用户、菜单、跳转适配和小组件数据权限边界 | [README](../../mango-ui/packages/grid-widgets/README.md) | [README](../../mango-ui/packages/grid-widgets/README.md) |
 | CLI | `@mango/cli` | 开发工具，项目生成、模块追加和 PMO baseline 同步 | 可用于生成项目，不是运行时组件 | [README](../../mango-ui/packages/mango-cli/README.md) | [README](../../mango-ui/packages/mango-cli/README.md) |
 
 ## 7. 后端装配与工具

@@ -18,7 +18,7 @@ Deprecated compatibility entry. Use Mango CLI directly:
   mango frontend prepare
 
 Compatibility commands:
-  init, print, validate, doctor, plan, start, backend, frontend, stop, status, logs
+  print, validate, doctor, plan, start, backend, frontend, stop, status, logs
   install-hooks
   worktree-remove <path> [--drop-db] [--force]
 EOF
@@ -131,11 +131,6 @@ remove_worktree() {
 
 command="${1:-start}"
 case "${command}" in
-  init|init-dev)
-    warn_deprecated
-    shift || true
-    run_mango workspace init "$@"
-    ;;
   print)
     warn_deprecated
     shift || true

@@ -8,6 +8,7 @@ export default defineConfig({
       entry: {
         index: 'src/index.ts',
         'admin-pages': 'src/admin-pages.ts',
+        'widgets/calendar': 'src/widgets/calendar/calendar.ts',
       },
       formats: ['es'],
     },
@@ -18,6 +19,7 @@ export default defineConfig({
         '@mango/api-schema',
         '@mango/common',
         '@mango/common/utils/request',
+        '@mango/grid-widgets',
         'element-plus',
         'vue',
       ],

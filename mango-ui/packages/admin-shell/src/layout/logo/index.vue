@@ -4,6 +4,12 @@
     class="layout-logo"
     @click="onLogoClick"
   >
+    <img
+      v-if="preferencesStore.logoUrl"
+      class="logo-image"
+      :src="preferencesStore.logoUrl"
+      alt="logo"
+    >
     <span
       class="logo-text"
       :style="{ color: setFontColor }"
@@ -14,10 +20,17 @@
     class="layout-logo-collapsed"
     @click="onLogoClick"
   >
+    <img
+      v-if="preferencesStore.logoUrl"
+      class="logo-image"
+      :src="preferencesStore.logoUrl"
+      alt="logo"
+    >
     <span
+      v-else
       class="logo-icon"
       :style="{ color: setFontColor }"
-    >M</span>
+    >{{ collapsedText }}</span>
   </div>
 </template>
 
@@ -35,6 +48,8 @@ const setFontColor = computed(() => {
     : 'var(--mango-color-primary)';
 });
 
+const collapsedText = computed(() => preferencesStore.shortTitle?.trim().charAt(0) || 'M');
+
 const onLogoClick = () => {
   if (layoutStore.layout === 'transverse') return false;
   layoutStore.toggleCollapse();
@@ -50,6 +65,7 @@ const onLogoClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.3s;
 
@@ -57,6 +73,12 @@ const onLogoClick = () => {
     font-size: 16px;
     font-weight: 700;
     white-space: nowrap;
+  }
+
+  .logo-image {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
   }
 }
 
@@ -72,6 +94,12 @@ const onLogoClick = () => {
   .logo-icon {
     font-size: 20px;
     font-weight: 700;
+  }
+
+  .logo-image {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
   }
 }
 </style>

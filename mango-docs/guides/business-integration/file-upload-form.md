@@ -22,7 +22,7 @@
 | 后端依赖 | 业务后端引入 file 相关 starter，确认存储配置可用 |
 | 业务表 | 业务表保存 fileId、fileIds 或业务附件关联表，不直接保存临时 URL |
 | 上传接口 | 前端上传后拿到文件 ID，再随业务 Command/Request 一起提交 |
-| 回显 | 详情页用文件 ID 查询元数据，按业务权限决定下载和预览入口 |
+| 回显 | 详情页用文件 ID 查询元数据，按业务权限决定下载和预览入口；图片缩略图由 `MUpload` 按直连地址或鉴权下载的临时 `blob:` 地址回显 |
 | 预览 | 需要在线预览时确认 file-preview 能拿到源文件并生成预览 token |
 | 删除 | 删除业务单据时区分业务解绑和物理文件清理 |
 
@@ -81,7 +81,7 @@ create table biz_contract_attachment (
 | 存储配置 | 目标环境已配置可用存储，上传接口能写入文件记录 |
 | 权限资源 | 下载和预览相关权限已授权给测试角色 |
 | 租户数据 | 文件记录、业务单据和当前登录用户处于同一租户上下文 |
-| 前端组件 | `MUpload` 返回 `fileId`、`fileIds` 或 token，详情页按文件 ID 回显 |
+| 前端组件 | `MUpload` 返回 `fileId`、`fileIds` 或 token，详情页按文件 ID 回显；不要把 `previewUrl`、`downloadUrl` 或临时 `blob:` 地址提交给业务接口；`FilePreviewPanel` 不会把下载地址当作预览地址 |
 | 菜单页面 | 使用文件中心管理页时，页面 key 和菜单 component 对齐 |
 | 预览链路 | 启用预览时，file-preview 和 fileproc 依赖可用 |
 | 业务语义 | 编辑、删除业务单据时，附件解绑或物理清理策略清晰 |
@@ -127,7 +127,9 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 | 下载 404 | fileId 是否存在，存储配置是否指向正确 bucket、目录或本地路径 |
 | 预览失败 | file-preview 依赖、转换配置、预览 token 和源文件读取权限 |
 | 多租户下看不到文件 | 文件记录 tenantId、业务数据 tenantId、当前登录上下文是否一致 |
-| 图片能下载但不能预览 | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配 |
+| 图片能下载但缩略图裂图 | 是否把受保护的 `previewUrl` 或 `downloadUrl` 直接交给 `<img>`；应升级并使用 `MUpload`，由组件优先使用直连地址，没有直连地址时通过鉴权下载生成临时 `blob:` 地址 |
+| 图片能下载但不能在线预览 | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配 |
+| 点击预览触发下载 | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用 `directPreviewUrl`、有效 `previewUrl` 或 file-preview 链接，没有可用预览地址时展示下载查看提示 |
 | ZIP 打包失败 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态 |
 
 ## 9. 验证命令
@@ -136,6 +138,7 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 mvn -f mango/pom.xml -pl mango-platform/mango-file -am test
 mvn -f mango/pom.xml -pl mango-platform/mango-file-preview -am test
 pnpm -F @mango/file build
+pnpm -F @mango/file test
 ```
 
 模块验证入口：
@@ -155,6 +158,18 @@ pnpm -F @mango/file build
 
 ## 11. 变更影响记录
 
+- v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅发布首页小组件归属拆分、CLI 版本锁和 generated backend baseline 修复；`@mango/file@1.0.15` 只是随批次对齐依赖版本，不改变文件上传、下载、预览 API、组件用法、业务表保存方式、权限、租户、页面入口、启动方式和本场景验收步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
+
+- v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和 `@mango/file@1.0.14` 前端批次，仅对齐文件组件回显修复、npm 物料和 CLI/starter 版本锁；不改变文件上传、下载、预览 API、业务表保存方式、权限、租户、页面入口、启动方式和表单验收步骤。业务项目应成组升级本发布批次的后端 `<mango.version>` 和前端 `@mango/*` 包。
+
+- Issue #337 修复 `FilePreviewPanel` 预览地址与下载地址混用问题：详情预览区域只使用 `directPreviewUrl`、有效 `previewUrl` 或文档预览服务链接，不再使用 `directDownloadUrl`、`downloadUrl` 或 `/api/file/files/download` 作为内联预览兜底；下载入口和上传回显策略不变。业务验收需要额外确认图片/PDF/音视频可正常预览，只有下载地址时页面展示下载查看提示，点击预览不再触发浏览器自动下载。
+
+- Issue #332 修复文件下载响应头文件名二次编码问题，中文、`+` 等字符在浏览器下载保存时应显示为原始文件名；不改变上传、fileId 持久化、详情回显、预览/下载 API、权限、租户、页面入口、启动方式和表单验收步骤。业务验收仍按本指南最小闭环执行，涉及中文附件名或 ZIP 文件名时确认下载后的本地文件名可读。
+
+- PR 本次后台品牌配置修复同步调整 `MUpload` 图片缩略图回显策略：业务值仍只保存文件 ID、文件 token 或文件记录；组件优先使用后端返回的 `directPreviewUrl`、`directDownloadUrl` 或其它直连地址，没有直连地址时通过鉴权下载生成临时 `blob:` 地址显示缩略图。文件上传、下载、在线预览 API、业务表保存方式、权限资源、租户隔离和接入代码不变。业务验收需要额外确认上传后立即回显、刷新后按文件 ID 回显、无直连地址时图片缩略图不裂图。
+
+- PR #329 新增文件下载压缩参数，业务调用文件服务下载或 ZIP 打包时可以为图片和 PDF 设置压缩档位，并可用 `perFileTargetSizeBytes` 或 entry 级 `targetSizeBytes` 指定单文件目标大小；该目标不表示 ZIP 总大小。文件上传、fileId 持久化、详情回显、预览入口、权限资源、租户隔离和前端 `MUpload` 接入方式不变。业务验收需要额外确认压缩后的图片/PDF 可打开、未支持格式在 ZIP 中保持原内容、每个 entry 的压缩参数只影响对应源文件。
+
 - PR #319 新增 `FileApi.packageFiles` 和 `POST /file/files/package`，业务后端可以把多个已存在文件按 `entries.path` 生成 ZIP 并保存为新的文件记录；文件上传、预览、下载、前端组件、菜单、权限和租户基础规则不变。业务验收需要额外确认 ZIP 内部目录结构、`${fileName}` 替换结果、路径安全校验和生成 ZIP 的下载权限。
 
 - PR #280 将文件详情、下载、预览和设置读取等已登录用户可用接口标记为 `LOGIN` 资源，业务表单不需要再为这些通用文件读取接口配置角色或用户授权；业务页面入口、业务数据可见性、上传、归档、删除和设置保存仍按原有业务权限、租户与数据权限控制。文件上传表单的 fileId 持久化、详情回显、预览和下载验收步骤不变。
@@ -170,3 +185,5 @@ pnpm -F @mango/file build
 - PR #193 新增 `mango-resource` 注册中心并将文件存储配置、文件设置默认数据迁移为资源声明同步；不改变文件上传、下载、预览的公开 API、前端组件、权限、租户、页面和表单验收步骤。排查默认存储配置缺失时，需要同时确认 `FILE_STORAGE_CONFIG` 和 `FILE_SETTINGS` 声明是否已同步。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面和运行时行为。
 - PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面、启动和运行时行为。
+
+- Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面、启动方式和表单验收步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，文件上传表单异常仍按文件服务、组件接入和业务字段持久化链路排查。

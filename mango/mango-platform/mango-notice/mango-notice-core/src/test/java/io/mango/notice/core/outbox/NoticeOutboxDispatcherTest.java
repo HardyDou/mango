@@ -5,6 +5,7 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.notice.core.service.INoticeService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class NoticeOutboxDispatcherTest {
         int result = dispatcher.dispatchOnce();
 
         assertEquals(0, result);
-        verify(outboxStore, never()).claim(any(), any(), any(Integer.class), any());
+        verify(outboxStore, never()).claimByTopic(any(), any(), any(Integer.class), any());
     }
 
     @Test
@@ -54,7 +55,7 @@ class NoticeOutboxDispatcherTest {
         IOutboxStore outboxStore = mock(IOutboxStore.class);
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = message(1001L, 1);
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         when(noticeService.hasRetryWaitingRecords(1001L)).thenReturn(false);
         NoticeOutboxDispatcher dispatcher = new NoticeOutboxDispatcher(
@@ -78,7 +79,7 @@ class NoticeOutboxDispatcherTest {
                 .payload(Map.of("taskId", 1001L))
                 .headers(Map.of(MangoContextHeaders.TENANT_ID, "1"))
                 .build();
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         when(noticeService.hasRetryWaitingRecords(1001L)).thenReturn(false);
         doAnswer(invocation -> {
@@ -103,7 +104,7 @@ class NoticeOutboxDispatcherTest {
         IOutboxStore outboxStore = mock(IOutboxStore.class);
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = message(1001L, 1);
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         when(noticeService.findTaskTenantId(1001L)).thenReturn("1");
         when(noticeService.hasRetryWaitingRecords(1001L)).thenReturn(false);
@@ -124,6 +125,7 @@ class NoticeOutboxDispatcherTest {
 
         OutboxMessage message = NoticeOutboxMessageMapper.toOutboxMessage(1001L, NOW);
 
+        assertEquals(OutboxTopics.NOTICE, message.getTopic());
         assertEquals("1", message.getHeaders().get(MangoContextHeaders.TENANT_ID));
     }
 
@@ -132,7 +134,7 @@ class NoticeOutboxDispatcherTest {
         IOutboxStore outboxStore = mock(IOutboxStore.class);
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = message(1001L, 1);
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         when(noticeService.hasRetryWaitingRecords(1001L)).thenReturn(true);
         NoticeOutboxDispatcher dispatcher = new NoticeOutboxDispatcher(
@@ -155,7 +157,7 @@ class NoticeOutboxDispatcherTest {
         IOutboxStore outboxStore = mock(IOutboxStore.class);
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = message(1001L, 3);
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         when(noticeService.hasRetryWaitingRecords(1001L)).thenReturn(true);
         NoticeOutboxDispatcher dispatcher = new NoticeOutboxDispatcher(
@@ -174,7 +176,7 @@ class NoticeOutboxDispatcherTest {
         IOutboxStore outboxStore = mock(IOutboxStore.class);
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = message(1001L, 1);
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         doThrow(new IllegalStateException("temporary failure")).when(noticeService).executeTask(1001L);
         NoticeOutboxDispatcher dispatcher = new NoticeOutboxDispatcher(
@@ -196,7 +198,7 @@ class NoticeOutboxDispatcherTest {
         IOutboxStore outboxStore = mock(IOutboxStore.class);
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = message(1001L, 3);
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         doThrow(new IllegalStateException("temporary failure")).when(noticeService).executeTask(1001L);
         NoticeOutboxDispatcher dispatcher = new NoticeOutboxDispatcher(
@@ -220,7 +222,7 @@ class NoticeOutboxDispatcherTest {
                 .attemptCount(1)
                 .payload(Map.of("taskId", "1001"))
                 .build();
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         NoticeOutboxDispatcher dispatcher = new NoticeOutboxDispatcher(
                 outboxStore, noticeService, CLOCK, "worker-a", 20, 45, 3);
@@ -241,7 +243,7 @@ class NoticeOutboxDispatcherTest {
                 .attemptCount(1)
                 .payload(Map.of())
                 .build();
-        when(outboxStore.claim("worker-a", NoticeOutboxMessageMapper.EVENT_TYPE, 20, NOW))
+        when(outboxStore.claimByTopic("worker-a", OutboxTopics.NOTICE, 20, NOW))
                 .thenReturn(List.of(message));
         NoticeOutboxDispatcher dispatcher = new NoticeOutboxDispatcher(
                 outboxStore, noticeService, CLOCK, "worker-a", 20, 45, 3);
@@ -263,6 +265,7 @@ class NoticeOutboxDispatcherTest {
     private OutboxMessage message(Long taskId, int attemptCount) {
         return OutboxMessage.builder()
                 .messageId("notice-" + taskId)
+                .topic(OutboxTopics.NOTICE)
                 .eventType(NoticeOutboxMessageMapper.EVENT_TYPE)
                 .attemptCount(attemptCount)
                 .payload(Map.of("taskId", taskId))

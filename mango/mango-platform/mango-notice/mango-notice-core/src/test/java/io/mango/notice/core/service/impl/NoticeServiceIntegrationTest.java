@@ -780,6 +780,11 @@ class NoticeServiceIntegrationTest {
         }
 
         @Override
+        public List<OutboxMessage> claimByTopic(String workerId, String topic, int batchSize, Instant now) {
+            return List.of();
+        }
+
+        @Override
         public void ack(String messageId, String workerId, Instant now) {
         }
 

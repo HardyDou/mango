@@ -5,6 +5,7 @@
 - 有前端改动，必须有对应验证。
 - 新增交互，必须覆盖主要流程。
 - 修复缺陷，必须补回归验证。
+- 测试用例登记、自动化层级、执行策略、稳定锚点和结果基线遵循 `rules/09-test-case-automation-flow.md`。
 
 ## 2. 测试层次
 
@@ -45,6 +46,10 @@ E2E 验收必须验证用户可见结果和业务结果，不能只验证接口 
 - 截图或 trace/video 路径。
 
 涉及新增、编辑、删除、启停、导入、导出、审批、上传、下载、搜索、重置、分页、批量操作时，台账必须逐项列出对应功能点和证据。
+
+前端 E2E 脚本必须按业务语义定位，优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`data-record-key` 和 `data-state`。`specs` 中禁止直接依赖 Element Plus 内部 class、布局 class、深层 DOM、字段顺序、`nth()`、`waitForTimeout()` 或 `force: true`；无法避免时只能封装在 `support`、`fixtures`、`tasks` 或 `components` 中，并写明原因。
+
+前端 E2E 用例必须按 `@p0`、`@p1`、`@p2` 和模块标签分级。PR 和 AI 交付优先执行相关 `@p0`，主干定时执行 `@p0/@p1`，夜间或发布前执行 `@p2`。
 
 验收证据必须使用 `mango-pmo/templates/acceptance-evidence.md` 或同结构表格记录，并在交付前执行：
 

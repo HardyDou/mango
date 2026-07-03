@@ -12,6 +12,8 @@ export interface GridWidgetVisibility {
 
 export interface MangoGridWidgetDefinition extends GridWidgetDefinition {
   source?: MangoGridWidgetSource;
+  businessDomainCode?: string;
+  businessDomainName?: string;
   moduleCode?: string;
   order?: number;
   visibility?: GridWidgetVisibility;
@@ -33,6 +35,7 @@ export interface MangoWidgetRuntimeUser {
   deptName?: string;
   orgName?: string;
   roles?: string[];
+  permissions?: string[];
   appCode?: string;
   lastLoginTime?: string;
 }

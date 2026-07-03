@@ -1,0 +1,55 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: link
+    module-name: 网址导航
+    declarations:
+      SYSTEM_CONFIG:
+        - id: "2026070103060000001"
+          version: 1
+          biz-key: link.config.open-jump-enabled
+          name: 网址跳转统计开关
+          target-module: link
+          fields:
+            configId:
+              type: LONG
+              value: 2026070103060000001
+            configKey:
+              type: STRING
+              value: mango.link.open.jump.enabled
+            configValue:
+              type: STRING
+              value: "false"
+            configName:
+              type: STRING
+              value: 网址跳转统计开关
+            type:
+              type: STRING
+              value: SYSTEM
+            domainCode:
+              type: STRING
+              value: LINK
+            valueType:
+              type: STRING
+              value: BOOLEAN
+            groupCode:
+              type: STRING
+              value: link-open
+            groupName:
+              type: STRING
+              value: 网址打开策略
+            defaultValue:
+              type: STRING
+              value: "false"
+            editable:
+              type: BOOLEAN
+              value: true
+            sort:
+              type: INT
+              value: 10
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 开启后公开导航接口返回 redirectUrl，点击网址先经过 /link/open/jump 并记录访问；关闭后不返回 redirectUrl，前端直接访问原始 url。

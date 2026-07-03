@@ -15,8 +15,17 @@ declare module '@mango/admin' {
     | readonly MangoAdminFeatureCode[]
     | Partial<Record<MangoAdminFeatureCode, boolean>>;
 
+  export interface MangoAdminFeatureRegistration {
+    businessDomainCode?: string;
+    businessDomainName?: string;
+    groupName?: string;
+    moduleCode?: string;
+    moduleName?: string;
+    widgets?: unknown[];
+  }
+
   export interface MangoAdminFeatureRegistrar {
-    (): void | Promise<void>;
+    (): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
   }
 
   export interface MangoAdminShellOptions {
@@ -45,34 +54,62 @@ declare module '@mango/admin' {
   export function createMangoAdminApp(options?: MangoAdminShellOptions): MangoAdminAppInstance;
 }
 
+declare module '@mango/job/admin-pages' {
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoJobAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
+}
+
+declare module '@mango/cms/admin-pages' {
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoCmsAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
+}
+
+declare module '@mango/link/admin-pages' {
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoLinkAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
+}
+
 declare module '@mango/workflow/admin-pages' {
-  export function registerMangoWorkflowAdminPages(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoWorkflowAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }
 
 declare module '@mango/workflow-business-example/admin-pages' {
-  export function registerMangoWorkflowBusinessExampleAdminPages(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoWorkflowBusinessExampleAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }
 
 declare module '@mango/template/admin-pages' {
-  export function registerMangoTemplateAdminPages(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoTemplateAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }
 
 declare module '@mango/notice/admin-pages' {
-  export function registerMangoNoticeAdminPages(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoNoticeAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }
 
 declare module '@mango/notice/admin-shell' {
-  export function registerMangoNoticeAdminShell(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoNoticeAdminShell(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }
 
 declare module '@mango/file/admin-pages' {
-  export function registerMangoFileAdminPages(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoFileAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }
 
 declare module '@mango/numgen/admin-pages' {
-  export function registerMangoNumgenAdminPages(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoNumgenAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }
 
 declare module '@mango/calendar/admin-pages' {
-  export function registerMangoCalendarAdminPages(): void | Promise<void>;
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoCalendarAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
+}
+
+declare module '@mango/payment/admin-pages' {
+  import type { MangoAdminFeatureRegistration } from '@mango/admin';
+  export function registerMangoPaymentAdminPages(): void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 }

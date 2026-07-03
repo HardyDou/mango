@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
@@ -20,6 +20,9 @@ const businessStarterRoot = existsSync(businessModuleTemplateRoot)
   : resolve(repoRoot, 'mango-business-starter');
 const releaseVersions = readReleaseVersions();
 const adminModulesManifest = readAdminModulesManifest();
+const DEFAULT_MAVEN_REPOSITORY = 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
+const DOCS_BUNDLE_GROUP_ID = 'io.mango';
+const DOCS_BUNDLE_ARTIFACT_ID = 'mango-docs-bundle';
 
 const defaultVersions = {
   mangoBackend: releaseVersions.maven?.mangoBackend || '1.0.0-SNAPSHOT',
@@ -35,6 +38,7 @@ const defaultVersions = {
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
   mangoGridWidgets: readReleasedMangoPackageVersion('grid-widgets', '1.0.0'),
   mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
+  mangoLink: readReleasedMangoPackageVersion('link', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
   mangoPayment: readReleasedMangoPackageVersion('payment', '1.0.1'),
@@ -92,6 +96,7 @@ const CORE_BACKEND_DEPENDENCIES = [
   { groupId: 'io.mango.platform.access', artifactId: 'mango-access-web-starter' },
   { groupId: 'io.mango.platform.org', artifactId: 'mango-org-starter' },
   { groupId: 'io.mango.platform.captcha', artifactId: 'mango-captcha-starter' },
+  { groupId: 'io.mango.platform.notice', artifactId: 'mango-notice-starter' },
   { groupId: 'io.mango.platform.system', artifactId: 'mango-system-starter' },
 ];
 
@@ -249,15 +254,19 @@ Usage:
   mango workspace init
   mango workspace status
   mango workspace doctor
-  mango workspace release [--workspace <path>]
+  mango workspace release [--workspace <path>] [--keep-db]
   mango dev start [group|app...]
   mango dev stop [app...]
+  mango dev restart [group|app...]
   mango dev status
   mango dev doctor
   mango dev logs <app>
   mango frontend prepare
   mango frontend doctor
   mango changelog
+  mango docs pull [--project-dir <dir>] [--version <version>] [--maven-repository <url>] [--force]
+  mango docs status [--project-dir <dir>]
+  mango docs path [--project-dir <dir>]
   mango pmo status --project-dir <dir>
   mango pmo check --project-dir <dir>
   mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]
@@ -326,6 +335,15 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (args[0] === 'docs') {
+    await runDocsCommand(args[1], args.slice(2));
+    return;
+  }
+
+  if (args[0] === 'init-dev') {
+    fail('mango init-dev has been removed. Use "mango workspace init".');
+  }
+
   if (isDevWorkspaceCommand(args[0])) {
     await runDevWorkspaceCommand(args[0], args.slice(1));
     return;
@@ -389,7 +407,7 @@ function parseArgs(argv) {
     version: '1.0.0-SNAPSHOT',
     mangoVersion: defaultVersions.mangoBackend,
     npmRegistry: 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
-    mavenRepository: 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+    mavenRepository: DEFAULT_MAVEN_REPOSITORY,
     modules: '',
     force: false,
   };
@@ -648,6 +666,7 @@ function addBusinessModule(argv) {
     modulePascal: toPascalCase(moduleKebab),
     moduleCamel: toCamelCase(moduleKebab),
     moduleName: options.moduleName || `${toPascalCase(moduleKebab)}模块`,
+    moduleBusinessDomainCode: toSnakeCase(moduleKebab).toUpperCase(),
     moduleKebabSnake: toSnakeCase(moduleKebab),
     aggregateKebab,
     aggregateKebabSnake: toSnakeCase(aggregateKebab),
@@ -670,21 +689,20 @@ function addBusinessModule(argv) {
   process.stdout.write(`Added business module: ${moduleKebab} (${aggregateKebab})\n`);
 }
 
-const DEV_WORKSPACE_COMMANDS = new Set(['init-dev', 'print', 'validate', 'doctor', 'plan', 'start', 'stop', 'status', 'logs', 'backend', 'frontend']);
+const DEV_WORKSPACE_COMMANDS = new Set(['print', 'validate', 'doctor', 'plan', 'start', 'stop', 'status', 'logs', 'backend', 'frontend']);
 const DEFAULT_SPRING_BOOT_PLUGIN = `org.springframework.boot:spring-boot-maven-plugin:${defaultVersions.springBoot}:run`;
 const WORKSPACE_SLOT_COUNT = 200;
 const BACKEND_PORT_BASE = 18000;
-const FRONTEND_PORT_BASE = 8600;
-const FRONTEND_SLOT_SIZE = 20;
+const FRONTEND_PORT_BASE = 30000;
 const DEFAULT_FRONTEND_APP_PORT_OFFSETS = {
-  MANGO_ADMIN_SHELL_PORT: 1,
-  MANGO_ADMIN_RBAC_APP_PORT: 6,
-  MANGO_ADMIN_WORKFLOW_APP_PORT: 7,
-  MANGO_ADMIN_TEMPLATE_APP_PORT: 8,
-  MANGO_ADMIN_CMS_APP_PORT: 9,
-  MANGO_SITE_ENTERPRISE_APP_PORT: 16,
-  MANGO_SITE_HELP_APP_PORT: 17,
-  MANGO_SITE_DEMO_APP_PORT: 18,
+  MANGO_ADMIN_SHELL_PORT: 1000,
+  MANGO_ADMIN_RBAC_APP_PORT: 2000,
+  MANGO_ADMIN_WORKFLOW_APP_PORT: 3000,
+  MANGO_ADMIN_TEMPLATE_APP_PORT: 4000,
+  MANGO_ADMIN_CMS_APP_PORT: 5000,
+  MANGO_SITE_ENTERPRISE_APP_PORT: 6000,
+  MANGO_SITE_HELP_APP_PORT: 7000,
+  MANGO_SITE_DEMO_APP_PORT: 8000,
 };
 
 function isDevWorkspaceCommand(command) {
@@ -692,10 +710,13 @@ function isDevWorkspaceCommand(command) {
 }
 
 async function runWorkspaceCommand(command = 'status', argv = []) {
-  const normalized = command === 'init-dev' ? 'init' : command;
+  const normalized = command;
   if (normalized === 'list') {
     listWorkspaceRegistry(process.cwd());
     return;
+  }
+  if (!['init', 'status', 'print', 'doctor', 'release'].includes(normalized)) {
+    fail(`unknown workspace command: ${command || ''}`);
   }
   const context = normalized === 'init'
     ? loadDevWorkspaceContext({ allowMissingManifest: true })
@@ -717,7 +738,6 @@ async function runWorkspaceCommand(command = 'status', argv = []) {
     releaseWorkspaceCommand(context, argv);
     return;
   }
-  fail(`unknown workspace command: ${command || ''}`);
 }
 
 async function runDevCommand(command = 'start', argv = []) {
@@ -729,6 +749,11 @@ async function runDevCommand(command = 'start', argv = []) {
   }
   if (normalized === 'stop') {
     await stopDevWorkspace(context, argv);
+    return;
+  }
+  if (normalized === 'restart') {
+    await stopDevWorkspace(context, argv);
+    await startDevWorkspace(context, argv);
     return;
   }
   if (normalized === 'status') {
@@ -781,15 +806,8 @@ async function runDevWorkspaceCommand(command, argv) {
     await runDevCommand('frontend', argv);
     return;
   }
-  const context = command === 'init-dev'
-    ? loadDevWorkspaceContext({ allowMissingManifest: true })
-    : loadDevWorkspaceContext({ allowMissingManifest: false });
+  const context = loadDevWorkspaceContext({ allowMissingManifest: false });
   const normalizedCommand = normalizeDevWorkspaceCommand(command);
-
-  if (normalizedCommand === 'init-dev') {
-    initDevWorkspace(context);
-    return;
-  }
 
   if (normalizedCommand === 'print') {
     printDevWorkspace(context);
@@ -1044,7 +1062,8 @@ function allocateDevWorkspace(root) {
     const candidate = buildWorkspaceConfig(normalizedRoot, slot);
     if (usedSlots.has(slot)
       || workspacePorts(candidate).some(port => usedPorts.has(port) || isPortInUse(port))
-      || usedDbNames.has(candidate.dbName)) {
+      || usedDbNames.has(candidate.dbName)
+      || workspaceDatabaseExists(candidate.dbName, readEnvFile(join(normalizedRoot, '.mango/dev-workspace.env')))) {
       continue;
     }
     writeWorkspaceRegistry(normalizedRoot, [...registry, candidate]);
@@ -1054,17 +1073,27 @@ function allocateDevWorkspace(root) {
 }
 
 function buildWorkspaceConfig(root, slot) {
-  const frontendPort = FRONTEND_PORT_BASE + slot * FRONTEND_SLOT_SIZE;
+  const frontendPort = FRONTEND_PORT_BASE + slot;
+  const slotText = slot.toString().padStart(3, '0');
   return {
     version: 1,
     root,
-    workspaceId: `mango_${slot.toString().padStart(3, '0')}`,
+    workspaceId: `mango_${slotText}`,
     slot,
     backendPort: BACKEND_PORT_BASE + slot,
     frontendPort,
     frontendApps: buildFrontendAppPorts(frontendPort),
-    dbName: `mango_dev_${slot.toString().padStart(3, '0')}`,
+    dbName: `mango_dev_${workspaceProjectSlug(root)}_${slotText}`,
   };
+}
+
+function workspaceProjectSlug(root) {
+  const slug = basename(resolve(root))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_');
+  return slug || 'workspace';
 }
 
 function buildFrontendAppPorts(frontendPort) {
@@ -1165,9 +1194,38 @@ function releaseWorkspaceCommand(context, argv) {
   const workspacePath = readOptionValue(argv, '--workspace') || context.root;
   const targetRoot = resolve(workspacePath);
   const registry = readWorkspaceRegistry(context.root);
+  const workspace = readReleaseWorkspace(targetRoot, registry);
+  if (!argv.includes('--keep-db')) {
+    dropWorkspaceDatabase(targetRoot, workspace);
+  }
   const next = registry.filter(entry => resolve(entry.root) !== targetRoot);
   writeWorkspaceRegistry(context.root, next);
   process.stdout.write(`Released Mango workspace registration: ${targetRoot}\n`);
+}
+
+function readReleaseWorkspace(targetRoot, registry) {
+  const workspacePath = join(targetRoot, '.mango/workspace.json');
+  if (existsSync(workspacePath)) {
+    return readJsonFile(workspacePath);
+  }
+  return registry.find(entry => resolve(entry.root) === targetRoot) || null;
+}
+
+function dropWorkspaceDatabase(targetRoot, workspace) {
+  const dbName = workspace?.dbName || '';
+  if (!dbName) {
+    process.stdout.write(`No Mango workspace database recorded for ${targetRoot}; skipped DB cleanup.\n`);
+    return;
+  }
+  if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
+    fail(`refuse to drop non-workspace database: ${dbName}`);
+  }
+  const env = readEnvFile(join(targetRoot, '.mango/dev-workspace.env'));
+  runMysqlStatement(env, `DROP DATABASE IF EXISTS \`${dbName}\`;`, {
+    cwd: targetRoot,
+    errorMessage: `failed to drop workspace database ${dbName}`,
+  });
+  process.stdout.write(`Dropped Mango workspace database: ${dbName}\n`);
 }
 
 function readOptionValue(argv, name) {
@@ -1710,11 +1768,48 @@ function ensureDevWorkspaceEnv(context) {
     MANGO_FRONTEND_MODE: 'source',
     ...workspace.frontendApps,
   };
-  const missing = Object.entries(requiredValues).filter(([key]) => !env[key]);
-  if (missing.length > 0) {
-    appendFileSync(envPath, `\n${missing.map(([key, value]) => `${key}=${value}`).join('\n')}\n`);
-    process.stdout.write(`Added workspace ownership values to local env: ${missing.map(([key]) => key).join(', ')}\n`);
+  const changes = syncEnvFileValues(envPath, requiredValues);
+  if (changes.added.length > 0) {
+    process.stdout.write(`Added workspace ownership values to local env: ${changes.added.join(', ')}\n`);
   }
+  if (changes.updated.length > 0) {
+    process.stdout.write(`Synchronized workspace ownership values in local env: ${changes.updated.join(', ')}\n`);
+  }
+}
+
+function syncEnvFileValues(envPath, requiredValues) {
+  const original = existsSync(envPath) ? readFileSync(envPath, 'utf8') : '';
+  const lines = original.split(/\r?\n/);
+  const seen = new Set();
+  const updated = [];
+  const nextLines = lines.map(line => {
+    const match = line.match(/^(\s*([A-Za-z_][A-Za-z0-9_]*)\s*=)(.*)$/);
+    if (!match) {
+      return line;
+    }
+    const key = match[2];
+    if (!Object.prototype.hasOwnProperty.call(requiredValues, key)) {
+      return line;
+    }
+    seen.add(key);
+    const value = String(requiredValues[key]);
+    if (unquoteEnvValue(match[3].trim()) !== value) {
+      updated.push(key);
+      return `${key}=${value}`;
+    }
+    return line;
+  });
+  const added = [];
+  for (const [key, value] of Object.entries(requiredValues)) {
+    if (!seen.has(key)) {
+      added.push(key);
+      nextLines.push(`${key}=${value}`);
+    }
+  }
+  if (added.length > 0 || updated.length > 0 || !original.endsWith('\n')) {
+    writeFileSync(envPath, `${nextLines.join('\n').replace(/\n+$/u, '')}\n`);
+  }
+  return { added, updated };
 }
 
 function startDevApp(context, name, app) {
@@ -1791,36 +1886,67 @@ function ensureWorkspaceDatabase(context, appName, logPath) {
   if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
     fail(`${appName}: refuse to auto-create non-workspace database: ${dbName || '<empty>'}`);
   }
+  runMysqlStatement(
+    context.env,
+    `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+    {
+      cwd: context.root,
+      logPath,
+      errorMessage: `${appName}: failed to auto-create database ${dbName}`,
+    },
+  );
+  process.stdout.write(`${appName}: ensured database ${dbName}\n`);
+}
+
+function workspaceDatabaseExists(dbName, env = {}) {
+  if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
+    return false;
+  }
+  const statement = [
+    'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA',
+    `WHERE SCHEMA_NAME = '${dbName.replace(/'/g, "''")}'`,
+  ].join(' ');
+  const result = runMysqlStatement(env, statement, {
+    cwd: process.cwd(),
+    capture: true,
+    allowFailure: true,
+  });
+  return result.status === 0 && String(result.stdout || '').trim() === dbName;
+}
+
+function runMysqlStatement(dbEnv = {}, statement, options = {}) {
   const mysqlArgs = [
     '--protocol=TCP',
-    '-h', context.env.MANGO_DB_HOST || '127.0.0.1',
-    '-P', String(context.env.MANGO_DB_PORT || '3306'),
-    '-u', context.env.MANGO_DB_USERNAME || 'root',
-    '-e', `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+    '-h', dbEnv.MANGO_DB_HOST || '127.0.0.1',
+    '-P', String(dbEnv.MANGO_DB_PORT || '3306'),
+    '-u', dbEnv.MANGO_DB_USERNAME || 'root',
+    '-e', statement,
   ];
   const env = { ...process.env };
-  if (context.env.MANGO_DB_PASSWORD) {
-    env.MYSQL_PWD = context.env.MANGO_DB_PASSWORD;
+  if (dbEnv.MANGO_DB_PASSWORD) {
+    env.MYSQL_PWD = dbEnv.MANGO_DB_PASSWORD;
   }
   const result = spawnSync('mysql', mysqlArgs, {
-    cwd: context.root,
+    cwd: options.cwd || process.cwd(),
     env,
+    stdio: 'pipe',
     encoding: 'utf8',
   });
-  if (result.stdout) {
-    appendFileSync(logPath, result.stdout);
+  if (options.logPath && result.stdout) {
+    appendFileSync(options.logPath, result.stdout);
   }
-  if (result.stderr) {
-    appendFileSync(logPath, result.stderr);
+  if (options.logPath && result.stderr) {
+    appendFileSync(options.logPath, result.stderr);
   }
-  if (result.error) {
-    appendFileSync(logPath, `${result.error.message}\n`);
+  if (options.logPath && result.error) {
+    appendFileSync(options.logPath, `${result.error.message}\n`);
   }
-  if (result.status !== 0) {
+  if (!options.allowFailure && result.status !== 0) {
     const reason = result.error ? `: ${result.error.message}` : '';
-    fail(`${appName}: failed to auto-create database ${dbName}${reason}, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+    const logHint = options.logPath ? `, see ${relativeOrAbsolute(process.cwd(), options.logPath)}` : '';
+    fail(`${options.errorMessage || 'mysql command failed'}${reason}${logHint}`);
   }
-  process.stdout.write(`${appName}: ensured database ${dbName}\n`);
+  return result;
 }
 
 function isTruthy(value) {
@@ -2353,6 +2479,282 @@ function httpOk(url) {
   });
 }
 
+async function runDocsCommand(command = 'status', argv = []) {
+  const normalized = command || 'status';
+  if (!['pull', 'status', 'path'].includes(normalized)) {
+    fail(`unknown docs command: ${command || ''}`);
+  }
+  const options = parseDocsArgs(argv);
+  const context = resolveDocsContext(options);
+  if (normalized === 'pull') {
+    await pullDocsBundle(context, options);
+    return;
+  }
+  if (normalized === 'path') {
+    printDocsPath(context);
+    return;
+  }
+  printDocsStatus(context);
+}
+
+function parseDocsArgs(argv) {
+  const result = {
+    projectDir: '.',
+    version: '',
+    mavenRepository: '',
+    force: false,
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--force') {
+      result.force = true;
+      continue;
+    }
+    if (['--project-dir', '--version', '--maven-repository'].includes(arg)) {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) {
+        fail(`missing value for ${arg}`);
+      }
+      if (arg === '--project-dir') {
+        result.projectDir = next;
+      } else if (arg === '--version') {
+        result.version = next;
+      } else {
+        result.mavenRepository = next;
+      }
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      fail(`unknown option: ${arg}`);
+    }
+    fail(`unexpected argument: ${arg}`);
+  }
+  return result;
+}
+
+function resolveDocsContext(options) {
+  const projectDir = resolve(process.cwd(), options.projectDir);
+  if (!existsSync(projectDir) || !statSync(projectDir).isDirectory()) {
+    fail(`project directory not found: ${projectDir}`);
+  }
+  const config = readOptionalJson(join(projectDir, 'mango.config.json'));
+  const version = options.version
+    || config?.mangoBackendVersion
+    || readMangoVersionFromPom(projectDir)
+    || defaultVersions.mangoBackend;
+  if (!version || /[\\/]/.test(version)) {
+    fail(`invalid Mango docs version: ${version || ''}`);
+  }
+  const mavenRepository = ensureTrailingSlash(options.mavenRepository
+    || config?.mavenRepository
+    || DEFAULT_MAVEN_REPOSITORY);
+  const docsBaseDir = join(projectDir, '.mango/docs');
+  const currentPath = join(docsBaseDir, 'current.json');
+  const current = readOptionalJson(currentPath);
+  const installRoot = join(docsBaseDir, version);
+  const docsRoot = resolveDocsContentRoot(installRoot);
+  return {
+    projectDir,
+    version,
+    mavenRepository,
+    docsBaseDir,
+    currentPath,
+    current,
+    installRoot,
+    docsRoot,
+    sourceUrl: buildMavenArtifactUrl(mavenRepository, DOCS_BUNDLE_GROUP_ID, DOCS_BUNDLE_ARTIFACT_ID, version),
+  };
+}
+
+async function pullDocsBundle(context, options) {
+  mkdirSync(context.docsBaseDir, { recursive: true });
+  if (existsSync(context.installRoot) && !options.force) {
+    writeCurrentDocsMetadata(context, {
+      status: 'available',
+      sourceUrl: context.current?.sourceUrl || context.sourceUrl,
+      sha256: context.current?.sha256 || '',
+    });
+    process.stdout.write(`Mango docs ${context.version} already available: ${resolveDocsContentRoot(context.installRoot)}\n`);
+    return;
+  }
+
+  const tempSuffix = randomBytes(6).toString('hex');
+  const tempArchive = join(context.docsBaseDir, `${DOCS_BUNDLE_ARTIFACT_ID}-${context.version}-${tempSuffix}.jar`);
+  const tempExtractRoot = join(context.docsBaseDir, `${context.version}.tmp-${tempSuffix}`);
+  await downloadFile(context.sourceUrl, tempArchive);
+  rmSync(tempExtractRoot, { recursive: true, force: true });
+  mkdirSync(tempExtractRoot, { recursive: true });
+  extractArchive(tempArchive, tempExtractRoot);
+  const extractedDocsRoot = resolveDocsContentRoot(tempExtractRoot);
+  assertDocsBundleContent(extractedDocsRoot, context.sourceUrl);
+  rmSync(context.installRoot, { recursive: true, force: true });
+  renameSync(tempExtractRoot, context.installRoot);
+  writeCurrentDocsMetadata(context, {
+    status: 'available',
+    sourceUrl: context.sourceUrl,
+    sha256: hashFile(tempArchive),
+  });
+  rmSync(tempArchive, { force: true });
+  process.stdout.write(`Pulled Mango docs ${context.version}: ${resolveDocsContentRoot(context.installRoot)}\n`);
+}
+
+function printDocsStatus(context) {
+  const installed = existsSync(context.installRoot);
+  const currentVersion = context.current?.version || '';
+  process.stdout.write(`projectDir: ${context.projectDir}\n`);
+  process.stdout.write(`mangoVersion: ${context.version}\n`);
+  process.stdout.write(`mavenRepository: ${context.mavenRepository}\n`);
+  process.stdout.write(`docsBundle: ${DOCS_BUNDLE_GROUP_ID}:${DOCS_BUNDLE_ARTIFACT_ID}:${context.version}\n`);
+  process.stdout.write(`installed: ${installed ? 'yes' : 'no'}\n`);
+  process.stdout.write(`currentVersion: ${currentVersion || 'none'}\n`);
+  if (installed) {
+    process.stdout.write(`path: ${resolveDocsContentRoot(context.installRoot)}\n`);
+  } else {
+    process.stdout.write(`path: none\n`);
+    process.stdout.write(`next: mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}\n`);
+  }
+  if (currentVersion && currentVersion !== context.version) {
+    process.stdout.write(`warning: current docs version ${currentVersion} differs from project Mango version ${context.version}\n`);
+  }
+}
+
+function printDocsPath(context) {
+  if (!existsSync(context.installRoot)) {
+    fail(`Mango docs ${context.version} are not installed. Run "mango docs pull --project-dir ${relativeOrAbsolute(process.cwd(), context.projectDir)}".`);
+  }
+  process.stdout.write(`${resolveDocsContentRoot(context.installRoot)}\n`);
+}
+
+function writeCurrentDocsMetadata(context, extra) {
+  mkdirSync(context.docsBaseDir, { recursive: true });
+  const metadata = {
+    version: context.version,
+    artifact: `${DOCS_BUNDLE_GROUP_ID}:${DOCS_BUNDLE_ARTIFACT_ID}:${context.version}`,
+    sourceUrl: extra.sourceUrl,
+    sha256: extra.sha256 || '',
+    path: resolveDocsContentRoot(context.installRoot),
+    status: extra.status,
+    fetchedAt: new Date().toISOString(),
+  };
+  writeFileSync(context.currentPath, `${JSON.stringify(metadata, null, 2)}\n`);
+}
+
+function buildMavenArtifactUrl(repository, groupId, artifactId, version) {
+  const base = ensureTrailingSlash(repository);
+  const groupPath = groupId.replaceAll('.', '/');
+  return `${base}${groupPath}/${artifactId}/${version}/${artifactId}-${version}.jar`;
+}
+
+async function downloadFile(url, targetPath) {
+  if (url.startsWith('file:')) {
+    const sourcePath = fileURLToPath(url);
+    if (!existsSync(sourcePath)) {
+      fail(`docs bundle not found: ${sourcePath}`);
+    }
+    copyFileSync(sourcePath, targetPath);
+    return;
+  }
+  if (!/^https?:\/\//.test(url)) {
+    fail(`unsupported docs bundle URL: ${url}`);
+  }
+  await downloadHttpFile(url, targetPath);
+}
+
+function downloadHttpFile(url, targetPath, redirects = 0) {
+  return new Promise((resolvePromise, reject) => {
+    const client = url.startsWith('https:') ? https : http;
+    const request = client.get(url, response => {
+      const statusCode = response.statusCode || 0;
+      const location = response.headers.location;
+      if ([301, 302, 303, 307, 308].includes(statusCode) && location) {
+        response.resume();
+        if (redirects >= 5) {
+          reject(new Error(`too many redirects while downloading ${url}`));
+          return;
+        }
+        const nextUrl = new URL(location, url).toString();
+        downloadHttpFile(nextUrl, targetPath, redirects + 1).then(resolvePromise, reject);
+        return;
+      }
+      if (statusCode < 200 || statusCode >= 300) {
+        response.resume();
+        reject(new Error(`download failed ${statusCode}: ${url}`));
+        return;
+      }
+      const file = openSync(targetPath, 'w');
+      response.on('data', chunk => {
+        writeFileSync(file, chunk);
+      });
+      response.on('end', () => {
+        closeSync(file);
+        resolvePromise();
+      });
+      response.on('error', error => {
+        closeSync(file);
+        reject(error);
+      });
+    });
+    request.on('error', reject);
+  }).catch(error => fail(error.message));
+}
+
+function extractArchive(archivePath, targetDir) {
+  const jarResult = spawnSync('jar', ['xf', archivePath], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  if (jarResult.status === 0) {
+    return;
+  }
+  const unzipResult = spawnSync('unzip', ['-q', archivePath, '-d', targetDir], {
+    encoding: 'utf8',
+  });
+  if (unzipResult.status === 0) {
+    return;
+  }
+  fail(`cannot extract docs bundle. jar: ${jarResult.stderr || jarResult.stdout}; unzip: ${unzipResult.stderr || unzipResult.stdout}`);
+}
+
+function resolveDocsContentRoot(installRoot) {
+  const nestedRoot = join(installRoot, 'META-INF/mango-docs');
+  return existsSync(nestedRoot) ? nestedRoot : installRoot;
+}
+
+function assertDocsBundleContent(docsRoot, sourceUrl) {
+  if (!existsSync(docsRoot) || !statSync(docsRoot).isDirectory()) {
+    fail(`docs bundle has no docs root: ${sourceUrl}`);
+  }
+  const hasReadme = existsSync(join(docsRoot, 'README.md'));
+  const hasManifest = existsSync(join(docsRoot, 'index.json'));
+  const hasCapabilities = existsSync(join(docsRoot, 'capabilities/README.md'));
+  if (!hasReadme && !hasManifest && !hasCapabilities) {
+    fail(`docs bundle does not look like Mango docs: ${sourceUrl}`);
+  }
+}
+
+function readOptionalJson(path) {
+  if (!existsSync(path)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(path, 'utf8'));
+}
+
+function readMangoVersionFromPom(projectDir) {
+  for (const relativePath of ['backend/pom.xml', 'pom.xml']) {
+    const pomPath = join(projectDir, relativePath);
+    if (!existsSync(pomPath)) {
+      continue;
+    }
+    const content = readFileSync(pomPath, 'utf8');
+    const match = content.match(/<mango\.version>\s*([^<\s]+)\s*<\/mango\.version>/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return '';
+}
+
 function tailFile(path, lineCount) {
   if (!existsSync(path)) {
     return '';
@@ -2401,7 +2803,7 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     version: '1.0.0-SNAPSHOT',
     mangoVersion: defaultVersions.mangoBackend,
     npmRegistry: 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
-    mavenRepository: 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+    mavenRepository: DEFAULT_MAVEN_REPOSITORY,
     modules: 'none',
   });
   const baseline = loadPmoPackageBaseline();
@@ -2936,14 +3338,21 @@ function updateFrontendEntry(targetDir, variables) {
   const entryPath = join(targetDir, 'frontend/src/main.ts');
   const content = readFileSync(entryPath, 'utf8');
   const nextContent = replaceManagedBlock(
-    replaceManagedBlock(content, 'imports', variables.frontendEntryImports),
+    replaceManagedBlock(content, 'imports', ensureFrontendTypeImport(variables.frontendEntryImports)),
     'features',
     [
       `const mangoFeatures = ${variables.frontendFeaturesExpression};`,
-      `const mangoFeatureRegistrars = ${variables.frontendFeatureRegistrarsExpression};`,
+      `const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = ${variables.frontendFeatureRegistrarsExpression};`,
     ].join('\n'),
   );
   writeFileSync(entryPath, nextContent);
+}
+
+function ensureFrontendTypeImport(importsBlock) {
+  const typeImport = "import type { MangoAdminFeatureRegistrar } from '@mango/admin';";
+  return importsBlock.includes(typeImport)
+    ? importsBlock
+    : `${importsBlock.trimEnd()}\n${typeImport}`;
 }
 
 function updateRuntimeConfigFiles(targetDir, variables) {
@@ -3019,18 +3428,96 @@ function updateFrontendBusinessIntegration(targetDir, variables) {
   const entryPath = join(targetDir, 'frontend/src/main.ts');
   const content = readFileSync(entryPath, 'utf8');
   const importLine = `import { register${variables.modulePascal}Pages } from '@${variables.projectKebab}/${variables.moduleKebab}';`;
-  const registerLine = `register${variables.modulePascal}Pages();`;
-  const withImport = content.includes(importLine)
-    ? content
-    : content.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
-  const marker = '// mango-cli:business-registrars';
-  const withMarker = withImport.includes(marker)
+  const styleImportLine = `import '@${variables.projectKebab}/${variables.moduleKebab}/style.css';`;
+  const registrarLine = `  register${variables.modulePascal}Pages,`;
+  const preparedContent = ensureFrontendBusinessRegistrars(content);
+  const withImport = preparedContent.includes(importLine)
+    ? preparedContent
+    : preparedContent.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
+  const withStyleImport = withImport.includes(styleImportLine)
     ? withImport
-    : withImport.replace('createMangoAdminApp({', `${marker}\n\ncreateMangoAdminApp({`);
-  const next = withMarker.includes(registerLine)
-    ? withMarker
-    : withMarker.replace(marker, `${marker}\n${registerLine}`);
+    : withImport.replace('// mango-cli:imports:end', `${styleImportLine}\n// mango-cli:imports:end`);
+  const next = appendBusinessFeatureRegistrar(withStyleImport, registrarLine);
   writeFileSync(entryPath, next);
+}
+
+function ensureFrontendBusinessRegistrars(content) {
+  const preparedContent = ensureFrontendMainRegistrarTypes(ensureFrontendMainTypeImport(content));
+  if (content.includes('// mango-cli:business-feature-registrars:start')
+    && content.includes('// mango-cli:business-feature-registrars:end')) {
+    return ensureAllFeatureRegistrarsUsage(preparedContent);
+  }
+
+  const block = [
+    '// mango-cli:business-feature-registrars:start',
+    'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
+    '];',
+    '// mango-cli:business-feature-registrars:end',
+    '',
+    'const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
+    '  ...mangoFeatureRegistrars,',
+    '  ...mangoBusinessFeatureRegistrars,',
+    '];',
+    '',
+  ].join('\n');
+  const featureEnd = '// mango-cli:features:end';
+  const withBlock = preparedContent.includes(featureEnd)
+    ? preparedContent.replace(featureEnd, `${featureEnd}\n\n${block.trimEnd()}`)
+    : `${block}${preparedContent}`;
+  return ensureAllFeatureRegistrarsUsage(withBlock);
+}
+
+function ensureFrontendMainTypeImport(content) {
+  const typeImport = "import type { MangoAdminFeatureRegistrar } from '@mango/admin';";
+  if (content.includes(typeImport)) {
+    return content;
+  }
+  const importsEnd = '// mango-cli:imports:end';
+  if (content.includes(importsEnd)) {
+    return content.replace(importsEnd, `${typeImport}\n${importsEnd}`);
+  }
+  return `${typeImport}\n${content}`;
+}
+
+function ensureFrontendMainRegistrarTypes(content) {
+  return content
+    .replace(
+      /const mangoFeatureRegistrars = /,
+      'const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = ',
+    )
+    .replace(
+      /const mangoBusinessFeatureRegistrars = \[/,
+      'const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
+    )
+    .replace(
+      /const mangoAllFeatureRegistrars = \[/,
+      'const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [',
+    );
+}
+
+function ensureAllFeatureRegistrarsUsage(content) {
+  return content.replace(
+    'featureRegistrars: mangoFeatureRegistrars,',
+    'featureRegistrars: mangoAllFeatureRegistrars,',
+  );
+}
+
+function appendBusinessFeatureRegistrar(content, registrarLine) {
+  const start = '// mango-cli:business-feature-registrars:start';
+  const end = '// mango-cli:business-feature-registrars:end';
+  const startIndex = content.indexOf(start);
+  const endIndex = content.indexOf(end);
+  if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
+    fail('managed block not found in frontend/src/main.ts: business-feature-registrars');
+  }
+  const startLineEnd = content.indexOf('\n', startIndex);
+  const endLineStart = content.lastIndexOf('\n', endIndex) + 1;
+  const currentBlock = content.slice(startLineEnd + 1, endLineStart);
+  if (currentBlock.includes(registrarLine.trim())) {
+    return content;
+  }
+  const nextBlock = currentBlock.replace('\n];', `\n${registrarLine}\n];`);
+  return `${content.slice(0, startLineEnd + 1)}${nextBlock}${content.slice(endLineStart)}`;
 }
 
 function updateBusinessConfig(targetDir, config, variables) {
@@ -3213,6 +3700,9 @@ function renderFrontendEntryImports(preset, selectedModules) {
     ].join('\n');
   }
   const imports = ["import { createMangoAdminApp } from '@mango/admin';", "import '@mango/admin/style.css';"];
+  for (const module of ADMIN_DEFAULT_MODULES) {
+    imports.push(...module.registrars.map(registrar => `import { ${registrar.name} } from '${registrar.import}';`));
+  }
   for (const module of selectedModules) {
     imports.push(...toArray(module.registrarImport));
   }
@@ -3236,7 +3726,10 @@ function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
   if (preset === 'full') {
     return 'mangoFullAdminFeatureRegistrars';
   }
-  const registrars = selectedModules.flatMap(module => toArray(module.registrar));
+  const registrars = [
+    ...ADMIN_DEFAULT_MODULES.flatMap(module => module.registrars.map(registrar => registrar.name)),
+    ...selectedModules.flatMap(module => toArray(module.registrar)),
+  ];
   if (registrars.length === 0) {
     return '[]';
   }

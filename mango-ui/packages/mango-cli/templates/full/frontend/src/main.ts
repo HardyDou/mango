@@ -1,5 +1,6 @@
 // mango-cli:imports:start
 {{frontendEntryImports}}
+import type { MangoAdminFeatureRegistrar } from '@mango/admin';
 // mango-cli:imports:end
 
 function splitEnvList(value?: string) {
@@ -11,17 +12,25 @@ function splitEnvList(value?: string) {
 
 // mango-cli:features:start
 const mangoFeatures = {{frontendFeaturesExpression}};
-const mangoFeatureRegistrars = {{frontendFeatureRegistrarsExpression}};
+const mangoFeatureRegistrars: MangoAdminFeatureRegistrar[] = {{frontendFeatureRegistrarsExpression}};
 // mango-cli:features:end
 
-// mango-cli:business-registrars
+// mango-cli:business-feature-registrars:start
+const mangoBusinessFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
+];
+// mango-cli:business-feature-registrars:end
+
+const mangoAllFeatureRegistrars: MangoAdminFeatureRegistrar[] = [
+  ...mangoFeatureRegistrars,
+  ...mangoBusinessFeatureRegistrars,
+];
 
 createMangoAdminApp({
   mountTarget: '#app',
   apiBaseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',
   title: import.meta.env.VITE_APP_TITLE || '{{projectPascal}}',
   features: mangoFeatures,
-  featureRegistrars: mangoFeatureRegistrars,
+  featureRegistrars: mangoAllFeatureRegistrars,
   devCenter: {
     deployEnv: import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE,
   },

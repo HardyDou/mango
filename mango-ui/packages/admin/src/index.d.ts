@@ -7,8 +7,19 @@ import type {
 } from '@mango/app-runtime';
 import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
 import type { MangoAuthConfig } from '@mango/auth';
+import type { MangoGridWidgetDefinition } from '@mango/grid-widgets';
 
-export type MangoAdminFeatureRegistrar = () => void | Promise<void>;
+export interface MangoAdminFeatureRegistration {
+  businessDomainCode?: string;
+  businessDomainName?: string;
+  groupName?: string;
+  moduleCode?: string;
+  moduleName?: string;
+  widgets?: MangoGridWidgetDefinition[];
+}
+
+export type MangoAdminFeatureRegistrar = () =>
+  void | MangoAdminFeatureRegistration | Promise<void | MangoAdminFeatureRegistration>;
 export type MangoAdminDevCenterRegistrar = () => void | Promise<void>;
 
 export interface MangoAdminDevCenterPage {

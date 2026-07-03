@@ -23,6 +23,12 @@ public class ResourceRegistryProperties {
             "classpath*:META-INF/mango/resources/*.yml",
             "classpath*:META-INF/mango/resources/*.yaml"
     ));
+    private boolean demoEnabled = false;
+    private List<String> demoLocations = new ArrayList<>(List.of(
+            "classpath*:META-INF/mango/demo/*.json",
+            "classpath*:META-INF/mango/demo/*.yml",
+            "classpath*:META-INF/mango/demo/*.yaml"
+    ));
 
     /**
      * 远程部署资源上报配置。

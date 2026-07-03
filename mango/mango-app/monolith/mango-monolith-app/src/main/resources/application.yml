@@ -126,6 +126,8 @@ mango:
           enabled: true
         workflow:
           enabled: true
+        home:
+          enabled: true
         mango-job:
           enabled: true
           out-of-order: true
@@ -145,6 +147,8 @@ mango:
           enabled: true
           out-of-order: true
           ignore-missing-migrations: true
+        link:
+          enabled: true
         domain:
           enabled: true
           out-of-order: true

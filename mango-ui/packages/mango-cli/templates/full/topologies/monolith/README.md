@@ -78,8 +78,8 @@ mango module add order --aggregate sales-order --project-dir .
 | `mango.dev.json` | `groups.default` | 后端 app、前端 app | 单体默认启动顺序 | `mango dev start` 同时启动后端和前端 | `mango.dev.json` |
 | `mango.dev.json` | 后端 app `type` | `spring-boot-maven` | 后端启动类型 | 使用 Spring Boot Maven plugin | `mango.dev.json` |
 | `mango.dev.json` | 前端 app `type` | `vite` | 前端启动类型 | 使用 NPM dev script | `mango.dev.json` |
-| `.mango/workspace.json` | `backendPort` | `18000+slot` | 单体后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
-| `.mango/workspace.json` | `frontendPort` | `8600+slot*20` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `backendPort` | `18NNN` | 单体后端端口 | 写入 `MANGO_BACKEND_PORT` | `mango workspace init` |
+| `.mango/workspace.json` | `frontendPort` | `30NNN` | 前端端口 | 写入 `MANGO_FRONTEND_PORT` | `mango workspace init` |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 单体后端端口 | 前端 proxy 目标 | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | 来自 `.mango/workspace.json` | 前端端口 | Vite dev server | Mango CLI |
 | `frontend/src/main.ts` | `apiBaseUrl` | `/api` | 前端 API base URL | Vite dev proxy 转发到后端 | `frontend/src/main.ts` |

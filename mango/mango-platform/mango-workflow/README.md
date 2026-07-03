@@ -323,6 +323,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 | `WORKFLOW_CATEGORY` | `workflow_category` | `tenantId + categoryCode` |
 | `WORKFLOW_TEMPLATE_CATEGORY` | `workflow_template_category` | `tenantId + categoryCode` |
 | `WORKFLOW_NODE_DEFINITION` | `workflow_node_definition` | `tenantId + nodeDefinitionCode` |
+| `WORKFLOW_DEFINITION` | `workflow_definition` | `tenantId + definitionKey` |
 
 `workflow` 作为资源提供方还会向其它模块注入：
 
@@ -402,6 +403,29 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 | `defaultProperties` | `JSON` | 否 | 节点默认属性。 |
 | `sort` | `INT` | 否 | 排序号，默认 `0`。 |
 | `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
+
+### 5.4 WORKFLOW_DEFINITION
+
+`WORKFLOW_DEFINITION` 用于初始化业务内置流程定义。资源处理器会按 `tenantId + definitionKey` 幂等创建或更新流程定义，并发布到 Flowable。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
+| `domainCode` | `STRING` | 是 | 业务域编码。 |
+| `categoryCode` | `STRING` | 是 | 流程分类编码。 |
+| `categoryName` | `STRING` | 是 | 流程分类名称。 |
+| `categorySort` | `INT` | 是 | 流程分类排序。 |
+| `categoryRemark` | `STRING` | 否 | 流程分类备注。 |
+| `orgId` | `LONG` | 否 | 所属组织 ID。 |
+| `adminUsers` | `LIST` | 否 | 流程管理员用户名列表。 |
+| `startEntryVisible` | `BOOLEAN` | 否 | 启动入口是否可见，默认 `true`。业务内嵌流程可设置为 `false`。 |
+| `icon` | `STRING` | 否 | 流程图标。 |
+| `definitionKey` | `STRING` | 是 | 流程编码，租户内唯一。 |
+| `definitionName` | `STRING` | 是 | 流程名称。 |
+| `designerJson` | `JSON` / `FILE` / `STRING` | 是 | 设计器 JSON 内容。`FILE` 只支持 `classpath:` 位置。 |
+| `formCode` | `STRING` | 否 | 表单编码。 |
+| `formJson` | `JSON` / `FILE` / `STRING` | 否 | 动态表单 JSON 配置。`FILE` 只支持 `classpath:` 位置。 |
+| `remark` | `STRING` | 否 | 备注。 |
 
 ## 6. 数据权限
 

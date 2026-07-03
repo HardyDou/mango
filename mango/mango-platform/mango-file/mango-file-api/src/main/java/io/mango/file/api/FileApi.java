@@ -37,6 +37,11 @@ public interface FileApi {
     /** 通过对外下载语义读取文件内容。 */
     FileDownloadVO download(Long id);
 
+    /** 通过对外下载语义读取文件内容，可按参数返回压缩后的下载副本。 */
+    default FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes) {
+        return download(id);
+    }
+
     /** 通过服务内语义读取文件内容。 */
     default FileDownloadVO downloadForService(Long id) {
         return download(id);
