@@ -34,6 +34,7 @@
         <module>mango-job-capability-app</module>
         <module>mango-calendar-capability-app</module>
         <module>mango-grid-layout-capability-app</module>
+        <module>mango-home-capability-app</module>
         <module>mango-numgen-capability-app</module>
         <module>mango-template-capability-app</module>
         <module>mango-payment-capability-app</module>

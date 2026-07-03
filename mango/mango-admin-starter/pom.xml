@@ -140,6 +140,10 @@
             <artifactId>mango-grid-layout-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.home</groupId>
+            <artifactId>mango-home-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.numgen</groupId>
             <artifactId>mango-numgen-starter</artifactId>
         </dependency>

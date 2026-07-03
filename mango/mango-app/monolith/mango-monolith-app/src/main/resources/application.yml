@@ -126,6 +126,8 @@ mango:
           enabled: true
         workflow:
           enabled: true
+        home:
+          enabled: true
         mango-job:
           enabled: true
           out-of-order: true

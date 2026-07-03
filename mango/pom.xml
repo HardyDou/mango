@@ -549,6 +549,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.home</groupId>
+                <artifactId>mango-home-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.numgen</groupId>
                 <artifactId>mango-numgen-api</artifactId>
                 <version>${project.version}</version>
