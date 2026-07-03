@@ -82,6 +82,18 @@ const cases = [
     mustRead: ['rules/09-test-case-automation-flow.md']
   },
   {
+    name: 'current plans path loads delivery contract',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '按 Sprint 计划开发', '--paths', 'mango-docs/plans/2026-07-03-plan.md'],
+    mode: 'main-direct-allowed',
+    mustRead: ['rules/01-delivery-contract.md']
+  },
+  {
+    name: 'current evidence path loads delivery contract',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '按交付记录验证', '--paths', 'mango-docs/evidence/2026-07-03-issue-372-home-management/report.md'],
+    mode: 'main-direct-allowed',
+    mustRead: ['rules/01-delivery-contract.md']
+  },
+  {
     name: 'frontend e2e task loads test case automation flow',
     args: ['--role', 'qa', '--phase', 'verify', '--task', '验证 Playwright E2E 自动化测试', '--paths', 'mango-ui/apps/mango-admin/e2e/specs/menu-management.spec.ts'],
     mode: 'worktree-required',
