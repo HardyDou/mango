@@ -1,5 +1,6 @@
 package io.mango.file.api.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -42,19 +43,24 @@ public class FileRecordVO implements Serializable {
     @Schema(description = "访问级别：PRIVATE、PUBLIC_READ、INTERNAL")
     private String accessLevel;
 
-    @Schema(description = "物理文件对象ID")
+    @JsonIgnore
+    @Schema(description = "物理文件对象ID", hidden = true)
     private Long objectId;
 
-    @Schema(description = "存储类型：LOCAL、S3、MINIO、AWS_S3、ALIYUN_OSS、TENCENT_COS、QINIU_KODO")
+    @JsonIgnore
+    @Schema(description = "存储类型：LOCAL、S3、MINIO、AWS_S3、ALIYUN_OSS、TENCENT_COS、QINIU_KODO", hidden = true)
     private String storageType;
 
-    @Schema(description = "存储配置ID")
+    @JsonIgnore
+    @Schema(description = "存储配置ID", hidden = true)
     private Long storageConfigId;
 
-    @Schema(description = "存储桶名称")
+    @JsonIgnore
+    @Schema(description = "存储桶名称", hidden = true)
     private String bucketName;
 
-    @Schema(description = "对象名称")
+    @JsonIgnore
+    @Schema(description = "对象名称", hidden = true)
     private String objectName;
 
     @Schema(description = "原始文件名")
@@ -87,7 +93,8 @@ public class FileRecordVO implements Serializable {
     @Schema(description = "更新时间")
     private LocalDateTime updatedTime;
 
-    @Schema(description = "动态访问地址，不入库")
+    @JsonIgnore
+    @Schema(description = "兼容旧版动态访问地址，不入库", hidden = true)
     private String url;
 
     @Schema(description = "动态预览地址，不入库")
@@ -96,18 +103,23 @@ public class FileRecordVO implements Serializable {
     @Schema(description = "动态下载地址，不入库")
     private String downloadUrl;
 
-    @Schema(description = "是否支持对象存储直连访问")
+    @JsonIgnore
+    @Schema(description = "是否支持存储公开访问", hidden = true)
     private Boolean directAccess;
 
-    @Schema(description = "对象存储直连预览地址，不入库")
+    @JsonIgnore
+    @Schema(description = "存储公开预览地址，不入库", hidden = true)
     private String directPreviewUrl;
 
-    @Schema(description = "对象存储直连下载地址，不入库")
+    @JsonIgnore
+    @Schema(description = "存储公开下载地址，不入库", hidden = true)
     private String directDownloadUrl;
 
-    @Schema(description = "直连预览地址有效期，单位秒")
+    @JsonIgnore
+    @Schema(description = "存储公开预览地址有效期，单位秒", hidden = true)
     private Long directPreviewExpireSeconds;
 
-    @Schema(description = "直连下载地址有效期，单位秒")
+    @JsonIgnore
+    @Schema(description = "存储公开下载地址有效期，单位秒", hidden = true)
     private Long directDownloadExpireSeconds;
 }

@@ -188,6 +188,27 @@ public class FileController implements FileApi {
                 .body(new org.springframework.core.io.InputStreamResource(download.inputStream()));
     }
 
+    @GetMapping("/preview-content")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "预览文件原始内容")
+    @Operation(summary = "预览文件原始内容", description = "登录用户基础接口。按文件ID以内联方式读取当前租户可见文件内容")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> previewContentResponse(
+            @Parameter(description = "文件ID", required = true)
+            @RequestParam Long id) {
+        FileDownloadVO download = fileService.download(id);
+        ContentDisposition disposition = ContentDisposition.inline()
+                .filename(download.fileName(), StandardCharsets.UTF_8)
+                .build();
+        MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        if (download.contentType() != null && !download.contentType().isBlank()) {
+            mediaType = MediaType.parseMediaType(download.contentType());
+        }
+        return ResponseEntity.ok()
+                .contentLength(download.contentLength())
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(new org.springframework.core.io.InputStreamResource(download.inputStream()));
+    }
+
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:archive")
     @Operation(summary = "归档文件", description = "权限接口。默认只归档文件记录，不物理删除存储对象")

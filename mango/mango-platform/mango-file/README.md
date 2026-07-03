@@ -24,7 +24,7 @@
 | 批量上传 | 一次上传多个小文件 | `POST /file/files/batch` |
 | 文件记录 | 查询文件列表、详情、业务标记和状态 | `GET /file/files/page`、`GET /file/files/detail` |
 | 下载 | 按 `fileId` 下载当前账号有权访问的文件 | `GET /file/files/download`、`FileApi.download()` |
-| 预览 | 获取预览地址、下载地址和直连地址 | `GET /file/files/preview` |
+| 预览元数据 | 获取原始内容预览地址、下载地址和存储公开访问元数据 | `GET /file/files/preview` |
 | 后端保存文件 | 后端生成 PDF、Excel、归档包后写入文件中心 | `FileApi.save(SaveFileCommand)` |
 | 后端打包文件 | 按目录结构清单把多个已存在文件打成 ZIP，并保存为新文件记录 | `POST /file/files/package`、`FileApi.packageFiles(FilePackageCommand)` |
 | 后端合并 PDF | 把多个已存在图片、PDF、Word 文件按顺序合并为一个 PDF，并保存为新文件记录 | `POST /file/files/merge-pdf`、`FileApi.mergeToPdf(FileMergePdfCommand)` |
@@ -500,7 +500,7 @@ mango:
 | `upload.instant-upload-enabled` | `true` | 是否默认开启秒传。 |
 | `upload.direct-upload-enabled` | `false` | 是否默认允许浏览器直传对象存储。 |
 | `upload.direct-upload-expire-seconds` | `900` | 直传分片签名有效期，单位秒。 |
-| `access.mode` | `PROXY` | `PROXY` 由 Java 服务转发，`DIRECT` 返回底层存储直连地址。 |
+| `access.mode` | `PROXY` | `PROXY` 由 Java 服务转发，`DIRECT` 返回存储公开访问地址。 |
 | `access.token-enabled` | `false` | 是否默认启用访问令牌。 |
 | `access.token-expire-seconds` | `600` | 下载/访问令牌有效期。 |
 | `preview.provider-url` | `/file-preview/files/preview` | 文档预览服务地址，支持相对地址、绝对地址和占位符。 |
@@ -627,8 +627,20 @@ README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 | `bizType` / `bizId` / `purpose` / `bizMeta` | 上传时传入的业务标记。 | 按业务需要 |
 | `fileName` / `fileExt` / `fileSize` / `contentType` | 展示用文件信息。 | 可冗余展示 |
 | `status` / `archived` | 文件状态。 | 通常不需要 |
-| `url` / `previewUrl` / `downloadUrl` | 运行时访问地址。 | 不要入库 |
-| `directPreviewUrl` / `directDownloadUrl` | 对象存储直连地址。 | 不要入库 |
+| `previewUrl` | 当前文件可用的预览地址。 | 不要入库 |
+| `downloadUrl` | 当前文件可用的下载地址。 | 不要入库 |
+
+`FileRecordVO` 面向上传、分页、详情、打包和合并 PDF 等业务接口，只暴露业务可理解字段。
+存储对象 ID、存储类型、bucket、objectName、`url`、`directAccess`、`directPreviewUrl`、`directDownloadUrl`
+及公开访问有效期不在 JSON 中返回。业务系统只保存 `id`，即时展示使用 `previewUrl`，下载使用 `downloadUrl`。
+
+字段职责边界：
+
+- `previewUrl`：文件原始内容预览地址，用于图片、PDF、音视频等可直接内联展示的文件。
+- `downloadUrl`：文件下载地址，用于浏览器下载动作。
+- `PROXY` 模式下，`previewUrl` 指向 `/file/files/preview-content?id=...`，响应头是 `inline`；`downloadUrl` 指向 `/file/files/download?id=...`，响应头是 `attachment`。
+- `DIRECT` 模式下，两个字段来自存储配置的公开访问地址。本地磁盘可由 Nginx 或 `LocalFileObjectController` 公开访问，MinIO/S3 可由 public endpoint 公开访问；如果存储层不区分预览和下载，两个字段可以相同。
+- 前端文档预览组件、Office 转换和 `mango-file-preview` 是另一条链路，需要时按 `fileId` 获取预览元数据，并读取 `FilePreviewVO.documentPreviewUrl`，不属于 `FileRecordVO` 字段职责。
 
 ### 10.2 `FilePreviewVO`
 
@@ -637,11 +649,12 @@ README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 | `id` | 文件 ID。 |
 | `fileName` / `fileExt` / `fileSize` / `contentType` | 展示信息。 |
 | `previewable` | 是否可预览。 |
-| `previewUrl` | 当前配置下可用的预览地址。 |
+| `previewUrl` | 文件原始内容预览地址。 |
 | `downloadUrl` | 当前配置下可用的下载地址。 |
-| `directAccess` | 是否使用对象存储直连。 |
-| `directPreviewUrl` / `directDownloadUrl` | 直连地址。 |
-| `directPreviewExpireSeconds` / `directDownloadExpireSeconds` | 直连地址有效期。 |
+| `documentPreviewUrl` | 文档预览服务地址，供前端预览组件使用。 |
+| `directAccess` | 是否使用存储公开访问。 |
+| `directPreviewUrl` / `directDownloadUrl` | 存储公开访问地址。 |
+| `directPreviewExpireSeconds` / `directDownloadExpireSeconds` | 存储公开访问地址有效期。 |
 
 ## 11. 管理入口
 
@@ -679,7 +692,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 - 大文件分片失败：检查 `POST /file/files/uploads` 返回的 `uploadMode`，`S3_MULTIPART` 需要存储配置支持直传签名，`SERVER_CHUNK` 需要 Java 服务能接收分片。
 - 预览只能下载不能打开：检查 `previewProviderUrl`、`previewExternalExtensions`，Office 类文件还需要 `mango-file-preview` 和 `mango-infra-fileproc`。
 - 页面空白或按钮不可见：检查 authorization 菜单 component 是否是 `file/files/index`、`file/storage-configs/index`、`file/settings/index`，并确认账号拥有对应 `file:*` 权限码。
-- 业务表里出现对象存储地址：应改为保存 `fileId` 或业务附件关系；`url`、`previewUrl`、`downloadUrl` 只用于当前页面即时展示。
+- 业务表里出现对象存储地址：应改为保存 `fileId` 或业务附件关系；`previewUrl`、`downloadUrl` 只用于当前页面即时展示。
 
 ## 14. 相关文档
 

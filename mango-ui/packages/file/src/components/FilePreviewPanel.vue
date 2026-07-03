@@ -121,8 +121,8 @@ const documentPreviewUrl = computed(() => {
   const item = preview.value;
   if (!item || isImage.value || isPdf.value || isVideo.value || isAudio.value) return '';
   if (externalPreviewUrl.value) return externalPreviewUrl.value;
-  if (isDefaultPreviewProviderUrl(item.previewUrl)) return '';
-  if (isPreviewDisplayUrl(item.previewUrl)) return item.previewUrl;
+  if (isDefaultPreviewProviderUrl(item.documentPreviewUrl)) return '';
+  if (isPreviewDisplayUrl(item.documentPreviewUrl)) return item.documentPreviewUrl;
   const providerUrl = props.previewProviderUrl || import.meta.env.VITE_FILE_PREVIEW_PROVIDER_URL;
   if (!providerUrl) return '';
   const url = new URL(providerUrl, window.location.origin);
@@ -183,7 +183,7 @@ async function openPreviewInNewWindow() {
   if (!item || !previewTargetUrl.value) return;
 
   const target = window.open('about:blank', '_blank');
-  const url = documentPreviewUrl.value && isDefaultPreviewProviderUrl(item.previewUrl)
+  const url = documentPreviewUrl.value && isDefaultPreviewProviderUrl(item.documentPreviewUrl)
     ? await resolveExternalPreviewUrl(item)
     : previewTargetUrl.value;
   if (!url) {
@@ -199,11 +199,11 @@ async function openPreviewInNewWindow() {
 }
 
 async function resolveExternalPreviewUrl(item: FilePreview) {
-  if (isDefaultPreviewProviderUrl(item.previewUrl)) {
+  if (isDefaultPreviewProviderUrl(item.documentPreviewUrl)) {
     const link = await fileApi.previewLink(item.id);
     return isPreviewDisplayUrl(link.previewUrl) ? link.previewUrl : '';
   }
-  return isPreviewDisplayUrl(item.previewUrl) ? item.previewUrl : '';
+  return isPreviewDisplayUrl(item.documentPreviewUrl) ? item.documentPreviewUrl || '' : '';
 }
 
 function resolveInlinePreviewUrl(item: FilePreview) {

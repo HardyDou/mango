@@ -935,9 +935,8 @@ public class FileServiceImpl implements IFileService {
 
     private void fillDirectAccess(FilePreviewVO vo, FileRecord record, FileSettingsVO settings) {
         vo.setDirectAccess(false);
-        String fallbackUrl = fileAccessUrlAssembler.downloadUrl(record.getId());
-        vo.setPreviewUrl(fallbackUrl);
-        vo.setDownloadUrl(fallbackUrl);
+        vo.setPreviewUrl(fileAccessUrlAssembler.previewContentUrl(record.getId()));
+        vo.setDownloadUrl(fileAccessUrlAssembler.downloadUrl(record.getId()));
         if (FileAccessMode.of(settings.getAccessMode()) != FileAccessMode.DIRECT) {
             fillConfiguredPreviewUrl(vo, record, settings);
             return;
@@ -993,7 +992,7 @@ public class FileServiceImpl implements IFileService {
         long expireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
         String sourceUrl = StringUtils.hasText(vo.getDirectDownloadUrl()) ? vo.getDirectDownloadUrl() : vo.getDownloadUrl();
         String previewUrl = FilePreviewUrlBuilder.build(settings.getPreviewProviderUrl(), record, sourceUrl, expireSeconds);
-        vo.setPreviewUrl(fileAccessUrlAssembler.externalize(previewUrl));
+        vo.setDocumentPreviewUrl(fileAccessUrlAssembler.externalize(previewUrl));
     }
 
     private boolean requiresPreviewProvider(FileRecord record, FileSettingsVO settings) {
@@ -1001,10 +1000,10 @@ public class FileServiceImpl implements IFileService {
     }
 
     private void fillDirectAccess(FileRecordVO vo, FileRecord record, FileSettingsVO settings) {
-        String fallbackUrl = fileAccessUrlAssembler.downloadUrl(record.getId());
-        vo.setUrl(fallbackUrl);
-        vo.setPreviewUrl(fallbackUrl);
-        vo.setDownloadUrl(fallbackUrl);
+        String previewUrl = fileAccessUrlAssembler.previewContentUrl(record.getId());
+        vo.setUrl(previewUrl);
+        vo.setPreviewUrl(previewUrl);
+        vo.setDownloadUrl(fileAccessUrlAssembler.downloadUrl(record.getId()));
         vo.setDirectAccess(false);
         if (FileAccessMode.of(settings.getAccessMode()) != FileAccessMode.DIRECT) {
             return;

@@ -150,10 +150,11 @@ const fileIds = ref<string[]>([]);
 - PDF：`application/pdf` 或 `pdf`。
 - 视频：`video/*` 或 `mp4`、`webm`、`ogg`、`mov`、`m4v`。
 - 音频：`audio/*` 或 `mp3`、`wav`、`ogg`、`m4a`、`aac`、`flac`。
-- 图片、PDF、音视频的内联预览只使用 `directPreviewUrl` 或有效 `previewUrl`；不会使用 `directDownloadUrl`、`downloadUrl` 或 `fileApi.downloadUrl(id)` 兜底。
+- 图片、PDF、音视频的内联预览只使用有效 `previewUrl` 或预览元数据中的存储公开预览地址；不会使用 `downloadUrl` 或 `fileApi.downloadUrl(id)` 兜底。
 - 其他文件优先使用有效 `previewUrl`；默认预览入口会请求 `/file-preview/files/preview-link`。
 - `/api/file/files/download` 和 `/file/files/download` 这类下载接口不会进入预览区域。
 - 没有可用预览地址时，展示下载查看提示，不会自动触发下载。
+- 文件记录里的 `previewUrl` 表示原始内容预览地址，不等同于 Office 转换或文档预览服务地址；组件需要文档预览服务时会按文件 ID 获取预览元数据并读取 `documentPreviewUrl`。
 
 ## 5. 后端依赖
 

@@ -40,4 +40,25 @@ class FileControllerDownloadResponseTest {
         assertThat(disposition).doesNotContain("%25E5");
         assertThat(ContentDisposition.parse(disposition).getFilename()).isEqualTo(fileName);
     }
+
+    @Test
+    void previewContentResponse_使用内联响应头() throws Exception {
+        String fileName = "材料预览.pdf";
+        IFileService fileService = mock(IFileService.class);
+        when(fileService.download(1001L)).thenReturn(new FileDownloadVO(
+                new ByteArrayInputStream("ok".getBytes(StandardCharsets.UTF_8)),
+                fileName,
+                "application/pdf",
+                2L));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService)).build();
+
+        MvcResult result = mockMvc.perform(get("/file/files/preview-content").param("id", "1001"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String disposition = result.getResponse().getHeader(HttpHeaders.CONTENT_DISPOSITION);
+        assertThat(disposition).isNotBlank();
+        assertThat(disposition).startsWith("inline");
+        assertThat(ContentDisposition.parse(disposition).getFilename()).isEqualTo(fileName);
+    }
 }

@@ -9,6 +9,12 @@
 - Added an ImageIO/PDFBox PNG/JPEG to PDF converter in `mango-infra-fileproc`, so mobile photo upload scenarios can
   generate mergeable PDF pages without depending on Aspose.Imaging reflection behavior on Java 21.
 
+### Changed
+
+- Simplified file upload/query `FileRecordVO` JSON responses. Business callers now use `previewUrl` for original file
+  preview and `downloadUrl` for download; storage object fields, `url`, and storage public-access details are hidden
+  from these record responses.
+
 ### Upgrade Notes
 
 - The first PDF merge version only accepts `targetFormat=PDF`; Word output is intentionally out of scope.
@@ -16,10 +22,17 @@
   TIFF, DOC, and DOCX.
 - `mango.fileproc.convert.image-to-pdf-enabled=true` is enabled by default. Set it to `false` only when a project
   intentionally wants image-to-PDF conversion to fall through to another custom provider.
+- Business code should persist only file IDs. Do not depend on `url`, `directPreviewUrl`, `directDownloadUrl`, bucket,
+  or object name fields from upload/page/detail responses. Office/document preview components should load preview
+  metadata by file ID and use `documentPreviewUrl` instead of treating `FileRecordVO.previewUrl` as a document-preview
+  service URL.
 
 ### Verification
 
-- `mvn -f mango/pom.xml -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core,mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter,mango-platform/mango-file/mango-file-core -am -Dtest=ImageToPdfConvertProviderTest,ConvertAutoConfigurationTest,FileServiceMergeToPdfTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core,mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter -am -Dtest=ImageToPdfConvertProviderTest,ConvertAutoConfigurationTest,FileServiceMergeToPdfTest,FileControllerMergeToPdfTest,FileControllerRecordSerializationTest,FileControllerDownloadResponseTest,FileControllerAccessModeTest,FileAccessUrlAssemblerTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-api,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter -am -DskipTests checkstyle:check`
+- `pnpm -C mango-ui -F @mango/file test`
+- `pnpm -C mango-ui -F @mango/file build`
 
 ## v2026.07.03-maven-1.0.7-platform-release - 2026-07-03
 

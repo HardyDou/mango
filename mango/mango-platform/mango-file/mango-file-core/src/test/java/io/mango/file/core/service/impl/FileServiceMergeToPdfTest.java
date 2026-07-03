@@ -206,6 +206,8 @@ class FileServiceMergeToPdfTest {
         assertThat(vo.getBizId()).isEqualTo("123456");
         assertThat(vo.getAccessLevel()).isEqualTo(FileAccessLevel.PRIVATE.name());
         assertThat(vo.getStatus()).isEqualTo(FileRecordStatus.COMPLETED.value());
+        assertThat(vo.getPreviewUrl()).isEqualTo("/file/files/preview-content?id=" + vo.getId());
+        assertThat(vo.getDownloadUrl()).isEqualTo("/file/files/download?id=" + vo.getId());
         byte[] content = savedContent(vo.getId());
         assertThat(new String(content, StandardCharsets.UTF_8)).isEqualTo("merged:合同正文|营业执照");
     }

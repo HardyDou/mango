@@ -22,7 +22,7 @@
 | 后端依赖 | 业务后端引入 file 相关 starter，确认存储配置可用 |
 | 业务表 | 业务表保存 fileId、fileIds 或业务附件关联表，不直接保存临时 URL |
 | 上传接口 | 前端上传后拿到文件 ID，再随业务 Command/Request 一起提交 |
-| 回显 | 详情页用文件 ID 查询元数据，按业务权限决定下载和预览入口；图片缩略图由 `MUpload` 按直连地址或鉴权下载的临时 `blob:` 地址回显 |
+| 回显 | 详情页用文件 ID 查询元数据，按业务权限决定下载和预览入口；图片缩略图由 `MUpload` 按原始内容预览地址、存储公开访问地址或鉴权下载的临时 `blob:` 地址回显 |
 | 预览 | 需要在线预览时确认 file-preview 能拿到源文件并生成预览 token |
 | 删除 | 删除业务单据时区分业务解绑和物理文件清理 |
 
@@ -146,6 +146,8 @@ FileRecordVO pdfFile = fileApi.mergeToPdf(command).getData();
 
 验收时除上传、回显、下载闭环外，还应确认 PDF 页面顺序、源文件租户可见性、生成 PDF 的预览/下载权限、以及不支持格式失败时不会生成半成品文件记录。
 
+文件记录返回的 `previewUrl` 是原始文件内容预览地址，`downloadUrl` 是下载地址。前端文档预览组件、Office 转换和在线预览服务是另一条链路，业务页面需要时按文件 ID 使用 `FilePreviewPanel` 获取预览元数据，并由组件读取 `documentPreviewUrl`，不要把文档预览服务地址当作业务表字段保存。
+
 ## 9. 常见失败
 
 | 现象 | 优先检查 |
@@ -154,9 +156,9 @@ FileRecordVO pdfFile = fileApi.mergeToPdf(command).getData();
 | 下载 404 | fileId 是否存在，存储配置是否指向正确 bucket、目录或本地路径 |
 | 预览失败 | file-preview 依赖、转换配置、预览 token 和源文件读取权限 |
 | 多租户下看不到文件 | 文件记录 tenantId、业务数据 tenantId、当前登录上下文是否一致 |
-| 图片能下载但缩略图裂图 | 是否把受保护的 `previewUrl` 或 `downloadUrl` 直接交给 `<img>`；应升级并使用 `MUpload`，由组件优先使用直连地址，没有直连地址时通过鉴权下载生成临时 `blob:` 地址 |
+| 图片能下载但缩略图裂图 | 是否把受保护的 `previewUrl` 或 `downloadUrl` 直接交给 `<img>`；应升级并使用 `MUpload`，由组件按文件 ID 获取预览元数据或通过鉴权下载生成临时 `blob:` 地址 |
 | 图片能下载但不能在线预览 | 前端是否使用预览入口，后端 MIME 类型和预览类型是否匹配 |
-| 点击预览触发下载 | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用 `directPreviewUrl`、有效 `previewUrl` 或 file-preview 链接，没有可用预览地址时展示下载查看提示 |
+| 点击预览触发下载 | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用有效 `previewUrl` 或文档预览服务链接，没有可用预览地址时展示下载查看提示 |
 | ZIP 打包失败 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态 |
 | PDF 合并失败 | `targetFormat` 是否为 `PDF`，源文件是否为 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX，fileproc 转换和 PDF 合并能力是否已配置，源文件是否处于可下载的已完成状态 |
 
@@ -192,11 +194,11 @@ pnpm -F @mango/file test
 
 - v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和 `@mango/file@1.0.14` 前端批次，仅对齐文件组件回显修复、npm 物料和 CLI/starter 版本锁；不改变文件上传、下载、预览 API、业务表保存方式、权限、租户、页面入口、启动方式和表单验收步骤。业务项目应成组升级本发布批次的后端 `<mango.version>` 和前端 `@mango/*` 包。
 
-- Issue #337 修复 `FilePreviewPanel` 预览地址与下载地址混用问题：详情预览区域只使用 `directPreviewUrl`、有效 `previewUrl` 或文档预览服务链接，不再使用 `directDownloadUrl`、`downloadUrl` 或 `/api/file/files/download` 作为内联预览兜底；下载入口和上传回显策略不变。业务验收需要额外确认图片/PDF/音视频可正常预览，只有下载地址时页面展示下载查看提示，点击预览不再触发浏览器自动下载。
+- Issue #337 修复 `FilePreviewPanel` 预览地址与下载地址混用问题：详情预览区域只使用有效 `previewUrl`、预览元数据中的存储公开预览地址或文档预览服务链接，不再使用 `downloadUrl` 或 `/api/file/files/download` 作为内联预览兜底；下载入口和上传回显策略不变。业务验收需要额外确认图片/PDF/音视频可正常预览，只有下载地址时页面展示下载查看提示，点击预览不再触发浏览器自动下载。
 
 - Issue #332 修复文件下载响应头文件名二次编码问题，中文、`+` 等字符在浏览器下载保存时应显示为原始文件名；不改变上传、fileId 持久化、详情回显、预览/下载 API、权限、租户、页面入口、启动方式和表单验收步骤。业务验收仍按本指南最小闭环执行，涉及中文附件名或 ZIP 文件名时确认下载后的本地文件名可读。
 
-- PR 本次后台品牌配置修复同步调整 `MUpload` 图片缩略图回显策略：业务值仍只保存文件 ID、文件 token 或文件记录；组件优先使用后端返回的 `directPreviewUrl`、`directDownloadUrl` 或其它直连地址，没有直连地址时通过鉴权下载生成临时 `blob:` 地址显示缩略图。文件上传、下载、在线预览 API、业务表保存方式、权限资源、租户隔离和接入代码不变。业务验收需要额外确认上传后立即回显、刷新后按文件 ID 回显、无直连地址时图片缩略图不裂图。
+- PR 本次后台品牌配置修复同步调整 `MUpload` 图片缩略图回显策略：业务值仍只保存文件 ID、文件 token 或文件记录；组件优先使用文件记录的 `previewUrl`，必要时按文件 ID 获取预览元数据，没有可直接展示地址时通过鉴权下载生成临时 `blob:` 地址显示缩略图。文件上传、下载、在线预览 API、业务表保存方式、权限资源、租户隔离和接入代码不变。业务验收需要额外确认上传后立即回显、刷新后按文件 ID 回显、无存储公开访问地址时图片缩略图不裂图。
 
 - PR #329 新增文件下载压缩参数，业务调用文件服务下载或 ZIP 打包时可以为图片和 PDF 设置压缩档位，并可用 `perFileTargetSizeBytes` 或 entry 级 `targetSizeBytes` 指定单文件目标大小；该目标不表示 ZIP 总大小。文件上传、fileId 持久化、详情回显、预览入口、权限资源、租户隔离和前端 `MUpload` 接入方式不变。业务验收需要额外确认压缩后的图片/PDF 可打开、未支持格式在 ZIP 中保持原内容、每个 entry 的压缩参数只影响对应源文件。
 
