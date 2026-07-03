@@ -50,6 +50,12 @@ public class PersistenceFlywayProperties {
         private boolean enabled = true;
 
         /**
+         * 当前模块有 classpath migration 但本应用有意不执行时的原因。
+         * enabled=false 时必须填写，避免误跳过已进入 classpath 的模块 migration。
+         */
+        private String skipReason;
+
+        /**
          * 是否对当前模块启用基线迁移。
          * 适用于数据库已有表结构、Flyway 需要从指定基线开始接管的场景。
          */

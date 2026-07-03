@@ -251,6 +251,8 @@ persistence-datasource=job
 
 如果不配置 `modules`，starter 会扫描所有 `classpath*:db/migration/*/V*.sql`，把中间目录名当作模块名，并按模块名排序执行。每个模块默认使用独立 history table，例如模块 `mango-job` 的默认表是 `flyway_schema_history_mango_job`。
 
+如果显式配置了 `modules`，starter 会把配置视为当前应用的 Flyway 模块清单，并继续扫描 classpath。classpath 中存在 `db/migration/<module>/V*.sql` 但清单未声明的模块会导致启动失败。有意跳过某个已进入 classpath 的模块时，必须声明该模块 `enabled=false` 并填写 `skip-reason`，避免 starter、Controller 或 Resource 已装配但表结构未初始化的假集成。
+
 显式配置示例：
 
 ```yaml
@@ -270,12 +272,16 @@ mango:
             - classpath:db/migration/mango-system
         mango-job:
           enabled: true
+        link:
+          enabled: false
+          skip-reason: 当前单体不启用网址导航模块
 ```
 
 | 配置 | 默认值 | 含义 |
 |------|--------|------|
 | `enabled` | `true` | 全局迁移开关 |
 | `modules.<module>.enabled` | `true` | 是否执行当前模块迁移 |
+| `modules.<module>.skip-reason` | 空 | `enabled=false` 且 classpath 存在当前模块 migration 时必须填写的跳过原因 |
 | `modules.<module>.baseline-on-migrate` | `true` | 存量库无 history table 时是否从 baseline 接管 |
 | `modules.<module>.out-of-order` | `false` | 是否允许非顺序版本补跑 |
 | `modules.<module>.history-table` | `flyway_schema_history_<module>` | 当前模块 history table，模块名会把非字母数字下划线替换成 `_` |
