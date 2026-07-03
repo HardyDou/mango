@@ -14,6 +14,8 @@
 - Simplified file upload/query `FileRecordVO` JSON responses. Business callers now use `previewUrl` for original file
   preview and `downloadUrl` for download; storage object fields, `url`, and storage public-access details are hidden
   from these record responses.
+- Simplified frontend `@mango/file` `FileRecord` typing and file list UI. Storage type, bucket/object path, `url`, and
+  `direct*` access fields are no longer part of the public file record contract.
 
 ### Upgrade Notes
 
@@ -26,6 +28,8 @@
   or object name fields from upload/page/detail responses. Office/document preview components should load preview
   metadata by file ID and use `documentPreviewUrl` instead of treating `FileRecordVO.previewUrl` as a document-preview
   service URL.
+- Frontend callers using `FileRecord` should read `previewUrl` for preview actions and `downloadUrl` for download
+  actions. Storage-layer diagnostics belong to storage configuration/admin APIs, not the business file record.
 
 ### Verification
 

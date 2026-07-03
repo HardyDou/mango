@@ -161,40 +161,10 @@
           show-overflow-tooltip
         />
         <el-table-column
-          prop="storageType"
-          label="存储方式"
-          width="110"
-        >
-          <template #default="{ row }">
-            <el-tag size="small" type="info">
-              {{ storageTypeLabel(row.storageType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
           prop="createdBy"
           label="上传账号"
           width="110"
         />
-        <el-table-column
-          label="存储位置"
-          min-width="260"
-          show-overflow-tooltip
-        >
-          <template #default="{ row }">
-            <div class="storage-location">
-              <span>{{ storageLocation(row) }}</span>
-              <el-button
-                link
-                type="primary"
-                size="small"
-                @click.stop="copyStorageLocation(row)"
-              >
-                复制
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
         <el-table-column
           prop="status"
           label="状态"
@@ -588,23 +558,6 @@ function accessLevelType(value?: string) {
   return 'info';
 }
 
-function storageTypeLabel(value?: string) {
-  if (value === 'LOCAL') return '本地';
-  if (value === 'MINIO') return 'MinIO';
-  if (value === 'AWS_S3') return 'AWS S3';
-  if (value === 'ALIYUN_OSS') return '阿里云 OSS';
-  if (value === 'TENCENT_COS') return '腾讯云 COS';
-  if (value === 'QINIU_KODO') return '七牛 Kodo';
-  if (value === 'S3') return 'S3';
-  return value || '-';
-}
-
-function storageLocation(row: FileRecord) {
-  const bucket = row.bucketName || '-';
-  const objectName = row.objectName || '-';
-  return `${bucket}/${objectName}`;
-}
-
 function findDirectory(nodes: FileDirectory[], id: string): FileDirectory | undefined {
   for (const node of nodes) {
     if (String(node.id) === id) return node;
@@ -612,12 +565,6 @@ function findDirectory(nodes: FileDirectory[], id: string): FileDirectory | unde
     if (found) return found;
   }
   return undefined;
-}
-
-async function copyStorageLocation(row: FileRecord) {
-  const value = storageLocation(row);
-  await navigator.clipboard.writeText(value);
-  ElMessage.success('存储位置已复制');
 }
 
 function formatSize(size?: number) {
@@ -684,22 +631,6 @@ onMounted(() => {
   margin-right: 12px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-}
-
-.storage-location {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.storage-location span {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--el-font-family);
 }
 
 .preview-dialog-header {
