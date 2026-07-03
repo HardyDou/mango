@@ -125,6 +125,8 @@ mango:
       consumer: ${spring.application.name}
 ```
 
+领域事件 outbox 写入 `topic=domain-event`，dispatcher 只通过 `claimByTopic(..., OutboxTopics.DOMAIN_EVENT, ...)` 获取领域事件消息。通知、实时消息等其他 outbox topic 不会被 `domain-event-dispatcher` 消费或 ack。
+
 ## 7. API 与扩展
 - `DomainEvent`：通用事件对象，字段包括 event id、event type、business type、business key、aggregate id、occurred at、payload、headers。
 - `IDomainEventPublisher`：事件发布入口。
@@ -159,10 +161,12 @@ mango:
 3. 订阅方实现 `DomainEventSubscriber`，按 event id 或业务幂等键防重复处理。
 4. 需要可靠投递时开启 outbox，并确认 KV store 可用。
 5. 需要运维入口时，确认系统事件菜单和权限已初始化到 authorization。
+6. 业务发布领域事件应使用 `IDomainEventPublisher`，不要手写无 topic 的 `OutboxMessage`。
 
 ## 11. 问题排查
 - 事件没有被订阅：检查订阅者是否是 Spring Bean，`eventType()` 是否和发布事件类型一致。
 - outbox 开启后没有投递：检查 `outbox.dispatch-enabled`、KV store、dispatcher 日志和 max attempts。
+- domain-event worker 处理到通知或实时消息：确认已升级到 topic 隔离版本，且没有自定义 dispatcher 继续调用无 topic 的旧 claim API。
 - reconsume 不能修复业务数据：它只重新投递事件，业务 handler 仍要处理数据状态和幂等。
 - 多服务重复消费：订阅者必须按 event id 或业务键幂等。
 

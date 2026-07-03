@@ -3,6 +3,7 @@ package io.mango.infra.event.core.outbox;
 import io.mango.common.result.Require;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 
 import java.util.HashMap;
 
@@ -18,6 +19,7 @@ final class OutboxDomainEventMapper {
         Require.notNull(event, "事件不能为空");
         return OutboxMessage.builder()
                 .messageId(event.getEventId())
+                .topic(OutboxTopics.DOMAIN_EVENT)
                 .eventType(event.getEventType())
                 .businessType(event.getBusinessType())
                 .businessKey(event.getBusinessKey())

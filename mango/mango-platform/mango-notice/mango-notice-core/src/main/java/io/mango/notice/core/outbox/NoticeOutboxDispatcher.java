@@ -7,6 +7,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.IOutboxDispatcher;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.notice.core.service.INoticeService;
 import org.springframework.util.StringUtils;
 
@@ -58,9 +59,9 @@ public class NoticeOutboxDispatcher implements IOutboxDispatcher {
         if (batchSize <= 0) {
             return 0;
         }
-        List<OutboxMessage> messages = outboxStore.claim(
+        List<OutboxMessage> messages = outboxStore.claimByTopic(
                 workerId,
-                NoticeOutboxMessageMapper.EVENT_TYPE,
+                OutboxTopics.NOTICE,
                 batchSize,
                 clock.instant());
         int handled = 0;

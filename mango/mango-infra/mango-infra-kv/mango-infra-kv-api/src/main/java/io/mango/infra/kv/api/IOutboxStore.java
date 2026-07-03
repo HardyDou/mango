@@ -16,11 +16,18 @@ public interface IOutboxStore {
     /**
      * Claim a batch of ready messages for processing.
      */
+    @Deprecated(since = "1.0.0", forRemoval = false)
     List<OutboxMessage> claim(String workerId, int batchSize, Instant now);
+
+    /**
+     * Claim a batch of ready messages owned by one topic.
+     */
+    List<OutboxMessage> claimByTopic(String workerId, String topic, int batchSize, Instant now);
 
     /**
      * Claim a batch of ready messages for one event type.
      */
+    @Deprecated(since = "1.0.0", forRemoval = false)
     default List<OutboxMessage> claim(String workerId, String eventType, int batchSize, Instant now) {
         return claim(workerId, batchSize, now).stream()
                 .filter(message -> eventType != null && eventType.equals(message.getEventType()))
