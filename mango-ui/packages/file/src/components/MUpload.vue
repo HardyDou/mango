@@ -110,6 +110,7 @@ import {
   isFileDisplayUrl,
   normalizeFileId,
   type FileRecord,
+  type FilePreview,
   type FileBizMeta,
   type FileId,
 } from '../api/file';
@@ -141,7 +142,13 @@ export interface UploadColumn {
 }
 
 type UploadModelValue = string | string[] | FileRecord | FileRecord[] | null | undefined;
-type InternalUploadFile = UploadUserFile & Partial<FileRecord>;
+type RuntimeFileRecord = FileRecord & Partial<Pick<
+  FilePreview,
+  'directPreviewUrl' | 'directDownloadUrl' | 'directPreviewExpireSeconds' | 'directDownloadExpireSeconds'
+>> & {
+  url?: string;
+};
+type InternalUploadFile = UploadUserFile & Partial<Omit<RuntimeFileRecord, 'status'>>;
 
 const props = withDefaults(defineProps<{
   modelValue?: UploadModelValue;
@@ -207,7 +214,7 @@ watch(() => props.modelValue, (value) => {
   syncing.value = false;
   internalFiles.value
     .map(fileToRecord)
-    .filter((item): item is FileRecord => Boolean(item?.id))
+    .filter((item): item is RuntimeFileRecord => Boolean(item?.id))
     .forEach(record => void hydratePreviewUrl(record, true));
 }, { immediate: true, deep: true });
 
@@ -378,7 +385,8 @@ function removeAt(index: number) {
 function syncValue() {
   const records = internalFiles.value
     .map(fileToRecord)
-    .filter((item): item is FileRecord => Boolean(item));
+    .filter((item): item is RuntimeFileRecord => Boolean(item))
+    .map(toPublicFileRecord);
   const value = modelValueFromRecords(records);
   emit('update:modelValue', value);
   emit('change', value, records);
@@ -410,7 +418,7 @@ function isSameRecordValue(value?: UploadModelValue) {
   if (!incomingIds.length) return false;
   const currentIds = internalFiles.value
     .map(fileToRecord)
-    .filter((item): item is FileRecord => Boolean(item?.id))
+    .filter((item): item is RuntimeFileRecord => Boolean(item?.id))
     .map(item => String(item.id));
   return currentIds.length === incomingIds.length
     && currentIds.every((id, index) => id === incomingIds[index]);
@@ -466,7 +474,7 @@ function normalizeUploadResponse(response: unknown): FileRecord | undefined {
   return record?.id ? record : undefined;
 }
 
-function recordToFile(record: FileRecord, uid?: number, runtimeUrl?: string): InternalUploadFile {
+function recordToFile(record: RuntimeFileRecord, uid?: number, runtimeUrl?: string): InternalUploadFile {
   const url = runtimeUrl ?? displayUrl(record);
   return {
     ...record,
@@ -478,11 +486,11 @@ function recordToFile(record: FileRecord, uid?: number, runtimeUrl?: string): In
     contentType: record.contentType,
     url,
     status: 'success',
-    response: record,
+    response: toPublicFileRecord(record),
   };
 }
 
-function previewUrl(record: Partial<FileRecord>) {
+function previewUrl(record: Partial<RuntimeFileRecord>) {
   return directDisplayUrl(record.directPreviewUrl)
     || directDisplayUrl(record.directDownloadUrl)
     || directDisplayUrl(record.url)
@@ -491,7 +499,7 @@ function previewUrl(record: Partial<FileRecord>) {
     || (record.id ? fileApi.downloadUrl(record.id) : '');
 }
 
-function displayUrl(record: Partial<FileRecord>) {
+function displayUrl(record: Partial<RuntimeFileRecord>) {
   const directUrl = thumbnailDirectUrl(record)
     || directDisplayUrl(record.previewUrl)
     || directDisplayUrl(record.downloadUrl)
@@ -507,7 +515,7 @@ function directDisplayUrl(value?: string) {
   return isFileDisplayUrl(value) ? value : false;
 }
 
-async function hydratePreviewUrl(record: FileRecord, shouldSyncValue = false) {
+async function hydratePreviewUrl(record: RuntimeFileRecord, shouldSyncValue = false) {
   if (!record.id) return;
   try {
     let hydrated = false;
@@ -533,7 +541,7 @@ async function hydratePreviewUrl(record: FileRecord, shouldSyncValue = false) {
   }
 }
 
-async function loadPreviewRecord(record: FileRecord): Promise<FileRecord> {
+async function loadPreviewRecord(record: RuntimeFileRecord): Promise<RuntimeFileRecord> {
   if (record.previewUrl || record.downloadUrl || record.directPreviewUrl || record.directDownloadUrl) {
     return record;
   }
@@ -553,7 +561,7 @@ async function loadPreviewRecord(record: FileRecord): Promise<FileRecord> {
   };
 }
 
-async function resolveThumbnailRuntimeUrl(record: FileRecord) {
+async function resolveThumbnailRuntimeUrl(record: RuntimeFileRecord) {
   if (normalizedDisplay.value !== 'thumbnail') {
     return displayUrl(record);
   }
@@ -567,7 +575,7 @@ async function resolveThumbnailRuntimeUrl(record: FileRecord) {
   return objectUrlForRecord(record);
 }
 
-async function objectUrlForRecord(record: FileRecord) {
+async function objectUrlForRecord(record: RuntimeFileRecord) {
   const key = String(record.id);
   const existing = objectUrls.get(key);
   if (existing) {
@@ -582,7 +590,7 @@ async function objectUrlForRecord(record: FileRecord) {
   return url;
 }
 
-function thumbnailDirectUrl(record: Partial<FileRecord>) {
+function thumbnailDirectUrl(record: Partial<RuntimeFileRecord>) {
   return directDisplayUrl(record.directPreviewUrl)
     || directDisplayUrl(record.directDownloadUrl)
     || directDisplayUrl(record.url)
@@ -601,7 +609,7 @@ function cleanupUnusedObjectUrls() {
   const activeIds = new Set(
     internalFiles.value
       .map(fileToRecord)
-      .filter((item): item is FileRecord => Boolean(item?.id))
+      .filter((item): item is RuntimeFileRecord => Boolean(item?.id))
       .map(item => String(item.id)),
   );
   objectUrls.forEach((url, id) => {
@@ -617,17 +625,59 @@ function revokeAllObjectUrls() {
   objectUrls.clear();
 }
 
-function fileToRecord(file: InternalUploadFile): FileRecord | null {
+function fileToRecord(file: InternalUploadFile): RuntimeFileRecord | null {
   const response = file.response as FileRecord | undefined;
-  if (response?.id) return response;
+  if (response?.id) {
+    return {
+      ...response,
+      url: file.url,
+      directPreviewUrl: file.directPreviewUrl,
+      directDownloadUrl: file.directDownloadUrl,
+      directPreviewExpireSeconds: file.directPreviewExpireSeconds,
+      directDownloadExpireSeconds: file.directDownloadExpireSeconds,
+    };
+  }
   if (!file.id) return null;
   return {
-    ...file,
     id: file.id,
     fileName: file.fileName || file.name,
+    fileExt: file.fileExt,
     fileSize: Number(file.fileSize ?? file.size ?? 0),
     contentType: file.contentType,
-  } as FileRecord;
+    url: file.url,
+    directPreviewUrl: file.directPreviewUrl,
+    directDownloadUrl: file.directDownloadUrl,
+    directPreviewExpireSeconds: file.directPreviewExpireSeconds,
+    directDownloadExpireSeconds: file.directDownloadExpireSeconds,
+    previewUrl: file.previewUrl,
+    downloadUrl: file.downloadUrl,
+  };
+}
+
+function toPublicFileRecord(record: RuntimeFileRecord): FileRecord {
+  return {
+    id: record.id,
+    tenantId: record.tenantId,
+    bizType: record.bizType,
+    bizId: record.bizId,
+    purpose: record.purpose,
+    bizMeta: record.bizMeta,
+    directoryId: record.directoryId,
+    directoryName: record.directoryName,
+    accessLevel: record.accessLevel,
+    fileName: record.fileName,
+    fileExt: record.fileExt,
+    fileSize: record.fileSize,
+    contentType: record.contentType,
+    fileHash: record.fileHash,
+    status: record.status,
+    archived: record.archived,
+    createdBy: record.createdBy,
+    createdTime: record.createdTime,
+    updatedTime: record.updatedTime,
+    previewUrl: record.previewUrl,
+    downloadUrl: record.downloadUrl,
+  };
 }
 
 function formatAllowed(fileName: string) {
@@ -728,7 +778,7 @@ function columnLabel(key: string) {
 }
 
 function cellValue(row: FileRecord, key: string) {
-  if (!key.startsWith('meta.')) return (row as Record<string, unknown>)[key] ?? '-';
+  if (!key.startsWith('meta.')) return (row as unknown as Record<string, unknown>)[key] ?? '-';
   const meta = typeof row.bizMeta === 'string' ? safeJson(row.bizMeta) : row.bizMeta;
   return (meta as Record<string, unknown> | undefined)?.[key.replace('meta.', '')] ?? '-';
 }

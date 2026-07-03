@@ -19,11 +19,6 @@ export interface FileRecord {
   directoryId?: FileId;
   directoryName?: string;
   accessLevel?: string;
-  objectId?: FileId;
-  storageType?: string;
-  storageConfigId?: FileId;
-  bucketName?: string;
-  objectName?: string;
   fileName: string;
   fileExt?: string;
   fileSize: number;
@@ -34,14 +29,8 @@ export interface FileRecord {
   createdBy?: FileId;
   createdTime?: string;
   updatedTime?: string;
-  url?: string;
   previewUrl?: string;
   downloadUrl?: string;
-  directAccess?: boolean;
-  directPreviewUrl?: string;
-  directDownloadUrl?: string;
-  directPreviewExpireSeconds?: number;
-  directDownloadExpireSeconds?: number;
 }
 
 export interface FilePreview {
@@ -60,6 +49,13 @@ export interface FilePreview {
   directPreviewExpireSeconds?: number;
   directDownloadExpireSeconds?: number;
 }
+
+type FileRuntimeAccess = Partial<Pick<
+  FilePreview,
+  'directAccess' | 'directPreviewUrl' | 'directDownloadUrl' | 'directPreviewExpireSeconds' | 'directDownloadExpireSeconds'
+>> & {
+  url?: string;
+};
 
 export interface FilePreviewLink {
   fileId: FileId;
@@ -226,10 +222,11 @@ export function isValidFileId(value?: unknown): value is FileId {
 
 export function fileRuntimeUrl(record?: Partial<FileRecord | FilePreview> | null): string {
   if (!record) return '';
+  const runtime = record as Partial<FileRecord | FilePreview> & FileRuntimeAccess;
   const candidates = [
-    record.directPreviewUrl,
-    record.directDownloadUrl,
-    'url' in record ? record.url : '',
+    runtime.directPreviewUrl,
+    runtime.directDownloadUrl,
+    runtime.url,
     record.previewUrl,
     record.downloadUrl,
   ];
@@ -403,25 +400,27 @@ function fromBackendUploadInit(item: any): FileUploadInit {
 
 function fromBackendFileRecord(item: any): FileRecord {
   return {
-    ...item,
     id: normalizeId(item.id),
     tenantId: normalizeId(item.tenantId),
-    objectId: normalizeId(item.objectId),
-    storageConfigId: normalizeId(item.storageConfigId),
-    createdBy: normalizeId(item.createdBy),
-    directoryId: normalizeId(item.directoryId ?? 0),
+    bizType: item.bizType,
+    bizId: item.bizId,
+    purpose: item.purpose,
     bizMeta: parseBizMeta(item.bizMeta),
+    directoryId: normalizeId(item.directoryId ?? 0),
+    directoryName: item.directoryName,
+    accessLevel: item.accessLevel,
+    fileName: item.fileName,
+    fileExt: item.fileExt,
     fileSize: Number(item.fileSize ?? 0),
+    contentType: item.contentType,
+    fileHash: item.fileHash,
+    status: item.status === undefined || item.status === null ? undefined : Number(item.status),
+    archived: item.archived === undefined || item.archived === null ? undefined : Number(item.archived),
+    createdBy: normalizeId(item.createdBy),
     createdTime: normalizeDateTime(item.createdTime),
     updatedTime: normalizeDateTime(item.updatedTime),
-    url: normalizeApiUrl(item.url),
     previewUrl: normalizeApiUrl(item.previewUrl),
     downloadUrl: normalizeApiUrl(item.downloadUrl),
-    directAccess: Boolean(item.directAccess),
-    directPreviewUrl: normalizeApiUrl(item.directPreviewUrl),
-    directDownloadUrl: normalizeApiUrl(item.directDownloadUrl),
-    directPreviewExpireSeconds: Number(item.directPreviewExpireSeconds ?? 0),
-    directDownloadExpireSeconds: Number(item.directDownloadExpireSeconds ?? 0),
   };
 }
 

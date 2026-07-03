@@ -37,7 +37,7 @@
 
 - `MUpload` 负责选择文件、前端预检查、调用文件上传接口并回写文件 ID、token 或完整记录。
 - `MUpload` 上传和回显只要求文件 ID、`previewUrl`、`downloadUrl` 这些业务字段；需要图片缩略图时，组件会按文件 ID 获取预览元数据，或通过鉴权下载生成临时 `blob:` 地址，不会把预览地址写入业务表单值。
-- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作；预览区域只使用有效 `previewUrl`、预览元数据中的存储公开预览地址或文档预览服务地址，`downloadUrl` 和 `fileApi.downloadUrl(id)` 只用于下载动作。
+- `FilePreviewPanel` 负责按文件 ID 或文件记录加载预览元数据，并展示预览、下载和新窗口预览操作；预览区域只使用有效 `previewUrl`、预览元数据中的临时展示地址或文档预览服务地址，`downloadUrl` 和 `fileApi.downloadUrl(id)` 只用于下载动作。
 
 `api-client`：
 
@@ -48,6 +48,7 @@ URL 字段职责：
 
 - `FileRecord.previewUrl` 是文件原始内容预览地址，适合图片、PDF、音视频等浏览器可直接内联展示的文件。
 - `FileRecord.downloadUrl` 是文件下载地址，只用于下载动作。
+- `FileRecord` 是业务可见文件记录，不包含 `storageType`、`bucketName`、`objectName`、`url`、`directPreviewUrl`、`directDownloadUrl` 等存储层或直连细节。
 - 后端 `PROXY` 模式下，预览和下载是两个不同接口；后端 `DIRECT` 模式下，两个字段来自存储公开访问地址，可能相同。
 - `FilePreviewPanel` 需要 Office 转换或文档预览服务时，会按文件 ID 获取预览元数据，并使用 `documentPreviewUrl`；这条链路不要求业务保存或理解存储公开访问字段。
 - `fileSettingsApi` 封装文件中心运行时配置。
