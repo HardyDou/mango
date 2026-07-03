@@ -185,3 +185,5 @@ pnpm -F @mango/file test
 - PR #193 新增 `mango-resource` 注册中心并将文件存储配置、文件设置默认数据迁移为资源声明同步；不改变文件上传、下载、预览的公开 API、前端组件、权限、租户、页面和表单验收步骤。排查默认存储配置缺失时，需要同时确认 `FILE_STORAGE_CONFIG` 和 `FILE_SETTINGS` 声明是否已同步。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面和运行时行为。
 - PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面、启动和运行时行为。
+
+- Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面、启动方式和表单验收步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，文件上传表单异常仍按文件服务、组件接入和业务字段持久化链路排查。

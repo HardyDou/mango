@@ -166,7 +166,7 @@ Mango 前端包的 `peerDependencies` 表达已验证的主版本兼容范围，
 | Pinia | `>=2.0.32 <3` |
 | vue-i18n | `>=9.2.2 <10` |
 
-`pinia@3`、`vue-i18n@10+` 和 `vue-router@5` 属于跨主版本升级，必须经过独立兼容验证后再声明支持。业务项目执行 `pnpm update --latest` 时，如果 registry latest 已跨出上表范围，应优先固定到 Mango 已认证范围，而不是忽略 peer warning。
+`pinia@3`、`vue-i18n@10+` 和 `vue-router@5` 属于尚未纳入当前认证范围的跨主版本升级。业务项目执行 `pnpm update --latest` 时，如果 registry latest 已跨出上表范围，建议固定到 Mango 已认证范围；需要声明新的跨主版本支持时，按 [PMO 前端组件发布要求](../mango-pmo/rules/frontend/03-component-development.md) 完成独立兼容验证和发布影响评估。
 
 ## 9. 数据与初始化
 前端没有数据库 migration。前端依赖后端已经初始化的数据：
