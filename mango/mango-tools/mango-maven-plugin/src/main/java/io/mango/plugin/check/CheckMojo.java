@@ -25,6 +25,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -212,6 +213,12 @@ public class CheckMojo extends AbstractMojo {
      */
     @Parameter(property = "mango.check.changedFiles")
     private String changedFiles;
+
+    /**
+     * Restrict scope-sensitive mango-check rules to changed files.
+     */
+    @Parameter(property = "mango.check.changedOnly", defaultValue = "false")
+    private boolean changedOnly;
 
     /**
      * Git base ref used to resolve changed files when changedFiles is not provided.
@@ -3298,6 +3305,14 @@ public class CheckMojo extends AbstractMojo {
         if (rootPath == null) {
             return;
         }
+        Set<String> scopeFiles = resolveModuleMenuChangedFiles(rootPath);
+        if (changedOnly && scopeFiles.isEmpty()) {
+            result.addIssue("MODULE_MENU", "MAJOR", rootPath.toString(), 0,
+                    "module-menu changedOnly scope is empty; set -Dmango.check.changedFiles=<paths> "
+                            + "or -Dmango.check.baseRef=<ref>",
+                    "MODULE_MENU", "backend/11-module-menu.md", SOURCE_MANGO_CHECK);
+            return;
+        }
 
         List<ModuleMenuIssue> issues = new ArrayList<>();
         try {
@@ -3313,16 +3328,145 @@ public class CheckMojo extends AbstractMojo {
                     "菜单声明扫描失败: " + e.getMessage()));
         }
 
+        getLog().info("Module menu scope: " + moduleMenuScopeSummary(rootPath, scopeFiles));
         if (!issues.isEmpty()) {
+            int blockingIssueCount = 0;
+            int excludedIssueCount = 0;
             for (ModuleMenuIssue issue : issues) {
-                result.addIssue("MODULE_MENU", issue.severity, issue.file, issue.line,
-                        issue.description, "MODULE_MENU", "backend/11-module-menu.md", SOURCE_MANGO_CHECK);
-                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+                if (isModuleMenuIssueInScope(issue, rootPath, scopeFiles)) {
+                    blockingIssueCount++;
+                    result.addIssue("MODULE_MENU", issue.severity, issue.file, issue.line,
+                            issue.description, "MODULE_MENU", "backend/11-module-menu.md", SOURCE_MANGO_CHECK);
+                    getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+                } else {
+                    excludedIssueCount++;
+                    result.addExcludedIssue("MODULE_MENU", issue.severity, issue.file, issue.line,
+                            "out-of-scope existing issue: " + issue.description,
+                            "MODULE_MENU", "backend/11-module-menu.md", SOURCE_MANGO_CHECK);
+                    getLog().info("  [OUT-OF-SCOPE][" + issue.severity + "] "
+                            + issue.description + " at " + issue.file);
+                }
             }
-            getLog().warn("Found " + issues.size() + " module menu declaration violation(s)");
+            if (blockingIssueCount > 0) {
+                getLog().warn("Found " + blockingIssueCount + " in-scope module menu declaration violation(s)");
+            }
+            if (excludedIssueCount > 0) {
+                getLog().info("Excluded " + excludedIssueCount + " out-of-scope module menu issue(s)");
+            }
         } else {
             getLog().info("All module menu declaration checks passed");
         }
+    }
+
+    private Set<String> resolveModuleMenuChangedFiles(Path rootPath) {
+        if (!changedOnly) {
+            return Set.of();
+        }
+        if (changedFiles != null && !changedFiles.isBlank()) {
+            return changedFilesFromParameter(changedFiles);
+        }
+        if (baseRef == null || baseRef.isBlank()) {
+            return Set.of();
+        }
+        return changedFilesFromGit(rootPath, baseRef);
+    }
+
+    private Set<String> changedFilesFromParameter(String files) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (String file : files.split(",")) {
+            addNormalizedScopeFile(result, file);
+        }
+        return result;
+    }
+
+    private Set<String> changedFilesFromGit(Path rootPath, String ref) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        ProcessBuilder processBuilder = new ProcessBuilder("git", "diff", "--name-only", ref.trim() + "...HEAD");
+        processBuilder.directory(rootPath.toFile());
+        processBuilder.redirectErrorStream(true);
+        try {
+            Process process = processBuilder.start();
+            String output = new String(process.getInputStream().readAllBytes());
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                getLog().warn("Failed to resolve module-menu changed files from " + ref + ": " + output.trim());
+                return Set.of();
+            }
+            for (String line : output.split("\\R")) {
+                addNormalizedScopeFile(result, line);
+            }
+            return result;
+        } catch (IOException e) {
+            getLog().warn("Failed to resolve module-menu changed files: " + e.getMessage());
+            return Set.of();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            getLog().warn("Interrupted while resolving module-menu changed files");
+            return Set.of();
+        }
+    }
+
+    private void addNormalizedScopeFile(Set<String> files, String file) {
+        String normalized = normalizeScopePath(file);
+        if (!normalized.isBlank()) {
+            files.add(normalized);
+        }
+    }
+
+    private String moduleMenuScopeSummary(Path rootPath, Set<String> scopeFiles) {
+        if (!changedOnly) {
+            return "baseDir=" + rootPath;
+        }
+        return "changedOnly=true, changedFiles=" + scopeFiles.size() + ", baseDir=" + rootPath;
+    }
+
+    private boolean isModuleMenuIssueInScope(ModuleMenuIssue issue, Path rootPath, Set<String> scopeFiles) {
+        if (!changedOnly) {
+            return true;
+        }
+        String issueFile = normalizeIssuePath(issue.file, rootPath);
+        for (String scopeFile : scopeFiles) {
+            if (sameScopePath(issueFile, scopeFile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeIssuePath(String file, Path rootPath) {
+        if (file == null || file.isBlank()) {
+            return "";
+        }
+        Path issuePath = Paths.get(file);
+        if (issuePath.isAbsolute()) {
+            Path normalizedRoot = rootPath.toAbsolutePath().normalize();
+            Path normalizedIssue = issuePath.toAbsolutePath().normalize();
+            if (normalizedIssue.startsWith(normalizedRoot)) {
+                return normalizeScopePath(normalizedRoot.relativize(normalizedIssue).toString());
+            }
+        }
+        return normalizeScopePath(file);
+    }
+
+    private boolean sameScopePath(String issueFile, String changedFile) {
+        if (issueFile.equals(changedFile)) {
+            return true;
+        }
+        if (issueFile.endsWith("/" + changedFile)) {
+            return true;
+        }
+        return changedFile.endsWith("/" + issueFile);
+    }
+
+    private String normalizeScopePath(String path) {
+        if (path == null) {
+            return "";
+        }
+        String normalized = path.trim().replace('\\', '/');
+        while (normalized.startsWith("./")) {
+            normalized = normalized.substring(2);
+        }
+        return normalized;
     }
 
     private Path resolveModuleMenuScanPath() {
