@@ -24,6 +24,8 @@ public class UserHomePreferenceEntity {
 
     private Long defaultHomePageId;
 
+    private String defaultHomeRef;
+
     @TableField(fill = FieldFill.INSERT)
     private Long createdBy;
 

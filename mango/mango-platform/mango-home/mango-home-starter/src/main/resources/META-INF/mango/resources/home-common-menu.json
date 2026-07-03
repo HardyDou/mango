@@ -1,0 +1,171 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "home",
+      "moduleName": "首页管理模块",
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951300000000003721",
+            "version": 2,
+            "bizKey": "home.menu.internal-admin",
+            "name": "首页管理菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-home"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "首页管理模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 12
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": [
+                  "platform_admin"
+                ]
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "首页管理",
+                    "menuCode": "home:management",
+                    "parentCode": "data",
+                    "path": "/home-management",
+                    "icon": "House",
+                    "sort": 12,
+                    "redirect": "/home-management/templates",
+                    "remark": "首页模板和用户首页治理入口",
+                    "children": [
+                      {
+                        "menuType": 2,
+                        "menuName": "首页模板",
+                        "menuCode": "home:templates",
+                        "path": "/home-management/templates",
+                        "icon": "Document",
+                        "component": "home/templates/index",
+                        "sort": 1,
+                        "permissions": [
+                          "home:templates:list"
+                        ],
+                        "remark": "首页模板、发布和多对象授权管理",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "home:templates:list",
+                            "permissionName": "查询首页模板列表",
+                            "sort": 1,
+                            "remark": "首页模板列表查询权限"
+                          },
+                          {
+                            "permissionCode": "home:templates:query",
+                            "permissionName": "查询首页模板详情",
+                            "sort": 2,
+                            "remark": "首页模板详情查询权限"
+                          },
+                          {
+                            "permissionCode": "home:templates:add",
+                            "permissionName": "新增或复制首页模板",
+                            "sort": 3,
+                            "remark": "首页模板新增与复制权限"
+                          },
+                          {
+                            "permissionCode": "home:templates:edit",
+                            "permissionName": "编辑首页模板草稿",
+                            "sort": 4,
+                            "remark": "首页模板草稿编辑权限"
+                          },
+                          {
+                            "permissionCode": "home:templates:publish",
+                            "permissionName": "发布首页模板",
+                            "sort": 5,
+                            "remark": "首页模板发布权限"
+                          },
+                          {
+                            "permissionCode": "home:templates:status",
+                            "permissionName": "启停首页模板",
+                            "sort": 6,
+                            "remark": "首页模板启停权限"
+                          },
+                          {
+                            "permissionCode": "home:templates:delete",
+                            "permissionName": "删除首页模板",
+                            "sort": 7,
+                            "remark": "首页模板删除权限"
+                          },
+                          {
+                            "permissionCode": "home:templates:auth",
+                            "permissionName": "维护首页模板授权",
+                            "sort": 8,
+                            "remark": "个人、部门、角色授权维护权限"
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "首页列表",
+                        "menuCode": "home:list",
+                        "path": "/home-management/list",
+                        "icon": "List",
+                        "component": "home/list/index",
+                        "sort": 2,
+                        "permissions": [
+                          "home:list:view"
+                        ],
+                        "remark": "查询用户自定义首页列表",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "home:list:view",
+                            "permissionName": "查看首页列表",
+                            "sort": 1,
+                            "remark": "用户自定义首页查看权限"
+                          }
+                        ]
+                      },
+                      {
+                        "menuType": 2,
+                        "menuName": "用户首页",
+                        "menuCode": "home:user",
+                        "path": "/home-management/user",
+                        "icon": "User",
+                        "component": "home/user/index",
+                        "sort": 3,
+                        "permissions": [
+                          "home:user:view"
+                        ],
+                        "remark": "按用户查看最终首页",
+                        "permissionItems": [
+                          {
+                            "permissionCode": "home:user:view",
+                            "permissionName": "查看用户首页",
+                            "sort": 1,
+                            "remark": "按用户、成员和部门渲染最终首页权限"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
