@@ -11,7 +11,7 @@
 | 能力 | 用途 | 常用入口 |
 |------|------|----------|
 | 查询我的首页 | 获取当前登录用户的首页列表 | `GET /home/pages` |
-| 解析首页 | `/home` 解析默认首页，`/home/:homeId` 解析指定首页 | `GET /home/pages/resolve` |
+| 解析首页 | 首页默认路由解析默认首页，带 `homeId` 参数的首页路由解析指定首页 | `GET /home/pages/resolve` |
 | 创建首页 | 新建个人首页，可设置为默认首页 | `POST /home/pages` |
 | 重命名首页 | 修改个人首页名称 | `PUT /home/pages/name` |
 | 复制首页 | 基于当前布局复制一个首页 | `POST /home/pages/duplicate` |
@@ -39,10 +39,10 @@
 import { homePageApi } from '@mango/home';
 ```
 
-`@mango/admin-shell` 的 `/home` 宿主已接入 `@mango/home`：
+`@mango/admin-shell` 的首页宿主已接入 `@mango/home`：
 
-- `/home` 加载当前用户默认首页。
-- `/home/:homeId` 加载当前用户拥有的指定首页。
+- 默认首页路由加载当前用户默认首页。
+- 带 `homeId` 参数的首页路由加载当前用户拥有的指定首页。
 - 用户可创建、重命名、复制、排序、删除、设置默认首页，并保存布局 JSON。
 
 ## 4. 配置说明
@@ -154,3 +154,19 @@ mvn -f mango/pom.xml -pl mango-platform/mango-home/mango-home-starter -am test
 pnpm -F @mango/home build
 pnpm -F @mango/admin-shell build
 ```
+
+## 9. 问题排查
+
+| 现象 | 排查项 |
+|------|--------|
+| 首页列表为空 | 确认当前用户是否已创建个人首页；未创建时前端首页宿主使用内置系统工作台 |
+| 默认首页未生效 | 确认 `sys_user_home_preference.default_home_page_id` 指向当前用户拥有且启用的首页 |
+| 保存布局失败 | 检查 `layoutJson` 是否包含 `schemaVersion` 和 `items`，并满足组件数量、组件 ID 和 12 栅格坐标校验 |
+| 指定首页无法打开 | 确认请求中的 `homeId` 属于当前登录租户和用户 |
+| 接口返回未登录或无上下文 | 确认请求经过后台登录态、租户上下文和 `MangoContextHolder` 初始化链路 |
+
+## 10. 相关文档
+
+- [@mango/home 前端 README](../../../mango-ui/packages/home/README.md)
+- [admin-shell README](../../../mango-ui/packages/admin-shell/README.md)
+- [Mango 能力索引](../../../mango-docs/capabilities/README.md)

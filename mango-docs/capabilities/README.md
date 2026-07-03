@@ -34,7 +34,7 @@
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
-| 2026-07-02 | 用户多首页工作台：个人首页列表、默认首页、`/home/:homeId` 指定首页、布局 JSON 持久化 | [Home README](../../mango/mango-platform/mango-home/README.md)、[Home Frontend README](../../mango-ui/packages/home/README.md)、[Admin Shell README](../../mango-ui/packages/admin-shell/README.md) | GitHub Issue #368 |
+| 2026-07-02 | 用户多首页工作台：个人首页列表、默认首页、带 `homeId` 参数的指定首页、布局 JSON 持久化 | [Home README](../../mango/mango-platform/mango-home/README.md)、[Home Frontend README](../../mango-ui/packages/home/README.md)、[Admin Shell README](../../mango-ui/packages/admin-shell/README.md) | GitHub Issue #368 |
 | 2026-07-01 | 数据治理第一版：Resource demo 隔离、`INIT_ONLY`、Flyway 外部 locations、schema baseline pack | [Resource README](../../mango/mango-platform/mango-resource/README.md)、[Persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) | [Issue #184 设计](../designs/2026-07-01-issue-184-data-governance-design.md)、[S5 清单](../plans/2026-07-01-issue-184-s5-data-material-audit.md) |
 | 2026-06-29 | File 支持按目录结构清单打包多个文件为 ZIP，生成后写回存储层并返回新的 `FileRecordVO` | [File README](../../mango/mango-platform/mango-file/README.md) | [计划](../plans/2026-06-29-issue-316-file-package-plan.md)、[详细设计](../designs/2026-06-29-issue-316-file-package-design.md)、[交付台账](../plans/2026-06-29-issue-316-file-package-ledger.md) |
 

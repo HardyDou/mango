@@ -20,7 +20,7 @@
 | 菜单运行时 | `useMenuHost()` |
 | 页面运行时 | `useRuntimeHost()` |
 | 运行时配置 | `loadShellRuntimeConfig()` |
-| 用户多首页工作台 | `/home`、`/home/:homeId`、`@mango/home` |
+| 用户多首页工作台 | 默认首页路由、带 `homeId` 参数的首页路由、`@mango/home` |
 | store 导出 | `stores` 子入口 |
 | 开发中心页面 | `dev-pages`、`dev-base-pages` 等子入口 |
 
@@ -165,7 +165,7 @@ Shell 首页会自动把模块返回的 `widgets` 合并进组件库。`business
 
 ### Home Widget Runtime
 
-Shell 首页通过 `@mango/home` 接入用户多首页能力。`/home` 会解析当前用户默认首页；`/home/:homeId` 会打开当前用户拥有的指定首页。用户可在首页宿主中创建、重命名、复制、排序、删除个人首页，设置默认首页，并把工作台布局 JSON 保存到后端 `mango-home`。
+Shell 首页通过 `@mango/home` 接入用户多首页能力。默认首页路由会解析当前用户默认首页；带 `homeId` 参数的首页路由会打开当前用户拥有的指定首页。用户可在首页宿主中创建、重命名、复制、排序、删除个人首页，设置默认首页，并把工作台布局 JSON 保存到后端 `mango-home`。
 
 Shell 首页会为工作台小组件注入当前用户、租户、菜单树和 `navigate` 跳转函数。小组件可通过 `navigate({ path, raw: { query } })` 交给 Shell 跳转，Shell 只透传 `raw.query` 到 Vue Router，不会把业务小组件的路由细节写入布局组件或持久化布局 JSON。业务小组件通过模块注册函数返回或通过 `widgets` 选项传入，Shell 只做聚合和运行时注入，不承载业务组件实现。
 
