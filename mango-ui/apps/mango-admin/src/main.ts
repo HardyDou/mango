@@ -4,6 +4,8 @@ import piniaPluginPersist from 'pinia-plugin-persistedstate';
 import { mangoMessage, registerUnauthorizedHandler } from '@mango/common';
 import { installMangoAuth } from '@mango/auth';
 import { configureMangoAdminShell } from '@mango/admin-shell';
+import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
+import { systemQuickEntryWidgets, systemUserProfileWidgets } from '@mango/system';
 import App from './App.vue';
 import router from './router';
 import { i18n } from './i18n';
@@ -16,6 +18,11 @@ import { registerAuthDirectives } from './directive/authDirective';
 
 configureMangoAdminShell({
   features: 'full',
+  featureRegistrars: mangoFullAdminFeatureRegistrars,
+  widgets: [
+    ...systemUserProfileWidgets,
+    ...systemQuickEntryWidgets,
+  ],
 });
 
 // MSW Mock 支持（开发环境且启用时）

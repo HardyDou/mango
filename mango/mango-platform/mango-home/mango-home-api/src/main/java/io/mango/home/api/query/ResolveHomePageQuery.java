@@ -7,5 +7,5 @@ import java.io.Serializable;
 @Data
 public class ResolveHomePageQuery implements Serializable {
 
-    private Long homeId;
+    private String homeId;
 }

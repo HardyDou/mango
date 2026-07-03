@@ -20,7 +20,8 @@
 | 菜单运行时 | `useMenuHost()` |
 | 页面运行时 | `useRuntimeHost()` |
 | 运行时配置 | `loadShellRuntimeConfig()` |
-| 用户多首页工作台 | 默认首页路由、带 `homeId` 参数的首页路由、`@mango/home` |
+| 用户多首页工作台 | 默认首页路由、带 `homeId` 参数的首页路由、授权首页复制、`@mango/home` |
+| 首页管理页面 | 平台级首页模板、首页列表和用户首页页面，注册 key 为 `home/templates/index`、`home/list/index`、`home/user/index` |
 | store 导出 | `stores` 子入口 |
 | 开发中心页面 | `dev-pages`、`dev-base-pages` 等子入口 |
 
@@ -121,6 +122,10 @@ admin.mount();
 | `stores` | 用户、布局、主题、偏好等 store。 |
 | `router` | Shell 路由。 |
 | `home` | 首页组件。 |
+| `home-management` | 首页管理兼容页面组件。 |
+| `home-templates` | 首页模板页面组件。 |
+| `home-list` | 首页列表页面组件。 |
+| `home-user` | 用户首页视图页面组件。 |
 | `dev-pages` | 开发中心页面注册。 |
 | `dev-base-pages` | 基础能力开发页注册。 |
 
@@ -165,7 +170,9 @@ Shell 首页会自动把模块返回的 `widgets` 合并进组件库。`business
 
 ### Home Widget Runtime
 
-Shell 首页通过 `@mango/home` 接入用户多首页能力。默认首页路由会解析当前用户默认首页；带 `homeId` 参数的首页路由会打开当前用户拥有的指定首页。用户可在首页宿主中创建、重命名、复制、排序、删除个人首页，设置默认首页，并把工作台布局 JSON 保存到后端 `mango-home`。
+Shell 首页通过 `@mango/home` 接入用户多首页能力。默认首页路由会解析当前用户默认首页；带 `homeId` 参数的首页路由会打开当前用户拥有的指定首页或授权模板首页。用户可在首页宿主中创建、重命名、复制、排序、删除个人首页，设置默认首页，并把工作台布局 JSON 保存到后端 `mango-home`。授权模板首页只读，但可复制为个人首页副本。
+
+Shell 同时注册 `home/templates/index`、`home/list/index` 和 `home/user/index` 页面，供后端菜单资源 `平台能力 / 首页管理` 挂载。`首页模板` 用于平台级首页模板草稿编辑、复制、发布、启停和授权维护；`首页列表` 用于查看所有用户自定义首页；`用户首页` 用于按用户渲染最终可见首页并切换不同首页。
 
 Shell 首页会为工作台小组件注入当前用户、租户、菜单树和 `navigate` 跳转函数。小组件可通过 `navigate({ path, raw: { query } })` 交给 Shell 跳转，Shell 只透传 `raw.query` 到 Vue Router，不会把业务小组件的路由细节写入布局组件或持久化布局 JSON。业务小组件通过模块注册函数返回或通过 `widgets` 选项传入，Shell 只做聚合和运行时注入，不承载业务组件实现。
 

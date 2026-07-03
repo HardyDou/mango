@@ -30,6 +30,22 @@
       "types": "./dist/home.d.ts",
       "import": "./dist/home.js"
     },
+    "./home-management": {
+      "types": "./dist/home-management.d.ts",
+      "import": "./dist/home-management.js"
+    },
+    "./home-templates": {
+      "types": "./dist/home-templates.d.ts",
+      "import": "./dist/home-templates.js"
+    },
+    "./home-list": {
+      "types": "./dist/home-list.d.ts",
+      "import": "./dist/home-list.js"
+    },
+    "./home-user": {
+      "types": "./dist/home-user.d.ts",
+      "import": "./dist/home-user.js"
+    },
     "./dev-pages": {
       "types": "./dist/dev-pages.d.ts",
       "import": "./dist/dev-pages.js"

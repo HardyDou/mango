@@ -8,10 +8,13 @@ import io.mango.home.api.command.CreateHomePageCommand;
 import io.mango.home.api.command.HomePageIdCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
+import io.mango.home.api.command.SetDefaultHomePageCommand;
 import io.mango.home.api.command.SortHomePagesCommand;
 import io.mango.home.api.query.ResolveHomePageQuery;
+import io.mango.home.api.query.UserHomePageQuery;
 import io.mango.home.api.vo.HomePageVO;
 import io.mango.home.core.service.IHomePageService;
+import io.mango.common.vo.PageResult;
 import io.mango.infra.log.annotation.Log;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,6 +47,14 @@ public class HomePageController implements HomePageApi {
     @Operation(summary = "查询我的首页", description = "登录接口。查询当前用户拥有的首页列表")
     public R<List<HomePageVO>> listMyPages() {
         return R.ok(homePageService.listMyPages());
+    }
+
+    @Override
+    @GetMapping("/user-pages")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:view")
+    @Operation(summary = "分页查询用户自定义首页", description = "后台接口。分页查询当前租户下所有用户自定义首页")
+    public R<PageResult<HomePageVO>> pageUserPages(@Valid @ParameterObject UserHomePageQuery query) {
+        return R.ok(homePageService.pageUserPages(query));
     }
 
     @Override
@@ -104,8 +115,8 @@ public class HomePageController implements HomePageApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "设置默认首页")
     @Operation(summary = "设置默认首页", description = "登录接口。设置当前用户默认首页")
     @Log("设置默认首页")
-    public R<HomePageVO> setDefault(@RequestBody @Valid HomePageIdCommand command) {
-        return R.ok(homePageService.setDefault(command.getId()));
+    public R<HomePageVO> setDefault(@RequestBody @Valid SetDefaultHomePageCommand command) {
+        return R.ok(homePageService.setDefault(command));
     }
 
     @Override

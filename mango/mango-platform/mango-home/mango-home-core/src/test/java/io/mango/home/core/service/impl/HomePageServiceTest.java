@@ -2,18 +2,23 @@ package io.mango.home.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.exception.BizException;
 import io.mango.home.api.command.CreateHomePageCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
 import io.mango.home.api.command.SortHomePagesCommand;
 import io.mango.home.api.query.ResolveHomePageQuery;
 import io.mango.home.api.vo.HomePageVO;
+import io.mango.home.core.mapper.HomeTemplateAuthorizationMapper;
+import io.mango.home.core.mapper.HomeTemplateMapper;
+import io.mango.home.core.mapper.HomeTemplateVersionMapper;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
 import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.org.api.SysOrgApi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,11 +53,28 @@ class HomePageServiceTest {
     @Mock
     private UserHomePreferenceMapper preferenceMapper;
 
+    @Mock
+    private HomeTemplateMapper templateMapper;
+
+    @Mock
+    private HomeTemplateVersionMapper templateVersionMapper;
+
+    @Mock
+    private HomeTemplateAuthorizationMapper templateAuthorizationMapper;
+
+    @Mock
+    private ObjectProvider<IAuthorizationProvider> authorizationProvider;
+
+    @Mock
+    private ObjectProvider<SysOrgApi> sysOrgApiProvider;
+
     private HomePageService homePageService;
 
     @BeforeEach
     void setUp() {
-        homePageService = new HomePageService(homePageMapper, preferenceMapper, new ObjectMapper());
+        homePageService = new HomePageService(homePageMapper, preferenceMapper, templateMapper, templateVersionMapper,
+                templateAuthorizationMapper, new ObjectMapper(), authorizationProvider, sysOrgApiProvider);
+        lenient().when(templateAuthorizationMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -104,10 +128,10 @@ class HomePageServiceTest {
     void resolve_specifiedOwnedPage_returnsPage() {
         UserHomePageEntity page = page(20L, "项目工作台", 10);
         UserHomePreferenceEntity preference = preference(20L);
-        when(homePageMapper.selectOne(any(Wrapper.class))).thenReturn(page);
+        when(homePageMapper.selectList(any(Wrapper.class))).thenReturn(List.of(page));
         when(preferenceMapper.selectOne(any(Wrapper.class))).thenReturn(preference);
         ResolveHomePageQuery query = new ResolveHomePageQuery();
-        query.setHomeId(20L);
+        query.setHomeId("20");
 
         HomePageVO result = homePageService.resolve(query);
 

@@ -4,7 +4,7 @@
 
 `mango-home` 提供当前登录用户的多首页工作台管理能力，配合前端 `@mango/home` 和 `@mango/admin-shell` 首页宿主使用。它面向后台首页、个人工作台、业务看板等需要用户自定义多个页面并设置默认首页的场景。
 
-模块只负责用户首页元数据、默认首页偏好和布局 JSON 持久化，不维护业务小组件数据、不提供角色或租户级默认首页模板，也不接管小组件权限判断。
+模块负责用户首页元数据、默认首页偏好、首页模板、模板发布版本和模板授权的持久化，不维护业务小组件数据，也不接管小组件权限判断。
 
 ## 2. 功能清单
 
@@ -19,6 +19,9 @@
 | 首页排序 | 调整个人首页顺序 | `PUT /home/pages/sort` |
 | 设置默认首页 | 设置登录后默认打开的首页 | `PUT /home/pages/default` |
 | 删除首页 | 删除个人首页，删除默认首页时自动回退 | `DELETE /home/pages` |
+| 首页模板管理 | 管理平台级首页模板草稿、复制、发布、启停和删除 | `GET /home/templates` |
+| 模板授权 | 将已发布模板授权给个人、部门或角色 | `PUT /home/templates/authorizations` |
+| 用户最终视图 | 后台按用户、成员、部门查看最终可见首页集合 | `GET /home/templates/user-pages` |
 
 ## 3. 接入方式
 
@@ -36,7 +39,7 @@
 前端管理端引入：
 
 ```ts
-import { homePageApi } from '@mango/home';
+import { homePageApi, homeTemplateApi } from '@mango/home';
 ```
 
 `@mango/admin-shell` 的首页宿主已接入 `@mango/home`：
@@ -68,6 +71,17 @@ HTTP 接口：
 | `PUT` | `/home/pages/sort` | 保存排序 |
 | `PUT` | `/home/pages/default` | 设置默认首页 |
 | `DELETE` | `/home/pages` | 删除首页 |
+| `GET` | `/home/templates` | 查询首页模板 |
+| `GET` | `/home/templates/detail?id=...` | 查询模板草稿和发布版本 |
+| `POST` | `/home/templates` | 创建模板草稿 |
+| `PUT` | `/home/templates/draft` | 编辑模板草稿 |
+| `POST` | `/home/templates/copy` | 复制模板为新草稿 |
+| `PUT` | `/home/templates/publish` | 发布模板草稿 |
+| `PUT` | `/home/templates/status` | 启停模板 |
+| `DELETE` | `/home/templates` | 删除未授权模板 |
+| `GET` | `/home/templates/authorizations?templateId=...` | 查询模板授权 |
+| `PUT` | `/home/templates/authorizations` | 保存模板授权 |
+| `GET` | `/home/templates/user-pages?userId=...` | 查询用户最终首页集合 |
 
 Java API：
 
@@ -82,6 +96,7 @@ Java API：
 | `HomePageApi#sort` | 保存排序 |
 | `HomePageApi#setDefault` | 设置默认首页 |
 | `HomePageApi#delete` | 删除首页 |
+| `HomeTemplateApi` | 模板草稿、复制、发布、启停、授权和用户首页视图管理 |
 
 布局 JSON 当前结构：
 
@@ -101,6 +116,7 @@ Java API：
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 |
 |------|------|------------|-----------------|----------|
 | Flyway migration | `mango-home-core/src/main/resources/db/migration/home/V1__init_home.sql` | 创建 `sys_user_home_page`、`sys_user_home_preference` | `tenant_id + user_id` 偏好唯一 | 应用启动时由 Flyway 执行 |
+| Flyway migration | `mango-home-core/src/main/resources/db/migration/home/V2__home_template_management.sql` | 创建模板、模板版本、模板授权表，并增加 `default_home_ref` | 模板授权对象唯一 | 应用启动时由 Flyway 执行 |
 
 数据表：
 
@@ -108,6 +124,9 @@ Java API：
 |------|------|
 | `sys_user_home_page` | 当前租户、用户下的个人首页和布局 JSON |
 | `sys_user_home_preference` | 当前租户、用户的默认首页偏好 |
+| `sys_home_template` | 平台级首页模板主表 |
+| `sys_home_template_version` | 模板草稿、发布版本、历史版本 |
+| `sys_home_template_authorization` | 模板授权对象，支持个人、部门、角色 |
 
 关键字段：
 
@@ -117,11 +136,41 @@ Java API：
 | `org_id` | 当前组织上下文，非组织主体时为空 |
 | `user_id` | 当前登录用户 |
 | `default_home_page_id` | 默认首页 ID |
+| `default_home_ref` | 默认首页路由标识，支持个人首页 ID 和 `template:{id}` 授权模板 |
 | `layout_json` | 前端布局 JSON 字符串 |
 
 ## 7. 管理入口
 
-本模块不新增独立后台菜单页面，不新增按钮权限码，也不新增默认套餐或角色授权数据。管理端首页仍使用已有 `首页` 菜单和 `/home` 路由。
+本模块新增后台菜单资源 `首页管理`，位于 `平台能力` 下，包含三个页面：
+
+| 菜单 | 路由 | 组件 key | 用途 |
+|------|------|----------|------|
+| 首页模板 | `/home-management/templates` | `home/templates/index` | 管理模板草稿、复制、发布、启停和授权 |
+| 首页列表 | `/home-management/list` | `home/list/index` | 查询所有用户自定义首页 |
+| 用户首页 | `/home-management/user` | `home/user/index` | 输入或选择用户后渲染该用户最终可见首页，并支持切换不同首页 |
+
+模板管理规则：
+
+- 已发布模板不可直接修改；需要复制生成新草稿后再编辑。
+- 发布草稿后，已授权用户看到最新发布版本。
+- 授权支持个人、部门、角色；部门授权继承到下级部门。
+- 默认优先级为：用户手动默认 > 个人授权默认 > 部门授权默认 > 角色授权默认 > 系统默认 > 首个可见首页。
+- 用户复制授权首页后会生成个人首页副本，不再跟随模板后续发布。
+
+权限码：
+
+| 权限码 | 说明 |
+|--------|------|
+| `home:templates:list` | 查询模板列表 |
+| `home:templates:query` | 查询模板详情 |
+| `home:templates:add` | 新建或复制模板 |
+| `home:templates:edit` | 编辑模板草稿 |
+| `home:templates:publish` | 发布模板 |
+| `home:templates:status` | 启停模板 |
+| `home:templates:delete` | 删除模板 |
+| `home:templates:auth` | 管理模板授权 |
+| `home:list:view` | 查看用户自定义首页列表 |
+| `home:user:view` | 查看并渲染指定用户最终首页 |
 
 接口使用登录访问模式，租户和用户来自 `MangoContextHolder`。前端不传 `tenantId`、`orgId` 和 `userId`。指定 `homeId` 时，后端只允许访问当前用户拥有且启用的首页。
 
