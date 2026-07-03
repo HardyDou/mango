@@ -16,6 +16,9 @@ const uiDependencyLocks = {
   'element-plus': '2.14.1',
   '@element-plus/icons-vue': '2.3.2',
 };
+const uiDependencyAllowedRanges = {
+  'element-plus': new Set(['>=2.14.1 <3']),
+};
 const uiDependencyTemplateLocks = {
   'element-plus': '{{elementPlusVersion}}',
   '@element-plus/icons-vue': '{{iconsVueVersion}}',
@@ -91,10 +94,12 @@ for (const packageJsonPath of collectPackageJsonFiles([
     for (const [dependencyName, lockedVersion] of Object.entries(uiDependencyLocks)) {
       const declaredVersion = dependencies[dependencyName];
       const templateLockedVersion = uiDependencyTemplateLocks[dependencyName];
+      const allowedRanges = uiDependencyAllowedRanges[dependencyName] ?? new Set();
       if (
         declaredVersion
         && declaredVersion !== lockedVersion
         && declaredVersion !== templateLockedVersion
+        && !allowedRanges.has(declaredVersion)
       ) {
         mismatches.push(
           `${relativePath(packageJsonPath)}: ${dependencyType}.${dependencyName} ${declaredVersion} != ${lockedVersion}`,

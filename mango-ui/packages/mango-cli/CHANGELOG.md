@@ -1,5 +1,50 @@
 # @mango/cli Changelog
 
+## 1.0.58 - 2026-07-03
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.7`.
+- Updated release version validation to accept the certified Element Plus peer range while keeping generated project
+  templates on fixed dependency locks.
+- Updated generated project release locks for the platform batch:
+  - `@mango/admin-pages@1.0.15`
+  - `@mango/admin-shell@1.0.33`
+  - `@mango/admin@1.0.38`
+  - `@mango/app-runtime@1.0.3`
+  - `@mango/auth@1.0.11`
+  - `@mango/calendar@1.0.16`
+  - `@mango/cms@1.0.5`
+  - `@mango/common@1.0.12`
+  - `@mango/file@1.0.16`
+  - `@mango/grid-layout@1.0.5`
+  - `@mango/grid-widgets@1.0.10`
+  - `@mango/home@1.0.0`
+  - `@mango/job@1.0.8`
+  - `@mango/link-page@1.0.2`
+  - `@mango/link@1.0.2`
+  - `@mango/notice@1.0.17`
+  - `@mango/numgen@1.0.16`
+  - `@mango/payment@1.0.7`
+  - `@mango/rbac@1.0.10`
+  - `@mango/site-shell@1.0.1`
+  - `@mango/system@1.0.14`
+  - `@mango/template@1.0.16`
+  - `@mango/workflow-business-example@1.0.20`
+  - `@mango/workflow@1.0.21`
+  - `@mango/cli@1.0.58`
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.58 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New generated business projects receive `<mango.version>1.0.7</mango.version>` and the current platform npm package batch.
+- Existing business projects should upgrade backend Maven, frontend Mango packages, and project-local `@mango/cli` as one batch.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.57 - 2026-07-02
 
 ### Changed

@@ -2,30 +2,97 @@
 
 ## Unreleased
 
+## v2026.07.03-maven-1.0.7-platform-release - 2026-07-03
+
 ### New
 
 - Added Resource Registry resource-type dependency ordering for Issue #354. Resource handlers can now declare
   `dependsOnResourceTypes()`, and active resource sync batches are topologically ordered before target handlers run.
+- Added the `mango-home` backend capability and `@mango/home` frontend package for user home pages, homepage templates,
+  template authorization, final user homepage views, and homepage management pages.
+- Added home management E2E coverage and evidence for template list, user view, and end-to-end homepage management flows.
+- Added Aliyun SMS and Tencent Cloud SMS gateways for `mango-notice-channel-sms`, including provider-specific channel
+  configuration fields, SMS template Code support, variable mapping, and sender tests.
+- Added notice SMS setup documentation for backend and frontend business configuration pages.
 
 ### Fixed
 
 - Fixed clean database Resource Registry bootstrap ordering for cross-type declarations such as `IDENTITY_USER` before
   `ORG_MEMBER_BINDING`, `AUTH_ROLE` before `AUTH_SUBJECT_ROLE`, and workflow categories/nodes before
   `WORKFLOW_DEFINITION`. Cyclic type dependencies now fail before any target handler is called.
+- Isolated KV outbox worker claims by topic so notice, realtime, and domain-event workers no longer compete for each
+  other's messages. Historical topic-less `notice.send` messages are inferred as notice messages.
+- Added Flyway module diagnostics for undeclared classpath migration modules so startup fails with actionable module
+  guidance instead of silently skipping migrations.
+- Relaxed Mango frontend peer dependency ranges within the currently certified major versions and documented the
+  unsupported cross-major ranges.
+- Scoped the Maven `module-menu` check to changed files when `mango.check.changedOnly` is enabled, reporting historical
+  out-of-scope findings as excluded issues.
+- Preserved same-origin admin deep-link targets through login by carrying the `redirect` query from route guards to the
+  auth login page and rejecting external redirect values.
 
 ### Upgrade Notes
 
 - Business projects can keep Resource Registry declarations split across files and modules; file scan order is no longer
   the ordering contract for resource types that declare handler dependencies.
+- Business backends should set `<mango.version>1.0.7</mango.version>` to consume the home, notice SMS, outbox topic,
+  Resource Registry ordering, Flyway diagnostics, and Maven checker fixes.
+- Business frontends should upgrade Mango npm packages as a single batch using the versions listed below. Do not mix the
+  new `@mango/home` package and admin shell homepage pages with older `@mango/admin` or `@mango/admin-shell` versions.
+- Generated or upgraded business projects should use `@mango/cli@1.0.58`; its release lock points to Mango Maven
+  `1.0.7` and this npm package batch.
+- To use homepage management, enable `mango-home-starter`, run the home Flyway migrations, synchronize the
+  `home-common-menu.json` resources, and make sure admin frontends register the `@mango/home` pages through the current
+  admin package batch.
+- To use SMS delivery, include `mango-notice-channel-sms`, configure channel provider credentials in Notice channel
+  management, and set the SMS template Code plus variable mapping in Notice business configuration.
+- Business developers can read version-matched docs from GitHub Pages at
+  `/mango/versions/v2026.07.03-maven-1.0.7-platform-release/`, or run `mango docs pull` in a generated project to
+  download `io.mango:mango-docs-bundle:1.0.7` into `.mango/docs/1.0.7`.
+
+### Published Packages
+
+- Maven: Mango backend platform artifacts at `1.0.7` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin-pages@1.0.15`, `@mango/admin-shell@1.0.33`, `@mango/admin@1.0.38`,
+  `@mango/app-runtime@1.0.3`, `@mango/auth@1.0.11`, `@mango/calendar@1.0.16`, `@mango/cms@1.0.5`,
+  `@mango/common@1.0.12`, `@mango/file@1.0.16`, `@mango/grid-layout@1.0.5`,
+  `@mango/grid-widgets@1.0.10`, `@mango/home@1.0.0`, `@mango/job@1.0.8`, `@mango/link-page@1.0.2`,
+  `@mango/link@1.0.2`, `@mango/notice@1.0.17`, `@mango/numgen@1.0.16`, `@mango/payment@1.0.7`,
+  `@mango/rbac@1.0.10`, `@mango/site-shell@1.0.1`, `@mango/system@1.0.14`, `@mango/template@1.0.16`,
+  `@mango/workflow-business-example@1.0.20`, `@mango/workflow@1.0.21`, and `@mango/cli@1.0.58` to
+  `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.03-maven-1.0.7-platform-release` for GitHub Pages and Maven docs bundle
+  `io.mango:mango-docs-bundle:1.0.7`.
+- GitHub Release: `v2026.07.03-maven-1.0.7-platform-release`.
 
 ### Verification
 
-- `mvn -pl mango-platform/mango-resource/mango-resource-core -am -Dtest=ResourceRegistrySyncServiceIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
-- `mvn -pl mango-platform/mango-identity/mango-identity-starter,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-workflow/mango-workflow-core -am -DskipTests compile`
+- `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase release --task "发布最新版本" --paths "CHANGELOG.md,mango/pom.xml,mango-ui/packages/mango-cli,mango-ui/packages/*/package.json,mango-docs"`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-resource/mango-resource-core -am -Dtest=ResourceRegistrySyncServiceIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-home/mango-home-core -am test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-notice/mango-notice-channel-sms -am -DskipTests=false test`
+- `mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -am test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-identity/mango-identity-starter,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-workflow/mango-workflow-core -am -DskipTests compile`
 - `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main`
 - `node mango-pmo/tools/audit-module-readmes.mjs`
 - `node mango-pmo/tools/audit-readme-source-facts.mjs`
-- `PR_BODY_FILE=.runtime/pr-354-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `PR_BODY_FILE=.runtime/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base v2026.07.02-maven-1.0.6-home-widgets-cli-release --head HEAD`
+- `pnpm -C mango-ui release:impact --base=v2026.07.02-maven-1.0.6-home-widgets-cli-release --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.03-maven-1.0.7-platform-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.7 -DskipTests deploy`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.7 -Dartifact=io.mango:mango-admin-starter:1.0.7 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.7 -Dartifact=io.mango.platform.home:mango-home-starter:1.0.7 -Dtransitive=false`
+- `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.7 -Dartifact=io.mango:mango-docs-bundle:1.0.7 -Dtransitive=false`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.03-maven-1.0.7-platform-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.03-maven-1.0.7-platform-release`
 - `git diff --check`
 
 ## v2026.07.02-maven-1.0.6-home-widgets-cli-release - 2026-07-02

@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@mango/api-schema": "^1.0.0",
+    "@mango/api-schema": "1.0.2",
     "@mango/common": "{{mangoCommonVersion}}"
   },
   "peerDependencies": {
