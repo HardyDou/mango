@@ -87,6 +87,7 @@
 - `npm --prefix mango-docs run docs:snapshot -- v2026.07.03-maven-1.0.7-platform-release`
 - `npm --prefix mango-docs run docs:build`
 - `mvn -f mango/pom.xml -Drevision=1.0.7 -DskipTests deploy`
+- `mvn deploy:deploy-file -DgroupId=io.mango -DartifactId=mango-docs-bundle -Dversion=1.0.7 -Dpackaging=jar -Dfile=.runtime/mango-docs-bundle-1.0.7.jar -Durl=http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/ -DrepositoryId=maven-releases`
 - `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.7 -Dartifact=io.mango:mango-admin-starter:1.0.7 -Dtransitive=false`
 - `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.7 -Dartifact=io.mango.platform.home:mango-home-starter:1.0.7 -Dtransitive=false`
 - `mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dmaven.repo.local=.runtime/maven-publish-verify-1.0.7 -Dartifact=io.mango:mango-docs-bundle:1.0.7 -Dtransitive=false`

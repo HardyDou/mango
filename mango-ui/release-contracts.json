@@ -2,8 +2,11 @@
   "npm": {
     "@mango/grid-widgets": {
       "files": [
-        "dist/calendar.js",
-        "dist/calendar.d.ts",
+        "dist/index.js",
+        "dist/index.d.ts",
+        "dist/registry.d.ts",
+        "dist/system.d.ts",
+        "dist/types.d.ts",
         "dist/style.css"
       ]
     },

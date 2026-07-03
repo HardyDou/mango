@@ -65,8 +65,8 @@ function checkChangelog(changelog) {
 }
 
 function latestReleaseSection(changelog) {
-  const match = changelog.match(/^##\s+.+$(?:\n(?!##\s).*)*/m);
-  return match?.[0] || '';
+  const releaseSections = changelog.match(/^##\s+.+$(?:\n(?!##\s).*)*/gm) || [];
+  return releaseSections.find((section) => !/^##\s+Unreleased\s*$/m.test(section)) || '';
 }
 
 function checkRelease() {
