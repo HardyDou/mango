@@ -2,12 +2,18 @@
 
 ## Unreleased
 
+## v2026.07.04-maven-1.0.8-platform-release - 2026-07-04
+
 ### New
 
 - Added file service PDF merge support for Issue #382. Backends can call `FileApi.mergeToPdf(...)` or
   `POST /file/files/merge-pdf` to combine existing file IDs into a new PDF file record in entry order.
 - Added an ImageIO/PDFBox PNG/JPEG to PDF converter in `mango-infra-fileproc`, so mobile photo upload scenarios can
   generate mergeable PDF pages without depending on Aspose.Imaging reflection behavior on Java 21.
+- Added structured site-message actions for Notice. Senders can attach domain action targets, the message center can
+  execute or complete actions, and action requests are tracked through the Notice API and persistence model.
+- Added homepage management follow-up APIs and admin UI support for batch selection, preview, edit, delete, user
+  selector filtering, and editing published pages without changing the currently effective version until republished.
 
 ### Changed
 
@@ -16,9 +22,19 @@
   from these record responses.
 - Simplified frontend `@mango/file` `FileRecord` typing and file list UI. Storage type, bucket/object path, `url`, and
   `direct*` access fields are no longer part of the public file record contract.
+- Updated Notice frontend message detail and message-center rendering to use structured action metadata instead of
+  free-form action assumptions.
+- Updated home management screens to use page-level editing and list operations instead of dialog-only editing for
+  complex homepage content.
 
 ### Upgrade Notes
 
+- Business backends should set `<mango.version>1.0.8</mango.version>` to consume the file PDF merge, Notice action, and
+  homepage management follow-up APIs.
+- Business frontends should upgrade Mango npm packages as one batch using the versions listed below. Do not mix
+  `@mango/admin-shell`, `@mango/home`, `@mango/notice`, or `@mango/file` from this release with older admin packages.
+- Generated or upgraded business projects should use `@mango/cli@1.0.59`; its release lock points to Mango Maven
+  `1.0.8` and this npm package batch.
 - The first PDF merge version only accepts `targetFormat=PDF`; Word output is intentionally out of scope.
 - PDF merge source files must be current-tenant visible and completed. Supported source formats are PDF, JPG/JPEG, PNG,
   TIFF, DOC, and DOCX.
@@ -30,13 +46,47 @@
   service URL.
 - Frontend callers using `FileRecord` should read `previewUrl` for preview actions and `downloadUrl` for download
   actions. Storage-layer diagnostics belong to storage configuration/admin APIs, not the business file record.
+- Notice senders that need message-center actions should populate structured `actions`, `subjects`, and `targets` on
+  `SendNoticeCommand` instead of encoding domain operations in display text.
+- Homepage edits on published pages are draft changes until the page is published again. The currently effective page
+  remains unchanged until republish.
+- Business developers can read version-matched docs from GitHub Pages at
+  `/mango/versions/v2026.07.04-maven-1.0.8-platform-release/`, or run `mango docs pull` in a generated project to
+  download `io.mango:mango-docs-bundle:1.0.8` into `.mango/docs/1.0.8`.
+
+### Published Packages
+
+- Maven: Mango backend platform artifacts at `1.0.8` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin-pages@1.0.16`, `@mango/admin-shell@1.0.35`, `@mango/admin@1.0.40`,
+  `@mango/calendar@1.0.17`, `@mango/cms@1.0.6`, `@mango/file@1.0.17`, `@mango/home@1.0.2`,
+  `@mango/job@1.0.9`, `@mango/link@1.0.3`, `@mango/notice@1.0.18`, `@mango/numgen@1.0.17`,
+  `@mango/payment@1.0.8`, `@mango/system@1.0.15`, `@mango/template@1.0.17`,
+  `@mango/workflow-business-example@1.0.21`, `@mango/workflow@1.0.22`, and `@mango/cli@1.0.59` to
+  `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.04-maven-1.0.8-platform-release` for GitHub Pages and Maven docs bundle
+  `io.mango:mango-docs-bundle:1.0.8`.
+- GitHub Release: `v2026.07.04-maven-1.0.8-platform-release`.
 
 ### Verification
 
+- `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase release --task "发布当前 main 中已合并的短信/首页/通知变更" --paths "mango,mango-ui,mango-business-starter,mango-docs"`
+- `pnpm -C mango-ui release:impact --base=v2026.07.03-maven-1.0.7-platform-release --head=HEAD`
 - `mvn -f mango/pom.xml -pl mango-infra/mango-infra-fileproc/mango-infra-fileproc-core,mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter -am -Dtest=ImageToPdfConvertProviderTest,ConvertAutoConfigurationTest,FileServiceMergeToPdfTest,FileControllerMergeToPdfTest,FileControllerRecordSerializationTest,FileControllerDownloadResponseTest,FileControllerAccessModeTest,FileAccessUrlAssemblerTest -Dsurefire.failIfNoSpecifiedTests=false test`
 - `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-api,mango-platform/mango-file/mango-file-core,mango-platform/mango-file/mango-file-starter -am -DskipTests checkstyle:check`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-home/mango-home-core,mango-platform/mango-home/mango-home-starter,mango-platform/mango-notice/mango-notice-core,mango-platform/mango-notice/mango-notice-starter,mango-platform/mango-notice/mango-notice-channel-site,mango-platform/mango-notice/mango-notice-channel-sms,mango-platform/mango-notice/mango-notice-channel-email,mango-platform/mango-notice/mango-notice-channel-dingtalk,mango-platform/mango-notice/mango-notice-channel-wechat-official,mango-platform/mango-notice/mango-notice-channel-wecom -am -Dtest=HomePageServiceTest,NoticeOutboxDispatcherTest,NoticeChannelResourceHandlerIntegrationTest,NoticeMessageTemplateResourceHandlerIntegrationTest,NoticeAnnouncementServiceIntegrationTest,NoticeServiceIntegrationTest,NoticeAutoConfigurationTest,NoticeControllerAccessModeTest,NoticeControllerTest,SiteNoticeChannelSenderTest,SmsNoticeChannelSenderTest,EmailNoticeChannelSenderTest,DingtalkNoticeChannelSenderTest,WechatOfficialNoticeChannelSenderTest,WecomNoticeChannelSenderTest -Dsurefire.failIfNoSpecifiedTests=false test`
 - `pnpm -C mango-ui -F @mango/file test`
 - `pnpm -C mango-ui -F @mango/file build`
+- `pnpm -C mango-ui -F @mango/notice test`
+- `pnpm -C mango-ui -F @mango/admin-shell build`
+- `pnpm -C mango-ui -F @mango/admin build`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.04-maven-1.0.8-platform-release`
+- `npm --prefix mango-docs run docs:build`
+- `mvn -f mango/pom.xml -Drevision=1.0.8 -DskipTests deploy`
+- `mvn deploy:deploy-file -DgroupId=io.mango -DartifactId=mango-docs-bundle -Dversion=1.0.8 -Dpackaging=jar -Dfile=.runtime/mango-docs-bundle-1.0.8.jar -Durl=http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/ -DrepositoryId=maven-releases`
+- `gh release view v2026.07.04-maven-1.0.8-platform-release`
+- `git diff --check`
 
 ## v2026.07.03-maven-1.0.7-platform-release - 2026-07-03
 

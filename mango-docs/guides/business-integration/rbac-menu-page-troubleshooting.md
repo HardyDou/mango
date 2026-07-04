@@ -176,3 +176,5 @@ pnpm -F @mango/admin-shell build
 - Issue #372 新增 `平台能力 / 首页管理` 菜单目录和 `home/templates/index`、`home/list/index`、`home/user/index` 页面注册，用于首页模板、首页列表和用户首页管理；不改变菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合和租户绑定。排查首页管理菜单不可见、页面 404 或 403 时，除本指南原闭环外，额外确认 `mango-home-starter` 的 `AUTH_MENU` 资源已同步、角色已授权首页管理菜单/按钮资源、前端已注册三个页面 key。
 
 - Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变菜单树接口、页面 `component` key、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，再回到本指南排查菜单、页面和权限链路。
+
+- v2026.07.04-maven-1.0.8-platform-release 仅发布首页管理后续 UI/API、通知动作和文件能力的版本批次；不新增菜单 component key 解析规则，不改变菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。首页管理页面仍按 Issue #372 的菜单资源同步、角色授权和前端页面 key 注册链路排查。

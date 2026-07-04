@@ -221,3 +221,5 @@ pnpm -F @mango/file test
 - PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面、启动和运行时行为。
 
 - Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面、启动方式和表单验收步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，文件上传表单异常仍按文件服务、组件接入和业务字段持久化链路排查。
+
+- v2026.07.04-maven-1.0.8-platform-release 精简文件记录返回字段，业务表单仍只保存文件 ID、文件 token 或文件记录；详情回显、预览和下载应读取文件服务返回的 `previewUrl` 与 `downloadUrl`，不要依赖 `url`、`directPreviewUrl`、`directDownloadUrl`、bucket 或 objectName 等存储层字段。文件上传组件接入方式、权限资源、租户隔离、页面入口和本场景验收步骤不变；文档预览类页面继续按文件 ID 获取预览元数据，`FileRecordVO.previewUrl` 仅表示文件服务预览地址。
