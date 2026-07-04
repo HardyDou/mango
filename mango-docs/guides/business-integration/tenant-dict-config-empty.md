@@ -71,6 +71,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #388 新增站内消息结构化动作字段、动作请求记录和部分业务模块动作消息示例；不写入租户字典、组织、用户或系统配置基础数据，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口和运行时数据行为。排查消息动作目标用户为空或动作不可用时，按业务消息发送对象、当前租户用户数据、动作目标注册和事件处理器排查，不按租户字典配置为空处理。
+
 - Issue #184 明确数据初始化与停机升级治理边界：结构和版本化 SQL 继续归 Flyway，正式小资源归 `META-INF/mango/resources/`，demo 数据归 `META-INF/mango/demo/` 且默认不启用，运行时会被用户修改且升级要保留的数据使用 Resource `INIT_ONLY` 或业务开通/导入流程，大 SQL、磁盘 SQL、远程 URL SQL 和新库 schema baseline pack 走 `mango-infra-persistence` 的模块化 Flyway `locations`。排查租户基础数据为空时，应先判断缺失数据属于正式资源、demo、运行时租户数据还是停机升级 SQL，避免把 demo 或运行时数据混入默认 migration。
 
 - v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和后台品牌配置前端批次；品牌配置复用系统配置资源和文件中心 ID，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。排查品牌图片为空时，同时确认配置资源同步、文件 ID 有效和文件读取权限。
