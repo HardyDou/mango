@@ -4,6 +4,7 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.home.api.HomePageApi;
+import io.mango.home.api.command.BatchDeleteHomePagesCommand;
 import io.mango.home.api.command.CreateHomePageCommand;
 import io.mango.home.api.command.HomePageIdCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
@@ -126,5 +127,43 @@ public class HomePageController implements HomePageApi {
     @Log("删除首页")
     public R<HomePageVO> delete(@RequestBody @Valid HomePageIdCommand command) {
         return R.ok(homePageService.delete(command.getId()));
+    }
+
+    @Override
+    @PutMapping("/admin/name")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:edit")
+    @Operation(summary = "后台重命名用户首页", description = "后台接口。重命名当前租户下指定用户首页")
+    @Log("后台重命名用户首页")
+    public R<HomePageVO> adminRename(@RequestBody @Valid RenameHomePageCommand command) {
+        return R.ok(homePageService.adminRename(command.getId(), command));
+    }
+
+    @Override
+    @PutMapping("/admin/layout")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:edit")
+    @Operation(summary = "后台保存用户首页布局", description = "后台接口。保存当前租户下指定用户首页布局")
+    @Log("后台保存用户首页布局")
+    public R<HomePageVO> adminSaveLayout(@RequestBody @Valid SaveHomePageLayoutCommand command) {
+        return R.ok(homePageService.adminSaveLayout(command.getId(), command));
+    }
+
+    @Override
+    @DeleteMapping("/admin")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:delete")
+    @Operation(summary = "后台删除用户首页", description = "后台接口。删除当前租户下指定用户首页")
+    @Log("后台删除用户首页")
+    public R<Void> adminDelete(@RequestBody @Valid HomePageIdCommand command) {
+        homePageService.adminDelete(command.getId());
+        return R.ok();
+    }
+
+    @Override
+    @DeleteMapping("/admin/batch")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "home:list:delete")
+    @Operation(summary = "后台批量删除用户首页", description = "后台接口。批量删除当前租户下指定用户首页")
+    @Log("后台批量删除用户首页")
+    public R<Void> adminBatchDelete(@RequestBody @Valid BatchDeleteHomePagesCommand command) {
+        homePageService.adminBatchDelete(command);
+        return R.ok();
     }
 }

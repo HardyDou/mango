@@ -133,6 +133,7 @@ export function createMangoWorkspaceAliases(options: MangoWorkspaceAliasOptions)
   }
 
   aliases.push(
+    { find: '@mango/home', replacement: resolve(repoRoot, 'packages/home/src/index.ts') },
     { find: '@mango/common/theme/index.css', replacement: resolve(repoRoot, 'packages/common/theme/index.css') },
     { find: '@mango/common/theme/index.scss', replacement: resolve(repoRoot, 'packages/common/theme/index.scss') },
     { find: /^@mango\/common\/(.*)$/, replacement: `${resolve(repoRoot, 'packages/common')}/$1` },

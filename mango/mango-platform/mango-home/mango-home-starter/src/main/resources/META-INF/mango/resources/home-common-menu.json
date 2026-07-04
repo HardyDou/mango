@@ -125,7 +125,9 @@
                         "component": "home/list/index",
                         "sort": 2,
                         "permissions": [
-                          "home:list:view"
+                          "home:list:view",
+                          "home:list:edit",
+                          "home:list:delete"
                         ],
                         "remark": "查询用户自定义首页列表",
                         "permissionItems": [
@@ -134,6 +136,18 @@
                             "permissionName": "查看首页列表",
                             "sort": 1,
                             "remark": "用户自定义首页查看权限"
+                          },
+                          {
+                            "permissionCode": "home:list:edit",
+                            "permissionName": "编辑用户首页",
+                            "sort": 2,
+                            "remark": "用户自定义首页编辑权限"
+                          },
+                          {
+                            "permissionCode": "home:list:delete",
+                            "permissionName": "删除用户首页",
+                            "sort": 3,
+                            "remark": "用户自定义首页删除权限"
                           }
                         ]
                       },

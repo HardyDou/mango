@@ -111,13 +111,21 @@ public class HomeTemplateService implements IHomeTemplateService {
         HomeLayoutSupport.validate(objectMapper, command.getLayoutJson());
         HomeTemplateEntity template = requiredTemplate(command.getId());
         HomeTemplateVersionEntity draft = draftVersion(template.getId());
-        Require.notNull(draft, "模板没有可编辑草稿，请复制后再编辑");
         template.setName(command.getName().trim());
         template.setUpdatedBy(MangoContextHolder.userId());
-        draft.setLayoutJson(command.getLayoutJson());
-        draft.setUpdatedBy(MangoContextHolder.userId());
         templateMapper.updateById(template);
-        versionMapper.updateById(draft);
+        if (draft == null) {
+            HomeTemplateVersionEntity active = activeVersion(template);
+            Require.notNull(active, "模板没有可编辑版本");
+            draft = newDraftVersion(template.getId(), nextDraftVersionNo(template), command.getLayoutJson(), active.getId());
+            draft.setCreatedBy(MangoContextHolder.userId());
+            draft.setUpdatedBy(MangoContextHolder.userId());
+            versionMapper.insert(draft);
+        } else {
+            draft.setLayoutJson(command.getLayoutJson());
+            draft.setUpdatedBy(MangoContextHolder.userId());
+            versionMapper.updateById(draft);
+        }
         return toVO(template);
     }
 
@@ -436,6 +444,10 @@ public class HomeTemplateService implements IHomeTemplateService {
         draft.setLayoutJson(layoutJson);
         draft.setSourceVersionId(sourceVersionId);
         return draft;
+    }
+
+    private int nextDraftVersionNo(HomeTemplateEntity template) {
+        return template.getActiveVersionNo() == null ? FIRST_DRAFT_VERSION : template.getActiveVersionNo() + 1;
     }
 
     private int nextSort() {

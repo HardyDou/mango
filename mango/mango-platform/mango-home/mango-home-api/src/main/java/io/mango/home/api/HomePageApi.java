@@ -1,6 +1,7 @@
 package io.mango.home.api;
 
 import io.mango.common.result.R;
+import io.mango.home.api.command.BatchDeleteHomePagesCommand;
 import io.mango.home.api.command.CreateHomePageCommand;
 import io.mango.home.api.command.HomePageIdCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
@@ -98,4 +99,36 @@ public interface HomePageApi {
      * @return 删除后的默认首页或内置默认首页。
      */
     R<HomePageVO> delete(@Valid HomePageIdCommand command);
+
+    /**
+     * 后台重命名用户首页。
+     *
+     * @param command 重命名命令。
+     * @return 更新后的首页。
+     */
+    R<HomePageVO> adminRename(@Valid RenameHomePageCommand command);
+
+    /**
+     * 后台保存用户首页布局。
+     *
+     * @param command 布局保存命令。
+     * @return 更新后的首页。
+     */
+    R<HomePageVO> adminSaveLayout(@Valid SaveHomePageLayoutCommand command);
+
+    /**
+     * 后台删除用户首页。
+     *
+     * @param command 首页 ID 命令。
+     * @return 空结果。
+     */
+    R<Void> adminDelete(@Valid HomePageIdCommand command);
+
+    /**
+     * 后台批量删除用户首页。
+     *
+     * @param command 批量删除命令。
+     * @return 空结果。
+     */
+    R<Void> adminBatchDelete(@Valid BatchDeleteHomePagesCommand command);
 }

@@ -35,6 +35,7 @@ type HomeTemplate = {
 type HomePage = {
   id?: string | number;
   routeKey?: string;
+  userId?: string | number;
   templateId?: string | number;
   templateVersionId?: string | number;
   name: string;
@@ -52,6 +53,13 @@ type PageResult<T> = {
   total: number;
   page: number;
   size: number;
+};
+
+type IdentityUser = {
+  userId?: string | number;
+  username?: string;
+  nickname?: string;
+  memberName?: string;
 };
 
 type AuthorizationItem = {
@@ -81,6 +89,15 @@ function layoutJson(title: string): string {
       },
     ],
   });
+}
+
+function formatIdentityUserName(user: IdentityUser): string {
+  return user.nickname || user.memberName || user.username || String(user.userId || '-');
+}
+
+function formatIdentityUserOption(user: IdentityUser): string {
+  const name = formatIdentityUserName(user);
+  return user.username && user.username !== name ? `${name}（${user.username}）` : name;
 }
 
 async function login(page: Page): Promise<LoginData> {
@@ -203,10 +220,12 @@ async function listHomePages(page: Page, token: string): Promise<HomePage[]> {
 }
 
 async function cleanupHomePages(page: Page, token: string, prefix: string) {
-  const pages = await listHomePages(page, token);
+  const result = await api<PageResult<HomePage>>(page, token, `/home/pages/user-pages?page=1&size=200&keyword=${encodeURIComponent(prefix)}`)
+    .catch(async () => ({ list: await listHomePages(page, token), total: 0, page: 1, size: 200 }));
+  const pages = result.list || [];
   for (const item of pages) {
     if (item.id && item.name?.startsWith(prefix)) {
-      await api<HomePage>(page, token, '/home/pages', {
+      await api(page, token, '/home/pages/admin', {
         method: 'DELETE',
         body: JSON.stringify({ id: item.id }),
       }).catch(() => undefined);
@@ -259,6 +278,7 @@ function defaultPageOf(pages: HomePage[]): HomePage | undefined {
 }
 
 test.describe('首页管理 E2E', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(90 * 1000);
 
   test('平台模板发布、授权、默认首页解析和页面管理可用', async ({ page }, testInfo) => {
@@ -286,15 +306,24 @@ test.describe('首页管理 E2E', () => {
     expect(published.activeVersionNo).toBe(1);
     expect(published.activeLayoutJson).toContain('draft-v1');
 
-    const immutableResult = await apiFailure(page, token, '/home/templates/draft', {
+    const editedPublished = await api<HomeTemplate>(page, token, '/home/templates/draft', {
       method: 'PUT',
       body: JSON.stringify({
         id: created.id,
-        name: `${originalName}-非法修改`,
-        layoutJson: layoutJson('should-not-save'),
+        name: originalName,
+        layoutJson: layoutJson('draft-v2-unpublished'),
       }),
     });
-    expect(JSON.stringify(immutableResult)).toMatch(/草稿|不存在|失败|错误/);
+    expect(editedPublished.activeVersionNo).toBe(1);
+    expect(editedPublished.activeLayoutJson).toContain('draft-v1');
+    expect(editedPublished.draftLayoutJson).toContain('draft-v2-unpublished');
+
+    const republished = await api<HomeTemplate>(page, token, '/home/templates/publish', {
+      method: 'PUT',
+      body: JSON.stringify({ id: created.id }),
+    });
+    expect(republished.activeVersionNo).toBe(2);
+    expect(republished.activeLayoutJson).toContain('draft-v2-unpublished');
 
     const copied = await api<HomeTemplate>(page, token, '/home/templates/copy', {
       method: 'POST',
@@ -601,14 +630,27 @@ test.describe('首页管理 E2E', () => {
     await page.locator('[data-action="home.template.auth"]').last().click();
     await page.getByRole('button', { name: '添加个人' }).click();
     const authDialog = page.locator('.el-dialog', { hasText: '模板授权' }).last();
-    await authDialog.getByPlaceholder('用户或部门 ID').last().fill('1');
-    await authDialog.getByPlaceholder('授权来源展示名称').last().fill('admin');
+    await expect(authDialog.locator('[data-field="home.template.auth.subject-id"]')).toHaveCount(0);
+    const usersPage = await api<PageResult<IdentityUser> & { records?: IdentityUser[] }>(
+      page,
+      token,
+      '/identity/users/page?page=1&size=20&status=1',
+    );
+    const selectedUser = (usersPage.records || usersPage.list || []).find(item => item.userId);
+    expect(selectedUser?.userId).toBeTruthy();
+    await authDialog.locator('[data-field="home.template.auth.subject-user"]').last().click();
+    await page
+      .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: formatIdentityUserOption(selectedUser!) })
+      .first()
+      .click();
+    await expect(authDialog.locator('[data-field="home.template.auth.subject-name"]').last())
+      .toContainText(formatIdentityUserName(selectedUser!));
     await authDialog.locator('[data-action="home.template.auth.save"]').click();
     await expect(authDialog).toBeHidden({ timeout: 15000 });
 
     await page.goto('/#/home-management/user');
     await expect(page.locator('[data-page="home.user"]')).toBeVisible({ timeout: 15000 });
-    await page.locator('[data-field="home.user.user-id"]').fill('1');
+    await page.locator('[data-field="home.user.user-id"]').fill(String(selectedUser!.userId));
     const userPagesResponsePromise = page.waitForResponse(response =>
       response.url().includes('/api/home/templates/user-pages') && response.status() === 200
     );
@@ -621,9 +663,10 @@ test.describe('首页管理 E2E', () => {
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
-  test('首页列表默认展示所有用户定义首页且不要求输入用户 ID', async ({ page }, testInfo) => {
+  test('首页列表支持用户选择、操作列和批量删除', async ({ page }, testInfo) => {
     const prefix = `E2E首页列表${Date.now()}`;
-    const token = (await login(page)).accessToken;
+    const loginData = await login(page);
+    const token = loginData.accessToken;
 
     await cleanupHomePages(page, token, 'E2E首页列表');
     const created = await api<HomePage>(page, token, '/home/pages', {
@@ -634,22 +677,85 @@ test.describe('首页管理 E2E', () => {
         setDefault: false,
       }),
     });
+    const batchOne = await api<HomePage>(page, token, '/home/pages', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: `${prefix}-批量删除A`,
+        layoutJson: layoutJson('batch-delete-a'),
+        setDefault: false,
+      }),
+    });
+    const batchTwo = await api<HomePage>(page, token, '/home/pages', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: `${prefix}-批量删除B`,
+        layoutJson: layoutJson('batch-delete-b'),
+        setDefault: false,
+      }),
+    });
     expect(created.id).toBeTruthy();
+    expect(batchOne.id).toBeTruthy();
+    expect(batchTwo.id).toBeTruthy();
 
     const pageResult = await api<PageResult<HomePage>>(page, token, '/home/pages/user-pages?page=1&size=20');
     expect(pageResult.list.some(item => item.id === created.id && item.sourceType === 'USER')).toBe(true);
     expect(pageResult.list.every(item => item.sourceType === 'USER')).toBe(true);
+    const usersPage = await api<PageResult<IdentityUser> & { records?: IdentityUser[] }>(
+      page,
+      token,
+      '/identity/users/page?page=1&size=200&status=1',
+    );
+    const currentUserId = created.userId || loginData.userId;
+    const selectedUser = (usersPage.records || usersPage.list || [])
+      .find(item => String(item.userId) === String(currentUserId))
+      || (usersPage.records || usersPage.list || []).find(item => item.userId);
+    expect(selectedUser?.userId).toBeTruthy();
 
     await page.goto('/#/home-management/list');
     await expect(page.locator('[data-page="home.list"]')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(`${prefix}-用户定义页`).first()).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('用户定义').first()).toBeVisible();
+    await expect(page.locator('[data-field="home.list.user-id"]')).toHaveCount(0);
+    await expect(page.locator('[data-field="home.list.user-selector"]')).toBeVisible();
     await capture(page, testInfo, '04-home-list-default-user-pages.png');
 
     await page.locator('[data-field="home.list.keyword"]').fill(prefix);
     await page.locator('[data-action="home.list.search"]').click();
     await expect(page.getByText(`${prefix}-用户定义页`).first()).toBeVisible({ timeout: 15000 });
+
+    await page.locator('[data-field="home.list.user-selector"]').click();
+    await page
+      .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: formatIdentityUserOption(selectedUser!) })
+      .first()
+      .click();
+    await expect(page.getByText(`${prefix}-批量删除A`).first()).toBeVisible({ timeout: 15000 });
+
+    await page.locator(`[data-action="home.list.preview"][data-record-key="home-page:${created.id}"]`).click();
+    await expect(page.locator('[data-surface="home.list.preview"]')).toBeVisible({ timeout: 15000 });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-surface="home.list.preview"]')).toBeHidden({ timeout: 15000 });
+
+    const editedName = `${prefix}-用户定义页-已编辑`;
+    await page.locator(`[data-action="home.list.edit"][data-record-key="home-page:${created.id}"]`).click();
+    await expect(page.locator('[data-surface="home.list.editor"]')).toBeVisible({ timeout: 15000 });
+    await page.locator('[data-field="home.list.editor.name"]').fill(editedName);
+    await page.locator('[data-action="home.list.save"]').click();
+    await expect(page.locator('[data-surface="home.list.editor"]')).toBeHidden({ timeout: 15000 });
+    await expect(page.getByText(editedName).first()).toBeVisible({ timeout: 15000 });
+
+    await page.locator(`[data-action="home.list.delete"][data-record-key="home-page:${created.id}"]`).click();
+    await page.getByRole('button', { name: '确认删除' }).click();
+    await expect(page.getByText(editedName).first()).toBeHidden({ timeout: 15000 });
+
+    await page.locator(`[data-action="home.list.select-row"][data-record-key="home-page:${batchOne.id}"]`).click();
+    await page.locator(`[data-action="home.list.select-row"][data-record-key="home-page:${batchTwo.id}"]`).click();
+    await expect(page.locator('[data-surface="home.list.batch-toolbar"]')).toContainText('已选 2 项');
+    await page.locator('[data-action="home.list.batch-delete"]').click();
+    await page.getByRole('button', { name: '确认删除' }).click();
+    await expect(page.getByText(`${prefix}-批量删除A`).first()).toBeHidden({ timeout: 15000 });
+    await expect(page.getByText(`${prefix}-批量删除B`).first()).toBeHidden({ timeout: 15000 });
+
     await page.locator('[data-action="home.list.reset"]').click();
-    await expect(page.getByText(`${prefix}-用户定义页`).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(prefix).first()).toBeHidden({ timeout: 15000 });
   });
 });

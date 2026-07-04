@@ -19,6 +19,7 @@
 | 首页排序 | 保存首页页签顺序 | `homePageApi.sort` |
 | 设置默认首页 | 设置登录后默认首页 | `homePageApi.setDefault` |
 | 删除首页 | 删除当前用户首页 | `homePageApi.delete` |
+| 后台维护用户首页 | 重命名、保存布局、单条或批量删除租户内用户首页 | `homePageApi.adminRename` / `homePageApi.adminSaveLayout` / `homePageApi.adminDelete` / `homePageApi.adminBatchDelete` |
 | 查询模板 | 获取后台首页模板列表 | `homeTemplateApi.list` |
 | 编辑模板草稿 | 新建或保存模板草稿布局 | `homeTemplateApi.create` / `homeTemplateApi.updateDraft` |
 | 发布模板 | 发布草稿，授权用户生效 | `homeTemplateApi.publish` |
@@ -78,7 +79,7 @@ await homeTemplateApi.publish(templateId);
 | 菜单 | 组件 key | 用途 |
 |------|----------|------|
 | 首页模板 | `home/templates/index` | 管理模板草稿、复制、发布、启停和授权 |
-| 首页列表 | `home/list/index` | 查询所有用户自定义首页 |
+| 首页列表 | `home/list/index` | 按用户查询、预览、编辑、单条或批量删除用户自定义首页 |
 | 用户首页 | `home/user/index` | 输入或选择用户后查看该用户最终可见首页 |
 
 ## 8. 快速开始

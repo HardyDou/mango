@@ -19,6 +19,7 @@
 | 首页排序 | 调整个人首页顺序 | `PUT /home/pages/sort` |
 | 设置默认首页 | 设置登录后默认打开的首页 | `PUT /home/pages/default` |
 | 删除首页 | 删除个人首页，删除默认首页时自动回退 | `DELETE /home/pages` |
+| 后台维护用户首页 | 按租户编辑、预览、单条或批量删除用户首页 | `PUT /home/pages/admin/layout` |
 | 首页模板管理 | 管理平台级首页模板草稿、复制、发布、启停和删除 | `GET /home/templates` |
 | 模板授权 | 将已发布模板授权给个人、部门或角色 | `PUT /home/templates/authorizations` |
 | 用户最终视图 | 后台按用户、成员、部门查看最终可见首页集合 | `GET /home/templates/user-pages` |
@@ -71,6 +72,10 @@ HTTP 接口：
 | `PUT` | `/home/pages/sort` | 保存排序 |
 | `PUT` | `/home/pages/default` | 设置默认首页 |
 | `DELETE` | `/home/pages` | 删除首页 |
+| `PUT` | `/home/pages/admin/name` | 后台重命名租户内用户首页 |
+| `PUT` | `/home/pages/admin/layout` | 后台保存租户内用户首页布局 |
+| `DELETE` | `/home/pages/admin` | 后台删除租户内用户首页，包括停用首页 |
+| `DELETE` | `/home/pages/admin/batch` | 后台批量删除租户内用户首页，包括停用首页 |
 | `GET` | `/home/templates` | 查询首页模板 |
 | `GET` | `/home/templates/detail?id=...` | 查询模板草稿和发布版本 |
 | `POST` | `/home/templates` | 创建模板草稿 |
@@ -96,6 +101,10 @@ Java API：
 | `HomePageApi#sort` | 保存排序 |
 | `HomePageApi#setDefault` | 设置默认首页 |
 | `HomePageApi#delete` | 删除首页 |
+| `HomePageApi#adminRename` | 后台重命名租户内用户首页 |
+| `HomePageApi#adminSaveLayout` | 后台保存租户内用户首页布局 |
+| `HomePageApi#adminDelete` | 后台删除租户内用户首页 |
+| `HomePageApi#adminBatchDelete` | 后台批量删除租户内用户首页 |
 | `HomeTemplateApi` | 模板草稿、复制、发布、启停、授权和用户首页视图管理 |
 
 布局 JSON 当前结构：
@@ -146,12 +155,12 @@ Java API：
 | 菜单 | 路由 | 组件 key | 用途 |
 |------|------|----------|------|
 | 首页模板 | `/home-management/templates` | `home/templates/index` | 管理模板草稿、复制、发布、启停和授权 |
-| 首页列表 | `/home-management/list` | `home/list/index` | 查询所有用户自定义首页 |
+| 首页列表 | `/home-management/list` | `home/list/index` | 按用户查询、预览、编辑、单条或批量删除用户自定义首页 |
 | 用户首页 | `/home-management/user` | `home/user/index` | 输入或选择用户后渲染该用户最终可见首页，并支持切换不同首页 |
 
 模板管理规则：
 
-- 已发布模板不可直接修改；需要复制生成新草稿后再编辑。
+- 已发布模板可以继续编辑；保存会生成或更新未发布草稿，只有再次发布后才影响已授权用户。
 - 发布草稿后，已授权用户看到最新发布版本。
 - 授权支持个人、部门、角色；部门授权继承到下级部门。
 - 默认优先级为：用户手动默认 > 个人授权默认 > 部门授权默认 > 角色授权默认 > 系统默认 > 首个可见首页。
@@ -170,6 +179,8 @@ Java API：
 | `home:templates:delete` | 删除模板 |
 | `home:templates:auth` | 管理模板授权 |
 | `home:list:view` | 查看用户自定义首页列表 |
+| `home:list:edit` | 编辑用户自定义首页 |
+| `home:list:delete` | 单条或批量删除用户自定义首页 |
 | `home:user:view` | 查看并渲染指定用户最终首页 |
 
 接口使用登录访问模式，租户和用户来自 `MangoContextHolder`。前端不传 `tenantId`、`orgId` 和 `userId`。指定 `homeId` 时，后端只允许访问当前用户拥有且启用的首页。

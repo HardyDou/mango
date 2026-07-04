@@ -1,5 +1,6 @@
 import { del, get, post, put } from '@mango/common/utils/request';
 import type {
+  BatchDeleteHomePagesCommand,
   CreateHomePageCommand,
   CreateHomeTemplateCommand,
   HomePageVO,
@@ -55,6 +56,20 @@ export const homePageApi = {
   delete(id: string) {
     const command: HomePageIdCommand = { id };
     return del<HomePageVO>('/home/pages', { data: command });
+  },
+  adminRename(id: string, command: Omit<RenameHomePageCommand, 'id'>) {
+    return put<HomePageVO>('/home/pages/admin/name', { ...command, id });
+  },
+  adminSaveLayout(id: string, command: Omit<SaveHomePageLayoutCommand, 'id'>) {
+    return put<HomePageVO>('/home/pages/admin/layout', { ...command, id });
+  },
+  adminDelete(id: string) {
+    const command: HomePageIdCommand = { id };
+    return del<void>('/home/pages/admin', { data: command });
+  },
+  adminBatchDelete(ids: BatchDeleteHomePagesCommand['ids']) {
+    const command: BatchDeleteHomePagesCommand = { ids };
+    return del<void>('/home/pages/admin/batch', { data: command });
   },
 };
 

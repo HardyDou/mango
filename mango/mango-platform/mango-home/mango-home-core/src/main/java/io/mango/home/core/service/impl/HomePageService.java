@@ -10,6 +10,7 @@ import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.home.api.command.BatchDeleteHomePagesCommand;
 import io.mango.home.api.command.CreateHomePageCommand;
 import io.mango.home.api.command.RenameHomePageCommand;
 import io.mango.home.api.command.SaveHomePageLayoutCommand;
@@ -220,6 +221,47 @@ public class HomePageService implements IHomePageService {
                     fallback == null ? null : HomeRouteKeys.parseUserPageId(fallback.getRouteKey()));
         }
         return resolve(new ResolveHomePageQuery());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public HomePageVO adminRename(Long id, RenameHomePageCommand command) {
+        Require.notNull(command, "重命名命令不能为空");
+        Require.notBlank(command.getName(), "首页名称不能为空");
+        UserHomePageEntity entity = requiredTenantEnabled(id);
+        entity.setName(command.getName().trim());
+        entity.setUpdatedBy(MangoContextHolder.userId());
+        homePageMapper.updateById(entity);
+        return toVO(entity, isDefaultRoute(HomeRouteKeys.user(entity.getId()), preferenceForUser(entity.getUserId())));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public HomePageVO adminSaveLayout(Long id, SaveHomePageLayoutCommand command) {
+        Require.notNull(command, "布局保存命令不能为空");
+        Require.notBlank(command.getLayoutJson(), "layoutJson不能为空");
+        HomeLayoutSupport.validate(objectMapper, command.getLayoutJson());
+        UserHomePageEntity entity = requiredTenantEnabled(id);
+        entity.setLayoutJson(command.getLayoutJson());
+        entity.setUpdatedBy(MangoContextHolder.userId());
+        homePageMapper.updateById(entity);
+        return toVO(entity, isDefaultRoute(HomeRouteKeys.user(entity.getId()), preferenceForUser(entity.getUserId())));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adminDelete(Long id) {
+        deleteAdminPage(requiredTenantPage(id));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adminBatchDelete(BatchDeleteHomePagesCommand command) {
+        Require.notNull(command, "批量删除命令不能为空");
+        Require.notEmpty(command.getIds(), "首页ID不能为空");
+        for (Long id : new LinkedHashSet<>(command.getIds())) {
+            deleteAdminPage(requiredTenantPage(id));
+        }
     }
 
     private List<HomePageVO> visiblePages(UserHomePreferenceEntity preference) {
@@ -443,6 +485,39 @@ public class HomePageService implements IHomePageService {
         return entity;
     }
 
+    private UserHomePageEntity requiredTenantEnabled(Long id) {
+        Require.notNull(id, "首页ID不能为空");
+        UserHomePageEntity entity = homePageMapper.selectOne(tenantWrapper()
+                .eq(UserHomePageEntity::getId, id)
+                .eq(UserHomePageEntity::getEnabled, true));
+        Require.notNull(entity, "首页不存在或无权访问");
+        return entity;
+    }
+
+    private UserHomePageEntity requiredTenantPage(Long id) {
+        Require.notNull(id, "首页ID不能为空");
+        UserHomePageEntity entity = homePageMapper.selectOne(tenantWrapper()
+                .eq(UserHomePageEntity::getId, id));
+        Require.notNull(entity, "首页不存在或无权访问");
+        return entity;
+    }
+
+    private void deleteAdminPage(UserHomePageEntity entity) {
+        clearDeletedDefaultRef(entity);
+        homePageMapper.delete(tenantWrapper().eq(UserHomePageEntity::getId, entity.getId()));
+    }
+
+    private void clearDeletedDefaultRef(UserHomePageEntity entity) {
+        UserHomePreferenceEntity preference = preferenceForUser(entity.getUserId());
+        if (!isDefaultRoute(HomeRouteKeys.user(entity.getId()), preference)) {
+            return;
+        }
+        preference.setDefaultHomePageId(null);
+        preference.setDefaultHomeRef(null);
+        preference.setUpdatedBy(MangoContextHolder.userId());
+        preferenceMapper.updateById(preference);
+    }
+
     private UserHomePageEntity selectOwnedEnabled(Long id) {
         return homePageMapper.selectOne(baseWrapper()
                 .eq(UserHomePageEntity::getId, id)
@@ -469,6 +544,11 @@ public class HomePageService implements IHomePageService {
         return new LambdaQueryWrapper<UserHomePageEntity>()
                 .eq(UserHomePageEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .eq(UserHomePageEntity::getUserId, HomeContextSupport.currentUserId());
+    }
+
+    private LambdaQueryWrapper<UserHomePageEntity> tenantWrapper() {
+        return new LambdaQueryWrapper<UserHomePageEntity>()
+                .eq(UserHomePageEntity::getTenantId, HomeContextSupport.currentTenantId());
     }
 
     private LambdaQueryWrapper<UserHomePageEntity> userHomePageWrapper(UserHomePageQuery query) {
@@ -531,6 +611,15 @@ public class HomePageService implements IHomePageService {
         return new LambdaQueryWrapper<UserHomePreferenceEntity>()
                 .eq(UserHomePreferenceEntity::getTenantId, HomeContextSupport.currentTenantId())
                 .eq(UserHomePreferenceEntity::getUserId, HomeContextSupport.currentUserId());
+    }
+
+    private UserHomePreferenceEntity preferenceForUser(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return preferenceMapper.selectOne(new LambdaQueryWrapper<UserHomePreferenceEntity>()
+                .eq(UserHomePreferenceEntity::getTenantId, HomeContextSupport.currentTenantId())
+                .eq(UserHomePreferenceEntity::getUserId, userId));
     }
 
     private HomePageVO builtInDefault() {
