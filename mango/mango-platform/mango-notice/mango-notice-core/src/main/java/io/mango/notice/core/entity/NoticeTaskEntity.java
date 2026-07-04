@@ -32,6 +32,28 @@ public class NoticeTaskEntity {
 
     private String channelTypes;
 
+    private String messageScene;
+
+    private String messageSubjectType;
+
+    private String messageSubjectId;
+
+    private String messageSubjectName;
+
+    private String messageTargetType;
+
+    private String messageTargetKey;
+
+    private String messageTargetParamsJson;
+
+    private String messageTargetOpenMode;
+
+    private String messageDataJson;
+
+    private String messageActionsJson;
+
+    private LocalDateTime messageExpireTime;
+
     private NoticeSendMode sendMode;
 
     private LocalDateTime scheduledTime;

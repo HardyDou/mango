@@ -2,7 +2,12 @@ package io.mango.workflow.starter.notice;
 
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.DomainEventSubscriber;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.workflow.api.WorkflowEventTypes;
 import org.springframework.context.ApplicationEventPublisher;
@@ -10,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,13 +53,20 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         if (!StringUtils.hasText(bizType)) {
             return;
         }
+        Map<String, Object> params = toParams(event);
+        NoticeSiteMessageTargetCommand target = target(event, params);
         NoticeSendEvent.NoticeSendEventBuilder builder = NoticeSendEvent.builder()
                 .bizType(bizType)
                 .bizId(firstText(event.getBusinessKey(), stringValue(payload(event).get("processInstanceId"))))
                 .recipientRuleCode(RECIPIENT_RULE_CODE)
                 .priority(priority(event.getEventType()))
                 .idempotentKey("workflow:" + event.getEventId())
-                .params(toParams(event));
+                .params(params)
+                .messageScene(bizType)
+                .messageSubject(subject(event, params))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(List.of(routeAction(actionLabel(event.getEventType()), target)));
         Long assigneeId = parseLong(stringValue(payload(event).get("assignee")));
         if (assigneeId != null) {
             builder.userId(assigneeId);
@@ -88,6 +101,58 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         params.putIfAbsent("processName", firstText(stringValue(params.get("definitionName")),
                 stringValue(params.get("businessType")), "流程"));
         return params;
+    }
+
+    private NoticeSiteMessageSubjectCommand subject(DomainEvent event, Map<String, Object> params) {
+        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+        subject.setSubjectType("WORKFLOW_PROCESS");
+        subject.setSubjectId(firstText(stringValue(params.get("processInstanceId")), event.getAggregateId(), event.getBusinessKey()));
+        subject.setSubjectName(firstText(stringValue(params.get("processName")), event.getBusinessType(), "流程"));
+        return subject;
+    }
+
+    private NoticeSiteMessageTargetCommand target(DomainEvent event, Map<String, Object> params) {
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+        target.setTargetKey(workflowTargetKey(event.getEventType(), params));
+        target.setParams(params);
+        return target;
+    }
+
+    private String workflowTargetKey(String eventType, Map<String, Object> params) {
+        if ((WorkflowEventTypes.TASK_ADVANCED.equals(eventType) || WorkflowEventTypes.TASK_REJECTED.equals(eventType))
+                && StringUtils.hasText(stringValue(params.get("taskId")))) {
+            return "workflow:task:detail";
+        }
+        if (WorkflowEventTypes.PROCESS_COMPLETED.equals(eventType)
+                || WorkflowEventTypes.PROCESS_ENDED.equals(eventType)) {
+            return "workflow:task:done";
+        }
+        if (WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)) {
+            return "workflow:task:initiated";
+        }
+        return "workflow:task:todo";
+    }
+
+    private String actionLabel(String eventType) {
+        if (WorkflowEventTypes.TASK_REJECTED.equals(eventType)
+                || WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)) {
+            return "查看驳回";
+        }
+        if (WorkflowEventTypes.PROCESS_COMPLETED.equals(eventType)
+                || WorkflowEventTypes.PROCESS_ENDED.equals(eventType)) {
+            return "查看已办";
+        }
+        return "处理任务";
+    }
+
+    private NoticeSiteMessageActionCommand routeAction(String actionLabel, NoticeSiteMessageTargetCommand target) {
+        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
+        action.setActionCode("OPEN_WORKFLOW");
+        action.setActionLabel(actionLabel);
+        action.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
+        action.setTarget(target);
+        return action;
     }
 
     private Map<String, Object> payload(DomainEvent event) {

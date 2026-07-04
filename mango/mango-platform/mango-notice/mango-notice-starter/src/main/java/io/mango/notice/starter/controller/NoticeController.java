@@ -7,6 +7,8 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
+import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
@@ -37,6 +39,7 @@ import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
+import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
@@ -383,6 +386,26 @@ public class NoticeController implements NoticeApi {
  public R<NoticeSiteMessageVO> getSiteMessage(@Parameter(description = "系统消息ID") @PathVariable Long id) {
  NoticeSiteMessageVO message = noticeService.getSiteMessage(id, currentUserId());
  return message == null ? R.fail(404, "系统消息不存在") : R.ok(message);
+ }
+
+ @Override
+ @PostMapping("/site/my/messages/{id}/actions/{actionCode}")
+ @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "执行我的系统消息动作")
+ @Operation(summary = "执行我的系统消息动作", description = "登录接口。提交当前用户可见系统消息的受控动作入口")
+ public R<NoticeSiteMessageActionRequestVO> executeSiteMessageAction(
+ @Parameter(description = "系统消息ID") @PathVariable Long id,
+ @Parameter(description = "动作编码") @PathVariable String actionCode,
+ @RequestBody(required = false) @Valid ExecuteNoticeSiteMessageActionCommand command) {
+ return R.ok(noticeService.executeSiteMessageAction(id, actionCode, currentUserId(), command));
+ }
+
+ @Override
+ @PostMapping("/internal/site/actions/complete")
+ @ApiAccess(mode = ApiResourceAccessMode.INTERNAL, desc = "内部完成系统消息动作")
+ @Operation(summary = "内部完成系统消息动作", description = "内部接口。业务模块完成动作处理后回写请求和动作状态")
+ public R<NoticeSiteMessageActionRequestVO> completeSiteMessageAction(
+ @RequestBody @Valid CompleteNoticeSiteMessageActionCommand command) {
+ return R.ok(noticeService.completeSiteMessageAction(command));
  }
 
  @Override

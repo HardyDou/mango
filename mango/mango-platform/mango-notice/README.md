@@ -144,6 +144,176 @@ registerMangoNoticeAdminShell();
 7. 业务后端调用 `NoticeApi.send`，传入 `bizType`、`bizId`、接收人和 `params`。
 8. 在任务、发送记录、站内信列表里确认发送结果。
 
+### 5.1 站内信动作协议
+
+站内信动作协议用于让一条站内信携带业务对象、命名目标和操作按钮。业务方发送消息时一次性声明这些结构，通知中心负责保存、展示、校验、幂等提交和事件转发。
+
+适用场景：
+
+| 场景 | 推荐交互 | 说明 |
+|------|----------|------|
+| 进入业务页面查看或处理 | `ROUTE` | 打开已注册的命名页面目标，允许重复进入。 |
+| 进入自定义交互流程 | `FLOW` | 打开业务前端注册的命名流程目标，允许重复进入。 |
+| 后台提交一个业务命令 | `EVENT` | 点击后提交动作请求，进入 `PROCESSING`，防重复点击。 |
+
+发送时不要把业务 ID、对象 ID、任务 ID、订单号等隐藏上下文拼到消息正文里。正文只写用户需要阅读的内容；业务上下文放到 `messageSubject`、`messageTarget.params`、`messageData` 和动作 `target.params` 中。站内信列表和详情不会默认展示这些隐藏上下文，点击按钮时会把它们结构化传回业务目标或业务事件。
+
+#### 5.1.1 发送字段
+
+| 字段 | 必填 | 用途 | 展示给用户 |
+|------|------|------|------------|
+| `bizType` | 是 | 通知业务类型，关联模板、优先级、幂等策略和业务域配置 | 通常不直接展示 |
+| `bizId` | 否 | 当前业务记录键，进入事件的 `businessKey` | 不默认展示 |
+| `params` | 否 | 模板渲染参数，用于标题和正文模板 | 渲染后的标题/正文会展示 |
+| `messageScene` | 否 | 消息场景，例如 `workflow.task.assigned` | 不默认展示 |
+| `messageSubject.subjectType` | 否 | 业务对象类型，例如 `WORKFLOW_TASK` | 不默认展示 |
+| `messageSubject.subjectId` | 否 | 业务对象 ID，例如任务 ID、订单 ID | 不默认展示 |
+| `messageSubject.subjectName` | 否 | 业务对象名称快照，用于必要的用户可读摘要 | 可在流程弹窗显示 |
+| `messageTarget.targetType` | 否 | 消息默认目标，取值 `NONE`、`ROUTE`、`FLOW` | 不直接展示 |
+| `messageTarget.targetKey` | 否 | 命名目标键，例如 `workflow:task-detail` | 不直接展示 |
+| `messageTarget.params` | 否 | 消息级隐藏参数，所有动作默认继承 | 不默认展示 |
+| `messageData` | 否 | 业务扩展数据，例如流程实例、任务、订单、锁定记录 | 不默认展示 |
+| `messageActions` | 否 | 站内信按钮列表 | 展示按钮名称 |
+
+`targetKey` 是命名目标，不是页面地址。业务前端需要提前注册这个名称；未注册或当前用户无权访问时，前端会提示“目标未注册或当前无权访问”。
+
+#### 5.1.2 动作字段
+
+| 字段 | 必填 | 用途 |
+|------|------|------|
+| `actionCode` | 是 | 动作稳定编码，同一条消息内不能重复。 |
+| `actionLabel` | 是 | 按钮名称，由业务方定义，例如“进入审批”“确认告警”。 |
+| `interactionType` | 否 | `EVENT` 或 `ROUTE`，默认 `EVENT`。`FLOW` 通过 `interactionType=ROUTE` 加 `target.targetType=FLOW` 表达。 |
+| `eventType` | `EVENT` 必填 | 后端点击后发布的领域事件类型。 |
+| `target` | `ROUTE/FLOW` 必填 | 动作自己的命名目标，可覆盖消息默认目标。 |
+| `target.params` | 否 | 动作级隐藏参数，会和消息级参数合并后传回。 |
+| `confirmRequired` | 否 | `EVENT` 点击前是否弹确认框。 |
+| `inputSchema` | 否 | 动作输入 JSON Schema，预留给需要表单输入的动作。 |
+| `sortOrder` | 否 | 按钮排序。 |
+| `expireTime` | 否 | 动作过期时间。 |
+
+#### 5.1.3 点击后的参数回传
+
+不管 `ROUTE`、`FLOW` 还是 `EVENT`，前端点击按钮时都会整理同一份隐藏上下文：
+
+```json
+{
+  "bizType": "WORKFLOW_TASK_ASSIGNED",
+  "bizId": "WF-20260704-001",
+  "bizGroup": "WORKFLOW",
+  "bizName": "工作流待办",
+  "messageScene": "workflow.task.assigned",
+  "messageId": "1234567890",
+  "actionCode": "OPEN_TASK",
+  "subject": {
+    "subjectType": "WORKFLOW_TASK",
+    "subjectId": "TASK-001",
+    "subjectName": "费用报销审批"
+  },
+  "data": {
+    "processInstanceId": "PI-001",
+    "taskId": "TASK-001"
+  },
+  "processInstanceId": "PI-001",
+  "taskId": "TASK-001"
+}
+```
+
+合并顺序是：消息级 `messageTarget.params` -> 动作级 `target.params` -> 通知中心补充的标准上下文。业务方放在 `messageData` 中的数据会保留在 `data` 下；业务方放在目标参数中的数据会直接出现在顶层，便于页面、流程或事件订阅方读取。
+
+#### 5.1.4 ROUTE
+
+`ROUTE` 用于进入已注册的命名页面目标。它不提交后端业务命令，点击后不会自动改变动作状态，也不会禁用按钮。用户关闭页面后可以再次点击进入。
+
+业务方需要准备：
+
+1. 发送消息时设置 `target.targetType=ROUTE`。
+2. 设置 `target.targetKey` 为前端已注册的命名页面目标。
+3. 把页面需要的业务参数放入 `target.params` 或 `messageTarget.params`。
+4. 前端命名目标读取参数后自行加载业务数据和校验权限。
+
+#### 5.1.5 FLOW
+
+`FLOW` 用于进入自定义交互流程，例如安全处置、支付异常处理、补偿确认、跨模块处理向导。它不是页面地址，也不等同于后端事件。`FLOW` 本身仍是前端交互入口，点击后不会自动禁用按钮。
+
+业务方需要准备：
+
+1. 发送消息时设置 `interactionType=ROUTE`。
+2. 设置动作 `target.targetType=FLOW`。
+3. 设置动作 `target.targetKey` 为业务前端注册的流程键，例如 `auth:security:resolve`。
+4. 把流程所需业务参数放入 `target.params`。
+5. 业务前端或微前端注册对应流程处理器；未注册时会进入兜底提示。
+
+跨微前端时，仍使用 `targetKey + params` 的命名协议。宿主或微前端运行时负责把目标键分发给对应子应用，通知消息不携带子应用地址。
+
+#### 5.1.6 EVENT
+
+`EVENT` 用于提交后端业务命令，例如“确认告警”“标记处理”“确认风险”“触发补偿”。点击后通知中心执行以下流程：
+
+1. 校验当前用户能看到该站内信。
+2. 校验动作存在、类型为 `EVENT`、`eventType` 已配置、动作未过期且可执行。
+3. 生成动作请求，`requestId` 使用 `messageId + actionCode + userId` 幂等。
+4. 动作状态从 `AVAILABLE` 改为 `PROCESSING`，前端按钮禁用，防止重复点击。
+5. 发布领域事件，`eventType` 使用动作的 `eventType`。
+6. 领域事件 payload 带上 `messageId`、`actionCode`、`actorUserId`、`requestId`、`subject`、`input` 和 `data`。
+7. 业务订阅方完成处理后调用内部完成接口回写结果。
+
+业务订阅方必须使用 `requestId` 做幂等。处理成功时回写 `SUCCEEDED`，处理失败时回写 `FAILED` 和失败原因。`FAILED` 状态允许用户再次点击重试；`PROCESSING` 和 `SUCCEEDED` 不允许重复点击。
+
+完成回写命令：
+
+```java
+CompleteNoticeSiteMessageActionCommand complete = new CompleteNoticeSiteMessageActionCommand();
+complete.setRequestId(requestId);
+complete.setStatus(NoticeSiteMessageActionRequestStatus.SUCCEEDED);
+complete.setResult(Map.of("handledBy", "workflow-service"));
+noticeApi.completeSiteMessageAction(complete);
+```
+
+#### 5.1.7 发送示例
+
+```java
+Map<String, Object> taskParams = new LinkedHashMap<>();
+taskParams.put("processInstanceId", "PI-001");
+taskParams.put("taskId", "TASK-001");
+
+NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+target.setTargetKey("workflow:task-detail");
+target.setParams(taskParams);
+
+NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+subject.setSubjectType("WORKFLOW_TASK");
+subject.setSubjectId("TASK-001");
+subject.setSubjectName("费用报销审批");
+
+NoticeSiteMessageActionCommand openTask = new NoticeSiteMessageActionCommand();
+openTask.setActionCode("OPEN_TASK");
+openTask.setActionLabel("进入审批");
+openTask.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
+openTask.setTarget(target);
+
+NoticeSiteMessageActionCommand acknowledge = new NoticeSiteMessageActionCommand();
+acknowledge.setActionCode("ACKNOWLEDGE");
+acknowledge.setActionLabel("标记跟进");
+acknowledge.setInteractionType(NoticeSiteMessageActionInteractionType.EVENT);
+acknowledge.setEventType("workflow.notice.task.acknowledge");
+acknowledge.setConfirmRequired(true);
+
+SendNoticeCommand command = new SendNoticeCommand();
+command.setBizType("WORKFLOW_TASK_ASSIGNED");
+command.setBizId("WF-20260704-001");
+command.setMessageScene("workflow.task.assigned");
+command.setMessageSubject(subject);
+command.setMessageTarget(target);
+command.setMessageData(taskParams);
+command.setMessageActions(List.of(openTask, acknowledge));
+command.setUserId(1001L);
+command.setParams(Map.of("applyNo", "EXP-001"));
+
+noticeApi.send(command);
+```
+
 ## 6. 配置说明
 
 YAML 只配置通知 outbox 分发行为。渠道账号、签名、模板 ID、Webhook、Secret 等运行时配置保存在 `notice_channel_config.config_json`，通过通知渠道管理页面维护。

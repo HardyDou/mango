@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
+import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.payment.api.vo.PaymentOpenNotificationVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
@@ -296,6 +298,40 @@ class PaymentNotificationServiceTest {
 
         verify(notificationRecordMapper, times(0)).insert(org.mockito.ArgumentMatchers.any(PaymentNotificationRecordEntity.class));
         verify(notificationRecordMapper, times(0)).updateDeliveryResult(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("notifyPaymentAfterCommit should publish structured site message actions for failed payment")
+    void notifyPaymentAfterCommit_failedPayment_publishesStructuredNoticeAction() throws Exception {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        CapturedServer server = startServer(200, "SUCCESS");
+        captureInsertedRecords();
+        captureDeliveryResults();
+        try {
+            service.notifyPaymentAfterCommit(application(), businessOrder(server.url()), paymentOrder("FAILED"));
+
+            assertThat(publishedEvents)
+                    .filteredOn(NoticeSendEvent.class::isInstance)
+                    .singleElement()
+                    .satisfies(event -> {
+                        NoticeSendEvent notice = (NoticeSendEvent) event;
+                        assertThat(notice.getBizType()).isEqualTo("payment.order.failed");
+                        assertThat(notice.getMessageScene()).isEqualTo("payment.order.failed");
+                        assertThat(notice.getMessageSubject().getSubjectType()).isEqualTo("PAYMENT_ORDER");
+                        assertThat(notice.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
+                        assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("payment:payment-order");
+                        assertThat(notice.getMessageData()).containsEntry("payOrderNo", "PO202606060001");
+                        assertThat(notice.getMessageActions())
+                                .extracting("actionCode")
+                                .containsExactly("VIEW_PAYMENT_ORDER", "HANDLE_PAYMENT_EXCEPTION");
+                        assertThat(notice.getMessageActions().get(1).getTarget().getTargetType())
+                                .isEqualTo(NoticeSiteMessageTargetType.FLOW);
+                        assertThat(notice.getMessageActions().get(1).getTarget().getTargetKey())
+                                .isEqualTo("payment.exception.resolve");
+                    });
+        } finally {
+            server.stop();
+        }
     }
 
     @Test

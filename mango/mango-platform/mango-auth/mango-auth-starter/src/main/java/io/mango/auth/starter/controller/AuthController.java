@@ -28,7 +28,12 @@ import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.infra.iplocation.api.IpLocation;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.system.api.SysLoginLogApi;
 import io.mango.system.api.po.SysLoginLogPo;
@@ -173,11 +178,17 @@ public class AuthController {
         params.put("clientIp", clientIp);
         params.put("loginTime", LocalDateTime.now().toString());
         params.put("appCode", firstText(response.getAppCode(), command.getAppCode()));
+        NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
         eventPublisher.publishEvent(NoticeSendEvent.builder()
                 .bizType("auth.login.success")
                 .bizId(String.valueOf(response.getUserId()))
                 .userId(response.getUserId())
                 .params(params)
+                .messageScene("auth.login.success")
+                .messageSubject(subject("AUTH_LOGIN", String.valueOf(response.getUserId()), response.getUsername()))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)))
                 .priority(NoticePriority.LOW)
                 .idempotentKey("auth.login.success:" + response.getUserId() + ":" + System.currentTimeMillis())
                 .build());
@@ -188,13 +199,44 @@ public class AuthController {
         params.put("username", command.getUsername());
         params.put("clientIp", clientIp);
         params.put("loginTime", LocalDateTime.now().toString());
+        NoticeSiteMessageTargetCommand target = routeTarget("system:user", params);
         eventPublisher.publishEvent(NoticeSendEvent.builder()
                 .bizType("auth.login.locked")
                 .bizId(command.getUsername())
                 .params(params)
+                .messageScene("auth.login.locked")
+                .messageSubject(subject("AUTH_LOGIN_LOCK", command.getUsername(), command.getUsername()))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(List.of(routeAction("VIEW_USER", "查看账号", target)))
                 .priority(NoticePriority.HIGH)
                 .idempotentKey("auth.login.locked:" + command.getUsername() + ":" + clientIp)
                 .build());
+    }
+
+    private NoticeSiteMessageSubjectCommand subject(String subjectType, String subjectId, String subjectName) {
+        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+        subject.setSubjectType(subjectType);
+        subject.setSubjectId(subjectId);
+        subject.setSubjectName(subjectName);
+        return subject;
+    }
+
+    private NoticeSiteMessageTargetCommand routeTarget(String targetKey, Map<String, Object> params) {
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+        target.setTargetKey(targetKey);
+        target.setParams(params);
+        return target;
+    }
+
+    private NoticeSiteMessageActionCommand routeAction(String actionCode, String actionLabel, NoticeSiteMessageTargetCommand target) {
+        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
+        action.setActionCode(actionCode);
+        action.setActionLabel(actionLabel);
+        action.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
+        action.setTarget(target);
+        return action;
     }
 
     @PostMapping("/password/change-required")

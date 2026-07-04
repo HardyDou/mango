@@ -29,6 +29,27 @@ public class SendNoticeCommand implements Serializable {
     @Schema(description = "业务参数")
     private Map<String, Object> params;
 
+    @Schema(description = "系统消息场景")
+    private String messageScene;
+
+    @Valid
+    @Schema(description = "系统消息业务对象")
+    private NoticeSiteMessageSubjectCommand messageSubject;
+
+    @Valid
+    @Schema(description = "系统消息跳转目标")
+    private NoticeSiteMessageTargetCommand messageTarget;
+
+    @Schema(description = "系统消息业务数据快照")
+    private Map<String, Object> messageData;
+
+    @Valid
+    @Schema(description = "系统消息交互动作")
+    private List<NoticeSiteMessageActionCommand> messageActions;
+
+    @Schema(description = "系统消息过期时间")
+    private LocalDateTime messageExpireTime;
+
     @Schema(description = "本次指定发送渠道，空表示按业务类型启用模板发送")
     private List<NoticeChannelType> channelTypes;
 

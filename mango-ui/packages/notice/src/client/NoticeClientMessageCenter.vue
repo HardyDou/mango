@@ -72,6 +72,24 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="消息动作" min-width="220">
+          <template #default="{ row }">
+            <div v-if="visibleActions(row).length > 0" class="notice-message-actions">
+              <el-button
+                v-for="action in visibleActions(row)"
+                :key="action.actionCode"
+                size="small"
+                plain
+                :type="action.interactionType === 'EVENT' ? 'primary' : 'success'"
+                :disabled="isActionDisabled(action)"
+                @click="handleMessageAction(row, action)"
+              >
+                {{ action.actionLabel }}
+              </el-button>
+            </div>
+            <span v-else class="notice-message-actions__empty">-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
@@ -93,7 +111,31 @@
       </div>
     </el-card>
 
-    <NoticeDetailDialog v-model="detailVisible" :message="currentMessage" />
+    <NoticeDetailDialog v-model="detailVisible" :message="currentMessage" @action="handleDetailAction" />
+
+    <el-dialog v-model="flowDialogVisible" :title="flowDialogTitle" width="560px" class="notice-flow-dialog">
+      <div v-if="flowContext" class="notice-flow">
+        <div class="notice-flow__summary">
+          <div class="notice-flow__title">{{ flowContext.message.title }}</div>
+          <div class="notice-flow__desc">{{ flowContext.message.content }}</div>
+        </div>
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item label="业务对象">
+            {{ flowContext.message.subject?.subjectName || flowContext.message.bizName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="业务域">
+            {{ domainText(flowContext.message.bizGroup) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="处理动作">
+            {{ flowContext.action?.actionLabel || '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <template #footer>
+        <el-button @click="flowDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitFlowAction">提交处理</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -103,13 +145,14 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import NoticeDetailDialog from '../components/NoticeDetailDialog.vue';
 import {
   deleteMySiteMessage,
+  executeMySiteMessageAction,
   getMySiteMessageDetail,
   getMySiteMessages,
   markAllMySiteMessagesRead,
   markMySiteMessageRead,
   markMySiteMessagesRead,
 } from '../api/notice';
-import type { NoticePriority, NoticeSiteMessage } from '../types/notice';
+import type { NoticePriority, NoticeSiteMessage, NoticeSiteMessageAction } from '../types/notice';
 import { useNoticeDomains } from '../components/useNoticeDomains';
 
 const loading = ref(false);
@@ -117,6 +160,13 @@ const messages = ref<NoticeSiteMessage[]>([]);
 const total = ref(0);
 const detailVisible = ref(false);
 const currentMessage = ref<NoticeSiteMessage>();
+const flowDialogVisible = ref(false);
+const flowContext = ref<{
+  message: NoticeSiteMessage;
+  action?: NoticeSiteMessageAction;
+  targetKey?: string;
+  input?: Record<string, unknown>;
+}>();
 const selectedIds = ref<string[]>([]);
 const readFilter = ref<'ALL' | 'UNREAD' | 'READ'>('ALL');
 const query = reactive({
@@ -204,6 +254,13 @@ async function removeMessage(id: string) {
 const emit = defineEmits<{
   (event: 'settings'): void;
   (event: 'announcement', id: string): void;
+  (event: 'interaction', payload: {
+    message: NoticeSiteMessage;
+    action?: NoticeSiteMessageAction;
+    targetKey?: string;
+    targetType?: 'ROUTE' | 'FLOW';
+    params?: Record<string, unknown>;
+  }): void;
 }>();
 
 function openReceiveSetting() {
@@ -216,6 +273,101 @@ function priorityText(priority: NoticePriority) {
 
 function priorityTag(priority: NoticePriority) {
   return ({ LOW: 'info', NORMAL: 'info', HIGH: 'warning', URGENT: 'danger' } as Record<NoticePriority, 'info' | 'warning' | 'danger'>)[priority] || 'info';
+}
+
+function visibleActions(row: NoticeSiteMessage) {
+  return (row.actions || []).filter(action => action.status !== 'DISABLED').slice(0, 2);
+}
+
+function isActionDisabled(action: NoticeSiteMessageAction) {
+  if (action.interactionType === 'EVENT') {
+    return !['AVAILABLE', 'FAILED'].includes(action.status);
+  }
+  return ['DISABLED', 'EXPIRED'].includes(action.status);
+}
+
+function buildActionInput(row: NoticeSiteMessage, action: NoticeSiteMessageAction): Record<string, unknown> {
+  return {
+    ...(row.target?.params || {}),
+    ...(action.target?.params || {}),
+    bizType: row.bizType,
+    bizId: row.bizId,
+    bizGroup: row.bizGroup,
+    bizName: row.bizName,
+    messageScene: row.messageScene,
+    messageId: row.id,
+    actionCode: action.actionCode,
+    subject: row.subject || {},
+    data: row.data || {},
+  };
+}
+
+async function handleMessageAction(row: NoticeSiteMessage, action: NoticeSiteMessageAction) {
+  const input = buildActionInput(row, action);
+  if (action.interactionType === 'ROUTE') {
+    const targetType = action.target?.targetType || row.target?.targetType;
+    const targetKey = action.target?.targetKey || row.target?.targetKey;
+    if (targetType === 'FLOW') {
+      openFlowDialog(row, action, targetKey, input);
+      return;
+    }
+    emit('interaction', {
+      message: row,
+      action,
+      targetKey,
+      targetType: 'ROUTE',
+      params: input,
+    });
+    return;
+  }
+  await executeEventAction(row, action, true, input);
+}
+
+async function executeEventAction(
+  row: NoticeSiteMessage,
+  action: NoticeSiteMessageAction,
+  requireConfirm: boolean,
+  input = buildActionInput(row, action),
+) {
+  if (action.confirmRequired && requireConfirm) {
+    await ElMessageBox.confirm(`确认执行“${action.actionLabel}”吗？`, '操作确认', { type: 'warning' });
+  }
+  await executeMySiteMessageAction(row.id, action.actionCode, input);
+  ElMessage.success('操作已提交');
+  await loadMessages();
+}
+
+function handleDetailAction(action: NoticeSiteMessageAction) {
+  if (!currentMessage.value) return;
+  void handleMessageAction(currentMessage.value, action);
+}
+
+function openFlowDialog(row: NoticeSiteMessage, action: NoticeSiteMessageAction, targetKey?: string, input?: Record<string, unknown>) {
+  flowContext.value = {
+    message: row,
+    action,
+    targetKey,
+    input,
+  };
+  flowDialogVisible.value = true;
+}
+
+const flowDialogTitle = '业务流程处理';
+
+async function submitFlowAction() {
+  if (!flowContext.value) return;
+  const eventAction = (flowContext.value.message.actions || [])
+    .find(action => action.interactionType === 'EVENT' && !isActionDisabled(action));
+  if (eventAction) {
+    await executeEventAction(flowContext.value.message, eventAction, false, {
+      ...buildActionInput(flowContext.value.message, eventAction),
+      ...(flowContext.value.input || {}),
+    });
+  } else {
+    ElMessage.success('处理已提交');
+  }
+  flowDialogVisible.value = false;
+  detailVisible.value = false;
 }
 
 onMounted(() => {
@@ -259,4 +411,43 @@ onMounted(() => {
   justify-content: flex-end;
   margin-top: 16px;
 }
+
+.notice-message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.notice-message-actions :deep(.el-button) {
+  margin-left: 0;
+}
+
+.notice-message-actions__empty {
+  color: var(--el-text-color-placeholder);
+}
+
+.notice-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.notice-flow__summary {
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+}
+
+.notice-flow__title {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.notice-flow__desc {
+  margin-top: 6px;
+  color: var(--el-text-color-regular);
+  line-height: 1.6;
+}
+
 </style>
