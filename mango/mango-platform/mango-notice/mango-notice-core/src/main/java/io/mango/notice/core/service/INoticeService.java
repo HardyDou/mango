@@ -2,6 +2,8 @@ package io.mango.notice.core.service;
 
 import io.mango.common.vo.PageResult;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
+import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
@@ -32,6 +34,7 @@ import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
+import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
@@ -124,6 +127,11 @@ public interface INoticeService {
  PageResult<NoticeSiteMessageVO> listSiteMessages(Long userId, NoticeSiteMessagePageQuery query);
 
  NoticeSiteMessageVO getSiteMessage(Long id, Long userId);
+
+ NoticeSiteMessageActionRequestVO executeSiteMessageAction(Long id, String actionCode, Long userId,
+ ExecuteNoticeSiteMessageActionCommand command);
+
+ NoticeSiteMessageActionRequestVO completeSiteMessageAction(CompleteNoticeSiteMessageActionCommand command);
 
  NoticeUnreadCountVO unreadCount(Long userId);
 

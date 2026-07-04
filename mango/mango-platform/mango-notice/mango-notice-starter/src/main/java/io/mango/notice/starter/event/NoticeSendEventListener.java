@@ -40,6 +40,12 @@ public class NoticeSendEventListener {
         command.setRecipientRuleCode(event.getRecipientRuleCode());
         command.setChannelTypes(event.getChannelTypes());
         command.setParams(event.getParams() == null ? null : new LinkedHashMap<>(event.getParams()));
+        command.setMessageScene(event.getMessageScene());
+        command.setMessageSubject(event.getMessageSubject());
+        command.setMessageTarget(event.getMessageTarget());
+        command.setMessageData(event.getMessageData() == null ? null : new LinkedHashMap<>(event.getMessageData()));
+        command.setMessageActions(event.getMessageActions());
+        command.setMessageExpireTime(event.getMessageExpireTime());
         command.setPriority(event.getPriority());
         command.setIdempotentKey(event.getIdempotentKey());
         return command;

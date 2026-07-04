@@ -33,7 +33,12 @@ import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.service.IIdentityUserService;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.event.NoticeSendEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -421,11 +426,17 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private void publishUserCreatedNotice(IdentityUser user) {
         Map<String, Object> params = baseUserParams(user);
         params.put("createdAt", user.getCreateTime() == null ? null : user.getCreateTime().toString());
+        NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
         eventPublisher.publishEvent(NoticeSendEvent.builder()
                 .bizType("identity.user.created")
                 .bizId(String.valueOf(user.getUserId()))
                 .userId(user.getUserId())
                 .params(params)
+                .messageScene("identity.user.created")
+                .messageSubject(userSubject(user))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)))
                 .priority(NoticePriority.NORMAL)
                 .idempotentKey("identity.user.created:" + user.getUserId())
                 .build());
@@ -434,11 +445,17 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private void publishPasswordResetNotice(IdentityUser user) {
         Map<String, Object> params = baseUserParams(user);
         params.put("resetAt", LocalDateTime.now().toString());
+        NoticeSiteMessageTargetCommand target = routeTarget("account:password", params);
         eventPublisher.publishEvent(NoticeSendEvent.builder()
                 .bizType("identity.password.reset")
                 .bizId(String.valueOf(user.getUserId()))
                 .userId(user.getUserId())
                 .params(params)
+                .messageScene("identity.password.reset")
+                .messageSubject(userSubject(user))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(List.of(routeAction("CHANGE_PASSWORD", "修改密码", target)))
                 .priority(NoticePriority.HIGH)
                 .idempotentKey("identity.password.reset:" + user.getUserId() + ":" + System.currentTimeMillis())
                 .build());
@@ -450,11 +467,17 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         params.put("corpId", binding.getCorpId());
         params.put("externalUserId", binding.getExternalUserId());
         params.put(timeParam, LocalDateTime.now().toString());
+        NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
         eventPublisher.publishEvent(NoticeSendEvent.builder()
                 .bizType(bizType)
                 .bizId(user.getUserId() + ":" + binding.getProvider() + ":" + binding.getExternalUserId())
                 .userId(user.getUserId())
                 .params(params)
+                .messageScene(bizType)
+                .messageSubject(userSubject(user))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)))
                 .priority(NoticePriority.NORMAL)
                 .idempotentKey(bizType + ":" + user.getUserId() + ":" + binding.getExternalUserId())
                 .build());
@@ -467,6 +490,31 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         params.put("nickname", user.getNickname());
         params.put("tenantId", currentTenantId());
         return params;
+    }
+
+    private NoticeSiteMessageSubjectCommand userSubject(IdentityUser user) {
+        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+        subject.setSubjectType("IDENTITY_USER");
+        subject.setSubjectId(String.valueOf(user.getUserId()));
+        subject.setSubjectName(firstText(user.getNickname(), user.getUsername()));
+        return subject;
+    }
+
+    private NoticeSiteMessageTargetCommand routeTarget(String targetKey, Map<String, Object> params) {
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+        target.setTargetKey(targetKey);
+        target.setParams(params);
+        return target;
+    }
+
+    private NoticeSiteMessageActionCommand routeAction(String actionCode, String actionLabel, NoticeSiteMessageTargetCommand target) {
+        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
+        action.setActionCode(actionCode);
+        action.setActionLabel(actionLabel);
+        action.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
+        action.setTarget(target);
+        return action;
     }
 
     private LambdaQueryWrapper<IdentityUser> buildManageableUserWrapper(IdentityUserPageQuery query) {

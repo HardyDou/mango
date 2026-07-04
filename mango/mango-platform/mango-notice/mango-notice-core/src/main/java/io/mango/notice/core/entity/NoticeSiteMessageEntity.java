@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.mango.notice.api.enums.NoticeDeleteStatus;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeReadStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -28,6 +29,26 @@ public class NoticeSiteMessageEntity {
     private String title;
 
     private String content;
+
+    private String messageScene;
+
+    private String subjectType;
+
+    private String subjectId;
+
+    private String subjectName;
+
+    private NoticeSiteMessageTargetType targetType;
+
+    private String targetKey;
+
+    private String targetParamsJson;
+
+    private String targetOpenMode;
+
+    private String dataJson;
+
+    private LocalDateTime expireTime;
 
     private NoticePriority priority;
 

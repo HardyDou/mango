@@ -23,12 +23,69 @@ export type NoticeAnnouncementConfirmStatus = 'NOT_REQUIRED' | 'PENDING' | 'CONF
 export type NoticeRecipientAccountType = 'MOBILE' | 'EMAIL' | 'WECHAT' | 'WECOM' | 'DINGTALK' | 'FEISHU';
 export type NoticeRecipientAccountStatus = 'UNBOUND' | 'PENDING_VERIFY' | 'VERIFIED' | 'DISABLED';
 export type NoticeReceivePreferenceScopeType = 'GLOBAL' | 'BIZ_GROUP' | 'BIZ_TYPE';
+export type NoticeSiteMessageTargetType = 'NONE' | 'ROUTE' | 'FLOW';
+export type NoticeSiteMessageActionInteractionType = 'EVENT' | 'ROUTE';
+export type NoticeSiteMessageActionStatus =
+  | 'AVAILABLE'
+  | 'PROCESSING'
+  | 'SUCCEEDED'
+  | 'FAILED'
+  | 'DISABLED'
+  | 'EXPIRED';
+export type NoticeSiteMessageActionRequestStatus = 'REQUESTED' | 'SUCCEEDED' | 'FAILED';
+
+export interface NoticeSiteMessageTarget {
+  targetType: NoticeSiteMessageTargetType;
+  targetKey?: string;
+  params?: Record<string, unknown>;
+  openMode?: string;
+}
+
+export interface NoticeSiteMessageSubject {
+  subjectType?: string;
+  subjectId?: string;
+  subjectName?: string;
+}
+
+export interface NoticeSiteMessageAction {
+  id: string;
+  actionCode: string;
+  actionLabel: string;
+  interactionType: NoticeSiteMessageActionInteractionType;
+  eventType?: string;
+  target?: NoticeSiteMessageTarget;
+  confirmRequired?: boolean;
+  inputSchema?: string;
+  status: NoticeSiteMessageActionStatus;
+  failureReason?: string;
+  sortOrder?: number;
+  expireTime?: string;
+}
+
+export interface NoticeSiteMessageActionRequest {
+  requestId: string;
+  messageId: string;
+  actionCode: string;
+  eventId?: string;
+  status: NoticeSiteMessageActionRequestStatus;
+  failCode?: string;
+  failReason?: string;
+  result?: Record<string, unknown>;
+  createdAt?: string;
+  finishedAt?: string;
+}
 
 export interface NoticeSiteMessage {
   id: string;
   title: string;
   content: string;
   userId: string;
+  messageScene?: string;
+  subject?: NoticeSiteMessageSubject;
+  target?: NoticeSiteMessageTarget;
+  data?: Record<string, unknown>;
+  actions?: NoticeSiteMessageAction[];
+  expireTime?: string;
   priority: NoticePriority;
   readStatus: NoticeReadStatus;
   readTime?: string;
@@ -124,6 +181,22 @@ export interface NoticeSendCommand {
   bizType: string;
   bizId?: string;
   params?: Record<string, unknown>;
+  messageScene?: string;
+  messageSubject?: NoticeSiteMessageSubject;
+  messageTarget?: NoticeSiteMessageTarget;
+  messageData?: Record<string, unknown>;
+  messageActions?: Array<{
+    actionCode: string;
+    actionLabel: string;
+    interactionType?: NoticeSiteMessageActionInteractionType;
+    eventType?: string;
+    target?: NoticeSiteMessageTarget;
+    confirmRequired?: boolean;
+    inputSchema?: string;
+    sortOrder?: number;
+    expireTime?: string;
+  }>;
+  messageExpireTime?: string;
   channelTypes?: NoticeChannelType[];
   recipients?: NoticeRecipientCommand[];
   recipientTargets?: NoticeRecipientTargetCommand[];

@@ -3,11 +3,14 @@ package io.mango.notice.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.event.api.DomainEvent;
+import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.identity.api.IdentityUserApi;
@@ -18,9 +21,14 @@ import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
+import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
 import io.mango.notice.api.command.NoticeRecipientTargetCommand;
 import io.mango.notice.api.command.RetryNoticeSendRecordsCommand;
@@ -46,6 +54,10 @@ import io.mango.notice.api.enums.NoticeRecipientAccountType;
 import io.mango.notice.api.enums.NoticeSendCancelCode;
 import io.mango.notice.api.enums.NoticeSendMode;
 import io.mango.notice.api.enums.NoticeSendStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageActionRequestStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageActionStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.enums.NoticeSyncStatus;
 import io.mango.notice.api.enums.NoticeTaskStatus;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
@@ -65,6 +77,10 @@ import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
+import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
+import io.mango.notice.api.vo.NoticeSiteMessageActionVO;
+import io.mango.notice.api.vo.NoticeSiteMessageSubjectVO;
+import io.mango.notice.api.vo.NoticeSiteMessageTargetVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
@@ -93,6 +109,8 @@ import io.mango.notice.core.entity.NoticeRecipientEntity;
 import io.mango.notice.core.entity.NoticeRecipientAccountEntity;
 import io.mango.notice.core.entity.NoticeSendRecordEntity;
 import io.mango.notice.core.entity.NoticeSettingEntity;
+import io.mango.notice.core.entity.NoticeSiteMessageActionEntity;
+import io.mango.notice.core.entity.NoticeSiteMessageActionRequestEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageEntity;
 import io.mango.notice.core.entity.NoticeTaskEntity;
 import io.mango.notice.core.entity.NoticeWecomSyncMappingEntity;
@@ -105,6 +123,8 @@ import io.mango.notice.core.mapper.NoticeRecipientAccountMapper;
 import io.mango.notice.core.mapper.NoticeRecipientMapper;
 import io.mango.notice.core.mapper.NoticeSendRecordMapper;
 import io.mango.notice.core.mapper.NoticeSettingMapper;
+import io.mango.notice.core.mapper.NoticeSiteMessageActionMapper;
+import io.mango.notice.core.mapper.NoticeSiteMessageActionRequestMapper;
 import io.mango.notice.core.mapper.NoticeSiteMessageMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.mapper.NoticeWecomSyncMappingMapper;
@@ -122,6 +142,7 @@ import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -171,6 +192,8 @@ public class NoticeService implements INoticeService {
  private static final Set<String> SENSITIVE_CONFIG_KEYS = Set.of("secret", "password", "token", "key", "appSecret",
  "accessKey", "accessKeySecret", "secretKey", "smtpPassword");
  private final NoticeSiteMessageMapper messageMapper;
+ private final NoticeSiteMessageActionMapper messageActionMapper;
+ private final NoticeSiteMessageActionRequestMapper messageActionRequestMapper;
  private final NoticeBusinessTypeMapper businessTypeMapper;
  private final NoticeBusinessConfigVersionMapper businessConfigVersionMapper;
  private final NoticeBusinessChannelTemplateMapper channelTemplateMapper;
@@ -186,6 +209,7 @@ public class NoticeService implements INoticeService {
  private final ObjectMapper objectMapper;
  private final IOutboxStore outboxStore;
  private final RealtimeApi realtimeApi;
+ private final ObjectProvider<IDomainEventPublisher> domainEventPublisherProvider;
  private final IdentityUserApi identityUserApi;
  private final SysOrgApi sysOrgApi;
  private final WecomDirectoryClient wecomDirectoryClient;
@@ -198,6 +222,7 @@ public class NoticeService implements INoticeService {
  List<NoticeBusinessChannelTemplateEntity> templates = resolveTemplates(command, businessType);
  List<NoticeRecipientCommand> recipients = recipientResolver.resolveRecipients(command);
  Require.isTrue(!recipients.isEmpty(), "接收用户不能为空");
+ validateMessageActions(command);
  NoticeTaskEntity task = createTask(command, templates, recipients);
  int totalCount = 0;
  Set<NoticeChannelType> actualChannels = new LinkedHashSet<>();
@@ -1244,6 +1269,180 @@ public class NoticeService implements INoticeService {
  return updated > 0;
  }
 
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public NoticeSiteMessageActionRequestVO executeSiteMessageAction(Long id, String actionCode, Long userId,
+ ExecuteNoticeSiteMessageActionCommand command) {
+ Require.notNull(id, "系统消息 ID 不能为空");
+ Require.notBlank(actionCode, "系统消息动作编码不能为空");
+ NoticeSiteMessageEntity message = messageMapper.selectOne(userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getId, id));
+ Require.notNull(message, "系统消息不存在");
+ NoticeSiteMessageActionEntity action = findMessageAction(message.getId(), actionCode);
+ Require.notNull(action, "系统消息动作不存在");
+ Require.isTrue(action.getInteractionType() == NoticeSiteMessageActionInteractionType.EVENT, "该系统消息动作只能进入业务页面处理");
+ Require.notBlank(action.getEventType(), "系统消息动作事件类型不能为空");
+ String requestId = actionRequestId(message.getId(), action.getActionCode(), userId);
+ NoticeSiteMessageActionRequestEntity existing = findActionRequest(requestId);
+ if (existing != null) {
+ return toActionRequestVO(existing);
+ }
+ Require.isTrue(action.getStatus() == NoticeSiteMessageActionStatus.AVAILABLE, "系统消息动作当前不可执行");
+ if (isExpired(message.getExpireTime()) || isExpired(action.getExpireTime())) {
+ markActionExpired(action);
+ throw new IllegalStateException("系统消息动作已过期");
+ }
+
+ NoticeSiteMessageActionEntity processing = new NoticeSiteMessageActionEntity();
+ processing.setStatus(NoticeSiteMessageActionStatus.PROCESSING);
+ int updated = messageActionMapper.update(processing, new LambdaQueryWrapper<NoticeSiteMessageActionEntity>()
+ .eq(NoticeSiteMessageActionEntity::getId, action.getId())
+ .eq(NoticeSiteMessageActionEntity::getStatus, NoticeSiteMessageActionStatus.AVAILABLE));
+ if (updated == 0) {
+ NoticeSiteMessageActionRequestEntity request = findActionRequest(requestId);
+ if (request != null) {
+ return toActionRequestVO(request);
+ }
+ throw new IllegalStateException("系统消息动作当前不可执行");
+ }
+
+ NoticeSiteMessageActionRequestEntity request = new NoticeSiteMessageActionRequestEntity();
+ request.setMessageId(message.getId());
+ request.setActionId(action.getId());
+ request.setActionCode(action.getActionCode());
+ request.setActorUserId(userId);
+ request.setRequestId(requestId);
+ request.setInputJson(toJson(command == null ? Collections.emptyMap() : command.getInput()));
+ request.setStatus(NoticeSiteMessageActionRequestStatus.REQUESTED);
+ request.setEventId(UUID.randomUUID().toString());
+ request.setTenantId(currentTenantId());
+ messageActionRequestMapper.insert(request);
+
+ publishActionRequestedEvent(message, action, request, command == null ? Collections.emptyMap() : command.getInput());
+ publishActionStatus(userId, message.getId(), action.getActionCode(), NoticeSiteMessageActionStatus.PROCESSING);
+ return toActionRequestVO(request);
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public NoticeSiteMessageActionRequestVO completeSiteMessageAction(CompleteNoticeSiteMessageActionCommand command) {
+ Require.notNull(command, "系统消息动作完成命令不能为空");
+ Require.notBlank(command.getRequestId(), "系统消息动作请求 ID 不能为空");
+ Require.notNull(command.getStatus(), "系统消息动作结果状态不能为空");
+ Require.isTrue(command.getStatus() != NoticeSiteMessageActionRequestStatus.REQUESTED, "系统消息动作结果状态非法");
+ NoticeSiteMessageActionRequestEntity request = findActionRequest(command.getRequestId());
+ Require.notNull(request, "系统消息动作请求不存在");
+ NoticeSiteMessageActionEntity action = messageActionMapper.selectById(request.getActionId());
+ Require.notNull(action, "系统消息动作不存在");
+
+ request.setStatus(command.getStatus());
+ request.setFailCode(command.getFailCode());
+ request.setFailReason(command.getFailReason());
+ request.setResultJson(toJson(command.getResult() == null ? Collections.emptyMap() : command.getResult()));
+ request.setFinishedAt(LocalDateTime.now());
+ messageActionRequestMapper.updateById(request);
+
+ NoticeSiteMessageActionEntity update = new NoticeSiteMessageActionEntity();
+ update.setId(action.getId());
+ update.setStatus(command.getStatus() == NoticeSiteMessageActionRequestStatus.SUCCEEDED
+ ? NoticeSiteMessageActionStatus.SUCCEEDED
+ : NoticeSiteMessageActionStatus.FAILED);
+ update.setFailureReason(command.getFailReason());
+ messageActionMapper.updateById(update);
+ publishActionStatus(request.getActorUserId(), request.getMessageId(), request.getActionCode(), update.getStatus());
+ return toActionRequestVO(request);
+ }
+
+ private NoticeSiteMessageActionEntity findMessageAction(Long messageId, String actionCode) {
+ return messageActionMapper.selectOne(new LambdaQueryWrapper<NoticeSiteMessageActionEntity>()
+ .eq(NoticeSiteMessageActionEntity::getMessageId, messageId)
+ .eq(NoticeSiteMessageActionEntity::getActionCode, actionCode)
+ .last("limit 1"));
+ }
+
+ private NoticeSiteMessageActionRequestEntity findActionRequest(String requestId) {
+ return messageActionRequestMapper.selectOne(new LambdaQueryWrapper<NoticeSiteMessageActionRequestEntity>()
+ .eq(NoticeSiteMessageActionRequestEntity::getRequestId, requestId)
+ .last("limit 1"));
+ }
+
+ private void markActionExpired(NoticeSiteMessageActionEntity action) {
+ NoticeSiteMessageActionEntity update = new NoticeSiteMessageActionEntity();
+ update.setStatus(NoticeSiteMessageActionStatus.EXPIRED);
+ messageActionMapper.update(update, new LambdaQueryWrapper<NoticeSiteMessageActionEntity>()
+ .eq(NoticeSiteMessageActionEntity::getId, action.getId())
+ .eq(NoticeSiteMessageActionEntity::getStatus, NoticeSiteMessageActionStatus.AVAILABLE));
+ }
+
+ private boolean isExpired(LocalDateTime expireTime) {
+ return expireTime != null && expireTime.isBefore(LocalDateTime.now());
+ }
+
+ private String actionRequestId(Long messageId, String actionCode, Long userId) {
+ return "NSMA:" + messageId + ":" + actionCode + ":" + userId;
+ }
+
+ private String currentTenantId() {
+ return tenantId();
+ }
+
+ private void publishActionRequestedEvent(NoticeSiteMessageEntity message, NoticeSiteMessageActionEntity action,
+ NoticeSiteMessageActionRequestEntity request, Map<String, Object> input) {
+ IDomainEventPublisher publisher = domainEventPublisherProvider.getIfAvailable();
+ Require.notNull(publisher, "领域事件发布器未装配");
+ Map<String, Object> payload = new LinkedHashMap<>();
+ payload.put("messageId", message.getId());
+ payload.put("actionCode", action.getActionCode());
+ payload.put("actorUserId", request.getActorUserId());
+ payload.put("requestId", request.getRequestId());
+ payload.put("subjectType", message.getSubjectType());
+ payload.put("subjectId", message.getSubjectId());
+ payload.put("subjectName", message.getSubjectName());
+ payload.put("input", input == null ? Collections.emptyMap() : input);
+ payload.put("data", fromJson(message.getDataJson()));
+ DomainEvent event = DomainEvent.builder()
+ .eventId(request.getEventId())
+ .eventType(action.getEventType())
+ .businessType(message.getBizType())
+ .businessKey(message.getBizId())
+ .aggregateId(message.getSubjectId())
+ .payload(payload)
+ .header("tenantId", currentTenantId())
+ .header("actorUserId", String.valueOf(request.getActorUserId()))
+ .header("requestId", request.getRequestId())
+ .header("messageId", String.valueOf(message.getId()))
+ .header("actionCode", action.getActionCode())
+ .build();
+ publisher.publish(event);
+ }
+
+ private void publishActionStatus(Long userId, Long messageId, String actionCode, NoticeSiteMessageActionStatus status) {
+ try {
+ Map<String, Object> payload = Map.of(
+ "messageId", messageId,
+ "actionCode", actionCode,
+ "actionStatus", status.name());
+ realtimeApi.publishToUser(userId, "notice-action", objectMapper.writeValueAsString(payload));
+ } catch (JsonProcessingException | RuntimeException ex) {
+ log.warn("Failed to publish notice action realtime message: userId={}, messageId={}, actionCode={}",
+ userId, messageId, actionCode, ex);
+ }
+ }
+
+ private NoticeSiteMessageActionRequestVO toActionRequestVO(NoticeSiteMessageActionRequestEntity entity) {
+ NoticeSiteMessageActionRequestVO vo = new NoticeSiteMessageActionRequestVO();
+ vo.setRequestId(entity.getRequestId());
+ vo.setMessageId(entity.getMessageId());
+ vo.setActionCode(entity.getActionCode());
+ vo.setEventId(entity.getEventId());
+ vo.setStatus(entity.getStatus());
+ vo.setFailCode(entity.getFailCode());
+ vo.setFailReason(entity.getFailReason());
+ vo.setResult(fromJson(entity.getResultJson()));
+ vo.setCreatedAt(entity.getCreatedAt());
+ vo.setFinishedAt(entity.getFinishedAt());
+ return vo;
+ }
+
  private void publishUnreadCount(Long userId) {
  Long unreadCount = messageMapper.selectCount(userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getReadStatus, NoticeReadStatus.UNREAD));
  try {
@@ -1292,6 +1491,18 @@ public class NoticeService implements INoticeService {
 
  private NoticeSiteMessageVO toSiteMessageVO(NoticeSiteMessageEntity entity) {
  NoticeSiteMessageVO vo = NoticeSiteMessageConvert.toVO(entity);
+ vo.setMessageScene(entity.getMessageScene());
+ vo.setSubject(toSubjectVO(entity));
+ vo.setTarget(toTargetVO(entity.getTargetType(), entity.getTargetKey(), entity.getTargetParamsJson(), entity.getTargetOpenMode()));
+ vo.setData(fromJson(entity.getDataJson()));
+ vo.setActions(messageActionMapper.selectList(new LambdaQueryWrapper<NoticeSiteMessageActionEntity>()
+ .eq(NoticeSiteMessageActionEntity::getMessageId, entity.getId())
+ .orderByAsc(NoticeSiteMessageActionEntity::getSortOrder)
+ .orderByAsc(NoticeSiteMessageActionEntity::getId))
+ .stream()
+ .map(this::toActionVO)
+ .toList());
+ vo.setExpireTime(entity.getExpireTime());
  if (entity.getBizType() == null) {
  return vo;
  }
@@ -1303,6 +1514,57 @@ public class NoticeService implements INoticeService {
  vo.setBizName(businessType.getBizName());
  }
  return vo;
+ }
+
+ private NoticeSiteMessageSubjectVO toSubjectVO(NoticeSiteMessageEntity entity) {
+ if (!StringUtils.hasText(entity.getSubjectType())
+ && !StringUtils.hasText(entity.getSubjectId())
+ && !StringUtils.hasText(entity.getSubjectName())) {
+ return null;
+ }
+ NoticeSiteMessageSubjectVO subject = new NoticeSiteMessageSubjectVO();
+ subject.setSubjectType(entity.getSubjectType());
+ subject.setSubjectId(entity.getSubjectId());
+ subject.setSubjectName(entity.getSubjectName());
+ return subject;
+ }
+
+ private NoticeSiteMessageTargetVO toTargetVO(NoticeSiteMessageTargetType targetType, String targetKey,
+ String paramsJson, String openMode) {
+ if (targetType == null || targetType == NoticeSiteMessageTargetType.NONE) {
+ return null;
+ }
+ NoticeSiteMessageTargetVO target = new NoticeSiteMessageTargetVO();
+ target.setTargetType(targetType);
+ target.setTargetKey(targetKey);
+ target.setParams(fromJson(paramsJson));
+ target.setOpenMode(openMode);
+ return target;
+ }
+
+ private NoticeSiteMessageActionVO toActionVO(NoticeSiteMessageActionEntity entity) {
+ NoticeSiteMessageActionVO vo = new NoticeSiteMessageActionVO();
+ vo.setId(entity.getId());
+ vo.setActionCode(entity.getActionCode());
+ vo.setActionLabel(entity.getActionLabel());
+ vo.setInteractionType(entity.getInteractionType());
+ vo.setEventType(entity.getEventType());
+ vo.setTarget(toTargetVO(entity.getTargetType(), entity.getTargetKey(), entity.getTargetParamsJson(),
+ entity.getTargetOpenMode()));
+ vo.setConfirmRequired(entity.getConfirmRequired());
+ vo.setInputSchema(entity.getInputSchema());
+ vo.setStatus(displayActionStatus(entity));
+ vo.setFailureReason(entity.getFailureReason());
+ vo.setSortOrder(entity.getSortOrder());
+ vo.setExpireTime(entity.getExpireTime());
+ return vo;
+ }
+
+ private NoticeSiteMessageActionStatus displayActionStatus(NoticeSiteMessageActionEntity entity) {
+ if (entity.getStatus() == NoticeSiteMessageActionStatus.AVAILABLE && isExpired(entity.getExpireTime())) {
+ return NoticeSiteMessageActionStatus.EXPIRED;
+ }
+ return entity.getStatus();
  }
 
  private SaveNoticeBusinessConfigCommand draftCommand(NoticeBusinessTypeEntity entity) {
@@ -1551,6 +1813,97 @@ public class NoticeService implements INoticeService {
  return value != null && Boolean.parseBoolean(String.valueOf(value));
  }
 
+ private void validateMessageActions(SendNoticeCommand command) {
+ if (command.getMessageTarget() != null) {
+ validateTarget(command.getMessageTarget());
+ }
+ if (command.getMessageActions() == null || command.getMessageActions().isEmpty()) {
+ return;
+ }
+ Set<String> actionCodes = new LinkedHashSet<>();
+ for (NoticeSiteMessageActionCommand action : command.getMessageActions()) {
+ Require.notBlank(action.getActionCode(), "系统消息动作编码不能为空");
+ Require.notBlank(action.getActionLabel(), "系统消息动作名称不能为空");
+ Require.isTrue(actionCodes.add(action.getActionCode()), "系统消息动作编码不能重复");
+ NoticeSiteMessageActionInteractionType type = action.getInteractionType() == null
+ ? NoticeSiteMessageActionInteractionType.EVENT
+ : action.getInteractionType();
+ action.setInteractionType(type);
+ if (type == NoticeSiteMessageActionInteractionType.EVENT) {
+ Require.notBlank(action.getEventType(), "系统消息事件动作必须配置事件类型");
+ } else {
+ Require.notNull(action.getTarget(), "系统消息路由动作必须配置目标");
+ validateTarget(action.getTarget());
+ }
+ }
+ }
+
+ private void validateTarget(NoticeSiteMessageTargetCommand target) {
+ if (target.getTargetType() == null || target.getTargetType() == NoticeSiteMessageTargetType.NONE) {
+ return;
+ }
+ Require.isTrue(target.getTargetType() == NoticeSiteMessageTargetType.ROUTE
+ || target.getTargetType() == NoticeSiteMessageTargetType.FLOW, "系统消息目标类型非法");
+ Require.notBlank(target.getTargetKey(), "系统消息目标键不能为空");
+ }
+
+ private void writeTaskMessageProtocol(NoticeTaskEntity task, SendNoticeCommand command) {
+ task.setMessageScene(command.getMessageScene());
+ NoticeSiteMessageSubjectCommand subject = command.getMessageSubject();
+ if (subject != null) {
+ task.setMessageSubjectType(subject.getSubjectType());
+ task.setMessageSubjectId(subject.getSubjectId());
+ task.setMessageSubjectName(subject.getSubjectName());
+ }
+ NoticeSiteMessageTargetCommand target = command.getMessageTarget();
+ if (target != null) {
+ task.setMessageTargetType(target.getTargetType() == null ? null : target.getTargetType().name());
+ task.setMessageTargetKey(target.getTargetKey());
+ task.setMessageTargetParamsJson(toJson(target.getParams()));
+ task.setMessageTargetOpenMode(target.getOpenMode());
+ }
+ task.setMessageDataJson(toJson(command.getMessageData()));
+ task.setMessageActionsJson(toJson(command.getMessageActions() == null ? Collections.emptyList() : command.getMessageActions()));
+ task.setMessageExpireTime(command.getMessageExpireTime());
+ }
+
+ private NoticeSiteMessageSubjectCommand taskMessageSubject(NoticeTaskEntity task) {
+ if (!StringUtils.hasText(task.getMessageSubjectType())
+ && !StringUtils.hasText(task.getMessageSubjectId())
+ && !StringUtils.hasText(task.getMessageSubjectName())) {
+ return null;
+ }
+ NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+ subject.setSubjectType(task.getMessageSubjectType());
+ subject.setSubjectId(task.getMessageSubjectId());
+ subject.setSubjectName(task.getMessageSubjectName());
+ return subject;
+ }
+
+ private NoticeSiteMessageTargetCommand taskMessageTarget(NoticeTaskEntity task) {
+ if (!StringUtils.hasText(task.getMessageTargetType())) {
+ return null;
+ }
+ NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+ target.setTargetType(NoticeSiteMessageTargetType.valueOf(task.getMessageTargetType()));
+ target.setTargetKey(task.getMessageTargetKey());
+ target.setParams(fromJson(task.getMessageTargetParamsJson()));
+ target.setOpenMode(task.getMessageTargetOpenMode());
+ return target;
+ }
+
+ private List<NoticeSiteMessageActionCommand> readMessageActions(String value) {
+ if (!StringUtils.hasText(value)) {
+ return Collections.emptyList();
+ }
+ try {
+ return objectMapper.readValue(value, new TypeReference<List<NoticeSiteMessageActionCommand>>() {
+ });
+ } catch (JsonProcessingException ex) {
+ return Collections.emptyList();
+ }
+ }
+
  private NoticeTaskEntity createTask(SendNoticeCommand command, List<NoticeBusinessChannelTemplateEntity> templates,
  List<NoticeRecipientCommand> recipients) {
  NoticeTaskEntity task = new NoticeTaskEntity();
@@ -1561,6 +1914,7 @@ public class NoticeService implements INoticeService {
  task.setParamsSnapshot(toJson(taskParams(command)));
  task.setRecipientTargetsSnapshot(toJson(recipientTargetsSnapshot(command)));
  task.setChannelTypes(templates.stream().map(template -> template.getChannelType().name()).distinct().collect(Collectors.joining(",")));
+ writeTaskMessageProtocol(task, command);
  task.setSendMode(command.getSendMode() == null ? NoticeSendMode.IMMEDIATE : command.getSendMode());
  task.setScheduledTime(command.getScheduledTime());
  task.setStatus(task.getSendMode() == NoticeSendMode.SCHEDULED ? NoticeTaskStatus.WAITING : NoticeTaskStatus.SENDING);
@@ -1930,6 +2284,12 @@ public class NoticeService implements INoticeService {
  sendCommand.setDingtalkUserId(recipient.getDingtalkUserId());
  sendCommand.setTitle(record.getRenderedTitle());
  sendCommand.setContent(record.getRenderedContent());
+ sendCommand.setMessageScene(task.getMessageScene());
+ sendCommand.setMessageSubject(taskMessageSubject(task));
+ sendCommand.setMessageTarget(taskMessageTarget(task));
+ sendCommand.setMessageData(fromJson(task.getMessageDataJson()));
+ sendCommand.setMessageActions(readMessageActions(task.getMessageActionsJson()));
+ sendCommand.setMessageExpireTime(task.getMessageExpireTime());
  sendCommand.setAttachmentFileIds(attachmentFileIds(task.getParamsSnapshot()));
  sendCommand.setPriority(NoticePriority.NORMAL);
  sendCommand.setBizType(task.getBizType());

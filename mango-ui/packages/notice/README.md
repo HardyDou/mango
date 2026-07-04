@@ -181,6 +181,144 @@ stop();
 | 接收设置 | `getRecipientAccounts`、`saveRecipientAccount`、`getReceivePreferences`、`saveReceivePreference` |
 | 个人提醒 | `getNoticeReminderSetting`、`saveNoticeReminderSetting` |
 
+### 7.4 站内信动作接入
+
+站内信动作由业务后端发送时定义，前端只负责展示按钮、把点击交给命名目标或后端动作接口处理。
+
+按钮名称来自业务后端的 `messageActions[].actionLabel`。前端不会根据 `bizType` 自行生成按钮名称。
+
+#### 7.4.1 动作类型
+
+| 业务意图 | 后端声明 | 前端行为 | 点击后是否禁用 |
+|----------|----------|----------|----------------|
+| 进入业务页面 | `interactionType=ROUTE`，`target.targetType=ROUTE` | 触发 `interaction`，宿主按 `targetKey` 打开命名页面 | 否 |
+| 进入自定义流程 | `interactionType=ROUTE`，`target.targetType=FLOW` | 打开流程处理入口或触发 `interaction` 给宿主处理 | 否 |
+| 提交后台命令 | `interactionType=EVENT`，`eventType` 必填 | 调用动作接口，提交隐藏 `input` | 是，`FAILED` 可重试 |
+
+`targetKey` 是命名目标键，不是页面地址。业务前端必须提前注册这个名称，或者在宿主的 `interaction` 事件里处理它。
+
+#### 7.4.2 隐藏业务参数
+
+点击任何动作时，`NoticeClientMessageCenter` 都会整理同一份隐藏上下文：
+
+```ts
+{
+  ...message.target?.params,
+  ...action.target?.params,
+  bizType: message.bizType,
+  bizId: message.bizId,
+  bizGroup: message.bizGroup,
+  bizName: message.bizName,
+  messageScene: message.messageScene,
+  messageId: message.id,
+  actionCode: action.actionCode,
+  subject: message.subject,
+  data: message.data,
+}
+```
+
+这些参数用于业务页面、业务流程或后端事件处理，不会默认展示在消息正文、详情弹窗或流程弹窗中。业务需要让用户看到的内容，应写进标题、正文、业务对象名称或业务页面本身。
+
+#### 7.4.3 使用消息中心组件
+
+```vue
+<template>
+  <NoticeClientMessageCenter
+    @settings="openReceiveSetting"
+    @announcement="openAnnouncement"
+    @interaction="openNoticeTarget"
+  />
+</template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+import { NoticeClientMessageCenter } from '@mango/notice/client';
+import type { NoticeSiteMessage, NoticeSiteMessageAction } from '@mango/notice';
+
+const router = useRouter();
+
+async function openNoticeTarget(payload: {
+  message: NoticeSiteMessage;
+  action?: NoticeSiteMessageAction;
+  targetKey?: string;
+  targetType?: 'ROUTE' | 'FLOW';
+  params?: Record<string, unknown>;
+}) {
+  if (!payload.targetKey) return;
+
+  await router.push({
+    name: payload.targetKey,
+    query: Object.fromEntries(Object.entries(payload.params || {})
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => [key, String(value)])),
+  });
+}
+</script>
+```
+
+宿主可以把 `targetKey` 映射到本地页面，也可以通过微前端运行时把它分发给对应子应用。通知组件只传命名目标和参数，不关心目标属于哪个子应用。
+
+#### 7.4.4 ROUTE 处理
+
+`ROUTE` 适合“查看详情”“进入审批”“查看实例”“查看资料”等入口型动作。
+
+业务前端需要保证：
+
+1. `targetKey` 对应的页面名称已注册。
+2. 页面能从 `params` 读取业务 ID 或对象 ID。
+3. 页面进入后用真实接口加载业务数据，并按当前用户权限判断是否可操作。
+4. 页面关闭或返回后，站内信按钮仍可再次进入。
+
+#### 7.4.5 FLOW 处理
+
+`FLOW` 适合“安全处理”“支付异常处理”“补偿向导”等自定义交互。它可以是本应用弹窗、抽屉、独立页面，也可以由微前端子应用承接。
+
+接入方式：
+
+1. 后端发送动作时使用 `target.targetType=FLOW`。
+2. 前端在宿主或子应用中注册同名 `targetKey` 的流程处理器。
+3. 处理器读取 `params` 中的隐藏业务上下文。
+4. 流程需要提交后端命令时，业务模块调用自己的业务接口；如果要沿用通知动作状态，则配套一个 `EVENT` 动作或由业务后端回写动作结果。
+
+未注册 FLOW 目标时，组件只显示兜底流程弹窗或提示“目标未注册或当前无权访问”。这通常表示业务前端还没有接入对应 `targetKey`，不是通知发送失败。
+
+#### 7.4.6 EVENT 处理
+
+`EVENT` 适合“确认告警”“标记处理”“确认风险”“触发补偿”等命令型按钮。前端点击后调用：
+
+```ts
+executeMySiteMessageAction(messageId, actionCode, input)
+```
+
+请求体形态：
+
+```json
+{
+  "input": {
+    "bizType": "WORKFLOW_TASK_ASSIGNED",
+    "bizId": "WF-20260704-001",
+    "messageId": "1234567890",
+    "actionCode": "ACKNOWLEDGE",
+    "taskId": "TASK-001",
+    "data": {
+      "processInstanceId": "PI-001"
+    }
+  }
+}
+```
+
+后端受理后会把动作改成 `PROCESSING`，前端按钮禁用。业务订阅方处理失败并回写 `FAILED` 后，按钮允许再次点击重试；成功回写 `SUCCEEDED` 后不再允许点击。
+
+#### 7.4.7 常见问题
+
+| 现象 | 原因 | 处理方式 |
+|------|------|----------|
+| 按钮不显示 | 后端没有传 `messageActions`，或动作状态为 `DISABLED` | 检查站内信详情接口返回的 `actions`。 |
+| 按钮名称不对 | 后端 `actionLabel` 定义不符合业务语义 | 业务发送消息时修正 `actionLabel`。 |
+| 提示目标未注册或当前无权访问 | `targetKey` 没有注册，或当前用户不能进入目标页面 | 注册命名目标，或补齐菜单/权限。 |
+| 点击 EVENT 后按钮灰掉 | 正常行为，命令已提交并处于 `PROCESSING` | 等业务订阅方回写成功或失败。 |
+| 业务 ID 没在弹窗里显示 | 正常行为，业务上下文是隐藏参数 | 在目标业务页面展示需要给用户看的业务信息。 |
+
 ## 8. 数据与初始化
 
 本包不创建数据库表，也不初始化菜单权限。它依赖后端完成以下初始化：

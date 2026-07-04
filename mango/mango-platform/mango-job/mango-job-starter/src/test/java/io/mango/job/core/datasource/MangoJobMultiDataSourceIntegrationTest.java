@@ -68,6 +68,8 @@ import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import io.mango.job.starter.MangoEmbeddedWorkerRegistrar;
 import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.command.SendNoticeCommand;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.AfterEach;
@@ -332,6 +334,7 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         assertThat(jobQueryService.pageLogs(new MangoJobLogPageQuery()).getTotal()).isEqualTo(1);
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList())
+                .filteredOn(worker -> "internal-admin".equals(worker.getServiceCode()))
                 .singleElement()
                 .extracting("workerAddress")
                 .asString()
@@ -382,6 +385,7 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         assertThat(rowCount("job", "mango_job_instance")).isZero();
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList())
+                .filteredOn(worker -> "internal-admin".equals(worker.getServiceCode()))
                 .singleElement()
                 .satisfies(worker -> {
                     assertThat(worker.getWorkerAddress()).startsWith("embedded://");
@@ -451,6 +455,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(rowCount("job", "mango_job_attempt")).isOne();
         assertThat(rowCount("job", "mango_job_log_chunk")).isGreaterThanOrEqualTo(2);
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList())
+                .filteredOn(worker -> "internal-admin".equals(worker.getServiceCode()))
                 .singleElement()
                 .satisfies(worker -> {
                     assertThat(worker.getEngineType()).isEqualTo(JobEngineType.MANGO_NATIVE.name());
@@ -711,7 +716,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                         .orderByAsc(MangoJobWorkerSnapshotEntity::getServiceCode)
                         .orderByAsc(MangoJobWorkerSnapshotEntity::getWorkerAddress)));
         assertThat(embeddedWorkers)
-                .hasSize(3)
+                .hasSize(5)
                 .allSatisfy(worker -> {
                     assertThat(worker.getStatus()).isEqualTo(JobWorkerStatus.ONLINE.name());
                     assertThat(worker.getWorkerAddress()).startsWith("embedded://");
@@ -1213,6 +1218,16 @@ class MangoJobMultiDataSourceIntegrationTest {
                             .containsEntry("jobCode", "native-failed-alarm")
                             .containsEntry("noticeTemplateCode", MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED_SITE_TEMPLATE)
                             .containsEntry("errorSummary", "handler failed intentionally");
+                    assertThat(notice.getMessageScene()).isEqualTo(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
+                    assertThat(notice.getMessageSubject().getSubjectType()).isEqualTo("JOB_INSTANCE");
+                    assertThat(notice.getMessageSubject().getSubjectId()).isEqualTo(String.valueOf(instanceId));
+                    assertThat(notice.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
+                    assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("job:instance");
+                    assertThat(notice.getMessageActions()).singleElement().satisfies(action -> {
+                        assertThat(action.getActionCode()).isEqualTo("VIEW_INSTANCE");
+                        assertThat(action.getInteractionType()).isEqualTo(NoticeSiteMessageActionInteractionType.ROUTE);
+                        assertThat(action.getTarget().getTargetKey()).isEqualTo("job:instance");
+                    });
                 });
         MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
         query.setJobId(jobId);

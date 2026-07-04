@@ -30,6 +30,8 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.AuthUserInfo;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.notice.api.NoticeApi;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
+import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
@@ -48,18 +50,21 @@ import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -82,6 +87,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                         + "com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure"
         })
 @AutoConfigureMockMvc
+@RecordApplicationEvents
 @DisplayName("Auth security E2E tests")
 class AuthSecurityE2ETest {
 
@@ -93,6 +99,9 @@ class AuthSecurityE2ETest {
 
     @Resource
     private TestUserStore testUserStore;
+
+    @Resource
+    private ApplicationEvents applicationEvents;
 
     @BeforeEach
     void setUp() {
@@ -124,6 +133,16 @@ class AuthSecurityE2ETest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("1:admin"));
+
+        assertThat(applicationEvents.stream(NoticeSendEvent.class).toList())
+                .singleElement()
+                .satisfies(event -> {
+                    assertThat(event.getBizType()).isEqualTo("auth.login.success");
+                    assertThat(event.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
+                    assertThat(event.getMessageTarget().getTargetKey()).isEqualTo("account:profile");
+                    assertThat(event.getMessageActions()).singleElement()
+                            .satisfies(action -> assertThat(action.getActionCode()).isEqualTo("VIEW_PROFILE"));
+                });
     }
 
     @Test
@@ -285,6 +304,16 @@ class AuthSecurityE2ETest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode()));
+
+        assertThat(applicationEvents.stream(NoticeSendEvent.class).toList())
+                .singleElement()
+                .satisfies(event -> {
+                    assertThat(event.getBizType()).isEqualTo("auth.login.locked");
+                    assertThat(event.getMessageSubject().getSubjectType()).isEqualTo("AUTH_LOGIN_LOCK");
+                    assertThat(event.getMessageTarget().getTargetKey()).isEqualTo("system:user");
+                    assertThat(event.getMessageActions()).singleElement()
+                            .satisfies(action -> assertThat(action.getActionCode()).isEqualTo("VIEW_USER"));
+                });
 
         testUserStore.unlock(3L);
 
