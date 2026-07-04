@@ -42,6 +42,10 @@ export interface HomePageIdCommand {
   id: ApiId;
 }
 
+export interface BatchDeleteHomePagesCommand {
+  ids: ApiId[];
+}
+
 export interface SortHomePagesCommand {
   ids: ApiId[];
 }

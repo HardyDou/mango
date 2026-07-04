@@ -1,6 +1,6 @@
 <template>
   <section class="home-admin-page" data-page="home.template" :data-state="pageState">
-    <section class="job-toolbar" data-surface="home.template.search">
+    <section v-if="!editor.visible" class="job-toolbar" data-surface="home.template.search">
       <div class="job-toolbar-head">
         <div>
           <h2>首页模板</h2>
@@ -49,7 +49,7 @@
       </el-form>
     </section>
 
-    <section class="job-panel" data-surface="home.template.list">
+    <section v-if="!editor.visible" class="job-panel" data-surface="home.template.list">
       <el-alert v-if="errorMessage" class="home-admin-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ errorMessage }}
@@ -75,9 +75,19 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="版本" width="120">
+        <el-table-column label="发布变更" width="120">
           <template #default="{ row }">
-            <span>{{ formatVersion(row) }}</span>
+            <el-tag :type="publishChangeTagType(row)" effect="light">{{ formatPublishChange(row) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="生效版本" width="110">
+          <template #default="{ row }">{{ formatActiveVersion(row) }}</template>
+        </el-table-column>
+        <el-table-column label="草稿状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="row.draftVersionId ? 'warning' : 'info'" effect="light">
+              {{ row.draftVersionId ? '有草稿' : '已同步' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="授权数" width="96">
@@ -100,7 +110,7 @@
                 v-auth="'home:templates:edit'"
                 link
                 type="primary"
-                :disabled="!canEditDraft(row)"
+                :disabled="!canEditTemplate(row)"
                 data-action="home.template.edit"
                 :data-record-key="`home-template:${row.id}`"
                 @click="openTemplateEditor(row)"
@@ -176,16 +186,11 @@
       </div>
     </section>
 
-    <el-dialog
-      v-model="editor.visible"
-      :title="editor.form.id ? '编辑模板草稿' : '新建模板'"
-      width="1180px"
-      destroy-on-close
-      append-to-body
-      :close-on-click-modal="false"
-      :before-close="beforeCloseEditor"
-      @closed="resetEditor"
-    >
+    <section v-else class="job-panel home-template-edit-page" data-surface="home.template.form-page">
+      <div class="home-template-edit-page__head">
+        <el-button :icon="ArrowLeft" text data-action="home.template.back" @click="closeEditor">返回</el-button>
+        <strong>{{ editor.form.id ? '编辑首页模板' : '新建首页模板' }}</strong>
+      </div>
       <el-form
         ref="templateFormRef"
         :model="editor.form"
@@ -209,27 +214,22 @@
           </el-col>
         </el-row>
         <div class="home-admin-form-section">布局配置</div>
-        <div class="home-template-editor">
-          <div class="home-template-editor__designer" data-surface="home.template.designer">
-            <MangoGridDesigner
-              v-model="draftItems"
-              :widgets="templateWidgets"
-              :default-width="3"
-              :default-height="10"
-              :row-height="15"
-              :gap="15"
-            />
-          </div>
-          <div class="home-template-editor__preview" data-surface="home.template.preview">
-            <MangoGridLayout :items="draftItems" :widgets="templateWidgets" :row-height="15" :gap="15" />
-          </div>
+        <div class="home-template-editor" data-surface="home.template.designer">
+          <MangoGridDesigner
+            v-model="draftItems"
+            :widgets="templateWidgets"
+            :default-width="3"
+            :default-height="10"
+            :row-height="15"
+            :gap="15"
+          />
         </div>
       </el-form>
-      <template #footer>
+      <div class="home-template-edit-page__footer">
         <el-button :disabled="saving" @click="closeEditor">取消</el-button>
         <el-button type="primary" :loading="saving" data-action="home.template.save" @click="saveTemplateDraft">保存草稿</el-button>
-      </template>
-    </el-dialog>
+      </div>
+    </section>
 
     <el-dialog
       v-model="authorization.visible"
@@ -246,42 +246,80 @@
           <el-button plain data-action="home.template.auth.add-role" @click="addAuthorization('ROLE')">添加角色</el-button>
         </div>
       </div>
-      <el-table :data="authorization.rows" row-key="clientId" data-surface="home.template.auth-table">
+      <el-table
+        v-loading="authorization.optionsLoading"
+        :data="authorization.rows"
+        row-key="clientId"
+        data-surface="home.template.auth-table"
+      >
         <template #empty>
           <el-empty description="暂无授权对象" />
         </template>
         <el-table-column label="授权类型" width="130">
           <template #default="{ row }">
-            <el-select v-model="row.subjectType" data-field="home.template.auth.subject-type">
+            <el-select
+              v-model="row.subjectType"
+              data-field="home.template.auth.subject-type"
+              @change="handleAuthorizationSubjectTypeChange(row)"
+            >
               <el-option label="个人" value="USER" />
               <el-option label="部门" value="ORG" />
               <el-option label="角色" value="ROLE" />
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column label="对象 ID" width="180">
+        <el-table-column label="授权对象" min-width="260">
           <template #default="{ row }">
-            <el-input
+            <el-select
+              v-if="row.subjectType === 'USER'"
               v-model="row.subjectId"
-              :disabled="row.subjectType === 'ROLE'"
-              placeholder="用户或部门 ID"
-              data-field="home.template.auth.subject-id"
+              filterable
+              clearable
+              placeholder="请选择用户"
+              data-field="home.template.auth.subject-user"
+              @change="handleAuthorizationUserChange(row)"
+            >
+              <el-option
+                v-for="user in authorization.userOptions"
+                :key="String(user.userId)"
+                :label="formatUserOption(user)"
+                :value="String(user.userId)"
+              />
+            </el-select>
+            <el-tree-select
+              v-else-if="row.subjectType === 'ORG'"
+              v-model="row.subjectId"
+              filterable
+              clearable
+              check-strictly
+              :data="authorization.orgOptions"
+              node-key="id"
+              :props="orgTreeProps"
+              placeholder="请选择部门"
+              data-field="home.template.auth.subject-org"
+              @change="handleAuthorizationOrgChange(row)"
             />
-          </template>
-        </el-table-column>
-        <el-table-column label="角色编码" width="180">
-          <template #default="{ row }">
-            <el-input
+            <el-select
+              v-else
               v-model="row.subjectCode"
-              :disabled="row.subjectType !== 'ROLE'"
-              placeholder="例如 ROLE_ADMIN"
-              data-field="home.template.auth.subject-code"
-            />
+              filterable
+              clearable
+              placeholder="请选择角色"
+              data-field="home.template.auth.subject-role"
+              @change="handleAuthorizationRoleChange(row)"
+            >
+              <el-option
+                v-for="role in authorization.roleOptions"
+                :key="role.roleCode"
+                :label="formatRoleOption(role)"
+                :value="role.roleCode"
+              />
+            </el-select>
           </template>
         </el-table-column>
         <el-table-column label="显示名称" min-width="180">
           <template #default="{ row }">
-            <el-input v-model="row.subjectName" placeholder="授权来源展示名称" data-field="home.template.auth.subject-name" />
+            <span data-field="home.template.auth.subject-name">{{ formatAuthorizationSubjectName(row) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="默认" width="86">
@@ -314,7 +352,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
-import { ArrowDown, Plus, RefreshLeft, Search } from '@element-plus/icons-vue';
+import { ArrowDown, ArrowLeft, Plus, RefreshLeft, Search } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import {
   homeTemplateApi,
@@ -322,9 +360,10 @@ import {
   type HomeTemplateAuthorizationSubjectType,
   type HomeTemplateVO,
 } from '@mango/home';
-import { MangoGridDesigner, MangoGridLayout, parseGridLayoutValue, type GridLayoutItem } from '@mango/grid-layout';
+import { MangoGridDesigner, parseGridLayoutValue, type GridLayoutItem } from '@mango/grid-layout';
 import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
 import type { MangoWidgetNavigateTarget, MangoWidgetRuntimeContext } from '@mango/grid-widgets';
+import { orgApi, roleApi, userApi, type IdentityUserVO, type RoleVO, type SysOrg } from '@mango/rbac';
 import { ensureFeatureRegistrars } from '../../../runtime/featureRegistrars';
 import { useMangoAdminHomeWidgets } from '../../../runtime/homeWidgets';
 import { useRoutesList } from '../../../stores/routesList';
@@ -335,6 +374,11 @@ type TemplateRowCommand = 'publish' | 'auth' | 'status' | 'delete';
 type AuthorizationRow = HomeTemplateAuthorizationItem & { clientId: string };
 
 const PAGE_CODE = 'admin-home-template';
+const orgTreeProps = {
+  label: 'orgName',
+  children: 'children',
+  value: 'id',
+};
 
 const router = useRouter();
 const userInfo = useUserInfo();
@@ -367,6 +411,10 @@ const editor = reactive({
 const authorization = reactive({
   visible: false,
   templateId: '',
+  optionsLoading: false,
+  userOptions: [] as IdentityUserVO[],
+  orgOptions: [] as SysOrg[],
+  roleOptions: [] as RoleVO[],
   rows: [] as AuthorizationRow[],
 });
 
@@ -470,8 +518,8 @@ function handlePageSizeChange(): void {
 }
 
 async function openTemplateEditor(row?: HomeTemplateVO): Promise<void> {
-  if (row && !canEditDraft(row)) {
-    ElMessage.warning('已发布模板不可直接修改，请先复制为新草稿。');
+  if (row && !canEditTemplate(row)) {
+    ElMessage.warning('当前模板没有可编辑版本');
     return;
   }
   editor.form.id = row?.id ? String(row.id) : '';
@@ -491,13 +539,11 @@ async function openTemplateEditor(row?: HomeTemplateVO): Promise<void> {
 }
 
 function closeEditor(): void {
-  editor.visible = false;
-}
-
-function beforeCloseEditor(done: () => void): void {
-  if (!saving.value) {
-    done();
+  if (saving.value) {
+    return;
   }
+  editor.visible = false;
+  resetEditor();
 }
 
 function resetEditor(): void {
@@ -598,11 +644,12 @@ async function openAuthorizationDialog(row: HomeTemplateVO): Promise<void> {
   if (!row.id) return;
   authorization.templateId = String(row.id);
   try {
+    await loadAuthorizationOptions();
     const rows = await homeTemplateApi.listAuthorizations({ templateId: row.id });
     authorization.rows = rows.map((item, index) => ({
       clientId: `${item.id || row.id}-${index}`,
       subjectType: item.subjectType,
-      subjectId: item.subjectId,
+      subjectId: normalizeId(item.subjectId),
       subjectCode: item.subjectCode,
       subjectName: item.subjectName,
       defaultFlag: Boolean(item.defaultFlag),
@@ -624,18 +671,34 @@ function addAuthorization(subjectType: HomeTemplateAuthorizationSubjectType): vo
 }
 
 async function saveAuthorizations(): Promise<void> {
+  const authorizations = authorization.rows.map(row => {
+    const subjectName = formatAuthorizationSubjectName(row);
+    if (row.subjectType === 'ROLE') {
+      return {
+        subjectType: row.subjectType,
+        subjectCode: row.subjectCode?.trim(),
+        subjectName,
+        defaultFlag: Boolean(row.defaultFlag),
+        sort: row.sort,
+      };
+    }
+    return {
+      subjectType: row.subjectType,
+      subjectId: normalizeId(row.subjectId),
+      subjectName,
+      defaultFlag: Boolean(row.defaultFlag),
+      sort: row.sort,
+    };
+  });
+  if (authorizations.some(row => row.subjectType === 'ROLE' ? !row.subjectCode : !row.subjectId)) {
+    ElMessage.warning('请选择完整的授权对象');
+    return;
+  }
   saving.value = true;
   try {
     await homeTemplateApi.saveAuthorizations({
       templateId: authorization.templateId,
-      authorizations: authorization.rows.map(row => ({
-        subjectType: row.subjectType,
-        subjectId: row.subjectType === 'ROLE' ? undefined : normalizeId(row.subjectId),
-        subjectCode: row.subjectType === 'ROLE' ? row.subjectCode?.trim() : undefined,
-        subjectName: row.subjectName?.trim(),
-        defaultFlag: Boolean(row.defaultFlag),
-        sort: row.sort,
-      })),
+      authorizations,
     });
     authorization.visible = false;
     ElMessage.success('授权已保存');
@@ -645,19 +708,79 @@ async function saveAuthorizations(): Promise<void> {
   }
 }
 
-function canEditDraft(row: HomeTemplateVO): boolean {
-  return Boolean(row.draftVersionId && !row.activeVersionId);
+async function loadAuthorizationOptions(): Promise<void> {
+  if (authorization.userOptions.length && authorization.orgOptions.length && authorization.roleOptions.length) {
+    return;
+  }
+  authorization.optionsLoading = true;
+  try {
+    const [users, orgs, roles] = await Promise.all([
+      userApi.page({ pageNum: 1, pageSize: 200, status: 1 }),
+      orgApi.tree({ parentId: '0', includeDisabled: false }),
+      roleApi.list(),
+    ]);
+    authorization.userOptions = users.list.filter(item => item.userId);
+    authorization.orgOptions = orgs;
+    authorization.roleOptions = roles.filter(item => item.roleCode && item.status !== 0);
+  } finally {
+    authorization.optionsLoading = false;
+  }
+}
+
+function handleAuthorizationSubjectTypeChange(row: AuthorizationRow): void {
+  row.subjectId = undefined;
+  row.subjectCode = undefined;
+  row.subjectName = undefined;
+}
+
+function handleAuthorizationUserChange(row: AuthorizationRow): void {
+  const selected = authorization.userOptions.find(item => String(item.userId) === String(row.subjectId));
+  row.subjectName = selected ? formatUserName(selected) : undefined;
+  row.subjectCode = undefined;
+}
+
+function handleAuthorizationOrgChange(row: AuthorizationRow): void {
+  const selected = findOrgById(authorization.orgOptions, row.subjectId);
+  row.subjectName = selected?.orgName;
+  row.subjectCode = undefined;
+}
+
+function handleAuthorizationRoleChange(row: AuthorizationRow): void {
+  const selected = authorization.roleOptions.find(item => item.roleCode === row.subjectCode);
+  row.subjectName = selected?.roleName;
+  row.subjectId = undefined;
+}
+
+function canEditTemplate(row: HomeTemplateVO): boolean {
+  return Boolean(row.id && (row.draftVersionId || row.activeVersionId));
 }
 
 function canPublish(row: HomeTemplateVO): boolean {
   return Boolean(row.draftVersionId);
 }
 
-function formatVersion(row: HomeTemplateVO): string {
+function formatActiveVersion(row: HomeTemplateVO): string {
   if (row.activeVersionNo) {
     return `V${row.activeVersionNo}`;
   }
-  return row.draftVersionId ? '草稿' : '-';
+  return '-';
+}
+
+function formatPublishChange(row: HomeTemplateVO): string {
+  if (!row.draftVersionId) {
+    return row.activeVersionId ? '已同步' : '未发布';
+  }
+  return row.activeVersionId ? '待发布' : '新草稿';
+}
+
+function publishChangeTagType(row: HomeTemplateVO): 'success' | 'warning' | 'info' {
+  if (!row.draftVersionId && row.activeVersionId) {
+    return 'success';
+  }
+  if (row.draftVersionId) {
+    return 'warning';
+  }
+  return 'info';
 }
 
 function formatDateTime(value?: string): string {
@@ -670,6 +793,53 @@ function formatDateTime(value?: string): string {
 function normalizeId(value: unknown): string | undefined {
   const text = String(value || '').trim();
   return text || undefined;
+}
+
+function formatAuthorizationSubjectName(row: HomeTemplateAuthorizationItem): string {
+  const selectedUser = row.subjectType === 'USER'
+    ? authorization.userOptions.find(item => String(item.userId) === String(row.subjectId))
+    : undefined;
+  if (selectedUser) {
+    return formatUserName(selectedUser);
+  }
+  const selectedOrg = row.subjectType === 'ORG' ? findOrgById(authorization.orgOptions, row.subjectId) : undefined;
+  if (selectedOrg) {
+    return selectedOrg.orgName;
+  }
+  const selectedRole = row.subjectType === 'ROLE'
+    ? authorization.roleOptions.find(item => item.roleCode === row.subjectCode)
+    : undefined;
+  return selectedRole?.roleName || row.subjectName?.trim() || '-';
+}
+
+function formatUserName(user: IdentityUserVO): string {
+  return user.nickname || user.memberName || user.username || String(user.userId || '-');
+}
+
+function formatUserOption(user: IdentityUserVO): string {
+  const name = formatUserName(user);
+  return user.username && user.username !== name ? `${name}（${user.username}）` : name;
+}
+
+function formatRoleOption(role: RoleVO): string {
+  return role.roleName && role.roleCode ? `${role.roleName}（${role.roleCode}）` : role.roleName || role.roleCode;
+}
+
+function findOrgById(items: SysOrg[], id: unknown): SysOrg | undefined {
+  const targetId = normalizeId(id);
+  if (!targetId) {
+    return undefined;
+  }
+  for (const item of items) {
+    if (String(item.id) === targetId) {
+      return item;
+    }
+    const matched = findOrgById(item.children || [], targetId);
+    if (matched) {
+      return matched;
+    }
+  }
+  return undefined;
 }
 
 function normalizeCurrentPage(): void {
@@ -850,14 +1020,37 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   margin-top: 10px;
 }
 
-.home-template-editor {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 14px;
+.home-template-edit-page {
+  padding-bottom: 72px;
 }
 
-.home-template-editor__designer,
-.home-template-editor__preview {
+.home-template-edit-page__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.home-template-edit-page__head strong {
+  color: var(--el-text-color-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.home-template-edit-page__footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 18px -20px -20px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+}
+
+.home-template-editor {
   min-height: 520px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -865,17 +1058,10 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   background: var(--el-fill-color-extra-light);
 }
 
-.home-template-editor__preview {
-  padding: 10px;
-}
-
 @media (max-width: 900px) {
-  .home-template-editor {
-    grid-template-columns: 1fr;
-  }
-
-  .home-template-editor__preview {
-    min-height: 320px;
+  .home-template-edit-page__footer {
+    margin-right: -12px;
+    margin-left: -12px;
   }
 }
 </style>

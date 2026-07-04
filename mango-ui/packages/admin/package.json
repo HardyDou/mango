@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.38",
+  "version": "1.0.39",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "1.0.15",
-    "@mango/admin-shell": "1.0.33",
+    "@mango/admin-shell": "1.0.34",
     "@mango/app-runtime": "1.0.3",
     "@mango/auth": "1.0.11",
     "@mango/cms": "1.0.5",
