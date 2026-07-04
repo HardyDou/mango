@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #389 为首页列表增加预览、编辑、删除和批量删除管理动作，并补齐后端 `home:list:edit`、`home:list:delete` 权限；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界和按钮展示规则执行逻辑。排查首页管理按钮不可见或接口 403 时，确认首页管理菜单按钮资源已同步、角色已授权对应 `home:*` 权限码，并在授权后重新登录刷新权限集合。
+
 - v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和后台品牌配置前端批次；不改变既有按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。品牌配置保存权限使用 `system:admin-branding:edit`，授权后需重新登录刷新权限集合。
 
 - PR #327 扩展 `AUTH_SUBJECT_ROLE` 基线声明，支持通过 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析租户成员后绑定角色；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和前端判断方式。排查清库初始化后的按钮缺失时，如依赖成员角色绑定基线，需要额外确认声明中的稳定主体键能解析到未离租的 `tenant_member`。
