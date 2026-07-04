@@ -5,6 +5,11 @@
   },
   "versions": [
     {
+      "version": "v2026.07.04-maven-1.0.8-platform-release",
+      "label": "1.0.8",
+      "path": "/versions/v2026.07.04-maven-1.0.8-platform-release/"
+    },
+    {
       "version": "v2026.07.03-maven-1.0.7-platform-release",
       "label": "1.0.7",
       "path": "/versions/v2026.07.03-maven-1.0.7-platform-release/"
