@@ -167,11 +167,11 @@ const onTopMenuClick = (item: ShellRouteMenu) => {
 };
 
 const goNoticeMessages = () => {
-  router.push('/message-center/site-message');
+  router.push({ name: 'notice:site-message' });
 };
 
 const goNoticeReceiveSetting = () => {
-  router.push('/notice/receive-setting');
+  router.push({ name: 'notice:receive-setting' });
 };
 
 async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {

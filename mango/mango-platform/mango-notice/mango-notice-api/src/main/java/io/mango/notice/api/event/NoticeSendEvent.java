@@ -1,11 +1,15 @@
 package io.mango.notice.api.event;
 
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticePriority;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +36,20 @@ public class NoticeSendEvent {
 
     @Singular
     Map<String, Object> params;
+
+    String messageScene;
+
+    NoticeSiteMessageSubjectCommand messageSubject;
+
+    NoticeSiteMessageTargetCommand messageTarget;
+
+    @Singular("messageDataEntry")
+    Map<String, Object> messageData;
+
+    @Singular
+    List<NoticeSiteMessageActionCommand> messageActions;
+
+    LocalDateTime messageExpireTime;
 
     NoticePriority priority;
 

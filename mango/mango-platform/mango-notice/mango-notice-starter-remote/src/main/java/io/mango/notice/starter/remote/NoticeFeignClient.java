@@ -4,6 +4,8 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
+import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
 import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
@@ -34,6 +36,7 @@ import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
+import io.mango.notice.api.vo.NoticeSiteMessageActionRequestVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
@@ -216,6 +219,17 @@ public interface NoticeFeignClient extends NoticeApi {
     @Override
     @GetMapping("/site/my/messages/{id}")
     R<NoticeSiteMessageVO> getSiteMessage(@PathVariable("id") Long id);
+
+    @Override
+    @PostMapping("/site/my/messages/{id}/actions/{actionCode}")
+    R<NoticeSiteMessageActionRequestVO> executeSiteMessageAction(@PathVariable("id") Long id,
+            @PathVariable("actionCode") String actionCode,
+            @RequestBody ExecuteNoticeSiteMessageActionCommand command);
+
+    @Override
+    @PostMapping("/internal/site/actions/complete")
+    R<NoticeSiteMessageActionRequestVO> completeSiteMessageAction(
+            @RequestBody CompleteNoticeSiteMessageActionCommand command);
 
     @Override
     @GetMapping("/site/my/unread-count")

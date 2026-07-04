@@ -17,6 +17,7 @@ import type {
   NoticeSendCommand,
   NoticeSendRecord,
   NoticeSendResult,
+  NoticeSiteMessageActionRequest,
   PublishNoticeAnnouncementCommand,
   SaveNoticeAnnouncementCommand,
   NoticeSiteMessage,
@@ -244,6 +245,12 @@ export function getMySiteMessageDetail(id: string) {
   return get<NoticeSiteMessage>(`/notice/site/my/messages/${id}`);
 }
 
+export function executeMySiteMessageAction(id: string, actionCode: string, input?: Record<string, unknown>) {
+  return post<NoticeSiteMessageActionRequest>(`/notice/site/my/messages/${id}/actions/${actionCode}`, {
+    input: input || {},
+  });
+}
+
 export function getAnnouncements(params?: Record<string, unknown>) {
   return get<PageResult<NoticeAnnouncement>>('/notice/announcements', { params });
 }
@@ -447,6 +454,7 @@ export const noticeApi = {
   ignoreSendRecords,
   getMySiteMessages,
   getMySiteMessageDetail,
+  executeMySiteMessageAction,
   getAnnouncements,
   getAnnouncement,
   createAnnouncement,

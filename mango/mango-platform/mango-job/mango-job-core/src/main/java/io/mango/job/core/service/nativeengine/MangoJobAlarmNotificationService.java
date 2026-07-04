@@ -10,8 +10,13 @@ import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
 import io.mango.job.core.mapper.MangoJobAlarmRuleMapper;
 import io.mango.notice.api.NoticeApi;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +93,14 @@ public class MangoJobAlarmNotificationService {
         command.setBizId(String.valueOf(instance.getId()));
         command.setTitle("Mango Job 任务执行失败：" + definition.getJobName());
         command.setContent(errorSummary);
-        command.setParams(noticeParams(rule, definition, instance, errorSummary));
+        Map<String, Object> params = noticeParams(rule, definition, instance, errorSummary);
+        NoticeSiteMessageTargetCommand target = routeTarget("job:instance", params);
+        command.setParams(params);
+        command.setMessageScene(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
+        command.setMessageSubject(subject("JOB_INSTANCE", String.valueOf(instance.getId()), definition.getJobName()));
+        command.setMessageTarget(target);
+        command.setMessageData(params);
+        command.setMessageActions(List.of(routeAction("VIEW_INSTANCE", "查看实例", target)));
         command.setPriority(NoticePriority.HIGH);
         command.setUserId(instance.getTriggerUserId());
         applyRecipientRule(rule, command);
@@ -131,6 +143,31 @@ public class MangoJobAlarmNotificationService {
         params.put("durationMillis", instance.getDurationMillis());
         params.put("errorSummary", StringUtils.hasText(errorSummary) ? errorSummary : instance.getErrorSummary());
         return params;
+    }
+
+    private NoticeSiteMessageSubjectCommand subject(String subjectType, String subjectId, String subjectName) {
+        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+        subject.setSubjectType(subjectType);
+        subject.setSubjectId(subjectId);
+        subject.setSubjectName(subjectName);
+        return subject;
+    }
+
+    private NoticeSiteMessageTargetCommand routeTarget(String targetKey, Map<String, Object> params) {
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+        target.setTargetKey(targetKey);
+        target.setParams(params);
+        return target;
+    }
+
+    private NoticeSiteMessageActionCommand routeAction(String actionCode, String actionLabel, NoticeSiteMessageTargetCommand target) {
+        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
+        action.setActionCode(actionCode);
+        action.setActionLabel(actionLabel);
+        action.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
+        action.setTarget(target);
+        return action;
     }
 
     @SuppressWarnings("unchecked")

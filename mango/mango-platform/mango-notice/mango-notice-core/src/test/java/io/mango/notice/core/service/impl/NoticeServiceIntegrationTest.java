@@ -20,9 +20,16 @@ import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxMessageQuery;
+import io.mango.infra.event.api.DomainEvent;
+import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
@@ -33,6 +40,10 @@ import io.mango.notice.api.enums.NoticeDeleteStatus;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeReadStatus;
 import io.mango.notice.api.enums.NoticeSendStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageActionRequestStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageActionStatus;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.enums.NoticeTaskStatus;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
 import io.mango.notice.channel.wecom.WecomDirectoryClient;
@@ -41,6 +52,8 @@ import io.mango.notice.channel.wecom.WecomDirectoryUser;
 import io.mango.notice.core.entity.NoticeBusinessConfigVersionEntity;
 import io.mango.notice.core.entity.NoticeBusinessTypeEntity;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
+import io.mango.notice.core.entity.NoticeSiteMessageActionEntity;
+import io.mango.notice.core.entity.NoticeSiteMessageActionRequestEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageEntity;
 import io.mango.notice.core.entity.NoticeTaskEntity;
 import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
@@ -49,6 +62,8 @@ import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.notice.core.mapper.NoticeRecipientMapper;
 import io.mango.notice.core.mapper.NoticeSendRecordMapper;
+import io.mango.notice.core.mapper.NoticeSiteMessageActionMapper;
+import io.mango.notice.core.mapper.NoticeSiteMessageActionRequestMapper;
 import io.mango.notice.core.mapper.NoticeSiteMessageMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
 import io.mango.notice.core.outbox.NoticeOutboxMessageMapper;
@@ -133,10 +148,19 @@ class NoticeServiceIntegrationTest {
     private NoticeSiteMessageMapper siteMessageMapper;
 
     @Autowired
+    private NoticeSiteMessageActionMapper siteMessageActionMapper;
+
+    @Autowired
+    private NoticeSiteMessageActionRequestMapper siteMessageActionRequestMapper;
+
+    @Autowired
     private TestOutboxStore outboxStore;
 
     @Autowired
     private TestRealtimeApi realtimeApi;
+
+    @Autowired
+    private TestDomainEventPublisher domainEventPublisher;
 
     @Autowired
     private TestIdentityUserApi identityUserApi;
@@ -146,6 +170,7 @@ class NoticeServiceIntegrationTest {
         resetSchema();
         outboxStore.clear();
         realtimeApi.clear();
+        domainEventPublisher.clear();
         identityUserApi.clear();
         identityUserApi.addUser(1L, "张三", "zhangsan@example.com", "13800000001");
         identityUserApi.addUser(2L, "李四", "lisi@example.com", "13800000002");
@@ -238,6 +263,94 @@ class NoticeServiceIntegrationTest {
     }
 
     @Test
+    void executeTaskPersistsStructuredMessageActionsThroughRealMappers() {
+        seedBusinessType();
+        seedActiveSiteTemplate(10L);
+        seedSiteChannelConfig(20L);
+        noticeService.send(interactiveSendCommand());
+
+        noticeService.executeTask(singleTask().getId());
+
+        NoticeTaskEntity task = singleTask();
+        assertThat(task.getMessageScene()).isEqualTo("workflow.todo");
+        assertThat(task.getMessageTargetKey()).isEqualTo("workflowTaskDetail");
+        NoticeSiteMessageEntity message = siteMessageMapper.selectList(new LambdaQueryWrapper<NoticeSiteMessageEntity>()
+                .eq(NoticeSiteMessageEntity::getUserId, 1L)).get(0);
+        assertThat(message.getMessageScene()).isEqualTo("workflow.todo");
+        assertThat(message.getTargetKey()).isEqualTo("workflowTaskDetail");
+        assertThat(message.getTargetParamsJson()).contains("taskId");
+        assertThat(siteMessageActionMapper.selectList(new LambdaQueryWrapper<NoticeSiteMessageActionEntity>()
+                .eq(NoticeSiteMessageActionEntity::getMessageId, message.getId())))
+                .hasSize(1)
+                .allSatisfy(action -> {
+                    assertThat(action.getActionCode()).isEqualTo("approve");
+                    assertThat(action.getInteractionType()).isEqualTo(NoticeSiteMessageActionInteractionType.EVENT);
+                    assertThat(action.getEventType()).isEqualTo("workflow.task.approve.requested");
+                    assertThat(action.getStatus()).isEqualTo(NoticeSiteMessageActionStatus.AVAILABLE);
+                });
+    }
+
+    @Test
+    void executeSiteMessageActionPublishesDomainEventAndIsIdempotent() {
+        seedBusinessType();
+        seedActiveSiteTemplate(10L);
+        seedSiteChannelConfig(20L);
+        noticeService.send(interactiveSendCommand());
+        noticeService.executeTask(singleTask().getId());
+        NoticeSiteMessageEntity message = siteMessageMapper.selectList(new LambdaQueryWrapper<NoticeSiteMessageEntity>()
+                .eq(NoticeSiteMessageEntity::getUserId, 1L)).get(0);
+
+        var first = noticeService.executeSiteMessageAction(message.getId(), "approve", 1L,
+                new ExecuteNoticeSiteMessageActionCommand());
+        var second = noticeService.executeSiteMessageAction(message.getId(), "approve", 1L,
+                new ExecuteNoticeSiteMessageActionCommand());
+
+        assertThat(first.getRequestId()).isEqualTo(second.getRequestId());
+        assertThat(first.getStatus()).isEqualTo(NoticeSiteMessageActionRequestStatus.REQUESTED);
+        assertThat(domainEventPublisher.events).hasSize(1);
+        DomainEvent event = domainEventPublisher.events.get(0);
+        assertThat(event.getEventType()).isEqualTo("workflow.task.approve.requested");
+        assertThat(event.getHeaders()).containsEntry("requestId", first.getRequestId());
+        assertThat(event.getPayload()).containsEntry("actionCode", "approve");
+        NoticeSiteMessageActionEntity action = siteMessageActionMapper.selectOne(
+                new LambdaQueryWrapper<NoticeSiteMessageActionEntity>()
+                        .eq(NoticeSiteMessageActionEntity::getMessageId, message.getId())
+                        .eq(NoticeSiteMessageActionEntity::getActionCode, "approve"));
+        assertThat(action.getStatus()).isEqualTo(NoticeSiteMessageActionStatus.PROCESSING);
+    }
+
+    @Test
+    void completeSiteMessageActionUpdatesRequestAndActionStatus() {
+        seedBusinessType();
+        seedActiveSiteTemplate(10L);
+        seedSiteChannelConfig(20L);
+        noticeService.send(interactiveSendCommand());
+        noticeService.executeTask(singleTask().getId());
+        NoticeSiteMessageEntity message = siteMessageMapper.selectList(new LambdaQueryWrapper<NoticeSiteMessageEntity>()
+                .eq(NoticeSiteMessageEntity::getUserId, 1L)).get(0);
+        var request = noticeService.executeSiteMessageAction(message.getId(), "approve", 1L,
+                new ExecuteNoticeSiteMessageActionCommand());
+        CompleteNoticeSiteMessageActionCommand command = new CompleteNoticeSiteMessageActionCommand();
+        command.setRequestId(request.getRequestId());
+        command.setStatus(NoticeSiteMessageActionRequestStatus.SUCCEEDED);
+        command.setResult(Map.of("approved", true));
+
+        var result = noticeService.completeSiteMessageAction(command);
+
+        assertThat(result.getStatus()).isEqualTo(NoticeSiteMessageActionRequestStatus.SUCCEEDED);
+        assertThat(result.getResult()).containsEntry("approved", true);
+        NoticeSiteMessageActionRequestEntity persistedRequest = siteMessageActionRequestMapper.selectOne(
+                new LambdaQueryWrapper<NoticeSiteMessageActionRequestEntity>()
+                        .eq(NoticeSiteMessageActionRequestEntity::getRequestId, request.getRequestId()));
+        assertThat(persistedRequest.getFinishedAt()).isNotNull();
+        NoticeSiteMessageActionEntity action = siteMessageActionMapper.selectOne(
+                new LambdaQueryWrapper<NoticeSiteMessageActionEntity>()
+                        .eq(NoticeSiteMessageActionEntity::getMessageId, message.getId())
+                        .eq(NoticeSiteMessageActionEntity::getActionCode, "approve"));
+        assertThat(action.getStatus()).isEqualTo(NoticeSiteMessageActionStatus.SUCCEEDED);
+    }
+
+    @Test
     void siteMessageReadAndDeleteOnlyAffectCurrentUsersVisibleRows() {
         insertSiteMessage(100L, 8L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL);
         insertSiteMessage(101L, 9L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL);
@@ -315,7 +428,34 @@ class NoticeServiceIntegrationTest {
         return command;
     }
 
+    private SendNoticeCommand interactiveSendCommand() {
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setMessageScene("workflow.todo");
+        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+        subject.setSubjectType("workflowTask");
+        subject.setSubjectId("task-1001");
+        subject.setSubjectName("审批任务");
+        command.setMessageSubject(subject);
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+        target.setTargetKey("workflowTaskDetail");
+        target.setParams(Map.of("taskId", "task-1001"));
+        command.setMessageTarget(target);
+        command.setMessageData(Map.of("processInstanceId", "pi-1001"));
+        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
+        action.setActionCode("approve");
+        action.setActionLabel("同意");
+        action.setInteractionType(NoticeSiteMessageActionInteractionType.EVENT);
+        action.setEventType("workflow.task.approve.requested");
+        action.setConfirmRequired(true);
+        command.setMessageActions(List.of(action));
+        return command;
+    }
+
     private void resetSchema() {
+        jdbcTemplate.execute("drop table if exists notice_site_message_action_request");
+        jdbcTemplate.execute("drop table if exists notice_site_message_action");
         jdbcTemplate.execute("drop table if exists notice_site_message");
         jdbcTemplate.execute("drop table if exists notice_send_record");
         jdbcTemplate.execute("drop table if exists notice_recipient");
@@ -338,6 +478,8 @@ class NoticeServiceIntegrationTest {
         createRecipientTable();
         createSendRecordTable();
         createSiteMessageTable();
+        createSiteMessageActionTable();
+        createSiteMessageActionRequestTable();
         createSettingTable();
         createWecomSyncMappingTable();
     }
@@ -489,6 +631,17 @@ class NoticeServiceIntegrationTest {
                     params_snapshot clob,
                     recipient_targets_snapshot clob,
                     channel_types varchar(256),
+                    message_scene varchar(64),
+                    message_subject_type varchar(64),
+                    message_subject_id varchar(128),
+                    message_subject_name varchar(128),
+                    message_target_type varchar(32),
+                    message_target_key varchar(128),
+                    message_target_params_json clob,
+                    message_target_open_mode varchar(32),
+                    message_data_json clob,
+                    message_actions_json clob,
+                    message_expire_time timestamp,
                     send_mode varchar(32),
                     scheduled_time timestamp,
                     status varchar(32),
@@ -563,6 +716,16 @@ class NoticeServiceIntegrationTest {
                     user_id bigint,
                     title varchar(512),
                     content clob,
+                    message_scene varchar(64),
+                    subject_type varchar(64),
+                    subject_id varchar(128),
+                    subject_name varchar(128),
+                    target_type varchar(32),
+                    target_key varchar(128),
+                    target_params_json clob,
+                    target_open_mode varchar(32),
+                    data_json clob,
+                    expire_time timestamp,
                     priority varchar(32),
                     read_status varchar(32),
                     read_time timestamp,
@@ -576,6 +739,55 @@ class NoticeServiceIntegrationTest {
                     updated_by bigint,
                     updated_at timestamp default current_timestamp,
                     tenant_id varchar(64)
+                )
+                """);
+    }
+
+    private void createSiteMessageActionTable() {
+        jdbcTemplate.execute("""
+                create table notice_site_message_action (
+                    id bigint generated by default as identity primary key,
+                    message_id bigint,
+                    action_code varchar(64),
+                    action_label varchar(64),
+                    interaction_type varchar(32),
+                    event_type varchar(128),
+                    target_type varchar(32),
+                    target_key varchar(128),
+                    target_params_json clob,
+                    target_open_mode varchar(32),
+                    confirm_required boolean,
+                    input_schema clob,
+                    status varchar(32),
+                    failure_reason varchar(512),
+                    sort_order int,
+                    expire_time timestamp,
+                    tenant_id varchar(64),
+                    created_at timestamp default current_timestamp,
+                    updated_at timestamp default current_timestamp
+                )
+                """);
+    }
+
+    private void createSiteMessageActionRequestTable() {
+        jdbcTemplate.execute("""
+                create table notice_site_message_action_request (
+                    id bigint generated by default as identity primary key,
+                    message_id bigint,
+                    action_id bigint,
+                    action_code varchar(64),
+                    actor_user_id bigint,
+                    request_id varchar(160),
+                    input_json clob,
+                    status varchar(32),
+                    fail_code varchar(64),
+                    fail_reason varchar(512),
+                    result_json clob,
+                    event_id varchar(64),
+                    tenant_id varchar(64),
+                    created_at timestamp default current_timestamp,
+                    updated_at timestamp default current_timestamp,
+                    finished_at timestamp
                 )
                 """);
     }
@@ -707,6 +919,11 @@ class NoticeServiceIntegrationTest {
         }
 
         @Bean
+        TestDomainEventPublisher domainEventPublisher() {
+            return new TestDomainEventPublisher();
+        }
+
+        @Bean
         TestIdentityUserApi identityUserApi() {
             return new TestIdentityUserApi();
         }
@@ -762,6 +979,20 @@ class NoticeServiceIntegrationTest {
 
         void clear() {
             messages.clear();
+        }
+    }
+
+    static class TestDomainEventPublisher implements IDomainEventPublisher {
+
+        private final List<DomainEvent> events = new ArrayList<>();
+
+        @Override
+        public void publish(DomainEvent event) {
+            events.add(event);
+        }
+
+        void clear() {
+            events.clear();
         }
     }
 

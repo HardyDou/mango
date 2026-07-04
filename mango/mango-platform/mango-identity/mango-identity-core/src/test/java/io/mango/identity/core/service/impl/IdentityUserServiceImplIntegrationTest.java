@@ -22,6 +22,9 @@ import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
+import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.system.api.SysConfigApi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +37,6 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -42,6 +44,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -65,6 +69,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
+@RecordApplicationEvents
 @DisplayName("身份用户服务集成测试")
 class IdentityUserServiceImplIntegrationTest {
 
@@ -88,6 +93,9 @@ class IdentityUserServiceImplIntegrationTest {
 
     @Autowired
     private IdentityUserServiceImpl service;
+
+    @Autowired
+    private ApplicationEvents applicationEvents;
 
     @BeforeEach
     void setUp() {
@@ -244,6 +252,19 @@ class IdentityUserServiceImplIntegrationTest {
         assertThat(bindings.get(0).getProvider()).isEqualTo("WECOM");
         assertThat(bindings.get(0).getCorpId()).isEqualTo("corp");
         assertThat(bindings.get(0).getExternalUserId()).isEqualTo("wecom_user");
+        assertThat(applicationEvents.stream(NoticeSendEvent.class).toList())
+                .singleElement()
+                .satisfies(event -> {
+                    assertThat(event.getBizType()).isEqualTo("auth.wecom.login.bound");
+                    assertThat(event.getMessageSubject().getSubjectType()).isEqualTo("IDENTITY_USER");
+                    assertThat(event.getMessageSubject().getSubjectId()).isEqualTo("1002");
+                    assertThat(event.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
+                    assertThat(event.getMessageTarget().getTargetKey()).isEqualTo("account:profile");
+                    assertThat(event.getMessageActions()).singleElement().satisfies(action -> {
+                        assertThat(action.getActionCode()).isEqualTo("VIEW_PROFILE");
+                        assertThat(action.getInteractionType()).isEqualTo(NoticeSiteMessageActionInteractionType.ROUTE);
+                    });
+                });
     }
 
     private void resetSchema() {
@@ -386,12 +407,6 @@ class IdentityUserServiceImplIntegrationTest {
         @Bean
         PasswordEncoder passwordEncoder() {
             return new BCryptPasswordEncoder();
-        }
-
-        @Bean
-        ApplicationEventPublisher applicationEventPublisher() {
-            return event -> {
-            };
         }
 
         @Bean

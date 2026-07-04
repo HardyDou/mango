@@ -6,7 +6,12 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
@@ -208,13 +213,21 @@ public class PaymentNotificationService {
             PaymentApplication application,
             PaymentBusinessOrderEntity businessOrder,
             PaymentOrderVO paymentOrder) {
+        String bizType = paymentNoticeBizType(paymentOrder.getStatus());
+        Map<String, Object> params = paymentNoticeParams(application, businessOrder, paymentOrder);
+        NoticeSiteMessageTargetCommand target = routeTarget("payment:payment-order", params);
         eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType(paymentNoticeBizType(paymentOrder.getStatus()))
+                .bizType(bizType)
                 .bizId(paymentOrder.getPayOrderNo())
                 .recipientRuleCode("payment.operator")
                 .priority(NoticePriority.NORMAL)
                 .idempotentKey("payment:" + paymentOrder.getPayOrderNo() + ":" + paymentOrder.getStatus())
-                .params(paymentNoticeParams(application, businessOrder, paymentOrder))
+                .params(params)
+                .messageScene(bizType)
+                .messageSubject(subject("PAYMENT_ORDER", paymentOrder.getPayOrderNo(), businessOrder.getBizOrderNo()))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(paymentActions(paymentOrder.getStatus(), target, params))
                 .build());
     }
 
@@ -222,13 +235,21 @@ public class PaymentNotificationService {
             PaymentApplication application,
             PaymentBusinessOrderEntity businessOrder,
             PaymentRefundOrderVO refundOrder) {
+        String bizType = refundNoticeBizType(refundOrder.getStatus());
+        Map<String, Object> params = refundNoticeParams(application, businessOrder, refundOrder);
+        NoticeSiteMessageTargetCommand target = routeTarget("payment:refund-order", params);
         eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType(refundNoticeBizType(refundOrder.getStatus()))
+                .bizType(bizType)
                 .bizId(refundOrder.getRefundOrderNo())
                 .recipientRuleCode("payment.operator")
                 .priority(FAILED_STATUS.equals(refundOrder.getStatus()) ? NoticePriority.HIGH : NoticePriority.NORMAL)
                 .idempotentKey("payment:refund:" + refundOrder.getRefundOrderNo() + ":" + refundOrder.getStatus())
-                .params(refundNoticeParams(application, businessOrder, refundOrder))
+                .params(params)
+                .messageScene(bizType)
+                .messageSubject(subject("PAYMENT_REFUND_ORDER", refundOrder.getRefundOrderNo(), businessOrder.getBizOrderNo()))
+                .messageTarget(target)
+                .messageData(params)
+                .messageActions(refundActions(refundOrder.getStatus(), target, params))
                 .build());
     }
 
@@ -280,6 +301,67 @@ public class PaymentNotificationService {
         params.put("failReason", refundOrder.getStatusName());
         params.put("reason", refundOrder.getReason());
         return params;
+    }
+
+    private List<NoticeSiteMessageActionCommand> paymentActions(
+            String status, NoticeSiteMessageTargetCommand target, Map<String, Object> params) {
+        NoticeSiteMessageActionCommand view = routeAction("VIEW_PAYMENT_ORDER", "查看订单", target);
+        if (!FAILED_STATUS.equals(status)) {
+            return List.of(view);
+        }
+        return List.of(view, flowAction("HANDLE_PAYMENT_EXCEPTION", "处理异常",
+                "payment.exception.resolve", params));
+    }
+
+    private List<NoticeSiteMessageActionCommand> refundActions(
+            String status, NoticeSiteMessageTargetCommand target, Map<String, Object> params) {
+        NoticeSiteMessageActionCommand view = routeAction("VIEW_REFUND_ORDER", "查看退款", target);
+        if (!FAILED_STATUS.equals(status)) {
+            return List.of(view);
+        }
+        return List.of(view, flowAction("HANDLE_REFUND_EXCEPTION", "处理退款异常",
+                "payment.refund-exception.resolve", params));
+    }
+
+    private NoticeSiteMessageSubjectCommand subject(String subjectType, String subjectId, String subjectName) {
+        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+        subject.setSubjectType(subjectType);
+        subject.setSubjectId(subjectId);
+        subject.setSubjectName(subjectName);
+        return subject;
+    }
+
+    private NoticeSiteMessageTargetCommand routeTarget(String targetKey, Map<String, Object> params) {
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+        target.setTargetKey(targetKey);
+        target.setParams(params);
+        return target;
+    }
+
+    private NoticeSiteMessageTargetCommand flowTarget(String targetKey, Map<String, Object> params) {
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.FLOW);
+        target.setTargetKey(targetKey);
+        target.setParams(params);
+        return target;
+    }
+
+    private NoticeSiteMessageActionCommand routeAction(
+            String actionCode, String actionLabel, NoticeSiteMessageTargetCommand target) {
+        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
+        action.setActionCode(actionCode);
+        action.setActionLabel(actionLabel);
+        action.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
+        action.setTarget(target);
+        return action;
+    }
+
+    private NoticeSiteMessageActionCommand flowAction(
+            String actionCode, String actionLabel, String targetKey, Map<String, Object> params) {
+        NoticeSiteMessageActionCommand action = routeAction(actionCode, actionLabel, flowTarget(targetKey, params));
+        action.setConfirmRequired(true);
+        return action;
     }
 
     private PaymentNotificationRecordEntity createPendingRecord(

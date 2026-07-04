@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @Data
 @Schema(description = "系统消息视图")
@@ -22,6 +24,24 @@ public class NoticeSiteMessageVO {
 
     @Schema(description = "接收用户ID")
     private Long userId;
+
+    @Schema(description = "系统消息场景")
+    private String messageScene;
+
+    @Schema(description = "系统消息业务对象")
+    private NoticeSiteMessageSubjectVO subject;
+
+    @Schema(description = "系统消息跳转目标")
+    private NoticeSiteMessageTargetVO target;
+
+    @Schema(description = "系统消息业务数据快照")
+    private Map<String, Object> data;
+
+    @Schema(description = "系统消息动作")
+    private List<NoticeSiteMessageActionVO> actions;
+
+    @Schema(description = "系统消息过期时间")
+    private LocalDateTime expireTime;
 
     @Schema(description = "通知优先级")
     private NoticePriority priority;

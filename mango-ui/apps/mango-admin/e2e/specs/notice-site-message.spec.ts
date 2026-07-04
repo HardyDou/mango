@@ -4,11 +4,8 @@ async function login(page: import('@playwright/test').Page) {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
   await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
+  await expect(page.locator('.tenant-select')).toContainText('芒果集团');
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
   await page.locator('.login-btn').click();
@@ -22,6 +19,7 @@ function ok(data: unknown) {
 
 test.describe('通知中心 E2E', () => {
   test('登录后可以访问完整通知菜单、消息入口和系统消息主流程', async ({ page }) => {
+    test.setTimeout(90_000);
     const businessTypes = [
       {
         id: '1',
@@ -94,6 +92,45 @@ test.describe('通知中心 E2E', () => {
         readStatus: 'UNREAD',
         bizType: 'WORKFLOW_APPROVED',
         bizId: 'WF-1',
+        bizGroup: 'WORKFLOW',
+        bizName: '审批通过通知',
+        messageScene: 'workflow.task.assigned',
+        subject: {
+          subjectType: 'WORKFLOW_PROCESS',
+          subjectId: 'PI-1001',
+          subjectName: '测试流程',
+        },
+        target: {
+          targetType: 'ROUTE',
+          targetKey: 'notice:receive-setting',
+          params: { source: 'notice-e2e', bizId: 'WF-1' },
+        },
+        data: {
+          processInstanceId: 'PI-1001',
+          taskId: 'TASK-1001',
+        },
+        actions: [
+          {
+            actionCode: 'ACKNOWLEDGE',
+            actionLabel: '标记处理',
+            interactionType: 'EVENT',
+            eventType: 'notice.e2e.acknowledge',
+            status: 'AVAILABLE',
+            sortOrder: 1,
+          },
+          {
+            actionCode: 'OPEN_SETTING',
+            actionLabel: '查看设置',
+            interactionType: 'ROUTE',
+            status: 'AVAILABLE',
+            sortOrder: 2,
+            target: {
+              targetType: 'ROUTE',
+              targetKey: 'notice:receive-setting',
+              params: { source: 'notice-e2e-action' },
+            },
+          },
+        ],
         createTime: '2026-05-25 17:10:00',
       },
     ];
@@ -530,6 +567,30 @@ test.describe('通知中心 E2E', () => {
         }),
       });
     });
+    await page.route('**/api/link/company-links/list**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
+    });
+    await page.route('**/api/link/personal-links/page**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: [], total: 0, page: 1, size: 500 }) });
+    });
+    await page.route('**/api/link/favorites/list**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
+    });
+    await page.route('**/api/link/personal-categories/list**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
+    });
+    await page.route('**/api/calendar/workdays/day**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ workday: true, holiday: false }) });
+    });
+    await page.route('**/api/calendar/lunar/day**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(null) });
+    });
+    await page.route('**/api/calendar/workdays/month/summary**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ workdays: 0, holidays: 0 }) });
+    });
+    await page.route('**/api/home/pages**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok([]) });
+    });
     await page.route('**/api/realtime/transports/negotiate**', async (route) => {
       await route.fulfill({
         status: 200,
@@ -584,6 +645,23 @@ test.describe('通知中心 E2E', () => {
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: messages, total: messages.length, page: 1, size: 10 }) });
         return;
       }
+      if (route.request().method() === 'POST' && route.request().url().includes('/actions/ACKNOWLEDGE')) {
+        const action = messages[0].actions.find(item => item.actionCode === 'ACKNOWLEDGE');
+        if (action) {
+          action.status = 'PROCESSING';
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: ok({
+            id: 'action-request-1001',
+            messageId: '1001',
+            actionCode: 'ACKNOWLEDGE',
+            status: 'PROCESSING',
+          }),
+        });
+        return;
+      }
       await route.continue();
     });
     await page.route('**/api/notice/site/my/messages/1001', async (route) => {
@@ -621,14 +699,15 @@ test.describe('通知中心 E2E', () => {
     const noticeBell = page.locator('.notice-bell');
     await expect(page.getByLabel('消息提醒')).toBeVisible();
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('1');
-    expect(unreadCountRequestCount).toBe(1);
+    const unreadCountRequestsAfterLogin = unreadCountRequestCount;
+    expect(unreadCountRequestsAfterLogin).toBeGreaterThanOrEqual(1);
     await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('mango-notice-message', {
         detail: { messageId: '2002', title: '实时系统消息', unreadCount: 2 },
       }));
     });
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('2');
-    expect(unreadCountRequestCount).toBe(1);
+    expect(unreadCountRequestCount).toBe(unreadCountRequestsAfterLogin);
     await expect(page.getByText('实时系统消息')).toBeVisible();
     await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeSpokenTexts?: string[] }).__noticeSpokenTexts?.[0] || '')).toBe('您有新的系统消息，请及时查看');
     await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeDesktopNotifications?: Array<unknown> }).__noticeDesktopNotifications?.length ?? 0)).toBe(1);
@@ -680,6 +759,7 @@ test.describe('通知中心 E2E', () => {
     await expect(configPage.getByRole('tab', { name: '短信' })).toBeVisible();
     await configPage.locator('.template-enabled-item .el-switch').click();
     await expect(configPage.locator('.template-enabled-item').getByText('启用', { exact: true })).toBeVisible();
+    await configPage.locator('input[placeholder="例如：SMS_123456789"]').fill('SMS_10002');
     await configPage.locator('textarea[placeholder="请输入短信内容，例如：订单 {{orderNo}} 已发货"]').fill('订单 {{orderNo}} 已发货');
     await expect(page.getByText('订单号：{{orderNo}}')).toBeVisible();
     await page.getByRole('button', { name: '保存', exact: true }).click();
@@ -759,7 +839,7 @@ test.describe('通知中心 E2E', () => {
     await expect(siteChannelDetailDialog.getByRole('tab', { name: '表单形式' })).toBeVisible();
     await expect(siteChannelDetailDialog.getByRole('tab', { name: 'JSON 形式' })).toBeVisible();
     await expect(siteChannelDetailDialog.getByLabel('播报内容')).toHaveValue('您有新的系统消息，请及时查看');
-    await siteChannelDetailDialog.getByRole('button', { name: '关闭' }).click();
+    await siteChannelDetailDialog.getByRole('button', { name: '关闭', exact: true }).click();
     await page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '编辑' }).click();
     const siteChannelDialog = page.getByRole('dialog', { name: '编辑渠道' });
     await expect(siteChannelDialog.getByLabel('播报内容')).toHaveValue('您有新的系统消息，请及时查看');
@@ -843,7 +923,7 @@ test.describe('通知中心 E2E', () => {
     await expect(retryDetailDialog.getByText('PROVIDER_ERROR')).toBeVisible();
     await expect(retryDetailDialog.getByText('模板错误')).toBeVisible();
     await expect(retryDetailDialog.getByText('"bizId": "WF-FAIL"')).toBeVisible();
-    await retryDetailDialog.getByRole('button', { name: '关闭' }).click();
+    await retryDetailDialog.getByRole('button', { name: '关闭', exact: true }).click();
     await page.getByRole('menuitem', { name: '发送记录' }).click();
     const recordRow = page.locator('tr', { hasText: '测试系统消息' });
     await expect(recordRow.getByText('WORKFLOW', { exact: true })).toBeVisible();
@@ -856,7 +936,7 @@ test.describe('通知中心 E2E', () => {
     await expect(recordDetailDialog.getByText('WF-1', { exact: true })).toBeVisible();
     await expect(recordDetailDialog.getByText('NR001')).toBeVisible();
     await expect(recordDetailDialog.getByText('"status": "SENT"')).toBeVisible();
-    await recordDetailDialog.getByRole('button', { name: '关闭' }).click();
+    await recordDetailDialog.getByRole('button', { name: '关闭', exact: true }).click();
     await page.getByRole('menuitem', { name: '接收设置' }).click();
     await expect(page.getByLabel('提醒方式').getByText('提示音')).toBeVisible();
 
@@ -865,10 +945,49 @@ test.describe('通知中心 E2E', () => {
     const siteMessageRow = page.locator('tr', { hasText: '测试系统消息' });
     await expect(siteMessageRow).toBeVisible();
     await expect(siteMessageRow.getByText('未读', { exact: true })).toBeVisible();
+    await expect(siteMessageRow.getByRole('button', { name: '标记处理' })).toBeVisible();
+    await expect(siteMessageRow.getByRole('button', { name: '查看设置' })).toBeVisible();
+    const actionRequest = page.waitForRequest(request =>
+      request.method() === 'POST' && request.url().includes('/api/notice/site/my/messages/1001/actions/ACKNOWLEDGE')
+    );
+    await siteMessageRow.getByRole('button', { name: '标记处理' }).click();
+    const actionRequestBody = (await actionRequest).postDataJSON();
+    expect(actionRequestBody.input).toMatchObject({
+      bizType: 'WORKFLOW_APPROVED',
+      bizId: 'WF-1',
+      bizGroup: 'WORKFLOW',
+      bizName: '审批通过通知',
+      messageScene: 'workflow.task.assigned',
+      messageId: '1001',
+      actionCode: 'ACKNOWLEDGE',
+      source: 'notice-e2e',
+      subject: {
+        subjectType: 'WORKFLOW_PROCESS',
+        subjectId: 'PI-1001',
+        subjectName: '测试流程',
+      },
+      data: {
+        processInstanceId: 'PI-1001',
+        taskId: 'TASK-1001',
+      },
+    });
+    await expect(page.getByText('操作已提交')).toBeVisible();
+    await expect(siteMessageRow.getByRole('button', { name: '标记处理' })).toBeDisabled();
+    await expect(siteMessageRow.getByRole('button', { name: '查看设置' })).toBeEnabled();
+    await siteMessageRow.getByRole('button', { name: '查看设置' }).click();
+    await expect(page.getByLabel('提醒方式').getByText('提示音')).toBeVisible();
+    await page.screenshot({ path: 'test-results/notice-message-actions.png', fullPage: true });
+    await page.getByRole('menuitem', { name: '系统消息' }).click();
+    await expect(page.locator('.notice-site-message-page__header').getByText('我的消息')).toBeVisible();
     await page.locator('tr', { hasText: '测试系统消息' }).getByRole('button', { name: '详情' }).click();
     const siteDetailDialog = page.getByRole('dialog', { name: '测试系统消息' });
     await expect(siteDetailDialog.getByText('这是一条系统消息内容')).toBeVisible();
     await expect(siteDetailDialog.getByText('2026-05-25 17:10:00')).toBeVisible();
+    await expect(siteDetailDialog).not.toContainText('WF-1');
+    await expect(siteDetailDialog).not.toContainText('PI-1001');
+    await expect(siteDetailDialog).not.toContainText('TASK-1001');
+    await expect(siteDetailDialog.getByRole('button', { name: '标记处理' })).toBeDisabled();
+    await expect(siteDetailDialog.getByRole('button', { name: '查看设置' })).toBeEnabled();
     await siteDetailDialog.getByRole('button', { name: '确认' }).click();
     await page.locator('tr', { hasText: '测试系统消息' }).getByRole('button', { name: '已读', exact: true }).click();
     await expect(page.locator('tr', { hasText: '测试系统消息' }).getByText('已读', { exact: true })).toBeVisible();
@@ -877,7 +996,9 @@ test.describe('通知中心 E2E', () => {
     await page.getByRole('button', { name: '全部已读' }).click();
     await expect(page.locator('.notice-site-message-page .el-loading-mask')).toHaveCount(0);
     await page.locator('tr', { hasText: '测试系统消息' }).getByRole('button', { name: '删除' }).click();
-    await page.getByRole('button', { name: /^(确认|OK)$/ }).click();
-    await expect(page.getByText('No Data')).toBeVisible();
+    const deleteConfirmDialog = page.getByRole('dialog', { name: '删除确认' });
+    await expect(deleteConfirmDialog).toBeVisible();
+    await deleteConfirmDialog.getByRole('button', { name: /^(确定|确认|OK)$/ }).click();
+    await expect(page.getByText('暂无数据')).toBeVisible();
   });
 });

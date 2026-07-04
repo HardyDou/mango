@@ -1,15 +1,18 @@
-import vue from '@vitejs/plugin-vue';
+import { createRequire } from 'node:module';
 import { resolve } from 'path';
-import { defineConfig } from 'vitest/config';
 
 const repoRoot = resolve(__dirname, '../..');
 const adminNodeModules = resolve(repoRoot, 'apps/mango-admin/node_modules');
+const require = createRequire(import.meta.url);
+const vue = require(resolve(adminNodeModules, '@vitejs/plugin-vue')).default;
+const { defineConfig } = require(resolve(adminNodeModules, 'vite'));
 
 export default defineConfig({
   plugins: [vue()],
   test: {
     globals: true,
     environment: 'happy-dom',
+    include: ['packages/notice/src/**/*.spec.ts'],
   },
   resolve: {
     alias: {

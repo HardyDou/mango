@@ -1,8 +1,12 @@
 package io.mango.notice.support.channel;
 
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +34,18 @@ public class ChannelSendCommand {
     private String title;
 
     private String content;
+
+    private String messageScene;
+
+    private NoticeSiteMessageSubjectCommand messageSubject;
+
+    private NoticeSiteMessageTargetCommand messageTarget;
+
+    private Map<String, Object> messageData;
+
+    private List<NoticeSiteMessageActionCommand> messageActions;
+
+    private LocalDateTime messageExpireTime;
 
     private List<Long> attachmentFileIds;
 

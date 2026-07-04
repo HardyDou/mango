@@ -21,6 +21,8 @@ import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
 import io.mango.job.core.service.IMangoJobDefinitionService;
 import io.mango.job.core.service.IMangoJobQueryService;
 import io.mango.job.starter.JobAutoConfiguration;
+import io.mango.job.starter.nativeengine.MangoJobWorkerInternalController;
+import io.mango.job.support.nativeengine.MangoJobWorkerExecutor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -32,6 +34,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -215,6 +218,7 @@ class MangoJobRemoteDispatchE2ETest {
     @SpringBootConfiguration
     @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, FlywayAutoConfiguration.class,
             JobAutoConfiguration.class})
+    @Import({MangoJobWorkerInternalController.class, MangoJobWorkerExecutor.class})
     static class WorkerApplication {
 
         @Bean
