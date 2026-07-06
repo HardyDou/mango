@@ -2,6 +2,10 @@ package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.cms.api.CmsAdminApi;
+import io.mango.cms.api.CmsSiteApi;
+import io.mango.cms.core.service.ICmsAdminService;
+import io.mango.cms.core.service.ICmsSiteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -30,6 +34,14 @@ class CmsControllerContractTest {
 
         assertThat(access).isNotNull();
         assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+    }
+
+    @Test
+    void cmsApi_只由Controller承载() {
+        assertThat(CmsAdminApi.class).isAssignableFrom(CmsAdminController.class);
+        assertThat(CmsSiteApi.class).isAssignableFrom(CmsSiteController.class);
+        assertThat(CmsAdminApi.class.isAssignableFrom(ICmsAdminService.class)).isFalse();
+        assertThat(CmsSiteApi.class.isAssignableFrom(ICmsSiteService.class)).isFalse();
     }
 
     @Test

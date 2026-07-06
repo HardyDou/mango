@@ -5,6 +5,8 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.infra.log.annotation.Log;
+import io.mango.system.api.SysTenantApi;
+import io.mango.system.api.command.UpdateTenantStatusCommand;
 import io.mango.system.api.po.SysTenantPo;
 import io.mango.system.core.service.ISysTenantService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,13 +22,14 @@ import java.util.List;
 @RequestMapping("/system/tenant")
 @RequiredArgsConstructor
 @Tag(name = "机构管理", description = "机构列表、详情、新增、修改、删除与状态管理接口")
-public class SysTenantController {
+public class SysTenantController implements SysTenantApi {
 
     private final ISysTenantService tenantService;
 
     @GetMapping("/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:list")
     @Operation(summary = "获取机构列表", description = "权限接口。查询全部机构列表")
+    @Override
     public R<List<SysTenantPo>> list() {
         return tenantService.list();
     }
@@ -41,6 +44,7 @@ public class SysTenantController {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:query")
     @Operation(summary = "获取机构详情", description = "权限接口。按机构ID查询机构详情")
+    @Override
     public R<SysTenantPo> get(
             @Parameter(description = "机构ID。底层对应 tenantId")
             @RequestParam Long id) {
@@ -51,6 +55,7 @@ public class SysTenantController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:add")
     @Operation(summary = "新增机构", description = "权限接口。创建机构空间")
     @Log("新增机构")
+    @Override
     public R<Long> create(@RequestBody @Valid SysTenantPo po) {
         return tenantService.create(po);
     }
@@ -59,6 +64,7 @@ public class SysTenantController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:edit")
     @Operation(summary = "修改机构", description = "权限接口。更新机构信息")
     @Log("修改机构")
+    @Override
     public R<Boolean> update(@RequestBody @Valid SysTenantPo po) {
         return tenantService.update(po);
     }
@@ -67,10 +73,16 @@ public class SysTenantController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:delete")
     @Operation(summary = "删除机构", description = "权限接口。仅允许删除未初始化且无关联数据的机构；已使用机构请改为归档")
     @Log("删除机构")
+    @Override
     public R<Boolean> delete(
             @Parameter(description = "机构ID。底层对应 tenantId")
             @RequestParam Long id) {
         return tenantService.delete(id);
+    }
+
+    @Override
+    public R<Boolean> updateStatus(UpdateTenantStatusCommand command) {
+        return tenantService.updateStatus(command.getId(), command.getStatus());
     }
 
     @PutMapping("/status")

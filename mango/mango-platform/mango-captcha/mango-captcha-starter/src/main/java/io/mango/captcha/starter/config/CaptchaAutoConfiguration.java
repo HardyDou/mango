@@ -1,7 +1,6 @@
 package io.mango.captcha.starter.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.service.ArithmeticCaptchaService;
@@ -68,15 +67,15 @@ public class CaptchaAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(CaptchaApi.class)
-    public ICaptchaService captchaApi(IKvStore kvStore,
-                                      ArithmeticCaptchaService arithmeticCaptchaService,
-                                      BlockPuzzleCaptchaService blockPuzzleCaptchaService,
-                                      ClickWordCaptchaService clickWordCaptchaService,
-                                      BehaviorCaptchaService behaviorCaptchaService,
-                                      List<SmsProvider> smsProviders,
-                                      List<EmailProvider> emailProviders,
-                                      ObjectMapper objectMapper) {
+    @ConditionalOnMissingBean(ICaptchaService.class)
+    public ICaptchaService captchaService(IKvStore kvStore,
+                                          ArithmeticCaptchaService arithmeticCaptchaService,
+                                          BlockPuzzleCaptchaService blockPuzzleCaptchaService,
+                                          ClickWordCaptchaService clickWordCaptchaService,
+                                          BehaviorCaptchaService behaviorCaptchaService,
+                                          List<SmsProvider> smsProviders,
+                                          List<EmailProvider> emailProviders,
+                                          ObjectMapper objectMapper) {
         return new CaptchaServiceImpl(
                 kvStore,
                 arithmeticCaptchaService,

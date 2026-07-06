@@ -206,7 +206,7 @@ HTTP 接口前缀是 `/auth`。
 | `X-App-Key` | 签名应用标识 |
 | `X-Sign` | 请求签名 |
 
-Java API 使用 `AuthApi`，本地 starter 会注册 `AuthApiAdapter`，remote starter 会注册 Feign Client：
+Java API 使用 `AuthApi`，本地 starter 由 `AuthController` 实现，remote starter 会注册 Feign Client：
 
 ```java
 R<LoginVO> response = authApi.login(command);
