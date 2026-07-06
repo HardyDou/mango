@@ -728,3 +728,7 @@ Resource Registry 还支持授权基线声明：
 - [@mango/rbac](../../../mango-ui/packages/rbac/README.md)
 - [@mango/admin-shell](../../../mango-ui/packages/admin-shell/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 16. 变更影响记录
+
+- PermissionApi 契约由 `PermissionController` 承载，授权菜单服务只暴露内部权限码查询能力。该变更不改变权限码来源、菜单资源同步、角色授权链路和 `/authorization/permissions` 对外路径。

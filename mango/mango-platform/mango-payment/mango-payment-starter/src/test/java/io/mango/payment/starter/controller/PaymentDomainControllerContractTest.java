@@ -15,6 +15,7 @@ import io.mango.payment.api.PaymentOfflineCollectionApi;
 import io.mango.payment.api.PaymentOfflineRefundApi;
 import io.mango.payment.api.PaymentOperationAuditApi;
 import io.mango.payment.api.PaymentOrderApi;
+import io.mango.payment.api.PaymentOpenApi;
 import io.mango.payment.api.PaymentReconciliationApi;
 import io.mango.payment.api.PaymentRefundApprovalApi;
 import io.mango.payment.api.PaymentRefundOrderApi;
@@ -22,6 +23,7 @@ import io.mango.payment.api.PaymentSecurityApi;
 import io.mango.payment.api.PaymentSettlementSummaryApi;
 import io.mango.payment.api.PaymentTaskApi;
 import io.mango.payment.api.PaymentTransactionFlowApi;
+import io.mango.payment.core.service.IPaymentOpenApiService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -67,6 +69,8 @@ class PaymentDomainControllerContractTest {
         assertThat(PaymentSecurityApi.class).isAssignableFrom(PaymentSecurityController.class);
         assertThat(PaymentObservabilityApi.class).isAssignableFrom(PaymentObservabilityController.class);
         assertThat(MangoPayVirtualPaymentApi.class).isAssignableFrom(MangoPayVirtualPaymentController.class);
+        assertThat(PaymentOpenApi.class).isAssignableFrom(PaymentOpenApiController.class);
+        assertThat(PaymentOpenApi.class.isAssignableFrom(IPaymentOpenApiService.class)).isFalse();
     }
 
     @Test

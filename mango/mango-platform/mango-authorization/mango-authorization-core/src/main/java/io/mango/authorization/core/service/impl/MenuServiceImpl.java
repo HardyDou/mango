@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -127,6 +128,34 @@ public class MenuServiceImpl implements IMenuService {
                         || !menuIds.contains(menu.getParentId()))
                 .map(menu -> buildMenuNode(menu, childrenByParentId))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Set<String> listAllPermissionCodes() {
+        LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Menu::getMenuType, List.of(2, 3))
+                .eq(Menu::getStatus, 1)
+                .orderByAsc(Menu::getSort);
+        return menuMapper.selectList(wrapper)
+                .stream()
+                .flatMap(menu -> permissionCodes(menu).stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private List<String> permissionCodes(Menu menu) {
+        if (menu == null) {
+            return new ArrayList<>();
+        }
+        if (StringUtils.hasText(menu.getPermissions())) {
+            return Arrays.stream(menu.getPermissions().split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .collect(Collectors.toList());
+        }
+        if (StringUtils.hasText(menu.getMenuCode())) {
+            return List.of(menu.getMenuCode().trim());
+        }
+        return new ArrayList<>();
     }
 
     private MenuVO buildMenuNode(Menu menu, Map<Long, List<Menu>> childrenByParentId) {

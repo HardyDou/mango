@@ -357,3 +357,7 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [文档资产边界](../../../mango-pmo/rules/06-document-assets.md)
+
+## 12. 变更影响记录
+
+- PaymentOpenApi 契约由 `PaymentOpenApiController` 承载，`IPaymentOpenApiService` 仅保留内部服务契约。该变更不改变支付开放接口方法签名、HTTP 路径、权限码、资源声明、编号规则和通知语义。

@@ -178,3 +178,5 @@ pnpm -F @mango/admin-shell build
 - Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变菜单树接口、页面 `component` key、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，再回到本指南排查菜单、页面和权限链路。
 
 - v2026.07.04-maven-1.0.8-platform-release 仅发布首页管理后续 UI/API、通知动作和文件能力的版本批次；不新增菜单 component key 解析规则，不改变菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。首页管理页面仍按 Issue #372 的菜单资源同步、角色授权和前端页面 key 注册链路排查。
+
+- Issue #396 仅治理 system 日志、行政区划和 authorization 权限码 API 契约承载位置：API Bean 改由 starter controller 承载，service/core 不再实现 API；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、登录态权限聚合、页面路由和本场景排障步骤。
