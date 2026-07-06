@@ -11,6 +11,9 @@ public final class WorkflowDomainEvents {
     public static final String TASK_COMPLETED = WorkflowEventTypes.TASK_COMPLETED;
     public static final String TASK_ADVANCED = WorkflowEventTypes.TASK_ADVANCED;
     public static final String TASK_REJECTED = WorkflowEventTypes.TASK_REJECTED;
+    public static final String TASK_SAVED = WorkflowEventTypes.TASK_SAVED;
+    public static final String TASK_CLAIMED = WorkflowEventTypes.TASK_CLAIMED;
+    public static final String TASK_UNCLAIMED = WorkflowEventTypes.TASK_UNCLAIMED;
     public static final String PROCESS_COMPLETED = WorkflowEventTypes.PROCESS_COMPLETED;
     public static final String PROCESS_REJECTED = WorkflowEventTypes.PROCESS_REJECTED;
     public static final String PROCESS_ENDED = WorkflowEventTypes.PROCESS_ENDED;

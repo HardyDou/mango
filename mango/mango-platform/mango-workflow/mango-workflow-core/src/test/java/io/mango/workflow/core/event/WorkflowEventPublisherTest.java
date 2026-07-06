@@ -3,6 +3,7 @@ package io.mango.workflow.core.event;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.core.entity.WorkflowDefinition;
@@ -44,6 +45,7 @@ class WorkflowEventPublisherTest {
         assertThat(event.getBusinessKey()).isEqualTo("EXP-20260516-001");
         assertThat(event.getAggregateId()).isEqualTo("APPLY-1");
         assertThat(event.getPayload())
+                .containsEntry("eventType", WorkflowDomainEvents.PROCESS_STARTED)
                 .containsEntry("processInstanceId", "PROC-1")
                 .containsEntry("definitionId", 1001L)
                 .containsEntry("definitionKey", "expense_reimbursement")
@@ -62,6 +64,7 @@ class WorkflowEventPublisherTest {
         assertThat(event.getEventType()).isEqualTo(WorkflowDomainEvents.TASK_COMPLETED);
         assertThat(event.getBusinessKey()).isEqualTo("EXP-FORM-KEY");
         assertThat(event.getPayload())
+                .containsEntry("eventType", WorkflowDomainEvents.TASK_COMPLETED)
                 .containsEntry("processInstanceId", "PROC-1")
                 .containsEntry("taskId", "TASK-1")
                 .containsEntry("taskName", "部门经理审批")
@@ -82,6 +85,7 @@ class WorkflowEventPublisherTest {
         assertThat(event.getEventType()).isEqualTo(WorkflowDomainEvents.TASK_ADVANCED);
         assertThat(event.getBusinessKey()).isEqualTo("EXP-FORM-KEY");
         assertThat(event.getPayload())
+                .containsEntry("eventType", WorkflowDomainEvents.TASK_ADVANCED)
                 .containsEntry("processInstanceId", "PROC-1")
                 .containsEntry("completedTaskId", "TASK-1")
                 .containsEntry("completedTaskDefinitionKey", "manager_approve")
@@ -96,7 +100,10 @@ class WorkflowEventPublisherTest {
                 .containsEntry("currentTaskDefinitionKeys", "finance_approve")
                 .containsEntry("currentAssigneeNames", "lisi")
                 .containsEntry("assignee", 1002L)
-                .containsEntry("assigneeName", "lisi");
+                .containsEntry("assigneeName", "lisi")
+                .containsEntry("claimStatus", WorkflowTaskClaimStatus.ASSIGNED.name())
+                .containsEntry("candidateUsers", List.of("1002"))
+                .containsEntry("candidateGroups", List.of("finance"));
         assertThat((List<?>) event.getPayload().get("currentTasks")).singleElement()
                 .satisfies(currentTask -> {
                     Map<?, ?> currentTaskPayload = (Map<?, ?>) currentTask;
@@ -105,6 +112,9 @@ class WorkflowEventPublisherTest {
                     assertThat(currentTaskPayload.get("taskName")).isEqualTo("财务审批");
                     assertThat(currentTaskPayload.get("assigneeId")).isEqualTo(1002L);
                     assertThat(currentTaskPayload.get("assigneeName")).isEqualTo("lisi");
+                    assertThat(currentTaskPayload.get("claimStatus")).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED.name());
+                    assertThat(currentTaskPayload.get("candidateUsers")).isEqualTo(List.of("1002"));
+                    assertThat(currentTaskPayload.get("candidateGroups")).isEqualTo(List.of("finance"));
                 });
     }
 
@@ -158,6 +168,9 @@ class WorkflowEventPublisherTest {
         currentTask.setTaskName("财务审批");
         currentTask.setAssigneeId(1002L);
         currentTask.setAssigneeName("lisi");
+        currentTask.setClaimStatus(WorkflowTaskClaimStatus.ASSIGNED);
+        currentTask.setCandidateUsers(List.of("1002"));
+        currentTask.setCandidateGroups(List.of("finance"));
 
         WorkflowBusinessApplyVO businessApply = new WorkflowBusinessApplyVO();
         businessApply.setId(1001L);

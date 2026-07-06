@@ -19,8 +19,8 @@
 |------|--------|
 | 业务状态 | 业务单据状态区分草稿、审批中、通过、驳回、撤回等业务语义 |
 | 流程定义 | 业务类型、流程 key、表单编码和版本关系清晰 |
-| 发起审批 | 业务保存和流程发起的事务边界可解释，失败时能回滚或补偿 |
-| 审批回调 | 监听流程完成、驳回、撤回等事件并回写业务状态 |
+| 发起审批 | 业务保存和流程发起的事务边界可解释，失败时能回滚或补偿；业务后端通过 `WorkflowProcessApi.startBusinessWorkflow()` 或 `WorkflowBusinessApplyApi` + `WorkflowProcessApi` 组合入口接入，不直接调用 workflow core service |
+| 审批回调 | 监听流程完成、驳回、撤回等事件并回写业务状态；事件类型和 payload 使用 `mango-workflow-api` 的 `WorkflowEventTypes`、`WorkflowEventPayloadVO` |
 | 页面入口 | 业务详情页展示流程进度、当前任务和审批记录 |
 | 返回入口 | 业务跳转审批任务详情时传 `returnPath`，审批完成或点返回能回到业务列表，不回退到 Mango 默认待办 |
 | 权限 | 发起、审批、撤回、查看记录按业务角色和流程任务共同判断 |
@@ -51,9 +51,11 @@
 
 | 业务目标 | 推荐方式 |
 |----------|----------|
-| 审批按钮点击后立即刷新当前节点、当前办理人和页面按钮状态 | 调用 `POST /workflow/tasks/complete-result` |
+| 审批按钮点击后立即刷新当前节点、当前办理人和页面按钮状态 | 调用 `POST /workflow/tasks/complete-result` 或 `WorkflowTaskRuntimeApi.completeWithResult()` |
 | 审批退回后立即刷新当前节点、当前办理人和页面按钮状态 | 调用 `POST /workflow/tasks/return` |
+| 保存审批草稿、认领、取消认领后立即刷新按钮状态 | 调用 `save-result`、`claim-result`、`unclaim-result` 或对应 `WorkflowTaskRuntimeApi` result 方法 |
 | 审批中同步下一节点办理人、业务列表当前节点、待办摘要 | 订阅 `workflow.task.advanced` |
+| 保存草稿、认领、取消认领后异步刷新业务侧状态 | 订阅 `workflow.task.saved`、`workflow.task.claimed`、`workflow.task.unclaimed` |
 | 审计刚完成的任务和办理意见 | 订阅 `workflow.task.completed` |
 | 流程通过后回写业务通过状态 | 订阅 `workflow.process.completed` |
 | 流程驳回后回写业务驳回状态 | 订阅 `workflow.process.rejected` |
@@ -68,6 +70,8 @@
 `POST /workflow/tasks/return` 会把当前任务退回到最近一个已完成的不同用户任务节点，或退回到 `targetTaskDefinitionKey` 指定的历史节点。串行流程可以不传目标节点；并行、多实例、重复审批节点或业务语义固定的流程，应在流程节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务侧应使用返回的 `currentTasks` 或订阅 `workflow.task.advanced` 刷新业务单据当前节点和当前办理人；退回不会发布 `workflow.task.completed`，也不会把流程状态改为驳回。
 
 单体多实例、微服务或微服务多实例部署时，事件应按至少一次投递处理。业务订阅方使用 `eventId`、`processInstanceId + completedTaskId` 或业务主键构造幂等键，避免重复回写状态、重复发通知或重复生成待办摘要。
+
+业务订阅事件时，依赖边界应停留在 `mango-workflow-api`：事件类型使用 `WorkflowEventTypes`，`event.payload` 使用 `WorkflowEventPayloadVO` 反序列化。不要在业务模块中引用 `io.mango.workflow.core.event.WorkflowDomainEvents`、`WorkflowEventPublisher` 或 `io.mango.workflow.core.service.*`。业务列表需要展示当前节点、当前办理人、认领状态或候选人时，使用 `WorkflowBusinessApplyApi.latestProgress()`、批量进度 API 或任务动作 result 返回值，不要直接查询 workflow 运行表。
 
 ## 7. 变更影响记录
 
@@ -105,6 +109,8 @@ pnpm -F @mango/workflow-business-example build
 - [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
 ## 9. 变更影响记录
+
+- PR #400 处理 workflow API 边界治理。业务模块发起业务审批可使用 `WorkflowProcessApi.startBusinessWorkflow()` 一次性创建业务申请并启动流程；审批、保存、认领和取消认领需要同步刷新页面时，使用任务 result API 读取 `progress.currentTask`、`claimStatus`、`candidateUsers` 和 `candidateGroups`。业务后端和事件订阅方只依赖 `mango-workflow-api` 或 remote starter，不依赖 workflow core service/event，也不直接读取 workflow 表。流程页面 key、菜单、权限码、租户隔离和既有 `WorkflowBusinessApplyApi.create()` + `WorkflowProcessApi.start()` 组合入口保持兼容。
 
 - PR #388 支持站内消息动作的 `FLOW` 目标类型，业务模块可在消息中携带流程或任务入口动作；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。排查审批消息动作无法打开流程时，额外确认消息动作 `targetKey`、隐藏业务参数、流程/任务权限和对应 workflow 页面注册。
 

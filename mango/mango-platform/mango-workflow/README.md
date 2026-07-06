@@ -88,6 +88,8 @@ module-path=/workflow
 | `WorkflowDefinitionApi.ensurePublished()` | 业务模块内置流程定义时，幂等确保流程已发布。 |
 | `WorkflowProcessApi.start()` | 发起流程实例。 |
 
+业务模块只能依赖 `mango-workflow-api` 暴露的 `XxxApi`、Command、Query、VO、Enum 和事件 payload 契约。禁止业务模块注入或调用 `mango-workflow-core` 的 `IWorkflow*Service`、`Workflow*ServiceImpl`、`WorkflowEventPublisher`、`WorkflowDomainEvents` 等内部实现；本地单体由 `mango-workflow-starter` 的 Controller 承载 API Bean，远程调用由 `mango-workflow-starter-remote` 的 Feign client 承载 API Bean。
+
 创建申请字段：
 
 | 字段 | 必填 | 含义 |
@@ -159,10 +161,10 @@ workflowProcessApi.start(start);
 | 步骤 | 业务模块动作 | Workflow 入口 |
 |------|--------------|---------------|
 | 1 | 保存业务主表、明细、附件关系和业务快照引用 | 业务模块自有 service |
-| 2 | 创建业务申请记录 | `WorkflowBusinessApplyApi.create()` |
-| 3 | 发起流程实例 | `WorkflowProcessApi.start()` |
-| 4 | 业务列表展示审批状态和当前处理人 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` |
-| 5 | 审批页办理任务后立即刷新页面状态 | `POST /workflow/tasks/complete-result` |
+| 2 | 创建业务申请记录并发起流程实例 | `WorkflowProcessApi.startBusinessWorkflow()` / `POST /workflow/processes/start-business` |
+| 3 | 业务列表批量展示审批状态、当前处理人和候选人 | `WorkflowBusinessApplyApi.latestProgress(businessType, businessKeys)` / `POST /workflow/business-applies/progress/latest-batch` |
+| 4 | 审批页办理任务后立即刷新页面状态 | `POST /workflow/tasks/complete-result`、`reject-result`、`save-result`、`claim-result`、`unclaim-result` |
+| 5 | 兼容旧代码时手工创建申请后发起流程 | `WorkflowBusinessApplyApi.create()` + `WorkflowProcessApi.start()` |
 | 6 | 业务后台异步回写通过、驳回、当前节点或通知摘要 | 订阅 workflow 领域事件 |
 
 业务模块推荐保存的关联字段：
@@ -175,24 +177,29 @@ workflowProcessApi.start(start);
 | `processInstanceId` | `WorkflowProcessApi.start()` 返回 | 排查流程运行时、幂等回写和审计。 |
 | `snapshotRef` | 业务模块定义 | 审批时读取稳定业务快照，避免审批中业务数据漂移。 |
 
+业务模块不应直接查询 `workflow_business_apply`、`workflow_business_apply_current_task` 或 Flowable 运行时表，也不应依赖 workflow core service 读取这些数据。列表页使用批量进度 API，详情页使用申请/任务详情 API，办理动作使用 result API 返回的快照；这样租户、数据权限、候选人和分页规则都由 workflow 模块统一处理。
+
+`POST /workflow/processes/start-business` 一次完成申请创建和流程发起，返回 `applyId`、`processInstanceId`、`processStatus`、第一个当前任务、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `currentTasks`。业务侧已有申请记录创建逻辑时，仍可保留 `WorkflowBusinessApplyApi.create()` + `WorkflowProcessApi.start()` 兼容模式。
+
 业务页面处理“审批通过”时有两种模式：
 
 | 模式 | 入口 | 适合场景 |
 |------|------|----------|
 | 兼容模式 | `POST /workflow/tasks/complete` | 只关心任务完成成功，随后由列表或详情重新查询状态。 |
-| 结果模式 | `POST /workflow/tasks/complete-result` | 完成任务后立即拿到刷新后的申请状态、当前节点和当前处理人。 |
+| 结果模式 | `POST /workflow/tasks/complete-result` | 完成任务后立即拿到刷新后的申请状态、当前节点、认领状态和候选人。 |
 
 业务模块订阅事件时，实现 `DomainEventSubscriber` 并按 `businessType` 过滤：
 
 ```java
 package com.example.approval;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.DomainEventSubscriber;
 import io.mango.workflow.api.WorkflowEventTypes;
+import io.mango.workflow.api.vo.WorkflowEventPayloadVO;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -205,9 +212,12 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
             WorkflowEventTypes.PROCESS_REJECTED);
 
     private final ExpenseApprovalService expenseApprovalService;
+    private final ObjectMapper objectMapper;
 
-    public ExpenseWorkflowEventSubscriber(ExpenseApprovalService expenseApprovalService) {
+    public ExpenseWorkflowEventSubscriber(ExpenseApprovalService expenseApprovalService,
+                                          ObjectMapper objectMapper) {
         this.expenseApprovalService = expenseApprovalService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -223,7 +233,7 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
             return;
         }
         String businessKey = event.getBusinessKey();
-        Map<String, Object> payload = event.getPayload();
+        WorkflowEventPayloadVO payload = objectMapper.convertValue(event.getPayload(), WorkflowEventPayloadVO.class);
         if (WorkflowEventTypes.TASK_ADVANCED.equals(event.getEventType())) {
             expenseApprovalService.syncCurrentApprovalTask(businessKey, payload);
         } else if (WorkflowEventTypes.PROCESS_COMPLETED.equals(event.getEventType())) {
@@ -234,6 +244,8 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
     }
 }
 ```
+
+事件订阅方使用 `WorkflowEventTypes` 判断类型，使用 `WorkflowEventPayloadVO` 解析 payload。不要引用 `io.mango.workflow.core.event.WorkflowDomainEvents` 或 `WorkflowEventPublisher`，这些类只属于 workflow 内部发布实现。
 
 业务事件处理建议：
 
@@ -512,10 +524,12 @@ mango:
 | 返回对象 | 主要字段 | 什么时候用 |
 |----------|----------|------------|
 | `WorkflowBusinessApplyVO` | 申请 ID、业务类型、业务主键、申请标题、流程定义、渲染模式、状态、当前任务、快照引用、变量、扩展信息。 | 申请分页、详情、历史申请和创建申请后回显。 |
-| `WorkflowBusinessApplyProgressVO` | 业务类型、业务主键、申请 ID、流程实例 ID、状态、当前任务、当前处理人、发起人、更新时间。 | 业务列表展示审批状态和当前处理节点。 |
+| `WorkflowBusinessApplyProgressVO` | 业务类型、业务主键、申请 ID、流程实例 ID、流程状态、当前任务、当前处理人、认领状态、候选用户/组、发起和结束时间。 | 业务列表展示审批状态和当前处理节点，支持批量查询。 |
 | `WorkflowBusinessProcessVO` | 业务类型、业务主键、申请 ID、流程实例 ID、流程状态和当前任务摘要。 | 业务侧批量查询最新流程状态。 |
 | `WorkflowProcessInstanceVO` | 流程实例 ID、流程定义信息、业务主键、发起人、状态、开始时间。 | 发起流程后的结果回显。 |
+| `WorkflowStartResultVO` | 申请 ID、流程实例 ID、流程状态、当前任务、认领状态、候选用户/组。 | 业务侧一体化创建申请并发起流程后的结果回显。 |
 | `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间。 | 待办、已办、抄送列表。 |
+| `WorkflowTaskActionResultVO` | 已处理任务、业务申请、流程状态、当前任务、认领状态、候选用户/组、是否结束。 | 驳回、暂存、认领和释放后立即刷新业务状态。 |
 | `WorkflowTaskDetailVO` | 任务详情、表单渲染配置、变量、审批记录、节点动作配置。 | 审批详情页渲染和按钮控制。 |
 | `WorkflowDefinitionVO` | 流程定义 ID、编码、名称、分类、业务域、启动入口可见性、状态、发布版本和流程管理员。 | 流程定义管理和业务选择流程。 |
 | `WorkflowDeployVO` | 部署 ID、流程定义 ID、流程定义 key、版本和发布结果。 | 发布流程或确保流程已发布后的结果。 |
@@ -540,6 +554,7 @@ mango:
 | 能力 | 接口 | 权限码 |
 |------|------|--------|
 | 发起流程 | `POST /workflow/processes/start` | `workflow:process:start` |
+| 创建业务申请并发起流程 | `POST /workflow/processes/start-business` | `workflow:process:start` |
 | 我的发起 | `GET /workflow/processes/initiated` | `workflow:task:list` |
 | 流程详情 | `GET /workflow/processes/detail` | `workflow:process:detail` |
 | 流程历史 | `GET /workflow/processes/history` | `workflow:process:detail` |
@@ -555,18 +570,22 @@ mango:
 | 审批通过 | `POST /workflow/tasks/complete` | `workflow:task:complete` |
 | 审批通过并返回推进结果 | `POST /workflow/tasks/complete-result` | `workflow:task:complete` |
 | 审批驳回 | `POST /workflow/tasks/reject` | `workflow:task:reject` |
+| 审批驳回并返回结果 | `POST /workflow/tasks/reject-result` | `workflow:task:reject` |
 | 审批退回 | `POST /workflow/tasks/return` | `workflow:task:return` |
 | 暂存 | `POST /workflow/tasks/save` | `workflow:task:save` |
+| 暂存并返回结果 | `POST /workflow/tasks/save-result` | `workflow:task:save` |
 | 转办 | `POST /workflow/tasks/transfer` | `workflow:task:transfer` |
 | 加签 | `POST /workflow/tasks/add-sign` | `workflow:task:add-sign` |
 | 认领 | `POST /workflow/tasks/claim` | `workflow:task:claim` |
+| 认领并返回结果 | `POST /workflow/tasks/claim-result` | `workflow:task:claim` |
 | 释放 | `POST /workflow/tasks/unclaim` | `workflow:task:unclaim` |
+| 释放并返回结果 | `POST /workflow/tasks/unclaim-result` | `workflow:task:unclaim` |
 | 待办统计 | `GET /workflow/tasks/todo/summary` | `workflow:task:list` |
 | 我的任务统计 | `GET /workflow/tasks/my/summary` | `workflow:task:list` |
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 
-`POST /workflow/tasks/complete` 保持兼容，只返回布尔成功结果。业务审批页在完成审批后需要立即刷新业务申请状态、当前任务、当前办理人或判断流程是否结束时，优先使用 `POST /workflow/tasks/complete-result`；返回体包含已完成任务、流程实例、是否结束、业务申请状态和刷新后的 `currentTasks` 快照。
+`POST /workflow/tasks/complete`、`reject`、`save`、`claim`、`unclaim` 保持兼容，只返回布尔成功结果。业务审批页在办理后需要立即刷新业务申请状态、当前任务、当前办理人、认领状态或判断流程是否结束时，优先使用对应的 `*-result` 接口；返回体包含已处理任务、流程实例、是否结束、业务申请状态和刷新后的当前任务快照。
 
 `complete-result` 返回字段：
 
@@ -584,7 +603,11 @@ mango:
 | `currentTaskNames` | 刷新后的当前节点名称，多个任务用逗号拼接。 |
 | `currentTaskDefinitionKeys` | 刷新后的当前节点定义 key，多个任务用逗号拼接。 |
 | `currentAssigneeNames` | 刷新后的当前处理人名称，多个任务用逗号拼接。 |
-| `currentTasks` | 刷新后的当前任务快照，来源于 `workflow_business_apply_current_task`。 |
+| `currentTaskId` / `currentTaskName` / `taskDefinitionKey` | 第一个当前任务的 ID、名称和定义 key。 |
+| `assigneeId` / `assigneeName` | 第一个当前任务的处理人。 |
+| `claimStatus` | 当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
+| `candidateUsers` / `candidateGroups` | 当前任务候选用户和候选组。 |
+| `currentTasks` | 刷新后的当前任务快照，来源于 `workflow_business_apply_current_task`，包含认领状态和候选人。 |
 
 `POST /workflow/tasks/return` 用于把当前任务退回到历史用户任务节点，流程实例保持运行。入参支持 `targetTaskDefinitionKey`；不传时默认退回当前流程实例中最近一个已完成的不同用户任务节点。默认退回策略面向串行用户任务链路；并行、多实例、重复节点或需要固定业务语义的复杂流程，应在节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务审批页可以直接使用刷新后的 `currentTasks` 快照同步当前节点和当前办理人。退回场景也会发布 `workflow.task.advanced`，其中 `completedTask*` 表示发起退回的源任务。
 
@@ -595,18 +618,23 @@ mango:
 | `workflow.task.completed` | 当前任务完成记录写入后、流程推进快照刷新前 | 记录“哪个任务刚被完成”，不保证 `workflow_business_apply_current_task` 已是下一节点。 |
 | `workflow.task.advanced` | 完成或退回任务后，流程运行时任务和业务申请当前任务快照刷新完成后 | 同步下一节点待办、刷新业务侧当前任务、发送 `workflow.task.assigned` 通知。 |
 | `workflow.task.rejected` | 任务驳回并结束流程后 | 回写业务驳回状态和通知。 |
+| `workflow.task.saved` | 任务暂存并刷新当前任务快照后 | 同步草稿或审批页状态。 |
+| `workflow.task.claimed` | 候选任务被认领并刷新当前任务快照后 | 同步当前处理人和认领状态。 |
+| `workflow.task.unclaimed` | 候选任务释放并刷新当前任务快照后 | 同步待领取状态和候选人。 |
 | `workflow.process.completed` | 流程正常完成后 | 回写业务通过状态。 |
 | `workflow.process.rejected` | 流程被驳回后 | 回写业务驳回状态。 |
 | `workflow.process.ended` | 流程被驳回或终止后 | 做流程结束类清理。 |
 
-事件通过 `mango-infra-event` 的 `IDomainEventPublisher` 发布。单体单实例默认可使用内存总线；单体多实例、微服务或微服务多实例部署时，应启用 `mango.event.outbox.enabled=true`，跨进程分发再配置 `mango.event.transport=redis-stream`。事件是至少一次投递语义，订阅方必须按 `eventId`、`processInstanceId + completedTaskId` 或业务主键自做幂等。需要同步拿到刷新后快照的前端/业务调用，不要依赖异步事件回读，应使用 `complete-result` 或 `return` 响应。
+事件通过 `mango-infra-event` 的 `IDomainEventPublisher` 发布。单体单实例默认可使用内存总线；单体多实例、微服务或微服务多实例部署时，应启用 `mango.event.outbox.enabled=true`，跨进程分发再配置 `mango.event.transport=redis-stream`。事件是至少一次投递语义，订阅方必须按 `eventId`、`processInstanceId + completedTaskId` 或业务主键自做幂等。需要同步拿到刷新后快照的前端/业务调用，不要依赖异步事件回读，应使用 `complete-result` 或 `return` 响应。业务订阅方只使用 `mango-workflow-api` 中的 `WorkflowEventTypes` 和 `WorkflowEventPayloadVO` 作为契约，禁止引用 workflow core 事件实现类。
 
 `workflow.task.advanced` payload 字段：
 
 | 字段 | 含义 |
 |------|------|
 | `processInstanceId` | 流程实例 ID。 |
+| `eventType` | 事件类型，和 `DomainEvent.eventType` 保持一致。 |
 | `tenantId` | 当前租户 ID。 |
+| `operatorId` / `operatorName` | 当前操作人。 |
 | `businessType` | 业务类型。 |
 | `businessKey` | 业务主键。 |
 | `applyId` | 业务申请 ID。 |
@@ -620,9 +648,14 @@ mango:
 | `currentTaskNames` | 刷新后的当前节点名称。 |
 | `currentTaskDefinitionKeys` | 刷新后的当前节点定义 key。 |
 | `currentAssigneeNames` | 刷新后的当前处理人名称。 |
+| `currentTask` | 第一个当前任务快照。 |
+| `taskId` / `taskDefinitionKey` / `taskName` | 第一个当前任务的 ID、定义 key 和名称。 |
 | `assignee` | 第一个当前任务的处理人 ID，供通知收件人解析使用。 |
+| `assigneeId` | 第一个当前任务的处理人 ID。 |
 | `assigneeName` | 第一个当前任务的处理人名称。 |
-| `currentTasks` | 刷新后的当前任务明细，包含 `taskId`、`taskDefinitionKey`、`taskName`、`assigneeId`、`assigneeName`、`arrivedAt`。 |
+| `claimStatus` | 第一个当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
+| `candidateUsers` / `candidateGroups` | 第一个当前任务候选用户和候选组。 |
+| `currentTasks` | 刷新后的当前任务明细，包含 `taskId`、`taskDefinitionKey`、`taskName`、`assigneeId`、`assigneeName`、`claimStatus`、`candidateUsers`、`candidateGroups`、`arrivedAt`。 |
 | `variables` | 流程变量快照。 |
 
 事件消费选择：

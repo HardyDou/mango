@@ -1,9 +1,11 @@
 package io.mango.workflow.api.vo;
 
+import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 业务工作流申请当前任务视图。
@@ -26,6 +28,15 @@ public class WorkflowBusinessApplyCurrentTaskVO {
 
     @Schema(description = "处理人名称")
     private String assigneeName;
+
+    @Schema(description = "认领状态")
+    private WorkflowTaskClaimStatus claimStatus;
+
+    @Schema(description = "候选用户")
+    private List<String> candidateUsers;
+
+    @Schema(description = "候选组")
+    private List<String> candidateGroups;
 
     @Schema(description = "到达时间")
     private LocalDateTime arrivedAt;

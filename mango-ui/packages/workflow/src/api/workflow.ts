@@ -328,7 +328,8 @@ export interface WorkflowProcessInstance {
 }
 
 export interface StartWorkflowProcessCommand {
-  definitionId: WorkflowId;
+  definitionId?: WorkflowId;
+  definitionKey?: string;
   businessKey?: string;
   businessType?: string;
   applyId?: WorkflowId;
@@ -340,8 +341,32 @@ export interface StartWorkflowProcessCommand {
   selectedAssignees?: Record<string, string[]>;
 }
 
+export interface StartBusinessWorkflowCommand {
+  definitionId?: WorkflowId;
+  definitionKey?: string;
+  businessType: string;
+  businessKey: string;
+  applyCode?: string;
+  applyTitle: string;
+  applySummary?: string;
+  renderMode?: WorkflowApplyRenderMode;
+  applyPageKey?: string;
+  approvePageKey?: string;
+  formKey?: string;
+  formVersion?: number;
+  formJsonSnapshot?: string;
+  formDataSnapshot?: Record<string, any>;
+  snapshotRef?: string;
+  snapshotDigest?: string;
+  variables?: Record<string, any>;
+  extension?: Record<string, any>;
+  selectedAssignees?: Record<string, string[]>;
+}
+
 export type WorkflowApplyStatus = 'DRAFT' | 'SUBMITTED' | 'IN_APPROVAL' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELED' | 'TERMINATED';
 export type WorkflowApplyRenderMode = 'DYNAMIC_FORM' | 'CUSTOM_PAGE';
+export type WorkflowTaskClaimStatus = 'NONE' | 'UNCLAIMED' | 'ASSIGNED';
+export type WorkflowTaskActionResultType = 'START' | 'SAVE' | 'COMPLETE' | 'REJECT' | 'RETURN' | 'TRANSFER' | 'ADD_SIGN' | 'CLAIM' | 'UNCLAIM' | 'READ' | 'AUTO_COMPLETE' | 'AUTO_REJECT' | 'AUTO_END' | 'EVENT_NOTIFY';
 
 export interface WorkflowBusinessApplyCurrentTask {
   taskId?: string;
@@ -349,6 +374,9 @@ export interface WorkflowBusinessApplyCurrentTask {
   taskName?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+  candidateUsers?: string[];
+  candidateGroups?: string[];
   arrivedAt?: string;
 }
 
@@ -392,6 +420,19 @@ export type WorkflowBusinessApplyProgress = Pick<WorkflowBusinessApply,
 > & {
   applyId?: WorkflowId;
   applyCode?: string;
+  processDefinitionKey?: string;
+  processStatus?: WorkflowApplyStatus;
+  processStatusName?: string;
+  currentTaskId?: string;
+  currentTaskName?: string;
+  taskDefinitionKey?: string;
+  assigneeId?: WorkflowId;
+  assigneeName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+  candidateUsers?: string[];
+  candidateGroups?: string[];
+  startedAt?: string;
+  endedAt?: string;
 };
 
 export interface WorkflowBusinessApplyPageQuery extends WorkflowPageQuery {
@@ -474,7 +515,9 @@ export interface WorkflowTaskActionCommand {
 }
 
 export interface WorkflowTaskCompleteResult {
+  actionResult?: WorkflowTaskActionResultType;
   completedTaskId?: string;
+  completedTaskName?: string;
   completedTaskDefinitionKey?: string;
   processInstanceId?: string;
   ended?: boolean;
@@ -486,6 +529,61 @@ export interface WorkflowTaskCompleteResult {
   currentTaskNames?: string;
   currentTaskDefinitionKeys?: string;
   currentAssigneeNames?: string;
+  currentTaskId?: string;
+  currentTaskName?: string;
+  taskDefinitionKey?: string;
+  assigneeId?: WorkflowId;
+  assigneeName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+  candidateUsers?: string[];
+  candidateGroups?: string[];
+  currentTask?: WorkflowBusinessApplyCurrentTask;
+  currentTasks?: WorkflowBusinessApplyCurrentTask[];
+  cancelled?: boolean;
+  rejected?: boolean;
+}
+
+export interface WorkflowTaskActionResult {
+  actionResult?: WorkflowTaskActionResultType;
+  previousTaskId?: string;
+  previousTaskDefinitionKey?: string;
+  previousTaskName?: string;
+  businessType?: string;
+  businessKey?: string;
+  applyId?: WorkflowId;
+  processInstanceId?: string;
+  processStatus?: WorkflowApplyStatus;
+  processStatusName?: string;
+  currentTaskId?: string;
+  currentTaskName?: string;
+  taskDefinitionKey?: string;
+  assigneeId?: WorkflowId;
+  assigneeName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+  candidateUsers?: string[];
+  candidateGroups?: string[];
+  currentTask?: WorkflowBusinessApplyCurrentTask;
+  nextTasks?: WorkflowBusinessApplyCurrentTask[];
+  ended?: boolean;
+  cancelled?: boolean;
+  rejected?: boolean;
+}
+
+export interface WorkflowStartResult {
+  applyId?: WorkflowId;
+  processInstanceId?: string;
+  businessType?: string;
+  businessKey?: string;
+  processStatus?: WorkflowApplyStatus;
+  processStatusName?: string;
+  currentTaskId?: string;
+  currentTaskName?: string;
+  taskDefinitionKey?: string;
+  assigneeId?: WorkflowId;
+  assigneeName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+  candidateUsers?: string[];
+  candidateGroups?: string[];
   currentTasks?: WorkflowBusinessApplyCurrentTask[];
 }
 
@@ -570,17 +668,30 @@ export const workflowApi = {
   taskDetail: (taskId: string) => get<WorkflowTaskDetail>('/workflow/tasks/detail', { params: { taskId } })
     .then(normalizeTaskDetail),
   completeTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/complete', data),
+  completeTaskWithResult: (data: WorkflowTaskActionCommand) => post<WorkflowTaskCompleteResult>('/workflow/tasks/complete-result', data)
+    .then(normalizeTaskCompleteResult),
   rejectTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/reject', data),
-  returnTask: (data: WorkflowTaskReturnCommand) => post<WorkflowTaskCompleteResult>('/workflow/tasks/return', data),
+  rejectTaskWithResult: (data: WorkflowTaskActionCommand) => post<WorkflowTaskActionResult>('/workflow/tasks/reject-result', data)
+    .then(normalizeTaskActionResult),
+  returnTask: (data: WorkflowTaskReturnCommand) => post<WorkflowTaskCompleteResult>('/workflow/tasks/return', data)
+    .then(normalizeTaskCompleteResult),
   saveTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/save', data),
+  saveTaskWithResult: (data: WorkflowTaskActionCommand) => post<WorkflowTaskActionResult>('/workflow/tasks/save-result', data)
+    .then(normalizeTaskActionResult),
   transferTask: (data: WorkflowTaskTransferCommand) => post<boolean>('/workflow/tasks/transfer', data),
   addSignTask: (data: WorkflowTaskAddSignCommand) => post<boolean>('/workflow/tasks/add-sign', data),
   claimTask: (taskId: string) => post<boolean>('/workflow/tasks/claim', { taskId }),
+  claimTaskWithResult: (taskId: string) => post<WorkflowTaskActionResult>('/workflow/tasks/claim-result', { taskId })
+    .then(normalizeTaskActionResult),
   unclaimTask: (taskId: string) => post<boolean>('/workflow/tasks/unclaim', { taskId }),
+  unclaimTaskWithResult: (taskId: string) => post<WorkflowTaskActionResult>('/workflow/tasks/unclaim-result', { taskId })
+    .then(normalizeTaskActionResult),
   readCopiedTask: (copiedTaskId: WorkflowId) => post<boolean>('/workflow/tasks/copied/read', { copiedTaskId }),
 
   startProcess: (data: StartWorkflowProcessCommand) => post<WorkflowProcessInstance>('/workflow/processes/start', data)
     .then(normalizeProcessInstance),
+  startBusinessWorkflow: (data: StartBusinessWorkflowCommand) => post<WorkflowStartResult>('/workflow/processes/start-business', data)
+    .then(normalizeWorkflowStartResult),
   businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
     .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
   businessApplyMySummary: () => get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary')
@@ -1050,6 +1161,9 @@ function normalizeBusinessApplyCurrentTask(item: any): WorkflowBusinessApplyCurr
     taskName: item?.taskName,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
     assigneeName: item?.assigneeName,
+    claimStatus: item?.claimStatus,
+    candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
+    candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     arrivedAt: normalizeDateTime(item?.arrivedAt),
   };
 }
@@ -1072,9 +1186,49 @@ function normalizeBusinessApplyProgress(item: any): WorkflowBusinessApplyProgres
   return {
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
+    candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
     createdAt: normalizeDateTime(item?.createdAt),
     updatedAt: normalizeDateTime(item?.updatedAt),
+    startedAt: normalizeDateTime(item?.startedAt),
+    endedAt: normalizeDateTime(item?.endedAt),
+  };
+}
+
+function normalizeTaskCompleteResult(item: any): WorkflowTaskCompleteResult {
+  return {
+    ...item,
+    applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
+    candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
+    currentTask: item?.currentTask ? normalizeBusinessApplyCurrentTask(item.currentTask) : undefined,
+    currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
+  };
+}
+
+function normalizeTaskActionResult(item: any): WorkflowTaskActionResult {
+  return {
+    ...item,
+    applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
+    candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
+    currentTask: item?.currentTask ? normalizeBusinessApplyCurrentTask(item.currentTask) : undefined,
+    nextTasks: Array.isArray(item?.nextTasks) ? item.nextTasks.map(normalizeBusinessApplyCurrentTask) : [],
+  };
+}
+
+function normalizeWorkflowStartResult(item: any): WorkflowStartResult {
+  return {
+    ...item,
+    applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
+    candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
+    currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
   };
 }
 

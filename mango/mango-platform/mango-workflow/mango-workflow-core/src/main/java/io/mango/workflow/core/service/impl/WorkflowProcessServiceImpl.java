@@ -8,19 +8,23 @@ import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.workflow.api.WorkflowBusinessProcessApi;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
+import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
 import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
+import io.mango.workflow.api.vo.WorkflowStartResultVO;
 import io.mango.workflow.core.entity.WorkflowDefinition;
 import io.mango.workflow.core.entity.WorkflowFormInstance;
 import io.mango.workflow.core.entity.WorkflowTaskRecord;
@@ -58,7 +62,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class WorkflowProcessServiceImpl implements IWorkflowProcessService, WorkflowBusinessProcessApi {
+public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
 
     private static final String INITIATOR_VAR = "mangoInitiator";
     private static final String INITIATOR_NAME_VAR = "mangoInitiatorName";
@@ -154,6 +158,29 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         return R.ok(vo);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowStartResultVO> startBusinessWorkflow(StartBusinessWorkflowCommand command) {
+        Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
+        Require.notBlank(command.getBusinessType(), WorkflowCode.APPLY_INVALID.getCode(), "业务类型不能为空");
+        Require.notBlank(command.getBusinessKey(), WorkflowCode.APPLY_INVALID.getCode(), "业务主键不能为空");
+        Require.notBlank(command.getApplyTitle(), WorkflowCode.APPLY_INVALID.getCode(), "申请标题不能为空");
+        WorkflowDefinition definition = selectDefinition(toStartCommand(command, null));
+        Require.notNull(definition, WorkflowCode.DEFINITION_NOT_FOUND);
+
+        CreateWorkflowBusinessApplyCommand applyCommand = toCreateApplyCommand(command, definition);
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.create(applyCommand).getData();
+        Require.notNull(apply, WorkflowCode.APPLY_INVALID.getCode(), "业务申请创建失败");
+
+        StartWorkflowProcessCommand startCommand = toStartCommand(command, apply.getId());
+        R<WorkflowProcessInstanceVO> startResult = start(startCommand);
+        WorkflowProcessInstanceVO process = startResult.getData();
+        WorkflowBusinessApplyProgressVO progress = workflowBusinessApplyService
+                .latestProgress(command.getBusinessType(), command.getBusinessKey())
+                .getData();
+        return R.ok(toStartResult(process, progress));
+    }
+
     private WorkflowDefinition selectDefinition(StartWorkflowProcessCommand command) {
         if (command.getDefinitionId() != null) {
             return definitionMapper.selectById(command.getDefinitionId());
@@ -166,6 +193,84 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
                 .orderByDesc(WorkflowDefinition::getPublishedVersionNo)
                 .orderByDesc(WorkflowDefinition::getUpdatedAt)
                 .last("limit 1"));
+    }
+
+    private CreateWorkflowBusinessApplyCommand toCreateApplyCommand(StartBusinessWorkflowCommand command,
+                                                                    WorkflowDefinition definition) {
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setApplyCode(trim(command.getApplyCode()));
+        applyCommand.setBusinessType(command.getBusinessType().trim());
+        applyCommand.setBusinessKey(command.getBusinessKey().trim());
+        applyCommand.setApplyTitle(command.getApplyTitle().trim());
+        applyCommand.setApplySummary(trim(command.getApplySummary()));
+        applyCommand.setProcessDefinitionId(definition.getId());
+        applyCommand.setProcessDefinitionKey(definition.getDefinitionKey());
+        applyCommand.setRenderMode(command.getRenderMode() == null
+                ? resolveRenderMode(definition)
+                : command.getRenderMode());
+        applyCommand.setApplyPageKey(trim(command.getApplyPageKey()));
+        applyCommand.setApprovePageKey(trim(command.getApprovePageKey()));
+        applyCommand.setFormKey(StringUtils.hasText(command.getFormKey())
+                ? command.getFormKey().trim()
+                : definition.getFormCode());
+        applyCommand.setFormVersion(command.getFormVersion() == null
+                ? definition.getPublishedVersionNo()
+                : command.getFormVersion());
+        applyCommand.setFormJsonSnapshot(StringUtils.hasText(command.getFormJsonSnapshot())
+                ? command.getFormJsonSnapshot()
+                : definition.getFormJson());
+        applyCommand.setFormDataSnapshot(command.getFormDataSnapshot());
+        applyCommand.setSnapshotRef(trim(command.getSnapshotRef()));
+        applyCommand.setSnapshotDigest(trim(command.getSnapshotDigest()));
+        applyCommand.setVariables(command.getVariables());
+        applyCommand.setExtension(command.getExtension());
+        return applyCommand;
+    }
+
+    private StartWorkflowProcessCommand toStartCommand(StartBusinessWorkflowCommand command, Long applyId) {
+        StartWorkflowProcessCommand startCommand = new StartWorkflowProcessCommand();
+        startCommand.setDefinitionId(command.getDefinitionId());
+        startCommand.setDefinitionKey(command.getDefinitionKey());
+        startCommand.setBusinessType(command.getBusinessType());
+        startCommand.setBusinessKey(command.getBusinessKey());
+        startCommand.setApplyId(applyId);
+        startCommand.setRenderMode(command.getRenderMode());
+        startCommand.setApplyPageKey(command.getApplyPageKey());
+        startCommand.setApprovePageKey(command.getApprovePageKey());
+        startCommand.setSnapshotRef(command.getSnapshotRef());
+        startCommand.setVariables(command.getVariables());
+        startCommand.setSelectedAssignees(command.getSelectedAssignees());
+        return startCommand;
+    }
+
+    private WorkflowStartResultVO toStartResult(WorkflowProcessInstanceVO process,
+                                                WorkflowBusinessApplyProgressVO progress) {
+        WorkflowStartResultVO vo = new WorkflowStartResultVO();
+        if (process != null) {
+            vo.setProcessInstanceId(process.getProcessInstanceId());
+            vo.setApplyId(process.getApplyId());
+            vo.setBusinessKey(process.getBusinessKey());
+        }
+        if (progress == null) {
+            vo.setCurrentTasks(List.of());
+            return vo;
+        }
+        vo.setApplyId(progress.getApplyId());
+        vo.setProcessInstanceId(progress.getProcessInstanceId());
+        vo.setBusinessType(progress.getBusinessType());
+        vo.setBusinessKey(progress.getBusinessKey());
+        vo.setProcessStatus(progress.getProcessStatus());
+        vo.setProcessStatusName(progress.getProcessStatusName());
+        vo.setCurrentTaskId(progress.getCurrentTaskId());
+        vo.setCurrentTaskName(progress.getCurrentTaskName());
+        vo.setTaskDefinitionKey(progress.getTaskDefinitionKey());
+        vo.setAssigneeId(progress.getAssigneeId());
+        vo.setAssigneeName(progress.getAssigneeName());
+        vo.setClaimStatus(progress.getClaimStatus());
+        vo.setCandidateUsers(progress.getCandidateUsers());
+        vo.setCandidateGroups(progress.getCandidateGroups());
+        vo.setCurrentTasks(progress.getCurrentTasks());
+        return vo;
     }
 
     private boolean isProcessEnded(String processInstanceId) {

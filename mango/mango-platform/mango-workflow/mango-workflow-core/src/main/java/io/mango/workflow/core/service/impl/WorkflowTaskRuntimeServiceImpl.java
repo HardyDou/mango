@@ -20,10 +20,12 @@ import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
+import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowFormPermission;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
+import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
@@ -33,6 +35,7 @@ import io.mango.workflow.api.vo.WorkflowNodeActionConfigVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import io.mango.workflow.api.vo.WorkflowRenderConfigVO;
+import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
@@ -331,6 +334,13 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command) {
+        saveDraftWithResult(command);
+        return R.ok(Boolean.TRUE);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowTaskActionResultVO> saveDraftWithResult(SaveWorkflowTaskDraftCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID.getCode(), "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
@@ -343,8 +353,10 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         runtimeService.setVariables(task.getProcessInstanceId(), variables);
         updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.RUNNING);
         saveRecord(task, WorkflowTaskAction.SAVE, command.getComment(), command.getVariables());
-        workflowBusinessApplyService.refreshCurrentTasks(task.getProcessInstanceId());
-        return R.ok(Boolean.TRUE);
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId());
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        workflowEventPublisher.publishTaskSaved(task, formInstance, variables, command.getComment(), apply);
+        return R.ok(toActionResult(WorkflowTaskAction.SAVE, task, false, apply));
     }
 
     @Override
@@ -396,6 +408,13 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public R<Boolean> reject(RejectWorkflowTaskCommand command) {
+        rejectWithResult(command);
+        return R.ok(Boolean.TRUE);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowTaskActionResultVO> rejectWithResult(RejectWorkflowTaskCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID.getCode(), "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
@@ -420,7 +439,8 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason);
         workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason);
         workflowBusinessApplyService.markRejected(task.getProcessInstanceId(), reason, task.getId(), task.getTaskDefinitionKey());
-        return R.ok(Boolean.TRUE);
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(task.getProcessInstanceId());
+        return R.ok(toActionResult(WorkflowTaskAction.REJECT, task, true, apply));
     }
 
     @Override
@@ -512,6 +532,13 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public R<Boolean> claim(ClaimWorkflowTaskCommand command) {
+        claimWithResult(command);
+        return R.ok(Boolean.TRUE);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowTaskActionResultVO> claimWithResult(ClaimWorkflowTaskCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID.getCode(), "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
@@ -522,13 +549,22 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         taskService.setVariableLocal(task.getId(), CLAIMED_FROM_CANDIDATE_VARIABLE, Boolean.TRUE);
         task.setAssignee(currentUser());
         saveRecord(task, WorkflowTaskAction.CLAIM, "认领任务", Map.of());
-        workflowBusinessApplyService.refreshCurrentTasks(task.getProcessInstanceId());
-        return R.ok(Boolean.TRUE);
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId());
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        workflowEventPublisher.publishTaskClaimed(task, formInstance, readStoredVariables(task.getProcessInstanceId()), apply);
+        return R.ok(toActionResult(WorkflowTaskAction.CLAIM, task, false, apply));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public R<Boolean> unclaim(ClaimWorkflowTaskCommand command) {
+        unclaimWithResult(command);
+        return R.ok(Boolean.TRUE);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowTaskActionResultVO> unclaimWithResult(ClaimWorkflowTaskCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID.getCode(), "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
@@ -539,8 +575,10 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         taskService.removeVariableLocal(task.getId(), CLAIMED_FROM_CANDIDATE_VARIABLE);
         task.setAssignee(null);
         saveRecord(task, WorkflowTaskAction.UNCLAIM, "释放任务", Map.of());
-        workflowBusinessApplyService.refreshCurrentTasks(task.getProcessInstanceId());
-        return R.ok(Boolean.TRUE);
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId());
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        workflowEventPublisher.publishTaskUnclaimed(task, formInstance, readStoredVariables(task.getProcessInstanceId()), apply);
+        return R.ok(toActionResult(WorkflowTaskAction.UNCLAIM, task, false, apply));
     }
 
     @Override
@@ -641,7 +679,9 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
 
     private WorkflowTaskCompleteResultVO toCompleteResult(Task completedTask, WorkflowTaskAdvanceResult advanceResult) {
         WorkflowTaskCompleteResultVO vo = new WorkflowTaskCompleteResultVO();
+        vo.setActionResult(WorkflowTaskAction.COMPLETE);
         vo.setCompletedTaskId(completedTask.getId());
+        vo.setCompletedTaskName(completedTask.getName());
         vo.setCompletedTaskDefinitionKey(completedTask.getTaskDefinitionKey());
         vo.setProcessInstanceId(advanceResult.processInstanceId());
         vo.setEnded(advanceResult.ended());
@@ -658,10 +698,83 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         vo.setCurrentTaskNames(apply.getCurrentTaskNames());
         vo.setCurrentTaskDefinitionKeys(apply.getCurrentTaskDefinitionKeys());
         vo.setCurrentAssigneeNames(apply.getCurrentAssigneeNames());
-        vo.setCurrentTasks(apply.getCurrentTasks() == null
+        List<WorkflowBusinessApplyCurrentTaskVO> currentTasks = apply.getCurrentTasks() == null
                 ? List.<WorkflowBusinessApplyCurrentTaskVO>of()
-                : apply.getCurrentTasks());
+                : apply.getCurrentTasks();
+        vo.setCurrentTasks(currentTasks);
+        vo.setCancelled(WorkflowApplyStatus.CANCELED == apply.getApplyStatus());
+        vo.setRejected(WorkflowApplyStatus.REJECTED == apply.getApplyStatus());
+        fillCurrentTask(vo, currentTasks);
         return vo;
+    }
+
+    private WorkflowTaskActionResultVO toActionResult(WorkflowTaskAction action, Task previousTask,
+                                                      boolean ended, WorkflowBusinessApplyVO apply) {
+        WorkflowTaskActionResultVO vo = new WorkflowTaskActionResultVO();
+        vo.setActionResult(action);
+        vo.setPreviousTaskId(previousTask.getId());
+        vo.setPreviousTaskDefinitionKey(previousTask.getTaskDefinitionKey());
+        vo.setPreviousTaskName(previousTask.getName());
+        vo.setProcessInstanceId(previousTask.getProcessInstanceId());
+        vo.setEnded(ended);
+        if (apply == null) {
+            vo.setNextTasks(List.of());
+            vo.setCandidateUsers(List.of());
+            vo.setCandidateGroups(List.of());
+            vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
+            return vo;
+        }
+        vo.setApplyId(apply.getId());
+        vo.setBusinessType(apply.getBusinessType());
+        vo.setBusinessKey(apply.getBusinessKey());
+        vo.setProcessStatus(apply.getApplyStatus());
+        vo.setProcessStatusName(apply.getApplyStatusName());
+        vo.setCancelled(WorkflowApplyStatus.CANCELED == apply.getApplyStatus());
+        vo.setRejected(WorkflowApplyStatus.REJECTED == apply.getApplyStatus());
+        List<WorkflowBusinessApplyCurrentTaskVO> nextTasks = apply.getCurrentTasks() == null
+                ? List.<WorkflowBusinessApplyCurrentTaskVO>of()
+                : apply.getCurrentTasks();
+        vo.setNextTasks(nextTasks);
+        fillCurrentTask(vo, nextTasks);
+        return vo;
+    }
+
+    private void fillCurrentTask(WorkflowTaskCompleteResultVO vo, List<WorkflowBusinessApplyCurrentTaskVO> currentTasks) {
+        if (currentTasks.isEmpty()) {
+            vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
+            vo.setCandidateUsers(List.of());
+            vo.setCandidateGroups(List.of());
+            return;
+        }
+        WorkflowBusinessApplyCurrentTaskVO first = currentTasks.getFirst();
+        vo.setCurrentTaskId(first.getTaskId());
+        vo.setCurrentTaskName(first.getTaskName());
+        vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
+        vo.setAssigneeId(first.getAssigneeId());
+        vo.setAssigneeName(first.getAssigneeName());
+        vo.setClaimStatus(first.getClaimStatus());
+        vo.setCandidateUsers(first.getCandidateUsers() == null ? List.of() : first.getCandidateUsers());
+        vo.setCandidateGroups(first.getCandidateGroups() == null ? List.of() : first.getCandidateGroups());
+        vo.setCurrentTask(first);
+    }
+
+    private void fillCurrentTask(WorkflowTaskActionResultVO vo, List<WorkflowBusinessApplyCurrentTaskVO> currentTasks) {
+        if (currentTasks.isEmpty()) {
+            vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
+            vo.setCandidateUsers(List.of());
+            vo.setCandidateGroups(List.of());
+            return;
+        }
+        WorkflowBusinessApplyCurrentTaskVO first = currentTasks.getFirst();
+        vo.setCurrentTaskId(first.getTaskId());
+        vo.setCurrentTaskName(first.getTaskName());
+        vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
+        vo.setAssigneeId(first.getAssigneeId());
+        vo.setAssigneeName(first.getAssigneeName());
+        vo.setClaimStatus(first.getClaimStatus());
+        vo.setCandidateUsers(first.getCandidateUsers() == null ? List.of() : first.getCandidateUsers());
+        vo.setCandidateGroups(first.getCandidateGroups() == null ? List.of() : first.getCandidateGroups());
+        vo.setCurrentTask(first);
     }
 
     private String resolveReturnTarget(Task task, String configuredTarget) {

@@ -27,6 +27,9 @@ public class WorkflowBusinessApplyCurrentTask {
     private String taskName;
     private Long assigneeId;
     private String assigneeName;
+    private String claimStatus;
+    private String candidateUsers;
+    private String candidateGroups;
     private LocalDateTime arrivedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
