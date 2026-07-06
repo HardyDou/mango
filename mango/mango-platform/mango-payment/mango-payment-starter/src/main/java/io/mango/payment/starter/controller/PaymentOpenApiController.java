@@ -3,6 +3,7 @@ package io.mango.payment.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
+import io.mango.payment.api.PaymentOpenApi;
 import io.mango.payment.api.command.PaymentOpenRequestCommand;
 import io.mango.payment.api.vo.PaymentOpenBusinessOrderVO;
 import io.mango.payment.api.vo.PaymentOpenCashierVO;
@@ -32,9 +33,49 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @RequestMapping("/openapi/pay")
 @RequiredArgsConstructor
 @Tag(name = "支付开放接口", description = "业务系统接入支付中心的签名开放接口")
-public class PaymentOpenApiController {
+public class PaymentOpenApiController implements PaymentOpenApi {
 
     private final IPaymentOpenApiService openApiService;
+
+    @Override
+    public R<PaymentOpenBusinessOrderVO> createOrder(PaymentOpenRequestCommand command) {
+        return openApiService.createOrder(command);
+    }
+
+    @Override
+    public R<PaymentOpenBusinessOrderVO> detailOrder(PaymentOpenRequestCommand command) {
+        return openApiService.detailOrder(command);
+    }
+
+    @Override
+    public R<PaymentOpenCashierVO> cashier(PaymentOpenRequestCommand command) {
+        return openApiService.cashier(command);
+    }
+
+    @Override
+    public R<PaymentOpenPaymentOrderVO> pay(PaymentOpenRequestCommand command) {
+        return openApiService.pay(command);
+    }
+
+    @Override
+    public R<PaymentOpenPaymentOrderVO> detailPaymentOrder(PaymentOpenRequestCommand command) {
+        return openApiService.detailPaymentOrder(command);
+    }
+
+    @Override
+    public R<PaymentOpenRefundOrderVO> refund(PaymentOpenRequestCommand command) {
+        return openApiService.refund(command);
+    }
+
+    @Override
+    public R<PaymentOpenRefundOrderVO> detailRefund(PaymentOpenRequestCommand command) {
+        return openApiService.detailRefund(command);
+    }
+
+    @Override
+    public R<PaymentOpenReceiptVO> receipt(PaymentOpenRequestCommand command) {
+        return openApiService.receipt(command);
+    }
 
     @PostMapping("/orders")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口创建业务订单")

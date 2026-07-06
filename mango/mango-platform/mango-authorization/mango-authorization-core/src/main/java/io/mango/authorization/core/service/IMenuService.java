@@ -5,6 +5,7 @@ import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.api.vo.MenuVO;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 菜单服务接口。
@@ -35,6 +36,11 @@ public interface IMenuService {
      * 将菜单列表组装为树。
      */
     List<MenuVO> buildMenuTree(List<Menu> menus);
+
+    /**
+     * 查询所有启用菜单/按钮声明的权限码。
+     */
+    Set<String> listAllPermissionCodes();
 
     /**
      * 新增菜单。

@@ -1,10 +1,15 @@
 package io.mango.system.starter.controller;
 
+import io.mango.area.api.SysAreaApi;
+import io.mango.area.core.service.ISysAreaService;
 import io.mango.system.api.DictApi;
 import io.mango.system.api.SysConfigApi;
+import io.mango.system.api.SysLoginLogApi;
+import io.mango.system.api.SysOperationLogApi;
 import io.mango.system.api.SysTenantApi;
 import io.mango.system.core.service.IDictService;
 import io.mango.system.core.service.ISysConfigService;
+import io.mango.system.core.service.ISysLogService;
 import io.mango.system.core.service.ISysTenantService;
 import org.junit.jupiter.api.Test;
 
@@ -17,9 +22,15 @@ class SystemApiContractTest {
         assertThat(DictApi.class).isAssignableFrom(SysDictController.class);
         assertThat(SysTenantApi.class).isAssignableFrom(SysTenantController.class);
         assertThat(SysConfigApi.class).isAssignableFrom(SysConfigController.class);
+        assertThat(SysLoginLogApi.class).isAssignableFrom(SysLoginLogController.class);
+        assertThat(SysOperationLogApi.class).isAssignableFrom(SysOperationLogController.class);
+        assertThat(SysAreaApi.class).isAssignableFrom(SysAreaController.class);
 
         assertThat(DictApi.class.isAssignableFrom(IDictService.class)).isFalse();
         assertThat(SysTenantApi.class.isAssignableFrom(ISysTenantService.class)).isFalse();
         assertThat(SysConfigApi.class.isAssignableFrom(ISysConfigService.class)).isFalse();
+        assertThat(SysLoginLogApi.class.isAssignableFrom(ISysLogService.class)).isFalse();
+        assertThat(SysOperationLogApi.class.isAssignableFrom(ISysLogService.class)).isFalse();
+        assertThat(SysAreaApi.class.isAssignableFrom(ISysAreaService.class)).isFalse();
     }
 }

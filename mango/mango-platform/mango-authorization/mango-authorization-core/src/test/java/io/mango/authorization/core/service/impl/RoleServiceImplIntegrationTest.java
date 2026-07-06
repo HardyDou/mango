@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -357,6 +358,11 @@ class RoleServiceImplIntegrationTest {
         @Override
         public List<MenuVO> buildMenuTree(List<Menu> menus) {
             return List.of();
+        }
+
+        @Override
+        public Set<String> listAllPermissionCodes() {
+            return Set.of();
         }
 
         @Override

@@ -167,3 +167,5 @@ pnpm -F @mango/admin-shell build
 - Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、页面和本场景排障步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，再回到本指南排查按钮资源、角色授权和登录态权限集合。
 
 - v2026.07.04-maven-1.0.8-platform-release 对首页管理补充列表操作、批量删除、选择器筛选和页面编辑体验；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界和按钮展示规则执行逻辑。首页管理按钮不可见或接口 403 仍按 Issue #372 的 `home:*` 权限码、角色授权和重新登录刷新权限集合排查。
+
+- Issue #396 仅治理 authorization `PermissionApi` 与 system 日志、行政区划 API 的契约承载位置：`PermissionApi` 由 starter controller 实现，菜单 service 仅提供内部权限码查询；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
