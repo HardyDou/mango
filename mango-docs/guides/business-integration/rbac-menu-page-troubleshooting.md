@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- v2026.07.07-maven-1.0.9-api-contract-release 仅发布 workflow API 边界治理物料、前端聚合包版本锁、CLI/starter 版本锁和 Mango Docs 版本快照；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户绑定、页面路由和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
+
 - PR #389 修复首页管理页面集成和编辑体验，`home/templates/index`、`home/list/index`、`home/user/index` 页面 key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定和通用排障步骤不变。排查首页管理页面打不开时，优先确认业务开发环境是否使用源码 alias 或已升级到同批次 `@mango/home`、`@mango/admin-shell`、`@mango/admin`，避免 `homePageApi` 等导出从过期可选 peer 包解析。
 
 - PR #388 新增站内消息结构化动作协议，消息动作可跳转注册路由、流程入口或触发后端事件；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定和通用排障步骤。排查通知消息动作跳转失败时，除确认 `@mango/notice` 页面注册外，额外确认动作 `targetType`、`targetKey` 与业务注册路由或流程入口是否匹配。

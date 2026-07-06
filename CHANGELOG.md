@@ -2,6 +2,80 @@
 
 ## Unreleased
 
+## v2026.07.07-maven-1.0.9-api-contract-release - 2026-07-07
+
+### New
+
+- Exposed workflow business start, progress, task action, and event payload contracts through `mango-workflow-api`, so
+  business modules can integrate workflow by depending on API beans instead of `mango-workflow-core` services.
+- Added workflow task runtime API adapters for claim, complete, approve, reject, and current task/progress operations.
+- Added workflow event API types and payload value objects so business code can subscribe to workflow events through the
+  published API boundary.
+
+### Changed
+
+- Aligned platform controller and adapter dependencies across Auth, Authorization, Captcha, CMS, Payment, System, and
+  Workflow so business-facing access goes through starter/API contracts rather than direct core service usage.
+- Updated workflow frontend API typings and package metadata to match the new workflow business API contract batch.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.9</mango.version>` to consume the API-boundary contract updates.
+- Business workflow integrations must inject `WorkflowProcessApi` and `WorkflowTaskRuntimeApi`, and must stop depending
+  on `io.mango.workflow.core.service.*` from business code.
+- Workflow event consumers should use `WorkflowEventTypes` and `WorkflowEventPayloadVO` from `mango-workflow-api` rather
+  than core event classes.
+- Business frontends should upgrade Mango npm packages as one batch using the versions listed below. Do not mix
+  `@mango/admin-shell`, `@mango/admin`, `@mango/workflow`, or `@mango/workflow-business-example` from this release with
+  older admin packages.
+- Generated or upgraded business projects should use `@mango/cli@1.0.60`; its release lock points to Mango Maven
+  `1.0.9` and this npm package batch.
+- Business developers can read version-matched docs from GitHub Pages at
+  `/mango/versions/v2026.07.07-maven-1.0.9-api-contract-release/`, or run `mango docs pull` in a generated project to
+  download `io.mango:mango-docs-bundle:1.0.9` into `.mango/docs/1.0.9`.
+
+### Published Packages
+
+- Maven: Mango backend platform artifacts at `1.0.9` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin-shell@1.0.36`, `@mango/admin@1.0.41`,
+  `@mango/workflow-business-example@1.0.22`, `@mango/workflow@1.0.23`, and `@mango/cli@1.0.60` to
+  `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.07-maven-1.0.9-api-contract-release` for GitHub Pages and Maven docs bundle
+  `io.mango:mango-docs-bundle:1.0.9`.
+- GitHub Release: `v2026.07.07-maven-1.0.9-api-contract-release`.
+
+### Verification
+
+- `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase release --task "发布最新版本 mango" --paths "mango,mango-ui,mango-pmo,mango-docs"`
+- `pnpm -C mango-ui release:impact --base=v2026.07.04-maven-1.0.8-platform-release --head=HEAD`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-auth/mango-auth-starter,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-captcha/mango-captcha-starter,mango-platform/mango-cms/mango-cms-starter,mango-platform/mango-payment/mango-payment-starter,mango-platform/mango-system/mango-system-starter,mango-platform/mango-workflow/mango-workflow-starter -am -Dtest=AuthApiContractTest,AuthorizationApiContractTest,CaptchaControllerIntegrationTest,CmsControllerContractTest,PaymentDomainControllerContractTest,SystemApiContractTest,WorkflowApiControllerContractTest,WorkflowEventPublisherTest,WorkflowProcessServiceImplIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter,mango-platform/mango-workflow/mango-workflow-starter-remote -am -DskipTests compile`
+- `pnpm -C mango-ui --filter @mango/workflow test`
+- `pnpm -C mango-ui --filter @mango/workflow build`
+- `pnpm -C mango-ui --filter @mango/workflow-business-example test`
+- `pnpm -C mango-ui --filter @mango/workflow-business-example build`
+- `pnpm -C mango-ui --filter @mango/admin-shell build`
+- `pnpm -C mango-ui --filter @mango/admin build`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui package-exports:check`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.07-maven-1.0.9-api-contract-release`
+- `npm --prefix mango-docs run docs:build`
+- `jar cf .runtime/mango-docs-bundle-1.0.9.jar -C .runtime/docs-bundle-1.0.9 .`
+- `shasum -a 256 .runtime/mango-docs-bundle-1.0.9.jar`
+- `PR_BODY_FILE=.runtime/release-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base v2026.07.04-maven-1.0.8-platform-release --head HEAD`
+- `node mango-pmo/tools/check-business-guides.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `mvn -f mango/pom.xml -Drevision=1.0.9 -DskipTests deploy`
+- `mvn deploy:deploy-file -DgroupId=io.mango -DartifactId=mango-docs-bundle -Dversion=1.0.9 -Dpackaging=jar -Dfile=.runtime/mango-docs-bundle-1.0.9.jar -Durl=http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/ -DrepositoryId=maven-releases`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.07-maven-1.0.9-api-contract-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.07-maven-1.0.9-api-contract-release`
+- `git diff --check`
+
 ## v2026.07.04-maven-1.0.8-platform-release - 2026-07-04
 
 ### New

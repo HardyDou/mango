@@ -618,7 +618,7 @@ importers:
         specifier: 1.0.16
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: 1.0.35
+        specifier: 1.0.36
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: 1.0.3
@@ -669,10 +669,10 @@ importers:
         specifier: 1.0.17
         version: link:../template
       '@mango/workflow':
-        specifier: 1.0.22
+        specifier: 1.0.23
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: 1.0.21
+        specifier: 1.0.22
         version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
@@ -761,7 +761,7 @@ importers:
         specifier: 1.0.10
         version: link:../rbac
       '@mango/workflow':
-        specifier: 1.0.22
+        specifier: 1.0.23
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -1525,7 +1525,7 @@ importers:
         specifier: 1.0.16
         version: link:../admin-pages
       '@mango/workflow':
-        specifier: 1.0.22
+        specifier: 1.0.23
         version: link:../workflow
       element-plus:
         specifier: '>=2.14.1 <3'

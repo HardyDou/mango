@@ -1,11 +1,11 @@
 {
   "maven": {
-    "mangoBackend": "1.0.8"
+    "mangoBackend": "1.0.9"
   },
   "npm": {
-    "@mango/admin": "1.0.40",
+    "@mango/admin": "1.0.41",
     "@mango/admin-pages": "1.0.16",
-    "@mango/admin-shell": "1.0.35",
+    "@mango/admin-shell": "1.0.36",
     "@mango/app-runtime": "1.0.3",
     "@mango/auth": "1.0.11",
     "@mango/calendar": "1.0.17",
@@ -26,9 +26,9 @@
     "@mango/site-shell": "1.0.1",
     "@mango/system": "1.0.15",
     "@mango/template": "1.0.17",
-    "@mango/workflow": "1.0.22",
-    "@mango/workflow-business-example": "1.0.21",
-    "@mango/cli": "1.0.59",
+    "@mango/workflow": "1.0.23",
+    "@mango/workflow-business-example": "1.0.22",
+    "@mango/cli": "1.0.60",
     "@mango/home": "1.0.2"
   }
 }

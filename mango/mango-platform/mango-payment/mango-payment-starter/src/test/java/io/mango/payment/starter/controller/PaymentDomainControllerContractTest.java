@@ -299,8 +299,8 @@ class PaymentDomainControllerContractTest {
     }
 
     @Test
-    @DisplayName("offline collection and manual operation permissions should be initialized by authorization migrations")
-    void paymentOperationPermissions_areInitializedByAuthorizationMigrations() throws Exception {
+    @DisplayName("offline collection and manual operation permissions should be initialized by payment menu resources")
+    void paymentOperationPermissions_areInitializedByPaymentMenuResources() throws Exception {
         List<String> requiredPermissions = List.of(
                 "payment:offline-collection:list",
                 "payment:offline-collection:query",
@@ -337,22 +337,13 @@ class PaymentDomainControllerContractTest {
                 "payment:settlement-summary:void",
                 "payment:observability:query");
 
-        String migrationSql = Files.walk(findMangoRoot().resolve(
-                        "mango-platform/mango-authorization/mango-authorization-core/src/main/resources/db/migration/authorization"))
-                .filter(Files::isRegularFile)
-                .filter(path -> path.getFileName().toString().endsWith(".sql"))
-                .map(path -> {
-                    try {
-                        return Files.readString(path, StandardCharsets.UTF_8);
-                    } catch (Exception ex) {
-                        throw new IllegalStateException("Failed to read " + path, ex);
-                    }
-                })
-                .reduce("", (left, right) -> left + "\n" + right);
+        String menuResource = Files.readString(findMangoRoot().resolve(
+                        "mango-platform/mango-payment/mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-menu.json"),
+                StandardCharsets.UTF_8);
 
-        assertThat(migrationSql)
-                .contains("线下收款")
-                .contains("@/views/payment/offline-collections/index.vue")
+        assertThat(menuResource)
+                .contains("线下收款订单")
+                .contains("payment/offline-collections/index")
                 .contains(requiredPermissions.toArray(String[]::new));
     }
 
