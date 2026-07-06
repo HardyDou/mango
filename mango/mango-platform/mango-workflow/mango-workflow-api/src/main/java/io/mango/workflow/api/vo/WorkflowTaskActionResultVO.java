@@ -9,32 +9,23 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * Workflow task completion result after runtime advancement.
+ * 工作流任务动作结果视图。
  */
 @Data
-@Schema(description = "审批任务完成后流程推进结果")
-public class WorkflowTaskCompleteResultVO {
+@Schema(description = "工作流任务动作结果视图")
+public class WorkflowTaskActionResultVO {
 
     @Schema(description = "任务动作")
     private WorkflowTaskAction actionResult;
 
-    @Schema(description = "已完成任务ID")
-    private String completedTaskId;
+    @Schema(description = "已处理任务ID")
+    private String previousTaskId;
 
-    @Schema(description = "已完成任务名称")
-    private String completedTaskName;
+    @Schema(description = "已处理任务定义Key")
+    private String previousTaskDefinitionKey;
 
-    @Schema(description = "已完成任务定义Key")
-    private String completedTaskDefinitionKey;
-
-    @Schema(description = "流程实例ID")
-    private String processInstanceId;
-
-    @Schema(description = "流程是否已结束")
-    private Boolean ended;
-
-    @Schema(description = "业务申请ID")
-    private Long applyId;
+    @Schema(description = "已处理任务名称")
+    private String previousTaskName;
 
     @Schema(description = "业务类型")
     private String businessType;
@@ -42,20 +33,17 @@ public class WorkflowTaskCompleteResultVO {
     @Schema(description = "业务主键")
     private String businessKey;
 
-    @Schema(description = "申请状态")
-    private WorkflowApplyStatus applyStatus;
+    @Schema(description = "业务申请ID")
+    private Long applyId;
 
-    @Schema(description = "申请状态名称")
-    private String applyStatusName;
+    @Schema(description = "流程实例ID")
+    private String processInstanceId;
 
-    @Schema(description = "当前节点名称")
-    private String currentTaskNames;
+    @Schema(description = "流程状态")
+    private WorkflowApplyStatus processStatus;
 
-    @Schema(description = "当前节点定义Key")
-    private String currentTaskDefinitionKeys;
-
-    @Schema(description = "当前处理人名称")
-    private String currentAssigneeNames;
+    @Schema(description = "流程状态名称")
+    private String processStatusName;
 
     @Schema(description = "当前任务ID")
     private String currentTaskId;
@@ -84,8 +72,11 @@ public class WorkflowTaskCompleteResultVO {
     @Schema(description = "当前任务")
     private WorkflowBusinessApplyCurrentTaskVO currentTask;
 
-    @Schema(description = "推进后的当前任务")
-    private List<WorkflowBusinessApplyCurrentTaskVO> currentTasks;
+    @Schema(description = "后续任务")
+    private List<WorkflowBusinessApplyCurrentTaskVO> nextTasks;
+
+    @Schema(description = "流程是否已结束")
+    private Boolean ended;
 
     @Schema(description = "流程是否已取消")
     private Boolean cancelled;

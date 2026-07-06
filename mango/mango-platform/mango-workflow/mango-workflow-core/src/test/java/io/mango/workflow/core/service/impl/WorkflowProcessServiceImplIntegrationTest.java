@@ -27,6 +27,7 @@ import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
+import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
@@ -524,6 +525,11 @@ class WorkflowProcessServiceImplIntegrationTest {
         }
 
         @Override
+        public R<WorkflowTaskActionResultVO> rejectWithResult(RejectWorkflowTaskCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
         public R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command) {
             return R.ok(null);
         }
@@ -531,6 +537,11 @@ class WorkflowProcessServiceImplIntegrationTest {
         @Override
         public R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command) {
             return R.ok(true);
+        }
+
+        @Override
+        public R<WorkflowTaskActionResultVO> saveDraftWithResult(SaveWorkflowTaskDraftCommand command) {
+            return R.ok(null);
         }
 
         @Override
@@ -549,8 +560,18 @@ class WorkflowProcessServiceImplIntegrationTest {
         }
 
         @Override
+        public R<WorkflowTaskActionResultVO> claimWithResult(ClaimWorkflowTaskCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
         public R<Boolean> unclaim(ClaimWorkflowTaskCommand command) {
             return R.ok(true);
+        }
+
+        @Override
+        public R<WorkflowTaskActionResultVO> unclaimWithResult(ClaimWorkflowTaskCommand command) {
+            return R.ok(null);
         }
 
         @Override

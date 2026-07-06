@@ -4,6 +4,7 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.workflow.api.WorkflowBusinessApplyApi;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.query.WorkflowBusinessApplyProgressBatchQuery;
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,13 +36,14 @@ import java.util.Map;
 @RequestMapping("/workflow/business-applies")
 @RequiredArgsConstructor
 @Tag(name = "审批中心业务申请", description = "业务申请与流程实例关系、进度、历史查询接口")
-public class WorkflowBusinessApplyController {
+public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi {
 
     private final IWorkflowBusinessApplyService workflowBusinessApplyService;
 
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:create")
     @Operation(summary = "创建业务工作流申请")
+    @Override
     public R<WorkflowBusinessApplyVO> create(@Valid @RequestBody CreateWorkflowBusinessApplyCommand command) {
         return workflowBusinessApplyService.create(command);
     }
@@ -47,6 +51,7 @@ public class WorkflowBusinessApplyController {
     @PostMapping("/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:list")
     @Operation(summary = "分页查询业务工作流申请")
+    @Override
     public R<PageResult<WorkflowBusinessApplyVO>> page(@RequestBody(required = false) WorkflowBusinessApplyPageQuery query) {
         return workflowBusinessApplyService.page(query);
     }
@@ -54,6 +59,7 @@ public class WorkflowBusinessApplyController {
     @GetMapping("/my/summary")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
     @Operation(summary = "查询我的申请统计")
+    @Override
     public R<WorkflowBusinessApplySummaryVO> mySummary() {
         return workflowBusinessApplyService.mySummary();
     }
@@ -61,6 +67,7 @@ public class WorkflowBusinessApplyController {
     @GetMapping("/{applyId}")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
     @Operation(summary = "查询业务工作流申请详情")
+    @Override
     public R<WorkflowBusinessApplyVO> detail(@PathVariable Long applyId) {
         return workflowBusinessApplyService.detail(applyId);
     }
@@ -68,6 +75,7 @@ public class WorkflowBusinessApplyController {
     @GetMapping("/history")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
     @Operation(summary = "按业务主键查询申请历史")
+    @Override
     public R<PageResult<WorkflowBusinessApplyVO>> history(@RequestParam String businessType,
                                                          @RequestParam String businessKey,
                                                          @ParameterObject WorkflowBusinessApplyPageQuery query) {
@@ -77,9 +85,21 @@ public class WorkflowBusinessApplyController {
     @GetMapping("/progress/latest")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
     @Operation(summary = "查询业务最新申请进度")
+    @Override
     public R<WorkflowBusinessApplyProgressVO> latestProgress(@RequestParam String businessType,
                                                             @RequestParam String businessKey) {
         return workflowBusinessApplyService.latestProgress(businessType, businessKey);
+    }
+
+    @Override
+    public Map<String, WorkflowBusinessApplyProgressVO> latestProgress(String businessType,
+                                                                       Collection<String> businessKeys) {
+        return workflowBusinessApplyService.latestProgress(businessType, businessKeys);
+    }
+
+    @Override
+    public List<WorkflowBusinessApplyVO> latestByBusinessKeys(String businessType, Collection<String> businessKeys) {
+        return workflowBusinessApplyService.latestByBusinessKeys(businessType, businessKeys);
     }
 
     @PostMapping("/progress/latest-batch")

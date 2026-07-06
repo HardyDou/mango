@@ -15,6 +15,7 @@ import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.enums.WorkflowApplyAction;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
@@ -29,6 +30,7 @@ import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.TaskService;
+import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.task.api.Task;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -286,7 +288,13 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
             currentTask.setTaskId(task.getId());
             currentTask.setTaskDefinitionKey(task.getTaskDefinitionKey());
             currentTask.setTaskName(task.getName());
-            currentTask.setAssigneeName(task.getAssignee());
+            currentTask.setAssigneeId(parseLong(task.getAssignee()));
+            currentTask.setAssigneeName(trim(task.getAssignee()));
+            TaskCandidates candidates = candidates(task);
+            WorkflowTaskClaimStatus claimStatus = currentClaimStatus(task, candidates);
+            currentTask.setClaimStatus(claimStatus.name());
+            currentTask.setCandidateUsers(join(candidates.users()));
+            currentTask.setCandidateGroups(join(candidates.groups()));
             currentTask.setArrivedAt(task.getCreateTime() == null
                     ? now
                     : task.getCreateTime().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
@@ -412,7 +420,9 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
                 .eq(WorkflowBusinessApply::getId, apply.getId())
                 .set(WorkflowBusinessApply::getCurrentTaskNames, join(tasks.stream().map(Task::getName).toList()))
                 .set(WorkflowBusinessApply::getCurrentTaskDefinitionKeys, join(tasks.stream().map(Task::getTaskDefinitionKey).toList()))
-                .set(WorkflowBusinessApply::getCurrentAssigneeNames, join(tasks.stream().map(Task::getAssignee).toList()))
+                .set(WorkflowBusinessApply::getCurrentAssigneeNames, join(tasks.stream()
+                        .map(this::currentAssigneeDisplay)
+                        .toList()))
                 .set(WorkflowBusinessApply::getUpdatedBy, MangoContextHolder.userId())
                 .set(WorkflowBusinessApply::getUpdatedTime, now)
                 .set(WorkflowBusinessApply::getUpdatedAt, now));
@@ -526,13 +536,20 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
         vo.setApplyTitle(apply.getApplyTitle());
         vo.setProcessInstanceId(apply.getProcessInstanceId());
         vo.setProcessName(apply.getProcessName());
+        vo.setProcessDefinitionKey(apply.getProcessDefinitionKey());
         WorkflowApplyStatus status = WorkflowApplyStatus.fromCode(apply.getApplyStatus());
         vo.setApplyStatus(status);
         vo.setApplyStatusName(status == null ? apply.getApplyStatus() : status.getLabel());
+        vo.setProcessStatus(status);
+        vo.setProcessStatusName(status == null ? apply.getApplyStatus() : status.getLabel());
         vo.setCurrentTaskNames(apply.getCurrentTaskNames());
         vo.setCurrentTaskDefinitionKeys(apply.getCurrentTaskDefinitionKeys());
         vo.setCurrentAssigneeNames(apply.getCurrentAssigneeNames());
-        vo.setCurrentTasks(tasks.stream().map(this::toTaskVo).toList());
+        List<WorkflowBusinessApplyCurrentTaskVO> currentTasks = tasks.stream().map(this::toTaskVo).toList();
+        vo.setCurrentTasks(currentTasks);
+        fillFirstTask(vo, currentTasks);
+        vo.setStartedAt(apply.getCreatedAt());
+        vo.setEndedAt(isEnded(status) ? apply.getUpdatedAt() : null);
         vo.setCreatedAt(apply.getCreatedAt());
         vo.setUpdatedAt(apply.getUpdatedAt());
         return vo;
@@ -565,8 +582,87 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
         vo.setTaskName(task.getTaskName());
         vo.setAssigneeId(task.getAssigneeId());
         vo.setAssigneeName(task.getAssigneeName());
+        vo.setClaimStatus(claimStatusOf(task.getClaimStatus()));
+        vo.setCandidateUsers(split(task.getCandidateUsers()));
+        vo.setCandidateGroups(split(task.getCandidateGroups()));
         vo.setArrivedAt(task.getArrivedAt());
         return vo;
+    }
+
+    private void fillFirstTask(WorkflowBusinessApplyProgressVO vo, List<WorkflowBusinessApplyCurrentTaskVO> currentTasks) {
+        if (currentTasks == null || currentTasks.isEmpty()) {
+            vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
+            vo.setCandidateUsers(List.of());
+            vo.setCandidateGroups(List.of());
+            return;
+        }
+        WorkflowBusinessApplyCurrentTaskVO first = currentTasks.getFirst();
+        vo.setCurrentTaskId(first.getTaskId());
+        vo.setCurrentTaskName(first.getTaskName());
+        vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
+        vo.setAssigneeId(first.getAssigneeId());
+        vo.setAssigneeName(first.getAssigneeName());
+        vo.setClaimStatus(first.getClaimStatus());
+        vo.setCandidateUsers(first.getCandidateUsers());
+        vo.setCandidateGroups(first.getCandidateGroups());
+    }
+
+    private WorkflowTaskClaimStatus currentClaimStatus(Task task, TaskCandidates candidates) {
+        if (StringUtils.hasText(task.getAssignee())) {
+            return WorkflowTaskClaimStatus.ASSIGNED;
+        }
+        if (!candidates.users().isEmpty() || !candidates.groups().isEmpty()) {
+            return WorkflowTaskClaimStatus.UNCLAIMED;
+        }
+        return WorkflowTaskClaimStatus.UNCLAIMED;
+    }
+
+    private String currentAssigneeDisplay(Task task) {
+        if (StringUtils.hasText(task.getAssignee())) {
+            return task.getAssignee().trim();
+        }
+        TaskCandidates candidates = candidates(task);
+        if (!candidates.users().isEmpty() || !candidates.groups().isEmpty()) {
+            return WorkflowTaskClaimStatus.UNCLAIMED.getLabel();
+        }
+        return null;
+    }
+
+    private TaskCandidates candidates(Task task) {
+        if (task == null || !StringUtils.hasText(task.getId())) {
+            return new TaskCandidates(List.of(), List.of());
+        }
+        List<IdentityLink> links = taskService.getIdentityLinksForTask(task.getId());
+        List<String> users = links.stream()
+                .map(IdentityLink::getUserId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        List<String> groups = links.stream()
+                .map(IdentityLink::getGroupId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        return new TaskCandidates(users, groups);
+    }
+
+    private boolean isEnded(WorkflowApplyStatus status) {
+        return status == WorkflowApplyStatus.APPROVED
+                || status == WorkflowApplyStatus.REJECTED
+                || status == WorkflowApplyStatus.WITHDRAWN
+                || status == WorkflowApplyStatus.CANCELED
+                || status == WorkflowApplyStatus.TERMINATED;
+    }
+
+    private WorkflowTaskClaimStatus claimStatusOf(String claimStatus) {
+        if (!StringUtils.hasText(claimStatus)) {
+            return WorkflowTaskClaimStatus.NONE;
+        }
+        try {
+            return WorkflowTaskClaimStatus.valueOf(claimStatus.trim());
+        } catch (IllegalArgumentException ex) {
+            return WorkflowTaskClaimStatus.NONE;
+        }
     }
 
     private void saveStatusLog(WorkflowBusinessApply apply, String fromStatus, String toStatus,
@@ -614,6 +710,24 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
         return List.copyOf(result);
     }
 
+    private List<String> split(String value) {
+        if (!StringUtils.hasText(value)) {
+            return List.of();
+        }
+        return cleanStrings(Arrays.asList(value.split(",")));
+    }
+
+    private Long parseLong(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            return Long.valueOf(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     private Map<String, Object> parseMap(String value) {
         if (!StringUtils.hasText(value)) {
             return Map.of();
@@ -657,5 +771,8 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
     }
 
     private record ApplyWithTasks(WorkflowBusinessApply apply, List<WorkflowBusinessApplyCurrentTask> tasks) {
+    }
+
+    private record TaskCandidates(List<String> users, List<String> groups) {
     }
 }

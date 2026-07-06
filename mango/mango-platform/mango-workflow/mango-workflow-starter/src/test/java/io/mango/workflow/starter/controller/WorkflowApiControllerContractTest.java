@@ -1,7 +1,11 @@
-package io.mango.workflow.starter.api;
+package io.mango.workflow.starter.controller;
 
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.workflow.api.WorkflowBusinessApplyApi;
+import io.mango.workflow.api.WorkflowBusinessProcessApi;
+import io.mango.workflow.api.WorkflowProcessApi;
+import io.mango.workflow.api.WorkflowTaskRuntimeApi;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
@@ -12,6 +16,8 @@ import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import org.junit.jupiter.api.Test;
 
@@ -23,13 +29,27 @@ import static org.mockito.Mockito.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class WorkflowTaskRuntimeApiAdapterTest {
+class WorkflowApiControllerContractTest {
 
+    private final IWorkflowBusinessApplyService businessApplyService = mock(IWorkflowBusinessApplyService.class);
+    private final IWorkflowProcessService processService = mock(IWorkflowProcessService.class);
     private final IWorkflowTaskRuntimeService runtimeService = mock(IWorkflowTaskRuntimeService.class);
-    private final WorkflowTaskRuntimeApiAdapter adapter = new WorkflowTaskRuntimeApiAdapter(runtimeService);
+    private final WorkflowBusinessApplyController businessApplyController =
+            new WorkflowBusinessApplyController(businessApplyService);
+    private final WorkflowProcessController processController = new WorkflowProcessController(processService);
+    private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService);
 
     @Test
-    void queryMethods_delegateToRuntimeService() {
+    void controllers_carryWorkflowApiContracts() {
+        assertThat(businessApplyController).isInstanceOf(WorkflowBusinessApplyApi.class);
+        assertThat(processController)
+                .isInstanceOf(WorkflowProcessApi.class)
+                .isInstanceOf(WorkflowBusinessProcessApi.class);
+        assertThat(taskController).isInstanceOf(WorkflowTaskRuntimeApi.class);
+    }
+
+    @Test
+    void taskQueryMethods_delegateToRuntimeService() {
         WorkflowTaskPageQuery query = new WorkflowTaskPageQuery();
         R<PageResult<WorkflowTaskVO>> page = R.ok(PageResult.of(List.of(), 0, 1, 10));
         WorkflowTaskSummaryVO taskSummary = new WorkflowTaskSummaryVO();
@@ -44,13 +64,13 @@ class WorkflowTaskRuntimeApiAdapterTest {
         when(runtimeService.detail("task-1")).thenReturn(R.ok(detail));
         when(runtimeService.processDetail("process-1")).thenReturn(R.ok(processDetail));
 
-        assertThat(adapter.todo(query)).isSameAs(page);
-        assertThat(adapter.done(query)).isSameAs(page);
-        assertThat(adapter.copied(query)).isSameAs(page);
-        assertThat(adapter.summary().getData()).isSameAs(taskSummary);
-        assertThat(adapter.myTaskSummary().getData()).isSameAs(mySummary);
-        assertThat(adapter.detail("task-1").getData()).isSameAs(detail);
-        assertThat(adapter.processDetail("process-1").getData()).isSameAs(processDetail);
+        assertThat(taskController.todo(query)).isSameAs(page);
+        assertThat(taskController.done(query)).isSameAs(page);
+        assertThat(taskController.copied(query)).isSameAs(page);
+        assertThat(taskController.summary().getData()).isSameAs(taskSummary);
+        assertThat(taskController.myTaskSummary().getData()).isSameAs(mySummary);
+        assertThat(taskController.detail("task-1").getData()).isSameAs(detail);
+        assertThat(taskController.processDetail("process-1").getData()).isSameAs(processDetail);
 
         verify(runtimeService).todo(same(query));
         verify(runtimeService).done(same(query));
@@ -62,7 +82,7 @@ class WorkflowTaskRuntimeApiAdapterTest {
     }
 
     @Test
-    void actionMethods_delegateToRuntimeService() {
+    void taskActionMethods_delegateToRuntimeService() {
         CompleteWorkflowTaskCommand complete = new CompleteWorkflowTaskCommand();
         ClaimWorkflowTaskCommand claim = new ClaimWorkflowTaskCommand();
         ReadWorkflowCopiedTaskCommand readCopied = new ReadWorkflowCopiedTaskCommand();
@@ -78,16 +98,16 @@ class WorkflowTaskRuntimeApiAdapterTest {
         when(runtimeService.unclaim(claim)).thenReturn(R.ok(Boolean.TRUE));
         when(runtimeService.readCopied(readCopied)).thenReturn(R.ok(Boolean.TRUE));
 
-        assertThat(adapter.complete(complete).getData()).isTrue();
-        assertThat(adapter.completeWithResult(complete).getData()).isSameAs(completeResult);
-        assertThat(adapter.reject(null).getData()).isTrue();
-        assertThat(adapter.returnTask(null).getData()).isSameAs(completeResult);
-        assertThat(adapter.saveDraft(null).getData()).isTrue();
-        assertThat(adapter.transfer(null).getData()).isTrue();
-        assertThat(adapter.addSign(null).getData()).isTrue();
-        assertThat(adapter.claim(claim).getData()).isTrue();
-        assertThat(adapter.unclaim(claim).getData()).isTrue();
-        assertThat(adapter.readCopied(readCopied).getData()).isTrue();
+        assertThat(taskController.complete(complete).getData()).isTrue();
+        assertThat(taskController.completeWithResult(complete).getData()).isSameAs(completeResult);
+        assertThat(taskController.reject(null).getData()).isTrue();
+        assertThat(taskController.returnTask(null).getData()).isSameAs(completeResult);
+        assertThat(taskController.saveDraft(null).getData()).isTrue();
+        assertThat(taskController.transfer(null).getData()).isTrue();
+        assertThat(taskController.addSign(null).getData()).isTrue();
+        assertThat(taskController.claim(claim).getData()).isTrue();
+        assertThat(taskController.unclaim(claim).getData()).isTrue();
+        assertThat(taskController.readCopied(readCopied).getData()).isTrue();
 
         verify(runtimeService).complete(complete);
         verify(runtimeService).completeWithResult(complete);

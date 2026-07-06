@@ -15,6 +15,7 @@ import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
+import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 
@@ -41,9 +42,13 @@ public interface WorkflowTaskRuntimeApi {
 
     R<Boolean> reject(RejectWorkflowTaskCommand command);
 
+    R<WorkflowTaskActionResultVO> rejectWithResult(RejectWorkflowTaskCommand command);
+
     R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command);
 
     R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command);
+
+    R<WorkflowTaskActionResultVO> saveDraftWithResult(SaveWorkflowTaskDraftCommand command);
 
     R<Boolean> transfer(TransferWorkflowTaskCommand command);
 
@@ -51,7 +56,11 @@ public interface WorkflowTaskRuntimeApi {
 
     R<Boolean> claim(ClaimWorkflowTaskCommand command);
 
+    R<WorkflowTaskActionResultVO> claimWithResult(ClaimWorkflowTaskCommand command);
+
     R<Boolean> unclaim(ClaimWorkflowTaskCommand command);
+
+    R<WorkflowTaskActionResultVO> unclaimWithResult(ClaimWorkflowTaskCommand command);
 
     R<Boolean> readCopied(ReadWorkflowCopiedTaskCommand command);
 

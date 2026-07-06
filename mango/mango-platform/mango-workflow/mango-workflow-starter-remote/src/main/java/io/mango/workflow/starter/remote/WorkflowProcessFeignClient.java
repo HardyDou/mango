@@ -2,8 +2,10 @@ package io.mango.workflow.starter.remote;
 
 import io.mango.common.result.R;
 import io.mango.workflow.api.WorkflowProcessApi;
+import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
+import io.mango.workflow.api.vo.WorkflowStartResultVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,4 +19,8 @@ public interface WorkflowProcessFeignClient extends WorkflowProcessApi {
     @Override
     @PostMapping("/start")
     R<WorkflowProcessInstanceVO> start(@RequestBody StartWorkflowProcessCommand command);
+
+    @Override
+    @PostMapping("/start-business")
+    R<WorkflowStartResultVO> startBusinessWorkflow(@RequestBody StartBusinessWorkflowCommand command);
 }
