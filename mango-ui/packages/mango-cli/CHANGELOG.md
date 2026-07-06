@@ -1,5 +1,29 @@
 # @mango/cli Changelog
 
+## 1.0.60 - 2026-07-07
+
+### Changed
+
+- Locked generated business backend projects to Mango Maven backend `1.0.9`.
+- Updated generated project release locks for the API contract boundary batch:
+  - `@mango/admin-shell@1.0.36`
+  - `@mango/admin@1.0.41`
+  - `@mango/workflow-business-example@1.0.22`
+  - `@mango/workflow@1.0.23`
+  - `@mango/cli@1.0.60`
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.60 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New generated business projects receive `<mango.version>1.0.9</mango.version>` and the current API contract package batch.
+- Existing workflow business integrations should depend on `WorkflowProcessApi`, `WorkflowTaskRuntimeApi`, and workflow
+  event API types instead of importing `mango-workflow-core` services.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.58 - 2026-07-03
 
 ### Changed

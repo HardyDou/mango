@@ -110,6 +110,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 9. 变更影响记录
 
+- v2026.07.07-maven-1.0.9-api-contract-release 发布 PR #400 的 workflow API 边界治理物料，并对齐 `@mango/workflow@1.0.23`、`@mango/workflow-business-example@1.0.22`、`@mango/admin-shell@1.0.36`、`@mango/admin@1.0.41` 和 `@mango/cli@1.0.60`。业务模块发起审批、任务办理、事件订阅和进度查询应继续只依赖 `mango-workflow-api` 或 remote starter，不直接引用 workflow core service/event，也不直接读取 workflow 表；既有业务审批发起、审批回调、状态回写、流程页面 key、菜单、权限码、租户隔离和组合入口保持兼容。
+
 - PR #400 处理 workflow API 边界治理。业务模块发起业务审批可使用 `WorkflowProcessApi.startBusinessWorkflow()` 一次性创建业务申请并启动流程；审批、保存、认领和取消认领需要同步刷新页面时，使用任务 result API 读取 `progress.currentTask`、`claimStatus`、`candidateUsers` 和 `candidateGroups`。业务后端和事件订阅方只依赖 `mango-workflow-api` 或 remote starter，不依赖 workflow core service/event，也不直接读取 workflow 表。流程页面 key、菜单、权限码、租户隔离和既有 `WorkflowBusinessApplyApi.create()` + `WorkflowProcessApi.start()` 组合入口保持兼容。
 
 - PR #388 支持站内消息动作的 `FLOW` 目标类型，业务模块可在消息中携带流程或任务入口动作；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。排查审批消息动作无法打开流程时，额外确认消息动作 `targetKey`、隐藏业务参数、流程/任务权限和对应 workflow 页面注册。
