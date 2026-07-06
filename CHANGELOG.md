@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Changed
+
+- Updated Maven publishing scripts so the standard backend platform release uses a non-app reactor scope and blocks
+  `mango-app/**` fat jar deployment artifacts unless `--include-apps` is explicitly requested.
+- Documented the backend Maven release gate: use `scripts/publish-maven-batch.sh --all-non-app --release-version <version>`
+  for full platform releases instead of raw full-reactor `mvn deploy`.
+
+### Verification
+
+- `bash -n scripts/publish-maven-batch.sh && bash -n scripts/publish-maven-module.sh`
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.10 --skip-verify --dry-run`
+- `scripts/publish-maven-batch.sh :mango-platform-app --release-version 1.0.10 --skip-verify --dry-run`
+- `scripts/publish-maven-module.sh :mango-platform-app --release-version 1.0.10 --skip-verify --dry-run`
+- `mvn -f mango/pom.xml -Drevision=1.0.10-SNAPSHOT -DskipTests -pl <all-non-app-module-paths> validate`
+- `node mango-pmo/tools/check-pmo-preflight.mjs`
+- `PR_BODY_FILE=/tmp/pr403-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `git diff --check`
+
 ## v2026.07.07-maven-1.0.9-api-contract-release - 2026-07-07
 
 ### New
