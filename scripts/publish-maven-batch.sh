@@ -8,11 +8,16 @@ MAVEN_ROOT="${REPO_ROOT}/mango"
 usage() {
   cat <<'EOF'
 Usage: scripts/publish-maven-batch.sh <artifactId|module-path>... [options]
+       scripts/publish-maven-batch.sh --all-non-app [options]
 
 Publish multiple Maven reactor modules in one deploy command and verify the
 published artifacts with one shared temporary Maven local repository.
 
 Options:
+  --all-non-app        Publish the complete backend reactor excluding
+                       mango-app/** deployment entry modules
+  --include-apps       Allow explicit mango-app/** targets. App artifacts are
+                       never included by --all-non-app
   --revision <ver>      Maven CI-friendly version; required unless
                         MANGO_MAVEN_REVISION is set
   --release-version <ver>
@@ -27,6 +32,7 @@ Options:
   -h, --help            Show help
 
 Examples:
+  scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.10
   scripts/publish-maven-batch.sh mango-auth-starter mango-auth-starter-remote --release-version 1.0.2
   scripts/publish-maven-batch.sh :mango-cms-starter :mango-cms-starter-remote --release-version 1.0.2-rc.20250701113000
   scripts/publish-maven-batch.sh mango-platform/mango-cms/mango-cms-starter --revision 1.0.2-SNAPSHOT --allow-snapshot
@@ -34,6 +40,8 @@ EOF
 }
 
 targets=()
+all_non_app=false
+include_apps=false
 skip_tests=true
 dry_run=false
 verify_publish=true
@@ -63,6 +71,12 @@ validate_revision() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --all-non-app)
+      all_non_app=true
+      ;;
+    --include-apps)
+      include_apps=true
+      ;;
     --run-tests)
       skip_tests=false
       ;;
@@ -130,8 +144,13 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if [[ ${#targets[@]} -eq 0 ]]; then
-  echo "Missing Maven module targets." >&2
+if [[ "${all_non_app}" == "true" && ${#targets[@]} -gt 0 ]]; then
+  echo "--all-non-app cannot be combined with explicit module targets." >&2
+  usage
+  exit 1
+fi
+if [[ "${all_non_app}" != "true" && ${#targets[@]} -eq 0 ]]; then
+  echo "Missing Maven module targets. Use --all-non-app for the default backend release batch." >&2
   usage
   exit 1
 fi
@@ -172,6 +191,45 @@ resolve_module_dir() {
   return 1
 }
 
+discover_non_app_targets() {
+  local pom_file rel_path module_path
+  while IFS= read -r pom_file; do
+    if [[ "${pom_file}" == "${MAVEN_ROOT}/mango-app/pom.xml" || "${pom_file}" == "${MAVEN_ROOT}/mango-app/"* ]]; then
+      continue
+    fi
+    rel_path="${pom_file#${MAVEN_ROOT}/}"
+    if [[ "${rel_path}" == "pom.xml" ]]; then
+      module_path="."
+    else
+      module_path="${rel_path%/pom.xml}"
+    fi
+    targets+=("${module_path}")
+  done < <(find "${MAVEN_ROOT}" -name pom.xml -not -path '*/target/*' -print | sort)
+}
+
+is_app_module_dir() {
+  local module_dir="$1"
+  [[ "${module_dir}" == "${MAVEN_ROOT}/mango-app" || "${module_dir}" == "${MAVEN_ROOT}/mango-app/"* ]]
+}
+
+if [[ "${all_non_app}" == "true" ]]; then
+  discover_non_app_targets
+fi
+
+if [[ "${include_apps}" != "true" ]]; then
+  for target in "${targets[@]}"; do
+    module_dir="$(resolve_module_dir "${target}")" || {
+      echo "Unable to resolve module directory: ${target}" >&2
+      exit 1
+    }
+    if is_app_module_dir "${module_dir}"; then
+      echo "Maven app artifact publish is blocked by default: ${target}" >&2
+      echo "Use --all-non-app for the standard backend release batch, or pass --include-apps for an explicit deployment artifact release." >&2
+      exit 1
+    fi
+  done
+fi
+
 project_list=""
 for target in "${targets[@]}"; do
   project="$(normalize_project "${target}")"
@@ -188,9 +246,15 @@ if [[ "${skip_tests}" == "true" ]]; then
 fi
 
 echo "Maven root: ${MAVEN_ROOT}"
+if [[ "${all_non_app}" == "true" ]]; then
+  echo "Publish scope: all non-app Maven modules"
+else
+  echo "Publish scope: explicit Maven modules"
+fi
 echo "Publishing modules: ${project_list}"
 echo "Revision: ${revision}"
 echo "Allow SNAPSHOT: ${allow_snapshot}"
+echo "Include app artifacts: ${include_apps}"
 echo "Mode: one reactor deploy for all selected modules and required upstream modules"
 printf 'Command: mvn'
 printf ' %q' "${mvn_args[@]}"

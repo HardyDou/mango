@@ -14,6 +14,8 @@ one Maven artifact. This single-module helper is for one-off module publication.
 
 Options:
   --also-make       Also build and deploy required upstream reactor modules
+  --include-apps    Allow explicit mango-app/** targets. App artifacts are
+                    blocked by default because they are deployment entries
   --revision <ver>  Maven CI-friendly version; required unless MANGO_MAVEN_REVISION is set
   --release-version <ver>
                     Alias for --revision
@@ -39,6 +41,7 @@ fi
 
 target=""
 also_make=false
+include_apps=false
 skip_tests=true
 dry_run=false
 verify_publish=true
@@ -68,6 +71,9 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --also-make)
       also_make=true
+      ;;
+    --include-apps)
+      include_apps=true
       ;;
     --run-tests)
       skip_tests=false
@@ -138,6 +144,39 @@ if [[ "${target}" != :* && ! -d "${MAVEN_ROOT}/${target}" ]]; then
   project_list=":${target}"
 fi
 
+resolve_module_dir() {
+  if [[ "${target}" != :* && -d "${MAVEN_ROOT}/${target}" ]]; then
+    printf '%s' "${MAVEN_ROOT}/${target}"
+    return 0
+  fi
+
+  local project basedir
+  project="${target}"
+  if [[ "${target}" != :* ]]; then
+    project=":${target}"
+  fi
+  basedir="$(
+    cd "${MAVEN_ROOT}"
+    mvn -q -pl "${project}" help:evaluate "-Drevision=${revision}" -Dexpression=project.basedir -DforceStdout
+  )"
+  basedir="$(printf '%s\n' "${basedir}" | tail -n 1)"
+  if [[ -n "${basedir}" && -f "${basedir}/pom.xml" ]]; then
+    printf '%s' "${basedir}"
+    return 0
+  fi
+  return 1
+}
+
+module_dir="$(resolve_module_dir)" || {
+  echo "Unable to resolve module directory: ${target}" >&2
+  exit 1
+}
+if [[ "${include_apps}" != "true" && ( "${module_dir}" == "${MAVEN_ROOT}/mango-app" || "${module_dir}" == "${MAVEN_ROOT}/mango-app/"* ) ]]; then
+  echo "Maven app artifact publish is blocked by default: ${target}" >&2
+  echo "Use scripts/publish-maven-batch.sh --all-non-app for the standard backend release batch, or pass --include-apps for an explicit deployment artifact release." >&2
+  exit 1
+fi
+
 mvn_args=(-pl "${project_list}")
 if [[ "${also_make}" == "true" ]]; then
   mvn_args+=(-am)
@@ -152,6 +191,7 @@ echo "Maven root: ${MAVEN_ROOT}"
 echo "Publishing module: ${project_list}"
 echo "Revision: ${revision}"
 echo "Allow SNAPSHOT: ${allow_snapshot}"
+echo "Include app artifacts: ${include_apps}"
 if [[ "${also_make}" == "true" ]]; then
   echo "Mode: deploy selected module and required upstream modules"
 else
@@ -175,23 +215,6 @@ if [[ "${verify_publish}" == "true" ]]; then
     mvn -q -f "${pom_file}" help:evaluate "-Drevision=${revision}" -Dexpression="${expression}" -DforceStdout
   }
 
-  module_dir=""
-  if [[ "${target}" != :* && -d "${MAVEN_ROOT}/${target}" ]]; then
-    module_dir="${MAVEN_ROOT}/${target}"
-  else
-    artifact_id="${target#:}"
-    while IFS= read -r -d '' pom_file; do
-      pom_artifact_id="$(mvn_eval "${pom_file}" project.artifactId)"
-      if [[ "${pom_artifact_id}" == "${artifact_id}" ]]; then
-        module_dir="$(dirname "${pom_file}")"
-        break
-      fi
-    done < <(find "${MAVEN_ROOT}" -name pom.xml -not -path '*/target/*' -print0)
-  fi
-  if [[ -z "${module_dir}" || ! -f "${module_dir}/pom.xml" ]]; then
-    echo "Unable to resolve module directory for publish verification: ${target}" >&2
-    exit 1
-  fi
   group_id="$(mvn_eval "${module_dir}/pom.xml" project.groupId)"
   artifact_id="$(mvn_eval "${module_dir}/pom.xml" project.artifactId)"
   version="$(mvn_eval "${module_dir}/pom.xml" project.version)"

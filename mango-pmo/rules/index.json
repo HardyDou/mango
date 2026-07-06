@@ -53,7 +53,7 @@
     },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
-      "reason": "AI 交付质量门禁"
+      "reason": "AI 交付质量门禁、发布批次和 Maven app 制品排除规则"
     },
     "process.documentAssets": {
       "path": "rules/06-document-assets.md",
