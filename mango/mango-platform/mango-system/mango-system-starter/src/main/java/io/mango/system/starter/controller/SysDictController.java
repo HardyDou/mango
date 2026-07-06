@@ -4,6 +4,7 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.infra.log.annotation.Log;
+import io.mango.system.api.DictApi;
 import io.mango.system.api.po.DictTypePo;
 import io.mango.system.api.po.DictDataPo;
 import io.mango.system.api.vo.DictTypeVO;
@@ -23,9 +24,14 @@ import java.util.List;
 @RequestMapping("/system/dict")
 @RequiredArgsConstructor
 @Tag(name = "系统字典", description = "字典类型与字典数据管理接口")
-public class SysDictController {
+public class SysDictController implements DictApi {
 
     private final IDictService dictService;
+
+    @Override
+    public R<List<DictTypeVO>> listTypes() {
+        return dictService.listTypes(null);
+    }
 
     @GetMapping("/type/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:list")
@@ -39,6 +45,7 @@ public class SysDictController {
     @GetMapping("/type/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:query")
     @Operation(summary = "获取字典类型详情", description = "权限接口。按字典类型ID查询详情")
+    @Override
     public R<DictTypeVO> getType(
             @Parameter(description = "字典类型ID")
             @RequestParam Long id) {
@@ -49,6 +56,7 @@ public class SysDictController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:add")
     @Operation(summary = "新增字典类型", description = "权限接口。创建字典类型")
     @Log("新增字典类型")
+    @Override
     public R<Long> createType(@RequestBody @Valid DictTypePo po) {
         return dictService.createType(po);
     }
@@ -57,6 +65,7 @@ public class SysDictController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:edit")
     @Operation(summary = "修改字典类型", description = "权限接口。更新字典类型")
     @Log("修改字典类型")
+    @Override
     public R<Boolean> updateType(@RequestBody @Valid DictTypePo po) {
         return dictService.updateType(po);
     }
@@ -65,6 +74,7 @@ public class SysDictController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:delete")
     @Operation(summary = "删除字典类型", description = "权限接口。按字典类型ID删除字典类型")
     @Log("删除字典类型")
+    @Override
     public R<Boolean> deleteType(
             @Parameter(description = "字典类型ID")
             @RequestParam Long id) {
@@ -74,6 +84,7 @@ public class SysDictController {
     @GetMapping("/data/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:list")
     @Operation(summary = "获取字典数据列表", description = "权限接口。按字典类型ID查询字典数据列表")
+    @Override
     public R<List<DictDataVO>> listData(
             @Parameter(description = "字典类型ID")
             @RequestParam(required = false) Long typeId) {
@@ -83,6 +94,7 @@ public class SysDictController {
     @GetMapping("/data/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:query")
     @Operation(summary = "获取字典数据详情", description = "权限接口。按字典数据ID查询详情")
+    @Override
     public R<DictDataVO> getData(
             @Parameter(description = "字典数据ID")
             @RequestParam Long id) {
@@ -93,6 +105,7 @@ public class SysDictController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:add")
     @Operation(summary = "新增字典数据", description = "权限接口。创建字典数据")
     @Log("新增字典数据")
+    @Override
     public R<Long> createData(@RequestBody @Valid DictDataPo po) {
         return dictService.createData(po);
     }
@@ -101,6 +114,7 @@ public class SysDictController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:edit")
     @Operation(summary = "修改字典数据", description = "权限接口。更新字典数据")
     @Log("修改字典数据")
+    @Override
     public R<Boolean> updateData(@RequestBody @Valid DictDataPo po) {
         return dictService.updateData(po);
     }
@@ -109,6 +123,7 @@ public class SysDictController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:delete")
     @Operation(summary = "删除字典数据", description = "权限接口。按字典数据ID删除字典数据")
     @Log("删除字典数据")
+    @Override
     public R<Boolean> deleteData(
             @Parameter(description = "字典数据ID")
             @RequestParam Long id) {
@@ -118,6 +133,7 @@ public class SysDictController {
     @GetMapping("/data/options")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取字典选项")
     @Operation(summary = "获取字典选项", description = "登录接口。按字典类型编码查询可选项，用于前端表单、筛选项和字典标签展示")
+    @Override
     public R<List<DictOptionVO>> getOptions(
             @Parameter(description = "字典类型编码")
             @RequestParam String typeCode) {

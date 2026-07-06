@@ -3,6 +3,8 @@ package io.mango.system.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
+import io.mango.system.api.SysConfigApi;
+import io.mango.system.api.command.UpdateConfigValueCommand;
 import io.mango.system.api.po.SysConfigPo;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import io.mango.system.core.service.ISysConfigService;
@@ -20,9 +22,14 @@ import java.util.List;
 @RequestMapping("/system/config")
 @RequiredArgsConstructor
 @Tag(name = "系统配置", description = "系统配置列表、详情、新增、修改与删除接口")
-public class SysConfigController {
+public class SysConfigController implements SysConfigApi {
 
     private final ISysConfigService configService;
+
+    @Override
+    public R<List<SysConfigPo>> list(ConfigTypeEnum type) {
+        return configService.list(type, null);
+    }
 
     @GetMapping("/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
@@ -38,6 +45,7 @@ public class SysConfigController {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:query")
     @Operation(summary = "获取系统配置详情", description = "权限接口。按配置ID查询系统配置详情")
+    @Override
     public R<SysConfigPo> get(
             @Parameter(description = "配置ID")
             @RequestParam Long id) {
@@ -48,6 +56,7 @@ public class SysConfigController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:add")
     @Operation(summary = "新增系统配置", description = "权限接口。创建系统配置")
     @Log("新增系统配置")
+    @Override
     public R<Long> create(@RequestBody @Valid SysConfigPo po) {
         return configService.create(po);
     }
@@ -56,6 +65,7 @@ public class SysConfigController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:edit")
     @Operation(summary = "修改系统配置", description = "权限接口。更新系统配置")
     @Log("修改系统配置")
+    @Override
     public R<Boolean> update(@RequestBody @Valid SysConfigPo po) {
         return configService.update(po);
     }
@@ -64,10 +74,16 @@ public class SysConfigController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:delete")
     @Operation(summary = "删除系统配置", description = "权限接口。按配置ID删除系统配置")
     @Log("删除系统配置")
+    @Override
     public R<Boolean> delete(
             @Parameter(description = "配置ID")
             @RequestParam Long id) {
         return configService.delete(id);
+    }
+
+    @Override
+    public R<Boolean> updateValue(UpdateConfigValueCommand command) {
+        return configService.updateValue(command.getId(), command.getValue());
     }
 
     @PutMapping("/value")
@@ -105,5 +121,20 @@ public class SysConfigController {
     @Operation(summary = "获取系统配置展示类型", description = "权限接口。查询配置面板支持的展示与编辑类型")
     public R<List<String>> valueTypes() {
         return configService.listValueTypes();
+    }
+
+    @Override
+    public R<String> getValue(String configKey) {
+        return configService.getValue(configKey);
+    }
+
+    @Override
+    public R<Boolean> getBooleanValue(String configKey, Boolean defaultValue) {
+        return configService.getBooleanValue(configKey, defaultValue);
+    }
+
+    @Override
+    public R<Integer> getIntegerValue(String configKey, Integer defaultValue) {
+        return configService.getIntegerValue(configKey, defaultValue);
     }
 }

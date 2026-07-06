@@ -1,8 +1,6 @@
 package io.mango.auth.starter;
 
-import io.mango.auth.api.AuthApi;
 import io.mango.auth.core.anti.AppSecretProvider;
-import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.auth.starter.config.AuthSecurityProperties;
 import io.mango.auth.starter.config.AuthSecurityConfig;
@@ -59,12 +57,6 @@ public class AuthAutoConfiguration {
     @ConditionalOnMissingBean
     public AppSecretProvider appSecretProvider(AntiReplayProperties properties) {
         return new ConfiguredAppSecretProvider(properties);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(AuthApi.class)
-    public AuthApi authApi(IAuthService authService) {
-        return new AuthApiAdapter(authService);
     }
 
     @Bean(destroyMethod = "shutdown")

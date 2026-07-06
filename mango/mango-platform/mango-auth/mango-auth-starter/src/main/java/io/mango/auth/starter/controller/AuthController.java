@@ -11,6 +11,7 @@ import io.mango.auth.api.vo.ButtonDisplayRuleVO;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
+import io.mango.auth.api.AuthApi;
 import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.authorization.api.AuthorizationQuery;
@@ -71,7 +72,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "认证授权", description = "认证登录、令牌刷新、退出登录接口")
-public class AuthController {
+public class AuthController implements AuthApi {
 
     private final IAuthService authService;
     private final ITokenProvider tokenProvider;
@@ -119,6 +120,13 @@ public class AuthController {
         }
         recordLoginLog(loginCommand, request, result, clientIp);
         return result;
+    }
+
+    @Override
+    public R<LoginVO> login(LoginCommand loginCommand) {
+        LoginVO response = authService.login(loginCommand);
+        Require.notNull(response, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        return R.ok(response);
     }
 
     @PostMapping("/login-institutions")
@@ -259,8 +267,11 @@ public class AuthController {
         }
     }
 
-    private R<LoginVO> refreshToken(RefreshTokenCommand command) {
-        return R.ok(authService.refreshToken(command.getRefreshToken()));
+    @Override
+    public R<LoginVO> refreshToken(RefreshTokenCommand command) {
+        LoginVO response = authService.refreshToken(command.getRefreshToken());
+        Require.notNull(response, AuthCode.REFRESH_TOKEN_INVALID);
+        return R.ok(response);
     }
 
     @PostMapping("/refresh")
@@ -286,7 +297,14 @@ public class AuthController {
         return R.ok();
     }
 
-    private R<Boolean> validateToken(ValidateTokenCommand command) {
+    @Override
+    public R<Void> logout(LogoutCommand command) {
+        authService.logout(command.getToken());
+        return R.ok();
+    }
+
+    @Override
+    public R<Boolean> validateToken(ValidateTokenCommand command) {
         return R.ok(authService.validateToken(command.getToken()));
     }
 

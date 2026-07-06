@@ -1,9 +1,11 @@
 package io.mango.captcha.starter.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.CaptchaCode;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
+import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.captcha.starter.config.CaptchaAutoConfiguration;
 import io.mango.infra.web.starter.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -38,6 +41,18 @@ class CaptchaControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private CaptchaApi captchaApi;
+
+    @Autowired
+    private ICaptchaService captchaService;
+
+    @Test
+    void captchaApiBean_isProvidedByController() {
+        assertThat(captchaApi).isInstanceOf(CaptchaController.class);
+        assertThat(captchaService).isNotInstanceOf(CaptchaApi.class);
+    }
 
     @Test
     void getTypes_returnsAllCaptchaTypes() throws Exception {
