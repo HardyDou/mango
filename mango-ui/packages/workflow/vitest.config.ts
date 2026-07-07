@@ -18,6 +18,7 @@ export default defineConfig({
       { find: /^@mango\/workflow$/, replacement: resolve(repoRoot, 'packages/workflow') },
       { find: /^@mango\/common$/, replacement: resolve(repoRoot, 'packages/common/index.ts') },
       { find: /^@mango\/common\/(.*)$/, replacement: `${resolve(repoRoot, 'packages/common')}/$1` },
+      { find: /^@mango\/grid-widgets$/, replacement: resolve(repoRoot, 'packages/grid-widgets/src/index.ts') },
       { find: /^@mango\/file$/, replacement: resolve(repoRoot, 'packages/file/src/index.ts') },
       { find: /^@mango\/rbac$/, replacement: resolve(repoRoot, 'packages/rbac/src/index.ts') },
       { find: /^@mango\/system$/, replacement: resolve(repoRoot, 'packages/system/src/index.ts') },

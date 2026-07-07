@@ -21,8 +21,9 @@ export const workflowMyProcessWidgets: MangoGridWidgetDefinition[] = [
     icon: Tickets,
     component: MyProcessWidget,
     visibility: {
-      mode: 'any',
-      widgetPermissionCodes: ['workflow:business-apply:list'],
+      mode: 'all',
+      widgetPermissionCodes: ['workflow:task:list'],
+      routePaths: ['/workflow/task/initiated'],
     },
     defaultLayout: { w: 3, h: 10, minW: 3, minH: 8 },
     showTitle: false,

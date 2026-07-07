@@ -48,10 +48,13 @@ import { homePageApi, homeTemplateApi } from '@mango/home';
 import { homePageApi } from '@mango/home';
 
 await homePageApi.resolve();
+await homePageApi.resolve(undefined, { silentError: true });
 await homePageApi.create({ name: '项目工作台', layoutJson, setDefault: true });
 await homePageApi.saveLayout(homeId, { layoutJson });
 await homeTemplateApi.publish(templateId);
 ```
+
+`homePageApi.listMyPages()` 和 `homePageApi.resolve()` 支持第二个参数 `{ silentError: true }`。首页宿主把 `mango-home` 视为可选能力时，可用该选项自行处理 404 并回退到内置默认布局，避免触发全局错误提示。
 
 主要类型：
 
@@ -100,6 +103,7 @@ pnpm -F @mango/home build
 | 现象 | 排查项 |
 |------|--------|
 | 首页列表为空 | 确认当前用户是否已创建个人首页；未创建时首页宿主可使用内置默认布局 |
+| 首页接口 404 | 确认后端是否启用 `mango-home-starter`；可选首页场景应使用 `silentError` 并回退到内置默认布局 |
 | 保存布局失败 | 确认后端是否引入 `mango-home-starter`，并检查 `layoutJson` 是否满足后端校验 |
 | 指定首页打不开 | 确认 `homeId` 属于当前登录用户且首页未被删除 |
 

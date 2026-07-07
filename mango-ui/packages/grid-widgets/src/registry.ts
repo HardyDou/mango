@@ -1,6 +1,11 @@
 import { defineComponent, h } from 'vue';
 import type { Component } from 'vue';
-import type { MangoGridWidgetDefinition, MangoWidgetRuntimeContext, MergeGridWidgetsOptions } from './types';
+import type {
+  GridWidgetAccessState,
+  MangoGridWidgetDefinition,
+  MangoWidgetRuntimeContext,
+  MergeGridWidgetsOptions,
+} from './types';
 
 export function mergeGridWidgets(options: MergeGridWidgetsOptions): MangoGridWidgetDefinition[] {
   const runtime = options.runtime;
@@ -31,8 +36,10 @@ function withRuntime(widget: MangoGridWidgetDefinition, runtime?: MangoWidgetRun
   if (!runtime || !widget?.component) {
     return widget;
   }
+  const accessState = resolveWidgetAccess(widget, runtime);
   return {
     ...widget,
+    disabled: Boolean(widget.disabled || !accessState.allowed),
     component: createRuntimeWidget(widget, runtime),
   };
 }
@@ -44,10 +51,11 @@ function createRuntimeWidget(widget: MangoGridWidgetDefinition, runtime: MangoWi
     setup(_, { attrs }) {
       // runtime 是页面运行态上下文，不能进入 defaultProps，避免被布局组件保存到个人布局 JSON。
       return () => {
-        if (!hasWidgetPermission(widget, runtime)) {
+        const accessState = resolveWidgetAccess(widget, runtime);
+        if (!accessState.allowed) {
           return h(MangoWidgetPermissionFallback, {
             widgetTitle: widget.title,
-            permissionCodes: widget.visibility?.widgetPermissionCodes || [],
+            accessState,
           });
         }
         return h(widget.component as Component, {
@@ -66,9 +74,9 @@ const MangoWidgetPermissionFallback = defineComponent({
       type: String,
       default: '小组件',
     },
-    permissionCodes: {
-      type: Array as () => string[],
-      default: () => [],
+    accessState: {
+      type: Object as () => GridWidgetAccessState,
+      required: true,
     },
   },
   setup(props) {
@@ -78,24 +86,104 @@ const MangoWidgetPermissionFallback = defineComponent({
     }, [
       h('div', { class: 'mango-grid-widget-permission-fallback__badge' }, '缺少权限'),
       h('strong', props.widgetTitle),
-      h('span', props.permissionCodes.length
-        ? `需要权限：${props.permissionCodes.join(' / ')}`
-        : '当前账号无权使用该小组件'),
+      h('span', formatAccessMessage(props.accessState)),
     ]);
   },
 });
 
-function hasWidgetPermission(widget: MangoGridWidgetDefinition, runtime: MangoWidgetRuntimeContext): boolean {
-  const permissionCodes = widget.visibility?.widgetPermissionCodes?.filter(Boolean) || [];
-  if (!permissionCodes.length) {
-    return true;
-  }
+export function resolveWidgetAccess(
+  widget: MangoGridWidgetDefinition,
+  runtime: MangoWidgetRuntimeContext,
+): GridWidgetAccessState {
+  const permissionCodes = uniqueStrings([
+    ...(widget.access?.permissionCodes || []),
+    ...(widget.visibility?.widgetPermissionCodes || []),
+  ]);
+  const routePaths = uniqueStrings([
+    ...(widget.access?.routePaths || []),
+    ...(widget.visibility?.routePaths || []),
+  ]);
   const permissions = new Set(runtime.user?.permissions || []);
-  const mode = widget.visibility?.mode || 'any';
-  if (mode === 'all') {
-    return permissionCodes.every(code => permissions.has(code));
+  const mode = widget.access?.mode || widget.visibility?.mode || 'all';
+  const missingPermissionCodes = permissionCodes.filter(code => !permissions.has(code));
+  const allowedByPermission = !permissionCodes.length
+    || (mode === 'all'
+      ? missingPermissionCodes.length === 0
+      : missingPermissionCodes.length < permissionCodes.length);
+  const runtimeRoutePaths = collectRuntimeRoutePaths(runtime.menus || []);
+  const missingRoutePaths = routePaths.filter(path => !runtimeRoutePaths.has(normalizePath(path)));
+  const allowedByRoute = missingRoutePaths.length === 0;
+
+  return {
+    allowed: allowedByPermission && allowedByRoute,
+    mode,
+    requiredPermissionCodes: permissionCodes,
+    missingPermissionCodes,
+    requiredRoutePaths: routePaths,
+    missingRoutePaths,
+  };
+}
+
+function formatAccessMessage(accessState: GridWidgetAccessState): string {
+  if (accessState.missingRoutePaths.length) {
+    return `当前账号缺少页面入口：${accessState.missingRoutePaths.join(' / ')}`;
   }
-  return permissionCodes.some(code => permissions.has(code));
+  if (accessState.requiredPermissionCodes.length) {
+    const codes = accessState.mode === 'all'
+      ? accessState.missingPermissionCodes
+      : accessState.requiredPermissionCodes;
+    return `需要权限：${codes.join(' / ')}`;
+  }
+  return '当前账号无权使用该小组件';
+}
+
+function collectRuntimeRoutePaths(menus: unknown[], parentPath = ''): Set<string> {
+  const routePaths = new Set<string>();
+  menus.forEach((item) => {
+    if (!isRecord(item)) {
+      return;
+    }
+    const rawPath = typeof item.path === 'string' ? item.path : '';
+    const currentPath = rawPath ? joinRoutePath(parentPath, rawPath) : parentPath;
+    if (currentPath) {
+      routePaths.add(normalizePath(currentPath));
+    }
+    if (rawPath.startsWith('/')) {
+      routePaths.add(normalizePath(rawPath));
+    }
+    if (Array.isArray(item.children)) {
+      collectRuntimeRoutePaths(item.children, currentPath).forEach(path => routePaths.add(path));
+    }
+  });
+  return routePaths;
+}
+
+function joinRoutePath(parentPath: string, path: string): string {
+  if (!path) {
+    return parentPath;
+  }
+  if (path.startsWith('/')) {
+    return path;
+  }
+  const parent = normalizePath(parentPath);
+  return normalizePath(parent ? `${parent}/${path}` : path);
+}
+
+function normalizePath(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return '';
+  }
+  const withSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withSlash.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.map(value => value.trim()).filter(Boolean)));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 function compareWidget(left: MangoGridWidgetDefinition, right: MangoGridWidgetDefinition): number {

@@ -252,6 +252,46 @@
   color: var(--mango-color-primary-light-3, #79bbff);
 }
 
+.mango-grid-widget-my-todo__state,
+.mango-grid-widget-my-process__state,
+.mango-grid-widget-my-task__state {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 0;
+  padding: 16px;
+  color: var(--mango-text-color-secondary, #909399);
+  text-align: center;
+}
+
+.mango-grid-widget-my-todo__state strong,
+.mango-grid-widget-my-process__state strong,
+.mango-grid-widget-my-task__state strong {
+  color: var(--mango-text-color-regular, #606266);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.mango-grid-widget-my-todo__state span,
+.mango-grid-widget-my-process__state span,
+.mango-grid-widget-my-task__state span {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+}
+
+.mango-grid-widget-my-todo__state[data-state='missing-permission'] strong,
+.mango-grid-widget-my-process__state[data-state='missing-permission'] strong,
+.mango-grid-widget-my-task__state[data-state='missing-permission'] strong {
+  color: var(--mango-color-warning, #e6a23c);
+}
+
 .mango-grid-widget-my-task__body {
   position: relative;
   flex: 1 1 auto;
@@ -462,4 +502,3 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
