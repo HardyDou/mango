@@ -49,6 +49,7 @@ verify_transitive=false
 allow_snapshot=false
 revision="${MANGO_MAVEN_REVISION:-}"
 verify_repo="${MANGO_MAVEN_VERIFY_REPO:-${REPO_ROOT}/.runtime/maven-publish-verify-batch}"
+verify_work_dir="${MANGO_MAVEN_VERIFY_WORK_DIR:-${REPO_ROOT}/.runtime/maven-publish-verify-work}"
 
 validate_revision() {
   local value="$1"
@@ -277,9 +278,12 @@ else
 fi
 
 echo "Verification local repository: ${verify_repo}"
+echo "Verification Maven work directory: ${verify_work_dir}"
 if [[ "${dry_run}" == "false" ]]; then
   rm -rf "${verify_repo}"
   mkdir -p "${verify_repo}"
+  rm -rf "${verify_work_dir}"
+  mkdir -p "${verify_work_dir}"
 fi
 
 for target in "${targets[@]}"; do
@@ -306,7 +310,10 @@ for target in "${targets[@]}"; do
     continue
   fi
 
-  mvn "${verify_args[@]}" "-Dartifact=${artifact_coordinates}"
+  (
+    cd "${verify_work_dir}"
+    mvn "${verify_args[@]}" "-Dartifact=${artifact_coordinates}"
+  )
   if [[ "${packaging}" == "jar" ]]; then
     artifact_path="$(find "${verify_repo}" -path "*/${artifact_id}/${version}/*.jar" -print | sort | tail -n 1)"
     if [[ -z "${artifact_path}" || ! -f "${artifact_path}" ]]; then
