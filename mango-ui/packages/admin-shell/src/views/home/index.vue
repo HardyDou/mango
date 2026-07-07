@@ -127,7 +127,7 @@
           </template>
         </el-popconfirm>
       </template>
-        <el-tooltip v-else content="编辑布局" placement="left">
+      <el-tooltip v-else content="编辑布局" placement="left">
         <el-button
           class="home-toolbar__button"
           type="primary"
@@ -311,11 +311,11 @@ const pageTabs = computed(() => {
   });
   if (currentPage.value?.builtIn && !tabMap.has(BUILT_IN_HOME_ID)) {
     tabMap.set(BUILT_IN_HOME_ID, {
-        id: BUILT_IN_HOME_ID,
-        name: '系统工作台',
-        defaultPage: currentPage.value.defaultPage,
-        builtIn: true,
-        active: selectedHomeId.value === BUILT_IN_HOME_ID,
+      id: BUILT_IN_HOME_ID,
+      name: '系统工作台',
+      defaultPage: currentPage.value.defaultPage,
+      builtIn: true,
+      active: selectedHomeId.value === BUILT_IN_HOME_ID,
     });
   }
   return Array.from(tabMap.values());
@@ -377,12 +377,15 @@ async function loadPagesAndResolve(): Promise<void> {
   loading.value = true;
   errorMessage.value = '';
   try {
-    pages.value = await homePageApi.listMyPages();
-    currentPage.value = await homePageApi.resolve({ homeId: routeHomeId() });
+    pages.value = await homePageApi.listMyPages({ silentError: true });
+    currentPage.value = await homePageApi.resolve({ homeId: routeHomeId() }, { silentError: true });
     selectedHomeId.value = pageRouteKey(currentPage.value);
     layoutItems.value = resolveLayoutItems(currentPage.value.layoutJson);
   } catch (error) {
-    errorMessage.value = '首页工作台加载失败，已使用系统默认布局。';
+    if (!isOptionalHomeWorkbenchUnavailable(error)) {
+      errorMessage.value = '首页工作台加载失败，已使用系统默认布局。';
+    }
+    pages.value = [];
     currentPage.value = builtInFallbackPage();
     selectedHomeId.value = BUILT_IN_HOME_ID;
     layoutItems.value = defaultLayoutItems();
@@ -394,6 +397,24 @@ async function loadPagesAndResolve(): Promise<void> {
 function routeHomeId(): string | undefined {
   const match = route.path.match(/^\/home\/([^/]+)$/);
   return match?.[1];
+}
+
+function isOptionalHomeWorkbenchUnavailable(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const record = error as {
+    code?: unknown;
+    response?: {
+      status?: unknown;
+      data?: {
+        code?: unknown;
+      };
+    };
+  };
+  return Number(record.code) === 404
+    || Number(record.response?.status) === 404
+    || Number(record.response?.data?.code) === 404;
 }
 
 async function handleHomeSelect(value: string): Promise<void> {

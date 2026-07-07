@@ -23,15 +23,19 @@ import type {
   UserHomeViewQuery,
 } from '../types';
 
+export interface HomePageRequestOptions {
+  silentError?: boolean;
+}
+
 export const homePageApi = {
-  listMyPages() {
-    return get<HomePageVO[]>('/home/pages');
+  listMyPages(options: HomePageRequestOptions = {}) {
+    return get<HomePageVO[]>('/home/pages', { silentError: options.silentError });
   },
   pageUserPages(query: UserHomePageQuery) {
     return get<UserHomePageResult>('/home/pages/user-pages', { params: query });
   },
-  resolve(query: ResolveHomePageQuery = {}) {
-    return get<HomePageVO>('/home/pages/resolve', { params: query });
+  resolve(query: ResolveHomePageQuery = {}, options: HomePageRequestOptions = {}) {
+    return get<HomePageVO>('/home/pages/resolve', { params: query, silentError: options.silentError });
   },
   create(command: CreateHomePageCommand) {
     return post<HomePageVO>('/home/pages', command);

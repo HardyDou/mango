@@ -77,6 +77,7 @@ const widgets = mergeGridWidgets({
 | `extraWidgets` | 调用方额外传入 | `[]` | 允许宿主追加临时或应用私有小组件 |
 | `access.permissionCodes` | 小组件定义 | `[]` | 声明渲染和新增小组件所需的按钮或页面权限码 |
 | `access.routePaths` | 小组件定义 | `[]` | 声明小组件可点击目标必须存在的菜单页面入口 |
+| `access.mode` / `visibility.mode` | 小组件定义 | `all` | 权限码匹配模式；默认要求全部权限满足 |
 
 具体业务小组件的数据接口、权限码和样式入口由所属业务包 README 说明，例如 `@mango/link`、`@mango/system`、`@mango/calendar`、`@mango/notice` 和 `@mango/workflow`。
 
@@ -85,7 +86,7 @@ const widgets = mergeGridWidgets({
 - 用户缺少 `access.permissionCodes` 或旧版 `visibility.widgetPermissionCodes` 声明的权限时，小组件不会渲染真实业务内容，而是在卡片内显示“缺少权限”。
 - 用户缺少 `access.routePaths` 或 `visibility.routePaths` 声明的菜单页面入口时，也按无权限处理，避免卡片可点击但跳转到 404。
 - 编辑首页时，无权访问的小组件会被标记为 `disabled`，不能从组件库新增；历史布局里已经存在的无权小组件仍保留卡片占位，用户可以在编辑态删除。
-- `mode: 'any'` / `mode: 'all'` 只作用于权限码；页面入口按全部目标都必须可访问处理。
+- `mode: 'any'` / `mode: 'all'` 只作用于权限码；未声明时按 `all` 处理。页面入口按全部目标都必须可访问处理。
 
 ## 7. API 与扩展
 

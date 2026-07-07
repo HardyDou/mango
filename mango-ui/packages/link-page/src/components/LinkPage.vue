@@ -43,7 +43,7 @@
           </button>
         </div>
       </div>
-      <div class="mango-link-page__tools">
+      <div v-if="!linkFeatureUnavailable" class="mango-link-page__tools">
         <el-popover v-if="loggedIn" placement="bottom-end" trigger="click" width="280" popper-class="mango-link-page__profile-popper">
           <template #reference>
             <button class="mango-link-page__user" type="button" :title="displayUserName">
@@ -75,7 +75,7 @@
       </div>
     </header>
 
-    <div class="mango-link-page__groups-head">
+    <div v-if="!linkFeatureUnavailable" class="mango-link-page__groups-head">
       <nav v-if="groups.length > 0" class="mango-link-page__tabs" aria-label="网址分组">
         <button
           v-for="group in groups"
@@ -100,7 +100,16 @@
     </div>
 
     <div v-loading="loading" class="mango-link-page__body">
-      <section v-if="activeGroup" :key="activeGroup.key" class="mango-link-page__group">
+      <section
+        v-if="linkFeatureUnavailable"
+        class="mango-link-page__permission"
+        data-state="missing-permission"
+      >
+        <div class="mango-link-page__permission-badge">缺少权限</div>
+        <strong>网址导航不可用</strong>
+        <span>当前账号缺少网址导航权限，或当前环境未开通网址导航服务。</span>
+      </section>
+      <section v-else-if="activeGroup" :key="activeGroup.key" class="mango-link-page__group">
         <div class="mango-link-page__grid">
           <article v-for="item in activeGroup.items" :key="`${item.source}:${item.id}`" class="mango-link-page__item">
             <button class="mango-link-page__open" type="button" @click="openLink(item)">
@@ -215,6 +224,7 @@ import {
   createPersonalCategory,
   createPersonalLink,
   deleteFavorite,
+  isLinkOpenApiNotFoundError,
   listPersonalCategories,
   listPublicLinks,
   type CreateLinkPersonalItemInput,
@@ -296,6 +306,7 @@ const loading = ref(false);
 const saving = ref(false);
 const detectedLogin = ref(false);
 const errorMessage = ref('');
+const linkFeatureUnavailable = ref(false);
 const keyword = ref('');
 const activeSearchEngine = ref(props.defaultSearchEngine);
 const storedBrandText = ref(readStoredBrandText());
@@ -428,6 +439,7 @@ watch(availableSearchEngines, (next) => {
 async function loadLinks() {
   loading.value = true;
   errorMessage.value = '';
+  linkFeatureUnavailable.value = false;
   try {
     links.value = await listPublicLinks({}, requestOptions.value);
     detectedLogin.value = links.value.some((item) => ['COMPANY', 'FAVORITE', 'PERSONAL'].includes(String(item.source || '')));
@@ -438,6 +450,13 @@ async function loadLinks() {
       ]);
     }
   } catch (error) {
+    if (isLinkOpenApiNotFoundError(error)) {
+      links.value = [];
+      personalCategories.value = [];
+      detectedLogin.value = false;
+      linkFeatureUnavailable.value = true;
+      return;
+    }
     errorMessage.value = errorMessageOf(error, '网址加载失败');
   } finally {
     loading.value = false;

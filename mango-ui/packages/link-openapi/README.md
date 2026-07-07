@@ -16,6 +16,7 @@
 | 新增个人网址 | `createPersonalLink` | `POST /link/personal-links/create` |
 | 收藏网址 | `createFavorite` | `POST /link/favorites/create` |
 | 取消收藏 | `deleteFavorite` | `DELETE /link/favorites/delete` |
+| 判断 link 能力缺失 | `isLinkOpenApiNotFoundError` | HTTP 404 或业务码 404 |
 
 ## 3. 接入方式
 
@@ -62,6 +63,7 @@ const links = await linkClient.listPublicLinks({ keyword: '办公' });
 | `createPersonalLink(input)` | `POST /link/personal-links/create` | 需要 | 新增我的网址。 |
 | `createFavorite(linkId)` | `POST /link/favorites/create` | 需要 | 收藏网址。 |
 | `deleteFavorite(linkId)` | `DELETE /link/favorites/delete` | 需要 | 取消收藏。 |
+| `isLinkOpenApiNotFoundError(error)` | - | - | 判断接口错误是否为 404，供可选 link 页面转成内联不可用状态。 |
 
 ## 7. 数据与初始化
 
@@ -104,10 +106,11 @@ interface LinkPublicItem {
 
 ## 11. 问题排查
 
-请求失败或 Mango 返回失败时会抛出 `Error`。调用方应按页面形态处理：
+请求失败或 Mango 返回失败时会抛出 `LinkOpenApiError`。调用方应按页面形态处理：
 
 - 匿名页面收到 401 时引导登录。
 - 登录后收到 403 时提示当前账号无权访问该网址。
+- 可选导航页收到 404 时，可用 `isLinkOpenApiNotFoundError(error)` 判断并显示“能力未开通/缺少权限”的内联状态，避免全局错误提示。
 - 打开网址优先使用接口返回的 `redirectUrl`；没有 `redirectUrl` 时再回退到原始 `url`。
 
 ## 12. 相关文档

@@ -132,4 +132,26 @@ describe('workflow home widgets access', () => {
     expect(mergedWidget.disabled).toBe(false);
     expect(renderRuntimeWidget(mergedWidget)).toContain('风控审批内容');
   });
+
+  it('uses all-mode access by default when widget access mode is omitted', () => {
+    const widget: MangoGridWidgetDefinition = {
+      type: 'business.operation-review',
+      title: '运营审核',
+      component: { render: () => h('div', '运营审核内容') },
+      access: {
+        permissionCodes: ['operation:review:list', 'operation:review:handle'],
+        routePaths: ['/operation/review'],
+      },
+    };
+
+    expect(resolveWidgetAccess(widget, createRuntime({
+      permissions: ['operation:review:list'],
+      menus: [{ path: '/operation/review' }],
+    }))).toMatchObject({
+      allowed: false,
+      mode: 'all',
+      missingPermissionCodes: ['operation:review:handle'],
+      missingRoutePaths: [],
+    });
+  });
 });

@@ -52,6 +52,11 @@ export interface LinkOpenApiClientOptions {
   fetcher?: typeof fetch;
 }
 
+export interface LinkOpenApiError extends Error {
+  status?: number;
+  code?: number | string;
+}
+
 interface MangoResult<T> {
   code?: number | string;
   success?: boolean;
@@ -109,13 +114,33 @@ async function requestJson<T>(path: string, init: RequestInit = {}, options: Lin
     headers: await mergedHeaders(options, init.headers),
   });
   if (!response.ok) {
-    throw new Error(`网址接口请求失败：${response.status}`);
+    throw createLinkOpenApiError(`网址接口请求失败：${response.status}`, {
+      status: response.status,
+    });
   }
   const result = await response.json() as MangoResult<T>;
   if (!isSuccessResult(result)) {
-    throw new Error(result.message || result.msg || '网址接口返回失败');
+    throw createLinkOpenApiError(result.message || result.msg || '网址接口返回失败', {
+      code: result.code,
+    });
   }
   return result.data as T;
+}
+
+function createLinkOpenApiError(message: string, options: Pick<LinkOpenApiError, 'status' | 'code'> = {}) {
+  const error = new Error(message) as LinkOpenApiError;
+  error.name = 'LinkOpenApiError';
+  error.status = options.status;
+  error.code = options.code;
+  return error;
+}
+
+export function isLinkOpenApiNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const record = error as LinkOpenApiError;
+  return Number(record.status) === 404 || Number(record.code) === 404;
 }
 
 export async function listPublicLinks(query: LinkPublicItemQuery = {}, options: LinkOpenApiClientOptions = {}) {

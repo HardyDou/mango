@@ -104,6 +104,8 @@ registerMangoLinkAdminPages();
 
 首页网址导航小组件默认复用菜单页同一组用户侧接口读取数据：企业网址来自 `/link/company-links/list`，我的网址来自 `/link/personal-links/page`，我的收藏来自 `/link/favorites/list`，个人分类来自 `/link/personal-categories/list`。不要为小组件单独维护另一套数据口径。
 
+当上述首页小组件接口返回 HTTP 404 或业务码 404 时，组件会按“link 模块未开通或当前账号缺少导航权限”处理：卡片内显示“网址导航不可用”，清空导航数据并隐藏搜索、收藏、新增、分组等交互，不触发全局错误提示。
+
 ## 9. 前端 API
 
 `linkApi` 封装的后端路径：
@@ -154,6 +156,7 @@ registerMangoLinkAdminPages();
 | 页面打不开 | 是否调用 `registerMangoLinkAdminPages()`，菜单 component 是否匹配页面 key。 |
 | 首页组件面板没有网址导航 | 检查宿主是否集成 `@mango/link`。CLI full/custom app 应确认生成入口包含 `registerMangoLinkAdminPages`；手写宿主需要把它传入 admin-shell `featureRegistrars`。 |
 | 页面请求 404 | 后端是否启用 `mango-link-starter`，网关是否代理 `/link/**`。 |
+| 首页网址导航显示不可用 | 当前账号缺少 link 菜单/权限，或当前环境没有启用 `mango-link-starter`。 |
 | 页面请求 401/403 | 登录态、角色权限、网址可见范围是否满足。 |
 | 打开网址没有访问记录 | 页面是否走 `openLinkWithRedirect`，请求路径是否为 `/api/link/open/redirect/{id}`。 |
 

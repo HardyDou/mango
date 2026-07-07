@@ -104,7 +104,7 @@ export function resolveWidgetAccess(
     ...(widget.visibility?.routePaths || []),
   ]);
   const permissions = new Set(runtime.user?.permissions || []);
-  const mode = widget.access?.mode || widget.visibility?.mode || 'any';
+  const mode = widget.access?.mode || widget.visibility?.mode || 'all';
   const missingPermissionCodes = permissionCodes.filter(code => !permissions.has(code));
   const allowedByPermission = !permissionCodes.length
     || (mode === 'all'

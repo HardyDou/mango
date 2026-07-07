@@ -4,6 +4,17 @@
     data-surface="home.link-navigation"
   >
     <div class="mango-grid-widget-link-navigation__content">
+      <div
+        v-if="linkFeatureUnavailable"
+        class="mango-grid-widget-link-navigation__permission"
+        data-state="missing-permission"
+      >
+        <span class="mango-grid-widget-link-navigation__permission-badge">缺少权限</span>
+        <strong>网址导航不可用</strong>
+        <p>当前账号缺少网址导航权限，或当前环境未开通网址导航服务。</p>
+      </div>
+
+      <template v-else>
       <div class="mango-grid-widget-link-navigation__hero">
         <header class="mango-grid-widget-link-navigation__header">
           <div class="mango-grid-widget-link-navigation__heading">
@@ -206,6 +217,7 @@
         <span class="mango-grid-widget-link-navigation__item-icon">+</span>
       </button>
       </div>
+      </template>
     </div>
 
     <el-dialog
@@ -353,6 +365,7 @@ const remoteNavigationItems = ref<LinkNavigationItem[]>([]);
 const remoteGroups = ref<LinkNavigationGroup[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
+const linkFeatureUnavailable = ref(false);
 const linkDialogVisible = ref(false);
 const categoryDialogVisible = ref(false);
 const categoryDialogMode = ref<'create' | 'edit'>('create');
@@ -539,6 +552,7 @@ async function loadFavorites(): Promise<void> {
   }
   loading.value = true;
   errorMessage.value = '';
+  linkFeatureUnavailable.value = false;
   try {
     if (props.loadItems || props.groups.length) {
       const favoriteItems = props.loadItems ? await props.loadItems(undefined, props.runtime) : [];
@@ -551,7 +565,14 @@ async function loadFavorites(): Promise<void> {
     remoteFavoriteItems.value = dedupeItems(data.favoriteItems.map(item => ({ ...item, favorited: true })));
     remoteNavigationItems.value = mergeNavigationItems([...data.companyItems, ...data.personalItems], remoteFavoriteItems.value);
     remoteGroups.value = data.categories;
-  } catch {
+  } catch (error) {
+    if (isLinkFeatureUnavailableError(error)) {
+      linkFeatureUnavailable.value = true;
+      remoteFavoriteItems.value = [];
+      remoteNavigationItems.value = [];
+      remoteGroups.value = [];
+      return;
+    }
     errorMessage.value = '收藏网址加载失败';
     remoteGroups.value = props.groups.length || props.loadItems ? props.groups : remoteGroups.value;
     if (!remoteFavoriteItems.value.length) {
@@ -566,12 +587,18 @@ async function loadFavorites(): Promise<void> {
 }
 
 function openLinkDialog(): void {
+  if (linkFeatureUnavailable.value) {
+    return;
+  }
   linkForm.name = '';
   linkForm.url = '';
   linkDialogVisible.value = true;
 }
 
 function openCategoryDialog(mode: 'create' | 'edit' = 'create'): void {
+  if (linkFeatureUnavailable.value) {
+    return;
+  }
   categoryDialogMode.value = mode;
   categoryForm.name = mode === 'edit' ? activeGroup.value?.title || '' : '';
   categoryDialogVisible.value = true;
@@ -748,6 +775,9 @@ async function deleteFavorite(linkId: string): Promise<void> {
 }
 
 async function handleItemAction(item: LinkNavigationItem): Promise<void> {
+  if (linkFeatureUnavailable.value) {
+    return;
+  }
   if (isDeleteFavoriteAction(item)) {
     await removeFavoriteItem(item);
     return;
@@ -819,13 +849,27 @@ async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
     ...init,
   });
   if (!response.ok) {
-    throw new Error(`请求失败：${response.status}`);
+    throw new LinkNavigationRequestError(`请求失败：${response.status}`, response.status);
   }
   const result = await response.json() as { success?: boolean; code?: number | string; msg?: string; message?: string; data?: T };
   if (!(result.success === true || result.code === 0 || result.code === 200 || result.code === '0' || result.code === '200')) {
-    throw new Error(result.message || result.msg || '请求失败');
+    throw new LinkNavigationRequestError(result.message || result.msg || '请求失败', undefined, result.code);
   }
   return (result.data ?? ([] as T)) as T;
+}
+
+class LinkNavigationRequestError extends Error {
+  constructor(message: string, readonly status?: number, readonly code?: number | string) {
+    super(message);
+    this.name = 'LinkNavigationRequestError';
+  }
+}
+
+function isLinkFeatureUnavailableError(error: unknown): boolean {
+  if (!(error instanceof LinkNavigationRequestError)) {
+    return false;
+  }
+  return error.status === 404 || String(error.code) === '404';
 }
 
 function resolveGroups(

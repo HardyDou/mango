@@ -21,7 +21,7 @@ export const workflowMyTaskWidgets: MangoGridWidgetDefinition[] = [
     icon: Histogram,
     component: MyTaskWidget,
     visibility: {
-      mode: 'any',
+      mode: 'all',
       widgetPermissionCodes: ['workflow:task:list'],
       routePaths: ['/workflow/task/todo', '/workflow/task/done'],
     },
