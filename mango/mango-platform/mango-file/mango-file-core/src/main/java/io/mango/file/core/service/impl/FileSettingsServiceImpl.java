@@ -197,7 +197,7 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         vo.setAllowedExtensions(normalizeExtensions(properties.getUpload().getAllowedExtensions()));
         vo.setBlockedExtensions(normalizeExtensions(properties.getUpload().getBlockedExtensions()));
         vo.setDefaultAccessLevel(FileAccessLevel.PRIVATE.name());
-        vo.setDuplicateNameStrategy(FileDuplicateNameStrategy.REJECT.name());
+        vo.setDuplicateNameStrategy(FileDuplicateNameStrategy.DEFAULT.name());
         vo.setDuplicateCheckDirectoryScoped(true);
         vo.setObjectNameStrategy(FileObjectNameStrategy.DATE_UUID.name());
         vo.setInstantUploadEnabled(properties.getUpload().isInstantUploadEnabled());

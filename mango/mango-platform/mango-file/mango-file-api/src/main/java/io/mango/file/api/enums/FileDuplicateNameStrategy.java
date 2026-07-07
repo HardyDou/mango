@@ -14,15 +14,17 @@ public enum FileDuplicateNameStrategy {
     /** 允许同目录存在重复文件名。 */
     ALLOW;
 
+    public static final FileDuplicateNameStrategy DEFAULT = AUTO_RENAME;
+
     public static FileDuplicateNameStrategy of(String value) {
         if (value == null || value.isBlank()) {
-            return REJECT;
+            return DEFAULT;
         }
         for (FileDuplicateNameStrategy item : values()) {
             if (item.name().equalsIgnoreCase(value.trim())) {
                 return item;
             }
         }
-        return REJECT;
+        return DEFAULT;
     }
 }

@@ -76,6 +76,7 @@ class FileResourceHandlerIntegrationTest {
 
         assertThat(storageConfigs).hasSize(2);
         assertThat(settings).hasSize(1);
+        assertThat(settings.getFirst().getVersion()).isEqualTo(2);
         assertThat(count("file_storage_config")).isEqualTo(2);
         assertThat(count("file_settings")).isOne();
         assertThat(stringValue("file_storage_config", "storage_type", "id = 1")).isEqualTo("LOCAL");
@@ -83,8 +84,19 @@ class FileResourceHandlerIntegrationTest {
         assertThat(stringValue("file_storage_config", "endpoint", "id = 2")).isEqualTo("http://127.0.0.1:9000");
         assertThat(intValue("file_storage_config", "path_style_access", "id = 2")).isOne();
         assertThat(stringValue("file_settings", "default_access_level", "id = 1")).isEqualTo("PRIVATE");
+        assertThat(stringValue("file_settings", "duplicate_name_strategy", "id = 1")).isEqualTo("AUTO_RENAME");
         assertThat(stringValue("file_settings", "access_mode", "id = 1")).isEqualTo("PROXY");
         assertThat(intValue("file_settings", "archive_retain_days", "id = 1")).isEqualTo(180);
+    }
+
+    @Test
+    void settingsDefaultsDuplicateNameStrategyToAutoRename() throws Exception {
+        ResourceDeclaration settings = declarations(loadFileStorageResource(), ResourceTypes.FILE_SETTINGS).getFirst();
+        settings.getFields().remove("duplicateNameStrategy");
+
+        settingsHandler.upsert(settings);
+
+        assertThat(stringValue("file_settings", "duplicate_name_strategy", "id = 1")).isEqualTo("AUTO_RENAME");
     }
 
     @Test
@@ -184,7 +196,7 @@ class FileResourceHandlerIntegrationTest {
                     allowed_extensions varchar(1000),
                     blocked_extensions varchar(1000) default 'exe,bat,cmd,sh,jar',
                     default_access_level varchar(32) not null default 'PRIVATE',
-                    duplicate_name_strategy varchar(32) not null default 'REJECT',
+                    duplicate_name_strategy varchar(32) not null default 'AUTO_RENAME',
                     duplicate_check_directory_scoped tinyint not null default 1,
                     object_name_strategy varchar(32) not null default 'DATE_UUID',
                     instant_upload_enabled tinyint not null default 1,

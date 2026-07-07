@@ -554,7 +554,7 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 | `allowedExtensions` | `STRING` | 否 | 允许上传扩展名，逗号分隔；为空表示不限制。 |
 | `blockedExtensions` | `STRING` | 否 | 禁止上传扩展名，默认 `exe,bat,cmd,sh,jar`。 |
 | `defaultAccessLevel` | `STRING` | 否 | 默认访问级别，默认 `PRIVATE`。 |
-| `duplicateNameStrategy` | `STRING` | 否 | 重名处理策略，默认 `REJECT`。 |
+| `duplicateNameStrategy` | `STRING` | 否 | 重名处理策略，默认 `AUTO_RENAME`。 |
 | `duplicateCheckDirectoryScoped` | `INT` | 否 | 是否按目录隔离重名，默认 `1`。 |
 | `objectNameStrategy` | `STRING` | 否 | 对象命名策略，默认 `DATE_UUID`。 |
 | `instantUploadEnabled` | `INT` | 否 | 是否启用秒传，默认 `1`。 |
@@ -593,7 +593,7 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 | `allowedExtensions` | `mango.file.upload.allowed-extensions` | 允许扩展名，空表示不限制。 |
 | `blockedExtensions` | `mango.file.upload.blocked-extensions` | 禁止扩展名。 |
 | `defaultAccessLevel` | `PRIVATE` | 上传未传 `accessLevel` 时使用。 |
-| `duplicateNameStrategy` | `REJECT` | 同目录重名处理：`REJECT`、`AUTO_RENAME`、`ALLOW`。 |
+| `duplicateNameStrategy` | `AUTO_RENAME` | 同目录重名处理：`REJECT`、`AUTO_RENAME`、`ALLOW`。 |
 | `duplicateCheckDirectoryScoped` | `true` | 是否只在同一逻辑目录内检查重名。 |
 | `objectNameStrategy` | `DATE_UUID` | 底层对象命名：`DATE_UUID`、`HASH`、`ORIGINAL`。 |
 | `instantUploadEnabled` | `mango.file.upload.instant-upload-enabled` | 是否开启秒传。 |

@@ -44,7 +44,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                 .fieldDescription("allowedExtensions", "允许上传扩展名，逗号分隔；为空表示不限制。")
                 .fieldDescription("blockedExtensions", "禁止上传扩展名，默认 exe,bat,cmd,sh,jar。")
                 .fieldDescription("defaultAccessLevel", "默认访问级别，默认 PRIVATE。")
-                .fieldDescription("duplicateNameStrategy", "重名处理策略，默认 REJECT。")
+                .fieldDescription("duplicateNameStrategy", "重名处理策略，默认 AUTO_RENAME。")
                 .fieldDescription("duplicateCheckDirectoryScoped", "是否按目录隔离重名，默认 1。")
                 .fieldDescription("objectNameStrategy", "对象命名策略，默认 DATE_UUID。")
                 .fieldDescription("instantUploadEnabled", "是否启用秒传，默认 1。")
@@ -195,7 +195,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                     fieldText(resource, "allowedExtensions", false),
                     defaultText(fieldText(resource, "blockedExtensions", false), "exe,bat,cmd,sh,jar"),
                     defaultText(fieldText(resource, "defaultAccessLevel", false), "PRIVATE").toUpperCase(),
-                    defaultText(fieldText(resource, "duplicateNameStrategy", false), "REJECT").toUpperCase(),
+                    defaultText(fieldText(resource, "duplicateNameStrategy", false), "AUTO_RENAME").toUpperCase(),
                     fieldInt(resource, "duplicateCheckDirectoryScoped", false, ENABLED),
                     defaultText(fieldText(resource, "objectNameStrategy", false), "DATE_UUID").toUpperCase(),
                     fieldInt(resource, "instantUploadEnabled", false, ENABLED),
