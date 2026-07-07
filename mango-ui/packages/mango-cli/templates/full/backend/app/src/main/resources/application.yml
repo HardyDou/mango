@@ -98,9 +98,13 @@ mango:
           enabled: true
         file:
           enabled: true
+        resource:
+          enabled: true
         template:
           enabled: true
         workflow:
+          enabled: true
+        home:
           enabled: true
         mango-job:
           enabled: true
@@ -117,6 +121,16 @@ mango:
         notice:
           enabled: true
           out-of-order: true
+        payment:
+          enabled: true
+          out-of-order: true
+          ignore-missing-migrations: true
+        link:
+          enabled: true
+        grid-layout:
+          enabled: true
+        mango-cms:
+          enabled: true
         # mango-cli:business-flyway-modules:start
 {{backendBusinessFlywayModules}}
         # mango-cli:business-flyway-modules:end
