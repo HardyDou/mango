@@ -2,6 +2,60 @@
 
 ## Unreleased
 
+## v2026.07.07-maven-1.0.12-flyway-bootstrap-release - 2026-07-07
+
+### Fixed
+
+- Fixed workflow clean-database bootstrap when `workflow_business_apply_current_task.claim_status`,
+  `candidate_users`, and `candidate_groups` already exist from V1 and V4 is replayed by a new database.
+- Fixed `mango-cms` Flyway migration V4 so standalone CMS migration no longer fails when authorization or resource
+  tables are not present in the same schema.
+- Fixed `mango-cms` demo media seed migrations so they skip file-backed cover/banner/ad delivery rows when
+  `file_record` is absent, while still seeding CMS-owned site, category, navigation, and content records.
+- Fixed generated full-preset business backend Flyway module declarations by adding the built-in modules included by
+  `mango-admin-starter`: `resource`, `home`, `payment`, `link`, `grid-layout`, and `mango-cms`.
+
+### Changed
+
+- Advanced generated business backend Maven lock to `1.0.12` through `@mango/cli@1.0.62`.
+- Kept Maven default release scope on non-app platform artifacts; `mango-app/**`, `app-*`, and `*-capability-app`
+  deployment jars remain excluded unless explicitly requested with `--include-apps`.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.12</mango.version>` to consume the workflow and CMS Flyway bootstrap
+  fixes.
+- Generated or upgraded business projects should use `@mango/cli@1.0.62`; its release lock points to Mango Maven
+  `1.0.12`.
+- Existing generated projects can update only `<mango.version>` to `1.0.12` if their frontend Mango package versions
+  already match the current certified frontend batch.
+- Existing databases with incomplete Flyway history still require environment-specific Flyway `repair`/baseline
+  handling. This release fixes code-level clean bootstrap and cross-module optional table guards; it does not mutate
+  historical `flyway_schema_history` state automatically.
+
+### Published Packages
+
+- Maven: Mango backend platform non-app artifacts at `1.0.12` to
+  `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/cli@1.0.62` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.07-maven-1.0.12-flyway-bootstrap-release`.
+
+### Verification
+
+- MySQL clean `mango-cms` migrations V1-V10 without authorization, resource, or file tables.
+- MySQL `mango-cms` V4 with minimal authorization/resource tables removes and disables only `cms:banner` menu entries.
+- MySQL `mango-cms` V8/V9 with minimal `file_record` table seeds cover, `NEWS_HERO`, and about ad delivery rows.
+- MySQL clean workflow migrations V1-V4.
+- `mvn -f mango/pom.xml -pl mango-platform/mango-cms/mango-cms-core -am -DskipTests compile`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core -am -DskipTests compile`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.12`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg @mango/cli --release-tag=v2026.07.07-maven-1.0.12-flyway-bootstrap-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/cli --version=1.0.62`
+- `gh release view v2026.07.07-maven-1.0.12-flyway-bootstrap-release`
+- `git diff --check`
+
 ## v2026.07.07-maven-1.0.10-resource-sync-release - 2026-07-07
 
 ### Fixed
