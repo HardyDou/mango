@@ -71,6 +71,8 @@ import '@mango/link-page/style.css';
 
 `mango-link` 后端配置 `mango.link.open.jump.enabled=false` 时，公开导航接口不返回 `redirectUrl`，组件会直接打开原始 `url`。
 
+当公开导航接口返回 HTTP 404 或业务码 404 时，组件会按“link 能力未开通或当前账号缺少导航权限”处理：页面内显示“网址导航不可用”，隐藏登录、分组、收藏和新增等交互，不触发全局错误提示。
+
 匿名收藏使用的 key：
 
 ```text
@@ -167,6 +169,7 @@ const searchEngines = [
 |------|----------|
 | 未登录只看到少量网址 | 这是匿名边界；只有 `PUBLIC` 网址会返回。 |
 | 登录后仍只看到公开网址 | `/auth/login` 是否返回 `accessToken`，后续请求是否带 `Authorization: Bearer <token>`。 |
+| 页面显示网址导航不可用 | 后端是否启用 `mango-link-starter`，或当前账号是否拥有 link 菜单/权限。 |
 | 点击打开没有访问记录 | 系统配置 `mango.link.open.jump.enabled` 是否为 `true`，接口返回项是否有 `redirectUrl`。 |
 | 新增分组失败 | 当前用户是否已登录，后端是否启用 `/link/personal-categories/create`。 |
 | 添加网址失败 | URL、名称、分组和登录态是否满足后端校验。 |
