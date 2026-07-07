@@ -11,11 +11,12 @@ Usage: scripts/publish-maven-batch.sh <artifactId|module-path>... [options]
        scripts/publish-maven-batch.sh --all-non-app [options]
 
 Publish multiple Maven reactor modules in one deploy command and verify the
-published artifacts with one shared temporary Maven local repository.
+published artifacts.
 
 Options:
   --all-non-app        Publish the complete backend reactor excluding
-                       mango-app/** deployment entry modules
+                       mango-app/** deployment entry modules and internal
+                       *-test modules
   --include-apps       Allow explicit mango-app/** targets. App artifacts are
                        never included by --all-non-app
   --revision <ver>      Maven CI-friendly version; required unless
@@ -24,8 +25,13 @@ Options:
                         Alias for --revision
   --allow-snapshot      Allow an explicit *-SNAPSHOT revision
   --run-tests           Run tests; default is -DskipTests
-  --skip-verify         Skip dependency:get verification after deploy
-  --verify-transitive   Resolve transitive dependencies during verification
+  --skip-verify         Skip artifact verification after deploy
+  --verify-mode <mode>  Verification mode: http or maven; default is http
+  --verify-base-url <url>
+                        HTTP verification repository URL; default is
+                        MANGO_MAVEN_VERIFY_BASE_URL or the internal maven-public
+                        repository
+  --verify-transitive   Resolve transitive dependencies during Maven verification
   --verify-repo <path>  Shared verification local repo; default is
                         .runtime/maven-publish-verify-batch
   --dry-run             Print commands without running them
@@ -45,11 +51,13 @@ include_apps=false
 skip_tests=true
 dry_run=false
 verify_publish=true
+verify_mode="${MANGO_MAVEN_VERIFY_MODE:-http}"
 verify_transitive=false
 allow_snapshot=false
 revision="${MANGO_MAVEN_REVISION:-}"
 verify_repo="${MANGO_MAVEN_VERIFY_REPO:-${REPO_ROOT}/.runtime/maven-publish-verify-batch}"
 verify_work_dir="${MANGO_MAVEN_VERIFY_WORK_DIR:-${REPO_ROOT}/.runtime/maven-publish-verify-work}"
+verify_base_url="${MANGO_MAVEN_VERIFY_BASE_URL:-http://nexus.inner.yunxinbaokeji.com/repository/maven-public}"
 
 validate_revision() {
   local value="$1"
@@ -111,6 +119,30 @@ while [[ $# -gt 0 ]]; do
     --skip-verify)
       verify_publish=false
       ;;
+    --verify-mode)
+      if [[ $# -lt 2 || "$2" == -* ]]; then
+        echo "Missing value for --verify-mode." >&2
+        usage
+        exit 1
+      fi
+      verify_mode="$2"
+      shift
+      ;;
+    --verify-mode=*)
+      verify_mode="${1#--verify-mode=}"
+      ;;
+    --verify-base-url)
+      if [[ $# -lt 2 || "$2" == -* ]]; then
+        echo "Missing value for --verify-base-url." >&2
+        usage
+        exit 1
+      fi
+      verify_base_url="$2"
+      shift
+      ;;
+    --verify-base-url=*)
+      verify_base_url="${1#--verify-base-url=}"
+      ;;
     --verify-transitive)
       verify_transitive=true
       ;;
@@ -156,11 +188,46 @@ if [[ "${all_non_app}" != "true" && ${#targets[@]} -eq 0 ]]; then
   exit 1
 fi
 validate_revision "${revision}"
+if [[ "${verify_mode}" != "http" && "${verify_mode}" != "maven" ]]; then
+  echo "Invalid verification mode: ${verify_mode}" >&2
+  echo "Use --verify-mode http or --verify-mode maven." >&2
+  exit 1
+fi
+verify_base_url="${verify_base_url%/}"
 
 mvn_eval() {
   local pom_file="$1"
   local expression="$2"
   mvn -q -f "${pom_file}" help:evaluate "-Drevision=${revision}" -Dexpression="${expression}" -DforceStdout
+}
+
+collect_target_coordinates() {
+  local coordinates_file="$1"
+  (
+    cd "${MAVEN_ROOT}"
+    mvn -q -pl "${project_list}" "-Drevision=${revision}" \
+      org.codehaus.mojo:exec-maven-plugin:3.5.0:exec \
+      -Dexec.executable=echo \
+      '-Dexec.args=${project.groupId}:${project.artifactId}:${project.version}:${project.packaging}'
+  ) | grep -E "^[^:]+:[^:]+:${revision}:[^:]+$" > "${coordinates_file}"
+}
+
+artifact_url_base() {
+  local group_id="$1"
+  local artifact_id="$2"
+  local version="$3"
+  local group_path
+  group_path="$(printf '%s' "${group_id}" | tr . /)"
+  printf '%s/%s/%s/%s/%s-%s' "${verify_base_url}" "${group_path}" "${artifact_id}" "${version}" "${artifact_id}" "${version}"
+}
+
+verify_http_url() {
+  local url="$1"
+  if [[ "${dry_run}" == "true" ]]; then
+    printf 'Command: curl -fsIL --max-time 20 %q\n' "${url}"
+    return 0
+  fi
+  curl -fsIL --max-time 20 "${url}" >/dev/null
 }
 
 normalize_project() {
@@ -203,6 +270,9 @@ discover_non_app_targets() {
       module_path="."
     else
       module_path="${rel_path%/pom.xml}"
+    fi
+    if [[ "${module_path##*/}" == *-test ]]; then
+      continue
     fi
     targets+=("${module_path}")
   done < <(find "${MAVEN_ROOT}" -name pom.xml -not -path '*/target/*' -print | sort)
@@ -257,6 +327,9 @@ echo "Revision: ${revision}"
 echo "Allow SNAPSHOT: ${allow_snapshot}"
 echo "Include app artifacts: ${include_apps}"
 echo "Mode: one reactor deploy for all selected modules and required upstream modules"
+if [[ "${verify_publish}" == "true" ]]; then
+  echo "Verification mode: ${verify_mode}"
+fi
 printf 'Command: mvn'
 printf ' %q' "${mvn_args[@]}"
 printf '\n'
@@ -267,6 +340,40 @@ if [[ "${dry_run}" == "false" ]]; then
 fi
 
 if [[ "${verify_publish}" != "true" ]]; then
+  exit 0
+fi
+
+if [[ "${verify_mode}" == "http" ]]; then
+  if [[ "${dry_run}" == "false" ]]; then
+    rm -rf "${verify_work_dir}"
+    mkdir -p "${verify_work_dir}"
+  fi
+  coordinates_file="${verify_work_dir}/coordinates.txt"
+  if [[ "${dry_run}" == "true" ]]; then
+    coordinates_file="$(mktemp "${TMPDIR:-/tmp}/mango-maven-coordinates.XXXXXX")"
+    trap 'rm -f "${coordinates_file}"' EXIT
+  fi
+  collect_target_coordinates "${coordinates_file}"
+
+  echo "Verification repository URL: ${verify_base_url}"
+  while IFS=: read -r group_id artifact_id version packaging; do
+    artifact_coordinates="${group_id}:${artifact_id}:${version}"
+    if [[ "${packaging}" == "pom" ]]; then
+      artifact_coordinates="${artifact_coordinates}:pom"
+    fi
+    echo "Verifying published Maven artifact by HTTP: ${artifact_coordinates}"
+    base_url="$(artifact_url_base "${group_id}" "${artifact_id}" "${version}")"
+    verify_http_url "${base_url}.pom" || {
+      echo "Published Maven pom is not reachable: ${base_url}.pom" >&2
+      exit 1
+    }
+    if [[ "${packaging}" != "pom" ]]; then
+      verify_http_url "${base_url}.jar" || {
+        echo "Published Maven jar is not reachable: ${base_url}.jar" >&2
+        exit 1
+      }
+    fi
+  done < "${coordinates_file}"
   exit 0
 fi
 
