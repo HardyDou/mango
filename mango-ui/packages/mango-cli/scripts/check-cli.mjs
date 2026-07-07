@@ -184,9 +184,16 @@ try {
   }
   assertYamlFlywayModuleEnabled(applicationYml, 'domain');
   assertYamlFlywayModuleEnabled(applicationYml, 'workflow');
+  assertYamlFlywayModuleEnabled(applicationYml, 'resource');
+  assertYamlFlywayModuleEnabled(applicationYml, 'home');
   assertYamlFlywayModuleEnabled(applicationYml, 'mango-job');
+  assertYamlFlywayModuleEnabled(applicationYml, 'payment');
+  assertYamlFlywayModuleEnabled(applicationYml, 'link');
+  assertYamlFlywayModuleEnabled(applicationYml, 'grid-layout');
+  assertYamlFlywayModuleEnabled(applicationYml, 'mango-cms');
   assertYamlFlywayModuleOutOfOrder(applicationYml, 'domain');
   assertYamlFlywayModuleOutOfOrder(applicationYml, 'mango-job');
+  assertYamlFlywayModuleOutOfOrder(applicationYml, 'payment');
   assertYamlFlywayModuleStrictOrdering(applicationYml, 'workflow');
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
