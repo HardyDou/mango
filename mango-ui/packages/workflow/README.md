@@ -24,6 +24,7 @@
 | 展示待办统计 | 使用 `workflowApi.todoSummary()` 读取待审批、待处理、待确认和已超时数量。 |
 | 展示我的任务统计 | 使用 `workflowApi.myTaskSummary()` 读取任务总数、待完成、进行中、已完成和已逾期数量。 |
 | 展示我的申请统计 | 使用 `workflowApi.businessApplyMySummary()` 读取审核中、已完成、已驳回和已撤回数量。 |
+| 注册首页工作流小组件 | 通过 admin registrar 暴露 `workflow.my-todo`、`workflow.my-task`、`workflow.my-process`，由首页统一按权限和菜单入口控制。 |
 | 发起流程 | 使用发起流程页、自定义申请页、`workflowApi.startProcess()` 或业务一体化入口 `workflowApi.startBusinessWorkflow()`。 |
 | 提交业务审批动作并刷新进度 | 使用 `completeTaskWithResult()`、`rejectTaskWithResult()`、`saveTaskWithResult()`、`claimTaskWithResult()`、`unclaimTaskWithResult()`。 |
 | 渲染动态表单 | 使用 `RuntimeFormRenderer`、`parseRuntimeForm()`、`createDefaultVariables()`。 |
@@ -162,6 +163,9 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 待办列表查询 | `todoType` | `ASSIGNED` 查询待审批，`CLAIMABLE` 查询待处理，`ALL` 查询全部待办。 |
 | 待办列表查询 | `overdue` | 为 `true` 时只查询已超时待办。 |
 | 抄送列表查询 | `unread` | 为 `true` 时只查询未读抄送。 |
+| 首页我的待办小组件 | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/copied` | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。 |
+| 首页我的任务小组件 | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/done` | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。 |
+| 首页我的申请小组件 | `workflow:task:list` + `/workflow/task/initiated` | 与后端摘要接口权限保持一致，缺失时不请求摘要接口、不允许点击跳转。 |
 | 业务申请进度 | `claimStatus` | 当前任务认领状态，取值来自后端 `WorkflowTaskClaimStatus`。 |
 | 业务申请进度 | `candidateUsers`、`candidateGroups` | 当前任务候选用户和候选用户组，用于业务页判断待处理、可认领和按钮状态。 |
 

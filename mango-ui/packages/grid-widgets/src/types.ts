@@ -8,6 +8,22 @@ export type MangoWidgetRuntimeMode = 'host' | 'sub-app' | 'standalone';
 export interface GridWidgetVisibility {
   mode?: MangoGridWidgetVisibilityMode;
   widgetPermissionCodes?: string[];
+  routePaths?: string[];
+}
+
+export interface GridWidgetAccess {
+  mode?: MangoGridWidgetVisibilityMode;
+  permissionCodes?: string[];
+  routePaths?: string[];
+}
+
+export interface GridWidgetAccessState {
+  allowed: boolean;
+  mode: MangoGridWidgetVisibilityMode;
+  requiredPermissionCodes: string[];
+  missingPermissionCodes: string[];
+  requiredRoutePaths: string[];
+  missingRoutePaths: string[];
 }
 
 export interface MangoGridWidgetDefinition extends GridWidgetDefinition {
@@ -16,6 +32,7 @@ export interface MangoGridWidgetDefinition extends GridWidgetDefinition {
   businessDomainName?: string;
   moduleCode?: string;
   order?: number;
+  access?: GridWidgetAccess;
   visibility?: GridWidgetVisibility;
 }
 

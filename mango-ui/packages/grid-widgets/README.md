@@ -13,6 +13,7 @@
 | 小组件定义类型 | 约束业务包注册的小组件元数据 | `MangoGridWidgetDefinition` |
 | 运行时上下文 | 向小组件注入用户、租户、菜单、跳转函数 | `MangoWidgetRuntimeContext` |
 | 聚合去重 | 合并系统、业务、临时传入的小组件 | `mergeGridWidgets` |
+| 访问控制 | 按权限码和菜单页面入口决定能否渲染、能否新增 | `access` / `visibility` |
 | 基础类型 | 快捷入口、消息中心、日历、工作流小组件 props 类型 | 包根入口 |
 
 ## 3. 快速开始
@@ -74,8 +75,17 @@ const widgets = mergeGridWidgets({
 | `runtime` | 调用 `mergeGridWidgets` 时传入 | 无 | 决定小组件能读取的用户、菜单、租户和跳转能力 |
 | `businessWidgets` | 业务包 admin registrar 返回 | `[]` | 决定组件库出现哪些业务小组件 |
 | `extraWidgets` | 调用方额外传入 | `[]` | 允许宿主追加临时或应用私有小组件 |
+| `access.permissionCodes` | 小组件定义 | `[]` | 声明渲染和新增小组件所需的按钮或页面权限码 |
+| `access.routePaths` | 小组件定义 | `[]` | 声明小组件可点击目标必须存在的菜单页面入口 |
 
 具体业务小组件的数据接口、权限码和样式入口由所属业务包 README 说明，例如 `@mango/link`、`@mango/system`、`@mango/calendar`、`@mango/notice` 和 `@mango/workflow`。
+
+小组件访问控制统一在 `mergeGridWidgets()` 注入运行态时处理：
+
+- 用户缺少 `access.permissionCodes` 或旧版 `visibility.widgetPermissionCodes` 声明的权限时，小组件不会渲染真实业务内容，而是在卡片内显示“缺少权限”。
+- 用户缺少 `access.routePaths` 或 `visibility.routePaths` 声明的菜单页面入口时，也按无权限处理，避免卡片可点击但跳转到 404。
+- 编辑首页时，无权访问的小组件会被标记为 `disabled`，不能从组件库新增；历史布局里已经存在的无权小组件仍保留卡片占位，用户可以在编辑态删除。
+- `mode: 'any'` / `mode: 'all'` 只作用于权限码；页面入口按全部目标都必须可访问处理。
 
 ## 7. API 与扩展
 
@@ -116,6 +126,10 @@ export const exampleWidgets: MangoGridWidgetDefinition[] = [
     businessDomainCode: 'BUSINESS',
     businessDomainName: '业务名称',
     groupName: '业务名称',
+    access: {
+      permissionCodes: ['business:example:list'],
+      routePaths: ['/business/example'],
+    },
   },
 ];
 ```

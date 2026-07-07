@@ -3,6 +3,7 @@
     <header class="mango-grid-widget-my-task__header">
       <span>我的任务</span>
       <button
+        v-if="!inlineState"
         class="mango-grid-widget-my-task__all"
         type="button"
         @click="navigateToAll"
@@ -12,6 +13,16 @@
     </header>
 
     <div
+      v-if="inlineState"
+      class="mango-grid-widget-my-task__state"
+      :data-state="inlineState"
+    >
+      <strong>{{ inlineStateTitle }}</strong>
+      <span>{{ inlineStateMessage }}</span>
+    </div>
+
+    <div
+      v-else
       class="mango-grid-widget-my-task__body"
       :class="{ 'is-loading': loading }"
     >
@@ -61,8 +72,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import { workflowApi, type WorkflowMyTaskSummary } from '../../api/workflow';
+import { isAccessDeniedError } from '../access-error';
 import type { MangoWidgetNavigateTarget, MyTaskWidgetProps } from '../types';
 
 defineOptions({
@@ -75,6 +86,7 @@ const props = withDefaults(defineProps<MyTaskWidgetProps>(), {
 
 const loading = ref(false);
 const summary = ref<WorkflowMyTaskSummary>(createEmptySummary());
+const inlineState = ref<'missing-permission' | 'load-failed' | ''>('');
 
 const taskItems = computed(() => {
   const total = Math.max(summary.value.total, 1);
@@ -110,6 +122,10 @@ const taskItems = computed(() => {
     percent: hasTotal ? Math.max(item.value, 0) / total : 1,
   }));
 });
+const inlineStateTitle = computed(() => inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败');
+const inlineStateMessage = computed(() => inlineState.value === 'missing-permission'
+  ? '当前账号无权查看我的任务'
+  : '任务统计加载失败，请稍后重试');
 
 onMounted(() => {
   loadSummary();
@@ -119,8 +135,9 @@ async function loadSummary(): Promise<void> {
   loading.value = true;
   try {
     summary.value = await workflowApi.myTaskSummary();
-  } catch {
-    ElMessage.error('任务加载失败，请稍后重试');
+    inlineState.value = '';
+  } catch (error) {
+    inlineState.value = isAccessDeniedError(error) ? 'missing-permission' : 'load-failed';
   } finally {
     loading.value = false;
   }

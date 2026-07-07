@@ -3,6 +3,7 @@
     <header class="mango-grid-widget-my-process__header">
       <span>我的申请</span>
       <button
+        v-if="!inlineState"
         class="mango-grid-widget-my-process__all"
         type="button"
         @click="navigateToAll"
@@ -12,6 +13,16 @@
     </header>
 
     <div
+      v-if="inlineState"
+      class="mango-grid-widget-my-process__state"
+      :data-state="inlineState"
+    >
+      <strong>{{ inlineStateTitle }}</strong>
+      <span>{{ inlineStateMessage }}</span>
+    </div>
+
+    <div
+      v-else
       class="mango-grid-widget-my-process__grid"
       :class="{ 'is-loading': loading }"
     >
@@ -31,8 +42,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import { workflowApi, type WorkflowBusinessApplySummary } from '../../api/workflow';
+import { isAccessDeniedError } from '../access-error';
 import type { MangoWidgetNavigateTarget, MyProcessWidgetProps } from '../types';
 
 defineOptions({
@@ -45,6 +56,7 @@ const props = withDefaults(defineProps<MyProcessWidgetProps>(), {
 
 const loading = ref(false);
 const summary = ref<WorkflowBusinessApplySummary>(createEmptySummary());
+const inlineState = ref<'missing-permission' | 'load-failed' | ''>('');
 
 const processItems = computed(() => [
   {
@@ -72,6 +84,10 @@ const processItems = computed(() => [
     raw: { query: { statuses: ['WITHDRAWN'] } },
   },
 ]);
+const inlineStateTitle = computed(() => inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败');
+const inlineStateMessage = computed(() => inlineState.value === 'missing-permission'
+  ? '当前账号无权查看我的申请'
+  : '申请统计加载失败，请稍后重试');
 
 onMounted(() => {
   loadSummary();
@@ -81,8 +97,9 @@ async function loadSummary(): Promise<void> {
   loading.value = true;
   try {
     summary.value = await workflowApi.businessApplyMySummary();
-  } catch {
-    ElMessage.error('申请加载失败，请稍后重试');
+    inlineState.value = '';
+  } catch (error) {
+    inlineState.value = isAccessDeniedError(error) ? 'missing-permission' : 'load-failed';
   } finally {
     loading.value = false;
   }

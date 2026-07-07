@@ -655,9 +655,9 @@ export const workflowApi = {
 
   todoTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/todo', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
-  todoSummary: () => get<WorkflowTaskSummary>('/workflow/tasks/todo/summary')
+  todoSummary: () => get<WorkflowTaskSummary>('/workflow/tasks/todo/summary', { silentError: true })
     .then(normalizeTaskSummary),
-  myTaskSummary: () => get<WorkflowMyTaskSummary>('/workflow/tasks/my/summary')
+  myTaskSummary: () => get<WorkflowMyTaskSummary>('/workflow/tasks/my/summary', { silentError: true })
     .then(normalizeMyTaskSummary),
   initiatedTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/initiated', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
@@ -694,7 +694,7 @@ export const workflowApi = {
     .then(normalizeWorkflowStartResult),
   businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
     .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
-  businessApplyMySummary: () => get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary')
+  businessApplyMySummary: () => get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary', { silentError: true })
     .then(normalizeBusinessApplySummary),
   businessApplyHistory: (businessType: string, businessKey: string, params?: WorkflowBusinessApplyPageQuery) => get<any>('/workflow/business-applies/history', {
     params: {

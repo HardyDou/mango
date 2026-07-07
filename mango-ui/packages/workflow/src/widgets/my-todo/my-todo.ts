@@ -23,6 +23,7 @@ export const workflowMyTodoWidgets: MangoGridWidgetDefinition[] = [
     visibility: {
       mode: 'any',
       widgetPermissionCodes: ['workflow:task:list'],
+      routePaths: ['/workflow/task/todo', '/workflow/task/copied'],
     },
     defaultLayout: { w: 3, h: 10, minW: 3, minH: 8 },
     showTitle: false,

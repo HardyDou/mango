@@ -822,8 +822,14 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
 }
 
 .home-toolbar__button {
+  flex: 0 0 44px;
   width: 44px;
+  min-width: 44px;
   height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  aspect-ratio: 1;
   box-shadow: 0 8px 18px rgb(31 45 61 / 16%);
 }
 
