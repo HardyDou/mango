@@ -47,7 +47,7 @@ export const defaultFileSettings: FileSettings = {
   allowedExtensions: [],
   blockedExtensions: ['exe', 'bat', 'cmd', 'sh', 'jar'],
   defaultAccessLevel: 'PRIVATE',
-  duplicateNameStrategy: 'REJECT',
+  duplicateNameStrategy: 'AUTO_RENAME',
   duplicateCheckDirectoryScoped: true,
   objectNameStrategy: 'DATE_UUID',
   instantUploadEnabled: true,

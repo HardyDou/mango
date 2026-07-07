@@ -100,7 +100,7 @@ mango:
               value: 本地 Docker Compose MinIO 示例配置。启动 mango-file/docker-compose.yml 后可设为默认验证对象存储。
       FILE_SETTINGS:
         - id: "2026061801000000101"
-          version: 1
+          version: 2
           biz-key: file.settings.default
           name: 文件中心默认配置
           target-module: file
@@ -122,7 +122,7 @@ mango:
               value: PRIVATE
             duplicateNameStrategy:
               type: STRING
-              value: REJECT
+              value: AUTO_RENAME
             duplicateCheckDirectoryScoped:
               type: INT
               value: 1
