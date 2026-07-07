@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## v2026.07.07-maven-1.0.10-resource-sync-release - 2026-07-07
+
+### Fixed
+
+- Fixed Resource Registry dependent-resource replay for AUTO declarations. When a resource type changes, handlers that
+  depend on that type are replayed in the same sync round, so unchanged menu, subject-role, data-scope, org binding, and
+  workflow declarations can reconcile against newly created dependencies.
+- Fixed business menu role binding when `AUTH_MENU` declarations are processed before newly created `AUTH_ROLE`
+  declarations in the same sync round. `AUTH_MENU` now declares its `AUTH_ROLE` dependency and participates in dependent
+  replay.
+- Fixed same-batch `ORG_UNIT` parent/child ordering for AUTO declarations, so child org units no longer run before a
+  parent org unit declared in the same resource batch.
+
 ### Changed
 
 - Updated Maven publishing scripts so the standard backend platform release uses a non-app reactor scope and blocks
@@ -9,8 +22,32 @@
 - Documented the backend Maven release gate: use `scripts/publish-maven-batch.sh --all-non-app --release-version <version>`
   for full platform releases instead of raw full-reactor `mvn deploy`.
 
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.10</mango.version>` to consume the Resource Registry replay fix.
+- Generated or upgraded business projects should use `@mango/cli@1.0.61`; its release lock points to Mango Maven
+  `1.0.10` while keeping the certified frontend package batch from the `1.0.9` release.
+- Existing environments that already bootstrapped with the old ordering bug may need one Resource Registry sync replay
+  after upgrading if both the role and menu declarations are unchanged.
+- Backend release operators must use `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.10` for the
+  standard platform release. Do not run a raw full-reactor `mvn deploy`, because it publishes `app-*` fat jars.
+- Bug-fix publishing should follow a release train by default. Only framework defects that block business bootstrap,
+  permissions, data correctness, or production operation should be promoted as immediate hotfix releases.
+
+### Published Packages
+
+- Maven: Mango backend platform non-app artifacts at `1.0.10` to
+  `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/cli@1.0.61` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- Docs: Mango Docs snapshot `v2026.07.07-maven-1.0.10-resource-sync-release` for GitHub Pages and Maven docs bundle
+  `io.mango:mango-docs-bundle:1.0.10`.
+- GitHub Release: `v2026.07.07-maven-1.0.10-resource-sync-release`.
+
 ### Verification
 
+- `mvn -pl mango-platform/mango-resource/mango-resource-core,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-org/mango-org-starter -am -Dtest=ResourceRegistrySyncServiceIntegrationTest,AuthMenuResourceHandlerTest,OrgUnitResourceHandlerTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
 - `bash -n scripts/publish-maven-batch.sh && bash -n scripts/publish-maven-module.sh`
 - `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.10 --skip-verify --dry-run`
 - `scripts/publish-maven-batch.sh :mango-platform-app --release-version 1.0.10 --skip-verify --dry-run`
@@ -18,6 +55,17 @@
 - `mvn -f mango/pom.xml -Drevision=1.0.10-SNAPSHOT -DskipTests -pl <all-non-app-module-paths> validate`
 - `node mango-pmo/tools/check-pmo-preflight.mjs`
 - `PR_BODY_FILE=/tmp/pr403-body.md node mango-pmo/tools/check-capability-docs.mjs --base origin/main --head HEAD`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.07-maven-1.0.10-resource-sync-release`
+- `npm --prefix mango-docs run docs:build`
+- `jar cf .runtime/mango-docs-bundle-1.0.10.jar -C .runtime/docs-bundle-1.0.10 .`
+- `shasum -a 256 .runtime/mango-docs-bundle-1.0.10.jar`
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.10`
+- `mvn deploy:deploy-file -DgroupId=io.mango -DartifactId=mango-docs-bundle -Dversion=1.0.10 -Dpackaging=jar -Dfile=.runtime/mango-docs-bundle-1.0.10.jar -Durl=http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/ -DrepositoryId=maven-releases`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg @mango/cli --release-tag=v2026.07.07-maven-1.0.10-resource-sync-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/cli --version=1.0.61`
+- `gh release view v2026.07.07-maven-1.0.10-resource-sync-release`
 - `git diff --check`
 
 ## v2026.07.07-maven-1.0.9-api-contract-release - 2026-07-07
