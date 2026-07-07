@@ -117,3 +117,4 @@ mango-ui/mango-docs/evidence/
 # ============ Misc ============
 *.orig
 replay_pid*
+.vscode/private-folder-alias.json
