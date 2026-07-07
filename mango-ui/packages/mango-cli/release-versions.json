@@ -1,6 +1,6 @@
 {
   "maven": {
-    "mangoBackend": "1.0.10"
+    "mangoBackend": "1.0.12"
   },
   "npm": {
     "@mango/admin": "1.0.41",
@@ -28,7 +28,7 @@
     "@mango/template": "1.0.17",
     "@mango/workflow": "1.0.23",
     "@mango/workflow-business-example": "1.0.22",
-    "@mango/cli": "1.0.61",
+    "@mango/cli": "1.0.62",
     "@mango/home": "1.0.2"
   }
 }
