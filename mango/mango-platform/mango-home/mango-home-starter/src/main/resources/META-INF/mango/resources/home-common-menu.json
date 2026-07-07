@@ -61,59 +61,16 @@
                         "icon": "Document",
                         "component": "home/templates/index",
                         "sort": 1,
-                        "permissions": [
-                          "home:templates:list"
-                        ],
                         "remark": "首页模板、发布和多对象授权管理",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "home:templates:list",
-                            "permissionName": "查询首页模板列表",
-                            "sort": 1,
-                            "remark": "首页模板列表查询权限"
-                          },
-                          {
-                            "permissionCode": "home:templates:query",
-                            "permissionName": "查询首页模板详情",
-                            "sort": 2,
-                            "remark": "首页模板详情查询权限"
-                          },
-                          {
-                            "permissionCode": "home:templates:add",
-                            "permissionName": "新增或复制首页模板",
-                            "sort": 3,
-                            "remark": "首页模板新增与复制权限"
-                          },
-                          {
-                            "permissionCode": "home:templates:edit",
-                            "permissionName": "编辑首页模板草稿",
-                            "sort": 4,
-                            "remark": "首页模板草稿编辑权限"
-                          },
-                          {
-                            "permissionCode": "home:templates:publish",
-                            "permissionName": "发布首页模板",
-                            "sort": 5,
-                            "remark": "首页模板发布权限"
-                          },
-                          {
-                            "permissionCode": "home:templates:status",
-                            "permissionName": "启停首页模板",
-                            "sort": 6,
-                            "remark": "首页模板启停权限"
-                          },
-                          {
-                            "permissionCode": "home:templates:delete",
-                            "permissionName": "删除首页模板",
-                            "sort": 7,
-                            "remark": "首页模板删除权限"
-                          },
-                          {
-                            "permissionCode": "home:templates:auth",
-                            "permissionName": "维护首页模板授权",
-                            "sort": 8,
-                            "remark": "个人、部门、角色授权维护权限"
-                          }
+                        "apiCodes": [
+                          "home:templates:list",
+                          "home:templates:query",
+                          "home:templates:add",
+                          "home:templates:edit",
+                          "home:templates:publish",
+                          "home:templates:status",
+                          "home:templates:delete",
+                          "home:templates:auth"
                         ]
                       },
                       {
@@ -124,31 +81,11 @@
                         "icon": "List",
                         "component": "home/list/index",
                         "sort": 2,
-                        "permissions": [
+                        "remark": "查询用户自定义首页列表",
+                        "apiCodes": [
                           "home:list:view",
                           "home:list:edit",
                           "home:list:delete"
-                        ],
-                        "remark": "查询用户自定义首页列表",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "home:list:view",
-                            "permissionName": "查看首页列表",
-                            "sort": 1,
-                            "remark": "用户自定义首页查看权限"
-                          },
-                          {
-                            "permissionCode": "home:list:edit",
-                            "permissionName": "编辑用户首页",
-                            "sort": 2,
-                            "remark": "用户自定义首页编辑权限"
-                          },
-                          {
-                            "permissionCode": "home:list:delete",
-                            "permissionName": "删除用户首页",
-                            "sort": 3,
-                            "remark": "用户自定义首页删除权限"
-                          }
                         ]
                       },
                       {
@@ -159,17 +96,9 @@
                         "icon": "User",
                         "component": "home/user/index",
                         "sort": 3,
-                        "permissions": [
-                          "home:user:view"
-                        ],
                         "remark": "按用户查看最终首页",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "home:user:view",
-                            "permissionName": "查看用户首页",
-                            "sort": 1,
-                            "remark": "按用户、成员和部门渲染最终首页权限"
-                          }
+                        "apiCodes": [
+                          "home:user:view"
                         ]
                       }
                     ]

@@ -51,25 +51,12 @@
                     "icon": "Tickets",
                     "component": "numgen/index",
                     "sort": 2,
-                    "permissions": [
-                      "numgen:manage:list"
-                    ],
                     "remark": "编号生成器、版本、片段和流水管理",
-                    "permissionItems": [
-                      {
-                        "permissionCode": "numgen:manage:list",
-                        "permissionName": "编号规则查询",
-                        "sort": 1,
-                        "remark": "编号规则查询权限"
-                      },
-                      {
-                        "permissionCode": "numgen:manage:write",
-                        "permissionName": "编号规则维护",
-                        "sort": 2,
-                        "remark": "编号规则维护权限"
-                      }
-                    ],
-                    "parentCode": "data"
+                    "parentCode": "data",
+                    "apiCodes": [
+                      "numgen:manage:list",
+                      "numgen:manage:write"
+                    ]
                   }
                 ]
               }

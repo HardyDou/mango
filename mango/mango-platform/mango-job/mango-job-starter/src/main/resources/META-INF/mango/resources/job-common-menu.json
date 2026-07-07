@@ -62,46 +62,15 @@
                         "icon": "List",
                         "component": "job/definition/index",
                         "sort": 1,
-                        "permissions": [
-                          "job:definition:list"
-                        ],
                         "remark": "任务定义、调度表达式、处理器和引擎同步状态管理",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "job:definition:list",
-                            "permissionName": "任务查询",
-                            "sort": 1
-                          },
-                          {
-                            "permissionCode": "job:definition:query",
-                            "permissionName": "任务详情",
-                            "sort": 2
-                          },
-                          {
-                            "permissionCode": "job:definition:add",
-                            "permissionName": "新增任务",
-                            "sort": 3
-                          },
-                          {
-                            "permissionCode": "job:definition:edit",
-                            "permissionName": "编辑任务",
-                            "sort": 4
-                          },
-                          {
-                            "permissionCode": "job:definition:delete",
-                            "permissionName": "删除任务",
-                            "sort": 5
-                          },
-                          {
-                            "permissionCode": "job:definition:status",
-                            "permissionName": "调整状态",
-                            "sort": 6
-                          },
-                          {
-                            "permissionCode": "job:definition:trigger",
-                            "permissionName": "手动触发",
-                            "sort": 7
-                          }
+                        "apiCodes": [
+                          "job:definition:list",
+                          "job:definition:query",
+                          "job:definition:add",
+                          "job:definition:edit",
+                          "job:definition:delete",
+                          "job:definition:status",
+                          "job:definition:trigger"
                         ]
                       },
                       {
@@ -112,26 +81,11 @@
                         "icon": "Tickets",
                         "component": "job/instance/index",
                         "sort": 2,
-                        "permissions": [
-                          "job:instance:list"
-                        ],
                         "remark": "任务执行实例查询",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "job:instance:list",
-                            "permissionName": "实例查询",
-                            "sort": 1
-                          },
-                          {
-                            "permissionCode": "job:instance:sync",
-                            "permissionName": "同步实例",
-                            "sort": 2
-                          },
-                          {
-                            "permissionCode": "job:log:list",
-                            "permissionName": "执行日志查询",
-                            "sort": 3
-                          }
+                        "apiCodes": [
+                          "job:instance:list",
+                          "job:instance:sync",
+                          "job:log:list"
                         ]
                       },
                       {
@@ -142,26 +96,11 @@
                         "icon": "Monitor",
                         "component": "job/worker/index",
                         "sort": 3,
-                        "permissions": [
-                          "job:worker:list"
-                        ],
                         "remark": "任务执行 Worker 节点查询和治理",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "job:worker:list",
-                            "permissionName": "Worker 查询",
-                            "sort": 1
-                          },
-                          {
-                            "permissionCode": "job:worker:add",
-                            "permissionName": "Worker 登记",
-                            "sort": 2
-                          },
-                          {
-                            "permissionCode": "job:worker:status",
-                            "permissionName": "Worker 状态",
-                            "sort": 3
-                          }
+                        "apiCodes": [
+                          "job:worker:list",
+                          "job:worker:add",
+                          "job:worker:status"
                         ]
                       },
                       {
@@ -172,41 +111,14 @@
                         "icon": "Bell",
                         "component": "job/alarm/index",
                         "sort": 4,
-                        "permissions": [
-                          "job:alarm:list"
-                        ],
                         "remark": "Mango Job 失败实例告警规则管理",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "job:alarm:list",
-                            "permissionName": "告警查询",
-                            "sort": 1
-                          },
-                          {
-                            "permissionCode": "job:alarm:query",
-                            "permissionName": "告警详情",
-                            "sort": 2
-                          },
-                          {
-                            "permissionCode": "job:alarm:add",
-                            "permissionName": "新增告警",
-                            "sort": 3
-                          },
-                          {
-                            "permissionCode": "job:alarm:edit",
-                            "permissionName": "编辑告警",
-                            "sort": 4
-                          },
-                          {
-                            "permissionCode": "job:alarm:status",
-                            "permissionName": "告警状态",
-                            "sort": 5
-                          },
-                          {
-                            "permissionCode": "job:alarm:delete",
-                            "permissionName": "删除告警",
-                            "sort": 6
-                          }
+                        "apiCodes": [
+                          "job:alarm:list",
+                          "job:alarm:query",
+                          "job:alarm:add",
+                          "job:alarm:edit",
+                          "job:alarm:status",
+                          "job:alarm:delete"
                         ]
                       },
                       {
@@ -217,16 +129,9 @@
                         "icon": "Cpu",
                         "component": "job/engine/index",
                         "sort": 5,
-                        "permissions": [
-                          "job:engine:list"
-                        ],
                         "remark": "Mango 原生任务调度运行状态汇总",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "job:engine:list",
-                            "permissionName": "引擎状态查询",
-                            "sort": 1
-                          }
+                        "apiCodes": [
+                          "job:engine:list"
                         ]
                       }
                     ]

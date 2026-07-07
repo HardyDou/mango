@@ -358,6 +358,7 @@ public class RoleServiceImpl implements IRoleService {
         LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StringUtils.hasText(effectiveAppCode), Menu::getAppCode, effectiveAppCode)
                 .eq(Menu::getStatus, 1)
+                .in(Menu::getMenuType, List.of(1, 2))
                 .orderByAsc(Menu::getSort);
         List<Menu> allMenus = menuMapper.selectList(wrapper);
         if (allMenus.isEmpty()) {

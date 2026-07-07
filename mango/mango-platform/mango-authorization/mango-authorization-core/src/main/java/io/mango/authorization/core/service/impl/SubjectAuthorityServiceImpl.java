@@ -18,7 +18,9 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +29,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
+
+    public static final String ROLE_ANONYMOUS = "ROLE_ANONYMOUS";
+    public static final String ROLE_LOGIN = "ROLE_LOGIN";
 
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
     private final RoleMapper roleMapper;
@@ -59,7 +64,6 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
         LambdaQueryWrapper<Menu> menuWrapper = new LambdaQueryWrapper<>();
         menuWrapper.in(Menu::getMenuId, menuIds)
                 .eq(StringUtils.hasText(query.systemCode()), Menu::getAppCode, query.systemCode())
-                .in(Menu::getMenuType, List.of(2, 3))
                 .eq(Menu::getStatus, 1);
         return menuMapper.selectList(menuWrapper)
                 .stream()
@@ -114,14 +118,11 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
         if (menu == null) {
             return new ArrayList<>();
         }
-        if (StringUtils.hasText(menu.getPermissions())) {
-            return Arrays.stream(menu.getPermissions().split(","))
+        if (StringUtils.hasText(menu.getApiCodes())) {
+            return Arrays.stream(menu.getApiCodes().split(","))
                     .map(String::trim)
                     .filter(StringUtils::hasText)
                     .collect(Collectors.toList());
-        }
-        if (StringUtils.hasText(menu.getMenuCode())) {
-            return List.of(menu.getMenuCode().trim());
         }
         return new ArrayList<>();
     }
@@ -131,18 +132,39 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
         if (StringUtils.hasText(query.tenantId()) && tenantId == null) {
             return new ArrayList<>();
         }
-        LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SubjectRoleBinding::getSubjectId, query.subjectId())
-                .eq(SubjectRoleBinding::getSubjectType, query.subjectType())
-                .eq(tenantId != null, SubjectRoleBinding::getTenantId, tenantId)
-                .eq(StringUtils.hasText(query.systemCode()), SubjectRoleBinding::getAppCode, query.systemCode())
-                .eq(StringUtils.hasText(query.realm()), SubjectRoleBinding::getRealm, query.realm())
-                .eq(StringUtils.hasText(query.actorType()), SubjectRoleBinding::getActorType, query.actorType())
-                .eq(StringUtils.hasText(query.partyType()), SubjectRoleBinding::getPartyType, query.partyType())
-                .eq(query.partyId() != null, SubjectRoleBinding::getPartyId, query.partyId());
-        return subjectRoleBindingMapper.selectList(wrapper)
+        Set<Long> roleIds = new LinkedHashSet<>();
+        if (!AuthorizationQuery.SUBJECT_TYPE_ANONYMOUS.equals(query.subjectType())) {
+            LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SubjectRoleBinding::getSubjectId, query.subjectId())
+                    .eq(SubjectRoleBinding::getSubjectType, query.subjectType())
+                    .eq(tenantId != null, SubjectRoleBinding::getTenantId, tenantId)
+                    .eq(StringUtils.hasText(query.systemCode()), SubjectRoleBinding::getAppCode, query.systemCode())
+                    .eq(StringUtils.hasText(query.realm()), SubjectRoleBinding::getRealm, query.realm())
+                    .eq(StringUtils.hasText(query.actorType()), SubjectRoleBinding::getActorType, query.actorType())
+                    .eq(StringUtils.hasText(query.partyType()), SubjectRoleBinding::getPartyType, query.partyType())
+                    .eq(query.partyId() != null, SubjectRoleBinding::getPartyId, query.partyId());
+            roleIds.addAll(subjectRoleBindingMapper.selectList(wrapper)
+                    .stream()
+                    .map(SubjectRoleBinding::getRoleId)
+                    .collect(Collectors.toCollection(LinkedHashSet::new)));
+        }
+        roleIds.addAll(listDefaultRoleIds(query));
+        return new ArrayList<>(roleIds);
+    }
+
+    private List<Long> listDefaultRoleIds(AuthorizationQuery query) {
+        Long tenantId = parseTenantId(query.tenantId());
+        LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<>();
+        String roleCode = AuthorizationQuery.SUBJECT_TYPE_ANONYMOUS.equals(query.subjectType())
+                ? ROLE_ANONYMOUS
+                : ROLE_LOGIN;
+        wrapper.eq(Role::getRoleCode, roleCode)
+                .eq(Role::getStatus, 1)
+                .eq(tenantId != null, Role::getTenantId, tenantId)
+                .eq(StringUtils.hasText(query.systemCode()), Role::getAppCode, query.systemCode());
+        return roleMapper.selectList(wrapper)
                 .stream()
-                .map(SubjectRoleBinding::getRoleId)
+                .map(Role::getRoleId)
                 .collect(Collectors.toList());
     }
 

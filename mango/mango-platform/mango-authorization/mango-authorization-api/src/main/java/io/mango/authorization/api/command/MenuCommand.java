@@ -50,8 +50,10 @@ public class MenuCommand implements Serializable {
     private Integer embedded;
     @Schema(description = "重定向地址")
     private String redirect;
-    @Schema(description = "权限编码")
+    @Schema(description = "历史权限编码，运行鉴权不再读取")
     private String permissions;
+    @Schema(description = "菜单携带的接口/动作权限码列表，逗号分隔")
+    private String apiCodes;
     @Schema(description = "按钮类型：TABLE-表格按钮，NON_TABLE-非表格按钮")
     private String buttonType;
     @Schema(description = "按钮展示规则表达式")

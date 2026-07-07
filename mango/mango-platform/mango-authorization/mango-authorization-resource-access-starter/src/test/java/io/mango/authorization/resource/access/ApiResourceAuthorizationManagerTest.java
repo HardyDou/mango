@@ -1,6 +1,7 @@
 package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
@@ -52,6 +53,30 @@ class ApiResourceAuthorizationManagerTest {
 
         assertFalse(denied.check(this::authentication, context("GET", "/demo")).isGranted());
         assertTrue(granted.check(this::authentication, context("GET", "/demo")).isGranted());
+    }
+
+    @Test
+    @DisplayName("permission resource should allow anonymous default role permission")
+    void permissionResourceShouldAllowAnonymousDefaultRolePermission() {
+        CapturingAuthorizationProvider authorizationProvider =
+                new CapturingAuthorizationProvider(List.of("file:files:upload"));
+        ApiResourceAuthorizationManager manager = new ApiResourceAuthorizationManager(
+                new TestApi(ApiResourceAccessMode.PERMISSION, "file:files:upload"),
+                authorizationProvider);
+
+        assertTrue(manager.check(() -> null, context("POST", "/file/files/upload")).isGranted());
+        assertEquals(AuthorizationQuery.SUBJECT_TYPE_ANONYMOUS, authorizationProvider.query.subjectType());
+    }
+
+    @Test
+    @DisplayName("permission resource should deny anonymous without matching permission")
+    void permissionResourceShouldDenyAnonymousWithoutMatchingPermission() {
+        ApiResourceAuthorizationManager manager = manager(
+                ApiResourceAccessMode.PERMISSION,
+                "file:files:download",
+                List.of("file:files:upload"));
+
+        assertFalse(manager.check(() -> null, context("GET", "/file/files/download")).isGranted());
     }
 
     @Test
@@ -185,6 +210,22 @@ class ApiResourceAuthorizationManagerTest {
         @Override
         public R<Void> refreshApiResourceCache() {
             return R.ok();
+        }
+    }
+
+    private static class CapturingAuthorizationProvider implements IAuthorizationProvider {
+
+        private final List<String> permissions;
+        private AuthorizationQuery query;
+
+        private CapturingAuthorizationProvider(List<String> permissions) {
+            this.permissions = permissions;
+        }
+
+        @Override
+        public AuthorizationSnapshot load(AuthorizationQuery query) {
+            this.query = query;
+            return AuthorizationSnapshot.of(List.of(), permissions, permissions);
         }
     }
 }

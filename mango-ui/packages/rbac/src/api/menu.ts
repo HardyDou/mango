@@ -59,6 +59,7 @@ export interface SysMenuVO {
   embedded?: number;
   redirect?: string;
   permissions?: string;
+  apiCodes?: string;
   buttonType?: ButtonType;
   buttonDisplayRule?: string;
   meta?: MenuMeta;
@@ -103,7 +104,7 @@ type MenuPayload = Pick<
   | 'keepAlive'
   | 'embedded'
   | 'redirect'
-  | 'permissions'
+  | 'apiCodes'
   | 'buttonType'
   | 'buttonDisplayRule'
   | 'component'
@@ -131,7 +132,7 @@ function toBackendPayload(data: Partial<SysMenuVO> & { appCode?: string }): Part
     keepAlive: data.keepAlive ?? 0,
     embedded: data.embedded ?? 0,
     redirect: data.redirect,
-    permissions: data.permissions,
+    apiCodes: data.apiCodes,
     buttonType: data.buttonType,
     buttonDisplayRule: data.buttonDisplayRule,
     component: data.component,

@@ -5,6 +5,7 @@ import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
+import io.mango.common.exception.BizException;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -65,23 +67,19 @@ class AppModuleServiceImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("registerResourceManifest should upsert menu tree and permission buttons through real mappers")
+    @DisplayName("registerResourceManifest should upsert menu tree with api codes through real mappers")
     void registerResourceManifestUpsertsMenuTreeThroughRealMappers() {
         int registered = service.registerResourceManifest(createManifest());
 
-        assertThat(registered).isEqualTo(3);
-        assertThat(menuCodes()).containsExactly("contract", "contract:archive:list", "contract:archive:create");
+        assertThat(registered).isEqualTo(2);
+        assertThat(menuCodes()).containsExactly("contract", "contract:archive:list");
         Menu directory = selectMenu("contract");
         Menu page = selectMenu("contract:archive:list");
-        Menu button = selectMenu("contract:archive:create");
         assertThat(directory.getMenuType()).isEqualTo(1);
         assertThat(page.getParentId()).isEqualTo(directory.getMenuId());
         assertThat(page.getMenuType()).isEqualTo(2);
-        assertThat(page.getPermissions()).isEqualTo("contract:archive:create,contract:archive:delete");
-        assertThat(button.getParentId()).isEqualTo(page.getMenuId());
-        assertThat(button.getMenuType()).isEqualTo(3);
-        assertThat(button.getPermissions()).isEqualTo("contract:archive:create");
-        assertThat(runtimeConfigTypes()).containsExactlyInAnyOrder("LOCAL_ROUTE", "LOCAL_ROUTE", "BUTTON");
+        assertThat(page.getApiCodes()).isEqualTo("contract:archive:list,contract:archive:create,contract:archive:delete");
+        assertThat(runtimeConfigTypes()).containsExactlyInAnyOrder("LOCAL_ROUTE", "LOCAL_ROUTE");
     }
 
     @Test
@@ -95,7 +93,7 @@ class AppModuleServiceImplIntegrationTest {
 
         int registered = service.registerResourceManifest(manifest);
 
-        assertThat(registered).isEqualTo(3);
+        assertThat(registered).isEqualTo(2);
         assertThat(menuPackageItemMenuIds()).containsExactlyElementsOf(menuIds());
         assertThat(roleMenuIds()).containsExactlyElementsOf(menuIds());
         assertThat(bindingHandler.calls()).containsExactlyInAnyOrder("1:1", "2:1");
@@ -110,13 +108,39 @@ class AppModuleServiceImplIntegrationTest {
 
         int registered = service.registerResourceManifest(manifest);
 
-        assertThat(registered).isEqualTo(3);
+        assertThat(registered).isEqualTo(2);
         Menu directory = selectMenu("contract");
         Menu page = selectMenu("contract:archive:list");
-        Menu button = selectMenu("contract:archive:create");
         assertThat(directory.getParentId()).isEqualTo(2700L);
         assertThat(page.getParentId()).isEqualTo(directory.getMenuId());
-        assertThat(button.getParentId()).isEqualTo(page.getMenuId());
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should reject legacy permissions field")
+    void registerResourceManifestRejectsLegacyPermissionsField() {
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.getMenus().get(0).getChildren().get(0).setPermissions(List.of("contract:archive:legacy"));
+
+        assertThatThrownBy(() -> service.registerResourceManifest(manifest))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("AUTH_MENU 不再支持 permissions");
+        assertThat(countRows("authorization_menu")).isZero();
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should reject legacy permissionItems field")
+    void registerResourceManifestRejectsLegacyPermissionItemsField() {
+        AppModuleResourceManifestCommand manifest = createManifest();
+        AppModuleResourceManifestCommand.Permission permission = new AppModuleResourceManifestCommand.Permission();
+        permission.setMenuCode("contract:archive:create-button");
+        permission.setPermissionCode("contract:archive:create");
+        permission.setPermissionName("新增合同");
+        manifest.getMenus().get(0).getChildren().get(0).setPermissionItems(List.of(permission));
+
+        assertThatThrownBy(() -> service.registerResourceManifest(manifest))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("AUTH_MENU 不再支持 permissionItems");
+        assertThat(countRows("authorization_menu")).isZero();
     }
 
     @Test
@@ -179,6 +203,7 @@ class AppModuleServiceImplIntegrationTest {
                     embedded tinyint not null default 0,
                     redirect varchar(255),
                     permissions varchar(512),
+                    api_codes varchar(2000),
                     button_type varchar(32),
                     button_display_rule varchar(512),
                     create_by varchar(64),
@@ -270,12 +295,7 @@ class AppModuleServiceImplIntegrationTest {
         page.setMenuCode("contract:archive:list");
         page.setPath("/contract/archives");
         page.setComponent("contract/archive/index");
-        page.setPermissions(List.of("contract:archive:create", "contract:archive:delete"));
-
-        AppModuleResourceManifestCommand.Permission create = new AppModuleResourceManifestCommand.Permission();
-        create.setPermissionCode("contract:archive:create");
-        create.setPermissionName("新增合同");
-        page.setPermissionItems(List.of(create));
+        page.setApiCodes(List.of("contract:archive:list", "contract:archive:create", "contract:archive:delete"));
         directory.setChildren(List.of(page));
         manifest.setMenus(List.of(directory));
         return manifest;

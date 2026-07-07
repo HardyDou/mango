@@ -145,8 +145,12 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
     }
 
     private boolean hasPermission(Authentication authentication, String permissionCode) {
-        if (!isAuthenticated(authentication) || !StringUtils.hasText(permissionCode)) {
+        if (!StringUtils.hasText(permissionCode)) {
             return false;
+        }
+        if (!isAuthenticated(authentication)) {
+            return authorizationProvider.load(AuthorizationQuery.anonymous()).permissionCodes().stream()
+                    .anyMatch(permission -> permissionMatches(permission, permissionCode));
         }
         SecurityPrincipal principal = resolvePrincipal(authentication);
         if (principal == null || principal.memberId() == null) {

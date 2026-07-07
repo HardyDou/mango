@@ -16,6 +16,7 @@ public record AuthorizationQuery(
 
     public static final String SUBJECT_TYPE_USER = "user";
     public static final String SUBJECT_TYPE_TENANT_MEMBER = "TENANT_MEMBER";
+    public static final String SUBJECT_TYPE_ANONYMOUS = "ANONYMOUS";
 
     public AuthorizationQuery(Long subjectId, String subjectType, String tenantId, String systemCode) {
         this(subjectId, subjectType, tenantId, systemCode, null, null, null, null);
@@ -42,6 +43,10 @@ public record AuthorizationQuery(
 
     public static AuthorizationQuery member(Long memberId) {
         return new AuthorizationQuery(memberId, SUBJECT_TYPE_TENANT_MEMBER, null, null);
+    }
+
+    public static AuthorizationQuery anonymous() {
+        return new AuthorizationQuery(0L, SUBJECT_TYPE_ANONYMOUS, null, null);
     }
 
     public AuthorizationQuery withTenantId(String newTenantId) {

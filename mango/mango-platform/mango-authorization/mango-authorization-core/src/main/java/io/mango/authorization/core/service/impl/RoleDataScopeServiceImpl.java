@@ -314,7 +314,7 @@ public class RoleDataScopeServiceImpl implements IRoleDataScopeService {
                 .eq(Menu::getStatus, 1);
         return menuMapper.selectList(menuWrapper)
                 .stream()
-                .flatMap(menu -> splitPermissions(menu.getPermissions()).stream())
+                .flatMap(menu -> splitPermissions(menu.getApiCodes()).stream())
                 .anyMatch(resourceCode::equals);
     }
 

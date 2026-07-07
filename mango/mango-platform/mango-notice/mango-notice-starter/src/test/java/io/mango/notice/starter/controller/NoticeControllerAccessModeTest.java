@@ -2,6 +2,7 @@ package io.mango.notice.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
 import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
@@ -17,28 +18,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 class NoticeControllerAccessModeTest {
 
     @Test
-    void personalNoticeEndpointsShouldUseLoginBaselineAccess() throws NoSuchMethodException {
-        assertLoginBaseline("listRecipientAccounts", NoticeRecipientAccountQuery.class);
-        assertLoginBaseline("saveRecipientAccount", SaveNoticeRecipientAccountCommand.class);
-        assertLoginBaseline("disableRecipientAccount", Long.class, Long.class);
-        assertLoginBaseline("setDefaultRecipientAccount", Long.class, Long.class);
-        assertLoginBaseline("listReceivePreferences", NoticeReceivePreferenceQuery.class);
-        assertLoginBaseline("saveReceivePreference", SaveNoticeReceivePreferenceCommand.class);
-        assertLoginBaseline("listSiteMessages", NoticeSiteMessagePageQuery.class);
-        assertLoginBaseline("getSiteMessage", Long.class);
-        assertLoginBaseline("unreadCount");
-        assertLoginBaseline("markSiteMessageRead", Long.class);
-        assertLoginBaseline("markSiteMessagesRead", MarkNoticeReadCommand.class);
-        assertLoginBaseline("markAllSiteMessagesRead");
-        assertLoginBaseline("deleteSiteMessage", Long.class);
+    void personalNoticeEndpointsShouldUseLoginDefaultRolePermissions() throws NoSuchMethodException {
+        assertPermission("listRecipientAccounts", "notice:receive-setting:view", NoticeRecipientAccountQuery.class);
+        assertPermission("saveRecipientAccount", "notice:receive-setting:edit", SaveNoticeRecipientAccountCommand.class);
+        assertPermission("disableRecipientAccount", "notice:receive-setting:edit", Long.class, Long.class);
+        assertPermission("setDefaultRecipientAccount", "notice:receive-setting:edit", Long.class, Long.class);
+        assertPermission("listReceivePreferences", "notice:receive-setting:view", NoticeReceivePreferenceQuery.class);
+        assertPermission("saveReceivePreference", "notice:receive-setting:edit", SaveNoticeReceivePreferenceCommand.class);
+        assertPermission("listSiteMessages", "notice:site:view", NoticeSiteMessagePageQuery.class);
+        assertPermission("getSiteMessage", "notice:site:view", Long.class);
+        assertPermission("executeSiteMessageAction", "notice:site:edit",
+                Long.class, String.class, ExecuteNoticeSiteMessageActionCommand.class);
+        assertPermission("unreadCount", "notice:site:view");
+        assertPermission("markSiteMessageRead", "notice:site:edit", Long.class);
+        assertPermission("markSiteMessagesRead", "notice:site:edit", MarkNoticeReadCommand.class);
+        assertPermission("markAllSiteMessagesRead", "notice:site:edit");
+        assertPermission("deleteSiteMessage", "notice:site:edit", Long.class);
     }
 
-    private static void assertLoginBaseline(String methodName, Class<?>... parameterTypes)
+    private static void assertPermission(String methodName, String permission, Class<?>... parameterTypes)
             throws NoSuchMethodException {
         Method method = NoticeController.class.getMethod(methodName, parameterTypes);
         ApiAccess apiAccess = method.getAnnotation(ApiAccess.class);
         assertThat(apiAccess).isNotNull();
-        assertThat(apiAccess.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
-        assertThat(apiAccess.permission()).isBlank();
+        assertThat(apiAccess.mode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
+        assertThat(apiAccess.permission()).isEqualTo(permission);
     }
 }

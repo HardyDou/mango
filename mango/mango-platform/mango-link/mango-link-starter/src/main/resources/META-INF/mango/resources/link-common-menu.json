@@ -60,18 +60,10 @@
                         "icon": "Star",
                         "component": "link/favorites/index",
                         "sort": 1,
-                        "permissions": [
+                        "remark": "用户侧我的收藏入口",
+                        "apiCodes": [
                           "link:favorite:view"
-                        ],
-                        "permissionItems": [
-                          {
-                            "permissionCode": "link:favorite:view",
-                            "permissionName": "我的收藏查看",
-                            "sort": 1,
-                            "remark": "查看网址收藏"
-                          }
-                        ],
-                        "remark": "用户侧我的收藏入口"
+                        ]
                       },
                       {
                         "menuType": 2,
@@ -81,18 +73,10 @@
                         "icon": "OfficeBuilding",
                         "component": "link/company/index",
                         "sort": 2,
-                        "permissions": [
+                        "remark": "用户侧分类入口",
+                        "apiCodes": [
                           "link:navigation:view"
-                        ],
-                        "permissionItems": [
-                          {
-                            "permissionCode": "link:navigation:view",
-                            "permissionName": "我的分类查看",
-                            "sort": 1,
-                            "remark": "查看我的分类"
-                          }
-                        ],
-                        "remark": "用户侧分类入口"
+                        ]
                       },
                       {
                         "menuType": 2,
@@ -102,18 +86,10 @@
                         "icon": "Collection",
                         "component": "link/my-links/index",
                         "sort": 3,
-                        "permissions": [
+                        "remark": "用户侧个人网址入口",
+                        "apiCodes": [
                           "link:personal:view"
-                        ],
-                        "permissionItems": [
-                          {
-                            "permissionCode": "link:personal:view",
-                            "permissionName": "我的网址查看",
-                            "sort": 1,
-                            "remark": "查看和维护我的网址"
-                          }
-                        ],
-                        "remark": "用户侧个人网址入口"
+                        ]
                       }
                     ]
                   },
@@ -135,37 +111,14 @@
                         "icon": "FolderOpened",
                         "component": "link/categories/index",
                         "sort": 1,
-                        "permissions": [
-                          "link:category:view"
-                        ],
-                        "permissionItems": [
-                          {
-                            "permissionCode": "link:category:view",
-                            "permissionName": "网址分类查询",
-                            "sort": 1
-                          },
-                          {
-                            "permissionCode": "link:category:create",
-                            "permissionName": "新增网址分类",
-                            "sort": 2
-                          },
-                          {
-                            "permissionCode": "link:category:update",
-                            "permissionName": "编辑网址分类",
-                            "sort": 3
-                          },
-                          {
-                            "permissionCode": "link:category:status",
-                            "permissionName": "网址分类启停",
-                            "sort": 4
-                          },
-                          {
-                            "permissionCode": "link:category:delete",
-                            "permissionName": "删除网址分类",
-                            "sort": 5
-                          }
-                        ],
-                        "remark": "维护公司网址分类"
+                        "remark": "维护公司网址分类",
+                        "apiCodes": [
+                          "link:category:view",
+                          "link:category:create",
+                          "link:category:update",
+                          "link:category:status",
+                          "link:category:delete"
+                        ]
                       },
                       {
                         "menuType": 2,
@@ -175,37 +128,14 @@
                         "icon": "Tickets",
                         "component": "link/items/index",
                         "sort": 2,
-                        "permissions": [
-                          "link:item:view"
-                        ],
-                        "permissionItems": [
-                          {
-                            "permissionCode": "link:item:view",
-                            "permissionName": "网址查询",
-                            "sort": 1
-                          },
-                          {
-                            "permissionCode": "link:item:create",
-                            "permissionName": "新增网址",
-                            "sort": 2
-                          },
-                          {
-                            "permissionCode": "link:item:update",
-                            "permissionName": "编辑网址",
-                            "sort": 3
-                          },
-                          {
-                            "permissionCode": "link:item:status",
-                            "permissionName": "网址启停",
-                            "sort": 4
-                          },
-                          {
-                            "permissionCode": "link:item:delete",
-                            "permissionName": "删除网址",
-                            "sort": 5
-                          }
-                        ],
-                        "remark": "维护公司、部门、指定人可见的网址"
+                        "remark": "维护公司、部门、指定人可见的网址",
+                        "apiCodes": [
+                          "link:item:view",
+                          "link:item:create",
+                          "link:item:update",
+                          "link:item:status",
+                          "link:item:delete"
+                        ]
                       }
                     ]
                   }
