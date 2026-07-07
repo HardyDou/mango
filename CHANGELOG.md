@@ -2,6 +2,75 @@
 
 ## Unreleased
 
+## v2026.07.07-maven-1.0.13-menu-api-codes-release - 2026-07-07
+
+### Fixed
+
+- Fixed menu/API permission coupling in Authorization. `menuCode` now controls menu visibility, while menu `apiCodes`
+  provide the API permission codes granted with that menu.
+- Fixed business approval authorization where workflow API permissions could expose workflow/risk menus to non-risk
+  roles. Business menus can now carry required `workflow:*` API permissions without showing workflow parent menus.
+- Fixed hidden baseline API permission grants for anonymous and logged-in users. File upload/preview/download and notice
+  site-message baseline permissions are now injected through hidden `ROLE_ANONYMOUS` / `ROLE_LOGIN` menus without adding
+  visible navigation.
+- Fixed home/workflow widget permission states from the previous unreleased main changes so missing workflow page entries
+  or API permissions show an inline access state instead of leading users into unavailable pages.
+
+### Changed
+
+- Added `authorization_menu.api_codes` and migration `V107__menu_api_codes.sql` to fold legacy menu/button permission
+  nodes into parent menu API permissions and remove old button-menu role bindings.
+- Updated `AUTH_MENU` resource usage: modules declare page-owned API permissions with `menus[].apiCodes` and no longer
+  declare `permissions`, `permissionItems`, or `permissionCode` menu nodes.
+- Updated RBAC menu management so operators edit menu API codes on the menu itself and role assignment only grants real
+  menu nodes.
+- Advanced generated business backend Maven lock to `1.0.13` through `@mango/cli@1.0.63`.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.13</mango.version>` to consume the menu/API permission split and
+  migration.
+- Business modules should move any menu-owned API permissions from legacy `permissionItems`/button nodes to the owning
+  menu `apiCodes` field.
+- If a business page needs workflow, notice, file, or other platform API permissions without exposing that platform
+  menu, put those API permission codes on the business menu's `apiCodes`.
+- Anonymous and logged-in baseline APIs should be injected through hidden menus bound to `ROLE_ANONYMOUS` or
+  `ROLE_LOGIN`; hidden menus do not render in the user menu tree.
+- Generated or upgraded business projects should use `@mango/cli@1.0.63`; its release lock points to Mango Maven
+  `1.0.13` and this npm package batch.
+
+### Published Packages
+
+- Maven: Mango backend platform non-app artifacts at `1.0.13` to
+  `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/admin@1.0.42`, `@mango/admin-pages@1.0.17`, `@mango/admin-shell@1.0.37`,
+  `@mango/calendar@1.0.18`, `@mango/cms@1.0.7`, `@mango/file@1.0.18`, `@mango/grid-widgets@1.0.11`,
+  `@mango/home@1.0.3`, `@mango/job@1.0.10`, `@mango/link@1.0.4`, `@mango/link-openapi@1.0.2`,
+  `@mango/link-page@1.0.3`, `@mango/notice@1.0.19`, `@mango/numgen@1.0.18`, `@mango/payment@1.0.9`,
+  `@mango/rbac@1.0.11`, `@mango/system@1.0.16`, `@mango/template@1.0.18`, `@mango/workflow@1.0.24`,
+  `@mango/workflow-business-example@1.0.23`, and `@mango/cli@1.0.63` to
+  `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.07-maven-1.0.13-menu-api-codes-release`.
+
+### Verification
+
+- `git diff --check`
+- `node mango-ui/scripts/check-release-impact.mjs --base=v2026.07.07-maven-1.0.12-flyway-bootstrap-release --head=HEAD`
+- `mvn -pl mango-platform/mango-authorization/mango-authorization-core,mango-platform/mango-authorization/mango-authorization-starter,mango-platform/mango-authorization/mango-authorization-resource-access-starter,mango-platform/mango-file/mango-file-starter,mango-platform/mango-file-preview/mango-file-preview-starter,mango-platform/mango-notice/mango-notice-starter -am test -Dtest=AppModuleServiceImplIntegrationTest,SubjectAuthorityServiceImplIntegrationTest,MenuServiceImplIntegrationTest,MenuApiCodesBusinessScenarioIntegrationTest,RoleDataScopeServiceImplIntegrationTest,RoleServiceImplIntegrationTest,TenantMenuPackageBindingHandlerIntegrationTest,MenuBaselineTest,AuthMenuResourceHandlerTest,RolePermissionAuthorityContributorTest,ApiResourceAuthorizationManagerTest,FileControllerAccessModeTest,FilePreviewControllerAccessModeTest,NoticeControllerAccessModeTest -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false`
+- `cd mango-ui/packages/common && ../../node_modules/.bin/vite build && node ../../scripts/generate-package-types.mjs`
+- `cd mango-ui/packages/rbac && ../../node_modules/.bin/vite build && node ../../scripts/generate-package-types.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui -r --filter './packages/*' --filter '!@mango/cli' --if-present run build`
+- `pnpm -C mango-ui package-exports:check`
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.13`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.07-maven-1.0.13-menu-api-codes-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.07-maven-1.0.13-menu-api-codes-release`
+- `git diff --check`
+
 ## v2026.07.07-maven-1.0.12-flyway-bootstrap-release - 2026-07-07
 
 ### Fixed

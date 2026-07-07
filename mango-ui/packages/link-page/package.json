@@ -1,6 +1,6 @@
 {
   "name": "@mango/link-page",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -23,7 +23,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/link-openapi": "1.0.1"
+    "@mango/link-openapi": "1.0.2"
   },
   "peerDependencies": {
     "element-plus": ">=2.14.1 <3",

@@ -188,3 +188,5 @@ pnpm -F @mango/admin-shell build
 - Issue #396 仅治理 system 日志、行政区划和 authorization 权限码 API 契约承载位置：API Bean 改由 starter controller 承载，service/core 不再实现 API；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、登录态权限聚合、页面路由和本场景排障步骤。
 
 - PR #414 收口首页工作台小组件权限展示：工作流首页卡片会同时校验权限码和目标页面入口，缺少任一项时在卡片内显示“缺少权限”并禁用交互；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、登录态权限聚合、页面路由和本场景排障步骤。若首页卡片缺少页面入口，按菜单资源同步、角色授权和前端页面 key 注册链路排查，不再通过点击卡片进入 404 页面定位。
+
+- v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、登录态权限聚合、页面路由和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
