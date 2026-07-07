@@ -177,3 +177,5 @@ pnpm -F @mango/admin-shell build
 - Issue #396 仅治理 authorization `PermissionApi` 与 system 日志、行政区划 API 的契约承载位置：`PermissionApi` 由 starter controller 实现，菜单 service 仅提供内部权限码查询；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
 
 - PR #414 仅调整首页工作台小组件的权限消费方式：小组件权限默认按 `all` 判断，工作流卡片缺少任一权限码或目标页面入口时显示卡片内“缺少权限”并隐藏查看交互；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。排查首页卡片不可用时，仍先确认角色是否拥有对应权限码，并重新登录刷新登录态权限集合。
+
+- v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
