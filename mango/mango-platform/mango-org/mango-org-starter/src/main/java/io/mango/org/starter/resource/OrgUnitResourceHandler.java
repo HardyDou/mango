@@ -5,6 +5,7 @@ import io.mango.org.api.entity.SysOrg;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceHandlerSpec;
@@ -12,6 +13,13 @@ import io.mango.resource.api.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Resource handler for organization unit declarations.
@@ -28,6 +36,11 @@ public class OrgUnitResourceHandler implements ResourceHandler {
     @Override
     public String resourceType() {
         return ResourceTypes.ORG_UNIT;
+    }
+
+    @Override
+    public boolean requiresCompleteBatch() {
+        return true;
     }
 
     @Override
@@ -64,6 +77,34 @@ public class OrgUnitResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
+        List<ResourceDeclaration> pending = resources.stream()
+                .filter(this::isAutoSync)
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+        Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
+        Set<String> syncedOrgCodes = new HashSet<>();
+        Set<String> declaredOrgCodes = collectDeclaredOrgCodes(resources);
+        collectProtectedOrgCodes(resources, syncedOrgCodes);
+        while (!pending.isEmpty()) {
+            boolean progressed = false;
+            for (int i = 0; i < pending.size(); i++) {
+                ResourceDeclaration resource = pending.get(i);
+                if (!dependsOnPendingParent(resource, declaredOrgCodes, syncedOrgCodes)) {
+                    results.put(resource.getId(), upsert(resource));
+                    syncedOrgCodes.add(orgCode(resource));
+                    pending.remove(i);
+                    i--;
+                    progressed = true;
+                }
+            }
+            if (!progressed) {
+                throw new IllegalStateException("ORG_UNIT resources have unresolved parent dependencies");
+            }
+        }
+        return results;
+    }
+
+    @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         SysOrg org = findByTargetOrBusinessKey(resource);
         boolean changed = false;
@@ -73,6 +114,42 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         }
         return ResourceSyncResult.of(org == null ? null : org.getId(), TARGET_TABLE,
                 "Org unit disabled: changed=" + changed);
+    }
+
+    private boolean isAutoSync(ResourceDeclaration resource) {
+        return resource.getSyncMode() == null || resource.getSyncMode() == ResourceSyncMode.AUTO;
+    }
+
+    private Set<String> collectDeclaredOrgCodes(List<ResourceDeclaration> resources) {
+        Set<String> orgCodes = new HashSet<>();
+        for (ResourceDeclaration resource : resources) {
+            orgCodes.add(orgCode(resource));
+        }
+        return orgCodes;
+    }
+
+    private void collectProtectedOrgCodes(List<ResourceDeclaration> resources, Set<String> orgCodes) {
+        for (ResourceDeclaration resource : resources) {
+            if (!isAutoSync(resource)) {
+                orgCodes.add(orgCode(resource));
+            }
+        }
+    }
+
+    private boolean dependsOnPendingParent(
+            ResourceDeclaration resource,
+            Set<String> declaredOrgCodes,
+            Set<String> syncedOrgCodes) {
+        String parentCode = fields.stringField(resource, "parentOrgCode");
+        if (!StringUtils.hasText(parentCode)) {
+            return false;
+        }
+        String normalizedParentCode = parentCode.trim();
+        return declaredOrgCodes.contains(normalizedParentCode) && !syncedOrgCodes.contains(normalizedParentCode);
+    }
+
+    private String orgCode(ResourceDeclaration resource) {
+        return fields.requiredString(resource, "orgCode");
     }
 
     private Long parentId(ResourceDeclaration resource) {

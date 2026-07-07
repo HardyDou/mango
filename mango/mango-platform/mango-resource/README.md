@@ -128,8 +128,10 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 
 `ResourceHandler` 可以通过 `dependsOnResourceTypes()` 声明当前资源类型在同一同步批次内依赖的其它资源类型。
 Resource Registry 会在批量同步 active 声明前做资源类型拓扑排序，保证例如 `IDENTITY_USER`
-先于 `ORG_MEMBER_BINDING`、`AUTH_ROLE` 先于 `AUTH_SUBJECT_ROLE`。依赖资源类型未出现在本批次时不会强制失败，
-目标资源是否已存在仍由具体 handler 校验。出现循环依赖时，同步会在调用目标 handler 前失败，并输出循环路径。
+先于 `ORG_MEMBER_BINDING`、`AUTH_ROLE` 先于 `AUTH_MENU` 和 `AUTH_SUBJECT_ROLE`。依赖资源类型发生创建或更新时，
+Resource Registry 会重放同一批次内声明了该依赖的 AUTO 资源，确保菜单默认角色授权这类派生绑定能在角色创建后补齐。
+依赖资源类型未出现在本批次时不会强制失败，目标资源是否已存在仍由具体 handler 校验。
+出现循环依赖时，同步会在调用目标 handler 前失败，并输出循环路径。
 
 资源声明来源支持：
 

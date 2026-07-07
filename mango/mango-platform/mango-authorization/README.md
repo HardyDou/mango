@@ -330,13 +330,14 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 新增管理菜单 | 在本模块 starter 的 `META-INF/mango/resources/{module}-common-menu.json` 声明 `AUTH_MENU`。 |
 | 新增按钮权限 | 在所属页面菜单的 `permissionItems` 中声明；如果按钮菜单编码和接口权限码不同，同时写 `menuCode` 和 `permissionCode`。 |
 | 加入默认套餐 | 在声明、菜单或按钮上写已有 `packageCodes`。未配置时继承父级，空数组表示不加入套餐。 |
-| 默认授权角色 | 仅在已明确确认的默认角色场景写已有 `roleCodes`。未配置时继承父级，空数组表示不授权角色。 |
+| 默认授权角色 | 仅在已明确确认的默认角色场景写 `roleCodes`。角色可由同一资源批次的 `AUTH_ROLE` 声明创建，未配置时继承父级，空数组表示不授权角色。 |
 | 只新增接口权限 | 使用 `@ApiAccess` / `@PermissionAccess`，由 `API_RESOURCE` Provider 扫描，不需要写菜单资源。 |
 | 新增前端运行单元 | 声明 `FRONTEND_APP_REGISTRY`，由授权模块写入 `authorization_frontend_app_registry`。 |
 | 新增前端模块运行策略 | 声明 `FRONTEND_MODULE_RUNTIME_STRATEGY`，由授权模块写入 `authorization_frontend_module_runtime_strategy`。 |
 | 历史 manifest | 只用于迁移，不作为新增入口。 |
 
 菜单、按钮权限、菜单运行时配置、菜单套餐明细和默认角色菜单授权不再通过 Flyway DML 维护。Flyway 只保留表结构、应用入口、登录上下文、套餐主档、基础角色和成员角色绑定等基础数据。
+业务模块不得直接写授权表或调用 `authorization-core` Service 来补菜单授权；角色、菜单和默认角色授权统一通过 Resource Registry 的 `AUTH_ROLE`、`AUTH_MENU` 声明同步。
 
 示例：
 
@@ -406,7 +407,7 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | `fields.status.value` | 模块状态，空时保存为 1 |
 | `fields.sort.value` | 模块排序，空时保存为 0 |
 | `fields.packageCodes.value` | 清单级套餐编码；菜单未配置时继承，套餐必须已存在 |
-| `fields.roleCodes.value` | 清单级默认角色编码；菜单未配置时继承，角色必须已存在 |
+| `fields.roleCodes.value` | 清单级默认角色编码；菜单未配置时继承，可引用同一资源批次内的 `AUTH_ROLE` 声明 |
 | `fields.menus.value[].menuType` | 1 目录、2 菜单、3 按钮 |
 | `fields.menus.value[].menuName` | 菜单名称 |
 | `fields.menus.value[].menuCode` | 菜单编码或权限码 |
@@ -699,6 +700,8 @@ Resource Registry 还支持授权基线声明：
 | `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组。 |
 | `AUTH_SUBJECT_ROLE` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析成员主体，并通过 `roleCodes` 确保角色绑定；禁用时移除声明中的角色绑定。 |
 
+同一轮资源同步中，`AUTH_MENU` 依赖 `AUTH_ROLE`。Resource Registry 会先同步角色，再同步菜单；当角色声明发生创建或更新时，也会重放依赖它的菜单声明，补齐 `roleCodes` 对应的 `authorization_role_menu` 绑定。
+
 启动同步入口：
 
 | Runner | 作用 |
@@ -714,7 +717,7 @@ Resource Registry 还支持授权基线声明：
 | 接口权限不生效 | 查 `authorization_api_resource` 是否有正确的 `http_method + path_pattern + access_mode + permission_code` |
 | PERMISSION 同步失败 | `@PermissionAccess` 或 `@ApiAccess(mode=PERMISSION)` 必须填写权限码；同时检查 `resource_registry` 和 `resource_sync_log` |
 | 菜单不显示 | 查 `authorization_app_module.status`、菜单 `status/visible`、角色菜单绑定、当前 `appCode` |
-| manifest 写了 `roleCodes` 但没授权 | 只有角色已存在时才会写 `authorization_role_menu` |
+| manifest 写了 `roleCodes` 但没授权 | 查 `AUTH_ROLE` 角色声明是否同步成功、`resource_sync_log` 是否有 `AUTH_MENU` 重放记录，以及 `authorization_role_menu` 是否已有绑定；不要手工直写授权表 |
 | manifest 写了 `packageCodes` 但套餐没变化 | 只有菜单套餐已存在时才会写套餐明细 |
 | 改了资源策略但 access 仍按旧策略 | 调 `/authorization/api-resources/cache/refresh` 或重新注册资源清空缓存 |
 | 前端页面打不开 | 查菜单 `component` 是否等于前端包注册的页面 key，`pageType` 和 `externalUrl` 是否匹配 |

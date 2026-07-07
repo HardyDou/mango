@@ -83,6 +83,8 @@
 | `ORG_UNIT` | `tenantId`、`orgCode`、`orgName`、`orgType`，可用 `parentOrgCode` 解析父组织。 |
 | `ORG_POST` | `tenantId`、`postCode`、`postName`，可声明排序、状态和备注。 |
 
+同一批 `ORG_UNIT` 声明会按 `parentOrgCode` 做父子排序后写入，业务模块不需要为了父组织先创建而拆分资源文件；如果父组织既不在本批声明中、也不在数据库中，handler 会明确报错。
+
 ## 6. 配置说明
 
 `mango-org` 当前没有独立 `@ConfigurationProperties` 前缀。引入 starter 后会通过自动配置注册 mapper、service、组织 controller、岗位 controller、租户初始化扩展和租户删除依赖检查扩展。
@@ -207,6 +209,7 @@ mango-org-core/src/main/resources/db/migration/org
 | 组织树为空 | 检查当前租户上下文、`sys_org` 数据、组织状态和新租户初始化 |
 | 岗位保存提示编码冲突 | `post_code` 在租户内唯一 |
 | 成员加不到组织 | 检查 `memberId` 是否来自当前租户的 `tenant_member` |
+| 资源同步时报父组织不存在 | 检查 `ORG_UNIT.parentOrgCode` 是否指向已存在组织或同批声明中的父级 `orgCode`，避免循环父子关系 |
 | 查询不到负责人 | 检查组织成员关系中是否有 `leaderFlag=true` |
 | 删除租户失败 | 组织模块会因已有组织或岗位数据阻止租户删除 |
 

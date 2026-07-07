@@ -40,6 +40,11 @@ public class AuthMenuResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public List<String> dependsOnResourceTypes() {
+        return List.of(ResourceTypes.AUTH_ROLE);
+    }
+
+    @Override
     public boolean requiresCompleteBatch() {
         return true;
     }

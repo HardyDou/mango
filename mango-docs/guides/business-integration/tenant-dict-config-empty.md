@@ -71,6 +71,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- 本次 PR 修复 Resource Registry 依赖重放，并补齐 `ORG_UNIT.parentOrgCode` 同批父子排序；不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。排查清库初始化后的组织或角色菜单基线缺失时，可额外确认资源同步日志中依赖资源是否先于下游绑定资源完成，业务侧仍通过 Resource API/资源声明使用，不直接写库或调用 core service。
+
 - v2026.07.07-maven-1.0.9-api-contract-release 仅发布 workflow API 边界治理物料、前端聚合包版本锁、CLI/starter 版本锁和 Mango Docs 版本快照；不写入租户字典、组织、用户或系统配置基础数据，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。业务项目升级后排查基础数据为空时，仍按资源声明同步、当前请求 tenantId、租户上下文和数据过滤链路定位。
 
 - PR #398 仅将 system/auth/captcha/cms 的 API Bean 承载位置按规范调整为 controller/feign，并移除 service/adapter 直接实现或继承 API；不写入租户字典、组织、用户或系统配置基础数据，不改变租户字典、租户、系统配置、验证码、CMS 的公开 API 方法、HTTP 路由、配置、权限、租户隔离、页面入口、启动方式和运行时数据行为。排查租户字典配置为空时，仍按当前请求 tenantId、资源同步、基础数据和数据过滤链路定位。
