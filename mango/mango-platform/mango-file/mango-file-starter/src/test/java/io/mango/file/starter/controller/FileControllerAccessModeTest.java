@@ -11,24 +11,36 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FileControllerAccessModeTest {
 
     @Test
-    void basicFileReadEndpointsUseLoginBaselineAccess() throws NoSuchMethodException {
-        assertLoginBaseline("get", Long.class);
-        assertLoginBaseline("preview", Long.class);
-        assertLoginBaseline("downloadResponse", Long.class, String.class, Long.class);
-        assertLoginBaseline("previewContentResponse", Long.class);
-        assertLoginBaseline(FileSettingsController.class, "get");
+    void basicFileEndpointsUseDefaultRolePermissions() throws NoSuchMethodException {
+        assertPermission("get", "file:files:query", Long.class);
+        assertPermission("upload", "file:files:upload",
+                org.springframework.web.multipart.MultipartFile.class,
+                String.class,
+                String.class,
+                String.class,
+                String.class,
+                String.class,
+                Long.class);
+        assertPermission("preview", "file:files:download", Long.class);
+        assertPermission("downloadResponse", "file:files:download", Long.class, String.class, Long.class);
+        assertPermission("previewContentResponse", "file:files:download", Long.class);
+        assertPermission(FileSettingsController.class, "get", "file:settings:query");
     }
 
-    private void assertLoginBaseline(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
-        assertLoginBaseline(FileController.class, methodName, parameterTypes);
+    private void assertPermission(String methodName, String permission, Class<?>... parameterTypes)
+            throws NoSuchMethodException {
+        assertPermission(FileController.class, methodName, permission, parameterTypes);
     }
 
-    private void assertLoginBaseline(Class<?> controllerClass, String methodName, Class<?>... parameterTypes)
+    private void assertPermission(Class<?> controllerClass,
+                                  String methodName,
+                                  String permission,
+                                  Class<?>... parameterTypes)
             throws NoSuchMethodException {
         Method method = controllerClass.getMethod(methodName, parameterTypes);
         ApiAccess apiAccess = method.getAnnotation(ApiAccess.class);
         assertThat(apiAccess).isNotNull();
-        assertThat(apiAccess.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
-        assertThat(apiAccess.permission()).isBlank();
+        assertThat(apiAccess.mode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
+        assertThat(apiAccess.permission()).isEqualTo(permission);
     }
 }

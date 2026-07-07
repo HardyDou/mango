@@ -154,6 +154,19 @@ class RoleServiceImplIntegrationTest {
         assertThat(roleMenuIds()).containsExactly(100L);
     }
 
+    @Test
+    @DisplayName("assignMenus should reject button permission menu")
+    void assignMenusRejectsButtonPermissionMenu() {
+        seedRole(10L, 1L, "ROLE_MENU");
+        seedMenu(100L, 0L, "system:allowed", 2);
+        seedMenu(101L, 100L, "system:allowed:create", 3);
+
+        Boolean rejected = service.assignMenus(10L, List.of(101L));
+
+        assertThat(rejected).isFalse();
+        assertThat(roleMenuIds()).isEmpty();
+    }
+
     private void resetSchema() {
         jdbcTemplate.execute("drop table if exists authorization_subject_role");
         jdbcTemplate.execute("drop table if exists authorization_role_menu");
@@ -218,6 +231,7 @@ class RoleServiceImplIntegrationTest {
                     embedded tinyint not null default 0,
                     redirect varchar(255),
                     permissions varchar(512),
+                    api_codes varchar(2000),
                     button_type varchar(32),
                     button_display_rule varchar(512),
                     create_by varchar(64),
@@ -283,12 +297,16 @@ class RoleServiceImplIntegrationTest {
     }
 
     private void seedMenu(Long menuId, Long parentId, String menuCode) {
+        seedMenu(menuId, parentId, menuCode, 2);
+    }
+
+    private void seedMenu(Long menuId, Long parentId, String menuCode, Integer menuType) {
         jdbcTemplate.update("""
                         insert into authorization_menu
                         (id, tenant_id, app_code, parent_id, menu_type, menu_name, menu_code, status, sort, del_flag)
-                        values (?, 1, 'internal-admin', ?, 2, ?, ?, 1, 1, 0)
+                        values (?, 1, 'internal-admin', ?, ?, ?, ?, 1, 1, 0)
                         """,
-                menuId, parentId, menuCode, menuCode);
+                menuId, parentId, menuType, menuCode, menuCode);
     }
 
     private List<Long> subjectRoleIds() {

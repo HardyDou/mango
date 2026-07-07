@@ -794,8 +794,7 @@ async function handleAssignSubmit() {
   assignSubmitLoading.value = true;
   try {
     const checkedKeys = menuTreeRef.value.getCheckedKeys(false) as ApiId[];
-    const halfCheckedKeys = menuTreeRef.value.getHalfCheckedKeys() as ApiId[];
-    const menuIds = Array.from(new Set([...checkedKeys, ...halfCheckedKeys].map(String)));
+    const menuIds = Array.from(new Set(checkedKeys.map(String)));
     await roleApi.assignMenus(currentRole.value.roleId, menuIds);
     ElMessage.success('分配成功');
     assignDialogVisible.value = false;
@@ -858,7 +857,7 @@ function buildDataScopeResourceOptions(menus: SysMenuVO[] = []): DataScopeResour
   const optionMap = new Map<string, DataScopeResourceOption>();
   const visit = (items: SysMenuVO[]) => {
     items.forEach((item) => {
-      splitPermissions(item.permissions).forEach((code) => {
+      splitPermissions(item.apiCodes).forEach((code) => {
         if (isListResourceCode(code) && !optionMap.has(code)) {
           const name = `${listResourceName(item.menuName)} / ${code}`;
           optionMap.set(code, {
@@ -882,7 +881,7 @@ function buildDataScopeResourceTree(menus: SysMenuVO[] = []): DataScopeResourceT
     return items
       .map((item) => {
         const children = buildNodes(item.children || []);
-        const listResourceCode = splitPermissions(item.permissions)
+        const listResourceCode = splitPermissions(item.apiCodes)
           .find((code) => isListResourceCode(code) && !usedResourceCodes.has(code));
         if (listResourceCode) {
           usedResourceCodes.add(listResourceCode);

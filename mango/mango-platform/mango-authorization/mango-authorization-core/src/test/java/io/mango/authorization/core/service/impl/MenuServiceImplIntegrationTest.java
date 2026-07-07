@@ -103,6 +103,33 @@ class MenuServiceImplIntegrationTest {
     }
 
     @Test
+    @DisplayName("listUserMenus should apply login default role and skip directly hidden menus")
+    void listUserMenusAppliesLoginDefaultRoleAndSkipsDirectlyHiddenMenus() {
+        seedEnabledModule("mango-file");
+        seedRole(20L, 1L, SubjectAuthorityServiceImpl.ROLE_LOGIN);
+        seedMenu(menu(10L, 0L, "File", "file", 1, 1, "mango-file"));
+        seedMenu(menu(11L, 10L, "File List", "file:list", 2, 1, "mango-file"));
+        Menu hiddenMenu = menu(12L, 10L, "File Basic", "file:basic-login", 2, 2, "mango-file");
+        hiddenMenu.setVisible(0);
+        seedMenu(hiddenMenu);
+        seedRoleMenu(1L, 1L, 20L, 11L);
+        seedRoleMenu(2L, 1L, 20L, 12L);
+
+        List<MenuVO> result = service.listUserMenus(
+                "internal-admin",
+                null,
+                null,
+                AuthorizationQuery.member(2002L).withTenantId("1").withSystemCode("internal-admin"),
+                true);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getMenuId()).isEqualTo(10L);
+        assertThat(result.get(0).getChildren())
+                .extracting(MenuVO::getMenuId)
+                .containsExactly(11L);
+    }
+
+    @Test
     @DisplayName("buildMenuTree should keep workflow manage children under workflow root")
     void buildMenuTreeKeepsWorkflowManageChildrenNested() {
         seedMenu(menu(26L, 0L, "审批中心", "workflow", 1, 2, "mango-workflow"));
@@ -149,6 +176,7 @@ class MenuServiceImplIntegrationTest {
         jdbcTemplate.execute("drop table if exists authorization_subject_role");
         jdbcTemplate.execute("drop table if exists authorization_role_menu");
         jdbcTemplate.execute("drop table if exists authorization_menu");
+        jdbcTemplate.execute("drop table if exists authorization_role");
         jdbcTemplate.execute("""
                 create table authorization_menu (
                     id bigint primary key,
@@ -169,6 +197,7 @@ class MenuServiceImplIntegrationTest {
                     embedded tinyint not null default 0,
                     redirect varchar(255),
                     permissions varchar(512),
+                    api_codes varchar(2000),
                     button_type varchar(32),
                     button_display_rule varchar(512),
                     create_by varchar(64),
@@ -177,6 +206,23 @@ class MenuServiceImplIntegrationTest {
                     update_time timestamp default current_timestamp,
                     remark varchar(500),
                     del_flag tinyint not null default 0
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table authorization_role (
+                    id bigint primary key,
+                    tenant_id bigint not null default 1,
+                    app_code varchar(64) not null default 'internal-admin',
+                    realm varchar(32) not null default 'INTERNAL',
+                    actor_type varchar(32),
+                    role_code varchar(100) not null,
+                    role_name varchar(50) not null,
+                    role_type tinyint not null default 1,
+                    status tinyint not null default 1,
+                    sort int not null default 0,
+                    create_time timestamp not null default current_timestamp,
+                    update_time timestamp not null default current_timestamp,
+                    remark varchar(500)
                 )
                 """);
         jdbcTemplate.execute("""
@@ -278,6 +324,23 @@ class MenuServiceImplIntegrationTest {
                 menuId, menuId, pageType, externalUrl);
     }
 
+    private void seedRole(Long roleId, Long tenantId, String roleCode) {
+        jdbcTemplate.update("""
+                        insert into authorization_role
+                        (id, tenant_id, app_code, realm, actor_type, role_code, role_name)
+                        values (?, ?, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', ?, ?)
+                        """,
+                roleId, tenantId, roleCode, roleCode);
+    }
+
+    private void seedRoleMenu(Long id, Long tenantId, Long roleId, Long menuId) {
+        jdbcTemplate.update("""
+                        insert into authorization_role_menu (id, tenant_id, role_id, menu_id)
+                        values (?, ?, ?, ?)
+                        """,
+                id, tenantId, roleId, menuId);
+    }
+
     private Long countRuntimeConfigs() {
         return jdbcTemplate.queryForObject("select count(*) from frontend_menu_runtime_config", Long.class);
     }
@@ -302,7 +365,10 @@ class MenuServiceImplIntegrationTest {
 
         @Override
         public List<String> listSubjectPermissions(AuthorizationQuery query) {
-            return List.of("*:*");
+            if (Long.valueOf(1L).equals(query.subjectId())) {
+                return List.of("*:*");
+            }
+            return List.of();
         }
 
         @Override

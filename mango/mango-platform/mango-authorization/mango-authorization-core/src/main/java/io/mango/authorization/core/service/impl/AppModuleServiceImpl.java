@@ -162,6 +162,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
         Require.notNull(command, "资源清单不能为空");
         Require.notBlank(command.getAppCode(), "应用编码不能为空");
         Require.notBlank(command.getModuleCode(), "模块编码不能为空");
+        validateManifestMenus(command.getMenus());
         AppModuleCommand moduleCommand = toModuleCommand(command);
         save(moduleCommand);
         if (command.getMenus() == null || command.getMenus().isEmpty()) {
@@ -178,6 +179,22 @@ public class AppModuleServiceImpl implements IAppModuleService {
         }
         refreshTenantPackageBindings(context.changedPackageIds());
         return context.count();
+    }
+
+    private void validateManifestMenus(List<AppModuleResourceManifestCommand.Menu> menus) {
+        if (menus == null || menus.isEmpty()) {
+            return;
+        }
+        for (AppModuleResourceManifestCommand.Menu menu : menus) {
+            if (menu == null) {
+                continue;
+            }
+            Require.isTrue(menu.getPermissions() == null || menu.getPermissions().isEmpty(),
+                    "AUTH_MENU 不再支持 permissions，请把权限码声明到菜单 apiCodes");
+            Require.isTrue(menu.getPermissionItems() == null || menu.getPermissionItems().isEmpty(),
+                    "AUTH_MENU 不再支持 permissionItems，请把权限码声明到菜单 apiCodes");
+            validateManifestMenus(menu.getChildren());
+        }
     }
 
     private AppModuleCommand toModuleCommand(AppModuleResourceManifestCommand command) {
@@ -222,7 +239,6 @@ public class AppModuleServiceImpl implements IAppModuleService {
         saveRuntimeConfig(menu, item.getPageType(), item.getExternalUrl());
         assignManifestMenu(context, menu, packageCodes, roleCodes);
         int changed = 1;
-        changed += upsertPermissionMenus(context, item, menu.getMenuId(), packageCodes, roleCodes);
         if (item.getChildren() != null) {
             for (AppModuleResourceManifestCommand.Menu child : item.getChildren()) {
                 changed += upsertManifestMenu(
@@ -270,85 +286,9 @@ public class AppModuleServiceImpl implements IAppModuleService {
         menu.setKeepAlive(item.getKeepAlive() == null ? 0 : item.getKeepAlive());
         menu.setEmbedded(item.getEmbedded() == null ? 0 : item.getEmbedded());
         menu.setRedirect(item.getRedirect());
-        menu.setPermissions(joinPermissions(item.getPermissions()));
+        menu.setApiCodes(joinPermissions(item.getApiCodes()));
         menu.setRemark(item.getRemark());
         menu.setDelFlag(0);
-    }
-
-    private int upsertPermissionMenus(
-            ManifestContext context,
-            AppModuleResourceManifestCommand.Menu item,
-            Long parentId,
-            List<String> inheritedPackageCodes,
-            List<String> inheritedRoleCodes) {
-        if (item.getPermissionItems() == null || item.getPermissionItems().isEmpty()) {
-            return 0;
-        }
-        int changed = 0;
-        for (AppModuleResourceManifestCommand.Permission permission : item.getPermissionItems()) {
-            if (permission == null) {
-                continue;
-            }
-            Require.notBlank(permission.getPermissionCode(), "权限编码不能为空");
-            Require.notBlank(permission.getPermissionName(), "权限名称不能为空");
-            Menu menu = findMenu(context.appCode(), context.moduleCode(), permissionMenuCode(permission));
-            LocalDateTime now = LocalDateTime.now();
-            if (menu == null) {
-                menu = new Menu();
-                menu.setAppCode(context.appCode());
-                menu.setModuleCode(context.moduleCode());
-                menu.setMenuCode(permission.getPermissionCode());
-                menu.setCreateTime(now);
-            }
-            fillPermissionMenu(menu, permission, parentId, context);
-            menu.setUpdateTime(now);
-            if (menu.getMenuId() == null) {
-                menuMapper.insert(menu);
-            } else {
-                menuMapper.updateById(menu);
-            }
-            ensureMenuRuntimeConfig(menu);
-            assignManifestMenu(
-                    context,
-                    menu,
-                    context.resolvePackageCodes(permission.getPackageCodes(), inheritedPackageCodes),
-                    context.resolveRoleCodes(permission.getRoleCodes(), inheritedRoleCodes));
-            changed++;
-        }
-        return changed;
-    }
-
-    private void fillPermissionMenu(
-            Menu menu,
-            AppModuleResourceManifestCommand.Permission permission,
-            Long parentId,
-            ManifestContext context) {
-        menu.setTenantId(1L);
-        menu.setAppCode(context.appCode());
-        menu.setModuleCode(context.moduleCode());
-        menu.setParentId(parentId == null ? 0L : parentId);
-        menu.setMenuType(3);
-        menu.setMenuName(permission.getPermissionName());
-        menu.setMenuCode(permissionMenuCode(permission));
-        menu.setPath(null);
-        menu.setIcon(null);
-        menu.setSort(permission.getSort() == null ? 0 : permission.getSort());
-        menu.setStatus(permission.getStatus() == null ? 1 : permission.getStatus());
-        menu.setVisible(0);
-        menu.setComponent(null);
-        menu.setKeepAlive(0);
-        menu.setEmbedded(0);
-        menu.setRedirect(null);
-        menu.setPermissions(permission.getPermissionCode());
-        menu.setRemark(permission.getRemark());
-        menu.setDelFlag(0);
-    }
-
-    private String permissionMenuCode(AppModuleResourceManifestCommand.Permission permission) {
-        if (StringUtils.hasText(permission.getMenuCode())) {
-            return permission.getMenuCode().trim();
-        }
-        return permission.getPermissionCode().trim();
     }
 
     private Menu findMenu(String appCode, String moduleCode, String menuCode) {

@@ -49,12 +49,13 @@ class MenuBaselineTest {
     }
 
     @Test
-    @DisplayName("resource menu manifests should cover every active baseline menu code")
-    void resourceManifests_coverActiveBaselineMenuCodes() throws IOException {
+    @DisplayName("resource menu manifests should cover every active baseline visible menu code")
+    void resourceManifests_coverActiveBaselineVisibleMenuCodes() throws IOException {
         Set<String> declaredCodes = readDeclaredResourceMenuCodes();
         List<String> missingCodes = readDataRows("authorization-menu.tsv").stream()
                 .map(row -> row.split("\t", -1))
                 .filter(columns -> "0".equals(columns[19]))
+                .filter(columns -> !"3".equals(columns[5]))
                 .map(columns -> columns[7])
                 .filter(code -> !code.isBlank())
                 .filter(code -> !declaredCodes.contains(code))
@@ -112,24 +113,26 @@ class MenuBaselineTest {
     }
 
     @Test
-    @DisplayName("resource menu permission items should not reuse page menu codes")
-    void resourceManifests_permissionItems_doNotReusePageMenuCodes() throws IOException {
-        List<ResourceMenuEntry> menus = readDeclaredResourceMenus();
-        Set<String> pageMenuCodes = new HashSet<>();
-        Set<String> permissionMenuCodes = new HashSet<>();
-        for (ResourceMenuEntry menu : menus) {
-            if (menu.permissionItem()) {
-                permissionMenuCodes.add(menu.menuCode());
-            } else {
-                pageMenuCodes.add(menu.menuCode());
+    @DisplayName("resource menu manifests should not declare legacy permission fields")
+    void resourceManifests_doNotDeclareLegacyPermissionFields() throws IOException {
+        List<String> legacyFields = new ArrayList<>();
+        Path platformDir = findPlatformDir();
+        try (Stream<Path> paths = Files.walk(platformDir)) {
+            List<Path> manifests = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith("common-menu.json"))
+                    .filter(path -> path.toString().contains("META-INF/mango/resources"))
+                    .filter(path -> !path.toString().contains("/target/"))
+                    .toList();
+            for (Path manifest : manifests) {
+                collectLegacyPermissionFields(
+                        OBJECT_MAPPER.readTree(manifest.toFile()),
+                        platformDir.relativize(manifest).toString(),
+                        legacyFields);
             }
         }
-        List<String> reusedCodes = permissionMenuCodes.stream()
-                .filter(pageMenuCodes::contains)
-                .sorted()
-                .toList();
 
-        assertEquals(List.of(), reusedCodes);
+        assertEquals(List.of(), legacyFields);
     }
 
     private static void assertDataRows(String filename, int expectedRows) throws IOException {
@@ -229,10 +232,9 @@ class MenuBaselineTest {
         }
         if (node.isObject()) {
             addText(node.get("menuCode"), declaredCodes);
-            addText(node.get("permissionCode"), declaredCodes);
-            JsonNode permissions = node.get("permissions");
-            if (permissions != null && permissions.isArray()) {
-                permissions.forEach(permission -> addText(permission, declaredCodes));
+            JsonNode apiCodes = node.get("apiCodes");
+            if (apiCodes != null && apiCodes.isArray()) {
+                apiCodes.forEach(permission -> addText(permission, declaredCodes));
             }
             node.properties().forEach(entry -> collectDeclaredCodes(entry.getValue(), declaredCodes));
             return;
@@ -265,36 +267,29 @@ class MenuBaselineTest {
                     menuCode,
                     parentCode.isBlank() ? inheritedParentCode : parentCode));
             collectDeclaredMenus(menuNode.path("children"), menus, moduleCode, resourceBizKey, sourcePath, menuCode);
-            collectDeclaredPermissionMenus(menuNode.path("permissionItems"), menus, moduleCode, resourceBizKey,
-                    sourcePath, menuCode);
         }
     }
 
-    private static void collectDeclaredPermissionMenus(
-            JsonNode permissionsNode,
-            List<ResourceMenuEntry> menus,
-            String moduleCode,
-            String resourceBizKey,
-            String sourcePath,
-            String parentCode) {
-        if (!permissionsNode.isArray()) {
+    private static void collectLegacyPermissionFields(JsonNode node, String sourcePath, List<String> collector) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
             return;
         }
-        for (JsonNode permissionNode : permissionsNode) {
-            String menuCode = permissionNode.path("menuCode").asText();
-            if (menuCode.isBlank()) {
-                menuCode = permissionNode.path("permissionCode").asText();
+        if (node.isObject()) {
+            node.properties().forEach(entry -> {
+                String fieldName = entry.getKey();
+                if ("permissions".equals(fieldName)
+                        || "permissionItems".equals(fieldName)
+                        || "permissionCode".equals(fieldName)) {
+                    collector.add(sourcePath + "#" + fieldName);
+                }
+                collectLegacyPermissionFields(entry.getValue(), sourcePath, collector);
+            });
+            return;
+        }
+        if (node.isArray()) {
+            for (JsonNode child : node) {
+                collectLegacyPermissionFields(child, sourcePath, collector);
             }
-            if (menuCode.isBlank()) {
-                continue;
-            }
-            menus.add(new ResourceMenuEntry(
-                    moduleCode,
-                    resourceBizKey,
-                    sourcePath,
-                    menuCode,
-                    parentCode,
-                    true));
         }
     }
 
@@ -346,11 +341,6 @@ class MenuBaselineTest {
             String resourceBizKey,
             String sourcePath,
             String menuCode,
-            String parentCode,
-            boolean permissionItem) {
-
-        ResourceMenuEntry(String moduleCode, String resourceBizKey, String sourcePath, String menuCode, String parentCode) {
-            this(moduleCode, resourceBizKey, sourcePath, menuCode, parentCode, false);
-        }
+            String parentCode) {
     }
 }

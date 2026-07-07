@@ -62,7 +62,7 @@ public class AppModuleResourceManifestCommand implements Serializable {
         private String menuName;
 
         @NotBlank
-        @Schema(description = "菜单编码或权限码")
+        @Schema(description = "菜单可见性编码")
         private String menuCode;
 
         @Schema(description = "父级菜单编码；为空时使用清单树父节点，根节点默认为一级菜单")
@@ -101,8 +101,11 @@ public class AppModuleResourceManifestCommand implements Serializable {
         @Schema(description = "重定向地址")
         private String redirect;
 
-        @Schema(description = "页面携带的权限编码列表")
+        @Schema(description = "不再支持：历史页面权限编码列表，请使用 apiCodes")
         private List<String> permissions = new ArrayList<>();
+
+        @Schema(description = "当前菜单携带的接口/动作权限码列表；授权该菜单后自动授予这些权限码")
+        private List<String> apiCodes = new ArrayList<>();
 
         @Schema(description = "当前菜单同步到的套餐编码列表；为空时继承父菜单或清单级套餐配置，空数组表示不绑定套餐")
         private List<String> packageCodes;
@@ -111,7 +114,7 @@ public class AppModuleResourceManifestCommand implements Serializable {
         private List<String> roleCodes;
 
         @Valid
-        @Schema(description = "页面下的按钮权限")
+        @Schema(description = "不再支持：历史按钮权限节点，请使用 apiCodes")
         private List<Permission> permissionItems = new ArrayList<>();
 
         @Valid

@@ -53,9 +53,9 @@ class AuthMenuResourceHandlerTest {
         assertThat(command.getMenus()).hasSize(1);
         assertThat(command.getMenus().get(0).getMenuCode()).isEqualTo("workflow");
         assertThat(command.getMenus().get(0).getChildren()).hasSize(1);
-        assertThat(command.getMenus().get(0).getChildren().get(0).getPermissionItems()).hasSize(1);
-        assertThat(command.getMenus().get(0).getChildren().get(0).getPermissionItems().get(0).getMenuCode())
-                .isEqualTo("workflow:task:list-button");
+        assertThat(command.getMenus().get(0).getChildren().get(0).getApiCodes())
+                .containsExactly("workflow:task:list");
+        assertThat(command.getMenus().get(0).getChildren().get(0).getPermissionItems()).isEmpty();
     }
 
     @Test
@@ -240,12 +240,7 @@ class AuthMenuResourceHandlerTest {
                                 "menuName", "发起流程",
                                 "menuCode", "workflow:start-process",
                                 "path", "/workflow/start-process",
-                                "permissionItems", List.of(Map.of(
-                                        "menuCode", "workflow:task:list-button",
-                                        "permissionCode", "workflow:task:list",
-                                        "permissionName", "查询流程任务",
-                                        "sort", 0
-                                ))
+                                "apiCodes", List.of("workflow:task:list")
                         ))
                 )));
     }

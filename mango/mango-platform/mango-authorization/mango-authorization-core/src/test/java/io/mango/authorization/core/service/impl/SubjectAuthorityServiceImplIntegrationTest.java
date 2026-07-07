@@ -53,13 +53,13 @@ class SubjectAuthorityServiceImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("listSubjectPermissions should use menu permissions through real mappers")
+    @DisplayName("listSubjectPermissions should use menu api codes through real mappers")
     void listSubjectPermissionsUsesMenuPermissionsThroughRealMappers() {
         seedSubjectRole(1L, 1L, 1001L, 10L);
         seedRoleMenu(1L, 1L, 10L, 100L);
         seedRoleMenu(2L, 1L, 10L, 101L);
         seedMenu(100L, 1L, "workflow:start-process:definition-list", "workflow:definition:list", 2, 1);
-        seedMenu(101L, 1L, "workflow:start-process", "workflow:definition:list,workflow:process:start", 3, 1);
+        seedMenu(101L, 1L, "workflow:start-process", "workflow:definition:list,workflow:process:start", 2, 1);
 
         List<String> permissions = service.listSubjectPermissions(query("1"));
 
@@ -67,20 +67,20 @@ class SubjectAuthorityServiceImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("listSubjectPermissions should fallback to menu code for legacy button menus")
-    void listSubjectPermissionsFallsBackToMenuCodeForLegacyButtons() {
+    @DisplayName("listSubjectPermissions should not fallback to menu code")
+    void listSubjectPermissionsDoesNotFallbackToMenuCode() {
         seedSubjectRole(1L, 1L, 1001L, 10L);
         seedRoleMenu(1L, 1L, 10L, 100L);
         seedMenu(100L, 1L, "system:user:view", null, 3, 1);
 
         List<String> permissions = service.listSubjectPermissions(query("1"));
 
-        assertThat(permissions).containsExactly("system:user:view");
+        assertThat(permissions).isEmpty();
     }
 
     @Test
-    @DisplayName("listSubjectPermissions should ignore directory menu permissions")
-    void listSubjectPermissionsIgnoresDirectoryMenuPermissions() {
+    @DisplayName("listSubjectPermissions should include api codes from hidden directory menus")
+    void listSubjectPermissionsIncludesDirectoryApiCodes() {
         seedSubjectRole(1L, 1L, 1001L, 10L);
         seedRoleMenu(1L, 1L, 10L, 100L);
         seedRoleMenu(2L, 1L, 10L, 101L);
@@ -89,7 +89,32 @@ class SubjectAuthorityServiceImplIntegrationTest {
 
         List<String> permissions = service.listSubjectPermissions(query("1"));
 
-        assertThat(permissions).containsExactly("payment:order:list");
+        assertThat(permissions).containsExactly("payment:directory", "payment:order:list");
+    }
+
+    @Test
+    @DisplayName("listSubjectPermissions should include login default role api codes")
+    void listSubjectPermissionsIncludesLoginDefaultRoleApiCodes() {
+        seedRole(20L, 1L, "ROLE_LOGIN");
+        seedRoleMenu(1L, 1L, 20L, 100L);
+        seedMenu(100L, 1L, "base:hidden", "base:profile:view", 2, 1);
+
+        List<String> permissions = service.listSubjectPermissions(query("1"));
+
+        assertThat(permissions).containsExactly("base:profile:view");
+    }
+
+    @Test
+    @DisplayName("listSubjectPermissions should include anonymous default role api codes")
+    void listSubjectPermissionsIncludesAnonymousDefaultRoleApiCodes() {
+        seedRole(30L, 1L, SubjectAuthorityServiceImpl.ROLE_ANONYMOUS);
+        seedRoleMenu(1L, 1L, 30L, 100L);
+        seedMenu(100L, 1L, "file:basic-anonymous", "file:files:query,file:files:upload,file:files:download", 2, 1);
+
+        List<String> permissions = service.listSubjectPermissions(
+                AuthorizationQuery.anonymous().withTenantId("1").withSystemCode("internal-admin"));
+
+        assertThat(permissions).containsExactly("file:files:query", "file:files:upload", "file:files:download");
     }
 
     @Test
@@ -151,6 +176,7 @@ class SubjectAuthorityServiceImplIntegrationTest {
                     embedded tinyint not null default 0,
                     redirect varchar(255),
                     permissions varchar(512),
+                    api_codes varchar(2000),
                     button_type varchar(32),
                     button_display_rule varchar(512),
                     create_by varchar(64),
@@ -214,10 +240,19 @@ class SubjectAuthorityServiceImplIntegrationTest {
                           Integer status) {
         jdbcTemplate.update("""
                         insert into authorization_menu
-                        (id, tenant_id, app_code, menu_name, menu_code, permissions, menu_type, status)
+                        (id, tenant_id, app_code, menu_name, menu_code, api_codes, menu_type, status)
                         values (?, ?, 'internal-admin', ?, ?, ?, ?, ?)
                         """,
                 id, tenantId, menuCode, menuCode, permissions, menuType, status);
+    }
+
+    private void seedRole(Long roleId, Long tenantId, String roleCode) {
+        jdbcTemplate.update("""
+                        insert into authorization_role
+                        (id, tenant_id, app_code, realm, actor_type, role_code, role_name)
+                        values (?, ?, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', ?, ?)
+                        """,
+                roleId, tenantId, roleCode, roleCode);
     }
 
     @Configuration

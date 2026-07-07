@@ -126,6 +126,7 @@ class TenantMenuPackageBindingHandlerIntegrationTest {
                     embedded tinyint not null default 0,
                     redirect varchar(255),
                     permissions varchar(512),
+                    api_codes varchar(2000),
                     button_type varchar(32),
                     button_display_rule varchar(512),
                     create_by varchar(64),

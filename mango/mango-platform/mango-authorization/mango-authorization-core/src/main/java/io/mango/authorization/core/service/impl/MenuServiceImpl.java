@@ -6,12 +6,14 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.core.entity.AuthorizationAppModule;
 import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
 import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.Role;
 import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.FrontendMenuRuntimeConfigMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
+import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.authorization.core.service.IMenuService;
@@ -47,6 +49,7 @@ public class MenuServiceImpl implements IMenuService {
     private final RoleMenuMapper roleMenuMapper;
     private final FrontendMenuRuntimeConfigMapper frontendMenuRuntimeConfigMapper;
     private final AuthorizationAppModuleMapper appModuleMapper;
+    private final RoleMapper roleMapper;
     private final ISubjectAuthorityService subjectAuthorityService;
 
     @Override
@@ -133,8 +136,7 @@ public class MenuServiceImpl implements IMenuService {
     @Override
     public Set<String> listAllPermissionCodes() {
         LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(Menu::getMenuType, List.of(2, 3))
-                .eq(Menu::getStatus, 1)
+        wrapper.eq(Menu::getStatus, 1)
                 .orderByAsc(Menu::getSort);
         return menuMapper.selectList(wrapper)
                 .stream()
@@ -146,14 +148,11 @@ public class MenuServiceImpl implements IMenuService {
         if (menu == null) {
             return new ArrayList<>();
         }
-        if (StringUtils.hasText(menu.getPermissions())) {
-            return Arrays.stream(menu.getPermissions().split(","))
+        if (StringUtils.hasText(menu.getApiCodes())) {
+            return Arrays.stream(menu.getApiCodes().split(","))
                     .map(String::trim)
                     .filter(StringUtils::hasText)
                     .collect(Collectors.toList());
-        }
-        if (StringUtils.hasText(menu.getMenuCode())) {
-            return List.of(menu.getMenuCode().trim());
         }
         return new ArrayList<>();
     }
@@ -191,6 +190,7 @@ public class MenuServiceImpl implements IMenuService {
         vo.setEmbedded(menu.getEmbedded());
         vo.setRedirect(menu.getRedirect());
         vo.setPermissions(menu.getPermissions());
+        vo.setApiCodes(menu.getApiCodes());
         vo.setButtonType(menu.getButtonType());
         vo.setButtonDisplayRule(menu.getButtonDisplayRule());
 
@@ -224,6 +224,7 @@ public class MenuServiceImpl implements IMenuService {
         LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StringUtils.hasText(appCode), Menu::getAppCode, appCode)
                 .eq(Menu::getStatus, 1)
+                .in(Menu::getMenuType, List.of(1, 2))
                 .orderByAsc(Menu::getSort);
         List<String> enabledModuleCodes = listEnabledModuleCodes(appCode);
         if (!enabledModuleCodes.isEmpty()) {
@@ -271,6 +272,10 @@ public class MenuServiceImpl implements IMenuService {
                 .collect(Collectors.toMap(Menu::getMenuId, menu -> menu));
         Set<Long> authorizedIds = new LinkedHashSet<>();
         for (Long menuId : directlyAssignedMenuIds) {
+            Menu menu = menuById.get(menuId);
+            if (menu == null || Integer.valueOf(0).equals(menu.getVisible())) {
+                continue;
+            }
             collectMenuWithAncestors(menuId, menuById, authorizedIds);
         }
         return authorizedIds;
@@ -278,6 +283,14 @@ public class MenuServiceImpl implements IMenuService {
 
     private List<Long> listSubjectRoleIds(AuthorizationQuery query) {
         Long tenantId = parseTenantId(query.tenantId());
+        if (StringUtils.hasText(query.tenantId()) && tenantId == null) {
+            return new ArrayList<>();
+        }
+        Set<Long> roleIds = new LinkedHashSet<>();
+        if (AuthorizationQuery.SUBJECT_TYPE_ANONYMOUS.equals(query.subjectType())) {
+            roleIds.addAll(listDefaultRoleIds(query, tenantId));
+            return new ArrayList<>(roleIds);
+        }
         LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SubjectRoleBinding::getSubjectId, query.subjectId())
                 .eq(SubjectRoleBinding::getSubjectType, query.subjectType())
@@ -287,9 +300,26 @@ public class MenuServiceImpl implements IMenuService {
                 .eq(StringUtils.hasText(query.actorType()), SubjectRoleBinding::getActorType, query.actorType())
                 .eq(StringUtils.hasText(query.partyType()), SubjectRoleBinding::getPartyType, query.partyType())
                 .eq(query.partyId() != null, SubjectRoleBinding::getPartyId, query.partyId());
-        return subjectRoleBindingMapper.selectList(wrapper)
+        roleIds.addAll(subjectRoleBindingMapper.selectList(wrapper)
                 .stream()
                 .map(SubjectRoleBinding::getRoleId)
+                .collect(Collectors.toCollection(LinkedHashSet::new)));
+        roleIds.addAll(listDefaultRoleIds(query, tenantId));
+        return new ArrayList<>(roleIds);
+    }
+
+    private List<Long> listDefaultRoleIds(AuthorizationQuery query, Long tenantId) {
+        LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<>();
+        String roleCode = AuthorizationQuery.SUBJECT_TYPE_ANONYMOUS.equals(query.subjectType())
+                ? SubjectAuthorityServiceImpl.ROLE_ANONYMOUS
+                : SubjectAuthorityServiceImpl.ROLE_LOGIN;
+        wrapper.eq(Role::getRoleCode, roleCode)
+                .eq(Role::getStatus, 1)
+                .eq(tenantId != null, Role::getTenantId, tenantId)
+                .eq(StringUtils.hasText(query.systemCode()), Role::getAppCode, query.systemCode());
+        return roleMapper.selectList(wrapper)
+                .stream()
+                .map(Role::getRoleId)
                 .collect(Collectors.toList());
     }
 
@@ -464,6 +494,7 @@ public class MenuServiceImpl implements IMenuService {
         if (menu.getEmbedded() != null) wrapper.set(Menu::getEmbedded, menu.getEmbedded());
         if (menu.getRedirect() != null) wrapper.set(Menu::getRedirect, menu.getRedirect());
         if (menu.getPermissions() != null) wrapper.set(Menu::getPermissions, menu.getPermissions());
+        if (menu.getApiCodes() != null) wrapper.set(Menu::getApiCodes, menu.getApiCodes());
         if (menu.getButtonType() != null) wrapper.set(Menu::getButtonType, menu.getButtonType());
         if (menu.getButtonDisplayRule() != null) wrapper.set(Menu::getButtonDisplayRule, menu.getButtonDisplayRule());
         if (menu.getRemark() != null) wrapper.set(Menu::getRemark, menu.getRemark());
@@ -590,9 +621,8 @@ public class MenuServiceImpl implements IMenuService {
 
     private String resolveDefaultModuleCode(Menu menu) {
         String code = menu == null ? null : menu.getMenuCode();
-        String permissions = menu == null ? null : menu.getPermissions();
         String path = menu == null ? null : menu.getPath();
-        String source = StreamContext.firstText(code, permissions, path);
+        String source = StreamContext.firstText(code, path);
         if (!StringUtils.hasText(source)) {
             return "mango-system";
         }

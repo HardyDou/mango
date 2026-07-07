@@ -64,11 +64,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
                 .fieldDescription("menus", "菜单树，结构与 AppModuleResourceManifestCommand.Menu 一致。")
                 .fieldDescription("menus.packageCodes", "当前菜单同步到的既有套餐编码列表；未配置时继承父菜单或清单级 packageCodes。")
                 .fieldDescription("menus.roleCodes", "当前菜单默认授权到的既有角色编码列表；未配置时继承父菜单或清单级 roleCodes。")
-                .fieldDescription("menus.permissionItems.menuCode", "按钮菜单编码；为空时使用 permissionCode。")
-                .fieldDescription("menus.permissionItems.packageCodes",
-                        "当前按钮同步到的既有套餐编码列表；未配置时继承所属菜单 packageCodes。")
-                .fieldDescription("menus.permissionItems.roleCodes",
-                        "当前按钮默认授权到的既有角色编码列表；未配置时继承所属菜单 roleCodes。")
+                .fieldDescription("menus.apiCodes", "当前菜单携带的接口/动作权限码；角色获得该菜单后自动获得这些权限码。")
                 .build();
     }
 
@@ -183,19 +179,6 @@ public class AuthMenuResourceHandler implements ResourceHandler {
         }
         if (StringUtils.hasText(menu.getMenuCode())) {
             menuCodes.add(menu.getMenuCode().trim());
-        }
-        if (menu.getPermissionItems() != null) {
-            for (AppModuleResourceManifestCommand.Permission permission : menu.getPermissionItems()) {
-                if (permission == null) {
-                    continue;
-                }
-                String menuCode = StringUtils.hasText(permission.getMenuCode())
-                        ? permission.getMenuCode()
-                        : permission.getPermissionCode();
-                if (StringUtils.hasText(menuCode)) {
-                    menuCodes.add(menuCode.trim());
-                }
-            }
         }
         if (menu.getChildren() != null) {
             for (AppModuleResourceManifestCommand.Menu child : menu.getChildren()) {

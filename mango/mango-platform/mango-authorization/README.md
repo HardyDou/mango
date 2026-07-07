@@ -95,7 +95,8 @@
 | `path` | 前端路由路径 |
 | `component` | 前端页面 key，必须和对应 npm 包注册的页面 key 一致 |
 | `pageType` | `LOCAL_ROUTE`、`MICRO_ROUTE`、`IFRAME`、`EXTERNAL_LINK`、`BUTTON` |
-| `permissions` | 页面级权限码，前端按钮权限和后端接口权限共同使用 |
+| `menuCode` | 菜单可见性编码，只决定用户能看到哪些菜单 |
+| `apiCodes` | 当前菜单携带的接口/动作权限码，分配菜单后自动授予 |
 
 如果新增的是 admin 页面插件，先在对应前端包 README 里确认页面 key，再把相同 key 写入 authorization 菜单清单。
 
@@ -106,16 +107,16 @@
 1. Controller 使用 `@PublicApi`、`@LoginApi`、`@PermissionAccess` 或 `@InternalApi` 声明访问模式。
 2. PERMISSION 接口用稳定权限码，例如 `contract:archive:create`。
 3. 部署应用启用 `mango-resource-sync-starter`，并按拓扑选择本地 `mango-resource-starter` 或远程 `mango-resource-starter-remote`。
-4. 在模块资源目录放 `META-INF/mango/resources/{module}-common-menu.{json,yml,yaml}`，用 `AUTH_MENU` 登记模块、菜单、页面 key 和按钮权限。菜单量大时优先使用 JSON。
-5. 启动服务后确认 `authorization_api_resource` 有接口资源，`authorization_menu` 有菜单和按钮权限。
+4. 在模块资源目录放 `META-INF/mango/resources/{module}-common-menu.{json,yml,yaml}`，用 `AUTH_MENU` 登记模块、菜单、页面 key 和 `apiCodes`。菜单量大时优先使用 JSON。
+5. 启动服务后确认 `authorization_api_resource` 有接口资源，`authorization_menu` 有菜单和 `api_codes`。
 6. 给租户绑定菜单套餐，由租户套餐同步角色菜单；`roleCodes` 只用于已明确确认的默认角色场景。
 7. 给成员绑定角色。
 8. 登录后检查 `/auth/info` 的 `permissions` 和 `/authorization/menus/user?fmt=tree&appCode=internal-admin` 的菜单树。
 9. 访问受保护接口，确认无权限返回 403、授权后通过。
 
-基础接口不用给每个角色或用户单独配置权限。只要接口声明为 `LOGIN`，所有已登录用户默认可进入；管理员只需要为业务菜单、按钮和 `PERMISSION` 接口配置角色授权。
+基础接口不用给每个角色或用户单独配置权限。所有登录用户都应具备的 `PERMISSION` 接口，挂到隐藏菜单并授权给 `ROLE_LOGIN`；匿名可用接口挂到隐藏菜单并授权给 `ROLE_ANONYMOUS`。管理员只需要分配业务菜单，系统会自动授予该菜单的 `apiCodes`。
 
-登录态权限集合会读取当前角色已授权菜单的 `permissions` 字段。页面菜单 `menuType=2` 可以携带页面级权限码，按钮菜单 `menuType=3` 继续携带按钮动作权限码；两类权限都会进入 `/auth/info` 的 `permissions` 去支撑前端按钮判断和后端 `PERMISSION` 接口鉴权。
+登录态权限集合只读取当前角色已授权菜单的 `apiCodes` 字段，不读取 `menuCode`。因此 `menuCode` 可以稳定表达菜单可见性，`apiCodes` 才表达真实接口/动作权限。隐藏菜单 `visible=0` 可以只授予基础权限，不会把父级菜单带入用户菜单树。
 
 ## 6. 配置说明
 
@@ -328,15 +329,17 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 场景 | 做法 |
 |------|------|
 | 新增管理菜单 | 在本模块 starter 的 `META-INF/mango/resources/{module}-common-menu.json` 声明 `AUTH_MENU`。 |
-| 新增按钮权限 | 在所属页面菜单的 `permissionItems` 中声明；如果按钮菜单编码和接口权限码不同，同时写 `menuCode` 和 `permissionCode`。 |
-| 加入默认套餐 | 在声明、菜单或按钮上写已有 `packageCodes`。未配置时继承父级，空数组表示不加入套餐。 |
+| 新增接口/按钮权限 | 写到所属菜单的 `apiCodes`。菜单授权给角色后，这些接口/动作权限自动授予。 |
+| 登录基础权限 | 声明 `visible: 0` 的隐藏菜单，写 `roleCodes: ["ROLE_LOGIN"]` 和对应 `apiCodes`。 |
+| 匿名基础权限 | 声明 `visible: 0` 的隐藏菜单，写 `roleCodes: ["ROLE_ANONYMOUS"]` 和对应 `apiCodes`。 |
+| 加入默认套餐 | 在声明或菜单上写已有 `packageCodes`。未配置时继承父级，空数组表示不加入套餐。 |
 | 默认授权角色 | 仅在已明确确认的默认角色场景写 `roleCodes`。角色可由同一资源批次的 `AUTH_ROLE` 声明创建，未配置时继承父级，空数组表示不授权角色。 |
 | 只新增接口权限 | 使用 `@ApiAccess` / `@PermissionAccess`，由 `API_RESOURCE` Provider 扫描，不需要写菜单资源。 |
 | 新增前端运行单元 | 声明 `FRONTEND_APP_REGISTRY`，由授权模块写入 `authorization_frontend_app_registry`。 |
 | 新增前端模块运行策略 | 声明 `FRONTEND_MODULE_RUNTIME_STRATEGY`，由授权模块写入 `authorization_frontend_module_runtime_strategy`。 |
 | 历史 manifest | 只用于迁移，不作为新增入口。 |
 
-菜单、按钮权限、菜单运行时配置、菜单套餐明细和默认角色菜单授权不再通过 Flyway DML 维护。Flyway 只保留表结构、应用入口、登录上下文、套餐主档、基础角色和成员角色绑定等基础数据。
+菜单、接口权限、菜单运行时配置、菜单套餐明细和默认角色菜单授权不再通过 Flyway DML 维护。Flyway 只保留表结构、应用入口、登录上下文、套餐主档、基础角色和成员角色绑定等基础数据。
 业务模块不得直接写授权表或调用 `authorization-core` Service 来补菜单授权；角色、菜单和默认角色授权统一通过 Resource Registry 的 `AUTH_ROLE`、`AUTH_MENU` 声明同步。
 
 示例：
@@ -377,11 +380,10 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
                         "menuCode": "contract:archive:list",
                         "path": "/contract/archives",
                         "component": "contract/archive/index",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "contract:archive:create",
-                            "permissionName": "新增合同"
-                          }
+                        "apiCodes": [
+                          "contract:archive:list",
+                          "contract:archive:create",
+                          "contract:archive:delete"
                         ]
                       }
                     ]
@@ -410,21 +412,16 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | `fields.roleCodes.value` | 清单级默认角色编码；菜单未配置时继承，可引用同一资源批次内的 `AUTH_ROLE` 声明 |
 | `fields.menus.value[].menuType` | 1 目录、2 菜单、3 按钮 |
 | `fields.menus.value[].menuName` | 菜单名称 |
-| `fields.menus.value[].menuCode` | 菜单编码或权限码 |
+| `fields.menus.value[].menuCode` | 菜单可见性编码，不作为接口权限码 |
 | `fields.menus.value[].parentCode` | 指定父菜单编码；为空时按清单树结构入库 |
 | `fields.menus.value[].path` | 前端路由路径 |
 | `fields.menus.value[].pageType` | `LOCAL_ROUTE`、`MICRO_ROUTE`、`IFRAME`、`EXTERNAL_LINK`、`BUTTON` |
 | `fields.menus.value[].component` | 前端页面 key |
 | `fields.menus.value[].externalUrl` | iframe 或外链地址 |
-| `fields.menus.value[].permissions` | 页面携带的权限编码列表 |
+| `fields.menus.value[].apiCodes` | 当前菜单携带的接口/动作权限码；分配菜单后自动授予 |
+| `fields.menus.value[].visible` | 0 隐藏、1 显示；隐藏菜单可用于默认角色基础权限，不进入用户菜单树 |
 | `fields.menus.value[].packageCodes` | 当前菜单套餐编码；未配置时继承父菜单或清单级配置，空数组表示不加入套餐 |
 | `fields.menus.value[].roleCodes` | 当前菜单默认角色编码；未配置时继承父菜单或清单级配置，空数组表示不授权角色 |
-| `fields.menus.value[].permissionItems` | 页面下按钮权限，会生成隐藏按钮菜单 |
-| `fields.menus.value[].permissionItems[].menuCode` | 按钮菜单编码；为空时使用 `permissionCode`，适用于一个页面按钮复用其它接口权限但仍需要独立菜单编码的场景 |
-| `fields.menus.value[].permissionItems[].permissionCode` | 按钮真实权限码 |
-| `fields.menus.value[].permissionItems[].permissionName` | 按钮权限名称 |
-| `fields.menus.value[].permissionItems[].packageCodes` | 当前按钮套餐编码；未配置时继承所属菜单配置，空数组表示不加入套餐 |
-| `fields.menus.value[].permissionItems[].roleCodes` | 当前按钮默认角色编码；未配置时继承所属菜单配置，空数组表示不授权角色 |
 
 清单同步行为：
 
@@ -432,7 +429,7 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 |------|------|
 | 模块绑定 | 写入或更新 `authorization_app_module` |
 | 菜单入库 | 按 `appCode + moduleCode + menuCode` upsert 到 `authorization_menu` |
-| 按钮权限 | `permissionItems` 生成 `menuType=3`、`visible=0` 的按钮菜单 |
+| 权限入库 | `apiCodes` 保存到 `authorization_menu.api_codes`，不再生成按钮菜单 |
 | 前端运行配置 | 每个菜单写入 `frontend_menu_runtime_config` |
 | 套餐绑定 | `packageCodes` 命中已有菜单套餐时写入 `authorization_menu_package_item` |
 | 角色授权 | `roleCodes` 命中已有角色时写入 `authorization_role_menu` |
@@ -443,8 +440,8 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 项 | 说明 |
 |----|------|
 | 幂等键 | `appCode + moduleCode + menuCode` |
-| `menuCode` | 同一模块内长期稳定，不和按钮 `permissionCode` 混用 |
-| `permissionCode` | 后端接口和前端按钮判断使用的真实权限码 |
+| `menuCode` | 同一模块内长期稳定，只表示菜单可见性 |
+| `apiCodes` | 后端接口和前端按钮判断使用的真实权限码 |
 | `packageCodes` 省略 | 继承父菜单或声明级套餐 |
 | `packageCodes: []` | 明确不加入任何套餐 |
 | `roleCodes` 省略 | 继承父菜单或声明级默认角色 |
@@ -536,7 +533,7 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 6. 登录后访问 `/auth/info` 和 `/authorization/menus/user?fmt=tree&appCode=internal-admin`，确认权限码和菜单树可见。
 7. 用无授权租户或普通角色访问维护接口，确认返回 403。
 
-旧 manifest 字段映射仍用于历史迁移：
+隐藏基础权限菜单示例：
 
 ```json
 {
@@ -549,15 +546,14 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
       "children": [
         {
           "menuType": 2,
-          "menuName": "合同列表",
-          "menuCode": "contract:archive:list",
-          "path": "/contract/archives",
-          "component": "contract/archive/index",
-          "permissionItems": [
-            {
-              "permissionCode": "contract:archive:create",
-              "permissionName": "新增合同"
-            }
+          "menuName": "登录合同基础权限",
+          "menuCode": "contract:basic-login",
+          "path": "/contract/basic-login",
+          "visible": 0,
+          "roleCodes": ["ROLE_LOGIN"],
+          "packageCodes": [],
+          "apiCodes": [
+            "contract:archive:list"
           ]
         }
       ]
@@ -594,11 +590,11 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | `parentId` | 父菜单 ID |
 | `menuType` | 1 目录、2 菜单、3 按钮 |
 | `menuName` | 菜单名称 |
-| `menuCode` | 菜单编码或权限码 |
+| `menuCode` | 菜单可见性编码 |
 | `path` | 路由路径 |
 | `pageType` | 页面运行类型 |
 | `component` | 前端页面 key |
-| `permissions` | 权限编码，多个值以逗号保存 |
+| `apiCodes` | 菜单携带的接口/动作权限码，多个值以逗号保存 |
 | `children` | 子菜单 |
 
 ## 11. 管理入口

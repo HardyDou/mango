@@ -179,6 +179,7 @@ class RoleDataScopeServiceImplIntegrationTest {
                     embedded tinyint not null default 0,
                     redirect varchar(255),
                     permissions varchar(512),
+                    api_codes varchar(2000),
                     button_type varchar(32),
                     button_display_rule varchar(512),
                     create_by varchar(64),
@@ -265,13 +266,13 @@ class RoleDataScopeServiceImplIntegrationTest {
                 roleId, tenantId, roleCode, roleCode);
     }
 
-    private void seedMenu(Long menuId, Long tenantId, String permissions) {
+    private void seedMenu(Long menuId, Long tenantId, String apiCodes) {
         jdbcTemplate.update("""
                         insert into authorization_menu
-                        (id, tenant_id, app_code, menu_name, menu_code, permissions, status)
+                        (id, tenant_id, app_code, menu_name, menu_code, api_codes, status)
                         values (?, ?, 'internal-admin', 'Role List', 'authorization:role', ?, 1)
                         """,
-                menuId, tenantId, permissions);
+                menuId, tenantId, apiCodes);
     }
 
     private void seedRoleMenu(Long id, Long tenantId, Long roleId, Long menuId) {

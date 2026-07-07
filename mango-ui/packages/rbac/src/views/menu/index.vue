@@ -196,19 +196,19 @@
           </template>
         </el-table-column>
         <el-table-column
-          label="接口标识"
+          label="接口权限码"
           min-width="200"
         >
           <template #default="{ row }">
             <el-tag
-              v-for="perm in (row.permissions || '').split(',').filter(Boolean)"
+              v-for="perm in (row.apiCodes || '').split(',').filter(Boolean)"
               :key="perm"
               size="small"
               class="permission-tag"
             >
               {{ perm }}
             </el-tag>
-            <span v-if="!row.permissions">-</span>
+            <span v-if="!row.apiCodes">-</span>
           </template>
         </el-table-column>
         <el-table-column
@@ -441,7 +441,7 @@
             placeholder="Element Plus 图标名"
           />
         </el-form-item>
-        <el-form-item label="接口标识">
+        <el-form-item label="接口权限码">
           <div class="permissions-tags">
             <el-tag
               v-for="perm in permissionList"
@@ -458,7 +458,7 @@
               v-model="inputPermissionValue"
               size="small"
               class="permission-input"
-              placeholder="输入接口标识"
+              placeholder="输入接口权限码"
               @keyup.enter="handleInputPermission"
               @blur="handleInputPermission"
             />
@@ -581,19 +581,19 @@ function buttonTypeLabel(type?: string) {
   return buttonTypeOptions.find((item) => item.value === type)?.label || type || '-';
 }
 
-// ==================== 接口标识 Tag 相关 ====================
+// ==================== 接口权限码 Tag 相关 ====================
 const permissionInputRef = ref<HTMLInputElement>();
 const inputPermissionVisible = ref(false);
 const inputPermissionValue = ref('');
 
-// 接口标识字符串转数组
+// 接口权限码字符串转数组
 const permissionList = computed({
   get: () => {
-    if (!form.permissions) return [];
-    return form.permissions.split(',').filter(Boolean);
+    if (!form.apiCodes) return [];
+    return form.apiCodes.split(',').filter(Boolean);
   },
   set: (val: string[]) => {
-    form.permissions = val.join(',');
+    form.apiCodes = val.join(',');
   },
 });
 
@@ -692,7 +692,7 @@ const form = reactive<SysMenuVO & { groupCode?: string }>({
   sort: 0,
   status: 1,
   visible: 1,
-  permissions: '',
+  apiCodes: '',
   buttonType: '',
   buttonDisplayRule: '',
   groupCode: 'internal-admin',
@@ -807,7 +807,7 @@ function handleAdd() {
   form.sort = 0;
   form.status = 1;
   form.visible = 1;
-  form.permissions = '';
+  form.apiCodes = '';
   form.buttonType = '';
   form.buttonDisplayRule = '';
   form.groupCode = activeGroup.value;
@@ -829,7 +829,7 @@ function handleAddChild(row: SysMenuVO) {
   form.sort = 0;
   form.status = 1;
   form.visible = 1;
-  form.permissions = '';
+  form.apiCodes = '';
   form.buttonType = '';
   form.buttonDisplayRule = '';
   form.groupCode = activeGroup.value;
@@ -852,7 +852,7 @@ function handleEdit(row: SysMenuVO) {
     sort: row.sort,
     status: row.status,
     visible: row.visible,
-    permissions: row.permissions,
+    apiCodes: row.apiCodes,
     buttonType: row.buttonType || '',
     buttonDisplayRule: row.buttonDisplayRule || '',
     groupCode: activeGroup.value,

@@ -192,6 +192,7 @@ public class MenuController implements MenuApi {
         po.setEmbedded(entity.getEmbedded());
         po.setRedirect(entity.getRedirect());
         po.setPermissions(entity.getPermissions());
+        po.setApiCodes(entity.getApiCodes());
         po.setButtonType(entity.getButtonType());
         po.setButtonDisplayRule(entity.getButtonDisplayRule());
         po.setCreateBy(entity.getCreateBy());
@@ -229,6 +230,7 @@ public class MenuController implements MenuApi {
         entity.setEmbedded(po.getEmbedded());
         entity.setRedirect(po.getRedirect());
         entity.setPermissions(po.getPermissions());
+        entity.setApiCodes(po.getApiCodes());
         entity.setButtonType(po.getButtonType());
         entity.setButtonDisplayRule(po.getButtonDisplayRule());
         entity.setCreateBy(po.getCreateBy());

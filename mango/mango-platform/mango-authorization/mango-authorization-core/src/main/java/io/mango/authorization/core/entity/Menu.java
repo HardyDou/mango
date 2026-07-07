@@ -42,7 +42,7 @@ public class Menu implements Serializable {
     /** 菜单名称。 */
     private String menuName;
 
-    /** 菜单权限标识。 */
+    /** 菜单可见性编码。 */
     private String menuCode;
 
     /** 前端路由路径。 */
@@ -80,8 +80,11 @@ public class Menu implements Serializable {
     /** 重定向路径。 */
     private String redirect;
 
-    /** 权限标识列表。 */
+    /** 历史权限标识列表，运行鉴权不再读取。 */
     private String permissions;
+
+    /** 菜单携带的接口/动作权限码列表。 */
+    private String apiCodes;
 
     /** Button type for display rule: TABLE or NON_TABLE. */
     private String buttonType;

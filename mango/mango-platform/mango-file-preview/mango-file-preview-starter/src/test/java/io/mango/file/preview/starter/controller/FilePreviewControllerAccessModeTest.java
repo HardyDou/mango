@@ -11,25 +11,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FilePreviewControllerAccessModeTest {
 
     @Test
-    void fileIdPreviewEndpointsUseLoginBaselineAccess() throws NoSuchMethodException {
-        assertAccessMode("preview", ApiResourceAccessMode.LOGIN, Long.class);
-        assertAccessMode("redirectPreview", ApiResourceAccessMode.LOGIN, Long.class);
+    void fileIdPreviewEndpointsUseDefaultRoleDownloadPermission() throws NoSuchMethodException {
+        assertAccessMode("preview", ApiResourceAccessMode.PERMISSION, "file:files:download", Long.class);
+        assertAccessMode("redirectPreview", ApiResourceAccessMode.PERMISSION, "file:files:download", Long.class);
     }
 
     @Test
     void tokenPreviewEndpointsRemainPublicBecauseTheyRequireShortLivedTokens() throws NoSuchMethodException {
-        assertAccessMode("redirectPreviewEntry", ApiResourceAccessMode.PUBLIC, String.class);
-        assertAccessMode("source", ApiResourceAccessMode.PUBLIC, String.class);
+        assertAccessMode("redirectPreviewEntry", ApiResourceAccessMode.PUBLIC, "", String.class);
+        assertAccessMode("source", ApiResourceAccessMode.PUBLIC, "", String.class);
     }
 
     private void assertAccessMode(String methodName,
                                   ApiResourceAccessMode mode,
+                                  String permission,
                                   Class<?>... parameterTypes) throws NoSuchMethodException {
         Method method = FilePreviewController.class.getMethod(methodName, parameterTypes);
         ApiAccess apiAccess = method.getAnnotation(ApiAccess.class);
         assertThat(apiAccess).isNotNull();
         assertThat(apiAccess.mode()).isEqualTo(mode);
-        if (mode != ApiResourceAccessMode.PERMISSION) {
+        if (mode == ApiResourceAccessMode.PERMISSION) {
+            assertThat(apiAccess.permission()).isEqualTo(permission);
+        } else {
             assertThat(apiAccess.permission()).isBlank();
         }
     }

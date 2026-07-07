@@ -60,47 +60,14 @@
                         "icon": "FolderOpened",
                         "component": "template/categories/index",
                         "sort": 1,
-                        "permissions": [
-                          "template:category:list"
-                        ],
                         "remark": "模板分类维护",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "template:category:list",
-                            "permissionName": "查询模板分类列表",
-                            "sort": 0,
-                            "remark": "模板分类列表查询权限"
-                          },
-                          {
-                            "permissionCode": "template:category:query",
-                            "permissionName": "查询模板分类详情",
-                            "sort": 1,
-                            "remark": "模板分类详情查询权限"
-                          },
-                          {
-                            "permissionCode": "template:category:add",
-                            "permissionName": "新增模板分类",
-                            "sort": 2,
-                            "remark": "模板分类新增权限"
-                          },
-                          {
-                            "permissionCode": "template:category:edit",
-                            "permissionName": "编辑模板分类",
-                            "sort": 3,
-                            "remark": "模板分类编辑权限"
-                          },
-                          {
-                            "permissionCode": "template:category:status",
-                            "permissionName": "启停模板分类",
-                            "sort": 4,
-                            "remark": "模板分类启停权限"
-                          },
-                          {
-                            "permissionCode": "template:category:delete",
-                            "permissionName": "删除模板分类",
-                            "sort": 5,
-                            "remark": "模板分类删除权限"
-                          }
+                        "apiCodes": [
+                          "template:category:list",
+                          "template:category:query",
+                          "template:category:add",
+                          "template:category:edit",
+                          "template:category:status",
+                          "template:category:delete"
                         ]
                       },
                       {
@@ -111,59 +78,16 @@
                         "icon": "Document",
                         "component": "template/templates/index",
                         "sort": 2,
-                        "permissions": [
-                          "template:template:list"
-                        ],
                         "remark": "模板主数据、版本发布、历史版本启用和预览渲染",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "template:template:list",
-                            "permissionName": "查询模板列表",
-                            "sort": 0,
-                            "remark": "模板列表查询权限"
-                          },
-                          {
-                            "permissionCode": "template:template:query",
-                            "permissionName": "查询模板详情",
-                            "sort": 1,
-                            "remark": "模板详情与版本查询权限"
-                          },
-                          {
-                            "permissionCode": "template:template:add",
-                            "permissionName": "新增模板",
-                            "sort": 2,
-                            "remark": "模板新增权限"
-                          },
-                          {
-                            "permissionCode": "template:template:edit",
-                            "permissionName": "编辑模板",
-                            "sort": 3,
-                            "remark": "模板编辑权限"
-                          },
-                          {
-                            "permissionCode": "template:template:status",
-                            "permissionName": "启停模板",
-                            "sort": 4,
-                            "remark": "模板启停权限"
-                          },
-                          {
-                            "permissionCode": "template:template:publish",
-                            "permissionName": "发布模板版本",
-                            "sort": 5,
-                            "remark": "模板版本发布权限"
-                          },
-                          {
-                            "permissionCode": "template:template:extract-variable",
-                            "permissionName": "提取模板变量",
-                            "sort": 6,
-                            "remark": "模板占位变量提取权限"
-                          },
-                          {
-                            "permissionCode": "template:template:render",
-                            "permissionName": "渲染模板",
-                            "sort": 7,
-                            "remark": "模板预览和正式渲染权限"
-                          }
+                        "apiCodes": [
+                          "template:template:list",
+                          "template:template:query",
+                          "template:template:add",
+                          "template:template:edit",
+                          "template:template:status",
+                          "template:template:publish",
+                          "template:template:extract-variable",
+                          "template:template:render"
                         ]
                       },
                       {
@@ -174,23 +98,10 @@
                         "icon": "Tickets",
                         "component": "template/render-records/index",
                         "sort": 3,
-                        "permissions": [
-                          "template:render-record:list"
-                        ],
                         "remark": "模板同步和异步渲染记录查询",
-                        "permissionItems": [
-                          {
-                            "permissionCode": "template:render-record:list",
-                            "permissionName": "查询渲染记录",
-                            "sort": 0,
-                            "remark": "模板渲染记录列表查询权限"
-                          },
-                          {
-                            "permissionCode": "template:render-record:query",
-                            "permissionName": "查询渲染详情",
-                            "sort": 1,
-                            "remark": "模板渲染记录详情查询权限"
-                          }
+                        "apiCodes": [
+                          "template:render-record:list",
+                          "template:render-record:query"
                         ]
                       }
                     ],

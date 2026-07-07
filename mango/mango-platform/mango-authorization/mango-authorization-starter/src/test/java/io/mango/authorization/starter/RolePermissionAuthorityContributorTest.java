@@ -19,12 +19,13 @@ import static org.mockito.Mockito.any;
 class RolePermissionAuthorityContributorTest {
 
     @Test
-    @DisplayName("supports tenant member subject type only")
-    void supportsTenantMemberSubjectTypeOnly() {
+    @DisplayName("supports tenant member and anonymous subject types")
+    void supportsTenantMemberAndAnonymousSubjectTypes() {
         RolePermissionAuthorityContributor contributor =
                 new RolePermissionAuthorityContributor(mock(ISubjectAuthorityService.class));
 
         assertTrue(contributor.supports(AuthorizationQuery.member(1L)));
+        assertTrue(contributor.supports(AuthorizationQuery.anonymous()));
         assertFalse(contributor.supports(new AuthorizationQuery(1L, "service", null, null)));
     }
 
