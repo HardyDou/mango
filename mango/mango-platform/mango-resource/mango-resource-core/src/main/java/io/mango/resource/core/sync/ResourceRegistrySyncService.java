@@ -306,6 +306,7 @@ public class ResourceRegistrySyncService {
             }
             declarationsByType.computeIfAbsent(declaration.getResourceType(), key -> new ArrayList<>()).add(declaration);
         }
+        replayDeclarationsForChangedDependencies(allDeclarationsByType, declarationsByType, handlerMap);
         for (String resourceType : orderResourceTypesForSync(declarationsByType, handlerMap)) {
             List<ResourceDeclaration> changedDeclarations = declarationsByType.get(resourceType);
             ResourceHandler handler = handlerMap.get(resourceType);
@@ -325,6 +326,55 @@ public class ResourceRegistrySyncService {
                 saveActiveSyncResult(declaration, result);
             }
         }
+    }
+
+    private void replayDeclarationsForChangedDependencies(
+            Map<String, List<ResourceDeclaration>> allDeclarationsByType,
+            Map<String, List<ResourceDeclaration>> declarationsByType,
+            Map<String, ResourceHandler> handlerMap) {
+        Set<String> scheduledTypes = new HashSet<>(declarationsByType.keySet());
+        boolean replayAdded;
+        do {
+            replayAdded = false;
+            for (Map.Entry<String, List<ResourceDeclaration>> entry : allDeclarationsByType.entrySet()) {
+                String resourceType = entry.getKey();
+                ResourceHandler handler = handlerMap.get(resourceType);
+                if (handler == null || !hasScheduledDependency(handler, scheduledTypes)) {
+                    continue;
+                }
+                List<ResourceDeclaration> scheduled = declarationsByType.computeIfAbsent(
+                        resourceType, key -> new ArrayList<>());
+                Set<String> scheduledIds = scheduled.stream()
+                        .map(ResourceDeclaration::getId)
+                        .collect(java.util.stream.Collectors.toSet());
+                for (ResourceDeclaration declaration : entry.getValue()) {
+                    if (isAutoSync(declaration) && scheduledIds.add(declaration.getId())) {
+                        scheduled.add(declaration);
+                        replayAdded = true;
+                    }
+                }
+                if (!scheduled.isEmpty()) {
+                    scheduledTypes.add(resourceType);
+                }
+            }
+        } while (replayAdded);
+    }
+
+    private boolean hasScheduledDependency(ResourceHandler handler, Set<String> scheduledTypes) {
+        List<String> dependencyTypes = handler.dependsOnResourceTypes();
+        if (dependencyTypes == null || dependencyTypes.isEmpty()) {
+            return false;
+        }
+        for (String dependencyType : dependencyTypes) {
+            if (StringUtils.hasText(dependencyType) && scheduledTypes.contains(dependencyType.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isAutoSync(ResourceDeclaration declaration) {
+        return declaration.getSyncMode() == null || declaration.getSyncMode() == ResourceSyncMode.AUTO;
     }
 
     private List<String> orderResourceTypesForSync(Map<String, List<ResourceDeclaration>> declarationsByType,

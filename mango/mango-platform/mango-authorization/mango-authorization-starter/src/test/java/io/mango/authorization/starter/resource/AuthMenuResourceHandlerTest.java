@@ -59,6 +59,11 @@ class AuthMenuResourceHandlerTest {
     }
 
     @Test
+    void authMenuDependsOnAuthRoleForDefaultRoleBindings() {
+        assertThat(handler.dependsOnResourceTypes()).containsExactly(ResourceTypes.AUTH_ROLE);
+    }
+
+    @Test
     void upsertRequiresMenusField() {
         ResourceDeclaration resource = menuResource();
         resource.getFields().remove("menus");

@@ -152,6 +152,25 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void syncReplaysUnchangedDependentsWhenDependencyChanges() {
+        ResourceDeclaration binding = genericDeclaration("1900000000000000101",
+                "TEST_BINDING", "guarantee.binding", "test-binding");
+        ResourceDeclaration user = genericDeclaration("1900000000000000102",
+                "TEST_USER", "guarantee.user", "test-user");
+        provider.setDeclarations(List.of(binding, user));
+        syncService.sync();
+        syncOrderRecorder.clear();
+
+        ResourceDeclaration updatedUser = genericDeclaration("1900000000000000102",
+                "TEST_USER", "guarantee.user", "test-user");
+        updatedUser.setVersion(2);
+        provider.setDeclarations(List.of(binding, updatedUser));
+        syncService.sync();
+
+        assertThat(syncOrderRecorder.resourceTypes()).containsExactly("TEST_USER", "TEST_BINDING");
+    }
+
+    @Test
     void syncFailsWhenResourceTypeDependenciesHaveCycle() {
         ResourceDeclaration cycleA = genericDeclaration("1900000000000000201",
                 "CYCLE_A", "guarantee.cycle-a", "cycle-a");

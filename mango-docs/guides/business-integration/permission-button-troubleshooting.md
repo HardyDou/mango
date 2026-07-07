@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- 本次 PR 修复 Resource Registry 依赖重放：`AUTH_MENU` 的菜单和按钮权限声明会在 `AUTH_ROLE` 创建或更新后重放，确保 `roleCodes` 对应的菜单、按钮授权能补齐；不改变按钮 `permissionCode`、登录态权限集合、接口鉴权、租户边界、按钮展示规则和前端排障步骤。排查按钮不可见或 403 时，除确认 `permissionCode` 和角色授权外，还要确认 `AUTH_ROLE`、`AUTH_MENU` 同步日志和授权关系是否由 Resource API 正常生成。
+
 - v2026.07.07-maven-1.0.9-api-contract-release 仅发布 workflow API 边界治理物料、前端聚合包版本锁、CLI/starter 版本锁和 Mango Docs 版本快照；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。业务项目升级后如遇按钮不可见或接口 403，仍按按钮资源、角色授权、重新登录刷新权限集合和接口权限码一致性排查。
 
 - PR #389 为首页列表增加预览、编辑、删除和批量删除管理动作，并补齐后端 `home:list:edit`、`home:list:delete` 权限；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界和按钮展示规则执行逻辑。排查首页管理按钮不可见或接口 403 时，确认首页管理菜单按钮资源已同步、角色已授权对应 `home:*` 权限码，并在授权后重新登录刷新权限集合。
