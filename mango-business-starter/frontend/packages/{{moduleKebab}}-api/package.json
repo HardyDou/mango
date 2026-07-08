@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "dependencies": {
     "@mango/api-schema": "1.0.2",
-    "@mango/common": "{{mangoCommonVersion}}"
+    "@mango/common": "1.0.13"
   },
   "peerDependencies": {
     "vue": "^3.5.13"

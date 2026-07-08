@@ -119,6 +119,10 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 验收时除上传、回显、下载闭环外，还应确认 ZIP 中的目录结构、文件名、租户可见性和下载权限符合业务预期。
 
+## 8. 变更影响记录
+
+- v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变文件上传、回显、下载、预览、文件权限、租户隔离、业务表保存 fileId/fileIds 的接入方式和本场景验收步骤。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
+
 ## 8. 后端合并 PDF 归档
 
 业务需要把手机拍照上传的多张图片，或图片、PDF、Word 材料按顺序归档为一个 PDF 时，业务后端依赖 `mango-file-api`，调用 `FileApi.mergeToPdf(FileMergePdfCommand)`，或通过文件服务 HTTP 入口 `POST /file/files/merge-pdf` 发起合并。合并完成后文件中心会生成新的 PDF 文件记录，业务表只保存返回的 PDF `fileId` 或自己的归档记录。

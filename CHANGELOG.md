@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+## v2026.07.08-admin-page-layout-release - 2026-07-08
+
+### New
+
+- Added `@mango/common` admin page skeleton components for business backend pages:
+  `MangoListPage`, `MangoSearchPanel`, `MangoListPanel`, `MangoDetailPage`, `MangoFormPage`, and `MangoPageSection`.
+- Added standard and compact admin page theme entries through `@mango/common/theme/admin-standard.css` and
+  `@mango/common/theme/admin-compact.css`, so business projects can keep multiple admin page styles side by side.
+- Added collapsible search panel behavior for generated list pages, including common-condition folding and right-aligned
+  query/reset actions in the lower-right corner.
+
+### Changed
+
+- Updated generated business module list templates in `@mango/cli` and `mango-business-starter` to use the shared page
+  skeleton instead of page-local custom layout classes.
+- Updated frontend PMO rules so new list, detail, form, and search layouts are governed by shared framework components
+  instead of business-specific page CSS.
+- Advanced the certified frontend npm batch through `@mango/cli@1.0.64` while keeping the generated backend Maven lock
+  on Mango Maven `1.0.13`.
+
+### Upgrade Notes
+
+- Business frontends should upgrade Mango npm packages as one batch using the versions listed below. Do not mix
+  `@mango/common@1.0.13` with older admin packages that still depend on `@mango/common@1.0.12`.
+- Generated or upgraded business projects should use `@mango/cli@1.0.64`; its release lock points to Mango Maven
+  `1.0.13` and this npm package batch.
+- Existing business pages can migrate incrementally by replacing custom page wrappers with `MangoListPage`,
+  `MangoSearchPanel`, `MangoListPanel`, `MangoDetailPage`, and `MangoFormPage`. No backend API, database, menu,
+  permission, tenant, or Maven dependency change is required for this release.
+
+### Published Packages
+
+- npm: `@mango/admin@1.0.43`, `@mango/admin-pages@1.0.18`, `@mango/admin-shell@1.0.38`,
+  `@mango/auth@1.0.12`, `@mango/calendar@1.0.19`, `@mango/cms@1.0.8`, `@mango/common@1.0.13`,
+  `@mango/file@1.0.19`, `@mango/grid-layout@1.0.6`, `@mango/grid-widgets@1.0.12`,
+  `@mango/home@1.0.4`, `@mango/job@1.0.11`, `@mango/link@1.0.5`, `@mango/notice@1.0.20`,
+  `@mango/numgen@1.0.19`, `@mango/payment@1.0.10`, `@mango/rbac@1.0.12`,
+  `@mango/site-shell@1.0.2`, `@mango/system@1.0.17`, `@mango/template@1.0.19`,
+  `@mango/workflow@1.0.25`, `@mango/workflow-business-example@1.0.24`, and `@mango/cli@1.0.64`
+  to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.08-admin-page-layout-release`.
+
+### Verification
+
+- `git diff --check`
+- `node mango-ui/scripts/check-release-impact.mjs --base=v2026.07.07-maven-1.0.13-menu-api-codes-release --head=HEAD`
+- `cd mango-ui/packages/common && ../../node_modules/.bin/vite build && node ../../scripts/generate-package-types.mjs`
+- `cd mango-ui/packages/common && ../../node_modules/.bin/vitest run components/MangoListPage/__tests__/MangoPageLayout.spec.ts`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `node mango-ui/scripts/generate-package-styles.mjs --root mango-ui --manifest mango-ui/packages/admin/admin-modules.json --package mango-ui/packages/admin/package.json --out mango-ui/packages/admin/generated-package-styles.css --admin-manifest-out mango-ui/packages/admin/admin-packages.json --full-style-out mango-ui/packages/admin/style-full.css --full-entry-out mango-ui/packages/admin/src/full.ts --full-types-out mango-ui/packages/admin/src/full.d.ts --build-deps-script-out mango-ui/packages/admin/build-style-deps.mjs --check`
+- `node mango-ui/scripts/check-admin-module-style-governance.mjs`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `PR_BODY_FILE=.runtime/release-admin-page-layout-pr-body.md node mango-pmo/tools/check-capability-docs.mjs --base=v2026.07.07-maven-1.0.13-menu-api-codes-release --head=HEAD`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg <package> --release-tag=v2026.07.08-admin-page-layout-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm <package> --version=<version>`
+- `gh release view v2026.07.08-admin-page-layout-release`
+
 ## v2026.07.07-maven-1.0.13-menu-api-codes-release - 2026-07-07
 
 ### Fixed

@@ -1,5 +1,47 @@
 # @mango/cli Changelog
 
+## 1.0.64 - 2026-07-08
+
+### Changed
+
+- Updated generated business list pages to use `@mango/common` admin page skeleton components:
+  `MangoListPage`, `MangoSearchPanel`, and `MangoListPanel`.
+- Locked generated business frontend projects to the `v2026.07.08-admin-page-layout-release` npm batch:
+  - `@mango/admin@1.0.43`
+  - `@mango/admin-pages@1.0.18`
+  - `@mango/admin-shell@1.0.38`
+  - `@mango/auth@1.0.12`
+  - `@mango/calendar@1.0.19`
+  - `@mango/cms@1.0.8`
+  - `@mango/common@1.0.13`
+  - `@mango/file@1.0.19`
+  - `@mango/grid-layout@1.0.6`
+  - `@mango/grid-widgets@1.0.12`
+  - `@mango/home@1.0.4`
+  - `@mango/job@1.0.11`
+  - `@mango/link@1.0.5`
+  - `@mango/notice@1.0.20`
+  - `@mango/numgen@1.0.19`
+  - `@mango/payment@1.0.10`
+  - `@mango/rbac@1.0.12`
+  - `@mango/site-shell@1.0.2`
+  - `@mango/system@1.0.17`
+  - `@mango/template@1.0.19`
+  - `@mango/workflow-business-example@1.0.24`
+  - `@mango/workflow@1.0.25`
+  - `@mango/cli@1.0.64`
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.64 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New generated business projects keep `<mango.version>1.0.13</mango.version>` and receive the admin page layout package batch.
+- Existing generated projects can upgrade frontend Mango packages as a batch to adopt the shared list/detail/form page skeletons.
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+
 ## 1.0.62 - 2026-07-07
 
 ### Fixed
