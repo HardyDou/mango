@@ -198,6 +198,7 @@ mango:
 - 外部 SQL 文件名仍必须符合 Flyway 版本命名，例如 `V2026070101__fix_channel_data.sql`。
 - URL SQL 会先下载到临时目录，再交给 Flyway 执行。
 - 执行结果仍写入当前模块的 Flyway history table。
+- 执行顺序按模块顺序、locations 装配顺序和 Flyway 版本排序三层约定：显式 `modules` 按配置顺序，未配置时模块名自然排序；默认 locations 为 classpath 在前、约定升级目录在后；同一模块最终 SQL 执行顺序由 Flyway 版本号决定。
 - 不提供绕过 Flyway history 的裸 SQL 执行器。
 
 ### 8.3 Schema baseline pack

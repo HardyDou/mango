@@ -333,6 +333,17 @@ mango:
 
 停机升级时，一个模块可以同时执行默认 classpath migration 和外部升级目录。Flyway 会按版本号决定执行顺序，已在当前模块 history table 中成功记录的版本不会重复执行。外部 SQL 必须使用高于已发布历史版本的版本号，避免和 jar 内 migration 冲突。
 
+升级执行顺序约定：
+
+```text
+1. 模块顺序：显式配置 modules 时按配置顺序执行；未配置 modules 时按 classpath 扫描到的模块名自然排序执行。
+2. locations 顺序：未显式配置 locations 时固定为 classpath:db/migration/<module> 在前，存在的约定升级目录 filesystem:${MANGO_HOME:-/opt/mango}/upgrade/<module> 在后；显式 locations 按配置顺序交给 Flyway。
+3. SQL 顺序：同一模块的所有 locations 合并后，由 Flyway 按版本号执行，不按文件复制时间、目录遍历顺序或 locations 先后顺序执行。
+4. 重复控制：当前模块 history table 中已经成功记录的版本不会重复执行；同一模块不同 location 出现相同版本会按 Flyway 规则校验失败。
+```
+
+外部升级 SQL 推荐使用可排序版本号，例如 `V202607081730__fix_payment_channel.sql` 或 `V2026070801__fix_payment_channel.sql`。同一停机窗口内需要多条 SQL 时，版本号必须递增。
+
 推荐升级顺序：
 
 ```text
