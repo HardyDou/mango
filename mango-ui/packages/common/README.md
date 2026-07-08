@@ -23,7 +23,7 @@
 | API 加密 | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt` | 按环境变量启用 SM2 或 BFF 透传。 |
 | 菜单和权限 | `buildMenuTree`、权限函数、TagsView 工具 | 给管理后台菜单、按钮权限和标签页使用。 |
 | 公共 API | `uploadFile`、captcha、org、area、dict API | 连接 file、captcha、org、system 后端。 |
-| 通用组件 | `MangoDialog`、`Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面复用组件。 |
+| 通用组件 | `MangoListPage`、`MangoSearchPanel`、`MangoListPanel`、`MangoDetailPage`、`MangoFormPage`、`MangoPageSection`、`MangoDialog`、`Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面骨架和复用组件。 |
 | hooks | `useTitle`、`useDict`、`useECharts`、`useLocale` | 页面标题、字典、图表和语言相关能力。 |
 | 实时通信 | `useRealtime`、`SSE`、`Websocket` | SSE/WebSocket client 和组件。 |
 | 主题和消息 | `mangoMessage`、theme 工具、主题 CSS | 管理端统一提示和主题样式。 |
@@ -49,6 +49,25 @@ import '@mango/common/style.css';
 import '@mango/common/theme/index.css';
 ```
 
+可选引入管理端页面主题 token。主题变量可以挂在应用、模块或单个页面外层，允许多套样式在同一应用内并存：
+
+```ts
+import '@mango/common/theme/admin-standard.css';
+import '@mango/common/theme/admin-compact.css';
+```
+
+```vue
+<template>
+  <section class="mango-theme-admin-standard">
+    <MangoListPage>...</MangoListPage>
+  </section>
+
+  <section data-mango-theme="admin-compact">
+    <MangoListPage dense>...</MangoListPage>
+  </section>
+</template>
+```
+
 配置请求：
 
 ```ts
@@ -68,10 +87,51 @@ const rows = await get('/system/dict/data/options', {
 
 ```vue
 <script setup lang="ts">
-import { DictSelect, OrgSelector, Pagination } from '@mango/common';
+import { DictSelect, MangoListPage, MangoListPanel, MangoSearchPanel, OrgSelector, Pagination } from '@mango/common';
 import '@mango/common/style.css';
 </script>
 ```
+
+使用标准列表页骨架：
+
+```vue
+<template>
+  <MangoListPage data-page="demo.orders">
+    <template #search>
+      <MangoSearchPanel :model="query" collapsible :collapsed-count="3" @search="search" @reset="reset">
+        <el-form-item label="关键字">
+          <el-input v-model="query.keyword" clearable placeholder="请输入关键字" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-input v-model="query.status" clearable placeholder="请选择状态" />
+        </el-form-item>
+        <el-form-item label="负责组织">
+          <el-input v-model="query.orgName" clearable placeholder="请输入组织" />
+        </el-form-item>
+        <el-form-item label="创建时间">
+          <el-date-picker v-model="query.createdAt" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期" />
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain>新增</el-button>
+      </template>
+
+      <el-table v-loading="loading" :data="rows" row-key="id">
+        <el-table-column prop="name" label="名称" min-width="180" show-overflow-tooltip />
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.page" v-model:limit="query.size" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
+  </MangoListPage>
+</template>
+```
+
+`MangoSearchPanel` 会按字段顺序识别常用搜索项。启用 `collapsible` 后，收起态显示前 `collapsed-count` 个字段，展开态显示全部字段；查询、重置、展开或收起按钮固定在搜索卡片右下角。单筛选项在桌面端保持合理字段宽度，不横向铺满整行；移动端使用单列撑满。
 
 使用通用弹框：
 
@@ -183,6 +243,12 @@ API 加密环境变量：
 
 | 组件 | 能力 |
 |------|------|
+| `MangoListPage` | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。 |
+| `MangoSearchPanel` | 列表页搜索卡片，统一字段栅格、按钮位置和查询/重置事件。 |
+| `MangoListPanel` | 列表卡片，统一功能区、表格区和分页区位置。 |
+| `MangoDetailPage` | 详情页外壳，提供返回栏、内容区和底部操作栏。 |
+| `MangoFormPage` | 表单页外壳，提供返回栏、内容区和底部操作栏。 |
+| `MangoPageSection` | 详情页和表单页的业务分组容器。 |
 | `Pagination` | 分页器。 |
 | `MangoDialog` | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。 |
 | `DictSelect`、`DictTag` | 字典选择和展示。 |
@@ -192,6 +258,19 @@ API 加密环境变量：
 | `IconSelector`、`TreeSelect`、`RightToolbar` | 管理端通用选择和工具栏。 |
 | `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`ECharts` | 表单、签名、代码、富文本和图表。 |
 | `SSE`、`Websocket`、`Chat` | 实时通信和聊天 UI。 |
+
+`MangoSearchPanel` 折叠规则：
+
+| 属性 | 默认值 | 说明 |
+|------|--------|------|
+| `collapsible` | `false` | 是否启用搜索项展开/收起。 |
+| `collapsed-count` | 自动按列数和 `collapsed-rows` 计算 | 收起态显示前几个搜索项。业务把常用搜索项放在前面。 |
+| `collapsed-rows` | `1` | 未指定 `collapsed-count` 时，收起态显示几行。 |
+| `default-expanded` | `false` | 初始是否展开全部搜索项。 |
+| `expand-text` / `collapse-text` | `展开` / `收起` | 展开按钮文案。 |
+| `expand-change` | - | 展开状态变化事件。 |
+
+默认操作区顺序为查询、重置、展开或收起，位置固定在搜索卡片右下角；传入 `actions` slot 时由业务自行接管按钮区域。
 
 `MangoDialog` 组件：
 

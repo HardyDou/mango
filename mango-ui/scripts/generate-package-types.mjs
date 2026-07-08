@@ -193,7 +193,20 @@ function generateCommonSubpathTypes(root) {
     writeFile(join(distDir, 'utils/realtime.js'), "export * from '../index.js';");
   }
 
-  const componentNames = ['Pagination', 'IconSelector', 'DictTag', 'DictSelect', 'PasswordPolicyHint', 'MangoDialog'];
+  const componentNames = [
+    'Pagination',
+    'MangoListPage',
+    'MangoSearchPanel',
+    'MangoListPanel',
+    'MangoDetailPage',
+    'MangoFormPage',
+    'MangoPageSection',
+    'IconSelector',
+    'DictTag',
+    'DictSelect',
+    'PasswordPolicyHint',
+    'MangoDialog',
+  ];
   for (const name of componentNames) {
     writeFile(
       join(distDir, 'components', name, 'index.d.ts'),

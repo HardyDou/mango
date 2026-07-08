@@ -153,7 +153,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 | `<module>` | `{{moduleCamel}}PageRegistry`、`register{{modulePascal}}Pages()`、API re-export | `<module>-api`、`@mango/admin-pages`、`@mango/common`、Element Plus | 管理后台页面注册 |
 | admin app | `createMangoAdminApp()` 调用和业务页面注册 | `@mango/admin` | 业务后台入口 |
 
-页面默认包含查询、重置、新增、刷新、表格、分页、编辑弹窗、详情抽屉和删除确认。它是 CRUD 起点，业务交付时应补齐真实字段、权限控制、空状态、错误态和 E2E。
+页面默认使用 `@mango/common` 的 `MangoListPage`、`MangoSearchPanel`、`MangoListPanel` 和 `Pagination` 组织查询、功能区、表格区和分页区。搜索区默认启用常用项折叠，业务把高频条件放在前面，展开后显示全部条件。它是 CRUD 起点，业务交付时应补齐真实字段、权限控制、空状态、错误态和 E2E。
 
 ## 8. 数据与初始化
 模板生成一个 Flyway migration 起点和一个菜单权限资源清单。

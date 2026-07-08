@@ -1,49 +1,44 @@
 <template>
-  <section class="{{moduleKebab}}-{{aggregateKebab}}-page">
-    <el-form :model="query" class="query-form" inline @submit.prevent>
-      <el-form-item label="{{aggregateName}}名称">
-        <el-input
-          v-model="query.name"
-          clearable
-          placeholder="请输入{{aggregateName}}名称"
-          class="query-input"
-          @keyup.enter="handleSearch"
+  <MangoListPage data-page="{{moduleKebab}}.{{aggregateKebab}}">
+    <template #search>
+      <MangoSearchPanel :model="query" collapsible :collapsed-count="3" @search="handleSearch" @reset="handleReset">
+        <el-form-item label="{{aggregateName}}名称">
+          <el-input
+            v-model="query.name"
+            clearable
+            placeholder="请输入{{aggregateName}}名称"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="openCreateDialog">新增</el-button>
+      </template>
+
+      <el-table v-loading="loading" :data="records" row-key="id" stripe highlight-current-row>
+        <el-table-column prop="name" label="{{aggregateName}}名称" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="id" label="业务标识" min-width="180" show-overflow-tooltip />
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openDetail(row)">详情</el-button>
+            <el-button link type="primary" @click="openEditDialog(row)">编辑</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination
+          v-model:page="query.page"
+          v-model:limit="query.size"
+          :total="total"
+          @pagination="loadData"
         />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleSearch">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
-      </el-form-item>
-    </el-form>
-
-    <div class="table-toolbar">
-      <el-button type="primary" @click="openCreateDialog">新增</el-button>
-      <el-button :loading="loading" @click="loadData">刷新</el-button>
-    </div>
-
-    <el-table v-loading="loading" :data="records" row-key="id" border>
-      <el-table-column prop="name" label="{{aggregateName}}名称" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="id" label="业务标识" min-width="180" show-overflow-tooltip />
-      <el-table-column label="操作" width="220" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openDetail(row)">详情</el-button>
-          <el-button link type="primary" @click="openEditDialog(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="pagination-wrap">
-      <el-pagination
-        v-model:current-page="query.page"
-        v-model:page-size="query.size"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handlePageSizeChange"
-        @current-change="loadData"
-      />
-    </div>
+      </template>
+    </MangoListPanel>
 
     <el-dialog
       v-model="formDialogVisible"
@@ -74,10 +69,11 @@
       </el-descriptions>
       <el-empty v-else description="暂无详情数据" />
     </el-drawer>
-  </section>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 import {
@@ -145,11 +141,6 @@ function handleReset() {
   void loadData();
 }
 
-function handlePageSizeChange() {
-  query.page = 1;
-  void loadData();
-}
-
 function resetFormModel() {
   formModel.id = undefined;
   formModel.name = '';
@@ -201,7 +192,7 @@ async function handleDelete(record: {{aggregatePascal}}VO) {
   try {
     await ElMessageBox.confirm(`确认删除“${record.name}”？`, '删除确认', {
       type: 'warning',
-      confirmButtonText: '删除',
+      confirmButtonText: '确认删除',
       cancelButtonText: '取消',
     });
   } catch {
@@ -223,30 +214,3 @@ onMounted(() => {
   void loadData();
 });
 </script>
-
-<style scoped>
-.{{moduleKebab}}-{{aggregateKebab}}-page {
-  padding: 16px;
-}
-
-.query-form {
-  margin-bottom: 12px;
-}
-
-.query-input {
-  width: 240px;
-}
-
-.table-toolbar {
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.pagination-wrap {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-}
-</style>

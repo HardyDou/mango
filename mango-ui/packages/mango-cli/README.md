@@ -303,6 +303,7 @@ CLI 生成或更新的数据库相关入口：
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
 |------|------|------------|-----------------|----------|----------|
 | 业务模块 Flyway 模板 | `backend/modules/<module>/<module>-core/src/main/resources/db/migration/<module>/V1__init_<module>.sql` | 业务模块示例表结构 | 由模板 SQL 定义 | 生成业务模块后，后端 Flyway 执行 | 检查后端启动日志和业务表 |
+| 业务聚合列表页模板 | `frontend/packages/<module>/src/views/<module>/<aggregate>/index.vue` | 基于 `@mango/common` 标准列表页骨架的 CRUD 起点，默认启用常用搜索项折叠 | component key | `mango module add` 后写入前端页面包 | 检查页面使用 `MangoListPage`、`MangoSearchPanel`、`MangoListPanel` 和 `Pagination` |
 | Flyway 模块开关 | `backend/app/src/main/resources/application.yml` 的 `business-flyway-modules` managed block | `<module>.enabled: true` | module code | `mango module add` 后写入，应用启动读取 | 检查 application.yml 中模块已登记 |
 | 平台模块 migration | 生成项目后端依赖中的 Mango starter | 平台模块表、菜单、权限、字典或默认数据 | 各平台模块定义 | 应用启动 Flyway 执行 | 查模块 README 和 Flyway history |
 | 本地数据库连接 | `.mango/dev-workspace.env` | DB host、port、name、username、password | 无 | `mango dev start` 注入后端启动参数 | `mango workspace status` 查看端口和数据库，`mango dev logs <backend>` 查 datasource |

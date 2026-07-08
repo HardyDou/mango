@@ -1,0 +1,27 @@
+.mango-theme-admin-standard,
+[data-mango-theme='admin-standard'] {
+  --mango-bg-main: #f3f5f8;
+  --mango-bg-color: #ffffff;
+  --mango-bg-overlay: #ffffff;
+  --mango-border-color: #e6ebf5;
+  --mango-border-light: #e5ebf3;
+  --mango-text-color: #243044;
+  --mango-text-color-regular: #5f6b7a;
+  --mango-text-color-placeholder: #a8abb2;
+  --mango-text-color-disabled: #c0c4cc;
+  --mango-color-primary: #2e5cf6;
+  --mango-color-primary-light: #5b8af6;
+  --mango-color-primary-lighter: #eef4ff;
+  --mango-color-primary-dark: #1e3cc4;
+  --mango-shadow-light: 0 6px 18px rgba(30, 62, 120, 0.08);
+  --el-color-primary: #2e5cf6;
+  --el-color-primary-dark-2: #2644d4;
+  --el-color-primary-light-9: #eef4ff;
+  --el-bg-color: var(--mango-bg-color);
+  --el-bg-color-page: var(--mango-bg-main);
+  --el-bg-color-overlay: var(--mango-bg-overlay);
+  --el-border-color: var(--mango-border-color);
+  --el-border-color-light: var(--mango-border-light);
+  --el-border-color-lighter: var(--mango-border-light);
+  --el-border-color-extra-light: var(--mango-border-light);
+}
