@@ -46,11 +46,16 @@ class PersistenceFlywayAutoConfigurationTest {
     );
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withPropertyValues("mango.persistence.flyway.upgrade-locations-enabled=false")
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     private final ApplicationContextRunner multiDataSourceContextRunner = new ApplicationContextRunner()
+            .withPropertyValues("mango.persistence.flyway.upgrade-locations-enabled=false")
             .withConfiguration(AutoConfigurations.of(PersistenceDataSourceAutoConfiguration.class,
                     PersistenceFlywayAutoConfiguration.class));
+
+    private final ApplicationContextRunner upgradeContextRunner = new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     @Test
     void whenEnabled_shouldCreateFlywayBean() {
@@ -357,6 +362,77 @@ class PersistenceFlywayAutoConfigurationTest {
                             new MigrationDataRow(4L, "TC184-FS-004", "文件数据-4", 204),
                             new MigrationDataRow(5L, "TC184-FS-005", "文件数据-5", 205)
                     );
+                });
+    }
+
+    @Test
+    void defaultUpgradeDirectory_shouldRunWhenModuleDirectoryExists() throws Exception {
+        Path root = Files.createTempDirectory("mango-flyway-upgrade-root-");
+        Path moduleDirectory = root.resolve("persistence-test");
+        Files.createDirectories(moduleDirectory);
+        Files.writeString(moduleDirectory.resolve("V2__convention_upgrade.sql"), """
+                create table convention_upgrade_migration (
+                    id bigint primary key,
+                    data_code varchar(64) not null,
+                    data_name varchar(128) not null,
+                    data_value int not null
+                );
+
+                insert into convention_upgrade_migration (id, data_code, data_name, data_value) values
+                    (1, 'TC184-UPGRADE-001', '约定目录升级数据-1', 401),
+                    (2, 'TC184-UPGRADE-002', '约定目录升级数据-2', 402),
+                    (3, 'TC184-UPGRADE-003', '约定目录升级数据-3', 403),
+                    (4, 'TC184-UPGRADE-004', '约定目录升级数据-4', 404),
+                    (5, 'TC184-UPGRADE-005', '约定目录升级数据-5', 405);
+                """);
+
+        upgradeContextRunner
+                .withPropertyValues(flywayProperties(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.upgrade-root=" + root.toAbsolutePath(),
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                ))
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "convention_upgrade_migration")).isTrue();
+                    assertThat(migrationRows(jdbcTemplate, "convention_upgrade_migration")).containsExactly(
+                            new MigrationDataRow(1L, "TC184-UPGRADE-001", "约定目录升级数据-1", 401),
+                            new MigrationDataRow(2L, "TC184-UPGRADE-002", "约定目录升级数据-2", 402),
+                            new MigrationDataRow(3L, "TC184-UPGRADE-003", "约定目录升级数据-3", 403),
+                            new MigrationDataRow(4L, "TC184-UPGRADE-004", "约定目录升级数据-4", 404),
+                            new MigrationDataRow(5L, "TC184-UPGRADE-005", "约定目录升级数据-5", 405)
+                    );
+                    assertThat(jdbcTemplate.queryForObject(
+                            "SELECT COUNT(*) FROM flyway_schema_history_persistence_test WHERE version = '2' AND success = TRUE",
+                            Integer.class)).isEqualTo(1);
+                });
+    }
+
+    @Test
+    void explicitLocations_shouldNotAppendDefaultUpgradeDirectory() throws Exception {
+        Path root = Files.createTempDirectory("mango-flyway-explicit-upgrade-root-");
+        Path moduleDirectory = root.resolve("persistence-test");
+        Files.createDirectories(moduleDirectory);
+        Files.writeString(moduleDirectory.resolve("V2__should_not_run.sql"), """
+                create table explicit_location_should_not_run (
+                    id bigint primary key
+                );
+                """);
+
+        upgradeContextRunner
+                .withPropertyValues(flywayProperties(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.upgrade-root=" + root.toAbsolutePath(),
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.locations[0]=classpath:db/migration/persistence-test"
+                ))
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "explicit_location_should_not_run")).isFalse();
                 });
     }
 

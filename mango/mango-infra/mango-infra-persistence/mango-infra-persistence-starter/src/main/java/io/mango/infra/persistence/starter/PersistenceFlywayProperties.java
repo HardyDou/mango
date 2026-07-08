@@ -42,6 +42,18 @@ public class PersistenceFlywayProperties {
      */
     private Map<String, ModuleConfig> modules = new LinkedHashMap<>();
 
+    /**
+     * 是否启用默认外部升级目录。
+     * 启用后，未显式配置 locations 的模块会自动追加 {upgradeRoot}/{module}。
+     */
+    private boolean upgradeLocationsEnabled = true;
+
+    /**
+     * 默认外部升级根目录。
+     * 为空时按 mango.upgrade.root、MANGO_UPGRADE_DIR、mango.home/MANGO_HOME、/opt/mango/upgrade 解析。
+     */
+    private String upgradeRoot;
+
     @Data
     public static class ModuleConfig {
         /**

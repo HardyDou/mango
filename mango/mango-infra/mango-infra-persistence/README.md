@@ -280,12 +280,14 @@ mango:
 | 配置 | 默认值 | 含义 |
 |------|--------|------|
 | `enabled` | `true` | 全局迁移开关 |
+| `upgrade-locations-enabled` | `true` | 是否启用默认外部升级目录；目录存在时追加到未显式配置 locations 的模块 |
+| `upgrade-root` | 空 | 默认外部升级根目录；为空时按 `mango.upgrade.root`、`MANGO_UPGRADE_DIR`、`mango.home`/`MANGO_HOME`、`/opt/mango/upgrade` 解析 |
 | `modules.<module>.enabled` | `true` | 是否执行当前模块迁移 |
 | `modules.<module>.skip-reason` | 空 | `enabled=false` 且 classpath 存在当前模块 migration 时必须填写的跳过原因 |
 | `modules.<module>.baseline-on-migrate` | `true` | 存量库无 history table 时是否从 baseline 接管 |
 | `modules.<module>.out-of-order` | `false` | 是否允许非顺序版本补跑 |
 | `modules.<module>.history-table` | `flyway_schema_history_<module>` | 当前模块 history table，模块名会把非字母数字下划线替换成 `_` |
-| `modules.<module>.locations` | `classpath:db/migration/<module>` | 当前模块迁移脚本位置，支持 `classpath:`、`filesystem:` 和 `http(s)` 单个 SQL 文件 |
+| `modules.<module>.locations` | `classpath:db/migration/<module>` + 存在时的 `{upgrade-root}/<module>` | 当前模块迁移脚本位置，支持 `classpath:`、`filesystem:` 和 `http(s)` 单个 SQL 文件；显式配置后不再隐式追加默认升级目录 |
 | `modules.<module>.validate-on-migrate` | `true` | 迁移前是否校验历史记录 |
 | `modules.<module>.ignore-missing-migrations` | `false` | 是否忽略数据库存在但代码已移除的历史迁移 |
 | `modules.<module>.datasource.url` | 空 | 当前模块迁移使用独立 JDBC URL |
@@ -293,7 +295,26 @@ mango:
 | `modules.<module>.datasource.username` | 空 | 当前模块迁移独立用户名 |
 | `modules.<module>.datasource.password` | 空 | 当前模块迁移独立密码 |
 
-停机升级需要执行不随应用 jar 发布的 SQL 时，不新增裸 SQL 执行器，仍把脚本作为 Flyway migration 管理：
+停机升级需要执行不随应用 jar 发布的 SQL 时，不新增裸 SQL 执行器，仍把脚本作为 Flyway migration 管理。默认约定目录为：
+
+```text
+${MANGO_HOME:-/opt/mango}/upgrade/<module>/
+  V2026070101__fix_channel_data.sql
+```
+
+如果没有显式配置当前模块 `locations`，starter 会保留 `classpath:db/migration/<module>`，并在目录存在时自动追加 `filesystem:${MANGO_HOME:-/opt/mango}/upgrade/<module>`。目录不存在时跳过，不创建目录、不报错。
+
+默认升级根目录解析顺序：
+
+```text
+1. Java system property: mango.upgrade.root
+2. 环境变量: MANGO_UPGRADE_DIR
+3. Java system property: mango.home + /upgrade
+4. 环境变量: MANGO_HOME + /upgrade
+5. /opt/mango/upgrade
+```
+
+需要远程 URL、baseline pack 或完全自定义目录时，显式配置模块 `locations`，此时配置值表示完整来源清单，不再隐式追加默认升级目录：
 
 ```yaml
 mango:
@@ -310,13 +331,13 @@ mango:
 
 `filesystem:` 应指向包含 `V*.sql` 的目录。`http(s)` 只支持单个 `.sql` 文件，启动迁移前会下载到临时目录再交给 Flyway；执行结果仍写入该模块的 `flyway_schema_history_<module>`。
 
-停机升级时，一个模块可以同时配置默认 classpath migration 和外部升级目录。Flyway 会按版本号决定执行顺序，已在当前模块 history table 中成功记录的版本不会重复执行。外部 SQL 必须使用高于已发布历史版本的版本号，避免和 jar 内 migration 冲突。
+停机升级时，一个模块可以同时执行默认 classpath migration 和外部升级目录。Flyway 会按版本号决定执行顺序，已在当前模块 history table 中成功记录的版本不会重复执行。外部 SQL 必须使用高于已发布历史版本的版本号，避免和 jar 内 migration 冲突。
 
 推荐升级顺序：
 
 ```text
 1. 停应用并备份数据库。
-2. 配置 classpath 历史 migration 和必要的 filesystem/http(s) 外部升级 SQL。
+2. 把必要的外部升级 SQL 放入约定目录；远程 URL 或特殊目录再显式配置 locations。
 3. 启动迁移入口，让 Flyway 写入模块 history table。
 4. 启动应用后由 Resource 同步正式资源；INIT_ONLY 不覆盖目标业务表运行时修改。
 5. 校验业务关键数据。
