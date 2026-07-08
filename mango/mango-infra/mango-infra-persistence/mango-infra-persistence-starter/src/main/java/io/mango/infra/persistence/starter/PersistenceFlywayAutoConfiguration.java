@@ -40,6 +40,8 @@ import java.util.Set;
  * <p>
  * 负责按模块加载数据库迁移脚本，支持通过配置开启或关闭指定模块的迁移。
  * 迁移脚本目录约定为 {@code classpath:db/migration/{module}/V*.sql}。
+ * 未显式配置模块 locations 时，会在目录存在的情况下追加
+ * {@code ${MANGO_HOME:-/opt/mango}/upgrade/{module}} 外部升级目录。
  * <p>
  * 配置示例：
  * <pre>
@@ -67,6 +69,8 @@ public class PersistenceFlywayAutoConfiguration {
     private static final String MIGRATION_SCAN_PATTERN = "classpath*:db/migration/*/V*.sql";
     private static final String NOOP_LOCATION = "classpath:db/migration/_noop";
     private static final String HISTORY_TABLE_PREFIX = "flyway_schema_history_";
+    private static final String DEFAULT_MANGO_HOME = "/opt/mango";
+    private static final String DEFAULT_UPGRADE_DIRECTORY_NAME = "upgrade";
     private static final Set<String> MANGO_NON_LINEAR_PUBLISHED_MODULES = Set.of(
             "authorization",
             "domain",
@@ -176,7 +180,7 @@ public class PersistenceFlywayAutoConfiguration {
                 if (config == null || config.isEnabled()) {
                     migrations.add(new ModuleMigration(
                             module,
-                            resolveConfiguredLocations(module, config),
+                            resolveConfiguredLocations(module, config, properties),
                             config == null ? new PersistenceFlywayProperties.ModuleConfig() : config));
                 }
             });
@@ -188,7 +192,7 @@ public class PersistenceFlywayAutoConfiguration {
         for (String module : modules) {
             migrations.add(new ModuleMigration(
                     module,
-                    List.of(MIGRATION_LOCATION_PREFIX + module),
+                    resolveDefaultLocations(module, properties),
                     new PersistenceFlywayProperties.ModuleConfig()));
         }
         return migrations;
@@ -224,7 +228,9 @@ public class PersistenceFlywayAutoConfiguration {
                         + "or set enabled=false with skip-reason for intentional skips.");
     }
 
-    private List<String> resolveConfiguredLocations(String module, PersistenceFlywayProperties.ModuleConfig config) {
+    private List<String> resolveConfiguredLocations(String module,
+                                                    PersistenceFlywayProperties.ModuleConfig config,
+                                                    PersistenceFlywayProperties properties) {
         if (config != null && config.getLocations() != null && !config.getLocations().isEmpty()) {
             List<String> locations = config.getLocations().stream()
                     .filter(StringUtils::hasText)
@@ -234,7 +240,61 @@ public class PersistenceFlywayAutoConfiguration {
                 return locations;
             }
         }
-        return List.of(MIGRATION_LOCATION_PREFIX + module);
+        return resolveDefaultLocations(module, properties);
+    }
+
+    private List<String> resolveDefaultLocations(String module, PersistenceFlywayProperties properties) {
+        List<String> locations = new ArrayList<>();
+        locations.add(MIGRATION_LOCATION_PREFIX + module);
+        appendDefaultUpgradeLocation(locations, module, properties);
+        return List.copyOf(locations);
+    }
+
+    private void appendDefaultUpgradeLocation(List<String> locations,
+                                              String module,
+                                              PersistenceFlywayProperties properties) {
+        if (properties == null || !properties.isUpgradeLocationsEnabled()) {
+            return;
+        }
+        Path upgradeDirectory = resolveUpgradeDirectory(module, properties);
+        if (!Files.isDirectory(upgradeDirectory)) {
+            return;
+        }
+        String location = "filesystem:" + upgradeDirectory;
+        if (!locations.contains(location)) {
+            locations.add(location);
+        }
+    }
+
+    private Path resolveUpgradeDirectory(String module, PersistenceFlywayProperties properties) {
+        Path root = Path.of(resolveUpgradeRoot(properties)).toAbsolutePath().normalize();
+        Path moduleDirectory = root.resolve(module).normalize();
+        if (!moduleDirectory.startsWith(root)) {
+            throw new IllegalStateException("Mango Flyway upgrade module directory is invalid: module=" + module);
+        }
+        return moduleDirectory;
+    }
+
+    private String resolveUpgradeRoot(PersistenceFlywayProperties properties) {
+        if (properties != null && StringUtils.hasText(properties.getUpgradeRoot())) {
+            return properties.getUpgradeRoot().trim();
+        }
+        String systemUpgradeRoot = System.getProperty("mango.upgrade.root");
+        if (StringUtils.hasText(systemUpgradeRoot)) {
+            return systemUpgradeRoot.trim();
+        }
+        String envUpgradeRoot = System.getenv("MANGO_UPGRADE_DIR");
+        if (StringUtils.hasText(envUpgradeRoot)) {
+            return envUpgradeRoot.trim();
+        }
+        String mangoHome = System.getProperty("mango.home");
+        if (!StringUtils.hasText(mangoHome)) {
+            mangoHome = System.getenv("MANGO_HOME");
+        }
+        if (!StringUtils.hasText(mangoHome)) {
+            mangoHome = DEFAULT_MANGO_HOME;
+        }
+        return Path.of(mangoHome.trim(), DEFAULT_UPGRADE_DIRECTORY_NAME).toString();
     }
 
     private Set<String> discoverMigrationModules() throws Exception {

@@ -34,6 +34,7 @@
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-08 | 投产升级 SQL 约定目录：未显式配置模块 `locations` 时，Persistence 自动追加 `${MANGO_HOME:-/opt/mango}/upgrade/<module>`，执行记录仍进入模块 Flyway history | [Persistence README](../../mango/mango-infra/mango-infra-persistence/README.md) | [Issue #184 设计](../designs/2026-07-01-issue-184-data-governance-design.md) |
 | 2026-07-04 | 首页管理返工：修复 `@mango/home` 集成，模板发布后可继续编辑未发布草稿，首页列表支持用户选择、所见即所得编辑及批量删除 | [Home README](../../mango/mango-platform/mango-home/README.md)、[Home Frontend README](../../mango-ui/packages/home/README.md)、[Admin Shell README](../../mango-ui/packages/admin-shell/README.md) | GitHub Issue #372 |
 | 2026-07-04 | 通知中心站内信动作协议：业务消息可声明业务对象、隐藏参数、命名目标和动作按钮，支持 `ROUTE`、`FLOW`、`EVENT` 三类交互及命令型动作幂等回写 | [Notice README](../../mango/mango-platform/mango-notice/README.md)、[Notice Frontend README](../../mango-ui/packages/notice/README.md) | GitHub Issue #387 |
 | 2026-07-03 | 首页管理：平台级首页模板、草稿复制、发布生效、个人/部门/角色授权、部门继承和用户最终首页视图 | [Home README](../../mango/mango-platform/mango-home/README.md)、[Home Frontend README](../../mango-ui/packages/home/README.md)、[Admin Shell README](../../mango-ui/packages/admin-shell/README.md) | GitHub Issue #372 |

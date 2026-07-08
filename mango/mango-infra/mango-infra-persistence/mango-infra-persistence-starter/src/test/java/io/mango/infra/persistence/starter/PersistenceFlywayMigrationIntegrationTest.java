@@ -10,20 +10,41 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PersistenceFlywayMigrationIntegrationTest {
 
+    private static final String MODULE_PROPERTY_PREFIX = "mango.persistence.flyway.modules.";
+
+    private static final String TEST_SKIP_REASON = "test fixture is not part of this scenario";
+
+    private static final List<String> TEST_CLASSPATH_MIGRATION_MODULES = List.of(
+            "another-test",
+            "business-upgrade",
+            "comparison-data",
+            "payment",
+            "persistence-test"
+    );
+
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withPropertyValues("mango.persistence.flyway.upgrade-locations-enabled=false")
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     @Test
     void flywayMigrationInitializer_shouldRunRealFlywayMigrationAgainstDatabase() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
@@ -39,11 +60,11 @@ class PersistenceFlywayMigrationIntegrationTest {
     @Test
     void duplicateVersionsAcrossModules_shouldUseSeparateHistoryTables() {
         contextRunner
-                .withPropertyValues(
+                .withPropertyValues(flywayProperties(
                         "mango.persistence.flyway.enabled=true",
                         "mango.persistence.flyway.modules.persistence-test.enabled=true",
                         "mango.persistence.flyway.modules.another-test.enabled=true"
-                )
+                ))
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
@@ -52,6 +73,34 @@ class PersistenceFlywayMigrationIntegrationTest {
                     assertThat(tableExists(jdbcTemplate, "flyway_schema_history_persistence_test")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "flyway_schema_history_another_test")).isTrue();
                 });
+    }
+
+    private static String[] flywayProperties(String... properties) {
+        Set<String> configuredModules = Arrays.stream(properties)
+                .map(PersistenceFlywayMigrationIntegrationTest::extractConfiguredModule)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        List<String> result = new ArrayList<>(Arrays.asList(properties));
+        for (String module : TEST_CLASSPATH_MIGRATION_MODULES) {
+            if (configuredModules.contains(module)) {
+                continue;
+            }
+            result.add(MODULE_PROPERTY_PREFIX + module + ".enabled=false");
+            result.add(MODULE_PROPERTY_PREFIX + module + ".skip-reason=" + TEST_SKIP_REASON);
+        }
+        return result.toArray(String[]::new);
+    }
+
+    private static String extractConfiguredModule(String property) {
+        if (!property.startsWith(MODULE_PROPERTY_PREFIX)) {
+            return null;
+        }
+        String tail = property.substring(MODULE_PROPERTY_PREFIX.length());
+        int dotIndex = tail.indexOf('.');
+        if (dotIndex <= 0) {
+            return null;
+        }
+        return tail.substring(0, dotIndex);
     }
 
     @Configuration

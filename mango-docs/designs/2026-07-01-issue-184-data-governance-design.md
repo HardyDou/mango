@@ -43,7 +43,7 @@ Issue #184 第一版不建设 DataOps 平台，不新增任务包、任务历史
 | 正式 Resource 默认扫描 | `mango-resource` | `META-INF/mango/resources/*.{json,yml,yaml}` | 菜单、字典、配置、消息、任务、号段、文件配置等结构化资源声明。 |
 | demo Resource 隔离 | `mango-resource` | `mango.resource.registry.demo-enabled=false`，目录 `META-INF/mango/demo/` | demo 默认不进入正式启动路径。 |
 | `INIT_ONLY` 同步模式 | `mango-resource` | Resource 声明 `sync-mode: INIT_ONLY` | 首次创建，后续升级只更新 registry 元数据，不覆盖业务表运行时修改。 |
-| 外部 Flyway locations | `mango-infra-persistence` | `mango.persistence.flyway.modules.<module>.locations` | 停机升级时执行磁盘目录或远程 URL SQL，仍写模块 Flyway history。 |
+| 外部 Flyway locations | `mango-infra-persistence` | 默认 `${MANGO_HOME:-/opt/mango}/upgrade/<module>`；特殊场景配置 `mango.persistence.flyway.modules.<module>.locations` | 停机升级时执行磁盘目录或远程 URL SQL，仍写模块 Flyway history。 |
 | Schema baseline pack | `mango-infra-persistence` | 新库显式配置 `filesystem:/opt/mango/baseline/<module>` | 新库可用当前完整结构包，不必从 V1 跑全部历史 SQL。 |
 | 当前物料清理清单 | `mango-docs/plans` | `2026-07-01-issue-184-s5-data-material-audit.md` | 给存量 Flyway seed/demo/runtime SQL 后续清理排优先级。 |
 
@@ -58,7 +58,7 @@ Issue #184 第一版不建设 DataOps 平台，不新增任务包、任务历史
 | 初始化后运行时会被用户改的数据 | Resource 声明 | `sync-mode: INIT_ONLY` | 首次创建；声明升级不覆盖目标业务表。 |
 | demo 站点、demo 角色、demo 流程、demo 日历、sample job | `starter/src/main/resources/META-INF/mango/demo/` | Resource JSON/YAML | 默认不加载；演示场景显式打开 `demo-enabled`。 |
 | 用户创建的业务单据、流程实例、任务实例、日历事件、用户改的角色授权 | 业务 Owner Service | 普通业务写入 | 不进 Resource，不进初始化 SQL。 |
-| 停机升级修复历史数据 | 运维显式配置的 Flyway 外部 locations | `filesystem:` 目录或 `http(s)` 单个 SQL 文件 | 必须是版本化 `V*.sql`，仍进模块 history table。 |
+| 停机升级修复历史数据 | Flyway 外部升级目录 | 默认 `${MANGO_HOME:-/opt/mango}/upgrade/<module>`；特殊场景用 `filesystem:` 目录或 `http(s)` 单个 SQL 文件 | 必须是版本化 `V*.sql`，仍进模块 history table。 |
 | 全国行政区划、年度日历、500MB/1GB 大数据 | Flyway 外部 SQL 包或模块批量导入服务 | 磁盘文件或远程制品 URL | 不放 YAML，不打进默认 jar classpath。 |
 | 新库不想跑几百个历史 SQL | baseline pack | `filesystem:/opt/mango/baseline/<module>` | 只给新库用，不和历史 V1...Vn 混用。 |
 
@@ -167,7 +167,16 @@ flyway_schema_history_<module>
 
 ### 8.2 外部升级 SQL
 
-停机升级需要执行不随应用 jar 发布的 SQL 时，配置模块级 `locations`：
+停机升级需要执行不随应用 jar 发布的 SQL 时，优先放入约定目录：
+
+```text
+${MANGO_HOME:-/opt/mango}/upgrade/<module>/
+  V2026070101__fix_channel_data.sql
+```
+
+未显式配置模块 `locations` 时，starter 会保留 `classpath:db/migration/<module>`，并在约定目录存在时自动追加该模块外部升级目录；目录不存在时跳过。
+
+需要远程 URL、baseline pack 或完全自定义来源时，再配置模块级 `locations`：
 
 ```yaml
 mango:
@@ -185,9 +194,12 @@ mango:
 
 - `classpath:` 和 `filesystem:` 可以是 Flyway migration 目录。
 - `http://` / `https://` 只支持单个 `.sql` 文件。
+- 显式 `locations` 表示完整来源清单，不再隐式追加默认升级目录。
 - 外部 SQL 文件名仍必须符合 Flyway 版本命名，例如 `V2026070101__fix_channel_data.sql`。
 - URL SQL 会先下载到临时目录，再交给 Flyway 执行。
 - 执行结果仍写入当前模块的 Flyway history table。
+- 执行顺序按模块顺序、locations 装配顺序和 Flyway 版本排序三层约定：显式 `modules` 按配置顺序，未配置时模块名自然排序；默认 locations 为 classpath 在前、约定升级目录在后；同一模块最终 SQL 执行顺序由 Flyway 版本号决定。
+- 多模块升级 SQL 默认必须互相独立；存在跨模块依赖时必须显式配置 `modules` 顺序。跨多个模块表的停机修复应放到单独发布编排模块，例如 `release-20260708`，并排在相关模块之后。
 - 不提供绕过 Flyway history 的裸 SQL 执行器。
 
 ### 8.3 Schema baseline pack
@@ -225,6 +237,8 @@ mango:
             - filesystem:/opt/mango/upgrade/payment
 ```
 
+未显式配置 `locations` 且 `/opt/mango/upgrade/payment` 存在时，上述旧库升级目录会按约定自动追加。
+
 边界：
 
 - baseline pack 不是默认自动替换历史 migration。
@@ -250,7 +264,7 @@ mango:
 ```text
 1. 停应用。
 2. 备份数据库。
-3. 配置默认 classpath migration 和必要的 filesystem/http(s) 外部升级 SQL。
+3. 把必要的外部升级 SQL 放入约定目录；远程 URL、baseline 或特殊目录再显式配置 locations。
 4. Flyway 按模块执行增量 migration。
 5. Resource 同步正式 resources；INIT_ONLY 保留目标业务表运行时修改。
 6. 校验关键数据。
@@ -281,7 +295,7 @@ mango:
 | --- | --- | --- |
 | S1 Resource demo 隔离 | 已完成 | `demo-enabled`、`demo-locations`、loader 测试。 |
 | S2 Resource `INIT_ONLY` | 已完成 | `ResourceSyncMode.INIT_ONLY`、registry 跳过目标 handler 的集成测试。 |
-| S3 Flyway 外部 locations | 已完成 | 模块级 `locations`，支持 `classpath:`、`filesystem:`、`http(s)` 单个 SQL 文件。 |
+| S3 Flyway 外部 locations | 已完成 | 默认约定升级目录，模块级 `locations` 支持 `classpath:`、`filesystem:`、`http(s)` 单个 SQL 文件。 |
 | S4 Schema baseline pack | 已完成设计说明 | 基于 S3 外部目录能力给新库提供 baseline pack 使用方式。 |
 | S5 当前物料清理清单 | 已完成 | 扫描 Resource 和 Flyway 物料，给 authorization/cms/payment/notice/job/system/file/workflow/calendar 分配后续路线。 |
 | 严格对比测试 | 已完成 | Resource 新旧模式 5 组入库对比；Flyway classpath/filesystem/url 5 组数据入库对比。 |
@@ -299,6 +313,7 @@ mango:
 | TC-184-007 | `filesystem:` 外部目录执行 5 组数据入库对比 | Persistence Flyway 测试 | 已自动化 |
 | TC-184-008 | `http(s)` URL SQL 执行 5 组数据入库对比 | Persistence Flyway 测试 | 已自动化 |
 | TC-184-009 | classpath 旧模式与 filesystem 新模式 5 组数据严格一致 | Persistence Flyway 测试 | 已自动化 |
+| TC-184-010 | 默认约定升级目录存在时自动追加并写入模块 history | Persistence Flyway 测试 | 已自动化 |
 
 ## 13. 后续清理优先级
 

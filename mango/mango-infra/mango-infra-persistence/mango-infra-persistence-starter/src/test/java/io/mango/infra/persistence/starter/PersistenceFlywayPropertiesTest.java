@@ -13,6 +13,14 @@ class PersistenceFlywayPropertiesTest {
     }
 
     @Test
+    void upgradeLocations_shouldDefaultToEnabledWithoutConfiguredRoot() {
+        PersistenceFlywayProperties props = new PersistenceFlywayProperties();
+
+        assertThat(props.isUpgradeLocationsEnabled()).isTrue();
+        assertThat(props.getUpgradeRoot()).isNull();
+    }
+
+    @Test
     void disabled_module_shouldNotBeEnabled() {
         PersistenceFlywayProperties props = new PersistenceFlywayProperties();
         props.setEnabled(true);
