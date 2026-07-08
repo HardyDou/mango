@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
+
 - 本次 PR 将按钮/接口权限从菜单节点拆出：登录态权限集合只从已授权菜单的 `apiCodes` 聚合，不再依赖 `menuType=3` 按钮菜单节点，也不会因为拥有某个接口权限码反向显示父菜单。管理后台分配菜单时只勾选目录/页面菜单；页面所需接口权限由菜单管理中的 `apiCodes` 维护，角色获得页面菜单后自动获得这些接口权限。排查按钮或接口 403 时，优先确认页面菜单 `apiCodes` 是否包含目标权限码、角色是否拥有页面菜单、授权后是否重新登录刷新权限集合。
 
 - 本次 PR 修复 Resource Registry 依赖重放：`AUTH_MENU` 的菜单和按钮权限声明会在 `AUTH_ROLE` 创建或更新后重放，确保 `roleCodes` 对应的菜单、按钮授权能补齐；不改变按钮 `permissionCode`、登录态权限集合、接口鉴权、租户边界、按钮展示规则和前端排障步骤。排查按钮不可见或 403 时，除确认 `permissionCode` 和角色授权外，还要确认 `AUTH_ROLE`、`AUTH_MENU` 同步日志和授权关系是否由 Resource API 正常生成。

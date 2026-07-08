@@ -110,6 +110,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 9. 变更影响记录
 
+- v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
+
 - 本次 PR 将业务审批页面需要复用的 `workflow:*` 接口权限放到业务菜单自身的 `apiCodes` 中，而不是挂到 workflow 菜单或按钮节点下。业务员、业务经理、总经理等非风控角色可以因业务菜单获得审批接口权限，但不会被自动带出审批中心、风控审批或风控工作台菜单。新业务接入审批时，应在本业务菜单声明需要的 workflow 接口权限，并由业务后端继续校验单据状态、办理人、租户和幂等。
 
 - v2026.07.07-maven-1.0.9-api-contract-release 发布 PR #400 的 workflow API 边界治理物料，并对齐 `@mango/workflow@1.0.23`、`@mango/workflow-business-example@1.0.22`、`@mango/admin-shell@1.0.36`、`@mango/admin@1.0.41` 和 `@mango/cli@1.0.60`。业务模块发起审批、任务办理、事件订阅和进度查询应继续只依赖 `mango-workflow-api` 或 remote starter，不直接引用 workflow core service/event，也不直接读取 workflow 表；既有业务审批发起、审批回调、状态回写、流程页面 key、菜单、权限码、租户隔离和组合入口保持兼容。
