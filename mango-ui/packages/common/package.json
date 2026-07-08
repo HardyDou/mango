@@ -12,6 +12,8 @@
     },
     "./style.css": "./dist/style.css",
     "./theme/index.css": "./theme/index.css",
+    "./theme/admin-standard.css": "./theme/admin-standard.css",
+    "./theme/admin-compact.css": "./theme/admin-compact.css",
     "./theme/index.scss": {
       "types": "./dist/theme/index.scss.d.ts",
       "import": "./theme/index.scss"
@@ -19,6 +21,30 @@
     "./components/Pagination/index.vue": {
       "types": "./dist/components/Pagination/index.d.ts",
       "import": "./dist/components/Pagination/index.js"
+    },
+    "./components/MangoListPage/index.vue": {
+      "types": "./dist/components/MangoListPage/index.d.ts",
+      "import": "./dist/components/MangoListPage/index.js"
+    },
+    "./components/MangoSearchPanel/index.vue": {
+      "types": "./dist/components/MangoSearchPanel/index.d.ts",
+      "import": "./dist/components/MangoSearchPanel/index.js"
+    },
+    "./components/MangoListPanel/index.vue": {
+      "types": "./dist/components/MangoListPanel/index.d.ts",
+      "import": "./dist/components/MangoListPanel/index.js"
+    },
+    "./components/MangoDetailPage/index.vue": {
+      "types": "./dist/components/MangoDetailPage/index.d.ts",
+      "import": "./dist/components/MangoDetailPage/index.js"
+    },
+    "./components/MangoFormPage/index.vue": {
+      "types": "./dist/components/MangoFormPage/index.d.ts",
+      "import": "./dist/components/MangoFormPage/index.js"
+    },
+    "./components/MangoPageSection/index.vue": {
+      "types": "./dist/components/MangoPageSection/index.d.ts",
+      "import": "./dist/components/MangoPageSection/index.js"
     },
     "./components/IconSelector/index.vue": {
       "types": "./dist/components/IconSelector/index.d.ts",

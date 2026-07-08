@@ -149,11 +149,11 @@
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",
-      "reason": "Admin UI 通用规范与基线格式门禁"
+      "reason": "Admin UI 通用规范、统一页面骨架与基线格式门禁"
     },
     "frontend.listPage": {
       "path": "rules/frontend/08-list-page.md",
-      "reason": "列表页 UI 规范与基线格式门禁"
+      "reason": "列表页统一骨架、可折叠搜索、UI 规范与基线格式门禁"
     },
     "frontend.detailPage": {
       "path": "rules/frontend/09-detail-page.md",

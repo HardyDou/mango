@@ -614,11 +614,14 @@ try {
   }
   const modulePage = readFileSync(join(customRoot, 'frontend/packages/contract/src/views/contract/seal/index.vue'), 'utf8');
   for (const expected of [
+    'MangoListPage',
+    'MangoSearchPanel',
+    'MangoListPanel',
+    'Pagination',
     'openCreateDialog',
     'openEditDialog',
     'openDetail',
     'handleDelete',
-    'el-pagination',
     'el-dialog',
     'el-drawer',
     'updateSeal',
