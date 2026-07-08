@@ -120,5 +120,15 @@ export function registerMangoAdminShellBaseDevPages() {
       sort: 11,
       loader: () => import('./components/RealtimeView.vue'),
     },
+    {
+      menuId: 'shell-components-search-panel',
+      menuName: '搜索面板',
+      menuCode: 'shell:components:search-panel',
+      path: '/components/search-panel',
+      component: 'demo/components/SearchPanelView',
+      icon: 'Search',
+      sort: 12,
+      loader: () => import('./components/SearchPanelView.vue'),
+    },
   ]);
 }
