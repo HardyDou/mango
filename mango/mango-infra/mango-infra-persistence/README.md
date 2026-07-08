@@ -342,6 +342,32 @@ mango:
 4. 重复控制：当前模块 history table 中已经成功记录的版本不会重复执行；同一模块不同 location 出现相同版本会按 Flyway 规则校验失败。
 ```
 
+多模块升级 SQL 约定：
+
+```text
+1. 默认约定：不同模块的升级 SQL 必须按模块边界独立可执行，不依赖另一个模块的外部升级 SQL 已先执行。
+2. 有依赖时：必须显式配置 mango.persistence.flyway.modules，并把被依赖模块放在前面；不要依赖未配置 modules 时的模块名自然排序表达业务依赖。
+3. 跨模块修复：一条 SQL 同时修复多个模块表、或必须在多个模块完成后执行时，应放入单独的发布编排模块，例如 release-20260708，并在 modules 中排在相关模块之后，使用独立 history table。
+4. 事务边界：模块之间没有全局事务；某个模块失败后，已成功模块的 history 不会回滚，恢复时继续由各模块 Flyway history 控制幂等。
+```
+
+显式模块顺序示例：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      modules:
+        identity:
+          enabled: true
+        payment:
+          enabled: true
+        release-20260708:
+          enabled: true
+          locations:
+            - filesystem:/opt/mango/upgrade/release-20260708
+```
+
 外部升级 SQL 推荐使用可排序版本号，例如 `V202607081730__fix_payment_channel.sql` 或 `V2026070801__fix_payment_channel.sql`。同一停机窗口内需要多条 SQL 时，版本号必须递增。
 
 推荐升级顺序：
