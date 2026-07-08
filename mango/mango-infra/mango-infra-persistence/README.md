@@ -342,6 +342,19 @@ mango:
 4. 重复控制：当前模块 history table 中已经成功记录的版本不会重复执行；同一模块不同 location 出现相同版本会按 Flyway 规则校验失败。
 ```
 
+同一个模块的升级顺序只看文件名前面的版本号，版本号小的先执行：
+
+```text
+/opt/mango/upgrade/payment/
+  V2026070801__fix_payment_channel.sql
+  V2026070802__fix_payment_order.sql
+  V2026070803__fix_payment_summary.sql
+
+执行顺序：0801 -> 0802 -> 0803
+```
+
+同一个模块内不要出现两个相同版本号。已经执行成功的版本不会重复执行。
+
 多模块升级 SQL 约定：
 
 ```text
