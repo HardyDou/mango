@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+## v2026.07.09-common-search-panel-release - 2026-07-09
+
+### Changed
+
+- Republished `@mango/common` as `1.0.14` so downstream projects can consume the exported `MangoSearchPanel`
+  component, types, and package styles from the company Nexus npm registry.
+
+### Upgrade Notes
+
+- Business frontends that need `MangoSearchPanel` should upgrade to `@mango/common@1.0.14`.
+- Import `MangoSearchPanel` from `@mango/common` or `@mango/common/components/MangoSearchPanel/index.vue`.
+- Continue importing shared styles through `@mango/common/style.css`; no backend API, database, route, menu,
+  permission, tenant, Maven, or CLI change is required for this release.
+
+### Published Packages
+
+- npm: `@mango/common@1.0.14` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.09-common-search-panel-release`.
+
+### Verification
+
+- `pnpm -F @mango/common build`
+- `node .runtime/check-common-exports.mjs`
+- `pnpm pack --pack-destination ..\..\..\.runtime\package-store`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/common --version=1.0.14 --tag=v2026.07.09-common-search-panel-release`
+- `pnpm -C mango-ui publish:pkg @mango/common --release-tag=v2026.07.09-common-search-panel-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/common --version=1.0.14`
+- `npm view @mango/common@1.0.14 version dist.tarball --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.07.08-admin-page-layout-release - 2026-07-08
 
 ### New
