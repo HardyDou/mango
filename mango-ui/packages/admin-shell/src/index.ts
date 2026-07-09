@@ -6,7 +6,15 @@ import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.css';
 import App from './App.vue';
 import { installShellApp } from './appBootstrap';
-import { configureMangoAdminShell, getMangoAdminShellOptions, type MangoAdminShellOptions } from './config';
+import {
+  configureMangoAdminShell,
+  getMangoAdminShellOptions,
+  type MangoAdminFeatureRegistrar,
+  type MangoAdminFeatureRegistration,
+  type MangoAdminLoginRouteComponent,
+  type MangoAdminShellLoginOptions,
+  type MangoAdminShellOptions,
+} from './config';
 import { createMangoAdminRouter } from './router';
 import { ensureFeatureRegistrars } from './runtime/featureRegistrars';
 import { onShellRuntimeUnauthorized } from './runtime/runtimeHost';
@@ -62,7 +70,13 @@ export { createMangoAdminRouter } from './router';
 export { getShellPinia, installShellApp } from './appBootstrap';
 export { configureMangoAdminShell, getMangoAdminShellOptions };
 export { ensureFeatureRegistrars };
-export type { MangoAdminFeatureRegistrar, MangoAdminFeatureRegistration, MangoAdminShellOptions };
+export type {
+  MangoAdminFeatureRegistrar,
+  MangoAdminFeatureRegistration,
+  MangoAdminLoginRouteComponent,
+  MangoAdminShellLoginOptions,
+  MangoAdminShellOptions,
+};
 export * from './stores';
 export * from './runtime/menuHost';
 export * from './runtime/runtimeConfig';

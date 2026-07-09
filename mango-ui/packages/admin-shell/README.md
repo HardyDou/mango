@@ -78,7 +78,7 @@ admin.mount();
 | `devCenter.deployEnv` | 空 | 开发中心运行环境标识。 |
 | `devCenter.registrars` | 空 | 开发中心页面注册函数。 |
 | `devCenter.pages` | 空 | 开发中心页面列表函数。 |
-| `login` | 空 | 传给 `@mango/auth` 的登录页配置。 |
+| `login` | 空 | 登录页配置；默认传给 `@mango/auth`，也可用 `login.component` 替换 `/login` 页面组件。 |
 | `modules` | 空 | 模块运行时配置，结构来自 `@mango/app-runtime`。 |
 | `localApps` | 空 | 本地应用配置。 |
 | `features` | `core` | 内置能力开关。 |
@@ -86,6 +86,25 @@ admin.mount();
 | `widgets` | 空 | 宿主直接传入的首页业务小组件定义。 |
 | `runtimeConfigUrl` | 空 | 运行时配置地址。 |
 | `runtimeConfigLoadOptions` | 空 | 运行时配置加载选项。 |
+
+自定义登录页：
+
+```ts
+import { createMangoAdminApp } from '@mango/admin-shell';
+import BusinessLoginView from './views/BusinessLoginView.vue';
+
+const admin = createMangoAdminApp({
+  login: {
+    component: BusinessLoginView,
+    defaults: {
+      appCode: 'internal-admin',
+      redirectPath: '/home',
+    },
+  },
+});
+```
+
+未配置 `login.component` 时，`/login` 继续使用 `@mango/auth` 的默认 `LoginView`。业务登录组件需要复用 Mango 登录协议时，直接调用 `@mango/auth` 的 `useMangoLoginFlow()`；页面结构、样式、表单校验和按钮状态由业务组件自行处理。
 
 `features` 支持：
 

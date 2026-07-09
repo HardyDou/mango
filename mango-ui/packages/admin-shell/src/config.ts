@@ -1,3 +1,4 @@
+import type { Component } from 'vue';
 import type { MangoAuthConfig } from '@mango/auth';
 import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
 import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
@@ -29,13 +30,22 @@ export interface MangoAdminDevCenterPage {
   feature?: MangoAdminFeatureCode;
 }
 
+export type MangoAdminLoginRouteComponent = Component | (() => Promise<Component>);
+
+export interface MangoAdminShellLoginOptions {
+  brand?: NonNullable<MangoAuthConfig['login']>['brand'];
+  defaults?: NonNullable<MangoAuthConfig['login']>['defaults'];
+  slots?: NonNullable<MangoAuthConfig['login']>['slots'];
+  component?: MangoAdminLoginRouteComponent;
+}
+
 export interface MangoAdminShellOptions {
   mountTarget?: string | Element;
   apiBaseUrl?: string;
   title?: string;
   contentMode?: 'router-view' | 'runtime-outlet';
   devCenter?: MangoAdminShellDevCenterOptions;
-  login?: MangoAuthConfig['login'];
+  login?: MangoAdminShellLoginOptions;
   modules?: MangoRuntimeConfig['modules'];
   localApps?: MangoFrontendApp[];
   features?: MangoAdminFeatures;
@@ -83,6 +93,7 @@ export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
         ...mangoAdminShellOptions.login?.slots,
         ...options.login?.slots,
       },
+      component: options.login?.component || mangoAdminShellOptions.login?.component,
     },
     devCenter: {
       ...mangoAdminShellOptions.devCenter,

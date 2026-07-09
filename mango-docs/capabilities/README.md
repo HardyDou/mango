@@ -98,7 +98,7 @@ Mango 前端包默认服务管理后台。标记为 `Admin Shell` 或 `Admin Pag
 | 单体管理端 | `@mango/admin` | Admin Shell，后台应用聚合入口 | 不使用 | [README](../../mango-ui/packages/admin/README.md) | [README](../../mango-ui/packages/admin/README.md) |
 | 后台 Shell | `@mango/admin-shell` | Admin Shell，后台布局、菜单、路由、运行时和首页业务小组件自动注册 | 不使用，除非官网就是内部后台 | [README](../../mango-ui/packages/admin-shell/README.md) | [README](../../mango-ui/packages/admin-shell/README.md) |
 | 页面注册表 | `@mango/admin-pages` | Admin Pages，后台页面注册和 component key 映射 | 不使用 | [README](../../mango-ui/packages/admin-pages/README.md) | [README](../../mango-ui/packages/admin-pages/README.md) |
-| 认证前端 | `@mango/auth` | Admin Pages，后台登录、用户与认证页面 | 不直接复用官网登录页 | [README](../../mango-ui/packages/auth/README.md) | [README](../../mango-ui/packages/auth/README.md) |
+| 认证前端 | `@mango/auth` | Admin Pages，后台登录、登录流程 hook、用户与认证页面 | 不直接复用官网登录页；自定义后台登录页可复用 `useMangoLoginFlow()` | [README](../../mango-ui/packages/auth/README.md) | [README](../../mango-ui/packages/auth/README.md) |
 | 日历前端 | `@mango/calendar` | Admin Pages，后台日历管理页面 | 不直接复用整页 | [README](../../mango-ui/packages/calendar/README.md) | [README](../../mango-ui/packages/calendar/README.md) |
 | 任务前端 | `@mango/job` | Admin Pages，后台任务管理页面 | 不使用 | [README](../../mango-ui/packages/job/README.md) | [README](../../mango-ui/packages/job/README.md) |
 | 网址导航前端 | `@mango/link` | Admin Pages，后台网址导航和网址管理页面 | 不直接复用整页；门户导航使用 `@mango/link-page` | [README](../../mango-ui/packages/link/README.md) | [README](../../mango-ui/packages/link/README.md) |

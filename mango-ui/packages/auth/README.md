@@ -2,7 +2,7 @@
 
 ## 1. 概览
 
-`@mango/auth` 是 Mango 管理端认证前端包，提供登录页、个人中心、修改密码页、用户信息 store、认证 API 封装和登录页运行配置。
+`@mango/auth` 是 Mango 管理端认证前端包，提供登录页、登录逻辑 hook、个人中心、修改密码页、用户信息 store、认证 API 封装和登录页运行配置。
 
 集成形态：
 
@@ -17,7 +17,7 @@
 
 | 能力 | 使用入口 | 后端依赖 |
 |------|----------|----------|
-| 账号密码登录 | `LoginView`、`login()` | `mango-auth` |
+| 账号密码登录 | `LoginView`、`useMangoLoginFlow()`、`login()` | `mango-auth` |
 | 企微登录 | `wecomLogin()`、`getWecomLoginConfig()` | `mango-auth` 企微渠道配置 |
 | 登录租户选择 | `getLoginTenantOptions()`、`getAccountLoginTenantOptions()` | `mango-system`、`mango-auth` |
 | 当前用户信息 | `getUserInfo()`、`useUserInfoStore` | `mango-auth`、`mango-identity` |
@@ -126,7 +126,28 @@ await logout();
 | `installMangoAuth` | 安装认证页面配置。 |
 | `getMangoAuthConfig` | 读取全局认证配置。 |
 | `mergeAuthConfig` | 合并认证配置。 |
-| `useUserInfoStore` | 用户信息 store。 |
+| `useUserInfo` | 用户信息 store。 |
+| `useMangoLoginFlow` | 登录流程 hook，供默认登录页和业务自定义登录页复用。 |
+
+自定义登录页可只消费登录逻辑，UI、布局、表单校验和按钮禁用由业务组件自己处理：
+
+```ts
+import { useMangoLoginFlow } from '@mango/auth';
+
+const loginFlow = useMangoLoginFlow();
+
+await loginFlow.loadLoginTenants();
+loginFlow.setTenantId(selectedTenantId);
+loginFlow.form.username = username;
+loginFlow.form.password = password;
+
+const result = await loginFlow.submitPasswordLogin();
+if (result.status === 'password-reset-required') {
+  // 业务组件自行打开强制改密弹窗，并调用 submitRequiredPasswordChange()
+}
+```
+
+`useMangoLoginFlow()` 会处理登录机构加载、账号密码登录、企业微信登录、强制改密、token/user/tenant 持久化和安全 redirect。它会暴露 `loading`、`tenantLoading`、`wecomLoading`、`passwordResetLoading` 等状态，业务组件自行决定按钮禁用、loading 展示和错误区域。
 
 API 封装：
 
@@ -207,3 +228,4 @@ API 封装：
 ## 11. 变更影响记录
 
 - 本次新增登录首次强制改密、密码复杂度提示和弱密码提交拦截；`LoginView` 和 `PasswordView` 都会展示密码规则，并按统一密码策略校验。登录成功后若后端返回 `passwordResetRequired=true` 或 `loginAction=CHANGE_PASSWORD`，前端会切换到改密弹窗而不是直接进入后台。该变更不改变 `login()`、`logout()`、`getUserInfo()`、`getLoginTenantOptions()`、`wecomLogin()` 和 `updatePassword()` 的接口路径。
+- 本次新增 `useMangoLoginFlow()` 登录流程 hook，默认 `LoginView` 已改为复用该 hook。业务项目如需完全自定义登录页，可在自己的 `/login` 组件中调用 hook；页面 UI、布局和表单校验仍由业务组件负责。

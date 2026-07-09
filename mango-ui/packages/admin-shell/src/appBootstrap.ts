@@ -73,6 +73,7 @@ export function getShellI18n() {
 }
 
 export function installShellApp(app: VueApp, options: MangoAdminShellOptions = getMangoAdminShellOptions()) {
+  const authLoginOptions = toMangoAuthLoginOptions(options.login);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);
   }
@@ -82,13 +83,13 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
   app.use(getShellI18n());
   installMangoAuth(app, {
     login: {
-      ...options.login,
+      ...authLoginOptions,
       brand: {
-        title: options.login?.brand?.title || options.title || DEFAULT_ADMIN_BRANDING.loginTitle,
-        subtitle: options.login?.brand?.subtitle || DEFAULT_ADMIN_BRANDING.loginSubtitle,
-        panelTitle: options.login?.brand?.panelTitle,
-        logoUrl: options.login?.brand?.logoUrl,
-        imageUrl: options.login?.brand?.imageUrl,
+        title: authLoginOptions.brand?.title || options.title || DEFAULT_ADMIN_BRANDING.loginTitle,
+        subtitle: authLoginOptions.brand?.subtitle || DEFAULT_ADMIN_BRANDING.loginSubtitle,
+        panelTitle: authLoginOptions.brand?.panelTitle,
+        logoUrl: authLoginOptions.brand?.logoUrl,
+        imageUrl: authLoginOptions.brand?.imageUrl,
       },
       defaults: {
         tenantCode: 'default',
@@ -97,7 +98,7 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
         partyType: 'INTERNAL_ORG',
         appCode: 'internal-admin',
         redirectPath: '/home',
-        ...options.login?.defaults,
+        ...authLoginOptions.defaults,
       },
     },
     profile: {
@@ -116,6 +117,17 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
       return;
     }
     mangoMessage.error('系统错误，请刷新页面');
+  };
+}
+
+function toMangoAuthLoginOptions(login: MangoAdminShellOptions['login']) {
+  if (!login) {
+    return {};
+  }
+  return {
+    brand: login.brand,
+    defaults: login.defaults,
+    slots: login.slots,
   };
 }
 

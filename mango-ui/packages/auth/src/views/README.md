@@ -10,7 +10,8 @@
 - `ProfileView`
 - `PasswordView`
 - `useAuthConfig`
-- `useUserInfoStore`
+- `useUserInfo`
+- `useMangoLoginFlow`
 - `login`、`logout`、`getInfo`、`updatePassword` 等认证 API 封装。
 
 `@mango/auth` 当前没有独立 `admin-pages` 注册入口；通常由 Shell、路由或业务应用直接引用页面组件。
@@ -38,7 +39,7 @@ import '@mango/auth/style.css';
 ]
 ```
 
-页面组件不对外定义 props 或事件；登录表单、租户选择、验证码、用户信息和密码修改通过 `src/api/sys.ts` 与后端交互。
+页面组件不对外定义 props 或事件。业务项目需要完全自定义登录页时，应自行实现 `/login` 页面 UI，并通过 `useMangoLoginFlow()` 复用登录机构、账号密码登录、企微登录、强制改密、登录态持久化和 redirect 逻辑。
 
 可配置项来自 `useAuthConfig()` 和后端系统配置。
 
