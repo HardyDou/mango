@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+## v2026.07.09-auth-login-flow-1.0.14-release - 2026-07-09
+
+### Changed
+
+- 基于已合并的 `main` 分支发布 `@mango/auth@1.0.14`，方便业务系统从 Nexus 获取包含
+  `useMangoLoginFlow` 的最新登录 Hook 包版本。
+
+### Upgrade Notes
+
+- 需要登录 Hook 的业务前端升级到 `@mango/auth@1.0.14`。
+- Hook 引入方式保持为：`import { useMangoLoginFlow } from '@mango/auth';`。
+- 使用包内登录页面时，样式仍通过 `@mango/auth/style.css` 引入。
+- 本次为基于已合并主干的 auth 单包发布，不调整后端接口、数据库、菜单、权限、租户、Maven 版本、CLI 模板或 admin 包运行时行为。
+
+### Published Packages
+
+- npm: `@mango/auth@1.0.14` 发布到 `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`。
+- GitHub Release: `v2026.07.09-auth-login-flow-1.0.14-release`。
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui --filter @mango/auth build`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/auth --version=1.0.14 --tag=v2026.07.09-auth-login-flow-1.0.14-release`
+- `pnpm -C mango-ui publish:pkg @mango/auth --release-tag=v2026.07.09-auth-login-flow-1.0.14-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/auth --version=1.0.14`
+
 ## v2026.07.09-auth-login-flow-release - 2026-07-09
 
 ### New
