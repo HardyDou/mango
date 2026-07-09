@@ -1,7 +1,12 @@
 <template>
-  <section class="mango-search-panel" data-surface="search">
+  <section class="mango-search-panel" :class="{ 'mango-search-panel--more-bottom': morePlacement === 'bottom' }" data-surface="search">
     <el-form class="mango-search-panel__form" :model="model" :label-width="labelWidth" @submit.prevent>
-      <div ref="fieldsRef" class="mango-search-panel__fields">
+      <div
+        ref="fieldsRef"
+        class="mango-search-panel__fields"
+        :class="fieldsClasses"
+        :style="fieldsStyle"
+      >
         <slot />
       </div>
       <div class="mango-search-panel__actions">
@@ -14,7 +19,7 @@
               {{ resetText }}
             </el-button>
             <el-button
-              v-if="collapsible && hasOverflow"
+              v-if="showActionMoreButton"
               link
               type="primary"
               :icon="expanded ? ArrowUp : ArrowDown"
@@ -26,12 +31,25 @@
         </el-form-item>
       </div>
     </el-form>
+    <div v-if="showBottomMoreButton" class="mango-search-panel__more">
+      <el-button
+        link
+        type="primary"
+        :icon="expanded ? ArrowUp : ArrowDown"
+        @click="toggleExpanded"
+      >
+        {{ expanded ? collapseText : expandText }}
+      </el-button>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts" name="MangoSearchPanel">
 import { ArrowDown, ArrowUp, Refresh, Search } from '@element-plus/icons-vue';
-import { nextTick, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue';
+
+type SearchPanelColumns = number | 'auto';
+type SearchPanelMorePlacement = 'actions' | 'bottom';
 
 const props = withDefaults(defineProps<{
   model?: Record<string, unknown>;
@@ -45,6 +63,10 @@ const props = withDefaults(defineProps<{
   collapsedCount?: number;
   expandText?: string;
   collapseText?: string;
+  columns?: SearchPanelColumns;
+  morePlacement?: SearchPanelMorePlacement;
+  fieldMinWidth?: string;
+  fieldMaxWidth?: string;
 }>(), {
   model: undefined,
   labelWidth: '96px',
@@ -55,6 +77,10 @@ const props = withDefaults(defineProps<{
   defaultExpanded: false,
   collapsedRows: 1,
   collapsedCount: undefined,
+  columns: 'auto',
+  morePlacement: 'actions',
+  fieldMinWidth: '280px',
+  fieldMaxWidth: '320px',
   expandText: '展开',
   collapseText: '收起',
 });
@@ -68,7 +94,40 @@ const emit = defineEmits<{
 const fieldsRef = ref<HTMLElement>();
 const expanded = ref(props.defaultExpanded);
 const hasOverflow = ref(false);
+const fieldsWidth = ref(0);
 let resizeObserver: ResizeObserver | undefined;
+
+const configuredColumns = computed(() => (typeof props.columns === 'number' && props.columns > 0 ? Math.floor(props.columns) : undefined));
+const fixedColumns = computed(() => configuredColumns.value !== undefined);
+
+// 固定列模式会跟随容器宽度降列，保证 collapsedRows 对应真实可见行数。
+const renderedColumns = computed(() => {
+  const columns = configuredColumns.value;
+  if (!columns) {
+    return undefined;
+  }
+  if (fieldsWidth.value > 0 && fieldsWidth.value <= 640) {
+    return 1;
+  }
+  if (fieldsWidth.value > 0 && fieldsWidth.value <= 960) {
+    return Math.min(columns, 2);
+  }
+  return columns;
+});
+
+const fieldsClasses = computed(() => ({
+  'mango-search-panel__fields--auto': !fixedColumns.value,
+  'mango-search-panel__fields--fixed': fixedColumns.value,
+}));
+
+const fieldsStyle = computed(() => ({
+  '--mango-search-columns': String(renderedColumns.value ?? 1),
+  '--mango-search-field-min-width': props.fieldMinWidth,
+  '--mango-search-field-max-width': props.fieldMaxWidth,
+}));
+
+const showActionMoreButton = computed(() => props.collapsible && hasOverflow.value && props.morePlacement === 'actions');
+const showBottomMoreButton = computed(() => props.collapsible && hasOverflow.value && props.morePlacement === 'bottom');
 
 const getFieldItems = () => {
   const fields = fieldsRef.value;
@@ -88,6 +147,10 @@ const clearHiddenState = (items = getFieldItems()) => {
 const resolveCollapsedCount = () => {
   if (props.collapsedCount && props.collapsedCount > 0) {
     return props.collapsedCount;
+  }
+
+  if (renderedColumns.value) {
+    return Math.max(1, renderedColumns.value * props.collapsedRows);
   }
 
   const fields = fieldsRef.value;
@@ -130,25 +193,44 @@ const scheduleApplyCollapse = () => {
   void nextTick(applyCollapse);
 };
 
+const updateFieldsWidth = () => {
+  fieldsWidth.value = fieldsRef.value?.clientWidth ?? 0;
+};
+
 const toggleExpanded = () => {
   expanded.value = !expanded.value;
   emit('expandChange', expanded.value);
 };
 
 watch(
-  () => [props.collapsible, props.collapsedRows, props.collapsedCount, expanded.value],
+  () => [
+    props.collapsible,
+    props.collapsedRows,
+    props.collapsedCount,
+    props.columns,
+    props.morePlacement,
+    fieldsWidth.value,
+    expanded.value,
+  ],
   scheduleApplyCollapse,
 );
 
 onMounted(() => {
+  updateFieldsWidth();
   scheduleApplyCollapse();
   if (typeof ResizeObserver !== 'undefined' && fieldsRef.value) {
-    resizeObserver = new ResizeObserver(scheduleApplyCollapse);
+    resizeObserver = new ResizeObserver(() => {
+      updateFieldsWidth();
+      scheduleApplyCollapse();
+    });
     resizeObserver.observe(fieldsRef.value);
   }
 });
 
-onUpdated(scheduleApplyCollapse);
+onUpdated(() => {
+  updateFieldsWidth();
+  scheduleApplyCollapse();
+});
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
@@ -165,6 +247,10 @@ onBeforeUnmount(() => {
   box-shadow: var(--mango-shadow-light);
 }
 
+.mango-search-panel--more-bottom {
+  padding-bottom: 10px;
+}
+
 .mango-search-panel__form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -174,10 +260,17 @@ onBeforeUnmount(() => {
 
 .mango-search-panel__fields {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 320px));
   gap: 12px 16px;
-  justify-content: start;
   min-width: 0;
+}
+
+.mango-search-panel__fields--auto {
+  grid-template-columns: repeat(auto-fill, minmax(var(--mango-search-field-min-width), var(--mango-search-field-max-width)));
+  justify-content: start;
+}
+
+.mango-search-panel__fields--fixed {
+  grid-template-columns: repeat(var(--mango-search-columns), minmax(0, 1fr));
 }
 
 .mango-search-panel__actions {
@@ -216,6 +309,12 @@ onBeforeUnmount(() => {
 .mango-search-panel__actions :deep(.el-form-item__content) {
   justify-content: flex-end;
   flex-wrap: nowrap;
+}
+
+.mango-search-panel__more {
+  display: flex;
+  justify-content: center;
+  padding-top: 2px;
 }
 
 @media (max-width: 960px) {
