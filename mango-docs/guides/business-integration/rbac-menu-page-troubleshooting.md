@@ -197,3 +197,5 @@ pnpm -F @mango/admin-shell build
 ## search-panel-layout-enhance 影响记录
 
 - 本次仅增强开发中心搜索面板示例和 `@mango/common` 搜索面板固定列布局能力，不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权关系、租户绑定、页面路由和本场景排障步骤。
+
+- 本次 PR 仅调整 `@mango/common` `MangoSearchPanel` 为无外壳视觉边界，并补充开发中心极简示例；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户应用绑定、页面路由和本场景排障步骤。
