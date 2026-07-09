@@ -6,6 +6,7 @@ import {
   findPackage,
   GROUP_REGISTRY,
   HOSTED_REGISTRY,
+  commandForPlatform,
   normalizePackageName,
   npmView,
   readReleaseContracts,
@@ -84,7 +85,8 @@ const skipSharedGates = args.includes('--skip-shared-gates');
 const releaseTagArg = args.find((arg) => arg.startsWith('--release-tag='));
 const releaseTag = releaseTagArg?.slice('--release-tag='.length) || '';
 const packageArg = args.find((arg) => !arg.startsWith('--'));
-const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const pnpmCommand = commandForPlatform('pnpm');
+const npmCommand = commandForPlatform('npm');
 
 if (args.includes('--help') || args.includes('-h')) {
   usage();
@@ -159,7 +161,7 @@ if (!dryRun && existing.status === 0 && existing.stdout.trim() === version) {
   process.exit(1);
 }
 
-const whoami = spawnSync('npm', ['whoami', `--registry=${HOSTED_REGISTRY}`], {
+const whoami = spawnSync(npmCommand, ['whoami', `--registry=${HOSTED_REGISTRY}`], {
   stdio: 'pipe',
   encoding: 'utf8',
 });
