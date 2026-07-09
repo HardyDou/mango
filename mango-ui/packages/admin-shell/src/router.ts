@@ -1,7 +1,13 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { Session } from '@mango/common/utils/storage';
 import { getShellPinia } from './appBootstrap';
+import { getMangoAdminShellOptions } from './config';
 import { useTagsViewRoutes } from './stores/tagsViewRoutes';
+
+function resolveLoginRouteComponent() {
+  return getMangoAdminShellOptions().login?.component
+    || (() => import('@mango/auth').then(m => m.LoginView));
+}
 
 export function createMangoAdminRouter() {
   const router = createRouter({
@@ -10,7 +16,7 @@ export function createMangoAdminRouter() {
       {
         path: '/login',
         name: 'Login',
-        component: () => import('@mango/auth').then(m => m.LoginView),
+        component: resolveLoginRouteComponent(),
       },
       {
         path: '/',
