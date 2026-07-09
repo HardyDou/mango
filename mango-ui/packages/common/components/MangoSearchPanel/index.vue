@@ -240,15 +240,6 @@ onBeforeUnmount(() => {
 <style scoped>
 .mango-search-panel {
   width: 100%;
-  padding: 14px 16px 2px;
-  background: var(--mango-bg-color);
-  border: 1px solid var(--mango-border-light);
-  border-radius: 6px;
-  box-shadow: var(--mango-shadow-light);
-}
-
-.mango-search-panel--more-bottom {
-  padding-bottom: 10px;
 }
 
 .mango-search-panel__form {
@@ -333,10 +324,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 640px) {
-  .mango-search-panel {
-    padding: 12px 12px 0;
-  }
-
   .mango-search-panel__fields {
     grid-template-columns: 1fr;
   }

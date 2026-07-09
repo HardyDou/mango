@@ -210,6 +210,29 @@
         <el-table-column prop="payload" label="参数" min-width="180" />
       </el-table>
     </section>
+
+    <section id="simple-preview" class="doc-section">
+      <MangoSearchPanel :model="simpleQuery" @search="handleSearch('极简搜索')" @reset="resetSimpleQuery">
+        <el-form-item label="关键字">
+          <el-input v-model="simpleQuery.keyword" placeholder="请输入关键字" clearable />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="simpleQuery.status" placeholder="请选择状态" clearable>
+            <el-option label="启用" value="enabled" />
+            <el-option label="停用" value="disabled" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="simpleQuery.type" placeholder="请选择类型" clearable>
+            <el-option label="系统" value="system" />
+            <el-option label="业务" value="business" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="创建时间">
+          <el-date-picker v-model="simpleQuery.createdAt" type="date" placeholder="请选择日期" value-format="YYYY-MM-DD" />
+        </el-form-item>
+      </MangoSearchPanel>
+    </section>
   </DemoDocLayout>
 </template>
 
@@ -268,6 +291,13 @@ const fixedQuery = reactive({
 const listQuery = reactive({
   menuName: '',
   menuType: '',
+});
+
+const simpleQuery = reactive({
+  keyword: '',
+  status: '',
+  type: '',
+  createdAt: '',
 });
 
 const tableData = [
@@ -425,6 +455,13 @@ function resetListQuery() {
   listQuery.menuName = '';
   listQuery.menuType = '';
   ElMessage.info('已重置列表页查询条件');
+}
+
+function resetSimpleQuery() {
+  simpleQuery.keyword = '';
+  simpleQuery.status = '';
+  simpleQuery.type = '';
+  simpleQuery.createdAt = '';
 }
 
 function handleSearch(scene: string) {
