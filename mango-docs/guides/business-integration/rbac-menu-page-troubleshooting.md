@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #425 仅新增可复用登录流程 Hook，并允许 `/login` 注入业务自定义登录组件；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户绑定、页面路由和本场景排障步骤。业务侧自定义登录 UI 后如遇页面入口缺失，仍按菜单资源同步、角色授权、租户绑定和前端页面 key 注册链路排查。
+
 - v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户绑定、页面路由和本场景排障步骤。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
 
 - 本次 PR 将菜单可见性和接口权限码拆分：`menuCode` 只决定菜单授权和菜单树可见性，`apiCodes` 表示该菜单页面需要的接口权限码。Resource `AUTH_MENU` 不再声明 `permissionItems`/`permissionCode` 按钮节点；业务模块需要给页面自动带上的接口权限，应写在目标菜单的 `apiCodes` 中。角色授权菜单后会获得该菜单的 `apiCodes`，但只拿到接口权限不会反向带出父菜单。若要给匿名或登录用户配置基础接口权限，使用隐藏菜单并绑定 `ROLE_ANONYMOUS` 或 `ROLE_LOGIN`，隐藏菜单不会出现在用户菜单树中。
