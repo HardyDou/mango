@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+## v2026.07.09-common-search-panel-form-layout-release - 2026-07-09
+
+### Changed
+
+- Released `@mango/common@1.0.16` with configurable `MangoSearchPanel` form layout defaults, including four columns per
+  row, two collapsed rows, configurable label suffix, label alignment, form size, and bottom-centered icon-only expand
+  or collapse control.
+- Kept `MangoSearchPanel` shellless so business pages can place it inside their own card or page containers without
+  duplicated background, border, shadow, or padding.
+
+### Upgrade Notes
+
+- Business frontends that use `MangoSearchPanel` should upgrade to `@mango/common@1.0.16`.
+- Continue importing the component from `@mango/common` or `@mango/common/components/MangoSearchPanel/index.vue`.
+- Continue importing styles through `@mango/common/style.css`.
+- This is a single-package release for the common component package. It does not change backend API, database, menu,
+  permission, tenant, Maven version, CLI templates, or admin package runtime behavior.
+
+### Published Packages
+
+- npm: `@mango/common@1.0.16` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.09-common-search-panel-form-layout-release`.
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui --filter @mango/common build`
+- `pnpm -C mango-ui --filter @mango/common exec vitest run components/MangoListPage/__tests__/MangoPageLayout.spec.ts`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/common --version=1.0.16 --tag=v2026.07.09-common-search-panel-form-layout-release`
+- `pnpm -C mango-ui publish:pkg @mango/common --release-tag=v2026.07.09-common-search-panel-form-layout-release`
+- `pnpm -C mango-ui release:verify-npm @mango/common --version=1.0.16`
+
 ## v2026.07.09-auth-login-flow-release - 2026-07-09
 
 ### New

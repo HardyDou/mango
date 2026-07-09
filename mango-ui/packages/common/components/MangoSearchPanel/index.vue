@@ -1,6 +1,14 @@
 <template>
   <section class="mango-search-panel" :class="{ 'mango-search-panel--more-bottom': morePlacement === 'bottom' }" data-surface="search">
-    <el-form class="mango-search-panel__form" :model="model" :label-width="labelWidth" @submit.prevent>
+    <el-form
+      class="mango-search-panel__form"
+      :model="model"
+      :label-width="labelWidth"
+      :label-position="labelPosition"
+      :label-suffix="labelSuffix"
+      :size="size"
+      @submit.prevent
+    >
       <div
         ref="fieldsRef"
         class="mango-search-panel__fields"
@@ -18,42 +26,51 @@
             <el-button v-if="showReset" :icon="Refresh" @click="emit('reset')">
               {{ resetText }}
             </el-button>
-            <el-button
+            <button
               v-if="showActionMoreButton"
-              link
-              type="primary"
-              :icon="expanded ? ArrowUp : ArrowDown"
+              class="mango-search-panel__more-button"
+              type="button"
+              :aria-label="expanded ? collapseText : expandText"
               @click="toggleExpanded"
             >
-              {{ expanded ? collapseText : expandText }}
-            </el-button>
+              <el-icon>
+                <component :is="expanded ? ArrowUpBold : ArrowDownBold" />
+              </el-icon>
+            </button>
           </slot>
         </el-form-item>
       </div>
     </el-form>
     <div v-if="showBottomMoreButton" class="mango-search-panel__more">
-      <el-button
-        link
-        type="primary"
-        :icon="expanded ? ArrowUp : ArrowDown"
+      <button
+        class="mango-search-panel__more-button"
+        type="button"
+        :aria-label="expanded ? collapseText : expandText"
         @click="toggleExpanded"
       >
-        {{ expanded ? collapseText : expandText }}
-      </el-button>
+        <el-icon>
+          <component :is="expanded ? ArrowUpBold : ArrowDownBold" />
+        </el-icon>
+      </button>
     </div>
   </section>
 </template>
 
 <script setup lang="ts" name="MangoSearchPanel">
-import { ArrowDown, ArrowUp, Refresh, Search } from '@element-plus/icons-vue';
+import { ArrowDownBold, ArrowUpBold, Refresh, Search } from '@element-plus/icons-vue';
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue';
 
 type SearchPanelColumns = number | 'auto';
 type SearchPanelMorePlacement = 'actions' | 'bottom';
+type SearchPanelLabelPosition = 'left' | 'right' | 'top';
+type SearchPanelSize = 'large' | 'default' | 'small';
 
 const props = withDefaults(defineProps<{
   model?: Record<string, unknown>;
   labelWidth?: string | number;
+  labelSuffix?: string;
+  labelPosition?: SearchPanelLabelPosition;
+  size?: SearchPanelSize;
   searchText?: string;
   resetText?: string;
   showReset?: boolean;
@@ -70,15 +87,18 @@ const props = withDefaults(defineProps<{
 }>(), {
   model: undefined,
   labelWidth: '96px',
+  labelSuffix: '：',
+  labelPosition: 'right',
+  size: 'default',
   searchText: '查询',
   resetText: '重置',
   showReset: true,
   collapsible: false,
   defaultExpanded: false,
-  collapsedRows: 1,
+  collapsedRows: 2,
   collapsedCount: undefined,
-  columns: 'auto',
-  morePlacement: 'actions',
+  columns: 4,
+  morePlacement: 'bottom',
   fieldMinWidth: '280px',
   fieldMaxWidth: '320px',
   expandText: '展开',
@@ -244,7 +264,7 @@ onBeforeUnmount(() => {
 
 .mango-search-panel__form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 10fr) minmax(128px, 2fr);
   gap: 12px 16px;
   align-items: stretch;
 }
@@ -268,7 +288,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-self: end;
   justify-content: flex-end;
-  min-width: 148px;
+  min-width: 0;
 }
 
 .mango-search-panel :deep(.el-form-item) {
@@ -306,6 +326,32 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   padding-top: 2px;
+}
+
+.mango-search-panel__more-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  outline: none;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.mango-search-panel__more-button:hover,
+.mango-search-panel__more-button:focus-visible {
+  color: var(--el-color-primary);
+  background: var(--el-fill-color-light);
+}
+
+.mango-search-panel__more-button .el-icon {
+  font-size: 16px;
 }
 
 @media (max-width: 960px) {
