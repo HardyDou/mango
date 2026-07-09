@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+## v2026.07.09-common-search-panel-shellless-release - 2026-07-09
+
+### Changed
+
+- Released `@mango/common@1.0.15` with the shellless `MangoSearchPanel` style so business pages can place the
+  component inside their own card or page containers without duplicated background, border, shadow, or padding.
+- Kept the fixed-column search layout, collapsed-field behavior, and bottom expand button from the current main branch.
+
+### Upgrade Notes
+
+- Business frontends that use `MangoSearchPanel` should upgrade to `@mango/common@1.0.15`.
+- Continue importing the component from `@mango/common` or `@mango/common/components/MangoSearchPanel/index.vue`.
+- Continue importing styles through `@mango/common/style.css`.
+- This is a single-package release for the common component package. It does not change backend API, database, menu,
+  permission, tenant, Maven version, CLI templates, or admin package runtime behavior.
+
+### Published Packages
+
+- npm: `@mango/common@1.0.15` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.09-common-search-panel-shellless-release`.
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui --filter @mango/common build`
+- `pnpm -C mango-ui --filter @mango/common exec vitest run components/MangoListPage/__tests__/MangoPageLayout.spec.ts`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/common --version=1.0.15 --tag=v2026.07.09-common-search-panel-shellless-release`
+- `pnpm -C mango-ui publish:pkg @mango/common --release-tag=v2026.07.09-common-search-panel-shellless-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/common --version=1.0.15`
+
 ## v2026.07.08-admin-page-layout-release - 2026-07-08
 
 ### New
