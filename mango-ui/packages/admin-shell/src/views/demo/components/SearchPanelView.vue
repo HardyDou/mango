@@ -77,6 +77,63 @@
       </div>
     </section>
 
+    <section id="fixed-columns" class="doc-section">
+      <h2>固定四列查询</h2>
+      <p>适合字段较多但希望桌面端保持四列排版的业务页，收起态默认展示两行，更多按钮可放在搜索区底部居中。</p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <MangoSearchPanel
+            :model="fixedQuery"
+            collapsible
+            :columns="4"
+            :collapsed-rows="2"
+            more-placement="bottom"
+            @search="handleSearch('固定四列查询')"
+            @reset="resetFixedQuery"
+          >
+            <el-form-item label="项目名称">
+              <el-input v-model="fixedQuery.projectName" placeholder="请输入项目名称" clearable />
+            </el-form-item>
+            <el-form-item label="项目编号">
+              <el-input v-model="fixedQuery.projectCode" placeholder="请输入项目编号" clearable />
+            </el-form-item>
+            <el-form-item label="客户名称">
+              <el-input v-model="fixedQuery.customerName" placeholder="请输入客户名称" clearable />
+            </el-form-item>
+            <el-form-item label="所属机构">
+              <el-input v-model="fixedQuery.orgName" placeholder="请输入所属机构" clearable />
+            </el-form-item>
+            <el-form-item label="业务类型">
+              <el-select v-model="fixedQuery.businessType" placeholder="请选择业务类型" clearable>
+                <el-option label="投标保函" value="bid" />
+                <el-option label="履约保函" value="performance" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="保函状态">
+              <el-select v-model="fixedQuery.status" placeholder="请选择保函状态" clearable>
+                <el-option label="待提交" value="draft" />
+                <el-option label="审批中" value="approval" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="申请日期">
+              <el-date-picker v-model="fixedQuery.applyDate" type="date" placeholder="请选择申请日期" value-format="YYYY-MM-DD" />
+            </el-form-item>
+            <el-form-item label="到期日期">
+              <el-date-picker v-model="fixedQuery.expireDate" type="date" placeholder="请选择到期日期" value-format="YYYY-MM-DD" />
+            </el-form-item>
+            <el-form-item label="经办人">
+              <el-input v-model="fixedQuery.operatorName" placeholder="请输入经办人" clearable />
+            </el-form-item>
+          </MangoSearchPanel>
+        </div>
+        <div class="op-btns" @click="toggleCode('fixedColumns')">
+          <el-icon><component :is="codeVisible.fixedColumns ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.fixedColumns ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.fixedColumns" :code="fixedColumnsCode" />
+      </div>
+    </section>
+
     <section id="list-page" class="doc-section">
       <h2>列表页组合</h2>
       <p>标准列表页建议和 MangoListPage、MangoListPanel、Pagination 一起使用。</p>
@@ -164,11 +221,12 @@ import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@ma
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
-type CodeBlockKey = 'basic' | 'collapsible' | 'listPage';
+type CodeBlockKey = 'basic' | 'collapsible' | 'fixedColumns' | 'listPage';
 
 const tocItems = [
   { id: 'basic', label: '基础查询' },
   { id: 'collapsible', label: '可折叠查询' },
+  { id: 'fixed-columns', label: '固定四列查询' },
   { id: 'list-page', label: '列表页组合' },
   { id: 'props', label: '支持属性' },
   { id: 'slots', label: '支持插槽' },
@@ -178,6 +236,7 @@ const tocItems = [
 const codeVisible = ref<Record<CodeBlockKey, boolean>>({
   basic: false,
   collapsible: false,
+  fixedColumns: false,
   listPage: false,
 });
 
@@ -192,6 +251,18 @@ const advancedQuery = reactive({
   status: '',
   createdRange: [] as string[],
   mobile: '',
+});
+
+const fixedQuery = reactive({
+  projectName: '',
+  projectCode: '',
+  customerName: '',
+  orgName: '',
+  businessType: '',
+  status: '',
+  applyDate: '',
+  expireDate: '',
+  operatorName: '',
 });
 
 const listQuery = reactive({
@@ -238,6 +309,44 @@ const collapsibleCode = `<MangoSearchPanel
   </el-form-item>
 </MangoSearchPanel>`;
 
+const fixedColumnsCode = `<MangoSearchPanel
+  :model="query"
+  collapsible
+  :columns="4"
+  :collapsed-rows="2"
+  more-placement="bottom"
+  @search="handleSearch"
+  @reset="handleReset"
+>
+  <el-form-item label="项目名称">
+    <el-input v-model="query.projectName" clearable />
+  </el-form-item>
+  <el-form-item label="项目编号">
+    <el-input v-model="query.projectCode" clearable />
+  </el-form-item>
+  <el-form-item label="客户名称">
+    <el-input v-model="query.customerName" clearable />
+  </el-form-item>
+  <el-form-item label="所属机构">
+    <el-input v-model="query.orgName" clearable />
+  </el-form-item>
+  <el-form-item label="业务类型">
+    <el-select v-model="query.businessType" clearable />
+  </el-form-item>
+  <el-form-item label="保函状态">
+    <el-select v-model="query.status" clearable />
+  </el-form-item>
+  <el-form-item label="申请日期">
+    <el-date-picker v-model="query.applyDate" type="date" />
+  </el-form-item>
+  <el-form-item label="到期日期">
+    <el-date-picker v-model="query.expireDate" type="date" />
+  </el-form-item>
+  <el-form-item label="经办人">
+    <el-input v-model="query.operatorName" clearable />
+  </el-form-item>
+</MangoSearchPanel>`;
+
 const listPageCode = `<MangoListPage>
   <template #search>
     <MangoSearchPanel :model="query" @search="handleSearch" @reset="handleReset">
@@ -265,6 +374,10 @@ const propsTable = [
   { name: 'collapsible', description: '是否启用展开收起', type: 'boolean', defaultValue: 'false' },
   { name: 'collapsedRows', description: '收起态展示行数，未设置 collapsedCount 时生效', type: 'number', defaultValue: '1' },
   { name: 'collapsedCount', description: '收起态固定展示字段数量', type: 'number', defaultValue: '-' },
+  { name: 'columns', description: '字段区列数；默认自适应，设置为数字时按固定列数排版', type: 'number | auto', defaultValue: 'auto' },
+  { name: 'morePlacement', description: '展开收起按钮位置，可放在操作区或搜索区底部居中', type: 'actions | bottom', defaultValue: 'actions' },
+  { name: 'fieldMinWidth', description: '自适应列模式下字段最小宽度', type: 'string', defaultValue: '280px' },
+  { name: 'fieldMaxWidth', description: '自适应列模式下字段最大宽度', type: 'string', defaultValue: '320px' },
   { name: 'expandText', description: '展开按钮文案', type: 'string', defaultValue: '展开' },
   { name: 'collapseText', description: '收起按钮文案', type: 'string', defaultValue: '收起' },
 ];
@@ -293,6 +406,19 @@ function resetAdvancedQuery() {
   advancedQuery.createdRange = [];
   advancedQuery.mobile = '';
   ElMessage.info('已重置可折叠查询条件');
+}
+
+function resetFixedQuery() {
+  fixedQuery.projectName = '';
+  fixedQuery.projectCode = '';
+  fixedQuery.customerName = '';
+  fixedQuery.orgName = '';
+  fixedQuery.businessType = '';
+  fixedQuery.status = '';
+  fixedQuery.applyDate = '';
+  fixedQuery.expireDate = '';
+  fixedQuery.operatorName = '';
+  ElMessage.info('已重置固定四列查询条件');
 }
 
 function resetListQuery() {

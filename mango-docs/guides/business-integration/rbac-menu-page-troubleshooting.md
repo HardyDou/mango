@@ -194,3 +194,6 @@ pnpm -F @mango/admin-shell build
 - v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户应用绑定、登录态权限聚合、页面路由和本场景排障步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
 
 - 本次 PR 仅在开发中心组件库新增 `MangoSearchPanel` 搜索面板示例入口和示例页面；不改变菜单 `component` key 解析、菜单树接口、业务页面注册方式、角色授权关系、按钮权限关系、登录态权限聚合、租户应用绑定、页面路由和本场景排障步骤。
+## search-panel-layout-enhance 影响记录
+
+- 本次仅增强开发中心搜索面板示例和 `@mango/common` 搜索面板固定列布局能力，不改变菜单 `component` key、菜单树接口、页面注册方式、角色菜单授权关系、租户绑定、页面路由和本场景排障步骤。

@@ -166,6 +166,48 @@ describe('Mango admin page layout components', () => {
     expect(wrapper.findAll('button').map(button => button.text())).toEqual(['查询', '重置', '收起']);
   });
 
+  it('supports fixed columns and bottom expand action for dense search panels', async () => {
+    const wrapper = mount(MangoSearchPanel, {
+      props: {
+        model: { keyword: '' },
+        collapsible: true,
+        columns: 4,
+        collapsedRows: 2,
+        morePlacement: 'bottom',
+        searchText: 'Search',
+        resetText: 'Reset',
+        expandText: 'More',
+        collapseText: 'Less',
+      },
+      slots: {
+        default: Array.from({ length: 9 }, (_, index) => `<el-form-item label="Field ${index + 1}"><input /></el-form-item>`).join(''),
+      },
+      global,
+    });
+
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const items = wrapper.findAll('.mango-search-panel__fields > .el-form-item');
+    expect(items).toHaveLength(9);
+    expect(wrapper.find('.mango-search-panel__fields--fixed').exists()).toBe(true);
+    expect(wrapper.find('.mango-search-panel__more').exists()).toBe(true);
+    expect(items[7].attributes('data-mango-search-hidden')).toBeUndefined();
+    expect(items[8].attributes('data-mango-search-hidden')).toBe('true');
+    expect(wrapper.find('.mango-search-panel__actions').text()).not.toContain('More');
+    expect(wrapper.find('.mango-search-panel__more').text()).toContain('More');
+
+    await wrapper.find('.mango-search-panel__more button').trigger('click');
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted('expandChange')).toEqual([[true]]);
+    wrapper.findAll('.mango-search-panel__fields > .el-form-item').forEach((item) => {
+      expect(item.attributes('data-mango-search-hidden')).toBeUndefined();
+    });
+    expect(wrapper.find('.mango-search-panel__more').text()).toContain('Less');
+  });
+
   it('renders list toolbar, table content and pagination slots', () => {
     const wrapper = mount(MangoListPanel, {
       slots: {

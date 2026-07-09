@@ -131,7 +131,29 @@ import '@mango/common/style.css';
 </template>
 ```
 
-`MangoSearchPanel` 会按字段顺序识别常用搜索项。启用 `collapsible` 后，收起态显示前 `collapsed-count` 个字段，展开态显示全部字段；查询、重置、展开或收起按钮固定在搜索卡片右下角。单筛选项在桌面端保持合理字段宽度，不横向铺满整行；移动端使用单列撑满。
+`MangoSearchPanel` 会按字段顺序识别常用搜索项。启用 `collapsible` 后，收起态显示前 `collapsed-count` 个字段，展开态显示全部字段；查询、重置、展开或收起按钮默认固定在搜索卡片右下角。单筛选项在桌面端保持合理字段宽度，不横向铺满整行；移动端使用单列撑满。字段较多且需要统一四列排版时，可显式设置固定列数和底部展开按钮：
+
+```vue
+<MangoSearchPanel
+  :model="query"
+  collapsible
+  :columns="4"
+  :collapsed-rows="2"
+  more-placement="bottom"
+  @search="search"
+  @reset="reset"
+>
+  <el-form-item label="项目名称">
+    <el-input v-model="query.projectName" clearable />
+  </el-form-item>
+  <el-form-item label="客户名称">
+    <el-input v-model="query.customerName" clearable />
+  </el-form-item>
+  <el-form-item label="业务状态">
+    <el-select v-model="query.status" clearable />
+  </el-form-item>
+</MangoSearchPanel>
+```
 
 使用通用弹框：
 
@@ -266,6 +288,10 @@ API 加密环境变量：
 | `collapsible` | `false` | 是否启用搜索项展开/收起。 |
 | `collapsed-count` | 自动按列数和 `collapsed-rows` 计算 | 收起态显示前几个搜索项。业务把常用搜索项放在前面。 |
 | `collapsed-rows` | `1` | 未指定 `collapsed-count` 时，收起态显示几行。 |
+| `columns` | `auto` | 搜索字段区列数。默认自适应；传入数字时按固定列数排版，并在窄屏下自动降列。 |
+| `more-placement` | `actions` | 展开/收起按钮位置。`actions` 表示跟随查询、重置按钮；`bottom` 表示放在搜索区底部居中。 |
+| `field-min-width` | `280px` | 自适应列模式下字段最小宽度。 |
+| `field-max-width` | `320px` | 自适应列模式下字段最大宽度。 |
 | `default-expanded` | `false` | 初始是否展开全部搜索项。 |
 | `expand-text` / `collapse-text` | `展开` / `收起` | 展开按钮文案。 |
 | `expand-change` | - | 展开状态变化事件。 |
