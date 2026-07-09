@@ -6,12 +6,19 @@ import { tmpdir } from 'node:os';
 export const HOSTED_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/';
 export const GROUP_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/';
 
+export function commandForPlatform(command) {
+  if (process.platform === 'win32' && ['npm', 'pnpm', 'npx'].includes(command)) {
+    return `${command}.cmd`;
+  }
+  return command;
+}
+
 export function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
 export function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
+  const result = spawnSync(commandForPlatform(command), args, {
     stdio: options.capture ? 'pipe' : 'inherit',
     encoding: 'utf8',
     ...options,
@@ -67,7 +74,7 @@ export function findPackage(packageName, workspaceRoot = process.cwd()) {
 }
 
 export function npmView(packageName, registry) {
-  return spawnSync('npm', ['view', packageName, 'version', `--registry=${registry}`], {
+  return spawnSync(commandForPlatform('npm'), ['view', packageName, 'version', `--registry=${registry}`], {
     stdio: 'pipe',
     encoding: 'utf8',
   });
