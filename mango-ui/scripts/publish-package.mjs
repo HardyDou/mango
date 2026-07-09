@@ -84,6 +84,7 @@ const skipSharedGates = args.includes('--skip-shared-gates');
 const releaseTagArg = args.find((arg) => arg.startsWith('--release-tag='));
 const releaseTag = releaseTagArg?.slice('--release-tag='.length) || '';
 const packageArg = args.find((arg) => !arg.startsWith('--'));
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 
 if (args.includes('--help') || args.includes('-h')) {
   usage();
@@ -122,10 +123,10 @@ checkReleaseNotes(packageName, version, {
 });
 if (packageName === '@mango/cli') {
   console.log('Checking CLI release version lock before publish');
-  run('pnpm', ['--filter', packageName, 'run', 'check:release-versions']);
+  run(pnpmCommand, ['--filter', packageName, 'run', 'check:release-versions']);
   if (!dryRun) {
     console.log('Checking published release locks before CLI publish, excluding the CLI package being published');
-    run('pnpm', [
+    run(pnpmCommand, [
       '--filter',
       packageName,
       'run',
@@ -141,15 +142,15 @@ if (skipSharedGates) {
   console.log('Skipping shared publish gates because the release batch gates already passed');
 } else {
   console.log('Checking generated business consumer vue-tsc before publish');
-  run('pnpm', ['run', 'package-consumer:typecheck', '--', `--registry=${GROUP_REGISTRY}`]);
+  run(pnpmCommand, ['run', 'package-consumer:typecheck', '--', `--registry=${GROUP_REGISTRY}`]);
 }
 if (found.packageJson.scripts?.build) {
   console.log(`Building ${packageName} before publish`);
-  run('pnpm', ['--filter', packageName, 'build']);
+  run(pnpmCommand, ['--filter', packageName, 'build']);
 }
 if (found.packageJson.scripts?.['check:styles']) {
   console.log(`Checking generated package styles for ${packageName}`);
-  run('pnpm', ['--filter', packageName, 'check:styles']);
+  run(pnpmCommand, ['--filter', packageName, 'check:styles']);
 }
 
 const existing = npmView(packageName, HOSTED_REGISTRY);
@@ -174,7 +175,7 @@ if (dryRun) {
 }
 
 console.log(`${dryRun ? 'Dry-run publishing' : 'Publishing'} ${packageName}@${version}`);
-run('pnpm', publishArgs);
+run(pnpmCommand, publishArgs);
 
 if (!dryRun) {
   for (const [name, registry] of [['npm-hosted', HOSTED_REGISTRY], ['npm-group', GROUP_REGISTRY]]) {
