@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "businessAssertionsPassed": true,
+  "capability": "pmo-executable-quality-contract",
+  "suite": "UNIT",
+  "commit": "6895a5295",
+  "environment": {
+    "date": "2026-07-10",
+    "timezone": "Asia/Shanghai",
+    "java": "21",
+    "isolation": "fresh temp directory, empty HOME, empty CODEX_HOME, UTC, proxy disabled"
+  },
+  "results": {
+    "fixtureCases": 48,
+    "fixturePassed": 48,
+    "candidateAccuracy": 1.0,
+    "currentAccuracy": 0.2135,
+    "improvementPercentagePoints": 78.65,
+    "criticalDetection": 1.0,
+    "legalCaseFalsePositives": 0,
+    "repeatConsistency": 1.0,
+    "workflowThresholdOriginal": "2 tests passed",
+    "workflowThresholdMutation": "1 of 2 tests failed as required",
+    "workflowThresholdRestored": "2 tests passed",
+    "baselineSafeguardSelfTest": "PASS"
+  },
+  "commands": [
+    "node mango-pmo/tools/quality-gate.mjs --self-test",
+    "node mango-pmo/tools/eval-executable-quality.mjs",
+    "mvn -pl mango-platform/mango-workflow/mango-workflow-core -am -Dtest=WorkflowApprovalThresholdTest -Dsurefire.failIfNoSpecifiedTests=false test",
+    "node mango-pmo/tools/quality-baseline.mjs self-test"
+  ]
+}

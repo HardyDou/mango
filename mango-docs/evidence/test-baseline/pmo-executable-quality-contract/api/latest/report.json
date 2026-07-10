@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "businessAssertionsPassed": true,
+  "capability": "pmo-executable-quality-contract",
+  "suite": "API",
+  "commit": "6895a5295",
+  "environment": {
+    "date": "2026-07-10",
+    "timezone": "Asia/Shanghai",
+    "java": "21",
+    "database": "H2 isolated in-memory database for payment integration sample"
+  },
+  "results": {
+    "preflightCases": 20,
+    "preflightPassed": 20,
+    "unknownRolePhaseAndOptionFailClosed": true,
+    "qualityGateFixtureCases": 48,
+    "qualityGateFixturePassed": 48,
+    "packagedBaselineFiles": 67,
+    "packagedBaselineStatus": "PASS",
+    "businessStarterVersion": "@mango/pmo@1.1.0",
+    "businessStarterMissingChangedExtra": [0, 0, 0],
+    "realJavaFilesChecked": 8,
+    "realJavaIssues": 0,
+    "paymentIntegrationTests": 7,
+    "paymentIntegrationFailures": 0,
+    "baselineLatestCount": 2,
+    "baselineCheckStatus": "PASS"
+  },
+  "commands": [
+    "node mango-pmo/tools/check-pmo-preflight.mjs",
+    "node mango-ui/packages/mango-pmo/scripts/build-package.mjs",
+    "node mango-ui/packages/mango-pmo/scripts/check-package.mjs",
+    "node mango-ui/packages/mango-cli/src/index.mjs pmo check --project-dir mango-business-starter",
+    "node mango-business-starter/business-pmo/mango-baseline/tools/quality-gate.mjs --self-test",
+    "mvn -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentChannelContractServiceImplIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test"
+  ]
+}

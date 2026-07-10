@@ -1,0 +1,3062 @@
+{
+  "status": "PASS",
+  "generatedAt": "2026-07-10T02:18:33.462Z",
+  "fixtureVersion": 1,
+  "caseCount": 48,
+  "isolation": {
+    "emptyHome": true,
+    "emptyCodexHome": true,
+    "timezone": "UTC",
+    "networkProxyDisabled": true,
+    "freshDirectoryPerRun": true
+  },
+  "current": {
+    "runs": 192,
+    "correct": 41,
+    "accuracy": 0.21354166666666666,
+    "criticalRuns": 120,
+    "criticalDetected": 5,
+    "criticalDetection": 0.041666666666666664,
+    "positiveRuns": 36,
+    "falsePositives": 0,
+    "consistency": 1
+  },
+  "candidate": {
+    "runs": 192,
+    "correct": 192,
+    "accuracy": 1,
+    "criticalRuns": 120,
+    "criticalDetected": 120,
+    "criticalDetection": 1,
+    "positiveRuns": 36,
+    "falsePositives": 0,
+    "consistency": 1
+  },
+  "improvement": 0.7864583333333334,
+  "thresholds": {
+    "minimumCases": true,
+    "accuracy": true,
+    "criticalDetection": true,
+    "falsePositives": true,
+    "consistency": true,
+    "improvement": true,
+    "expectedRules": true
+  },
+  "rows": [
+    {
+      "id": "noop-constant-assert",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-NOOP-003",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-003"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "noop-self-assert",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-NOOP-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "noop-getter-setter",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-NOOP-004",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-004"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "noop-does-not-throw",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-NOOP-005",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-005"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "noop-not-null",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-NOOP-006",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-006"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-006"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-006"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mock-tested-target",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-MOCK-003",
+      "runs": [
+        {
+          "current": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "LEGACY-MOCK-001"
+            ]
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "LEGACY-MOCK-001"
+            ]
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "LEGACY-MOCK-001"
+            ]
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "LEGACY-MOCK-001"
+            ]
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "LEGACY-MOCK-001"
+            ]
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-003"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mock-protected-node-under-alias-test",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-MOCK-004",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-004"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-direct-service",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-API-001",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-001"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-mocks-service",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-API-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-mocks-mapper",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-API-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-API-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "verify-only-mock",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-NOOP-007",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-007"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-007"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-007"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-key-decision-unit",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-external-client-mock-unit",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-real-entry-api",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "controller-direct-mapper",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-JAVA-001",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-001"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "controller-write-without-validation",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-JAVA-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-controller-boundary",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "service-write-without-transaction",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-JAVA-003",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-003"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-service-transaction",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "mapper-unconditional-update",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-JAVA-004",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-004"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-depends-core",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-JAVA-005",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "core-depends-starter",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-JAVA-005",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "remote-depends-core",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-JAVA-005",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-JAVA-005"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-core-depends-api",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-mocks-own-api",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-UI-001",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-001"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-ui-mocks-third-party",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-element-selector",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-UI-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-fixed-wait",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-UI-003",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-003"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-force-click",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-UI-004",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-004"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-order-selector",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-UI-005",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-005"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-005"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-screenshot-only",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-UI-006",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-006"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-006"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-006"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-006"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-UI-006"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-ui-business-and-screenshot",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "page-missing-capability-anchor",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-WEB-001",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-001"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "page-hidden-compliance-anchor",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-WEB-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "form-missing-surface",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-WEB-003",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-003"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "form-missing-field-anchor",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-WEB-004",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-004"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-WEB-004"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "valid-form-contract",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-unknown-test-type",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-CONTRACT-010",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-010",
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-010",
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-010",
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-010",
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-010",
+              "PQT-CONTRACT-011"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-r2-missing-api",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-CONTRACT-011",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-011"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-011"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-r0-over-testing",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-NOOP-001",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-NOOP-001"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-double-protected-node",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-MOCK-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-MOCK-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-valid-external-double",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-expired-exception",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-EXCEPTION-002",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-002"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-002"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-forbidden-exception",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-EXCEPTION-003",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-003"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-EXCEPTION-003"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-weak-acceptance",
+      "expected": "BLOCK",
+      "critical": false,
+      "expectedRule": "PQT-CONTRACT-008",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-008"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-008"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-CONTRACT-008"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract-valid-r3",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "baseline-multiple-current-versions",
+      "expected": "BLOCK",
+      "critical": true,
+      "expectedRule": "PQT-BASELINE-001",
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-BASELINE-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-BASELINE-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-BASELINE-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-BASELINE-001"
+            ]
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "BLOCK",
+            "status": 1,
+            "rules": [
+              "PQT-BASELINE-001"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "baseline-only-latest",
+      "expected": "PASS",
+      "critical": false,
+      "expectedRule": null,
+      "runs": [
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        },
+        {
+          "current": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          },
+          "candidate": {
+            "outcome": "PASS",
+            "status": 0,
+            "rules": []
+          }
+        }
+      ]
+    }
+  ]
+}
