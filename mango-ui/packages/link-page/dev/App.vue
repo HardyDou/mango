@@ -2,7 +2,8 @@
   <MangoLinkPage
     base-url=""
     :headers="headers"
-    :login-defaults="loginDefaults"
+    headline="保函业务快捷入口"
+    subtitle="集中访问保函查询、风险核验和常用辅助工具"
   />
 </template>
 
@@ -11,15 +12,5 @@ import { MangoLinkPage } from '../src';
 
 const headers = {
   'X-Mango-Tenant-Id': '1',
-};
-
-const loginDefaults = {
-  tenantId: '1',
-  tenantCode: 'default',
-  realm: 'INTERNAL',
-  actorType: 'INTERNAL_USER',
-  partyType: 'INTERNAL_ORG',
-  partyId: 1,
-  appCode: 'internal-admin',
 };
 </script>
