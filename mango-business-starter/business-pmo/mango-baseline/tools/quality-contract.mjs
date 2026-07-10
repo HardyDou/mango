@@ -93,7 +93,10 @@ function proofPath(risk, artifacts) {
 
 try {
   const args = parseArgs(process.argv.slice(2));
-  const files = changedFiles(args.base, args.head);
+  const output = path.resolve(repoRoot, args.out);
+  const outputRelative = path.relative(repoRoot, output).replaceAll('\\', '/');
+  const files = changedFiles(args.base, args.head).filter((file) =>
+    file !== outputRelative && !file.startsWith('mango-docs/evidence/test-baseline/'));
   if (files.length === 0) throw new Error('No changed files found for quality contract');
   const artifacts = loadArtifacts(repoRoot, files);
   const classification = classify(artifacts);
@@ -118,7 +121,6 @@ try {
   const issues = analyzeArtifacts({ artifacts, contract });
   const contractIssues = issues.filter((issue) => issue.file === 'quality-contract.json');
   if (contractIssues.length > 0) throw new Error(contractIssues.map((issue) => `${issue.rule}: ${issue.message}`).join('; '));
-  const output = path.resolve(repoRoot, args.out);
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(contract, null, 2)}\n`);
   console.log(`Quality contract generated: ${path.relative(repoRoot, output)}`);
