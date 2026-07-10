@@ -1,0 +1,152 @@
+{
+  "role": "dev",
+  "phase": "develop",
+  "task": "按钮位置移动一点，只调整 4px 间距",
+  "paths": [
+    "mango-ui/packages/payment/src/views/channel/index.vue"
+  ],
+  "indexVersion": 2,
+  "rulesFingerprint": "sha256:f63e2739a12f10d7b64f2a938d6a2a0fcd47f876dfe1c4edd60ed4a3fae106ed",
+  "taskProfile": {
+    "level": "L0",
+    "label": "MICRO",
+    "provisional": true,
+    "reasons": [
+      "visual-only micro change: 移动一点, 间距, 按钮位置"
+    ],
+    "estimatedPathCount": 1,
+    "lightweightWorkspaceEligible": true,
+    "upgradeRule": "交付前按真实 Git diff 复核；范围扩大、行为/数据风险出现或边界不确定时自动升级。",
+    "obligations": {
+      "dedicatedWorktree": false,
+      "detailedDesign": false,
+      "deliveryPlan": false,
+      "changedOnlyChecks": false,
+      "staticReview": true,
+      "unitTests": "NOT_REQUIRED",
+      "apiTests": "NOT_REQUIRED",
+      "uiVerification": "AFFECTED_PAGE_SMOKE",
+      "fullE2E": false,
+      "screenshot": false,
+      "proofPath": false,
+      "targetedMutation": false,
+      "latestBaseline": false,
+      "formalDeliveryReport": false,
+      "verificationSummary": "ONE_LINE"
+    }
+  },
+  "workspacePolicy": {
+    "mode": "lightweight-branch-allowed",
+    "summary": "可复用当前干净任务分支/工作区，不强制创建专用 worktree；不得直接绕过仓库 PR 规则。",
+    "reason": "L0 MICRO: visual-only micro change: 移动一点, 间距, 按钮位置"
+  },
+  "mustRead": [
+    {
+      "key": "always",
+      "path": "rules/00-dev-flow.md",
+      "reason": "全局研发流程"
+    },
+    {
+      "key": "always",
+      "path": "rules/03-ai-coding-redlines.md",
+      "reason": "AI 编码红线"
+    },
+    {
+      "key": "agent.dev",
+      "path": "agents/03-dev-agent.md",
+      "reason": "开发与自测角色"
+    },
+    {
+      "key": "process.devEnvironment",
+      "path": "rules/02-dev-environment.md",
+      "reason": "开发环境、本地启动、Mango CLI 项目内锁定版本与 workspace/dev start/frontend 入口规范"
+    },
+    {
+      "key": "process.testAssets",
+      "path": "rules/04-test-assets.md",
+      "reason": "测试资产目录规范"
+    },
+    {
+      "key": "process.testCaseAutomation",
+      "path": "rules/09-test-case-automation-flow.md",
+      "reason": "测试用例登记、自动化层级、稳定锚点、执行策略和结果基线流程"
+    },
+    {
+      "key": "process.executableQualityContract",
+      "path": "rules/10-executable-quality-contract.md",
+      "reason": "差异风险、UNIT/API/UI 测试义务、证明路径、Mock 边界、基线与例外的可执行质量契约"
+    },
+    {
+      "key": "process.aiDeliveryQuality",
+      "path": "rules/05-ai-delivery-quality.md",
+      "reason": "AI 交付质量门禁、发布批次和 Maven app 制品排除规则"
+    },
+    {
+      "key": "frontend.devFlow",
+      "path": "rules/frontend/05-dev-flow.md",
+      "reason": "前端开发流程"
+    },
+    {
+      "key": "frontend.vue",
+      "path": "rules/frontend/01-vue-code.md",
+      "reason": "Vue 代码规范"
+    },
+    {
+      "key": "frontend.test",
+      "path": "rules/frontend/04-test.md",
+      "reason": "前端测试规范"
+    },
+    {
+      "key": "frontend.elementPlusUi",
+      "path": "rules/frontend/02-element-plus-ui.md",
+      "reason": "Element Plus UI 规范"
+    },
+    {
+      "key": "frontend.adminUiCommon",
+      "path": "rules/frontend/07-admin-ui-common.md",
+      "reason": "Admin UI 通用规范、统一页面骨架与基线格式门禁"
+    },
+    {
+      "key": "frontend.listPage",
+      "path": "rules/frontend/08-list-page.md",
+      "reason": "列表页统一骨架、可折叠搜索、UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.detailPage",
+      "path": "rules/frontend/09-detail-page.md",
+      "reason": "详情页 UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.formPage",
+      "path": "rules/frontend/10-form-page.md",
+      "reason": "表单页 UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.dialogDrawer",
+      "path": "rules/frontend/11-dialog-drawer.md",
+      "reason": "弹框与抽屉 UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.componentDevelopment",
+      "path": "rules/frontend/03-component-development.md",
+      "reason": "前端组件开发与发布防漏规范"
+    },
+    {
+      "key": "frontend.monorepo",
+      "path": "rules/frontend/06-monorepo-architecture.md",
+      "reason": "前端 Monorepo 架构规范"
+    },
+    {
+      "key": "process.capabilityDocs",
+      "path": "rules/08-capability-docs.md",
+      "reason": "能力说明维护规范与发布门禁"
+    },
+    {
+      "key": "process.documentAssets",
+      "path": "rules/06-document-assets.md",
+      "reason": "文档资产归档边界"
+    }
+  ],
+  "requiredChecks": [],
+  "errors": []
+}

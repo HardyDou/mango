@@ -1,152 +1,184 @@
-# PMO 可执行质量契约最终实验报告
+# PMO 可执行质量契约最终实验报告（季度治理总结）
 
 > 实验日期：2026-07-10
 >
-> 受测实现提交：`29176bf17`
+> 受测实现提交：`be970469d0eab3715880e565e94d1bf756dec4fc`
 >
 > 能力：`pmo-executable-quality-contract`
->
-> 总结论：**PASS（可验证范围）**
 
-## 1. 结论
+## 1. 最终判定
 
-本次优化已经从文字建议落到规则、schema、可执行工具、反例集、CI、npm PMO 包和业务 starter。冻结的已知问题在空白上下文重复实验中达到 100% 检出，合法正例误报为 0；真实 Java 样本、Maven 测试、Mutation、PMO CLI、发布包和 starter 同步全部通过。
+| 判定对象 | 结论 | 依据 |
+|---|---|---|
+| 确定性规则门禁 | **PASS** | 48/48 场景、192/192 重复判定、120/120 关键阻断、0 合法误阻断 |
+| L0-L3 任务分级与 Preflight | **PASS** | 23/23 自测；4px 布局为 L0，权限显隐为 L3 |
+| Maven 入口、发布包、starter 同步 | **PASS** | Maven 插件 151 测试；81 文件 0 问题；发布包 71 文件；starter 0 漂移 |
+| 定向 Mutation | **PASS** | 1/1 冻结种子被指定测试杀死，Surefire XML 验证真实执行 |
+| 空白上下文 Agent 分类 | **FAIL** | 候选精确匹配 88.10% < 95%；每组仅完成 39/42；未完成运行受额度限制 |
+| PMO 全量推广认证 | **FAIL / 暂不批准** | Agent 实验未过；真实 MySQL、真实产品 UI/E2E、完整纵向业务试点尚缺 |
+| changed-only 试点 | **CONDITIONAL PASS** | 仅允许带硬门禁、可回滚、受监控的 30 天灰度试点 |
 
-“PASS”表示本次冻结规则和真实样本达到既定阈值，不表示可以数学证明未来未知业务语义永不漏检。未来发现的新逃逸方式必须先加入反例集，再允许修改门禁。
+这不是“感觉可用”的结论。能由程序确定的部分已经通过；依赖 Agent 语义理解和真实业务环境的部分没有通过，因此不写成 100% 成功，也不批准一次性全量替换。
 
-## 2. 交付结果
+## 2. 本季度完成了什么
 
-| 交付项 | 结果 |
-|---|---|
-| 正式测试分类 | 只保留 `UNIT`、`API`、`UI`；`E2E` 与 `UI` 同义；静态 Review、Mutation、截图为验证手段 |
-| 风险选择 | `R0` 静态 Review，`R1` 增加 UNIT，`R2` 增加 API，`R3` 增加 UI |
-| 无用测试 | 常量自证、getter/setter、只断言不抛异常/非空/调用次数进入阻断规则 |
-| Mock 防逃逸 | 被测目标、受保护证明节点、API 内部 Service/Mapper、UI 自有 API 替身进入阻断规则 |
-| Java 门禁 | Controller/Mapper、参数校验、Service 事务、危险 SQL、api/core/starter/starter-remote 依赖方向可执行检查 |
-| Web 门禁 | 页面/表单语义锚点、隐藏伪装、自有 API Mock、Element Plus 内部选择器、固定等待、force、DOM 顺序依赖可执行检查 |
-| Preflight | 未知 role、phase、参数和缺少 task 均 fail-closed；输出完整规则 SHA-256 指纹 |
-| 基线 | 普通 check 只读；失败报告、缺少批准、并存旧版本均不能提升；promote 原子替换唯一 `latest` |
-| CI | PR 强制执行门禁自测、空白 A/B、changed-only、基线、治理和 PMO 包检查 |
-| 实际消费 | `@mango/pmo@1.1.0` 构建 67 个 baseline 文件；`mango-business-starter` 为 0 missing、0 changed、0 extra |
+1. 把测试类型统一为 `UNIT`、`API`、`UI`；`E2E` 与 `UI` 同义。静态 Review、Mutation、截图是验证手段，不是第四种测试。
+2. 建立差异驱动质量契约：R0 机械变更不强迫写单测；关键逻辑要求 UNIT；复杂后端流程增加真实入口 API；关键用户流程增加 UI。
+3. 建立无用测试和 Mock 防逃逸门禁，覆盖常量自证、getter/setter、只断言不报错、Mock 被测目标、包装层 Mock、内部 API route mock 等问题。
+4. 将 Java Controller/Service/Mapper、`api/core/starter/starter-remote` 依赖方向和前端页面/表单/UI 规则落成可执行检查。
+5. 将质量门禁接入 Maven、CI、`@mango/pmo` 发布包和业务 starter，避免规范只存在于文档。
+6. 建立 `latest` 唯一基线、受控 promote、失败报告不可提升、过程数据不入库的证据生命周期。
+7. 增加 L0-L3 流程分级，解决“按钮移动 4px 也走完整项目流程”的过度治理。
+8. 将“确定性门禁效果”和“Agent 空白上下文理解能力”拆成两套实验，杜绝用门禁 100% 冒充 AI 100%。
 
-完整的 36 项问题、发生概率和设计决策见 [`2026-07-10-pmo-executable-quality-contract-design.md`](../designs/2026-07-10-pmo-executable-quality-contract-design.md)。
+## 3. 合并后的问题清单
 
-## 3. 空白上下文 A/B 实验
+项目问题与开发反馈合并为 37 项，完整概率、影响和设计决策见[设计文档](../designs/2026-07-10-pmo-executable-quality-contract-design.md)。重点如下：
 
-### 3.1 隔离方式
+| 类别 | 问题编号 | 主要问题 | 原发生概率 |
+|---|---|---|---|
+| 无用测试 | P01-P03 | 常量自证、机械代码测试、无业务断言的覆盖率测试 | 高至极高 |
+| Mock 逃逸 | P04-P07、P17 | Mock 被测逻辑、错误层级 Mock、UI Mock 自有 API、包装多层规避 | 高 |
+| UI 伪通过 | P08-P11 | 只看 DOM、截图无断言、私有 CSS、固定等待和 force | 中至高 |
+| 证据与基线 | P12-P14、P35 | 过程数据入库、多份 latest、测试顺带改基线、报告不可追溯 | 中至高 |
+| 风险与证明 | P15-P16、P33、P36 | 测试义务靠 Agent 自选、无执行证明、无 Mutation、测试一刀切 | 高至极高 |
+| Agent/输入治理 | P18-P20、P30-P31 | Agent/Skill 只复述、fail-open、版本漂移、主链路可跳过、永久例外 | 中至高 |
+| Java | P21-P25 | Controller/Service/Mapper/事务/SQL/模块依赖/协议漂移 | 中至高 |
+| Web | P26-P29 | 路由权限闭环、布局伪装、表单状态缺失、设计系统漂移 | 高至极高 |
+| 存量与稳定性 | P32、P34 | 新旧债务一起阻断、Flaky 只靠重跑 | 中 |
+| 流程成本 | P37 | 微小视觉调整也强制 worktree、计划、全量 E2E、截图和长报告 | 极高 |
 
-- 每次运行创建独立临时目录。
-- `HOME` 和 `CODEX_HOME` 指向全新空目录。
-- 无历史会话、无用户级 Skill 和记忆。
-- 固定 UTC、禁用代理，current/candidate 使用完全相同的文件输入。
-- 门禁进程只读取物化后的场景文件；生成者自述不参与评分。
-- 普通场景重复 3 次，关键红线重复 5 次。
+## 4. 测试策略：什么该测，什么不该测
 
-### 3.2 规模
+| 变更性质 | 最小充分验证 | 禁止做法 |
+|---|---|---|
+| 常量、getter/setter、简单赋值/委托 | STATIC_REVIEW | 为 `A = 10` 编写 `A == 10` 单测 |
+| 关键业务规则、边界、状态转换、算法 | STATIC_REVIEW + UNIT | Mock 被测类、被测方法或关键分支 |
+| 多个关键技术/业务节点构成的后端流程 | STATIC_REVIEW + UNIT + 真实入口 API | 直接调 Service 冒充 API；Mock Service/Mapper 后声称全流程通过 |
+| 关键用户可见流程 | STATIC_REVIEW + 所需 UNIT/API + UI | 拦截 Mango 自有 API；只截图或只断言元素存在 |
 
-- 场景：48 个，超过 30 个最低要求。
-- Candidate 独立运行：192 次。
-- 关键红线运行：120 次。
-- 合法正例运行：36 次。
-- 覆盖无用测试、错误 Mock、API 入口绕过、Java 分层、危险 SQL、前端自有 API Mock、页面伪装、未知测试类型、过期例外和多份基线。
+外部不可控系统允许使用 WireMock/Stub，但必须明确它是系统边界；本系统的 Controller、Service、Mapper、权限、事务、工作流结果属于受保护证明路径，不能被 Mock 后再声称覆盖该路径。
 
-### 3.3 结果
+## 5. 任务大小、复杂度与风险分级
 
-| 指标 | Current | Candidate | 阈值 | 结论 |
-|---|---:|---:|---:|---|
-| 总体正确率 | 21.35% | 100.00% | ≥ 95% | PASS |
-| 关键红线检出率 | 4.17% | 100.00% | 100% | PASS |
-| 合法正例误报 | 0 | 0 | 0 | PASS |
-| 重复结论一致率 | 100.00% | 100.00% | ≥ 95% | PASS |
-| 相对提升 | - | 78.65 个百分点 | ≥ 30 个百分点 | PASS |
-| 指定规则命中 | 未覆盖 | 48/48 场景符合预期 | 100% | PASS |
+| 等级 | 典型任务 | 必须做 | 明确不要求 |
+|---|---|---|---|
+| L0 MICRO | 单页 1-2 文件、纯文字/颜色/间距/位置，无行为与数据变化 | 静态 Review、受影响页面快速 smoke、一行验证说明 | 专用 worktree、详细计划、正式 UI/E2E、截图、基线、长报告 |
+| L1 SMALL | 局部低风险修改，约 3 个文件内，易回滚 | 3-5 条短计划、changed-only 检查、按风险选测试、简短总结 | 全套设计、全量 E2E、完整交付报告 |
+| L2 STANDARD | 多文件、Controller-Service-Mapper、表单提交等正常业务流 | 专用 worktree、简要设计/计划、关键 UNIT、真实入口 API、受影响 UI、latest 基线 | 无关模块全量 E2E |
+| L3 HIGH | 权限、租户、金额、事务、并发、公共 API、Schema、跨服务、难回滚 | 完整设计/计划/回滚、证明路径、定向 Mutation、真实环境、正式报告、受影响流程 UI/E2E | 降级成“只改一行” |
 
-机器报告：[`evaluation.json`](test-baseline/pmo-executable-quality-contract/unit/latest/evaluation.json)。
+Preflight 先依据任务和路径给出临时等级，交付前必须按真实 Git diff 复核；只允许自动升级，不允许 Agent 自行降级。
 
-逐场景摘要：[`evaluation.md`](test-baseline/pmo-executable-quality-contract/unit/latest/evaluation.md)。
+实际案例：
 
-## 4. 真实项目验证
+- “按钮位置移动一点，只调整 4px 间距”被判为 L0：无专用 worktree、无正式 E2E、无截图，只做静态 Review和受影响页面快速 smoke。
+- “按钮权限显隐微调一行”被判为 L3：虽然只有一行，但涉及权限，必须验证权限链路和受影响用户流程，不能伪装为微任务。
 
-### 4.1 关键业务/技术 UNIT 与 Mutation
+## 6. 两套空白上下文实验
 
-对象：`WorkflowApprovalThreshold`。
+### 6.1 确定性门禁 A/B：PASS
 
-1. 原实现执行 `WorkflowApprovalThresholdTest`：2 个测试通过。
-2. 临时把 `Math.ceil` 改为 `Math.floor`：同一测试出现 `expected: 2 but was: 1`，Maven 非零退出。
-3. 恢复原实现后复跑：2 个测试再次通过。
+每次运行使用独立临时目录、空 `HOME`、空 `CODEX_HOME`、固定 UTC、禁用代理；普通场景重复 3 次，关键场景重复 5 次。
 
-结论：测试不是常量或实现复述，确实能够杀死关键阈值计算错误；本次指定 Mutation 杀死率为 100%。
+| 指标 | Current | Candidate | 结果 |
+|---|---:|---:|---|
+| 场景级精确匹配 | 13/48（27.08%） | 48/48（100%） | PASS |
+| 重复运行加权精确匹配 | 41/192（21.35%） | 192/192（100%） | PASS |
+| 关键红线阻断召回 | 5/120（4.17%） | 120/120（100%） | PASS |
+| 合法正例错误阻断 | 0 | 0 | PASS |
+| 重复一致率 | 100% | 100% | PASS |
 
-### 4.2 Java 结构与真实持久化样本
+`Current 21.35%` 的准确解释是：旧确定性检查在 192 次带重复权重的 PASS/BLOCK 判定中只命中 41 次。关键场景重复次数更多，而旧检查恰好大量漏掉关键红线，所以该值低于场景级的 27.08%。它不是代码覆盖率、项目正确率、测试通过率、AI 正确率或业务质量分。
 
-质量门禁显式扫描 8 个真实文件：工作流 `api/core/starter/starter-remote` POM、阈值生产/测试代码、Payment Service 和集成测试，结果 0 问题。
+### 6.2 真实 Agent 空白上下文分类：FAIL
 
-`PaymentChannelContractServiceImplIntegrationTest` 使用 Spring、真实 Mapper 和隔离 H2 内存库执行：7 个测试通过，0 失败。门禁没有把合法的 test-scope starter 依赖误判为生产依赖。
+每个案例单独执行 `codex exec --ephemeral --ignore-user-config --ignore-rules --sandbox read-only`；使用临时目录、临时 `HOME`、仅含认证信息的临时 `CODEX_HOME`，只提供同一份任务、政策和输出 schema。模型为 `gpt-5.6-sol`，Codex CLI 为 `0.144.1`。
 
-现有六个重点后端域的 Mockito 盘点结果为 0 BLOCK、81 WARN。WARN 主要是 Mapper 替身测试，其结论只能覆盖局部决策，不能声称覆盖真实持久化；新增或修改时由 changed-only 门禁重新判定。
+| 指标 | Current | Candidate | 门槛 |
+|---|---:|---:|---:|
+| 精确匹配 | 45.24% | 88.10% | ≥95% |
+| 关键案例精确匹配 | 41.67% | 86.11% | ≥95% |
+| 放行/阻断 + 测试义务匹配 | 71.43% | 92.86% | ≥95% |
+| 风险等级匹配 | 78.57% | 90.48% | 参考 |
+| 静态 Review 义务匹配 | 76.19% | 90.48% | 参考 |
+| 完成运行 | 39/42 | 39/42 | 42/42 |
 
-### 4.3 UI/E2E 门禁与存量债务
+候选对“纯 4px 按钮移动”的 3 次判定全部正确；但真实 API 场景有 1 次漏掉静态 Review，包装 Mock 场景有 1 次风险等级偏高。最后的权限微调场景中，Candidate 3 次和 Current 2 次因 Codex 使用额度耗尽未返回结果，Current 另 1 次超时。严格按预设阈值，本实验必须判 FAIL，不用已有结果补分，也不把外部限制改写为通过。
 
-本次 PMO/CLI 能力风险为 `R1`，没有产品页面或用户浏览器流程，因此正式基线不伪造 UI/E2E 通过，也不提交无业务含义截图。UI 规则使用 13 个正反场景验证，包含自有 API Mock 必须失败、第三方外部替身必须通过、截图不能代替业务断言等情况，结果全部符合预期。
+## 7. 真实工程验证
 
-对现有 58 个真实 E2E spec 执行报告模式扫描，发现 144 个存量问题：
+### 7.1 Maven 与 Java
 
-| 规则 | 数量 | 说明 |
-|---|---:|---|
-| `PQT-UI-001` | 47 | Mango 自有 API 被 route/fulfill；应改成真实 UI/E2E，或重新归类为非 E2E 测试 |
-| `PQT-UI-002` | 42 | 直接依赖 `.el-*` 内部 class |
-| `PQT-UI-003` | 5 | 固定等待 `waitForTimeout` |
-| `PQT-UI-004` | 4 | `force: true` 绕过真实可交互性 |
-| `PQT-UI-005` | 46 | `nth/first/last` 等 DOM 顺序依赖 |
+| 检查 | 结果 | 边界 |
+|---|---|---|
+| Maven 插件测试 | 151 个测试通过，含新增 3 个 quality-gate 用例 | 验证成功、缺工具、子进程阻断 |
+| Maven 全坐标 goal | 81 个变更文件，0 问题 | `mango:quality-gate` 前缀不可解析，文档和 CI 已改为完整坐标 |
+| 工作流定向 Mutation | 1/1 种子杀死 | 每个种子独立 detached worktree；解析 Surefire XML，不以任意非零退出冒充测试杀死 |
+| Payment 集成样本 | 7/7 | 使用 Spring、真实 Mapper、H2；不等价于 MySQL 生产环境 |
 
-其中 `workflow-management.spec.ts` 被稳定识别出 Element Plus 内部 class 和 DOM 顺序依赖。以上为历史债务，不冒充已修复；CI 对新增和修改文件硬阻断，历史文件被触碰时必须迁移或提供有效的限期例外。
+Mutation 将 `WorkflowApprovalThreshold` 的 `Math.ceil` 临时改为 `Math.floor`：基线运行 2/2 通过；变异运行 2 个测试中 1 个按预期出现 `expected: 2 but was: 1`；源代码和测试文件均带 SHA-256，原工作树未被污染。
 
-## 5. 发布包与业务应用验证
+### 7.2 发布与消费
 
-| 检查 | 结果 |
-|---|---|
-| PMO preflight 自测 | 20/20 PASS；非法 role、phase、未知参数和缺少 task 均失败 |
-| 质量门禁自测 | 48/48 PASS |
-| 基线保护自测 | 只读 check、审批、PASS 报告、原子 latest、旧版本拒绝全部 PASS |
-| `@mango/pmo` build/check | `1.1.0`，67 个文件，PASS |
-| 发布包内质量门禁 | 48/48 PASS |
-| 业务 starter PMO check | 0 missing、0 changed、0 extra |
-| 业务 starter 内质量门禁 | 48/48 PASS |
-| 治理检查 | governance intent、module README、README 源事实、5 个业务指南、68 个变更文件能力文档检查全部 PASS |
-| 最终差异质量契约 | 68 个文件，0 问题，PASS |
+- Preflight：23/23。
+- 确定性质量门禁：48/48。
+- `@mango/pmo@1.1.0`：71 个发布文件。
+- `mango-business-starter`：0 missing、0 changed、0 extra。
+- 正式基线：每个能力/类型只保留唯一 `latest`；普通 check 只读，promote 必须要求 PASS 报告、owner、approver 和原因。
 
-## 6. 正式基线
+### 7.3 UI 与现有债务
 
-- UNIT 最新基线：[`unit/latest`](test-baseline/pmo-executable-quality-contract/unit/latest/README.md)
-- API/CLI 最新基线：[`api/latest`](test-baseline/pmo-executable-quality-contract/api/latest/README.md)
-- 机器质量契约：[`quality-contract.json`](test-baseline/pmo-executable-quality-contract/api/latest/quality-contract.json)
+本能力是 PMO/CLI，没有产品页面，因此没有伪造 UI/E2E 截图或 UI 通过结论。UI 规则由冻结正反例验证；真实产品 UI 必须在后续业务试点中补做。
 
-当前树每个已要求的能力/类型只有一个 `latest`。过程报告保存在 `.runtime/pmo`，不提交。普通测试不能更新正式基线；提升必须经过独立 `quality-baseline.mjs promote`。
+现有 58 个 E2E spec 仍有 144 项债务：47 个内部 API Mock、42 个 Element Plus 内部 class、5 个固定等待、4 个 `force`、46 个 DOM 顺序依赖。后端重点域审计为 0 BLOCK、81 WARN，主要是 Mapper 替身只能证明局部决策。它们是可见存量债务，不算本次已修复。
 
-## 7. 复现命令
+## 8. 专家联合评审结论
+
+| 专家视角 | 结论 | 已吸收的约束 |
+|---|---|---|
+| AI Coding | 条件通过 | 分离确定性门禁与 Agent 指标；禁止把 21.35%/100% 写成 AI 正确率 |
+| Java/Spring/MySQL/微服务 | 条件通过 | Maven 主链路 fail-closed；真实入口 API；事务/Mapper/依赖方向检查；H2 不冒充 MySQL |
+| Web | 条件通过 | UI=E2E；禁止自有 API Mock；稳定语义锚点；L0 smoke 不冒充正式 UI |
+| 测试 | 条件通过 | Mutation 每例隔离；解析 Surefire；基线只保留 latest；无用测试不计覆盖证据 |
+| 敏捷教练 | 仅批准受控试点 | L0-L3 最小充分流程；changed-only；历史债务不一次性全阻断 |
+
+五个视角的融合结论不是折中为“全部通过”，而是：机器可判定部分立即硬执行，Agent 语义分类继续改进，复杂业务通过真实纵向试点补齐证据，小改动走轻流程。
+
+## 9. 30 天试点准入与退出条件
+
+只允许在 changed-only 范围开展 30 天试点，并至少选择一个工作流、一个支付后端流程和一个真实 UI 流程。升级为全量规则前必须同时满足：
+
+1. Agent 空白上下文所有运行完成，精确匹配、关键精确匹配、决策+义务匹配均达到 95%，关键漏放行为 0。
+2. 确定性门禁关键种子 100% 阻断，合法误阻断率低于 2%。
+3. 三条真实纵向证明路径均完成：关键 UNIT、真实入口 API、必要 UI/E2E；UI 基线带固定视口截图。
+4. MySQL 真实环境验证完成，不以 H2 替代生产兼容性结论。
+5. 定向 Mutation 冻结种子 100% 杀死，且无“非测试错误冒充杀死”。
+6. CI p95 耗时在预算内，无过期例外、无多份 latest、无新增无用测试。
+
+任何一项不满足，维持 changed-only 或回滚候选门禁，不扩大到全量历史代码。
+
+## 10. 可复现命令
 
 ```bash
+node mango-pmo/tools/check-pmo-preflight.mjs
 node mango-pmo/tools/quality-gate.mjs --self-test
 node mango-pmo/tools/eval-executable-quality.mjs
-node mango-pmo/tools/check-pmo-preflight.mjs
+node mango-pmo/tools/eval-agent-classification.mjs --validate-only
+node mango-pmo/tools/verify-targeted-mutations.mjs
 node mango-pmo/tools/quality-baseline.mjs self-test
 node mango-pmo/tools/quality-baseline.mjs check
 node mango-ui/packages/mango-pmo/scripts/build-package.mjs
 node mango-ui/packages/mango-pmo/scripts/check-package.mjs
 node mango-ui/packages/mango-cli/src/index.mjs pmo check --project-dir mango-business-starter
-node mango-business-starter/business-pmo/mango-baseline/tools/quality-gate.mjs --self-test
+mvn -f mango/mango-tools/mango-maven-plugin/pom.xml test
+mvn -f mango/pom.xml io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:quality-gate \
+  -Dmango.quality.baseRef=HEAD~1 -Dmango.quality.headRef=HEAD \
+  -Dmango.quality.report=.runtime/pmo/maven-quality-gate-final.json
 ```
 
-真实 Java 命令：
+## 11. 交付结论
 
-```bash
-cd mango
-mvn -pl mango-platform/mango-workflow/mango-workflow-core -am -Dtest=WorkflowApprovalThresholdTest -Dsurefire.failIfNoSpecifiedTests=false test
-mvn -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentChannelContractServiceImplIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test
-```
+本季度已经解决“规范只有文字、可随意跳过”和“小改动被过度治理”两个结构性问题：规则具备可执行入口，任务具备 L0-L3 最小充分流程，测试证据与基线有明确边界。
 
-## 8. 最终判定
-
-本次候选 PMO 达到替换现行执行方式的实验阈值：冻结红线 100% 检出、合法正例 0 误报、真实项目样本通过、发布包和 starter 一致、CI 已接入、基线不可被普通测试静默改写。
-
-仍需按 changed-only 策略逐步清理的历史债务是 81 个后端 Mock 警告和 144 个 UI/E2E 结构问题。这些债务已经可见、可定位且不会再对新增代码放行，但不应被表述为本次已经全部修复。
+最终结论保持克制且可审计：**确定性质量契约通过；changed-only 试点有条件通过；Agent 语义认证与 PMO 全量推广不通过。** 后续是否升级，只由第 9 节的真实实验数据决定。

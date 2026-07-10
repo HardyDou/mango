@@ -3,7 +3,8 @@
   "businessAssertionsPassed": true,
   "capability": "pmo-executable-quality-contract",
   "suite": "API",
-  "commit": "29176bf17",
+  "commit": "be970469d0eab3715880e565e94d1bf756dec4fc",
+  "scope": "PMO preflight, Maven quality-gate entry, package and starter consumption",
   "environment": {
     "date": "2026-07-10",
     "timezone": "Asia/Shanghai",
@@ -11,28 +12,33 @@
     "database": "H2 isolated in-memory database for payment integration sample"
   },
   "results": {
-    "preflightCases": 20,
-    "preflightPassed": 20,
-    "unknownRolePhaseAndOptionFailClosed": true,
+    "preflightCases": 23,
+    "preflightPassed": 23,
+    "microTaskLevel": "L0",
+    "microTaskFormalE2ERequired": false,
+    "permissionTaskLevel": "L3",
+    "permissionTaskFormalE2ERequired": true,
     "qualityGateFixtureCases": 48,
     "qualityGateFixturePassed": 48,
-    "packagedBaselineFiles": 67,
+    "mavenPluginTests": 151,
+    "mavenPluginFailures": 0,
+    "mavenQualityGateFiles": 81,
+    "mavenQualityGateIssues": 0,
+    "packagedBaselineFiles": 71,
     "packagedBaselineStatus": "PASS",
     "businessStarterVersion": "@mango/pmo@1.1.0",
     "businessStarterMissingChangedExtra": [0, 0, 0],
-    "realJavaFilesChecked": 8,
-    "realJavaIssues": 0,
     "paymentIntegrationTests": 7,
     "paymentIntegrationFailures": 0,
-    "baselineLatestCount": 2,
-    "baselineCheckStatus": "PASS"
+    "databaseParityLimitation": "H2 sample; does not certify MySQL production parity",
+    "uiProductE2E": "NOT_APPLICABLE to the PMO CLI capability; no product UI certification claimed"
   },
   "commands": [
     "node mango-pmo/tools/check-pmo-preflight.mjs",
+    "mvn -f mango/mango-tools/mango-maven-plugin/pom.xml test",
+    "mvn -f mango/pom.xml io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:quality-gate -Dmango.quality.baseRef=HEAD~1 -Dmango.quality.headRef=HEAD -Dmango.quality.report=.runtime/pmo/maven-quality-gate-final.json",
     "node mango-ui/packages/mango-pmo/scripts/build-package.mjs",
     "node mango-ui/packages/mango-pmo/scripts/check-package.mjs",
-    "node mango-ui/packages/mango-cli/src/index.mjs pmo check --project-dir mango-business-starter",
-    "node mango-business-starter/business-pmo/mango-baseline/tools/quality-gate.mjs --self-test",
-    "mvn -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentChannelContractServiceImplIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test"
+    "node mango-ui/packages/mango-cli/src/index.mjs pmo check --project-dir mango-business-starter"
   ]
 }

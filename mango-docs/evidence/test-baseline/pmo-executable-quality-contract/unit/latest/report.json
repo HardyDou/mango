@@ -3,7 +3,8 @@
   "businessAssertionsPassed": true,
   "capability": "pmo-executable-quality-contract",
   "suite": "UNIT",
-  "commit": "29176bf17",
+  "commit": "be970469d0eab3715880e565e94d1bf756dec4fc",
+  "scope": "deterministic quality gate, baseline safeguards and curated mutation only",
   "environment": {
     "date": "2026-07-10",
     "timezone": "Asia/Shanghai",
@@ -11,23 +12,27 @@
     "isolation": "fresh temp directory, empty HOME, empty CODEX_HOME, UTC, proxy disabled"
   },
   "results": {
-    "fixtureCases": 48,
-    "fixturePassed": 48,
-    "candidateAccuracy": 1.0,
-    "currentAccuracy": 0.2135,
+    "deterministicFixtureCases": 48,
+    "deterministicFixturePassed": 48,
+    "candidateGateDecisionExactMatchRate": 1.0,
+    "currentGateDecisionExactMatchRate": 0.2135,
     "improvementPercentagePoints": 78.65,
-    "criticalDetection": 1.0,
-    "legalCaseFalsePositives": 0,
+    "criticalBlockRecall": 1.0,
+    "legalCaseFalseBlocks": 0,
     "repeatConsistency": 1.0,
-    "workflowThresholdOriginal": "2 tests passed",
+    "curatedMutationSeeds": 1,
+    "curatedMutationSeedsKilled": 1,
+    "workflowThresholdBaseline": "2 tests passed",
     "workflowThresholdMutation": "1 of 2 tests failed as required",
-    "workflowThresholdRestored": "2 tests passed",
-    "baselineSafeguardSelfTest": "PASS"
+    "baselineSafeguardSelfTest": "PASS",
+    "agentClassificationCertification": "FAIL; supplemental experiment is not part of this PASS scope",
+    "agentCandidateExactMatchRate": 0.881,
+    "agentCompletedRuns": "39/42 per group"
   },
   "commands": [
     "node mango-pmo/tools/quality-gate.mjs --self-test",
     "node mango-pmo/tools/eval-executable-quality.mjs",
-    "mvn -pl mango-platform/mango-workflow/mango-workflow-core -am -Dtest=WorkflowApprovalThresholdTest -Dsurefire.failIfNoSpecifiedTests=false test",
+    "node mango-pmo/tools/verify-targeted-mutations.mjs",
     "node mango-pmo/tools/quality-baseline.mjs self-test"
   ]
 }

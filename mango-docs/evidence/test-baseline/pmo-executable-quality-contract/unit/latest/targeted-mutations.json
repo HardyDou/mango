@@ -1,0 +1,61 @@
+{
+  "status": "PASS",
+  "head": "HEAD",
+  "resolvedCommit": "be970469d0eab3715880e565e94d1bf756dec4fc",
+  "workingTreeIncluded": false,
+  "workingTreeWasDirty": false,
+  "catalogHash": "e87a147b91f3025c0cc1592e83dc004e751acf6e0f64db3ff9fab3ecc8ad78b2",
+  "generatedAt": "2026-07-10T06:42:51.243Z",
+  "isolation": "detached temporary git worktree",
+  "caseCount": 1,
+  "curatedSeedCount": 1,
+  "curatedSeedsKilled": 1,
+  "curatedSeedKillRate": 1,
+  "results": [
+    {
+      "id": "workflow-approval-threshold-ceil-to-floor",
+      "status": "PASS",
+      "baselineExit": 0,
+      "baselineReport": {
+        "valid": true,
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "expectedTestFound": true,
+        "expectedTestFailed": false,
+        "failureType": "",
+        "failureMessage": ""
+      },
+      "mutatedExit": 1,
+      "mutatedTimedOut": false,
+      "mutatedSignal": null,
+      "mutatedReport": {
+        "valid": true,
+        "tests": 2,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "expectedTestFound": true,
+        "expectedTestFailed": true,
+        "failureType": "org.opentest4j.AssertionFailedError",
+        "failureMessage": "&#10;expected: 2&#10; but was: 1"
+      },
+      "sourceHash": "f5080d4b25772974518e7258afec08625680acc197d8858e94f1c184b50e9a23",
+      "testHash": "a62108b27c36d55b842097f6e06f47ded94d89e36e8c4abd6460c7a8da1d4ac1",
+      "command": [
+        "mvn",
+        "-pl",
+        "mango-platform/mango-workflow/mango-workflow-core",
+        "-am",
+        "-Dtest=WorkflowApprovalThresholdTest",
+        "-Dsurefire.failIfNoSpecifiedTests=false",
+        "test"
+      ],
+      "expectedFailurePattern": "expected: (?:&lt;)?2(?:&gt;)?[\\s\\S]*but was: (?:&lt;)?1(?:&gt;)?",
+      "expectedFailureObserved": true,
+      "curatedSeedKilled": true,
+      "mutatedTail": "[INFO] Mango Infra Web .................................... SUCCESS [  0.025 s]\n[INFO] Mango Infra Web API ................................ SUCCESS [  0.031 s]\n[INFO] Mango Resource ..................................... SUCCESS [  0.022 s]\n[INFO] Mango Resource API ................................. SUCCESS [  0.038 s]\n[INFO] mango-domain ....................................... SUCCESS [  0.026 s]\n[INFO] mango-domain-api ................................... SUCCESS [  0.035 s]\n[INFO] Mango Platform ..................................... SUCCESS [  0.025 s]\n[INFO] Mango Workflow ..................................... SUCCESS [  0.029 s]\n[INFO] Mango Workflow API ................................. SUCCESS [  0.037 s]\n[INFO] Mango Workflow Core ................................ FAILURE [  3.579 s]\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD FAILURE\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  7.115 s\n[INFO] Finished at: 2026-07-10T06:42:48Z\n[INFO] ------------------------------------------------------------------------\n[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.4:test (default-test) on project mango-workflow-core: There are test failures.\n[ERROR] \n[ERROR] See /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mutation-3LQqe6/mango/mango-platform/mango-workflow/mango-workflow-core/target/surefire-reports for the individual test results.\n[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.\n[ERROR] -> [Help 1]\n[ERROR] \n[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.\n[ERROR] Re-run Maven using the -X switch to enable full debug logging.\n[ERROR] \n[ERROR] For more information about the errors and possible solutions, please read the following articles:\n[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException\n[ERROR] \n[ERROR] After correcting the problems, you can resume the build with the command\n[ERROR]   mvn <args> -rf :mango-workflow-core"
+    }
+  ]
+}

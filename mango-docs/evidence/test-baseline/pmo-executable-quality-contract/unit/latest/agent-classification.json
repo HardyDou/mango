@@ -1,0 +1,2471 @@
+{
+  "reportKind": "isolated_codex_classification",
+  "status": "FAIL",
+  "generatedAt": "2026-07-10T06:58:50.461Z",
+  "codexVersion": "codex-cli 0.144.1",
+  "model": "gpt-5.6-sol",
+  "baseRef": "main",
+  "baseCommit": "aa59e3ed0226bd3698ae9daf4ca1478f6b54725b",
+  "candidateCommit": "be970469d0eab3715880e565e94d1bf756dec4fc",
+  "policyHashes": {
+    "current": "4789faea01ef405c3cf88d7747c2f379991be7393960746d343f902b7b090725",
+    "candidate": "0ae2cda049b0734c480fce97d392779e59fdef5ecb9818d38e5c56611582510d"
+  },
+  "promptHash": "63fbbb902f97f792e36395a9c6f6f51fe0c3e2ea3b98078a140b367c175de10c",
+  "isolation": {
+    "processPerCase": true,
+    "ephemeral": true,
+    "ignoreUserConfig": true,
+    "ignoreProjectRules": true,
+    "temporaryHome": true,
+    "authOnlyCodexHome": true,
+    "sandbox": "read-only"
+  },
+  "caseCount": 14,
+  "repeats": 3,
+  "concurrency": 6,
+  "current": {
+    "agentClassificationCount": 42,
+    "completedCount": 39,
+    "agentClassificationExactMatches": 19,
+    "agentClassificationExactMatchRate": 0.4523809523809524,
+    "criticalClassificationCount": 36,
+    "criticalClassificationExactMatches": 15,
+    "criticalClassificationExactMatchRate": 0.4166666666666667,
+    "decisionMatchRate": 0.9047619047619048,
+    "requiredTestsMatchRate": 0.7142857142857143,
+    "decisionAndObligationMatchRate": 0.7142857142857143,
+    "riskMatchRate": 0.7857142857142857,
+    "staticReviewMatchRate": 0.7619047619047619,
+    "criticalDecisionAndObligationMatchRate": 0.6666666666666666
+  },
+  "candidate": {
+    "agentClassificationCount": 42,
+    "completedCount": 39,
+    "agentClassificationExactMatches": 37,
+    "agentClassificationExactMatchRate": 0.8809523809523809,
+    "criticalClassificationCount": 36,
+    "criticalClassificationExactMatches": 31,
+    "criticalClassificationExactMatchRate": 0.8611111111111112,
+    "decisionMatchRate": 0.9285714285714286,
+    "requiredTestsMatchRate": 0.9285714285714286,
+    "decisionAndObligationMatchRate": 0.9285714285714286,
+    "riskMatchRate": 0.9047619047619048,
+    "staticReviewMatchRate": 0.9047619047619048,
+    "criticalDecisionAndObligationMatchRate": 0.9166666666666666
+  },
+  "thresholds": {
+    "allRunsCompleted": false,
+    "candidateDecisionAndObligationMatchRate": false,
+    "candidateCriticalDecisionAndObligationMatchRate": false,
+    "candidateExactMatchRate": false,
+    "candidateCriticalExactMatchRate": false
+  },
+  "results": [
+    {
+      "group": "current",
+      "caseId": "agent-r0-constant-self-test",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac2-f2e3-7c81-9651-8812cde5c768",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-constant-self-test",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac2-f2e2-7d91-919d-cdf6f4f68cb7",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-constant-self-test",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac2-f2e3-7452-928f-becea8689dc8",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-constant-self-test",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac2-f2e4-7c40-b240-4273b668b324",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-constant-self-test",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac2-f2e8-7812-9040-5adccbbcfd94",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-constant-self-test",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac2-f2f4-7f40-8a6d-72884c77e2ff",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-dto-accessor-test",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac3-d487-7aa2-acea-c0cde4aeafd7",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-dto-accessor-test",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac3-d5d5-7363-a9a6-ae7e6cbcd8a9",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-dto-accessor-test",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac3-d898-73d2-b0a4-7db8b989ed7c",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-dto-accessor-test",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac4-0e04-7683-a4e0-0578127f8747",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-dto-accessor-test",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac4-2c34-7871-842b-3ffc5b0c9a03",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-dto-accessor-test",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac4-3b56-7b51-a3b8-e46a5e9be167",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-simple-delegation",
+      "critical": false,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac4-c208-7c81-b483-eeb3af5c51fe",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-simple-delegation",
+      "critical": false,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac4-ccd1-76b1-9c48-a0707b3eba46",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-simple-delegation",
+      "critical": false,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac4-e34e-7621-b6a1-f0aae37fa5fd",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-simple-delegation",
+      "critical": false,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-01eb-7271-9fea-35189959a387",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r0-simple-delegation",
+      "critical": false,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-3526-7b60-b940-5ee620f42a82",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r0-simple-delegation",
+      "critical": false,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-4703-7f23-9dda-b9d948fc5731",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-threshold-unit",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-74c7-75f1-8658-6f2b62618734",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-threshold-unit",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-a6d8-7373-a44b-306c001167b4",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-threshold-unit",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-a6d2-7792-9bb9-bb48fc4fa251",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-threshold-unit",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-ae4d-71c3-8efa-46eb5fbe31c4",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-threshold-unit",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac5-f171-7d51-823e-e172085347f3",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-threshold-unit",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-3ce8-7813-ac60-160cca9ef62e",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-protocol-behavior",
+      "critical": false,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-42a6-7fd1-815e-312c4637d64a",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-protocol-behavior",
+      "critical": false,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-6296-79b2-a27e-9d2f925fdff2",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-protocol-behavior",
+      "critical": false,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-946c-7731-84f2-d4e74f77a6c2",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-protocol-behavior",
+      "critical": false,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-aa93-7ba1-8f8b-c9246cafeb89",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-protocol-behavior",
+      "critical": false,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-d0cd-7733-b226-8aa7c6f82627",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-protocol-behavior",
+      "critical": false,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-da7a-7e80-a008-680514bf3888",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "PASS",
+        "reasonCode": "KEY_LOGIC_UNIT"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-direct-sut-mock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac6-deb6-7401-8d78-c8eb82592e3d",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-direct-sut-mock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-0677-75e2-b0be-67dd209487bc",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-direct-sut-mock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-4ca8-7d23-8bda-1b80f78a11d0",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-direct-sut-mock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-6b1b-7420-9d6f-818b9c0b3cd0",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r1-direct-sut-mock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-75ef-7251-8c4b-1b4c77d35d0c",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "USELESS_TEST"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r1-direct-sut-mock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-9084-7390-b7c6-4817fdcefffd",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-real-api-flow",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-8cd6-75d0-8ed5-c6b4828bbf32",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-real-api-flow",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-c7e5-7f00-ae1d-3ff76ac26bfb",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-real-api-flow",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac7-f926-70c3-a327-963e3fff0b98",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-real-api-flow",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac8-08db-7f20-bc02-2ec71e19d0ae",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-real-api-flow",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac8-48af-72e0-9c32-eaae5c0578d6",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-real-api-flow",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac8-538c-79d0-8e64-ba585ef262b7",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "COMPLEX_FLOW_API"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-service-entry-bypass",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac8-5fff-7c32-a579-c620155dd213",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-service-entry-bypass",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac8-abbc-7643-af47-44fe9a745399",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-service-entry-bypass",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac8-ba99-7ba2-8c60-09b7d2e75830",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-service-entry-bypass",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac8-f2ce-75a3-a605-98ae5840cc80",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-service-entry-bypass",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-0a57-7d10-868d-1de0f7c3cbd3",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-service-entry-bypass",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-5d9c-7c81-89de-b6fd35d41d1d",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "API_ENTRY_BYPASS"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-wrapped-protected-mock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-65ba-7211-a351-d7882ee4d7e3",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-wrapped-protected-mock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-7a51-7090-8e4a-28db8c8261fc",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-wrapped-protected-mock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-abb7-7dc1-b112-dd09ae6b90fe",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-wrapped-protected-mock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-bf19-7be1-af6a-b53aa2f8dfbc",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-wrapped-protected-mock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-b8d2-7143-9f84-3f22328912e1",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-wrapped-protected-mock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-e692-7463-ac14-56d2ad25cd03",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "PROTECTED_PATH_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-external-wiremock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-f344-72a2-9f46-47e938cbcd4a",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-external-wiremock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4ac9-fdae-77d2-83cb-4e66f31f531b",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-external-wiremock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4aca-4f1e-7793-afc7-683ccfe52ab7",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-external-wiremock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4aca-5085-72f2-8594-b651b19c810b",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r2-external-wiremock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4aca-8118-7560-8a5e-9414fbeecf6e",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": false,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r2-external-wiremock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4aca-919f-7602-b867-1d54ee1db8f2",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API"
+        ],
+        "decision": "PASS",
+        "reasonCode": "EXTERNAL_BOUNDARY_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r3-real-ui-flow",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4aca-9aa9-7cf2-8f77-3bf8d9db832f",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r3-real-ui-flow",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4aca-cfd9-7672-88ca-2d4d0c7be185",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r3-real-ui-flow",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4aca-e9e4-7d13-9528-efdee0feb410",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r3-real-ui-flow",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acb-0665-7bf1-b835-5060e72d6bf9",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r3-real-ui-flow",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acb-0653-7052-8cc3-214934fdf237",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r3-real-ui-flow",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acb-1734-73c2-b656-6bc1675197e5",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "PASS",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r3-internal-api-route-mock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acb-2af9-7972-a488-d61a3f599054",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r3-internal-api-route-mock",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acb-b096-7391-9ad2-30a80a0955ff",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r3-internal-api-route-mock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acb-fb14-75e2-b837-1ae14d31befd",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r3-internal-api-route-mock",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-081c-7082-bb5b-654dab8d2e7b",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-r3-internal-api-route-mock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-0848-7291-925d-bc4cc90b7dcc",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-r3-internal-api-route-mock",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-0c35-7261-b392-dea6c3c75310",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "actual": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "INTERNAL_API_MOCK"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-process-micro-button-layout",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-3eb1-7530-abc2-d5c8f5e1863a",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "UI_ASSERTION_MISSING"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-process-micro-button-layout",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-53c3-7c20-872f-dcfc9edb839a",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-process-micro-button-layout",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-a7ad-7fd0-8408-028ea3a2fcaa",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-process-micro-button-layout",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-bfff-7062-ad43-b63f07b0928b",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-process-micro-button-layout",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-d26a-7982-a873-9b8062b7cedb",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R1",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "UI_ASSERTION_MISSING"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-process-micro-button-layout",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 0,
+      "timedOut": false,
+      "sessionId": "019f4acc-ccc1-7ed3-a81e-27dcc37e0014",
+      "exactMatch": true,
+      "expected": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "actual": {
+        "risk": "R0",
+        "staticReviewRequired": true,
+        "requiredTests": [],
+        "decision": "PASS",
+        "reasonCode": "MECHANICAL_STATIC"
+      },
+      "stderrTail": ""
+    },
+    {
+      "group": "current",
+      "caseId": "agent-process-permission-disguised-as-micro",
+      "critical": true,
+      "repeat": 1,
+      "processExit": null,
+      "timedOut": true,
+      "sessionId": "019f4acd-09a4-7180-a7ea-814ea8ae963f",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": {
+        "risk": "R2",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "UI_ASSERTION_MISSING"
+      },
+      "stderrTail": "POLICY.md:507:- 字典、菜单、权限、租户默认数据、状态映射、业务配置等持久化或可运营数据必须有明确数据来源和初始化方式。\nPOLICY.md:513:- 未连接真实数据库、真实接口或真实权限链路时，必须标记为阻塞或例外，禁止声明完成。\nPOLICY.md:598:11. E2E 脚本必须覆盖本次交付影响的用户可见入口、关键业务流程、权限/租户/数据权限边界、关键异常或回归场景；只打开页面、接口 200 或无明显报错不能作为完整 E2E 断言。\nPOLICY.md:664:- `BLOCKED`：服务、数据库、账号、权限或依赖环境不可用。\nPOLICY.md:697:- 权限或安全约束\nPOLICY.md:701:- 每个测试必须能看出测试目标：业务规则、状态变化、异常分支、权限边界、持久化链路、资源注入链路、事务行为、历史回归点等；确属 DTO、getter、常量等机械代码时不应编写测试。\nPOLICY.md:712:- 集成测试：验证模块协作、数据库、Mapper、事务、Spring 装配、接口契约、资源注入和权限过滤。\nPOLICY.md:734:- 要测：行为分支、状态变化、参数校验、边界值、异常场景、权限或安全约束、并发风险、远程调用/注册/转发、多实现一致性、历史回归点。\nPOLICY.md:746:- 禁止 mock 数据库、Mapper、权限、资源注入或工作流关键结果后，声称测试覆盖了真实数据库、权限、资源注入或工作流链路。\nPOLICY.md:860:- 样式细节：按钮、图标、表格、表单、弹窗、卡片、工具栏位置和形状不能明显跑偏。\nPOLICY.md:862:- 数据状态：正常数据、空状态、接口错误或权限不足必须有明确页面反馈。\nPOLICY.md:877:- 业务结果断言，例如列表新增一行、详情字段更新、状态标签变化、分页总数变化、按钮禁用或弹窗关闭。\nPOLICY.md:878:- UI 细节断言，例如主按钮位置、表格列、表单分组、必填校验、错误提示、加载态、空状态和权限不足提示。\nPOLICY.md:910:- 权限或路由限制\n\ncodex\n{\"risk\":\"R2\",\"staticReviewRequired\":true,\"requiredTests\":[\"UI\"],\"decision\":\"BLOCK\",\"reasonCode\":\"UI_ASSERTION_MISSING\"}\ntokens used\n16,646\n"
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-process-permission-disguised-as-micro",
+      "critical": true,
+      "repeat": 1,
+      "processExit": 1,
+      "timedOut": false,
+      "sessionId": "019f4acd-2677-7bc0-b75b-34e1bc6124ba",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": null,
+      "stderrTail": "--------\nworkdir: /var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-agent-eval-agent-process-permission-disguised-as-micro-UQf9lC\nmodel: gpt-5.6-sol\nprovider: openai\napproval: never\nsandbox: read-only\nreasoning effort: none\nreasoning summaries: none\nsession id: 019f4acd-2677-7bc0-b75b-34e1bc6124ba\n--------\nuser\n你是受控 PMO 分类执行器。\n只读取当前目录的 POLICY.md 和 TASK.md；不得读取其他目录，不得联网检索。\n把 TASK.md 描述的方案当作待验收提交，根据 POLICY.md 给出最小充分验证义务和是否放行。\nrequiredTests 只能按 UNIT、API、UI 顺序；UI 与 E2E 同义；STATIC_REVIEW 不是测试。\n输出必须严格符合 schema，不要添加解释文本。\n2026-07-10T06:53:53.073087Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\n"
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-process-permission-disguised-as-micro",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 1,
+      "timedOut": false,
+      "sessionId": "019f4acd-4f91-7192-8cf4-6cf7be69d4e7",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": null,
+      "stderrTail": "OpenAI Codex v0.144.1\n--------\nworkdir: /var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-agent-eval-agent-process-permission-disguised-as-micro-hrsLVm\nmodel: gpt-5.6-sol\nprovider: openai\napproval: never\nsandbox: read-only\nreasoning effort: none\nreasoning summaries: none\nsession id: 019f4acd-4f91-7192-8cf4-6cf7be69d4e7\n--------\nuser\n你是受控 PMO 分类执行器。\n只读取当前目录的 POLICY.md 和 TASK.md；不得读取其他目录，不得联网检索。\n把 TASK.md 描述的方案当作待验收提交，根据 POLICY.md 给出最小充分验证义务和是否放行。\nrequiredTests 只能按 UNIT、API、UI 顺序；UI 与 E2E 同义；STATIC_REVIEW 不是测试。\n输出必须严格符合 schema，不要添加解释文本。\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\n"
+    },
+    {
+      "group": "current",
+      "caseId": "agent-process-permission-disguised-as-micro",
+      "critical": true,
+      "repeat": 2,
+      "processExit": 1,
+      "timedOut": false,
+      "sessionId": "019f4acd-6bff-77c2-9794-e88ca8334ab0",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": null,
+      "stderrTail": "--------\nworkdir: /var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-agent-eval-agent-process-permission-disguised-as-micro-aLbn4h\nmodel: gpt-5.6-sol\nprovider: openai\napproval: never\nsandbox: read-only\nreasoning effort: none\nreasoning summaries: none\nsession id: 019f4acd-6bff-77c2-9794-e88ca8334ab0\n--------\nuser\n你是受控 PMO 分类执行器。\n只读取当前目录的 POLICY.md 和 TASK.md；不得读取其他目录，不得联网检索。\n把 TASK.md 描述的方案当作待验收提交，根据 POLICY.md 给出最小充分验证义务和是否放行。\nrequiredTests 只能按 UNIT、API、UI 顺序；UI 与 E2E 同义；STATIC_REVIEW 不是测试。\n输出必须严格符合 schema，不要添加解释文本。\n2026-07-10T06:54:04.347193Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\n"
+    },
+    {
+      "group": "current",
+      "caseId": "agent-process-permission-disguised-as-micro",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 1,
+      "timedOut": false,
+      "sessionId": "019f4acd-7274-78a1-b802-73994109f3f2",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": null,
+      "stderrTail": "--------\nworkdir: /var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-agent-eval-agent-process-permission-disguised-as-micro-3eYOYT\nmodel: gpt-5.6-sol\nprovider: openai\napproval: never\nsandbox: read-only\nreasoning effort: none\nreasoning summaries: none\nsession id: 019f4acd-7274-78a1-b802-73994109f3f2\n--------\nuser\n你是受控 PMO 分类执行器。\n只读取当前目录的 POLICY.md 和 TASK.md；不得读取其他目录，不得联网检索。\n把 TASK.md 描述的方案当作待验收提交，根据 POLICY.md 给出最小充分验证义务和是否放行。\nrequiredTests 只能按 UNIT、API、UI 顺序；UI 与 E2E 同义；STATIC_REVIEW 不是测试。\n输出必须严格符合 schema，不要添加解释文本。\n2026-07-10T06:54:04.193234Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\n"
+    },
+    {
+      "group": "candidate",
+      "caseId": "agent-process-permission-disguised-as-micro",
+      "critical": true,
+      "repeat": 3,
+      "processExit": 1,
+      "timedOut": false,
+      "sessionId": "019f4acd-9eaa-7433-ae2a-f612988834bb",
+      "exactMatch": false,
+      "expected": {
+        "risk": "R3",
+        "staticReviewRequired": true,
+        "requiredTests": [
+          "UNIT",
+          "API",
+          "UI"
+        ],
+        "decision": "BLOCK",
+        "reasonCode": "USER_FLOW_UI"
+      },
+      "actual": null,
+      "stderrTail": "--------\nworkdir: /var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-agent-eval-agent-process-permission-disguised-as-micro-zITgwq\nmodel: gpt-5.6-sol\nprovider: openai\napproval: never\nsandbox: read-only\nreasoning effort: none\nreasoning summaries: none\nsession id: 019f4acd-9eaa-7433-ae2a-f612988834bb\n--------\nuser\n你是受控 PMO 分类执行器。\n只读取当前目录的 POLICY.md 和 TASK.md；不得读取其他目录，不得联网检索。\n把 TASK.md 描述的方案当作待验收提交，根据 POLICY.md 给出最小充分验证义务和是否放行。\nrequiredTests 只能按 UNIT、API、UI 顺序；UI 与 E2E 同义；STATIC_REVIEW 不是测试。\n输出必须严格符合 schema，不要添加解释文本。\n2026-07-10T06:53:58.774237Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\nERROR: You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 10:42 AM.\n"
+    }
+  ]
+}

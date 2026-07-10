@@ -1,0 +1,177 @@
+{
+  "role": "dev",
+  "phase": "develop",
+  "task": "按钮权限显隐微调一行",
+  "paths": [
+    "mango-ui/packages/payment/src/views/channel/index.vue"
+  ],
+  "indexVersion": 2,
+  "rulesFingerprint": "sha256:f63e2739a12f10d7b64f2a938d6a2a0fcd47f876dfe1c4edd60ed4a3fae106ed",
+  "taskProfile": {
+    "level": "L3",
+    "label": "HIGH",
+    "provisional": true,
+    "reasons": [
+      "high-risk semantics: 权限"
+    ],
+    "estimatedPathCount": 1,
+    "lightweightWorkspaceEligible": false,
+    "upgradeRule": "交付前按真实 Git diff 复核；范围扩大、行为/数据风险出现或边界不确定时自动升级。",
+    "obligations": {
+      "dedicatedWorktree": true,
+      "detailedDesign": true,
+      "deliveryPlan": true,
+      "changedOnlyChecks": true,
+      "staticReview": true,
+      "unitTests": "WHEN_KEY_LOGIC",
+      "apiTests": "WHEN_BACKEND_ENTRY_OR_DATA",
+      "uiVerification": "AFFECTED_FLOW_ONLY",
+      "fullE2E": true,
+      "screenshot": true,
+      "proofPath": true,
+      "targetedMutation": true,
+      "latestBaseline": true,
+      "formalDeliveryReport": true,
+      "verificationSummary": "STRUCTURED"
+    }
+  },
+  "workspacePolicy": {
+    "mode": "worktree-required",
+    "summary": "必须使用任务专用 Git worktree 和任务分支。",
+    "reason": "path mango-ui/packages/payment/src/views/channel/index.vue"
+  },
+  "mustRead": [
+    {
+      "key": "always",
+      "path": "rules/00-dev-flow.md",
+      "reason": "全局研发流程"
+    },
+    {
+      "key": "always",
+      "path": "rules/03-ai-coding-redlines.md",
+      "reason": "AI 编码红线"
+    },
+    {
+      "key": "agent.dev",
+      "path": "agents/03-dev-agent.md",
+      "reason": "开发与自测角色"
+    },
+    {
+      "key": "process.devEnvironment",
+      "path": "rules/02-dev-environment.md",
+      "reason": "开发环境、本地启动、Mango CLI 项目内锁定版本与 workspace/dev start/frontend 入口规范"
+    },
+    {
+      "key": "process.testAssets",
+      "path": "rules/04-test-assets.md",
+      "reason": "测试资产目录规范"
+    },
+    {
+      "key": "process.testCaseAutomation",
+      "path": "rules/09-test-case-automation-flow.md",
+      "reason": "测试用例登记、自动化层级、稳定锚点、执行策略和结果基线流程"
+    },
+    {
+      "key": "process.executableQualityContract",
+      "path": "rules/10-executable-quality-contract.md",
+      "reason": "差异风险、UNIT/API/UI 测试义务、证明路径、Mock 边界、基线与例外的可执行质量契约"
+    },
+    {
+      "key": "process.aiDeliveryQuality",
+      "path": "rules/05-ai-delivery-quality.md",
+      "reason": "AI 交付质量门禁、发布批次和 Maven app 制品排除规则"
+    },
+    {
+      "key": "process.capabilityDocs",
+      "path": "rules/08-capability-docs.md",
+      "reason": "能力说明维护规范与发布门禁"
+    },
+    {
+      "key": "process.documentAssets",
+      "path": "rules/06-document-assets.md",
+      "reason": "文档资产归档边界"
+    },
+    {
+      "key": "backend.db",
+      "path": "rules/backend/04-db.md",
+      "reason": "数据库、migration、初始化数据、默认升级目录与默认 Flyway 禁止项规范"
+    },
+    {
+      "key": "backend.moduleMenu",
+      "path": "rules/backend/11-module-menu.md",
+      "reason": "模块菜单 Resource Registry 初始化、menuCode/apiCodes 分离、默认角色权限、编码、同步与验收规范"
+    },
+    {
+      "key": "backend.persistence",
+      "path": "rules/backend/07-persistence.md",
+      "reason": "事务、持久化与业务 CRUD 基线规范"
+    },
+    {
+      "key": "backend.security",
+      "path": "rules/backend/06-security.md",
+      "reason": "后端安全规范"
+    },
+    {
+      "key": "backend.api",
+      "path": "rules/backend/03-api.md",
+      "reason": "后端 API 规范"
+    },
+    {
+      "key": "frontend.devFlow",
+      "path": "rules/frontend/05-dev-flow.md",
+      "reason": "前端开发流程"
+    },
+    {
+      "key": "frontend.vue",
+      "path": "rules/frontend/01-vue-code.md",
+      "reason": "Vue 代码规范"
+    },
+    {
+      "key": "frontend.test",
+      "path": "rules/frontend/04-test.md",
+      "reason": "前端测试规范"
+    },
+    {
+      "key": "frontend.elementPlusUi",
+      "path": "rules/frontend/02-element-plus-ui.md",
+      "reason": "Element Plus UI 规范"
+    },
+    {
+      "key": "frontend.adminUiCommon",
+      "path": "rules/frontend/07-admin-ui-common.md",
+      "reason": "Admin UI 通用规范、统一页面骨架与基线格式门禁"
+    },
+    {
+      "key": "frontend.listPage",
+      "path": "rules/frontend/08-list-page.md",
+      "reason": "列表页统一骨架、可折叠搜索、UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.detailPage",
+      "path": "rules/frontend/09-detail-page.md",
+      "reason": "详情页 UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.formPage",
+      "path": "rules/frontend/10-form-page.md",
+      "reason": "表单页 UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.dialogDrawer",
+      "path": "rules/frontend/11-dialog-drawer.md",
+      "reason": "弹框与抽屉 UI 规范与基线格式门禁"
+    },
+    {
+      "key": "frontend.componentDevelopment",
+      "path": "rules/frontend/03-component-development.md",
+      "reason": "前端组件开发与发布防漏规范"
+    },
+    {
+      "key": "frontend.monorepo",
+      "path": "rules/frontend/06-monorepo-architecture.md",
+      "reason": "前端 Monorepo 架构规范"
+    }
+  ],
+  "requiredChecks": [],
+  "errors": []
+}

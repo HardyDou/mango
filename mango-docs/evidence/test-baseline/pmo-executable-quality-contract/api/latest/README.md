@@ -1,17 +1,21 @@
 # PMO 可执行质量契约 API 最新基线
 
-本能力的真实入口是 PMO/CLI 命令；没有浏览器页面。API 基线从 CLI 入口验证参数 fail-closed、规则路由、门禁报告、发布包和业务 starter 消费链路。
+本能力的实际入口是 PMO CLI 和 Maven goal，没有产品浏览器页面。本基线验证参数 fail-closed、L0-L3 任务分级、Maven 主链路、发布包和业务 starter 消费。
+
+- 4px 按钮纯布局调整：L0；无需专用 worktree、详细计划、正式 UI/E2E、截图、基线和长报告，只做静态 Review、受影响页面快速 smoke、一行说明。
+- “一行权限显隐调整”：L3；不得伪装成微任务，要求完整证明路径和受影响用户流程 UI/E2E。
+- Preflight 23/23；Maven 插件 151 个测试通过；全坐标质量门禁扫描 81 个文件、0 问题。
+- `@mango/pmo@1.1.0` 构建 71 个文件，业务 starter 为 0 missing、0 changed、0 extra。
+- Payment 集成样本 7/7，但数据库为 H2，仅证明 Spring/Mapper/持久化装配，不声称 MySQL 生产等价。
+- PMO/CLI 无产品页面，因此没有伪造 UI/E2E 截图或 UI 通过结论。
 
 复现命令：
 
 ```bash
 node mango-pmo/tools/check-pmo-preflight.mjs
-node mango-pmo/tools/quality-gate.mjs --self-test
+mvn -f mango/mango-tools/mango-maven-plugin/pom.xml test
+mvn -f mango/pom.xml io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:quality-gate -Dmango.quality.baseRef=HEAD~1 -Dmango.quality.headRef=HEAD -Dmango.quality.report=.runtime/pmo/maven-quality-gate-final.json
 node mango-ui/packages/mango-pmo/scripts/build-package.mjs
 node mango-ui/packages/mango-pmo/scripts/check-package.mjs
 node mango-ui/packages/mango-cli/src/index.mjs pmo check --project-dir mango-business-starter
-node mango-business-starter/business-pmo/mango-baseline/tools/quality-gate.mjs --self-test
-node mango-pmo/tools/quality-baseline.mjs check
 ```
-
-真实 Java 样本同时验证工作流 `api/core/starter/starter-remote` POM、关键规则单测、Payment Service/Mapper/H2 集成测试。真实工作流 UI 脚本的存量问题不计为本能力通过项，单独记录在最终实验报告。

@@ -2,15 +2,19 @@
   "schemaVersion": 1,
   "change": {
     "base": "aa59e3ed0226bd3698ae9daf4ca1478f6b54725b",
-    "head": "29176bf177c4a681b9688d7ab70d7e9eb0a03461",
-    "filesDigest": "sha256:34a36a849566fdb206e40920fb82b5bf7b8d348b8afdd378191a2201d748f27d",
+    "head": "be970469d0eab3715880e565e94d1bf756dec4fc",
+    "filesDigest": "sha256:64a71687cfddc8a3b0673e7c5d2f557fbdc9eaab271c13f468e690e58a9006de",
     "files": [
       ".github/workflows/pmo-doc-check.yml",
       "mango-business-starter/README.md",
       "mango-business-starter/business-pmo/README.md",
       "mango-business-starter/business-pmo/mango-baseline/README.md",
+      "mango-business-starter/business-pmo/mango-baseline/agents/03-dev-agent.md",
+      "mango-business-starter/business-pmo/mango-baseline/agents/04-qa-agent.md",
       "mango-business-starter/business-pmo/mango-baseline/baseline.json",
+      "mango-business-starter/business-pmo/mango-baseline/fixtures/agent-classification/cases.json",
       "mango-business-starter/business-pmo/mango-baseline/fixtures/executable-quality/cases.json",
+      "mango-business-starter/business-pmo/mango-baseline/fixtures/mutations/cases.json",
       "mango-business-starter/business-pmo/mango-baseline/rules/00-dev-flow.md",
       "mango-business-starter/business-pmo/mango-baseline/rules/01-delivery-contract.md",
       "mango-business-starter/business-pmo/mango-baseline/rules/02-dev-environment.md",
@@ -34,6 +38,7 @@
       "mango-business-starter/business-pmo/mango-baseline/tools/check-governance-intent.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/check-pmo-preflight.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/delivery-contract-check.mjs",
+      "mango-business-starter/business-pmo/mango-baseline/tools/eval-agent-classification.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/eval-executable-quality.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/lib/quality-analyzer.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/lib/quality-fixtures.mjs",
@@ -41,10 +46,18 @@
       "mango-business-starter/business-pmo/mango-baseline/tools/quality-baseline.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/quality-contract.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/quality-gate.mjs",
+      "mango-business-starter/business-pmo/mango-baseline/tools/verify-targeted-mutations.mjs",
       "mango-docs/designs/2026-07-10-pmo-executable-quality-contract-design.md",
       "mango-docs/plans/2026-07-10-pmo-executable-quality-contract-plan.md",
       "mango-pmo/README.md",
+      "mango-pmo/agents/03-dev-agent.md",
+      "mango-pmo/agents/04-qa-agent.md",
+      "mango-pmo/fixtures/agent-classification/cases.json",
       "mango-pmo/fixtures/executable-quality/cases.json",
+      "mango-pmo/fixtures/mutations/cases.json",
+      "mango-pmo/rules/00-dev-flow.md",
+      "mango-pmo/rules/02-dev-environment.md",
+      "mango-pmo/rules/05-ai-delivery-quality.md",
       "mango-pmo/rules/09-test-case-automation-flow.md",
       "mango-pmo/rules/10-executable-quality-contract.md",
       "mango-pmo/rules/backend/08-test.md",
@@ -52,6 +65,7 @@
       "mango-pmo/rules/index.json",
       "mango-pmo/schemas/quality-contract.schema.json",
       "mango-pmo/tools/check-pmo-preflight.mjs",
+      "mango-pmo/tools/eval-agent-classification.mjs",
       "mango-pmo/tools/eval-executable-quality.mjs",
       "mango-pmo/tools/lib/quality-analyzer.mjs",
       "mango-pmo/tools/lib/quality-fixtures.mjs",
@@ -59,13 +73,18 @@
       "mango-pmo/tools/quality-baseline.mjs",
       "mango-pmo/tools/quality-contract.mjs",
       "mango-pmo/tools/quality-gate.mjs",
+      "mango-pmo/tools/verify-targeted-mutations.mjs",
       "mango-ui/package.json",
       "mango-ui/packages/mango-cli/README.md",
       "mango-ui/packages/mango-cli/release-versions.json",
       "mango-ui/packages/mango-pmo/README.md",
       "mango-ui/packages/mango-pmo/package.json",
       "mango-ui/packages/mango-pmo/scripts/build-package.mjs",
-      "mango-ui/packages/mango-pmo/scripts/check-package.mjs"
+      "mango-ui/packages/mango-pmo/scripts/check-package.mjs",
+      "mango/mango-tools/README.md",
+      "mango/mango-tools/mango-maven-plugin/pom.xml",
+      "mango/mango-tools/mango-maven-plugin/src/main/java/io/mango/plugin/check/QualityGateMojo.java",
+      "mango/mango-tools/mango-maven-plugin/src/test/java/io/mango/plugin/check/QualityGateMojoTest.java"
     ]
   },
   "capabilities": [
@@ -75,15 +94,19 @@
         "R0机械变更不再被要求编写单元测试",
         "关键逻辑或证明路径被Mock时质量门禁稳定失败",
         "Java与Web违规在标准CI入口中被定位并阻断",
-        "业务starter消费的PMO发布包与源码行为一致"
+        "业务starter消费的PMO发布包与源码行为一致",
+        "L0微小视觉改动不再要求专用worktree和全量E2E报告",
+        "门禁判定与Agent分类指标分离且不会误写为业务正确率"
       ],
-      "risk": "R1",
+      "risk": "R2",
       "riskReasons": [
-        "branch-or-error-handling"
+        "branch-or-error-handling",
+        "module-dependency"
       ],
       "obligations": [
         "STATIC_REVIEW",
-        "UNIT"
+        "UNIT",
+        "API"
       ],
       "protectedProofPath": [
         "change-entry",
@@ -91,6 +114,7 @@
         "check-governance-intent",
         "check-pmo-preflight",
         "delivery-contract-check",
+        "eval-agent-classification",
         "eval-executable-quality",
         "quality-analyzer",
         "quality-fixtures",
@@ -98,8 +122,10 @@
         "quality-baseline",
         "quality-contract",
         "quality-gate",
+        "verify-targeted-mutations",
         "build-package",
         "check-package",
+        "QualityGateMojo",
         "observable-result"
       ],
       "allowedExternalDoubles": []

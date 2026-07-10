@@ -1,21 +1,19 @@
 # PMO 可执行质量契约 UNIT 最新基线
 
-- 能力：`pmo-executable-quality-contract`
-- 受测实现提交：`29176bf17`
-- 环境：macOS，Node.js，Java 21，Maven；隔离评估固定 UTC、空 `HOME`、空 `CODEX_HOME`、禁用网络代理。
-- 数据：`mango-pmo/fixtures/executable-quality/cases.json` 的 48 个冻结正反场景。
+- 受测实现：`be970469d0eab3715880e565e94d1bf756dec4fc`
+- PASS 范围：确定性质量门禁、基线保护和定向 Mutation。
+- 确定性门禁：48/48 场景、192/192 重复判定符合标签；关键红线 120/120 阻断；合法正例 0 误阻断。
+- 定向 Mutation：独立临时 worktree 中将 `Math.ceil` 改为 `Math.floor`，2 个测试中的目标用例按预期失败并被 Surefire XML 证实。
+
+`21.35%` 是旧确定性门禁在 192 次加权判定中的 41 次命中，不是 AI、代码或业务正确率。
+
+受控空白上下文 Agent 分类报告作为补充证据保存在 `agent-classification.json`：候选精确匹配率为 88.10%，每组完成 39/42，结论为 FAIL，不能纳入本基线的 PASS 范围，也不能据此批准 PMO 全量推广。
 
 复现命令：
 
 ```bash
 node mango-pmo/tools/quality-gate.mjs --self-test
 node mango-pmo/tools/eval-executable-quality.mjs
-cd mango
-mvn -pl mango-platform/mango-workflow/mango-workflow-core -am -Dtest=WorkflowApprovalThresholdTest -Dsurefire.failIfNoSpecifiedTests=false test
+node mango-pmo/tools/verify-targeted-mutations.mjs
+node mango-pmo/tools/quality-baseline.mjs self-test
 ```
-
-Mutation 验证把 `WorkflowApprovalThreshold` 的 `Math.ceil` 临时替换为 `Math.floor`：同一测试出现 `expected: 2 but was: 1` 并非零退出；恢复生产实现后 2/2 测试再次通过。
-
-基线工具自测还验证：`check` 只读、失败报告不能提升、缺少批准人不能提升、合法提升原子替换 `latest`、并存旧版本会失败。
-
-机器明细见 `evaluation.json`，便于按场景和重复轮次复核；可读摘要见 `evaluation.md`。
