@@ -89,4 +89,12 @@ if (qualityGate.status !== 0) {
   throw new Error(`packaged baseline quality gate self-test failed:\n${qualityGate.stdout}\n${qualityGate.stderr}`);
 }
 
+const qualityBaseline = spawnSync(process.execPath, ['tools/quality-baseline.mjs', 'self-test'], {
+  cwd: baselineRoot,
+  encoding: 'utf8',
+});
+if (qualityBaseline.status !== 0) {
+  throw new Error(`packaged baseline quality baseline self-test failed:\n${qualityBaseline.stdout}\n${qualityBaseline.stderr}`);
+}
+
 process.stdout.write(`Checked ${manifest.packageName}@${manifest.packageVersion} baseline package.\n`);

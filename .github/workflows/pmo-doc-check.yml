@@ -36,7 +36,9 @@ jobs:
             --report .runtime/pmo/changed-quality-gate.json
 
       - name: Check latest test baselines
-        run: node mango-pmo/tools/quality-baseline.mjs check
+        run: |
+          node mango-pmo/tools/quality-baseline.mjs self-test
+          node mango-pmo/tools/quality-baseline.mjs check
 
       - name: Build and verify versioned PMO package
         run: |

@@ -3,7 +3,7 @@
   "packageVersion": "1.1.0",
   "schemaVersion": 1,
   "source": "mango-pmo",
-  "generatedAt": "2026-07-10T02:13:41.327Z",
+  "generatedAt": "2026-07-10T02:15:56.979Z",
   "files": [
     {
       "path": "agents/01-pm-agent.md",
@@ -327,8 +327,8 @@
     },
     {
       "path": "tools/quality-baseline.mjs",
-      "sha256": "3dc4e3aa92ddabfb2a38f175c5bed37c27b5d3a06d0cb6a7e1076179833ddfb8",
-      "size": 5024
+      "sha256": "44b989e7eb839c299fbf2d3f050d723f146fa43bdfc0003e3dff56c8618b37f1",
+      "size": 7483
     },
     {
       "path": "tools/quality-contract.mjs",

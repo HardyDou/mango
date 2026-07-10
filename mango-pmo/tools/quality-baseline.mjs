@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analyzeArtifacts } from './lib/quality-analyzer.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const baselineRoot = path.join(repoRoot, 'mango-docs/evidence/test-baseline');
+let activeRepoRoot = repoRoot;
+let baselineRoot = path.join(activeRepoRoot, 'mango-docs/evidence/test-baseline');
 
 function parseArgs(argv) {
   const command = argv[0] || '';
-  if (!['check', 'promote'].includes(command)) throw new Error('usage: quality-baseline.mjs check|promote');
+  if (!['check', 'promote', 'self-test'].includes(command)) throw new Error('usage: quality-baseline.mjs check|promote|self-test');
   const args = { command };
-  const allowed = new Set(['capability', 'type', 'source', 'owner', 'approver', 'reason']);
+  const allowed = new Set(['root', 'capability', 'type', 'source', 'owner', 'approver', 'reason']);
   for (let index = 1; index < argv.length; index += 1) {
     const option = argv[index];
     if (!option.startsWith('--') || !allowed.has(option.slice(2))) throw new Error(`Unknown option: ${option}`);
@@ -34,8 +36,8 @@ function walk(dir, files = []) {
 }
 
 function check() {
-  const files = walk(baselineRoot).map((file) => path.relative(repoRoot, file).replaceAll('\\', '/'));
-  const artifacts = files.map((file) => ({ path: file, content: fs.readFileSync(path.join(repoRoot, file), 'utf8') }));
+  const files = walk(baselineRoot).map((file) => path.relative(activeRepoRoot, file).replaceAll('\\', '/'));
+  const artifacts = files.map((file) => ({ path: file, content: fs.readFileSync(path.join(activeRepoRoot, file), 'utf8') }));
   const issues = analyzeArtifacts({ artifacts }).filter((issue) => issue.rule.startsWith('PQT-BASELINE'));
   const latestRoots = new Set(files.map((file) => file.match(/^(mango-docs\/evidence\/test-baseline\/[^/]+\/(?:unit|api|ui)\/latest)\//)?.[1]).filter(Boolean));
   for (const latest of latestRoots) {
@@ -57,7 +59,7 @@ function promote(args) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(args.capability)) throw new Error('invalid --capability');
   if (!['unit', 'api', 'ui'].includes(args.type)) throw new Error('--type must be unit, api or ui');
   if (args.reason.trim().length < 8) throw new Error('--reason must explain the baseline change');
-  const source = path.resolve(repoRoot, args.source);
+  const source = path.resolve(activeRepoRoot, args.source);
   const reportPath = path.join(source, 'report.json');
   if (!fs.existsSync(reportPath) || !fs.existsSync(path.join(source, 'README.md'))) throw new Error('source requires report.json and README.md');
   const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
@@ -80,13 +82,56 @@ function promote(args) {
     throw error;
   }
   check();
-  console.log(`Quality baseline promoted: ${path.relative(repoRoot, latest)}`);
+  console.log(`Quality baseline promoted: ${path.relative(activeRepoRoot, latest)}`);
+}
+
+function selfTest() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-quality-baseline-'));
+  activeRepoRoot = root;
+  baselineRoot = path.join(root, 'mango-docs/evidence/test-baseline');
+  try {
+    const source = path.join(root, 'candidate');
+    fs.mkdirSync(source, { recursive: true });
+    fs.writeFileSync(path.join(source, 'README.md'), '# Candidate\n');
+    fs.writeFileSync(path.join(source, 'report.json'), '{"status":"FAIL","businessAssertionsPassed":false}\n');
+    assertFails(() => promote({ capability: 'demo', type: 'unit', source: 'candidate', owner: 'dev', approver: 'lead', reason: '验证失败报告不能提升' }), 'FAIL report');
+    fs.writeFileSync(path.join(source, 'report.json'), '{"status":"PASS","businessAssertionsPassed":true}\n');
+    assertFails(() => promote({ capability: 'demo', type: 'unit', source: 'candidate', owner: 'dev', reason: '验证缺少批准人不能提升' }), 'missing approver');
+    promote({ capability: 'demo', type: 'unit', source: 'candidate', owner: 'dev', approver: 'lead', reason: '验证受控基线原子提升流程' });
+    const latest = path.join(baselineRoot, 'demo/unit/latest');
+    if (!fs.existsSync(path.join(latest, 'promotion.json'))) throw new Error('self-test: promotion metadata missing');
+    const before = fs.readFileSync(path.join(latest, 'report.json'), 'utf8');
+    check();
+    const after = fs.readFileSync(path.join(latest, 'report.json'), 'utf8');
+    if (before !== after) throw new Error('self-test: baseline check modified latest');
+    const stale = path.join(baselineRoot, 'demo/unit/2026-01-01');
+    fs.mkdirSync(stale, { recursive: true });
+    fs.writeFileSync(path.join(stale, 'report.json'), '{}\n');
+    assertFails(() => check(), 'multiple baseline versions');
+    console.log('Quality baseline self-test passed: read-only check, approval, PASS report, atomic latest and stale-version rejection');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}
+
+function assertFails(action, label) {
+  try {
+    action();
+  } catch {
+    return;
+  }
+  throw new Error(`self-test expected failure: ${label}`);
 }
 
 try {
   const args = parseArgs(process.argv.slice(2));
+  if (args.root) {
+    activeRepoRoot = path.resolve(args.root);
+    baselineRoot = path.join(activeRepoRoot, 'mango-docs/evidence/test-baseline');
+  }
   if (args.command === 'check') check();
-  else promote(args);
+  else if (args.command === 'promote') promote(args);
+  else selfTest();
 } catch (error) {
   console.error(`Quality baseline failed: ${error.message}`);
   process.exit(1);
