@@ -25,12 +25,15 @@ const policyFiles = [
   { label: 'AGENTS.md', local: path.join(repoRoot, 'AGENTS.md'), git: 'AGENTS.md' },
   ...[
     'rules/00-dev-flow.md',
+    'rules/02-dev-environment.md',
     'rules/03-ai-coding-redlines.md',
     'rules/04-test-assets.md',
     'rules/05-ai-delivery-quality.md',
     'rules/backend/08-test.md',
     'rules/frontend/04-test.md',
-    'rules/10-executable-quality-contract.md'
+    'rules/10-executable-quality-contract.md',
+    'agents/03-dev-agent.md',
+    'agents/04-qa-agent.md'
   ].map((file) => ({ label: file, local: path.join(baselineRoot, file), git: `${baselinePrefix}/${file}` }))
 ];
 

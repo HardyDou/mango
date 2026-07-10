@@ -10,14 +10,15 @@
 
 - 每个工作区必须使用 `mango workspace init` 初始化本地配置。
 - `scripts/dev-workspace.sh` 只保留为历史兼容入口，正式开发、验证和交付命令必须使用 Mango CLI。
-- 所有代码、接口、数据库、测试、前端页面或构建配置改动必须在任务专用 Git worktree 中进行。
-- 任务 worktree 必须从最新 `main` 新建，并使用独立任务分支。
+- preflight 为 `L2/L3` 或输出 `worktree-required` 的代码、接口、数据库、测试、前端页面或构建配置改动，必须在任务专用 Git worktree 中进行。
+- preflight 为 `L0/L1` 且输出 `lightweight-branch-allowed` 时，可复用当前干净工作区和独立任务分支，不强制额外创建 worktree；禁止直接在 `main` 分支提交，真实 diff 越界后必须升级并迁移到任务 worktree。
+- 需要任务 worktree 时必须从最新 `main` 新建，并使用独立任务分支。
 - 一个任务或一个 PR 在本地只能对应一个开发 worktree。
 - 验收返工、Review 修改、CI 修复和 PR 门禁修复必须复用该任务或 PR 的既有 worktree。
 - 新建 worktree 前，Agent 必须先执行 `git worktree list`，确认是否已有同一任务分支或 PR 分支对应的 worktree。
 - 只有新独立任务、用户明确拆分任务、原 worktree 丢失或用户明确要求重建时，才允许创建新的 worktree。
 - 原 worktree 丢失或损坏时，必须基于原任务分支重建 worktree，不得另起无关联分支。
-- 主工作区只用于拉取 `main`、创建 worktree、查看状态和执行清理，不承载任务改动。
+- 主工作区默认只用于拉取 `main`、创建 worktree、查看状态和执行清理；只有 preflight 明确输出 `lightweight-branch-allowed`、工作区干净且没有其它任务占用时，才允许切换到独立轻量任务分支承载 `L0/L1` 改动。
 - 只修改 PMO 规范、流程、Agent 入口、设计文档、Sprint 计划、交付记录或历史材料，且不影响服务代码、接口、数据库、测试、前端页面或构建配置时，可按 preflight 的 `main-direct-allowed` 结果在主工作区直接提交。
 - 本地工作区配置文件固定为 `.mango/workspace.json` 和 `.mango/dev-workspace.env`。
 - `.mango/workspace.json` 记录当前 worktree 的稳定 slot、端口、数据库名和 workspace id，禁止提交到 Git。
