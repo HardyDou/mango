@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "change": {
     "base": "aa59e3ed0226bd3698ae9daf4ca1478f6b54725b",
-    "head": "08abb6d11bd9396d4b4d1589782b54cb2352e689",
-    "filesDigest": "sha256:d6c2dc997140ba6f69dd9c8b95110265befe583fe7094b3bd7d525c5ae7e6194",
+    "head": "29176bf177c4a681b9688d7ab70d7e9eb0a03461",
+    "filesDigest": "sha256:34a36a849566fdb206e40920fb82b5bf7b8d348b8afdd378191a2201d748f27d",
     "files": [
       ".github/workflows/pmo-doc-check.yml",
       "mango-business-starter/README.md",
@@ -42,7 +42,6 @@
       "mango-business-starter/business-pmo/mango-baseline/tools/quality-contract.mjs",
       "mango-business-starter/business-pmo/mango-baseline/tools/quality-gate.mjs",
       "mango-docs/designs/2026-07-10-pmo-executable-quality-contract-design.md",
-      "mango-docs/evidence/2026-07-10-pmo-executable-quality-contract-final-report.md",
       "mango-docs/plans/2026-07-10-pmo-executable-quality-contract-plan.md",
       "mango-pmo/README.md",
       "mango-pmo/fixtures/executable-quality/cases.json",

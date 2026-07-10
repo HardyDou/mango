@@ -2,7 +2,7 @@
 
 > 实验日期：2026-07-10
 >
-> 受测实现提交：`08abb6d11`
+> 受测实现提交：`29176bf17`
 >
 > 能力：`pmo-executable-quality-contract`
 >

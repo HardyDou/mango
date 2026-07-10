@@ -1,7 +1,7 @@
 # PMO 可执行质量契约 UNIT 最新基线
 
 - 能力：`pmo-executable-quality-contract`
-- 受测实现提交：`08abb6d11`
+- 受测实现提交：`29176bf17`
 - 环境：macOS，Node.js，Java 21，Maven；隔离评估固定 UTC、空 `HOME`、空 `CODEX_HOME`、禁用网络代理。
 - 数据：`mango-pmo/fixtures/executable-quality/cases.json` 的 48 个冻结正反场景。
 

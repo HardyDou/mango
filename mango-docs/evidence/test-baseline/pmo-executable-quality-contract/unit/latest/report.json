@@ -3,7 +3,7 @@
   "businessAssertionsPassed": true,
   "capability": "pmo-executable-quality-contract",
   "suite": "UNIT",
-  "commit": "08abb6d11",
+  "commit": "29176bf17",
   "environment": {
     "date": "2026-07-10",
     "timezone": "Asia/Shanghai",
