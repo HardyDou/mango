@@ -1,8 +1,11 @@
 # PMO 可执行质量契约最终实验报告
 
-> 实验日期：2026-07-10  
-> 受测实现提交：`6895a5295`  
-> 能力：`pmo-executable-quality-contract`  
+> 实验日期：2026-07-10
+>
+> 受测实现提交：`08abb6d11`
+>
+> 能力：`pmo-executable-quality-contract`
+>
 > 总结论：**PASS（可验证范围）**
 
 ## 1. 结论
@@ -58,7 +61,8 @@
 | 相对提升 | - | 78.65 个百分点 | ≥ 30 个百分点 | PASS |
 | 指定规则命中 | 未覆盖 | 48/48 场景符合预期 | 100% | PASS |
 
-机器报告：[`evaluation.json`](test-baseline/pmo-executable-quality-contract/unit/latest/evaluation.json)。  
+机器报告：[`evaluation.json`](test-baseline/pmo-executable-quality-contract/unit/latest/evaluation.json)。
+
 逐场景摘要：[`evaluation.md`](test-baseline/pmo-executable-quality-contract/unit/latest/evaluation.md)。
 
 ## 4. 真实项目验证

@@ -1,6 +1,6 @@
 # PMO 可执行质量空白上下文 A/B 实验报告
 
-- 时间：2026-07-10T02:18:33.462Z
+- 时间：2026-07-10T02:22:59.832Z
 - 场景数：48
 - 隔离运行数：192（普通场景 3 次，关键场景 5 次）
 - 隔离条件：每次使用独立临时目录、空 HOME、空 CODEX_HOME、固定 UTC、代理禁用、无会话历史。
@@ -69,4 +69,3 @@
 | contract-valid-r3 | PASS | 否 | PASS | PASS | - |
 | baseline-multiple-current-versions | BLOCK | 是 | PASS | BLOCK | PQT-BASELINE-001 |
 | baseline-only-latest | PASS | 否 | PASS | PASS | - |
-
