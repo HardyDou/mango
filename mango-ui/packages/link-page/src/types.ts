@@ -20,6 +20,9 @@ export interface LinkPageProps {
   baseUrl?: string;
   headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   credentials?: RequestCredentials;
+  headline?: string;
+  subtitle?: string;
+  searchPlaceholder?: string;
   loginUrl?: string;
   title?: string;
   logoUrl?: string;
