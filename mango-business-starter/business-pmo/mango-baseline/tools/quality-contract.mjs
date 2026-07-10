@@ -65,8 +65,8 @@ function classify(artifacts) {
       risk = maxRisk(risk, 'R2');
       reasons.add('module-dependency');
     }
-    if (reasons.size === 0) reasons.add('mechanical-change');
   }
+  if (reasons.size === 0) reasons.add('mechanical-change');
   return { risk, reasons: [...reasons] };
 }
 
