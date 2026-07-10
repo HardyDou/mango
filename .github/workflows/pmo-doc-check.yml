@@ -29,7 +29,10 @@ jobs:
         run: node mango-pmo/tools/eval-executable-quality.mjs
 
       - name: Validate isolated Agent classification experiment
-        run: node mango-pmo/tools/eval-agent-classification.mjs --validate-only
+        run: >-
+          node mango-pmo/tools/eval-agent-classification.mjs
+          --validate-only
+          --base ${{ github.event.pull_request.base.sha }}
 
       - name: Set up Java for targeted mutation verification
         uses: actions/setup-java@v4
