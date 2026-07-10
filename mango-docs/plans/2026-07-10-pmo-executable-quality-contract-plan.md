@@ -1,6 +1,7 @@
 # PMO 可执行质量契约实施计划
 
-> 设计来源：[`2026-07-10-pmo-executable-quality-contract-design.md`](../designs/2026-07-10-pmo-executable-quality-contract-design.md)  
+> 设计来源：[`2026-07-10-pmo-executable-quality-contract-design.md`](../designs/2026-07-10-pmo-executable-quality-contract-design.md)
+>
 > 工作分支：`feature/pmo-executable-quality-contract`
 
 ## 交付批次

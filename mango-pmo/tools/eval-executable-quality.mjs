@@ -122,8 +122,7 @@ function markdown(report) {
     const rules = [...new Set(row.runs.flatMap((run) => run.candidate.rules))].join(', ');
     lines.push(`| ${row.id} | ${row.expected} | ${row.critical ? '是' : '否'} | ${current} | ${candidate} | ${rules || '-'} |`);
   }
-  lines.push('');
-  return `${lines.join('\n')}\n`;
+  return `${lines.join('\n').trimEnd()}\n`;
 }
 
 try {
