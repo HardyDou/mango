@@ -22,6 +22,27 @@ jobs:
       - name: Check PMO preflight routing
         run: node mango-pmo/tools/check-pmo-preflight.mjs
 
+      - name: Check executable quality gate fixtures
+        run: node mango-pmo/tools/quality-gate.mjs --self-test
+
+      - name: Run isolated executable quality A/B evaluation
+        run: node mango-pmo/tools/eval-executable-quality.mjs
+
+      - name: Check changed files with executable quality gate
+        run: |
+          node mango-pmo/tools/quality-gate.mjs \
+            --base ${{ github.event.pull_request.base.sha }} \
+            --head ${{ github.event.pull_request.head.sha }} \
+            --report .runtime/pmo/changed-quality-gate.json
+
+      - name: Check latest test baselines
+        run: node mango-pmo/tools/quality-baseline.mjs check
+
+      - name: Build and verify versioned PMO package
+        run: |
+          node mango-ui/packages/mango-pmo/scripts/build-package.mjs
+          node mango-ui/packages/mango-pmo/scripts/check-package.mjs
+
       - name: Check governance intent
         run: node mango-pmo/tools/check-governance-intent.mjs
 

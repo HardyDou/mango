@@ -12,10 +12,15 @@ const requiredFiles = [
   'rules/00-dev-flow.md',
   'README.md',
   'rules/03-ai-coding-redlines.md',
+  'rules/10-executable-quality-contract.md',
   'rules/index.json',
+  'schemas/quality-contract.schema.json',
+  'fixtures/executable-quality/cases.json',
   'agents/03-dev-agent.md',
   'agents/05-pmo-agent.md',
   'tools/pmo-preflight.mjs',
+  'tools/quality-gate.mjs',
+  'tools/eval-executable-quality.mjs',
   'tools/delivery-contract-check.mjs',
   'tools/acceptance-evidence-check.mjs',
   'templates/delivery-contract.md',
@@ -74,6 +79,14 @@ if (preflight.status !== 0) {
 }
 if (!preflight.stdout.includes('rules/00-dev-flow.md') || !preflight.stdout.includes('rules/03-ai-coding-redlines.md')) {
   throw new Error(`packaged baseline preflight did not load baseline rules:\n${preflight.stdout}`);
+}
+
+const qualityGate = spawnSync(process.execPath, ['tools/quality-gate.mjs', '--self-test'], {
+  cwd: baselineRoot,
+  encoding: 'utf8',
+});
+if (qualityGate.status !== 0) {
+  throw new Error(`packaged baseline quality gate self-test failed:\n${qualityGate.stdout}\n${qualityGate.stderr}`);
 }
 
 process.stdout.write(`Checked ${manifest.packageName}@${manifest.packageVersion} baseline package.\n`);

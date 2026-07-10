@@ -1,9 +1,9 @@
 {
   "packageName": "@mango/pmo",
-  "packageVersion": "1.0.4",
+  "packageVersion": "1.1.0",
   "schemaVersion": 1,
   "source": "mango-pmo",
-  "generatedAt": "2026-06-29T01:01:21.766Z",
+  "generatedAt": "2026-07-10T02:12:47.306Z",
   "files": [
     {
       "path": "agents/01-pm-agent.md",
@@ -31,24 +31,29 @@
       "size": 442
     },
     {
+      "path": "fixtures/executable-quality/cases.json",
+      "sha256": "8ab05f8be3a23b314bae3c89ccf7197ad0963b6ddf21ab766df358c3f7a7f842",
+      "size": 20398
+    },
+    {
       "path": "README.md",
-      "sha256": "3b8398456e80a0ce8dfc449e2b914f360fdd0ec35ec8f91365b37076b3d52367",
-      "size": 5618
+      "sha256": "bfa747c7d8021f4926c6b0d1a17f01b97774b160851d2d6b3ef0defe726875ab",
+      "size": 6897
     },
     {
       "path": "rules/00-dev-flow.md",
-      "sha256": "bd8b9ab6939da0223df0fbda2d5fdfcd6ae132dfd2f18c179bf7fa1c7bb9dd99",
-      "size": 12257
+      "sha256": "080eb0eb8ef915464fa6e0d688af83e2647745056dc5ecae3a3f954be1b068d9",
+      "size": 12584
     },
     {
       "path": "rules/01-delivery-contract.md",
-      "sha256": "027625d23e0a42ee8e43e5a7b8282ebff07c5f4cb35707e6270ea5e3e4010966",
-      "size": 4897
+      "sha256": "5ed25ace97ce7e0f47d53477ea3b09ca30b41c865765fc499742efc8c3cb56cc",
+      "size": 5521
     },
     {
       "path": "rules/02-dev-environment.md",
-      "sha256": "c6c8e0a44558100ae93d12d2b9f44b172d7b35add54723ae58c43de211927f2f",
-      "size": 8311
+      "sha256": "a2f6cd4a92cc60f05e4d8e3c94e3a272c3c9e13961dfb63b537c787f7e2b5399",
+      "size": 10084
     },
     {
       "path": "rules/03-ai-coding-redlines.md",
@@ -62,8 +67,8 @@
     },
     {
       "path": "rules/05-ai-delivery-quality.md",
-      "sha256": "94c266f797a228afdea8a058cfa06e482ee66fa8d9a3046a010916ee550d2503",
-      "size": 6410
+      "sha256": "040c756c3377c462b015b231e7fabf0668a39114ee15b1994ae0d8450d0949f2",
+      "size": 7135
     },
     {
       "path": "rules/06-document-assets.md",
@@ -77,8 +82,18 @@
     },
     {
       "path": "rules/08-capability-docs.md",
-      "sha256": "652f6c8f9f65647ad70f4e5010552f41a0e8ab5ba98b54218974c823b3710b7f",
-      "size": 5666
+      "sha256": "5c885d92d3ebab46ffaeab84b413b5947166c70d731aa36d815707bbcf16f5a6",
+      "size": 6789
+    },
+    {
+      "path": "rules/09-test-case-automation-flow.md",
+      "sha256": "6c8dcb3c2dab3a85ecb48485b687bd003ba653dfabd43dd3226b4474f681778a",
+      "size": 8636
+    },
+    {
+      "path": "rules/10-executable-quality-contract.md",
+      "sha256": "4752d02dd3c25e312b2cb85b3683b655b8f95f790dc8f56041dae3c75dc6ce84",
+      "size": 7066
     },
     {
       "path": "rules/backend/01-code.md",
@@ -97,8 +112,8 @@
     },
     {
       "path": "rules/backend/04-db.md",
-      "sha256": "c356bc4b7ee7b75362e5af3e46d616e60368a3c576b6056e0880a19dcf2b8ad6",
-      "size": 1859
+      "sha256": "396195da59d7bacf0cc77a6972f80aa93770778731d6b818b1afdbea7c41a220",
+      "size": 3130
     },
     {
       "path": "rules/backend/05-module.md",
@@ -117,8 +132,8 @@
     },
     {
       "path": "rules/backend/08-test.md",
-      "sha256": "34768818b5c3917a65bd39aaf2aa08ff79632dc41a2251f59d1a5dd1095a35bd",
-      "size": 10616
+      "sha256": "a03000643fb59f1641be2269a73fd662125776f1c0e3cbb6e45c965ca179038e",
+      "size": 10903
     },
     {
       "path": "rules/backend/09-versioning.md",
@@ -132,8 +147,8 @@
     },
     {
       "path": "rules/backend/11-module-menu.md",
-      "sha256": "593207b2bd136d987bb1ac170169248d763c608b3e525fd90d15483ddba143dc",
-      "size": 3914
+      "sha256": "6093bbe4ea81ff3593ef452021e32a1b9287b74884865c2b72e1df8747768e57",
+      "size": 4081
     },
     {
       "path": "rules/frontend/01-vue-code.md",
@@ -142,8 +157,8 @@
     },
     {
       "path": "rules/frontend/02-element-plus-ui.md",
-      "sha256": "e574d7d8a360e33391e0666a639e552f37fafde39865105c20c2c1948dba0d77",
-      "size": 9204
+      "sha256": "6368821ef3205ca912ebaf19b19774bdc22e1c8c409e843b2ba5825181cccf3c",
+      "size": 9489
     },
     {
       "path": "rules/frontend/03-component-development.md",
@@ -152,8 +167,8 @@
     },
     {
       "path": "rules/frontend/04-test.md",
-      "sha256": "34bd4b0622bce793147f79cb172a566f7413527405d9c15bf70e58f10df1ac6e",
-      "size": 3682
+      "sha256": "a3d74fb6f3c7f8f2005b30b10f49a4e9b27d1b4031c59d098aaa0c223540e297",
+      "size": 4915
     },
     {
       "path": "rules/frontend/05-dev-flow.md",
@@ -167,13 +182,13 @@
     },
     {
       "path": "rules/frontend/07-admin-ui-common.md",
-      "sha256": "74156dc9aa8c9b47d0dac8827d71db388d5136294f246f51ccfff92ddd12b068",
-      "size": 2076
+      "sha256": "6acfcb328cecadf6d023f925a18d9f89f1c1cd7ccb574be180c72e73db237b04",
+      "size": 2197
     },
     {
       "path": "rules/frontend/08-list-page.md",
-      "sha256": "bb52587a6f5cccb83ec984a8d6fe032c0f0399bfc6893e34f3aef63b8ea689ee",
-      "size": 1923
+      "sha256": "093c9b85e2a96fc45ffa3abf7738c758617623c0befc804b39c18299da170b0d",
+      "size": 3036
     },
     {
       "path": "rules/frontend/09-detail-page.md",
@@ -192,8 +207,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "cddfd532d34617d73147a97995e2160a8b13f800971b470af77879c406b90200",
-      "size": 16849
+      "sha256": "5409989d912d3e27eeb5c99a9a14bee4b20a7ba7e9d5cc3216726e83cc84a428",
+      "size": 20303
     },
     {
       "path": "rules/product/01-prd-template.md",
@@ -207,18 +222,23 @@
     },
     {
       "path": "rules/product/03-detailed-design-template.md",
-      "sha256": "cc009488c2b577151a1725dec5f5913cd8ea0f6c2b53b72ff5da9ee3f2da765e",
-      "size": 20934
+      "sha256": "50c4004a473a771dc506a582ba24855782474c4f39c9814a182fc026bc825b1c",
+      "size": 21327
+    },
+    {
+      "path": "schemas/quality-contract.schema.json",
+      "sha256": "8da2a5a8f60f5c973138deab73866b967de429425d00b1a78f39648a50b33ce8",
+      "size": 3277
     },
     {
       "path": "templates/acceptance-evidence.md",
-      "sha256": "1d835d44a48616219b058602a4ee7a12cf4f58b63c965396b133df7cc12cf883",
-      "size": 779
+      "sha256": "1c53d8e474d0e134b9ddfe8d6d16e7dd85e210d900fed50d05274865b9dafea0",
+      "size": 1024
     },
     {
       "path": "templates/delivery-contract.md",
-      "sha256": "8df6e66a275b79882594ef62caf734ce9321c044d5dc6e6c1d2ebd2ce3e838aa",
-      "size": 1568
+      "sha256": "a57def09fec0087093426936b3de7549e2f103f31bcaec38485ec4b1e1dc3c72",
+      "size": 2204
     },
     {
       "path": "templates/detailed-design.md",
@@ -242,8 +262,8 @@
     },
     {
       "path": "tools/acceptance-evidence-check.mjs",
-      "sha256": "c0ef5a10ae29e0272e204bb08ca4138c3dc5c9fcab683a4bb94f8c065971772d",
-      "size": 5681
+      "sha256": "75e5b41154667e4028cd22ae52c42f57700a83eba2d3d7e3db517b5ec9290790",
+      "size": 6121
     },
     {
       "path": "tools/audit-backend-test-mocks.mjs",
@@ -272,23 +292,53 @@
     },
     {
       "path": "tools/check-governance-intent.mjs",
-      "sha256": "770c3521d747206efdb0c02ccd6554cbebf04c86021c77cfa6259111ef914d2b",
-      "size": 7303
+      "sha256": "8a28de760d314157928591311c9811c1e0d1283adb81313c85ef2a65d92f3989",
+      "size": 7591
     },
     {
       "path": "tools/check-pmo-preflight.mjs",
-      "sha256": "acecaec5ca2be75ff1c2fe0ae2157daa61ab4a319b4dbad4d5f92667447e3189",
-      "size": 4821
+      "sha256": "ba9acd22755bd0a2ef2e4c62548770546d28cf49ec06d82bac2a952bd5ef3dc2",
+      "size": 7930
     },
     {
       "path": "tools/delivery-contract-check.mjs",
-      "sha256": "1f19b907aa001ff01d0675710b7e60e77bf7ed901a40894fe4f8b167c71485a6",
-      "size": 14010
+      "sha256": "1b5775633a91d3786038c46b6e5d216f4c7b2616cb279b768b6d8bf9a9512a20",
+      "size": 21862
+    },
+    {
+      "path": "tools/eval-executable-quality.mjs",
+      "sha256": "a190d55d324d9d40a00ece44f31b92bada7aa1970fa9a9045b5ef6dd06751d89",
+      "size": 8646
+    },
+    {
+      "path": "tools/lib/quality-analyzer.mjs",
+      "sha256": "990ea62f02f3c79108b7fcdfcf7f6c01059b80acbfc8feb3ab96d53736ed373d",
+      "size": 21478
+    },
+    {
+      "path": "tools/lib/quality-fixtures.mjs",
+      "sha256": "6bd906ab334627660f999a718836777aed2e77c1a250f678dce8ea4105f832f7",
+      "size": 1367
     },
     {
       "path": "tools/pmo-preflight.mjs",
-      "sha256": "0fe72f8fbc8564583ffc2d9194eebe6c685112a4e1d4e317f09c4b0a2c2525bb",
-      "size": 10855
+      "sha256": "85b663cc70b9fb62a9b76bad8372b1e1959940131f6976a6f5bd955595a51d2b",
+      "size": 13169
+    },
+    {
+      "path": "tools/quality-baseline.mjs",
+      "sha256": "3dc4e3aa92ddabfb2a38f175c5bed37c27b5d3a06d0cb6a7e1076179833ddfb8",
+      "size": 5024
+    },
+    {
+      "path": "tools/quality-contract.mjs",
+      "sha256": "05549f52f98c94ea1c87bf47903959f1e8fca239256fbae1a6e32ffa91d9a6ac",
+      "size": 5508
+    },
+    {
+      "path": "tools/quality-gate.mjs",
+      "sha256": "487cc9ac46ad88cca99ecf9439ed507f716ceee84473a0f1c6430dd6fad85588",
+      "size": 5124
     }
   ]
 }

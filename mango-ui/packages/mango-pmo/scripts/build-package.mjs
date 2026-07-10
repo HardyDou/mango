@@ -10,7 +10,7 @@ const sourceRoot = join(repoRoot, 'mango-pmo');
 const distRoot = join(packageRoot, 'dist');
 const baselineRoot = join(distRoot, 'baseline');
 const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
-const copiedRoots = ['agents', 'rules', 'templates', 'tools'];
+const copiedRoots = ['agents', 'fixtures', 'rules', 'schemas', 'templates', 'tools'];
 
 if (!existsSync(sourceRoot)) {
   throw new Error(`mango-pmo source not found: ${sourceRoot}`);
