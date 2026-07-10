@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "noop-constant-assert",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-NOOP-003",
+      "files": [{ "path": "mango/demo/src/test/java/demo/LimitTest.java", "content": "class LimitTest { static final int A = 10; @Test void value() { assertEquals(10, A); } }" }]
+    },
+    {
+      "id": "noop-self-assert",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-NOOP-002",
+      "files": [{ "path": "mango/demo/src/test/java/demo/SelfTest.java", "content": "class SelfTest { @Test void value() { assertEquals(10, 10); } }" }]
+    },
+    {
+      "id": "noop-getter-setter",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-NOOP-004",
+      "files": [{ "path": "mango/demo/src/test/java/demo/UserTest.java", "content": "class UserTest { @Test void name() { User user = new User(); user.setName(\"A\"); assertEquals(\"A\", user.getName()); } }" }]
+    },
+    {
+      "id": "noop-does-not-throw",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-NOOP-005",
+      "files": [{ "path": "mango/demo/src/test/java/demo/RunnerTest.java", "content": "class RunnerTest { @Test void run() { assertDoesNotThrow(() -> new Runner().run()); } }" }]
+    },
+    {
+      "id": "noop-not-null",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-NOOP-006",
+      "files": [{ "path": "mango/demo/src/test/java/demo/FactoryTest.java", "content": "class FactoryTest { @Test void create() { assertNotNull(new Factory().create()); } }" }]
+    },
+    {
+      "id": "mock-tested-target",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-MOCK-003",
+      "files": [{ "path": "mango/demo/src/test/java/demo/ThresholdPolicyTest.java", "content": "class ThresholdPolicyTest { @Test void approve() { ThresholdPolicy policy = mock(ThresholdPolicy.class); when(policy.approve(10)).thenReturn(true); assertTrue(policy.approve(10)); } }" }]
+    },
+    {
+      "id": "mock-protected-node-under-alias-test",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-MOCK-004",
+      "contractCapabilities": [{ "id": "workflow-threshold", "acceptance": ["达到阈值后状态变为 approved"], "risk": "R1", "riskReasons": ["branch"], "obligations": ["STATIC_REVIEW", "UNIT"], "protectedProofPath": ["workflow-entry", "ThresholdPolicy"], "allowedExternalDoubles": [] }],
+      "files": [{ "path": "mango/demo/src/test/java/demo/WorkflowRuleTest.java", "content": "class WorkflowRuleTest { @Mock ThresholdPolicy policy; @Test void approve() { when(policy.approve(10)).thenReturn(true); assertTrue(policy.approve(10)); } }" }]
+    },
+    {
+      "id": "api-direct-service",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-API-001",
+      "files": [{ "path": "mango/demo/src/test/java/demo/OrderApiTest.java", "content": "class OrderApiTest { OrderService service = new OrderService(); @Test void create() { assertEquals(\"CREATED\", service.create().status()); } }" }]
+    },
+    {
+      "id": "api-mocks-service",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-API-002",
+      "files": [{ "path": "mango/demo/src/test/java/demo/OrderApiTest.java", "content": "class OrderApiTest { MockMvc mvc; @MockBean OrderService service; @Test void create() { mvc.perform(post(\"/orders\")).andExpect(status().isOk()); } }" }]
+    },
+    {
+      "id": "api-mocks-mapper",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-API-002",
+      "files": [{ "path": "mango/demo/src/test/java/demo/OrderIntegrationTest.java", "content": "class OrderIntegrationTest { WebTestClient client; OrderMapper mapper = mock(OrderMapper.class); @Test void create() { client.post().uri(\"/orders\").exchange().expectStatus().isOk(); } }" }]
+    },
+    {
+      "id": "verify-only-mock",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-NOOP-007",
+      "files": [{ "path": "mango/demo/src/test/java/demo/PublisherTest.java", "content": "class PublisherTest { @Test void publish() { Sender sender = mock(Sender.class); new Publisher(sender).publish(); verify(sender).send(); } }" }]
+    },
+    {
+      "id": "valid-key-decision-unit",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango/demo/src/test/java/demo/ThresholdPolicyTest.java", "content": "class ThresholdPolicyTest { @Test void belowThresholdRemainsPending() { ThresholdPolicy policy = new ThresholdPolicy(10); assertEquals(Status.PENDING, policy.decide(9)); assertEquals(Status.APPROVED, policy.decide(10)); } }" }]
+    },
+    {
+      "id": "valid-external-client-mock-unit",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango/demo/src/test/java/demo/OrderPolicyTest.java", "content": "class OrderPolicyTest { @Test void externalFailureRejects() { StripeClient stripe = mock(StripeClient.class); when(stripe.charge()).thenThrow(new TimeoutException()); assertEquals(Status.REJECTED, new OrderPolicy(stripe).pay()); } }" }]
+    },
+    {
+      "id": "valid-real-entry-api",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango/demo/src/test/java/demo/OrderApiTest.java", "content": "class OrderApiTest { MockMvc mvc; @Test void create() { mvc.perform(post(\"/orders\").content(\"{}\")).andExpect(status().isCreated()).andExpect(jsonPath(\"$.status\").value(\"CREATED\")); } }" }]
+    },
+    {
+      "id": "controller-direct-mapper",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-JAVA-001",
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderController.java", "content": "@RestController class OrderController { private final OrderMapper orderMapper; OrderController(OrderMapper orderMapper) { this.orderMapper = orderMapper; } }" }]
+    },
+    {
+      "id": "controller-write-without-validation",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-JAVA-002",
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderController.java", "content": "@RestController class OrderController { @PostMapping(\"/orders\") R<OrderVO> create(@RequestBody CreateOrderCommand command) { return service.create(command); } }" }]
+    },
+    {
+      "id": "valid-controller-boundary",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderController.java", "content": "@RestController class OrderController { private final OrderService orderService; @PostMapping(\"/orders\") R<OrderVO> create(@RequestBody @Valid CreateOrderCommand command) { return orderService.create(command); } }" }]
+    },
+    {
+      "id": "service-write-without-transaction",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-JAVA-003",
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderServiceImpl.java", "content": "@Service class OrderServiceImpl { void create(Order order) { mapper.insert(order); } }" }]
+    },
+    {
+      "id": "valid-service-transaction",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderServiceImpl.java", "content": "@Service class OrderServiceImpl { @Transactional void create(Order order) { mapper.insert(order); } }" }]
+    },
+    {
+      "id": "mapper-unconditional-update",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-JAVA-004",
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderMapper.java", "content": "interface OrderMapper { @Update(\"update orders set status = 'DONE'\") int finishAll(); }" }]
+    },
+    {
+      "id": "api-depends-core",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-JAVA-005",
+      "files": [{ "path": "mango/mango-demo/mango-demo-api/pom.xml", "content": "<project><dependencies><dependency><groupId>io.mango</groupId><artifactId>mango-demo-core</artifactId></dependency></dependencies></project>" }]
+    },
+    {
+      "id": "core-depends-starter",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-JAVA-005",
+      "files": [{ "path": "mango/mango-demo/mango-demo-core/pom.xml", "content": "<project><dependencies><dependency><groupId>io.mango</groupId><artifactId>mango-demo-starter</artifactId></dependency></dependencies></project>" }]
+    },
+    {
+      "id": "remote-depends-core",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-JAVA-005",
+      "files": [{ "path": "mango/mango-demo/mango-demo-starter-remote/pom.xml", "content": "<project><dependencies><dependency><groupId>io.mango</groupId><artifactId>mango-demo-core</artifactId></dependency></dependencies></project>" }]
+    },
+    {
+      "id": "valid-core-depends-api",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango/mango-demo/mango-demo-core/pom.xml", "content": "<project><dependencies><dependency><groupId>io.mango</groupId><artifactId>mango-demo-api</artifactId></dependency></dependencies></project>" }]
+    },
+    {
+      "id": "ui-mocks-own-api",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-UI-001",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/order.spec.ts", "content": "test('create', async ({ page }) => { await page.route('**/api/orders', route => route.fulfill({ json: { ok: true } })); await page.goto('/orders'); });" }]
+    },
+    {
+      "id": "valid-ui-mocks-third-party",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/payment.spec.ts", "content": "test('pay', async ({ page }) => { await page.route('https://sandbox.stripe.example/charge', route => route.fulfill({ json: { status: 'paid' } })); await page.goto('/payments'); await expect(page.locator('[data-state=paid]')).toHaveAttribute('data-state', 'paid'); });" }]
+    },
+    {
+      "id": "ui-element-selector",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-UI-002",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/order.spec.ts", "content": "test('create', async ({ page }) => { await page.locator('.el-button--primary').click(); });" }]
+    },
+    {
+      "id": "ui-fixed-wait",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-UI-003",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/order.spec.ts", "content": "test('create', async ({ page }) => { await page.waitForTimeout(1000); });" }]
+    },
+    {
+      "id": "ui-force-click",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-UI-004",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/order.spec.ts", "content": "test('create', async ({ page }) => { await page.getByRole('button').click({ force: true }); });" }]
+    },
+    {
+      "id": "ui-order-selector",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-UI-005",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/order.spec.ts", "content": "test('create', async ({ page }) => { await page.getByRole('row').nth(2).click(); });" }]
+    },
+    {
+      "id": "ui-screenshot-only",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-UI-006",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/order.spec.ts", "content": "test('page', async ({ page }) => { await page.goto('/orders'); await expect(page).toHaveScreenshot('orders.png'); });" }]
+    },
+    {
+      "id": "valid-ui-business-and-screenshot",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango-ui/apps/admin/e2e/specs/order.spec.ts", "content": "test('create', async ({ page }) => { await page.goto('/orders'); await page.getByRole('button', { name: '创建' }).click(); await expect(page.locator('[data-state=saved]')).toHaveAttribute('data-state', 'saved'); await expect(page).toHaveScreenshot('order-saved.png'); });" }]
+    },
+    {
+      "id": "page-missing-capability-anchor",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-WEB-001",
+      "files": [{ "path": "mango-ui/packages/order/src/views/order/index.vue", "content": "<template><main>订单</main></template>" }]
+    },
+    {
+      "id": "page-hidden-compliance-anchor",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-WEB-002",
+      "files": [{ "path": "mango-ui/packages/order/src/views/order/index.vue", "content": "<template><main><div style=\"display:none\" data-page=\"order.management\"></div><LegacyPage /></main></template>" }]
+    },
+    {
+      "id": "form-missing-surface",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-WEB-003",
+      "files": [{ "path": "mango-ui/packages/order/src/views/order/form.vue", "content": "<template><main data-page=\"order.form\"><el-form><input data-field=\"order.name\" /></el-form></main></template>" }]
+    },
+    {
+      "id": "form-missing-field-anchor",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-WEB-004",
+      "files": [{ "path": "mango-ui/packages/order/src/views/order/form.vue", "content": "<template><main data-page=\"order.form\"><el-form data-surface=\"order.form\"><el-form-item label=\"名称\"><input /></el-form-item></el-form></main></template>" }]
+    },
+    {
+      "id": "valid-form-contract",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango-ui/packages/order/src/views/order/form.vue", "content": "<template><main data-page=\"order.form\"><el-form data-surface=\"order.form\"><el-form-item label=\"名称\"><input data-field=\"order.name\" /></el-form-item></el-form></main></template>" }]
+    },
+    {
+      "id": "contract-unknown-test-type",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-CONTRACT-010",
+      "contractCapabilities": [{ "id": "order-create", "acceptance": ["创建成功后列表显示新订单"], "risk": "R1", "riskReasons": ["branch"], "obligations": ["STATIC_REVIEW", "COMPONENT"], "protectedProofPath": ["order-entry", "OrderPolicy"], "allowedExternalDoubles": [] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status decide(int value) { return value > 0 ? Status.OK : Status.REJECTED; } }" }]
+    },
+    {
+      "id": "contract-r2-missing-api",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-CONTRACT-011",
+      "contractCapabilities": [{ "id": "order-create", "acceptance": ["创建成功后订单持久化并返回编号"], "risk": "R2", "riskReasons": ["persistence"], "obligations": ["STATIC_REVIEW", "UNIT"], "protectedProofPath": ["http-entry", "OrderService", "order-write"], "allowedExternalDoubles": [] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status decide(int value) { return value > 0 ? Status.OK : Status.REJECTED; } }" }]
+    },
+    {
+      "id": "contract-r0-over-testing",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-NOOP-001",
+      "contractCapabilities": [{ "id": "order-constant", "acceptance": ["订单默认分页大小声明为十条"], "risk": "R0", "riskReasons": ["constant"], "obligations": ["STATIC_REVIEW", "UNIT"], "protectedProofPath": [], "allowedExternalDoubles": [] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderConstants.java", "content": "class OrderConstants { static final int PAGE_SIZE = 10; }" }]
+    },
+    {
+      "id": "contract-double-protected-node",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-MOCK-002",
+      "contractCapabilities": [{ "id": "order-create", "acceptance": ["创建成功后订单持久化并返回编号"], "risk": "R2", "riskReasons": ["persistence"], "obligations": ["STATIC_REVIEW", "UNIT", "API"], "protectedProofPath": ["http-entry", "OrderService", "order-write"], "allowedExternalDoubles": [{ "target": "OrderService", "reason": "为了让测试更快而替换" }] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status decide(int value) { return value > 0 ? Status.OK : Status.REJECTED; } }" }]
+    },
+    {
+      "id": "contract-valid-external-double",
+      "critical": false,
+      "expected": "PASS",
+      "contractCapabilities": [{ "id": "order-payment", "acceptance": ["支付超时时订单进入可重试状态"], "risk": "R2", "riskReasons": ["state-transition", "external"], "obligations": ["STATIC_REVIEW", "UNIT", "API"], "protectedProofPath": ["http-entry", "OrderPaymentService", "order-state-write"], "allowedExternalDoubles": [{ "target": "StripeClient", "reason": "第三方沙箱不可稳定注入超时" }] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status timeout() { return Status.RETRYABLE; } }" }]
+    },
+    {
+      "id": "contract-expired-exception",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-EXCEPTION-002",
+      "contractCapabilities": [{ "id": "order-create", "acceptance": ["创建成功后列表显示新订单"], "risk": "R1", "riskReasons": ["branch"], "obligations": ["STATIC_REVIEW", "UNIT"], "protectedProofPath": ["order-entry", "OrderPolicy"], "allowedExternalDoubles": [], "exceptions": [{ "rule": "PQT-WEB-001", "target": "order-page", "reason": "历史页面等待迁移完成", "alternativeEvidence": "人工录屏与业务验收记录", "owner": "dev-a", "approver": "lead-a", "expiresAt": "2025-01-01" }] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status decide(int value) { return value > 0 ? Status.OK : Status.REJECTED; } }" }]
+    },
+    {
+      "id": "contract-forbidden-exception",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-EXCEPTION-003",
+      "contractCapabilities": [{ "id": "order-create", "acceptance": ["创建成功后列表显示新订单"], "risk": "R1", "riskReasons": ["branch"], "obligations": ["STATIC_REVIEW", "UNIT"], "protectedProofPath": ["order-entry", "OrderPolicy"], "allowedExternalDoubles": [], "exceptions": [{ "rule": "PQT-MOCK-002", "target": "OrderPolicy", "reason": "暂时使用替身完成测试编写", "alternativeEvidence": "人工阅读实现并确认逻辑正确", "owner": "dev-a", "approver": "lead-a", "expiresAt": "2099-01-01" }] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status decide(int value) { return value > 0 ? Status.OK : Status.REJECTED; } }" }]
+    },
+    {
+      "id": "contract-weak-acceptance",
+      "critical": false,
+      "expected": "BLOCK",
+      "rule": "PQT-CONTRACT-008",
+      "contractCapabilities": [{ "id": "order-create", "acceptance": ["通过"], "risk": "R1", "riskReasons": ["branch"], "obligations": ["STATIC_REVIEW", "UNIT"], "protectedProofPath": ["order-entry", "OrderPolicy"], "allowedExternalDoubles": [] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status decide(int value) { return value > 0 ? Status.OK : Status.REJECTED; } }" }]
+    },
+    {
+      "id": "contract-valid-r3",
+      "critical": false,
+      "expected": "PASS",
+      "contractCapabilities": [{ "id": "order-create", "acceptance": ["用户创建订单后列表显示新订单和已创建状态"], "risk": "R3", "riskReasons": ["state-transition", "persistence", "user-flow"], "obligations": ["STATIC_REVIEW", "UNIT", "API", "UI"], "protectedProofPath": ["browser-entry", "OrderController", "OrderService", "order-write", "order-visible-state"], "allowedExternalDoubles": [] }],
+      "files": [{ "path": "mango/demo/src/main/java/demo/OrderPolicy.java", "content": "class OrderPolicy { Status decide(int value) { return value > 0 ? Status.OK : Status.REJECTED; } }" }]
+    },
+    {
+      "id": "baseline-multiple-current-versions",
+      "critical": true,
+      "expected": "BLOCK",
+      "rule": "PQT-BASELINE-001",
+      "files": [
+        { "path": "mango-docs/evidence/test-baseline/order-create/ui/latest/report.json", "content": "{}" },
+        { "path": "mango-docs/evidence/test-baseline/order-create/ui/2026-07-01/report.json", "content": "{}" }
+      ]
+    },
+    {
+      "id": "baseline-only-latest",
+      "critical": false,
+      "expected": "PASS",
+      "files": [{ "path": "mango-docs/evidence/test-baseline/order-create/ui/latest/report.json", "content": "{}" }]
+    }
+  ]
+}
