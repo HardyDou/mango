@@ -1,6 +1,6 @@
 # PMO 可执行质量契约 UNIT 最新基线
 
-- 受测实现：`be970469d0eab3715880e565e94d1bf756dec4fc`
+- 受测实现：`ce76f87c2f994a728a5217b3f4423b88a68b6596`
 - PASS 范围：确定性质量门禁、基线保护和定向 Mutation。
 - 确定性门禁：48/48 场景、192/192 重复判定符合标签；关键红线 120/120 阻断；合法正例 0 误阻断。
 - 定向 Mutation：独立临时 worktree 中将 `Math.ceil` 改为 `Math.floor`，2 个测试中的目标用例按预期失败并被 Surefire XML 证实。

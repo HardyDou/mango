@@ -3,7 +3,7 @@
   "businessAssertionsPassed": true,
   "capability": "pmo-executable-quality-contract",
   "suite": "API",
-  "commit": "be970469d0eab3715880e565e94d1bf756dec4fc",
+  "commit": "ce76f87c2f994a728a5217b3f4423b88a68b6596",
   "scope": "PMO preflight, Maven quality-gate entry, package and starter consumption",
   "environment": {
     "date": "2026-07-10",
@@ -22,7 +22,7 @@
     "qualityGateFixturePassed": 48,
     "mavenPluginTests": 151,
     "mavenPluginFailures": 0,
-    "mavenQualityGateFiles": 81,
+    "mavenQualityGateFiles": 95,
     "mavenQualityGateIssues": 0,
     "packagedBaselineFiles": 71,
     "packagedBaselineStatus": "PASS",

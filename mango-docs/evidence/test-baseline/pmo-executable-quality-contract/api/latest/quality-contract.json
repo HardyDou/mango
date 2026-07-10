@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "change": {
     "base": "aa59e3ed0226bd3698ae9daf4ca1478f6b54725b",
-    "head": "be970469d0eab3715880e565e94d1bf756dec4fc",
-    "filesDigest": "sha256:64a71687cfddc8a3b0673e7c5d2f557fbdc9eaab271c13f468e690e58a9006de",
+    "head": "ce76f87c2f994a728a5217b3f4423b88a68b6596",
+    "filesDigest": "sha256:d54748a191abcc3b1df5143789ad483c324f3f4366add9e49171d2f17a1f5611",
     "files": [
       ".github/workflows/pmo-doc-check.yml",
       "mango-business-starter/README.md",

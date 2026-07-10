@@ -2,7 +2,7 @@
 
 > 实验日期：2026-07-10
 >
-> 受测实现提交：`be970469d0eab3715880e565e94d1bf756dec4fc`
+> 受测实现提交：`ce76f87c2f994a728a5217b3f4423b88a68b6596`
 >
 > 能力：`pmo-executable-quality-contract`
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | 确定性规则门禁 | **PASS** | 48/48 场景、192/192 重复判定、120/120 关键阻断、0 合法误阻断 |
 | L0-L3 任务分级与 Preflight | **PASS** | 23/23 自测；4px 布局为 L0，权限显隐为 L3 |
-| Maven 入口、发布包、starter 同步 | **PASS** | Maven 插件 151 测试；81 文件 0 问题；发布包 71 文件；starter 0 漂移 |
+| Maven 入口、发布包、starter 同步 | **PASS** | Maven 插件 151 测试；95 文件 0 问题；发布包 71 文件；starter 0 漂移 |
 | 定向 Mutation | **PASS** | 1/1 冻结种子被指定测试杀死，Surefire XML 验证真实执行 |
 | 空白上下文 Agent 分类 | **FAIL** | 候选精确匹配 88.10% < 95%；每组仅完成 39/42；未完成运行受额度限制 |
 | PMO 全量推广认证 | **FAIL / 暂不批准** | Agent 实验未过；真实 MySQL、真实产品 UI/E2E、完整纵向业务试点尚缺 |
@@ -113,7 +113,7 @@ Preflight 先依据任务和路径给出临时等级，交付前必须按真实 
 | 检查 | 结果 | 边界 |
 |---|---|---|
 | Maven 插件测试 | 151 个测试通过，含新增 3 个 quality-gate 用例 | 验证成功、缺工具、子进程阻断 |
-| Maven 全坐标 goal | 81 个变更文件，0 问题 | `mango:quality-gate` 前缀不可解析，文档和 CI 已改为完整坐标 |
+| Maven 全坐标 goal | 95 个变更文件，0 问题 | `mango:quality-gate` 前缀不可解析，文档和 CI 已改为完整坐标 |
 | 工作流定向 Mutation | 1/1 种子杀死 | 每个种子独立 detached worktree；解析 Surefire XML，不以任意非零退出冒充测试杀死 |
 | Payment 集成样本 | 7/7 | 使用 Spring、真实 Mapper、H2；不等价于 MySQL 生产环境 |
 

@@ -1,6 +1,6 @@
 {
   "owner": "pmo",
   "approver": "test-expert",
-  "reason": "固化确定性门禁、定向Mutation与Agent失败边界",
-  "promotedAt": "2026-07-10T07:02:27.982Z"
+  "reason": "绑定最终CI可移植性修复提交与已验证UNIT证据",
+  "promotedAt": "2026-07-10T07:06:59.604Z"
 }

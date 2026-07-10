@@ -3,7 +3,7 @@
   "businessAssertionsPassed": true,
   "capability": "pmo-executable-quality-contract",
   "suite": "UNIT",
-  "commit": "be970469d0eab3715880e565e94d1bf756dec4fc",
+  "commit": "ce76f87c2f994a728a5217b3f4423b88a68b6596",
   "scope": "deterministic quality gate, baseline safeguards and curated mutation only",
   "environment": {
     "date": "2026-07-10",

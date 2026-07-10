@@ -1,6 +1,6 @@
 {
   "owner": "pmo",
   "approver": "tech-lead",
-  "reason": "更正Maven质量门禁系统属性并重固化API基线",
-  "promotedAt": "2026-07-10T07:03:22.933Z"
+  "reason": "固化最终95文件Maven质量门禁复验结果",
+  "promotedAt": "2026-07-10T07:07:20.292Z"
 }
