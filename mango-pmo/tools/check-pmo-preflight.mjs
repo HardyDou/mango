@@ -98,6 +98,30 @@ const cases = [
     args: ['--role', 'qa', '--phase', 'verify', '--task', '验证 Playwright E2E 自动化测试', '--paths', 'mango-ui/apps/mango-admin/e2e/specs/menu-management.spec.ts'],
     mode: 'worktree-required',
     mustRead: ['rules/09-test-case-automation-flow.md']
+  },
+  {
+    name: 'unknown role fails closed',
+    args: ['--role', 'developer', '--phase', 'develop', '--task', '修改代码', '--paths', 'mango/demo'],
+    exit: 1,
+    error: 'Unknown PMO role'
+  },
+  {
+    name: 'unknown phase fails closed',
+    args: ['--role', 'dev', '--phase', 'coding', '--task', '修改代码', '--paths', 'mango/demo'],
+    exit: 1,
+    error: 'Unknown PMO phase'
+  },
+  {
+    name: 'unknown option fails closed',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '修改代码', '--paths', 'mango/demo', '--skip-quality', 'true'],
+    exit: 1,
+    error: 'Unknown option'
+  },
+  {
+    name: 'missing task fails closed',
+    args: ['--role', 'dev', '--phase', 'develop', '--paths', 'mango/demo'],
+    exit: 1,
+    error: 'Missing required option "--task"'
   }
 ];
 
@@ -108,11 +132,31 @@ for (const item of cases) {
     encoding: 'utf8',
     stdio: 'pipe'
   });
+  if (item.exit && item.exit !== 0) {
+    if (result.status === 0) {
+      failures.push(`${item.name}: expected non-zero exit`);
+      continue;
+    }
+    let output;
+    try {
+      output = JSON.parse(result.stdout);
+    } catch {
+      failures.push(`${item.name}: expected JSON error output\n${result.stderr || result.stdout}`);
+      continue;
+    }
+    if (!(output.errors || []).some((error) => error.includes(item.error))) {
+      failures.push(`${item.name}: expected error containing ${item.error}, got ${(output.errors || []).join('; ')}`);
+    }
+    continue;
+  }
   if (result.status !== 0) {
     failures.push(`${item.name}: preflight exited ${result.status}\n${result.stderr || result.stdout}`);
     continue;
   }
   const output = JSON.parse(result.stdout);
+  if (!/^sha256:[0-9a-f]{64}$/.test(output.rulesFingerprint || '')) {
+    failures.push(`${item.name}: missing stable rules fingerprint`);
+  }
   if (output.workspacePolicy?.mode !== item.mode) {
     failures.push(`${item.name}: expected ${item.mode}, got ${output.workspacePolicy?.mode || '<missing>'}`);
   }

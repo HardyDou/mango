@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pmoRoot = path.resolve(__dirname, '..');
 const indexPath = path.join(pmoRoot, 'rules', 'index.json');
+const supportedOptions = new Set(['role', 'phase', 'task', 'paths']);
 
 function parseArgs(argv) {
   const args = {
@@ -13,7 +15,8 @@ function parseArgs(argv) {
     phase: '',
     task: '',
     paths: '',
-    json: false
+    json: false,
+    parseErrors: []
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -21,8 +24,19 @@ function parseArgs(argv) {
       args.json = true;
     } else if (arg.startsWith('--')) {
       const key = arg.slice(2);
-      args[key] = argv[i + 1] ?? '';
+      if (!supportedOptions.has(key)) {
+        args.parseErrors.push(`Unknown option "${arg}"`);
+        if (argv[i + 1] && !argv[i + 1].startsWith('--')) i += 1;
+        continue;
+      }
+      if (argv[i + 1] === undefined || argv[i + 1].startsWith('--')) {
+        args.parseErrors.push(`Missing value for option "${arg}"`);
+        continue;
+      }
+      args[key] = argv[i + 1];
       i += 1;
+    } else {
+      args.parseErrors.push(`Unexpected positional argument "${arg}"`);
     }
   }
   return args;
@@ -196,6 +210,21 @@ function unique(items) {
   return [...new Set(items)];
 }
 
+function rulesFingerprint(index) {
+  const paths = unique([
+    ...(index.always || []).map((entry) => entry.path),
+    ...Object.values(index.rules || {}).map((entry) => entry.path)
+  ]).sort();
+  const hash = crypto.createHash('sha256');
+  hash.update(fs.readFileSync(indexPath));
+  for (const relativePath of paths) {
+    const absolutePath = path.join(pmoRoot, relativePath);
+    hash.update(`\n${relativePath}\n`);
+    if (fs.existsSync(absolutePath)) hash.update(fs.readFileSync(absolutePath));
+  }
+  return `sha256:${hash.digest('hex')}`;
+}
+
 function globToRegExp(pattern) {
   let source = '^';
   for (let i = 0; i < pattern.length; i += 1) {
@@ -311,16 +340,32 @@ function addRule(result, index, key, source) {
 
 function buildResult(index, args) {
   const result = {
-    role: args.role || 'auto',
-    phase: args.phase || 'auto',
+    role: args.role,
+    phase: args.phase,
     task: args.task || '',
     paths: splitPaths(args.paths),
+    indexVersion: index.version,
+    rulesFingerprint: rulesFingerprint(index),
     workspacePolicy: classifyWorkspacePolicy(args),
     mustRead: [],
     requiredChecks: collectRequiredChecks(args),
-    errors: [],
+    errors: [...args.parseErrors],
     seen: new Set()
   };
+
+  if (!args.role) {
+    result.errors.push('Missing required option "--role"');
+  } else if (!Object.hasOwn(index.roles || {}, args.role)) {
+    result.errors.push(`Unknown PMO role "${args.role}"; expected one of: ${Object.keys(index.roles || {}).join(', ')}`);
+  }
+  if (!args.phase) {
+    result.errors.push('Missing required option "--phase"');
+  } else if (!Object.hasOwn(index.phases || {}, args.phase)) {
+    result.errors.push(`Unknown PMO phase "${args.phase}"; expected one of: ${Object.keys(index.phases || {}).join(', ')}`);
+  }
+  if (!String(args.task || '').trim()) {
+    result.errors.push('Missing required option "--task"');
+  }
 
   for (const entry of index.always || []) {
     if (!result.seen.has(entry.path)) {

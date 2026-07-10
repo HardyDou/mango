@@ -11,6 +11,9 @@
 | PMO preflight | `tools/pmo-preflight.mjs` | 根据 role、phase、task、paths 输出 Must read 文件 |
 | 交付契约检查 | `tools/delivery-contract-check.mjs` | 校验设计说明和交付台账 |
 | 验收证据检查 | `tools/acceptance-evidence-check.mjs` | 校验验收证据表和弱表达 |
+| 可执行质量门禁 | `tools/quality-gate.mjs` | 校验有效测试、Mock 边界、Java/Web 结构和质量契约 |
+| 空白上下文评估 | `tools/eval-executable-quality.mjs` | 在隔离目录和空 Agent 上下文中执行 current/candidate A/B 反例集 |
+| 质量基线 | `tools/quality-baseline.mjs` | 检查唯一 latest，并通过独立命令提升正式基线 |
 | 规则路由 | rules index JSON | 维护规则、角色、阶段和 bundle 映射 |
 | 角色定义 | `agents/**` | PM、Tech Lead、Dev、QA、PMO 的职责说明 |
 | 模板资产 | `templates/**` | PRD、详细设计、交付契约、验收证据模板 |
@@ -61,6 +64,9 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | `pmo-preflight.mjs` | role、phase、task、paths | Must read、workspace policy、required checks |
 | `delivery-contract-check.mjs` | design、ledger、mode | 台账覆盖和状态检查结果 |
 | `acceptance-evidence-check.mjs` | evidence、min rows | 验收证据表检查结果 |
+| `quality-contract.mjs` | Git refs、能力 ID、验收结果 | 自动风险、最低测试义务和受保护证明路径 |
+| `quality-gate.mjs` | changed files、质量契约 | 稳定规则编号、定位、原因和修复建议 |
+| `quality-baseline.mjs` | check 或 promote 参数 | 最新基线校验或受控原子提升 |
 | `@mango/pmo` | `dist/baseline.json`、`dist/baseline/**` | 可发布 PMO baseline 包 |
 | `mango pmo check` | business project root | baseline 漂移状态 |
 | `mango pmo upgrade` | business project root | 已升级 baseline 快照 |
@@ -84,6 +90,9 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | 升级历史业务 baseline | `mango pmo upgrade --project-dir .` |
 | 输出任务规则 | `node business-pmo/mango-baseline/tools/pmo-preflight.mjs ...` |
 | 检查交付台账 | `node business-pmo/mango-baseline/tools/delivery-contract-check.mjs ...` |
+| 自测质量门禁 | `node business-pmo/mango-baseline/tools/quality-gate.mjs --self-test` |
+| 校验变更质量 | `node business-pmo/mango-baseline/tools/quality-gate.mjs --base origin/main --head HEAD` |
+| 校验正式基线 | `node business-pmo/mango-baseline/tools/quality-baseline.mjs check` |
 
 ## 8. 快速开始
 1. 在 Mango 主仓修改 `mango-pmo/**`。
@@ -105,4 +114,5 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 - [开发环境规范](./rules/02-dev-environment.md)
 - [AI 编码红线](./rules/03-ai-coding-redlines.md)
 - [AI 交付质量门禁](./rules/05-ai-delivery-quality.md)
+- [可执行质量契约](./rules/10-executable-quality-contract.md)
 - [Mango Issue 登记 Runbook](./rules/07-mango-issue-runbook.md)

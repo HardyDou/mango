@@ -51,6 +51,10 @@
       "path": "rules/09-test-case-automation-flow.md",
       "reason": "测试用例登记、自动化层级、稳定锚点、执行策略和结果基线流程"
     },
+    "process.executableQualityContract": {
+      "path": "rules/10-executable-quality-contract.md",
+      "reason": "差异风险、UNIT/API/UI 测试义务、证明路径、Mock 边界、基线与例外的可执行质量契约"
+    },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
       "reason": "AI 交付质量门禁、发布批次和 Maven app 制品排除规则"
@@ -170,18 +174,18 @@
   },
   "roles": {
     "pm": ["agent.pm", "product.prd"],
-    "tech-lead": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation"],
-    "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "qa": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
+    "tech-lead": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation", "process.executableQualityContract"],
+    "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.testCaseAutomation", "process.executableQualityContract", "process.aiDeliveryQuality"],
+    "qa": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.executableQualityContract", "process.aiDeliveryQuality"],
+    "pmo": ["agent.pmo", "process.executableQualityContract", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
     "requirement": ["product.prd", "process.testCaseAutomation"],
-    "design": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation"],
-    "develop": ["agent.dev", "process.devEnvironment", "process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "verify": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "release": ["process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
+    "design": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation", "process.executableQualityContract"],
+    "develop": ["agent.dev", "process.devEnvironment", "process.testCaseAutomation", "process.executableQualityContract", "process.aiDeliveryQuality"],
+    "verify": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.executableQualityContract", "process.aiDeliveryQuality"],
+    "release": ["process.testCaseAutomation", "process.executableQualityContract", "process.aiDeliveryQuality"],
+    "governance": ["agent.pmo", "process.executableQualityContract", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "bundles": {
     "deliveryContract": {
@@ -248,6 +252,12 @@
       "paths": ["mango/**/src/test/**", "backend/**/src/test/**"],
       "keywords": ["后端测试", "单测", "集成测试", "mvn test", "mvn verify", "mango:check", "pmd", "checkstyle", "spotbugs", "测试资产", "回归脚本", "验收证据", "evidence"],
       "include": ["backend.test", "process.testAssets", "process.aiDeliveryQuality"]
+    },
+    "executableQualityContract": {
+      "roles": ["tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango/**/src/test/**", "mango-ui/**/src/**", "mango-ui/**/e2e/**", "mango-docs/evidence/test-baseline/**", "mango-pmo/tools/**", "mango-pmo/schemas/**"],
+      "keywords": ["质量契约", "有效测试", "无用测试", "Mock", "mock", "单元测试", "接口测试", "API 测试", "UI 测试", "E2E", "测试基线", "空白上下文", "mutation"],
+      "include": ["process.executableQualityContract"]
     },
     "frontendFlow": {
       "roles": ["tech-lead", "dev", "qa"],
