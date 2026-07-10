@@ -9,9 +9,10 @@
 | 能力 | 入口 | 说明 |
 |------|------|------|
 | 构建 baseline | `pnpm -F @mango/pmo build` | 复制 `mango-pmo` 到 `dist/baseline` |
-| 校验 baseline | `pnpm -F @mango/pmo check` | 校验必备文件、manifest hash 和 preflight |
+| 校验 baseline | `pnpm -F @mango/pmo check` | 校验必备文件、manifest hash、preflight、质量门禁和基线保护自测 |
 | 发布 manifest | `dist/baseline.json` | 记录 package version、文件列表和 SHA-256 |
 | 业务同步 | `mango pmo sync/upgrade` | CLI 从本包安装业务仓 baseline |
+| 可执行质量资产 | `dist/baseline/{rules,schemas,fixtures,tools}` | 下发质量契约、48 个正反样例、门禁和隔离评估工具 |
 
 ## 3. 接入方式
 Mango 发布前执行：
@@ -40,7 +41,7 @@ mango pmo upgrade --project-dir .
 | API / 扩展点 | 输入 | 输出 |
 |--------------|------|------|
 | `scripts/build-package.mjs` | `mango-pmo/**` | `dist/baseline/**`、`dist/baseline.json` |
-| `scripts/check-package.mjs` | `dist/baseline/**` | 校验结果 |
+| `scripts/check-package.mjs` | `dist/baseline/**` | 包完整性、preflight、质量门禁和基线保护校验结果 |
 | `exports["."]` | npm import | `dist/baseline.json` |
 | `exports["./baseline/*"]` | npm package path | baseline 文件 |
 
@@ -75,9 +76,11 @@ mango pmo upgrade --project-dir .
 | check 报 hash mismatch | dist 内容和 manifest 不一致 | 重新 build 后再 check |
 | 业务项目 baseline changed | 业务仓 baseline 被改或版本落后 | 执行 `mango pmo upgrade --project-dir .` |
 | npm tarball 缺 baseline | 发布前未 build 或 files 配置错误 | 执行 pack dry-run 并检查 `package.json` |
+| 源码门禁通过但业务仓行为不同 | 业务仓仍消费旧 PMO 快照 | 升级到 `@mango/pmo@1.1.0` 并执行 `mango pmo check` |
 
 ## 10. 相关文档
 - [Mango PMO Baseline](../../../mango-pmo/README.md)
 - [@mango/cli](../mango-cli/README.md)
 - [PMO 总流程](../../../mango-pmo/rules/00-dev-flow.md)
 - [开发环境规范](../../../mango-pmo/rules/02-dev-environment.md)
+- [可执行质量契约](../../../mango-pmo/rules/10-executable-quality-contract.md)

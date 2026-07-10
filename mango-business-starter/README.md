@@ -4,7 +4,7 @@
 `mango-business-starter` 是 Mango 业务项目和业务模块的模板资产目录。它提供三类能力：
 
 - 业务模块模板：后端 `api`、`core`、`starter`、`starter-remote` 四层模块，前端 API 包和页面包。
-- 业务 PMO baseline：业务仓库内可独立执行的 preflight、交付契约检查、角色规则和示例台账。
+- 业务 PMO baseline：业务仓库内可独立执行的 preflight、交付契约检查、可执行质量门禁、空白上下文评估、角色规则和示例台账。
 - 拓扑说明：单体和微服务模式下业务模块依赖、远程调用和菜单页面接入方式。
 
 `@mango/cli` 使用本目录的方式有边界：`mango init --preset full` 读取 CLI 包内 `templates/full`；`mango module add` 会优先读取 CLI 包内 `templates/business-module`，当前该目录不存在时回退到本目录。
@@ -58,6 +58,14 @@ mango pmo status --project-dir .
 mango pmo check --project-dir .
 mango pmo upgrade --project-dir . --dry-run
 mango pmo upgrade --project-dir . --sync-shell
+```
+
+当前模板 baseline 对齐 `@mango/pmo@1.1.0`。升级后验证规则快照和质量工具：
+
+```bash
+mango pmo check --project-dir .
+node business-pmo/mango-baseline/tools/quality-gate.mjs --self-test
+node business-pmo/mango-baseline/tools/quality-baseline.mjs self-test
 ```
 
 升级后每个 active worktree 都要重新确认本地工作区：
@@ -217,6 +225,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 - [交付质量门禁](../mango-pmo/rules/05-ai-delivery-quality.md)
 - [文档资产边界](../mango-pmo/rules/06-document-assets.md)
 - [能力说明维护](../mango-pmo/rules/08-capability-docs.md)
+- [可执行质量契约](../mango-pmo/rules/10-executable-quality-contract.md)
 
 ## 13. 补充资料
 - [业务 PMO 说明](./business-pmo/README.md)

@@ -44,6 +44,7 @@ CLI 负责：
 - 维护受 `mango-cli` marker 保护的代码块，例如 `backend/pom.xml`、`backend/app/pom.xml`、`frontend/src/main.ts`、`application.yml` 中的 managed block。
 - 同步业务 PMO baseline、兼容脚本和 Agent 入口。
 - 通过 `@mango/pmo` 安装版本化 PMO baseline，并用 `baseline.json` 校验业务仓是否漂移。
+- 当前 release lock 使用 `@mango/pmo@1.1.0`；同步后业务仓可直接执行质量契约、无用测试/Mock/Java/Web 门禁及空白上下文评估工具。
 - 按业务项目锁定的 Mango 后端版本，从 Maven 仓库拉取 `io.mango:mango-docs-bundle:<version>`，解包到 `.mango/docs/<version>`，供业务开发和 AI 优先读取同版本 README、能力文档、规则和示例。
 
 CLI 不负责：
@@ -104,6 +105,13 @@ mango pmo check --project-dir demo-custom
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
 mango pmo upgrade --project-dir demo-custom
+```
+
+同步后验证可执行质量基线：
+
+```bash
+node demo-custom/business-pmo/mango-baseline/tools/quality-gate.mjs --self-test
+node demo-custom/business-pmo/mango-baseline/tools/quality-baseline.mjs self-test
 ```
 
 拉取当前项目对应版本的 Mango 文档包：
@@ -366,6 +374,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 - [交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 - [文档资产边界](../../../mango-pmo/rules/06-document-assets.md)
 - [能力说明维护](../../../mango-pmo/rules/08-capability-docs.md)
+- [可执行质量契约](../../../mango-pmo/rules/10-executable-quality-contract.md)
 
 - [CLI CHANGELOG](./CHANGELOG.md)
 - [full 模板 README](./templates/full/README.md)
