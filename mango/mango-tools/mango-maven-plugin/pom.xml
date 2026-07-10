@@ -16,7 +16,7 @@
     <packaging>maven-plugin</packaging>
 
     <name>Mango Maven Plugin</name>
-    <description>AI-Friendly Java Scaffold Maven Plugin - gen-module, gen-crud, check, evaluate</description>
+    <description>AI-Friendly Java Scaffold Maven Plugin - gen-module, gen-crud, check, quality-gate</description>
 
     <properties>
         <maven.version>3.9.15</maven.version>

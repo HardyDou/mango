@@ -1,7 +1,7 @@
 # Mango Tools
 
 ## 1. 概览
-`mango-tools` 提供 Mango 后端开发期工具，当前核心是 `mango-maven-plugin`。它用于质量检查、模块脚手架、CRUD 脚手架和权限资源生成。
+`mango-tools` 提供 Mango 后端开发期工具，当前核心是 `mango-maven-plugin`。它用于质量检查、可执行 PMO 质量契约、模块脚手架、CRUD 脚手架和权限资源生成。
 
 主要使用者是 Mango 维护者、业务模块开发者、CI 门禁和 AI Agent。
 
@@ -78,6 +78,18 @@ mvn -f mango/pom.xml mango:check -Drule=all \
   -DreportFile=target/mango-check-report.json
 ```
 
+从 Maven 执行与 CI 相同的 PMO 可执行质量门禁：
+
+```bash
+mvn -f mango/pom.xml mango:quality-gate \
+  -Dmango.quality.baseRef=origin/main \
+  -Dmango.quality.report=.runtime/pmo/maven-quality-gate.json
+```
+
+该 goal 会自动定位主仓库的 `mango-pmo/tools/quality-gate.mjs` 或业务工程同步后的
+`business-pmo/mango-baseline/tools/quality-gate.mjs`。找不到工具、Node 无法启动、超时或门禁返回
+非零状态时一律阻断构建；可用 `mango.quality.tool`、`mango.quality.repositoryRoot` 显式指定位置。
+
 使用仓库基线阻断新增问题：
 
 ```bash
@@ -110,6 +122,7 @@ mvn mango:check \
 | Goal | Mojo | 用途 |
 |------|------|------|
 | `mango:check` | `CheckMojo` | 执行 Mango 后端质量检查和 PR 门禁。 |
+| `mango:quality-gate` | `QualityGateMojo` | 执行版本化 PMO 质量契约；失败时阻断 Maven。 |
 | `mango:gen-module` | `GenModuleMojo` | 生成模块脚手架。 |
 | `mango:gen-crud` | `GenCrudMojo` | 生成 CRUD 脚手架。 |
 | `mango:gen-permission` | `GenPermissionMojo` | 生成权限资源草稿。 |

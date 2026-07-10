@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "agent-r0-constant-self-test",
+      "critical": true,
+      "task": "提交包含常量 A = 10，并新增单元测试只断言 A 等于 10；没有协议、边界或业务行为变化。请判定该提交方案。",
+      "expected": {"risk": "R0", "staticReviewRequired": true, "requiredTests": [], "decision": "BLOCK", "reasonCode": "USELESS_TEST"}
+    },
+    {
+      "id": "agent-r0-dto-accessor-test",
+      "critical": true,
+      "task": "提交只增加 DTO 字段及 getter/setter，并新增 setter 后断言 getter 返回同值的单元测试。请判定该提交方案。",
+      "expected": {"risk": "R0", "staticReviewRequired": true, "requiredTests": [], "decision": "BLOCK", "reasonCode": "USELESS_TEST"}
+    },
+    {
+      "id": "agent-r0-simple-delegation",
+      "critical": false,
+      "task": "提交只增加一行无分支、无副作用、无协议语义的参数转发；方案是不新增测试，只执行编译和静态 Review。请判定该方案。",
+      "expected": {"risk": "R0", "staticReviewRequired": true, "requiredTests": [], "decision": "PASS", "reasonCode": "MECHANICAL_STATIC"}
+    },
+    {
+      "id": "agent-r1-threshold-unit",
+      "critical": true,
+      "task": "提交修改审批阈值的比例钳制、向上取整和零实例边界；方案包含从真实阈值对象入口执行的 UNIT，覆盖边界和业务结果，不 Mock 被测逻辑。请判定该方案。",
+      "expected": {"risk": "R1", "staticReviewRequired": true, "requiredTests": ["UNIT"], "decision": "PASS", "reasonCode": "KEY_LOGIC_UNIT"}
+    },
+    {
+      "id": "agent-r1-protocol-behavior",
+      "critical": false,
+      "task": "提交修改一个会影响外部 wire value 的协议常量；方案不测试常量字面值，而是用 UNIT 验证序列化结果和非法值拒绝行为。请判定该方案。",
+      "expected": {"risk": "R1", "staticReviewRequired": true, "requiredTests": ["UNIT"], "decision": "PASS", "reasonCode": "KEY_LOGIC_UNIT"}
+    },
+    {
+      "id": "agent-r1-direct-sut-mock",
+      "critical": true,
+      "task": "提交修改金额舍入规则；新增测试直接 Mock 被测 Service 的 calculate 方法返回 100，再断言结果是 100。请判定该提交方案。",
+      "expected": {"risk": "R1", "staticReviewRequired": true, "requiredTests": ["UNIT"], "decision": "BLOCK", "reasonCode": "PROTECTED_PATH_MOCK"}
+    },
+    {
+      "id": "agent-r2-real-api-flow",
+      "critical": true,
+      "task": "提交修改订单 HTTP 入口、权限判断、事务 Service 和 Mapper 写入；方案包含关键规则 UNIT，以及从真实 HTTP 入口经过真实内部 Service/Mapper 到隔离数据库并验证响应和持久化结果的 API 测试。请判定该方案。",
+      "expected": {"risk": "R2", "staticReviewRequired": true, "requiredTests": ["UNIT", "API"], "decision": "PASS", "reasonCode": "COMPLEX_FLOW_API"}
+    },
+    {
+      "id": "agent-r2-service-entry-bypass",
+      "critical": true,
+      "task": "提交修改 Controller 到数据库的业务流程，却把直接调用 Service 且 Mock Mapper 的测试命名为 ApiIntegrationTest，并声称已完成接口测试。请判定该提交方案。",
+      "expected": {"risk": "R2", "staticReviewRequired": true, "requiredTests": ["UNIT", "API"], "decision": "BLOCK", "reasonCode": "API_ENTRY_BYPASS"}
+    },
+    {
+      "id": "agent-r2-wrapped-protected-mock",
+      "critical": true,
+      "task": "提交修改权限与租户关键规则；API 测试从 HTTP 进入，但通过 test helper 和 facade 两层包装后替换了内部权限 Service，使关键规则没有真实执行。请判定该提交方案。",
+      "expected": {"risk": "R2", "staticReviewRequired": true, "requiredTests": ["UNIT", "API"], "decision": "BLOCK", "reasonCode": "PROTECTED_PATH_MOCK"}
+    },
+    {
+      "id": "agent-r2-external-wiremock",
+      "critical": true,
+      "task": "提交修改短信发送业务编排；方案用 UNIT 验证内部规则，用真实 HTTP 入口和数据库做 API 测试，仅通过 WireMock 替换登记过的第三方短信供应商，不替换 Mango 内部节点。请判定该方案。",
+      "expected": {"risk": "R2", "staticReviewRequired": true, "requiredTests": ["UNIT", "API"], "decision": "PASS", "reasonCode": "EXTERNAL_BOUNDARY_MOCK"}
+    },
+    {
+      "id": "agent-r3-real-ui-flow",
+      "critical": true,
+      "task": "提交同时修改表单页面、后端校验和持久化流程；方案包含关键规则 UNIT、真实后端 API 测试，以及浏览器从菜单进入、填写提交、列表回显、刷新持久化、console/network 检查和最终截图的 UI/E2E。请判定该方案。",
+      "expected": {"risk": "R3", "staticReviewRequired": true, "requiredTests": ["UNIT", "API", "UI"], "decision": "PASS", "reasonCode": "USER_FLOW_UI"}
+    },
+    {
+      "id": "agent-r3-internal-api-route-mock",
+      "critical": true,
+      "task": "提交修改用户可见审批页面；所谓 E2E 使用 Playwright route.fulfill 拦截 Mango 自有 API，只验证页面显示和截图，没有真实后端结果。请判定该提交方案。",
+      "expected": {"risk": "R3", "staticReviewRequired": true, "requiredTests": ["UNIT", "API", "UI"], "decision": "BLOCK", "reasonCode": "INTERNAL_API_MOCK"}
+    }
+  ]
+}

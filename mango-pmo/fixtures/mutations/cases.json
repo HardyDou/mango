@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "workflow-approval-threshold-ceil-to-floor",
+      "critical": true,
+      "file": "mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/engine/WorkflowApprovalThreshold.java",
+      "find": "Math.ceil(totalInstances * ratio / 100.0d)",
+      "replace": "Math.floor(totalInstances * ratio / 100.0d)",
+      "cwd": "mango",
+      "testFile": "mango/mango-platform/mango-workflow/mango-workflow-core/src/test/java/io/mango/workflow/core/engine/WorkflowApprovalThresholdTest.java",
+      "surefireReport": "mango/mango-platform/mango-workflow/mango-workflow-core/target/surefire-reports/TEST-io.mango.workflow.core.engine.WorkflowApprovalThresholdTest.xml",
+      "expectedTestClass": "io.mango.workflow.core.engine.WorkflowApprovalThresholdTest",
+      "expectedTestMethod": "requiredApprovals_shouldCeilByPassRatio",
+      "expectedFailureType": "org.opentest4j.AssertionFailedError",
+      "command": [
+        "mvn",
+        "-pl",
+        "mango-platform/mango-workflow/mango-workflow-core",
+        "-am",
+        "-Dtest=WorkflowApprovalThresholdTest",
+        "-Dsurefire.failIfNoSpecifiedTests=false",
+        "test"
+      ],
+      "expectedFailurePattern": "expected: (?:&lt;)?2(?:&gt;)?[\\s\\S]*but was: (?:&lt;)?1(?:&gt;)?"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "packageVersion": "1.1.0",
   "schemaVersion": 1,
   "source": "mango-pmo",
-  "generatedAt": "2026-07-10T02:24:07.643Z",
+  "generatedAt": "2026-07-10T06:10:19.749Z",
   "files": [
     {
       "path": "agents/01-pm-agent.md",
@@ -31,14 +31,24 @@
       "size": 442
     },
     {
+      "path": "fixtures/agent-classification/cases.json",
+      "sha256": "24399e2b59ebd2da0a06073a7a1f46f7bad5878fede536be7179f9c4cb9063f6",
+      "size": 5346
+    },
+    {
       "path": "fixtures/executable-quality/cases.json",
       "sha256": "8ab05f8be3a23b314bae3c89ccf7197ad0963b6ddf21ab766df358c3f7a7f842",
       "size": 20398
     },
     {
+      "path": "fixtures/mutations/cases.json",
+      "sha256": "e87a147b91f3025c0cc1592e83dc004e751acf6e0f64db3ff9fab3ecc8ad78b2",
+      "size": 1334
+    },
+    {
       "path": "README.md",
-      "sha256": "bfa747c7d8021f4926c6b0d1a17f01b97774b160851d2d6b3ef0defe726875ab",
-      "size": 6897
+      "sha256": "14b1e48e2008d7a5567df8f5673a3d7dbc9f7d8447b367a29a3035095a31b22c",
+      "size": 7621
     },
     {
       "path": "rules/00-dev-flow.md",
@@ -92,8 +102,8 @@
     },
     {
       "path": "rules/10-executable-quality-contract.md",
-      "sha256": "4752d02dd3c25e312b2cb85b3683b655b8f95f790dc8f56041dae3c75dc6ce84",
-      "size": 7066
+      "sha256": "8257dbd42b129ae82910b05e6e4746c4e8ef9c6b5e6daf00ee4e83152be1d7c5",
+      "size": 7458
     },
     {
       "path": "rules/backend/01-code.md",
@@ -306,9 +316,14 @@
       "size": 21862
     },
     {
+      "path": "tools/eval-agent-classification.mjs",
+      "sha256": "24e3768655309e5255e23c983d6a4e8ce456b16ad835bb8d67fca79ee9e84246",
+      "size": 15924
+    },
+    {
       "path": "tools/eval-executable-quality.mjs",
-      "sha256": "e2aa896c744c61a3f25baa7fecd34acc153657bcefd53604420af964165a7980",
-      "size": 8638
+      "sha256": "bf8441152514e0e70a4927b629efe5e0051eab0f3dafc25361abc4f7fbf1a5c3",
+      "size": 9524
     },
     {
       "path": "tools/lib/quality-analyzer.mjs",
@@ -339,6 +354,11 @@
       "path": "tools/quality-gate.mjs",
       "sha256": "487cc9ac46ad88cca99ecf9439ed507f716ceee84473a0f1c6430dd6fad85588",
       "size": 5124
+    },
+    {
+      "path": "tools/verify-targeted-mutations.mjs",
+      "sha256": "ab09e024dfbe4bf5d2bf6ace292802259f94698b11220629f416308ea3e9ec44",
+      "size": 8623
     }
   ]
 }

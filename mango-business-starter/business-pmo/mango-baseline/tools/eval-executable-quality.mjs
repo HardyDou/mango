@@ -74,15 +74,15 @@ function metrics(rows, engine) {
   const positiveRuns = positiveRows.flatMap((row) => row.runs.map((run) => run[engine].outcome));
   const consistentRows = rows.filter((row) => new Set(row.runs.map((run) => run[engine].outcome)).size === 1).length;
   return {
-    runs: predictions.length,
-    correct,
-    accuracy: predictions.length === 0 ? 0 : correct / predictions.length,
-    criticalRuns: criticalRuns.length,
-    criticalDetected: criticalRuns.filter((outcome) => outcome === 'BLOCK').length,
-    criticalDetection: criticalRuns.length === 0 ? 1 : criticalRuns.filter((outcome) => outcome === 'BLOCK').length / criticalRuns.length,
-    positiveRuns: positiveRuns.length,
-    falsePositives: positiveRuns.filter((outcome) => outcome !== 'PASS').length,
-    consistency: rows.length === 0 ? 0 : consistentRows / rows.length
+    gateDecisionCount: predictions.length,
+    gateDecisionExactMatches: correct,
+    gateDecisionExactMatchRate: predictions.length === 0 ? 0 : correct / predictions.length,
+    criticalDecisionCount: criticalRuns.length,
+    criticalBlocks: criticalRuns.filter((outcome) => outcome === 'BLOCK').length,
+    criticalBlockRecall: criticalRuns.length === 0 ? 1 : criticalRuns.filter((outcome) => outcome === 'BLOCK').length / criticalRuns.length,
+    legalDecisionCount: positiveRuns.length,
+    legalFalseBlocks: positiveRuns.filter((outcome) => outcome !== 'PASS').length,
+    repeatConsistencyRate: rows.length === 0 ? 0 : consistentRows / rows.length
   };
 }
 
@@ -92,22 +92,24 @@ function percent(value) {
 
 function markdown(report) {
   const lines = [
-    '# PMO 可执行质量空白上下文 A/B 实验报告',
+    '# PMO 可执行质量隔离门禁判定 A/B 实验报告',
     '',
     `- 时间：${report.generatedAt}`,
+    '- 受测对象：旧版与候选版可执行门禁，不是 AI 生成代码。',
     `- 场景数：${report.caseCount}`,
-    `- 隔离运行数：${report.candidate.runs}（普通场景 3 次，关键场景 5 次）`,
-    '- 隔离条件：每次使用独立临时目录、空 HOME、空 CODEX_HOME、固定 UTC、代理禁用、无会话历史。',
+    `- 隔离运行数：${report.candidate.gateDecisionCount}（普通场景 3 次，关键场景 5 次）`,
+    '- 隔离条件：每次使用独立临时目录、空 HOME、空 CODEX_HOME、固定 UTC、代理禁用。',
+    '- 口径限制：这里的“门禁判定精确匹配率”只表示冻结样本的 PASS/BLOCK 是否符合标签，不能解释为项目质量或 AI 编码正确率。',
     '',
     '## 结果',
     '',
     '| 指标 | Current executable checks | Candidate quality gate | 阈值 |',
     '|---|---:|---:|---:|',
-    `| 总体正确率 | ${percent(report.current.accuracy)} | ${percent(report.candidate.accuracy)} | ≥ 95% |`,
-    `| 关键红线检出率 | ${percent(report.current.criticalDetection)} | ${percent(report.candidate.criticalDetection)} | 100% |`,
-    `| 合法正例误报 | ${report.current.falsePositives} | ${report.candidate.falsePositives} | 0 |`,
-    `| 重复结论一致率 | ${percent(report.current.consistency)} | ${percent(report.candidate.consistency)} | ≥ 95% |`,
-    `| 相对提升 | - | ${(report.improvement * 100).toFixed(2)} 个百分点 | ≥ 30 个百分点 |`,
+    `| 门禁判定精确匹配率 | ${percent(report.current.gateDecisionExactMatchRate)} | ${percent(report.candidate.gateDecisionExactMatchRate)} | ≥ 95% |`,
+    `| 关键红线阻断召回率 | ${percent(report.current.criticalBlockRecall)} | ${percent(report.candidate.criticalBlockRecall)} | 100% |`,
+    `| 合法正例错误阻断数 | ${report.current.legalFalseBlocks} | ${report.candidate.legalFalseBlocks} | 0 |`,
+    `| 重复结论一致率 | ${percent(report.current.repeatConsistencyRate)} | ${percent(report.candidate.repeatConsistencyRate)} | ≥ 95% |`,
+    `| 门禁精确匹配率提升 | - | ${report.gateDecisionImprovementPoints.toFixed(2)} 个百分点 | ≥ 30 个百分点 |`,
     '',
     `结论：**${report.status}**`,
     '',
@@ -148,25 +150,27 @@ try {
   }
   const current = metrics(rows, 'current');
   const candidate = metrics(rows, 'candidate');
-  const improvement = candidate.accuracy - current.accuracy;
+  const gateDecisionImprovementPoints = (candidate.gateDecisionExactMatchRate - current.gateDecisionExactMatchRate) * 100;
   const thresholds = {
     minimumCases: cases.length >= 30,
-    accuracy: candidate.accuracy >= 0.95,
-    criticalDetection: candidate.criticalDetection === 1,
-    falsePositives: candidate.falsePositives === 0,
-    consistency: candidate.consistency >= 0.95,
-    improvement: improvement >= 0.30,
+    gateDecisionExactMatchRate: candidate.gateDecisionExactMatchRate >= 0.95,
+    criticalBlockRecall: candidate.criticalBlockRecall === 1,
+    legalFalseBlocks: candidate.legalFalseBlocks === 0,
+    repeatConsistencyRate: candidate.repeatConsistencyRate >= 0.95,
+    gateDecisionImprovementPoints: gateDecisionImprovementPoints >= 30,
     expectedRules: rows.every((row) => !row.expectedRule || row.runs.every((run) => run.candidate.rules.includes(row.expectedRule)))
   };
   const report = {
+    reportKind: 'deterministic_gate_ab',
     status: Object.values(thresholds).every(Boolean) ? 'PASS' : 'FAIL',
     generatedAt: new Date().toISOString(),
+    evaluationSubject: 'deterministic executable gate classification; not AI artifact generation',
     fixtureVersion: 1,
     caseCount: cases.length,
     isolation: { emptyHome: true, emptyCodexHome: true, timezone: 'UTC', networkProxyDisabled: true, freshDirectoryPerRun: true },
     current,
     candidate,
-    improvement,
+    gateDecisionImprovementPoints,
     thresholds,
     rows
   };
@@ -176,9 +180,9 @@ try {
   fs.mkdirSync(path.dirname(mdPath), { recursive: true });
   fs.writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`);
   fs.writeFileSync(mdPath, markdown(report));
-  console.log(`Executable quality A/B evaluation: ${report.status}`);
-  console.log(`Cases=${cases.length}; current=${percent(current.accuracy)}; candidate=${percent(candidate.accuracy)}; improvement=${(improvement * 100).toFixed(2)}pp`);
-  console.log(`Critical=${percent(candidate.criticalDetection)}; falsePositives=${candidate.falsePositives}; consistency=${percent(candidate.consistency)}`);
+  console.log(`Executable quality isolated gate A/B evaluation: ${report.status}`);
+  console.log(`Cases=${cases.length}; current gate exact-match=${percent(current.gateDecisionExactMatchRate)}; candidate=${percent(candidate.gateDecisionExactMatchRate)}; improvement=${gateDecisionImprovementPoints.toFixed(2)}pp`);
+  console.log(`Critical block recall=${percent(candidate.criticalBlockRecall)}; legal false blocks=${candidate.legalFalseBlocks}; consistency=${percent(candidate.repeatConsistencyRate)}`);
   console.log(`Reports: ${path.relative(repoRoot, jsonPath)}, ${path.relative(repoRoot, mdPath)}`);
   if (report.status !== 'PASS') process.exit(1);
 } catch (error) {

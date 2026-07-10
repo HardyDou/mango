@@ -25,8 +25,29 @@ jobs:
       - name: Check executable quality gate fixtures
         run: node mango-pmo/tools/quality-gate.mjs --self-test
 
-      - name: Run isolated executable quality A/B evaluation
+      - name: Run isolated deterministic gate A/B evaluation
         run: node mango-pmo/tools/eval-executable-quality.mjs
+
+      - name: Validate isolated Agent classification experiment
+        run: node mango-pmo/tools/eval-agent-classification.mjs --validate-only
+
+      - name: Set up Java for targeted mutation verification
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Verify Maven quality-gate entry
+        run: |
+          mvn -f mango/pom.xml \
+            -pl mango-tools/mango-maven-plugin -am \
+            -Dtest=QualityGateMojoTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            test
+
+      - name: Verify targeted business mutations
+        run: node mango-pmo/tools/verify-targeted-mutations.mjs
 
       - name: Check changed files with executable quality gate
         run: |

@@ -12,7 +12,9 @@
 | 交付契约检查 | `tools/delivery-contract-check.mjs` | 校验设计说明和交付台账 |
 | 验收证据检查 | `tools/acceptance-evidence-check.mjs` | 校验验收证据表和弱表达 |
 | 可执行质量门禁 | `tools/quality-gate.mjs` | 校验有效测试、Mock 边界、Java/Web 结构和质量契约 |
-| 空白上下文评估 | `tools/eval-executable-quality.mjs` | 在隔离目录和空 Agent 上下文中执行 current/candidate A/B 反例集 |
+| 隔离门禁评估 | `tools/eval-executable-quality.mjs` | 在隔离目录中执行旧版/候选门禁 A/B；不代表 Agent 正确率 |
+| 隔离 Agent 分类试验 | `tools/eval-agent-classification.mjs` | 用 ephemeral Codex 新进程评估 PMO 分类；需本地 Codex 认证，不在普通 CI 自动执行 |
+| 定向变异验证 | `tools/verify-targeted-mutations.mjs` | 在 detached 临时 worktree 中验证人工定义的关键错误种子被指定测试杀死 |
 | 质量基线 | `tools/quality-baseline.mjs` | 检查唯一 latest，并通过独立命令提升正式基线 |
 | 规则路由 | rules index JSON | 维护规则、角色、阶段和 bundle 映射 |
 | 角色定义 | `agents/**` | PM、Tech Lead、Dev、QA、PMO 的职责说明 |
@@ -66,6 +68,9 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | `acceptance-evidence-check.mjs` | evidence、min rows | 验收证据表检查结果 |
 | `quality-contract.mjs` | Git refs、能力 ID、验收结果 | 自动风险、最低测试义务和受保护证明路径 |
 | `quality-gate.mjs` | changed files、质量契约 | 稳定规则编号、定位、原因和修复建议 |
+| `eval-executable-quality.mjs` | 冻结 fixtures | 确定性门禁判定 A/B 报告，不测量 AI/Agent 正确率 |
+| `eval-agent-classification.mjs` | current/candidate PMO、分类 fixtures | 受控隔离 Codex 分类报告，不证明 Coding 或业务正确性 |
+| `verify-targeted-mutations.mjs` | curated mutation catalog | 指定测试、Surefire 失败归因和错误种子杀死结果 |
 | `quality-baseline.mjs` | check 或 promote 参数 | 最新基线校验或受控原子提升 |
 | `@mango/pmo` | `dist/baseline.json`、`dist/baseline/**` | 可发布 PMO baseline 包 |
 | `mango pmo check` | business project root | baseline 漂移状态 |
