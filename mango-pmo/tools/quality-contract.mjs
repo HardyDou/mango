@@ -96,7 +96,7 @@ try {
   const output = path.resolve(repoRoot, args.out);
   const outputRelative = path.relative(repoRoot, output).replaceAll('\\', '/');
   const files = changedFiles(args.base, args.head).filter((file) =>
-    file !== outputRelative && !file.startsWith('mango-docs/evidence/test-baseline/'));
+    file !== outputRelative && !file.startsWith('mango-docs/evidence/'));
   if (files.length === 0) throw new Error('No changed files found for quality contract');
   const artifacts = loadArtifacts(repoRoot, files);
   const classification = classify(artifacts);
