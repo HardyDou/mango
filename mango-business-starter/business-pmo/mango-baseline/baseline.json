@@ -3,7 +3,7 @@
   "packageVersion": "1.1.0",
   "schemaVersion": 1,
   "source": "mango-pmo",
-  "generatedAt": "2026-07-10T06:27:10.003Z",
+  "generatedAt": "2026-07-10T06:41:22.227Z",
   "files": [
     {
       "path": "agents/01-pm-agent.md",
@@ -52,8 +52,8 @@
     },
     {
       "path": "rules/00-dev-flow.md",
-      "sha256": "748e9889e020ecd9894a0a4dfda94336909e87a110312b9fbbd13f712c6c4368",
-      "size": 16732
+      "sha256": "782ce8bb5629b500425521b54c8c90fcc766fca47cb023f6da1b0837d6cd16b5",
+      "size": 16794
     },
     {
       "path": "rules/01-delivery-contract.md",
@@ -77,8 +77,8 @@
     },
     {
       "path": "rules/05-ai-delivery-quality.md",
-      "sha256": "040c756c3377c462b015b231e7fabf0668a39114ee15b1994ae0d8450d0949f2",
-      "size": 7135
+      "sha256": "9cfeddeb59ae6de11bf4d55c64c00e0e369c3e4b889e2bdff3523279dd2a16a9",
+      "size": 7390
     },
     {
       "path": "rules/06-document-assets.md",
@@ -97,8 +97,8 @@
     },
     {
       "path": "rules/09-test-case-automation-flow.md",
-      "sha256": "6c8dcb3c2dab3a85ecb48485b687bd003ba653dfabd43dd3226b4474f681778a",
-      "size": 8636
+      "sha256": "76ed740f0e12d89934b4613422f7eb81bb3c59bc43e205ea1f6a292b511d7133",
+      "size": 8811
     },
     {
       "path": "rules/10-executable-quality-contract.md",
@@ -177,8 +177,8 @@
     },
     {
       "path": "rules/frontend/04-test.md",
-      "sha256": "a3d74fb6f3c7f8f2005b30b10f49a4e9b27d1b4031c59d098aaa0c223540e297",
-      "size": 4915
+      "sha256": "703ee5be0fccd1613f66e7ea934c2117727364fa6d52ef35e208bc00c0a4e7e8",
+      "size": 5566
     },
     {
       "path": "rules/frontend/05-dev-flow.md",
