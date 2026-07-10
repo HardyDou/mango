@@ -3,7 +3,7 @@
   "packageVersion": "1.1.0",
   "schemaVersion": 1,
   "source": "mango-pmo",
-  "generatedAt": "2026-07-10T06:10:19.749Z",
+  "generatedAt": "2026-07-10T06:21:47.259Z",
   "files": [
     {
       "path": "agents/01-pm-agent.md",
@@ -17,13 +17,13 @@
     },
     {
       "path": "agents/03-dev-agent.md",
-      "sha256": "1262cdeec7f87a94c7b819790c100fff364c7dd8b291fadafcffac34dc9906ff",
-      "size": 757
+      "sha256": "91ba567fea95bb71cb6bd2a5ef9b220916414fef7e1fa5a6e68b99220190b1e2",
+      "size": 952
     },
     {
       "path": "agents/04-qa-agent.md",
-      "sha256": "3323529684006d755c59f83a918179097d3956cafff204fa9bd3431ad307a358",
-      "size": 936
+      "sha256": "f2eefd7a54bbe73c7d02d94846bde27aa080dc75ac45ad18bbac732b645588b3",
+      "size": 1161
     },
     {
       "path": "agents/05-pmo-agent.md",
@@ -32,8 +32,8 @@
     },
     {
       "path": "fixtures/agent-classification/cases.json",
-      "sha256": "24399e2b59ebd2da0a06073a7a1f46f7bad5878fede536be7179f9c4cb9063f6",
-      "size": 5346
+      "sha256": "5a3fe01dd829ff6e35cdc8b82589b4d06b67fbeb8d52c93a40e80a5e5f03155a",
+      "size": 6337
     },
     {
       "path": "fixtures/executable-quality/cases.json",
@@ -47,13 +47,13 @@
     },
     {
       "path": "README.md",
-      "sha256": "14b1e48e2008d7a5567df8f5673a3d7dbc9f7d8447b367a29a3035095a31b22c",
-      "size": 7621
+      "sha256": "60b4a71c57cfb469732e7338ab215d5022af2b263c99eecc94c404ed9a75f06b",
+      "size": 7720
     },
     {
       "path": "rules/00-dev-flow.md",
-      "sha256": "080eb0eb8ef915464fa6e0d688af83e2647745056dc5ecae3a3f954be1b068d9",
-      "size": 12584
+      "sha256": "748e9889e020ecd9894a0a4dfda94336909e87a110312b9fbbd13f712c6c4368",
+      "size": 16732
     },
     {
       "path": "rules/01-delivery-contract.md",
@@ -307,8 +307,8 @@
     },
     {
       "path": "tools/check-pmo-preflight.mjs",
-      "sha256": "ba9acd22755bd0a2ef2e4c62548770546d28cf49ec06d82bac2a952bd5ef3dc2",
-      "size": 7930
+      "sha256": "0e5d6b71a92b950576995426cb42e7d96d76bd7d30cabd8ada5c47bb9768f7d2",
+      "size": 9763
     },
     {
       "path": "tools/delivery-contract-check.mjs",
@@ -317,13 +317,13 @@
     },
     {
       "path": "tools/eval-agent-classification.mjs",
-      "sha256": "24e3768655309e5255e23c983d6a4e8ce456b16ad835bb8d67fca79ee9e84246",
-      "size": 15924
+      "sha256": "fa292d496f7e09a3461847d545857a2b1fc7e1ea0876dc20ccb0045228243063",
+      "size": 17252
     },
     {
       "path": "tools/eval-executable-quality.mjs",
-      "sha256": "bf8441152514e0e70a4927b629efe5e0051eab0f3dafc25361abc4f7fbf1a5c3",
-      "size": 9524
+      "sha256": "9276af71833fcdd06fac907ba702df528cc84ccc742dcf7bf5e7f908934695e4",
+      "size": 9939
     },
     {
       "path": "tools/lib/quality-analyzer.mjs",
@@ -337,8 +337,8 @@
     },
     {
       "path": "tools/pmo-preflight.mjs",
-      "sha256": "85b663cc70b9fb62a9b76bad8372b1e1959940131f6976a6f5bd955595a51d2b",
-      "size": 13169
+      "sha256": "1d4a5d1f4e4b923f03c28bfdf0f77fee5c40de13a757946fc7a96820f9285715",
+      "size": 18707
     },
     {
       "path": "tools/quality-baseline.mjs",

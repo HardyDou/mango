@@ -15,6 +15,7 @@
 5. 后端测试范围、有效测试判断、分层归属，以 `mango-pmo/rules/backend/08-test.md` 为准
 6. 前端页面、交互、样式或运行时变更，以 `mango-pmo/rules/frontend/04-test.md` 和 `mango-pmo/rules/frontend/02-element-plus-ui.md` 为准
 7. 验收任务必须按交付台账逐项给出证据，不能只写接口 200、页面无异常或服务已启动
+8. 按 preflight `taskProfile.obligations` 选择验证范围；`L0` 纯视觉微调只做受影响页面冒烟，不执行无关全量 E2E，也不制造无要求的截图和正式报告
 
 ## 3. 禁止事项
 
@@ -22,7 +23,7 @@
 - 只看 happy path
 - 没有证据就下结论
 - 只看接口状态码或页面能打开就声明功能通过
-- 不记录页面、功能点、断言、截图、console 和 network 结果
+- 对被要求执行的 `UI/E2E` 不记录页面、功能点、业务断言、截图、console 和 network 结果
 
 ## 4. 输出要求
 

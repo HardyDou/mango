@@ -15,6 +15,7 @@
 4. 提交时说明改动和验证结果
 5. 测试设计、测试归属、是否属于有效测试，遵循 `mango-pmo/rules/backend/08-test.md`
 6. 修复验收、Review、CI 或 PR 门禁发现的问题前，必须先确认是否已有当前任务或 PR 的 worktree；存在时必须复用
+7. 以 preflight 输出的 `taskProfile` 执行最小充分流程；`L0/L1` 不得擅自追加专用 worktree、完整设计、无关 E2E、截图或长报告，真实 diff 越界时必须升级
 
 ## 3. 禁止事项
 

@@ -81,12 +81,14 @@ mvn -f mango/pom.xml mango:check -Drule=all \
 从 Maven 执行与 CI 相同的 PMO 可执行质量门禁：
 
 ```bash
-mvn -f mango/pom.xml mango:quality-gate \
+mvn -f mango/pom.xml \
+  io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:quality-gate \
   -Dmango.quality.baseRef=origin/main \
   -Dmango.quality.report=.runtime/pmo/maven-quality-gate.json
 ```
 
-该 goal 会自动定位主仓库的 `mango-pmo/tools/quality-gate.mjs` 或业务工程同步后的
+Mango 插件发布组尚未配置为 Maven 的全局 prefix group，因此这里使用完整插件坐标，不能简写为
+`mango:quality-gate`。该 goal 会自动定位主仓库的 `mango-pmo/tools/quality-gate.mjs` 或业务工程同步后的
 `business-pmo/mango-baseline/tools/quality-gate.mjs`。找不到工具、Node 无法启动、超时或门禁返回
 非零状态时一律阻断构建；可用 `mango.quality.tool`、`mango.quality.repositoryRoot` 显式指定位置。
 

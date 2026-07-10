@@ -139,7 +139,107 @@ function anyKeywordMatches(task, keywords) {
   return keywords.some((keyword) => normalizedTask.includes(normalizeText(keyword)));
 }
 
-function classifyWorkspacePolicy(args) {
+const highRiskKeywords = [
+  '权限', '租户', '安全', '金额', '支付', '事务', '并发', '幂等', 'migration', '数据库结构',
+  '公共 api', '公共api', 'schema', '跨服务', '跨模块', '发布', '回滚', '加密', '认证'
+];
+
+const behaviorKeywords = [
+  '点击事件', '校验', '显隐', '状态', '表单字段', '路由', '菜单', '权限', '接口', 'api',
+  '数据', '提交', '保存', '删除', '新增', '逻辑', '请求', '响应'
+];
+
+const microVisualKeywords = [
+  '移动一点', '挪动一点', '微调', '像素', '间距', '对齐', '颜色', '字号', '按钮位置',
+  '纯样式', '视觉调整', '文案调整', '文案修正', '错别字'
+];
+
+const smallChangeKeywords = [
+  '小修复', '局部修复', '轻量修复', '提示文案', '错误提示', '单组件', '单文件'
+];
+
+function looksLikeFile(inputPath) {
+  return /\.[a-z0-9-]+$/i.test(inputPath);
+}
+
+function isFrontendVisualFile(inputPath) {
+  return /\.(?:vue|css|scss|less|sass)$/.test(inputPath.replaceAll('\\', '/'));
+}
+
+function classifyTaskProfile(args) {
+  const task = normalizeText(args.task);
+  const inputPaths = splitPaths(args.paths);
+  const highHits = highRiskKeywords.filter((keyword) => task.includes(normalizeText(keyword)));
+  const behaviorHits = behaviorKeywords.filter((keyword) => task.includes(normalizeText(keyword)));
+  const microHits = microVisualKeywords.filter((keyword) => task.includes(normalizeText(keyword)));
+  const smallHits = smallChangeKeywords.filter((keyword) => task.includes(normalizeText(keyword)));
+  const codePaths = inputPaths.filter((inputPath) => /(?:mango|backend|frontend|src|scripts|\.github)(?:\/|$)/.test(inputPath.replaceAll('\\', '/')));
+  const backendBoundary = inputPaths.some((inputPath) => /(?:Controller|Service|Mapper)\.java$|\/db\/migration\/|pom\.xml$/.test(inputPath));
+  const uiAffected = inputPaths.some(isFrontendVisualFile) || /页面|按钮|表单|弹框|抽屉|ui|e2e/.test(task);
+  const microEligible = microHits.length > 0
+    && behaviorHits.length === 0
+    && inputPaths.length > 0
+    && inputPaths.length <= 2
+    && inputPaths.every(isFrontendVisualFile);
+
+  let level;
+  const reasons = [];
+  if (highHits.length > 0) {
+    level = 'L3';
+    reasons.push(`high-risk semantics: ${unique(highHits).join(', ')}`);
+  } else if (microEligible) {
+    level = 'L0';
+    reasons.push(`visual-only micro change: ${unique(microHits).join(', ')}`);
+  } else if (backendBoundary || codePaths.length > 3 || /完整流程|业务流程|表单提交|状态写入|controller|service|mapper/.test(task)) {
+    level = 'L2';
+    if (backendBoundary) reasons.push('backend/API/persistence boundary path');
+    if (codePaths.length > 3) reasons.push(`estimated changed paths: ${codePaths.length}`);
+    if (reasons.length === 0) reasons.push('multi-node or state-changing behavior');
+  } else if (smallHits.length > 0 && inputPaths.length > 0 && inputPaths.length <= 3) {
+    level = 'L1';
+    reasons.push(`explicit contained change: ${unique(smallHits).join(', ')}`);
+  } else if (codePaths.length > 0 || uiAffected) {
+    level = 'L2';
+    reasons.push('code/page change without enough evidence for lightweight classification');
+  } else {
+    level = 'L1';
+    reasons.push('contained non-runtime or governance change');
+  }
+
+  const lightweightWorkspaceEligible = ['L0', 'L1'].includes(level)
+    && inputPaths.length > 0
+    && inputPaths.length <= 3
+    && inputPaths.every(looksLikeFile);
+  const obligations = {
+    dedicatedWorktree: ['L2', 'L3'].includes(level),
+    detailedDesign: level === 'L3',
+    deliveryPlan: ['L2', 'L3'].includes(level),
+    changedOnlyChecks: level !== 'L0',
+    staticReview: true,
+    unitTests: ['L2', 'L3'].includes(level) ? 'WHEN_KEY_LOGIC' : (level === 'L1' ? 'WHEN_KEY_LOGIC' : 'NOT_REQUIRED'),
+    apiTests: ['L2', 'L3'].includes(level) ? 'WHEN_BACKEND_ENTRY_OR_DATA' : 'NOT_REQUIRED',
+    uiVerification: uiAffected ? (level === 'L0' ? 'AFFECTED_PAGE_SMOKE' : 'AFFECTED_FLOW_ONLY') : 'NOT_REQUIRED',
+    fullE2E: level === 'L3' && uiAffected,
+    screenshot: ['L2', 'L3'].includes(level) && uiAffected,
+    proofPath: level === 'L3',
+    targetedMutation: level === 'L3',
+    latestBaseline: ['L2', 'L3'].includes(level),
+    formalDeliveryReport: level === 'L3',
+    verificationSummary: level === 'L0' ? 'ONE_LINE' : (level === 'L1' ? 'SHORT' : 'STRUCTURED')
+  };
+  return {
+    level,
+    label: { L0: 'MICRO', L1: 'SMALL', L2: 'STANDARD', L3: 'HIGH' }[level],
+    provisional: true,
+    reasons,
+    estimatedPathCount: inputPaths.length,
+    lightweightWorkspaceEligible,
+    upgradeRule: '交付前按真实 Git diff 复核；范围扩大、行为/数据风险出现或边界不确定时自动升级。',
+    obligations
+  };
+}
+
+function classifyWorkspacePolicy(args, taskProfile) {
   const inputPaths = splitPaths(args.paths);
   const requiredHits = [];
   const directHits = [];
@@ -175,19 +275,27 @@ function classifyWorkspacePolicy(args) {
     };
   }
 
-  if (requiredHits.length > 0) {
-    return {
-      mode: 'worktree-required',
-      summary: '必须使用任务专用 Git worktree 和任务分支。',
-      reason: unique(requiredHits).join('; ')
-    };
-  }
-
   if (inputPaths.length > 0 && inputPaths.every((inputPath) => directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern)))) {
     return {
       mode: 'main-direct-allowed',
       summary: '可在主工作区直接修改并提交。',
       reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
+    };
+  }
+
+  if (taskProfile.lightweightWorkspaceEligible) {
+    return {
+      mode: 'lightweight-branch-allowed',
+      summary: '可复用当前干净任务分支/工作区，不强制创建专用 worktree；不得直接绕过仓库 PR 规则。',
+      reason: `${taskProfile.level} ${taskProfile.label}: ${taskProfile.reasons.join('; ')}`
+    };
+  }
+
+  if (requiredHits.length > 0) {
+    return {
+      mode: 'worktree-required',
+      summary: '必须使用任务专用 Git worktree 和任务分支。',
+      reason: unique(requiredHits).join('; ')
     };
   }
 
@@ -339,6 +447,7 @@ function addRule(result, index, key, source) {
 }
 
 function buildResult(index, args) {
+  const taskProfile = classifyTaskProfile(args);
   const result = {
     role: args.role,
     phase: args.phase,
@@ -346,7 +455,8 @@ function buildResult(index, args) {
     paths: splitPaths(args.paths),
     indexVersion: index.version,
     rulesFingerprint: rulesFingerprint(index),
-    workspacePolicy: classifyWorkspacePolicy(args),
+    taskProfile,
+    workspacePolicy: classifyWorkspacePolicy(args, taskProfile),
     mustRead: [],
     requiredChecks: collectRequiredChecks(args),
     errors: [...args.parseErrors],
@@ -417,6 +527,12 @@ function printText(result) {
   }
   console.log(`Workspace: ${result.workspacePolicy.mode} - ${result.workspacePolicy.summary}`);
   console.log(`Workspace reason: ${result.workspacePolicy.reason}`);
+  console.log(`Task profile: ${result.taskProfile.level} ${result.taskProfile.label} (provisional)`);
+  console.log(`Task profile reason: ${result.taskProfile.reasons.join('; ')}`);
+  console.log('Workflow obligations:');
+  for (const [key, value] of Object.entries(result.taskProfile.obligations)) {
+    console.log(`- ${key}: ${value}`);
+  }
   console.log('');
   console.log('Must read:');
   result.mustRead.forEach((item, index) => {

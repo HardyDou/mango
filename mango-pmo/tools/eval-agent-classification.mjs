@@ -238,6 +238,9 @@ function metrics(results) {
   const exact = results.filter((item) => item.exactMatch);
   const critical = results.filter((item) => item.critical);
   const criticalExact = critical.filter((item) => item.exactMatch);
+  const matches = (item, fields) => item.actual !== null && fields.every((field) =>
+    JSON.stringify(item.actual[field]) === JSON.stringify(item.expected[field]));
+  const rate = (rows, fields) => rows.length === 0 ? 0 : rows.filter((item) => matches(item, fields)).length / rows.length;
   return {
     agentClassificationCount: results.length,
     completedCount: completed.length,
@@ -245,7 +248,13 @@ function metrics(results) {
     agentClassificationExactMatchRate: results.length === 0 ? 0 : exact.length / results.length,
     criticalClassificationCount: critical.length,
     criticalClassificationExactMatches: criticalExact.length,
-    criticalClassificationExactMatchRate: critical.length === 0 ? 1 : criticalExact.length / critical.length
+    criticalClassificationExactMatchRate: critical.length === 0 ? 1 : criticalExact.length / critical.length,
+    decisionMatchRate: rate(results, ['decision']),
+    requiredTestsMatchRate: rate(results, ['requiredTests']),
+    decisionAndObligationMatchRate: rate(results, ['decision', 'requiredTests']),
+    riskMatchRate: rate(results, ['risk']),
+    staticReviewMatchRate: rate(results, ['staticReviewRequired']),
+    criticalDecisionAndObligationMatchRate: rate(critical, ['decision', 'requiredTests'])
   };
 }
 
@@ -284,6 +293,9 @@ function markdown(report) {
     '| 指标 | Current PMO | Candidate PMO |', '|---|---:|---:|',
     `| Agent 分类精确匹配率 | ${percent(report.current.agentClassificationExactMatchRate)} | ${percent(report.candidate.agentClassificationExactMatchRate)} |`,
     `| 关键案例精确匹配率 | ${percent(report.current.criticalClassificationExactMatchRate)} | ${percent(report.candidate.criticalClassificationExactMatchRate)} |`,
+    `| 放行/阻断 + 测试义务匹配率 | ${percent(report.current.decisionAndObligationMatchRate)} | ${percent(report.candidate.decisionAndObligationMatchRate)} |`,
+    `| 风险等级匹配率 | ${percent(report.current.riskMatchRate)} | ${percent(report.candidate.riskMatchRate)} |`,
+    `| 静态 Review 义务匹配率 | ${percent(report.current.staticReviewMatchRate)} | ${percent(report.candidate.staticReviewMatchRate)} |`,
     `| 完成运行 | ${report.current.completedCount}/${report.current.agentClassificationCount} | ${report.candidate.completedCount}/${report.candidate.agentClassificationCount} |`, '',
     '## 未精确匹配', ''
   ];
@@ -325,6 +337,8 @@ try {
   const candidate = metrics(results.filter((item) => item.group === 'candidate'));
   const thresholds = {
     allRunsCompleted: candidate.completedCount === candidate.agentClassificationCount,
+    candidateDecisionAndObligationMatchRate: candidate.decisionAndObligationMatchRate === 1,
+    candidateCriticalDecisionAndObligationMatchRate: candidate.criticalDecisionAndObligationMatchRate === 1,
     candidateExactMatchRate: candidate.agentClassificationExactMatchRate >= 0.95,
     candidateCriticalExactMatchRate: candidate.criticalClassificationExactMatchRate === 1
   };

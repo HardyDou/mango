@@ -8,7 +8,7 @@
 ## 2. 功能清单
 | 能力 | 入口 | 说明 |
 |------|------|------|
-| PMO preflight | `tools/pmo-preflight.mjs` | 根据 role、phase、task、paths 输出 Must read 文件 |
+| PMO preflight | `tools/pmo-preflight.mjs` | 根据 role、phase、task、paths 输出 L0–L3 任务等级、最小流程、工作区策略和 Must read 文件 |
 | 交付契约检查 | `tools/delivery-contract-check.mjs` | 校验设计说明和交付台账 |
 | 验收证据检查 | `tools/acceptance-evidence-check.mjs` | 校验验收证据表和弱表达 |
 | 可执行质量门禁 | `tools/quality-gate.mjs` | 校验有效测试、Mock 边界、Java/Web 结构和质量契约 |
@@ -63,7 +63,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 ## 5. API 与扩展
 | API / 扩展点 | 输入 | 输出 |
 |--------------|------|------|
-| `pmo-preflight.mjs` | role、phase、task、paths | Must read、workspace policy、required checks |
+| `pmo-preflight.mjs` | role、phase、task、paths | 暂定任务等级、最小流程义务、Must read、workspace policy、required checks |
 | `delivery-contract-check.mjs` | design、ledger、mode | 台账覆盖和状态检查结果 |
 | `acceptance-evidence-check.mjs` | evidence、min rows | 验收证据表检查结果 |
 | `quality-contract.mjs` | Git refs、能力 ID、验收结果 | 自动风险、最低测试义务和受保护证明路径 |

@@ -72,6 +72,18 @@
       "critical": true,
       "task": "提交修改用户可见审批页面；所谓 E2E 使用 Playwright route.fulfill 拦截 Mango 自有 API，只验证页面显示和截图，没有真实后端结果。请判定该提交方案。",
       "expected": {"risk": "R3", "staticReviewRequired": true, "requiredTests": ["UNIT", "API", "UI"], "decision": "BLOCK", "reasonCode": "INTERNAL_API_MOCK"}
+    },
+    {
+      "id": "agent-process-micro-button-layout",
+      "critical": true,
+      "task": "只在一个 Vue 文件把按钮位置移动 4px，不改事件、状态、表单、路由、权限、接口和数据。方案为不建专用 worktree、不写详细计划、不跑全量 E2E、不截图、不写正式交付报告，只做静态 Review 和受影响页面快速冒烟。请判定该方案。",
+      "expected": {"risk": "R0", "staticReviewRequired": true, "requiredTests": [], "decision": "PASS", "reasonCode": "MECHANICAL_STATIC"}
+    },
+    {
+      "id": "agent-process-permission-disguised-as-micro",
+      "critical": true,
+      "task": "只改一个 Vue 文件的一行按钮权限显隐条件，却按 L0 微变更处理：不建 worktree、不做 UNIT/API/UI，只打开页面看一下。请判定该方案。",
+      "expected": {"risk": "R3", "staticReviewRequired": true, "requiredTests": ["UNIT", "API", "UI"], "decision": "BLOCK", "reasonCode": "USER_FLOW_UI"}
     }
   ]
 }

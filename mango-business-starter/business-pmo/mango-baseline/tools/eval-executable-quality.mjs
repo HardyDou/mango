@@ -73,7 +73,11 @@ function metrics(rows, engine) {
   const positiveRows = rows.filter((row) => row.expected === 'PASS');
   const positiveRuns = positiveRows.flatMap((row) => row.runs.map((run) => run[engine].outcome));
   const consistentRows = rows.filter((row) => new Set(row.runs.map((run) => run[engine].outcome)).size === 1).length;
+  const exactRows = rows.filter((row) => row.runs.every((run) => run[engine].outcome === row.expected)).length;
   return {
+    gateCaseCount: rows.length,
+    gateCaseExactMatches: exactRows,
+    gateCaseExactMatchRate: rows.length === 0 ? 0 : exactRows / rows.length,
     gateDecisionCount: predictions.length,
     gateDecisionExactMatches: correct,
     gateDecisionExactMatchRate: predictions.length === 0 ? 0 : correct / predictions.length,
@@ -105,7 +109,8 @@ function markdown(report) {
     '',
     '| 指标 | Current executable checks | Candidate quality gate | 阈值 |',
     '|---|---:|---:|---:|',
-    `| 门禁判定精确匹配率 | ${percent(report.current.gateDecisionExactMatchRate)} | ${percent(report.candidate.gateDecisionExactMatchRate)} | ≥ 95% |`,
+    `| 场景级精确匹配率 | ${percent(report.current.gateCaseExactMatchRate)} | ${percent(report.candidate.gateCaseExactMatchRate)} | 参考 |`,
+    `| 重复运行加权精确匹配率 | ${percent(report.current.gateDecisionExactMatchRate)} | ${percent(report.candidate.gateDecisionExactMatchRate)} | ≥ 95% |`,
     `| 关键红线阻断召回率 | ${percent(report.current.criticalBlockRecall)} | ${percent(report.candidate.criticalBlockRecall)} | 100% |`,
     `| 合法正例错误阻断数 | ${report.current.legalFalseBlocks} | ${report.candidate.legalFalseBlocks} | 0 |`,
     `| 重复结论一致率 | ${percent(report.current.repeatConsistencyRate)} | ${percent(report.candidate.repeatConsistencyRate)} | ≥ 95% |`,

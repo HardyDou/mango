@@ -27,7 +27,45 @@ const cases = [
   {
     name: 'frontend page requires worktree',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '修改前端页面', '--paths', 'mango-ui/packages/admin-shell/src/views/home/index.vue'],
-    mode: 'worktree-required'
+    mode: 'worktree-required',
+    level: 'L2'
+  },
+  {
+    name: 'visual-only button move uses micro workflow',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '按钮位置移动一点，只调整 4px 间距', '--paths', 'mango-ui/packages/payment/src/views/channel/index.vue'],
+    mode: 'lightweight-branch-allowed',
+    level: 'L0',
+    obligations: {
+      dedicatedWorktree: false,
+      detailedDesign: false,
+      deliveryPlan: false,
+      fullE2E: false,
+      screenshot: false,
+      formalDeliveryReport: false,
+      uiVerification: 'AFFECTED_PAGE_SMOKE'
+    }
+  },
+  {
+    name: 'contained single-file fix uses small workflow',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '单文件局部修复错误提示', '--paths', 'mango-ui/packages/payment/src/views/channel/index.vue'],
+    mode: 'lightweight-branch-allowed',
+    level: 'L1',
+    obligations: {
+      dedicatedWorktree: false,
+      fullE2E: false,
+      formalDeliveryReport: false
+    }
+  },
+  {
+    name: 'one-line permission change is still high risk',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '按钮权限显隐微调一行', '--paths', 'mango-ui/packages/payment/src/views/channel/index.vue'],
+    mode: 'worktree-required',
+    level: 'L3',
+    obligations: {
+      dedicatedWorktree: true,
+      proofPath: true,
+      targetedMutation: true
+    }
   },
   {
     name: 'mixed governance and release script requires worktree',
@@ -159,6 +197,15 @@ for (const item of cases) {
   }
   if (output.workspacePolicy?.mode !== item.mode) {
     failures.push(`${item.name}: expected ${item.mode}, got ${output.workspacePolicy?.mode || '<missing>'}`);
+  }
+  if (item.level && output.taskProfile?.level !== item.level) {
+    failures.push(`${item.name}: expected task level ${item.level}, got ${output.taskProfile?.level || '<missing>'}`);
+  }
+  for (const [key, expectedValue] of Object.entries(item.obligations || {})) {
+    const actualValue = output.taskProfile?.obligations?.[key];
+    if (actualValue !== expectedValue) {
+      failures.push(`${item.name}: expected obligation ${key}=${expectedValue}, got ${actualValue}`);
+    }
   }
   for (const expectedPath of item.mustRead || []) {
     const hasPath = (output.mustRead || []).some((entry) => entry.path === expectedPath);

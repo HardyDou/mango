@@ -44,7 +44,12 @@ jobs:
             -pl mango-tools/mango-maven-plugin -am \
             -Dtest=QualityGateMojoTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
-            test
+            install
+          mvn -f mango/pom.xml \
+            io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:quality-gate \
+            -Dmango.quality.baseRef=${{ github.event.pull_request.base.sha }} \
+            -Dmango.quality.headRef=${{ github.event.pull_request.head.sha }} \
+            -Dmango.quality.report=.runtime/pmo/maven-quality-gate.json
 
       - name: Verify targeted business mutations
         run: node mango-pmo/tools/verify-targeted-mutations.mjs
