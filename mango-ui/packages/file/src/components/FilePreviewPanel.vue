@@ -7,7 +7,7 @@
         <el-tag size="small" :type="previewModeTag">
           {{ previewModeLabel }}
         </el-tag>
-        <el-button v-auth="downloadPermission" link type="primary" @click="openDownload">
+        <el-button link type="primary" @click="openDownload">
           下载
         </el-button>
         <el-button v-if="canOpenInNewWindow" link type="primary" @click="openPreviewInNewWindow">
@@ -75,7 +75,6 @@ const props = withDefaults(defineProps<{
   preview?: FilePreview | null;
   previewProviderUrl?: string;
   previewExternalExtensions?: string[];
-  downloadPermission?: string;
   showActions?: boolean;
 }>(), {
   showActions: true,
@@ -141,7 +140,6 @@ const previewModeLabel = computed(() => {
 });
 
 const previewModeTag = computed(() => documentPreviewUrl.value ? 'success' : 'info');
-const downloadPermission = computed(() => props.downloadPermission || 'file:files:download');
 const previewTargetUrl = computed(() => inlinePreviewUrl.value || documentPreviewUrl.value);
 const canOpenInNewWindow = computed(() => Boolean(previewTargetUrl.value));
 const canDownload = computed(() => Boolean(preview.value?.id));

@@ -29,7 +29,7 @@ public class FileSettingsController {
     private final IFileSettingsService settingsService;
 
     @GetMapping
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:settings:query")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "获取文件中心配置", description = "权限接口。返回当前机构文件中心运行时配置，未保存时返回 yml 默认值")
     public R<FileSettingsVO> get() {
         return settingsService.get();

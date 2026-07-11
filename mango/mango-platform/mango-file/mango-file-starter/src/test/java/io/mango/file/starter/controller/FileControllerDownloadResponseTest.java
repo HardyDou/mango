@@ -29,7 +29,7 @@ class FileControllerDownloadResponseTest {
                 fileName,
                 "application/zip",
                 2L));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService)).build();
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService, null)).build();
 
         MvcResult result = mockMvc.perform(get("/file/files/download").param("id", "1001"))
                 .andExpect(status().isOk())
@@ -50,7 +50,7 @@ class FileControllerDownloadResponseTest {
                 fileName,
                 "application/pdf",
                 2L));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService)).build();
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService, null)).build();
 
         MvcResult result = mockMvc.perform(get("/file/files/preview-content").param("id", "1001"))
                 .andExpect(status().isOk())

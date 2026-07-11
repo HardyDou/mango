@@ -29,7 +29,7 @@ class FileControllerMergeToPdfTest {
         record.setFileName("材料合集.pdf");
         record.setContentType("application/pdf");
         when(fileService.mergeToPdf(any(FileMergePdfCommand.class))).thenReturn(R.ok(record));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService)).build();
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService, null)).build();
 
         mockMvc.perform(post("/file/files/merge-pdf")
                         .contentType(MediaType.APPLICATION_JSON)

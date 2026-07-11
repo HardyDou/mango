@@ -133,7 +133,6 @@ const fileIds = ref<string[]>([]);
 | `preview` | `FilePreview \| null` | 空 | 外部已加载预览对象；传入后不再请求 `fileApi.preview()`。 |
 | `previewProviderUrl` | `string` | 环境变量或后端返回 | 文档预览服务地址。 |
 | `previewExternalExtensions` | `string[]` | 空 | 外部预览扩展名。 |
-| `downloadPermission` | `string` | `file:files:download` | 下载按钮权限码。 |
 | `showActions` | `boolean` | `true` | 是否显示下载和新窗口预览操作。 |
 
 `FilePreviewPanel` events 和 expose：
@@ -167,13 +166,13 @@ const fileIds = ref<string[]>([]);
 
 ## 6. 权限与数据边界
 
-常用权限：
+访问基线：
 
-| 操作 | 权限码 |
-|------|--------|
-| 上传 | `file:files:upload` |
-| 查询预览元数据 | `file:files:query` |
-| 下载 | `file:files:download` |
+| 操作 | 访问模式 |
+|------|----------|
+| 上传、秒传、分片、预览、下载 | `LOGIN`，不依赖角色权限码 |
+| 匿名预览、下载 | 仅使用后端签发的短时能力链接 |
+| 列表、归档、删除、管理配置 | 后端细粒度权限 |
 
 租户、目录、文件状态、访问级别和业务归属由后端校验。组件不会绕过后端权限。
 
@@ -193,10 +192,6 @@ const fileIds = ref<string[]>([]);
 **秒传没有命中**
 
 检查后端是否开启 `instantUploadEnabled`，以及上传会话是否提交了 `fileHash`。
-
-**下载按钮不可见**
-
-检查 `downloadPermission` 和当前账号授权。
 
 **文档只能下载不能预览**
 

@@ -44,14 +44,15 @@
 
 | 场景 | 访问模式 | 是否需要为角色/用户单独配置 |
 |------|----------|------------------------------|
-| 文件详情、预览元数据、下载入口 | `LOGIN` | 不需要。所有已登录用户默认可调用。 |
+| 文件详情、预览元数据、下载、上传、批量、秒传、分片、打包、合并 | `LOGIN` | 不需要。所有已登录用户默认可调用。 |
+| 短时预览/下载能力链接 | `PUBLIC` | 匿名可用，但必须使用登录用户签发的不可猜测短时 token，不能直接暴露文件 ID。 |
 | 文件运行时配置读取 | `LOGIN` | 不需要。上传/预览组件可读取当前租户限制和策略。 |
-| 文件列表、上传、分片上传、归档、删除 | `PERMISSION` | 需要。按菜单、按钮、套餐和角色授权。 |
+| 文件列表、归档、删除 | `PERMISSION` | 需要。按菜单、按钮、套餐和角色授权。 |
 | 存储配置、文件配置保存、目录维护 | `PERMISSION` | 需要。只给文件管理员或平台管理员。 |
 
 `LOGIN` 只表示登录用户可以进入文件基础接口，不表示可以读取任意文件。`mango-file` 在 `FileApi.get()`、`preview()`、`download()` 和预览链路中继续按当前 `tenantId` 查询可见文件，归档、删除或跨租户文件不会返回。
 
-业务使用时不需要给每个角色、每个用户配置 `file:files:query`、`file:files:download` 或 `file:settings:query` 才能让详情页预览/下载已保存的附件，或让上传/预览组件读取运行时策略；只需要保证用户已登录，并且业务页面本身有权限展示该 `fileId`。新增、归档、删除文件，以及保存文件中心配置仍然需要对应权限码。
+业务使用时不需要给每个角色、每个用户配置 `file:files:query`、`file:files:upload`、`file:files:download` 或 `file:settings:query`。匿名预览或下载先由登录用户调用 `POST /file/files/access-links`，再使用返回的 `GET /file/files/access?token=...`；token 绑定租户、文件、动作和有效期，消费时重新校验文件状态。归档、删除文件以及管理配置仍需要对应权限码。
 
 ### 3.1 开发依赖
 
@@ -314,7 +315,6 @@ import { FilePreviewPanel } from '@mango/file';
 | `file` | 已加载的文件引用。 |
 | `preview` | 已加载的预览对象；传入后不再请求 `fileApi.preview()`。 |
 | `previewProviderUrl` | 文档预览服务地址。 |
-| `downloadPermission` | 下载按钮权限，默认 `file:files:download`。 |
 | `showActions` | 是否显示下载和新窗口预览操作。 |
 
 ## 5. 快速开始

@@ -38,7 +38,7 @@ class FileControllerRecordSerializationTest {
         record.setDirectPreviewExpireSeconds(300L);
         record.setDirectDownloadExpireSeconds(300L);
         when(fileService.get(1001L)).thenReturn(R.ok(record));
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService)).build();
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService, null)).build();
 
         mockMvc.perform(get("/file/files/detail").param("id", "1001"))
                 .andExpect(status().isOk())
