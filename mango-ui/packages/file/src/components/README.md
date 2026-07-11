@@ -14,6 +14,32 @@
 | 预览文件 | `FilePreviewPanel` |
 | 上传组件类型 | `UploadColumn`、`UploadColumnKey`、`UploadDisplay`、`UploadSizeRules`、`UploadValueType` |
 
+组件选型边界：
+
+| 场景 | 使用组件 | 说明 |
+|------|----------|------|
+| 业务表单上传、附件列表、图片缩略图回显 | `MUpload` | 负责选择、上传、回写和上传列表展示。点击上传列表文件时，组件内部按文件记录打开可用预览地址，不渲染 `FilePreviewPanel`。 |
+| 业务详情页、只读附件区、后台文件管理预览内容区 | `FilePreviewPanel` | 负责按文件 ID 或预览元数据展示图片、PDF、音视频和文档预览，并提供下载、新窗口预览能力。它是内容面板，不是完整弹框组件。 |
+| 后端在线预览服务 | `mango-file-preview` | 提供 `/file-preview/files/preview-link` 和 `/file-preview/files/preview`，不是前端 Vue 组件。前端组件通过 `fileApi.previewLink()` 或预览元数据消费它。 |
+
+Issue #411 的布局优化目标是 `FilePreviewPanel` 及文件管理页承载它的预览弹框；如果业务页面看到的是 `MUpload` 上传列表点击后的新窗口预览，需要按 `MUpload` 的预览行为另行评估，不应误判为 `FilePreviewPanel` 未生效。
+
+正确用法：
+
+| 需求 | 推荐方式 | 边界 |
+|------|----------|------|
+| 在详情页内嵌预览 | 直接使用 `<FilePreviewPanel :file-id="fileId" />` | 页面负责外围标题和布局，组件负责预览内容、下载和新窗口预览。 |
+| 在弹框中预览文件 | 使用统一的文件预览弹框入口；当前缺少公共 `FilePreviewDialog` 时，业务外层 `el-dialog` 必须只做标题、尺寸和确认动作包装，内部固定放置 `FilePreviewPanel` | 不要在业务页重新实现 PDF/iframe/img 预览逻辑，不要复制 `FilePreviewPanel` 内部能力。 |
+| 上传列表点击文件 | 使用 `MUpload` 自带预览行为 | 这是上传组件交互，不等同于详情预览弹框。需要弹框式预览时，应在业务详情区另行接入 `FilePreviewPanel`。 |
+
+弹框包装约定：
+
+- 外层弹框负责业务标题、文件名、版本、确认/取消等业务动作。
+- `FilePreviewPanel` 负责文件展示、下载和新窗口预览。
+- 外层弹框如果隐藏 `FilePreviewPanel` 自带操作区，必须自己接管并透传下载、新窗口预览能力，不能只保留部分按钮。
+- 弹框宽高、小屏适配和内容区高度必须与 `FilePreviewPanel` 的 CSS 变量配合，例如设置 `--mango-file-preview-panel-height`、`--mango-file-preview-content-height`。
+- 业务页面不得把 `/file/files/download` 当作预览地址传入预览内容区。
+
 ## 3. 接入方式
 
 引入组件和样式：
