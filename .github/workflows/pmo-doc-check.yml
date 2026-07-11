@@ -34,10 +34,14 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           mvn -f mango/pom.xml \
+            -pl :mango-architecture-verification \
+            -am \
             -DskipTests \
             -Dmango.architecture.base="$BASE_SHA" \
             verify
           mvn -f mango/pom.xml \
+            -pl :mango-architecture-verification \
+            -am \
             io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:check \
             -Drule=module-info \
             -DbaseDir="${{ github.workspace }}" \
