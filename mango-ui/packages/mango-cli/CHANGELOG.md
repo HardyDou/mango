@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.67 - 2026-07-11
+
+### Changed
+
+- Advanced generated business backend projects from Mango Maven `1.0.13` to the forward-only `1.0.14` backend batch.
+- Kept the certified frontend npm package lock from `v2026.07.11-npm-readme-forward-release` unchanged.
+- Preserved the current backend and frontend runtime implementation; this release does not revert source changes.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.67 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing business backends should update `<mango.version>` to `1.0.14`; new generated projects receive that version automatically.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.14 --dry-run`
+
 ## 1.0.66 - 2026-07-11
 
 ### Changed
