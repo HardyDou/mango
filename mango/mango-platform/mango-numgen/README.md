@@ -365,3 +365,104 @@ PAY_MANGO_SCENARIO_NO
 - [前端编号生成包](../../../mango-ui/packages/numgen/README.md)
 - [支付模块](../mango-payment/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 压力测试（并发分发）
+
+测试方法：
+
+```bash
+mvn -pl mango-platform/mango-numgen/mango-numgen-core \
+  -Dtest=NumgenServiceIntegrationTest#nextValue_concurrency_pressure_max_throughput \
+  test
+```
+
+测试脚本会：
+
+- 同时起 48 线程，每线程 500 次生成；
+- 先预热 200 次；
+- 统计重复率、冲突率、QPS、p50/p95/p99 延迟；
+- 校验“无重复编码”。
+
+### 14.1 memory 模式（默认内存 KV）
+
+```bash
+mvn -pl mango-platform/mango-numgen/mango-numgen-core \
+  -Dtest=NumgenServiceIntegrationTest#nextValue_concurrency_pressure_max_throughput \
+  -Dnumgen.test.kv.store.type=memory \
+  test
+```
+
+结果（2026-07-11）：
+
+| 指标 | 数值 |
+|---|---:|
+| 发送量 | 24,000 |
+| 成功数（非冲突） | 1,442 |
+| 冲突数 | 22,558 |
+| 冲突率 | 93.99% |
+| 重复编码 | 0 |
+| QPS | 9,198.73 |
+| 平均延迟 (ms) | 4.901 |
+| p50/p95/p99 (ms) | 0.509 / 23.183 / 101.241 |
+
+### 14.2 db 模式（MySQL）
+
+```bash
+# 先准备数据库
+mysql -u root -h 127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS mango_numgen_test;"
+
+mvn -pl mango-platform/mango-numgen/mango-numgen-core \
+  -Dtest=NumgenServiceIntegrationTest#nextValue_concurrency_pressure_max_throughput \
+  -Dnumgen.test.kv.store.type=jdbc \
+  -Dnumgen.test.datasource.url='jdbc:mysql://127.0.0.1:3306/mango_numgen_test?useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false' \
+  -Dnumgen.test.datasource.username=root \
+  -Dnumgen.test.datasource.password= \
+  -Dnumgen.test.datasource.driver-class-name=com.mysql.cj.jdbc.Driver \
+  test
+```
+
+结果（2026-07-11）：
+
+| 指标 | 数值 |
+|---|---:|
+| 发送量 | 24,000 |
+| 成功数（非冲突） | 2,565 |
+| 冲突数 | 21,435 |
+| 冲突率 | 89.31% |
+| 重复编码 | 0 |
+| QPS | 345.10 |
+| 平均延迟 (ms) | 137.756 |
+| p50/p95/p99 (ms) | 133.830 / 257.515 / 372.226 |
+
+### 14.3 redis 模式
+
+```bash
+mvn -pl mango-platform/mango-numgen/mango-numgen-core \
+  -Dtest=NumgenServiceIntegrationTest#nextValue_concurrency_pressure_max_throughput \
+  -Dnumgen.test.kv.store.type=redis \
+  -Dmango.redis.host=127.0.0.1 \
+  -Dmango.redis.port=6379 \
+  -Dmango.redis.timeout=10000 \
+  -Dmango.redis.pool.maxActive=64 \
+  -Dmango.redis.pool.maxIdle=64 \
+  -Dmango.redis.pool.minIdle=8 \
+  -Dmango.redis.pool.maxWait=30000 \
+  -Dmango.redis.database=0 \
+  test
+```
+
+结果（2026-07-11）：
+
+| 指标 | 数值 |
+|---|---:|
+| 发送量 | 24,000 |
+| 成功数（非冲突） | 2,093 |
+| 冲突数 | 21,907 |
+| 冲突率 | 91.28% |
+| 重复编码 | 0 |
+| QPS | 9,302.28 |
+| 平均延迟 (ms) | 4.926 |
+| p50/p95/p99 (ms) | 0.972 / 24.498 / 69.087 |
+
+> 注：以上“冲突”是业务可重试/重排队的分发竞争结果，不代表重复编码；  
+> 三种模式均校验通过重复编码为 `0`。

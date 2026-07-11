@@ -7,6 +7,7 @@ import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,9 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
 
     private static final Pattern TABLE_NAME_PATTERN = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final Snowflake ID_GENERATOR = IdUtil.getSnowflake();
+    private static final int MAX_LOCK_RETRY = 6;
+    private static final long LOCK_RETRY_BASE_MILLIS = 20L;
+    private static final long LOCK_RETRY_MAX_MILLIS = 120L;
 
     private final JdbcTemplate jdbcTemplate;
     private final String tableName;
@@ -54,15 +58,32 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
             return putNonPositiveTtl(key);
         }
         LocalDateTime currentTime = now();
-        if (findActiveValue(key, currentTime).isPresent()) {
-            return false;
+        for (int attempt = 0; ; attempt++) {
+            if (findActiveValue(key, currentTime).isPresent()) {
+                return false;
+            }
+            try {
+                replaceValue(key, value, currentTime.plusSeconds(expireSeconds));
+                return true;
+            } catch (PessimisticLockingFailureException e) {
+                if (attempt >= MAX_LOCK_RETRY) {
+                    log.debug("JdbcKvStore setIfAbsent lock contention exhausted, key={}", key, e);
+                    return false;
+                }
+                sleepForRetry(attempt);
+                continue;
+            } catch (DuplicateKeyException e) {
+                log.debug("JdbcKvStore setIfAbsent conflict, key={}", key, e);
+                return false;
+            }
         }
+    }
+
+    private void sleepForRetry(int attempt) {
         try {
-            replaceValue(key, value, currentTime.plusSeconds(expireSeconds));
-            return true;
-        } catch (DuplicateKeyException e) {
-            log.debug("JdbcKvStore setIfAbsent conflict, key={}", key, e);
-            return false;
+            Thread.sleep(Math.min(LOCK_RETRY_BASE_MILLIS * (1L << attempt), LOCK_RETRY_MAX_MILLIS));
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
         }
     }
 

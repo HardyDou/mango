@@ -3,6 +3,9 @@ package io.mango.numgen.core.service.impl;
 import io.mango.common.result.R;
 import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
+import io.mango.infra.kv.starter.KvCapabilityAutoConfiguration;
+import io.mango.infra.kv.starter.KvStoreAutoConfiguration;
+import io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.numgen.api.command.NumgenNextCommand;
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
@@ -34,6 +38,18 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,14 +59,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration.class,
+        KvRedisAutoConfiguration.class,
+        KvStoreAutoConfiguration.class,
+        KvCapabilityAutoConfiguration.class,
         NumgenServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:numgen;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.flyway.enabled=false"
+        "spring.datasource.url=${numgen.test.datasource.url:jdbc:h2:mem:numgen;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}",
+        "spring.datasource.username=${numgen.test.datasource.username:sa}",
+        "spring.datasource.password=${numgen.test.datasource.password:}",
+        "spring.datasource.driver-class-name=${numgen.test.datasource.driver-class-name:org.h2.Driver}",
+        "spring.flyway.enabled=false",
+        "mango.kv.store.type=${numgen.test.kv.store.type:memory}",
+        "mango.kv.capability.enabled=${numgen.test.kv.capability.enabled:true}",
+        "mango.kv.capability.locker=${numgen.test.kv.capability.locker:true}",
+        "mango.kv.provider.jdbc.table-name=${numgen.test.kv.provider.jdbc.table-name:infra_kv_entry}",
+        "mango.numgen.pressure.mode=${numgen.test.kv.store.type:memory}"
 })
 class NumgenServiceIntegrationTest {
 
@@ -71,6 +95,12 @@ class NumgenServiceIntegrationTest {
 
     @Autowired
     private NumgenSequenceAllocator sequenceAllocator;
+
+    @Value("${mango.numgen.pressure.mode:memory}")
+    private String pressureMode;
+
+    @Value("${mango.kv.store.type:memory}")
+    private String kvStoreType;
 
     @BeforeEach
     void setUp() {
@@ -252,6 +282,116 @@ class NumgenServiceIntegrationTest {
                 .isEqualTo(1L);
     }
 
+    @Test
+    void nextValue_concurrency_pressure_max_throughput() throws Exception {
+        seedPublishedAndDraftRules();
+        NumgenNextCommand next = new NumgenNextCommand();
+        next.setGenKey("ORDER_NO");
+
+        int threadCount = 48;
+        int callsPerThread = 500;
+        int warmupCalls = 200;
+        int totalCalls = threadCount * callsPerThread;
+
+        for (int i = 0; i < warmupCalls; i++) {
+            numgenService.nextValue(next);
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(threadCount);
+        AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger conflictCount = new AtomicInteger();
+        List<String> generatedCodes = Collections.synchronizedList(new ArrayList<>());
+        List<Long> latenciesNs = Collections.synchronizedList(new ArrayList<>());
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.execute(() -> {
+                try {
+                    start.await();
+                    for (int j = 0; j < callsPerThread; j++) {
+                        long begin = System.nanoTime();
+                        try {
+                            String generated = numgenService.nextValue(next);
+                            successCount.incrementAndGet();
+                            generatedCodes.add(generated);
+                        } catch (Throwable t) {
+                            if (isRetryableConflict(t)) {
+                                conflictCount.incrementAndGet();
+                            } else {
+                                throw t;
+                            }
+                        }
+                        long latency = System.nanoTime() - begin;
+                        latenciesNs.add(latency);
+                    }
+                } catch (Throwable t) {
+                    error.compareAndSet(null, t);
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        long startAt = System.nanoTime();
+        start.countDown();
+        assertThat(done.await(180, TimeUnit.SECONDS)).isTrue();
+        long elapsedNs = System.nanoTime() - startAt;
+        executor.shutdownNow();
+
+        assertThat(error.get()).isNull();
+        assertThat(successCount.get() + conflictCount.get()).isEqualTo(totalCalls);
+        Map<String, Long> codeFrequency = generatedCodes.stream()
+                .collect(Collectors.groupingBy(code -> code, HashMap::new, Collectors.counting()));
+        long duplicateOccurrenceCount = codeFrequency.values().stream().mapToLong(count -> count - 1).sum();
+        assertThat(duplicateOccurrenceCount).isZero();
+        if (duplicateOccurrenceCount > 0) {
+            String duplicates = codeFrequency.entrySet().stream()
+                    .filter(entry -> entry.getValue() > 1)
+                    .sorted(Map.Entry.<String, Long>comparingByKey())
+                    .map(entry -> entry.getKey() + "=>" + entry.getValue())
+                    .collect(Collectors.joining(", "));
+            System.out.println("Duplicate code occurrences: " + duplicates);
+        }
+        assertThat(generatedCodes).hasSize(successCount.get());
+        assertThat(longValue("numgen_sequence", "current_value",
+                "gen_key = 'ORDER_NO' AND scope_key = 'GLOBAL'")).isEqualTo((long) warmupCalls + successCount.get());
+
+        double conflictRate = totalCalls == 0 ? 0 : conflictCount.get() * 100.0d / totalCalls;
+        System.out.printf("Numgen pressure mode=%s%n", pressureMode);
+        System.out.printf("Numgen concurrency conflictCount=%s, conflictRate=%.2f%%%n",
+                conflictCount.get(), conflictRate);
+        System.out.printf("Numgen concurrency duplicates=%s%n", duplicateOccurrenceCount);
+
+        Collections.sort(latenciesNs);
+        double throughput = totalCalls * 1_000_000_000d / elapsedNs;
+        double averageMs = latenciesNs.stream().mapToLong(v -> v).average().orElse(0d) / 1_000_000d;
+        long p50ms = latenciesNs.get((int) Math.min(latenciesNs.size() - 1L, Math.max(0L, Math.round(latenciesNs.size() * 0.50) - 1L)));
+        long p95ms = latenciesNs.get((int) Math.min(latenciesNs.size() - 1L, Math.max(0L, Math.round(latenciesNs.size() * 0.95) - 1L)));
+        long p99ms = latenciesNs.get((int) Math.min(latenciesNs.size() - 1L, Math.max(0L, Math.round(latenciesNs.size() * 0.99) - 1L)));
+
+        System.out.printf("Numgen concurrency throughput=%s QPS, totalCalls=%s, threads=%s, elapsedMs=%s%n",
+                throughput, totalCalls, threadCount, elapsedNs / 1_000_000d);
+        System.out.printf("Numgen latency stats (ms): avg=%.3f, p50=%s, p95=%s, p99=%s%n",
+                averageMs, p50ms / 1_000_000d, p95ms / 1_000_000d, p99ms / 1_000_000d);
+    }
+
+    private boolean isRetryableConflict(Throwable throwable) {
+        if (throwable == null) {
+            return false;
+        }
+
+        String message = throwable.getMessage() == null ? "" : throwable.getMessage();
+        if (message.contains("编号序列")
+                || message.contains("Deadlock found when trying to get lock")
+                || message.contains("try restarting transaction")
+                || message.contains("Lock wait timeout exceeded")) {
+            return true;
+        }
+        return throwable.getCause() != null && isRetryableConflict(throwable.getCause());
+    }
+
     private NumgenGeneratorVO firstGenerator() {
         return generatorService.pageGenerators(new NumgenGeneratorPageQuery()).getData().getList().get(0);
     }
@@ -310,6 +450,21 @@ class NumgenServiceIntegrationTest {
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_rule_segment");
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_rule");
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_generator");
+        if ("jdbc".equalsIgnoreCase(kvStoreType)) {
+            jdbcTemplate.execute("DROP TABLE IF EXISTS infra_kv_entry");
+            jdbcTemplate.execute("""
+                    CREATE TABLE IF NOT EXISTS infra_kv_entry (
+                        id BIGINT NOT NULL,
+                        kv_key VARCHAR(200) NOT NULL,
+                        kv_value TEXT,
+                        expire_time DATETIME NOT NULL,
+                        create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (id),
+                        UNIQUE KEY uk_kv_key (kv_key),
+                        KEY idx_kv_record_expire_time (expire_time)
+                    )
+                    """);
+        }
         jdbcTemplate.execute("""
                 CREATE TABLE numgen_generator (
                     id BIGINT NOT NULL,
