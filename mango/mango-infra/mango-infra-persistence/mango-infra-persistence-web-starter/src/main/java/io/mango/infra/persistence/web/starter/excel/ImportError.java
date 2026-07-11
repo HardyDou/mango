@@ -25,7 +25,11 @@ public final class ImportError {
         this.line = line;
         this.field = field;
         this.message = Objects.requireNonNull(message, "message");
-        this.code = code == null || code.isBlank() ? "IMPORT_ERROR" : code;
+        if (code == null || code.isBlank()) {
+            this.code = "IMPORT_ERROR";
+        } else {
+            this.code = code;
+        }
         this.title = title;
         this.rawValue = rawValue;
     }

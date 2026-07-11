@@ -12,8 +12,16 @@ import java.util.List;
 public record ExcelReadResult<ROW>(List<ROW> rows, List<ImportError> errors) {
 
     public ExcelReadResult {
-        rows = rows == null ? List.of() : List.copyOf(rows);
-        errors = errors == null ? List.of() : List.copyOf(errors);
+        if (rows == null) {
+            rows = List.of();
+        } else {
+            rows = List.copyOf(rows);
+        }
+        if (errors == null) {
+            errors = List.of();
+        } else {
+            errors = List.copyOf(errors);
+        }
     }
 
     public static <ROW> ExcelReadResult<ROW> success(List<ROW> rows) {

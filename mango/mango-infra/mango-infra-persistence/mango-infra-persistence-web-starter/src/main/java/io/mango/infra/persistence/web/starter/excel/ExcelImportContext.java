@@ -16,9 +16,7 @@ public record ExcelImportContext(String fileName, int headRowNumber, boolean ign
         if (annotation == null) {
             return defaults();
         }
-        String fileName = annotation.fileName() == null || annotation.fileName().isBlank()
-                ? "file"
-                : annotation.fileName().trim();
+        String fileName = normalizeFileName(annotation.fileName());
         return new ExcelImportContext(fileName, Math.max(annotation.headRowNumber(), 1), annotation.ignoreEmptyRow(),
                 annotation.mode(), normalize(annotation.sheetName()), Math.max(annotation.sheetIndex(), 0),
                 annotation.unknownColumnPolicy(), normalize(annotation.templateLocation()), annotation.failureRowPolicy());
@@ -28,16 +26,18 @@ public record ExcelImportContext(String fileName, int headRowNumber, boolean ign
         if (annotation == null) {
             return defaults();
         }
-        String fileName = annotation.fileName() == null || annotation.fileName().isBlank()
-                ? "file"
-                : annotation.fileName().trim();
+        String fileName = normalizeFileName(annotation.fileName());
         return new ExcelImportContext(fileName, Math.max(annotation.headRowNumber(), 1), annotation.ignoreEmptyRow(),
                 annotation.mode(), normalize(annotation.sheetName()), Math.max(annotation.sheetIndex(), 0),
                 annotation.unknownColumnPolicy(), normalize(annotation.templateLocation()), annotation.failureRowPolicy());
     }
 
     public ExcelImportContext withMode(ExcelImportMode mode) {
-        return new ExcelImportContext(fileName, headRowNumber, ignoreEmptyRow, mode == null ? this.mode : mode,
+        ExcelImportMode selectedMode = mode;
+        if (selectedMode == null) {
+            selectedMode = this.mode;
+        }
+        return new ExcelImportContext(fileName, headRowNumber, ignoreEmptyRow, selectedMode,
                 sheetName, sheetIndex, unknownColumnPolicy, templateLocation, failureRowPolicy);
     }
 
@@ -46,6 +46,16 @@ public record ExcelImportContext(String fileName, int headRowNumber, boolean ign
     }
 
     private static String normalize(String value) {
-        return value == null ? "" : value.trim();
+        if (value == null) {
+            return "";
+        }
+        return value.trim();
+    }
+
+    private static String normalizeFileName(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return "file";
+        }
+        return fileName.trim();
     }
 }

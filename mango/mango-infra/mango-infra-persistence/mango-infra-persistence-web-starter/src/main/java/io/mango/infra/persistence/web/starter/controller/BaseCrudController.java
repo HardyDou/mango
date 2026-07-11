@@ -56,6 +56,8 @@ import java.util.Set;
  */
 public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
 
+    private static final int XLSX_EXTENSION_LENGTH = 5;
+
     protected final S service;
 
     @Autowired(required = false)
@@ -146,8 +148,8 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
         if (excelAdapter == null) {
             throw new IllegalStateException("Excel 导入能力未启用");
         }
-        ExcelImportContext context = excelImportContext("importData", MultipartHttpServletRequest.class)
-                .withMode(requestMode(request));
+        ExcelImportContext context = excelImportContext("importData", MultipartHttpServletRequest.class).
+                withMode(requestMode(request));
         MultipartFile file = request.getFile(context.fileName());
         if (file == null) {
             throw new IllegalStateException("未找到上传文件: " + context.fileName());
@@ -217,15 +219,19 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
 
     private ExcelExportContext excelExportContext(String fallbackFileName) {
         Method method = findControllerMethod("export", Map.class, HttpServletResponse.class);
-        ExcelExport annotation = method == null ? null : AnnotatedElementUtils.findMergedAnnotation(method,
-                ExcelExport.class);
+        ExcelExport annotation = null;
+        if (method != null) {
+            annotation = AnnotatedElementUtils.findMergedAnnotation(method, ExcelExport.class);
+        }
         return ExcelExportContext.of(annotation, fallbackFileName);
     }
 
     private ExcelImportContext excelImportContext(String name, Class<?>... parameterTypes) {
         Method method = findControllerMethod(name, parameterTypes);
-        ExcelImport annotation = method == null ? null : AnnotatedElementUtils.findMergedAnnotation(method,
-                ExcelImport.class);
+        ExcelImport annotation = null;
+        if (method != null) {
+            annotation = AnnotatedElementUtils.findMergedAnnotation(method, ExcelImport.class);
+        }
         return ExcelImportContext.of(annotation);
     }
 
@@ -256,7 +262,11 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
     private ImportResult validateImportRows(List<?> rows, ExcelImportContext context,
                                             ImportableService importableService) {
         if (rows == null || rows.isEmpty()) {
-            return ImportResult.success(rows == null ? 0 : rows.size());
+            int total = 0;
+            if (rows != null) {
+                total = rows.size();
+            }
+            return ImportResult.success(total);
         }
         List<ImportError> errors = new ArrayList<>();
         if (validator != null) {
@@ -308,7 +318,10 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
             } else {
                 result = new TransactionTemplate(transactionManager).execute(status -> service.importRows(rows, context));
             }
-            return result == null ? ImportResult.success(rows.size()) : result;
+            if (result == null) {
+                return ImportResult.success(rows.size());
+            }
+            return result;
         } catch (RuntimeException ex) {
             ImportError error = new ImportError(0, null, meaningfulMessage(ex), "IMPORT_BATCH_FAILED", null, null);
             ImportResult result = ImportResult.failed(rows.size(), List.of());
@@ -335,15 +348,12 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
         result.setErrors(new ArrayList<>(safeErrors(result.getErrors())));
         result.setBatchErrors(new ArrayList<>(safeErrors(result.getBatchErrors())));
         result.setTotal(total);
-        Set<Integer> failedLines = result.getErrors().stream()
-                .map(ImportError::line)
-                .filter(line -> line > 0)
-                .collect(java.util.stream.Collectors.toSet());
+        Set<Integer> failedLines = result.getErrors().stream().
+                map(ImportError::line).
+                filter(line -> line > 0).
+                collect(java.util.stream.Collectors.toSet());
         result.setFailed(failedLines.size());
-        if (result.getSuccess() == 0 && (!result.getBatchErrors().isEmpty()
-                || ExcelImportMode.ALL_SUCCESS.equals(context.mode()) && !result.getErrors().isEmpty())) {
-            result.setFailed(total);
-        }
+        markAllRowsFailedWhenRequired(context, total, result);
         if (!result.getErrors().isEmpty()) {
             storeFailureWorkbook(file, context, result);
         }
@@ -355,6 +365,17 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
             result.setStatus(ImportStatus.SUCCESS);
         }
         return result;
+    }
+
+    private void markAllRowsFailedWhenRequired(ExcelImportContext context, int total, ImportResult result) {
+        if (result.getSuccess() != 0) {
+            return;
+        }
+        boolean allSuccessRejectedRows = ExcelImportMode.ALL_SUCCESS.equals(context.mode())
+                && !result.getErrors().isEmpty();
+        if (!result.getBatchErrors().isEmpty() || allSuccessRejectedRows) {
+            result.setFailed(total);
+        }
     }
 
     private void storeFailureWorkbook(MultipartFile file, ExcelImportContext context, ImportResult result) {
@@ -374,13 +395,19 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
     }
 
     private List<ImportError> safeErrors(List<ImportError> errors) {
-        return errors == null ? List.of() : errors;
+        if (errors == null) {
+            return List.of();
+        }
+        return errors;
     }
 
     private String failureFileName(String originalFileName) {
-        String name = originalFileName == null || originalFileName.isBlank() ? "import" : originalFileName.trim();
+        String name = "import";
+        if (originalFileName != null && !originalFileName.isBlank()) {
+            name = originalFileName.trim();
+        }
         if (name.toLowerCase(java.util.Locale.ROOT).endsWith(".xlsx")) {
-            name = name.substring(0, name.length() - 5);
+            name = name.substring(0, name.length() - XLSX_EXTENSION_LENGTH);
         }
         return name + "-failed.xlsx";
     }
@@ -390,8 +417,9 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
         while (current.getCause() != null && current.getCause() != current) {
             current = current.getCause();
         }
-        return current.getMessage() == null || current.getMessage().isBlank()
-                ? current.getClass().getSimpleName()
-                : current.getMessage();
+        if (current.getMessage() == null || current.getMessage().isBlank()) {
+            return current.getClass().getSimpleName();
+        }
+        return current.getMessage();
     }
 }

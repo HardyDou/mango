@@ -16,17 +16,17 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @MapperScan({
-        "io.mango.system.core.mapper",
-        "io.mango.area.core.mapper",
-        "io.mango.i18n.core.mapper"
+    "io.mango.system.core.mapper",
+    "io.mango.area.core.mapper",
+    "io.mango.i18n.core.mapper"
 })
 @ComponentScan({
-        "io.mango.system.core",
-        "io.mango.system.starter.controller",
-        "io.mango.system.starter.resource",
-        "io.mango.area.core",
-        "io.mango.i18n.core",
-        "io.mango.i18n.starter.controller"
+    "io.mango.system.core",
+    "io.mango.system.starter.controller",
+    "io.mango.system.starter.resource",
+    "io.mango.area.core",
+    "io.mango.i18n.core",
+    "io.mango.i18n.starter.controller"
 })
 public class SystemAutoConfiguration {
 
@@ -51,14 +51,21 @@ public class SystemAutoConfiguration {
             if (result == null || !result.isSuccess() || result.getData() == null) {
                 throw new IllegalStateException("无法读取 Excel 字典: " + dictType);
             }
-            String normalizedLabel = label == null ? "" : label.trim();
-            var matches = result.getData().stream()
-                    .filter(option -> option.getLabel() != null && option.getLabel().trim().equals(normalizedLabel))
-                    .toList();
+            String normalizedLabel = "";
+            if (label != null) {
+                normalizedLabel = label.trim();
+            }
+            String expectedLabel = normalizedLabel;
+            var matches = result.getData().stream().
+                    filter(option -> option.getLabel() != null && option.getLabel().trim().equals(expectedLabel)).
+                    toList();
             if (matches.size() > 1) {
                 throw new IllegalArgumentException("Excel 字典存在重复 label: " + dictType + "/" + normalizedLabel);
             }
-            return matches.isEmpty() ? null : matches.getFirst().getValue();
+            if (matches.isEmpty()) {
+                return null;
+            }
+            return matches.getFirst().getValue();
         };
     }
 }

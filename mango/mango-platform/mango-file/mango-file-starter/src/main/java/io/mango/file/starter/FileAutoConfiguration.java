@@ -35,10 +35,10 @@ import java.util.List;
 @EnableConfigurationProperties(FileProperties.class)
 @MapperScan("io.mango.file.core.mapper")
 @ComponentScan({
-        "io.mango.file.core.resource",
-        "io.mango.file.core.service",
-        "io.mango.file.starter"
-    })
+    "io.mango.file.core.resource",
+    "io.mango.file.core.service",
+    "io.mango.file.starter"
+})
 public class FileAutoConfiguration {
 
     @Bean
@@ -94,7 +94,10 @@ public class FileAutoConfiguration {
             command.setBizType("EXCEL_IMPORT");
             var result = fileService.save(command);
             if (result == null || !result.isSuccess() || result.getData() == null) {
-                String message = result == null ? "文件服务无响应" : result.getMsg();
+                String message = "文件服务无响应";
+                if (result != null) {
+                    message = result.getMsg();
+                }
                 throw new IllegalStateException("保存 Excel 失败工作簿失败: " + message);
             }
             return result.getData().getId();

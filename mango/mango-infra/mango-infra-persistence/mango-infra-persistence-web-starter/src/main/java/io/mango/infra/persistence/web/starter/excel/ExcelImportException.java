@@ -11,7 +11,11 @@ public class ExcelImportException extends RuntimeException {
 
     public ExcelImportException(String message, List<ImportError> errors) {
         super(message);
-        this.errors = errors == null ? List.of() : List.copyOf(errors);
+        if (errors == null) {
+            this.errors = List.of();
+        } else {
+            this.errors = List.copyOf(errors);
+        }
     }
 
     public ExcelImportException(String message, Throwable cause) {

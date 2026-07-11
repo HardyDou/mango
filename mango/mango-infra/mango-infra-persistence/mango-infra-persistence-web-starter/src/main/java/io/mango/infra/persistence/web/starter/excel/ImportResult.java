@@ -42,8 +42,16 @@ public class ImportResult {
         result.setTotal(total);
         result.setSuccess(Math.max(success, 0));
         result.setFailed(countFailedRows(errors));
-        result.setErrors(errors == null ? new ArrayList<>() : new ArrayList<>(errors));
-        result.setStatus(result.getSuccess() > 0 ? ImportStatus.PARTIAL_SUCCESS : ImportStatus.FAILED);
+        List<ImportError> safeErrors = new ArrayList<>();
+        if (errors != null) {
+            safeErrors.addAll(errors);
+        }
+        result.setErrors(safeErrors);
+        if (result.getSuccess() > 0) {
+            result.setStatus(ImportStatus.PARTIAL_SUCCESS);
+        } else {
+            result.setStatus(ImportStatus.FAILED);
+        }
         return result;
     }
 
@@ -51,10 +59,10 @@ public class ImportResult {
         if (errors == null || errors.isEmpty()) {
             return 0;
         }
-        return (int) errors.stream()
-                .map(ImportError::line)
-                .filter(line -> line > 0)
-                .distinct()
-                .count();
+        return (int) errors.stream().
+                map(ImportError::line).
+                filter(line -> line > 0).
+                distinct().
+                count();
     }
 }

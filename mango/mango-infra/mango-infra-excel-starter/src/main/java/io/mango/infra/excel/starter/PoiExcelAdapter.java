@@ -36,7 +36,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URLEncoder;
@@ -69,14 +68,14 @@ public class PoiExcelAdapter implements ExcelAdapter {
     private static final String XLSX_CONTENT_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     private static final DateTimeFormatter[] DATE_FORMATTERS = {
-            DateTimeFormatter.ISO_LOCAL_DATE,
-            DateTimeFormatter.ofPattern("yyyy/M/d"),
-            DateTimeFormatter.ofPattern("yyyy-M-d")
+        DateTimeFormatter.ISO_LOCAL_DATE,
+        DateTimeFormatter.ofPattern("yyyy/M/d"),
+        DateTimeFormatter.ofPattern("yyyy-M-d")
     };
     private static final DateTimeFormatter[] DATE_TIME_FORMATTERS = {
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-            DateTimeFormatter.ofPattern("yyyy-M-d H:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy/M/d H:mm:ss")
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+        DateTimeFormatter.ofPattern("yyyy-M-d H:mm:ss"),
+        DateTimeFormatter.ofPattern("yyyy/M/d H:mm:ss")
     };
 
     private final ApplicationContext applicationContext;
@@ -127,17 +126,20 @@ public class PoiExcelAdapter implements ExcelAdapter {
             Row header = sheet.createRow(0);
             for (int i = 0; i < bindings.size(); i++) {
                 ColumnBinding binding = bindings.get(i);
-                int column = binding.configuredIndex() >= 0 ? binding.configuredIndex() : i;
+                int column = columnFor(binding, i);
                 header.createCell(column).setCellValue(binding.displayTitle());
             }
-            List<ROW> safeRows = rows == null ? List.of() : rows;
+            List<ROW> safeRows = rows;
+            if (safeRows == null) {
+                safeRows = List.of();
+            }
             for (int rowIndex = 0; rowIndex < safeRows.size(); rowIndex++) {
                 Row row = sheet.createRow(rowIndex + 1);
                 for (int i = 0; i < bindings.size(); i++) {
                     ColumnBinding binding = bindings.get(i);
-                    int column = binding.configuredIndex() >= 0 ? binding.configuredIndex() : i;
+                    int column = columnFor(binding, i);
                     Object value = readField(binding.field(), safeRows.get(rowIndex));
-                    row.createCell(column).setCellValue(value == null ? "" : String.valueOf(value));
+                    row.createCell(column).setCellValue(textValue(value));
                 }
             }
             writeResponse(response, resolveExportFileName(context), workbook);
@@ -154,12 +156,12 @@ public class PoiExcelAdapter implements ExcelAdapter {
             return;
         }
         try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet(StringUtils.hasText(context.sheetName()) ? context.sheetName() : "sheet1");
+            Sheet sheet = workbook.createSheet(importSheetName(context));
             Row header = sheet.createRow(0);
             List<ColumnBinding> bindings = bindings(rowType);
             for (int i = 0; i < bindings.size(); i++) {
                 ColumnBinding binding = bindings.get(i);
-                int column = binding.configuredIndex() >= 0 ? binding.configuredIndex() : i;
+                int column = columnFor(binding, i);
                 header.createCell(column).setCellValue(binding.displayTitle());
             }
             for (int rowIndex = 1; rowIndex < context.headRowNumber(); rowIndex++) {
@@ -237,45 +239,12 @@ public class PoiExcelAdapter implements ExcelAdapter {
 
     private void resolveColumns(Sheet sheet, ExcelImportContext context, List<ColumnBinding> bindings,
                                 FormulaEvaluator evaluator, DataFormatter formatter, List<ImportError> errors) {
-        Row titleRow = sheet.getRow(0);
         Map<String, Integer> titleIndexes = new LinkedHashMap<>();
-        Set<String> duplicateTitles = new LinkedHashSet<>();
-        if (titleRow != null) {
-            for (int column = titleRow.getFirstCellNum() < 0 ? 0 : titleRow.getFirstCellNum();
-                 column < titleRow.getLastCellNum(); column++) {
-                Cell cell = effectiveCell(sheet, titleRow, column);
-                String title = normalizeTitle(formatter.formatCellValue(cell, evaluator));
-                if (title.isEmpty()) {
-                    continue;
-                }
-                if (titleIndexes.putIfAbsent(title, column) != null) {
-                    duplicateTitles.add(title);
-                }
-            }
-        }
-        for (String duplicate : duplicateTitles) {
-            errors.add(batchError("DUPLICATE_TITLE", "存在重复标题: " + duplicate));
-        }
+        readTitleIndexes(sheet, evaluator, formatter, titleIndexes, errors);
         Set<String> declaredTitles = new HashSet<>();
         Set<Integer> declaredIndexes = new HashSet<>();
         for (ColumnBinding binding : bindings) {
-            if (binding.configuredIndex() >= 0) {
-                binding.columnIndex(binding.configuredIndex());
-                declaredIndexes.add(binding.configuredIndex());
-                continue;
-            }
-            List<String> candidates = new ArrayList<>();
-            candidates.add(normalizeTitle(binding.annotation().title()));
-            Arrays.stream(binding.annotation().aliases()).map(this::normalizeTitle).forEach(candidates::add);
-            declaredTitles.addAll(candidates);
-            Integer resolved = candidates.stream().map(titleIndexes::get).filter(Objects::nonNull).findFirst().orElse(null);
-            if (resolved == null) {
-                if (binding.annotation().required()) {
-                    errors.add(batchError("REQUIRED_TITLE_MISSING", "缺少必填标题: " + binding.displayTitle()));
-                }
-            } else {
-                binding.columnIndex(resolved);
-            }
+            resolveBinding(binding, titleIndexes, declaredTitles, declaredIndexes, errors);
         }
         if (UnknownColumnPolicy.ERROR.equals(context.unknownColumnPolicy())) {
             titleIndexes.forEach((title, index) -> {
@@ -283,6 +252,49 @@ public class PoiExcelAdapter implements ExcelAdapter {
                     errors.add(batchError("UNKNOWN_TITLE", "存在未声明标题: " + title));
                 }
             });
+        }
+    }
+
+    private void readTitleIndexes(Sheet sheet, FormulaEvaluator evaluator, DataFormatter formatter,
+                                  Map<String, Integer> titleIndexes, List<ImportError> errors) {
+        Row titleRow = sheet.getRow(0);
+        if (titleRow == null) {
+            return;
+        }
+        Set<String> duplicateTitles = new LinkedHashSet<>();
+        int firstColumn = titleRow.getFirstCellNum();
+        if (firstColumn < 0) {
+            firstColumn = 0;
+        }
+        for (int column = firstColumn; column < titleRow.getLastCellNum(); column++) {
+            Cell cell = effectiveCell(sheet, titleRow, column);
+            String title = normalizeTitle(formatter.formatCellValue(cell, evaluator));
+            if (!title.isEmpty() && titleIndexes.putIfAbsent(title, column) != null) {
+                duplicateTitles.add(title);
+            }
+        }
+        for (String duplicate : duplicateTitles) {
+            errors.add(batchError("DUPLICATE_TITLE", "存在重复标题: " + duplicate));
+        }
+    }
+
+    private void resolveBinding(ColumnBinding binding, Map<String, Integer> titleIndexes,
+                                Set<String> declaredTitles, Set<Integer> declaredIndexes,
+                                List<ImportError> errors) {
+        if (binding.configuredIndex() >= 0) {
+            binding.columnIndex(binding.configuredIndex());
+            declaredIndexes.add(binding.configuredIndex());
+            return;
+        }
+        List<String> candidates = new ArrayList<>();
+        candidates.add(normalizeTitle(binding.annotation().title()));
+        Arrays.stream(binding.annotation().aliases()).map(this::normalizeTitle).forEach(candidates::add);
+        declaredTitles.addAll(candidates);
+        Integer resolved = candidates.stream().map(titleIndexes::get).filter(Objects::nonNull).findFirst().orElse(null);
+        if (resolved != null) {
+            binding.columnIndex(resolved);
+        } else if (binding.annotation().required()) {
+            errors.add(batchError("REQUIRED_TITLE_MISSING", "缺少必填标题: " + binding.displayTitle()));
         }
     }
 
@@ -327,7 +339,10 @@ public class PoiExcelAdapter implements ExcelAdapter {
             return value.rawText();
         }
         if (value.rawText() == null || value.rawText().isBlank()) {
-            return targetType.isPrimitive() ? primitiveDefault(targetType) : null;
+            if (targetType.isPrimitive()) {
+                return primitiveDefault(targetType);
+            }
+            return null;
         }
         if (LocalDate.class.equals(targetType) || LocalDateTime.class.equals(targetType) || Date.class.equals(targetType)
                 || Instant.class.equals(targetType)) {
@@ -338,42 +353,20 @@ public class PoiExcelAdapter implements ExcelAdapter {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Object convertText(String text, Class<?> targetType) {
-        String normalized = text == null ? "" : text.trim();
         if (String.class.equals(targetType)) {
             return text;
         }
-        if (Integer.class.equals(targetType) || int.class.equals(targetType)) {
-            return new BigDecimal(normalized.replace(",", "")).intValueExact();
+        String normalized = "";
+        if (text != null) {
+            normalized = text.trim();
         }
-        if (Long.class.equals(targetType) || long.class.equals(targetType)) {
-            return new BigDecimal(normalized.replace(",", "")).longValueExact();
+        Class<?> boxedType = boxedType(targetType);
+        Object numeric = convertNumeric(normalized, boxedType);
+        if (numeric != null) {
+            return numeric;
         }
-        if (Double.class.equals(targetType) || double.class.equals(targetType)) {
-            return Double.valueOf(normalized.replace(",", ""));
-        }
-        if (Float.class.equals(targetType) || float.class.equals(targetType)) {
-            return Float.valueOf(normalized.replace(",", ""));
-        }
-        if (Short.class.equals(targetType) || short.class.equals(targetType)) {
-            return new BigDecimal(normalized.replace(",", "")).shortValueExact();
-        }
-        if (Byte.class.equals(targetType) || byte.class.equals(targetType)) {
-            return new BigDecimal(normalized.replace(",", "")).byteValueExact();
-        }
-        if (BigDecimal.class.equals(targetType)) {
-            return new BigDecimal(normalized.replace(",", ""));
-        }
-        if (BigInteger.class.equals(targetType)) {
-            return new BigDecimal(normalized.replace(",", "")).toBigIntegerExact();
-        }
-        if (Boolean.class.equals(targetType) || boolean.class.equals(targetType)) {
-            if (Set.of("true", "1", "yes", "是").contains(normalized.toLowerCase(Locale.ROOT))) {
-                return true;
-            }
-            if (Set.of("false", "0", "no", "否").contains(normalized.toLowerCase(Locale.ROOT))) {
-                return false;
-            }
-            throw new IllegalArgumentException("无法转换为布尔值: " + text);
+        if (Boolean.class.equals(boxedType)) {
+            return convertBoolean(text, normalized);
         }
         if (targetType.isEnum()) {
             return Enum.valueOf((Class<? extends Enum>) targetType, normalized);
@@ -381,8 +374,63 @@ public class PoiExcelAdapter implements ExcelAdapter {
         throw new IllegalArgumentException("不支持的 Excel 字段类型: " + targetType.getName());
     }
 
+    private Object convertNumeric(String normalized, Class<?> boxedType) {
+        String number = normalized.replace(",", "");
+        Object integral = convertIntegral(number, boxedType);
+        if (integral != null) {
+            return integral;
+        }
+        return convertDecimal(number, boxedType);
+    }
+
+    private Object convertIntegral(String number, Class<?> boxedType) {
+        if (Integer.class.equals(boxedType)) {
+            return new BigDecimal(number).intValueExact();
+        }
+        if (Long.class.equals(boxedType)) {
+            return new BigDecimal(number).longValueExact();
+        }
+        if (Short.class.equals(boxedType)) {
+            return new BigDecimal(number).shortValueExact();
+        }
+        if (Byte.class.equals(boxedType)) {
+            return new BigDecimal(number).byteValueExact();
+        }
+        return null;
+    }
+
+    private Object convertDecimal(String number, Class<?> boxedType) {
+        if (Double.class.equals(boxedType)) {
+            return Double.valueOf(number);
+        }
+        if (Float.class.equals(boxedType)) {
+            return Float.valueOf(number);
+        }
+        if (BigDecimal.class.equals(boxedType)) {
+            return new BigDecimal(number);
+        }
+        if (BigInteger.class.equals(boxedType)) {
+            return new BigDecimal(number).toBigIntegerExact();
+        }
+        return null;
+    }
+
+    private Boolean convertBoolean(String text, String normalized) {
+        String value = normalized.toLowerCase(Locale.ROOT);
+        if (Set.of("true", "1", "yes", "是").contains(value)) {
+            return true;
+        }
+        if (Set.of("false", "0", "no", "否").contains(value)) {
+            return false;
+        }
+        throw new IllegalArgumentException("无法转换为布尔值: " + text);
+    }
+
     private Object convertDate(ExcelCellValue value, Class<?> targetType) {
-        Date date = value.value() instanceof Date actual ? actual : null;
+        Date date = null;
+        if (value.value() instanceof Date actual) {
+            date = actual;
+        }
         if (date != null) {
             Instant instant = date.toInstant();
             if (Date.class.equals(targetType)) {
@@ -392,7 +440,10 @@ public class PoiExcelAdapter implements ExcelAdapter {
                 return instant;
             }
             LocalDateTime local = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-            return LocalDate.class.equals(targetType) ? local.toLocalDate() : local;
+            if (LocalDate.class.equals(targetType)) {
+                return local.toLocalDate();
+            }
+            return local;
         }
         if (LocalDate.class.equals(targetType)) {
             return parseDate(value.rawText());
@@ -402,7 +453,10 @@ public class PoiExcelAdapter implements ExcelAdapter {
             return local;
         }
         Instant instant = local.atZone(ZoneId.systemDefault()).toInstant();
-        return Instant.class.equals(targetType) ? instant : Date.from(instant);
+        if (Instant.class.equals(targetType)) {
+            return instant;
+        }
+        return Date.from(instant);
     }
 
     private LocalDate parseDate(String value) {
@@ -433,7 +487,10 @@ public class PoiExcelAdapter implements ExcelAdapter {
             return new ExcelCellValue("", null, null, CellType.BLANK.name(), line, column);
         }
         String rawText = formatter.formatCellValue(cell, evaluator);
-        String formula = cell.getCellType() == CellType.FORMULA ? cell.getCellFormula() : null;
+        String formula = null;
+        if (cell.getCellType() == CellType.FORMULA) {
+            formula = cell.getCellFormula();
+        }
         Object value = underlyingValue(cell, evaluator);
         return new ExcelCellValue(rawText, formula, value, cell.getCellType().name(), line, column);
     }
@@ -441,29 +498,38 @@ public class PoiExcelAdapter implements ExcelAdapter {
     private Object underlyingValue(Cell cell, FormulaEvaluator evaluator) {
         CellType type = cell.getCellType();
         if (type == CellType.FORMULA) {
-            CellValue evaluated = evaluator.evaluate(cell);
-            if (evaluated == null) {
-                throw new IllegalArgumentException("公式没有可用计算结果: " + cell.getCellFormula());
-            }
-            return switch (evaluated.getCellType()) {
-                case BOOLEAN -> evaluated.getBooleanValue();
-                case NUMERIC -> DateUtil.isCellDateFormatted(cell) ? cell.getDateCellValue()
-                        : BigDecimal.valueOf(evaluated.getNumberValue());
-                case STRING -> evaluated.getStringValue();
-                case BLANK -> null;
-                case ERROR -> throw new IllegalArgumentException("公式计算错误: " + evaluated.getErrorValue());
-                default -> null;
-            };
+            return formulaValue(cell, evaluator);
         }
         return switch (type) {
             case BOOLEAN -> cell.getBooleanCellValue();
-            case NUMERIC -> DateUtil.isCellDateFormatted(cell) ? cell.getDateCellValue()
-                    : BigDecimal.valueOf(cell.getNumericCellValue());
+            case NUMERIC -> numericValue(cell, cell.getNumericCellValue());
             case STRING -> cell.getStringCellValue();
             case BLANK -> null;
             case ERROR -> throw new IllegalArgumentException("单元格错误: " + cell.getErrorCellValue());
             default -> null;
         };
+    }
+
+    private Object formulaValue(Cell cell, FormulaEvaluator evaluator) {
+        CellValue evaluated = evaluator.evaluate(cell);
+        if (evaluated == null) {
+            throw new IllegalArgumentException("公式没有可用计算结果: " + cell.getCellFormula());
+        }
+        return switch (evaluated.getCellType()) {
+            case BOOLEAN -> evaluated.getBooleanValue();
+            case NUMERIC -> numericValue(cell, evaluated.getNumberValue());
+            case STRING -> evaluated.getStringValue();
+            case BLANK -> null;
+            case ERROR -> throw new IllegalArgumentException("公式计算错误: " + evaluated.getErrorValue());
+            default -> null;
+        };
+    }
+
+    private Object numericValue(Cell cell, double number) {
+        if (DateUtil.isCellDateFormatted(cell)) {
+            return cell.getDateCellValue();
+        }
+        return BigDecimal.valueOf(number);
     }
 
     private List<ColumnBinding> bindings(Class<?> rowType) {
@@ -518,7 +584,10 @@ public class PoiExcelAdapter implements ExcelAdapter {
         for (CellRangeAddress region : sheet.getMergedRegions()) {
             if (region.isInRange(row.getRowNum(), column)) {
                 Row firstRow = sheet.getRow(region.getFirstRow());
-                return firstRow == null ? null : firstRow.getCell(region.getFirstColumn());
+                if (firstRow == null) {
+                    return null;
+                }
+                return firstRow.getCell(region.getFirstColumn());
             }
         }
         return row.getCell(column);
@@ -582,6 +651,52 @@ public class PoiExcelAdapter implements ExcelAdapter {
         }
     }
 
+    private int columnFor(ColumnBinding binding, int fallback) {
+        if (binding.configuredIndex() >= 0) {
+            return binding.configuredIndex();
+        }
+        return fallback;
+    }
+
+    private String textValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        return String.valueOf(value);
+    }
+
+    private String importSheetName(ExcelImportContext context) {
+        if (StringUtils.hasText(context.sheetName())) {
+            return context.sheetName();
+        }
+        return "sheet1";
+    }
+
+    private Class<?> boxedType(Class<?> type) {
+        if (int.class.equals(type)) {
+            return Integer.class;
+        }
+        if (long.class.equals(type)) {
+            return Long.class;
+        }
+        if (double.class.equals(type)) {
+            return Double.class;
+        }
+        if (float.class.equals(type)) {
+            return Float.class;
+        }
+        if (short.class.equals(type)) {
+            return Short.class;
+        }
+        if (byte.class.equals(type)) {
+            return Byte.class;
+        }
+        if (boolean.class.equals(type)) {
+            return Boolean.class;
+        }
+        return type;
+    }
+
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Excel 上传文件不能为空");
@@ -611,8 +726,8 @@ public class PoiExcelAdapter implements ExcelAdapter {
         if (errors == null) {
             return Map.of();
         }
-        return errors.stream().filter(error -> error.line() > 0)
-                .collect(Collectors.groupingBy(ImportError::line, LinkedHashMap::new,
+        return errors.stream().filter(error -> error.line() > 0).
+                collect(Collectors.groupingBy(ImportError::line, LinkedHashMap::new,
                         Collectors.mapping(ImportError::message, Collectors.joining("；"))));
     }
 
@@ -664,14 +779,20 @@ public class PoiExcelAdapter implements ExcelAdapter {
 
     private String meaningfulMessage(RuntimeException ex) {
         Throwable current = ex;
-        while (current instanceof InvocationTargetException && current.getCause() != null) {
+        while (current.getCause() != null && current.getCause() != current) {
             current = current.getCause();
         }
-        return StringUtils.hasText(current.getMessage()) ? current.getMessage() : current.getClass().getSimpleName();
+        if (StringUtils.hasText(current.getMessage())) {
+            return current.getMessage();
+        }
+        return current.getClass().getSimpleName();
     }
 
     private void writeClasspathTemplate(HttpServletResponse response, String location) {
-        String normalized = location.startsWith("classpath:") ? location.substring("classpath:".length()) : location;
+        String normalized = location;
+        if (location.startsWith("classpath:")) {
+            normalized = location.substring("classpath:".length());
+        }
         while (normalized.startsWith("/")) {
             normalized = normalized.substring(1);
         }
@@ -698,17 +819,26 @@ public class PoiExcelAdapter implements ExcelAdapter {
     }
 
     private String contentDisposition(String fileName) {
-        String safeName = StringUtils.hasText(fileName) ? fileName : "export.xlsx";
+        String safeName = "export.xlsx";
+        if (StringUtils.hasText(fileName)) {
+            safeName = fileName;
+        }
         String encoded = URLEncoder.encode(safeName, StandardCharsets.UTF_8).replace("+", "%20");
         return "attachment; filename*=UTF-8''" + encoded;
     }
 
     private String resolveExportFileName(ExcelExportContext context) {
-        return context == null || !StringUtils.hasText(context.fileName()) ? "export.xlsx" : context.fileName();
+        if (context == null || !StringUtils.hasText(context.fileName())) {
+            return "export.xlsx";
+        }
+        return context.fileName();
     }
 
     private String resolveExportSheetName(ExcelExportContext context) {
-        return context == null || !StringUtils.hasText(context.sheetName()) ? "sheet1" : context.sheetName();
+        if (context == null || !StringUtils.hasText(context.sheetName())) {
+            return "sheet1";
+        }
+        return context.sheetName();
     }
 
     private static final class ColumnBinding {
@@ -743,11 +873,14 @@ public class PoiExcelAdapter implements ExcelAdapter {
         }
 
         private String displayTitle() {
-            return StringUtils.hasText(annotation.title()) ? annotation.title().trim() : field.getName();
+            if (StringUtils.hasText(annotation.title())) {
+                return annotation.title().trim();
+            }
+            return field.getName();
         }
 
         private ExcelColumnMetadata metadata() {
-            return new ExcelColumnMetadata(field, annotation.title(), List.of(annotation.aliases()),
+            return new ExcelColumnMetadata(field.getName(), annotation.title(), List.of(annotation.aliases()),
                     annotation.dictType(), field.getType(), columnIndex);
         }
     }
