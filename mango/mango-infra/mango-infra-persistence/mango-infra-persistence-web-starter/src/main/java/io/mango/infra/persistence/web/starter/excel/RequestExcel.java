@@ -25,9 +25,34 @@ public @interface RequestExcel {
     int headRowNumber() default 1;
 
     /**
+     * 数据 Sheet 名称。非空时优先于 sheetIndex。
+     */
+    String sheetName() default "";
+
+    /**
+     * 数据 Sheet 的零基序号。
+     */
+    int sheetIndex() default 0;
+
+    /**
      * 是否忽略空行。
      */
     boolean ignoreEmptyRow() default true;
+
+    /**
+     * 未声明列处理策略。
+     */
+    UnknownColumnPolicy unknownColumnPolicy() default UnknownColumnPolicy.IGNORE;
+
+    /**
+     * classpath 原始模板位置。
+     */
+    String templateLocation() default "";
+
+    /**
+     * 失败工作簿的数据行保留策略。
+     */
+    FailureRowPolicy failureRowPolicy() default FailureRowPolicy.FAILED_ONLY;
 
     /**
      * 导入失败处理模式。

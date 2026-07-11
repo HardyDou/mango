@@ -1,11 +1,14 @@
 package io.mango.system.starter;
 
 import io.mango.infra.iplocation.api.IpLocationResolver;
+import io.mango.infra.persistence.web.starter.excel.ExcelDictionaryProvider;
 import io.mango.system.core.aspect.OperationLogAspect;
 import io.mango.system.core.middleware.TenantFilter;
+import io.mango.system.core.service.IDictService;
 import io.mango.system.core.service.ISysLogService;
-import org.springframework.beans.factory.ObjectProvider;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -38,5 +41,24 @@ public class SystemAutoConfiguration {
     public OperationLogAspect operationLogAspect(ISysLogService logService,
                                                  ObjectProvider<IpLocationResolver> ipLocationResolverProvider) {
         return new OperationLogAspect(logService, ipLocationResolverProvider.getIfAvailable());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ExcelDictionaryProvider.class)
+    public ExcelDictionaryProvider systemExcelDictionaryProvider(IDictService dictService) {
+        return (dictType, label, metadata, context) -> {
+            var result = dictService.getOptions(dictType);
+            if (result == null || !result.isSuccess() || result.getData() == null) {
+                throw new IllegalStateException("无法读取 Excel 字典: " + dictType);
+            }
+            String normalizedLabel = label == null ? "" : label.trim();
+            var matches = result.getData().stream()
+                    .filter(option -> option.getLabel() != null && option.getLabel().trim().equals(normalizedLabel))
+                    .toList();
+            if (matches.size() > 1) {
+                throw new IllegalArgumentException("Excel 字典存在重复 label: " + dictType + "/" + normalizedLabel);
+            }
+            return matches.isEmpty() ? null : matches.getFirst().getValue();
+        };
     }
 }

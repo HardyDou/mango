@@ -5,18 +5,21 @@ import io.mango.infra.persistence.api.crud.BatchDeleteCommand;
 import io.mango.infra.persistence.api.crud.DeleteCommand;
 import io.mango.infra.persistence.api.crud.MangoCrudService;
 import io.mango.infra.persistence.api.query.PersistencePageResult;
-import io.mango.infra.web.util.JacksonUtils;
+import io.mango.infra.persistence.web.starter.excel.ExcelAdapter;
 import io.mango.infra.persistence.web.starter.excel.ExcelExport;
 import io.mango.infra.persistence.web.starter.excel.ExcelExportContext;
+import io.mango.infra.persistence.web.starter.excel.ExcelFailureFileStore;
 import io.mango.infra.persistence.web.starter.excel.ExcelImport;
 import io.mango.infra.persistence.web.starter.excel.ExcelImportContext;
 import io.mango.infra.persistence.web.starter.excel.ExcelImportMode;
+import io.mango.infra.persistence.web.starter.excel.ExcelReadResult;
 import io.mango.infra.persistence.web.starter.excel.ExcelLines;
-import io.mango.infra.persistence.web.starter.excel.ExcelAdapter;
 import io.mango.infra.persistence.web.starter.excel.ExportableService;
 import io.mango.infra.persistence.web.starter.excel.ImportError;
 import io.mango.infra.persistence.web.starter.excel.ImportResult;
+import io.mango.infra.persistence.web.starter.excel.ImportStatus;
 import io.mango.infra.persistence.web.starter.excel.ImportableService;
+import io.mango.infra.web.util.JacksonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,6 +28,8 @@ import jakarta.validation.Validator;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,6 +62,12 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
 
     @Autowired(required = false)
     private Validator validator;
+
+    @Autowired(required = false)
+    private ExcelFailureFileStore excelFailureFileStore;
+
+    @Autowired(required = false)
+    private PlatformTransactionManager transactionManager;
 
     protected BaseCrudController(S service) {
         this.service = service;
@@ -140,28 +151,44 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
         if (file == null) {
             throw new IllegalStateException("未找到上传文件: " + context.fileName());
         }
-        List rows = excelAdapter.read(file, context, importableService.importRowType());
+        ExcelReadResult readResult = excelAdapter.readResult(file, context, importableService.importRowType());
+        List rows = readResult.rows();
         ExcelLines.fillLineNumbers(rows, context);
         ImportResult validationResult = validateImportRows(rows, context, importableService);
-        if (validationResult.getFailed() == 0) {
-            return R.ok(importableService.importRows(rows));
+        List<ImportError> rowErrors = new ArrayList<>();
+        List<ImportError> batchErrors = new ArrayList<>();
+        collectErrors(readResult.errors(), rowErrors, batchErrors);
+        collectErrors(validationResult.getErrors(), rowErrors, batchErrors);
+        collectErrors(validationResult.getBatchErrors(), rowErrors, batchErrors);
+        validationResult = ImportResult.failed(rows.size(), rowErrors);
+        validationResult.setBatchErrors(batchErrors);
+        if (rowErrors.isEmpty() && batchErrors.isEmpty()) {
+            ImportResult result = importRows(importableService, rows, context);
+            return R.ok(completeImportResult(file, context, rows.size(), result));
         }
-        if (ExcelImportMode.ALL_SUCCESS.equals(context.mode())) {
-            return R.ok(validationResult);
+        if (!batchErrors.isEmpty() || ExcelImportMode.ALL_SUCCESS.equals(context.mode())) {
+            return R.ok(completeImportResult(file, context, rows.size(), validationResult));
         }
         List validRows = validRows(rows, context, validationResult.getErrors());
         if (!validRows.isEmpty()) {
-            ImportResult importResult = importableService.importRows(validRows);
-            validationResult.setSuccess(importResult.getSuccess());
+            ImportResult importResult = importRows(importableService, validRows, context);
+            mergeImportResult(validationResult, importResult, validRows.size());
         }
-        if (validationResult.getSuccess() == 0 && !validRows.isEmpty()) {
-            validationResult.setSuccess(validRows.size());
+        return R.ok(completeImportResult(file, context, rows.size(), validationResult));
+    }
+
+    private void collectErrors(List<ImportError> source, List<ImportError> rowErrors,
+                               List<ImportError> batchErrors) {
+        if (source == null) {
+            return;
         }
-        if (validationResult.getSuccess() > 0) {
-            validationResult.setFailed(Math.max(validationResult.getTotal() - validationResult.getSuccess(), 0));
-            return R.ok(validationResult);
+        for (ImportError error : source) {
+            if (error != null && error.line() > 0) {
+                rowErrors.add(error);
+            } else if (error != null) {
+                batchErrors.add(error);
+            }
         }
-        return R.ok(validationResult);
     }
 
     @GetMapping("/import-template")
@@ -269,5 +296,101 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
             }
         }
         return validRows;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ImportResult importRows(ImportableService service, List<?> rows, ExcelImportContext context) {
+        try {
+            ImportResult result;
+            if (transactionManager == null) {
+                result = service.importRows(rows, context);
+            } else {
+                result = new TransactionTemplate(transactionManager).execute(status -> service.importRows(rows, context));
+            }
+            return result == null ? ImportResult.success(rows.size()) : result;
+        } catch (RuntimeException ex) {
+            ImportError error = new ImportError(0, null, meaningfulMessage(ex), "IMPORT_BATCH_FAILED", null, null);
+            ImportResult result = ImportResult.failed(rows.size(), List.of());
+            result.setBatchErrors(new ArrayList<>(List.of(error)));
+            result.setStatus(ImportStatus.FAILED);
+            return result;
+        }
+    }
+
+    private void mergeImportResult(ImportResult target, ImportResult source, int attemptedRows) {
+        int success = source.getSuccess();
+        List<ImportError> sourceErrors = safeErrors(source.getErrors());
+        List<ImportError> sourceBatchErrors = safeErrors(source.getBatchErrors());
+        if (success == 0 && source.getFailed() == 0 && sourceErrors.isEmpty() && sourceBatchErrors.isEmpty()) {
+            success = attemptedRows;
+        }
+        target.setSuccess(Math.max(success, 0));
+        target.getErrors().addAll(sourceErrors);
+        target.getBatchErrors().addAll(sourceBatchErrors);
+    }
+
+    private ImportResult completeImportResult(MultipartFile file, ExcelImportContext context, int total,
+                                              ImportResult result) {
+        result.setErrors(new ArrayList<>(safeErrors(result.getErrors())));
+        result.setBatchErrors(new ArrayList<>(safeErrors(result.getBatchErrors())));
+        result.setTotal(total);
+        Set<Integer> failedLines = result.getErrors().stream()
+                .map(ImportError::line)
+                .filter(line -> line > 0)
+                .collect(java.util.stream.Collectors.toSet());
+        result.setFailed(failedLines.size());
+        if (result.getSuccess() == 0 && (!result.getBatchErrors().isEmpty()
+                || ExcelImportMode.ALL_SUCCESS.equals(context.mode()) && !result.getErrors().isEmpty())) {
+            result.setFailed(total);
+        }
+        if (!result.getErrors().isEmpty()) {
+            storeFailureWorkbook(file, context, result);
+        }
+        if (result.getSuccess() > 0 && (result.getFailed() > 0 || !result.getBatchErrors().isEmpty())) {
+            result.setStatus(ImportStatus.PARTIAL_SUCCESS);
+        } else if (result.getFailed() > 0 || !result.getBatchErrors().isEmpty()) {
+            result.setStatus(ImportStatus.FAILED);
+        } else {
+            result.setStatus(ImportStatus.SUCCESS);
+        }
+        return result;
+    }
+
+    private void storeFailureWorkbook(MultipartFile file, ExcelImportContext context, ImportResult result) {
+        if (excelFailureFileStore == null) {
+            return;
+        }
+        try {
+            byte[] content = excelAdapter.createFailureWorkbook(file, context, result.getErrors());
+            String fileName = failureFileName(file.getOriginalFilename());
+            Long fileId = excelFailureFileStore.store(fileName,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content, context);
+            result.setFailureFileId(fileId);
+        } catch (RuntimeException ex) {
+            result.getBatchErrors().add(new ImportError(0, null, meaningfulMessage(ex),
+                    "FAILURE_FILE_STORE_FAILED", null, null));
+        }
+    }
+
+    private List<ImportError> safeErrors(List<ImportError> errors) {
+        return errors == null ? List.of() : errors;
+    }
+
+    private String failureFileName(String originalFileName) {
+        String name = originalFileName == null || originalFileName.isBlank() ? "import" : originalFileName.trim();
+        if (name.toLowerCase(java.util.Locale.ROOT).endsWith(".xlsx")) {
+            name = name.substring(0, name.length() - 5);
+        }
+        return name + "-failed.xlsx";
+    }
+
+    private String meaningfulMessage(RuntimeException exception) {
+        Throwable current = exception;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current.getMessage() == null || current.getMessage().isBlank()
+                ? current.getClass().getSimpleName()
+                : current.getMessage();
     }
 }
