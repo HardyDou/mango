@@ -143,3 +143,9 @@ registerExampleAdminPages();
 
 - [Admin Shell README](../admin-shell/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- v2026.07.11-npm-lock-sync-release 新增开发中心搜索面板页面描述：`demo/components/SearchPanelView` 对应
+  `/components/search-panel`，由 `@mango/admin-shell` 提供页面 loader。该入口仅用于开发中心示例，不新增后端
+  菜单、接口、角色权限、租户数据或业务页面注册要求。

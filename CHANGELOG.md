@@ -8,6 +8,14 @@
 
 - Synchronized the Mango frontend npm release lock to the latest certified package batch, so new generated business
   projects and package consumers resolve a coherent set of `@mango/*` versions.
+- `@mango/admin-shell@1.0.39` adds `login.component` so a business application can replace the default `/login` route
+  while reusing Mango login flow configuration, and registers a development-center search panel example route.
+- `@mango/admin-pages@1.0.19` registers the `demo/components/SearchPanelView` development-center page descriptor used
+  by the Shell example route.
+- `@mango/file@1.0.20` aligns the file management UI with the login-level file access baseline: upload, preview, and
+  download actions no longer use the removed `file:files:upload`, `file:files:query`, or `file:files:download` UI
+  permission gates. It also makes the file preview dialog responsive and removes the public
+  `FilePreviewPanel.downloadPermission` prop.
 - Updated starter frontend package templates to consume `@mango/admin@1.0.44`, `@mango/admin-pages@1.0.19`, and
   `@mango/common@1.0.16`.
 - Hardened the packed consumer type gate for pnpm 11 by writing supported workspace overrides for local tarballs and
@@ -20,6 +28,9 @@
 - Install or upgrade the CLI with
   `npm install -g @mango/cli@1.0.65 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
 - New generated business projects continue to use Mango Maven backend `1.0.13` and receive the npm lock batch below.
+- Consumers of `FilePreviewPanel` must remove `downloadPermission`; download visibility and access are now determined
+  by the component state and backend file access checks. File list, archive, delete, directory, storage, and settings
+  management permissions remain unchanged.
 
 ### Published Packages
 

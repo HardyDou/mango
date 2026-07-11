@@ -193,4 +193,7 @@ pnpm -F @mango/admin-shell build
 
 - v2026.07.09-common-search-panel-form-layout-release 仅调整 `MangoSearchPanel` 的表单尺寸、label 展示、默认列数、折叠行数和展开控件布局；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
 
-- v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。业务项目应将相关前端包与 `@mango/cli` 成组升级。
+- v2026.07.11-npm-lock-sync-release 发布 `@mango/file@1.0.20`：文件管理页的上传、预览和下载操作不再通过
+  `v-auth` 校验 `file:files:upload`、`file:files:query` 或 `file:files:download` 后隐藏按钮。该变化仅适用于文件
+  访问基线；列表、归档、删除、目录、存储配置和文件设置仍按既有细粒度权限码控制，后端文件访问继续校验登录态、
+  文件状态、访问级别、租户和业务归属。

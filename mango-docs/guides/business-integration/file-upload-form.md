@@ -236,4 +236,8 @@ pnpm -F @mango/file test
 
 - v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面入口、启动方式和表单验收步骤。文件基础接口仍由默认角色权限承载，业务单据的查看、编辑、归档和删除仍由业务菜单权限、数据权限和租户隔离控制。
 
-- v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面入口、启动方式和表单验收步骤。业务项目应将相关前端包与 `@mango/cli` 成组升级。
+- v2026.07.11-npm-lock-sync-release 发布 `@mango/file@1.0.20`：文件管理页上传、预览和下载操作不再依赖
+  `file:files:upload`、`file:files:query` 或 `file:files:download` 前端角色权限码，改为由登录态和后端文件访问
+  校验决定；列表、归档、删除、目录、存储配置和文件设置仍使用既有细粒度权限。`FilePreviewPanel` 不再支持
+  `downloadPermission` prop，业务页面应移除该 prop。文件 ID 持久化、上传/下载/预览 API、租户边界、页面入口和
+  启动方式不变。
