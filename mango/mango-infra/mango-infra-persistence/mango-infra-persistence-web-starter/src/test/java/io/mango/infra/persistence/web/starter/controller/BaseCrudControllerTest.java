@@ -236,6 +236,32 @@ class BaseCrudControllerTest {
     }
 
     @Test
+    void importData_shouldReturnInternalErrorWhenRequestModeInvalid() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "upload", "users.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[]{1, 2, 3});
+        mockMvc.perform(multipart("/excel-users/import").file(file).param("importMode", "INVALID"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(400));
+    }
+
+    @Test
+    void importData_shouldAcceptLowercaseAndTrimmedImportMode() throws Exception {
+        recordingExcelCrudService.returnInvalidImportRows = true;
+
+        MockMultipartFile file = new MockMultipartFile(
+                "upload", "users.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[]{1, 2, 3});
+        mockMvc.perform(multipart("/excel-users/import").file(file).param("importMode", "  partial_success  "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.success").value(0))
+                .andExpect(jsonPath("$.data.failed").value(1));
+
+        assertThat(recordingExcelCrudService.importRowsCalled).isFalse();
+    }
+
+    @Test
     void requestExcel_shouldResolveTypedListAndFillLineNumber() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "upload", "users.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
