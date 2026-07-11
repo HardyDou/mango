@@ -19,10 +19,17 @@ public class ImportResult {
 
     private List<ImportError> errors = new ArrayList<>();
 
+    private List<ImportError> batchErrors = new ArrayList<>();
+
+    private Long failureFileId;
+
+    private ImportStatus status = ImportStatus.SUCCESS;
+
     public static ImportResult success(int total) {
         ImportResult result = new ImportResult();
         result.setTotal(total);
         result.setSuccess(total);
+        result.setStatus(ImportStatus.SUCCESS);
         return result;
     }
 
@@ -35,7 +42,16 @@ public class ImportResult {
         result.setTotal(total);
         result.setSuccess(Math.max(success, 0));
         result.setFailed(countFailedRows(errors));
-        result.setErrors(errors == null ? new ArrayList<>() : new ArrayList<>(errors));
+        List<ImportError> safeErrors = new ArrayList<>();
+        if (errors != null) {
+            safeErrors.addAll(errors);
+        }
+        result.setErrors(safeErrors);
+        if (result.getSuccess() > 0) {
+            result.setStatus(ImportStatus.PARTIAL_SUCCESS);
+        } else {
+            result.setStatus(ImportStatus.FAILED);
+        }
         return result;
     }
 
@@ -43,9 +59,10 @@ public class ImportResult {
         if (errors == null || errors.isEmpty()) {
             return 0;
         }
-        return (int) errors.stream()
-                .map(ImportError::line)
-                .distinct()
-                .count();
+        return (int) errors.stream().
+                map(ImportError::line).
+                filter(line -> line > 0).
+                distinct().
+                count();
     }
 }

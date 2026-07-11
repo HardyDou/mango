@@ -192,6 +192,8 @@ pnpm -F @mango/file test
 
 ## 12. 变更影响记录
 
+- Issue #431 新增 Excel 导入失败工作簿保存桥接。`BaseCrudController` 存在行级导入错误且装配 `mango-file-starter` 时，会以 `PRIVATE`、`EXCEL_IMPORT` 用途保存失败 `.xlsx`，并在 `ImportResult.failureFileId` 返回文件 ID；下载继续经过既有文件权限和租户隔离。普通文件上传表单的 fileId/fileIds 持久化、回显、预览和下载接口不变。
+
 - 本次 PR 将文件详情、上传、下载、预览和设置读取等基础文件接口注入默认角色权限：`ROLE_ANONYMOUS` 可获得文件查询、上传、下载和设置读取等匿名可用基础能力，`ROLE_LOGIN` 可获得登录后通用文件能力；这些权限通过隐藏菜单的 `apiCodes` 注入，不会显示文件中心菜单。业务表单仍按 fileId/fileIds 保存业务值，真正的业务单据查看、编辑、归档和删除仍应由业务菜单权限、业务数据权限和租户隔离控制。
 
 - PR #386 简化 `@mango/file` 前端 `FileRecord` 公共类型，只保留业务可见字段并移除存储层和直连访问字段；文件上传表单仍按 `fileId`、`fileIds` 或文件 token 保存业务值，上传、回显、预览、下载 API、权限、租户、页面入口、启动方式和本场景验收步骤不变。业务前端如曾读取 `storageType`、`bucketName`、`objectName`、`url`、`directPreviewUrl` 或 `directDownloadUrl`，升级后应改为使用 `previewUrl`、`downloadUrl` 或按文件 ID 调用预览/下载能力。

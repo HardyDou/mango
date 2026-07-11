@@ -175,6 +175,8 @@ pnpm -F @mango/admin-shell build
 
 - v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不新增租户字典、组织、用户或系统配置基础数据表，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。业务项目升级后基础数据为空仍按资源声明同步、租户上下文和角色/租户绑定排查。
 
+- Issue #431 为 Excel `@ExcelColumn(dictType = "...")` 增加 Mango System 字典读取桥接，按当前租户已有字典执行 label 到 value 的精确转换；不新增或修改字典数据，不改变字典管理 API、页面、权限、资源同步和租户隔离。导入提示字典 label 不存在时，仍按本指南确认当前租户字典已同步并启用，再核对 Excel 原始 label。
+
 - 本次 PR 仅在开发中心组件库新增 `MangoSearchPanel` 搜索面板示例入口和示例页面；不新增租户字典、组织、用户或系统配置基础数据表，不改变租户字典、组织、用户、系统配置公开查询 API、权限、租户隔离、页面入口、页面路由、启动方式和运行时数据行为。
 ## search-panel-layout-enhance 影响记录
 
