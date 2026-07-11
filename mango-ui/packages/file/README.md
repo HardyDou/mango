@@ -267,3 +267,13 @@ import { FilePreviewPanel } from '@mango/file';
 - [Mango File 后端 README](../../../mango/mango-platform/mango-file/README.md)
 - [Mango File Preview README](../../../mango/mango-platform/mango-file-preview/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 12. 变更影响记录
+
+- v2026.07.11-npm-lock-sync-release 将文件管理页的上传、预览和下载操作对齐到登录级文件访问基线，不再用
+  `file:files:upload`、`file:files:query` 或 `file:files:download` 控制前端按钮显隐；最终访问仍由后端依据登录态、
+  文件状态、访问级别、租户和业务归属校验。列表、归档、删除、目录、存储配置和文件设置继续使用既有细粒度权限。
+- `FilePreviewPanel` 移除了 `downloadPermission` prop，详情预览组件不再接受自定义下载按钮权限码。业务页面应删除
+  该 prop，并继续通过文件服务返回的下载地址或组件 `openDownload()` 执行下载。
+- 文件管理预览弹框调整为响应式宽高，`FilePreviewPanel` 支持通过 CSS 变量适配弹框内容高度；文件 ID 持久化、上传、
+  下载、预览 API、页面 key 和后端启动方式不变。

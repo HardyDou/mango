@@ -310,6 +310,11 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 ## 11. 变更影响记录
 
+- v2026.07.11-npm-lock-sync-release 支持在 `MangoAdminShellOptions.login.component` 中提供业务登录组件，以替换
+  `/login` 的默认 `@mango/auth` 登录页；未设置时仍使用 `LoginView`。业务组件需要自行负责页面结构、样式和表单
+  交互，并可复用 `useMangoLoginFlow()`。本次还新增 `/components/search-panel` 开发中心示例路由，不改变业务菜单
+  `component` key、菜单树接口、角色授权、租户绑定或运行时业务页面加载协议。
+
 - PR #267 调整顶部通知铃铛的公告详情跳转目标到用户端 `消息中心 / 公告`，即 `/message-center/announcement?id=公告ID`；不改变 Shell 菜单加载接口、菜单 `component` key 归一化、页面注册协议、角色授权、按钮权限、租户绑定、登录态装配和运行时页面加载协议。公告管理、用户公告列表和菜单拆分由 `@mango/notice` 负责。
 
 - 本次 PR 扩展 Shell 能力注册机制，业务 UI 包的 `featureRegistrar` 可以返回首页 `widgets`，Shell 首页自动聚合这些业务小组件；未集成的 UI 包不会注册对应小组件。历史布局中的失效小组件查看态隐藏，编辑态提示“组件已失效，可删除后保存布局”。

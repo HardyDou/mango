@@ -233,3 +233,12 @@ const fileIds = ref<string[]>([]);
 - [Mango File 后端 README](../../../../../mango/mango-platform/mango-file/README.md)
 - [Mango File Preview README](../../../../../mango/mango-platform/mango-file-preview/README.md)
 - [能力说明维护规范](../../../../../mango-pmo/rules/08-capability-docs.md)
+
+## 10. 变更影响记录
+
+- v2026.07.11-npm-lock-sync-release 删除 `FilePreviewPanel.downloadPermission` prop。已有业务页面应移除该 prop；
+  下载按钮不再由前端角色权限码决定是否显示，组件只在存在可下载文件时显示操作，后端继续校验登录态、文件状态、
+  访问级别、租户和业务归属。
+- `FilePreviewPanel` 可通过 `--mango-file-preview-panel-height`、
+  `--mango-file-preview-stage-min-height` 和 `--mango-file-preview-content-height` 适配外层弹框高度。文件管理页
+  使用响应式预览弹框；业务详情页仍可直接按原有方式使用 `<FilePreviewPanel :file-id="fileId" />`。
