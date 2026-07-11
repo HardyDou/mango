@@ -1,967 +1,294 @@
 <template>
-  <section class="mango-link-page" data-component="mango-link-page">
-    <header class="mango-link-page__header">
-      <h2 class="mango-link-page__title">{{ title }}</h2>
-      <div class="mango-link-page__brand" :class="{ 'is-editing': brandEditing }">
-        <input
-          v-if="brandEditing"
-          ref="brandInputRef"
-          v-model="brandDraft"
-          class="mango-link-page__brand-input"
-          maxlength="24"
-          aria-label="编辑 Logo 文本"
-          @keyup.enter="confirmBrandEdit"
-          @keyup.esc="cancelBrandEdit"
-        />
-        <template v-else>
-          <img v-if="displayLogoUrl" :src="displayLogoUrl" :alt="logoAlt || effectiveBrandText || title" />
-          <span v-else>{{ effectiveBrandText }}</span>
-          <button class="mango-link-page__brand-edit" type="button" title="编辑 Logo" @click="startBrandEdit">
-            <el-icon><Edit /></el-icon>
-          </button>
-        </template>
-      </div>
-      <div class="mango-link-page__searchbar">
+  <section class="mango-link-page" data-page="link.home" data-component="mango-link-page">
+    <header class="mango-link-page__hero" data-surface="link.hero">
+      <h1 class="mango-link-page__headline">{{ displayHeadline }}</h1>
+      <p v-if="subtitle" class="mango-link-page__subtitle">{{ subtitle }}</p>
+
+      <form class="mango-link-page__searchbar" data-surface="link.search" @submit.prevent="submitSearch">
         <el-input
           v-model="keyword"
           class="mango-link-page__search"
           clearable
-          placeholder="搜索导航..."
+          :placeholder="searchPlaceholder"
           :prefix-icon="Search"
-          @keyup.enter="submitSearch"
+          data-field="link.keyword"
+          @clear="clearSearch"
         />
-        <div class="mango-link-page__engines" aria-label="搜索引擎">
-          <button
-            v-for="engine in availableSearchEngines"
-            :key="engine.code"
-            class="mango-link-page__engine"
-            :data-engine="engine.code"
-            type="button"
-            @click="openSearch(engine.code)"
-          >
-            {{ engine.label }}
-          </button>
-        </div>
-      </div>
-      <div v-if="!linkFeatureUnavailable" class="mango-link-page__tools">
-        <el-popover v-if="loggedIn" placement="bottom-end" trigger="click" width="280" popper-class="mango-link-page__profile-popper">
-          <template #reference>
-            <button class="mango-link-page__user" type="button" :title="displayUserName">
-              <img v-if="displayUserAvatarUrl" :src="displayUserAvatarUrl" :alt="`${displayUserName}头像`" />
-              <span v-else>{{ userInitial }}</span>
-            </button>
-          </template>
-          <div class="mango-link-page__profile">
-            <div class="mango-link-page__profile-head">
-              <span class="mango-link-page__profile-avatar">
-                <img v-if="displayUserAvatarUrl" :src="displayUserAvatarUrl" :alt="`${displayUserName}头像`" />
-                <span v-else>{{ userInitial }}</span>
-              </span>
-              <div class="mango-link-page__profile-main">
-                <strong>{{ displayUserName }}</strong>
-                <span v-if="userAccount">{{ userAccount }}</span>
-              </div>
-            </div>
-            <dl class="mango-link-page__profile-fields">
-              <div v-for="field in profileFields" :key="field.label">
-                <dt>{{ field.label }}</dt>
-                <dd>{{ field.value }}</dd>
-              </div>
-            </dl>
-            <button class="mango-link-page__logout" type="button" :disabled="saving" @click="submitLogout">退出登录</button>
-          </div>
-        </el-popover>
-        <button v-else class="mango-link-page__login" type="button" @click="openLoginDialog">登录</button>
-      </div>
+        <el-button
+          class="mango-link-page__search-button"
+          type="primary"
+          native-type="submit"
+          :icon="Search"
+          :loading="searching"
+          data-action="link.search"
+        >
+          搜索
+        </el-button>
+      </form>
     </header>
 
-    <div v-if="!linkFeatureUnavailable" class="mango-link-page__groups-head">
-      <nav v-if="groups.length > 0" class="mango-link-page__tabs" aria-label="网址分组">
-        <button
-          v-for="group in groups"
-          :key="group.key"
-          class="mango-link-page__tab"
-          :class="{ 'is-active': group.key === activeGroupKey }"
-          type="button"
-          @click="activeGroupKey = group.key"
-        >
-          <span>{{ group.title }}</span>
-        </button>
-      </nav>
-      <button
-        v-if="loggedIn"
-        class="mango-link-page__add-group"
-        type="button"
-        @click="openCategoryDialog"
-      >
-        <el-icon><Plus /></el-icon>
-        <span>添加分组</span>
-      </button>
-    </div>
-
-    <div v-loading="loading" class="mango-link-page__body">
-      <section
-        v-if="linkFeatureUnavailable"
-        class="mango-link-page__permission"
-        data-state="missing-permission"
-      >
-        <div class="mango-link-page__permission-badge">缺少权限</div>
-        <strong>网址导航不可用</strong>
-        <span>当前账号缺少网址导航权限，或当前环境未开通网址导航服务。</span>
+    <main v-loading="loading" class="mango-link-page__body" data-surface="link.content">
+      <section v-if="errorMessage" class="mango-link-page__state" data-state="error">
+        <strong>导航加载失败</strong>
+        <span>{{ errorMessage }}</span>
+        <el-button type="primary" :icon="RefreshRight" @click="reload">重试</el-button>
       </section>
-      <section v-else-if="activeGroup" :key="activeGroup.key" class="mango-link-page__group">
-        <div class="mango-link-page__grid">
-          <article v-for="item in activeGroup.items" :key="`${item.source}:${item.id}`" class="mango-link-page__item">
-            <button class="mango-link-page__open" type="button" @click="openLink(item)">
-              <span class="mango-link-page__icon" :class="{ 'has-initial': !displayIcon(item) }">
+
+      <template v-else>
+        <section v-if="searchQuery" class="mango-link-page__results" data-surface="link.search-results">
+          <div class="mango-link-page__section-head">
+            <div>
+              <h2>搜索结果</h2>
+              <p>关键词：{{ searchQuery }}</p>
+            </div>
+            <button class="mango-link-page__text-button" type="button" data-action="link.clear-search" @click="clearSearch">
+              清空搜索
+            </button>
+          </div>
+
+          <div v-if="searchResults.length > 0" class="mango-link-page__compact-grid">
+            <a
+              v-for="item in searchResults"
+              :key="`search:${itemKey(item)}`"
+              class="mango-link-page__compact-card"
+              :href="linkTarget(item) || undefined"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="linkTarget(item) || item.url || item.name"
+              :data-record-key="itemKey(item)"
+              data-action="link.open"
+              @click="handleLinkClick(item, $event)"
+            >
+              <span class="mango-link-page__compact-logo" :class="{ 'has-initial': !displayIcon(item) }">
                 <img
                   v-if="displayIcon(item)"
                   :src="displayIcon(item)"
-                  :alt="`${item.name || '网址'} logo`"
+                  :alt="`${item.name || '导航'} logo`"
                   loading="lazy"
                   @error="markIconFailed(item)"
                 />
                 <span v-else>{{ itemInitial(item) }}</span>
               </span>
-              <span class="mango-link-page__item-main" :title="item.summary || item.url || item.name">
-                {{ item.name || '-' }}
+              <span class="mango-link-page__compact-main">
+                <strong>{{ item.name || '-' }}</strong>
+                <span>{{ displayUrl(item.url) || '-' }}</span>
               </span>
-            </button>
-            <div class="mango-link-page__item-actions" :class="{ 'is-favorited': item.favorited }">
-              <el-button
-                v-if="item.source !== 'PERSONAL'"
-                circle
-                link
-                type="primary"
-                class="mango-link-page__favorite"
-                :icon="item.favorited ? StarFilled : Star"
-                :title="item.favorited ? '取消收藏' : '收藏'"
-                :loading="isFavoritePending(item)"
-                :disabled="isFavoritePending(item)"
-                @click.stop="toggleFavorite(item)"
-              />
-              <span v-if="item.recommended" class="mango-link-page__badge">荐</span>
-            </div>
-          </article>
-          <button
-            v-if="canAddLink(activeGroup)"
-            class="mango-link-page__add-link"
-            type="button"
-            @click="openLinkDialog(activeGroup)"
+            </a>
+          </div>
+
+          <div v-else class="mango-link-page__state is-inline" data-state="empty">
+            <strong>没有找到相关导航</strong>
+            <span>可以换一个关键词再试试。</span>
+          </div>
+        </section>
+
+        <section v-if="hasAnyGroupItem" class="mango-link-page__groups" data-surface="link.groups">
+          <section
+            v-for="group in groups"
+            :key="group.name"
+            class="mango-link-page__group"
+            :data-group="group.name"
           >
-            <span class="mango-link-page__add-link-icon">
-              <el-icon><Plus /></el-icon>
-            </span>
-            <span class="mango-link-page__item-main">添加网址</span>
-          </button>
-        </div>
-      </section>
-    </div>
+            <div class="mango-link-page__section-head">
+              <div>
+                <h2>{{ group.name }}</h2>
+                <p>{{ group.items.length }} 个入口</p>
+              </div>
+            </div>
 
-    <el-dialog v-model="categoryDialogVisible" title="新增分组" width="420px" append-to-body>
-      <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="72px">
-        <el-form-item label="名称" prop="name">
-          <el-input v-model="categoryForm.name" maxlength="64" show-word-limit />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="categoryDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="saveCategory">保存</el-button>
+            <div v-if="group.items.length > 0" class="mango-link-page__card-grid">
+              <a
+                v-for="item in group.items"
+                :key="itemKey(item)"
+                class="mango-link-page__card"
+                :href="linkTarget(item) || undefined"
+                target="_blank"
+                rel="noopener noreferrer"
+                :title="linkTarget(item) || item.url || item.name"
+                :data-record-key="itemKey(item)"
+                data-action="link.open"
+                @click="handleLinkClick(item, $event)"
+              >
+                <span class="mango-link-page__logo" :class="{ 'has-initial': !displayIcon(item) }">
+                  <img
+                    v-if="displayIcon(item)"
+                    :src="displayIcon(item)"
+                    :alt="`${item.name || '导航'} logo`"
+                    loading="lazy"
+                    @error="markIconFailed(item)"
+                  />
+                  <span v-else>{{ itemInitial(item) }}</span>
+                </span>
+                <span class="mango-link-page__card-main">
+                  <strong>{{ item.name || '-' }}</strong>
+                  <span class="mango-link-page__url" :title="item.url">{{ displayUrl(item.url) || '-' }}</span>
+                  <span v-if="item.summary" class="mango-link-page__summary">{{ item.summary }}</span>
+                </span>
+              </a>
+            </div>
+
+            <div v-else class="mango-link-page__state is-inline" data-state="empty">
+              <strong>暂无{{ group.name }}入口</strong>
+              <span>数据库中还没有启用的导航卡片。</span>
+            </div>
+          </section>
+        </section>
+
+        <section v-else class="mango-link-page__state" data-state="empty">
+          <strong>暂无导航</strong>
+          <span>当前没有可展示的内置导航卡片。</span>
+        </section>
       </template>
-    </el-dialog>
-
-    <el-dialog v-model="linkDialogVisible" title="添加网址" width="640px" append-to-body>
-      <el-form ref="linkFormRef" :model="linkForm" :rules="linkRules" label-width="84px">
-        <el-form-item label="分组">
-          <el-select v-model="linkForm.categoryId" clearable placeholder="未分组">
-            <el-option v-for="category in personalCategories" :key="category.id" :label="category.name" :value="category.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="名称" prop="name">
-          <el-input v-model="linkForm.name" maxlength="128" show-word-limit />
-        </el-form-item>
-        <el-form-item label="网址" prop="url">
-          <el-input v-model="linkForm.url" placeholder="https://example.com" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="linkDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="saveLink">保存</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="loginDialogVisible" title="登录" width="420px" append-to-body>
-      <el-form
-        ref="loginFormRef"
-        :model="loginForm"
-        :rules="loginRules"
-        label-width="64px"
-        @keyup.enter="submitLogin"
-      >
-        <el-form-item label="账号" prop="username">
-          <el-input v-model="loginForm.username" autocomplete="username" placeholder="请输入账号" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="loginForm.password" autocomplete="current-password" placeholder="请输入密码" show-password type="password" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="loginDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submitLogin">登录</el-button>
-      </template>
-    </el-dialog>
-
-    <el-alert v-if="errorMessage" class="mango-link-page__error" type="error" closable show-icon @close="errorMessage = ''">
-      <template #title>{{ errorMessage }}</template>
-    </el-alert>
+    </main>
   </section>
 </template>
 
 <script setup lang="ts">
-import { Edit, Plus, Search, Star, StarFilled } from '@element-plus/icons-vue';
+import { RefreshRight, Search } from '@element-plus/icons-vue';
 import {
-  createFavorite,
-  createPersonalCategory,
-  createPersonalLink,
-  deleteFavorite,
   isLinkOpenApiNotFoundError,
-  listPersonalCategories,
   listPublicLinks,
-  type CreateLinkPersonalItemInput,
-  type LinkCategory,
   type LinkOpenApiClientOptions,
   type LinkPublicItem,
 } from '@mango/link-openapi';
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-import type { LinkPageLoginInput, LinkPageProps, LinkPageSearchEngine } from '../types';
+import { computed, onMounted, reactive, ref } from 'vue';
+import type { LinkPageProps } from '../types';
 
 type LinkGroup = {
-  key: string;
-  title: string;
+  name: string;
   items: LinkPublicItem[];
 };
 
-type MangoAuthResult = {
-  accessToken?: string;
-  token?: string;
-  tokenType?: string;
-  refreshToken?: string;
-  expiresIn?: number | string;
-  passwordResetRequired?: boolean;
-  loginAction?: string;
-  passwordResetTicket?: string;
-  userId?: string | number;
-  memberId?: string | number;
-  username?: string;
-  nickname?: string;
-  roles?: string[];
-  permissions?: string[];
-  userInfo?: Record<string, unknown>;
-  tenantId?: string | number;
-  tenantCode?: string;
-  tenantName?: string;
-  realm?: string;
-  actorType?: string;
-  partyType?: string;
-  partyId?: string | number;
-  appCode?: string;
-};
-
-type MangoResult<T> = {
-  code?: number | string;
-  success?: boolean;
-  msg?: string;
-  message?: string;
-  data?: T;
-};
-
-const localFavoritesKey = 'mango-link-page:favorites';
-const localBrandTextKey = 'mango-link-page:brand-text';
-const mangoTokenKey = 'MANGO_TOKEN';
-const mangoRefreshTokenKey = 'MANGO_REFRESH_TOKEN';
-const mangoTokenExpiresAtKey = 'MANGO_TOKEN_EXPIRES_AT';
-const defaultSearchEngines: LinkPageSearchEngine[] = [
-  { code: 'baidu', label: '百度', searchUrl: 'https://www.baidu.com/s?wd={keyword}' },
-  { code: 'google', label: 'Google', searchUrl: 'https://www.google.com/search?q={keyword}' },
-];
+const categoryNames = ['业务相关', '工具相关', '其他'] as const;
+const categoryNameSet = new Set<string>(categoryNames);
 
 const props = withDefaults(defineProps<LinkPageProps>(), {
   credentials: 'same-origin',
-  title: '网址导航',
-  logoText: 'Mango',
-  logoAlt: '公司 Logo',
-  authenticated: false,
+  title: '保函业务导航',
+  headline: '保函业务快捷入口',
+  searchPlaceholder: '搜索网站、工具或关键词',
   jumpEnabled: undefined,
-  defaultSearchEngine: 'baidu',
 });
+
 const emit = defineEmits<{
-  login: [input: LinkPageLoginInput];
-  logout: [];
   opened: [item: LinkPublicItem];
-  created: [];
 }>();
 
 const loading = ref(false);
-const saving = ref(false);
-const detectedLogin = ref(false);
+const searching = ref(false);
 const errorMessage = ref('');
-const linkFeatureUnavailable = ref(false);
 const keyword = ref('');
-const activeSearchEngine = ref(props.defaultSearchEngine);
-const storedBrandText = ref(readStoredBrandText());
-const brandEditing = ref(false);
-const brandDraft = ref('');
-const mangoAuthToken = ref(readMangoToken());
-const mangoUserInfo = ref<Record<string, unknown>>(readStoredMangoUserInfo());
+const searchQuery = ref('');
 const links = ref<LinkPublicItem[]>([]);
-const localFavorites = ref<LinkPublicItem[]>([]);
-const personalCategories = ref<LinkCategory[]>([]);
+const searchItems = ref<LinkPublicItem[]>([]);
 const failedIcons = reactive<Record<string, boolean>>({});
-const favoritePendingIds = reactive<Record<string, boolean>>({});
-const activeGroupKey = ref('');
-const categoryDialogVisible = ref(false);
-const linkDialogVisible = ref(false);
-const loginDialogVisible = ref(false);
-const categoryFormRef = ref<FormInstance>();
-const linkFormRef = ref<FormInstance>();
-const loginFormRef = ref<FormInstance>();
-const brandInputRef = ref<HTMLInputElement>();
-const categoryForm = reactive({ name: '' });
-const linkForm = reactive<CreateLinkPersonalItemInput>({ name: '', url: '', categoryId: '' });
-const loginForm = reactive<LinkPageLoginInput>({ username: '', password: '' });
 
-const categoryRules: FormRules = {
-  name: [{ required: true, message: '请输入分组名称', trigger: 'blur' }],
-};
-const linkRules: FormRules = {
-  name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
-  url: [{ required: true, message: '请输入网址', trigger: 'blur' }],
-};
-const loginRules: FormRules = {
-  username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-};
-const loggedIn = computed(() => props.authenticated || detectedLogin.value || Boolean(mangoAuthToken.value));
+const displayHeadline = computed(() => props.headline || props.title || '保函业务快捷入口');
+const subtitle = computed(() => props.subtitle || '');
+const searchPlaceholder = computed(() => props.searchPlaceholder || '搜索网站、工具或关键词');
 const requestOptions = computed<LinkOpenApiClientOptions>(() => ({
   baseUrl: props.baseUrl,
-  headers: resolveRequestHeaders,
+  headers: props.headers,
   credentials: props.credentials,
 }));
-const availableSearchEngines = computed(() => props.searchEngines?.length ? props.searchEngines : defaultSearchEngines);
-const effectiveBrandText = computed(() => storedBrandText.value || props.logoText || 'Mango');
-const displayLogoUrl = computed(() => storedBrandText.value ? '' : props.logoUrl);
-const displayUserName = computed(() => props.userName
-  || props.userAccount
-  || mangoUserText(['nickname', 'name', 'realName', 'username', 'account'])
-  || '当前用户');
-const displayUserAvatarUrl = computed(() => props.userAvatarUrl || mangoUserText(['avatarUrl', 'avatar', 'photo']));
-const userAccount = computed(() => props.userAccount || mangoUserText(['username', 'account']));
-const userInitial = computed(() => displayUserName.value.trim().slice(0, 1) || '我');
-const profileFields = computed(() => [
-  { label: '账号', value: props.userAccount || mangoUserText(['username', 'account']) },
-  { label: '邮箱', value: props.userEmail || mangoUserText(['email']) },
-  { label: '手机', value: props.userPhone || mangoUserText(['phone', 'mobile']) },
-  { label: '部门', value: props.userDepartment || mangoUserText(['departmentName', 'deptName', 'orgName']) },
-  { label: '角色', value: props.userRole || mangoUserText(['roleName']) },
-].filter((field): field is { label: string; value: string } => Boolean(field.value)));
-const localFavoriteIds = computed(() => new Set(localFavorites.value.map(item => String(item.id || '')).filter(Boolean)));
-const visibleLinks = computed(() => links.value.map(item => ({
-  ...item,
-  favorited: item.favorited || (!loggedIn.value && Boolean(item.id) && localFavoriteIds.value.has(String(item.id))),
+const visibleLinks = computed(() => normalizeItems(links.value));
+const searchResults = computed(() => normalizeItems(searchItems.value));
+const groups = computed<LinkGroup[]>(() => categoryNames.map(name => ({
+  name,
+  items: visibleLinks.value
+    .filter(item => item.categoryName === name)
+    .sort(itemComparator),
 })));
-const mergedLocalFavorites = computed(() => localFavorites.value.map((favorite) => {
-  const latest = visibleLinks.value.find(item => item.id && favorite.id && String(item.id) === String(favorite.id));
-  return {
-    ...favorite,
-    ...latest,
-    source: 'FAVORITE' as const,
-    favorited: true,
-  };
-}));
-const favoriteLinks = computed(() => {
-  if (!loggedIn.value) {
-    return mergedLocalFavorites.value;
-  }
-  return visibleLinks.value.filter(item => item.source === 'FAVORITE');
-});
-const companyLinks = computed(() => visibleLinks.value.filter((item) => {
-  const source = item.source || 'PUBLIC';
-  return source === 'COMPANY' || source === 'PUBLIC';
-}));
-const personalLinks = computed(() => visibleLinks.value.filter(item => item.source === 'PERSONAL'));
-const personalGroups = computed(() => {
-  const result = new Map<string, LinkGroup>();
-  for (const category of personalCategories.value) {
-    if (!category.id) {
-      continue;
-    }
-    result.set(`PERSONAL:${category.id}`, {
-      key: `PERSONAL:${category.id}`,
-      title: category.name || '我的网址',
-      items: [],
-    });
-  }
-  for (const item of personalLinks.value) {
-    const key = `PERSONAL:${item.categoryId || 'none'}`;
-    if (!result.has(key)) {
-      result.set(key, {
-        key,
-        title: item.categoryName || '我的网址',
-        items: [],
-      });
-    }
-    result.get(key)?.items.push(item);
-  }
-  return Array.from(result.values());
-});
-const groups = computed<LinkGroup[]>(() => [
-  { key: 'FAVORITE', title: '我的收藏', items: favoriteLinks.value },
-  { key: 'COMPANY', title: '企业导航', items: companyLinks.value },
-  ...personalGroups.value,
-]);
-const activeGroup = computed(() => groups.value.find(group => group.key === activeGroupKey.value) || groups.value[0]);
+const hasAnyGroupItem = computed(() => groups.value.some(group => group.items.length > 0));
 
-watch(groups, (next) => {
-  const current = next.find(group => group.key === activeGroupKey.value);
-  if (current) {
-    return;
-  }
-  activeGroupKey.value = next.find(group => group.items.length > 0)?.key || next[0]?.key || '';
-}, { immediate: true });
-
-watch(availableSearchEngines, (next) => {
-  if (!next.some(engine => engine.code === activeSearchEngine.value)) {
-    activeSearchEngine.value = next[0]?.code || 'baidu';
-  }
-}, { immediate: true });
+onMounted(() => {
+  void loadLinks();
+});
 
 async function loadLinks() {
   loading.value = true;
   errorMessage.value = '';
-  linkFeatureUnavailable.value = false;
   try {
     links.value = await listPublicLinks({}, requestOptions.value);
-    detectedLogin.value = links.value.some((item) => ['COMPANY', 'FAVORITE', 'PERSONAL'].includes(String(item.source || '')));
-    if (loggedIn.value) {
-      await Promise.all([
-        loadPersonalCategories(),
-        loadCurrentUserInfo(),
-      ]);
-    }
   } catch (error) {
-    if (isLinkOpenApiNotFoundError(error)) {
-      links.value = [];
-      personalCategories.value = [];
-      detectedLogin.value = false;
-      linkFeatureUnavailable.value = true;
-      return;
-    }
-    errorMessage.value = errorMessageOf(error, '网址加载失败');
+    links.value = [];
+    errorMessage.value = readableError(error, '导航加载失败，请稍后重试');
   } finally {
     loading.value = false;
   }
 }
 
-function submitSearch() {
-  openSearch(activeSearchEngine.value);
+async function reload() {
+  await loadLinks();
+  if (searchQuery.value) {
+    await searchByKeyword(searchQuery.value);
+  }
 }
 
-function openSearch(engineCode: string) {
+async function submitSearch() {
   const term = keyword.value.trim();
-  const engine = availableSearchEngines.value.find(item => item.code === engineCode)
-    || availableSearchEngines.value[0];
-  if (!engine) {
+  if (!term) {
+    clearSearch();
     return;
   }
-  const target = !term
-    ? searchHomeUrl(engine.searchUrl)
-    : engine.searchUrl.includes('{keyword}')
-    ? engine.searchUrl.replace('{keyword}', encodeURIComponent(term))
-    : `${engine.searchUrl}${encodeURIComponent(term)}`;
-  window.open(target, '_blank', 'noopener,noreferrer');
+  await searchByKeyword(term);
 }
 
-async function startBrandEdit() {
-  brandDraft.value = effectiveBrandText.value;
-  brandEditing.value = true;
-  await nextTick();
-  brandInputRef.value?.focus();
-  brandInputRef.value?.select();
-}
-
-function confirmBrandEdit() {
-  const nextValue = brandDraft.value.trim() || 'Mango';
-  storedBrandText.value = nextValue;
-  saveStoredBrandText(nextValue);
-  brandEditing.value = false;
-}
-
-function cancelBrandEdit() {
-  brandDraft.value = effectiveBrandText.value;
-  brandEditing.value = false;
-}
-
-function searchHomeUrl(searchUrl: string) {
+async function searchByKeyword(term: string) {
+  searching.value = true;
+  errorMessage.value = '';
+  searchQuery.value = term;
   try {
-    return new URL(searchUrl).origin;
-  } catch {
-    return searchUrl.replace(/[?#].*$/, '').replace(/\{keyword\}/g, '');
-  }
-}
-
-async function loadPersonalCategories() {
-  try {
-    personalCategories.value = await listPersonalCategories(requestOptions.value);
+    searchItems.value = await listPublicLinks({ keyword: term }, requestOptions.value);
   } catch (error) {
-    if (!isUnauthorized(error)) {
-      throw error;
-    }
-  }
-}
-
-function openCategoryDialog() {
-  categoryForm.name = '';
-  categoryDialogVisible.value = true;
-}
-
-function openLinkDialog(group?: LinkGroup) {
-  const personalCategoryId = defaultLinkCategoryId(group);
-  Object.assign(linkForm, {
-    name: '',
-    url: '',
-    categoryId: personalCategoryId,
-  });
-  linkDialogVisible.value = true;
-}
-
-function defaultLinkCategoryId(group?: LinkGroup) {
-  if (group?.key.startsWith('PERSONAL:')) {
-    const categoryId = group.key.slice('PERSONAL:'.length);
-    return categoryId === 'none' ? '' : categoryId;
-  }
-  return personalCategories.value[0]?.id || '';
-}
-
-function canAddLink(group?: LinkGroup) {
-  if (!loggedIn.value || !group) {
-    return false;
-  }
-  return group.key === 'FAVORITE' || group.key.startsWith('PERSONAL:');
-}
-
-function openLoginDialog() {
-  loginDialogVisible.value = true;
-}
-
-async function submitLogin() {
-  await loginFormRef.value?.validate();
-  saving.value = true;
-  try {
-    const input = { ...props.loginDefaults, ...loginForm };
-    if (props.loginHandler) {
-      await props.loginHandler(input);
-    } else {
-      await loginByMangoApi(input);
-    }
-    emit('login', input);
-    loginDialogVisible.value = false;
-    await loadLinks();
-  } catch (error) {
-    ElMessage.error(errorMessageOf(error, '登录失败'));
+    searchItems.value = [];
+    errorMessage.value = readableError(error, '搜索失败，请稍后重试');
   } finally {
-    saving.value = false;
+    searching.value = false;
   }
 }
 
-async function submitLogout() {
-  saving.value = true;
-  try {
-    if (props.logoutHandler) {
-      await props.logoutHandler();
-    } else {
-      await logoutByMangoApi();
+function clearSearch() {
+  keyword.value = '';
+  searchQuery.value = '';
+  searchItems.value = [];
+}
+
+function normalizeItems(items: LinkPublicItem[]) {
+  const result = new Map<string, LinkPublicItem>();
+  for (const item of items) {
+    if (!item.categoryName || !categoryNameSet.has(item.categoryName)) {
+      continue;
     }
-    clearMangoAuth();
-    detectedLogin.value = false;
-    personalCategories.value = [];
-    emit('logout');
-    await loadLinks();
-  } catch (error) {
-    ElMessage.error(errorMessageOf(error, '退出登录失败'));
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function loginByMangoApi(input: LinkPageLoginInput) {
-  const result = await mangoRequestJson<MangoAuthResult>('/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  if (result.passwordResetRequired || result.loginAction === 'CHANGE_PASSWORD') {
-    throw new Error('当前账号需要修改密码，请先在 Mango 完成改密后再登录网址导航');
-  }
-  const token = result.accessToken || result.token;
-  if (!token) {
-    throw new Error('登录响应无效');
-  }
-  mangoAuthToken.value = token;
-  persistMangoToken(token, result);
-  const fallbackUserInfo = normalizeLoginUserInfo(result, input);
-  mangoUserInfo.value = fallbackUserInfo;
-  persistMangoUserInfo(fallbackUserInfo);
-  await loadCurrentUserInfo();
-}
-
-async function logoutByMangoApi() {
-  try {
-    await mangoRequestJson<unknown>('/auth/logout', { method: 'POST' });
-  } catch (error) {
-    if (!isUnauthorized(error)) {
-      throw error;
+    const key = itemKey(item);
+    if (!result.has(key)) {
+      result.set(key, item);
     }
   }
+  return Array.from(result.values()).sort(itemComparator);
 }
 
-async function loadCurrentUserInfo() {
-  try {
-    const userInfo = await mangoRequestJson<MangoAuthResult>('/auth/info', { method: 'GET' });
-    const normalized = normalizeLoginUserInfo(userInfo, { username: mangoUserText(['username', 'account']) || loginForm.username, password: '' });
-    mangoUserInfo.value = { ...mangoUserInfo.value, ...normalized };
-    persistMangoUserInfo(mangoUserInfo.value);
-  } catch (error) {
-    if (mangoAuthToken.value && !isUnauthorized(error)) {
-      throw error;
-    }
+function itemComparator(left: LinkPublicItem, right: LinkPublicItem) {
+  const leftCategoryIndex = categoryNames.indexOf(left.categoryName as typeof categoryNames[number]);
+  const rightCategoryIndex = categoryNames.indexOf(right.categoryName as typeof categoryNames[number]);
+  if (leftCategoryIndex !== rightCategoryIndex) {
+    return leftCategoryIndex - rightCategoryIndex;
   }
+  return (left.sortNo ?? 0) - (right.sortNo ?? 0);
 }
 
-async function resolveRequestHeaders() {
-  const result = new Headers(await resolveProvidedHeaders());
-  if (mangoAuthToken.value && !result.has('Authorization')) {
-    result.set('Authorization', `Bearer ${mangoAuthToken.value}`);
-  }
-  const tenantId = mangoUserText(['tenantId']) || readStorageValue('tenantId');
-  if (tenantId && !result.has('X-Mango-Tenant-Id')) {
-    result.set('X-Mango-Tenant-Id', tenantId);
-  }
-  if (tenantId && !result.has('TENANT-ID')) {
-    result.set('TENANT-ID', tenantId);
-  }
-  return result;
+function itemKey(item: LinkPublicItem) {
+  return String(item.id || `${item.categoryName || 'none'}:${item.name || ''}:${item.url || ''}`);
 }
 
-async function resolveProvidedHeaders() {
-  if (typeof props.headers === 'function') {
-    return props.headers();
-  }
-  return props.headers;
-}
-
-async function mangoRequestJson<T>(path: string, init: RequestInit = {}) {
-  const response = await fetch(`${trimTrailingSlash(props.baseUrl || globalThis.location?.origin || '')}${path}`, {
-    ...init,
-    credentials: props.credentials,
-    headers: await mergeMangoHeaders(init.headers),
-  });
-  if (!response.ok) {
-    throw new Error(`Mango 接口请求失败：${response.status}`);
-  }
-  const result = await response.json() as MangoResult<T> | T;
-  if (isMangoResult(result)) {
-    if (!isSuccessMangoResult(result)) {
-      throw new Error(result.message || result.msg || 'Mango 接口返回失败');
-    }
-    return result.data as T;
-  }
-  return result as T;
-}
-
-async function mergeMangoHeaders(headers?: HeadersInit) {
-  const result = new Headers(await resolveRequestHeaders());
-  if (headers) {
-    new Headers(headers).forEach((value, key) => result.set(key, value));
-  }
-  return result;
-}
-
-function isMangoResult<T>(result: MangoResult<T> | T): result is MangoResult<T> {
-  return Boolean(result && typeof result === 'object'
-    && ('code' in result || 'success' in result || 'data' in result || 'msg' in result || 'message' in result));
-}
-
-function isSuccessMangoResult(result: MangoResult<unknown>) {
-  return result.success === true
-    || result.code === 0
-    || result.code === 200
-    || result.code === '0'
-    || result.code === '200';
-}
-
-function trimTrailingSlash(value: string) {
-  return value.replace(/\/+$/, '');
-}
-
-function normalizeLoginUserInfo(result: MangoAuthResult, fallback: LinkPageLoginInput) {
-  const userInfo = result.userInfo || {};
-  return {
-    ...userInfo,
-    userId: userInfo.userId ?? result.userId,
-    memberId: userInfo.memberId ?? result.memberId,
-    username: userInfo.username ?? result.username ?? fallback.username,
-    nickname: userInfo.nickname ?? result.nickname,
-    roles: userInfo.roles ?? result.roles,
-    permissions: userInfo.permissions ?? result.permissions,
-    passwordResetTicket: userInfo.passwordResetTicket ?? result.passwordResetTicket,
-    tenantId: userInfo.tenantId ?? result.tenantId ?? fallback.tenantId,
-    tenantCode: userInfo.tenantCode ?? result.tenantCode ?? fallback.tenantCode,
-    tenantName: userInfo.tenantName ?? result.tenantName,
-    realm: userInfo.realm ?? result.realm ?? fallback.realm,
-    actorType: userInfo.actorType ?? result.actorType ?? fallback.actorType,
-    partyType: userInfo.partyType ?? result.partyType ?? fallback.partyType,
-    partyId: userInfo.partyId ?? result.partyId ?? fallback.partyId,
-    appCode: userInfo.appCode ?? result.appCode ?? fallback.appCode,
-  };
-}
-
-function persistMangoToken(token: string, result: MangoAuthResult) {
-  if (typeof window === 'undefined') {
+function handleLinkClick(item: LinkPublicItem, event: MouseEvent) {
+  const target = linkTarget(item);
+  if (!target) {
+    event.preventDefault();
+    errorMessage.value = '当前导航地址无效';
     return;
   }
-  window.sessionStorage.setItem(mangoTokenKey, token);
-  if (result.tokenType) {
-    window.sessionStorage.setItem('tokenType', result.tokenType);
-  }
-  document.cookie = `${mangoTokenKey}=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
-  if (result.refreshToken) {
-    window.sessionStorage.setItem(mangoRefreshTokenKey, result.refreshToken);
-  }
-  const expiresIn = Number(result.expiresIn);
-  if (Number.isFinite(expiresIn) && expiresIn > 0) {
-    window.sessionStorage.setItem(mangoTokenExpiresAtKey, String(Date.now() + expiresIn * 1000));
-  }
-}
-
-function persistMangoUserInfo(userInfo: Record<string, unknown>) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  window.sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
-  const tenantId = userInfo.tenantId;
-  if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
-    window.sessionStorage.setItem('tenantId', String(tenantId));
-  }
-}
-
-function clearMangoAuth() {
-  mangoAuthToken.value = '';
-  mangoUserInfo.value = {};
-  if (typeof window === 'undefined') {
-    return;
-  }
-  window.sessionStorage.removeItem(mangoTokenKey);
-  window.sessionStorage.removeItem(mangoRefreshTokenKey);
-  window.sessionStorage.removeItem(mangoTokenExpiresAtKey);
-  window.sessionStorage.removeItem('tokenType');
-  window.sessionStorage.removeItem('userInfo');
-  window.sessionStorage.removeItem('tenantId');
-  document.cookie = `${mangoTokenKey}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-}
-
-function readMangoToken() {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  return window.sessionStorage.getItem(mangoTokenKey) || readCookie(mangoTokenKey) || '';
-}
-
-function readStoredMangoUserInfo() {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-  try {
-    const value = window.sessionStorage.getItem('userInfo');
-    const parsed = value ? JSON.parse(value) : {};
-    return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {};
-  } catch {
-    return {};
-  }
-}
-
-function readStorageValue(key: string) {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  return window.sessionStorage.getItem(key) || '';
-}
-
-function readCookie(name: string) {
-  if (typeof document === 'undefined' || !document.cookie) {
-    return '';
-  }
-  const prefix = `${name}=`;
-  const cookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith(prefix));
-  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : '';
-}
-
-function mangoUserText(keys: string[]) {
-  for (const key of keys) {
-    const value = mangoUserInfo.value[key];
-    if (value !== undefined && value !== null && value !== '') {
-      return String(value);
-    }
-  }
-  return '';
-}
-
-async function saveCategory() {
-  await categoryFormRef.value?.validate();
-  saving.value = true;
-  try {
-    const categoryId = await createPersonalCategory({ name: categoryForm.name }, requestOptions.value);
-    ElMessage.success('分组已新增');
-    categoryDialogVisible.value = false;
-    emit('created');
-    await loadPersonalCategories();
-    if (categoryId) {
-      activeGroupKey.value = `PERSONAL:${categoryId}`;
-    }
-  } catch (error) {
-    handleActionError(error, '新增分组失败');
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function saveLink() {
-  await linkFormRef.value?.validate();
-  saving.value = true;
-  try {
-    await createPersonalLink({
-      name: linkForm.name,
-      url: linkForm.url,
-      categoryId: linkForm.categoryId || undefined,
-    }, requestOptions.value);
-    ElMessage.success('网址已添加');
-    linkDialogVisible.value = false;
-    emit('created');
-    await loadLinks();
-  } catch (error) {
-    handleActionError(error, '添加网址失败');
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function toggleFavorite(item: LinkPublicItem) {
-  if (!item.id) {
-    return;
-  }
-  const id = String(item.id);
-  if (favoritePendingIds[id]) {
-    return;
-  }
-  if (!loggedIn.value) {
-    toggleLocalFavorite(item);
-    return;
-  }
-  favoritePendingIds[id] = true;
-  try {
-    if (item.favorited || item.source === 'FAVORITE') {
-      await deleteFavorite(item.id, requestOptions.value);
-      ElMessage.success('已取消收藏');
-      updateFavoriteState(item.id, false);
-    } else {
-      await createFavorite(item.id, requestOptions.value);
-      ElMessage.success('已收藏');
-      updateFavoriteState(item.id, true);
-    }
-    await loadLinks();
-  } catch (error) {
-    handleActionError(error, '收藏操作失败');
-  } finally {
-    favoritePendingIds[id] = false;
-  }
-}
-
-function toggleLocalFavorite(item: LinkPublicItem) {
-  const id = String(item.id || '');
-  if (!id) {
-    return;
-  }
-  if (localFavoriteIds.value.has(id)) {
-    localFavorites.value = localFavorites.value.filter(favorite => String(favorite.id || '') !== id);
-    saveLocalFavorites();
-    ElMessage.success('已取消收藏');
-    return;
-  }
-  localFavorites.value = [
-    {
-      id: item.id,
-      categoryId: item.categoryId,
-      categoryName: item.categoryName,
-      name: item.name,
-      url: item.url,
-      summary: item.summary,
-      iconUrl: item.iconUrl,
-      tags: item.tags,
-      openMode: item.openMode,
-      recommended: item.recommended,
-      sortNo: item.sortNo,
-      source: 'FAVORITE',
-      redirectUrl: item.redirectUrl,
-      favorited: true,
-    },
-    ...localFavorites.value.filter(favorite => String(favorite.id || '') !== id),
-  ];
-  saveLocalFavorites();
-  ElMessage.success('已收藏到本地');
-}
-
-function loadLocalFavorites() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  try {
-    const value = window.localStorage.getItem(localFavoritesKey);
-    const parsed = value ? JSON.parse(value) : [];
-    localFavorites.value = Array.isArray(parsed) ? parsed : [];
-  } catch {
-    localFavorites.value = [];
-  }
-}
-
-function saveLocalFavorites() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  window.localStorage.setItem(localFavoritesKey, JSON.stringify(localFavorites.value));
-}
-
-function readStoredBrandText() {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  return window.localStorage.getItem(localBrandTextKey) || '';
-}
-
-function saveStoredBrandText(value: string) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  window.localStorage.setItem(localBrandTextKey, value);
-}
-
-function isFavoritePending(item: LinkPublicItem) {
-  return Boolean(item.id && favoritePendingIds[String(item.id)]);
-}
-
-function updateFavoriteState(linkId: string, favorited: boolean) {
-  links.value = links.value.map(item => String(item.id || '') === String(linkId)
-    ? { ...item, favorited }
-    : item);
+  emit('opened', item);
 }
 
 function linkTarget(item: LinkPublicItem) {
@@ -972,15 +299,6 @@ function linkTarget(item: LinkPublicItem) {
   return resolveTargetUrl(target);
 }
 
-function openLink(item: LinkPublicItem) {
-  const target = linkTarget(item);
-  if (!target) {
-    return;
-  }
-  emit('opened', item);
-  window.open(target, '_blank', 'noopener,noreferrer');
-}
-
 function systemRedirectUrl(item: LinkPublicItem) {
   if (props.jumpEnabled === false) {
     return '';
@@ -988,10 +306,7 @@ function systemRedirectUrl(item: LinkPublicItem) {
   if (item.redirectUrl) {
     return item.redirectUrl;
   }
-  if (props.jumpEnabled === undefined) {
-    return '';
-  }
-  if (!item.url) {
+  if (props.jumpEnabled === undefined || !item.url) {
     return '';
   }
   return `/link/open/jump?url=${encodeURIComponent(item.url)}&source=${encodeURIComponent(item.source || 'PUBLIC')}`;
@@ -1001,31 +316,7 @@ function resolveTargetUrl(target: string) {
   if (/^https?:\/\//i.test(target)) {
     return target;
   }
-  const base = props.baseUrl || '';
-  if (base.startsWith('http')) {
-    return `${base.replace(/\/+$/, '')}${target}`;
-  }
-  return `${base.replace(/\/+$/, '')}${target}`;
-}
-
-function requestLogin() {
-  openLoginDialog();
-}
-
-function handleActionError(error: unknown, fallback: string) {
-  if (isUnauthorized(error)) {
-    requestLogin();
-    return;
-  }
-  ElMessage.error(errorMessageOf(error, fallback));
-}
-
-function errorMessageOf(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
-function isUnauthorized(error: unknown) {
-  return error instanceof Error && error.message.includes('401');
+  return target;
 }
 
 function displayIcon(item: LinkPublicItem) {
@@ -1041,11 +332,15 @@ function markIconFailed(item: LinkPublicItem) {
 }
 
 function iconKey(item: LinkPublicItem) {
-  return item.iconUrl || item.url || item.name || String(item.id || '');
+  return item.iconUrl || item.url || item.name || itemKey(item);
 }
 
 function itemInitial(item: LinkPublicItem) {
   const value = (item.name || item.url || '?').trim();
+  const latin = value.match(/[A-Za-z0-9]+/);
+  if (latin?.[0] && latin.index === 0) {
+    return latin[0].slice(0, 2).toUpperCase();
+  }
   return value.slice(0, 1).toUpperCase();
 }
 
@@ -1060,7 +355,7 @@ function normalizeIconUrl(value?: string) {
 }
 
 function faviconUrl(value?: string) {
-  if (!value) {
+  if (!value || value.startsWith('/')) {
     return '';
   }
   try {
@@ -1071,8 +366,17 @@ function faviconUrl(value?: string) {
   }
 }
 
-onMounted(() => {
-  loadLocalFavorites();
-  void loadLinks();
-});
+function displayUrl(value?: string) {
+  if (!value) {
+    return '';
+  }
+  return value.replace(/^https?:\/\//i, '');
+}
+
+function readableError(error: unknown, fallback: string) {
+  if (isLinkOpenApiNotFoundError(error)) {
+    return '网址导航服务未开通或接口不可用';
+  }
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 </script>

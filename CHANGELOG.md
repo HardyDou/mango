@@ -34,6 +34,74 @@
 - `pnpm -C mango-ui publish:pkg @mango/common --release-tag=v2026.07.09-common-search-panel-shellless-release --skip-shared-gates`
 - `pnpm -C mango-ui release:verify-npm @mango/common --version=1.0.15`
 
+## v2026.07.10-link-page-business-home-release - 2026-07-10
+
+### Changed
+
+- Published `@mango/link-page@1.0.4` with the business-home navigation page changes from the merged link-page work.
+- Updated the generated project release lock so business frontends resolve `@mango/link-page@1.0.4` instead of the older
+  `1.0.3` package.
+
+### Upgrade Notes
+
+- Business frontends that use `MangoLinkPage` should upgrade to `@mango/link-page@1.0.4`.
+- Continue importing the page styles through `@mango/link-page/style.css`.
+- This is a single-package frontend release. It does not change backend API, database, menu, permission, tenant,
+  Maven version, or the workbench link-navigation widget.
+
+### Published Packages
+
+- npm: `@mango/link-page@1.0.4` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.10-link-page-business-home-release`.
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/link-page build`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/link-page --version=1.0.4 --tag=v2026.07.10-link-page-business-home-release`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg @mango/link-page --release-tag=v2026.07.10-link-page-business-home-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/link-page --version=1.0.4`
+
+## v2026.07.09-auth-login-flow-release - 2026-07-09
+
+### New
+
+- Published `@mango/auth@1.0.13` with the reusable `useMangoLoginFlow` hook for business systems that need to build
+  custom login pages while reusing Mango login, tenant, WeCom login, forced password reset, token storage, user context,
+  and safe redirect behavior.
+
+### Changed
+
+- Updated release tooling so npm and pnpm commands resolve correctly on Windows release machines.
+- Added an npm tarball contract for `@mango/auth` to verify the published package exposes `useMangoLoginFlow`.
+
+### Upgrade Notes
+
+- Business frontends that need the login hook should upgrade to `@mango/auth@1.0.13`.
+- Import the hook from `@mango/auth`: `import { useMangoLoginFlow } from '@mango/auth';`.
+- Continue importing auth styles through `@mango/auth/style.css` when using package-provided pages.
+- This is a single-package auth release. It does not change backend API, database, menu, permission, tenant, Maven
+  version, CLI templates, or admin package runtime behavior.
+
+### Published Packages
+
+- npm: `@mango/auth@1.0.13` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.09-auth-login-flow-release`.
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui --filter @mango/auth build`
+- `pnpm -C mango-ui package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `node --check mango-ui/scripts/release-guard-utils.mjs`
+- `node --check mango-ui/scripts/publish-package.mjs`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/auth --version=1.0.13 --tag=v2026.07.09-auth-login-flow-release`
+- `pnpm -C mango-ui publish:pkg @mango/auth --release-tag=v2026.07.09-auth-login-flow-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/auth --version=1.0.13`
+
 ## v2026.07.08-admin-page-layout-release - 2026-07-08
 
 ### New
