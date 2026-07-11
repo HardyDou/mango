@@ -5,6 +5,11 @@
   },
   "versions": [
     {
+      "version": "v2026.07.11-maven-1.0.14-cli-release",
+      "label": "1.0.14",
+      "path": "/versions/v2026.07.11-maven-1.0.14-cli-release/"
+    },
+    {
       "version": "v2026.07.07-maven-1.0.10-resource-sync-release",
       "label": "1.0.10",
       "path": "/versions/v2026.07.07-maven-1.0.10-resource-sync-release/"
