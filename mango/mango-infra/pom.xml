@@ -28,6 +28,8 @@
         <module>mango-infra-web</module>
         <!-- 关系型持久化基础设施 -->
         <module>mango-infra-persistence</module>
+        <!-- Excel import/export default implementation -->
+        <module>mango-infra-excel-starter</module>
         <!-- Redis -->
         <!-- Feign RPC (OpenFeign) -->
         <module>mango-infra-feign</module>

@@ -1,5 +1,6 @@
 package io.mango.file.starter;
 
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.mapper.FileRecordMapper;
 import io.mango.file.core.storage.AliyunOssFileStorage;
@@ -9,9 +10,12 @@ import io.mango.file.core.storage.LocalFileStorage;
 import io.mango.file.core.storage.QiniuKodoFileStorage;
 import io.mango.file.core.storage.S3CompatibleFileStorage;
 import io.mango.file.core.storage.TencentCosFileStorage;
+import io.mango.file.core.service.IFileService;
+import io.mango.infra.persistence.web.starter.excel.ExcelFailureFileStore;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -19,6 +23,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.Ordered;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 /**
@@ -30,10 +35,10 @@ import java.util.List;
 @EnableConfigurationProperties(FileProperties.class)
 @MapperScan("io.mango.file.core.mapper")
 @ComponentScan({
-        "io.mango.file.core.resource",
-        "io.mango.file.core.service",
-        "io.mango.file.starter"
-    })
+    "io.mango.file.core.resource",
+    "io.mango.file.core.service",
+    "io.mango.file.starter"
+})
 public class FileAutoConfiguration {
 
     @Bean
@@ -73,5 +78,29 @@ public class FileAutoConfiguration {
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         registration.addUrlPatterns("/*");
         return registration;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ExcelFailureFileStore.class)
+    public ExcelFailureFileStore excelFailureFileStore(IFileService fileService) {
+        return (fileName, contentType, content, context) -> {
+            SaveFileCommand command = new SaveFileCommand();
+            command.setInputStream(new ByteArrayInputStream(content));
+            command.setFileName(fileName);
+            command.setFileSize((long) content.length);
+            command.setContentType(contentType);
+            command.setPurpose("excel-import-failure");
+            command.setAccessLevel("PRIVATE");
+            command.setBizType("EXCEL_IMPORT");
+            var result = fileService.save(command);
+            if (result == null || !result.isSuccess() || result.getData() == null) {
+                String message = "文件服务无响应";
+                if (result != null) {
+                    message = result.getMsg();
+                }
+                throw new IllegalStateException("保存 Excel 失败工作簿失败: " + message);
+            }
+            return result.getData().getId();
+        };
     }
 }

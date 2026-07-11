@@ -32,6 +32,35 @@
 - `pnpm -C mango-ui publish:pkg @mango/auth --release-tag=v2026.07.09-auth-login-flow-1.0.14-release --skip-shared-gates`
 - `pnpm -C mango-ui release:verify-npm @mango/auth --version=1.0.14`
 
+## v2026.07.10-link-page-business-home-release - 2026-07-10
+
+### Changed
+
+- Published `@mango/link-page@1.0.4` with the business-home navigation page changes from the merged link-page work.
+- Updated the generated project release lock so business frontends resolve `@mango/link-page@1.0.4` instead of the older
+  `1.0.3` package.
+
+### Upgrade Notes
+
+- Business frontends that use `MangoLinkPage` should upgrade to `@mango/link-page@1.0.4`.
+- Continue importing the page styles through `@mango/link-page/style.css`.
+- This is a single-package frontend release. It does not change backend API, database, menu, permission, tenant,
+  Maven version, or the workbench link-navigation widget.
+
+### Published Packages
+
+- npm: `@mango/link-page@1.0.4` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.10-link-page-business-home-release`.
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/link-page build`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/link-page --version=1.0.4 --tag=v2026.07.10-link-page-business-home-release`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg @mango/link-page --release-tag=v2026.07.10-link-page-business-home-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/link-page --version=1.0.4`
+
 ## v2026.07.09-auth-login-flow-release - 2026-07-09
 
 ### New

@@ -144,8 +144,7 @@ export function isLinkOpenApiNotFoundError(error: unknown): boolean {
 }
 
 export async function listPublicLinks(query: LinkPublicItemQuery = {}, options: LinkOpenApiClientOptions = {}) {
-  const baseUrl = trimTrailingSlash(options.baseUrl || globalThis.location?.origin || '');
-  const url = new URL(`${baseUrl}${publicLinksPath}`);
+  const url = new URL(publicLinksPath, 'http://mango.local');
   appendQuery(url, query);
   return requestJson<LinkPublicItem[]>(`${url.pathname}${url.search}`, { method: 'GET' }, options).then((data) => data || []);
 }
