@@ -235,3 +235,5 @@ pnpm -F @mango/file test
 - v2026.07.04-maven-1.0.8-platform-release 精简文件记录返回字段，业务表单仍只保存文件 ID、文件 token 或文件记录；详情回显、预览和下载应读取文件服务返回的 `previewUrl` 与 `downloadUrl`，不要依赖 `url`、`directPreviewUrl`、`directDownloadUrl`、bucket 或 objectName 等存储层字段。文件上传组件接入方式、权限资源、租户隔离、页面入口和本场景验收步骤不变；文档预览类页面继续按文件 ID 获取预览元数据，`FileRecordVO.previewUrl` 仅表示文件服务预览地址。
 
 - v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面入口、启动方式和表单验收步骤。文件基础接口仍由默认角色权限承载，业务单据的查看、编辑、归档和删除仍由业务菜单权限、数据权限和租户隔离控制。
+
+- v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面入口、启动方式和表单验收步骤。业务项目应将相关前端包与 `@mango/cli` 成组升级。
