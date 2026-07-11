@@ -36,6 +36,67 @@
 - `pnpm -C mango-ui publish:pkg @mango/common --release-tag=v2026.07.09-common-search-panel-form-layout-release`
 - `pnpm -C mango-ui release:verify-npm @mango/common --version=1.0.16`
 
+## v2026.07.09-common-search-panel-shellless-release - 2026-07-09
+
+### Changed
+
+- Released `@mango/common@1.0.15` with the shellless `MangoSearchPanel` style so business pages can place the
+  component inside their own card or page containers without duplicated background, border, shadow, or padding.
+- Kept the fixed-column search layout, collapsed-field behavior, and bottom expand button from the current main branch.
+
+### Upgrade Notes
+
+- Business frontends that use `MangoSearchPanel` should upgrade to `@mango/common@1.0.15`.
+- Continue importing the component from `@mango/common` or `@mango/common/components/MangoSearchPanel/index.vue`.
+- Continue importing styles through `@mango/common/style.css`.
+- This is a single-package release for the common component package. It does not change backend API, database, menu,
+  permission, tenant, Maven version, CLI templates, or admin package runtime behavior.
+
+### Published Packages
+
+- npm: `@mango/common@1.0.15` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.09-common-search-panel-shellless-release`.
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui --filter @mango/common build`
+- `pnpm -C mango-ui --filter @mango/common exec vitest run components/MangoListPage/__tests__/MangoPageLayout.spec.ts`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/common --version=1.0.15 --tag=v2026.07.09-common-search-panel-shellless-release`
+- `pnpm -C mango-ui publish:pkg @mango/common --release-tag=v2026.07.09-common-search-panel-shellless-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/common --version=1.0.15`
+
+## v2026.07.10-link-page-business-home-release - 2026-07-10
+
+### Changed
+
+- Published `@mango/link-page@1.0.4` with the business-home navigation page changes from the merged link-page work.
+- Updated the generated project release lock so business frontends resolve `@mango/link-page@1.0.4` instead of the older
+  `1.0.3` package.
+
+### Upgrade Notes
+
+- Business frontends that use `MangoLinkPage` should upgrade to `@mango/link-page@1.0.4`.
+- Continue importing the page styles through `@mango/link-page/style.css`.
+- This is a single-package frontend release. It does not change backend API, database, menu, permission, tenant,
+  Maven version, or the workbench link-navigation widget.
+
+### Published Packages
+
+- npm: `@mango/link-page@1.0.4` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.10-link-page-business-home-release`.
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+- `pnpm -C mango-ui --filter @mango/link-page build`
+- `node mango-ui/scripts/check-release-notes.mjs --package=@mango/link-page --version=1.0.4 --tag=v2026.07.10-link-page-business-home-release`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm -C mango-ui publish:pkg @mango/link-page --release-tag=v2026.07.10-link-page-business-home-release --skip-shared-gates`
+- `pnpm -C mango-ui release:verify-npm @mango/link-page --version=1.0.4`
+
 ## v2026.07.09-auth-login-flow-release - 2026-07-09
 
 ### New

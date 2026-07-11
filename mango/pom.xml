@@ -705,6 +705,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.infra.excel</groupId>
+                <artifactId>mango-infra-excel-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.infra.feign</groupId>
                 <artifactId>mango-infra-feign-starter</artifactId>
                 <version>${project.version}</version>
