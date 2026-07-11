@@ -2,6 +2,66 @@
 
 ## Unreleased
 
+## v2026.07.11-npm-lock-sync-release - 2026-07-11
+
+### Changed
+
+- Synchronized the Mango frontend npm release lock to the latest certified package batch, so new generated business
+  projects and package consumers resolve a coherent set of `@mango/*` versions.
+- Updated starter frontend package templates to consume `@mango/admin@1.0.44`, `@mango/admin-pages@1.0.19`, and
+  `@mango/common@1.0.16`.
+- Hardened the packed consumer type gate for pnpm 11 by writing supported workspace overrides for local tarballs and
+  carrying the approved dependency build-script allowlist into the temporary consumer workspace.
+
+### Upgrade Notes
+
+- Business frontends should upgrade Mango frontend packages as a batch. Do not mix the new aggregate packages with
+  older `@mango/auth`, `@mango/admin-pages`, `@mango/file`, `@mango/system`, or workflow package versions.
+- Install or upgrade the CLI with
+  `npm install -g @mango/cli@1.0.65 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- New generated business projects continue to use Mango Maven backend `1.0.13` and receive the npm lock batch below.
+
+### Published Packages
+
+- npm: `@mango/admin@1.0.44`
+- npm: `@mango/admin-pages@1.0.19`
+- npm: `@mango/admin-shell@1.0.39`
+- npm: `@mango/auth@1.0.15`
+- npm: `@mango/calendar@1.0.20`
+- npm: `@mango/cms@1.0.9`
+- npm: `@mango/file@1.0.20`
+- npm: `@mango/grid-layout@1.0.7`
+- npm: `@mango/grid-widgets@1.0.13`
+- npm: `@mango/home@1.0.5`
+- npm: `@mango/job@1.0.12`
+- npm: `@mango/link@1.0.6`
+- npm: `@mango/notice@1.0.21`
+- npm: `@mango/numgen@1.0.20`
+- npm: `@mango/payment@1.0.11`
+- npm: `@mango/rbac@1.0.13`
+- npm: `@mango/site-shell@1.0.3`
+- npm: `@mango/system@1.0.18`
+- npm: `@mango/template@1.0.20`
+- npm: `@mango/workflow@1.0.26`
+- npm: `@mango/workflow-business-example@1.0.25`
+- npm: `@mango/cli@1.0.65`
+- Registry: `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`
+- GitHub Release: `v2026.07.11-npm-lock-sync-release`
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/file test`
+- `pnpm -C mango-ui --filter @mango/workflow test`
+- `pnpm -C mango-ui --filter @mango/admin-shell test`
+- `pnpm -C mango-ui --filter @mango/workflow-business-example test`
+- `pnpm -C mango-ui run package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.07.09-common-search-panel-form-layout-release - 2026-07-09
 
 ### Changed
