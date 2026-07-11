@@ -44,6 +44,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.infra.kv</groupId>
+            <artifactId>mango-infra-kv-starter</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
             <version>${project.version}</version>

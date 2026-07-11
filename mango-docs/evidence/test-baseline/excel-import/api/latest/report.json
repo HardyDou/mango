@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "businessAssertionsPassed": true,
+  "capability": "excel-import",
+  "type": "api",
+  "commit": "8cf15d95caee37d08026ccccbe0aa6a809e6a1fe",
+  "testsPassed": 11,
+  "testsTotal": 11,
+  "realMultipartEntry": true,
+  "realDatabaseTransaction": true,
+  "failureFileIdVerified": 9001
+}

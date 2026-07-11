@@ -19,6 +19,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.aop.support.AopUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -141,6 +149,50 @@ class JdbcKvStoreH2IntegrationTest {
                 assertThrows(IllegalStateException.class, () -> failingWriter.writeThenFail("rollback:key", "after"));
 
                 assertEquals("before", kvStore.get("rollback:key"));
+        }
+
+        @Test
+        void setIfAbsent_concurrent_sameKey_noExceptions() throws Exception {
+                int threadCount = 24;
+                int roundsPerThread = 40;
+                ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+                CountDownLatch startLatch = new CountDownLatch(1);
+                CountDownLatch doneLatch = new CountDownLatch(threadCount);
+                AtomicInteger successCount = new AtomicInteger();
+                AtomicInteger failureCount = new AtomicInteger();
+                AtomicReference<Throwable> error = new AtomicReference<>();
+                List<Runnable> tasks = new ArrayList<>();
+
+                for (int i = 0; i < threadCount; i++) {
+                        tasks.add(() -> {
+                                try {
+                                        startLatch.await();
+                                        for (int j = 0; j < roundsPerThread; j++) {
+                                                boolean success = kvStore.setIfAbsent("concurrency-hotspot", "v", 3600);
+                                                if (success) {
+                                                        successCount.incrementAndGet();
+                                                } else {
+                                                        failureCount.incrementAndGet();
+                                                }
+                                        }
+                                } catch (Throwable t) {
+                                        error.compareAndSet(null, t);
+                                } finally {
+                                        doneLatch.countDown();
+                                }
+                        });
+                }
+
+                tasks.forEach(pool::execute);
+                startLatch.countDown();
+                assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "concurrency test timeout");
+                pool.shutdown();
+
+                assertTrue(error.get() == null, () -> "unexpected concurrency exception: " + error.get());
+                assertTrue(successCount.get() >= 1, "at least one request should obtain the lock");
+                assertEquals(threadCount * roundsPerThread,
+                        successCount.get() + failureCount.get(), "every call should produce a return value");
+                assertEquals("v", kvStore.get("concurrency-hotspot"));
         }
 
         @Configuration(proxyBeanMethods = false)

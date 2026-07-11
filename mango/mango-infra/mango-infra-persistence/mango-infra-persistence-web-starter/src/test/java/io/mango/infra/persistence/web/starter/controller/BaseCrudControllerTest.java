@@ -7,9 +7,11 @@ import io.mango.infra.persistence.api.query.PersistencePageResult;
 import io.mango.infra.persistence.web.starter.excel.ExcelAdapter;
 import io.mango.infra.persistence.web.starter.excel.ExcelExport;
 import io.mango.infra.persistence.web.starter.excel.ExcelExportContext;
+import io.mango.infra.persistence.web.starter.excel.ExcelFailureFileStore;
 import io.mango.infra.persistence.web.starter.excel.ExcelImport;
 import io.mango.infra.persistence.web.starter.excel.ExcelImportContext;
 import io.mango.infra.persistence.web.starter.excel.ExcelLine;
+import io.mango.infra.persistence.web.starter.excel.ExcelReadResult;
 import io.mango.infra.persistence.web.starter.excel.ExportableService;
 import io.mango.infra.persistence.web.starter.excel.ImportError;
 import io.mango.infra.persistence.web.starter.excel.ImportResult;
@@ -190,7 +192,8 @@ class BaseCrudControllerTest {
                 .andExpect(jsonPath("$.data.failed").value(1))
                 .andExpect(jsonPath("$.data.errors[0].line").value(3))
                 .andExpect(jsonPath("$.data.errors[0].field").value("username"))
-                .andExpect(jsonPath("$.data.errors[0].message").value("用户名不能为空"));
+                .andExpect(jsonPath("$.data.errors[0].message").value("用户名不能为空"))
+                .andExpect(jsonPath("$.data.failureFileId").value(9001));
 
         assertThat(recordingExcelCrudService.importRowsCalled).isFalse();
     }
@@ -207,6 +210,7 @@ class BaseCrudControllerTest {
                 .andExpect(jsonPath("$.data.total").value(2))
                 .andExpect(jsonPath("$.data.success").value(1))
                 .andExpect(jsonPath("$.data.failed").value(1))
+                .andExpect(jsonPath("$.data.errors.length()").value(3))
                 .andExpect(jsonPath("$.data.errors[0].line").value(4))
                 .andExpect(jsonPath("$.data.errors[0].field").value("username"))
                 .andExpect(jsonPath("$.data.errors[0].message").value("用户名已存在"));
@@ -229,7 +233,7 @@ class BaseCrudControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(2))
                 .andExpect(jsonPath("$.data.success").value(0))
-                .andExpect(jsonPath("$.data.failed").value(1))
+                .andExpect(jsonPath("$.data.failed").value(2))
                 .andExpect(jsonPath("$.data.errors[0].line").value(4));
 
         assertThat(recordingExcelCrudService.importRowsCalled).isFalse();
@@ -257,6 +261,20 @@ class BaseCrudControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.success").value(0))
                 .andExpect(jsonPath("$.data.failed").value(1));
+    }
+
+    @Test
+    void importData_shouldNotImportRowsWhenWorkbookHasStructuralError() throws Exception {
+        recordingExcelCrudService.returnStructuralError = true;
+        MockMultipartFile file = new MockMultipartFile(
+                "upload", "users.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/excel-users/import").file(file).param("importMode", "PARTIAL_SUCCESS"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.success").value(0))
+                .andExpect(jsonPath("$.data.batchErrors[0].code").value("DUPLICATE_TITLE"));
 
         assertThat(recordingExcelCrudService.importRowsCalled).isFalse();
     }
@@ -298,6 +316,11 @@ class BaseCrudControllerTest {
         @Bean
         ExcelAdapter excelAdapter(RecordingExcelCrudService service) {
             return new RecordingExcelAdapter(service);
+        }
+
+        @Bean
+        ExcelFailureFileStore excelFailureFileStore() {
+            return (fileName, contentType, content, context) -> 9001L;
         }
     }
 
@@ -435,6 +458,8 @@ class BaseCrudControllerTest {
 
         private boolean returnDuplicateImportRows;
 
+        private boolean returnStructuralError;
+
         private boolean importRowsCalled;
 
         private List<UserImportExcelRow> importedRows = new ArrayList<>();
@@ -442,6 +467,7 @@ class BaseCrudControllerTest {
         void reset() {
             returnInvalidImportRows = false;
             returnDuplicateImportRows = false;
+            returnStructuralError = false;
             importRowsCalled = false;
             lastExportQuery = null;
             lastExportContext = null;
@@ -474,7 +500,9 @@ class BaseCrudControllerTest {
                 return List.of();
             }
             return List.of(
-                    ImportError.of(context.headRowNumber() + 2, "username", "用户名已存在")
+                    ImportError.of(context.headRowNumber() + 2, "username", "用户名已存在"),
+                    ImportError.of(context.headRowNumber() + 2, "username", "用户名格式错误"),
+                    ImportError.of(context.headRowNumber() + 2, "nickname", "昵称关联记录不存在")
             );
         }
 
@@ -492,6 +520,17 @@ class BaseCrudControllerTest {
 
         RecordingExcelAdapter(RecordingExcelCrudService service) {
             this.service = service;
+        }
+
+        @Override
+        public <ROW> ExcelReadResult<ROW> readResult(MultipartFile file, ExcelImportContext context,
+                                                      Class<ROW> rowType) {
+            if (service.returnStructuralError) {
+                ImportError error = new ImportError(0, null, "存在重复标题: 状态",
+                        "DUPLICATE_TITLE", "状态", null);
+                return new ExcelReadResult<>(List.of(), List.of(error));
+            }
+            return ExcelAdapter.super.readResult(file, context, rowType);
         }
 
         @Override
@@ -522,6 +561,12 @@ class BaseCrudControllerTest {
                                                Class<ROW> rowType) {
             service.lastImportContext = context;
             service.templateRowType = rowType;
+        }
+
+        @Override
+        public byte[] createFailureWorkbook(MultipartFile file, ExcelImportContext context,
+                                            List<ImportError> errors) {
+            return new byte[]{9, 0, 0, 1};
         }
     }
 
