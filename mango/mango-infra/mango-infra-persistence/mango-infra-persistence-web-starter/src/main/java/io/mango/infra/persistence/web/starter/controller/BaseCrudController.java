@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Valid;
 import jakarta.validation.Validator;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,28 +77,28 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
     @PostMapping("/create")
     @Operation(summary = "新增记录", description = "标准 CRUD 接口。提交创建命令并新增记录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "创建命令对象，字段以具体资源定义为准")
-    public R<Object> create(@RequestBody C command) {
+    public R<Object> create(@RequestBody @Valid C command) {
         return R.ok(service.createByCommand(command));
     }
 
     @PostMapping("/update")
     @Operation(summary = "修改记录", description = "标准 CRUD 接口。提交更新命令并修改记录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "更新命令对象，字段以具体资源定义为准")
-    public R<Boolean> update(@RequestBody U command) {
+    public R<Boolean> update(@RequestBody @Valid U command) {
         return R.ok(service.updateByCommand(command));
     }
 
     @PostMapping("/delete")
     @Operation(summary = "删除记录", description = "标准 CRUD 接口。按主键删除单条记录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "删除命令对象")
-    public R<Boolean> delete(@RequestBody DeleteCommand command) {
+    public R<Boolean> delete(@RequestBody @Valid DeleteCommand command) {
         return R.ok(service.deleteById(command.getId()));
     }
 
     @PostMapping("/batch-delete")
     @Operation(summary = "批量删除记录", description = "标准 CRUD 接口。按主键列表批量删除记录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "批量删除命令对象")
-    public R<Boolean> batchDelete(@RequestBody BatchDeleteCommand command) {
+    public R<Boolean> batchDelete(@RequestBody @Valid BatchDeleteCommand command) {
         return R.ok(service.batchDeleteByIds(command.getIds()));
     }
 
@@ -120,7 +121,7 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
     @Operation(summary = "导出记录", description = "标准 CRUD 接口。按查询条件导出记录")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "导出查询条件，字段以具体资源查询对象定义为准")
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public void export(@RequestBody Map<String, Object> body,
+    public void export(@RequestBody @Valid Map<String, Object> body,
                        @Parameter(hidden = true) HttpServletResponse response) {
         if (!(service instanceof ExportableService exportableService)) {
             throw new IllegalStateException("当前资源未启用导出能力");
