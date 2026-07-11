@@ -208,7 +208,7 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         vo.setDirectUploadEnabled(properties.getUpload().isDirectUploadEnabled());
         vo.setDirectUploadExpireSeconds(properties.getUpload().getDirectUploadExpireSeconds());
         vo.setAccessTokenEnabled(properties.getAccess().isTokenEnabled());
-        vo.setPublicReadRequiresToken(false);
+        vo.setPublicReadRequiresToken(true);
         vo.setAccessMode(FileAccessMode.of(properties.getAccess().getMode()).name());
         vo.setAccessTokenExpireSeconds(properties.getAccess().getTokenExpireSeconds());
         vo.setPreviewProviderUrl(trimToNull(properties.getPreview().getProviderUrl()));

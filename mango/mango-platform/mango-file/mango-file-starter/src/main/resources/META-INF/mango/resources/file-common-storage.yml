@@ -100,7 +100,7 @@ mango:
               value: 本地 Docker Compose MinIO 示例配置。启动 mango-file/docker-compose.yml 后可设为默认验证对象存储。
       FILE_SETTINGS:
         - id: "2026061801000000101"
-          version: 2
+          version: 3
           biz-key: file.settings.default
           name: 文件中心默认配置
           target-module: file
@@ -149,19 +149,19 @@ mango:
               value: 900
             accessTokenEnabled:
               type: INT
-              value: 0
+              value: 1
             publicReadRequiresToken:
               type: INT
-              value: 0
+              value: 1
             accessMode:
               type: STRING
-              value: PROXY
+              value: DIRECT
             accessTokenExpireSeconds:
               type: LONG
-              value: 600
+              value: 86400
             previewExpireSeconds:
               type: LONG
-              value: 600
+              value: 86400
             previewExternalExtensions:
               type: STRING
               value: doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg

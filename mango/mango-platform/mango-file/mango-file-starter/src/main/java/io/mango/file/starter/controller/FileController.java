@@ -6,7 +6,6 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
 import io.mango.file.api.command.CompleteFileUploadPartCommand;
-import io.mango.file.api.command.CreateFileAccessLinkCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
@@ -16,13 +15,11 @@ import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
-import io.mango.file.api.vo.FileAccessLinkVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileUploadInitVO;
 import io.mango.file.api.vo.FileUploadPartSignVO;
 import io.mango.file.core.service.IFileService;
-import io.mango.file.starter.service.FileAccessLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,30 +46,6 @@ import java.util.List;
 public class FileController implements FileApi {
 
     private final IFileService fileService;
-    private final FileAccessLinkService accessLinkService;
-
-    @PostMapping("/access-links")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
-    @Operation(summary = "创建文件访问链接", description = "为预览或下载创建短时匿名能力链接")
-    public R<FileAccessLinkVO> createAccessLink(@Valid @RequestBody CreateFileAccessLinkCommand command) {
-        return R.ok(accessLinkService.create(command.getFileId(), command.getAction()));
-    }
-
-    @GetMapping("/access")
-    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC)
-    @Operation(summary = "使用文件访问链接", description = "匿名使用短时能力链接预览或下载文件")
-    public ResponseEntity<org.springframework.core.io.InputStreamResource> access(@RequestParam String token) {
-        FileAccessLinkService.AccessContent content = accessLinkService.open(token);
-        FileDownloadVO download = content.download();
-        ContentDisposition disposition = content.action() == io.mango.file.api.enums.FileAccessAction.PREVIEW
-                ? ContentDisposition.inline().filename(download.fileName(), StandardCharsets.UTF_8).build()
-                : ContentDisposition.attachment().filename(download.fileName(), StandardCharsets.UTF_8).build();
-        MediaType mediaType = download.contentType() == null || download.contentType().isBlank()
-                ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(download.contentType());
-        return ResponseEntity.ok().contentLength(download.contentLength()).contentType(mediaType)
-                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
-                .body(new org.springframework.core.io.InputStreamResource(download.inputStream()));
-    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN)

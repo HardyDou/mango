@@ -222,14 +222,16 @@ import { FilePreviewPanel } from '@mango/file';
 
 ## 9. 管理入口
 
-文件模块常用权限码：
+文件模块访问基线：
 
-| 范围 | 权限码 |
-|------|--------|
-| 文件 | `file:files:list`、`file:files:query`、`file:files:upload`、`file:files:download`、`file:files:archive`、`file:files:delete` |
+| 范围 | 访问要求 |
+|------|----------|
+| 详情、上传、批量、秒传、分片、预览、下载、打包、合并、运行时设置读取 | 登录即可，不要求角色权限码 |
+| 跨域预览、下载 | 直接使用查询返回的存储安全签名 URL，默认有效期 24 小时 |
+| 文件管理 | `file:files:list`、`file:files:archive`、`file:files:delete` |
 | 目录 | `file:directories:list`、`file:directories:add`、`file:directories:edit`、`file:directories:delete` |
 | 存储配置 | `file:storage-configs:list`、`file:storage-configs:query`、`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:active`、`file:storage-configs:test` |
-| 设置 | `file:settings:query`、`file:settings:edit` |
+| 设置管理 | `file:settings:edit` |
 
 前端只负责页面注册、按钮显隐和交互展示。租户、目录、文件状态、访问级别、业务归属和下载权限由后端校验。
 
@@ -247,9 +249,9 @@ import { FilePreviewPanel } from '@mango/file';
 
 确认业务 admin app 调用了 `registerMangoFileAdminPages()`，再检查菜单 component 和页面 key 映射。
 
-**下载按钮不显示或接口返回 403**
+**上传、预览或下载接口返回 401/403**
 
-检查 `file:files:download`、文件状态、访问级别、租户和业务归属。
+确认当前用户已登录，并检查文件状态、访问级别、租户和业务归属。基础文件接口不再依赖 `file:files:upload`、`file:files:query` 或 `file:files:download` 角色权限；跨域预览和下载直接使用查询返回的安全签名 URL，过期后重新查询文件记录。
 
 **文档预览打不开**
 

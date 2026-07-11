@@ -73,13 +73,13 @@ public class FileProperties {
     public static class Access {
 
         /** 文件访问模式：PROXY-通过 Java 服务转发，DIRECT-使用存储公开访问地址。 */
-        private String mode = "PROXY";
+        private String mode = "DIRECT";
 
         /** 是否启用带时效的访问令牌。 */
-        private boolean tokenEnabled = false;
+        private boolean tokenEnabled = true;
 
         /** 下载/访问令牌有效期，单位秒。 */
-        private long tokenExpireSeconds = 600L;
+        private long tokenExpireSeconds = 86400L;
     }
 
     @Data
@@ -89,7 +89,7 @@ public class FileProperties {
         private String providerUrl = "/file-preview/files/preview";
 
         /** 文档预览访问有效期，单位秒。 */
-        private long expireSeconds = 600L;
+        private long expireSeconds = 86400L;
 
         /** 可交由文档预览服务处理的扩展名。为空表示所有文件都可进入预览服务。 */
         private List<String> externalExtensions = List.of(

@@ -962,8 +962,8 @@ public class FileServiceImpl implements IFileService {
             fillConfiguredPreviewUrl(vo, record, settings);
             return;
         }
-        long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
-        long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 600L);
+        long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 86400L);
+        long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 86400L);
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                 .ifPresent(url -> {
@@ -989,7 +989,7 @@ public class FileServiceImpl implements IFileService {
         if (!requiresPreviewProvider(record, settings)) {
             return;
         }
-        long expireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
+        long expireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 86400L);
         String sourceUrl = StringUtils.hasText(vo.getDirectDownloadUrl()) ? vo.getDirectDownloadUrl() : vo.getDownloadUrl();
         String previewUrl = FilePreviewUrlBuilder.build(settings.getPreviewProviderUrl(), record, sourceUrl, expireSeconds);
         vo.setDocumentPreviewUrl(fileAccessUrlAssembler.externalize(previewUrl));
@@ -1029,8 +1029,8 @@ public class FileServiceImpl implements IFileService {
                     });
             return;
         }
-        long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
-        long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 600L);
+        long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 86400L);
+        long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 86400L);
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                     .ifPresent(url -> {

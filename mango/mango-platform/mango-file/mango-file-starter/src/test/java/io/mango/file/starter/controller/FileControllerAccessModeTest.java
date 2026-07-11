@@ -24,9 +24,6 @@ class FileControllerAccessModeTest {
         assertLogin("preview", Long.class);
         assertLogin("downloadResponse", Long.class, String.class, Long.class);
         assertLogin("previewContentResponse", Long.class);
-        assertLogin("createAccessLink", io.mango.file.api.command.CreateFileAccessLinkCommand.class);
-        Method access = FileController.class.getMethod("access", String.class);
-        assertThat(access.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
         Method settings = FileSettingsController.class.getMethod("get");
         assertThat(settings.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
     }

@@ -118,10 +118,10 @@ CREATE TABLE IF NOT EXISTS `file_settings` (
   `instant_upload_enabled` tinyint NOT NULL DEFAULT '1' COMMENT '是否启用秒传: 0-否 1-是',
   `direct_upload_enabled` tinyint NOT NULL DEFAULT '0' COMMENT '是否启用客户端直传对象存储: 0-否 1-是',
   `direct_upload_expire_seconds` bigint NOT NULL DEFAULT '900' COMMENT '直传签名有效期，单位秒',
-  `access_token_enabled` tinyint NOT NULL DEFAULT '0' COMMENT '是否启用限时访问令牌: 0-否 1-是',
-  `access_token_expire_seconds` bigint NOT NULL DEFAULT '600' COMMENT '访问令牌有效期，单位秒',
+  `access_token_enabled` tinyint NOT NULL DEFAULT '1' COMMENT '是否启用限时访问令牌: 0-否 1-是',
+  `access_token_expire_seconds` bigint NOT NULL DEFAULT '86400' COMMENT '访问令牌有效期，单位秒',
   `preview_provider_url` varchar(500) DEFAULT NULL COMMENT '外部文档预览服务地址',
-  `preview_expire_seconds` bigint NOT NULL DEFAULT '600' COMMENT '预览访问有效期，单位秒',
+  `preview_expire_seconds` bigint NOT NULL DEFAULT '86400' COMMENT '预览访问有效期，单位秒',
   `preview_external_extensions` varchar(1000) DEFAULT 'doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg' COMMENT '外部预览扩展名，逗号分隔',
   `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
   `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -294,7 +294,7 @@ DEALLOCATE PREPARE stmt;
 
 SET @add_public_read_requires_token = (
     SELECT IF(NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'file_settings' AND column_name = 'public_read_requires_token'),
-        'ALTER TABLE `file_settings` ADD COLUMN `public_read_requires_token` tinyint NOT NULL DEFAULT ''0'' COMMENT ''公开读取文件是否仍强制签名访问'' AFTER `access_token_enabled`',
+        'ALTER TABLE `file_settings` ADD COLUMN `public_read_requires_token` tinyint NOT NULL DEFAULT ''1'' COMMENT ''公开读取文件是否仍强制签名访问'' AFTER `access_token_enabled`',
         'SELECT 1')
 );
 PREPARE stmt FROM @add_public_read_requires_token;
@@ -483,7 +483,7 @@ SET @add_access_mode = (
               AND table_name = 'file_settings'
               AND column_name = 'access_mode'
         ),
-        'ALTER TABLE `file_settings` ADD COLUMN `access_mode` varchar(32) NOT NULL DEFAULT ''PROXY'' COMMENT ''文件访问模式: PROXY-Java服务转发 DIRECT-直连底层存储'' AFTER `public_read_requires_token`',
+        'ALTER TABLE `file_settings` ADD COLUMN `access_mode` varchar(32) NOT NULL DEFAULT ''DIRECT'' COMMENT ''文件访问模式: PROXY-Java服务转发 DIRECT-直连底层存储'' AFTER `public_read_requires_token`',
         'SELECT 1'
     )
 );
