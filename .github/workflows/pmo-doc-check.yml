@@ -38,7 +38,7 @@ jobs:
             -am \
             -DskipTests \
             -Dmango.architecture.base="$BASE_SHA" \
-            verify
+            install
           mvn -f mango/pom.xml \
             -pl :mango-architecture-verification \
             -am \
