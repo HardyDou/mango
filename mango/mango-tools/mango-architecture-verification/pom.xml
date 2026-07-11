@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango.tools</groupId>
+        <artifactId>mango-tools</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>mango-architecture-verification</artifactId>
+    <packaging>pom</packaging>
+    <name>Mango Architecture Verification</name>
+    <description>Runs the self-hosted architecture gate after Reactor compilation</description>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.6.3</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.mango.tools</groupId>
+                        <artifactId>mango-architecture-rules</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>mango-dependency-architecture-gate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <mangoArchitecture implementation="io.mango.architecture.MangoArchitectureEnforcerRule" />
+                            </rules>
+                            <failFast>false</failFast>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.mango.tools.maven.plugin</groupId>
+                <artifactId>mango-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <excludedModules>
+                        <excludedModule>mango-file-preview-engine</excludedModule>
+                    </excludedModules>
+                    <allowedReverseControllers>
+                        <allowedReverseController>io.mango.infra.realtime.starter.remote.RealtimeInboundRemoteController</allowedReverseController>
+                        <allowedReverseController>io.mango.resource.starter.remote.ResourceTargetController</allowedReverseController>
+                    </allowedReverseControllers>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>mango-architecture-gate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>architecture</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

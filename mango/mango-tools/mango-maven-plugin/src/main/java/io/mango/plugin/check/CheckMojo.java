@@ -185,10 +185,11 @@ public class CheckMojo extends AbstractMojo {
             "ResponseEntity", "HttpEntity", "RequestEntity");
 
     /**
-     * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
-     * api-contract, path-param, permission-param, kv-key, test-fixture, persistence-schema,
-     * persistence-access, mapper-sql-style, persistence-crud-baseline, service-contract,
-     * resource-registry, module-menu.
+     * Check rule: all, static, naming, module-info, path-param, permission-param, kv-key,
+     * test-fixture, persistence-schema, persistence-access, persistence-crud-baseline,
+     * resource-registry, module-menu. The dependency, module-boundary, remote-adapter,
+     * api-contract, mapper-sql-style and service-contract rules are compatibility-only
+     * diagnostics; {@code mvn verify} is the authoritative Java architecture gate.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -315,18 +316,33 @@ public class CheckMojo extends AbstractMojo {
             case "duplicate", "method-length", "class-length", "complexity" -> unsupportedGenericRule(rule);
             case "static" -> runStaticAnalysis();
             case "naming" -> checkNaming();
-            case "dependency", "module-boundary" -> checkDependency();
+            case "dependency", "module-boundary" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkDependency();
+            }
             case "module-info" -> checkModuleInfo();
-            case "remote-adapter" -> checkRemoteAdapter();
-            case "api-contract" -> checkApiContract();
+            case "remote-adapter" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkRemoteAdapter();
+            }
+            case "api-contract" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkApiContract();
+            }
             case "path-param" -> checkPathParam();
             case "permission-param" -> checkPermissionParam();
             case "kv-key" -> checkKvKey();
             case "persistence-schema" -> checkPersistenceSchema();
             case "persistence-access" -> checkPersistenceAccess();
-            case "mapper-sql-style" -> checkMapperSqlStyle();
+            case "mapper-sql-style" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkMapperSqlStyle();
+            }
             case "persistence-crud-baseline" -> checkPersistenceCrudBaseline();
-            case "service-contract" -> checkServiceContract();
+            case "service-contract" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkServiceContract();
+            }
             case "test-fixture" -> checkTestFixture();
             case "web-boundary" -> checkWebBoundary();
             case "resource-registry" -> checkResourceRegistry();
@@ -334,23 +350,18 @@ public class CheckMojo extends AbstractMojo {
             case "all" -> {
                 runStaticAnalysis();
                 checkNaming();
-                checkDependency();
                 checkModuleInfo();
-                checkRemoteAdapter();
-                checkApiContract();
                 checkPathParam();
                 checkPermissionParam();
                 checkKvKey();
                 checkPersistenceSchema();
                 if (isBusinessProject(resolveBasePath())) {
                     checkPersistenceAccess();
-                    checkMapperSqlStyle();
                     checkPersistenceCrudBaseline();
-                    checkServiceContract();
                 } else {
                     getLog().info("Skip business backend style checks in mango:check all; run "
-                            + "-Drule=persistence-access, mapper-sql-style, persistence-crud-baseline "
-                            + "or service-contract explicitly for governance scans.");
+                            + "-Drule=persistence-access or persistence-crud-baseline explicitly "
+                            + "for governance scans.");
                 }
                 checkTestFixture();
                 checkWebBoundary();
@@ -380,6 +391,11 @@ public class CheckMojo extends AbstractMojo {
         }
 
         getLog().info("Check completed. " + result.issues.size() + " issue(s) found.");
+    }
+
+    private void warnLegacyArchitectureDiagnostic() {
+        getLog().warn("This legacy source-text architecture diagnostic is not a delivery gate. "
+                + "Use mvn verify (mango:architecture) for authoritative Enforcer, ArchUnit and PMD 7 checks.");
     }
 
     private void unsupportedGenericRule(String selectedRule) {

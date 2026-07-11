@@ -271,9 +271,7 @@ class CheckMojoTest {
         Files.createDirectories(changedFile.getParent());
         Files.writeString(changedFile, "class DemoEntity {}\n");
 
-        for (String hardRule : List.of(
-                "DEPENDENCY", "MODULE_INFO", "REMOTE_ADAPTER", "API_CONTRACT",
-                "MAPPER_SQL_STYLE", "SERVICE_CONTRACT")) {
+        for (String hardRule : List.of("MODULE_INFO")) {
             CheckIssue issue = new CheckIssue();
             issue.type = hardRule;
             issue.severity = "CRITICAL";
@@ -4109,7 +4107,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkAll_inBusinessProject_runsBusinessBackendStyleChecks() throws Exception {
+    void checkAll_inBusinessProject_skipsLegacyJavaArchitectureDiagnostics() throws Exception {
         // given
         Files.createDirectories(tempDir.resolve("business-pmo"));
         Path sourceDir = tempDir.resolve("backend/demo/src/main/java/io/mango/demo/core/mapper");
@@ -4132,7 +4130,7 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         // then
-        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+        assertDoesNotThrow(() -> mojo.execute());
     }
 
     @Test

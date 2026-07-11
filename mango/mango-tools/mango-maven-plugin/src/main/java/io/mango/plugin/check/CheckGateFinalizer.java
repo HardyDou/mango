@@ -29,9 +29,7 @@ class CheckGateFinalizer {
     private static final String CHANGED_FILE_SEPARATOR = ",";
     private static final String LINE_SEPARATOR_PATTERN = "\\R";
     private static final Set<String> FILE_LEVEL_COUNT_RULES = Set.of("filelengthcheck");
-    private static final Set<String> NON_WAIVABLE_CHANGED_RULES = Set.of(
-            "DEPENDENCY", "MODULE_INFO", "REMOTE_ADAPTER", "API_CONTRACT",
-            "MAPPER_SQL_STYLE", "SERVICE_CONTRACT");
+    private static final Set<String> NON_WAIVABLE_CHANGED_RULES = Set.of("MODULE_INFO");
     private static final Set<String> REPOSITORY_ROOT_SEGMENTS = Set.of(
             "mango-parent",
             "mango-common",

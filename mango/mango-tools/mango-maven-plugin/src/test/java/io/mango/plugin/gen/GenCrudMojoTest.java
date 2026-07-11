@@ -1,6 +1,7 @@
 package io.mango.plugin.gen;
 
 import io.mango.plugin.check.CheckMojo;
+import io.mango.architecture.MangoPmdChecker;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -8,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -323,6 +325,27 @@ class GenCrudMojoTest {
         setField(checker, "session", null);
 
         assertDoesNotThrow(checker::execute);
+    }
+
+    @Test
+    void execute_generatedLayersPassPmd7ArchitectureGate() throws Exception {
+        createModuleStructure();
+
+        GenCrudMojo generator = new GenCrudMojo();
+        setField(generator, "module", "user");
+        setField(generator, "entity", "User");
+        setField(generator, "table", "sys_user");
+        setField(generator, "baseDir", tempDir.toString());
+        generator.execute();
+
+        Path module = tempDir.resolve("mango-user");
+        List<Path> sourceDirectories = List.of(
+                module.resolve("mango-user-api/src/main/java"),
+                module.resolve("mango-user-core/src/main/java"),
+                module.resolve("mango-user-starter/src/main/java"),
+                module.resolve("mango-user-starter-remote/src/main/java"));
+
+        assertTrue(new MangoPmdChecker().check(sourceDirectories, "21").isEmpty());
     }
 
     /**

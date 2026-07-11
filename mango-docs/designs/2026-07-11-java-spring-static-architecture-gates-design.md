@@ -10,7 +10,7 @@
 - JUnit 5 正反样例验证每条硬红线。
 - 所有规则由 `mvn verify` 执行，不引入 SonarQube、数据库、Docker 服务、后台进程或生产运行时依赖。
 
-版本固定为 Maven Enforcer Plugin 3.6.3、ArchUnit 1.4.2、PMD 7.17.0。PMD 不直接采用 2026 年最新版本，是为了保持 Mango Java 17 构建基线兼容；升级必须重新执行本设计的全部正反和性能验收。
+版本固定为 Maven Enforcer Plugin 3.6.3、ArchUnit 1.4.2、PMD 7.26.0。Mango 根聚合 POM 声明 Java 21，发布用 `mango-parent` 仍声明 Java 17，这是待单独治理的双基线；架构规则 JAR 按 Java 17 编译并用 PMD 7 分析最高 Java 21 源码。版本或语言基线升级必须重新执行本设计的全部正反和性能验收。仓库现有 P3C 2.1.1/PMD 6 通用检查暂时保持独立兼容执行，不得作为七类架构硬红线的实现或 PASS 证据。
 
 ## 2. 设计输入与范围
 
@@ -40,7 +40,7 @@
 - 不修改生产运行时依赖或业务接口行为。
 - 不使用静态规则替代关键业务 UNIT/API 测试。
 - 不在本次提交中修复 Mango 扫描发现的全部存量业务代码。
-- 不保留当前 Java 正则实现作为第二套长期规则；只允许在迁移验证期间用于结果对比，切换后删除对应硬判断。
+- 不保留当前 Java 正则实现作为第二套交付门禁；切换后从 CI、`mango:check all` 和不可豁免规则中删除对应硬判断。历史显式命令只作为兼容诊断并打印非权威警告。
 
 ## 3. 组件与边界
 
@@ -69,7 +69,7 @@
 
 ### 3.3 PMD 7 AST 规则
 
-新增独立 PMD Java Rule JAR，接入仓库已有 `maven-pmd-plugin` 的同一次源码解析：
+新增独立 PMD Java Rule JAR，由 PMD 7.26.0 执行一次架构源码解析：
 
 - Controller/API HTTP 方法返回 `R<T>`，不暴露 Entity/PO。
 - Controller 类具有 `@Validated`；`@RequestBody` 参数具有 `@Valid`。
@@ -165,7 +165,7 @@ mvn verify
 - changed-only 在编译完成后的额外中位耗时不超过 10 秒。
 - Mango 全 Reactor 架构检查额外中位耗时不超过 30 秒。
 - 同一进程内 ArchUnit 只导入一次 Reactor 字节码。
-- PMD 自定义规则加入既有 PMD AST 遍历，不启动第二次全仓 PMD。
+- 七类架构规则共享同一次 PMD 7 AST 遍历，不得为每条规则重复解析。现有 P3C 兼容检查属于独立迁移边界，不计作架构门禁的重复解析。
 - 报告冷缓存、热缓存、样本数、中位数和最大值；不得只报告最快一次。
 
 ## 7. 实施和切换
@@ -173,7 +173,7 @@ mvn verify
 1. 建立三个隔离规则模块：Enforcer、ArchUnit、PMD，统一规则编号和测试 fixture。
 2. 先修复路径作用域和注解语义测试，再实现七项规则。
 3. 在同一冻结输入上并行运行旧正则与新引擎，只用于差异定位。
-4. 新引擎满足效果、路径一致性和性能阈值后，删除 Java 七项对应的旧正则硬判断。
+4. 新引擎满足效果、路径一致性和性能阈值后，从 CI、`mango:check all` 和不可豁免规则中删除 Java 七项对应的旧正则硬判断；历史显式命令降级为兼容诊断。
 5. 将 Enforcer、ArchUnit、PMD 绑定 `mvn verify`，CI 只调用统一入口。
 6. 更新 Mango 工具说明和业务 PMO 发布物；不发布、不 push、不合并，直到用户明确批准。
 

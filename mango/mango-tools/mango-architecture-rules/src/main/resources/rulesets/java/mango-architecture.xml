@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Mango Java Architecture"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>Mango Java/Spring architecture hard gates.</description>
+    <rule name="MangoJavaArchitecture"
+          language="java"
+          message="Mango Java/Spring architecture violation"
+          class="io.mango.architecture.pmd.MangoJavaArchitectureRule">
+        <description>Checks Controller, Service and Mapper source semantics in one PMD 7 pass.</description>
+        <priority>1</priority>
+    </rule>
+</ruleset>
