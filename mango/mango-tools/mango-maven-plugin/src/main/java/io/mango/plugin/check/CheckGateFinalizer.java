@@ -29,6 +29,9 @@ class CheckGateFinalizer {
     private static final String CHANGED_FILE_SEPARATOR = ",";
     private static final String LINE_SEPARATOR_PATTERN = "\\R";
     private static final Set<String> FILE_LEVEL_COUNT_RULES = Set.of("filelengthcheck");
+    private static final Set<String> NON_WAIVABLE_CHANGED_RULES = Set.of(
+            "DEPENDENCY", "MODULE_INFO", "REMOTE_ADAPTER", "API_CONTRACT",
+            "MAPPER_SQL_STYLE", "SERVICE_CONTRACT");
     private static final Set<String> REPOSITORY_ROOT_SEGMENTS = Set.of(
             "mango-parent",
             "mango-common",
@@ -111,6 +114,9 @@ class CheckGateFinalizer {
     }
 
     private boolean isNewIssue(CheckIssue issue, Set<String> changedFileSet, boolean hasBaseline) {
+        if (issue.inChangedFiles && isNonWaivableChangedRule(issue)) {
+            return true;
+        }
         if (hasBaseline) {
             if (issue.baseline) {
                 return false;
@@ -118,6 +124,11 @@ class CheckGateFinalizer {
             return changedFileSet.isEmpty() || issue.inChangedFiles;
         }
         return issue.inChangedFiles;
+    }
+
+    private boolean isNonWaivableChangedRule(CheckIssue issue) {
+        return issue != null && issue.rule != null
+                && NON_WAIVABLE_CHANGED_RULES.contains(issue.rule.toUpperCase(Locale.ROOT));
     }
 
     private boolean consumeBaselineMatch(Map<String, Integer> baselineFingerprints, CheckIssue issue) {
@@ -214,7 +225,15 @@ class CheckGateFinalizer {
     private Set<String> resolveChangedFiles(CheckResult result) throws MojoExecutionException {
         String changedFiles = options.changedFiles();
         if (changedFiles != null && !changedFiles.isBlank()) {
-            return changedFilesFromParameter(changedFiles);
+            Set<String> declared = changedFilesFromParameter(changedFiles);
+            String baseRef = options.baseRef();
+            if (baseRef != null && !baseRef.isBlank()) {
+                Set<String> actual = changedFilesFromGit(result, baseRef);
+                if (!declared.equals(actual)) {
+                    throw new MojoExecutionException("mango.check.changedFiles does not match trusted git diff from " + baseRef);
+                }
+            }
+            return declared;
         }
         String baseRef = options.baseRef();
         if (baseRef == null || baseRef.isBlank() || options.basePath() == null) {
@@ -241,8 +260,7 @@ class CheckGateFinalizer {
             String output = new String(process.getInputStream().readAllBytes());
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                result.addGateMessage("failed to resolve changed files from " + baseRef + ": " + output.trim());
-                return files;
+                throw new MojoExecutionException("Failed to resolve changed files from " + baseRef + ": " + output.trim());
             }
             for (String line : output.split(LINE_SEPARATOR_PATTERN)) {
                 addNormalizedFile(files, line);
@@ -277,7 +295,6 @@ class CheckGateFinalizer {
             CheckResult baseline = objectMapper.readValue(baselinePath.toFile(), CheckResult.class);
             if (baseline.issues != null) {
                 for (CheckIssue issue : baseline.issues) {
-                    addFingerprint(fingerprints, fingerprintForBaseline(issue));
                     addFingerprint(fingerprints, stableFingerprint(issue));
                 }
             }

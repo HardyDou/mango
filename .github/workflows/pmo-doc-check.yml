@@ -22,6 +22,34 @@ jobs:
       - name: Check PMO preflight routing
         run: node mango-pmo/tools/check-pmo-preflight.mjs
 
+      - name: Set up Java for backend architecture gates
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Enforce Java and Spring architecture contracts
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mvn -f mango/pom.xml \
+            -pl mango-tools/mango-maven-plugin -am \
+            -DskipTests \
+            install
+          for rule in dependency module-info remote-adapter api-contract mapper-sql-style service-contract; do
+            mvn -f mango/pom.xml \
+              io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:check \
+              -Drule="$rule" \
+              -DbaseDir="${{ github.workspace }}" \
+              -Dmango.check.changedOnly=true \
+              -Dmango.check.gate=no-new-violations \
+              -Dmango.check.baseRef="$BASE_SHA" \
+              -Dmango.check.baselineFile="${{ github.workspace }}/mango-pmo/baselines/mango-check/no-new-violations-baseline.json" \
+              -Doutput=json \
+              -DreportFile="${{ github.workspace }}/.runtime/pmo/backend-${rule}.json"
+          done
+
       - name: Check governance intent
         run: node mango-pmo/tools/check-governance-intent.mjs
 

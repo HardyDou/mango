@@ -92,8 +92,8 @@
     },
     {
       "path": "rules/backend/03-api.md",
-      "sha256": "0e14d36250a4dda0760fc4dce903aa255ac28aef15720210b263a3ffbeecfee7",
-      "size": 6817
+      "sha256": "644f068a76d3d7059d964bce75d977ec674fa092cb6aaf85eadb3449b74fa2c2",
+      "size": 8772
     },
     {
       "path": "rules/backend/04-db.md",
@@ -102,8 +102,8 @@
     },
     {
       "path": "rules/backend/05-module.md",
-      "sha256": "fb181f690201b88bbfc52629542cc082760baa49be1eef74e4a769083ca2f8e8",
-      "size": 9571
+      "sha256": "c4c32ba0ef01509c292f10cc561c5e7e329f187178d1b0f97cb09b9ebf4d91a2",
+      "size": 10367
     },
     {
       "path": "rules/backend/06-security.md",
@@ -192,7 +192,7 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "cddfd532d34617d73147a97995e2160a8b13f800971b470af77879c406b90200",
+      "sha256": "5a05d1c120a8e7c39ff486b70de1b611c506382ac00dd4b7b016b466e181d4c1",
       "size": 16849
     },
     {

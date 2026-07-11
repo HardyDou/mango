@@ -89,7 +89,9 @@ mvn mango:check \
   -DreportFile=target/mango-check-report.json
 ```
 
-`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只记录既有问题。更新基线前必须确认报告中的 `newIssueCount` 为 `0`，不能把本次新增问题写入基线。
+`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只记录既有问题。更新基线前必须确认报告中的 `newIssueCount` 为 `0`，不能把本次新增问题写入基线。`DEPENDENCY`、`MODULE_INFO`、`REMOTE_ADAPTER`、`API_CONTRACT`、`MAPPER_SQL_STYLE`、`SERVICE_CONTRACT` 命中本次变更文件时不可由 baseline 豁免。
+
+`API_CONTRACT` 同时硬校验：Controller 实现 `XxxApi`、启用 `@Validated/@Valid`、只依赖 `IXxxService`、统一返回 `R<T>`；Service 使用 `Require + XxxCode/BizCode` 校验业务前置条件且不返回 `R`；Entity、Mapper、Feign、Controller 和 Service 实现必须位于规定模块。
 
 检查当前变更文件内的模块菜单声明：
 

@@ -112,31 +112,70 @@ public class GenCrudMojo extends AbstractMojo {
         String entityName = toPascalCase(entity);
         String camelEntity = toCamelCase(entity);
         String resourcePath = camelEntity.toLowerCase();
+        String modulePath = module.toLowerCase();
+        String controllerPath = modulePath.equals(resourcePath)
+                ? "/" + modulePath
+                : "/" + modulePath + "/" + resourcePath;
         String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".starter.controller;\n\n" +
+            "import io.mango." + module + ".api." + entityName + "Api;\n" +
             "import io.mango." + module + ".api.command.Create" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
+            "import io.mango." + module + ".api.vo." + entityName + "VO;\n" +
             "import io.mango." + module + ".core.service.I" + entityName + "Service;\n" +
-            "import io.mango.infra.persistence.web.starter.controller.BaseCrudController;\n" +
+            "import io.mango.common.result.R;\n" +
+            "import io.mango.infra.persistence.api.crud.DeleteCommand;\n" +
+            "import io.mango.infra.persistence.api.query.PersistencePageResult;\n" +
+            "import jakarta.validation.Valid;\n" +
+            "import jakarta.validation.constraints.NotNull;\n" +
+            "import org.springframework.validation.annotation.Validated;\n" +
+            "import org.springdoc.core.annotations.ParameterObject;\n" +
+            "import org.springframework.web.bind.annotation.GetMapping;\n" +
+            "import org.springframework.web.bind.annotation.PostMapping;\n" +
+            "import org.springframework.web.bind.annotation.RequestBody;\n" +
             "import org.springframework.web.bind.annotation.RequestMapping;\n" +
+            "import org.springframework.web.bind.annotation.RequestParam;\n" +
             "import org.springframework.web.bind.annotation.RestController;\n\n" +
             javaDoc(entityName + " 管理接口。", author) +
             "@RestController\n" +
-            "@RequestMapping(\"/" + resourcePath + "\")\n" +
-            "public class " + entityName + "Controller extends BaseCrudController<\n" +
-            "        I" + entityName + "Service,\n" +
-            "        Create" + entityName + "Command,\n" +
-            "        Update" + entityName + "Command,\n" +
-            "        " + entityName + "PageQuery> {\n\n" +
+            "@Validated\n" +
+            "@RequestMapping(\"" + controllerPath + "\")\n" +
+            "public class " + entityName + "Controller implements " + entityName + "Api {\n\n" +
+            "    private final I" + entityName + "Service service;\n\n" +
             "    public " + entityName + "Controller(I" + entityName + "Service service) {\n" +
-            "        super(service);\n" +
+            "        this.service = service;\n" +
             "    }\n\n" +
             "    @Override\n" +
-            "    protected Class<" + entityName + "PageQuery> queryType() {\n" +
-            "        return " + entityName + "PageQuery.class;\n" +
+            "    @GetMapping(\"/page\")\n" +
+            "    @SuppressWarnings(\"unchecked\")\n" +
+            "    public R<PersistencePageResult<" + entityName + "VO>> page(@ParameterObject @Valid "
+                    + entityName + "PageQuery query) {\n" +
+            "        PersistencePageResult<" + entityName + "VO> result = (PersistencePageResult<" + entityName
+                    + "VO>) (PersistencePageResult<?>) service.pageByQuery(query);\n" +
+            "        return R.ok(result);\n" +
+            "    }\n\n" +
+            "    @Override\n" +
+            "    @GetMapping(\"/detail\")\n" +
+            "    public R<" + entityName + "VO> detail(@RequestParam(\"id\") @NotNull Long id) {\n" +
+            "        return R.ok((" + entityName + "VO) service.detailById(id));\n" +
+            "    }\n\n" +
+            "    @Override\n" +
+            "    @PostMapping(\"/create\")\n" +
+            "    public R<Object> create(@RequestBody @Valid Create" + entityName + "Command command) {\n" +
+            "        return R.ok(service.createByCommand(command));\n" +
+            "    }\n\n" +
+            "    @Override\n" +
+            "    @PostMapping(\"/update\")\n" +
+            "    public R<Boolean> update(@RequestBody @Valid Update" + entityName + "Command command) {\n" +
+            "        return R.ok(service.updateByCommand(command));\n" +
+            "    }\n\n" +
+            "    @Override\n" +
+            "    @PostMapping(\"/delete\")\n" +
+            "    public R<Boolean> delete(@RequestBody @Valid DeleteCommand command) {\n" +
+            "        return R.ok(service.deleteById(command.getId()));\n" +
             "    }\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Controller.java"), content);
@@ -158,11 +197,11 @@ public class GenCrudMojo extends AbstractMojo {
             "import jakarta.validation.Valid;\n\n" +
             javaDoc(entityName + " 跨模块接口契约。", author) +
             "public interface " + entityName + "Api {\n\n" +
-            "    R<PersistencePageResult<" + entityName + "VO>> page(" + entityName + "PageQuery query);\n\n" +
-            "    R<" + entityName + "VO> detail(Long id);\n\n" +
+            "    R<PersistencePageResult<" + entityName + "VO>> page(@Valid " + entityName + "PageQuery query);\n\n" +
+            "    R<" + entityName + "VO> detail(@jakarta.validation.constraints.NotNull Long id);\n\n" +
             "    R<Object> create(@Valid Create" + entityName + "Command command);\n\n" +
             "    R<Boolean> update(@Valid Update" + entityName + "Command command);\n\n" +
-            "    R<Boolean> delete(DeleteCommand command);\n" +
+            "    R<Boolean> delete(@Valid DeleteCommand command);\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Api.java"), content);
     }
@@ -398,6 +437,10 @@ public class GenCrudMojo extends AbstractMojo {
     private void generateFeignClient(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
         String resourcePath = toCamelCase(entity).toLowerCase();
+        String modulePath = module.toLowerCase();
+        String remotePath = modulePath.equals(resourcePath)
+                ? "/" + modulePath
+                : "/" + modulePath + "/" + resourcePath;
         String author = currentAuthor();
 
         String content =
@@ -410,6 +453,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango.common.result.R;\n" +
             "import io.mango.infra.persistence.api.crud.DeleteCommand;\n" +
             "import io.mango.infra.persistence.api.query.PersistencePageResult;\n" +
+            "import jakarta.validation.Valid;\n" +
             "import org.springframework.cloud.openfeign.FeignClient;\n" +
             "import org.springframework.cloud.openfeign.SpringQueryMap;\n" +
             "import org.springframework.web.bind.annotation.GetMapping;\n" +
@@ -417,7 +461,8 @@ public class GenCrudMojo extends AbstractMojo {
             "import org.springframework.web.bind.annotation.RequestBody;\n" +
             "import org.springframework.web.bind.annotation.RequestParam;\n\n" +
             javaDoc(entityName + " 远程调用客户端。", author) +
-            "@FeignClient(name = \"" + module + "-service\", path = \"/" + resourcePath + "\")\n" +
+            "@FeignClient(name = \"mango-" + module + "\", contextId = \""
+                    + lowerCamelCase(entityName + "FeignClient") + "\", path = \"" + remotePath + "\")\n" +
             "public interface " + entityName + "FeignClient extends " + entityName + "Api {\n\n" +
             "    @Override\n" +
             "    @GetMapping(\"/page\")\n" +
@@ -428,15 +473,22 @@ public class GenCrudMojo extends AbstractMojo {
             "    R<" + entityName + "VO> detail(@RequestParam(\"id\") Long id);\n\n" +
             "    @Override\n" +
             "    @PostMapping(\"/create\")\n" +
-            "    R<Object> create(@RequestBody Create" + entityName + "Command command);\n\n" +
+            "    R<Object> create(@RequestBody @Valid Create" + entityName + "Command command);\n\n" +
             "    @Override\n" +
             "    @PostMapping(\"/update\")\n" +
-            "    R<Boolean> update(@RequestBody Update" + entityName + "Command command);\n\n" +
+            "    R<Boolean> update(@RequestBody @Valid Update" + entityName + "Command command);\n\n" +
             "    @Override\n" +
             "    @PostMapping(\"/delete\")\n" +
-            "    R<Boolean> delete(@RequestBody DeleteCommand command);\n" +
+            "    R<Boolean> delete(@RequestBody @Valid DeleteCommand command);\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "FeignClient.java"), content);
+    }
+
+    private String lowerCamelCase(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return Character.toLowerCase(value.charAt(0)) + value.substring(1);
     }
 
     private void generateRemoteAutoConfiguration(Path dir) throws IOException {

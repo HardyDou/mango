@@ -1,5 +1,6 @@
 package io.mango.plugin.gen;
 
+import io.mango.plugin.check.CheckMojo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -166,8 +167,10 @@ class GenCrudMojoTest {
         Path controllerFile = tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java");
         String content = Files.readString(controllerFile);
         assertTrue(content.contains("@RequestMapping(\"/user\")"), "Controller should have @RequestMapping");
-        assertTrue(content.contains("extends BaseCrudController<"), "Controller should reuse standard CRUD controller");
-        assertTrue(content.contains("protected Class<UserPageQuery> queryType()"));
+        assertTrue(content.contains("implements UserApi"), "Controller should implement the API contract");
+        assertTrue(content.contains("@Validated"), "Controller should enable Bean Validation");
+        assertTrue(content.contains("private final IUserService service;"), "Controller should only depend on the service interface");
+        assertTrue(content.contains("R<PersistencePageResult<UserVO>> page(@ParameterObject @Valid UserPageQuery query)"));
         assertFalse(content.contains("selectPage("), "Controller should not hand-roll pagination");
     }
 
@@ -237,9 +240,11 @@ class GenCrudMojoTest {
                 "mango-user/mango-user-starter-remote/src/main/java/io/mango/user/starter/remote/UserFeignClient.java"));
         assertTrue(apiContent.contains("R<Boolean> update(@Valid UpdateUserCommand command);"));
         assertFalse(apiContent.contains("R<Void> update(Long id, UpdateUserCommand command);"));
-        assertTrue(controllerContent.contains("extends BaseCrudController<"));
+        assertTrue(controllerContent.contains("implements UserApi"));
+        assertTrue(controllerContent.contains("@Validated"));
         assertTrue(feignContent.contains("@PostMapping(\"/update\")"));
-        assertTrue(feignContent.contains("R<Boolean> update(@RequestBody UpdateUserCommand command);"));
+        assertTrue(feignContent.contains("R<Boolean> update(@RequestBody @Valid UpdateUserCommand command);"));
+        assertTrue(feignContent.contains("@FeignClient(name = \"mango-user\", contextId = \"userFeignClient\", path = \"/user\")"));
     }
 
     @Test
@@ -265,7 +270,8 @@ class GenCrudMojoTest {
                 "mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java"));
         assertTrue(serviceContent.contains("extends MangoCrudService"));
         assertTrue(implContent.contains("extends MangoCrudServiceImpl<UserMapper, UserEntity>"));
-        assertTrue(controllerContent.contains("extends BaseCrudController<"));
+        assertTrue(controllerContent.contains("implements UserApi"));
+        assertTrue(controllerContent.contains("@RequestBody @Valid CreateUserCommand command"));
         assertFalse(implContent.contains("extends ServiceImpl"));
         assertFalse(implContent.contains("selectPage("));
         assertFalse(implContent.contains("new Page<"));
@@ -298,6 +304,25 @@ class GenCrudMojoTest {
         assertTrue(implContent.contains(".selfField(\"created_by\")"));
         assertTrue(implContent.contains(".orgField(\"org_id\")"));
         assertTrue(implContent.contains(".tenantField(\"tenant_id\")"));
+    }
+
+    @Test
+    void execute_generatedLayersPassApiContractGate() throws Exception {
+        createModuleStructure();
+
+        GenCrudMojo generator = new GenCrudMojo();
+        setField(generator, "module", "user");
+        setField(generator, "entity", "User");
+        setField(generator, "table", "sys_user");
+        setField(generator, "baseDir", tempDir.toString());
+        generator.execute();
+
+        CheckMojo checker = new CheckMojo();
+        setField(checker, "rule", "api-contract");
+        setField(checker, "baseDir", tempDir.toString());
+        setField(checker, "session", null);
+
+        assertDoesNotThrow(checker::execute);
     }
 
     /**
