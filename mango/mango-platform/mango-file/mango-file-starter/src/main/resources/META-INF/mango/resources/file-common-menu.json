@@ -54,44 +54,6 @@
                     "children": [
                       {
                         "menuType": 2,
-                        "menuName": "匿名文件基础权限",
-                        "menuCode": "file:basic-anonymous",
-                        "path": "/file/basic-anonymous",
-                        "sort": 0,
-                        "visible": 0,
-                        "remark": "匿名可用的文件上传、预览和下载基础权限，不展示菜单",
-                        "roleCodes": [
-                          "ROLE_ANONYMOUS"
-                        ],
-                        "packageCodes": [],
-                        "apiCodes": [
-                          "file:files:query",
-                          "file:files:upload",
-                          "file:files:download",
-                          "file:settings:query"
-                        ]
-                      },
-                      {
-                        "menuType": 2,
-                        "menuName": "登录文件基础权限",
-                        "menuCode": "file:basic-login",
-                        "path": "/file/basic-login",
-                        "sort": 0,
-                        "visible": 0,
-                        "remark": "所有登录用户可用的文件上传、预览和下载基础权限，不展示菜单",
-                        "roleCodes": [
-                          "ROLE_LOGIN"
-                        ],
-                        "packageCodes": [],
-                        "apiCodes": [
-                          "file:files:query",
-                          "file:files:upload",
-                          "file:files:download",
-                          "file:settings:query"
-                        ]
-                      },
-                      {
-                        "menuType": 2,
                         "menuName": "文件管理",
                         "menuCode": "file:files",
                         "path": "/file/files",
@@ -101,9 +63,6 @@
                         "remark": "文件记录、上传下载、预览和归档管理",
                         "apiCodes": [
                           "file:files:list",
-                          "file:files:query",
-                          "file:files:upload",
-                          "file:files:download",
                           "file:files:archive",
                           "file:directories:list",
                           "file:directories:add",
@@ -141,7 +100,6 @@
                         "sort": 3,
                         "remark": "文件上传策略、访问策略、预览策略和直传策略配置",
                         "apiCodes": [
-                          "file:settings:query",
                           "file:settings:edit"
                         ]
                       }

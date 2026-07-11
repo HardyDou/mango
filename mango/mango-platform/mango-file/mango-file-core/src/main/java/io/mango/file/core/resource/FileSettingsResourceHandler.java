@@ -54,12 +54,12 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                 .fieldDescription("blockedContentTypes", "禁止上传内容类型。")
                 .fieldDescription("directUploadEnabled", "是否启用客户端直传，默认 0。")
                 .fieldDescription("directUploadExpireSeconds", "直传签名有效期，默认 900。")
-                .fieldDescription("accessTokenEnabled", "是否启用限时访问令牌，默认 0。")
-                .fieldDescription("publicReadRequiresToken", "公开读取是否强制签名访问，默认 0。")
-                .fieldDescription("accessMode", "文件访问模式，默认 PROXY。")
-                .fieldDescription("accessTokenExpireSeconds", "访问令牌有效期，默认 600。")
+                .fieldDescription("accessTokenEnabled", "是否启用限时访问令牌，默认 1。")
+                .fieldDescription("publicReadRequiresToken", "公开读取是否强制签名访问，默认 1。")
+                .fieldDescription("accessMode", "文件访问模式，默认 DIRECT。")
+                .fieldDescription("accessTokenExpireSeconds", "访问令牌有效期，默认 86400（24 小时）。")
                 .fieldDescription("previewProviderUrl", "外部预览服务地址。")
-                .fieldDescription("previewExpireSeconds", "预览访问有效期，默认 600。")
+                .fieldDescription("previewExpireSeconds", "预览访问有效期，默认 86400（24 小时）。")
                 .fieldDescription("previewExternalExtensions", "外部预览扩展名，逗号分隔。")
                 .fieldDescription("archiveRetainEnabled", "是否保留归档记录，默认 1。")
                 .fieldDescription("archiveRetainDays", "归档记录保留天数，默认 180。")
@@ -206,12 +206,12 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                             "application/x-msdownload,application/x-sh"),
                     fieldInt(resource, "directUploadEnabled", false, DISABLED),
                     fieldLong(resource, "directUploadExpireSeconds", false, 900L),
-                    fieldInt(resource, "accessTokenEnabled", false, DISABLED),
-                    fieldInt(resource, "publicReadRequiresToken", false, DISABLED),
-                    defaultText(fieldText(resource, "accessMode", false), "PROXY").toUpperCase(),
-                    fieldLong(resource, "accessTokenExpireSeconds", false, 600L),
+                    fieldInt(resource, "accessTokenEnabled", false, ENABLED),
+                    fieldInt(resource, "publicReadRequiresToken", false, ENABLED),
+                    defaultText(fieldText(resource, "accessMode", false), "DIRECT").toUpperCase(),
+                    fieldLong(resource, "accessTokenExpireSeconds", false, 86400L),
                     fieldText(resource, "previewProviderUrl", false),
-                    fieldLong(resource, "previewExpireSeconds", false, 600L),
+                    fieldLong(resource, "previewExpireSeconds", false, 86400L),
                     defaultText(fieldText(resource, "previewExternalExtensions", false),
                             "doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg"),
                     fieldInt(resource, "archiveRetainEnabled", false, ENABLED),

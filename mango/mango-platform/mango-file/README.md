@@ -44,14 +44,15 @@
 
 | 场景 | 访问模式 | 是否需要为角色/用户单独配置 |
 |------|----------|------------------------------|
-| 文件详情、预览元数据、下载入口 | `LOGIN` | 不需要。所有已登录用户默认可调用。 |
+| 文件详情、预览元数据、下载、上传、批量、秒传、分片、打包、合并 | `LOGIN` | 不需要。所有已登录用户默认可调用。 |
+| 查询返回的预览/下载链接 | 存储安全签名 | `previewUrl`、`downloadUrl` 可直接使用并支持跨域，默认有效期 24 小时。 |
 | 文件运行时配置读取 | `LOGIN` | 不需要。上传/预览组件可读取当前租户限制和策略。 |
-| 文件列表、上传、分片上传、归档、删除 | `PERMISSION` | 需要。按菜单、按钮、套餐和角色授权。 |
+| 文件列表、归档、删除 | `PERMISSION` | 需要。按菜单、按钮、套餐和角色授权。 |
 | 存储配置、文件配置保存、目录维护 | `PERMISSION` | 需要。只给文件管理员或平台管理员。 |
 
 `LOGIN` 只表示登录用户可以进入文件基础接口，不表示可以读取任意文件。`mango-file` 在 `FileApi.get()`、`preview()`、`download()` 和预览链路中继续按当前 `tenantId` 查询可见文件，归档、删除或跨租户文件不会返回。
 
-业务使用时不需要给每个角色、每个用户配置 `file:files:query`、`file:files:download` 或 `file:settings:query` 才能让详情页预览/下载已保存的附件，或让上传/预览组件读取运行时策略；只需要保证用户已登录，并且业务页面本身有权限展示该 `fileId`。新增、归档、删除文件，以及保存文件中心配置仍然需要对应权限码。
+业务使用时不需要给每个角色、每个用户配置 `file:files:query`、`file:files:upload`、`file:files:download` 或 `file:settings:query`。文件分页、详情、上传结果和预览查询都会直接返回可使用的 `previewUrl`、`downloadUrl`；DIRECT 模式沿用存储适配器的跨域安全签名策略，默认有效期 86400 秒，过期后重新查询即可获得新链接。归档、删除文件以及管理配置仍需要对应权限码。
 
 ### 3.1 开发依赖
 
@@ -314,7 +315,6 @@ import { FilePreviewPanel } from '@mango/file';
 | `file` | 已加载的文件引用。 |
 | `preview` | 已加载的预览对象；传入后不再请求 `fileApi.preview()`。 |
 | `previewProviderUrl` | 文档预览服务地址。 |
-| `downloadPermission` | 下载按钮权限，默认 `file:files:download`。 |
 | `showActions` | 是否显示下载和新窗口预览操作。 |
 
 ## 5. 快速开始
@@ -431,7 +431,7 @@ mango:
   file:
     preview:
       provider-url: /file-preview/files/preview
-      expire-seconds: 600
+      expire-seconds: 86400
 ```
 
 运行时在管理端“文件配置”页面设置：
@@ -479,10 +479,10 @@ mango:
     access:
       mode: PROXY
       token-enabled: false
-      token-expire-seconds: 600
+      token-expire-seconds: 86400
     preview:
       provider-url: /file-preview/files/preview
-      expire-seconds: 600
+      expire-seconds: 86400
       external-extensions: [doc, docx, xls, xlsx, xlsm, ppt, pptx, odt, ods, odp, ofd, wps, et, dps, csv, txt, zip, rar, 7z, eml, msg]
 ```
 
@@ -502,9 +502,9 @@ mango:
 | `upload.direct-upload-expire-seconds` | `900` | 直传分片签名有效期，单位秒。 |
 | `access.mode` | `PROXY` | `PROXY` 由 Java 服务转发，`DIRECT` 返回存储公开访问地址。 |
 | `access.token-enabled` | `false` | 是否默认启用访问令牌。 |
-| `access.token-expire-seconds` | `600` | 下载/访问令牌有效期。 |
+| `access.token-expire-seconds` | `86400` | 下载/访问签名有效期，默认 24 小时。 |
 | `preview.provider-url` | `/file-preview/files/preview` | 文档预览服务地址，支持相对地址、绝对地址和占位符。 |
-| `preview.expire-seconds` | `600` | 预览地址有效期。 |
+| `preview.expire-seconds` | `86400` | 预览地址有效期，默认 24 小时。 |
 | `preview.external-extensions` | 文档和压缩包扩展名 | 交给预览服务处理的扩展名。 |
 
 ## 8. 资源注入
@@ -564,12 +564,12 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 | `blockedContentTypes` | `STRING` | 否 | 禁止上传 MIME。 |
 | `directUploadEnabled` | `INT` | 否 | 是否启用客户端直传，默认 `0`。 |
 | `directUploadExpireSeconds` | `LONG` | 否 | 直传签名有效期，默认 `900`。 |
-| `accessTokenEnabled` | `INT` | 否 | 是否启用限时访问令牌，默认 `0`。 |
-| `publicReadRequiresToken` | `INT` | 否 | 公开读取是否仍要求签名访问，默认 `0`。 |
-| `accessMode` | `STRING` | 否 | 文件访问模式，默认 `PROXY`。 |
-| `accessTokenExpireSeconds` | `LONG` | 否 | 访问令牌有效期，默认 `600`。 |
+| `accessTokenEnabled` | `INT` | 否 | 是否启用限时访问令牌，默认 `1`。 |
+| `publicReadRequiresToken` | `INT` | 否 | 公开读取是否仍要求签名访问，默认 `1`。 |
+| `accessMode` | `STRING` | 否 | 文件访问模式，默认 `DIRECT`。 |
+| `accessTokenExpireSeconds` | `LONG` | 否 | 访问签名有效期，默认 `86400`（24 小时）。 |
 | `previewProviderUrl` | `STRING` | 否 | 外部预览服务地址。 |
-| `previewExpireSeconds` | `LONG` | 否 | 预览访问有效期，默认 `600`。 |
+| `previewExpireSeconds` | `LONG` | 否 | 预览访问有效期，默认 `86400`（24 小时）。 |
 | `previewExternalExtensions` | `STRING` | 否 | 外部预览扩展名，逗号分隔。 |
 | `archiveRetainEnabled` | `INT` | 否 | 是否保留归档记录，默认 `1`。 |
 | `archiveRetainDays` | `INT` | 否 | 归档记录保留天数，默认 `180`。 |

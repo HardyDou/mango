@@ -48,7 +48,7 @@ public class FileController implements FileApi {
     private final IFileService fileService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "单文件上传", description = "权限接口。上传文件并创建当前机构下的文件记录")
     public R<FileRecordVO> upload(
             @Parameter(description = "文件", required = true)
@@ -69,7 +69,7 @@ public class FileController implements FileApi {
     }
 
     @PostMapping(path = "/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "多文件上传", description = "权限接口。批量上传文件并创建当前机构下的文件记录")
     public R<List<FileRecordVO>> uploadBatch(
             @Parameter(description = "文件列表", required = true)
@@ -98,7 +98,7 @@ public class FileController implements FileApi {
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "获取文件详情", description = "权限接口。按文件ID查询当前租户可见文件记录详情")
     @Override
     public R<FileRecordVO> get(
@@ -108,7 +108,7 @@ public class FileController implements FileApi {
     }
 
     @GetMapping("/preview")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "获取文件预览元数据", description = "权限接口。返回当前租户可见文件的文件名、类型、大小、预览地址和下载地址")
     @Override
     public R<FilePreviewVO> preview(
@@ -123,7 +123,7 @@ public class FileController implements FileApi {
     }
 
     @PostMapping("/package")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "打包文件", description = "权限接口。按当前租户可见文件清单生成 ZIP，并保存为新的文件记录")
     @Override
     public R<FileRecordVO> packageFiles(@Valid @RequestBody FilePackageCommand command) {
@@ -131,7 +131,7 @@ public class FileController implements FileApi {
     }
 
     @PostMapping("/merge-pdf")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "合并生成 PDF", description = "权限接口。按当前租户可见文件清单生成 PDF，并保存为新的文件记录")
     @Override
     public R<FileRecordVO> mergeToPdf(@Valid @RequestBody FileMergePdfCommand command) {
@@ -164,7 +164,7 @@ public class FileController implements FileApi {
     }
 
     @GetMapping("/download")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "下载文件", description = "权限接口。按文件ID下载当前租户可见文件")
     public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadResponse(
             @Parameter(description = "文件ID", required = true)
@@ -189,7 +189,7 @@ public class FileController implements FileApi {
     }
 
     @GetMapping("/preview-content")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "预览文件原始内容", description = "权限接口。按文件ID以内联方式读取当前租户可见文件内容")
     public ResponseEntity<org.springframework.core.io.InputStreamResource> previewContentResponse(
             @Parameter(description = "文件ID", required = true)
@@ -243,7 +243,7 @@ public class FileController implements FileApi {
     }
 
     @PostMapping("/uploads")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "初始化分片上传", description = "权限接口。按当前生效存储配置创建上传会话，命中秒传时直接返回文件记录")
     public R<FileUploadInitVO> createUploadSession(
             @Valid @RequestBody CreateFileUploadSessionCommand command) {
@@ -251,7 +251,7 @@ public class FileController implements FileApi {
     }
 
     @PostMapping("/uploads/{sessionId}/parts/sign")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "签发分片上传地址", description = "权限接口。为 MinIO/S3 原生分片上传生成浏览器可直传的预签名地址")
     public R<FileUploadPartSignVO> createUploadPartSign(
             @Parameter(description = "上传会话ID", required = true)
@@ -261,7 +261,7 @@ public class FileController implements FileApi {
     }
 
     @PostMapping(path = "/uploads/{sessionId}/parts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "上传后端分片", description = "权限接口。用于不支持对象存储原生分片的存储类型，由后端接收分片并在完成时合并")
     public R<Boolean> uploadServerPart(
             @Parameter(description = "上传会话ID", required = true)
@@ -274,7 +274,7 @@ public class FileController implements FileApi {
     }
 
     @PutMapping("/uploads/{sessionId}/parts")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "登记分片完成", description = "权限接口。登记对象存储返回的分片 ETag 或后端分片元数据")
     public R<Boolean> completeUploadPart(
             @Parameter(description = "上传会话ID", required = true)
@@ -284,7 +284,7 @@ public class FileController implements FileApi {
     }
 
     @PostMapping("/uploads/{sessionId}/complete")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "完成分片上传", description = "权限接口。完成对象存储原生分片或后端分片合并，并创建文件记录")
     public R<FileRecordVO> completeUploadSession(
             @Parameter(description = "上传会话ID", required = true)
@@ -293,7 +293,7 @@ public class FileController implements FileApi {
     }
 
     @DeleteMapping("/uploads/{sessionId}")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "取消分片上传", description = "权限接口。取消对象存储分片上传或清理后端临时分片")
     public R<Boolean> abortUploadSession(
             @Parameter(description = "上传会话ID", required = true)

@@ -82,7 +82,6 @@
         <div class="toolbar-left">
           <span class="current-directory">{{ currentDirectoryName }}</span>
           <MUpload
-            v-auth="'file:files:upload'"
             :count="20"
             :size="uploadSize"
             :fmt="uploadFormats"
@@ -187,10 +186,10 @@
           fixed="right"
         >
           <template #default="{ row }">
-            <el-button v-auth="'file:files:query'" link type="primary" size="small" @click="handlePreview(row)">
+            <el-button link type="primary" size="small" @click="handlePreview(row)">
               预览
             </el-button>
-            <el-button v-auth="'file:files:download'" link type="primary" size="small" @click="handleDownload(row)">
+            <el-button link type="primary" size="small" @click="handleDownload(row)">
               下载
             </el-button>
             <el-button
@@ -248,7 +247,6 @@
             </el-tooltip>
             <el-tooltip content="下载" placement="bottom">
               <el-button
-                v-auth="'file:files:download'"
                 text
                 circle
                 :icon="Download"
