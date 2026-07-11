@@ -361,6 +361,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | `mango dev logs <app>` 找不到日志 | 应用未通过 `mango dev start` 启动 | 先执行 `mango dev start <app>` |
 
 ## 12. 相关文档
+
+### 1.0.66 发布影响
+
+`@mango/cli@1.0.66` 是不回退运行时代码的前向文档发布：同步新的前端 npm 版本锁和业务 starter 依赖，使已更正的 package README 进入实际发布包。本次 CLI 不改变命令行参数、workspace 端口分配、模板生成逻辑或后端 Maven `1.0.13` 基线。业务项目应按本批次版本锁成组升级，不要混用上一批次的精确 `@mango/*` 依赖。
 - [PMO 总流程](../../../mango-pmo/rules/00-dev-flow.md)
 - [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)
 - [交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)

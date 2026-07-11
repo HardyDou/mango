@@ -192,6 +192,8 @@ pnpm -F @mango/file test
 
 ## 12. 变更影响记录
 
+- v2026.07.11-npm-readme-forward-release 以 `@mango/file@1.0.21` 向前发布已更正的 README 和精确依赖，不回退 `1.0.20` 的运行时变更。`FilePreviewPanel` 不再接受 `downloadPermission` prop，业务页面升级时必须删除该 prop；上传、预览和下载入口由登录态与后端文件访问校验决定，不再使用 `file:files:upload/query/download` 前端按钮权限隐藏。列表、归档、删除、目录和管理配置的细粒度权限不变。
+
 - PR #433 统一文件访问基线：详情、上传、批量、秒传、分片、预览、下载、打包、合并和运行时设置读取改为登录即可，不再依赖默认角色注入或 `file:files:query/upload/download` 权限码。文件分页、详情、上传结果和预览查询继续直接返回可使用的 `previewUrl`、`downloadUrl`；DIRECT 模式沿用存储适配器的跨域安全签名策略，有效期统一为 24 小时。文件列表、归档、删除、目录和管理配置继续使用细粒度权限，业务表单仍只保存 fileId/fileIds。
 
 - PR #439 优化 `FilePreviewPanel` 弹性高度和文件管理页预览弹框布局，并补充组件入口 README 中 `MUpload` 与 `FilePreviewPanel` 的选型边界；文件上传表单的 fileId/fileIds 保存方式、上传/下载/预览 API、权限、租户、页面入口、启动方式和本场景验收步骤不变。业务页面已使用 `FilePreviewPanel` 时可沿用文件 ID 接入方式；需要弹框承载时，由外层弹框负责标题和尺寸，预览内容继续交给 `FilePreviewPanel`。

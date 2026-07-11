@@ -134,3 +134,9 @@ import '@mango/admin/style-full.css';
 - [Admin Shell README](../admin-shell/README.md)
 - [Admin Pages README](../admin-pages/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- `@mango/admin@1.0.45` 聚合 `@mango/admin-pages@1.0.20`、`@mango/file@1.0.21`、
+  `@mango/admin-shell@1.0.40` 及本批次下游模块。相对 `1.0.44` 不回退运行源码，主要用于交付完整 README 和
+  一致的精确依赖闭包。

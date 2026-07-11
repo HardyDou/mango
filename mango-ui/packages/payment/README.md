@@ -221,3 +221,8 @@ await paymentOrderApi.syncStatus(payOrderNo);
 - [后端 Numgen](../../../mango/mango-platform/mango-numgen/README.md)
 - [后端 Job](../../../mango/mango-platform/mango-job/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- `@mango/payment@1.0.12` 将精确依赖升级到 `@mango/admin-pages@1.0.20` 和 `@mango/file@1.0.21`；支付 API、
+  页面 key、权限、租户、收银台和运行时行为相对 `1.0.11` 不变。

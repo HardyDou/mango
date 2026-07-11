@@ -197,3 +197,5 @@ pnpm -F @mango/admin-shell build
   `v-auth` 校验 `file:files:upload`、`file:files:query` 或 `file:files:download` 后隐藏按钮。该变化仅适用于文件
   访问基线；列表、归档、删除、目录、存储配置和文件设置仍按既有细粒度权限码控制，后端文件访问继续校验登录态、
   文件状态、访问级别、租户和业务归属。
+
+- v2026.07.11-npm-readme-forward-release 以 `@mango/file@1.0.21` 向前发布上述权限边界和完整 README，不回退任何运行时代码。业务项目如使用 `FilePreviewPanel` 需同时移除已删除的 `downloadPermission` prop；这不代表取消后端文件状态、访问级别、租户和业务归属校验。

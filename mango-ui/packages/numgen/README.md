@@ -186,3 +186,8 @@ const no = await numgenApi.nextValue({
 
 - [后端编号生成模块](../../../mango/mango-platform/mango-numgen/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 12. 变更影响记录
+
+- `@mango/numgen@1.0.21` 将精确依赖升级到 `@mango/admin-pages@1.0.20` 和 `@mango/system@1.0.19`；编号 API、
+  页面 key、权限、租户和运行时行为相对 `1.0.20` 不变。

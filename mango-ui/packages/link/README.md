@@ -166,3 +166,8 @@ registerMangoLinkAdminPages();
 - [@mango/link-openapi](../link-openapi/README.md)
 - [@mango/link-page](../link-page/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 13. 变更影响记录
+
+- `@mango/link@1.0.7` 将 `@mango/admin-pages` 精确依赖升级到 `1.0.20`；网址导航 API、页面 key、组件、权限、
+  租户和运行时行为相对 `1.0.6` 不变。

@@ -251,3 +251,8 @@ await jobApi.createAlarmRule({
 - [Mango Job 后端模块](../../../mango/mango-platform/mango-job/README.md)
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 12. 变更影响记录
+
+- `@mango/job@1.0.13` 将 `@mango/admin-pages` 精确依赖升级到 `1.0.20`；任务 API、页面 key、权限、租户和
+  运行时行为相对 `1.0.12` 不变。

@@ -146,6 +146,8 @@ registerExampleAdminPages();
 
 ## 11. 变更影响记录
 
+- `@mango/admin-pages@1.0.20` 向前发布当前页面注册实现和完整 README，不回退
+  `demo/components/SearchPanelView` 开发中心页面描述；运行时行为与 `1.0.19` 一致。
 - v2026.07.11-npm-lock-sync-release 新增开发中心搜索面板页面描述：`demo/components/SearchPanelView` 对应
   `/components/search-panel`，由 `@mango/admin-shell` 提供页面 loader。该入口仅用于开发中心示例，不新增后端
   菜单、接口、角色权限、租户数据或业务页面注册要求。

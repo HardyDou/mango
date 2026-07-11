@@ -2,6 +2,58 @@
 
 ## Unreleased
 
+## v2026.07.11-npm-readme-forward-release - 2026-07-11
+
+### Changed
+
+- Published a forward-only npm patch batch from the current `main` implementation. No runtime source was reverted.
+- Included the corrected package READMEs for the development-center search panel entry, custom Admin Shell login route,
+  file access baseline, responsive preview dialog, and `FilePreviewPanel.downloadPermission` migration.
+- Advanced exact internal dependencies from `@mango/admin-pages@1.0.20` and `@mango/file@1.0.21` through the affected
+  system, feature, Shell, admin aggregate, starter, and CLI release locks.
+
+### Upgrade Notes
+
+- Upgrade this batch together; do not mix the new `@mango/admin-pages` or `@mango/file` versions with aggregate packages
+  from `v2026.07.11-npm-lock-sync-release`.
+- Consumers of `FilePreviewPanel` must remove `downloadPermission`. Runtime behavior remains the current login-level file
+  access model; file list, archive, delete, directory, storage, and settings management permissions remain unchanged.
+- Install or upgrade the CLI with
+  `npm install -g @mango/cli@1.0.66 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Generated backend projects remain on Mango Maven backend `1.0.13`.
+
+### Published Packages
+
+- npm: `@mango/admin-pages@1.0.20`
+- npm: `@mango/file@1.0.21`
+- npm: `@mango/system@1.0.19`
+- npm: `@mango/calendar@1.0.21`
+- npm: `@mango/cms@1.0.10`
+- npm: `@mango/job@1.0.13`
+- npm: `@mango/link@1.0.7`
+- npm: `@mango/notice@1.0.22`
+- npm: `@mango/numgen@1.0.21`
+- npm: `@mango/payment@1.0.12`
+- npm: `@mango/template@1.0.21`
+- npm: `@mango/workflow@1.0.27`
+- npm: `@mango/workflow-business-example@1.0.26`
+- npm: `@mango/admin-shell@1.0.40`
+- npm: `@mango/admin@1.0.45`
+- npm: `@mango/cli@1.0.66`
+- Registry: `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`
+- GitHub Release: `v2026.07.11-npm-readme-forward-release`
+
+### Verification
+
+- `git diff --check`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `node mango-pmo/tools/audit-module-readmes.mjs`
+- `node mango-pmo/tools/audit-readme-source-facts.mjs`
+- `pnpm -C mango-ui run package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.07.11-npm-lock-sync-release - 2026-07-11
 
 ### Changed
