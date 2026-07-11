@@ -96,7 +96,7 @@ Converter 由 Spring 容器优先提供；未注册为 Bean 时允许无参构�
 
 - `sheetName`：非空时按名称选择。
 - `sheetIndex`：`sheetName` 为空时按零基序号选择，默认 `0`。
-- `headRowNumber`：表头占用的总行数；最后一行是 title，之后第一行为数据。
+- `headRowNumber`：数据开始前占用的总行数；第一行是 title，其余行可作为说明，之后第一行为数据。
 - `ignoreEmptyRow`：默认 `true`。
 - `unknownColumnPolicy`：默认 `IGNORE`。
 - `templateLocation`：可选 classpath 原始模板。
@@ -198,13 +198,13 @@ Converter 由 Spring 容器优先提供；未注册为 Bean 时允许无参构�
 | TC-431-11 | API | 失败文件经 Mango File 保存，当前租户得到可下载 `fileId` |
 | TC-431-12 | API | 仅添加 Excel Starter 即自动注册默认 Adapter 和参数解析器 |
 
-真实 xlsx fixture 放在对应测试模块 `src/test/resources`。API 测试从 HTTP multipart 入口进入，不直接调用 Service 冒充真实入口。正式结果提升到 `mango-docs/evidence/test-baseline/excel-import/{unit,api}/latest`。
+测试使用 Apache POI 在测试运行时生成并重新打开真实 OOXML `.xlsx` 工作簿，覆盖公式缓存值、日期格式、合并单元格、原模板字节复制与 multipart 上传。API 测试从 HTTP multipart 入口进入，不直接调用 Service 冒充真实入口。正式结果提升到 `mango-docs/evidence/test-baseline/excel-import/{unit,api}/latest`。
 
 ## 10. 风险与取舍
 
 - 现有 Excel 契约位于 Persistence Web Starter。为保持源码和二进制兼容，本次不搬包；新实现独立成 Starter，后续若治理 API 模块需单独发布迁移方案。
 - System/File 桥接使改动跨平台模块，但避免 Infra 反向依赖 Platform。桥接模块必须分别验证缺失和存在时的条件装配。
-- 原 workbook 派生失败文件的内存成本高于流式读取。首期设置可配置文件大小与行数上限，超限时拒绝并返回明确错误，不以 OOM 风险换取静默降级。
+- 原 workbook 派生失败文件的内存成本高于流式读取。首期依赖 Servlet 上传大小限制并仅支持 `.xlsx`；后续增加独立的工作簿行数/复杂度上限，部署方不得无限放大上传限制。
 - PARTIAL_SUCCESS 下未知批次入库异常不能可靠推断哪些行成功，因此不伪造逐行成功结果；业务需要可靠部分提交时必须返回明确行级结果。
 
 ## 11. 完成标准
@@ -214,4 +214,3 @@ Converter 由 Spring 容器优先提供；未注册为 Bean 时允许无参构�
 - 公共 API 兼容检查通过，现有自定义 Adapter 可继续装配。
 - 受影响模块 `mvn verify` 和 Mango 质量门禁通过。
 - Persistence README、能力地图、测试基线和业务接入示例同步更新。
-
