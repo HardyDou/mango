@@ -1,6 +1,6 @@
 # Issue #431 Excel 导入能力实施计划
 
-文档状态：实施中  
+文档状态：已完成
 关联 Issue：<https://github.com/HardyDou/mango/issues/431>  
 关联设计：`mango-docs/designs/2026-07-11-issue-431-excel-import-design.md`  
 日期：2026-07-11
