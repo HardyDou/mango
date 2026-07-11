@@ -22,8 +22,21 @@ const ElButtonStub = defineComponent({
 
 const ElFormStub = defineComponent({
   name: 'ElForm',
-  setup(_props, { slots }) {
-    return () => h('form', { class: 'el-form' }, slots.default?.());
+  props: {
+    model: Object,
+    labelWidth: [String, Number],
+    labelSuffix: String,
+    labelPosition: String,
+    size: String,
+  },
+  setup(props, { slots }) {
+    return () => h('form', {
+      class: 'el-form',
+      'data-label-width': props.labelWidth,
+      'data-label-suffix': props.labelSuffix,
+      'data-label-position': props.labelPosition,
+      'data-size': props.size,
+    }, slots.default?.());
   },
 });
 
@@ -68,6 +81,27 @@ const ArrowUpStub = defineComponent({
   },
 });
 
+const ArrowDownBoldStub = defineComponent({
+  name: 'ArrowDownBold',
+  setup() {
+    return () => h('span', { class: 'mock-arrow-down-bold-icon' });
+  },
+});
+
+const ArrowUpBoldStub = defineComponent({
+  name: 'ArrowUpBold',
+  setup() {
+    return () => h('span', { class: 'mock-arrow-up-bold-icon' });
+  },
+});
+
+const ElIconStub = defineComponent({
+  name: 'ElIcon',
+  setup(_props, { slots }) {
+    return () => h('i', { class: 'el-icon' }, slots.default?.());
+  },
+});
+
 const BackStub = defineComponent({
   name: 'Back',
   setup() {
@@ -84,6 +118,9 @@ const global = {
     Refresh: RefreshStub,
     ArrowDown: ArrowDownStub,
     ArrowUp: ArrowUpStub,
+    ArrowDownBold: ArrowDownBoldStub,
+    ArrowUpBold: ArrowUpBoldStub,
+    ElIcon: ElIconStub,
     Back: BackStub,
   },
 };
@@ -126,6 +163,40 @@ describe('Mango admin page layout components', () => {
     expect(wrapper.emitted('reset')).toHaveLength(1);
   });
 
+  it('passes default and custom form display options to Element Plus form', () => {
+    const defaultWrapper = mount(MangoSearchPanel, {
+      props: { model: { keyword: '' } },
+      slots: {
+        default: '<el-form-item label="关键字"><input /></el-form-item>',
+      },
+      global,
+    });
+
+    const defaultForm = defaultWrapper.find('form');
+    expect(defaultForm.attributes('data-label-suffix')).toBe('：');
+    expect(defaultForm.attributes('data-label-position')).toBe('right');
+    expect(defaultForm.attributes('data-size')).toBe('default');
+    expect(defaultWrapper.find('.mango-search-panel__fields--fixed').exists()).toBe(true);
+
+    const customWrapper = mount(MangoSearchPanel, {
+      props: {
+        model: { keyword: '' },
+        labelSuffix: '',
+        labelPosition: 'left',
+        size: 'small',
+      },
+      slots: {
+        default: '<el-form-item label="关键字"><input /></el-form-item>',
+      },
+      global,
+    });
+
+    const customForm = customWrapper.find('form');
+    expect(customForm.attributes('data-label-suffix')).toBe('');
+    expect(customForm.attributes('data-label-position')).toBe('left');
+    expect(customForm.attributes('data-size')).toBe('small');
+  });
+
   it('collapses search fields to common items and expands all fields', async () => {
     const wrapper = mount(MangoSearchPanel, {
       props: {
@@ -153,9 +224,11 @@ describe('Mango admin page layout components', () => {
     expect(items[1].attributes('data-mango-search-hidden')).toBeUndefined();
     expect(items[2].attributes('data-mango-search-hidden')).toBe('true');
     expect(items[3].attributes('data-mango-search-hidden')).toBe('true');
-    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['查询', '重置', '展开']);
+    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['查询', '重置', '']);
+    expect(wrapper.find('.mango-search-panel__actions').text()).not.toContain('展开');
+    expect(wrapper.find('.mango-search-panel__more-button').attributes('aria-label')).toBe('展开');
 
-    await wrapper.findAllComponents(ElButtonStub)[2].trigger('click');
+    await wrapper.find('.mango-search-panel__more-button').trigger('click');
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
@@ -163,7 +236,8 @@ describe('Mango admin page layout components', () => {
     wrapper.findAll('.mango-search-panel__fields > .el-form-item').forEach((item) => {
       expect(item.attributes('data-mango-search-hidden')).toBeUndefined();
     });
-    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['查询', '重置', '收起']);
+    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['查询', '重置', '']);
+    expect(wrapper.find('.mango-search-panel__more-button').attributes('aria-label')).toBe('收起');
   });
 
   it('supports fixed columns and bottom expand action for dense search panels', async () => {
@@ -195,7 +269,7 @@ describe('Mango admin page layout components', () => {
     expect(items[7].attributes('data-mango-search-hidden')).toBeUndefined();
     expect(items[8].attributes('data-mango-search-hidden')).toBe('true');
     expect(wrapper.find('.mango-search-panel__actions').text()).not.toContain('More');
-    expect(wrapper.find('.mango-search-panel__more').text()).toContain('More');
+    expect(wrapper.find('.mango-search-panel__more-button').attributes('aria-label')).toBe('More');
 
     await wrapper.find('.mango-search-panel__more button').trigger('click');
     await wrapper.vm.$nextTick();
@@ -205,7 +279,7 @@ describe('Mango admin page layout components', () => {
     wrapper.findAll('.mango-search-panel__fields > .el-form-item').forEach((item) => {
       expect(item.attributes('data-mango-search-hidden')).toBeUndefined();
     });
-    expect(wrapper.find('.mango-search-panel__more').text()).toContain('Less');
+    expect(wrapper.find('.mango-search-panel__more-button').attributes('aria-label')).toBe('Less');
   });
 
   it('renders list toolbar, table content and pagination slots', () => {
