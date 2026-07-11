@@ -104,6 +104,24 @@ class FileResourceHandlerIntegrationTest {
     }
 
     @Test
+    void settingsDefaultsAccessBaselineToDirectSignedUrls() throws Exception {
+        ResourceDeclaration settings = declarations(loadFileStorageResource(), ResourceTypes.FILE_SETTINGS).getFirst();
+        settings.getFields().remove("accessTokenEnabled");
+        settings.getFields().remove("publicReadRequiresToken");
+        settings.getFields().remove("accessMode");
+        settings.getFields().remove("accessTokenExpireSeconds");
+        settings.getFields().remove("previewExpireSeconds");
+
+        settingsHandler.upsert(settings);
+
+        assertThat(stringValue("file_settings", "access_mode", "id = 1")).isEqualTo("DIRECT");
+        assertThat(intValue("file_settings", "access_token_enabled", "id = 1")).isOne();
+        assertThat(intValue("file_settings", "public_read_requires_token", "id = 1")).isOne();
+        assertThat(intValue("file_settings", "access_token_expire_seconds", "id = 1")).isEqualTo(86400);
+        assertThat(intValue("file_settings", "preview_expire_seconds", "id = 1")).isEqualTo(86400);
+    }
+
+    @Test
     void storageConfigUpsertUpdatesExistingConfig() throws Exception {
         ResourceDeclaration declaration = declarations(loadFileStorageResource(), ResourceTypes.FILE_STORAGE_CONFIG).getFirst();
         storageConfigHandler.upsert(declaration);
