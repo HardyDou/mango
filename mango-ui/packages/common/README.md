@@ -131,7 +131,24 @@ import '@mango/common/style.css';
 </template>
 ```
 
-`MangoSearchPanel` 会按字段顺序识别常用搜索项。启用 `collapsible` 后，收起态显示前 `collapsed-count` 个字段，展开态显示全部字段；查询、重置、展开或收起按钮默认固定在搜索面板右下角。组件只负责字段栅格、按钮区和展开收起能力，不自带白底、边框、圆角或阴影，业务页面可在外层使用统一卡片容器。单筛选项在桌面端保持合理字段宽度，不横向铺满整行；移动端使用单列撑满。字段较多且需要统一四列排版时，可显式设置固定列数和底部展开按钮：
+`MangoSearchPanel` 会按字段顺序识别常用搜索项。启用 `collapsible` 后，收起态默认显示两行字段，展开态显示全部字段；查询、重置按钮默认固定在搜索区域右侧，展开或收起按钮默认以图标形式在搜索区底部居中。组件只负责字段栅格、按钮区和展开收起能力，不自带白底、边框、圆角或阴影，业务页面可在外层使用统一卡片容器。字段区默认桌面端一行四列，也可设置 `columns="auto"` 使用字段宽度自适应；移动端使用单列撑满。字段区和按钮区在桌面端按 `10:2` 比例排布。表单默认使用中等尺寸、label 右对齐并带中文冒号，可通过 `size`、`label-position`、`label-suffix` 覆盖：
+
+```vue
+<MangoSearchPanel
+  :model="query"
+  label-suffix=""
+  label-position="left"
+  size="small"
+  @search="search"
+  @reset="reset"
+>
+  <el-form-item label="客户名称">
+    <el-input v-model="query.customerName" clearable />
+  </el-form-item>
+</MangoSearchPanel>
+```
+
+字段较多且需要统一四列排版时，可显式设置固定列数：
 
 ```vue
 <MangoSearchPanel
@@ -139,7 +156,6 @@ import '@mango/common/style.css';
   collapsible
   :columns="4"
   :collapsed-rows="2"
-  more-placement="bottom"
   @search="search"
   @reset="reset"
 >

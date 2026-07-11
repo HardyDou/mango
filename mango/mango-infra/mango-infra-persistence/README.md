@@ -12,6 +12,7 @@
 | `mango-infra-persistence-api` | `io.mango.infra.persistence:mango-infra-persistence-api` | 实体基类、分页结果、CRUD 契约、查询注解、租户和数据范围扩展契约 |
 | `mango-infra-persistence-starter` | `io.mango.infra.persistence:mango-infra-persistence-starter` | MyBatis-Plus、Flyway、多数据源、审计填充、Schema 校验自动配置 |
 | `mango-infra-persistence-web-starter` | `io.mango.infra.persistence:mango-infra-persistence-web-starter` | 标准 CRUD Controller、Excel 导入导出扩展入口 |
+| `mango-infra-excel-starter` | `io.mango.infra.excel:mango-infra-excel-starter` | 基于 Apache POI 的默认 Excel Adapter、title/idx 映射、转换、模板和失败工作簿 |
 
 核心能力：
 
@@ -57,12 +58,12 @@
 | 新数据库需要使用当前完整 schema baseline | YAML 配置 / baseline pack |
 | 应用需要把不同模块路由到不同数据库 | Maven 依赖 / starter / Java API |
 | 非 Web 任务、定时任务或测试环境需要显式配置默认租户 | Maven 依赖 / starter / Java API |
-| 管理端资源需要复用标准导入导出入口，但 Excel 解析实现由其他模块提供 | Maven 依赖 / starter / Java API |
+| 管理端资源需要复用标准导入导出入口和官方 Excel 解析 | `mango-infra-excel-starter` / Java API |
 
 
 ## 3. 能力边界
 - 不替代业务领域建模、复杂聚合查询、跨聚合事务和业务校验。
-- 不提供 Excel 实现本身；`web-starter` 只定义 `ExcelAdapter` 接口和 Controller 调用流程。
+- `web-starter` 只定义 Excel 公共契约和 Controller 编排；默认 POI 实现由独立的 `mango-infra-excel-starter` 提供。
 - 不做全局 SQL 数据范围拦截；平台提供 `DataScopeProvider` 和 `DataScopeApplier`，业务在标准查询入口显式声明资源编码和业务字段。
 - 不自动让 `@IgnoreTenant` 生效；当前代码里它只是 API 契约标记，租户拦截器没有读取这个注解。
 - 不提供菜单和按钮权限资源；业务模块仍要通过自己的 resource manifest 或 authorization 初始化。
@@ -77,7 +78,7 @@
 - `src/main/resources/db/migration/<module>/V*.sql` 表结构。
 - 资源菜单、按钮权限、API 权限的初始化。
 - 数据范围、复杂查询、业务唯一性和业务事务。
-- 导入导出行模型、业务校验和 Excel 具体实现依赖。
+- 导入导出行模型、业务字典/名称到 code 的特殊转换、数据库关联、去重和业务校验。
 
 ## 5. 接入方式
 只使用实体、查询注解、分页模型和契约：
@@ -106,6 +107,17 @@
     <artifactId>mango-infra-persistence-web-starter</artifactId>
 </dependency>
 ```
+
+使用 Mango 默认 Excel 实现：
+
+```xml
+<dependency>
+    <groupId>io.mango.infra.excel</groupId>
+    <artifactId>mango-infra-excel-starter</artifactId>
+</dependency>
+```
+
+默认实现通过条件装配注册 `ExcelAdapter`；业务已提供自定义 Adapter 时不会覆盖。
 
 只引入 `api` 不会注册 MyBatis-Plus 插件、Flyway、审计填充、多数据源和 Controller。业务应用要让能力生效，至少需要运行时引入 `mango-infra-persistence-starter`。
 
@@ -894,6 +906,57 @@ public class OrderInvoiceController extends BaseCrudController<
 - 如果容器里有 `Validator`，导入行会先执行 Bean Validation，再执行业务 `validateImportRows`。
 - `PARTIAL_SUCCESS` 会导入校验通过的行；`ALL_SUCCESS` 只要有错误就不导入。
 
+#### 7.4.1 默认 Excel 导入
+
+字段可以按规范化标题或固定零基列号映射，两者必须二选一：
+
+```java
+public class TenderLedgerImportRow {
+
+    @ExcelLine
+    private Long lineNum;
+
+    @ExcelColumn(title = "渠道", aliases = {"合作渠道"}, required = true,
+            dictType = "tender_channel")
+    private String channel;
+
+    @ExcelColumn(title = "协议号", required = true,
+            converter = AgreementNoConverter.class)
+    private String agreementNo;
+
+    @ExcelColumn(idx = 4)
+    private BigDecimal amount;
+}
+```
+
+- title 会执行全半角和连续空白归一化后精确匹配；列乱序不影响结果。
+- `idx` 从 `0` 开始，只适用于固定列序模板；title 匹配失败不会按 idx 兜底。
+- `converter` 优先于 `dictType`；配置 Converter 后，`dictType` 只作为字段元数据传给 Converter。
+- 未配置 Converter 且存在 `dictType` 时，`mango-system-starter` 提供字典 label 到 value 的解析。
+- 两者均未配置时使用内置字符串、数字、布尔、枚举、日期和时间转换。
+- Converter 可以注册为 Spring Bean；没有 Bean 时必须提供无参构造。
+
+普通 Controller 可以直接使用：
+
+```java
+@PostMapping("/import")
+public R<ImportResult> importTender(
+        @RequestExcel(fileName = "file", sheetName = "投标模板", headRowNumber = 2)
+        List<TenderLedgerImportRow> rows) {
+    return R.ok(service.importRows(rows));
+}
+```
+
+`headRowNumber = 2` 表示第一行 title、第二行说明、第三行开始为数据，`@ExcelLine` 的第一条值为 `3`。`sheetName` 非空时按名称选 Sheet，否则使用零基 `sheetIndex`。
+
+校验顺序为工作簿结构、单元格转换、Jakarta Validation、`validateImportRows` 业务批量校验、事务入库。业务批量校验用于文件内重复、跨字段、数据库关联和数据库重复；同一行可以返回多个 `ImportError`。
+
+`BaseCrudController` 存在 Spring 事务管理器时会在事务内调用 `importRows`。`PARTIAL_SUCCESS` 只传入无错误行；`ALL_SUCCESS` 在任一校验错误时不调用入库，入库运行时异常会回滚并进入 `batchErrors`。
+
+存在行级错误且应用装配 `mango-file-starter` 时，默认 Adapter 从原工作簿生成失败文件，只保留失败数据行并追加“失败原因”，通过 Mango File 保存后在 `ImportResult.failureFileId` 返回文件 ID。
+
+模板下载配置 `templateLocation = "classpath:/templates/tender.xlsx"` 时直接复制原始 xlsx，保留说明行、字典 Sheet、数据验证、公式、列宽和冻结窗格；未配置时根据 `@ExcelColumn` 生成空模板。
+
 ### 7.5 多数据源路由 API
 
 注解方式：
@@ -1026,7 +1089,7 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 
 **导入导出接口存在但调用失败**
 
-`BaseCrudController` 只是提供入口。导出需要 Service 实现 `ExportableService`，导入需要 Service 实现 `ImportableService`，并且容器里必须有 `ExcelAdapter` bean。
+`BaseCrudController` 只是提供入口。导出需要 Service 实现 `ExportableService`，导入需要 Service 实现 `ImportableService`。使用官方实现时检查是否依赖 `mango-infra-excel-starter`；字段配置 `dictType` 时还需装配 `mango-system-starter`，需要失败文件 ID 时还需装配 `mango-file-starter`。
 
 **业务只拿到发布 jar，读不到使用说明**
 

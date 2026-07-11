@@ -8,7 +8,7 @@
   >
     <section id="basic" class="doc-section">
       <h2>基础查询</h2>
-      <p>适合字段较少的列表页，查询和重置按钮固定在搜索卡片右下角。</p>
+      <p>适合字段较少的列表页，查询和重置按钮固定在搜索区域右侧。</p>
       <div class="demo-block">
         <div class="demo-source">
           <MangoSearchPanel :model="basicQuery" @search="handleSearch('基础查询')" @reset="resetBasicQuery">
@@ -31,9 +31,41 @@
       </div>
     </section>
 
+    <section id="form-options" class="doc-section">
+      <h2>表单配置</h2>
+      <p>可以按业务页面需要调整 label 冒号、label 对齐方式和表单尺寸。</p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <MangoSearchPanel
+            :model="configQuery"
+            label-suffix=""
+            label-position="left"
+            size="small"
+            @search="handleSearch('表单配置查询')"
+            @reset="resetConfigQuery"
+          >
+            <el-form-item label="客户名称">
+              <el-input v-model="configQuery.customerName" placeholder="请输入客户名称" clearable />
+            </el-form-item>
+            <el-form-item label="业务状态">
+              <el-select v-model="configQuery.status" placeholder="请选择业务状态" clearable>
+                <el-option label="待处理" value="pending" />
+                <el-option label="已完成" value="done" />
+              </el-select>
+            </el-form-item>
+          </MangoSearchPanel>
+        </div>
+        <div class="op-btns" @click="toggleCode('formOptions')">
+          <el-icon><component :is="codeVisible.formOptions ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.formOptions ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.formOptions" :code="formOptionsCode" />
+      </div>
+    </section>
+
     <section id="collapsible" class="doc-section">
       <h2>可折叠查询</h2>
-      <p>字段较多时启用 collapsible，收起态展示高频字段，展开态展示全部字段。</p>
+      <p>字段较多时启用 collapsible，默认一行四个表单项，收起态展示两行，展开和收起按钮以图标形式在搜索区底部居中。</p>
       <div class="demo-block">
         <div class="demo-source">
           <MangoSearchPanel
@@ -244,10 +276,11 @@ import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@ma
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
-type CodeBlockKey = 'basic' | 'collapsible' | 'fixedColumns' | 'listPage';
+type CodeBlockKey = 'basic' | 'formOptions' | 'collapsible' | 'fixedColumns' | 'listPage';
 
 const tocItems = [
   { id: 'basic', label: '基础查询' },
+  { id: 'form-options', label: '表单配置' },
   { id: 'collapsible', label: '可折叠查询' },
   { id: 'fixed-columns', label: '固定四列查询' },
   { id: 'list-page', label: '列表页组合' },
@@ -258,6 +291,7 @@ const tocItems = [
 
 const codeVisible = ref<Record<CodeBlockKey, boolean>>({
   basic: false,
+  formOptions: false,
   collapsible: false,
   fixedColumns: false,
   listPage: false,
@@ -274,6 +308,11 @@ const advancedQuery = reactive({
   status: '',
   createdRange: [] as string[],
   mobile: '',
+});
+
+const configQuery = reactive({
+  customerName: '',
+  status: '',
 });
 
 const fixedQuery = reactive({
@@ -315,6 +354,22 @@ const basicCode = `<MangoSearchPanel :model="query" @search="handleSearch" @rese
       <el-option label="启用" value="enabled" />
       <el-option label="停用" value="disabled" />
     </el-select>
+  </el-form-item>
+</MangoSearchPanel>`;
+
+const formOptionsCode = `<MangoSearchPanel
+  :model="query"
+  label-suffix=""
+  label-position="left"
+  size="small"
+  @search="handleSearch"
+  @reset="handleReset"
+>
+  <el-form-item label="客户名称">
+    <el-input v-model="query.customerName" clearable />
+  </el-form-item>
+  <el-form-item label="业务状态">
+    <el-select v-model="query.status" clearable />
   </el-form-item>
 </MangoSearchPanel>`;
 
@@ -398,14 +453,17 @@ const listPageCode = `<MangoListPage>
 const propsTable = [
   { name: 'model', description: '绑定查询对象，传给内部 ElForm 的 model', type: 'Record<string, unknown>', defaultValue: '-' },
   { name: 'labelWidth', description: '表单 label 宽度', type: 'string | number', defaultValue: '96px' },
+  { name: 'labelSuffix', description: '表单 label 后缀，传给内部 ElForm；设置为空字符串可去掉冒号', type: 'string', defaultValue: '：' },
+  { name: 'labelPosition', description: '表单 label 对齐方式，传给内部 ElForm', type: 'left | right | top', defaultValue: 'right' },
+  { name: 'size', description: '表单组件尺寸，传给内部 ElForm', type: 'large | default | small', defaultValue: 'default' },
   { name: 'searchText', description: '查询按钮文案', type: 'string', defaultValue: '查询' },
   { name: 'resetText', description: '重置按钮文案', type: 'string', defaultValue: '重置' },
   { name: 'showReset', description: '是否展示重置按钮', type: 'boolean', defaultValue: 'true' },
   { name: 'collapsible', description: '是否启用展开收起', type: 'boolean', defaultValue: 'false' },
-  { name: 'collapsedRows', description: '收起态展示行数，未设置 collapsedCount 时生效', type: 'number', defaultValue: '1' },
+  { name: 'collapsedRows', description: '收起态展示行数，未设置 collapsedCount 时生效', type: 'number', defaultValue: '2' },
   { name: 'collapsedCount', description: '收起态固定展示字段数量', type: 'number', defaultValue: '-' },
-  { name: 'columns', description: '字段区列数；默认自适应，设置为数字时按固定列数排版', type: 'number | auto', defaultValue: 'auto' },
-  { name: 'morePlacement', description: '展开收起按钮位置，可放在操作区或搜索区底部居中', type: 'actions | bottom', defaultValue: 'actions' },
+  { name: 'columns', description: '字段区列数；默认四列，设置为 auto 时按字段宽度自适应排版', type: 'number | auto', defaultValue: '4' },
+  { name: 'morePlacement', description: '展开收起按钮位置，可放在操作区或搜索区底部居中', type: 'actions | bottom', defaultValue: 'bottom' },
   { name: 'fieldMinWidth', description: '自适应列模式下字段最小宽度', type: 'string', defaultValue: '280px' },
   { name: 'fieldMaxWidth', description: '自适应列模式下字段最大宽度', type: 'string', defaultValue: '320px' },
   { name: 'expandText', description: '展开按钮文案', type: 'string', defaultValue: '展开' },
@@ -436,6 +494,12 @@ function resetAdvancedQuery() {
   advancedQuery.createdRange = [];
   advancedQuery.mobile = '';
   ElMessage.info('已重置可折叠查询条件');
+}
+
+function resetConfigQuery() {
+  configQuery.customerName = '';
+  configQuery.status = '';
+  ElMessage.info('已重置表单配置查询条件');
 }
 
 function resetFixedQuery() {

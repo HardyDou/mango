@@ -28,4 +28,15 @@ public interface ImportableService<ROW> {
      * 导入行数据。
      */
     ImportResult importRows(List<ROW> rows);
+
+    /**
+     * 在明确导入上下文中执行写入。既有实现继续复用 {@link #importRows(List)}。
+     *
+     * @param rows 已通过框架校验、允许写入的行
+     * @param context 导入上下文
+     * @return 实际写入结果
+     */
+    default ImportResult importRows(List<ROW> rows, ExcelImportContext context) {
+        return importRows(rows);
+    }
 }

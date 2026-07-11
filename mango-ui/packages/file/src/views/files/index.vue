@@ -227,8 +227,9 @@
     <el-dialog
       v-model="previewVisible"
       :title="previewDialogTitle"
-      width="840px"
+      width="1080px"
       class="file-preview-dialog"
+      :show-close="false"
     >
       <template #header>
         <div class="preview-dialog-header">
@@ -268,6 +269,7 @@
       </template>
       <FilePreviewPanel
         ref="previewPanelRef"
+        class="preview-dialog-panel"
         :file-id="preview?.id"
         :preview="preview"
         :preview-provider-url="settings.previewProviderUrl"
@@ -635,8 +637,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   min-width: 0;
+  min-height: 32px;
 }
 
 .preview-dialog-title {
@@ -652,16 +655,41 @@ onMounted(() => {
 .preview-dialog-actions {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
-:deep(.file-preview-dialog .el-dialog__headerbtn) {
-  display: none;
+.preview-dialog-panel {
+  flex: 1 1 auto;
+  width: 100%;
+  --mango-file-preview-panel-height: 100%;
+  --mango-file-preview-panel-min-height: 0;
+  --mango-file-preview-stage-min-height: 0;
+  --mango-file-preview-content-height: 100%;
+}
+
+:deep(.file-preview-dialog.el-dialog) {
+  width: 1080px;
+  max-width: calc(100vw - 48px);
+  height: min(760px, calc(100vh - 64px));
+  margin: 32px auto 0;
+  display: flex;
+  flex-direction: column;
 }
 
 :deep(.file-preview-dialog .el-dialog__header) {
-  padding-right: var(--el-dialog-padding-primary);
+  flex: 0 0 auto;
+  margin-right: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:deep(.file-preview-dialog .el-dialog__body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px 16px 16px;
+  display: flex;
+  overflow: hidden;
 }
 
 @media (max-width: 960px) {
@@ -671,6 +699,12 @@ onMounted(() => {
 
   .directory-panel {
     min-height: auto;
+  }
+
+  :deep(.file-preview-dialog.el-dialog) {
+    max-width: calc(100vw - 24px);
+    height: calc(100vh - 32px);
+    margin-top: 16px;
   }
 }
 </style>

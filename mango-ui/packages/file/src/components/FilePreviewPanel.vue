@@ -251,15 +251,20 @@ defineExpose({
 .file-preview-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  height: var(--mango-file-preview-panel-height, auto);
+  min-height: var(--mango-file-preview-panel-min-height, 0);
 }
 
 .preview-stage {
-  min-height: 220px;
+  flex: 1 1 auto;
+  min-height: var(--mango-file-preview-stage-min-height, 220px);
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-fill-color-lighter);
   overflow: hidden;
+  display: flex;
+  align-items: stretch;
 }
 
 .preview-actions {
@@ -271,13 +276,14 @@ defineExpose({
 
 .preview-image {
   width: 100%;
-  height: 360px;
+  height: var(--mango-file-preview-content-height, 360px);
   display: block;
 }
 
 .preview-media {
   width: 100%;
-  max-height: 420px;
+  height: var(--mango-file-preview-content-height, 420px);
+  max-height: 100%;
   display: block;
   background: #000;
 }
@@ -289,14 +295,17 @@ defineExpose({
 
 .preview-frame {
   width: 100%;
-  height: 420px;
+  height: var(--mango-file-preview-content-height, 420px);
+  flex: 1 1 auto;
   border: 0;
   display: block;
   background: #fff;
 }
 
 .preview-placeholder {
-  min-height: 220px;
+  flex: 1 1 auto;
+  min-height: var(--mango-file-preview-stage-min-height, 220px);
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;

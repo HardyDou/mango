@@ -194,6 +194,10 @@ pnpm -F @mango/file test
 
 - PR #433 统一文件访问基线：详情、上传、批量、秒传、分片、预览、下载、打包、合并和运行时设置读取改为登录即可，不再依赖默认角色注入或 `file:files:query/upload/download` 权限码。文件分页、详情、上传结果和预览查询继续直接返回可使用的 `previewUrl`、`downloadUrl`；DIRECT 模式沿用存储适配器的跨域安全签名策略，有效期统一为 24 小时。文件列表、归档、删除、目录和管理配置继续使用细粒度权限，业务表单仍只保存 fileId/fileIds。
 
+- PR #439 优化 `FilePreviewPanel` 弹性高度和文件管理页预览弹框布局，并补充组件入口 README 中 `MUpload` 与 `FilePreviewPanel` 的选型边界；文件上传表单的 fileId/fileIds 保存方式、上传/下载/预览 API、权限、租户、页面入口、启动方式和本场景验收步骤不变。业务页面已使用 `FilePreviewPanel` 时可沿用文件 ID 接入方式；需要弹框承载时，由外层弹框负责标题和尺寸，预览内容继续交给 `FilePreviewPanel`。
+
+- Issue #431 新增 Excel 导入失败工作簿保存桥接。`BaseCrudController` 存在行级导入错误且装配 `mango-file-starter` 时，会以 `PRIVATE`、`EXCEL_IMPORT` 用途保存失败 `.xlsx`，并在 `ImportResult.failureFileId` 返回文件 ID；下载继续经过既有文件权限和租户隔离。普通文件上传表单的 fileId/fileIds 持久化、回显、预览和下载接口不变。
+
 - PR #386 简化 `@mango/file` 前端 `FileRecord` 公共类型，只保留业务可见字段并移除存储层和直连访问字段；文件上传表单仍按 `fileId`、`fileIds` 或文件 token 保存业务值，上传、回显、预览、下载 API、权限、租户、页面入口、启动方式和本场景验收步骤不变。业务前端如曾读取 `storageType`、`bucketName`、`objectName`、`url`、`directPreviewUrl` 或 `directDownloadUrl`，升级后应改为使用 `previewUrl`、`downloadUrl` 或按文件 ID 调用预览/下载能力。
 
 - Issue #382 新增 `FileApi.mergeToPdf` 和 `POST /file/files/merge-pdf`，业务后端可以把多个已存在图片、PDF、Word 文件按顺序生成 PDF 并保存为新的文件记录；输出目标格式首期仅支持 `PDF`。文件上传、预览、下载、前端组件、菜单、权限和租户基础规则不变。业务验收需要额外确认 PDF 页面顺序、源文件状态隔离、生成 PDF 的预览/下载权限，以及不支持格式失败时不会生成半成品。
