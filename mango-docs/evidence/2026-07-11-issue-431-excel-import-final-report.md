@@ -1,8 +1,8 @@
 # Issue #431 Excel 导入能力交付报告
 
-日期：2026-07-11  
-关联 Issue：<https://github.com/HardyDou/mango/issues/431>  
-分支：`issue-431-excel-import`
+日期：2026-07-11
+关联 Issue：<https://github.com/HardyDou/mango/issues/431>
+分支：`issue-431-excel-import-pr`
 
 ## 1. 交付结论
 

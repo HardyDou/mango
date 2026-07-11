@@ -106,4 +106,3 @@ public class TenderImportRow {
 ## 13. 补充资料
 
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)
-
