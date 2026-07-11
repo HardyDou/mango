@@ -310,6 +310,8 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 ## 11. 变更影响记录
 
+- `@mango/admin-shell@1.0.40` 向前发布当前 Shell 实现和完整 README，不回退自定义登录组件或开发中心搜索
+  面板入口；运行时行为与 `1.0.39` 一致，并将内部精确依赖对齐到本发布批次。
 - v2026.07.11-npm-lock-sync-release 支持在 `MangoAdminShellOptions.login.component` 中提供业务登录组件，以替换
   `/login` 的默认 `@mango/auth` 登录页；未设置时仍使用 `LoginView`。业务组件需要自行负责页面结构、样式和表单
   交互，并可复用 `useMangoLoginFlow()`。本次还新增 `/components/search-panel` 开发中心示例路由，不改变业务菜单

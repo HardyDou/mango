@@ -266,3 +266,8 @@ import '@mango/system/style.css';
 - [@mango/system Components](./src/components/README.md)
 - [@mango/rbac](../rbac/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- `@mango/system@1.0.19` 将可选 `@mango/file` peer 精确版本升级到 `1.0.21`；系统 API、页面 key、组件、权限、
+  租户和运行时行为相对 `1.0.18` 不变。

@@ -369,3 +369,8 @@ executeMySiteMessageAction(messageId, actionCode, input)
 
 - [后端通知模块](../../../mango/mango-platform/mango-notice/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 12. 变更影响记录
+
+- `@mango/notice@1.0.22` 将精确依赖升级到 `@mango/admin-pages@1.0.20` 和 `@mango/system@1.0.19`；通知 API、
+  页面 key、实时消息、权限、租户和运行时行为相对 `1.0.21` 不变。

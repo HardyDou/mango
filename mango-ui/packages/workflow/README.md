@@ -323,3 +323,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 - [Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md)
 - [@mango/workflow 组件 README](src/components/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 12. 变更影响记录
+
+- `@mango/workflow@1.0.27` 将精确依赖升级到 `@mango/admin-pages@1.0.20`、`@mango/file@1.0.21` 和
+  `@mango/system@1.0.19`；流程 API、页面 key、审批组件、权限、租户和运行时行为相对 `1.0.26` 不变。

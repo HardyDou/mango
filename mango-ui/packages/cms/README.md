@@ -176,3 +176,8 @@ Confirm the host application also integrates `@mango/file` and backend `mango-fi
 - [Admin page registry](../admin-pages/README.md)
 - [CMS design](../../../mango-docs/designs/2026-06-22-mango-cms-design.md)
 - [Capability docs rule](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. Change Impact
+
+- `@mango/cms@1.0.10` aligns exact dependencies to `@mango/admin-pages@1.0.20` and `@mango/file@1.0.21`.
+  CMS APIs, page keys, permissions, tenant boundaries, and runtime behavior are unchanged from `1.0.9`.

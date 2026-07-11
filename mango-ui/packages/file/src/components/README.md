@@ -236,6 +236,8 @@ const fileIds = ref<string[]>([]);
 
 ## 10. 变更影响记录
 
+- `@mango/file@1.0.21` 保持 `1.0.20` 的公共组件实现并向前发布完整迁移说明；不会重新引入
+  `downloadPermission`。业务页面继续按本节说明移除该 prop，并依赖后端文件访问校验。
 - v2026.07.11-npm-lock-sync-release 删除 `FilePreviewPanel.downloadPermission` prop。已有业务页面应移除该 prop；
   下载按钮不再由前端角色权限码决定是否显示，组件只在存在可下载文件时显示操作，后端继续校验登录态、文件状态、
   访问级别、租户和业务归属。

@@ -253,3 +253,8 @@ calendar:calculate:query
 - [Admin Pages 使用说明](../admin-pages/README.md)
 - [Mango Common 使用说明](../common/README.md)
 - [能力文档维护规则](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 12. 变更影响记录
+
+- `@mango/calendar@1.0.21` 将 `@mango/admin-pages` 精确依赖升级到 `1.0.20`；日历 API、页面 key、组件、权限、
+  租户和运行时行为相对 `1.0.20` 不变。

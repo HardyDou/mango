@@ -181,3 +181,8 @@ export function registerContractWorkflowComponents() {
 - [@mango/workflow 组件 README](../workflow/src/components/README.md)
 - [Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- `@mango/workflow-business-example@1.0.26` 将精确依赖升级到 `@mango/admin-pages@1.0.20` 和
+  `@mango/workflow@1.0.27`；业务审批示例页面、回传协议、权限、租户和运行时行为相对 `1.0.25` 不变。

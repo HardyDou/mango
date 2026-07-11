@@ -270,6 +270,9 @@ import { FilePreviewPanel } from '@mango/file';
 
 ## 12. 变更影响记录
 
+- `@mango/file@1.0.21` 向前发布当前文件访问实现和完整 README，不恢复已移除的
+  `FilePreviewPanel.downloadPermission`，也不回退登录级上传、预览和下载访问基线；运行时行为与 `1.0.20`
+  一致，并将 `@mango/admin-pages` 精确依赖对齐到本发布批次。
 - v2026.07.11-npm-lock-sync-release 将文件管理页的上传、预览和下载操作对齐到登录级文件访问基线，不再用
   `file:files:upload`、`file:files:query` 或 `file:files:download` 控制前端按钮显隐；最终访问仍由后端依据登录态、
   文件状态、访问级别、租户和业务归属校验。列表、归档、删除、目录、存储配置和文件设置继续使用既有细粒度权限。
