@@ -153,6 +153,22 @@ function applyTarballMappings(frontendRoot, mappings) {
     packageJson.pnpm.overrides[dependency] = tarball;
   }
   writeJson(packageJsonPath, packageJson);
+  writeFileSync(
+    join(frontendRoot, 'pnpm-workspace.yaml'),
+    [
+      'packages: []',
+      'allowBuilds:',
+      "  '@swc/core': true",
+      '  core-js-pure: true',
+      '  es5-ext: true',
+      '  esbuild: true',
+      '  msw: true',
+      '  vue-demi: true',
+      'overrides:',
+      ...[...mappings].map(([dependency, tarball]) => `  "${dependency}": "${tarball}"`),
+      '',
+    ].join('\n'),
+  );
   writeFileSync(join(frontendRoot, '.npmrc'), `registry=${registry}\n`);
 }
 
@@ -171,6 +187,9 @@ try {
 
   console.log('Generating package styles before packing');
   run(pnpmCommand, ['admin:styles']);
+
+  console.log('Prebuilding Mango admin dependency chain before recursive package build');
+  run(pnpmCommand, ['--filter', '@mango/admin', 'run', 'build']);
 
   console.log('Building Mango frontend packages before consumer typecheck');
   run(pnpmCommand, ['-r', '--filter', './packages/*', '--filter', '!@mango/cli', '--if-present', 'run', 'build']);

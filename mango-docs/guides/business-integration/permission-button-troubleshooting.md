@@ -192,3 +192,5 @@ pnpm -F @mango/admin-shell build
 - 本次 PR 仅调整 `@mango/common` `MangoSearchPanel` 为无外壳视觉边界，并补充开发中心极简示例；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑、业务页面按钮渲染方式和本场景排障步骤。
 
 - v2026.07.09-common-search-panel-form-layout-release 仅调整 `MangoSearchPanel` 的表单尺寸、label 展示、默认列数、折叠行数和展开控件布局；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。
+
+- v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。业务项目应将相关前端包与 `@mango/cli` 成组升级。

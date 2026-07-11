@@ -1,5 +1,48 @@
 # @mango/cli Changelog
 
+## 1.0.65 - 2026-07-11
+
+### Changed
+
+- Locked generated business frontend projects to the `v2026.07.11-npm-lock-sync-release` npm batch:
+  - `@mango/admin@1.0.44`
+  - `@mango/admin-pages@1.0.19`
+  - `@mango/admin-shell@1.0.39`
+  - `@mango/auth@1.0.15`
+  - `@mango/calendar@1.0.20`
+  - `@mango/cms@1.0.9`
+  - `@mango/common@1.0.16`
+  - `@mango/file@1.0.20`
+  - `@mango/grid-layout@1.0.7`
+  - `@mango/grid-widgets@1.0.13`
+  - `@mango/home@1.0.5`
+  - `@mango/job@1.0.12`
+  - `@mango/link@1.0.6`
+  - `@mango/notice@1.0.21`
+  - `@mango/numgen@1.0.20`
+  - `@mango/payment@1.0.11`
+  - `@mango/rbac@1.0.13`
+  - `@mango/site-shell@1.0.3`
+  - `@mango/system@1.0.18`
+  - `@mango/template@1.0.20`
+  - `@mango/workflow-business-example@1.0.25`
+  - `@mango/workflow@1.0.26`
+  - `@mango/cli@1.0.65`
+- Kept generated backend projects on Mango Maven backend `1.0.13`.
+- Updated the packed consumer type gate so pnpm 11 verifies unpublished local tarball batches with supported workspace
+  overrides and approved dependency build scripts.
+
+### Upgrade Notes
+
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.65 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Existing generated frontend projects should upgrade the listed Mango npm packages as a batch.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `pnpm -C mango-ui run package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## 1.0.64 - 2026-07-08
 
 ### Changed

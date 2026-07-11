@@ -1,6 +1,6 @@
 {
   "name": "@mango/cli",
-  "version": "1.0.64",
+  "version": "1.0.65",
   "private": false,
   "type": "module",
   "bin": {
@@ -24,6 +24,6 @@
     "test": "pnpm run check:release-versions && node scripts/check-cli.mjs"
   },
   "dependencies": {
-    "@mango/pmo": "workspace:*"
+    "@mango/pmo": "1.0.6"
   }
 }

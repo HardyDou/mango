@@ -173,3 +173,5 @@ pnpm -F @mango/workflow-business-example build
 - PR #414 仅收口首页工作台的 `我的待办`、`我的任务`、`我的申请` 小组件权限：卡片同时校验 `workflow:task:list` 和对应工作流页面入口，缺少任一项时首页显示“缺少权限”并禁用查看交互；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务审批异常仍按流程定义、任务运行时接口、权限和业务回调链路排查。
 
 - v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务菜单仍应在自身 `apiCodes` 中声明需要复用的 workflow 接口权限，避免因接口权限带出 workflow 或风控菜单。
+
+- v2026.07.11-npm-lock-sync-release 仅同步 `@mango/*` npm 发布批次、CLI/starter 版本锁和包消费者验证；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目应将相关前端包与 `@mango/cli` 成组升级。
