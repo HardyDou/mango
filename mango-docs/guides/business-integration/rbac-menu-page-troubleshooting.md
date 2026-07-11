@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- v2026.07.11-npm-readme-forward-release 仅向前发布已更正的 package README 并传播精确 npm 依赖版本；不改变 RBAC 菜单页面 key、菜单与按钮权限码、角色授权、租户边界或本场景排障步骤。
+
 - PR #425 仅新增可复用登录流程 Hook，并允许 `/login` 注入业务自定义登录组件；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户绑定、页面路由和本场景排障步骤。业务侧自定义登录 UI 后如遇页面入口缺失，仍按菜单资源同步、角色授权、租户绑定和前端页面 key 注册链路排查。
 
 - v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变菜单 `component` key、菜单树接口、页面注册方式、角色授权关系、租户绑定、页面路由和本场景排障步骤。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
