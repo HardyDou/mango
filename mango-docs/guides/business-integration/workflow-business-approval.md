@@ -110,6 +110,8 @@ pnpm -F @mango/workflow-business-example build
 
 ## 9. 变更影响记录
 
+- v2026.07.11-maven-1.0.14-cli-release 仅将当前后端实现向前发布为 Maven `1.0.14` 并更新 CLI 后端版本锁；不改变流程定义、业务申请/审批 API、任务操作、工作流事件、数据权限或验收步骤。
+
 - v2026.07.11-npm-readme-forward-release 仅向前发布已更正的 package README 并传播精确 npm 依赖版本；不改变流程定义、业务申请/审批 API、任务操作、工作流事件、数据权限或本场景验收步骤。
 
 - v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变业务审批发起、审批回调、状态回写、流程页面 key、后端公开 API、配置、菜单、权限、租户隔离、启动方式和运行时行为。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。

@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+## v2026.07.11-maven-1.0.14-cli-release - 2026-07-11
+
+### Changed
+
+- Published the current `main` backend implementation forward as the complete non-app Maven reactor batch `1.0.14`.
+- Published `@mango/cli@1.0.67` with `maven.mangoBackend` locked to `1.0.14`; the certified frontend npm package lock remains unchanged.
+- No backend or frontend runtime source was reverted or replaced with an older implementation.
+
+### Upgrade Notes
+
+- Business backends should set `<mango.version>1.0.14</mango.version>` and refresh Maven dependencies as one platform batch.
+- Install or upgrade the CLI with `npm install -g @mango/cli@1.0.67 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- Frontend packages remain on the versions published by `v2026.07.11-npm-readme-forward-release`; no frontend package downgrade is required.
+
+### Published Packages
+
+- Maven: complete Mango backend non-app reactor artifacts at `1.0.14` to `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/`.
+- npm: `@mango/cli@1.0.67` to `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/`.
+- GitHub Release: `v2026.07.11-maven-1.0.14-cli-release`.
+
+### Verification
+
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.14 --dry-run`
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.14`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- `pnpm -C mango-ui publish:pkg cli --dry-run --release-tag=v2026.07.11-maven-1.0.14-cli-release`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions -- --check-registry --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+
 ## v2026.07.11-npm-readme-forward-release - 2026-07-11
 
 ### Changed
