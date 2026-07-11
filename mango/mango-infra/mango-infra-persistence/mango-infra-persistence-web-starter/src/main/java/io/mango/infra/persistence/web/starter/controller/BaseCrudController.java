@@ -1,6 +1,8 @@
 package io.mango.infra.persistence.web.starter.controller;
 
+import io.mango.common.result.CommonCode;
 import io.mango.common.result.R;
+import io.mango.common.result.Require;
 import io.mango.infra.persistence.api.crud.BatchDeleteCommand;
 import io.mango.infra.persistence.api.crud.DeleteCommand;
 import io.mango.infra.persistence.api.crud.MangoCrudService;
@@ -255,7 +257,14 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
         if (mode == null || mode.isBlank()) {
             return null;
         }
-        return ExcelImportMode.valueOf(mode.trim().toUpperCase());
+        String normalized = mode.trim().toUpperCase(java.util.Locale.ROOT);
+        try {
+            return ExcelImportMode.valueOf(normalized);
+        } catch (IllegalArgumentException ex) {
+            Require.fail(CommonCode.BAD_REQUEST.getCode(),
+                    "非法导入模式: " + mode + "，支持值: PARTIAL_SUCCESS, ALL_SUCCESS");
+            return null;
+        }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
