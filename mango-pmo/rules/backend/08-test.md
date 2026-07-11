@@ -127,6 +127,7 @@
 
 - `mvn test`
 - `mvn verify`
+- Java/Spring 架构专项调试可执行 `mvn mango:architecture`，正式验收仍以 `mvn verify` 为准
 - `mvn pmd:check`
 - `mvn checkstyle:check`
 - `mvn mango:check`

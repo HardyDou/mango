@@ -53,11 +53,8 @@
 - `support` 不放持久化内容，包括 `Entity`、`Mapper`、`BaseMapper`、`ServiceImpl`、`MangoCrudServiceImpl`、`@TableName`、`db/migration`、MyBatis/Flyway/DataSource/JDBC/JdbcTemplate 接入。
 - 其它模块直接依赖包括：注入、继承、实现、方法签名、远程调用契约。
 - 本地实现协作用类型，例如 `*Service`、`*Manager`、`*Registry`、`*Session`、`*Dispatcher`，禁止放 `api`。
-- Controller 对外接口契约统一声明为 `XxxApi`。
-- `XxxController` 必须实现对应 `XxxApi`，只能持有 `IXxxService` 或等效内部服务接口，禁止持有 `XxxApi` 自调用。
-- `XxxFeignClient` 必须实现对应 `XxxApi`，只能放在 `starter-remote`。
-- `XxxService` 必须实现 `IXxxService`，禁止直接实现 `XxxApi`。
-- `IXxxService` 和 `XxxService` 方法签名必须遵守后端 API 规范中的 Service 入参规则。
+- Controller、Service、`R<T>`、校验和错误码职责统一引用 [`03-api.md`](03-api.md)，本文件只维护这些类型应位于哪个模块及其依赖方向。
+- `XxxFeignClient` 必须继承对应 `XxxApi`，只能放在 `starter-remote`。
 - `core` 不放 `Controller`。
 - `Mapper` 禁止跨域访问其他模块表。
 - 跨域调用必须走 `XxxApi`。
@@ -66,6 +63,18 @@
 - 远程部署通过 `starter-remote` 调用。
 - 远程目标服务不得写死在业务代码中。
 - 远程目标必须通过模块信息解析。
+
+### 5.1 不可降级门禁
+
+以下结构违规对新增或被修改文件绝对阻断，历史 baseline、普通例外、Agent 声明和测试通过均不能放行：
+
+- `api` 依赖 `support/core/starter/starter-*`，或包含 Entity、Mapper、Controller、Service 实现、Feign。
+- `core` 依赖其它 `core/starter/starter-*`，或包含 Controller、Feign。
+- `starter` 承载 Entity、Mapper、业务 Service 实现，或 Controller 未实现本域 `XxxApi`。
+- `starter-remote` 承载领域实现，Feign 不在该模块、未且仅继承一个 `XxxApi`、缺少唯一 `contextId`，或 name/path 不匹配 module 信息。
+- Controller/Service/API 的职责违规按 [`03-api.md`](03-api.md) 阻断；本文件额外阻断 Entity、Mapper 或 Feign 跨模块放置和暴露。
+
+CI 必须从最终 PR diff 执行 `mvn verify -Dmango.architecture.base=<base-sha>`，由 Enforcer、ArchUnit、PMD 7 重新检查模块依赖、远程适配、API、Controller、Service、Mapper 和 Entity；`module-info` 继续由 `mango:check` 执行。修改架构硬红线文件时不得使用 baseline 抵消失败。
 
 ## 6. 模块信息规则
 

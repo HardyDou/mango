@@ -39,7 +39,7 @@
 - 业务 VO 可以返回文件 ID；如页面需要临时预览或下载地址，由前端通过 `mango-file` 查询，或由业务聚合层在响应时临时组装，禁止反写到业务表。
 - 预签名 URL、对象存储直连地址只允许作为单次响应中的运行时字段，不允许成为业务 Command、Entity 或持久化 JSON 的字段。
 
-## 2.1 OpenAPI / Knife4j 文档规则
+## 2.3 OpenAPI / Knife4j 文档规则
 
 - 所有对外展示的 Controller 必须声明中文 `@Tag(name, description)`，禁止显示默认的 `xxx-controller`。
 - 所有 HTTP 接口方法必须声明中文 `@Operation(summary, description)`；`summary` 说明接口动作，`description` 说明业务语义、访问边界或关键约束。
@@ -82,6 +82,20 @@
 - `XxxApi` 禁止声明 `@FeignClient`。
 - `XxxService` 禁止直接实现 `XxxApi`；服务层应实现 `IXxxService`。
 
+## 4.1 Controller、Service 与错误契约
+
+| 层 | 必须负责 | 绝对禁止 |
+|---|---|---|
+| `XxxApi` | 协议方法、Command/Query/VO、校验约束、统一 `R<T>` 返回 | Entity/PO、实现逻辑、`@FeignClient`、裸返回值 |
+| `XxxController` | 实现 `XxxApi`、协议适配、`@Validated`、`@RequestBody @Valid`、调用 `IXxxService`、包装成功 `R<T>` | Mapper/Entity/Feign/具体 Service 依赖，自行拼装失败 `R`，业务判断和持久化 |
+| `IXxxService`/实现 | 业务编排、业务前置条件、Command/Query 到持久化模型转换、事务和状态结果 | 返回或拼装 `R`，直接实现 `XxxApi`，用 `if/throw`、裸异常或静默 return 代替 `Require` |
+| `XxxMapper` | Entity/id/Wrapper/分页及 core 内部查询对象的数据访问 | Command/Query/VO/Controller 请求对象、注解 SQL、跨域表访问 |
+
+- Controller 的基础字段校验由 Bean Validation 完成；业务存在性、状态、归属、权限、重复和前后置条件必须在 Service 使用 `Require` 校验。
+- Service 的业务失败必须使用模块 `XxxCode implements BizCode`（即统一 ErrorCode 契约）；禁止裸数字错误码和临时错误字符串作为新增业务错误契约。
+- Controller 只返回成功 `R<T>`；业务失败由 Service 抛出带 `BizCode` 的业务异常，再由统一异常处理器转换为失败 `R<T>`。
+- 以上为不可降级结构红线：新增文件或被修改文件命中时，即使历史基线存在也必须失败，不允许普通例外。
+
 ## 5. DTO 规则
 
 - 仓内业务 API 禁止使用 `DTO` 作为默认入参或返回命名。
@@ -107,3 +121,8 @@
 - 在 API 契约中硬编码服务发现名
 - 业务 API 用文件访问地址代替文件 ID
 - API 写死本应来自数据库、配置、字典服务或真实接口的数据
+- Controller 缺少 `@Validated` 或 `@RequestBody` 缺少 `@Valid`
+- Controller 未实现 `XxxApi`，或依赖 Mapper、Entity、FeignClient、具体 `XxxService`
+- Controller/API HTTP 方法不返回 `R<T>`，或返回 Entity/PO
+- Service 返回 `R<T>`、调用 `R.ok/R.fail`、直接抛裸运行时/业务异常
+- Service 业务动作没有使用 `Require + XxxCode implements BizCode` 执行业务前置条件校验

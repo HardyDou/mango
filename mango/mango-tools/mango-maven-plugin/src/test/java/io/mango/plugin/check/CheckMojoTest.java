@@ -265,6 +265,44 @@ class CheckMojoTest {
     }
 
     @Test
+    void finalizeResult_changedHardRulesCannotBeWaivedByBaseline() throws Exception {
+        Path changedFile = tempDir.resolve(
+                "mango-demo-api/src/main/java/io/mango/demo/api/DemoEntity.java");
+        Files.createDirectories(changedFile.getParent());
+        Files.writeString(changedFile, "class DemoEntity {}\n");
+
+        for (String hardRule : List.of("MODULE_INFO")) {
+            CheckIssue issue = new CheckIssue();
+            issue.type = hardRule;
+            issue.severity = "CRITICAL";
+            issue.file = changedFile.toString();
+            issue.line = 1;
+            issue.description = "hard rule violation: " + hardRule;
+            issue.rule = hardRule;
+            issue.reference = "api-rules.md";
+            issue.source = "mango-check";
+
+            CheckResult baseline = new CheckResult();
+            baseline.issues.add(issue);
+            Path baselineFile = tempDir.resolve("target/hard-rule-baseline-" + hardRule + ".json");
+            Files.createDirectories(baselineFile.getParent());
+            Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+            CheckResult result = new CheckResult();
+            result.issues.add(issue);
+            CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                    new CheckGateOptions(tempDir,
+                            "mango-demo-api/src/main/java/io/mango/demo/api/DemoEntity.java",
+                            null, baselineFile.toString(), "no-new-violations", "block"));
+
+            assertDoesNotThrow(() -> finalizer.finalizeResult(result), hardRule);
+            assertFalse(result.passed, hardRule);
+            assertEquals("FAIL", result.gateStatus, hardRule);
+            assertEquals(1, result.newIssueCount, hardRule);
+        }
+    }
+
+    @Test
     void finalizeResult_noNewViolationsWithBaselineMarksUnmatchedIssueAsNewWithoutChangedFiles() throws Exception {
         // given
         CheckResult baseline = new CheckResult();
@@ -415,7 +453,7 @@ class CheckMojoTest {
         existingIssue.type = "MagicNumberCheck";
         existingIssue.severity = "MINOR";
         existingIssue.file = tempDir.resolve("mango-platform/mango-notice/src/main/java/Demo.java").toString();
-        existingIssue.line = 18;
+        existingIssue.line = 12;
         existingIssue.description = "magic number";
         existingIssue.rule = "MagicNumberCheck";
         existingIssue.reference = "auto-check-mapping.md";
@@ -2467,7 +2505,29 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkApiContract_withMultipleMethodParameters_reportsIssue() throws Exception {
+    void checkApiContract_withMoreThanTwoMethodParameters_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoApi.java"), """
+                package io.mango.demo.api;
+
+                import io.mango.common.result.R;
+
+                public interface DemoApi {
+                    R<Boolean> updateValue(Long id, String value, Boolean enabled);
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withTwoSimpleMethodParameters_passes() throws Exception {
         Path sourceDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api");
         Files.createDirectories(sourceDir);
         Files.writeString(sourceDir.resolve("DemoApi.java"), """
@@ -2485,7 +2545,365 @@ class CheckMojoTest {
         setField(mojo, "baseDir", tempDir.toString());
         setField(mojo, "session", null);
 
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withDefaultMethodDoesNotTreatReturnAsDeclaration() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoApi.java"), """
+                package io.mango.demo.api;
+
+                import io.mango.common.result.R;
+
+                public interface DemoApi {
+                    R<Boolean> updateValue(Long id, String value);
+                    default R<Boolean> updateDefault(Long id, String value) {
+                        return updateValue(id, value);
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withResponseEntityDoesNotTreatFrameworkWrapperAsPersistenceModel() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+
+                import org.springframework.http.ResponseEntity;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @Validated
+                @RestController
+                public class DemoController implements DemoApi {
+                    @GetMapping("/download")
+                    public ResponseEntity<byte[]> download() {
+                        return ResponseEntity.ok(new byte[0]);
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute(),
+                "ResponseEntity is not a persistence model, but non-R HTTP return remains a contract violation");
+        Field resultField = CheckMojo.class.getDeclaredField("result");
+        resultField.setAccessible(true);
+        CheckResult result = (CheckResult) resultField.get(mojo);
+        assertTrue(result.issues.stream().noneMatch(issue -> issue.description.contains("持久化模型")));
+    }
+
+    @Test
+    void checkUnknownRuleFailsClosed() throws Exception {
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "mapper");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withEntityInApi_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api/entity");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoEntity.java"), """
+                package io.mango.demo.api.entity;
+                public class DemoEntity {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
         assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withFeignOutsideStarterRemote_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoFeignClient.java"), """
+                package io.mango.demo.core;
+                import org.springframework.cloud.openfeign.FeignClient;
+                @FeignClient(name = "mango-demo")
+                public interface DemoFeignClient extends DemoApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withCompliantController_passes() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+                import io.mango.common.result.R;
+                import jakarta.validation.Valid;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.RequestBody;
+                import org.springframework.web.bind.annotation.RestController;
+                @RestController
+                @Validated
+                public class DemoController implements DemoApi {
+                    private final IDemoService demoService;
+                    public DemoController(IDemoService demoService) { this.demoService = demoService; }
+                    @PostMapping("/demo")
+                    public R<DemoVO> create(@RequestBody @Valid CreateDemoCommand command) {
+                        return R.ok(demoService.create(command));
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withControllerMapperAndMissingValidation_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+                import org.springframework.web.bind.annotation.RestController;
+                @RestController
+                public class DemoController {
+                    private final DemoMapper demoMapper;
+                    public DemoController(DemoMapper demoMapper) { this.demoMapper = demoMapper; }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withServiceActionWithoutRequire_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core/service/impl");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service.impl;
+                import org.springframework.stereotype.Service;
+                @Service
+                public class DemoServiceImpl {
+                    public Long create(CreateDemoCommand command) { return 1L; }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withServiceStringErrorInsteadOfBizCode_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core/service/impl");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service.impl;
+                import io.mango.common.result.Require;
+                import org.springframework.stereotype.Service;
+                @Service
+                public class DemoServiceImpl {
+                    public Long create(CreateDemoCommand command) {
+                        Require.notNull(command, "command required");
+                        return 1L;
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withServiceRequireBizCode_passes() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core/service/impl");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service.impl;
+                import io.mango.common.result.Require;
+                import org.springframework.stereotype.Service;
+                @Service
+                public class DemoServiceImpl {
+                    public Long create(CreateDemoCommand command) {
+                        Require.notNull(command, DemoCode.COMMAND_REQUIRED);
+                        return 1L;
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withServiceConsumingRemoteR_passes() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core/service/impl");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service.impl;
+                import io.mango.common.result.R;
+                import org.springframework.stereotype.Service;
+                @Service
+                public class DemoServiceImpl {
+                    private final UserApi userApi;
+                    public DemoServiceImpl(UserApi userApi) { this.userApi = userApi; }
+                    public UserVO findUser(Long id) {
+                        R<UserVO> response = userApi.findUser(id);
+                        return response.getData();
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withTechnicalExceptionOutsideBusinessAction_passes() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core/service/impl");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service.impl;
+                import org.springframework.stereotype.Service;
+                @Service
+                public class DemoServiceImpl {
+                    public String serialize(Object value) {
+                        try {
+                            return value.toString();
+                        } catch (RuntimeException exception) {
+                            throw new IllegalStateException("serialization failed", exception);
+                        }
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withServiceReturningR_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core/service/impl");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service.impl;
+                import io.mango.common.result.R;
+                import org.springframework.stereotype.Service;
+                @Service
+                public class DemoServiceImpl {
+                    public R<UserVO> findUser(Long id) { return R.ok(new UserVO()); }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_ignoresRuntimeAndNodeModulesSources() throws Exception {
+        for (String ignoredRoot : List.of(".runtime/generated", "node_modules/generated", "target/generated")) {
+            Path sourceDir = tempDir.resolve(ignoredRoot)
+                    .resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+            Files.createDirectories(sourceDir);
+            Files.writeString(sourceDir.resolve("InvalidController.java"), """
+                    package io.mango.demo.starter;
+                    import org.springframework.web.bind.annotation.RestController;
+                    @RestController
+                    public class InvalidController {
+                        private final InvalidMapper invalidMapper;
+                    }
+                    """);
+        }
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_ignoresRuntimePomFiles() throws Exception {
+        Path pomFile = tempDir.resolve(".runtime/generated/mango-demo-core/pom.xml");
+        Files.createDirectories(pomFile.getParent());
+        Files.writeString(pomFile, """
+                <project>
+                  <groupId>io.mango.demo</groupId>
+                  <artifactId>mango-demo-core</artifactId>
+                  <dependencies>
+                    <dependency>
+                      <groupId>io.mango.demo</groupId>
+                      <artifactId>mango-other-starter</artifactId>
+                    </dependency>
+                  </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
     }
 
     @Test
@@ -3689,7 +4107,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkAll_inBusinessProject_runsBusinessBackendStyleChecks() throws Exception {
+    void checkAll_inBusinessProject_skipsLegacyJavaArchitectureDiagnostics() throws Exception {
         // given
         Files.createDirectories(tempDir.resolve("business-pmo"));
         Path sourceDir = tempDir.resolve("backend/demo/src/main/java/io/mango/demo/core/mapper");
@@ -3712,7 +4130,7 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         // then
-        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+        assertDoesNotThrow(() -> mojo.execute());
     }
 
     @Test

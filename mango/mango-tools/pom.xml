@@ -20,7 +20,9 @@
     <description>AI-Friendly Java Scaffold Tools - Maven Plugin, CLI</description>
 
     <modules>
+        <module>mango-architecture-rules</module>
         <module>mango-maven-plugin</module>
+        <module>mango-architecture-verification</module>
     </modules>
 
     <properties>

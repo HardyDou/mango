@@ -134,6 +134,28 @@ public class CheckMojo extends AbstractMojo {
     private static final Pattern FEIGN_INTERFACE_DECLARATION_PATTERN = Pattern.compile(
             "\\binterface\\s+([A-Za-z0-9_]+FeignClient)\\b([^\\{;]*)\\{",
             Pattern.DOTALL);
+    private static final Pattern CONTROLLER_IMPLEMENTS_API_PATTERN = Pattern.compile(
+            "\\bclass\\s+[A-Za-z0-9_]+Controller\\b[^\\{;]*\\bimplements\\b[^\\{;]*\\b[A-Za-z0-9_]+Api\\b",
+            Pattern.DOTALL);
+    private static final Pattern CONTROLLER_FIELD_PATTERN = Pattern.compile(
+            "\\bprivate\\s+(?:final\\s+)?(?:[A-Za-z0-9_$.]+\\.)?([A-Za-z0-9_]+)\\s+[A-Za-z0-9_]+\\s*;");
+    private static final Pattern MAPPED_METHOD_PATTERN = Pattern.compile(
+            "(?s)@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\\b[^\\n]*"
+                    + "(?:\\R\\s*@[A-Za-z0-9_$.]+(?:\\([^;{}]*?\\))?)*\\R\\s*"
+                    + "(?:public\\s+)?([A-Za-z0-9_$.<>?,\\[\\]]+)\\s+([A-Za-z0-9_]+)\\s*\\(");
+    private static final Pattern API_DECLARED_METHOD_PATTERN = Pattern.compile(
+            "(?m)^\\s*(?:@[A-Za-z0-9_$.]+(?:\\([^;{}]*?\\))?\\s*)*"
+                    + "(?:public\\s+)?([A-Za-z0-9_$.<>?,\\[\\]]+)\\s+([A-Za-z0-9_]+)\\s*\\([^;{}]*\\)\\s*;");
+    private static final Pattern SERVICE_DIRECT_THROW_PATTERN = Pattern.compile(
+            "\\bthrow\\s+new\\s+(?:[A-Za-z0-9_$.]+\\.)?(?:RuntimeException|IllegalArgumentException|IllegalStateException|BizException)\\s*\\(");
+    private static final Pattern SERVICE_R_RETURN_PATTERN = Pattern.compile(
+            "(?m)^\\s*(?:@[A-Za-z0-9_$.]+(?:\\s*\\([^;{}]*?\\))?\\s*)*"
+                    + "public\\s+(?:[A-Za-z0-9_$.]+\\.)?R\\s*<");
+    private static final Pattern REQUIRE_CALL_PATTERN = Pattern.compile("\\bRequire\\.[A-Za-z0-9_]+\\s*\\(([^;]+)\\)");
+    private static final Pattern BIZ_CODE_REFERENCE_PATTERN = Pattern.compile("\\b[A-Za-z0-9_]+Code\\.[A-Z][A-Z0-9_]*\\b");
+    private static final Set<String> BUSINESS_ACTION_PREFIXES = Set.of(
+            "create", "update", "delete", "remove", "save", "submit", "approve", "reject", "publish",
+            "cancel", "enable", "disable", "assign", "bind", "unbind", "claim", "release", "execute");
     private static final Pattern CREATE_TABLE_PATTERN = Pattern.compile(
             "(?is)create\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?(?:`?([a-zA-Z0-9_]+)`?\\.)?`?([a-zA-Z0-9_]+)`?\\s*\\(");
     private static final Pattern ALTER_TABLE_PATTERN = Pattern.compile(
@@ -156,12 +178,18 @@ public class CheckMojo extends AbstractMojo {
             "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log");
     private static final List<String> DIRECT_JDBC_TYPES = List.of(
             "Connection", "Statement", "PreparedStatement", "ResultSet");
+    private static final Set<String> IGNORED_SCAN_SEGMENTS = Set.of(
+            ".git", ".mango", ".runtime", "node_modules", "target", "dist", "coverage",
+            "playwright-report", "test-results");
+    private static final Set<String> NON_PERSISTENCE_ENTITY_TYPES = Set.of(
+            "ResponseEntity", "HttpEntity", "RequestEntity");
 
     /**
-     * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
-     * api-contract, path-param, permission-param, kv-key, test-fixture, persistence-schema,
-     * persistence-access, mapper-sql-style, persistence-crud-baseline, service-contract,
-     * resource-registry, module-menu.
+     * Check rule: all, static, naming, module-info, path-param, permission-param, kv-key,
+     * test-fixture, persistence-schema, persistence-access, persistence-crud-baseline,
+     * resource-registry, module-menu. The dependency, module-boundary, remote-adapter,
+     * api-contract, mapper-sql-style and service-contract rules are compatibility-only
+     * diagnostics; {@code mvn verify} is the authoritative Java architecture gate.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -288,18 +316,33 @@ public class CheckMojo extends AbstractMojo {
             case "duplicate", "method-length", "class-length", "complexity" -> unsupportedGenericRule(rule);
             case "static" -> runStaticAnalysis();
             case "naming" -> checkNaming();
-            case "dependency", "module-boundary" -> checkDependency();
+            case "dependency", "module-boundary" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkDependency();
+            }
             case "module-info" -> checkModuleInfo();
-            case "remote-adapter" -> checkRemoteAdapter();
-            case "api-contract" -> checkApiContract();
+            case "remote-adapter" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkRemoteAdapter();
+            }
+            case "api-contract" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkApiContract();
+            }
             case "path-param" -> checkPathParam();
             case "permission-param" -> checkPermissionParam();
             case "kv-key" -> checkKvKey();
             case "persistence-schema" -> checkPersistenceSchema();
             case "persistence-access" -> checkPersistenceAccess();
-            case "mapper-sql-style" -> checkMapperSqlStyle();
+            case "mapper-sql-style" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkMapperSqlStyle();
+            }
             case "persistence-crud-baseline" -> checkPersistenceCrudBaseline();
-            case "service-contract" -> checkServiceContract();
+            case "service-contract" -> {
+                warnLegacyArchitectureDiagnostic();
+                checkServiceContract();
+            }
             case "test-fixture" -> checkTestFixture();
             case "web-boundary" -> checkWebBoundary();
             case "resource-registry" -> checkResourceRegistry();
@@ -307,30 +350,25 @@ public class CheckMojo extends AbstractMojo {
             case "all" -> {
                 runStaticAnalysis();
                 checkNaming();
-                checkDependency();
                 checkModuleInfo();
-                checkRemoteAdapter();
-                checkApiContract();
                 checkPathParam();
                 checkPermissionParam();
                 checkKvKey();
                 checkPersistenceSchema();
                 if (isBusinessProject(resolveBasePath())) {
                     checkPersistenceAccess();
-                    checkMapperSqlStyle();
                     checkPersistenceCrudBaseline();
-                    checkServiceContract();
                 } else {
                     getLog().info("Skip business backend style checks in mango:check all; run "
-                            + "-Drule=persistence-access, mapper-sql-style, persistence-crud-baseline "
-                            + "or service-contract explicitly for governance scans.");
+                            + "-Drule=persistence-access or persistence-crud-baseline explicitly "
+                            + "for governance scans.");
                 }
                 checkTestFixture();
                 checkWebBoundary();
                 checkResourceRegistry();
                 checkModuleMenu();
             }
-            default -> getLog().warn("Unknown rule: " + rule);
+            default -> throw new MojoExecutionException("Unknown mango:check rule: " + rule);
         }
 
         gateFinalizer(resolveBasePath()).finalizeResult(result);
@@ -353,6 +391,11 @@ public class CheckMojo extends AbstractMojo {
         }
 
         getLog().info("Check completed. " + result.issues.size() + " issue(s) found.");
+    }
+
+    private void warnLegacyArchitectureDiagnostic() {
+        getLog().warn("This legacy source-text architecture diagnostic is not a delivery gate. "
+                + "Use mvn verify (mango:architecture) for authoritative Enforcer, ArchUnit and PMD 7 checks.");
     }
 
     private void unsupportedGenericRule(String selectedRule) {
@@ -384,7 +427,7 @@ public class CheckMojo extends AbstractMojo {
 
     private void cleanStaticReports(Path rootPath) throws MojoExecutionException {
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     String fileName = file.getFileName().toString();
@@ -635,7 +678,7 @@ public class CheckMojo extends AbstractMojo {
     private List<Path> findReports(Path rootPath, String fileName) throws MojoExecutionException {
         List<Path> reports = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (fileName.equals(file.getFileName().toString())) {
@@ -863,10 +906,10 @@ public class CheckMojo extends AbstractMojo {
         Map<String, ModuleDescriptor> descriptors = new LinkedHashMap<>();
         Map<String, String> modulePathOwners = new LinkedHashMap<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (!file.toString().endsWith("/pom.xml")) {
+                    if (isIgnoredScanPath(file) || !file.toString().endsWith("/pom.xml")) {
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -955,7 +998,7 @@ public class CheckMojo extends AbstractMojo {
         if (!Files.exists(sourceRoot)) {
             return files;
         }
-        Files.walkFileTree(sourceRoot, new SimpleFileVisitor<>() {
+        Files.walkFileTree(sourceRoot, new SkippingFileVisitor() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 if (file.toString().endsWith(".java")) {
@@ -1062,7 +1105,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<NamingIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if ("pom.xml".equals(file.getFileName().toString())) {
@@ -1133,10 +1176,10 @@ public class CheckMojo extends AbstractMojo {
         List<Path> scopedPomFiles = resolveCheckPomFiles(rootPath);
         try {
             if (scopedPomFiles.isEmpty()) {
-                Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        if (file.toString().endsWith("/pom.xml")) {
+                        if (!isIgnoredScanPath(file) && file.toString().endsWith("/pom.xml")) {
                             analyzePomDependency(file, issues);
                         }
                         return FileVisitResult.CONTINUE;
@@ -1335,7 +1378,7 @@ public class CheckMojo extends AbstractMojo {
         if (!Files.exists(sourceDir)) {
             return;
         }
-        Files.walkFileTree(sourceDir, new SimpleFileVisitor<>() {
+        Files.walkFileTree(sourceDir, new SkippingFileVisitor() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 String normalized = file.toString().replace('\\', '/');
@@ -1532,10 +1575,10 @@ public class CheckMojo extends AbstractMojo {
 
         List<WebBoundaryIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (file.toString().endsWith("/pom.xml")) {
+                    if (!isIgnoredScanPath(file) && file.toString().endsWith("/pom.xml")) {
                         analyzeWebBoundaryPom(file, issues);
                     }
                     return FileVisitResult.CONTINUE;
@@ -1633,7 +1676,7 @@ public class CheckMojo extends AbstractMojo {
             return false;
         }
         final boolean[] found = {false};
-        Files.walkFileTree(sourceRoot, new SimpleFileVisitor<>() {
+        Files.walkFileTree(sourceRoot, new SkippingFileVisitor() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 if (file.toString().endsWith(".java") && Files.readString(file).contains("@Inner")) {
@@ -1665,10 +1708,10 @@ public class CheckMojo extends AbstractMojo {
         List<ModuleInfoIssue> issues = new ArrayList<>();
         Map<String, ModuleDescriptor> descriptors = loadModuleDescriptors(rootPath, issues);
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (file.toString().endsWith("/pom.xml")) {
+                    if (!isIgnoredScanPath(file) && file.toString().endsWith("/pom.xml")) {
                         analyzeModuleInfo(file, descriptors, issues);
                     }
                     return FileVisitResult.CONTINUE;
@@ -1797,7 +1840,7 @@ public class CheckMojo extends AbstractMojo {
         Map<String, ModuleDescriptor> descriptors = loadModuleDescriptors(rootPath, new ArrayList<>());
 
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isStarterRemoteJavaFile(file)) {
@@ -1824,7 +1867,8 @@ public class CheckMojo extends AbstractMojo {
 
     private boolean isStarterRemoteJavaFile(Path file) {
         String normalized = file.toString().replace('\\', '/');
-        return normalized.contains("-starter-remote/src/main/java/") && normalized.endsWith(".java");
+        return !isIgnoredScanPath(file)
+                && normalized.contains("-starter-remote/src/main/java/") && normalized.endsWith(".java");
     }
 
     private void analyzeRemoteAdapter(
@@ -1963,7 +2007,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<ApiContractIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isApiJavaFile(file)) {
@@ -1993,7 +2037,8 @@ public class CheckMojo extends AbstractMojo {
 
     private boolean isApiJavaFile(Path file) {
         String normalized = file.toString().replace('\\', '/');
-        return normalized.contains("-api/src/main/java/") && normalized.endsWith(".java");
+        return !isIgnoredScanPath(file)
+                && normalized.contains("-api/src/main/java/") && normalized.endsWith(".java");
     }
 
     private void analyzeApiContract(Path file, List<ApiContractIssue> issues) {
@@ -2005,6 +2050,15 @@ public class CheckMojo extends AbstractMojo {
                         "*-api 禁止声明 @FeignClient"));
             }
             String typeName = declaredTypeName(code, file);
+            if (typeName.endsWith("Entity") || typeName.endsWith("Mapper") || typeName.endsWith("Controller")
+                    || typeName.endsWith("ServiceImpl") || typeName.endsWith("FeignClient")) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "*-api 只能声明协议契约，禁止持久化、实现或适配类型: " + typeName));
+            }
+            if (code.contains("@TableName") || code.contains("BaseMapper<") || code.contains("@RestController")) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "*-api 禁止包含 Entity/Mapper/Controller 实现注解或基类: " + typeName));
+            }
             if (isLocalCollaborationType(typeName) && !isApiSpiJavaFile(file) && !isAllowedInfrastructureApi(typeName)) {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "*-api 只允许放跨模块契约，禁止出现本地协作类型: " + typeName));
@@ -2020,10 +2074,37 @@ public class CheckMojo extends AbstractMojo {
             Matcher apiMethodMatcher = API_METHOD_PATTERN.matcher(code);
             while (apiMethodMatcher.find()) {
                 int parameterCount = countTopLevelParameters(apiMethodMatcher.group(2));
-                if (parameterCount > 1) {
+                if (parameterCount > 2) {
                     issues.add(new ApiContractIssue("CRITICAL", file.toString(),
-                            "XxxApi 方法超过 1 个入参时必须收敛为 Query/Command 对象: "
+                            "XxxApi 方法超过 2 个入参时必须收敛为 Query/Command 对象: "
                                     + apiMethodMatcher.group(1) + " 入参数=" + parameterCount));
+                }
+            }
+            if (typeName.endsWith("Api")) {
+                Matcher declaredMethodMatcher = API_DECLARED_METHOD_PATTERN.matcher(code);
+                while (declaredMethodMatcher.find()) {
+                    String returnType = declaredMethodMatcher.group(1);
+                    if (Set.of("return", "throw", "new").contains(returnType)) {
+                        continue;
+                    }
+                    if (!returnType.startsWith("R<") && !returnType.startsWith("io.mango.common.result.R<")) {
+                        issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                "XxxApi 方法必须统一返回 R<T>: " + declaredMethodMatcher.group(2)
+                                        + " 返回 " + returnType));
+                    }
+                    for (String parameter : splitTopLevelParameters(
+                            declaredMethodMatcher.group().substring(declaredMethodMatcher.group().indexOf('(') + 1,
+                                    declaredMethodMatcher.group().lastIndexOf(')')))) {
+                        String parameterType = parameterType(parameter);
+                        if (exposesPersistenceModel(parameterType)) {
+                            issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                    "XxxApi 入参禁止暴露持久化模型 " + parameterType));
+                        }
+                    }
+                    if (exposesPersistenceModel(returnType)) {
+                        issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                "XxxApi 返回禁止暴露持久化模型: " + returnType));
+                    }
                 }
             }
         } catch (IOException e) {
@@ -2114,12 +2195,89 @@ public class CheckMojo extends AbstractMojo {
         try {
             String content = Files.readString(file);
             String code = stripStringLiterals(content);
+            ModuleType moduleType = moduleTypeFromSourcePath(file);
+            String typeName = declaredTypeName(code, file);
+            boolean controller = code.contains("@RestController") || typeName.endsWith("Controller");
+            boolean feignClient = code.contains("@FeignClient") || typeName.endsWith("FeignClient");
+            boolean entity = typeName.endsWith("Entity") || code.contains("@TableName");
+            boolean mapper = typeName.endsWith("Mapper") || code.contains("BaseMapper<");
+            boolean serviceImplementation = code.contains("@Service") || typeName.endsWith("ServiceImpl");
+
+            if (feignClient && moduleType != ModuleType.STARTER_REMOTE) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "Feign adapter 只能放在 *-starter-remote: " + typeName));
+            }
+            if (controller && moduleType != ModuleType.ROOT && moduleType != ModuleType.OTHER
+                    && moduleType != ModuleType.STARTER && moduleType != ModuleType.STARTER_REMOTE) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "Controller 只能放在 *-starter；反向 Controller 才可放 *-starter-remote: " + typeName));
+            }
+            if ((entity || mapper) && moduleType != ModuleType.ROOT && moduleType != ModuleType.OTHER
+                    && moduleType != ModuleType.CORE && !isMangoPersistenceFrameworkFile(file)) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "Entity/Mapper 只能放在 *-core: " + typeName));
+            }
+            if (serviceImplementation && moduleType != ModuleType.ROOT && moduleType != ModuleType.OTHER
+                    && moduleType != ModuleType.CORE) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "业务 Service 实现只能放在 *-core: " + typeName));
+            }
             if (code.contains("@RestController")) {
+                if (!CONTROLLER_IMPLEMENTS_API_PATTERN.matcher(code).find()) {
+                    issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                            "XxxController 必须实现本域 XxxApi: " + typeName));
+                }
+                if (!code.contains("@Validated")) {
+                    issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                            "Controller 必须使用 @Validated 开启基础字段校验: " + typeName));
+                }
                 Matcher apiFieldMatcher = API_FIELD_PATTERN.matcher(code);
                 while (apiFieldMatcher.find()) {
                     issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                             "Controller 禁止持有 XxxApi 字段，应实现 XxxApi 并依赖 IXxxService: "
                                     + apiFieldMatcher.group(1)));
+                }
+                Matcher fieldMatcher = CONTROLLER_FIELD_PATTERN.matcher(code);
+                while (fieldMatcher.find()) {
+                    String fieldType = fieldMatcher.group(1);
+                    if (fieldType.endsWith("Mapper") || fieldType.endsWith("Entity")
+                            || fieldType.endsWith("FeignClient")
+                            || (fieldType.endsWith("Service") && !fieldType.startsWith("I"))) {
+                        issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                "Controller 只能依赖 IXxxService/等效服务接口，禁止依赖 " + fieldType));
+                    }
+                }
+                Matcher methodMatcher = MAPPED_METHOD_PATTERN.matcher(code);
+                while (methodMatcher.find()) {
+                    String returnType = methodMatcher.group(1);
+                    if (!returnType.startsWith("R<") && !returnType.startsWith("io.mango.common.result.R<")) {
+                        issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                "Controller HTTP 方法必须统一返回 R<T>: " + methodMatcher.group(2)
+                                        + " 返回 " + returnType));
+                    }
+                    if (exposesPersistenceModel(returnType)) {
+                        issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                "Controller 禁止返回持久化模型: " + returnType));
+                    }
+                }
+                Matcher javaMethodMatcher = JAVA_METHOD_PATTERN.matcher(code);
+                while (javaMethodMatcher.find()) {
+                    for (String parameter : splitTopLevelParameters(javaMethodMatcher.group(2))) {
+                        if (parameter.contains("@RequestBody") && !parameter.contains("@Valid")) {
+                            issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                    "Controller @RequestBody 必须使用 @Valid 做基础字段校验: "
+                                            + javaMethodMatcher.group(1)));
+                        }
+                        String parameterType = parameterType(parameter);
+                        if (exposesPersistenceModel(parameterType)) {
+                            issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                                    "Controller 入参禁止使用持久化模型 " + parameterType));
+                        }
+                    }
+                }
+                if (code.contains("R.fail(")) {
+                    issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                            "Controller 禁止自行拼装失败 R；业务失败必须由 Service 使用 Require + BizCode 抛出"));
                 }
             }
             Matcher serviceMatcher = SERVICE_IMPLEMENTS_API_PATTERN.matcher(code);
@@ -2131,10 +2289,75 @@ public class CheckMojo extends AbstractMojo {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "XxxFeignClient 必须继承本域 XxxApi"));
             }
+            if (serviceImplementation && (SERVICE_R_RETURN_PATTERN.matcher(code).find()
+                    || code.contains("R.ok(") || code.contains("R.fail("))) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "Service 禁止返回或拼装 R；R<T> 只属于 API/Controller/Feign 协议边界"));
+            }
+            if (serviceImplementation) {
+                validateServicePreconditions(code, file, issues);
+            }
         } catch (IOException e) {
             issues.add(new ApiContractIssue("MAJOR", file.toString(),
                     "API 分层检查失败: " + e.getMessage()));
         }
+    }
+
+    private ModuleType moduleTypeFromSourcePath(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        if (normalized.contains("-starter-remote/src/main/java/")) return ModuleType.STARTER_REMOTE;
+        if (normalized.contains("-starter/src/main/java/")) return ModuleType.STARTER;
+        if (normalized.contains("-core/src/main/java/")) return ModuleType.CORE;
+        if (normalized.contains("-api/src/main/java/")) return ModuleType.API;
+        return ModuleType.OTHER;
+    }
+
+    private void validateServicePreconditions(String code, Path file, List<ApiContractIssue> issues) {
+        Matcher matcher = SERVICE_IMPL_PUBLIC_METHOD_PATTERN.matcher(code);
+        while (matcher.find()) {
+            String methodName = matcher.group(1);
+            if (!isBusinessActionMethod(methodName) || splitTopLevelParameters(matcher.group(2)).isEmpty()) {
+                continue;
+            }
+            String body = methodBody(code, matcher.end() - 1);
+            if (body == null || !body.contains("Require.")) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "Service 业务动作必须使用 Require 执行业务前置条件校验: " + methodName));
+                continue;
+            }
+            if (SERVICE_DIRECT_THROW_PATTERN.matcher(body).find()) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "Service 业务动作禁止直接 if/throw 或裸业务异常，必须使用 Require + BizCode: "
+                                + methodName));
+            }
+            Matcher requireMatcher = REQUIRE_CALL_PATTERN.matcher(body);
+            while (requireMatcher.find()) {
+                if (!BIZ_CODE_REFERENCE_PATTERN.matcher(requireMatcher.group(1)).find()) {
+                    issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                            "Service Require 必须使用模块 BizCode/ErrorCode，禁止裸数字或错误字符串: "
+                                    + methodName));
+                }
+            }
+        }
+    }
+
+    private boolean isBusinessActionMethod(String methodName) {
+        String normalized = methodName.toLowerCase(Locale.ROOT);
+        return BUSINESS_ACTION_PREFIXES.stream().anyMatch(normalized::startsWith);
+    }
+
+    private String methodBody(String code, int openingBraceIndex) {
+        if (openingBraceIndex < 0 || openingBraceIndex >= code.length() || code.charAt(openingBraceIndex) != '{') {
+            openingBraceIndex = code.indexOf('{', Math.max(0, openingBraceIndex));
+        }
+        if (openingBraceIndex < 0) return null;
+        int depth = 0;
+        for (int index = openingBraceIndex; index < code.length(); index++) {
+            char current = code.charAt(index);
+            if (current == '{') depth++;
+            else if (current == '}' && --depth == 0) return code.substring(openingBraceIndex + 1, index);
+        }
+        return null;
     }
 
     private String declaredTypeName(String content, Path file) {
@@ -2262,7 +2485,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<KvKeyIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainJavaFile(file)) {
@@ -2289,7 +2512,39 @@ public class CheckMojo extends AbstractMojo {
 
     private boolean isMainJavaFile(Path file) {
         String normalized = file.toString().replace('\\', '/');
-        return normalized.contains("/src/main/java/") && normalized.endsWith(".java");
+        return !isIgnoredScanPath(file)
+                && normalized.contains("/src/main/java/") && normalized.endsWith(".java");
+    }
+
+    private boolean exposesPersistenceModel(String type) {
+        if (type == null || type.isBlank()) {
+            return false;
+        }
+        Matcher matcher = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$.]*").matcher(type);
+        while (matcher.find()) {
+            String token = matcher.group();
+            String simpleName = token.substring(token.lastIndexOf('.') + 1);
+            if (!NON_PERSISTENCE_ENTITY_TYPES.contains(simpleName)
+                    && (simpleName.endsWith("Entity") || simpleName.endsWith("PO"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isIgnoredScanPath(Path file) {
+        if (file == null) {
+            return false;
+        }
+        for (Path segmentPath : file.normalize()) {
+            String segment = segmentPath.toString();
+            if (IGNORED_SCAN_SEGMENTS.contains(segment)
+                    || ".venv".equals(segment)
+                    || segment.startsWith(".venv-")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -2304,7 +2559,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<PathParamIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainJavaFile(file)) {
@@ -2376,7 +2631,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<PathParamIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainJavaFile(file) && !isMangoToolingFile(file) && !isPermissionAccessAnnotation(file)) {
@@ -2476,7 +2731,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<Path> migrationFiles = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMigrationSqlFile(file)) {
@@ -2770,7 +3025,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<PersistenceStyleIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainJavaFile(file) && !isMangoToolingFile(file)) {
@@ -2840,7 +3095,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<PersistenceStyleIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainJavaFile(file) && !isMangoToolingFile(file) && !isMangoPersistenceFrameworkFile(file)) {
@@ -2927,7 +3182,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<PersistenceStyleIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainJavaFile(file) && isMapperJavaFile(file)) {
@@ -3007,7 +3262,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<ServiceContractIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainJavaFile(file) && isServiceContractFile(file) && !isMangoToolingFile(file)) {
@@ -3195,7 +3450,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<TestFixtureIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isTestJavaFile(file)) {
@@ -3271,7 +3526,7 @@ public class CheckMojo extends AbstractMojo {
         List<ResourceRegistryIssue> issues = new ArrayList<>();
         List<ResourceDeclarationRecord> declarations = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isMainResourceDeclarationFile(file)) {
@@ -3316,7 +3571,7 @@ public class CheckMojo extends AbstractMojo {
 
         List<ModuleMenuIssue> issues = new ArrayList<>();
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SkippingFileVisitor() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     analyzeModuleMenuFile(file, issues);
@@ -4152,6 +4407,13 @@ public class CheckMojo extends AbstractMojo {
             this.file = file;
             this.line = line;
             this.description = description;
+        }
+    }
+
+    private class SkippingFileVisitor extends SimpleFileVisitor<Path> {
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+            return isIgnoredScanPath(dir) ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
         }
     }
 

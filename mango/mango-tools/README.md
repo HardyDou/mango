@@ -1,7 +1,7 @@
 # Mango Tools
 
 ## 1. 概览
-`mango-tools` 提供 Mango 后端开发期工具，当前核心是 `mango-maven-plugin`。它用于质量检查、模块脚手架、CRUD 脚手架和权限资源生成。
+`mango-tools` 提供 Mango 后端开发期工具，包含无服务器 Java/Spring 架构门禁、质量检查、模块脚手架、CRUD 脚手架和权限资源生成。
 
 主要使用者是 Mango 维护者、业务模块开发者、CI 门禁和 AI Agent。
 
@@ -9,7 +9,7 @@
 
 | 能力 | 常用入口 |
 |------|----------|
-| PR 需要执行 Mango 后端质量检查 | Maven 依赖 / HTTP API / Java API |
+| PR 需要执行 Java/Spring 架构门禁 | `mvn verify`，专项调试使用 `mvn mango:architecture` |
 | 新增平台模块或业务模块时生成标准目录和基础文件 | Maven 依赖 / HTTP API / Java API |
 | 快速生成 CRUD API、实体、Mapper、Service、Controller 等脚手架 | Maven 依赖 / HTTP API / Java API |
 | 根据接口或资源生成权限数据草稿 | Maven 依赖 / HTTP API / Java API |
@@ -22,14 +22,22 @@
 
 ## 4. 模块入口
 - `mango-tools`：Maven 聚合模块。
+- `mango-architecture-rules`：Enforcer 3.6.3、ArchUnit 1.4.2、PMD 7.26.0 规则 JAR。
 - `mango-maven-plugin`：Maven 插件，goalPrefix 为 `mango`。
+- `mango-architecture-verification`：Reactor 最后执行的自托管验证模块，避免要求预装本仓插件。
 - 插件代码读取项目源码、migration、报告文件和 Git 变更，不写运行时数据库。
 
 ## 5. 接入方式
-在 Mango reactor 中直接调用：
+在 Mango Reactor 中统一调用：
 
 ```bash
-mvn -f mango/pom.xml mango:check
+mvn -f mango/pom.xml verify
+```
+
+只调试架构检查且 Reactor 已完成编译时可执行：
+
+```bash
+mvn -f mango/pom.xml mango:architecture
 ```
 
 或者在模块构建中使用插件 goal：
@@ -68,15 +76,14 @@ mvn -f mango/pom.xml mango:gen-permission
 
 Resource Registry 依赖边界作为 #186 的专项守护继续保留：非 `mango-resource` 模块默认只能依赖 `mango-resource-api`，不能直接依赖 `mango-resource-core`、`mango-resource-support`、`mango-resource-starter`、`mango-resource-sync-starter` 或 `mango-resource-starter-remote`。确需例外时，必须在命令行显式传入 `artifactId=reason`；缺少 reason 的例外不会生效。
 
-PR 检查推荐命令：
+PR 架构检查推荐命令：
 
 ```bash
-mvn -f mango/pom.xml mango:check -Drule=all \
-  -Dmango.check.gate=no-new-violations \
-  -Dmango.check.baseRef=origin/main \
-  -Doutput=json \
-  -DreportFile=target/mango-check-report.json
+mvn -f mango/pom.xml verify \
+  -Dmango.architecture.base=origin/main
 ```
+
+架构报告固定写入 `mango/target/mango-architecture-report.json`。默认 `changed` 模式只阻断变更文件或变更 POM 命中的问题，同时报告全量存量；`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、PMD 解析失败、ArchUnit 未导入到字节码或预期 Java 输入为零时均 fail-closed。
 
 使用仓库基线阻断新增问题：
 
@@ -89,7 +96,9 @@ mvn mango:check \
   -DreportFile=target/mango-check-report.json
 ```
 
-`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只记录既有问题。更新基线前必须确认报告中的 `newIssueCount` 为 `0`，不能把本次新增问题写入基线。
+`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只服务仍由 `mango:check` 管理的存量规则。Java/Spring 架构红线不读取该 baseline；新增或修改文件命中 Enforcer、ArchUnit、PMD 7 任一架构规则时直接阻断。
+
+`mango:architecture` 硬校验：Controller 实现 `XxxApi`、启用 `@Validated/@Valid`、只依赖 `IXxxService`、统一返回 `R<T>`；Service 使用 `Require + BizCode/ErrorCode` 校验业务前置条件且不返回或拼装 `R`；Entity、Mapper、Feign、Controller 和 Service 实现必须位于规定模块。
 
 检查当前变更文件内的模块菜单声明：
 
@@ -109,6 +118,7 @@ mvn mango:check \
 
 | Goal | Mojo | 用途 |
 |------|------|------|
+| `mango:architecture` | `ArchitectureMojo` | 聚合 Enforcer、ArchUnit、PMD 7 架构结果并阻断新增违规。 |
 | `mango:check` | `CheckMojo` | 执行 Mango 后端质量检查和 PR 门禁。 |
 | `mango:gen-module` | `GenModuleMojo` | 生成模块脚手架。 |
 | `mango:gen-crud` | `GenCrudMojo` | 生成 CRUD 脚手架。 |
@@ -125,7 +135,7 @@ mvn mango:check \
 ## 10. 快速开始
 1. 使用 `gen-module` 或 `gen-crud` 生成初稿。
 2. 补齐业务模型、Controller 权限、migration、README、能力地图和测试。
-3. 执行 `mango:check`。
+3. 执行 `mvn verify`。
 4. 检查生成文件是否符合 PMO 模板和模块边界。
 
 ## 11. 问题排查

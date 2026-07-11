@@ -24,6 +24,12 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.tools</groupId>
+            <artifactId>mango-architecture-rules</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Picocli for CLI -->
         <dependency>
             <groupId>info.picocli</groupId>
