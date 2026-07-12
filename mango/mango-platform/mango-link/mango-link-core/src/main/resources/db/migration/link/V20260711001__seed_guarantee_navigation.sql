@@ -1,3 +1,5 @@
+-- Use a globally unique version because consumers may own lower Link migration versions.
+
 INSERT INTO link_category (
     id, tenant_id, scope, owner_user_id, name, sort_no, status, remark, created_by, updated_by
 )
@@ -11,7 +13,8 @@ FROM (
 ) seed
 WHERE NOT EXISTS (
     SELECT 1 FROM link_category
-    WHERE tenant_id = 1 AND scope = 'COMPANY' AND owner_user_id = 0 AND name = seed.name
+    WHERE id = seed.id
+       OR (tenant_id = 1 AND scope = 'COMPANY' AND owner_user_id = 0 AND name = seed.name)
 );
 
 INSERT INTO link_item (
