@@ -74,12 +74,14 @@ public class PersistenceFlywayAutoConfiguration {
     private static final Set<String> MANGO_NON_LINEAR_PUBLISHED_MODULES = Set.of(
             "authorization",
             "domain",
+            "link",
             "mango-job",
             "notice",
             "numgen",
             "payment",
             "system"
     );
+    private static final Set<String> MANGO_MISSING_MIGRATION_COMPATIBILITY_MODULES = Set.of("link");
 
     @Bean
     @DependsOn("dataSource")
@@ -115,6 +117,7 @@ public class PersistenceFlywayAutoConfiguration {
                     ResolvedLocations resolvedLocations = null;
                     String historyTable = "<unresolved>";
                     boolean outOfOrder = resolveOutOfOrder(module);
+                    boolean ignoreMissingMigrations = resolveIgnoreMissingMigrations(module);
                     boolean validateOnMigrate = module.config().isValidateOnMigrate();
                     String datasource = resolveDataSourceDescription(module, resolver);
                     try {
@@ -132,7 +135,7 @@ public class PersistenceFlywayAutoConfiguration {
                                 .baselineVersion("0")
                                 .validateOnMigrate(validateOnMigrate)
                                 .outOfOrder(outOfOrder);
-                        if (module.config().isIgnoreMissingMigrations()) {
+                        if (ignoreMissingMigrations) {
                             configuration.ignoreMigrationPatterns("*:missing");
                         }
                         configuration.load().migrate();
@@ -144,7 +147,7 @@ public class PersistenceFlywayAutoConfiguration {
                                         + ", datasource=" + datasource
                                         + ", validateOnMigrate=" + validateOnMigrate
                                         + ", outOfOrder=" + outOfOrder
-                                        + ", ignoreMissingMigrations=" + module.config().isIgnoreMissingMigrations(),
+                                        + ", ignoreMissingMigrations=" + ignoreMissingMigrations,
                                 e);
                     } finally {
                         if (resolvedDataSource != null) {
@@ -328,6 +331,11 @@ public class PersistenceFlywayAutoConfiguration {
             return configured;
         }
         return MANGO_NON_LINEAR_PUBLISHED_MODULES.contains(module.name());
+    }
+
+    private boolean resolveIgnoreMissingMigrations(ModuleMigration module) {
+        return module.config().isIgnoreMissingMigrations()
+                || MANGO_MISSING_MIGRATION_COMPATIBILITY_MODULES.contains(module.name());
     }
 
     private String resolveHistoryTable(ModuleMigration module) {

@@ -41,6 +41,7 @@ class PersistenceFlywayAutoConfigurationTest {
             "another-test",
             "business-upgrade",
             "comparison-data",
+            "link",
             "payment",
             "persistence-test"
     );
@@ -130,7 +131,7 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(ctx).hasFailed();
                     assertThat(ctx.getStartupFailure())
                             .hasMessageContaining("Mango Flyway classpath migration modules are not fully declared")
-                            .hasMessageContaining("missingModules=[another-test, business-upgrade, comparison-data, payment]")
+                            .hasMessageContaining("missingModules=[another-test, business-upgrade, comparison-data, link, payment]")
                             .hasMessageContaining("classpath:db/migration/another-test")
                             .hasMessageContaining("mango.persistence.flyway.modules.<module>.enabled=true")
                             .hasMessageContaining("enabled=false with skip-reason");
@@ -225,6 +226,36 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(jdbcTemplate.queryForObject(
                             "SELECT COUNT(*) FROM flyway_schema_history_payment WHERE version IN ('3', '4') AND success = TRUE",
                             Integer.class)).isEqualTo(2);
+                });
+    }
+
+    @Test
+    void linkModule_shouldApplyPublishedHistoryCompatibilityByDefault() {
+        String url = "jdbc:h2:mem:flyway_link_published_history;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        Flyway.configure()
+                .dataSource(h2DataSource(url))
+                .locations("classpath:db/legacy-migration/link")
+                .table("flyway_schema_history_link")
+                .baselineOnMigrate(true)
+                .load()
+                .migrate();
+
+        contextRunner
+                .withPropertyValues(flywayProperties(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.link.enabled=true"
+                ))
+                .withBean(DataSource.class, () -> h2DataSource(url))
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(h2DataSource(url));
+                    assertThat(tableExists(jdbcTemplate, "link_legacy_v6")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "link_high_version_seed")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "link_followup_v7")).isTrue();
+                    assertThat(jdbcTemplate.queryForObject(
+                            "SELECT COUNT(*) FROM flyway_schema_history_link "
+                                    + "WHERE version IN ('6', '7', '20260711001') AND success = TRUE",
+                            Integer.class)).isEqualTo(3);
                 });
     }
 
