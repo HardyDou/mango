@@ -24,14 +24,14 @@
 
 ### Published Packages
 
-The release state machine owns the following target batch; statuses remain pending until registry and GitHub Release back-checks complete.
+The release state machine completed the following target batch and verified every consumable artifact through its configured consume endpoint.
 
 | Order | Target | Version / destination | Status |
 |---|---|---|---|
-| 1 | Maven non-app backend batch | `io.mango:*:1.0.17` -> Nexus Maven hosted | `PENDING` |
-| 2 | npm PMO bundle | `@mango/pmo@1.2.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
-| 3 | npm CLI | `@mango/cli@1.0.70` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
-| 4 | GitHub Release | `v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release` | `PENDING` |
+| 1 | Maven non-app backend batch | `io.mango:*:1.0.17` -> Nexus Maven hosted | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 3 | npm CLI | `@mango/cli@1.0.70` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 4 | GitHub Release | `v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release` | `PUBLISHED` |
 
 ### Verification
 
@@ -45,6 +45,9 @@ The release state machine owns the following target batch; statuses remain pendi
 - `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
 - `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
 - `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- Unified release manifest completed all 17 fixed states. The private Maven consume repository resolved 122 published coordinates, and the private npm consume repository resolved both exact package versions.
+- Generated backend acceptance passed against Mango Maven `1.0.17`; a clean install of `@mango/cli@1.0.70` from `npm-group` exposed Mango Maven `1.0.17` as its default.
+- Latest and versioned documentation endpoints returned HTTP 200. Detailed immutable-attempt and consumer evidence is recorded in `mango-docs/evidence/governance/release-v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release.json`.
 
 ## v2026.07.13-pmo-1.1.1-cli-1.0.69-release - 2026-07-13
 
