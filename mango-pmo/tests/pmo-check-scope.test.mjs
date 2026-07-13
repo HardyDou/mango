@@ -54,6 +54,18 @@ test('governance workflow changes self-verify every conditional suite', () => {
   }
 });
 
+test('clean CI builds the architecture test dependency without expanding the quality reactor', () => {
+  const workflow = fs.readFileSync(
+    new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(
+    workflow,
+    /Build the architecture gate test dependency[\s\S]*?-pl :mango-common[\s\S]*?-DskipTests[\s\S]*?install/,
+  );
+  assert.doesNotMatch(workflow, /^\s+-am(?:d)?(?:\s|\\)/m);
+});
+
 test('Java source maps to one Maven module plus the governed architecture aggregator', () => {
   const scope = resolveMavenScope([
     'mango/mango-platform/mango-system/mango-system-core/src/main/java/example/UserService.java',
