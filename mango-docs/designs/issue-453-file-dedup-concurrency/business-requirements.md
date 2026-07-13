@@ -5,11 +5,11 @@ pmoVersion: 1.1.0
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: rules/09-test-case-automation-flow.md 中并发与数据一致性变更的 L3 判定
-status: IN_REVIEW
-action: WRITE
+status: APPROVED
+action: NEXT
 owner: Mango 文件能力负责人
 approver: HardyDou
-approvalEvidence: NONE
+approvalEvidence: review/BRD-ISSUE-453.md
 upstreamDocumentId: NONE
 upstreamDocumentHash: NONE
 ---
@@ -94,4 +94,4 @@ upstreamDocumentHash: NONE
 | 业务需求 checker | PASS | `node mango-pmo/tools/check-business-requirements.mjs --document mango-docs/designs/issue-453-file-dedup-concurrency/business-requirements.md` |
 | 未关闭阻断数量 | 0 | BI-001 已关闭 |
 | 例外 | 0 | NONE |
-| 业务审批 | PENDING | 等待 HardyDou 审阅本文档 |
+| 业务审批 | APPROVED | `review/BRD-ISSUE-453.md` |
