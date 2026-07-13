@@ -5,11 +5,11 @@ pmoVersion: 1.1.0
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: rules/09-test-case-automation-flow.md 中并发与数据一致性变更的 L3 判定
-status: IN_REVIEW
-action: WRITE
+status: APPROVED
+action: NEXT
 owner: Mango 文件能力负责人
 approver: HardyDou
-approvalEvidence: NONE
+approvalEvidence: review/SRS-ISSUE-453.md
 upstreamDocumentId: BRD-ISSUE-453
 upstreamDocumentHash: e7c3bcee62c715f531168e25d08bf8c70a48f110b92d5870a13a68a1ecc5e71a
 ---
@@ -97,6 +97,6 @@ upstreamDocumentHash: e7c3bcee62c715f531168e25d08bf8c70a48f110b92d5870a13a68a1ec
 | 检查项 | 结果 | 证据 |
 |---|---|---|
 | 系统需求 checker | PASS | `node mango-pmo/tools/check-system-requirements.mjs --document mango-docs/designs/issue-453-file-dedup-concurrency/system-requirements.md` |
-| 生命周期 handoff | PENDING | 待执行截至系统需求阶段的生命周期检查 |
+| 生命周期 handoff | PASS | `node mango-pmo/tools/check-lifecycle-handoff.mjs --brd mango-docs/designs/issue-453-file-dedup-concurrency/business-requirements.md --srs mango-docs/designs/issue-453-file-dedup-concurrency/system-requirements.md --risk L3 --through srs` |
 | 未关闭阻断数量 | 0 | BRD 与本文均无开放阻断 |
-| 系统需求审批 | PENDING | 等待 HardyDou 审阅本文档 |
+| 系统需求审批 | APPROVED | `review/SRS-ISSUE-453.md` |
