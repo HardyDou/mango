@@ -7,6 +7,32 @@ const LEGACY_DELIVERY_COLUMN = '交付物';
 const MATERIAL_COLUMNS = ['代码交付物', 'README/使用说明', '需求/设计文档', 'E2E 脚本', '测试结果基线'];
 const E2E_COLUMN = 'E2E 脚本';
 const BASELINE_COLUMN = '测试结果基线';
+const EVIDENCE_CASE_COLUMN = '用例 ID';
+const EVIDENCE_COLUMNS = [
+  '台账 ID',
+  EVIDENCE_CASE_COLUMN,
+  '页面/接口',
+  '功能点',
+  '测试数据',
+  '关键断言',
+  'UI/交互检查',
+  'console/network 结果',
+  '截图/trace/日志',
+  '结论'
+];
+const TEST_CASE_COLUMNS = [
+  '用例 ID',
+  '来源 AC',
+  '场景',
+  '优先级',
+  '测试层级',
+  '自动化判断',
+  '测试数据',
+  '稳定契约',
+  '执行入口',
+  '证据',
+  '状态'
+];
 const BASELINE_COLUMNS = [
   '基线 ID',
   '覆盖台账 ID',
@@ -20,9 +46,23 @@ const BASELINE_COLUMNS = [
   '报告/截图/日志路径',
   '行为变化'
 ];
+const BASELINE_CASE_COLUMN = '覆盖用例 ID';
+const BUSINESS_OUTPUT_COLUMNS = [
+  '输出对象',
+  '交接内容',
+  '材料路径',
+  '执行入口',
+  '数据/账号边界',
+  '失败/例外处理',
+  '状态'
+];
 const DEFAULT_FORBIDDEN = ['TODO', 'FIXME', 'mock', 'Mock', 'virtual', 'Virtual', '模拟', '伪代码', '未来优化', '后续优化'];
 const DONE_STATUSES = new Set(['DONE', 'EXCEPTION']);
 const PLAN_STATUSES = new Set(['TODO', 'IN_PROGRESS', 'DONE', 'EXCEPTION']);
+const TEST_CASE_STATUSES = new Set(['CANDIDATE', 'AUTOMATED', 'MANUAL', 'FLAKY', 'DEPRECATED']);
+const TEST_PRIORITIES = new Set(['P0', 'P1', 'P2', 'P3']);
+const TEST_LEVELS = new Set(['单元', 'API', '组件', 'E2E', '截图', '手工']);
+const AUTOMATION_DECISIONS = new Set(['AUTO', 'MANUAL', 'EXCEPTION']);
 const EMPTY_VALUES = new Set(['', '-']);
 const NOT_APPLICABLE_VALUES = new Set(['n/a', 'na', 'none', 'not applicable', '不适用', '无需', '无']);
 
@@ -135,10 +175,28 @@ function parseLedgerRows(content) {
   return ledgerTable || { headers: [], rows: [] };
 }
 
+function parseTestCaseRows(content) {
+  const tables = parseMarkdownTables(content);
+  const testCaseTable = tables.find((table) => TEST_CASE_COLUMNS.every((column) => table.headers.includes(column)));
+  return testCaseTable || { headers: [], rows: [] };
+}
+
 function parseBaselineRows(content) {
   const tables = parseMarkdownTables(content);
   const baselineTable = tables.find((table) => BASELINE_COLUMNS.every((column) => table.headers.includes(column)));
   return baselineTable || { headers: [], rows: [] };
+}
+
+function parseEvidenceRows(content) {
+  const tables = parseMarkdownTables(content);
+  const evidenceTable = tables.find((table) => EVIDENCE_COLUMNS.every((column) => table.headers.includes(column)));
+  return evidenceTable || { headers: [], rows: [] };
+}
+
+function parseBusinessOutputRows(content) {
+  const tables = parseMarkdownTables(content);
+  const businessOutputTable = tables.find((table) => BUSINESS_OUTPUT_COLUMNS.every((column) => table.headers.includes(column)));
+  return businessOutputTable || { headers: [], rows: [] };
 }
 
 function rowText(row) {
@@ -168,6 +226,11 @@ function isEmptyCell(value) {
   return EMPTY_VALUES.has(String(value || '').trim());
 }
 
+function isPlaceholderCell(value) {
+  const normalized = String(value || '').trim();
+  return isEmptyCell(normalized) || normalized === 'TODO' || normalized === 'TBD';
+}
+
 function hasExceptionText(value) {
   return String(value || '').toUpperCase().includes('EXCEPTION');
 }
@@ -175,6 +238,11 @@ function hasExceptionText(value) {
 function hasPathLikeText(value) {
   const text = String(value || '').trim();
   return /[`'"]?\/?[\w.@-]+\/[\w./@-]+[`'"]?/.test(text) || /\b[\w.@-]+\.(md|mjs|js|ts|tsx|vue|java|xml|json|yaml|yml|sql|sh|feature|spec)\b/.test(text);
+}
+
+function hasCommandLikeText(value) {
+  const text = String(value || '').trim();
+  return /\b(node|npm|pnpm|yarn|mvn|gradle|java|npx|playwright|vitest|jest|bash|sh)\b/.test(text);
 }
 
 function extractPathLikeText(value) {
@@ -234,16 +302,101 @@ function checkE2ePath(rowNo, value, errors) {
   }
 }
 
-function checkBaselineTable(baselineRows, mode, errors) {
+function splitCellIds(value) {
+  return String(value || '')
+    .split(/[,，、\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function checkTestCaseTable(testCaseRows, evidenceRows, baselineRows, errors) {
+  if (testCaseRows.length === 0) {
+    return;
+  }
+  const referencedCaseIds = new Set([
+    ...evidenceRows.flatMap((row) => splitCellIds(row[EVIDENCE_CASE_COLUMN])),
+    ...baselineRows.flatMap((row) => splitCellIds(row[BASELINE_CASE_COLUMN]))
+  ]);
+  const seenCaseIds = new Set();
+  testCaseRows.forEach((row, index) => {
+    const rowNo = index + 1;
+    for (const column of TEST_CASE_COLUMNS) {
+      if (isPlaceholderCell(row[column])) {
+        errors.push(`Test case row ${rowNo} missing concrete value for column: ${column}`);
+      }
+    }
+
+    const caseId = String(row['用例 ID'] || '').trim();
+    if (!/^TC-\d{3,}$/.test(caseId)) {
+      errors.push(`Test case row ${rowNo} has invalid 用例 ID "${caseId}", expected TC-001 style`);
+    }
+    if (seenCaseIds.has(caseId)) {
+      errors.push(`Test case row ${rowNo} duplicates 用例 ID: ${caseId}`);
+    }
+    seenCaseIds.add(caseId);
+
+    const sourceAc = String(row['来源 AC'] || '').trim();
+    if (!/^AC-\d{3,}$/.test(sourceAc)) {
+      errors.push(`Test case row ${rowNo} has invalid 来源 AC "${sourceAc}", expected AC-001 style`);
+    }
+
+    const priority = String(row['优先级'] || '').trim();
+    if (!TEST_PRIORITIES.has(priority)) {
+      errors.push(`Test case row ${rowNo} has invalid priority "${priority}", expected P0, P1, P2, or P3`);
+    }
+
+    const levels = splitCellIds(row['测试层级']);
+    if (levels.length === 0 || levels.some((level) => !TEST_LEVELS.has(level))) {
+      errors.push(`Test case row ${rowNo} has invalid 测试层级 "${row['测试层级']}", expected 单元/API/组件/E2E/截图/手工`);
+    }
+
+    const automationDecision = String(row['自动化判断'] || '').trim();
+    if (!AUTOMATION_DECISIONS.has(automationDecision)) {
+      errors.push(`Test case row ${rowNo} has invalid 自动化判断 "${automationDecision}", expected AUTO, MANUAL, or EXCEPTION`);
+    }
+
+    const status = String(row['状态'] || '').trim();
+    if (!TEST_CASE_STATUSES.has(status)) {
+      errors.push(`Test case row ${rowNo} has invalid status "${status}", expected CANDIDATE, AUTOMATED, MANUAL, FLAKY, or DEPRECATED`);
+    }
+
+    if (automationDecision === 'AUTO' && isNotApplicableText(row['执行入口'])) {
+      errors.push(`Test case row ${rowNo} is AUTO but 执行入口 is not applicable`);
+    }
+    if (automationDecision === 'EXCEPTION' && !hasExceptionText(row['证据'])) {
+      errors.push(`Test case row ${rowNo} is EXCEPTION but 证据 does not record an EXCEPTION reason`);
+    }
+    if (caseId && referencedCaseIds.size > 0 && !referencedCaseIds.has(caseId)) {
+      errors.push(`Test case row ${rowNo} 用例 ID ${caseId} is not referenced by evidence or baseline tables`);
+    }
+  });
+}
+
+function checkBaselineTable(baselineRows, mode, testCaseRows, errors) {
   if (baselineRows.length === 0) {
     errors.push('Test result baseline table has no rows');
     return;
   }
+  const knownCaseIds = new Set(testCaseRows.map((row) => String(row['用例 ID'] || '').trim()).filter(Boolean));
+  const baselineHasCaseColumn = baselineRows.some((row) => Object.prototype.hasOwnProperty.call(row, BASELINE_CASE_COLUMN));
   baselineRows.forEach((row, index) => {
     const rowNo = index + 1;
     for (const column of BASELINE_COLUMNS) {
       if (isEmptyCell(row[column])) {
         errors.push(`Baseline row ${rowNo} missing value for column: ${column}`);
+      }
+    }
+    if (baselineHasCaseColumn) {
+      if (isPlaceholderCell(row[BASELINE_CASE_COLUMN])) {
+        errors.push(`Baseline row ${rowNo} missing value for column: ${BASELINE_CASE_COLUMN}`);
+      }
+      const caseIds = splitCellIds(row[BASELINE_CASE_COLUMN]);
+      for (const caseId of caseIds) {
+        if (!/^TC-\d{3,}$/.test(caseId)) {
+          errors.push(`Baseline row ${rowNo} has invalid ${BASELINE_CASE_COLUMN} "${caseId}", expected TC-001 style`);
+        } else if (knownCaseIds.size > 0 && !knownCaseIds.has(caseId)) {
+          errors.push(`Baseline row ${rowNo} references unknown test case: ${caseId}`);
+        }
       }
     }
     if (mode === 'verify' && !String(row['报告/截图/日志路径'] || '').trim().includes('EXCEPTION')) {
@@ -255,7 +408,39 @@ function checkBaselineTable(baselineRows, mode, errors) {
   });
 }
 
-function checkRows(rows, mode, requireMaterials, baselineRows, errors) {
+function checkBusinessOutputTable(businessOutputRows, requireMaterials, mode, errors) {
+  if (!requireMaterials) {
+    return;
+  }
+  if (businessOutputRows.length === 0) {
+    errors.push('Business developer handoff table has no rows');
+    return;
+  }
+  businessOutputRows.forEach((row, index) => {
+    const rowNo = index + 1;
+    for (const column of BUSINESS_OUTPUT_COLUMNS) {
+      if (isPlaceholderCell(row[column])) {
+        errors.push(`Business handoff row ${rowNo} missing concrete value for column: ${column}`);
+      }
+    }
+    for (const column of ['材料路径', '执行入口']) {
+      if (hasExceptionText(row[column])) {
+        checkMaterialException(rowNo, column, row[column], errors);
+      } else if (!hasPathLikeText(row[column]) && !hasCommandLikeText(row[column])) {
+        errors.push(`Business handoff row ${rowNo} column ${column} must contain a path, command, or EXCEPTION reason`);
+      }
+    }
+    const status = String(row['状态'] || '').trim();
+    if (!PLAN_STATUSES.has(status)) {
+      errors.push(`Business handoff row ${rowNo} has invalid status "${status}", expected TODO, IN_PROGRESS, DONE, or EXCEPTION`);
+    }
+    if (mode === 'verify' && !DONE_STATUSES.has(status)) {
+      errors.push(`Business handoff row ${rowNo} is not complete in verify mode: ${status}`);
+    }
+  });
+}
+
+function checkRows(rows, mode, requireMaterials, baselineRows, testCaseRows, errors) {
   if (rows.length === 0) {
     errors.push('Ledger has no delivery rows');
     return;
@@ -307,7 +492,7 @@ function checkRows(rows, mode, requireMaterials, baselineRows, errors) {
     }
   });
   if (requireMaterials && rows.some((row) => row[BASELINE_COLUMN] !== undefined && !hasExceptionText(row[BASELINE_COLUMN]))) {
-    checkBaselineTable(baselineRows, mode, errors);
+    checkBaselineTable(baselineRows, mode, testCaseRows, errors);
   }
 }
 
@@ -405,9 +590,14 @@ if (!['plan', 'verify'].includes(args.mode)) {
 
 const parsed = ledgerText ? parseLedgerRows(ledgerText) : { headers: [], rows: [] };
 const baselineParsed = ledgerText ? parseBaselineRows(ledgerText) : { headers: [], rows: [] };
+const testCaseParsed = ledgerText ? parseTestCaseRows(ledgerText) : { headers: [], rows: [] };
+const evidenceParsed = ledgerText ? parseEvidenceRows(ledgerText) : { headers: [], rows: [] };
+const businessOutputParsed = ledgerText ? parseBusinessOutputRows(ledgerText) : { headers: [], rows: [] };
 if (ledgerText) {
   checkRequiredColumns(parsed.headers, args.requireMaterials, errors);
-  checkRows(parsed.rows, args.mode, args.requireMaterials, baselineParsed.rows, errors);
+  checkTestCaseTable(testCaseParsed.rows, evidenceParsed.rows, baselineParsed.rows, errors);
+  checkRows(parsed.rows, args.mode, args.requireMaterials, baselineParsed.rows, testCaseParsed.rows, errors);
+  checkBusinessOutputTable(businessOutputParsed.rows, args.requireMaterials, args.mode, errors);
   checkRequiredItems(parsed.rows, designText, requiredItems, errors);
 }
 

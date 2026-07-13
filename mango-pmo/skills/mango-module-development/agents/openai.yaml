@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango New Module"
+  short_description: "Add a governed module to an existing Mango project"
+  default_prompt: "Use $mango-module-development to add and verify the approved module in this existing Mango project."
+policy:
+  allow_implicit_invocation: true

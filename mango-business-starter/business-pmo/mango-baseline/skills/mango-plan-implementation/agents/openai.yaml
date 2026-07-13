@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Implementation Plan"
+  short_description: "Turn approved design into executable governed work items"
+  default_prompt: "Use $mango-plan-implementation to turn the approved technical design into an executable implementation plan."
+policy:
+  allow_implicit_invocation: true

@@ -13,8 +13,10 @@
 正式任务先确认本仓 baseline 没有漂移：
 
 ```bash
-mango pmo check --project-dir .
+mango pmo check --project-dir . --locked
 ```
+
+该检查同时校验 `business-pmo/pmo-lock.json`、baseline manifest 和 `.agents/skills` 中由 PMO bundle 管理的项目 Skill。项目 Skill 同步不代表用户级 Codex plugin 已安装。
 
 正式开发、验证、发布、提交前执行：
 
@@ -50,6 +52,14 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 ```
 
 禁止只用“接口 200”“页面无异常”“截图正常”声明验收通过。
+
+后端验证统一执行完整 reactor：
+
+```bash
+mvn -f backend/pom.xml verify
+```
+
+`backend/architecture-verification` 必须保持为最后一个模块；它负责聚合检查生成后的业务 `api/core/starter/starter-remote` 边界，并执行阻断式 P3C/PMD、Checkstyle、SpotBugs 检查。禁止用 `changedOnly`、`codeLevelExcludedModules`、缩小 Reactor 或关闭静态失败阻断来规避全量校验。
 
 ## 5. 本地开发启动
 

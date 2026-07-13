@@ -11,8 +11,9 @@
 
 - 单元测试：工具函数、组合式函数、独立逻辑。
 - 组件测试：组件渲染、输入输出、事件。
-- E2E 测试：页面主流程、路由、接口联动。
+- UI/E2E 测试：同一概念，指从浏览器用户入口验证页面主流程、路由和真实接口联动。
 - 是否需要视觉截图，按改动影响面决定。
+- 测试强度按 `rules/09-test-case-automation-flow.md` 的 `L0-L3` 决定；`L0` 非行为改动不得机械要求完整 UI/E2E，`L2/L3` 页面行为或主流程改动不得省略对应 UI/E2E。
 
 ## 3. 页面回归走查
 
@@ -31,9 +32,9 @@
 
 禁止把“服务已启动”“路由可访问”“截图有画面”当作页面验收通过。交付结论必须写明具体页面、关键元素、异常记录和截图路径。
 
-## 3.1 有效 E2E 验收
+## 3.1 有效 UI/E2E 验收
 
-E2E 验收必须验证用户可见结果和业务结果，不能只验证接口 200 或没有前端异常。
+UI/E2E 验收必须验证用户可见结果和业务结果，不能只验证接口 200 或没有前端异常。
 
 每个关键功能点至少记录：
 
@@ -47,9 +48,9 @@ E2E 验收必须验证用户可见结果和业务结果，不能只验证接口 
 
 涉及新增、编辑、删除、启停、导入、导出、审批、上传、下载、搜索、重置、分页、批量操作时，台账必须逐项列出对应功能点和证据。
 
-前端 E2E 脚本必须按业务语义定位，优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`data-record-key` 和 `data-state`。`specs` 中禁止直接依赖 Element Plus 内部 class、布局 class、深层 DOM、字段顺序、`nth()`、`waitForTimeout()` 或 `force: true`；无法避免时只能封装在 `support`、`fixtures`、`tasks` 或 `components` 中，并写明原因。
+前端 UI/E2E 脚本必须按业务语义定位，优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`data-record-key` 和 `data-state`。`specs` 中禁止直接依赖 Element Plus 内部 class、布局 class、深层 DOM、字段顺序、`nth()`、`waitForTimeout()` 或 `force: true`；无法避免时只能封装在 `support`、`fixtures`、`tasks` 或 `components` 中，并写明原因。
 
-前端 E2E 用例必须按 `@p0`、`@p1`、`@p2` 和模块标签分级。PR 和 AI 交付优先执行相关 `@p0`，主干定时执行 `@p0/@p1`，夜间或发布前执行 `@p2`。
+前端 UI/E2E 用例必须按 `@p0`、`@p1`、`@p2` 和模块标签分级。PR 和 AI 交付优先执行相关 `@p0`，主干定时执行 `@p0/@p1`，夜间或发布前执行 `@p2`。
 
 验收证据必须使用 `mango-pmo/templates/acceptance-evidence.md` 或同结构表格记录，并在交付前执行：
 

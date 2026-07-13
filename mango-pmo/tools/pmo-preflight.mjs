@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -123,6 +124,58 @@ function pathMatches(inputPath, pattern) {
 function anyKeywordMatches(task, keywords) {
   const normalizedTask = normalizeText(task);
   return keywords.some((keyword) => normalizedTask.includes(normalizeText(keyword)));
+}
+
+function runGit(args) {
+  return execFileSync('git', args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore']
+  }).trim();
+}
+
+function inspectCurrentWorkspace() {
+  try {
+    const root = fs.realpathSync(runGit(['rev-parse', '--show-toplevel']));
+    const branch = runGit(['branch', '--show-current']);
+    const worktreeLines = runGit(['worktree', 'list', '--porcelain']).split(/\r?\n/);
+    const registeredPaths = worktreeLines
+      .filter((line) => line.startsWith('worktree '))
+      .map((line) => fs.realpathSync(line.slice('worktree '.length)));
+    const primaryPath = registeredPaths[0] || root;
+    const isPrimary = root === primaryPath;
+    const isMainBranch = branch === 'main' || branch === 'master';
+    return {
+      available: true,
+      root,
+      branch: branch || '(detached)',
+      primaryPath,
+      isPrimary,
+      isMainBranch,
+      reusableTaskWorkspace: !isPrimary || (!isMainBranch && Boolean(branch))
+    };
+  } catch {
+    return {
+      available: false,
+      root: '',
+      branch: '',
+      primaryPath: '',
+      isPrimary: false,
+      isMainBranch: false,
+      reusableTaskWorkspace: false
+    };
+  }
+}
+
+function applyCurrentWorkspacePolicy(policy, workspace) {
+  if (!workspace.reusableTaskWorkspace || policy.mode === 'needs-human-check') {
+    return policy;
+  }
+  return {
+    mode: 'reuse-current-worktree',
+    summary: '当前已位于非 main 任务工作区；必须在当前工作区和当前分支继续处理，禁止为本问题再创建 worktree。',
+    reason: `current=${workspace.root}; branch=${workspace.branch}; classified=${policy.mode}; ${policy.reason}`
+  };
 }
 
 function classifyWorkspacePolicy(args) {
@@ -278,19 +331,68 @@ const frontendAdminModuleStyleKeywords = [
   'CLI 模块'
 ];
 
+const testQualityPaths = [
+  '**/src/test/**',
+  '**/__tests__/**',
+  '**/e2e/**',
+  '**/*.spec.ts',
+  '**/*.test.ts',
+  '**/*Test.java',
+  '**/*Tests.java'
+];
+
+const testQualityKeywords = [
+  '测试', '单测', '集成测试', '流程测试', 'e2e', 'mock', 'mockito', '回归'
+];
+
+const workspaceLayoutKeywords = [
+  'worktree', '工作区', '运行时目录', '临时目录', '.runtime', '.mango', 'pmo', '规范治理'
+];
+
+function toolCommand(file, argumentsText) {
+  const relative = path.relative(process.cwd(), path.join(pmoRoot, 'tools', file)).replaceAll('\\', '/');
+  const executable = relative && !relative.startsWith('..') ? relative : path.join(pmoRoot, 'tools', file);
+  return `node ${executable}${argumentsText ? ` ${argumentsText}` : ''}`;
+}
+
 function collectRequiredChecks(args) {
   const inputPaths = splitPaths(args.paths);
   const task = normalizeText(args.task);
-  const pathHit = inputPaths.some((inputPath) =>
+  const checks = [];
+  const adminStylePathHit = inputPaths.some((inputPath) =>
     frontendAdminModuleStylePaths.some((pattern) => pathMatches(inputPath, pattern)),
   );
-  const keywordHit = frontendAdminModuleStyleKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+  const adminStyleKeywordHit = frontendAdminModuleStyleKeywords.some((keyword) => task.includes(normalizeText(keyword)));
 
-  if (!pathHit && !keywordHit) {
-    return [];
+  if (adminStylePathHit || adminStyleKeywordHit) {
+    checks.push(frontendAdminModuleStyleCheck);
   }
 
-  return [frontendAdminModuleStyleCheck];
+  const testPathHit = inputPaths.some((inputPath) =>
+    testQualityPaths.some((pattern) => pathMatches(inputPath, pattern)),
+  );
+  const testKeywordHit = testQualityKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+  if (testPathHit || testKeywordHit) {
+    checks.push({
+      id: 'test-quality',
+      commands: [toolCommand('test-quality-check.mjs', '--base origin/main')],
+      reason: '测试改动必须阻断恒真断言、同值断言和 mock 被测对象'
+    });
+  }
+
+  const workspaceKeywordHit = workspaceLayoutKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+  const workspacePathHit = inputPaths.some((inputPath) =>
+    ['mango-pmo/**', '.github/**', 'mango-business-starter/**'].some((pattern) => pathMatches(inputPath, pattern)),
+  );
+  if (workspaceKeywordHit || workspacePathHit || args.role === 'pmo') {
+    checks.push({
+      id: 'workspace-layout',
+      commands: [toolCommand('workspace-layout-check.mjs', '--root .')],
+      reason: '工作区治理改动必须确认 Git worktree 位于仓库外且运行时目录被忽略'
+    });
+  }
+
+  return checks;
 }
 
 function addRule(result, index, key, source) {
@@ -310,12 +412,16 @@ function addRule(result, index, key, source) {
 }
 
 function buildResult(index, args) {
+  const currentWorkspace = inspectCurrentWorkspace();
+  const classifiedWorkspacePolicy = classifyWorkspacePolicy(args);
   const result = {
     role: args.role || 'auto',
     phase: args.phase || 'auto',
     task: args.task || '',
     paths: splitPaths(args.paths),
-    workspacePolicy: classifyWorkspacePolicy(args),
+    currentWorkspace,
+    classifiedWorkspacePolicy,
+    workspacePolicy: applyCurrentWorkspacePolicy(classifiedWorkspacePolicy, currentWorkspace),
     mustRead: [],
     requiredChecks: collectRequiredChecks(args),
     errors: [],

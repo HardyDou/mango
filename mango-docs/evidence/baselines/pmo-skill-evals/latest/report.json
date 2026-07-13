@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "suite": "pmo-skill-evals",
+  "evaluatedAt": "2026-07-13T08:47:21+08:00",
+  "workspace": {
+    "branch": "pmo-update-by-cc",
+    "policy": "reuse-current-worktree",
+    "createdAdditionalWorktree": false
+  },
+  "source": {
+    "skills": "mango-pmo/skills",
+    "evalFiles": [
+      "mango-pmo/tests/skills/evals.json",
+      "mango-pmo/tests/skills/high-frequency-evals.json"
+    ],
+    "methodology": "mango-pmo/tests/skills/README.md",
+    "trustedFixturePolicy": "evaluator-injected-system-facts"
+  },
+  "issueCoverage": [
+    {
+      "issue": 306,
+      "status": "covered-by-candidate",
+      "scope": "Deterministic document contracts, checkers, high-frequency Skills, CLI PMO bundle installation and blank-context evaluation."
+    },
+    {
+      "issue": 443,
+      "status": "closed-predecessor-verified-and-extended",
+      "scope": "Java/Spring api/core/starter/starter-remote, Feign, Controller, Service registration, Mapper, Entity, R, Require and BizCode gates."
+    },
+    {
+      "issue": 448,
+      "status": "covered-by-candidate",
+      "scope": "L0-L3 task grading, invalid test rejection, risk-appropriate evidence, latest baseline and blank-context acceptance."
+    },
+    {
+      "issue": 446,
+      "status": "covered-by-candidate",
+      "scope": "Auditable mango release publish/status/verify/repair state machine, registry doctor, schema-v2 evidence, immutable verify-existing repair, explicit registry roles and version matrix. No artifact was published during candidate verification."
+    }
+  ],
+  "coverage": {
+    "skillCount": 14,
+    "caseCount": 103,
+    "kinds": [
+      "trigger",
+      "not-trigger",
+      "blank-context",
+      "boundary",
+      "gate",
+      "route",
+      "next"
+    ],
+    "requiredBoundaries": [
+      "claim-only evidence rejection",
+      "L0 lightweight path",
+      "L3 no stage skipping",
+      "non-main worktree reuse",
+      "current fix versus Issue registration",
+      "Java architecture rules",
+      "business Service versus conditional framework bean versus pure helper",
+      "unregistered cross-cutting annotations and static Service Locator",
+      "full-Reactor stable-identity debt ratchet",
+      "release compatibility matrix and auditable manifest"
+    ]
+  },
+  "execution": {
+    "structuralCommand": "node mango-pmo/tests/skills/check-skill-evals.mjs",
+    "structuralResult": "PASS",
+    "blankContextAgents": 3,
+    "targetedReviewRounds": {
+      "serviceRegistration": 2,
+      "architectureDebt": 4,
+      "releaseStateMachine": 4
+    },
+    "policy": "Each affected case is re-reviewed after every implementation or fixture change; an action with the wrong reasoning fails requiredAssertions.",
+    "finalCumulativePassed": 103,
+    "finalCumulativeFailed": 0
+  },
+  "regressionResults": [
+    {
+      "area": "document lifecycle and four document Skills",
+      "result": "PASS",
+      "finalTargetedReview": "10/10",
+      "notes": "Canonical BRD/SRS/TDD/Plan handoffs, chapter contracts, L0 lightweight routing and L3 no-skip behavior passed."
+    },
+    {
+      "area": "engineering Service registration",
+      "result": "PASS",
+      "finalTargetedReview": "4/4",
+      "notes": "Business @Service, owning-starter conditional Bean, pure Java helper, manual construction, cross-cutting proxy and static Service Locator boundaries passed after one failed review and repair."
+    },
+    {
+      "area": "architecture debt governance",
+      "result": "PASS",
+      "notes": "Schema-v3 stable identities, base-SHA Maven subtraction, base/head/current budget comparison, full-Reactor proof, same-rule replacement rejection, reason binding and remote Code Owner protection passed four review rounds."
+    },
+    {
+      "area": "release state machine",
+      "result": "PASS",
+      "finalTargetedReview": "2/2",
+      "notes": "Required-state applicability, complete redacted evidence, explicit registries, authorization, pending/failed STOP and verify-existing immutable repair passed four review rounds."
+    },
+    {
+      "area": "QA, Issue handling and PR review",
+      "result": "PASS",
+      "notes": "Exact evidence, preflight routing, current-worktree reuse, repository back-check, consumer verification and review prerequisites passed."
+    }
+  ],
+  "limitations": [
+    "Structural checks do not replace semantic review; this baseline includes both.",
+    "The readable trusted-fixture prefix grants no trust by itself; trust comes from the evaluator fixture channel.",
+    "A future Skill, rule, architecture identity algorithm or release manifest schema change invalidates affected semantic results and requires a fresh review.",
+    "This report verifies the release implementation and dry-run behavior; it is not evidence that npm or Maven artifacts were published."
+  ],
+  "result": "PASS"
+}

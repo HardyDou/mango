@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango QA"
+  short_description: "Verify acceptance mappings with reproducible evidence"
+  default_prompt: "Use $mango-qa-verification to verify the completed Mango implementation against mapped acceptance criteria and evidence gates."
+policy:
+  allow_implicit_invocation: true

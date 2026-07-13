@@ -1,164 +1,193 @@
 # Business PMO
 
 ## 1. 概览
-`business-pmo` 是生成业务项目内置的 PMO 工作区，用来承载当前业务仓可执行的 Mango baseline 快照、业务交付规则入口、Agent 路由和交付检查工具。baseline 由 `@mango/pmo` 安装或同步，不在 CLI 模板中维护第二份规则。
 
-目录定位：
+`business-pmo` 是生成业务项目内置的 Mango PMO 工作区。CLI 从精确依赖的 `@mango/pmo` 安装同一份可复现 bundle，并把规则、Agent、模板、文档契约、检查器和项目级 Skill 一起锁定。
+
+长期规则只在 Mango PMO 源仓维护；本目录保存发布快照和项目锁，不维护第二份规则正文。
 
 | 目录 / 文件 | 作用 |
 |-------------|------|
-| `mango-baseline` | Mango PMO baseline 快照，包含规则、Agent、工具和模板 |
-| `mango-baseline/rules/index.json` | preflight 路由索引 |
-| `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 Must read |
-| `mango-baseline/tools/delivery-contract-check.mjs` | 校验设计和交付台账 |
-| `mango-baseline/tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
-| 项目根 `AGENTS.md` | Agent 入口，只路由到 baseline，不复制长期规则正文 |
+| `mango-baseline` | 当前项目锁定的 PMO baseline 快照 |
+| `mango-baseline/baseline.json` | bundle 文件、权限、hash、契约版本和 plugin 投影清单 |
+| `global-entity-exceptions.json` | 架构门禁显式读取的全局 Entity 例外清单，初始为空 |
+| `pmo-lock.json` | 精确锁定 `@mango/pmo` 版本、bundle hash、源码提交和契约版本 |
+| 项目根 `.agents/skills` | CLI 从锁定 bundle 同步的项目级交付 Skill |
+| 项目根 `.agents/skills/.mango-pmo.json` | bundle-owned Skill 文件和 hash 清单 |
+| 项目根 `AGENTS.md` | Agent 路由入口；只引用 baseline，不复制长期规则 |
+| 项目根 `.mango` 下的 PMO 备份目录 | upgrade 和 rollback 使用的已校验本地备份 |
 
-## 2. 功能清单
+项目级 Skill 同步与用户级 Codex plugin 安装是两件事。CLI 只维护当前项目的 `.agents/skills`，不会修改用户级 Codex 配置。
 
-| 能力 | 使用入口 | 说明 |
-|------|----------|------|
-| 规则路由 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 Must read。 |
-| 交付契约检查 | `delivery-contract-check.mjs` | 校验设计说明和交付台账。 |
-| 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
-| baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
-| baseline 同步 | `mango pmo sync` | 从 `@mango/pmo` 同步 baseline、入口和兼容脚本。 |
+## 2. 文档生命周期资产
 
-## 3. 能力边界
-- 不作为 Mango 主仓长期规范源；长期规范仍由 Mango PMO 维护。
-- 普通业务需求不直接修改 `mango-baseline/**`。
-- 不保存业务源码、运行时配置、数据库 migration 或菜单权限资源。
-- 不替代业务模块 README、业务设计文档、测试报告和发布 runbook。
-- 不用来堆放临时日志、大文件截图或未归档运行产物。
+正式产品文档按 BRD -> SRS -> TDD -> Plan 逐阶段收敛。每个阶段都从同一 PMO bundle 取得模板、专用 Agent、Skill、规则和 checker。
 
-## 4. 模块入口
-`business-pmo/mango-baseline` 是可同步快照，业务项目自有文档应放在 baseline 外，例如 `business-docs/plans`、`business-docs/evidence` 或项目自定义 PMO 目录。
+| 阶段 | 模板 | 专用 Agent | 项目 Skill | Checker | 规范 |
+|------|------|------------|------------|---------|------|
+| BRD | `templates/business-requirements.md` | `agents/business-requirements-agent.md` | `mango-requirements-business` | `tools/check-business-requirements.mjs` | `rules/product/01-business-requirements.md` |
+| SRS | `templates/system-requirements.md` | `agents/system-requirements-agent.md` | `mango-requirements-system` | `tools/check-system-requirements.mjs` | `rules/product/02-system-requirements.md` |
+| TDD | `templates/technical-design.md` | `agents/technical-design-agent.md` | `mango-design-technical` | `tools/check-technical-design.mjs` | `rules/product/03-technical-design.md` |
+| Plan | `templates/implementation-plan.md` | `agents/implementation-plan-agent.md` | `mango-plan-implementation` | `tools/check-implementation-plan.mjs` | `rules/product/04-implementation-plan.md` |
 
-边界要求：
+跨阶段顺序、摘要、追踪和移交由以下资产统一处理：
 
-- baseline 内文件只通过 baseline 升级任务或 `mango pmo sync` 更新。
-- 业务需求的设计、台账、验收证据放到 `business-docs`。
-- Agent 每次正式交付前读取 preflight 输出的 Must read 文件原文。
-- 交付异常要写在业务交付记录中，不在 baseline 规则里临时改规则绕过。
+- 编排 Skill：`mango-pmo-lifecycle`
+- 生命周期 checker：`tools/check-lifecycle-handoff.mjs`
+- 生命周期规范：`rules/product/05-document-lifecycle.md`
+- 机器契约：`contracts/*.json`
 
-## 5. 接入方式
-preflight：
+旧 `prd.md`、`detailed-design.md` 和 delivery contract 资产只用于存量迁移，不是新产品文档链路入口。
+
+## 3. PMO Bundle 操作
+
+### 3.1 查看与校验
 
 ```bash
+mango pmo status --project-dir .
+mango pmo check --project-dir . --locked
+```
+
+`--locked` 以 `pmo-lock.json` 为准，同时校验 baseline、manifest、文件 hash/权限和项目级 Skill。未带 `--locked` 时，命令会对比当前 CLI 可用的 `@mango/pmo` 包，用于判断是否存在可升级版本。
+
+### 3.2 修复当前锁
+
+```bash
+mango pmo sync --project-dir . --dry-run
+mango pmo sync --project-dir .
+```
+
+`sync` 只修复当前项目锁定的 bundle，不隐式升版；它会恢复被修改或缺失的 bundle-owned 文件，并删除清单之外的陈旧 bundle-owned 文件。
+
+### 3.3 显式升级
+
+```bash
+mango pmo upgrade --project-dir . --to {{mangoPmoVersion}} --dry-run
+mango pmo upgrade --project-dir . --to {{mangoPmoVersion}}
+mango pmo check --project-dir . --locked
+```
+
+`--to` 必须等于当前项目 CLI 精确依赖并能解析到的 `@mango/pmo` 版本。需要其它版本时，先使用依赖该版本的项目内 CLI。
+
+### 3.4 回滚
+
+```bash
+mango pmo rollback --project-dir . --dry-run
+mango pmo rollback --project-dir .
+mango pmo rollback --project-dir . --to <version>
+```
+
+rollback 只使用项目根 `.mango` 下 PMO 运行时目录中的已校验本地备份，并在原子切换后再次执行 locked 校验。
+
+## 4. Preflight
+
+正式任务先校验项目锁，再执行 preflight：
+
+```bash
+mango pmo check --project-dir . --locked
+
 node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
-  --role dev \
-  --phase develop \
-  --task "新增订单管理模块" \
-  --paths "backend,frontend,business-docs"
+  --role <pm|tech-lead|dev|qa|pmo> \
+  --phase <requirement|design|develop|verify|release|governance> \
+  --task "<任务>" \
+  --paths "<影响路径，逗号分隔>"
 ```
 
-JSON 输出：
+Agent 读取输出中 `Must read` 的每一个文件原文。当前已经位于非 `main` 任务 worktree 时，preflight 会要求复用当前 worktree。
+
+## 5. 文档检查与移交
+
+各阶段文档保存在项目自己的 `business-docs`，不要写入 `mango-baseline`。单文档检查：
+
+CI 和提交前扫描整个业务文档目录，自动识别四类生命周期文档，并检查合同、重复 ID、连续上游和摘要：
 
 ```bash
-node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
-  --role qa \
-  --phase verify \
-  --task "订单模块 E2E 验收" \
-  --paths "frontend,backend,business-docs/evidence" \
-  --json
+node business-pmo/mango-baseline/tools/check-document-set.mjs \
+  --root business-docs
 ```
 
-交付台账检查：
+需要定位单个文档时执行：
 
 ```bash
-node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
-  --design business-docs/plans/order-design.md \
-  --ledger business-docs/plans/order-ledger.md \
-  --mode plan
+node business-pmo/mango-baseline/tools/check-business-requirements.mjs \
+  --document business-docs/requirements/order-brd.md
+
+node business-pmo/mango-baseline/tools/check-system-requirements.mjs \
+  --document business-docs/requirements/order-srs.md
+
+node business-pmo/mango-baseline/tools/check-technical-design.mjs \
+  --document business-docs/designs/order-tdd.md
+
+node business-pmo/mango-baseline/tools/check-implementation-plan.mjs \
+  --document business-docs/plans/order-plan.md
 ```
 
-验收证据检查：
+阶段移交只检查截至当前阶段的连续链路：
+
+```bash
+node business-pmo/mango-baseline/tools/check-lifecycle-handoff.mjs \
+  --brd business-docs/requirements/order-brd.md \
+  --srs business-docs/requirements/order-srs.md \
+  --through srs \
+  --risk L2
+```
+
+最终交付检查传入完整四阶段，不使用 `--through`：
+
+```bash
+node business-pmo/mango-baseline/tools/check-lifecycle-handoff.mjs \
+  --brd business-docs/requirements/order-brd.md \
+  --srs business-docs/requirements/order-srs.md \
+  --tdd business-docs/designs/order-tdd.md \
+  --plan business-docs/plans/order-plan.md \
+  --risk L2
+```
+
+checker 通过不等于自动审批。阶段状态和 `NEXT` 还需要规范指定的人工审批证据。
+
+## 6. 验收证据
+
+验收证据写入 `business-docs/evidence`，并执行：
 
 ```bash
 node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
-  --evidence business-docs/evidence/order-e2e.md \
+  --evidence business-docs/evidence/order-acceptance.md \
   --min-rows 1
 ```
 
-## 6. 配置说明
-`business-pmo` 没有运行时配置。工具参数就是配置入口。
+测试命令、环境、数据集、账号/租户标识、结果和报告路径保存在证据中，不写密码、token 或密钥。
 
-### 6.1 preflight 参数
+## 7. 能力边界
 
-| 参数 | 默认值 | 含义 | 影响行为 | 源码入口 |
-|------|--------|------|----------|----------|
-| `--role` | `auto` | 任务角色，支持 `pm`、`tech-lead`、`dev`、`qa`、`pmo` | 匹配 `rules/index.json` 的 `roles` | `pmo-preflight.mjs` |
-| `--phase` | `auto` | 任务阶段，支持 `requirement`、`design`、`develop`、`verify`、`release`、`governance` | 匹配 `phases` | `pmo-preflight.mjs` |
-| `--task` | 空 | 任务描述 | 与 bundle keywords 匹配 | `bundleMatches` |
-| `--paths` | 空 | 影响路径，逗号分隔 | 与 bundle paths 匹配 | `splitPaths`、`pathMatches` |
-| `--json` | `false` | 输出 JSON | 便于 Agent 或 CI 解析 | `parseArgs` |
+- `mango-baseline` 和 bundle-owned `.agents/skills` 只通过 `mango pmo sync`、`mango pmo upgrade` 或 `mango pmo rollback` 更新。
+- 业务需求文档、设计、计划、台账和证据保存在 `business-docs`。
+- 业务源码、运行时配置、数据库 migration、菜单和权限资源保存在对应业务模块。
+- 规则变更回到 Mango PMO 源仓处理；普通业务任务不直接修改发布快照。
+- bundle 不替代业务模块 README、测试脚本、发布 runbook 或真实链路验收。
 
-### 6.2 delivery-contract-check 参数
+## 8. 问题排查
 
-| 参数 | 默认值 | 含义 | 影响行为 | 源码入口 |
-|------|--------|------|----------|----------|
-| `--design` | 空 | 设计说明文件 | 缺失时报错；用于校验 required item 是否存在 | `readFile` |
-| `--ledger` | 空 | 交付台账文件 | 缺失时报错；必须含固定列 | `parseLedgerRows` |
-| `--mode` | `plan` | `plan` 或 `verify` | verify 要求状态为 `DONE` 或 `EXCEPTION` | `checkRows` |
-| `--require` | 空 | 必须覆盖的条目，逗号分隔 | 设计和台账都要命中 | `checkRequiredItems` |
-| `--scan` | 空 | 扫描路径，逗号分隔 | 检查禁用词 | `checkForbidden` |
-| `--forbidden` | 默认禁用词列表 | 禁用词 | 命中时报错 | `DEFAULT_FORBIDDEN` |
-| `--json` | `false` | 输出 JSON | 便于 CI 解析 | `parseArgs` |
-
-### 6.3 acceptance-evidence-check 参数
-
-| 参数 | 默认值 | 含义 | 影响行为 | 源码入口 |
-|------|--------|------|----------|----------|
-| `--evidence` | 空 | 验收证据 Markdown 文件 | 缺失时报错 | `acceptance-evidence-check.mjs` |
-| `--min-rows` | `1` | 证据表最少行数 | 行数不足时报错 | `parseArgs` |
-| `--json` | `false` | 输出 JSON | 便于 CI 解析 | `parseArgs` |
-
-## 7. API 与扩展
-| 扩展点 | 可扩展内容 | 约束 |
-|--------|------------|------|
-| `rules/index.json` | role、phase、bundle、keyword、path 路由 | 只在 baseline 升级任务中改 |
-| `rules/**` | PMO、后端、前端、测试、文档规则 | 不在普通业务需求中改 |
-| `agents/**` | Agent 角色职责 | 不复制到项目根入口 |
-| `templates/**` | 交付契约、验收证据模板 | baseline 升级统一维护 |
-| `business-docs/**` | 业务设计、计划、台账、证据 | 业务团队维护 |
-
-## 8. 数据与初始化
-本目录不包含数据库 migration。初始化内容是 CLI 生成或同步的 Markdown、JSON 和 Node.js 工具文件。
-
-| 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
-|------|------|------------|-----------------|----------|----------|
-| PMO baseline | `business-pmo/mango-baseline` | 规则、Agent、工具、模板 | 文件路径 | `mango init` 或 `mango pmo sync` | preflight 能输出 Must read |
-| 业务计划示例 | `business-docs/plans` | example contract 和 ledger | 文件路径 | `mango init`；sync 时已有文件不覆盖 | delivery contract check |
-| Agent 入口 | 项目根 `AGENTS.md` | 规则路由入口 | 文件路径 | `mango init` 或带参数 sync | 人工检查入口指向本仓 baseline |
-
-## 9. 管理入口
-本目录不提供菜单、权限资源或租户数据。涉及菜单、权限和租户时，preflight 会根据任务和路径命中后端模块、数据库、安全或菜单规则；实际资源应在业务模块的 migration、resource manifest、授权配置和测试证据中登记。
-
-## 10. 快速开始
-1. 需求开始前执行 preflight，按输出读取 Must read 文件原文。
-2. 设计或交付任务创建 design 和 ledger，并用 `delivery-contract-check.mjs --mode plan` 检查列和覆盖项。
-3. 开发和验证过程中把证据写入 `business-docs/evidence`。
-4. 验证阶段执行 `acceptance-evidence-check.mjs`，避免只写“接口 200”“页面正常”。
-5. 交付前执行 `delivery-contract-check.mjs --mode verify`，确认台账状态为 `DONE` 或有明确 `EXCEPTION`。
-6. 最终回复列出实际加载的 baseline 文件、验证命令、未验证项和 PMO 例外。
-
-## 11. 问题排查
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
-| Must read 为空或不符合预期 | `--task` 和 `--paths` 太空泛 | 写清任务关键词和影响路径 |
-| preflight 报 Missing PMO file | `rules/index.json` 指向不存在文件 | 通过 baseline 同步修复 |
-| verify 模式台账失败 | 台账状态仍是待处理或进行中 | 完成验收后改为 `DONE`，例外写 `EXCEPTION` 和证据 |
-| 禁用词扫描失败 | 代码或文档仍有临时实现标记 | 删除临时实现或登记明确例外 |
-| 验收证据被判弱表达 | 只写了“接口 200”“页面无异常”等泛化句 | 写具体测试数据、关键断言、UI 检查、network/console 结果和截图路径 |
-| 普通需求改了 baseline | 把规则当成业务文档改了 | 还原 baseline，业务说明放入 `business-docs` |
+| `pmo-lock.json` 缺失 | 项目尚未迁移到锁定 bundle | 使用当前 CLI 执行 `mango pmo upgrade --to <version>` |
+| locked check 报 baseline changed | 锁定快照被修改或缺失 | 执行 `mango pmo sync` 修复当前锁 |
+| locked check 报 stale files | 旧 bundle 文件残留 | 执行 `mango pmo sync` 按 manifest 清理 |
+| locked check 报 project Skill changed | bundle-owned Skill 被修改 | 执行 `mango pmo sync`；业务自有 Skill 使用其它名称 |
+| sync 提示锁定版本不可用 | 当前 CLI 的 PMO 依赖与项目锁不一致，且没有本地备份 | 使用锁定版本的项目内 CLI，或显式 upgrade 到当前可用版本 |
+| upgrade 拒绝 `--to` | 请求版本不是当前 CLI 可解析的精确 PMO 版本 | 安装匹配的 CLI 后重试 |
+| rollback 无可用版本 | 本地没有对应已校验备份 | 使用匹配版本的 CLI 执行 upgrade，不能伪造备份 |
+| Codex 中未出现用户级 plugin | 项目 Skill 同步不安装用户级 plugin | 对发布包的 package-root plugin 执行独立安装流程 |
+| 文档 checker 失败 | 章节、字段、边界、ID 或证据不满足机器契约 | 按 rule ID 回到对应规范和模板修订 |
+| 生命周期 hash 失效 | 上游文档在下游生成后发生变化 | 重新评审上游并重做受影响的下游移交 |
 
-## 12. 相关文档
-- [开发流程规范](./mango-baseline/rules/00-dev-flow.md)
-- [交付契约规范](./mango-baseline/rules/01-delivery-contract.md)
-- [AI 编码红线](./mango-baseline/rules/03-ai-coding-redlines.md)
-- [交付质量门禁](./mango-baseline/rules/05-ai-delivery-quality.md)
-- [文档资产规范](./mango-baseline/rules/06-document-assets.md)
+## 9. 相关入口
 
-- [Mango Baseline README](./mango-baseline/README.md)
-- [交付契约模板](./mango-baseline/templates/delivery-contract.md)
-- [验收证据模板](./mango-baseline/templates/acceptance-evidence.md)
+- Mango Baseline README：`business-pmo/mango-baseline/README.md`
+- 产品文档生命周期规范：`business-pmo/mango-baseline/rules/product/05-document-lifecycle.md`
+- PMO 总流程：`business-pmo/mango-baseline/rules/00-dev-flow.md`
+- 文档资产边界：`business-pmo/mango-baseline/rules/06-document-assets.md`
+- 测试用例与自动化流程：`business-pmo/mango-baseline/rules/09-test-case-automation-flow.md`
+- 业务需求模板：`business-pmo/mango-baseline/templates/business-requirements.md`
+- 系统需求模板：`business-pmo/mango-baseline/templates/system-requirements.md`
+- 技术设计模板：`business-pmo/mango-baseline/templates/technical-design.md`
+- 实施计划模板：`business-pmo/mango-baseline/templates/implementation-plan.md`

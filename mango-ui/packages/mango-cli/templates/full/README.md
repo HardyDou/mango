@@ -7,8 +7,8 @@
 
 - `backend`：Spring Boot 后端应用，full preset 默认依赖 `io.mango:mango-admin-starter`。
 - `frontend`：Vue 管理后台，full preset 默认使用 `@mango/admin/full` 和 `@mango/admin/style-full.css`。
-- `business-pmo`：业务仓库内置 PMO baseline、Agent 规则和检查工具。
-- `business-docs`：业务交付契约和台账示例。
+- `business-pmo`：业务仓库锁定的 PMO baseline、文档契约、Agent、检查工具和项目 Skill 入口。
+- `business-docs`：业务需求、设计、实施计划、交付台账和证据。
 - `topologies`：单体和微服务接入说明。
 - `mango.dev.json`：本地开发工作区 manifest。
 - `scripts`：历史兼容入口，会把旧命令转发到 Mango CLI。
@@ -21,8 +21,8 @@
 | 前端管理后台 | `frontend` | full preset 默认使用 `@mango/admin/full` 和 `@mango/admin/style-full.css`。 |
 | 本地开发编排 | `mango.dev.json`、`.mango/workspace.json`、Mango CLI | 后端、前端启动、日志、状态和停止。 |
 | 平台能力接入 | 后端 starter、前端 `@mango/*` 包 | 认证、授权、系统、文件、模板、通知、编号、日历、工作流、job 等。 |
-| 业务模块生成 | `mango module add` | 在业务项目内生成 backend module 和 frontend package。 |
-| PMO baseline | `business-pmo`、`AGENTS.md` | 脱离 Mango 源码后执行 preflight 和交付检查。 |
+| 业务模块生成 | `mango module add` | 生成 api/core/starter/starter-remote、typed CRUD service 和 frontend package。 |
+| PMO bundle | `business-pmo`、`.agents/skills`、`AGENTS.md` | 按 `pmo-lock.json` 锁定规则、Agent、模板、契约、检查器和项目 Skill。 |
 
 ## 3. 能力边界
 - 不作为生产部署脚本；`mango dev start` 只面向本地开发。
@@ -36,6 +36,7 @@
 
 - 平台能力由 Mango starter 和 `@mango/*` 包提供。
 - 本地启动由 `@mango/cli` 读取 `mango.dev.json`、`.mango/workspace.json` 和 `.mango/dev-workspace.env` 执行。
+- PMO baseline 和项目 Skill 由 `@mango/cli` 按项目的 `pmo-lock.json` 同步，用户级 Codex plugin 独立安装。
 - 业务模块由业务仓库维护，CLI 只更新 managed block。
 - 生产部署、密钥、数据库、对象存储、网关域名和权限授权由业务项目自己治理。
 
@@ -166,6 +167,9 @@ npm --prefix frontend run build
 |------|---------------|------|
 | `backend/pom.xml` | `business-modules` | `mango module add` 追加 `modules/<module>` |
 | `backend/pom.xml` | `managed-dependencies` | CLI 根据 preset 和模块维护平台依赖版本 |
+| `backend/architecture-verification/pom.xml` | Maven `verify` 最后一个 reactor 模块 | 聚合校验 API、Controller、Feign、Service、Mapper、Entity、统一返回、参数绑定、模块元数据、持久化边界，并执行 P3C/PMD、Checkstyle、SpotBugs |
+| `backend/config/quality` | Java 静态检查配置 | 与发布该模板的 Mango Maven plugin 使用同一份 P3C/PMD 和 Checkstyle 配置 |
+| `business-pmo/global-entity-exceptions.json` | 全局 Entity 例外清单 | 默认空清单；架构门禁显式读取，文件缺失、结构错误、过期或不完整例外都会失败 |
 | `backend/app/pom.xml` | `dependencies` | CLI 根据 preset 和模块维护 app 平台依赖 |
 | `backend/app/pom.xml` | `business-dependencies` | `mango module add` 追加业务 starter 依赖 |
 | `application.yml` | `business-flyway-modules` | `mango module add` 追加业务 Flyway 模块开关 |
@@ -214,7 +218,9 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 3. 执行 `mango dev start`，确认后端 health 和前端页面可访问。
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。
 5. 通过 `mango module add` 新增业务模块，然后补齐表结构、菜单权限、租户边界、页面交互和测试。
-6. 每个业务能力完成后，把模块 README、交付契约、验证证据和 E2E 更新到业务仓库。
+6. 在项目根执行 `mvn -f backend/pom.xml verify`；架构和 Mango 综合质量报告分别写入 `backend/target/mango-architecture-report.json`、`backend/target/mango-quality-report.json`。门禁固定使用完整 Reactor 和完整代码范围，`changedOnly`、`codeLevelExcludedModules` 等缩小范围的参数会直接失败。
+7. 在 GitHub `main` 分支保护中把 `PMO Documentation Checks / pmo-doc-check` 设为 required check，并启用 Code Owner review；该检查同时执行业务文档合同和后端 Java 架构门禁。
+8. 每个业务能力完成后，把模块 README、交付契约、验证证据和 E2E 更新到业务仓库。
 
 ## 11. 问题排查
 | 问题 | 原因 | 处理方式 |
@@ -223,6 +229,8 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 | 前端请求后端失败 | `VITE_ADMIN_PROXY_PATH` 未指向本机后端，或后端未启动 | 用 `mango workspace status` 查看端口，用 `mango dev status` 查看后端 |
 | Vite proxy 报 host 不允许 | `vite.config.ts` 只允许本机代理 | 本地开发保持代理到 `127.0.0.1` 或 `localhost` |
 | 后端 health 访问失败 | 数据库、Flyway、端口或密钥配置错误 | 查 `mango dev logs {{projectKebab}}-service` |
+| Maven verify 报 Mango architecture violation | 业务模块违反 API、Controller、Feign、Service、Mapper、Entity、统一返回或请求参数边界 | 按 `backend/target/mango-architecture-report.json` 的规则编号修复源码，不删除 `architecture-verification` 模块 |
+| Maven verify 报 quality gate failure | 模块元数据、持久化边界、P3C/PMD、Checkstyle 或 SpotBugs 失败 | 查看 `backend/target/mango-quality-report.json` 和对应模块 `target` 报告并修复源码 |
 | 后端 health 卡住且 `mango_dev_*` 数据库不存在 | `MANGO_DB_AUTO_CREATE` 未启用、本机缺少 `mysql` 命令，或 `.mango/dev-workspace.env` 中 MySQL 连接配置不可用 | 查 `command -v mysql`、`MANGO_DB_AUTO_CREATE`、`MANGO_DB_HOST`、`MANGO_DB_PORT`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD` 和 `.mango/run/logs/{{projectKebab}}-service.log`；如果 CLI 没有输出 `ensured database` 或 `failed to auto-create database`，按 Mango issue runbook 登记 |
 | 文件上传大小不符合预期 | multipart 上限仍是模板默认值 | 修改 `spring.servlet.multipart.max-file-size` 和 `max-request-size` |
 | Office 预览不可用 | `MANGO_OFFICE_PLUGIN_ENABLED=false` | 安装并确认 Office 插件后再启用 |

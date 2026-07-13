@@ -1,0 +1,6 @@
+{
+  "base": "../valid/system-requirements.md",
+  "replace": "记录提交、审核和撤回过程",
+  "with": "NoticeController 记录提交、审核和撤回过程",
+  "expectedRuleId": "SRS-BOUNDARY-001"
+}

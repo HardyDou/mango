@@ -1,6 +1,6 @@
 {
   "name": "@mango/cli",
-  "version": "1.0.67",
+  "version": "1.0.68",
   "private": false,
   "type": "module",
   "bin": {
@@ -20,10 +20,12 @@
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   },
   "scripts": {
+    "check:business-module-template": "node scripts/check-business-module-template.mjs",
+    "check:generated-backend-gate": "node scripts/check-generated-backend-gate.mjs",
     "check:release-versions": "node scripts/check-release-versions.mjs",
-    "test": "pnpm run check:release-versions && node scripts/check-cli.mjs"
+    "test": "pnpm run check:business-module-template && pnpm run check:release-versions && node scripts/check-cli.mjs && node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@mango/pmo": "1.0.6"
+    "@mango/pmo": "1.1.0"
   }
 }

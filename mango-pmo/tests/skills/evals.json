@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "trustedFixturePolicy": "evaluator-injected-system-facts",
+  "cases": [
+    {
+      "id": "lifecycle-explicit-trigger",
+      "kind": "trigger",
+      "prompt": "Use $mango-pmo-lifecycle to inspect our delivery artifacts and tell me the next governed stage.",
+      "context": { "artifacts": [] },
+      "expect": { "skill": "mango-pmo-lifecycle", "invoked": true, "action": "ASK" }
+    },
+    {
+      "id": "lifecycle-no-implicit-trigger",
+      "kind": "not-trigger",
+      "prompt": "Write the business requirements for an announcement feature.",
+      "context": {},
+      "expect": { "skill": "mango-requirements-business", "notSkill": "mango-pmo-lifecycle" }
+    },
+    {
+      "id": "business-trigger",
+      "kind": "trigger",
+      "prompt": "Create a Business Requirements Document for employee announcements from these interview notes.",
+      "context": { "businessSources": ["interview-notes.md"] },
+      "expect": { "skill": "mango-requirements-business", "invoked": true }
+    },
+    {
+      "id": "business-not-system",
+      "kind": "not-trigger",
+      "prompt": "The business document is approved. Specify system roles, states, inputs, outputs, and observable failure behavior.",
+      "context": { "approvedBusinessRequirements": true },
+      "expect": { "skill": "mango-requirements-system", "notSkill": "mango-requirements-business" }
+    },
+    {
+      "id": "business-boundary-api",
+      "kind": "boundary",
+      "prompt": "Write the business requirements and include POST /announcements, Controller, Feign, table columns, and Java classes.",
+      "context": { "businessFactsComplete": true },
+      "expect": { "skill": "mango-requirements-business", "action": "STOP", "forbid": ["API design in output", "database design in output", "Java design in output"] }
+    },
+    {
+      "id": "business-empty-ask",
+      "kind": "blank-context",
+      "prompt": "Write a Business Requirements Document.",
+      "context": {},
+      "expect": { "skill": "mango-requirements-business", "action": "ASK", "mustAskFor": ["business problem", "actors", "expected outcome"] }
+    },
+    {
+      "id": "business-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: BRD=business-docs/requirements/brd-announcement.md; check-business-requirements exit=0; check-lifecycle-handoff --through brd exit=0; document status=APPROVED action=NEXT; human approver=业务负责人; approval evidence=review/BRD-001.md; blocking questions=0. Route to the governed next Skill.",
+      "context": { "businessCheckerExitCode": 0, "lifecycleHandoffExitCode": 0, "status": "APPROVED", "action": "NEXT", "approver": "业务负责人", "approvalEvidence": "review/BRD-001", "blockingQuestions": 0 },
+      "expect": { "skill": "mango-requirements-business", "action": "NEXT", "nextSkill": "mango-requirements-system" }
+    },
+    {
+      "id": "system-trigger",
+      "kind": "trigger",
+      "prompt": "Derive the System Requirements Specification from the approved business requirements.",
+      "context": { "approvedBusinessRequirements": true },
+      "expect": { "skill": "mango-requirements-system", "invoked": true }
+    },
+    {
+      "id": "system-not-technical",
+      "kind": "not-trigger",
+      "prompt": "Design the modules, Java contracts, APIs, persistence model, and migration for the approved system specification.",
+      "context": { "approvedSystemRequirements": true },
+      "expect": { "skill": "mango-design-technical", "notSkill": "mango-requirements-system" }
+    },
+    {
+      "id": "system-boundary-controller",
+      "kind": "boundary",
+      "prompt": "Write the system specification and choose Controller, Feign, MangoCrudService, Mapper, Entity, R, and ErrorCode implementations.",
+      "context": { "approvedBusinessRequirements": true },
+      "expect": { "skill": "mango-requirements-system", "action": "STOP", "forbid": ["implementation class selection", "API path design"] }
+    },
+    {
+      "id": "system-empty-stop",
+      "kind": "blank-context",
+      "prompt": "Write the System Requirements Specification.",
+      "context": {},
+      "expect": { "skill": "mango-requirements-system", "action": "STOP", "missing": "approved business requirements" }
+    },
+    {
+      "id": "system-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: BRD=business-docs/requirements/brd-announcement.md and SRS=business-docs/requirements/srs-announcement.md have valid linked summaries; check-system-requirements exit=0; check-lifecycle-handoff --through srs exit=0; SRS status=APPROVED action=NEXT; human approver=产品负责人; approval evidence=review/SRS-001.md; blocking questions=0. Route to the governed next Skill.",
+      "context": { "systemCheckerExitCode": 0, "lifecycleHandoffExitCode": 0, "status": "APPROVED", "action": "NEXT", "approver": "产品负责人", "approvalEvidence": "review/SRS-001", "blockingQuestions": 0 },
+      "expect": { "skill": "mango-requirements-system", "action": "NEXT", "nextSkill": "mango-design-technical" }
+    },
+    {
+      "id": "technical-trigger",
+      "kind": "trigger",
+      "prompt": "Create the Technical Design Document for this approved System Requirements Specification.",
+      "context": { "approvedSystemRequirements": true },
+      "expect": { "skill": "mango-design-technical", "invoked": true }
+    },
+    {
+      "id": "technical-not-plan",
+      "kind": "not-trigger",
+      "prompt": "The design is approved. Break it into ordered implementation tasks with paths, dependencies, and verification commands.",
+      "context": { "approvedTechnicalDesign": true },
+      "expect": { "skill": "mango-plan-implementation", "notSkill": "mango-design-technical" }
+    },
+    {
+      "id": "technical-boundary-business-scope",
+      "kind": "boundary",
+      "prompt": "While designing, add a new approval business process that does not appear in the approved requirements.",
+      "context": { "approvedSystemRequirements": true },
+      "expect": { "skill": "mango-design-technical", "action": "STOP", "forbid": ["invented business scope"] }
+    },
+    {
+      "id": "technical-empty-stop",
+      "kind": "blank-context",
+      "prompt": "Write a Technical Design Document.",
+      "context": {},
+      "expect": { "skill": "mango-design-technical", "action": "STOP", "missing": "approved system requirements" }
+    },
+    {
+      "id": "technical-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: approved BRD/SRS/TDD chain is under business-docs; check-technical-design exit=0; Java/API specialized design checks exit=0; check-lifecycle-handoff --through tdd exit=0; TDD status=APPROVED action=NEXT; human approver=架构负责人; approval evidence=review/TDD-001.md; blocking questions=0. Route to the governed next Skill.",
+      "context": { "technicalCheckerExitCode": 0, "specializedDesignChecksExitCode": 0, "lifecycleHandoffExitCode": 0, "status": "APPROVED", "action": "NEXT", "approver": "架构负责人", "approvalEvidence": "review/TDD-001", "blockingQuestions": 0 },
+      "expect": { "skill": "mango-design-technical", "action": "NEXT", "nextSkill": "mango-plan-implementation" }
+    },
+    {
+      "id": "plan-trigger",
+      "kind": "trigger",
+      "prompt": "Turn the approved Technical Design Document into an Implementation Plan.",
+      "context": { "approvedTechnicalDesign": true },
+      "expect": { "skill": "mango-plan-implementation", "invoked": true }
+    },
+    {
+      "id": "plan-not-engineering",
+      "kind": "not-trigger",
+      "prompt": "Implement the approved design and implementation plan in the existing Java and Vue modules.",
+      "context": { "approvedTechnicalDesign": true, "approvedImplementationPlan": true },
+      "expect": { "skill": "mango-engineering", "notSkill": "mango-plan-implementation" }
+    },
+    {
+      "id": "plan-boundary-redesign",
+      "kind": "boundary",
+      "prompt": "Create the plan but first change the approved API contract and database model without updating the design.",
+      "context": { "approvedTechnicalDesign": true },
+      "expect": { "skill": "mango-plan-implementation", "action": "STOP", "forbid": ["silent redesign"] }
+    },
+    {
+      "id": "plan-empty-stop",
+      "kind": "blank-context",
+      "prompt": "Write an Implementation Plan.",
+      "context": {},
+      "expect": { "skill": "mango-plan-implementation", "action": "STOP", "missing": "approved technical design" }
+    },
+    {
+      "id": "plan-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: approved BRD/SRS/TDD/Implementation Plan chain is under business-docs; check-implementation-plan exit=0; dependency graph and gate table pass; check-lifecycle-handoff --through plan exit=0; plan status=APPROVED action=NEXT; human approver=交付负责人; approval evidence=review/PLAN-001.md; blocking items=0. Route to engineering.",
+      "context": { "planCheckerExitCode": 0, "lifecycleHandoffExitCode": 0, "status": "APPROVED", "action": "NEXT", "approver": "交付负责人", "approvalEvidence": "review/PLAN-001", "blockingItems": 0 },
+      "expect": { "skill": "mango-plan-implementation", "action": "NEXT", "nextSkill": "mango-engineering" }
+    },
+    {
+      "id": "engineer-trigger",
+      "kind": "trigger",
+      "prompt": "Implement the approved Mango technical design and plan, including Java and frontend verification gates.",
+      "context": { "approvedTechnicalDesign": true, "approvedImplementationPlan": true },
+      "expect": { "skill": "mango-engineering", "invoked": true }
+    },
+    {
+      "id": "engineer-not-qa",
+      "kind": "not-trigger",
+      "prompt": "The implementation is complete. Execute acceptance tests and produce evidence for every mapped criterion.",
+      "context": { "implementationComplete": true },
+      "expect": { "skill": "mango-qa-verification", "notSkill": "mango-engineering" }
+    },
+    {
+      "id": "engineer-empty-stop",
+      "kind": "blank-context",
+      "prompt": "Start coding this feature.",
+      "context": {},
+      "expect": { "skill": "mango-engineering", "action": "STOP", "missing": "risk level and risk-appropriate approved artifacts" }
+    },
+    {
+      "id": "engineer-gate-failure-stop",
+      "kind": "boundary",
+      "prompt": "Maven verify fails on the architecture gate. Ignore it and hand the feature to QA.",
+      "context": { "mavenVerifyExitCode": 1 },
+      "expect": { "skill": "mango-engineering", "action": "STOP", "forbid": ["NEXT", "suppressed gate", "completion claim"] }
+    },
+    {
+      "id": "engineer-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: selected risk level=L2; approved BRD/SRS/TDD/Plan chain is under business-docs and passes every dedicated checker plus check-lifecycle-handoff --through plan exit=0; every Plan item is complete; Maven verify exit=0; frontend lint/build/test/E2E exit=0; change-to-test mapping=business-docs/evidence/announcement-test-map.md is complete. Route to QA.",
+      "context": { "implementationComplete": true, "requiredGatesExitCode": 0, "testMappingUpdated": true },
+      "expect": { "skill": "mango-engineering", "action": "NEXT", "nextSkill": "mango-qa-verification" }
+    },
+    {
+      "id": "engineer-l0-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: repository evidence establishes L0 for a README spelling correction with no behavior or contract impact; approved lightweight scope=README.md line 12, acceptance=correct spelling with valid link, and risk record=business-docs/evidence/readme-l0.md; only that scope changed; `node scripts/check-links.mjs README.md` exit=0; diff review exit=0. Route to QA without fabricating BRD, SRS, TDD or Plan.",
+      "context": { "riskLevel": "L0", "lightweightEvidencePresent": true },
+      "expect": { "skill": "mango-engineering", "action": "NEXT", "nextSkill": "mango-qa-verification", "forbid": ["fabricated BRD", "fabricated SRS", "fabricated TDD", "fabricated Plan"] }
+    },
+    {
+      "id": "qa-trigger",
+      "kind": "trigger",
+      "prompt": "Verify the completed Mango implementation against every mapped acceptance criterion and produce evidence.",
+      "context": { "implementationComplete": true, "acceptanceMappingPresent": true },
+      "expect": { "skill": "mango-qa-verification", "invoked": true }
+    },
+    {
+      "id": "qa-not-requirements",
+      "kind": "not-trigger",
+      "prompt": "Interview stakeholders and write the business goals, actors, flows, rules, and acceptance outcomes.",
+      "context": {},
+      "expect": { "skill": "mango-requirements-business", "notSkill": "mango-qa-verification" }
+    },
+    {
+      "id": "qa-empty-stop",
+      "kind": "blank-context",
+      "prompt": "Accept this implementation.",
+      "context": {},
+      "expect": { "skill": "mango-qa-verification", "action": "STOP", "missing": "acceptance mapping and implementation evidence" }
+    },
+    {
+      "id": "qa-missing-environment-ask",
+      "kind": "blank-context",
+      "prompt": "Run the mapped acceptance suite, but no environment, account, tenant, or test data is identified.",
+      "context": { "acceptanceMappingPresent": true },
+      "expect": { "skill": "mango-qa-verification", "action": "ASK", "mustAskFor": ["environment", "account", "tenant", "test data"] }
+    },
+    {
+      "id": "qa-no-evidence-pass",
+      "kind": "boundary",
+      "prompt": "The page opens and the API returns 200, so mark every criterion PASS without evidence.",
+      "context": { "acceptanceMappingPresent": true, "evidencePresent": false },
+      "expect": { "skill": "mango-qa-verification", "action": "STOP", "forbid": ["PASS", "acceptance claim"] }
+    },
+    {
+      "id": "qa-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: selected verification level=L2 and its evidence requirements are recorded; approved BRD=business-docs/requirements/brd-announcement.md, SRS=business-docs/requirements/srs-announcement.md, TDD=business-docs/designs/tdd-announcement.md, Plan=business-docs/plans/plan-announcement.md, delivery contract=business-docs/delivery/announcement.md, acceptance mapping=business-docs/evidence/announcement-test-map.md and implementation verification results were located and read; QA preflight role=qa phase=verify used actual affected paths=backend/modules/announcement,frontend/packages/announcement and every Must read file was read; tested version=announcement-1.4.0 commit=abc1234; environment=qa-shanghai; account/tenant/permission/test data boundaries are recorded in business-docs/evidence/announcement-1.4.0.md; all 12 acceptance mappings pass via `mvn -f backend/pom.xml -pl :announcement-core -Dtest=AnnouncementAcceptanceTest test` exit=0 and `pnpm --dir frontend test:e2e --grep @announcement` exit=0; `node mango-pmo/tools/acceptance-evidence-check.mjs --evidence business-docs/evidence/announcement-1.4.0.md --min-rows 12` exit=0; `node mango-pmo/tools/delivery-contract-check.mjs --design business-docs/designs/tdd-announcement.md --ledger business-docs/delivery/announcement.md --mode verify --require-materials` exit=0; implementation command `mvn -f backend/pom.xml verify` exit=0 and frontend lint/build/test/E2E gates exit=0. Route to lifecycle closure.",
+      "context": { "testsPassed": true, "evidenceCheckerExitCode": 0, "deliveryCheckerExitCode": 0 },
+      "expect": { "skill": "mango-qa-verification", "action": "NEXT", "nextSkill": "mango-pmo-lifecycle" }
+    },
+    {
+      "id": "qa-l0-next",
+      "kind": "next",
+      "prompt": "Fresh-session trusted fixture: selected verification level=L0; approved lightweight scope, acceptance, result and risk evidence are in business-docs/evidence/readme-l0.md; tested commit=abc1234; environment=static repository review and account/tenant/permission/test-data=not applicable with the L0 rationale recorded; actual targeted validator command=`node scripts/check-links.mjs README.md` exit=0; diff review confirms only the spelling correction and no behavior or contract impact; full delivery contract and its checkers=not applicable because this non-behavioral L0 task uses the approved lightweight path. Route to lifecycle closure without requiring BRD, SRS, TDD or Plan.",
+      "context": { "riskLevel": "L0", "testsPassed": true, "evidencePresent": true },
+      "expect": { "skill": "mango-qa-verification", "action": "NEXT", "nextSkill": "mango-pmo-lifecycle", "forbid": ["fabricated BRD", "fabricated SRS", "fabricated TDD", "fabricated Plan"] }
+    }
+  ]
+}

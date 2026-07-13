@@ -6,6 +6,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Build;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
@@ -35,6 +36,103 @@ class CheckMojoTest {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    @Test
+    void governedFullScopeRejectsChangedOnlyOverride() throws Exception {
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "requireFullScope", true);
+        setField(mojo, "changedOnly", true);
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, mojo::execute);
+        assertTrue(exception.getMessage().contains("changedOnly=true is forbidden"));
+    }
+
+    @Test
+    void governedFullScopeRejectsExcludedModulesOverride() throws Exception {
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "requireFullScope", true);
+        setField(mojo, "codeLevelExcludedModules", "mango-demo-core");
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, mojo::execute);
+        assertTrue(exception.getMessage().contains("codeLevelExcludedModules is forbidden"));
+    }
+
+    @Test
+    void governedFullScopeRequiresEveryJavaModuleStaticReportAndIgnoresPomOnlyModules()
+            throws Exception {
+        MavenProject moduleA = reactorProject("modules/a", "module-a", true);
+        MavenProject moduleB = reactorProject("modules/b", "module-b", true);
+        MavenProject pomOnly = reactorProject("aggregator", "aggregator", false);
+        MavenSession reactorSession = mock(MavenSession.class);
+        when(reactorSession.getProjects()).thenReturn(List.of(moduleA, moduleB, pomOnly));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "requireFullScope", true);
+        setField(mojo, "session", reactorSession);
+        for (Map.Entry<String, String> tool : Map.of(
+                "pmd", "pmd.xml",
+                "checkstyle", "checkstyle-result.xml",
+                "spotbugs", "spotbugsXml.xml").entrySet()) {
+            Path reportA = Path.of(moduleA.getBuild().getDirectory()).resolve(tool.getValue());
+            Path reportB = Path.of(moduleB.getBuild().getDirectory()).resolve(tool.getValue());
+            Files.createDirectories(reportA.getParent());
+            Files.writeString(reportA, "<report/>\n");
+
+            MojoExecutionException missing = assertThrows(
+                    MojoExecutionException.class,
+                    () -> mojo.requireStaticReports(tempDir, tool.getValue(), tool.getKey()));
+            assertTrue(missing.getMessage().contains("module-b"));
+            assertFalse(missing.getMessage().contains("aggregator"));
+
+            Files.createDirectories(reportB.getParent());
+            Files.writeString(reportB, "<report/>\n");
+            assertEquals(2,
+                    mojo.requireStaticReports(tempDir, tool.getValue(), tool.getKey()).size());
+        }
+    }
+
+    @Test
+    void governedFullScopeStaticReportsFailClosedWithoutReactorSession() throws Exception {
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "requireFullScope", true);
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class,
+                () -> mojo.requireStaticReports(tempDir, "pmd.xml", "pmd"));
+        assertTrue(exception.getMessage().contains("requires the Maven Reactor session"));
+    }
+
+    private MavenProject reactorProject(String relativePath, String artifactId, boolean withJava)
+            throws Exception {
+        Path basedir = tempDir.resolve(relativePath);
+        Files.createDirectories(basedir);
+        Path pom = basedir.resolve("pom.xml");
+        Files.writeString(pom, "<project/>\n");
+        Build build = new Build();
+        build.setDirectory(basedir.resolve("target").toString());
+        if (withJava) {
+            Path sourceRoot = basedir.resolve("src/main/java");
+            Files.createDirectories(sourceRoot.resolve("example"));
+            Files.writeString(sourceRoot.resolve("example/Demo.java"),
+                    "package example; final class Demo {}\n");
+            build.setSourceDirectory(sourceRoot.toString());
+        }
+        MavenProject project = new MavenProject();
+        project.setFile(pom.toFile());
+        project.setArtifactId(artifactId);
+        project.setBuild(build);
+        if (withJava) {
+            project.addCompileSourceRoot(build.getSourceDirectory());
+        }
+        return project;
     }
 
     @SuppressWarnings("unchecked")
@@ -343,6 +441,127 @@ class CheckMojoTest {
         assertEquals("FAIL", result.gateStatus);
         assertEquals(1, result.newIssueCount);
         assertEquals(0, result.baselineIssueCount);
+    }
+
+    @Test
+    void finalizeResult_changedOnlyWithBaselineIgnoresUnmatchedIssueOutsideChangedFiles() throws Exception {
+        // given
+        CheckIssue baselineIssue = issue("mango-existing/pom.xml", "mangoExistingCore");
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/changed-only-baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        result.issues.add(issue("mango-historical/pom.xml", "mangoHistoricalCore"));
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, "mango-changed/Changed.java", null, baselineFile.toString(),
+                        "no-new-violations", "block", true));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertTrue(result.passed);
+        assertEquals("PASS", result.gateStatus);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+        assertFalse(result.baselineIssues.get(0).baseline);
+        assertFalse(result.baselineIssues.get(0).inChangedFiles);
+    }
+
+    @Test
+    void finalizeResult_changedOnlyWithoutScopeSourceFailsClosed() throws Exception {
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(issue("mango-existing/pom.xml", "mangoExistingCore"));
+        Path baselineFile = tempDir.resolve("target/missing-scope-baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        result.issues.add(issue("mango-historical/pom.xml", "mangoHistoricalCore"));
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, null, null, baselineFile.toString(),
+                        "no-new-violations", "block", true));
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class, () -> finalizer.finalizeResult(result));
+        assertTrue(exception.getMessage().contains("changedOnly=true requires"));
+    }
+
+    @Test
+    void finalizeResult_configuredMissingBaselineFailsClosed() {
+        CheckResult result = new CheckResult();
+        result.issues.add(issue("mango-historical/pom.xml", "mangoHistoricalCore"));
+        Path missingBaseline = tempDir.resolve("target/missing-baseline.json");
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, "mango-changed/Changed.java", null,
+                        missingBaseline.toString(), "no-new-violations", "block", true));
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class, () -> finalizer.finalizeResult(result));
+        assertTrue(exception.getMessage().contains("baseline file does not exist"));
+    }
+
+    @Test
+    void checkNaming_changedOnlyWithTrustedEmptyGitDiffPassesThroughMojo() throws Exception {
+        Path pomFile = tempDir.resolve("mango-demo/pom.xml");
+        Files.createDirectories(pomFile.getParent());
+        Files.writeString(pomFile, """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <artifactId>mangoDemoCore</artifactId>
+                </project>
+                """);
+        runGit("init", "-q");
+        runGit("config", "user.name", "Mango Test");
+        runGit("config", "user.email", "mango-test@example.invalid");
+        runGit("add", ".");
+        runGit("commit", "-qm", "baseline");
+
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(issue("mango-existing/pom.xml", "mangoExistingCore"));
+        Path baselineFile = tempDir.resolve("baseline.json");
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "gate", "no-new-violations");
+        setField(mojo, "changedOnly", true);
+        setField(mojo, "baseRef", "HEAD");
+        setField(mojo, "baselineFile", baselineFile.toString());
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(mojo::execute);
+    }
+
+    @Test
+    void finalizeResult_changedOnlyWithBaselineRejectsUnmatchedIssueInChangedFile() throws Exception {
+        // given
+        CheckIssue baselineIssue = issue("mango-existing/pom.xml", "mangoExistingCore");
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/changed-only-with-change-baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        result.issues.add(issue("mango-changed/pom.xml", "mangoChangedCore"));
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, "mango-changed/pom.xml", null, baselineFile.toString(),
+                        "no-new-violations", "block", true));
+
+        // when
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+
+        // then
+        assertFalse(result.passed);
+        assertEquals("FAIL", result.gateStatus);
+        assertEquals(1, result.newIssueCount);
+        assertEquals(0, result.baselineIssueCount);
+        assertTrue(result.newIssues.get(0).inChangedFiles);
     }
 
     @Test
@@ -899,8 +1118,8 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkAll_withGenericQualityIssue_runsOnlyMangoSpecificRules() throws Exception {
-        // given - generic code quality is delegated to PMD/P3C/Checkstyle, not mango:check
+    void checkAll_withoutMavenStaticToolchainFailsClosed() throws Exception {
+        // given
         Path javaFile = tempDir.resolve("src/main/java/io/mango/demo/TestService.java");
         Files.createDirectories(javaFile.getParent());
         StringBuilder source = new StringBuilder();
@@ -921,7 +1140,7 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         // then
-        assertDoesNotThrow(() -> mojo.execute());
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
     }
 
     @Test
@@ -1031,6 +1250,30 @@ class CheckMojoTest {
         List<String> command = Files.readAllLines(commandFile);
         assertTrue(command.contains("compile"));
         assertEquals(command.indexOf("compile") + 1, command.indexOf("pmd:check"));
+    }
+
+    @Test
+    void staticReportScanIncludesTargetAndMissingReportFailsClosed() throws Exception {
+        Path report = tempDir.resolve("demo/target/pmd.xml");
+        Files.createDirectories(report.getParent());
+        Files.writeString(report, "<pmd/>");
+        CheckMojo mojo = new CheckMojo();
+
+        Method findReports = CheckMojo.class.getDeclaredMethod(
+                "findReports", Path.class, String.class);
+        findReports.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Path> reports = (List<Path>) findReports.invoke(mojo, tempDir, "pmd.xml");
+        assertEquals(List.of(report), reports);
+
+        Method requireReports = CheckMojo.class.getDeclaredMethod(
+                "requireStaticReports", Path.class, String.class, String.class);
+        requireReports.setAccessible(true);
+        InvocationTargetException exception = assertThrows(
+                InvocationTargetException.class,
+                () -> requireReports.invoke(mojo, tempDir, "spotbugsXml.xml", "spotbugs"));
+        assertInstanceOf(MojoExecutionException.class, exception.getCause());
+        assertTrue(exception.getCause().getMessage().contains("produced no spotbugs report"));
     }
 
     @Test
@@ -3154,6 +3397,176 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkPersistenceSchema_entityTableMustExistInMigration() throws Exception {
+        Path migrationFile = tempDir.resolve(
+                "mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Path entityFile = tempDir.resolve(
+                "mango-demo-core/src/main/java/com/example/demo/core/entity/DemoUserEntity.java");
+        Files.createDirectories(entityFile.getParent());
+        Files.writeString(entityFile, """
+                package com.example.demo.core.entity;
+                import com.baomidou.mybatisplus.annotation.TableName;
+                @TableName("demo_user_typo")
+                public class DemoUserEntity {}
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, mojo::execute);
+        assertTrue(exception.getMessage().contains("issues=1"));
+    }
+
+    @Test
+    void checkPersistenceSchema_entityCannotBorrowSiblingModuleTable() throws Exception {
+        Path migrationFile = tempDir.resolve(
+                "modules/user/user-core/src/main/resources/db/migration/user/V1__init_user.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE user_account (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Path entityFile = tempDir.resolve(
+                "modules/order/order-core/src/main/java/com/example/order/core/entity/OrderEntity.java");
+        Files.createDirectories(entityFile.getParent());
+        Files.writeString(entityFile, """
+                package com.example.order.core.entity;
+                import com.baomidou.mybatisplus.annotation.TableName;
+                @TableName("user_account")
+                public class OrderEntity {}
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
+    }
+
+    @Test
+    void checkPersistenceSchema_mapperXmlCannotJoinSiblingModuleTable() throws Exception {
+        Path migrationFile = tempDir.resolve(
+                "modules/user/user-core/src/main/resources/db/migration/user/V1__init_user.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE user_account (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+        Path mapperXml = tempDir.resolve(
+                "modules/order/order-core/src/main/resources/mapper/OrderMapper.xml");
+        Files.createDirectories(mapperXml.getParent());
+        Files.writeString(mapperXml, """
+                <mapper namespace="com.example.order.core.mapper.OrderMapper">
+                  <select id="find">SELECT id FROM user_account</select>
+                </mapper>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
+    }
+
+    @Test
+    void checkPersistenceSchema_tableNameMustBeLiteral() throws Exception {
+        Path entityFile = tempDir.resolve(
+                "mango-demo-core/src/main/java/com/example/demo/core/entity/DemoUserEntity.java");
+        Files.createDirectories(entityFile.getParent());
+        Files.writeString(entityFile, """
+                package com.example.demo.core.entity;
+                import com.baomidou.mybatisplus.annotation.TableName;
+                public class DemoUserEntity {
+                    private static final String TABLE = "demo_user";
+                }
+                @TableName(DemoUserEntity.TABLE)
+                class OtherEntity {}
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, mojo::execute);
+        assertTrue(exception.getMessage().contains("issues=1"));
+    }
+
+    @Test
+    void checkPersistenceSchema_businessTableCannotReuseFrameworkExclusionName() throws Exception {
+        Files.createDirectories(tempDir.resolve("business-pmo"));
+        Path migrationFile = tempDir.resolve(
+                "backend/modules/demo/demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE infra_kv_entry (
+                    `id` bigint NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
+    }
+
+    @Test
+    void checkPersistenceSchema_frameworkExclusionIsLimitedToOwnedModule() throws Exception {
+        Path migrationFile = tempDir.resolve(
+                "mango-infra/mango-infra-kv/mango-infra-kv-core/src/main/resources/db/migration/kv/V1__init_kv.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE infra_kv_entry (
+                    `id` bigint NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(mojo::execute);
+    }
+
+    @Test
     void checkPersistenceSchema_withMissingRequiredColumns_reportsIssue() throws Exception {
         // given
         Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
@@ -3590,6 +4003,33 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkPersistenceSchema_businessUnusedDynamicAlterStringsCannotFakeSchema() throws Exception {
+        Files.createDirectories(tempDir.resolve("business-pmo"));
+        Path migrationFile = tempDir.resolve(
+                "backend/modules/demo/demo-core/src/main/resources/db/migration/demo/V1__init.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                SET @unused1 = 'ALTER TABLE demo_user ADD COLUMN created_by bigint';
+                SET @unused2 = 'ALTER TABLE demo_user ADD COLUMN created_at datetime';
+                SET @unused3 = 'ALTER TABLE demo_user ADD COLUMN updated_by bigint';
+                SET @unused4 = 'ALTER TABLE demo_user ADD COLUMN updated_at datetime';
+                SET @unused5 = 'ALTER TABLE demo_user ADD COLUMN tenant_id varchar(64)';
+                SET @unused6 = 'ALTER TABLE demo_user ADD COLUMN org_id bigint';
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
+    }
+
+    @Test
     void checkPersistenceSchema_ordersMigrationVersionsNumerically() throws Exception {
         // given
         Path migrationDir = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo");
@@ -3671,7 +4111,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkPersistenceSchema_withDisabledTable_passes() throws Exception {
+    void checkPersistenceSchema_commentCannotBypassGovernedManifest() throws Exception {
         // given
         Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_external.sql");
         Files.createDirectories(migrationFile.getParent());
@@ -3689,7 +4129,49 @@ class CheckMojoTest {
         setField(mojo, "baseDir", tempDir.toString());
         setField(mojo, "session", null);
 
-        assertDoesNotThrow(() -> mojo.execute());
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_commentedCreateCannotSatisfyGlobalManifest() throws Exception {
+        Path manifest = tempDir.resolve("business-pmo/global-entity-exceptions.json");
+        Files.createDirectories(manifest.getParent());
+        Files.writeString(manifest, """
+                {
+                  "contractId": "global-entity-exceptions",
+                  "schemaRevision": 1,
+                  "version": 1,
+                  "exceptions": [{
+                    "entity": "com.example.demo.core.entity.PlatformSettingEntity",
+                    "table": "platform_setting",
+                    "owner": "platform-team",
+                    "reason": "平台级配置经过架构委员会审批",
+                    "approvalRef": "ADR-42",
+                    "approvedBy": "chief-architect",
+                    "expiresOn": "2099-12-31"
+                  }]
+                }
+                """);
+        Path migrationFile = tempDir.resolve(
+                "backend/modules/demo/demo-core/src/main/resources/db/migration/demo/V1__fake.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                -- CREATE TABLE platform_setting (
+                --   id bigint NOT NULL PRIMARY KEY,
+                --   created_by bigint,
+                --   created_at datetime,
+                --   updated_by bigint,
+                --   updated_at datetime
+                -- );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "globalEntityManifest", manifest);
+        setField(mojo, "session", null);
+
+        assertThrows(MojoExecutionException.class, mojo::execute);
     }
 
     @Test
@@ -4107,7 +4589,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkAll_inBusinessProject_skipsLegacyJavaArchitectureDiagnostics() throws Exception {
+    void checkAll_inBusinessProjectStillRequiresStaticToolchain() throws Exception {
         // given
         Files.createDirectories(tempDir.resolve("business-pmo"));
         Path sourceDir = tempDir.resolve("backend/demo/src/main/java/io/mango/demo/core/mapper");
@@ -4130,7 +4612,7 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         // then
-        assertDoesNotThrow(() -> mojo.execute());
+        assertThrows(MojoExecutionException.class, () -> mojo.execute());
     }
 
     @Test
@@ -4152,5 +4634,31 @@ class CheckMojoTest {
 
         assertNotNull(signature);
         assertTrue(signature.contains("doSomething"));
+    }
+
+    private CheckIssue issue(String relativeFile, String artifactId) {
+        CheckIssue issue = new CheckIssue();
+        issue.type = "NAMING";
+        issue.severity = "MAJOR";
+        issue.file = tempDir.resolve(relativeFile).toString();
+        issue.line = 3;
+        issue.description = "Mango module artifactId must use kebab-case: " + artifactId;
+        issue.rule = "NAMING";
+        issue.reference = "naming-rules.md";
+        issue.source = "mango-check";
+        return issue;
+    }
+
+    private void runGit(String... arguments) throws Exception {
+        List<String> command = new java.util.ArrayList<>();
+        command.add("git");
+        command.addAll(List.of(arguments));
+        Process process = new ProcessBuilder(command)
+                .directory(tempDir.toFile())
+                .redirectErrorStream(true)
+                .start();
+        String output = new String(process.getInputStream().readAllBytes());
+        assertTrue(process.waitFor(10, TimeUnit.SECONDS), "git command timed out: " + command);
+        assertEquals(0, process.exitValue(), output);
     }
 }

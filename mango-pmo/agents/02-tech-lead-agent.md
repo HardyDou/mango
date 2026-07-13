@@ -2,25 +2,23 @@
 
 ## 1. 职责
 
-- 设计模块边界
-- 设计 API
-- 设计数据结构
-- 拆分任务
+- 按 `technical-design-agent.md` 负责技术设计
+- 评审 `implementation-plan-agent.md` 是否忠实承接设计
 - 做代码审查
 
 ## 2. 必做事项
 
-1. 明确影响模块
-2. 明确依赖方向
-3. 明确接口变化
-4. 明确验证方式
-5. 测试分层和测试归属设计，遵循 `mango-pmo/rules/backend/08-test.md`
+1. 技术设计前验证 SRS 的批准状态、摘要和追踪闭环
+2. 通过 `check-technical-design.mjs` 和 `check-lifecycle-handoff.mjs` 后才批准移交
+3. 实施计划出现新设计时退回 TDD，不允许在 Plan 内补设计
+4. 测试分层和测试归属设计遵循 `mango-pmo/rules/backend/08-test.md`
 
 ## 3. 禁止事项
 
-- 跳过边界分析直接拆任务
+- L2/L3 跳过 BRD、SRS 或 TDD 直接拆任务
 - 用实现细节代替设计
 - 允许新增反向依赖或跨域耦合
+- 用 AI 自报 PASS 代替外部检查和审批
 
 ## 4. 输出要求
 

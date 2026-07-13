@@ -2,6 +2,51 @@
 
 ## Unreleased
 
+### Release Target - 2026-07-12
+
+- Publish the Java/Spring architecture enforcement and `MangoTypedCrudService` first as the complete non-app Mango Maven backend batch `1.0.16`; `1.0.15` already resolves from Nexus but cannot parse the new global Entity manifest contract and must not be reused.
+- Publish `@mango/pmo@1.1.0` second with the reproducible PMO bundle, document contracts, lifecycle checkers, dedicated agents, project Skills, and package-root Codex plugin projection.
+- Publish `@mango/cli@1.0.68` last, with exact dependencies on `@mango/pmo@1.1.0` and Mango Maven backend `1.0.16` so generated business modules never reference an incompatible Java contract.
+- Use the new `mango release publish/status/verify/repair/registry doctor` state machine as the batch owner; registry roles are explicit, verification can run without republishing, and every state persists a non-empty auditable reason.
+- Require schema-v2 release evidence for every applicable terminal state, revalidate required-state applicability, and restrict immutable repair to `{kind: verify-existing}` backed by the existing verify adapter; `not_applicable` records a reason and decision time without fabricating a command.
+- Enforce Spring Service registration: business `XxxService implements IXxxService` uses `@Service`, replaceable framework defaults use starter `@Bean + @ConditionalOnMissingBean`, and direct construction or mutable static Service Locator patterns are rejected.
+- Track the 9,311-item full-Reactor architecture inventory with schema-v3 stable identities; Maven subtracts only base-SHA identities while CI compares base, PR, and current budgets so historical debt does not block unchanged violations and cannot authorize replacements.
+- Keep the package, template, checker, workflow, and capability documentation in one coordinated release candidate; none of the targets below are described as published until registry and consumer verification succeeds.
+
+### Upgrade Notes
+
+1. Upgrade an existing business backend to `<mango.version>1.0.16</mango.version>` only after the complete Maven batch is available from `maven-releases` and a clean consumer can resolve it; do not use the already-published incompatible `1.0.15` plugin with this template batch.
+2. Install or upgrade the CLI with `npm install -g @mango/cli@1.0.68 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/` only after both npm packages are visible through `npm-group`.
+3. In each business repository, run `mango pmo upgrade --project-dir . --to 1.1.0`, then `mango pmo check --project-dir . --locked` and review the project-owned Skills under `.agents/skills`.
+4. Migrate CRUD services to `MangoTypedCrudService<Entity, CreateCommand, UpdateCommand, PageQuery, VO, Long>` and keep the implementation on `MangoCrudServiceImpl<Mapper, Entity>`; migrate Controllers to explicit `XxxApi` adapters before running Maven `verify`.
+5. `mango pmo sync` repairs the version recorded in `business-pmo/pmo-lock.json`; it does not select a newer PMO version. `rollback` only restores a verified local backup.
+6. Project Skill synchronization does not install or modify a user-level Codex plugin. User-profile plugin installation remains a separate explicit operation against the published `@mango/pmo` package.
+
+### Published Packages
+
+The following are planned publication targets. Their status is `PENDING`; this `Unreleased` section is not publication evidence.
+
+| Order | Target | Version / destination | Status |
+|---|---|---|---|
+| 1 | Complete Mango backend non-app Maven reactor | `1.0.16` -> `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/` | `PENDING` |
+| 2 | npm PMO bundle | `@mango/pmo@1.1.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
+| 3 | npm CLI | `@mango/cli@1.0.68` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
+| 4 | GitHub Release | release notes containing this dependency order and upgrade procedure | `PENDING` |
+
+### Verification
+
+Release-candidate package checks completed before final backend integration:
+
+- `node mango-ui/packages/mango-pmo/scripts/build-package.mjs`
+- `node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/pmo-bundle.test.mjs`
+- `node mango-ui/scripts/check-release-impact.mjs --self-test`
+- `node --test mango-ui/packages/mango-cli/tests/release-command.test.mjs`
+- `node --test mango-pmo/tests/architecture-debt-budget.test.mjs`
+- `npm pack --dry-run --json` from `mango-ui/packages/mango-pmo`
+
+Before moving this entry out of `Unreleased` or changing any target to published, the final commit must also pass the complete Maven architecture suite, PMO lifecycle/document checks, template projection checks, package export and release-impact gates, registry lookups for all three version groups, a clean generated business-module compile, and GitHub Release verification.
+
 ## v2026.07.11-maven-1.0.14-cli-release - 2026-07-11
 
 ### Changed

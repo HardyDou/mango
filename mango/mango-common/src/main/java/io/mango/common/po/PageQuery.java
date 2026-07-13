@@ -1,7 +1,12 @@
 package io.mango.common.po;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 分页请求参数。
@@ -9,6 +14,7 @@ import lombok.Data;
  * @author Mango
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "分页请求参数")
 public class PageQuery extends Query {
 
@@ -19,10 +25,13 @@ public class PageQuery extends Query {
 
     /** 当前页，从 1 开始。 */
     @Schema(description = "当前页，从 1 开始")
+    @Min(value = 1, message = "当前页必须大于等于1")
     private long page = DEFAULT_PAGE;
 
     /** 每页大小。 */
     @Schema(description = "每页大小，最大 500")
+    @Min(value = 1, message = "每页大小必须大于等于1")
+    @Max(value = MAX_SIZE, message = "每页大小不能超过500")
     private long size = DEFAULT_SIZE;
 
     /**

@@ -1,14 +1,26 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const root = new URL('..', import.meta.url).pathname;
 const repoRoot = new URL('../..', import.meta.url).pathname;
 
+const baselineCheck = spawnSync(process.execPath, [join(root, 'scripts/sync-pmo-baseline.mjs'), '--check'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+});
+if (baselineCheck.status !== 0) {
+  console.error(baselineCheck.stdout);
+  console.error(baselineCheck.stderr);
+  process.exit(baselineCheck.status ?? 1);
+}
+
 const requiredFiles = [
   'README.md',
   'AGENTS.md',
   '.github/CODEOWNERS',
   'business-pmo/README.md',
+  'business-pmo/global-entity-exceptions.json',
   'business-pmo/mango-baseline/README.md',
   'business-pmo/mango-baseline/agents/01-pm-agent.md',
   'business-pmo/mango-baseline/agents/02-tech-lead-agent.md',
@@ -40,6 +52,7 @@ const requiredFiles = [
   'business-pmo/mango-baseline/rules/product/02-sprint.md',
   'business-pmo/mango-baseline/templates/delivery-contract.md',
   'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+  'business-pmo/mango-baseline/tools/check-document-set.mjs',
   'business-pmo/mango-baseline/tools/delivery-contract-check.mjs',
   'business-docs/plans/example-contract.md',
   'business-docs/plans/example-ledger.md',
@@ -49,6 +62,7 @@ const requiredFiles = [
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Create{{aggregatePascal}}Command.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Update{{aggregatePascal}}Command.java',
+  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/enums/{{aggregatePascal}}Code.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/vo/{{aggregatePascal}}VO.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/pom.xml',
@@ -90,15 +104,19 @@ const contentChecks = [
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
-    patterns: ['R<Object>', 'R<PersistencePageResult<?>>', '@ParameterObject', '@Validated', '/create', '/update', '/delete', '/page', '/detail', '{{aggregateName}}'],
+    patterns: ['R<Long>', 'R<PersistencePageResult<{{aggregatePascal}}VO>>', 'R<{{aggregatePascal}}VO>', '@Valid', '@NotNull'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/enums/{{aggregatePascal}}Code.java',
+    patterns: ['implements BizCode', 'NOT_FOUND', 'VALIDATION_ERROR'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java',
-    patterns: ['extends MangoCrudService<{{aggregatePascal}}Entity>'],
+    patterns: ['extends MangoTypedCrudService<', 'Create{{aggregatePascal}}Command', '{{aggregatePascal}}VO', 'Long>'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java',
-    patterns: ['extends MangoCrudServiceImpl<{{aggregatePascal}}Mapper, {{aggregatePascal}}Entity>', 'toVO({{aggregatePascal}}Entity entity)'],
+    patterns: ['@Service', 'implements I{{aggregatePascal}}Service', 'extends MangoCrudServiceImpl<{{aggregatePascal}}Mapper, {{aggregatePascal}}Entity>', 'toVO({{aggregatePascal}}Entity entity)', 'Require.notNull(entity, {{aggregatePascal}}Code.NOT_FOUND)', '@Transactional(rollbackFor = Exception.class)', 'public Long create(Create{{aggregatePascal}}Command command)', 'public boolean update(Update{{aggregatePascal}}Command command)', 'public boolean delete(DeleteCommand command)', 'public PersistencePageResult<{{aggregatePascal}}VO> page(', 'public {{aggregatePascal}}VO detail(Long id)'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql',
@@ -106,7 +124,7 @@ const contentChecks = [
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
-    patterns: ['extends BaseCrudController', 'I{{aggregatePascal}}Service', '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")'],
+    patterns: ['implements {{modulePascal}}Api', 'I{{aggregatePascal}}Service', '@Validated', '@Tag(', '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")', '@RequestParam("id")', '@RequestBody @Valid'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml',
@@ -139,7 +157,7 @@ const contentChecks = [
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java',
-    patterns: ['extends {{modulePascal}}Api', '@FeignClient(name = "{{moduleKebab}}"', 'path = "/{{moduleKebab}}"'],
+    patterns: ['extends {{modulePascal}}Api', 'name = "{{moduleKebab}}"', 'contextId = "{{moduleCamel}}FeignClient"', 'path = "/{{moduleKebab}}/{{aggregateKebab}}s"', '@RequestParam("id")', '@SpringQueryMap'],
   },
   {
     file: 'frontend/packages/{{moduleKebab}}-api/src/api.ts',
@@ -151,7 +169,7 @@ const contentChecks = [
   },
   {
     file: 'frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
-    patterns: ['create{{aggregatePascal}}', 'update{{aggregatePascal}}', 'delete{{aggregatePascal}}', 'get{{aggregatePascal}}Detail', 'openCreateDialog', 'openEditDialog', 'openDetail', 'handleDelete', 'el-pagination', 'el-dialog', 'el-drawer', 'records.value = result.records', 'page: 1', 'size: 20'],
+    patterns: ['create{{aggregatePascal}}', 'update{{aggregatePascal}}', 'delete{{aggregatePascal}}', 'get{{aggregatePascal}}Detail', 'openCreateDialog', 'openEditDialog', 'openDetail', 'handleDelete', '<Pagination', 'el-dialog', 'el-drawer', 'records.value = result.records', 'page: 1', 'size: 20'],
   },
   {
     file: 'frontend/packages/{{moduleKebab}}/src/index.ts',
@@ -175,7 +193,7 @@ const contentChecks = [
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml',
-    patterns: ['<relativePath>../pom.xml</relativePath>', 'mango-infra-persistence-starter'],
+    patterns: ['<relativePath>../pom.xml</relativePath>', 'mango-infra-persistence-api', 'jakarta.validation-api'],
   },
   {
     file: 'AGENTS.md',
@@ -183,7 +201,16 @@ const contentChecks = [
   },
   {
     file: 'business-pmo/README.md',
-    patterns: ['business-pmo/mango-baseline/tools/pmo-preflight.mjs', '不随普通业务需求直接修改 `mango-baseline/**`'],
+    patterns: ['business-pmo/mango-baseline/tools/pmo-preflight.mjs', '普通业务需求不直接修改 `mango-baseline/**`'],
+  },
+  {
+    file: 'business-pmo/global-entity-exceptions.json',
+    patterns: [
+      '"contractId": "global-entity-exceptions"',
+      '"schemaRevision": 1',
+      '"version": 1',
+      '"exceptions": []',
+    ],
   },
   {
     file: 'business-pmo/mango-baseline/rules/index.json',

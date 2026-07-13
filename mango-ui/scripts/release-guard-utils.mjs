@@ -3,8 +3,8 @@ import { dirname, join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
-export const HOSTED_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/';
-export const GROUP_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/';
+export const HOSTED_REGISTRY = process.env.MANGO_NPM_PUBLISH_REGISTRY || '';
+export const GROUP_REGISTRY = process.env.MANGO_NPM_CONSUME_REGISTRY || '';
 
 export function commandForPlatform(command) {
   if (process.platform === 'win32' && ['npm', 'pnpm', 'npx'].includes(command)) {
@@ -163,6 +163,9 @@ export function verifyPackageTree(packageName, packageRoot, sourcePackageJson, o
 
 export function verifyPublishedPackage(packageName, version, foundPackage, options = {}) {
   const registry = options.registry || HOSTED_REGISTRY;
+  if (!registry) {
+    throw new Error('Published package verification requires an explicit registry.');
+  }
   const tempDir = mkdtempSync(join(tmpdir(), 'mango-npm-publish-verify-'));
   try {
     console.log(`Verifying published tarball ${packageName}@${version} from ${registry}`);

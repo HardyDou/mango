@@ -48,6 +48,42 @@
 - 非 Web 任务如果配置 `mango.persistence.mybatis-plus.tenant.default-tenant-id`，只能用于明确单租户任务或本地验证，不得作为多租户业务链路的隐式兜底。
 - 自定义 Mapper SQL、XML SQL、`Db`/`DbHelper`/`DbUtil` 等绕开实体服务的访问必须有集成测试证明租户插件生效；插件无法覆盖的 SQL 必须显式标注例外并补权限/租户断言。
 
+## 0.4 表所有权与 Schema 证据
+
+正向要求：
+
+- 表所有权只由模块 `src/main/resources/db/migration/**` 中可静态解析的 `CREATE TABLE` 声明建立；普通 Entity 和 Mapper XML 只能访问与自身处于同一 Maven 模块、由该模块 migration 创建的表。
+- Entity 的 `@TableName` 必须是小写 `snake_case` 字符串字面量，目标表必须存在于 migration，Entity 模块必须与表 owner 模块一致。
+- Mapper XML 的 `FROM`、`JOIN`、`UPDATE`、`INSERT INTO`、`DELETE FROM` 等静态表引用必须指向本模块拥有的表。
+- 同一张表只能有一个模块 owner；两个不同模块的 migration 重复 `CREATE TABLE` 同名表时立即阻断。
+- 全局非租户 Entity 必须登记 `business-pmo/global-entity-exceptions.json`，并保证 manifest 表名、`@TableName` 和 migration 表名一致；manifest 不是免除 migration 的入口。
+- `mvn verify` 中的 `mango:check` 必须以 `rule=all`、`gate=all`、`changedOnly=false` 执行 `PERSISTENCE_SCHEMA`。
+
+禁止：
+
+- 禁止 Entity 绑定其它模块拥有的表，禁止 Mapper XML 跨模块直接访问表。
+- 禁止 Mapper XML 使用 `${...}` 动态拼接表名规避静态表归属检查。
+- 禁止把 Java 字符串、测试 fixture、README 代码块、普通资源 SQL 或运行时动态 DDL 当作 schema 证据；它们不进入 migration 表清单。
+- 禁止通过同表多 owner、动态表名或把 DDL 移出 migration 目录绕过归属门禁。
+
+正例：`order-core/src/main/resources/db/migration/order/V1__init.sql` 创建 `order_invoice`，同一 `order-core` 的 `OrderInvoiceEntity` 声明 `@TableName("order_invoice")`，其 Mapper XML 只访问 `order_invoice`。
+
+反例：`payment-core` 的 Mapper XML 直接 `JOIN order_invoice`；或两个 core 模块分别创建 `shared_record`；或在 Java 中执行 `jdbc.execute("CREATE TABLE ...")` 后省略 migration。三种情况都不能形成合法表所有权。
+
+## 0.5 全局表例外
+
+- 正向要求：业务 Entity 默认继承 canonical `TenantEntity`，`@TableName` 必须与 migration 表名一致。
+- 正向要求：确属全局数据、不得按租户隔离的表，必须在项目
+  `business-pmo/global-entity-exceptions.json` 登记精确的 Entity FQCN 和表名，并填写 owner、充分理由、
+  `approvalRef`、`approvedBy` 和 `expiresOn`；框架仓使用
+  `mango-pmo/contracts/global-entity-exceptions.json`。
+- 禁止：通过自定义基类、去掉租户字段、模糊包名前缀或永久白名单绕过 `TenantEntity`。
+- 禁止：例外到期后继续交付，或让 manifest 的 `table` 与 `@TableName` 不一致。
+- 正例：经架构负责人批准的全局配置表按单个 Entity、单个表登记，并设置复审到期日。
+- 反例：把“该模块暂时不支持多租户”作为整个包的例外理由。
+- 机器门禁：`MANGO-ARCH-ENTITY-003`、`MANGO-ARCH-ENTITY-004` 与 `MANGO-ARCH-ENGINE-014`；manifest 缺字段、重复、
+  过期、格式错误或表名不一致时 `mvn verify` 失败。
+
 ## 1. 事务规则
 
 - 写操作必须放在明确事务边界内。
@@ -82,3 +118,7 @@
 - 用数据库实现跨模块业务耦合
 - 业务代码直接使用 JDBC 或 `JdbcTemplate`
 - Mapper 方法使用注解 SQL
+- Entity 或 Mapper XML 跨模块访问表
+- 同一张表由多个模块 migration 重复创建
+- Mapper XML 动态拼接表名
+- 用运行时动态 DDL 代替模块 migration

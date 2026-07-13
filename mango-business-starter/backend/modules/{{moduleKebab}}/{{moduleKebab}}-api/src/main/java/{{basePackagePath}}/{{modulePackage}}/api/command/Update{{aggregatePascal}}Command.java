@@ -11,6 +11,8 @@ import java.io.Serializable;
 @Schema(description = "修改{{aggregateName}}命令")
 public class Update{{aggregatePascal}}Command implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Schema(description = "业务标识")
     @NotNull(message = "业务标识不能为空")
     private Long id;

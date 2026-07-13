@@ -12,7 +12,7 @@ import java.io.Serializable;
  */
 @Data
 @SuppressWarnings({"PMD.ShortClassName", "PMD.ClassNamingShouldBeCamelRule"})
-public class R<T> implements Serializable {
+public final class R<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

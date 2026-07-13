@@ -1,0 +1,184 @@
+{
+  "contractSchema": 1,
+  "contractId": "system-requirements",
+  "documentType": "system-requirements",
+  "documentIdPrefix": "SRS",
+  "schemaRevision": 1,
+  "ruleSource": "mango-pmo/rules/product/02-system-requirements.md",
+  "template": "mango-pmo/templates/system-requirements.md",
+  "upstreamDocumentType": "business-requirements",
+  "metadata": {
+    "ruleId": "SRS-META-001",
+    "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
+    "fixed": {"documentType": "system-requirements", "pmoVersion": "1.1.0", "schemaRevision": "1"}
+  },
+  "localPrefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"],
+  "upstreamPrefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"],
+  "sections": [
+    {
+      "ruleId": "SRS-STRUCT-010",
+      "title": "系统范围与上下文",
+      "tables": [{
+        "headers": ["上下文ID", "上游ID", "系统责任", "边界外责任", "参与方", "可观察输出"],
+        "minRows": 1,
+        "defines": {"上下文ID": "SC"},
+        "references": [{"column": "上游ID", "prefixes": ["BS", "BG", "BF"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "SRS-STRUCT-020",
+      "title": "系统参与者与访问行为",
+      "tables": [{
+        "headers": ["系统参与者ID", "上游参与者ID", "使用入口类别", "可见范围", "可执行动作", "禁止动作", "用户可见原因"],
+        "minRows": 1,
+        "defines": {"系统参与者ID": "SA"},
+        "references": [{"column": "上游参与者ID", "prefixes": ["BA"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "SRS-STRUCT-030",
+      "title": "功能需求",
+      "tables": [{
+        "headers": ["功能ID", "上游ID", "触发者ID", "前置条件", "输入信息语义", "系统行为", "成功反馈", "失败或禁止反馈", "状态影响"],
+        "minRows": 1,
+        "defines": {"功能ID": "FR"},
+        "references": [
+          {"column": "上游ID", "prefixes": ["BG", "BF", "BR", "BAC"], "required": true},
+          {"column": "触发者ID", "prefixes": ["SA"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "SRS-STRUCT-040",
+      "title": "用户场景与交互流程",
+      "tables": [{
+        "headers": ["场景ID", "上游流程ID", "功能ID", "参与者ID", "入口", "前置状态", "用户动作", "系统反馈", "替代或异常路径", "完成状态"],
+        "minRows": 1,
+        "defines": {"场景ID": "UC"},
+        "references": [
+          {"column": "上游流程ID", "prefixes": ["BF"], "required": true},
+          {"column": "功能ID", "prefixes": ["FR"], "required": true},
+          {"column": "参与者ID", "prefixes": ["SA"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "SRS-STRUCT-050",
+      "title": "页面、信息与动作需求",
+      "tables": [
+        {
+          "headers": ["页面ID", "页面名称", "用途", "参与者ID", "信息区域", "页面状态", "功能ID"],
+          "minRows": 1,
+          "defines": {"页面ID": "PG"},
+          "references": [
+            {"column": "参与者ID", "prefixes": ["SA"], "required": true},
+            {"column": "功能ID", "prefixes": ["FR"], "required": true}
+          ]
+        },
+        {
+          "headers": ["动作ID", "页面ID", "动作名称", "显示条件", "可用条件", "用户交互", "成功反馈", "失败反馈", "功能ID"],
+          "minRows": 1,
+          "defines": {"动作ID": "BT"},
+          "references": [
+            {"column": "页面ID", "prefixes": ["PG"], "required": true},
+            {"column": "功能ID", "prefixes": ["FR"], "required": true}
+          ]
+        },
+        {
+          "headers": ["页面ID", "信息名称", "业务语义", "来源类别", "必填条件", "输入限制", "空值含义", "展示要求"],
+          "minRows": 1,
+          "references": [{"column": "页面ID", "prefixes": ["PG"], "required": true}]
+        },
+        {
+          "headers": ["页面ID", "状态类型", "触发场景", "展示内容", "可见动作", "可用动作", "不可操作原因"],
+          "minRows": 5,
+          "references": [{"column": "页面ID", "prefixes": ["PG"], "required": true}],
+          "enums": {"状态类型": ["正常", "空", "加载", "失败", "不可操作"]},
+          "requiredEnumValues": {"状态类型": ["正常", "空", "加载", "失败", "不可操作"]}
+        }
+      ]
+    },
+    {
+      "ruleId": "SRS-STRUCT-060",
+      "title": "逻辑数据需求",
+      "tables": [{
+        "headers": ["数据需求ID", "上游或功能ID", "业务信息", "来源", "使用场景", "完整性或唯一性口径", "保留要求", "敏感级别", "空值业务语义"],
+        "minRows": 1,
+        "defines": {"数据需求ID": "DR"},
+        "references": [{"column": "上游或功能ID", "prefixes": ["BO", "BR", "FR"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "SRS-STRUCT-070",
+      "title": "外部交互需求",
+      "tables": [{
+        "headers": ["外部交互ID", "上游或功能ID", "外部参与方", "业务目的", "触发条件", "输入业务信息", "输出业务信息", "时效要求", "重复或失败处理", "责任边界"],
+        "minRows": 1,
+        "defines": {"外部交互ID": "IR"},
+        "references": [{"column": "上游或功能ID", "prefixes": ["BF", "BR", "FR"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "SRS-STRUCT-080",
+      "title": "非功能需求",
+      "tables": [{
+        "headers": ["非功能ID", "上游ID", "类别", "适用场景", "度量指标", "目标值", "测量条件", "失败影响", "验收方式"],
+        "minRows": 1,
+        "defines": {"非功能ID": "NFR"},
+        "references": [{"column": "上游ID", "prefixes": ["BG", "BS", "BR", "BAC"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "SRS-STRUCT-090",
+      "title": "系统验收标准",
+      "tables": [{
+        "headers": ["系统验收ID", "业务验收ID", "系统需求ID", "前置状态", "用户或外部动作", "可观察结果", "失败或边界结果", "验收类型"],
+        "minRows": 1,
+        "defines": {"系统验收ID": "SAC"},
+        "references": [
+          {"column": "业务验收ID", "prefixes": ["BAC"], "required": true},
+          {"column": "系统需求ID", "prefixes": ["FR", "UC", "PG", "BT", "DR", "IR", "NFR"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "SRS-TRACE-100",
+      "title": "系统需求追踪矩阵",
+      "tables": [{
+        "headers": ["上游ID", "系统需求ID", "系统验收ID", "覆盖说明"],
+        "minRows": 1,
+        "references": [
+          {"column": "上游ID", "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"], "required": true},
+          {"column": "系统需求ID", "prefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"], "required": true},
+          {"column": "系统验收ID", "prefixes": ["SAC"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "SRS-GATE-110",
+      "title": "阶段判定与审批",
+      "tables": [{
+        "headers": ["检查项", "结果", "证据"],
+        "minRows": 4,
+        "rowKeys": ["系统需求 checker", "生命周期 handoff", "未关闭阻断数量", "系统需求审批"]
+      }]
+    }
+  ],
+  "traceability": {
+    "ruleId": "SRS-TRACE-100",
+    "section": "系统需求追踪矩阵",
+    "localCoveragePrefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"]
+  },
+  "forbidden": {
+    "ruleId": "SRS-BOUNDARY-001",
+    "codeBlocks": true,
+    "literals": [
+      "@GetMapping", "@PostMapping", "@PutMapping", "@DeleteMapping", "@RequestMapping",
+      "Controller", "Feign", "MangoCrudService", "Mapper", "Entity", "DTO", "VO", "Command", "Query", "Payload",
+      "R<", "Require.", "ErrorCode", "permissionCode", "component key", "componentKey",
+      "/api/", "HTTP GET", "HTTP POST", "Spring MVC", "Redis", "Kafka", "CREATE TABLE", "ALTER TABLE", "VARCHAR", "BIGINT",
+      "migration", "api/core/starter", "starter-remote", "ElTable", "测试命令", "开发任务", "接口路径"
+    ],
+    "patterns": ["/[A-Za-z0-9_./-]*\\{[^}\\n]+\\}", "\\b[A-Z][A-Za-z0-9]*(?:Payload|Controller|FeignClient|Service|Mapper|Entity|DTO|VO|Command|Query)\\b"]
+  }
+}

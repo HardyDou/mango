@@ -74,7 +74,7 @@
 - `starter-remote` 承载领域实现，Feign 不在该模块、未且仅继承一个 `XxxApi`、缺少唯一 `contextId`，或 name/path 不匹配 module 信息。
 - Controller/Service/API 的职责违规按 [`03-api.md`](03-api.md) 阻断；本文件额外阻断 Entity、Mapper 或 Feign 跨模块放置和暴露。
 
-CI 必须从最终 PR diff 重新执行 `dependency`、`module-info`、`remote-adapter`、`api-contract`、`mapper-sql-style` 和 `service-contract`；修改硬红线文件时不得使用 baseline 抵消失败。
+CI 必须从最终 PR diff 执行 `mvn verify -Dmango.architecture.base=<base-sha>`，由 Enforcer、ArchUnit、PMD 7 重新检查模块依赖、远程适配、API、Controller、Service、Mapper 和 Entity；`module-info` 继续由 `mango:check` 执行。修改架构硬红线文件时不得使用 baseline 抵消失败。
 
 ## 6. 模块信息规则
 

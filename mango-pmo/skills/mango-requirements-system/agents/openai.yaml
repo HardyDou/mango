@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango System Requirements"
+  short_description: "Specify observable system behavior from approved needs"
+  default_prompt: "Use $mango-requirements-system to derive a system requirements specification from the approved business document."
+policy:
+  allow_implicit_invocation: true

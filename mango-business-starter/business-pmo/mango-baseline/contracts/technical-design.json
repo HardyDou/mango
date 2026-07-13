@@ -1,0 +1,202 @@
+{
+  "contractSchema": 1,
+  "contractId": "technical-design",
+  "documentType": "technical-design",
+  "documentIdPrefix": "TDD",
+  "schemaRevision": 1,
+  "ruleSource": "mango-pmo/rules/product/03-technical-design.md",
+  "template": "mango-pmo/templates/technical-design.md",
+  "upstreamDocumentType": "system-requirements",
+  "metadata": {
+    "ruleId": "TDD-META-001",
+    "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
+    "fixed": {"documentType": "technical-design", "pmoVersion": "1.1.0", "schemaRevision": "1"}
+  },
+  "localPrefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"],
+  "upstreamPrefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"],
+  "sections": [
+    {
+      "ruleId": "TDD-STRUCT-010",
+      "title": "设计输入、约束与决策",
+      "tables": [{
+        "headers": ["决策ID", "问题", "候选方案", "选择", "理由", "来源ID或路径", "是否推断", "影响", "风险", "回退条件"],
+        "minRows": 1,
+        "defines": {"决策ID": "DEC"},
+        "enums": {"是否推断": ["是", "否"]}
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-020",
+      "title": "模块与依赖边界",
+      "tables": [{
+        "headers": ["模块设计ID", "模块或包", "职责", "改动类型", "依赖方向", "公开能力", "系统需求ID", "适用规范ruleId", "验证方式"],
+        "minRows": 1,
+        "defines": {"模块设计ID": "MOD"},
+        "references": [{"column": "系统需求ID", "prefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-030",
+      "title": "技术对象与状态模型",
+      "tables": [
+        {
+          "headers": ["模型ID", "上游ID", "模型职责", "标识", "关系", "状态编码", "审计或历史", "归属或租户", "一致性约束"],
+          "minRows": 1,
+          "defines": {"模型ID": "DM"},
+          "references": [{"column": "上游ID", "prefixes": ["FR", "DR"], "required": true}]
+        },
+        {
+          "headers": ["模型ID", "当前状态", "触发", "目标状态", "前置条件", "副作用", "失败处理", "上游ID"],
+          "minRows": 1,
+          "references": [
+            {"column": "模型ID", "prefixes": ["DM"], "required": true},
+            {"column": "上游ID", "prefixes": ["FR", "UC", "DR", "SAC"], "required": true}
+          ]
+        }
+      ]
+    },
+    {
+      "ruleId": "TDD-STRUCT-040",
+      "title": "系统流程、事务与一致性",
+      "tables": [{
+        "headers": ["流程设计ID", "系统需求ID", "调用入口", "参与模块", "处理顺序", "事务边界", "状态变化", "幂等键", "并发策略", "外部失败与补偿", "用户可见结果"],
+        "minRows": 1,
+        "defines": {"流程设计ID": "FLOW"},
+        "references": [
+          {"column": "系统需求ID", "prefixes": ["FR", "UC", "SAC"], "required": true},
+          {"column": "参与模块", "prefixes": ["MOD"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-050",
+      "title": "API 与远程契约设计",
+      "tables": [{
+        "headers": ["接口ID", "系统需求ID", "调用方", "所属模块", "入口类型", "方法与路径", "Command Query或VO", "返回契约", "校验", "权限租户或数据权限", "幂等分页或排序", "错误码", "兼容策略", "适用规范ruleId", "验证方式"],
+        "minRows": 1,
+        "defines": {"接口ID": "API"},
+        "references": [
+          {"column": "系统需求ID", "prefixes": ["FR", "UC", "SAC"], "required": true},
+          {"column": "所属模块", "prefixes": ["MOD"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-060",
+      "title": "持久化与数据迁移设计",
+      "tables": [{
+        "headers": ["数据设计ID", "上游或模型ID", "表或实体", "字段变化", "约束", "索引", "租户审计", "Mapper边界", "数据来源", "migration或回填", "回滚或补偿", "适用规范ruleId", "验证方式"],
+        "minRows": 1,
+        "defines": {"数据设计ID": "DB"},
+        "references": [{"column": "上游或模型ID", "prefixes": ["DR", "FR", "DM"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-070",
+      "title": "安全、权限、租户与数据边界",
+      "tables": [{
+        "headers": ["安全设计ID", "系统需求ID", "能力", "权限资源", "默认授权", "后端校验入口", "租户边界", "数据归属断言", "前端反馈", "审计", "适用规范ruleId", "验证方式"],
+        "minRows": 1,
+        "defines": {"安全设计ID": "SEC"},
+        "references": [{"column": "系统需求ID", "prefixes": ["SA", "FR", "DR", "SAC"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-080",
+      "title": "错误码、异常与可观测性",
+      "tables": [{
+        "headers": ["错误设计ID", "系统需求ID", "失败场景", "触发条件", "错误码", "异常类型", "用户反馈", "日志上下文", "指标或告警", "重试或补偿", "敏感信息处理"],
+        "minRows": 1,
+        "defines": {"错误设计ID": "ERR"},
+        "references": [{"column": "系统需求ID", "prefixes": ["FR", "UC", "SAC"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-090",
+      "title": "前端结构与交互实现映射",
+      "tables": [{
+        "headers": ["前端设计ID", "系统需求ID", "页面或动作", "页面key或路由", "区域与组件", "状态来源", "API依赖", "权限或不可操作", "空加载或失败态", "语义测试锚点", "复用判断", "适用规范ruleId"],
+        "minRows": 1,
+        "defines": {"前端设计ID": "UI"},
+        "references": [
+          {"column": "系统需求ID", "prefixes": ["FR", "PG", "BT", "SAC"], "required": true},
+          {"column": "API依赖", "prefixes": ["API"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-100",
+      "title": "测试设计与验收映射",
+      "tables": [{
+        "headers": ["测试用例ID", "系统验收ID", "设计项ID", "场景", "优先级", "测试层级", "自动化判断", "测试数据", "权限或租户边界", "稳定契约", "执行入口", "证据", "失败处理", "适用规范ruleId"],
+        "minRows": 1,
+        "defines": {"测试用例ID": "TC"},
+        "references": [
+          {"column": "系统验收ID", "prefixes": ["SAC"], "required": true},
+          {"column": "设计项ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "IMP"], "required": true}
+        ],
+        "enums": {"优先级": ["P0", "P1", "P2", "P3"], "自动化判断": ["AUTO", "MANUAL", "EXCEPTION"]}
+      }]
+    },
+    {
+      "ruleId": "TDD-STRUCT-110",
+      "title": "兼容、发布与能力文档影响",
+      "tables": [{
+        "headers": ["影响ID", "设计项ID", "影响对象", "当前行为", "目标行为", "兼容策略", "升级或回滚", "README或能力地图", "发布批次", "验证", "责任人"],
+        "minRows": 1,
+        "defines": {"影响ID": "IMP"},
+        "references": [{"column": "设计项ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "TDD-TRACE-120",
+      "title": "技术追踪矩阵",
+      "tables": [{
+        "headers": ["上游ID", "设计项ID", "测试用例ID", "覆盖说明"],
+        "minRows": 1,
+        "references": [
+          {"column": "上游ID", "prefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"], "required": true},
+          {"column": "设计项ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "IMP"], "required": true},
+          {"column": "测试用例ID", "prefixes": ["TC"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "TDD-GATE-130",
+      "title": "阶段判定与审批",
+      "tables": [{
+        "headers": ["检查项", "结果", "证据"],
+        "minRows": 5,
+        "rowKeys": ["技术设计 checker", "生命周期 handoff", "专项规范检查计划", "未关闭阻断数量", "Tech Lead 审批"]
+      }]
+    }
+  ],
+  "traceability": {
+    "ruleId": "TDD-TRACE-120",
+    "section": "技术追踪矩阵",
+    "localCoveragePrefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"]
+  },
+  "columnRules": [{
+    "ruleId": "TDD-BOUNDARY-001",
+    "section": "API 与远程契约设计",
+    "headers": ["接口ID", "系统需求ID", "调用方", "所属模块", "入口类型", "方法与路径", "Command Query或VO", "返回契约", "校验", "权限租户或数据权限", "幂等分页或排序", "错误码", "兼容策略", "适用规范ruleId", "验证方式"],
+    "columns": {
+      "方法与路径": {
+        "forbiddenPatterns": ["\\{[^}]+\\}"],
+        "requiredPatterns": ["^(?:GET|POST|PUT|PATCH|DELETE)\\s+/[A-Za-z0-9_./-]+$"]
+      },
+      "Command Query或VO": {
+        "forbiddenPatterns": ["\\b[A-Za-z0-9_]*(?:Entity|PO)\\b"]
+      },
+      "返回契约": {
+        "forbiddenPatterns": ["\\b[A-Za-z0-9_]*(?:Entity|PO)\\b", "Map\\s*<\\s*String\\s*,\\s*Object\\s*>"],
+        "requiredPatterns": ["^R<[^<>]+>$"]
+      }
+    }
+  }],
+  "forbidden": {
+    "ruleId": "TDD-BOUNDARY-001",
+    "codeBlocks": false,
+    "literals": ["新增业务目标", "顺便增加功能", "需求以后补", "已经完成开发", "测试已经通过", "发布已经完成"]
+  }
+}

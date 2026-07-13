@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango New Issue Registration"
+  short_description: "Register a new Mango Issue with attributable evidence"
+  default_prompt: "Use $mango-issue-register to register this newly discovered Mango problem with complete evidence."
+policy:
+  allow_implicit_invocation: true

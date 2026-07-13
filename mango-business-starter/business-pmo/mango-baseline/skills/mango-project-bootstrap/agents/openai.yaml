@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango New Project"
+  short_description: "Generate and accept a governed Mango business project"
+  default_prompt: "Use $mango-project-bootstrap to initialize and verify this new Mango business project."
+policy:
+  allow_implicit_invocation: true

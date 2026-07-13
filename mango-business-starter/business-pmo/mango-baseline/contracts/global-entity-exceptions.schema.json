@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mango.local/contracts/global-entity-exceptions.schema.json",
+  "contractId": "global-entity-exceptions-schema",
+  "schemaRevision": 1,
+  "title": "Mango global entity exceptions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractId", "schemaRevision", "version", "exceptions"],
+  "properties": {
+    "contractId": { "const": "global-entity-exceptions" },
+    "schemaRevision": { "const": 1 },
+    "version": { "const": 1 },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entity", "table", "owner", "reason", "approvalRef", "approvedBy", "expiresOn"],
+        "properties": {
+          "entity": { "type": "string", "minLength": 3 },
+          "table": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "owner": { "type": "string", "minLength": 2 },
+          "reason": { "type": "string", "minLength": 10 },
+          "approvalRef": { "type": "string", "minLength": 2 },
+          "approvedBy": { "type": "string", "minLength": 2 },
+          "expiresOn": { "type": "string", "format": "date" }
+        }
+      }
+    }
+  }
+}

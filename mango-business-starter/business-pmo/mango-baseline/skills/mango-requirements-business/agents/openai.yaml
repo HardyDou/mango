@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Business Requirements"
+  short_description: "Write business-only requirements with governed boundaries"
+  default_prompt: "Use $mango-requirements-business to create a business-only requirements document from these source facts."
+policy:
+  allow_implicit_invocation: true

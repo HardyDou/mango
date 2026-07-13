@@ -36,7 +36,7 @@
 
 ## 5. 命名规则
 
-- 后端测试类使用 `XxxTest`、`XxxIntegrationTest` 或 `XxxE2ETest`。
+- 后端测试类使用 `XxxTest`、`XxxIntegrationTest` 或 `XxxFlowTest`；`XxxE2ETest` 只用于浏览器 UI/E2E。
 - 前端测试文件使用 `*.spec.ts` 或 `*.test.ts`。
 - 可复用脚本使用能表达目标的名称，例如 `main-framework-regression`、`enterprise-cli-runtime-regression`。
 - Evidence 目录使用日期和任务名命名，例如 `2026-06-04-main-framework-regression`。
@@ -57,3 +57,12 @@
 - 禁止把依赖缓存、构建产物或运行日志提交到仓库。
 - 禁止只保留截图而没有可复核的验证步骤或报告。
 - 禁止将同一个可复用回归脚本复制到多个长期目录。
+
+## 8. 最新基线保留策略
+
+- 长期测试套件的当前有效基线固定放在 `mango-docs/evidence/baselines/<suite>/latest/`，并包含命令、版本、环境、数据、账号/租户标识、结果和证据索引。
+- 新基线验收通过后替换 `latest/`；旧基线从当前工作树删除，由 Git 历史追溯，禁止并列保留多个“当前基线”。
+- 一次性任务证据可以使用日期目录，但不得冒充长期测试基线。
+- trace、video、完整日志、下载和调试截图属于过程数据，留在 `.runtime/`，只把支撑最终结论的最小证据放入 `latest/`。
+- 正例：`mango-docs/evidence/baselines/pmo-skill-evals/latest/report.json` 指向本次空白上下文用例结果。
+- 反例：提交 `latest-v2-final-new/`、十份过期截图和完整浏览器缓存，并让读者猜哪份仍有效。

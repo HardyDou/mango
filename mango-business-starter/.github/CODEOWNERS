@@ -1,4 +1,11 @@
 /backend/ @backend-team
+/backend/pom.xml @backend-team @tech-lead
+/backend/architecture-verification/ @backend-team @tech-lead
+/backend/config/quality/ @platform-team @tech-lead
+/backend/.mvn/ @platform-team @tech-lead
+/.mvn/ @platform-team @tech-lead
+/.github/CODEOWNERS @platform-team @tech-lead @pmo
+/.github/workflows/ @platform-team @tech-lead @pmo
 /frontend/ @frontend-team
 /business-pmo/ @tech-lead @pmo
 /business-docs/ @pm @tech-lead @qa

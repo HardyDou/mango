@@ -33,16 +33,16 @@
 - 单元测试：验证纯业务规则、复杂分支、状态机、校验器、转换规则和异常路径。
 - 组件测试：验证模块内多个类的协作，可以替换外部系统，但模块内核心链路应真实参与。
 - 集成测试：验证模块协作、数据库、Mapper、事务、Spring 装配、接口契约、资源注入和权限过滤。
-- E2E 测试：验证 app/API/安全过滤器/跨模块主流程，可以替换第三方外部服务，但不能替换 Mango 内部主链路。
-- E2E 测试脚本必须独立、完整、可组合执行；用例不能依赖隐式执行顺序、上一个用例残留状态或人工预置数据。
-- E2E 测试必须能按单个用例、按标签/能力组合、按全量套件执行，并保持相同断言口径。
-- 后端 E2E 使用 JUnit 5 `@Tag` 标识组合维度，至少包含 `e2e` 和能力标签，例如 `auth`、`workflow`、`payment`；涉及慢测或外部依赖时额外标记 `slow` 或 `external`。
-- E2E 用例必须自行创建依赖数据或调用明确 fixture，使用唯一测试数据标识，并在前置或后置步骤清理自身数据。
-- 禁止 E2E 使用 `@TestMethodOrder` 表达业务依赖，禁止跨用例共享可变静态业务状态，禁止用例 A 创建数据供用例 B 验收。
-- 后端 E2E 最小验证入口应覆盖单用例、能力标签和全量套件；无法执行任一组合时，交付记录必须说明阻塞原因和风险。
+- 入口级流程测试：验证 app/API/安全过滤器/跨模块主流程，可以替换第三方外部服务，但不能替换 Mango 内部主链路。
+- 后端入口级流程测试不得称为 E2E；`UI/E2E` 只指从浏览器用户入口执行的端到端测试。
+- 入口级流程测试必须独立、完整、可组合执行；用例不能依赖隐式执行顺序、上一个用例残留状态或人工预置数据。
+- 入口级流程测试必须能按单个用例、按标签/能力组合、按全量套件执行，并保持相同断言口径。
+- 后端入口级流程测试使用 JUnit 5 `@Tag` 标识组合维度，至少包含 `flow` 和能力标签，例如 `auth`、`workflow`、`payment`；涉及慢测或外部依赖时额外标记 `slow` 或 `external`。
+- 入口级流程用例必须自行创建依赖数据或调用明确 fixture，使用唯一测试数据标识，并在前置或后置步骤清理自身数据。
+- 禁止入口级流程测试使用 `@TestMethodOrder` 表达业务依赖，禁止跨用例共享可变静态业务状态，禁止用例 A 创建数据供用例 B 验收。
+- 后端入口级流程测试最小验证入口应覆盖单用例、能力标签和全量套件；无法执行任一组合时，交付记录必须说明阻塞原因和风险。
 - 只做有效测试：测行为、规则、边界、链路，不测 DTO、getter/setter、常量、简单透传、机械装配。
-- 不要求每次都写 E2E。
-- 是否需要前端或 E2E 测试，按需求影响面决定。
+- 不要求每次都写入口级流程测试或 UI/E2E；按 `rules/09-test-case-automation-flow.md` 的 `L0-L3` 决定。
 
 ## 5. 分层归属
 
@@ -50,7 +50,7 @@
 - `common`：测试放各模块 `src/test/java`，只测公共规则、通用工具、SPI 契约和高复用基础逻辑，以 `UnitTest` 为主。
 - `infra`：模块内 `src/test/java` 只放少量复杂局部逻辑测试；跨 `api/support/core/starter/starter-remote` 的能力链路、单体真实链路、多服务协作链路统一放 `mango-infra-test`。
 - `platform`：测试放各模块 `src/test/java`，主要验证业务规则、command/query/usecase/service 链路和模块内部协作，以 `IntegrationTest` 为主。
-- `app`：测试放各 app 模块 `src/test/java`，主要验证端到端业务流程和关键用户主链路，以 `E2ETest` 为主。
+- `app`：测试放各 app 模块 `src/test/java`，主要验证应用入口和关键业务主链路，以 `FlowTest` 为主；存量 `E2ETest` 在修改时迁移。
 
 ## 6. 要测与不测
 
@@ -76,10 +76,10 @@
 - 不得为了避免脏数据而 mock 数据库、Mapper 或持久化结果；需要验证持久化链路时，必须使用隔离测试库、嵌入式数据库或容器数据库。
 - 每个会写库的测试必须自行准备依赖数据，不依赖人工预置数据、其它用例残留数据或隐式执行顺序。
 - 每个会写库的测试必须具备清理策略：事务回滚、`BeforeEach` 清表、`AfterEach` 删除测试数据、销毁容器或销毁一次性 schema。
-- Spring service/mapper 集成测试优先使用 `@Transactional` 自动回滚；不适合回滚的异步、跨线程、消息、调度或 E2E 测试必须显式清理自身数据。
-- 测试数据必须可识别，推荐使用 `TEST_`、`IT_`、`E2E_` 加能力或 issue 编号作为前缀；批量数据必须带唯一业务键，便于定位和清理。
+- Spring service/mapper 集成测试优先使用 `@Transactional` 自动回滚；不适合回滚的异步、跨线程、消息、调度或入口级流程测试必须显式清理自身数据。
+- 测试数据必须可识别，推荐使用 `TEST_`、`IT_`、`FLOW_` 加能力或 issue 编号作为前缀；批量数据必须带唯一业务键，便于定位和清理。
 - 测试清理只能清理本测试创建的数据或隔离测试库内的数据；禁止在共享库上执行无条件 `truncate`、全表 `delete` 或破坏性初始化。
-- E2E 测试必须使用专用测试库、专用测试租户或专用测试账号；用例必须独立创建数据，并在前置或后置步骤清理自身数据。
+- 入口级流程测试必须使用专用测试库、专用测试租户或专用测试账号；用例必须独立创建数据，并在前置或后置步骤清理自身数据。
 
 ## 9. 数据库物料选择
 
@@ -91,13 +91,13 @@
 | Spring service 持久化链路 | H2 或 Testcontainers，加真实 Mapper 和事务管理 | 覆盖 service 到 mapper 到数据库链路 |
 | resource handler 资源注入落库 | H2 或 Testcontainers，加真实目标 Mapper | 覆盖资源声明解析和落库链路 |
 | 异步、消息、调度、跨线程 | 隔离测试库加唯一测试数据和显式清理 | 覆盖异步副作用，不能依赖事务回滚 |
-| app/API/E2E 主流程 | 专用测试库、测试租户、测试账号 | 覆盖跨模块主链路和清理能力 |
+| app/API 入口主流程 | 专用测试库、测试租户、测试账号 | 覆盖跨模块主链路和清理能力 |
 
 ## 10. 命名规则
 
 - 测试类名使用 `XxxTest`。
 - 测试方法名使用 `方法_场景_结果`。
-- 推荐用意图区分测试层次：`*UnitTest`、`*IntegrationTest`、`*E2ETest`。
+- 推荐用意图区分测试层次：`*UnitTest`、`*IntegrationTest`、`*FlowTest`；`*E2ETest` 保留给浏览器 UI/E2E。
 - 测试类名如果以实现类型开头，测试物料必须和类名一致：
   - `RedisXxxTest` 必须使用 Redis 实现或真实 Redis 集成物料。
   - `JdbcXxxTest` 必须使用 JDBC 实现和数据库物料。
@@ -127,11 +127,13 @@
 
 - `mvn test`
 - `mvn verify`
+- Java/Spring 架构专项调试可执行 `mvn mango:architecture`，正式验收仍以 `mvn verify` 为准
 - `mvn pmd:check`
 - `mvn checkstyle:check`
 - `mvn mango:check`
 - 涉及 KV、缓存、锁、限流、幂等、token、id 等能力时，执行 `mvn mango:check -Drule=test-fixture`
 - 修改后端测试或新增 Mockito/test double 时，执行 `node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` 并说明新增风险。
+- 修改测试时执行 `node mango-pmo/tools/test-quality-check.mjs --base origin/main`，确定性拦截恒真断言、同值断言和 mock 被测对象。
 
 ## 14. 交付要求
 
