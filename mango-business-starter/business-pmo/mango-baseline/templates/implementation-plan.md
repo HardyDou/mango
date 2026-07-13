@@ -3,8 +3,8 @@ documentId: {{DOCUMENT_ID}}
 documentType: implementation-plan
 pmoVersion: {{PMO_VERSION}}
 schemaRevision: 1
-riskLevel: {{RISK_LEVEL}}
-riskAssessmentEvidence: {{RISK_ASSESSMENT_EVIDENCE}}
+riskLevel: {{FINAL_RISK_LEVEL_FROM_TDD}}
+riskAssessmentEvidence: {{FINAL_RISK_EVIDENCE_FROM_TDD}}
 status: DRAFT
 action: WRITE
 owner: {{OWNER}}

@@ -2,6 +2,7 @@ name: PMO Documentation Checks
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   push:
     branches:
       - main
@@ -18,26 +19,68 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      - name: Classify affected Maven scope
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node business-pmo/mango-baseline/tools/classify-pmo-check-scope.mjs \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --output "$GITHUB_OUTPUT"
+
+      - name: Write PR body
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > .pr-body.md
+
+      - name: Check impact-driven risk and verification contract
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY_FILE: .pr-body.md
+        run: node business-pmo/mango-baseline/tools/risk-verification.mjs
+
       - name: Check PMO document contracts
         run: >-
           node business-pmo/mango-baseline/tools/check-document-set.mjs
           --root business-docs
+
       - name: Set up Java
+        if: steps.scope.outputs.backend == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Verify backend and Mango architecture
+
+      - name: Validate backend governance POMs
+        if: steps.scope.outputs.backend_mode == 'governance'
         run: >-
           mvn -B -ntp -f backend/pom.xml
-          -Dmango.architecture.mode=full
+          -pl architecture-verification
+          -DskipTests
+          help:effective-pom
+
+      - name: Verify affected backend modules and Mango architecture
+        if: steps.scope.outputs.backend_mode == 'partial'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
+          MAVEN_PROJECTS: ${{ steps.scope.outputs.maven_projects }}
+        run: >-
+          mvn -B -ntp -f backend/pom.xml
+          -pl "$MAVEN_PROJECTS"
+          -Dmango.architecture.mode=changed
+          -Dmango.architecture.base="$BASE_SHA"
           -Dmango.architecture.skip=false
-          -Dmango.architecture.requireFullReactor=true
+          -Dmango.architecture.requireFullReactor=false
           -Dmango.check.rule=all
           -Dmango.check.gate=all
           -Dmango.check.staticFailurePolicy=block

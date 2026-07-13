@@ -3,8 +3,8 @@ documentId: {{DOCUMENT_ID}}
 documentType: technical-design
 pmoVersion: {{PMO_VERSION}}
 schemaRevision: 1
-riskLevel: {{RISK_LEVEL}}
-riskAssessmentEvidence: {{RISK_ASSESSMENT_EVIDENCE}}
+riskLevel: {{FINAL_RISK_LEVEL}}
+riskAssessmentEvidence: requirement={{REQUIREMENT_IMPACT_LEVEL_AND_EVIDENCE}}; solution={{SOLUTION_RISK_LEVEL_AND_EVIDENCE}}; final=max(requirement,solution)
 status: DRAFT
 action: WRITE
 owner: {{OWNER}}

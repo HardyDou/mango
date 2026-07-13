@@ -24,6 +24,7 @@ function parseArgs(argv) {
     modules: [],
     write: false,
     acceptIncrease: false,
+    baselineOnly: false,
     reason: '',
     json: false
   };
@@ -33,6 +34,8 @@ function parseArgs(argv) {
       args.write = true;
     } else if (arg === '--accept-increase') {
       args.acceptIncrease = true;
+    } else if (arg === '--baseline-only') {
+      args.baselineOnly = true;
     } else if (arg === '--json') {
       args.json = true;
     } else if (arg === '--module') {
@@ -62,6 +65,9 @@ function parseArgs(argv) {
   }
   if (args.acceptIncrease && args.modules.length > 0) {
     throw new Error('--module cannot be combined with --accept-increase');
+  }
+  if (args.baselineOnly && (args.write || args.acceptIncrease || args.modules.length > 0)) {
+    throw new Error('--baseline-only cannot be combined with --write, --accept-increase, or --module');
   }
   return args;
 }
@@ -608,9 +614,8 @@ function checkAgainstBase(baseDocument, baseline, current) {
   }
   if (baseline.acceptedIncreaseReason !== null) {
     return {
-      passed: false,
-      action: 'stale-increase-reason',
-      message: 'Accepted-increase metadata is stale because the budget did not increase relative to the PR base.',
+      passed: true,
+      action: 'historical-increase-recorded',
       base: baseDocument.value,
       baseline,
       current,
@@ -812,8 +817,26 @@ function resultForGlobal(args, baselineDocument, current, baseline, baselinePath
 }
 
 function resultFor(args) {
-  const reportPath = path.resolve(args.report);
   const baselinePath = path.resolve(args.baseline);
+  if (args.baselineOnly) {
+    if (!fs.existsSync(baselinePath)) {
+      return {
+        passed: false,
+        action: 'initialize',
+        message: `Architecture debt budget is missing: ${baselinePath}`
+      };
+    }
+    const baselineDocument = readJsonDocument(baselinePath, 'architecture debt budget');
+    const baseline = baselineDocument.value;
+    validateBudget(baseline, 'architecture debt budget', { allowLegacy: true });
+    const baseDocument = readBaseBudget(args, baselinePath);
+    if (!baseDocument) {
+      throw new Error('--baseline-only requires --base-ref or --base-budget');
+    }
+    return checkAgainstBase(baseDocument, baseline, baseline);
+  }
+
+  const reportPath = path.resolve(args.report);
   const report = readJsonDocument(reportPath, 'architecture report').value;
   const current = budgetFromReport(report, reportPath);
   validateBudget(current, 'current architecture budget');

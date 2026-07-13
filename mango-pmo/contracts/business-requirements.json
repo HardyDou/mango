@@ -25,7 +25,7 @@
     ],
     "fixed": {
       "documentType": "business-requirements",
-      "pmoVersion": "1.1.1",
+      "pmoVersion": "1.2.0",
       "schemaRevision": "1",
       "upstreamDocumentId": "NONE",
       "upstreamDocumentHash": "NONE"

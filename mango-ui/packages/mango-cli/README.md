@@ -8,7 +8,7 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.69` |
+| 当前版本 | `1.0.70` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
@@ -62,9 +62,9 @@ CLI 不负责：
 使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
 
 ```bash
-npm view @mango/pmo@1.1.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.69 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.69 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.2.0 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.70 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.70 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -83,7 +83,7 @@ pnpm exec mango dev start
 
 业务仓日常开发以项目内锁定的 `@mango/cli` 为准。进入生成项目的 `frontend` 后先安装依赖，再用 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能是旧全局入口，不能作为业务项目 CLI 版本依据。
 
-生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --to 1.1.1 --sync-shell`；已经锁定到该 bundle 的项目只需用 `mango pmo sync --project-dir . --sync-shell` 修复当前锁。随后进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
+生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --to 1.2.0 --sync-shell`；已经锁定到该 bundle 的项目只需用 `mango pmo sync --project-dir . --sync-shell` 修复当前锁。随后进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
 
 生成 custom 项目：
 
@@ -111,7 +111,7 @@ mango pmo check --project-dir demo-custom
 mango pmo check --project-dir demo-custom --locked
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
-mango pmo upgrade --project-dir demo-custom --to 1.1.1
+mango pmo upgrade --project-dir demo-custom --to 1.2.0
 mango pmo rollback --project-dir demo-custom --dry-run
 ```
 
@@ -126,7 +126,7 @@ mango docs path --project-dir demo-custom
 `mango docs pull` 默认从项目 `mango.config.json.mavenRepository` 拉取 `io.mango:mango-docs-bundle:<mangoBackendVersion>:jar`。业务仓没有 Mango 源码时，AI 和开发者应先读取 `mango docs path` 输出目录下的同版本文档，再参考在线文档或历史上下文。需要临时验证其它版本或仓库时使用：
 
 ```bash
-mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository http://nexus.inner.yunxinbaokeji.com/repository/maven-public/ --force
+mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository https://nexus.inner.yunxinbaokeji.com/repository/maven-public/ --force
 ```
 
 ## 6. 配置说明
@@ -143,7 +143,7 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository htt
 | `--version` | `1.0.0-SNAPSHOT` | 生成项目版本 | 渲染 Maven 和前端业务包版本 | `buildVariables` |
 | `--mango-version` | `release-versions.json` 的 `maven.mangoBackend` | Mango 后端 Maven 版本 | 写入生成项目 Maven 依赖版本 | `defaultVersions` |
 | `--npm-registry` | [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) | 生成项目 `.npmrc` registry | 前端安装 Mango NPM 包时使用 | `parseArgs` |
-| `--maven-repository` | [maven-public](http://nexus.inner.yunxinbaokeji.com/repository/maven-public/) | 生成项目 Maven 仓库 | 后端拉取 Mango Maven 包时使用 | `parseArgs` |
+| `--maven-repository` | [maven-public](https://nexus.inner.yunxinbaokeji.com/repository/maven-public/) | 生成项目 Maven 仓库 | 后端拉取 Mango Maven 包时使用 | `parseArgs` |
 | `--force` | `false` | 目标目录已存在时是否覆盖 | 为 true 时先删除目标目录再生成 | `main` |
 
 ### 6.2 mango.config.json
@@ -410,7 +410,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 已有业务项目同步：
 
 1. 在项目根目录确认有 `mango.config.json` 和 `mango.dev.json`。
-2. 首次迁移或升版先执行 `mango pmo upgrade --project-dir . --to 1.1.1 --dry-run` 查看计划。
+2. 首次迁移或升版先执行 `mango pmo upgrade --project-dir . --to 1.2.0 --dry-run` 查看计划。
 3. 确认后执行相同 upgrade 命令，并用 `mango pmo check --project-dir . --locked` 校验项目锁、baseline 和项目 Skill。
 4. 已锁定项目发生文件漂移时执行 `mango pmo sync --project-dir .` 修复当前锁，不用 sync 隐式升版。
 5. 需要恢复时先执行 `mango pmo rollback --project-dir . --dry-run`；只有明确要同步兼容启动脚本时才加 `--sync-shell`。
@@ -436,6 +436,12 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | `mango dev logs <app>` 找不到日志 | 应用未通过 `mango dev start` 启动 | 先执行 `mango dev start <app>` |
 
 ## 12. 相关文档
+
+### 1.0.70 发布影响
+
+`@mango/cli@1.0.70` 精确依赖 `@mango/pmo@1.2.0`。新生成或升级后的业务项目使用需求影响与解决方案风险的最大值作为最终等级，PR 只从 `STATIC`、`UNIT`、`API`、`UI` 中选择能够证明验收结果的最小充分集合。`pmo-doc-check` 的稳定名称不变；普通后端质量门禁通过 Git 路径只选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大扫描范围。依赖构建和消费者兼容性由独立验证承担；PMO 同步、文档或前端局部改动不启动后端 Reactor。Mango Maven 锁定 `1.0.17`，该版本移除了插件委托静态分析时的隐藏 Reactor 扩展。
+
+升级后先填写 `.github/pull_request_template.md` 的 `Risk / Verification`，再用 `mango pmo check --project-dir . --locked` 校验 baseline、项目 Skill 和锁。仅移动按钮位置且行为不变时可以记录 L0、选择 `STATIC, UI`，以定向截图证明位置，并说明跳过 UNIT/API 的理由。
 
 ### 1.0.69 发布影响
 

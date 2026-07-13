@@ -26,7 +26,7 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
 
 ## Execute
 
-1. Establish the L0-L3 risk level. This four-document stage applies to L2/L3; for L0/L1, do not fabricate an SRS and route back to the approved lightweight lifecycle path. For L2/L3, locate the approved Business Requirements Document and verify it with its dedicated checker.
+1. Refine the L0-L3 impact assessment using observable system-entry, behavior, data and non-functional facts; do not lower the BRD level or assume implementation details. This four-document stage applies to L2/L3; for L0/L1, do not fabricate an SRS and route back to the approved lightweight lifecycle path. For L2/L3, locate the approved Business Requirements Document and verify it with its dedicated checker.
 2. Choose one action:
    - `STOP`: the upstream document is absent, unapproved, invalid, or the request asks for implementation design.
    - `ASK`: a required externally observable system fact cannot be traced to approved business input or verified repository facts.

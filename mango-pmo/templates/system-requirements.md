@@ -3,8 +3,8 @@ documentId: {{DOCUMENT_ID}}
 documentType: system-requirements
 pmoVersion: {{PMO_VERSION}}
 schemaRevision: 1
-riskLevel: {{RISK_LEVEL}}
-riskAssessmentEvidence: {{RISK_ASSESSMENT_EVIDENCE}}
+riskLevel: {{SYSTEM_IMPACT_LEVEL}}
+riskAssessmentEvidence: {{SYSTEM_IMPACT_EVIDENCE}}
 status: DRAFT
 action: WRITE
 owner: {{OWNER}}

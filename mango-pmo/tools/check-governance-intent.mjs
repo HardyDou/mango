@@ -174,18 +174,29 @@ assertNotIncludes('mango-pmo/templates/module-readme.md', ['## 10. 验证方式'
 assertIncludes('.github/pull_request_template.md', [
   '## PMO / Scope',
   '## Capability Docs',
+  '## Risk / Verification',
+  'Requirement impact:',
+  'Solution risk:',
+  'Selected verification:',
   '## Validation',
   '## PMO Exceptions'
 ], failures);
 assertNotIncludes('.github/pull_request_template.md', ['Not applicable reason'], failures);
 
 assertIncludes('.github/workflows/pmo-doc-check.yml', [
+  'node mango-pmo/tools/classify-pmo-check-scope.mjs',
+  'node mango-pmo/tools/risk-verification.mjs',
+  "steps.scope.outputs.backend_mode == 'partial'",
   'node mango-pmo/tools/check-governance-intent.mjs',
   'node mango-pmo/tools/audit-module-readmes.mjs',
   'node mango-pmo/tools/audit-readme-source-facts.mjs',
   'github.event.pull_request.base.sha',
   'github.event.pull_request.head.sha',
   'PR_BODY_FILE'
+], failures);
+assertNotIncludes('.github/workflows/pmo-doc-check.yml', [
+  '\n            -am \\',
+  '\n            -amd \\'
 ], failures);
 
 assertIncludes('mango-pmo/rules/05-ai-delivery-quality.md', [

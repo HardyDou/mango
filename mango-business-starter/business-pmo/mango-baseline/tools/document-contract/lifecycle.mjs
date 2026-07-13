@@ -88,9 +88,6 @@ export function validateLifecycle(documents, options = {}) {
     if (meta.status !== 'APPROVED' || meta.action !== 'NEXT') {
       addFinding(findings, RULES.gate, `${stage.type} 必须经过外部门禁并处于 APPROVED/NEXT`);
     }
-    if (riskLevel && meta.riskLevel !== riskLevel) {
-      addFinding(findings, RULES.risk, `${stage.type} 风险等级 ${meta.riskLevel} 与入口 ${riskLevel} 不一致`);
-    }
   }
 
   const available = STAGES.map((stage) => results[stage.key]).filter(Boolean);
@@ -101,9 +98,41 @@ export function validateLifecycle(documents, options = {}) {
     addFinding(findings, RULES.risk, `${riskLevel} 任务必须保留${scope}`);
   }
   if (available.length > 0) {
-    const levels = new Set(available.map((entry) => entry.result.ast.frontmatter.values.riskLevel));
-    if (levels.size > 1) addFinding(findings, RULES.risk, `四阶段风险等级不一致：${[...levels].join(', ')}`);
-    const effectiveRisk = riskLevel || available[0].result.ast.frontmatter.values.riskLevel;
+    for (let index = 1; index < available.length; index += 1) {
+      const upstream = available[index - 1];
+      const downstream = available[index];
+      const upstreamRisk = upstream.result.ast.frontmatter.values.riskLevel;
+      const downstreamRisk = downstream.result.ast.frontmatter.values.riskLevel;
+      const upstreamIndex = Object.keys(LIFECYCLE_CONTRACT.requiredStagesByRisk).indexOf(upstreamRisk);
+      const downstreamIndex = Object.keys(LIFECYCLE_CONTRACT.requiredStagesByRisk).indexOf(downstreamRisk);
+      if (upstreamIndex >= 0 && downstreamIndex >= 0 && downstreamIndex < upstreamIndex) {
+        addFinding(
+          findings,
+          RULES.risk,
+          `${downstream.type} 风险等级 ${downstreamRisk} 低于上游 ${upstream.type} 的 ${upstreamRisk}；风险只能基于新增事实升级，禁止下游降级`,
+        );
+      }
+    }
+
+    const target = throughIndex >= 0
+      ? results[STAGES[throughIndex].key]
+      : available.at(-1);
+    if (riskLevel && target) {
+      const targetRisk = target.result.ast.frontmatter.values.riskLevel;
+      if (targetRisk !== riskLevel) {
+        addFinding(findings, RULES.risk, `${target.type} 风险等级 ${targetRisk} 与当前入口 ${riskLevel} 不一致`);
+      }
+    }
+
+    if (results.tdd && results.plan) {
+      const tddRisk = results.tdd.result.ast.frontmatter.values.riskLevel;
+      const planRisk = results.plan.result.ast.frontmatter.values.riskLevel;
+      if (tddRisk !== planRisk) {
+        addFinding(findings, RULES.risk, `technical-design 与 implementation-plan 必须使用同一最终风险等级：${tddRisk} != ${planRisk}`);
+      }
+    }
+
+    const effectiveRisk = riskLevel || available.at(-1).result.ast.frontmatter.values.riskLevel;
     if (!riskLevel && throughIndex < 0 && ['L2', 'L3'].includes(effectiveRisk) && available.length !== STAGES.length) {
       addFinding(findings, RULES.risk, `${effectiveRisk} 复杂任务必须保留完整 BRD/SRS/TDD/Plan 链路`);
     }

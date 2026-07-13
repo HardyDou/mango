@@ -28,14 +28,14 @@ Run PMO preflight with role `tech-lead` and phase `design`, then read every `Mus
 
 ## Execute
 
-1. Establish the L0-L3 risk level. This four-document stage applies to L2/L3; for L0/L1, do not fabricate a TDD and route back to the approved lightweight lifecycle path. For L2/L3, locate the approved System Requirements Specification, verify it, and inspect affected Mango source and public contracts.
+1. Read the approved requirement/system impact, then assess the selected solution's blast radius, coupling, failure consequences, recovery effort and uncertainty. Set final L0-L3 to the maximum and never below SRS. If a lightweight path rises to L2/L3, stop implementation and complete the four-document chain. For L2/L3, locate the approved System Requirements Specification, verify it, and inspect affected Mango source and public contracts.
 2. Choose one action:
    - `STOP`: upstream requirements are absent, unapproved, invalid, or the request asks this stage to invent business scope.
    - `ASK`: a design decision cannot be derived from approved requirements, repository facts, or loaded Mango rules.
    - `WRITE`: inputs satisfy the rule; fill the official template and trace every design decision to upstream requirements.
 3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-technical-design.mjs" --document <document-path>`.
 4. Validate every API design against the loaded backend API/module rules, including the path-variable ban, protocol-model boundary and api/core/starter/starter-remote ownership.
-5. Run the lifecycle checker with BRD, SRS and TDD through `--through tdd`; require valid hashes and trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
+5. Map every acceptance outcome to the lowest-cost sufficient `STATIC/UNIT/API/UI` type, record why the selected set is sufficient and why each omitted type is unnecessary. Then run the lifecycle checker with BRD, SRS and TDD through `--through tdd`; require valid hashes, nondecreasing risk, trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
 6. Return `NEXT: $mango-plan-implementation` only when the dedicated checker, staged lifecycle handoff, specialized design checks, gate table and human approval all pass.
 
 With an empty context or no approved upstream document, return `STOP` and identify the missing prerequisite.

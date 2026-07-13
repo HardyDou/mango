@@ -41,11 +41,18 @@ function readFixture(relativePath) {
   return fs.readFileSync(path.join(FIXTURES, relativePath), 'utf8');
 }
 
-function hydrateLifecycle() {
-  const brd = readFixture('valid/business-requirements.md');
-  const srs = readFixture('valid/system-requirements.md').replace('0'.repeat(64), sha256(brd));
-  const tdd = readFixture('valid/technical-design.md').replace('0'.repeat(64), sha256(srs));
-  const plan = readFixture('valid/implementation-plan.md').replace('0'.repeat(64), sha256(tdd));
+function hydrateLifecycle(levels = {}) {
+  const brd = readFixture('valid/business-requirements.md')
+    .replace('riskLevel: L2', `riskLevel: ${levels.brd ?? 'L2'}`);
+  const srs = readFixture('valid/system-requirements.md')
+    .replace('riskLevel: L2', `riskLevel: ${levels.srs ?? 'L2'}`)
+    .replace('0'.repeat(64), sha256(brd));
+  const tdd = readFixture('valid/technical-design.md')
+    .replace('riskLevel: L2', `riskLevel: ${levels.tdd ?? 'L2'}`)
+    .replace('0'.repeat(64), sha256(srs));
+  const plan = readFixture('valid/implementation-plan.md')
+    .replace('riskLevel: L2', `riskLevel: ${levels.plan ?? 'L2'}`)
+    .replace('0'.repeat(64), sha256(tdd));
   return {
     brd: { source: brd, resolved: path.join(FIXTURES, 'valid/business-requirements.md') },
     srs: { source: srs, resolved: path.join(FIXTURES, 'valid/system-requirements.md') },
@@ -90,12 +97,12 @@ for (const stage of STAGES) {
 test('文档 pmoVersion 必须与版本化合同一致', () => {
   const contract = loadContract('mango-pmo/contracts/business-requirements.json');
   const source = readFixture('valid/business-requirements.md').replace(
-    'pmoVersion: 1.1.1',
+    'pmoVersion: 1.2.0',
     'pmoVersion: 9.9.9'
   );
   const result = validateDocument(source, contract);
   assert.ok(result.findings.some((finding) =>
-    finding.ruleId === 'BRD-META-001' && finding.message.includes('pmoVersion 必须为 1.1.1')));
+    finding.ruleId === 'BRD-META-001' && finding.message.includes('pmoVersion 必须为 1.2.0')));
 });
 
 test('NEXT 的本地审批证据必须存在且禁止路径穿越', () => {
@@ -167,6 +174,39 @@ test('反例变异必须命中声明的 ruleId', () => {
 test('完整 L2 生命周期通过摘要、审批和双向追踪检查', () => {
   const result = validateLifecycle(hydrateLifecycle(), { riskLevel: 'L2' });
   assert.deepEqual(result.findings, []);
+});
+
+test('需求影响可以在技术方案阶段升级并由实施计划继承最终等级', () => {
+  const result = validateLifecycle(
+    hydrateLifecycle({ brd: 'L1', srs: 'L1', tdd: 'L2', plan: 'L2' }),
+    { riskLevel: 'L2' },
+  );
+  assert.deepEqual(result.findings, []);
+});
+
+test('下游阶段禁止把已识别风险降级', () => {
+  const result = validateLifecycle(
+    hydrateLifecycle({ brd: 'L2', srs: 'L1', tdd: 'L2', plan: 'L2' }),
+    { riskLevel: 'L2' },
+  );
+  assert.ok(result.findings.some(finding =>
+    finding.ruleId === 'LIFE-RISK-001' && finding.message.includes('禁止下游降级')));
+});
+
+test('入口风险必须匹配当前阶段，TDD 和 Plan 必须保持同一最终等级', () => {
+  const entryMismatch = validateLifecycle(
+    hydrateLifecycle({ brd: 'L1', srs: 'L1', tdd: 'L2', plan: 'L2' }),
+    { riskLevel: 'L1' },
+  );
+  assert.ok(entryMismatch.findings.some(finding =>
+    finding.ruleId === 'LIFE-RISK-001' && finding.message.includes('与当前入口 L1 不一致')));
+
+  const finalMismatch = validateLifecycle(
+    hydrateLifecycle({ brd: 'L1', srs: 'L1', tdd: 'L2', plan: 'L3' }),
+    { riskLevel: 'L3' },
+  );
+  assert.ok(finalMismatch.findings.some(finding =>
+    finding.ruleId === 'LIFE-RISK-001' && finding.message.includes('必须使用同一最终风险等级')));
 });
 
 test('业务文档集合自动发现并检查四阶段文档', (t) => {

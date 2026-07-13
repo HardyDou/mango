@@ -1,5 +1,51 @@
 # Mango Changelog
 
+## v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release - 2026-07-13
+
+### Changed
+
+- Replace keyword/line-count risk grading with two explicit assessments: requirement impact and solution risk. The final L0-L3 level is their maximum; BRD/SRS hold impact pre-assessments, TDD fixes the final level, and Plan inherits it without downgrade.
+- Add a required PR contract for the selected `STATIC/UNIT/API/UI` set, why it proves the acceptance outcome, and concrete reasons for every skipped type. A behavior-neutral button-position change can remain L0 with static review and a targeted screenshot; backend L3 work without a browser entry is not forced to add UI.
+- Add machine gates and regression cases for risk maximum calculation, lifecycle risk escalation/no-downgrade, same requirement with different solution risks, one-line tenant changes, backend-only L3, and real transaction/tenant evidence.
+- Keep `PMO Documentation Checks / pmo-doc-check` stable while classifying its internal work by changed paths. Frontend/docs/PMO-only changes skip Java; ordinary backend quality gates select only directly changed Maven modules and do not use `-am` or `-amd`. Dependency builds and consumer compatibility remain separate verification concerns.
+- Keep architecture-tool build preparation separate from the quality gate: a clean runner explicitly installs the `mango-parent`, `mango-common`, and `mango-tools` prerequisite projects before testing the two gate modules, without expanding either build or quality scope through `-am` or `-amd`.
+- Move the 212-module historical architecture inventory exclusively to the scheduled/manual `Mango Architecture Debt Inventory` workflow. Root/parent POM, architecture rule/plugin, debt baseline, or gate workflow changes use governance mode in PRs: current gate unit tests, baseline-only anti-increase validation, POM validation, and generated-business-backend acceptance replace a repeated full Reactor scan.
+- Make generated business projects default to the HTTPS Nexus endpoint, while GitHub generated-backend acceptance uses only explicitly built local Mango artifacts and never connects to the internal Nexus.
+- Adopt the PMO 1.2.0 / Mango Maven 1.0.17 rule expansion's 9,182 detected findings as an explicitly approved historical budget from a complete 212-module report. The schema-v4 budget records every module independently; subsequent budgets may only decrease and cannot move debt between modules. The base-bound acceptance remains inert audit evidence after merge and cannot authorize a later increase.
+- Remove hidden `-am` expansion from the Maven quality plugin's delegated PMD, Checkstyle, and SpotBugs commands, and ship the same direct-module behavior through Mango Maven `1.0.17`, `@mango/pmo@1.2.0`, and `@mango/cli@1.0.70`.
+
+### Upgrade Notes
+
+1. Publish and verify the non-app Mango Maven `1.0.17` batch before publishing the npm packages; then install `@mango/cli@1.0.70` from `npm-group` after all target packages are visible.
+2. Run `mango pmo upgrade --project-dir . --to 1.2.0`, then `mango pmo check --project-dir . --locked` in each business repository.
+3. Fill the generated PR template's requirement impact, solution risk, final maximum, selected verification, sufficiency, and skipped-type reasons. Editing the PR body retriggers the required check.
+4. Upgrade business backends to Mango Maven `1.0.17`; `1.0.16` still expands delegated static-analysis commands with `-am` and cannot provide the direct-module quality-gate contract.
+5. Existing historical debt remains non-blocking for unrelated changes. Use the full inventory workflow before writing a global or per-module reduced debt budget.
+
+### Published Packages
+
+The release state machine owns the following target batch; statuses remain pending until registry and GitHub Release back-checks complete.
+
+| Order | Target | Version / destination | Status |
+|---|---|---|---|
+| 1 | Maven non-app backend batch | `io.mango:*:1.0.17` -> Nexus Maven hosted | `PENDING` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
+| 3 | npm CLI | `@mango/cli@1.0.70` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
+| 4 | GitHub Release | `v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release` | `PENDING` |
+
+### Verification
+
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs mango-pmo/tests/pmo-check-scope.test.mjs mango-pmo/tests/risk-verification.test.mjs`
+- `node mango-pmo/tests/skills/check-skill-evals.mjs`
+- `node mango-pmo/tools/check-governance-intent.mjs`
+- Direct-module Maven gate verification passed without `-am` or `-amd`: the Reactor contained only `mango-system-core` and `mango-architecture-verification`, completed in 18.286s, and delegated PMD, Checkstyle, and SpotBugs commands contained neither expansion flag.
+- `node mango-ui/packages/mango-pmo/scripts/build-package.mjs`
+- `node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+
 ## v2026.07.13-pmo-1.1.1-cli-1.0.69-release - 2026-07-13
 
 ### Changed

@@ -21,7 +21,7 @@ const businessStarterRoot = existsSync(businessModuleTemplateRoot)
   : resolve(repoRoot, 'mango-business-starter');
 const releaseVersions = readReleaseVersions();
 const adminModulesManifest = readAdminModulesManifest();
-const DEFAULT_MAVEN_REPOSITORY = 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
+const DEFAULT_MAVEN_REPOSITORY = 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 const DOCS_BUNDLE_GROUP_ID = 'io.mango';
 const DOCS_BUNDLE_ARTIFACT_ID = 'mango-docs-bundle';
 
@@ -631,7 +631,7 @@ function addModules(argv) {
     version: config.projectVersion || '1.0.0-SNAPSHOT',
     mangoVersion: config.mangoBackendVersion || defaultVersions.mangoBackend,
     npmRegistry: config.npmRegistry || 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
-    mavenRepository: config.mavenRepository || 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+    mavenRepository: config.mavenRepository || DEFAULT_MAVEN_REPOSITORY,
     modules: mergedCodes.join(','),
   };
   const variables = buildVariables(projectOptions);
@@ -673,7 +673,7 @@ function addBusinessModule(argv) {
       version: config.projectVersion || '1.0.0-SNAPSHOT',
       mangoVersion: config.mangoBackendVersion || defaultVersions.mangoBackend,
       npmRegistry: config.npmRegistry || 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
-      mavenRepository: config.mavenRepository || 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+      mavenRepository: config.mavenRepository || DEFAULT_MAVEN_REPOSITORY,
       modules: (config.modules?.optional || []).join(','),
     }),
     moduleKebab,
