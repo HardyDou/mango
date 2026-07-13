@@ -71,11 +71,11 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Build the architecture gate test dependency
+      - name: Build the architecture gate prerequisites
         if: steps.scope.outputs.backend == 'true'
         run: |
           mvn -f mango/pom.xml \
-            -pl :mango-common \
+            -pl :mango-parent,:mango-common,:mango-tools \
             -DskipTests \
             install
 
