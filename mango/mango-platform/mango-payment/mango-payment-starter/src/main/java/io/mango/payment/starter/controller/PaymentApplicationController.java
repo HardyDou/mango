@@ -41,15 +41,15 @@ public class PaymentApplicationController implements PaymentApplicationApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:application:list")
     @Operation(summary = "分页查询支付应用", description = "按当前租户查询支付接入应用")
     public R<PageResult<PaymentApplicationVO>> pageApplications(@ParameterObject PaymentConfigPageQuery query) {
-        return applicationService.pageApplications(query);
+        return R.ok(applicationService.pageApplications(query));
     }
 
     @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:application:query")
     @Operation(summary = "查询支付应用详情", description = "按应用 ID 查询支付接入应用详情")
-    public R<PaymentApplicationVO> detailApplication(@Parameter(description = "应用 ID", required = true) @RequestParam Long id) {
-        return applicationService.detailApplication(id);
+    public R<PaymentApplicationVO> detailApplication(@Parameter(description = "应用 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(applicationService.detailApplication(id));
     }
 
     @Override
@@ -57,7 +57,7 @@ public class PaymentApplicationController implements PaymentApplicationApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:application:add")
     @Operation(summary = "新增支付应用", description = "创建支付接入应用")
     public R<PaymentApplicationSaveResultVO> createApplication(@Valid @RequestBody CreatePaymentApplicationCommand command) {
-        return applicationService.createApplication(command);
+        return R.ok(applicationService.createApplication(command));
     }
 
     @Override
@@ -65,14 +65,14 @@ public class PaymentApplicationController implements PaymentApplicationApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:application:edit")
     @Operation(summary = "修改支付应用", description = "更新支付接入应用")
     public R<PaymentApplicationSaveResultVO> updateApplication(@Valid @RequestBody UpdatePaymentApplicationCommand command) {
-        return applicationService.updateApplication(command);
+        return R.ok(applicationService.updateApplication(command));
     }
 
     @Override
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:application:delete")
     @Operation(summary = "删除支付应用", description = "受控逻辑删除支付接入应用；存在收银台、订单、流水、通知、差异等关联数据时拒绝删除")
-    public R<Boolean> deleteApplication(@Parameter(description = "应用 ID", required = true) @RequestParam Long id) {
-        return applicationService.deleteApplication(id);
+    public R<Boolean> deleteApplication(@Parameter(description = "应用 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(applicationService.deleteApplication(id));
     }
 }

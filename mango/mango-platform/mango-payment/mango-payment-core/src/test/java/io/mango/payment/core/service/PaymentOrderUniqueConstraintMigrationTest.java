@@ -128,7 +128,8 @@ class PaymentOrderUniqueConstraintMigrationTest {
                     (case when success_flag = 1 then business_order_id else null end),
                   pay_time timestamp,
                   updated_at timestamp,
-                  tenant_id bigint not null,
+                  tenant_id varchar(64) not null,
+                    org_id bigint,
                   primary key (id),
                   unique key uk_payment_order_channel_trade (tenant_id, channel_code, channel_trade_no),
                   unique key uk_payment_order_success_business (tenant_id, success_business_order_id)

@@ -10,7 +10,7 @@ import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentDifferenceActionVO;
 import io.mango.payment.api.vo.PaymentDifferenceStatusVO;
 import io.mango.payment.api.vo.PaymentDifferenceVO;
-import io.mango.payment.core.service.PaymentDifferenceService;
+import io.mango.payment.core.service.IPaymentDifferenceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,7 +34,7 @@ import java.util.List;
 @Tag(name = "对账差异", description = "通道账单差异查询和受控处理接口")
 public class PaymentDifferenceController implements PaymentDifferenceApi {
 
-    private final PaymentDifferenceService differenceService;
+    private final IPaymentDifferenceService differenceService;
 
     @Override
     @GetMapping("/page")
@@ -48,7 +48,7 @@ public class PaymentDifferenceController implements PaymentDifferenceApi {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:difference:query")
     @Operation(summary = "查询对账差异详情", description = "按差异单 ID 查询差异原因、处理动作、处理人和凭据")
-    public R<PaymentDifferenceVO> detailDifference(@Parameter(description = "对账差异 ID", required = true) @RequestParam Long id) {
+    public R<PaymentDifferenceVO> detailDifference(@Parameter(description = "对账差异 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(differenceService.detailDifference(id));
     }
 

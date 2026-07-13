@@ -2,7 +2,7 @@ package io.mango.payment.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
-import io.mango.payment.api.vo.PaymentDifferenceVO;
+import io.mango.payment.core.model.projection.PaymentDifferenceProjection;
 import io.mango.payment.core.entity.PaymentDifferenceEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -15,26 +15,26 @@ public interface PaymentDifferenceMapper extends BaseMapper<PaymentDifferenceEnt
 
     @InterceptorIgnore(tenantLine = "true")
     long countDifferences(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode);
 
     @InterceptorIgnore(tenantLine = "true")
-    List<PaymentDifferenceVO> selectDifferencePage(
-            @Param("tenantId") Long tenantId,
+    List<PaymentDifferenceProjection> selectDifferencePage(
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode,
             @Param("limit") long limit,
             @Param("offset") long offset);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentDifferenceVO selectDifferenceDetail(
-            @Param("tenantId") Long tenantId,
+    PaymentDifferenceProjection selectDifferenceDetail(
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     int handleDifference(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("processStatus") String processStatus,
             @Param("processAction") String processAction,

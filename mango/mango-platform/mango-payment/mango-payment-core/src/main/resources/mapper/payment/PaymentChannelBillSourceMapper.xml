@@ -61,7 +61,7 @@
         <include refid="sourceWhere"/>
     </select>
 
-    <select id="selectBillSourcePage" resultType="io.mango.payment.api.vo.PaymentChannelBillSourceVO">
+    <select id="selectBillSourcePage" resultType="io.mango.payment.core.model.projection.PaymentChannelBillSourceProjection">
         <include refid="sourceSelect"/>
         from payment_channel_bill_source s
         left join payment_channel_contract c
@@ -81,7 +81,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectBillSourceDetail" resultType="io.mango.payment.api.vo.PaymentChannelBillSourceVO">
+    <select id="selectBillSourceDetail" resultType="io.mango.payment.core.model.projection.PaymentChannelBillSourceProjection">
         <include refid="sourceSelect"/>
         from payment_channel_bill_source s
         left join payment_channel_contract c

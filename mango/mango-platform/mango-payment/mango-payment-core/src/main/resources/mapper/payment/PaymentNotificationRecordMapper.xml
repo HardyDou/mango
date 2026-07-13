@@ -57,7 +57,7 @@
           and nr.notify_status = 'FAILED'
     </select>
 
-    <select id="selectNotificationRecordPage" resultType="io.mango.payment.api.vo.PaymentNotificationRecordVO">
+    <select id="selectNotificationRecordPage" resultType="io.mango.payment.core.model.projection.PaymentNotificationRecordProjection">
         <include refid="notificationRecordSelect"/>
         from payment_notification_record nr
         <include refid="notificationRecordWhere"/>
@@ -65,7 +65,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectNotificationRecordDetail" resultType="io.mango.payment.api.vo.PaymentNotificationRecordVO">
+    <select id="selectNotificationRecordDetail" resultType="io.mango.payment.core.model.projection.PaymentNotificationRecordProjection">
         <include refid="notificationRecordSelect"/>
         from payment_notification_record nr
         where nr.tenant_id = #{tenantId}

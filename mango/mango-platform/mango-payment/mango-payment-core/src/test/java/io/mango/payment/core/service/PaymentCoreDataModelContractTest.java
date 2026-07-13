@@ -3,23 +3,23 @@ package io.mango.payment.core.service;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.mango.infra.persistence.api.entity.AuditableEntity;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
-import io.mango.payment.core.entity.PaymentCashierConfig;
-import io.mango.payment.core.entity.PaymentChannel;
+import io.mango.payment.core.entity.PaymentCashierConfigEntity;
+import io.mango.payment.core.entity.PaymentChannelEntity;
 import io.mango.payment.core.entity.PaymentChannelBillBatchEntity;
 import io.mango.payment.core.entity.PaymentChannelBillDetailEntity;
-import io.mango.payment.core.entity.PaymentChannelCapability;
-import io.mango.payment.core.entity.PaymentChannelContract;
-import io.mango.payment.core.entity.PaymentChannelContractCapability;
+import io.mango.payment.core.entity.PaymentChannelCapabilityEntity;
+import io.mango.payment.core.entity.PaymentChannelContractEntity;
+import io.mango.payment.core.entity.PaymentChannelContractCapabilityEntity;
 import io.mango.payment.core.entity.PaymentChannelContractValueEntity;
 import io.mango.payment.core.entity.PaymentChannelFieldTemplateEntity;
 import io.mango.payment.core.entity.PaymentDifferenceEntity;
-import io.mango.payment.core.entity.PaymentEnterpriseSubject;
-import io.mango.payment.core.entity.PaymentMethod;
-import io.mango.payment.core.entity.PaymentMethodCategory;
-import io.mango.payment.core.entity.PaymentMethodRouteRule;
-import io.mango.payment.core.entity.PaymentMethodRouteRuleItem;
+import io.mango.payment.core.entity.PaymentEnterpriseSubjectEntity;
+import io.mango.payment.core.entity.PaymentMethodEntity;
+import io.mango.payment.core.entity.PaymentMethodCategoryEntity;
+import io.mango.payment.core.entity.PaymentMethodRouteRuleEntity;
+import io.mango.payment.core.entity.PaymentMethodRouteRuleItemEntity;
 import io.mango.payment.core.entity.PaymentNotificationRecordEntity;
 import io.mango.payment.core.entity.PaymentOfflineBankStatementBatchEntity;
 import io.mango.payment.core.entity.PaymentOfflineBankStatementItemEntity;
@@ -27,7 +27,7 @@ import io.mango.payment.core.entity.PaymentOfflineCollectionEntity;
 import io.mango.payment.core.entity.PaymentOfflineCollectionMatchEntity;
 import io.mango.payment.core.entity.PaymentOfflineCollectionVoucherEntity;
 import io.mango.payment.core.entity.PaymentOfflineRefundEntity;
-import io.mango.payment.core.entity.PaymentOperationAudit;
+import io.mango.payment.core.entity.PaymentOperationAuditEntity;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
 import io.mango.payment.core.entity.PaymentRiskRuleEntity;
@@ -94,28 +94,28 @@ class PaymentCoreDataModelContractTest {
 
     static {
         contract("pay_tenant", "payment_tenant", PaymentTenantEntity.class, PaymentTenantMapper.class);
-        contract("pay_app", "payment_application", PaymentApplication.class, PaymentApplicationMapper.class);
-        contract("pay_subject", "payment_enterprise_subject", PaymentEnterpriseSubject.class, PaymentEnterpriseSubjectMapper.class);
+        contract("pay_app", "payment_application", PaymentApplicationEntity.class, PaymentApplicationMapper.class);
+        contract("pay_subject", "payment_enterprise_subject", PaymentEnterpriseSubjectEntity.class, PaymentEnterpriseSubjectMapper.class);
         contract("pay_subject_bank_account", "payment_subject_bank_account",
                 PaymentSubjectBankAccountEntity.class, PaymentSubjectBankAccountMapper.class);
-        contract("pay_channel", "payment_channel", PaymentChannel.class, PaymentChannelMapper.class);
+        contract("pay_channel", "payment_channel", PaymentChannelEntity.class, PaymentChannelMapper.class);
         contract("pay_channel_capability", "payment_channel_capability",
-                PaymentChannelCapability.class, PaymentChannelCapabilityMapper.class);
+                PaymentChannelCapabilityEntity.class, PaymentChannelCapabilityMapper.class);
         contract("pay_channel_field_template", "payment_channel_field_template",
                 PaymentChannelFieldTemplateEntity.class, PaymentChannelFieldTemplateMapper.class);
         contract("pay_channel_contract", "payment_channel_contract",
-                PaymentChannelContract.class, PaymentChannelContractMapper.class);
+                PaymentChannelContractEntity.class, PaymentChannelContractMapper.class);
         contract("pay_channel_contract_value", "payment_channel_contract_value",
                 PaymentChannelContractValueEntity.class, PaymentChannelContractValueMapper.class);
         contract("pay_channel_contract_capability", "payment_channel_contract_capability",
-                PaymentChannelContractCapability.class, PaymentChannelContractCapabilityMapper.class);
-        contract("pay_method_category", "payment_method_category", PaymentMethodCategory.class, PaymentMethodCategoryMapper.class);
-        contract("pay_method", "payment_method", PaymentMethod.class, PaymentMethodMapper.class);
+                PaymentChannelContractCapabilityEntity.class, PaymentChannelContractCapabilityMapper.class);
+        contract("pay_method_category", "payment_method_category", PaymentMethodCategoryEntity.class, PaymentMethodCategoryMapper.class);
+        contract("pay_method", "payment_method", PaymentMethodEntity.class, PaymentMethodMapper.class);
         contract("pay_method_route_rule", "payment_method_route_rule",
-                PaymentMethodRouteRule.class, PaymentMethodRouteRuleMapper.class);
+                PaymentMethodRouteRuleEntity.class, PaymentMethodRouteRuleMapper.class);
         contract("pay_method_route_rule_item", "payment_method_route_rule_item",
-                PaymentMethodRouteRuleItem.class, PaymentMethodRouteRuleItemMapper.class);
-        contract("pay_cashier", "payment_cashier_config", PaymentCashierConfig.class, PaymentCashierConfigMapper.class);
+                PaymentMethodRouteRuleItemEntity.class, PaymentMethodRouteRuleItemMapper.class);
+        contract("pay_cashier", "payment_cashier_config", PaymentCashierConfigEntity.class, PaymentCashierConfigMapper.class);
         contract("pay_biz_order", "payment_business_order", PaymentBusinessOrderEntity.class, PaymentBusinessOrderMapper.class);
         contract("pay_payment_order", "payment_order", PaymentOrderEntity.class, PaymentOrderMapper.class);
         contract("pay_refund_order", "payment_refund_order", PaymentRefundOrderEntity.class, PaymentRefundOrderMapper.class);
@@ -143,7 +143,7 @@ class PaymentCoreDataModelContractTest {
         contract("pay_notify_record", "payment_notification_record",
                 PaymentNotificationRecordEntity.class, PaymentNotificationRecordMapper.class);
         contract("pay_operation_audit", "payment_operation_audit",
-                PaymentOperationAudit.class, PaymentOperationAuditMapper.class);
+                PaymentOperationAuditEntity.class, PaymentOperationAuditMapper.class);
         contract("pay_risk_rule", "payment_risk_rule", PaymentRiskRuleEntity.class, PaymentRiskRuleMapper.class);
     }
 

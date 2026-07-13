@@ -11,7 +11,7 @@ owner: Mango 支付能力负责人
 approver: HardyDou
 approvalEvidence: review/PLAN-PAYMENT-DEBT.md
 upstreamDocumentId: TDD-PAYMENT-DEBT
-upstreamDocumentHash: 5dd486e881b720c251ab5d6834697996828ea74a273829c4718c0396483b10e0
+upstreamDocumentHash: 1f3521c030d6a82bc077873d96190853fc047169bfeb3d052c0d5cc3ad0cc253
 ---
 
 # 支付模块历史架构债务治理实施计划
@@ -24,7 +24,7 @@ upstreamDocumentHash: 5dd486e881b720c251ab5d6834697996828ea74a273829c4718c039648
 | DEL-002 | DEC-003, DEC-004, DEC-005, MOD-001, MOD-002, MOD-003, MOD-004, API-001, API-002, API-003, API-004 | 支付后端 canonical 契约与实现 | `mango/mango-platform/mango-payment` | API/Controller/Service/Mapper/Entity/Feign/装配/错误契约符合机器门禁，支付行为测试通过，无第二套历史实现 | SAC-002, SAC-003, SAC-004 | 不修改其它模块业务能力 |
 | DEL-003 | DEC-006, DM-002, DB-002, SEC-003 | String 租户模型与值保持 migration | payment core entity/mapper/migration/test | 历史 schema 全量重放，tenant 值、记录数、索引/唯一约束与双租户读写验证满足 TC-006 | SAC-005 | 不修改 V3-V101 历史 migration |
 | DEL-004 | DEC-005, MOD-005, API-005, UI-001, IMP-001, IMP-002 | 支付前端与使用材料同步 | `mango-ui/packages/payment`、payment README、统一支付设计说明 | 前端唯一接口目录、主键字符串语义、包构建、支付页面入口和迁移说明一致 | SAC-004 | 不重做支付页面视觉与交互 |
-| DEL-005 | DEC-007, MOD-006, ERR-003, IMP-003 | 架构规则回归、完整报告与支付预算归零 | architecture rules tests、完整报告、`debt-budget.json` | 只有已证明误判被修正；payment 1,843→0；其它模块无新增问题指纹；预算只下降 | SAC-003 | 不接受排除、降级、跨模块转移或预算增加 |
+| DEL-005 | DEC-007, MOD-006, ERR-003, IMP-003 | 架构规则回归、完整报告与支付预算归零 | architecture rules tests、完整报告、`debt-budget.json` | 只有已证明误判被修正；payment 1,869→0；其它模块无新增问题指纹；预算只下降 | SAC-003 | 不接受排除、降级、跨模块转移或预算增加 |
 
 ## 2. 工作分解
 
@@ -44,7 +44,7 @@ upstreamDocumentHash: 5dd486e881b720c251ab5d6834697996828ea74a273829c4718c039648
 
 | 里程碑ID | 包含任务ID | 进入条件 | 完成条件 | 依赖 | 可并行任务 | 阻塞升级 | 责任人 |
 |---|---|---|---|---|---|---|---|
-| MS-001 | TASK-001, TASK-002 | 生命周期 TDD 批准 | 生产代码未变、有效测试已补强、before 基线和 1,843 问题清单已固化 | TASK-002 依赖 TASK-001 | 测试资产盘点与接口/表目录盘点可并行 | 当前代码不能执行统一 suite 或测试基础设施不真实时停止生产改造 | 支付负责人 |
+| MS-001 | TASK-001, TASK-002 | 生命周期 TDD 批准 | 生产代码未变、有效测试已补强、before 基线和 1,869 问题清单已固化 | TASK-002 依赖 TASK-001 | 测试资产盘点与接口/表目录盘点可并行 | 当前代码不能执行统一 suite 或测试基础设施不真实时停止生产改造 | 支付负责人 |
 | MS-002 | TASK-003, TASK-004, TASK-005, TASK-006 | MS-001 完成 | 后端四子模块 canonical 迁移完成，业务与接口定向测试通过，支付规则残留收敛到可解释的检查器问题 | 依次迁移契约→Service→persistence→adapters；租户在 persistence 后 | 同一检查点内不同聚合可机械并行，但提交前统一验证 | 业务不变量、migration 值保持或接口目录失败时在当前批次修复 | 支付负责人 |
 | MS-003 | TASK-007, TASK-008 | MS-002 完成 | 支付前端/文档同步；检查器正反例通过 | TASK-007 依赖新接口；TASK-008 依赖真实残留事实 | TASK-007 与 TASK-008 可并行 | 不得为进度降低检查器或跳过 UI 入口验证 | 支付负责人 |
 | MS-004 | TASK-009 | MS-003 完成 | after、完整架构、预算、前端、文档与交付门禁全部满足 | 全部任务 | NONE | 任一检查失败保持任务未完成并在当前 worktree 修复 | 支付负责人 |
@@ -59,7 +59,7 @@ upstreamDocumentHash: 5dd486e881b720c251ab5d6834697996828ea74a273829c4718c039648
 | VAL-004 | TC-007 | TASK-003, TASK-004, TASK-006, TASK-008, TASK-009 | Java/Spring 架构 | 运行 architecture-rules tests；执行完整 `mvn -f mango/pom.xml verify` 生成 full-reactor report | 当前 worktree 完整 Reactor | checker fixtures 与全部 compiled classes | 不涉及业务账号 | payment moduleKey 问题为 0，其它模块无新增；报告 schema/模块归属完整 | 同上与 `target/mango-architecture-report.json` | Dev | 禁止排除、changed-only 替代完整报告或降低规则 |
 | VAL-005 | TC-008 | TASK-007, TASK-009 | 前端类型/构建/契约 | `pnpm -C mango-ui --filter @mango/payment build` 并执行支付 API client 测试 | 当前 worktree Node/pnpm 锁定环境 | 固定请求输入，不写共享业务库 | ID 使用字符串语义 | package build/type/API mapping 通过 | 同上 | Dev | 修复前端契约，不恢复历史后端路由 |
 | VAL-006 | TC-008 | TASK-007, TASK-009 | UI/E2E | 使用 Mango CLI 启动 slot 178 前后端，执行 `mango-ui/apps/mango-admin/e2e/specs/payment-center.spec.ts` 受影响 P0/P1 用例，记录页面/console/network/截图 | backend 18178、frontend 30178、`mango_dev_mango_payment_architecture_debt_178` | E2E 自有前缀和清理步骤 | 专用测试账号/租户，不使用超级管理员绕过权限断言 | 页面正常/空/失败/无权限与关键业务结果正确，无未解释错误 | 同上 | QA | 服务/数据库/账号不可用标记 BLOCKED，禁止用接口 200 替代 |
-| VAL-007 | TC-007 | TASK-001, TASK-008, TASK-009 | 架构预算 | `node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-payment --write` 下调后，再执行全局无 `--module` 比较 | 同一完整架构报告 | 正式 schema v4 baseline | 不涉及账号 | payment 1,843→0，总量精确下降 1,843，其他模块规则与指纹不增加 | 同上 | Dev | 模块选择不唯一、报告不完整或任何增加均阻断 |
+| VAL-007 | TC-007 | TASK-001, TASK-008, TASK-009 | 架构预算 | `node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-payment --write` 下调后，再执行全局无 `--module` 比较 | 同一完整架构报告 | 正式 schema v4 baseline | 不涉及账号 | payment 1,869→0，总量精确下降 1,869，其他模块规则与指纹不增加 | 同上 | Dev | 模块选择不唯一、报告不完整或任何增加均阻断 |
 | VAL-008 | TC-001, TC-002, TC-003, TC-004, TC-005, TC-006, TC-007, TC-008 | TASK-009 | PMO/交付质量 | 执行 test-quality-check、backend test double audit、workspace-layout、四文档 checker/handoff、delivery-contract-check、acceptance-evidence-check | 当前 worktree | 不额外写业务数据 | 审批证据引用当前用户授权 | 所有 checker 通过，台账状态 DONE/有依据的 EXCEPTION，未完成项为 0 | delivery ledger 与 latest baseline | Dev/QA | 失败按 checker 定位修复，禁止自报通过 |
 
 ## 5. 数据、升级、发布与回滚步骤
@@ -74,7 +74,7 @@ upstreamDocumentHash: 5dd486e881b720c251ab5d6834697996828ea74a273829c4718c039648
 | 文档项ID | 技术设计或交付物ID | 目标文档 | 变化 | 责任人 | 完成条件 | 检查命令 | 不适用依据 |
 |---|---|---|---|---|---|---|---|
 | DOC-001 | IMP-001, IMP-002, DEL-002, DEL-003, DEL-004 | payment 后端/前端 README 与统一支付系统设计说明 | 更新 Java/HTTP 路由、PaymentCode import、String tenant、V102 和升级步骤 | Dev | 文档与实际代码/契约目录一致，无历史入口残留 | README 链接/diff review、前端/后端构建 | NONE |
-| DOC-002 | IMP-003, DEL-001, DEL-005 | 本任务 BRD/SRS/TDD/Plan、delivery ledger、latest test baseline | 记录 before/after、测试交接、批准差异、架构 1,843→0 和验证结果 | Dev/QA | document-set、lifecycle、delivery/acceptance checker 通过 | `node mango-pmo/tools/check-document-set.mjs --root mango-docs/designs/payment-architecture-debt` | NONE |
+| DOC-002 | IMP-003, DEL-001, DEL-005 | 本任务 BRD/SRS/TDD/Plan、delivery ledger、latest test baseline | 记录 before/after、测试交接、批准差异、架构 1,869→0 和验证结果 | Dev/QA | document-set、lifecycle、delivery/acceptance checker 通过 | `node mango-pmo/tools/check-document-set.mjs --root mango-docs/designs/payment-architecture-debt` | NONE |
 | DOC-003 | DEL-004, TASK-007 | payment-center E2E | 同步批准接口路径与 String tenant 测试数据；保留业务语义锚点 | QA | 受影响 P0/P1 可按单条、payment 标签和文件执行 | Playwright list/test | NONE |
 
 ## 7. 风险、阻塞与例外

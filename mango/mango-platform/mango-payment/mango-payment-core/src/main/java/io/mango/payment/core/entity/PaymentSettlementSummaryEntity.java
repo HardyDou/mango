@@ -3,7 +3,6 @@ package io.mango.payment.core.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.mango.infra.persistence.api.entity.AuditableEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,7 +12,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("payment_settlement_summary")
-public class PaymentSettlementSummaryEntity extends AuditableEntity {
+public class PaymentSettlementSummaryEntity extends PaymentBaseEntity {
 
     private LocalDate settlementDate;
 
@@ -60,8 +59,6 @@ public class PaymentSettlementSummaryEntity extends AuditableEntity {
     private LocalDateTime voidedAt;
 
     private String voidReason;
-
-    private Long tenantId;
 
     @TableLogic
     @TableField("del_flag")

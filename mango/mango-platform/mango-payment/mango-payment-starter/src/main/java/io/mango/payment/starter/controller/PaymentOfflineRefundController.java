@@ -8,7 +8,7 @@ import io.mango.payment.api.PaymentOfflineRefundApi;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentOfflineRefundStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundVO;
-import io.mango.payment.core.service.PaymentOfflineChannelService;
+import io.mango.payment.core.service.IPaymentOfflineChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +29,7 @@ import java.util.List;
 @Tag(name = "线下退款", description = "线下收款通道退款订单接口")
 public class PaymentOfflineRefundController implements PaymentOfflineRefundApi {
 
-    private final PaymentOfflineChannelService offlineChannelService;
+    private final IPaymentOfflineChannelService offlineChannelService;
 
     @Override
     @GetMapping("/page")
@@ -43,7 +43,7 @@ public class PaymentOfflineRefundController implements PaymentOfflineRefundApi {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-refund:query")
     @Operation(summary = "查询线下退款详情", description = "按线下退款 ID 查询退款金额、账户、凭证和关联线下收款单")
-    public R<PaymentOfflineRefundVO> detailOfflineRefund(@Parameter(description = "线下退款 ID", required = true) @RequestParam Long id) {
+    public R<PaymentOfflineRefundVO> detailOfflineRefund(@Parameter(description = "线下退款 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(offlineChannelService.detailOfflineRefund(id));
     }
 

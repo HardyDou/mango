@@ -2,7 +2,7 @@ package io.mango.payment.core.mapper;
 
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.payment.api.vo.PaymentSettlementSummaryVO;
+import io.mango.payment.core.model.projection.PaymentSettlementSummaryProjection;
 import io.mango.payment.core.entity.PaymentSettlementSummaryEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -16,26 +16,26 @@ public interface PaymentSettlementSummaryMapper extends BaseMapper<PaymentSettle
 
     @InterceptorIgnore(tenantLine = "true")
     long countSettlementSummaries(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode);
 
     @InterceptorIgnore(tenantLine = "true")
-    List<PaymentSettlementSummaryVO> selectSettlementSummaryPage(
-            @Param("tenantId") Long tenantId,
+    List<PaymentSettlementSummaryProjection> selectSettlementSummaryPage(
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode,
             @Param("limit") long limit,
             @Param("offset") long offset);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentSettlementSummaryVO selectSettlementSummaryDetail(
-            @Param("tenantId") Long tenantId,
+    PaymentSettlementSummaryProjection selectSettlementSummaryDetail(
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     PaymentSettlementSummaryEntity selectByScope(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("settlementDate") LocalDate settlementDate,
             @Param("appCode") String appCode,
             @Param("enterpriseSubjectId") Long enterpriseSubjectId,
@@ -43,7 +43,7 @@ public interface PaymentSettlementSummaryMapper extends BaseMapper<PaymentSettle
 
     @InterceptorIgnore(tenantLine = "true")
     SettlementCalculation selectSettlementCalculation(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("settlementDate") LocalDate settlementDate,
             @Param("appCode") String appCode,
             @Param("enterpriseSubjectId") Long enterpriseSubjectId,
@@ -51,13 +51,13 @@ public interface PaymentSettlementSummaryMapper extends BaseMapper<PaymentSettle
 
     @InterceptorIgnore(tenantLine = "true")
     long countCompletedReconciliation(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("settlementDate") LocalDate settlementDate,
             @Param("channelCode") String channelCode);
 
     @InterceptorIgnore(tenantLine = "true")
     DifferenceCalculation selectUnresolvedDifferenceCalculation(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("settlementDate") LocalDate settlementDate,
             @Param("appCode") String appCode,
             @Param("enterpriseSubjectId") Long enterpriseSubjectId,
@@ -65,7 +65,7 @@ public interface PaymentSettlementSummaryMapper extends BaseMapper<PaymentSettle
 
     @InterceptorIgnore(tenantLine = "true")
     int confirmGeneratedSummary(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("tradeAmount") Long tradeAmount,
             @Param("refundAmount") Long refundAmount,
@@ -81,7 +81,7 @@ public interface PaymentSettlementSummaryMapper extends BaseMapper<PaymentSettle
 
     @InterceptorIgnore(tenantLine = "true")
     int voidConfirmedSummary(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("voidedBy") Long voidedBy,
             @Param("voidedByName") String voidedByName,

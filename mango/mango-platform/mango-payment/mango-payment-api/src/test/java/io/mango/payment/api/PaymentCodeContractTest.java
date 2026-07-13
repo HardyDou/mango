@@ -1,6 +1,7 @@
 package io.mango.payment.api;
 
 import io.mango.common.result.BizCode;
+import io.mango.payment.api.enums.PaymentCode;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;

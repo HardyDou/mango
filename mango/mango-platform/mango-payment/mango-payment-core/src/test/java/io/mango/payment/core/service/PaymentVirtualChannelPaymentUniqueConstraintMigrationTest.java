@@ -39,17 +39,17 @@ class PaymentVirtualChannelPaymentUniqueConstraintMigrationTest {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         createVirtualPaymentTable(jdbcTemplate);
 
-        insertVirtualPayment(jdbcTemplate, 1L, "MP202606070001", "PO202606070001", "MCH202606070001");
+        insertVirtualPayment(jdbcTemplate, "1", "MP202606070001", "PO202606070001", "MCH202606070001");
 
         assertThatThrownBy(() -> insertVirtualPayment(
                 jdbcTemplate,
-                1L,
+                "1",
                 "MP202606070002",
                 "PO202606070001",
                 "MCH202606070002"))
                 .isInstanceOf(DuplicateKeyException.class);
 
-        insertVirtualPayment(jdbcTemplate, 1L, "MP202606070003", "PO202606070002", "MCH202606070003");
+        insertVirtualPayment(jdbcTemplate, "1", "MP202606070003", "PO202606070002", "MCH202606070003");
         Long count = jdbcTemplate.queryForObject("select count(1) from payment_virtual_channel_payment", Long.class);
         assertThat(count).isEqualTo(2L);
     }
@@ -61,7 +61,8 @@ class PaymentVirtualChannelPaymentUniqueConstraintMigrationTest {
                   virtual_payment_no varchar(64) not null,
                   pay_order_no varchar(64),
                   channel_trade_no varchar(128),
-                  tenant_id bigint not null,
+                  tenant_id varchar(64) not null,
+                    org_id bigint,
                   unique key uk_payment_virtual_payment_no (virtual_payment_no),
                   unique key uk_payment_virtual_channel_trade (tenant_id, channel_trade_no),
                   unique key uk_payment_virtual_pay_order (tenant_id, pay_order_no)
@@ -71,7 +72,7 @@ class PaymentVirtualChannelPaymentUniqueConstraintMigrationTest {
 
     private void insertVirtualPayment(
             JdbcTemplate jdbcTemplate,
-            Long tenantId,
+            String tenantId,
             String virtualPaymentNo,
             String payOrderNo,
             String channelTradeNo) {

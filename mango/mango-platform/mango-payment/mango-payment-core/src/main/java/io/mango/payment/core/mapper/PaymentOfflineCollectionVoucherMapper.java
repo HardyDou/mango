@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public interface PaymentOfflineCollectionVoucherMapper extends BaseMapper<PaymentOfflineCollectionVoucherEntity> {
 
     int acceptByCollection(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("offlineCollectionId") Long offlineCollectionId,
             @Param("updatedBy") Long updatedBy,
             @Param("updatedAt") LocalDateTime updatedAt);

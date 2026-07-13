@@ -1460,9 +1460,7 @@ public final class MangoArchUnitChecker {
 
     private boolean isManagedServiceTarget(
             JavaClass target, Map<String, BeanRegistration> beanRegistrations) {
-        return beanRegistrations.containsKey(target.getName())
-                || target.isAnnotatedWith(SERVICE)
-                || isServiceImplementation(target);
+        return isServiceImplementation(target) && isSpringManaged(target, beanRegistrations);
     }
 
     private void checkStaticServiceLocator(

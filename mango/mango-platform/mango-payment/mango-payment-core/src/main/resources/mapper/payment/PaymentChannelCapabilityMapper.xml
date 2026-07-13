@@ -40,7 +40,7 @@
         <include refid="channelCapabilityWhere"/>
     </select>
 
-    <select id="selectChannelCapabilityPage" resultType="io.mango.payment.api.vo.PaymentChannelCapabilityVO">
+    <select id="selectChannelCapabilityPage" resultType="io.mango.payment.core.model.projection.PaymentChannelCapabilityProjection">
         select cc.id,
                cc.channel_id as channelId,
                c.channel_name as channelName,
@@ -64,7 +64,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectChannelCapabilityDetail" resultType="io.mango.payment.api.vo.PaymentChannelCapabilityVO">
+    <select id="selectChannelCapabilityDetail" resultType="io.mango.payment.core.model.projection.PaymentChannelCapabilityProjection">
         select cc.id,
                cc.channel_id as channelId,
                c.channel_name as channelName,

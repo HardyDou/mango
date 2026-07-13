@@ -14,9 +14,9 @@ public class PaymentOpenNotificationVO {
     private String notificationType;
 
     @Schema(description = "租户 ID")
-    private Long tenantId;
+    private String tenantId;
 
-    @Schema(description = "AppId")
+    @Schema(description = "支付应用 AppId")
     private String appId;
 
     @Schema(description = "业务订单号")

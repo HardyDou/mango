@@ -40,7 +40,7 @@
         <include refid="operationAuditWhere"/>
     </select>
 
-    <select id="selectOperationAuditPage" resultType="io.mango.payment.api.vo.PaymentOperationAuditVO">
+    <select id="selectOperationAuditPage" resultType="io.mango.payment.core.model.projection.PaymentOperationAuditProjection">
         <include refid="operationAuditSelect"/>
         <include refid="operationAuditWhere"/>
         order by audit.operation_time desc, audit.id desc

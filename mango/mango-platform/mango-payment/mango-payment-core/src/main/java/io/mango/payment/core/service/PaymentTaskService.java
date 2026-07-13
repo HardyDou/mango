@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.vo.PaymentTaskDispatchResultVO;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
@@ -15,13 +15,13 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentTaskService {
+public class PaymentTaskService implements IPaymentTaskService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PaymentTaskService.class);
 
     private final PaymentOrderMapper paymentOrderMapper;
-    private final PaymentChannelSyncService channelSyncService;
-    private final PaymentChannelOrderCloseService channelOrderCloseService;
+    private final PaymentChannelSynchronizer channelSyncService;
+    private final PaymentChannelOrderCloseCoordinator channelOrderCloseService;
     private final PaymentOperationAuditService auditService;
 
     public PaymentTaskDispatchResultVO expireOpenPaymentOrders(long limit) {
@@ -36,7 +36,7 @@ public class PaymentTaskService {
                 continue;
             }
             try {
-                PaymentChannelOrderCloseService.CloseResult closeResult =
+                PaymentChannelOrderCloseCoordinator.CloseResult closeResult =
                         channelOrderCloseService.closeExpiredPaymentOrder(order.getPayOrderNo());
                 if (closeResult.changed()) {
                     result.setSuccessCount(result.getSuccessCount() + 1);
@@ -48,11 +48,11 @@ public class PaymentTaskService {
                 LOGGER.warn("Payment expired order close failed: payOrderNo={}", order.getPayOrderNo(), ex);
             }
         }
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_EXPIRE_OPEN_PAYMENT_ORDERS,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_ORDER,
                 taskResultResourceId("EXPIRE_OPEN_PAYMENT_ORDERS", result),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return result;
     }
 
@@ -68,7 +68,7 @@ public class PaymentTaskService {
                 continue;
             }
             try {
-                PaymentChannelSyncService.PaymentSyncResult queryResult =
+                PaymentChannelSynchronizer.PaymentSyncResult queryResult =
                         channelSyncService.syncPaymentStatus(order.getPayOrderNo());
                 if (queryResult.changed()) {
                     result.setSuccessCount(result.getSuccessCount() + 1);
@@ -80,16 +80,16 @@ public class PaymentTaskService {
                 LOGGER.warn("Payment processing order query failed: payOrderNo={}", order.getPayOrderNo(), ex);
             }
         }
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_QUERY_PROCESSING_PAYMENT_ORDERS,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_ORDER,
                 taskResultResourceId("QUERY_PROCESSING_PAYMENT_ORDERS", result),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return result;
     }
 
     private long validateTaskLimit(long limit) {
-        Require.isTrue(limit > 0 && limit <= 100, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID.getCode(),
+        Require.isTrue(limit > 0 && limit <= 100, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID,
                 "任务批次大小必须在 1 到 100 之间");
         return limit;
     }

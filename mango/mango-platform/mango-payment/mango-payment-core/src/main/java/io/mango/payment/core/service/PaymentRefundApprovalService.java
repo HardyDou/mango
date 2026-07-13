@@ -1,11 +1,15 @@
 package io.mango.payment.core.service;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
+import io.mango.payment.core.integration.PaymentRemoteResultSupport;
 import io.mango.payment.api.command.CreatePaymentOpenRefundCommand;
 import io.mango.payment.api.command.CreatePaymentRefundApprovalCommand;
 import io.mango.payment.api.enums.PaymentRefundApprovalStatusEnum;
@@ -14,7 +18,7 @@ import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundApprovalStatusVO;
 import io.mango.payment.api.vo.PaymentRefundApprovalVO;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentRefundApprovalEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
@@ -43,7 +47,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PaymentRefundApprovalService {
+public class PaymentRefundApprovalService implements IPaymentRefundApprovalService {
 
     public static final String WORKFLOW_BUSINESS_TYPE = "PAYMENT_REFUND_APPROVAL";
     public static final String WORKFLOW_DEFINITION_KEY = "PAYMENT_REFUND_APPROVAL";
@@ -53,10 +57,10 @@ public class PaymentRefundApprovalService {
     private final PaymentApplicationMapper applicationMapper;
     private final PaymentOrderMapper paymentOrderMapper;
     private final PaymentRefundOrderMapper refundOrderMapper;
-    private final PaymentRefundApplyService refundApplyService;
-    private final PaymentOrderStateService orderStateService;
+    private final PaymentRefundApplyCoordinator refundApplyService;
+    private final PaymentOrderStatePolicy orderStateService;
     private final PaymentOperationAuditService auditService;
-    private final PaymentNumberService numberService;
+    private final PaymentNumberGenerator numberService;
     private final WorkflowProcessApi workflowProcessApi;
     private final WorkflowBusinessApplyApi workflowBusinessApplyApi;
     private final PlatformTransactionManager transactionManager;
@@ -65,19 +69,20 @@ public class PaymentRefundApprovalService {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = refundApprovalMapper.countRefundApprovals(tenantId, keyword, statusCode);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentRefundApprovalVO> rows = refundApprovalMapper.selectRefundApprovalPage(
-                tenantId, keyword, statusCode, size, (page - 1) * size);
+        List<PaymentRefundApprovalVO> rows = toApiList(refundApprovalMapper.selectRefundApprovalPage(
+                tenantId, keyword, statusCode, size, (page - 1) * size), PaymentRefundApprovalVO.class);
         rows.forEach(this::fillStatusName);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentRefundApprovalVO detailRefundApproval(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批 ID 不能为空");
-        PaymentRefundApprovalVO vo = refundApprovalMapper.selectRefundApprovalDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批 ID 不能为空");
+        PaymentRefundApprovalVO vo = toApi(refundApprovalMapper.selectRefundApprovalDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentRefundApprovalVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_REFUND_APPROVAL_NOT_FOUND);
         fillStatusName(vo);
         return vo;
@@ -93,13 +98,14 @@ public class PaymentRefundApprovalService {
     }
 
     public PaymentRefundApprovalVO createRefundApproval(CreatePaymentRefundApprovalCommand command) {
+        Require.notNull(command, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "创建退款审批命令不能为空");
         PaymentRefundApprovalCreateContext context = inTransaction(() -> createRefundApprovalRecord(command));
         WorkflowProcessInstanceVO process;
         try {
             process = startRefundApprovalWorkflow(context.approval(), context.paymentOrder());
         } catch (RuntimeException ex) {
             markWorkflowStartFailedAfterWorkflowException(context, ex);
-            throw ex;
+            return io.mango.payment.core.integration.PaymentExceptionPropagation.rethrow(ex);
         }
         inTransaction(() -> {
             boolean started = updateWorkflowStartProjectionIfPending(
@@ -122,22 +128,23 @@ public class PaymentRefundApprovalService {
     }
 
     private PaymentRefundApprovalCreateContext createRefundApprovalRecord(CreatePaymentRefundApprovalCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "创建退款审批命令不能为空");
-        Require.notNull(command.getPaymentOrderId(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "原支付订单 ID 不能为空");
-        Require.notNull(command.getRefundAmount(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款金额不能为空");
+        Require.notNull(command, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "创建退款审批命令不能为空");
+        Require.notNull(command.getPaymentOrderId(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "原支付订单 ID 不能为空");
+        Require.notNull(command.getRefundAmount(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款金额不能为空");
         Require.isTrue(command.getRefundAmount() > 0, PaymentCode.PAYMENT_AMOUNT_INVALID);
-        Require.notBlank(command.getReason(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款原因不能为空");
+        Require.notBlank(command.getReason(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款原因不能为空");
 
-        Long tenantId = PaymentContextSupport.currentTenantId();
-        PaymentOrderVO paymentOrder = paymentOrderMapper.selectPaymentOrderById(tenantId, command.getPaymentOrderId());
+        String tenantId = PaymentContextSupport.currentTenantId();
+        PaymentOrderVO paymentOrder = toApi(paymentOrderMapper.selectPaymentOrderById(
+                tenantId, command.getPaymentOrderId()), PaymentOrderVO.class);
         Require.notNull(paymentOrder, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         Require.isTrue("SUCCESS".equals(paymentOrder.getStatus()) && Integer.valueOf(1).equals(paymentOrder.getSuccessFlag()),
-                PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode(), "只有有效成功支付订单允许申请后台退款");
-        PaymentApplication application = selectRequiredApplication(tenantId, paymentOrder.getAppId());
+                PaymentCode.PAYMENT_ORDER_STATE_INVALID, "只有有效成功支付订单允许申请后台退款");
+        PaymentApplicationEntity application = selectRequiredApplication(tenantId, paymentOrder.getAppId());
         LocalDateTime now = LocalDateTime.now();
         String bizRefundNo = PaymentContextSupport.trimToNull(command.getBizRefundNo());
         if (bizRefundNo == null) {
-            bizRefundNo = numberService.next(PaymentNumberService.PAY_BIZ_REFUND_NO);
+            bizRefundNo = numberService.next(PaymentNumberGenerator.PAY_BIZ_REFUND_NO);
         }
         Require.isTrue(refundOrderMapper.selectOpenRefundOrder(tenantId, application.getAppId(), bizRefundNo) == null,
                 PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT);
@@ -149,7 +156,7 @@ public class PaymentRefundApprovalService {
         requireRefundAmountAvailable(tenantId, paymentOrder, command.getRefundAmount());
 
         PaymentRefundApprovalEntity entity = new PaymentRefundApprovalEntity();
-        entity.setApprovalNo(numberService.next(PaymentNumberService.PAY_REFUND_APPROVAL_NO));
+        entity.setApprovalNo(numberService.next(PaymentNumberGenerator.PAY_REFUND_APPROVAL_NO));
         entity.setBusinessOrderId(paymentOrder.getBusinessOrderId());
         entity.setPaymentOrderId(paymentOrder.getId());
         entity.setBizOrderNo(paymentOrder.getBizOrderNo());
@@ -183,7 +190,7 @@ public class PaymentRefundApprovalService {
         boolean sameRefundTarget = Objects.equals(approval.getPaymentOrderId(), paymentOrder.getId())
                 && Objects.equals(approval.getRefundAmount(), command.getRefundAmount());
         Require.isTrue(sameRefundTarget,
-                PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT.getCode(), "退款审批幂等参数不一致");
+                PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT, "退款审批幂等参数不一致");
         requireRefundAmountAvailable(approval.getTenantId(), paymentOrder, command.getRefundAmount());
         approval.setReason(command.getReason().trim());
         approval.setRemark(PaymentContextSupport.trimToNull(command.getRemark()));
@@ -207,12 +214,12 @@ public class PaymentRefundApprovalService {
         approval.setUpdatedBy(PaymentContextSupport.currentUserId());
         approval.setUpdatedAt(now);
         int updated = refundApprovalMapper.updateById(approval);
-        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,
                 "退款审批失败记录恢复失败");
         return new PaymentRefundApprovalCreateContext(approval, paymentOrder);
     }
 
-    private void requireRefundAmountAvailable(Long tenantId, PaymentOrderVO paymentOrder, Long refundAmount) {
+    private void requireRefundAmountAvailable(String tenantId, PaymentOrderVO paymentOrder, Long refundAmount) {
         long occupyingRefundAmount = normalizedAmount(
                 refundOrderMapper.sumOccupyingRefundAmount(tenantId, paymentOrder.getId()));
         long pendingApprovalAmount = normalizedAmount(
@@ -220,13 +227,13 @@ public class PaymentRefundApprovalService {
         orderStateService.requireRefundAmount(refundAmount, paymentOrder.getAmount(), occupyingRefundAmount + pendingApprovalAmount);
     }
 
-    public void syncWorkflowProjection(Long tenantId, String approvalNo) {
-        Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "租户 ID 不能为空");
-        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批单号不能为空");
-        R<WorkflowBusinessApplyProgressVO> response = workflowBusinessApplyApi.latestProgress(WORKFLOW_BUSINESS_TYPE, approvalNo);
-        Require.isTrue(response != null && response.isSuccess(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
-                response == null ? "查询工作流审批进度失败" : response.getMsg());
-        WorkflowBusinessApplyProgressVO progress = response.getData();
+    public void syncWorkflowProjection(String tenantId, String approvalNo) {
+        Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "租户 ID 不能为空");
+        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批单号不能为空");
+        WorkflowBusinessApplyProgressVO progress = PaymentRemoteResultSupport.requireData(
+                workflowBusinessApplyApi.latestProgress(WORKFLOW_BUSINESS_TYPE, approvalNo),
+                PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,
+                "查询工作流审批进度失败");
         if (progress == null) {
             return;
         }
@@ -236,15 +243,15 @@ public class PaymentRefundApprovalService {
         });
     }
 
-    public void approveByWorkflow(Long tenantId, String approvalNo, String processInstanceId) {
-        Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "租户 ID 不能为空");
-        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批单号不能为空");
+    void approveByWorkflow(String tenantId, String approvalNo, String processInstanceId) {
+        Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "租户 ID 不能为空");
+        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批单号不能为空");
         PaymentRefundApprovalEntity approval = inTransaction(() -> markApprovalWorkflowApproved(tenantId, approvalNo, processInstanceId));
         if (approval == null) {
             return;
         }
 
-        PaymentApplication application = selectRequiredApplication(tenantId, approval.getAppId());
+        PaymentApplicationEntity application = selectRequiredApplication(tenantId, approval.getAppId());
         CreatePaymentOpenRefundCommand refundCommand = new CreatePaymentOpenRefundCommand();
         refundCommand.setTenantId(tenantId);
         refundCommand.setAppId(application.getAppId());
@@ -255,7 +262,7 @@ public class PaymentRefundApprovalService {
         PaymentOpenRefundOrderVO refundOrder = refundApplyService.applyRefund(
                 application,
                 refundCommand,
-                PaymentOrderStatusFlowService.SOURCE_MANUAL_REFUND_APPROVAL,
+                PaymentOrderStatusFlowRecorder.SOURCE_MANUAL_REFUND_APPROVAL,
                 approval.getApprovalNo(),
                 true);
         inTransaction(() -> {
@@ -266,16 +273,16 @@ public class PaymentRefundApprovalService {
             locked.setUpdatedBy(PaymentContextSupport.currentUserId());
             locked.setUpdatedAt(LocalDateTime.now());
             refundApprovalMapper.updateById(locked);
-            auditService.record(
+            auditService.record(new PaymentOperationAuditService.AuditEntry(
                     PaymentOperationAuditService.ACTION_APPROVE_REFUND_APPROVAL,
                     PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                     approvalNo,
-                    PaymentOperationAuditService.RESULT_SUCCESS);
+                    PaymentOperationAuditService.RESULT_SUCCESS));
             return null;
         });
     }
 
-    private PaymentRefundApprovalEntity markApprovalWorkflowApproved(Long tenantId, String approvalNo, String processInstanceId) {
+    private PaymentRefundApprovalEntity markApprovalWorkflowApproved(String tenantId, String approvalNo, String processInstanceId) {
         PaymentRefundApprovalEntity approval = refundApprovalMapper.selectEntityByApprovalNoForUpdate(tenantId, approvalNo);
         Require.notNull(approval, PaymentCode.PAYMENT_REFUND_APPROVAL_NOT_FOUND);
         if (PaymentRefundApprovalStatusEnum.APPROVED.getCode().equals(approval.getStatus())) {
@@ -302,9 +309,9 @@ public class PaymentRefundApprovalService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void rejectByWorkflow(Long tenantId, String approvalNo, String processInstanceId, String reason) {
-        Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "租户 ID 不能为空");
-        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批单号不能为空");
+    void rejectByWorkflow(String tenantId, String approvalNo, String processInstanceId, String reason) {
+        Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "租户 ID 不能为空");
+        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批单号不能为空");
         PaymentRefundApprovalEntity approval = refundApprovalMapper.selectEntityByApprovalNoForUpdate(tenantId, approvalNo);
         Require.notNull(approval, PaymentCode.PAYMENT_REFUND_APPROVAL_NOT_FOUND);
         if (PaymentRefundApprovalStatusEnum.REJECTED.getCode().equals(approval.getStatus())) {
@@ -328,20 +335,20 @@ public class PaymentRefundApprovalService {
         approval.setUpdatedBy(PaymentContextSupport.currentUserId());
         approval.setUpdatedAt(now);
         refundApprovalMapper.updateById(approval);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_REJECT_REFUND_APPROVAL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                 approval.getApprovalNo(),
-                PaymentOperationAuditService.RESULT_REJECTED);
+                PaymentOperationAuditService.RESULT_REJECTED));
     }
 
-    private PaymentApplication selectRequiredApplication(Long tenantId, String appId) {
-        PaymentApplication application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplication>()
-                .eq(PaymentApplication::getTenantId, tenantId)
-                .eq(PaymentApplication::getAppId, appId));
+    private PaymentApplicationEntity selectRequiredApplication(String tenantId, String appId) {
+        PaymentApplicationEntity application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplicationEntity>()
+                .eq(PaymentApplicationEntity::getTenantId, tenantId)
+                .eq(PaymentApplicationEntity::getAppId, appId));
         Require.notNull(application, PaymentCode.PAYMENT_APPLICATION_NOT_FOUND);
         Require.isTrue(Integer.valueOf(1).equals(application.getStatus()),
-                PaymentCode.PAYMENT_APPLICATION_INVALID.getCode(), "支付应用未启用");
+                PaymentCode.PAYMENT_APPLICATION_INVALID, "支付应用未启用");
         return application;
     }
 
@@ -374,17 +381,17 @@ public class PaymentRefundApprovalService {
         variables.put("appId", approval.getAppId());
         variables.put("businessOrderId", approval.getBusinessOrderId());
         command.setVariables(variables);
-        R<WorkflowProcessInstanceVO> response = workflowProcessApi.start(command);
-        Require.isTrue(response != null && response.isSuccess(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
-                response == null ? "发起退款审批工作流失败" : response.getMsg());
-        WorkflowProcessInstanceVO process = response.getData();
-        Require.notNull(process, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "发起退款审批工作流未返回流程实例");
-        Require.notBlank(process.getProcessInstanceId(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
+        WorkflowProcessInstanceVO process = PaymentRemoteResultSupport.requireData(
+                workflowProcessApi.start(command),
+                PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,
+                "发起退款审批工作流失败");
+        Require.notNull(process, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "发起退款审批工作流未返回流程实例");
+        Require.notBlank(process.getProcessInstanceId(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,
                 "发起退款审批工作流未返回流程实例 ID");
         return process;
     }
 
-    private boolean updateWorkflowStartProjectionIfPending(Long tenantId, String approvalNo, WorkflowProcessInstanceVO process) {
+    private boolean updateWorkflowStartProjectionIfPending(String tenantId, String approvalNo, WorkflowProcessInstanceVO process) {
         int updated = refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
                 .eq("tenant_id", tenantId)
                 .eq("approval_no", approvalNo)
@@ -401,13 +408,13 @@ public class PaymentRefundApprovalService {
     }
 
     private void acceptWorkflowStartProjectionAlreadyProgressed(
-            Long tenantId,
+            String tenantId,
             String approvalNo,
             WorkflowProcessInstanceVO process) {
         PaymentRefundApprovalEntity locked = refundApprovalMapper.selectEntityByApprovalNoForUpdate(tenantId, approvalNo);
         Require.notNull(locked, PaymentCode.PAYMENT_REFUND_APPROVAL_NOT_FOUND);
         Require.isTrue(isWorkflowStartProjectionAcceptable(locked.getStatus()),
-                PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批工作流启动状态更新失败");
+                PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批工作流启动状态更新失败");
         LocalDateTime now = LocalDateTime.now();
         locked.setWorkflowProcessInstanceId(process.getProcessInstanceId());
         locked.setWorkflowApplyId(process.getApplyId());
@@ -419,7 +426,7 @@ public class PaymentRefundApprovalService {
         locked.setUpdatedBy(PaymentContextSupport.currentUserId());
         locked.setUpdatedAt(now);
         int updated = refundApprovalMapper.updateById(locked);
-        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,
                 "退款审批工作流启动投影同步失败");
     }
 
@@ -454,11 +461,11 @@ public class PaymentRefundApprovalService {
             String result,
             RuntimeException ownerException) {
         try {
-            auditService.record(
+            auditService.record(new PaymentOperationAuditService.AuditEntry(
                     PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
                     PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                     approvalNo,
-                    result);
+                    result));
         } catch (RuntimeException auditException) {
             if (ownerException != null) {
                 ownerException.addSuppressed(auditException);
@@ -468,7 +475,7 @@ public class PaymentRefundApprovalService {
         }
     }
 
-    private void markWorkflowStartFailed(Long tenantId, String approvalNo, String reason) {
+    private void markWorkflowStartFailed(String tenantId, String approvalNo, String reason) {
         int updated = refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
                 .eq("tenant_id", tenantId)
                 .eq("approval_no", approvalNo)
@@ -483,12 +490,12 @@ public class PaymentRefundApprovalService {
                 .set("review_time", LocalDateTime.now())
                 .set("updated_by", PaymentContextSupport.currentUserId())
                 .set("updated_at", LocalDateTime.now()));
-        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,
                 "退款审批工作流启动失败状态更新失败");
     }
 
     private void updateWorkflowProgressProjection(
-            Long tenantId,
+            String tenantId,
             String approvalNo,
             WorkflowBusinessApplyProgressVO progress) {
         refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()

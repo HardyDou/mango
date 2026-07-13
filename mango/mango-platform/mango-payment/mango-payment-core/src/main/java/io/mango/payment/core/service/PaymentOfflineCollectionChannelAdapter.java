@@ -3,9 +3,8 @@ package io.mango.payment.core.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.enums.PaymentChannelCode;
 import io.mango.payment.api.enums.PaymentOfflineCollectionStatusEnum;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
@@ -15,7 +14,7 @@ import io.mango.payment.core.entity.PaymentOfflineCollectionEntity;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.mapper.PaymentOfflineCollectionMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -23,7 +22,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * 线下收款通道适配器。
  */
-@Service
+@Component
 @RequiredArgsConstructor
 public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAdapter {
 
@@ -38,9 +37,9 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
     private static final int RECONCILIATION_CODE_LENGTH = 6;
 
     private final PaymentOfflineCollectionMapper offlineCollectionMapper;
-    private final PaymentSensitiveValueService sensitiveValueService;
+    private final PaymentSensitiveValueCodec sensitiveValueService;
     private final ObjectMapper objectMapper;
-    private final PaymentNumberService numberService;
+    private final PaymentNumberGenerator numberService;
 
     @Override
     public String channelCode() {
@@ -48,7 +47,8 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
     }
 
     @Override
-    public PaymentApplyResult applyPayment(PaymentApplyCommand command) {
+    public PaymentApplyResult applyPayment(PaymentApplyInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "线下收款支付命令不能为空");
         validatePaymentCommand(command);
         String reconciliationCode = nextReconciliationCode();
         OfflineCollectionAccount account = collectionAccount(command);
@@ -63,13 +63,13 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
     }
 
     @Override
-    public void afterPaymentOrderCreated(PaymentApplyCommand command, PaymentApplyResult result, PaymentOrderEntity order) {
+    public void afterPaymentOrderCreated(PaymentApplyInput command, PaymentApplyResult result, PaymentOrderEntity order) {
         validatePaymentCommand(command);
-        Require.notNull(result, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "线下收款通道支付结果不能为空");
+        Require.notNull(result, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "线下收款通道支付结果不能为空");
         Require.notNull(order, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         PaymentCashierPayMaterialVO material = result.material();
-        Require.notNull(material, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "线下收款通道支付物料不能为空");
-        Require.notBlank(material.getTransferRemark(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "线下收款转账备注不能为空");
+        Require.notNull(material, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "线下收款通道支付物料不能为空");
+        Require.notBlank(material.getTransferRemark(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "线下收款转账备注不能为空");
 
         PaymentOfflineCollectionEntity entity = new PaymentOfflineCollectionEntity();
         entity.setOfflineCollectionNo(nextOfflineCollectionNo());
@@ -102,40 +102,40 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
     }
 
     @Override
-    public RefundApplyResult applyRefund(RefundApplyCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_REFUND_INVALID.getCode(), "线下退款命令不能为空");
-        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "线下收款通道编码不正确");
-        Require.notBlank(command.refundOrderNo(), PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "退款订单号不能为空");
-        throw unsupported(
+    public RefundApplyResult applyRefund(RefundApplyInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_REFUND_INVALID, "线下退款命令不能为空");
+        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID, "线下收款通道编码不正确");
+        Require.notBlank(command.refundOrderNo(), PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "退款订单号不能为空");
+        return Require.fail(
                 PaymentCode.PAYMENT_OFFLINE_REFUND_INVALID,
                 "线下退款需要录入退款账户、退款金额和退款凭证，请通过线下支付/退款订单入口办理");
     }
 
     @Override
-    public ChannelBillResult generateBill(ChannelBillCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "线下收款账单命令不能为空");
-        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "线下收款通道编码不正确");
-        Require.notNull(command.billDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期不能为空");
-        throw unsupported(
+    public ChannelBillResult generateBill(ChannelBillInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "线下收款账单命令不能为空");
+        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID, "线下收款通道编码不正确");
+        Require.notNull(command.billDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单日期不能为空");
+        return Require.fail(
                 PaymentCode.PAYMENT_RECONCILIATION_INVALID,
                 "线下收款对账以银行流水 Excel 导入为准，请通过线下支付/银行流水导入入口办理");
     }
 
     @Override
-    public PaymentQueryResult queryPayment(PaymentQueryCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode(), "线下收款查单命令不能为空");
+    public PaymentQueryResult queryPayment(PaymentQueryInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_ORDER_STATE_INVALID, "线下收款查单命令不能为空");
         Require.notNull(command.order(), PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         PaymentOfflineCollectionEntity collection = offlineCollectionMapper.selectByPayOrderNoForUpdate(
                 command.tenantId(),
                 command.order().getPayOrderNo());
         Require.notNull(collection, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
-        Require.isTrue(CHANNEL_CODE.equals(collection.getChannelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "线下收款通道编码不正确");
+        Require.isTrue(CHANNEL_CODE.equals(collection.getChannelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID, "线下收款通道编码不正确");
         return mapPaymentQueryResult(collection.getCollectionStatus());
     }
 
     @Override
-    public RefundQueryResult queryRefund(RefundQueryCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "线下退款查单命令不能为空");
+    public RefundQueryResult queryRefund(RefundQueryInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "线下退款查单命令不能为空");
         Require.notNull(command.refundOrder(), PaymentCode.PAYMENT_REFUND_ORDER_NOT_FOUND);
         return new RefundQueryResult(
                 "OFFLINE_REFUND_INTERNAL_RECORD",
@@ -144,24 +144,24 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
                 PaymentRefundOrderStatusEnum.REFUNDING.getCode());
     }
 
-    private void validatePaymentCommand(PaymentApplyCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "线下收款支付命令不能为空");
-        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "线下收款通道编码不正确");
-        Require.notNull(command.contractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "线下收款签约 ID 不能为空");
-        Require.notBlank(command.payOrderNo(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
-        Require.notBlank(command.bizOrderNo(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "业务订单号不能为空");
+    private void validatePaymentCommand(PaymentApplyInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "线下收款支付命令不能为空");
+        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID, "线下收款通道编码不正确");
+        Require.notNull(command.contractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "线下收款签约 ID 不能为空");
+        Require.notBlank(command.payOrderNo(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "支付订单号不能为空");
+        Require.notBlank(command.bizOrderNo(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "业务订单号不能为空");
         Require.isTrue(MATERIAL_TYPE_TRANSFER_ACCOUNT.equals(command.paymentMaterialType()),
-                PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "线下收款只支持转账账号物料");
-        Require.notNull(command.amount(), PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "线下收款金额不能为空");
-        Require.isTrue(command.amount() > 0, PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "线下收款金额必须大于 0");
-        Require.notBlank(command.currency(), PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "线下收款币种不能为空");
-        Require.notNull(command.subjectId(), PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_INVALID.getCode(), "线下收款主体 ID 不能为空");
-        Require.notBlank(command.subjectName(), PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_INVALID.getCode(), "线下收款主体名称不能为空");
-        Require.notBlank(command.contractConfigValuesJson(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "线下收款签约配置缺少收款账户");
+                PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "线下收款只支持转账账号物料");
+        Require.notNull(command.amount(), PaymentCode.PAYMENT_AMOUNT_INVALID, "线下收款金额不能为空");
+        Require.isTrue(command.amount() > 0, PaymentCode.PAYMENT_AMOUNT_INVALID, "线下收款金额必须大于 0");
+        Require.notBlank(command.currency(), PaymentCode.PAYMENT_AMOUNT_INVALID, "线下收款币种不能为空");
+        Require.notNull(command.subjectId(), PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_INVALID, "线下收款主体 ID 不能为空");
+        Require.notBlank(command.subjectName(), PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_INVALID, "线下收款主体名称不能为空");
+        Require.notBlank(command.contractConfigValuesJson(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "线下收款签约配置缺少收款账户");
     }
 
     private PaymentCashierPayMaterialVO transferMaterial(
-            PaymentApplyCommand command,
+            PaymentApplyInput command,
             OfflineCollectionAccount account,
             String reconciliationCode) {
         PaymentCashierPayMaterialVO material = new PaymentCashierPayMaterialVO();
@@ -177,14 +177,14 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
         return material;
     }
 
-    private OfflineCollectionAccount collectionAccount(PaymentApplyCommand command) {
+    private OfflineCollectionAccount collectionAccount(PaymentApplyInput command) {
         Map<String, Object> values = parseConfigValues(command.contractConfigValuesJson());
         String accountName = trimToNull(values.get(CONFIG_ACCOUNT_NAME));
         String accountNo = sensitiveValueService.decrypt(trimToNull(values.get(CONFIG_ACCOUNT_NO)));
         String bankName = trimToNull(values.get(CONFIG_BANK_NAME));
-        Require.notBlank(accountName, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "线下收款签约配置缺少收款户名");
-        Require.notBlank(accountNo, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "线下收款签约配置缺少收款账号");
-        Require.notBlank(bankName, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "线下收款签约配置缺少开户行");
+        Require.notBlank(accountName, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "线下收款签约配置缺少收款户名");
+        Require.notBlank(accountNo, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "线下收款签约配置缺少收款账号");
+        Require.notBlank(bankName, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "线下收款签约配置缺少开户行");
         return new OfflineCollectionAccount(accountName, accountNo, bankName);
     }
 
@@ -193,7 +193,7 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
             Map<String, Object> values = objectMapper.readValue(configValuesJson, CONFIG_VALUES_TYPE);
             return values == null ? Map.of() : values;
         } catch (JsonProcessingException ex) {
-            throw new BizException(PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "线下收款签约配置不是有效 JSON", ex);
+            return Require.fail(PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "线下收款签约配置不是有效 JSON", ex);
         }
     }
 
@@ -205,12 +205,12 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
         return text.isEmpty() ? null : text;
     }
 
-    private String offlineChannelTradeNo(PaymentApplyCommand command) {
+    private String offlineChannelTradeNo(PaymentApplyInput command) {
         return "OC" + command.payOrderNo();
     }
 
     private String nextOfflineCollectionNo() {
-        return numberService.next(PaymentNumberService.PAY_OFFLINE_COLLECTION_NO);
+        return numberService.next(PaymentNumberGenerator.PAY_OFFLINE_COLLECTION_NO);
     }
 
     private String nextReconciliationCode() {
@@ -244,10 +244,6 @@ public class PaymentOfflineCollectionChannelAdapter implements IPaymentChannelAd
                 collectionStatus,
                 "ASYNC_PROCESSING",
                 PaymentOrderStatusEnum.PAYING.getCode());
-    }
-
-    private BizException unsupported(PaymentCode code, String message) {
-        return new BizException(code.getCode(), message);
     }
 
     private record OfflineCollectionAccount(String accountName, String accountNo, String bankName) {

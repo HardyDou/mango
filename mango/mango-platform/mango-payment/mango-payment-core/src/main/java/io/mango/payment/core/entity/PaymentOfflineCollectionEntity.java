@@ -3,7 +3,6 @@ package io.mango.payment.core.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.mango.infra.persistence.api.entity.AuditableEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("payment_offline_collection")
-public class PaymentOfflineCollectionEntity extends AuditableEntity {
+public class PaymentOfflineCollectionEntity extends PaymentBaseEntity {
 
     private String offlineCollectionNo;
 
@@ -75,8 +74,6 @@ public class PaymentOfflineCollectionEntity extends AuditableEntity {
     private LocalDateTime expireTime;
 
     private LocalDateTime confirmedTime;
-
-    private Long tenantId;
 
     @TableLogic
     @TableField("del_flag")

@@ -5,7 +5,7 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.DomainEventSubscriber;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.workflow.api.WorkflowEventTypes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -41,9 +41,9 @@ public class PaymentRefundApprovalWorkflowSubscriber implements DomainEventSubsc
             return;
         }
         String approvalNo = PaymentContextSupport.trimToNull(event.getBusinessKey());
-        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "工作流事件缺少退款审批单号");
+        Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "工作流事件缺少退款审批单号");
         Map<String, Object> payload = event.getPayload();
-        Long tenantId = tenantId(payload);
+        String tenantId = tenantId(payload);
         String processInstanceId = stringValue(payload == null ? null : payload.get("processInstanceId"));
         String reason = stringValue(payload == null ? null : payload.get("reason"));
         MangoContextSnapshot previous = MangoContextHolder.get();
@@ -60,18 +60,14 @@ public class PaymentRefundApprovalWorkflowSubscriber implements DomainEventSubsc
         }
     }
 
-    private Long tenantId(Map<String, Object> payload) {
+    private String tenantId(Map<String, Object> payload) {
         Object value = payload == null ? null : payload.get("tenantId");
         String tenantId = stringValue(value);
-        Require.notBlank(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "工作流事件缺少租户 ID");
-        try {
-            return Long.valueOf(tenantId);
-        } catch (NumberFormatException e) {
-            return Require.fail(PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "工作流事件租户 ID 非法: " + tenantId);
-        }
+        Require.notBlank(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "工作流事件缺少租户 ID");
+        return tenantId;
     }
 
-    private void ensureContext(Long tenantId) {
+    private void ensureContext(String tenantId) {
         MangoContextSnapshot current = MangoContextHolder.get();
         if (current.tenantId() != null) {
             return;

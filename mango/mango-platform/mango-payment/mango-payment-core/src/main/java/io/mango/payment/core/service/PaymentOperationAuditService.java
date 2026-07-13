@@ -1,9 +1,11 @@
 package io.mango.payment.core.service;
 
+import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentOperationAuditVO;
-import io.mango.payment.core.entity.PaymentOperationAudit;
+import io.mango.payment.core.entity.PaymentOperationAuditEntity;
 import io.mango.payment.core.mapper.PaymentOperationAuditMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
+
 @Service
 @RequiredArgsConstructor
-public class PaymentOperationAuditService {
+public class PaymentOperationAuditService implements IPaymentOperationAuditService {
 
     public static final String RESOURCE_PAYMENT_APPLICATION = "PAYMENT_APPLICATION";
     public static final String RESOURCE_PAYMENT_ENTERPRISE_SUBJECT = "PAYMENT_ENTERPRISE_SUBJECT";
@@ -95,28 +99,30 @@ public class PaymentOperationAuditService {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String operationResult = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = auditMapper.countOperationAudits(tenantId, keyword, operationResult);
         long page = resolved.getPage();
         long size = resolved.getSize();
         return PageResult.of(
-                auditMapper.selectOperationAuditPage(tenantId, keyword, operationResult, size, (page - 1) * size),
+                toApiList(auditMapper.selectOperationAuditPage(
+                        tenantId, keyword, operationResult, size, (page - 1) * size), PaymentOperationAuditVO.class),
                 total,
                 page,
                 size);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
-    public void record(String operationAction, String resourceType, String resourceId, String operationResult) {
+    public void record(AuditEntry entry) {
+        Require.notNull(entry, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID, "操作审计内容不能为空");
         LocalDateTime now = LocalDateTime.now();
         Long operatorId = PaymentContextSupport.currentUserId();
-        PaymentOperationAudit audit = new PaymentOperationAudit();
+        PaymentOperationAuditEntity audit = new PaymentOperationAuditEntity();
         audit.setOperatorId(operatorId);
         audit.setOperatorName(PaymentContextSupport.currentPrincipalName());
-        audit.setOperationAction(operationAction);
-        audit.setResourceType(resourceType);
-        audit.setResourceId(resourceId);
-        audit.setOperationResult(operationResult);
+        audit.setOperationAction(entry.operationAction());
+        audit.setResourceType(entry.resourceType());
+        audit.setResourceId(entry.resourceId());
+        audit.setOperationResult(entry.operationResult());
         audit.setOperationTime(now);
         audit.setTenantId(PaymentContextSupport.currentTenantId());
         audit.setCreatedBy(operatorId);
@@ -124,5 +130,12 @@ public class PaymentOperationAuditService {
         audit.setUpdatedBy(operatorId);
         audit.setUpdatedAt(now);
         auditMapper.insert(audit);
+    }
+
+    public record AuditEntry(
+            String operationAction,
+            String resourceType,
+            String resourceId,
+            String operationResult) {
     }
 }

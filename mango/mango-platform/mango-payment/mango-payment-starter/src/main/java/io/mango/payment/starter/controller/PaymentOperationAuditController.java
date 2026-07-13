@@ -7,7 +7,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentOperationAuditApi;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentOperationAuditVO;
-import io.mango.payment.core.service.PaymentOperationAuditService;
+import io.mango.payment.core.service.IPaymentOperationAuditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "支付操作审计", description = "支付域关键操作审计接口")
 public class PaymentOperationAuditController implements PaymentOperationAuditApi {
 
-    private final PaymentOperationAuditService auditService;
+    private final IPaymentOperationAuditService auditService;
 
     @Override
     @GetMapping("/page")

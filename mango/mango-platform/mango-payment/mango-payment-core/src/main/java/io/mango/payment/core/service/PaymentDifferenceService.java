@@ -3,7 +3,7 @@ package io.mango.payment.core.service;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.HandlePaymentDifferenceCommand;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
@@ -21,38 +21,43 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
 import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentDifferenceService {
+public class PaymentDifferenceService implements IPaymentDifferenceService {
 
     private static final Pattern PAYMENT_ORDER_NO_PATTERN = Pattern.compile("^PO\\d{16}$");
     private static final Pattern REFUND_ORDER_NO_PATTERN = Pattern.compile("^RO\\d{16}$");
 
     private final PaymentDifferenceMapper differenceMapper;
     private final PaymentTransactionFlowMapper transactionFlowMapper;
-    private final PaymentChannelSyncService channelSyncService;
+    private final PaymentChannelSynchronizer channelSyncService;
     private final PaymentOperationAuditService auditService;
-    private final PaymentNumberService numberService;
+    private final PaymentNumberGenerator numberService;
     private final PaymentOrderViewSupport viewSupport;
 
     public PageResult<PaymentDifferenceVO> pageDifferences(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = differenceMapper.countDifferences(tenantId, keyword, statusCode);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentDifferenceVO> rows = differenceMapper.selectDifferencePage(tenantId, keyword, statusCode, size, (page - 1) * size);
+        List<PaymentDifferenceVO> rows = toApiList(differenceMapper.selectDifferencePage(
+                tenantId, keyword, statusCode, size, (page - 1) * size), PaymentDifferenceVO.class);
         rows.forEach(this::fillDifferenceSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentDifferenceVO detailDifference(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "对账差异 ID 不能为空");
-        PaymentDifferenceVO vo = differenceMapper.selectDifferenceDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "对账差异 ID 不能为空");
+        PaymentDifferenceVO vo = toApi(differenceMapper.selectDifferenceDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentDifferenceVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_DIFFERENCE_NOT_FOUND);
         fillDifferenceSummary(vo);
         return vo;
@@ -77,21 +82,21 @@ public class PaymentDifferenceService {
 
     public PaymentDifferenceVO handleDifference(HandlePaymentDifferenceCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_DIFFERENCE_INVALID);
-        Require.notNull(command.getId(), PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "对账差异 ID 不能为空");
+        Require.notNull(command.getId(), PaymentCode.PAYMENT_DIFFERENCE_INVALID, "对账差异 ID 不能为空");
         String processAction = PaymentContextSupport.trimToNull(command.getProcessAction());
         String processReason = PaymentContextSupport.trimToNull(command.getProcessReason());
         String processResult = PaymentContextSupport.trimToNull(command.getProcessResult());
         String processEvidence = PaymentContextSupport.trimToNull(command.getProcessEvidence());
-        Require.notBlank(processAction, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理动作不能为空");
-        Require.notBlank(processReason, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理原因不能为空");
-        Require.notBlank(processResult, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理结果不能为空");
-        Require.isTrue(isSupportedDifferenceAction(processAction), PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理动作不支持");
-        Require.isTrue(processAction.length() <= 64, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理动作不能超过 64 个字符");
-        Require.isTrue(processReason.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理原因不能超过 512 个字符");
-        Require.isTrue(processResult.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理结果不能超过 512 个字符");
-        Require.isTrue(processEvidence == null || processEvidence.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理凭据不能超过 512 个字符");
+        Require.notBlank(processAction, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理动作不能为空");
+        Require.notBlank(processReason, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理原因不能为空");
+        Require.notBlank(processResult, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理结果不能为空");
+        Require.isTrue(isSupportedDifferenceAction(processAction), PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理动作不支持");
+        Require.isTrue(processAction.length() <= 64, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理动作不能超过 64 个字符");
+        Require.isTrue(processReason.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理原因不能超过 512 个字符");
+        Require.isTrue(processResult.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理结果不能超过 512 个字符");
+        Require.isTrue(processEvidence == null || processEvidence.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理凭据不能超过 512 个字符");
 
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentDifferenceEntity entity = differenceMapper.selectById(command.getId());
         Require.notNull(entity, PaymentCode.PAYMENT_DIFFERENCE_NOT_FOUND);
         Require.isTrue(tenantId.equals(entity.getTenantId()) && !Integer.valueOf(1).equals(entity.getDelFlag()),
@@ -100,7 +105,7 @@ public class PaymentDifferenceService {
                 PaymentCode.PAYMENT_DIFFERENCE_HANDLE_STATUS_INVALID);
         DifferenceActionResult actionResult = executeDifferenceAction(processAction, entity);
         processResult = mergeProcessResult(processResult, actionResult.message());
-        Require.isTrue(processResult.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "处理结果不能超过 512 个字符");
+        Require.isTrue(processResult.length() <= 512, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "处理结果不能超过 512 个字符");
 
         LocalDateTime now = LocalDateTime.now();
         Long operatorId = PaymentContextSupport.currentUserId();
@@ -120,18 +125,18 @@ public class PaymentDifferenceService {
                 now);
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_DIFFERENCE_HANDLE_STATUS_INVALID);
 
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_HANDLE_DIFFERENCE,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_DIFFERENCE,
                 entity.getDifferenceNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailDifference(command.getId());
     }
 
-    private PaymentTransactionFlowEntity createDifferenceAdjustFlow(LocalDateTime now, Long operatorId, Long tenantId) {
+    private PaymentTransactionFlowEntity createDifferenceAdjustFlow(LocalDateTime now, Long operatorId, String tenantId) {
         PaymentTransactionFlowEntity flow = new PaymentTransactionFlowEntity();
         flow.setId(IdWorker.getId());
-        flow.setFlowNo(numberService.next(PaymentNumberService.PAY_ADJUST_FLOW_NO));
+        flow.setFlowNo(numberService.next(PaymentNumberGenerator.PAY_ADJUST_FLOW_NO));
         flow.setBusinessOrderId(null);
         flow.setPaymentOrderId(null);
         flow.setRefundOrderId(null);
@@ -171,9 +176,9 @@ public class PaymentDifferenceService {
 
     private DifferenceActionResult executeDifferenceActiveQuery(PaymentDifferenceEntity entity) {
         String relatedOrderNo = PaymentContextSupport.trimToNull(entity.getRelatedOrderNo());
-        Require.notBlank(relatedOrderNo, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "主动查单需要关联订单号");
+        Require.notBlank(relatedOrderNo, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "主动查单需要关联订单号");
         if (isPaymentOrderNo(relatedOrderNo)) {
-            PaymentChannelSyncService.PaymentSyncResult queryResult = channelSyncService.syncPaymentStatus(relatedOrderNo);
+            PaymentChannelSynchronizer.PaymentSyncResult queryResult = channelSyncService.syncPaymentStatus(relatedOrderNo);
             return new DifferenceActionResult(
                     paymentQueryNextStatus(queryResult.status()),
                     "主动查单结果：支付订单 " + queryResult.payOrderNo()
@@ -181,14 +186,14 @@ public class PaymentDifferenceService {
                             + (queryResult.changed() ? "，已按通道结果推进" : "，本地状态未变化"));
         }
         if (isRefundOrderNo(relatedOrderNo)) {
-            PaymentChannelSyncService.RefundSyncResult queryResult = channelSyncService.syncRefundStatus(relatedOrderNo);
+            PaymentChannelSynchronizer.RefundSyncResult queryResult = channelSyncService.syncRefundStatus(relatedOrderNo);
             return new DifferenceActionResult(
                     refundQueryNextStatus(queryResult.status()),
                     "主动查退款结果：退款订单 " + queryResult.refundOrderNo()
                             + " 当前状态 " + queryResult.status()
                             + (queryResult.changed() ? "，已按通道结果推进" : "，本地状态未变化"));
         }
-        Require.isTrue(false, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "主动查单需要关联本地支付单号或退款单号");
+        Require.isTrue(false, PaymentCode.PAYMENT_DIFFERENCE_INVALID, "主动查单需要关联本地支付单号或退款单号");
         return new DifferenceActionResult("PROCESSING", null);
     }
 

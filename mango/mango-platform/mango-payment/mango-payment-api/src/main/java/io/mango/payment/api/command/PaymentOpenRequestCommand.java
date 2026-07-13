@@ -2,6 +2,7 @@ package io.mango.payment.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -9,6 +10,7 @@ import lombok.Data;
 public class PaymentOpenRequestCommand {
 
     @Schema(description = "请求体原文")
+    @Size(max = 1048576, message = "请求体不能超过 1 MiB")
     private String body;
 
     @Schema(description = "支付应用 AppId")
@@ -32,18 +34,22 @@ public class PaymentOpenRequestCommand {
     private String signature;
 
     @Schema(description = "请求路径")
-    @NotBlank(message = "请求路径不能为空")
+    @Size(max = 256, message = "请求路径不能超过 256 个字符")
     private String requestPath;
 
     @Schema(description = "客户端 IP")
+    @Size(max = 64, message = "客户端 IP 不能超过 64 个字符")
     private String clientIp;
 
     @Schema(description = "业务订单号")
+    @Size(max = 64, message = "业务订单号不能超过 64 个字符")
     private String bizOrderNo;
 
     @Schema(description = "支付订单号")
+    @Size(max = 64, message = "支付订单号不能超过 64 个字符")
     private String payOrderNo;
 
     @Schema(description = "业务退款单号")
+    @Size(max = 64, message = "业务退款单号不能超过 64 个字符")
     private String bizRefundNo;
 }

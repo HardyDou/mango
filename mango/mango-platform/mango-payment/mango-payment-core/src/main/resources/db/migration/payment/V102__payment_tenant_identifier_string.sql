@@ -1,0 +1,47 @@
+-- 支付域租户标识与平台 TenantEntity 的 String 契约对齐。
+-- MySQL 会在 bigint -> varchar 转换时保留现有十进制文本值；默认值与非空约束保持不变。
+
+ALTER TABLE `payment_application` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_enterprise_subject` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_method` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_cashier_config` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_business_order` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_order` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_refund_order` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_transaction_flow` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_exception_order` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_notification_record` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_reconciliation` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_difference` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_settlement_summary` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_operation_audit` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_virtual_channel_payment` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_contract` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户 ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_capability` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户 ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_contract_capability` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户 ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_method_route_rule` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户 ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_method_route_rule_item` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户 ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_method_category` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户 ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_bill_detail` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_openapi_nonce` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_query_record` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_refund_query_record` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_mango_pay_scenario_control` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_tenant` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_subject_bank_account` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_field_template` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_contract_value` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_bill_batch` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_risk_rule` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_order_status_flow` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_certificate_rotation_record` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_refund_approval` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_offline_collection` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_offline_refund_process` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_offline_collection_voucher` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_offline_bank_statement_batch` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_offline_bank_statement_item` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_offline_collection_match` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_bill_source` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';
+ALTER TABLE `payment_channel_bill_fetch_batch` MODIFY COLUMN `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID', ADD COLUMN `org_id` bigint DEFAULT NULL COMMENT '所属组织ID';

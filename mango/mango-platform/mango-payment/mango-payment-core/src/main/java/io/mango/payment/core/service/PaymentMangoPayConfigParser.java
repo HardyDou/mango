@@ -1,10 +1,12 @@
 package io.mango.payment.core.service;
 
+import io.mango.common.result.Require;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -34,7 +36,7 @@ final class PaymentMangoPayConfigParser {
             }
             return result;
         } catch (JsonProcessingException ex) {
-            throw new BizException(PaymentCode.PAYMENT_CHANNEL_CONTRACT_VALUE_INVALID.getCode(), "芒果支付场景配置不是有效 JSON", ex);
+            return Require.fail(PaymentCode.PAYMENT_CHANNEL_CONTRACT_VALUE_INVALID, "芒果支付场景配置不是有效 JSON", ex);
         }
     }
 }

@@ -43,7 +43,7 @@ class PaymentReconciliationMapperIntegrationTest {
         try (SqlSession session = sqlSessionFactory.openSession()) {
             PaymentOrderMapper paymentOrderMapper = session.getMapper(PaymentOrderMapper.class);
             List<PaymentOrderEntity> missingPaymentOrders = paymentOrderMapper.selectSuccessfulChannelOrdersMissingInBill(
-                    1L,
+                    "1",
                     "MANGO_PAY",
                     LocalDate.of(2026, 6, 6),
                     LocalDate.of(2026, 6, 7),
@@ -56,7 +56,7 @@ class PaymentReconciliationMapperIntegrationTest {
 
             PaymentRefundOrderMapper refundOrderMapper = session.getMapper(PaymentRefundOrderMapper.class);
             List<PaymentRefundOrderEntity> missingRefundOrders = refundOrderMapper.selectSuccessfulChannelRefundsMissingInBill(
-                    1L,
+                    "1",
                     "MANGO_PAY",
                     LocalDate.of(2026, 6, 6),
                     LocalDate.of(2026, 6, 7),
@@ -107,7 +107,8 @@ class PaymentReconciliationMapperIntegrationTest {
                   success_flag int default 0,
                   pay_time timestamp,
                   expire_time timestamp,
-                  tenant_id bigint not null,
+                  tenant_id varchar(64) not null,
+                    org_id bigint,
                   created_by bigint,
                   created_at timestamp,
                   updated_by bigint,
@@ -126,7 +127,8 @@ class PaymentReconciliationMapperIntegrationTest {
                   reason varchar(255),
                   status varchar(32) not null,
                   refund_time timestamp,
-                  tenant_id bigint not null,
+                  tenant_id varchar(64) not null,
+                    org_id bigint,
                   created_by bigint,
                   created_at timestamp,
                   updated_by bigint,
@@ -176,7 +178,7 @@ class PaymentReconciliationMapperIntegrationTest {
                 channelTradeNo,
                 successFlag,
                 payTime,
-                1L,
+                "1",
                 1001L,
                 payTime,
                 1001L,
@@ -205,7 +207,7 @@ class PaymentReconciliationMapperIntegrationTest {
                 refundAmount,
                 status,
                 refundTime,
-                1L,
+                "1",
                 1001L,
                 refundTime,
                 1001L,

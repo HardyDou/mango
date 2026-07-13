@@ -3,7 +3,6 @@ package io.mango.payment.core.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.mango.infra.persistence.api.entity.AuditableEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("payment_channel_certificate_rotation_record")
-public class PaymentChannelCertificateRotationRecordEntity extends AuditableEntity {
+public class PaymentChannelCertificateRotationRecordEntity extends PaymentBaseEntity {
 
     private Long contractId;
 
@@ -35,8 +34,6 @@ public class PaymentChannelCertificateRotationRecordEntity extends AuditableEnti
     private String operatorName;
 
     private LocalDateTime rotateTime;
-
-    private Long tenantId;
 
     @TableLogic
     @TableField("del_flag")

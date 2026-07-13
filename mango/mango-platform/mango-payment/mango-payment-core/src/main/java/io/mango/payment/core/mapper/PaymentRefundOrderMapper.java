@@ -2,7 +2,7 @@ package io.mango.payment.core.mapper;
 
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.payment.api.vo.PaymentRefundOrderVO;
+import io.mango.payment.core.model.projection.PaymentRefundOrderProjection;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -16,76 +16,76 @@ public interface PaymentRefundOrderMapper extends BaseMapper<PaymentRefundOrderE
 
     @InterceptorIgnore(tenantLine = "true")
     long countRefundOrders(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode);
 
     @InterceptorIgnore(tenantLine = "true")
     long countRefundOrdersByStatus(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("status") String status);
 
     @InterceptorIgnore(tenantLine = "true")
-    List<PaymentRefundOrderVO> selectRefundOrderPage(
-            @Param("tenantId") Long tenantId,
+    List<PaymentRefundOrderProjection> selectRefundOrderPage(
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode,
             @Param("limit") long limit,
             @Param("offset") long offset);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentRefundOrderVO selectRefundOrderDetail(
-            @Param("tenantId") Long tenantId,
+    PaymentRefundOrderProjection selectRefundOrderDetail(
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentRefundOrderVO selectOpenRefundOrder(
-            @Param("tenantId") Long tenantId,
+    PaymentRefundOrderProjection selectOpenRefundOrder(
+            @Param("tenantId") String tenantId,
             @Param("appId") String appId,
             @Param("bizRefundNo") String bizRefundNo);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentRefundOrderVO selectByTenantAndRefundOrderNo(
-            @Param("tenantId") Long tenantId,
+    PaymentRefundOrderProjection selectByTenantAndRefundOrderNo(
+            @Param("tenantId") String tenantId,
             @Param("refundOrderNo") String refundOrderNo);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentRefundOrderVO selectByTenantAndChannelRefundNo(
-            @Param("tenantId") Long tenantId,
+    PaymentRefundOrderProjection selectByTenantAndChannelRefundNo(
+            @Param("tenantId") String tenantId,
             @Param("channelRefundNo") String channelRefundNo);
 
     @InterceptorIgnore(tenantLine = "true")
     int updateRefundingQueryResult(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("status") String status,
             @Param("refundTime") LocalDateTime refundTime);
 
     @InterceptorIgnore(tenantLine = "true")
     int updateRefundApplyResult(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("channelRefundNo") String channelRefundNo,
             @Param("status") String status);
 
     @InterceptorIgnore(tenantLine = "true")
     Long sumOccupyingRefundAmount(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("paymentOrderId") Long paymentOrderId);
 
     @InterceptorIgnore(tenantLine = "true")
     String selectLatestFlowNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("refundOrderId") Long refundOrderId);
 
     @InterceptorIgnore(tenantLine = "true")
     PaymentRefundOrderEntity selectEntityByTenantAndChannelRefundNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("channelRefundNo") String channelRefundNo);
 
     @InterceptorIgnore(tenantLine = "true")
     List<PaymentRefundOrderEntity> selectSuccessfulChannelRefundsMissingInBill(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("channelCode") String channelCode,
             @Param("billDate") LocalDate billDate,
             @Param("nextBillDate") LocalDate nextBillDate,
@@ -93,7 +93,7 @@ public interface PaymentRefundOrderMapper extends BaseMapper<PaymentRefundOrderE
 
     @InterceptorIgnore(tenantLine = "true")
     List<PaymentRefundOrderEntity> selectSuccessfulChannelRefundsForBill(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("channelCode") String channelCode,
             @Param("contractId") Long contractId,
             @Param("billDate") LocalDate billDate,

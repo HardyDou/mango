@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
 import io.mango.payment.api.vo.PaymentObservabilityAlertVO;
@@ -26,7 +26,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentObservabilityService {
+public class PaymentObservabilityService implements IPaymentObservabilityService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PaymentObservabilityService.class);
     private static final BigDecimal ONE = BigDecimal.ONE;
@@ -40,7 +40,7 @@ public class PaymentObservabilityService {
     private final PaymentObservabilityProperties properties;
 
     public PaymentObservabilitySnapshotVO currentSnapshot() {
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentObservabilitySnapshotVO snapshot = new PaymentObservabilitySnapshotVO();
         long paymentTotal = paymentOrderMapper.countPaymentOrdersByStatus(tenantId, null);
         long paymentSuccess = paymentOrderMapper.countPaymentOrdersByStatus(tenantId, PaymentOrderStatusEnum.SUCCESS.getCode());
@@ -77,7 +77,7 @@ public class PaymentObservabilityService {
         return snapshot;
     }
 
-    public void logSummary(
+    void logSummary(
             String event,
             String orderNo,
             String status,
@@ -85,7 +85,7 @@ public class PaymentObservabilityService {
             String channelCode,
             long durationMillis,
             String result) {
-        Require.notBlank(event, PaymentCode.PAYMENT_OBSERVABILITY_INVALID.getCode(), "摘要日志事件不能为空");
+        Require.notBlank(event, PaymentCode.PAYMENT_OBSERVABILITY_INVALID, "摘要日志事件不能为空");
         LOGGER.info(
                 "payment.summary event={} orderNo={} status={} amount={} channel={} durationMs={} result={}",
                 event,
@@ -97,7 +97,7 @@ public class PaymentObservabilityService {
                 safe(result));
     }
 
-    private List<PaymentObservabilityAlertVO> alerts(PaymentObservabilitySnapshotVO snapshot, Long tenantId) {
+    private List<PaymentObservabilityAlertVO> alerts(PaymentObservabilitySnapshotVO snapshot, String tenantId) {
         List<PaymentObservabilityAlertVO> alerts = new ArrayList<>();
         if (positive(snapshot.getPaymentTotalCount())
                 && snapshot.getPaymentSuccessRate().compareTo(properties.getPaymentSuccessRateMinimum()) < 0) {
@@ -159,7 +159,7 @@ public class PaymentObservabilityService {
         return alerts;
     }
 
-    private List<PaymentObservabilityAlertVO> channelFailureAlerts(Long tenantId) {
+    private List<PaymentObservabilityAlertVO> channelFailureAlerts(String tenantId) {
         List<PaymentObservabilityAlertVO> alerts = new ArrayList<>();
         List<PaymentChannelFailureMetric> metrics = paymentOrderMapper.selectChannelFailureMetrics(tenantId);
         for (PaymentChannelFailureMetric metric : metrics) {
@@ -175,7 +175,7 @@ public class PaymentObservabilityService {
         return alerts;
     }
 
-    private BigDecimal channelFailureRate(Long tenantId) {
+    private BigDecimal channelFailureRate(String tenantId) {
         long total = 0L;
         long failed = 0L;
         for (PaymentChannelFailureMetric metric : paymentOrderMapper.selectChannelFailureMetrics(tenantId)) {

@@ -2,7 +2,7 @@ package io.mango.payment.core.mapper;
 
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.payment.api.vo.PaymentNotificationRecordVO;
+import io.mango.payment.core.model.projection.PaymentNotificationRecordProjection;
 import io.mango.payment.core.entity.PaymentNotificationRecordEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -15,47 +15,47 @@ public interface PaymentNotificationRecordMapper extends BaseMapper<PaymentNotif
 
     @InterceptorIgnore(tenantLine = "true")
     long countNotificationRecords(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode);
 
     @InterceptorIgnore(tenantLine = "true")
-    long countFailedNotificationRecords(@Param("tenantId") Long tenantId);
+    long countFailedNotificationRecords(@Param("tenantId") String tenantId);
 
     @InterceptorIgnore(tenantLine = "true")
-    List<PaymentNotificationRecordVO> selectNotificationRecordPage(
-            @Param("tenantId") Long tenantId,
+    List<PaymentNotificationRecordProjection> selectNotificationRecordPage(
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode,
             @Param("limit") long limit,
             @Param("offset") long offset);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentNotificationRecordVO selectNotificationRecordDetail(
-            @Param("tenantId") Long tenantId,
+    PaymentNotificationRecordProjection selectNotificationRecordDetail(
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     List<PaymentNotificationRecordEntity> selectDueNotificationRecords(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("now") LocalDateTime now,
             @Param("limit") long limit);
 
     @InterceptorIgnore(tenantLine = "true")
-    List<Long> selectDueNotificationTenantIds(
+    List<String> selectDueNotificationTenantIds(
             @Param("now") LocalDateTime now,
             @Param("limit") long limit);
 
     @InterceptorIgnore(tenantLine = "true")
     int claimDueNotificationRecord(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("now") LocalDateTime now,
             @Param("operatorId") Long operatorId);
 
     @InterceptorIgnore(tenantLine = "true")
     int updateDeliveryResult(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("notifyStatus") String notifyStatus,
             @Param("responseCode") String responseCode,
@@ -66,7 +66,7 @@ public interface PaymentNotificationRecordMapper extends BaseMapper<PaymentNotif
 
     @InterceptorIgnore(tenantLine = "true")
     int manualRetryNotificationRecord(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("retryReason") String retryReason,
             @Param("retryResult") String retryResult,

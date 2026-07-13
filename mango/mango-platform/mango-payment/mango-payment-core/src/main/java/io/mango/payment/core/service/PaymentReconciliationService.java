@@ -1,15 +1,19 @@
 package io.mango.payment.core.service;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
 import io.mango.payment.api.command.GeneratePaymentLocalOrderCheckCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
+import io.mango.payment.api.command.PaymentReconciliationBillItemCommand;
 import io.mango.payment.api.command.SavePaymentChannelBillSourceCommand;
 import io.mango.payment.api.enums.PaymentBusinessOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentChannelBillFetchModeEnum;
@@ -29,8 +33,8 @@ import io.mango.payment.core.entity.PaymentChannelBillBatchEntity;
 import io.mango.payment.core.entity.PaymentChannelBillFetchBatchEntity;
 import io.mango.payment.core.entity.PaymentChannelBillSourceEntity;
 import io.mango.payment.core.entity.PaymentChannelBillDetailEntity;
-import io.mango.payment.core.entity.PaymentChannel;
-import io.mango.payment.core.entity.PaymentChannelContract;
+import io.mango.payment.core.entity.PaymentChannelEntity;
+import io.mango.payment.core.entity.PaymentChannelContractEntity;
 import io.mango.payment.core.entity.PaymentDifferenceEntity;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
@@ -79,7 +83,7 @@ import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentReconciliationService {
+public class PaymentReconciliationService implements IPaymentReconciliationService {
 
     private static final String STATUS_MATCHED = "MATCHED";
     private static final String STATUS_DIFFERENCE = "DIFFERENCE";
@@ -104,11 +108,11 @@ public class PaymentReconciliationService {
     private final PaymentTransactionFlowMapper transactionFlowMapper;
     private final PaymentOperationAuditService auditService;
     private final PaymentChannelAdapterRegistry channelAdapterRegistry;
-    private final PaymentOrderStateService orderStateService;
-    private final PaymentOrderStatusFlowService statusFlowService;
-    private final PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
+    private final PaymentOrderStatePolicy orderStateService;
+    private final PaymentOrderStatusFlowRecorder statusFlowService;
+    private final PaymentRefundCompletionDeduplicator duplicateRefundCompletionService;
     private final PaymentObservabilityService observabilityService;
-    private final PaymentNumberService numberService;
+    private final PaymentNumberGenerator numberService;
     private final PaymentChannelBillFileClient billFileClient;
     private final ObjectMapper objectMapper;
     private final PlatformTransactionManager transactionManager;
@@ -117,22 +121,25 @@ public class PaymentReconciliationService {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = reconciliationMapper.countReconciliations(tenantId, keyword, statusCode);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentReconciliationVO> rows = reconciliationMapper.selectReconciliationPage(tenantId, keyword, statusCode, size, (page - 1) * size);
+        List<PaymentReconciliationVO> rows = toApiList(reconciliationMapper.selectReconciliationPage(
+                tenantId, keyword, statusCode, size, (page - 1) * size), PaymentReconciliationVO.class);
         rows.forEach(this::fillReconciliationSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentReconciliationVO detailReconciliation(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "对账批次 ID 不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
-        PaymentReconciliationVO vo = reconciliationMapper.selectReconciliationDetail(tenantId, id);
+        Require.notNull(id, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "对账批次 ID 不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
+        PaymentReconciliationVO vo = toApi(
+                reconciliationMapper.selectReconciliationDetail(tenantId, id), PaymentReconciliationVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND);
         fillReconciliationSummary(vo);
-        List<PaymentChannelBillDetailVO> details = billDetailMapper.selectBillDetails(tenantId, id);
+        List<PaymentChannelBillDetailVO> details = toApiList(
+                billDetailMapper.selectBillDetails(tenantId, id), PaymentChannelBillDetailVO.class);
         details.forEach(this::fillBillDetailSummary);
         vo.setDetails(details);
         return vo;
@@ -157,20 +164,21 @@ public class PaymentReconciliationService {
     public PageResult<PaymentChannelBillSourceVO> pageBillSources(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = billSourceMapper.countBillSources(tenantId, keyword, resolved.getContractId());
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentChannelBillSourceVO> rows = billSourceMapper.selectBillSourcePage(
-                tenantId, keyword, resolved.getContractId(), size, (page - 1) * size);
+        List<PaymentChannelBillSourceVO> rows = toApiList(billSourceMapper.selectBillSourcePage(
+                tenantId, keyword, resolved.getContractId(), size, (page - 1) * size), PaymentChannelBillSourceVO.class);
         rows.forEach(this::fillBillSourceSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentChannelBillSourceVO detailBillSource(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取源 ID 不能为空");
-        PaymentChannelBillSourceVO vo = billSourceMapper.selectBillSourceDetail(PaymentContextSupport.currentTenantId(), id);
-        Require.notNull(vo, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+        Require.notNull(id, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单获取源 ID 不能为空");
+        PaymentChannelBillSourceVO vo = toApi(billSourceMapper.selectBillSourceDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentChannelBillSourceVO.class);
+        Require.notNull(vo, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND, "账单获取源不存在");
         fillBillSourceSummary(vo);
         return vo;
     }
@@ -178,39 +186,39 @@ public class PaymentReconciliationService {
     @Transactional(rollbackFor = Exception.class)
     public PaymentChannelBillSourceVO saveBillSource(SavePaymentChannelBillSourceCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
-        Require.notNull(command.getContractId(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "签约通道不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
-        PaymentChannelContract contract = selectBillSourceContract(command.getContractId(), tenantId);
-        PaymentChannel channel = selectBillSourceChannel(contract, tenantId);
+        Require.notNull(command.getContractId(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "签约通道不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
+        PaymentChannelContractEntity contract = selectBillSourceContract(command.getContractId(), tenantId);
+        PaymentChannelEntity channel = selectBillSourceChannel(contract, tenantId);
         String channelCode = normalizeCode(channel.getChannelCode());
         String fetchMode = normalizeCode(command.getFetchMode());
         String endpoint = PaymentContextSupport.trimToNull(command.getEndpoint());
         String remotePath = PaymentContextSupport.trimToNull(command.getRemotePath());
         String credentialRef = PaymentContextSupport.trimToNull(command.getCredentialRef());
         String pageMode = normalizeCode(command.getPageMode());
-        Require.notBlank(fetchMode, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "获取方式不能为空");
-        Require.isTrue(PaymentChannelBillFetchModeEnum.contains(fetchMode), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "获取方式仅支持 MANUAL、FTP、FTPS、HTTP");
+        Require.notBlank(fetchMode, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "获取方式不能为空");
+        Require.isTrue(PaymentChannelBillFetchModeEnum.contains(fetchMode), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "获取方式仅支持 MANUAL、FTP、FTPS、HTTP");
         Require.isTrue(channelBillFetchModes(channel).contains(fetchMode),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道未声明支持该账单获取方式");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "支付通道未声明支持该账单获取方式");
         Require.isTrue(command.getEnabled() != null && (command.getEnabled() == 0 || command.getEnabled() == 1),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "启用状态只能是 0 或 1");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "启用状态只能是 0 或 1");
         if ("HTTP".equals(fetchMode)) {
-            Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 获取地址不能为空");
+            Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "HTTP 获取地址不能为空");
             Require.isTrue(pageMode == null || "PAGE".equals(pageMode) || "CURSOR".equals(pageMode),
-                    PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 分页模式仅支持 PAGE、CURSOR");
+                    PaymentCode.PAYMENT_RECONCILIATION_INVALID, "HTTP 分页模式仅支持 PAGE、CURSOR");
         }
         if ("FTP".equals(fetchMode) || "FTPS".equals(fetchMode)) {
-            Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 服务器地址不能为空");
-            Require.notBlank(remotePath, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 远端路径不能为空");
+            Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 服务器地址不能为空");
+            Require.notBlank(remotePath, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 远端路径不能为空");
         }
 
         LocalDateTime now = LocalDateTime.now();
         Long operatorId = PaymentContextSupport.currentUserId();
         PaymentChannelBillSourceEntity entity = command.getId() == null ? new PaymentChannelBillSourceEntity() : billSourceMapper.selectById(command.getId());
         if (command.getId() != null) {
-            Require.notNull(entity, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+            Require.notNull(entity, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND, "账单获取源不存在");
             Require.isTrue(tenantId.equals(entity.getTenantId()) && Integer.valueOf(0).equals(entity.getDelFlag()),
-                PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+                PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND, "账单获取源不存在");
         } else {
             entity.setId(IdWorker.getId());
             entity.setTenantId(tenantId);
@@ -232,42 +240,43 @@ public class PaymentReconciliationService {
         } else {
             billSourceMapper.updateById(entity);
         }
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_SAVE_CHANNEL_BILL_SOURCE,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_CHANNEL_BILL_SOURCE,
                 String.valueOf(entity.getId()),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailBillSource(entity.getId());
     }
 
     public PageResult<PaymentChannelBillFetchBatchVO> pageBillFetchBatches(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = billFetchBatchMapper.countFetchBatches(tenantId, keyword);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentChannelBillFetchBatchVO> rows = billFetchBatchMapper.selectFetchBatchPage(tenantId, keyword, size, (page - 1) * size);
+        List<PaymentChannelBillFetchBatchVO> rows = toApiList(billFetchBatchMapper.selectFetchBatchPage(
+                tenantId, keyword, size, (page - 1) * size), PaymentChannelBillFetchBatchVO.class);
         rows.forEach(this::fillFetchBatchSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentReconciliationVO fetchChannelBill(FetchPaymentChannelBillCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
-        Require.notNull(command.getSourceId(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取源 ID 不能为空");
-        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notNull(command.getSourceId(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单获取源 ID 不能为空");
+        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单日期不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentChannelBillSourceEntity source = billSourceMapper.selectById(command.getSourceId());
-        Require.notNull(source, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+        Require.notNull(source, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND, "账单获取源不存在");
         Require.isTrue(tenantId.equals(source.getTenantId()) && Integer.valueOf(0).equals(source.getDelFlag()),
-                PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+                PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND, "账单获取源不存在");
         Require.isTrue(Integer.valueOf(1).equals(source.getEnabled()),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取源未启用");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单获取源未启用");
         if ("MANUAL".equals(source.getFetchMode())) {
-            throw new IllegalArgumentException("手动获取方式请使用导入账单入口");
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "手动获取方式请使用导入账单入口");
         }
         Require.isTrue("HTTP".equals(source.getFetchMode()) || "FTP".equals(source.getFetchMode()) || "FTPS".equals(source.getFetchMode()),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "当前仅支持 HTTP、FTP、FTPS 自动获取执行");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "当前仅支持 HTTP、FTP、FTPS 自动获取执行");
 
         LocalDateTime started = LocalDateTime.now();
         PaymentChannelBillFetchBatchEntity fetchBatch = createFetchBatch(source, command, tenantId, started);
@@ -293,7 +302,7 @@ public class PaymentReconciliationService {
                 billFetchBatchMapper.updateById(fetchBatch);
                 return null;
             });
-            throw ex;
+            return io.mango.payment.core.integration.PaymentExceptionPropagation.rethrow(ex);
         }
     }
 
@@ -301,7 +310,7 @@ public class PaymentReconciliationService {
             PaymentChannelBillSourceEntity source,
             PaymentChannelBillFetchBatchEntity fetchBatch,
             ImportPaymentReconciliationCommand importCommand,
-            Long tenantId,
+            String tenantId,
             String billFileName,
             String fileDigest) {
         PaymentReconciliationVO reconciliation = createReconciliation(
@@ -319,11 +328,11 @@ public class PaymentReconciliationService {
         fetchBatch.setFetchEndTime(LocalDateTime.now());
         fetchBatch.setUpdatedAt(fetchBatch.getFetchEndTime());
         billFetchBatchMapper.updateById(fetchBatch);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_CHANNEL_BILL_FETCH_BATCH,
                 fetchBatch.getBatchNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return reconciliation;
     }
 
@@ -338,63 +347,63 @@ public class PaymentReconciliationService {
         String channelCode = normalizeCode(command.getChannelCode());
         String billFileName = PaymentContextSupport.trimToNull(command.getBillFileName());
         String fileDigest = PaymentContextSupport.trimToNull(command.getFileDigest());
-        Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道编码不能为空");
-        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期不能为空");
-        Require.notBlank(billFileName, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单文件名不能为空");
-        Require.notBlank(fileDigest, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单文件摘要不能为空");
-        Require.notEmpty(command.getItems(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单明细不能为空");
-        Require.isTrue(channelCode.length() <= 32, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道编码不能超过 32 个字符");
-        Require.isTrue(billFileName.length() <= 255, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单文件名不能超过 255 个字符");
-        Require.isTrue(fileDigest.length() <= 128, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单文件摘要不能超过 128 个字符");
+        Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道编码不能为空");
+        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单日期不能为空");
+        Require.notBlank(billFileName, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单文件名不能为空");
+        Require.notBlank(fileDigest, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单文件摘要不能为空");
+        Require.notEmpty(command.getItems(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单明细不能为空");
+        Require.isTrue(channelCode.length() <= 32, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道编码不能超过 32 个字符");
+        Require.isTrue(billFileName.length() <= 255, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单文件名不能超过 255 个字符");
+        Require.isTrue(fileDigest.length() <= 128, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单文件摘要不能超过 128 个字符");
 
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         return createReconciliation(command, tenantId, channelCode, billFileName, fileDigest,
                 PaymentOperationAuditService.ACTION_IMPORT_RECONCILIATION);
     }
 
-    private PaymentChannelContract selectBillSourceContract(Long contractId, Long tenantId) {
-        PaymentChannelContract contract = channelContractMapper.selectById(contractId);
-        Require.notNull(contract, PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND.getCode(), "签约通道不存在");
+    private PaymentChannelContractEntity selectBillSourceContract(Long contractId, String tenantId) {
+        PaymentChannelContractEntity contract = channelContractMapper.selectById(contractId);
+        Require.notNull(contract, PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND, "签约通道不存在");
         Require.isTrue(tenantId.equals(contract.getTenantId()) && Integer.valueOf(0).equals(contract.getDelFlag()),
-                PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND.getCode(), "签约通道不存在");
+                PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND, "签约通道不存在");
         Require.isTrue(Integer.valueOf(1).equals(contract.getStatus()),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "签约通道未启用");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "签约通道未启用");
         return contract;
     }
 
-    private PaymentChannel selectBillSourceChannel(PaymentChannelContract contract, Long tenantId) {
-        PaymentChannel channel = channelMapper.selectById(contract.getChannelId());
-        Require.notNull(channel, PaymentCode.PAYMENT_CHANNEL_NOT_FOUND.getCode(), "支付通道不存在");
+    private PaymentChannelEntity selectBillSourceChannel(PaymentChannelContractEntity contract, String tenantId) {
+        PaymentChannelEntity channel = channelMapper.selectById(contract.getChannelId());
+        Require.notNull(channel, PaymentCode.PAYMENT_CHANNEL_NOT_FOUND, "支付通道不存在");
         Require.isTrue(tenantId.equals(channel.getTenantId()) && Integer.valueOf(0).equals(channel.getDelFlag()),
-                PaymentCode.PAYMENT_CHANNEL_NOT_FOUND.getCode(), "支付通道不存在");
+                PaymentCode.PAYMENT_CHANNEL_NOT_FOUND, "支付通道不存在");
         Require.isTrue(Integer.valueOf(1).equals(channel.getStatus()),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道未启用");
-        Require.notBlank(channel.getChannelCode(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道编码不能为空");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "支付通道未启用");
+        Require.notBlank(channel.getChannelCode(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "支付通道编码不能为空");
         return channel;
     }
 
-    private Set<String> channelBillFetchModes(PaymentChannel channel) {
+    private Set<String> channelBillFetchModes(PaymentChannelEntity channel) {
         String modes = PaymentContextSupport.trimToNull(channel.getBillFetchModes());
-        Require.notBlank(modes, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道未配置账单获取方式");
+        Require.notBlank(modes, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "支付通道未配置账单获取方式");
         Set<String> result = new LinkedHashSet<>();
         Arrays.stream(modes.split(","))
                 .map(this::normalizeCode)
                 .filter(item -> item != null && PaymentChannelBillFetchModeEnum.contains(item))
                 .forEach(result::add);
-        Require.isTrue(!result.isEmpty(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道账单获取方式配置无效");
+        Require.isTrue(!result.isEmpty(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "支付通道账单获取方式配置无效");
         return result;
     }
 
     public PaymentReconciliationVO generateMangoPayVirtualBill(GenerateMangoPayVirtualBillCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
         String channelCode = normalizeCode(command.getChannelCode());
-        Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道编码不能为空");
-        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期不能为空");
+        Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道编码不能为空");
+        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单日期不能为空");
         Require.isTrue(MANGO_PAY_CHANNEL_CODE.equals(channelCode),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "芒果支付账单生成仅支持 MANGO_PAY 通道");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "芒果支付账单生成仅支持 MANGO_PAY 通道");
+        String tenantId = PaymentContextSupport.currentTenantId();
         List<PaymentChannelBillItemRow> rows = channelAdapterRegistry.requireAdapter(channelCode)
-                .generateBill(new IPaymentChannelAdapter.ChannelBillCommand(
+                .generateBill(new IPaymentChannelAdapter.ChannelBillInput(
                         tenantId,
                         channelCode,
                         command.getContractId(),
@@ -413,12 +422,12 @@ public class PaymentReconciliationService {
     public PaymentReconciliationVO generateLocalOrderCheck(GeneratePaymentLocalOrderCheckCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
         String channelCode = normalizeCode(command.getChannelCode());
-        Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道编码不能为空");
-        Require.notNull(command.getContractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "签约通道 ID 不能为空");
-        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "核验日期不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道编码不能为空");
+        Require.notNull(command.getContractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "签约通道 ID 不能为空");
+        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "核验日期不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
         List<PaymentChannelBillItemRow> rows = channelAdapterRegistry.requireAdapter(channelCode)
-                .generateBill(new IPaymentChannelAdapter.ChannelBillCommand(
+                .generateBill(new IPaymentChannelAdapter.ChannelBillInput(
                         tenantId,
                         channelCode,
                         command.getContractId(),
@@ -436,7 +445,7 @@ public class PaymentReconciliationService {
 
     private PaymentReconciliationVO createReconciliation(
             ImportPaymentReconciliationCommand command,
-            Long tenantId,
+            String tenantId,
             String channelCode,
             String billFileName,
             String fileDigest,
@@ -447,7 +456,7 @@ public class PaymentReconciliationService {
 
         LocalDateTime now = LocalDateTime.now();
         Long operatorId = PaymentContextSupport.currentUserId();
-        String batchNo = numberService.next(PaymentNumberService.PAY_RECON_BATCH_NO);
+        String batchNo = numberService.next(PaymentNumberGenerator.PAY_RECON_BATCH_NO);
         PaymentReconciliationEntity reconciliation = new PaymentReconciliationEntity();
         reconciliation.setId(IdWorker.getId());
         reconciliation.setReconciliationNo(batchNo);
@@ -479,11 +488,11 @@ public class PaymentReconciliationService {
         reconciliationMapper.insert(reconciliation);
         insertBillBatch(command, reconciliation, summary, now, operatorId, tenantId, channelCode, batchNo);
 
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 auditAction,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_RECONCILIATION,
                 reconciliation.getReconciliationNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         observabilityService.logSummary("RECONCILIATION_BATCH", reconciliation.getReconciliationNo(),
                 reconciliation.getMatchStatus(), reconciliation.getTotalAmount(), channelCode,
                 elapsedMillis(startedAt), PaymentOperationAuditService.RESULT_SUCCESS);
@@ -496,7 +505,7 @@ public class PaymentReconciliationService {
             ReconciliationSummary summary,
             LocalDateTime now,
             Long operatorId,
-            Long tenantId,
+            String tenantId,
             String channelCode,
             String batchNo) {
         PaymentChannelBillBatchEntity batch = new PaymentChannelBillBatchEntity();
@@ -528,7 +537,7 @@ public class PaymentReconciliationService {
             PaymentReconciliationEntity reconciliation,
             LocalDateTime now,
             Long operatorId,
-            Long tenantId,
+            String tenantId,
             String channelCode,
             String batchNo) {
         long totalAmount = 0L;
@@ -537,7 +546,7 @@ public class PaymentReconciliationService {
         List<PaymentDifferenceEntity> differences = new ArrayList<>();
         Set<String> paymentBillTradeNos = new HashSet<>();
         Set<String> refundBillTradeNos = new HashSet<>();
-        for (ImportPaymentReconciliationCommand.BillItem item : command.getItems()) {
+        for (PaymentReconciliationBillItemCommand item : command.getItems()) {
             BillItemNormalized normalized = normalizeBillItem(item);
             collectBillTradeNo(normalized, paymentBillTradeNos, refundBillTradeNos);
             totalAmount = Money.cents(totalAmount).add(Money.cents(normalized.amount())).toNonNegativeCents();
@@ -598,7 +607,7 @@ public class PaymentReconciliationService {
     private PaymentChannelBillFetchBatchEntity createFetchBatch(
             PaymentChannelBillSourceEntity source,
             FetchPaymentChannelBillCommand command,
-            Long tenantId,
+            String tenantId,
             LocalDateTime started) {
         LocalDateTime requestStart = command.getStartTime() == null
                 ? command.getBillDate().atStartOfDay()
@@ -607,12 +616,12 @@ public class PaymentReconciliationService {
                 ? command.getBillDate().plusDays(1).atStartOfDay()
                 : command.getEndTime();
         Require.isTrue(requestEnd.isAfter(requestStart),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "请求结束时间必须晚于开始时间");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "请求结束时间必须晚于开始时间");
         Long operatorId = PaymentContextSupport.currentUserId();
         PaymentChannelBillFetchBatchEntity batch = new PaymentChannelBillFetchBatchEntity();
         batch.setId(IdWorker.getId());
         batch.setSourceId(source.getId());
-        batch.setBatchNo(numberService.next(PaymentNumberService.PAY_RECON_BATCH_NO));
+        batch.setBatchNo(numberService.next(PaymentNumberGenerator.PAY_RECON_BATCH_NO));
         batch.setChannelCode(normalizeCode(source.getChannelCode()));
         batch.setFetchMode(source.getFetchMode());
         batch.setBillDate(command.getBillDate());
@@ -637,7 +646,7 @@ public class PaymentReconciliationService {
             PaymentChannelBillSourceEntity source,
             FetchPaymentChannelBillCommand command) {
         String endpoint = PaymentContextSupport.trimToNull(source.getEndpoint());
-        Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 获取地址不能为空");
+        Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "HTTP 获取地址不能为空");
         LocalDateTime startTime = command.getStartTime() == null ? command.getBillDate().atStartOfDay() : command.getStartTime();
         LocalDateTime endTime = command.getEndTime() == null ? command.getBillDate().plusDays(1).atStartOfDay() : command.getEndTime();
         try {
@@ -648,13 +657,13 @@ public class PaymentReconciliationService {
                     .build();
             HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             Require.isTrue(response.statusCode() >= 200 && response.statusCode() < 300,
-                    PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 账单获取失败，状态码：" + response.statusCode());
+                    PaymentCode.PAYMENT_RECONCILIATION_INVALID, "HTTP 账单获取失败，状态码：" + response.statusCode());
             return parseBillResponse(source, command, httpBillFileName(source.getChannelCode(), command.getBillDate()), response.body());
         } catch (IOException ex) {
-            throw new IllegalArgumentException("HTTP 账单获取失败：" + ex.getMessage(), ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "HTTP 账单获取失败：" + ex.getMessage(), ex);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new IllegalArgumentException("HTTP 账单获取被中断", ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "HTTP 账单获取被中断", ex);
         }
     }
 
@@ -668,7 +677,7 @@ public class PaymentReconciliationService {
         try {
             return parseBillResponse(source, command, file.fileName(), file.body());
         } catch (IOException ex) {
-            throw new IllegalArgumentException(source.getFetchMode() + " 账单解析失败：" + ex.getMessage(), ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, source.getFetchMode() + " 账单解析失败：" + ex.getMessage(), ex);
         }
     }
 
@@ -680,10 +689,10 @@ public class PaymentReconciliationService {
         JsonNode root = objectMapper.readTree(body);
         JsonNode itemsNode = root.isArray() ? root : root.get("items");
         Require.isTrue(itemsNode != null && itemsNode.isArray() && !itemsNode.isEmpty(),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单响应必须包含非空 items 数组");
-        List<ImportPaymentReconciliationCommand.BillItem> items = new ArrayList<>();
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道账单响应必须包含非空 items 数组");
+        List<PaymentReconciliationBillItemCommand> items = new ArrayList<>();
         for (JsonNode node : itemsNode) {
-            ImportPaymentReconciliationCommand.BillItem item = new ImportPaymentReconciliationCommand.BillItem();
+            PaymentReconciliationBillItemCommand item = new PaymentReconciliationBillItemCommand();
             item.setChannelTradeNo(requiredText(node, "channelTradeNo"));
             item.setTradeType(requiredText(node, "tradeType"));
             item.setAmount(requiredLong(node, "amount"));
@@ -717,14 +726,14 @@ public class PaymentReconciliationService {
     private String requiredText(JsonNode node, String field) {
         JsonNode value = node.get(field);
         Require.isTrue(value != null && !value.asText().isBlank(),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单明细缺少字段：" + field);
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道账单明细缺少字段：" + field);
         return value.asText();
     }
 
     private Long requiredLong(JsonNode node, String field) {
         JsonNode value = node.get(field);
         Require.isTrue(value != null && value.canConvertToLong(),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单明细金额字段无效：" + field);
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道账单明细金额字段无效：" + field);
         return value.asLong();
     }
 
@@ -752,7 +761,7 @@ public class PaymentReconciliationService {
 
     private int appendLocalMissingDifferences(
             Long reconciliationId,
-            Long tenantId,
+            String tenantId,
             String channelCode,
             LocalDate billDate,
             Set<String> paymentBillTradeNos,
@@ -802,7 +811,7 @@ public class PaymentReconciliationService {
 
     private PaymentDifferenceEntity createDifference(
             Long reconciliationId,
-            Long tenantId,
+            String tenantId,
             String relatedOrderNo,
             String differenceType,
             Long differenceAmount,
@@ -811,7 +820,7 @@ public class PaymentReconciliationService {
             Long operatorId) {
         PaymentDifferenceEntity difference = new PaymentDifferenceEntity();
         difference.setId(IdWorker.getId());
-        difference.setDifferenceNo(numberService.next(PaymentNumberService.PAY_DIFF_NO));
+        difference.setDifferenceNo(numberService.next(PaymentNumberGenerator.PAY_DIFF_NO));
         difference.setReconciliationId(reconciliationId);
         difference.setRelatedOrderNo(relatedOrderNo);
         difference.setDifferenceType(differenceType);
@@ -826,24 +835,24 @@ public class PaymentReconciliationService {
         return difference;
     }
 
-    private BillItemNormalized normalizeBillItem(ImportPaymentReconciliationCommand.BillItem item) {
-        Require.notNull(item, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单明细不能为空");
+    private BillItemNormalized normalizeBillItem(PaymentReconciliationBillItemCommand item) {
+        Require.notNull(item, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单明细不能为空");
         String channelTradeNo = PaymentContextSupport.trimToNull(item.getChannelTradeNo());
         String tradeType = normalizeCode(item.getTradeType());
-        Require.notBlank(channelTradeNo, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道交易号不能为空");
-        Require.notBlank(tradeType, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "交易类型不能为空");
-        Require.notNull(item.getAmount(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "金额不能为空");
-        Require.notNull(item.getFee(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "手续费不能为空");
-        Require.notNull(item.getTradeTime(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道交易时间不能为空");
-        Require.isTrue(channelTradeNo.length() <= 128, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道交易号不能超过 128 个字符");
-        Require.isTrue(tradeType.length() <= 32, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "交易类型不能超过 32 个字符");
+        Require.notBlank(channelTradeNo, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道交易号不能为空");
+        Require.notBlank(tradeType, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "交易类型不能为空");
+        Require.notNull(item.getAmount(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "金额不能为空");
+        Require.notNull(item.getFee(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "手续费不能为空");
+        Require.notNull(item.getTradeTime(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道交易时间不能为空");
+        Require.isTrue(channelTradeNo.length() <= 128, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道交易号不能超过 128 个字符");
+        Require.isTrue(tradeType.length() <= 32, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "交易类型不能超过 32 个字符");
         long amount = Money.cents(item.getAmount()).toNonNegativeCents();
         long fee = Money.cents(item.getFee()).toNonNegativeCents();
-        Require.isTrue(isSupportedTradeType(tradeType), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "交易类型仅支持 PAYMENT、REFUND、FEE");
+        Require.isTrue(isSupportedTradeType(tradeType), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "交易类型仅支持 PAYMENT、REFUND、FEE");
         return new BillItemNormalized(channelTradeNo, tradeType, amount, fee, item.getTradeTime());
     }
 
-    private MatchResult matchBillItem(Long tenantId, String channelCode, BillItemNormalized item, LocalDateTime compensateTime) {
+    private MatchResult matchBillItem(String tenantId, String channelCode, BillItemNormalized item, LocalDateTime compensateTime) {
         if ("PAYMENT".equals(item.tradeType())) {
             return matchPaymentBillItem(tenantId, channelCode, item, compensateTime);
         }
@@ -853,7 +862,7 @@ public class PaymentReconciliationService {
         return new MatchResult(STATUS_IMPORTED, null, "手续费账单无独立本地手续费订单，本轮仅入库供结算汇总使用", null, null, 0L, null, null, null);
     }
 
-    private MatchResult matchPaymentBillItem(Long tenantId, String channelCode, BillItemNormalized item, LocalDateTime compensateTime) {
+    private MatchResult matchPaymentBillItem(String tenantId, String channelCode, BillItemNormalized item, LocalDateTime compensateTime) {
         PaymentOrderEntity order = paymentOrderMapper.selectByTenantAndChannelTradeNo(tenantId, channelCode, item.channelTradeNo());
         if (order == null) {
             return new MatchResult(
@@ -907,7 +916,7 @@ public class PaymentReconciliationService {
         return new MatchResult(STATUS_MATCHED, order.getPayOrderNo(), "支付成功金额一致", null, null, 0L, order.getBusinessOrderId(), order.getId(), null);
     }
 
-    private MatchResult matchRefundBillItem(Long tenantId, BillItemNormalized item, LocalDateTime compensateTime) {
+    private MatchResult matchRefundBillItem(String tenantId, BillItemNormalized item, LocalDateTime compensateTime) {
         PaymentRefundOrderEntity refundOrder = refundOrderMapper.selectEntityByTenantAndChannelRefundNo(tenantId, item.channelTradeNo());
         if (refundOrder == null) {
             return new MatchResult(
@@ -973,7 +982,7 @@ public class PaymentReconciliationService {
     }
 
     private void compensatePaymentSuccess(
-            Long tenantId,
+            String tenantId,
             PaymentOrderEntity order,
             BillItemNormalized item,
             LocalDateTime compensateTime) {
@@ -984,15 +993,15 @@ public class PaymentReconciliationService {
                 PaymentOrderStatusEnum.SUCCESS.getCode(),
                 1,
                 item.tradeTime());
-        Require.isTrue(updated == 1, PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode(), "支付订单状态已变化，对账补偿未执行");
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_ORDER_STATE_INVALID, "支付订单状态已变化，对账补偿未执行");
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT,
                 order.getId(),
                 order.getPayOrderNo(),
                 order.getStatus(),
                 PaymentOrderStatusEnum.SUCCESS.getCode(),
-                PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE,
+                PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE,
                 item.channelTradeNo(),
                 compensateTime,
                 "对账账单确认支付成功并补偿推进支付订单状态");
@@ -1000,17 +1009,17 @@ public class PaymentReconciliationService {
         Require.isTrue(businessUpdated == 1, PaymentCode.PAYMENT_BUSINESS_ORDER_STATE_CHANGED);
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS,
                 order.getBusinessOrderId(),
                 selectBusinessOrderNo(tenantId, order.getBusinessOrderId()),
                 PaymentBusinessOrderStatusEnum.PAYING.getCode(),
                 PaymentBusinessOrderStatusEnum.PAID.getCode(),
-                PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE,
+                PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE,
                 item.channelTradeNo(),
                 compensateTime,
                 "对账账单确认支付成功并补偿推进业务订单状态");
         PaymentTransactionFlowEntity flow = new PaymentTransactionFlowEntity();
-        flow.setFlowNo(numberService.next(PaymentNumberService.PAY_FLOW_NO));
+        flow.setFlowNo(numberService.next(PaymentNumberGenerator.PAY_FLOW_NO));
         flow.setBusinessOrderId(order.getBusinessOrderId());
         flow.setPaymentOrderId(order.getId());
         flow.setRefundOrderId(null);
@@ -1025,7 +1034,7 @@ public class PaymentReconciliationService {
     }
 
     private void compensateRefundSuccess(
-            Long tenantId,
+            String tenantId,
             PaymentRefundOrderEntity refundOrder,
             PaymentOrderEntity paymentOrder,
             BillItemNormalized item,
@@ -1038,22 +1047,22 @@ public class PaymentReconciliationService {
                 refundOrder.getId(),
                 PaymentRefundOrderStatusEnum.SUCCESS.getCode(),
                 item.tradeTime());
-        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode(), "退款订单状态已变化，对账补偿未执行");
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID, "退款订单状态已变化，对账补偿未执行");
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_REFUND,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_REFUND,
                 refundOrder.getId(),
                 refundOrder.getRefundOrderNo(),
                 currentStatus,
                 PaymentRefundOrderStatusEnum.SUCCESS.getCode(),
-                PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE,
+                PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE,
                 item.channelTradeNo(),
                 compensateTime,
                 "对账账单确认退款成功并补偿推进退款订单状态");
         boolean duplicateRefund = duplicateRefundCompletionService.completeIfDuplicateRefund(
                 tenantId,
                 toRefundOrderVO(refundOrder, paymentOrder),
-                PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE,
+                PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE,
                 item.channelTradeNo(),
                 compensateTime);
         if (!duplicateRefund) {
@@ -1063,18 +1072,18 @@ public class PaymentReconciliationService {
             Require.isTrue(businessUpdated == 1, PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED);
             statusFlowService.record(
                     tenantId,
-                    PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS,
+                    PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS,
                     paymentOrder.getBusinessOrderId(),
                     businessOrder.getBizOrderNo(),
                     businessOrder.getStatus(),
                     nextBusinessRefundStatus(businessOrder, refundOrder.getRefundAmount()),
-                    PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE,
+                    PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE,
                     item.channelTradeNo(),
                     compensateTime,
                     "对账账单确认退款成功并补偿推进业务订单状态");
         }
         PaymentTransactionFlowEntity flow = new PaymentTransactionFlowEntity();
-        flow.setFlowNo(numberService.next(PaymentNumberService.PAY_REFUND_FLOW_NO));
+        flow.setFlowNo(numberService.next(PaymentNumberGenerator.PAY_REFUND_FLOW_NO));
         flow.setBusinessOrderId(paymentOrder.getBusinessOrderId());
         flow.setPaymentOrderId(paymentOrder.getId());
         flow.setRefundOrderId(refundOrder.getId());
@@ -1088,7 +1097,7 @@ public class PaymentReconciliationService {
         transactionFlowMapper.insert(flow);
     }
 
-    private String selectBusinessOrderNo(Long tenantId, Long businessOrderId) {
+    private String selectBusinessOrderNo(String tenantId, Long businessOrderId) {
         PaymentBusinessOrderEntity businessOrder = businessOrderMapper.selectCashierBusinessOrder(tenantId, businessOrderId);
         Require.notNull(businessOrder, PaymentCode.PAYMENT_BUSINESS_ORDER_NOT_FOUND);
         return businessOrder.getBizOrderNo();
@@ -1118,7 +1127,7 @@ public class PaymentReconciliationService {
     }
 
     private FeeFlowResult ensureChannelFeeFlow(
-            Long tenantId,
+            String tenantId,
             BillItemNormalized item,
             MatchResult matchResult,
             LocalDateTime now,
@@ -1138,7 +1147,7 @@ public class PaymentReconciliationService {
     }
 
     private FeeFlowResult ensureChannelFeeFlow(
-            Long tenantId,
+            String tenantId,
             Long businessOrderId,
             Long paymentOrderId,
             Long refundOrderId,
@@ -1154,7 +1163,7 @@ public class PaymentReconciliationService {
         }
         PaymentTransactionFlowEntity flow = new PaymentTransactionFlowEntity();
         flow.setId(IdWorker.getId());
-        flow.setFlowNo(numberService.next(PaymentNumberService.PAY_FEE_FLOW_NO));
+        flow.setFlowNo(numberService.next(PaymentNumberGenerator.PAY_FEE_FLOW_NO));
         flow.setBusinessOrderId(businessOrderId);
         flow.setPaymentOrderId(paymentOrderId);
         flow.setRefundOrderId(refundOrderId);
@@ -1238,8 +1247,8 @@ public class PaymentReconciliationService {
         return "PAYMENT".equals(tradeType) || "REFUND".equals(tradeType) || "FEE".equals(tradeType);
     }
 
-    private ImportPaymentReconciliationCommand.BillItem toBillItem(PaymentChannelBillItemRow row) {
-        ImportPaymentReconciliationCommand.BillItem item = new ImportPaymentReconciliationCommand.BillItem();
+    private PaymentReconciliationBillItemCommand toBillItem(PaymentChannelBillItemRow row) {
+        PaymentReconciliationBillItemCommand item = new PaymentReconciliationBillItemCommand();
         item.setChannelTradeNo(row.getChannelTradeNo());
         item.setTradeType(row.getTradeType());
         item.setAmount(row.getAmount());
@@ -1252,7 +1261,7 @@ public class PaymentReconciliationService {
             String channelCode,
             LocalDate billDate,
             List<PaymentChannelBillItemRow> rows) {
-        Require.notEmpty(rows, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单明细不能为空");
+        Require.notEmpty(rows, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "通道账单明细不能为空");
         ImportPaymentReconciliationCommand importCommand = new ImportPaymentReconciliationCommand();
         importCommand.setChannelCode(channelCode);
         importCommand.setBillDate(billDate);
@@ -1285,7 +1294,7 @@ public class PaymentReconciliationService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(builder.toString().getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 algorithm is unavailable", ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "SHA-256 algorithm is unavailable", ex);
         }
     }
 
@@ -1294,7 +1303,7 @@ public class PaymentReconciliationService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 algorithm is unavailable", ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "SHA-256 algorithm is unavailable", ex);
         }
     }
 

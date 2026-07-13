@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
 import io.mango.common.exception.BizException;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -13,13 +13,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class PaymentChannelCallbackHandlerRegistryTest {
+class PaymentChannelCallbackHandlerServiceTest {
 
     @Test
     @DisplayName("handle should route callback by channel code")
     void handle_routesByChannelCode() {
         AtomicReference<PaymentChannelRawCallback> received = new AtomicReference<>();
-        PaymentChannelCallbackHandlerRegistry registry = new PaymentChannelCallbackHandlerRegistry(List.of(new TestHandler(received)));
+        PaymentChannelCallbackHandlerService registry = new PaymentChannelCallbackHandlerService(List.of(new TestHandler(received)));
         PaymentChannelRawCallback callback = new PaymentChannelRawCallback(
                 "fuiou_pay",
                 "POST",
@@ -40,7 +40,7 @@ class PaymentChannelCallbackHandlerRegistryTest {
     @Test
     @DisplayName("handle should fail when callback handler is not registered")
     void handle_unregisteredChannel_fails() {
-        PaymentChannelCallbackHandlerRegistry registry = new PaymentChannelCallbackHandlerRegistry(List.of(new TestHandler(new AtomicReference<>())));
+        PaymentChannelCallbackHandlerService registry = new PaymentChannelCallbackHandlerService(List.of(new TestHandler(new AtomicReference<>())));
         PaymentChannelRawCallback callback = new PaymentChannelRawCallback(
                 "UNKNOWN_PAY",
                 "POST",

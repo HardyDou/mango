@@ -1,6 +1,5 @@
 package io.mango.payment.core.service;
 
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.payment.api.command.RotatePaymentChannelContractCertificateCommand;
 import io.mango.payment.api.command.SavePaymentChannelContractCommand;
@@ -13,17 +12,17 @@ import java.util.List;
 
 public interface IPaymentChannelContractService {
 
-    R<PageResult<PaymentChannelContractVO>> pageChannelContracts(PaymentConfigPageQuery query);
+    PageResult<PaymentChannelContractVO> pageChannelContracts(PaymentConfigPageQuery query);
 
-    R<PaymentChannelContractVO> detailChannelContract(Long id);
+    PaymentChannelContractVO detailChannelContract(Long id);
 
-    R<Long> createChannelContract(SavePaymentChannelContractCommand command);
+    Long createChannelContract(SavePaymentChannelContractCommand command);
 
-    R<Boolean> updateChannelContract(SavePaymentChannelContractCommand command);
+    Boolean updateChannelContract(SavePaymentChannelContractCommand command);
 
-    R<Boolean> deleteChannelContract(Long id);
+    Boolean deleteChannelContract(Long id);
 
-    R<List<PaymentChannelCertificateExpiryVO>> listExpiringCertificates(Integer warningDays);
+    List<PaymentChannelCertificateExpiryVO> listExpiringCertificates(Integer warningDays);
 
-    R<PaymentChannelCertificateRotationRecordVO> rotateCertificate(RotatePaymentChannelContractCertificateCommand command);
+    PaymentChannelCertificateRotationRecordVO rotateCertificate(RotatePaymentChannelContractCertificateCommand command);
 }

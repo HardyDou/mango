@@ -3,11 +3,12 @@ package io.mango.payment.core.service;
 import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.ConfirmPaymentSettlementSummaryCommand;
 import io.mango.payment.api.command.GeneratePaymentSettlementSummaryCommand;
 import io.mango.payment.api.command.VoidPaymentSettlementSummaryCommand;
 import io.mango.payment.api.vo.PaymentSettlementSummaryVO;
+import io.mango.payment.core.model.projection.PaymentSettlementSummaryProjection;
 import io.mango.payment.core.entity.PaymentSettlementSummaryEntity;
 import io.mango.payment.core.mapper.PaymentSettlementSummaryMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -64,16 +65,16 @@ class PaymentSettlementSummaryServiceTest {
         calculation.setFeeAmount(130L);
         calculation.setTradeCount(2);
         calculation.setRefundCount(1);
-        when(settlementSummaryMapper.countCompletedReconciliation(1L, LocalDate.of(2026, 6, 1), "MANGO_PAY"))
+        when(settlementSummaryMapper.countCompletedReconciliation("1", LocalDate.of(2026, 6, 1), "MANGO_PAY"))
                 .thenReturn(1L);
         PaymentSettlementSummaryMapper.DifferenceCalculation difference = new PaymentSettlementSummaryMapper.DifferenceCalculation();
         difference.setUnresolvedDifferenceCount(0);
         difference.setUnresolvedDifferenceAmount(0L);
-        when(settlementSummaryMapper.selectSettlementCalculation(1L, LocalDate.of(2026, 6, 1), "APP_ORDER", 320001L, "MANGO_PAY"))
+        when(settlementSummaryMapper.selectSettlementCalculation("1", LocalDate.of(2026, 6, 1), "APP_ORDER", 320001L, "MANGO_PAY"))
                 .thenReturn(calculation);
-        when(settlementSummaryMapper.selectUnresolvedDifferenceCalculation(1L, LocalDate.of(2026, 6, 1), "APP_ORDER", 320001L, "MANGO_PAY"))
+        when(settlementSummaryMapper.selectUnresolvedDifferenceCalculation("1", LocalDate.of(2026, 6, 1), "APP_ORDER", 320001L, "MANGO_PAY"))
                 .thenReturn(difference);
-        PaymentSettlementSummaryVO detail = new PaymentSettlementSummaryVO();
+        PaymentSettlementSummaryProjection detail = new PaymentSettlementSummaryProjection();
         detail.setId(500001L);
         detail.setStatus("GENERATED");
         when(settlementSummaryMapper.selectSettlementSummaryDetail(any(), any())).thenReturn(detail);
@@ -88,11 +89,11 @@ class PaymentSettlementSummaryServiceTest {
         assertThat(inserted.getRefundAmount()).isEqualTo(2100L);
         assertThat(inserted.getFeeAmount()).isEqualTo(130L);
         assertThat(inserted.getNetAmount()).isEqualTo(7770L);
-        verify(auditService).record(
-                eq(PaymentOperationAuditService.ACTION_GENERATE_SETTLEMENT_SUMMARY),
-                eq(PaymentOperationAuditService.RESOURCE_PAYMENT_SETTLEMENT_SUMMARY),
-                eq(String.valueOf(inserted.getId())),
-                eq(PaymentOperationAuditService.RESULT_SUCCESS));
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
+                PaymentOperationAuditService.ACTION_GENERATE_SETTLEMENT_SUMMARY,
+                PaymentOperationAuditService.RESOURCE_PAYMENT_SETTLEMENT_SUMMARY,
+                String.valueOf(inserted.getId()),
+                PaymentOperationAuditService.RESULT_SUCCESS));
     }
 
     @Test
@@ -103,7 +104,7 @@ class PaymentSettlementSummaryServiceTest {
         command.setAppCode("app_order");
         command.setEnterpriseSubjectId(320001L);
         command.setChannelCode("MANGO_PAY");
-        when(settlementSummaryMapper.countCompletedReconciliation(1L, LocalDate.of(2026, 6, 1), "MANGO_PAY"))
+        when(settlementSummaryMapper.countCompletedReconciliation("1", LocalDate.of(2026, 6, 1), "MANGO_PAY"))
                 .thenReturn(0L);
 
         assertThatThrownBy(() -> service.generateSettlementSummary(command))
@@ -117,7 +118,7 @@ class PaymentSettlementSummaryServiceTest {
     void confirmSettlementSummary_withUnresolvedDifference_rejects() {
         PaymentSettlementSummaryEntity entity = generatedEntity();
         when(settlementSummaryMapper.selectById(500001L)).thenReturn(entity);
-        when(settlementSummaryMapper.countCompletedReconciliation(1L, entity.getSettlementDate(), entity.getChannelCode()))
+        when(settlementSummaryMapper.countCompletedReconciliation("1", entity.getSettlementDate(), entity.getChannelCode()))
                 .thenReturn(1L);
         PaymentSettlementSummaryMapper.SettlementCalculation calculation = new PaymentSettlementSummaryMapper.SettlementCalculation();
         calculation.setTradeAmount(10000L);
@@ -125,12 +126,12 @@ class PaymentSettlementSummaryServiceTest {
         calculation.setFeeAmount(100L);
         calculation.setTradeCount(1);
         calculation.setRefundCount(1);
-        when(settlementSummaryMapper.selectSettlementCalculation(1L, entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
+        when(settlementSummaryMapper.selectSettlementCalculation("1", entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
                 .thenReturn(calculation);
         PaymentSettlementSummaryMapper.DifferenceCalculation difference = new PaymentSettlementSummaryMapper.DifferenceCalculation();
         difference.setUnresolvedDifferenceCount(1);
         difference.setUnresolvedDifferenceAmount(100L);
-        when(settlementSummaryMapper.selectUnresolvedDifferenceCalculation(1L, entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
+        when(settlementSummaryMapper.selectUnresolvedDifferenceCalculation("1", entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
                 .thenReturn(difference);
 
         ConfirmPaymentSettlementSummaryCommand command = new ConfirmPaymentSettlementSummaryCommand();
@@ -156,9 +157,9 @@ class PaymentSettlementSummaryServiceTest {
         calculation.setFeeAmount(0L);
         calculation.setTradeCount(1);
         calculation.setRefundCount(1);
-        when(settlementSummaryMapper.countCompletedReconciliation(1L, LocalDate.of(2026, 6, 1), "MANGO_PAY"))
+        when(settlementSummaryMapper.countCompletedReconciliation("1", LocalDate.of(2026, 6, 1), "MANGO_PAY"))
                 .thenReturn(1L);
-        when(settlementSummaryMapper.selectSettlementCalculation(1L, LocalDate.of(2026, 6, 1), "APP_ORDER", 320001L, "MANGO_PAY"))
+        when(settlementSummaryMapper.selectSettlementCalculation("1", LocalDate.of(2026, 6, 1), "APP_ORDER", 320001L, "MANGO_PAY"))
                 .thenReturn(calculation);
 
         assertThatThrownBy(() -> service.generateSettlementSummary(command))
@@ -172,12 +173,12 @@ class PaymentSettlementSummaryServiceTest {
         PaymentSettlementSummaryEntity entity = generatedEntity();
         entity.setStatus("CONFIRMED");
         when(settlementSummaryMapper.selectById(500001L)).thenReturn(entity);
-        when(settlementSummaryMapper.voidConfirmedSummary(eq(1L), eq(500001L), eq(1001L), eq("admin"), any(), eq("账单修正后重新生成")))
+        when(settlementSummaryMapper.voidConfirmedSummary(eq("1"), eq(500001L), eq(1001L), eq("admin"), any(), eq("账单修正后重新生成")))
                 .thenReturn(1);
-        PaymentSettlementSummaryVO detail = new PaymentSettlementSummaryVO();
+        PaymentSettlementSummaryProjection detail = new PaymentSettlementSummaryProjection();
         detail.setId(500001L);
         detail.setStatus("VOIDED");
-        when(settlementSummaryMapper.selectSettlementSummaryDetail(1L, 500001L)).thenReturn(detail);
+        when(settlementSummaryMapper.selectSettlementSummaryDetail("1", 500001L)).thenReturn(detail);
 
         VoidPaymentSettlementSummaryCommand command = new VoidPaymentSettlementSummaryCommand();
         command.setId(500001L);
@@ -186,19 +187,19 @@ class PaymentSettlementSummaryServiceTest {
         PaymentSettlementSummaryVO result = service.voidSettlementSummary(command);
 
         assertThat(result.getStatusName()).isEqualTo("已作废");
-        verify(settlementSummaryMapper).voidConfirmedSummary(eq(1L), eq(500001L), eq(1001L), eq("admin"), any(), eq("账单修正后重新生成"));
-        verify(auditService).record(
+        verify(settlementSummaryMapper).voidConfirmedSummary(eq("1"), eq(500001L), eq(1001L), eq("admin"), any(), eq("账单修正后重新生成"));
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_VOID_SETTLEMENT_SUMMARY,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_SETTLEMENT_SUMMARY,
                 "500001",
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
     }
 
     @Test
     @DisplayName("confirmSettlementSummary should reject cross tenant row before update")
     void confirmSettlementSummary_crossTenant_rejectsBeforeUpdate() {
         PaymentSettlementSummaryEntity entity = generatedEntity();
-        entity.setTenantId(2L);
+        entity.setTenantId("2");
         when(settlementSummaryMapper.selectById(500001L)).thenReturn(entity);
         ConfirmPaymentSettlementSummaryCommand command = new ConfirmPaymentSettlementSummaryCommand();
         command.setId(500001L);
@@ -215,7 +216,7 @@ class PaymentSettlementSummaryServiceTest {
     @DisplayName("voidSettlementSummary should reject cross tenant row before update")
     void voidSettlementSummary_crossTenant_rejectsBeforeUpdate() {
         PaymentSettlementSummaryEntity entity = generatedEntity();
-        entity.setTenantId(2L);
+        entity.setTenantId("2");
         entity.setStatus("CONFIRMED");
         when(settlementSummaryMapper.selectById(500001L)).thenReturn(entity);
         VoidPaymentSettlementSummaryCommand command = new VoidPaymentSettlementSummaryCommand();
@@ -234,7 +235,7 @@ class PaymentSettlementSummaryServiceTest {
     void confirmSettlementSummary_generatedRow_confirmsWithControlledUpdate() {
         PaymentSettlementSummaryEntity entity = generatedEntity();
         when(settlementSummaryMapper.selectById(500001L)).thenReturn(entity);
-        when(settlementSummaryMapper.countCompletedReconciliation(1L, entity.getSettlementDate(), entity.getChannelCode()))
+        when(settlementSummaryMapper.countCompletedReconciliation("1", entity.getSettlementDate(), entity.getChannelCode()))
                 .thenReturn(1L);
         PaymentSettlementSummaryMapper.SettlementCalculation calculation = new PaymentSettlementSummaryMapper.SettlementCalculation();
         calculation.setTradeAmount(10000L);
@@ -242,21 +243,21 @@ class PaymentSettlementSummaryServiceTest {
         calculation.setFeeAmount(130L);
         calculation.setTradeCount(2);
         calculation.setRefundCount(1);
-        when(settlementSummaryMapper.selectSettlementCalculation(1L, entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
+        when(settlementSummaryMapper.selectSettlementCalculation("1", entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
                 .thenReturn(calculation);
         PaymentSettlementSummaryMapper.DifferenceCalculation difference = new PaymentSettlementSummaryMapper.DifferenceCalculation();
         difference.setUnresolvedDifferenceCount(0);
         difference.setUnresolvedDifferenceAmount(0L);
-        when(settlementSummaryMapper.selectUnresolvedDifferenceCalculation(1L, entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
+        when(settlementSummaryMapper.selectUnresolvedDifferenceCalculation("1", entity.getSettlementDate(), entity.getAppCode(), entity.getEnterpriseSubjectId(), entity.getChannelCode()))
                 .thenReturn(difference);
         when(settlementSummaryMapper.confirmGeneratedSummary(
-                eq(1L), eq(500001L), eq(10000L), eq(2100L), eq(130L), eq(7770L),
+                eq("1"), eq(500001L), eq(10000L), eq(2100L), eq(130L), eq(7770L),
                 eq(2), eq(1), eq(0), eq(0L), eq(1001L), eq("admin"), any(LocalDateTime.class)))
                 .thenReturn(1);
-        PaymentSettlementSummaryVO detail = new PaymentSettlementSummaryVO();
+        PaymentSettlementSummaryProjection detail = new PaymentSettlementSummaryProjection();
         detail.setId(500001L);
         detail.setStatus("CONFIRMED");
-        when(settlementSummaryMapper.selectSettlementSummaryDetail(1L, 500001L)).thenReturn(detail);
+        when(settlementSummaryMapper.selectSettlementSummaryDetail("1", 500001L)).thenReturn(detail);
 
         ConfirmPaymentSettlementSummaryCommand command = new ConfirmPaymentSettlementSummaryCommand();
         command.setId(500001L);
@@ -265,20 +266,20 @@ class PaymentSettlementSummaryServiceTest {
 
         assertThat(result.getStatusName()).isEqualTo("已确认");
         verify(settlementSummaryMapper).confirmGeneratedSummary(
-                eq(1L), eq(500001L), eq(10000L), eq(2100L), eq(130L), eq(7770L),
+                eq("1"), eq(500001L), eq(10000L), eq(2100L), eq(130L), eq(7770L),
                 eq(2), eq(1), eq(0), eq(0L), eq(1001L), eq("admin"), any(LocalDateTime.class));
         verify(settlementSummaryMapper, never()).updateById(entity);
-        verify(auditService).record(
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CONFIRM_SETTLEMENT_SUMMARY,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_SETTLEMENT_SUMMARY,
                 "500001",
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
     }
 
     private PaymentSettlementSummaryEntity generatedEntity() {
         PaymentSettlementSummaryEntity entity = new PaymentSettlementSummaryEntity();
         entity.setId(500001L);
-        entity.setTenantId(1L);
+        entity.setTenantId("1");
         entity.setSettlementDate(LocalDate.of(2026, 6, 1));
         entity.setAppCode("APP_ORDER");
         entity.setEnterpriseSubjectId(320001L);

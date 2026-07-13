@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -32,8 +33,10 @@ public class MangoPayVirtualPaymentCommand implements Serializable {
     private Long amount;
 
     @Schema(description = "标准支付方式编码")
+    @Size(max = 64, message = "标准支付方式编码不能超过 64 个字符")
     private String paymentMethodCode;
 
     @Schema(description = "付款人")
+    @Size(max = 128, message = "付款人不能超过 128 个字符")
     private String payerName;
 }

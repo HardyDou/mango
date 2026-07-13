@@ -495,6 +495,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         if (!isCallOn(call, REQUIRE)) {
             return;
         }
+        if ("rethrow".equals(call.getMethodName())) {
+            return;
+        }
         int codeParameterIndex = businessCodeParameterIndex(call);
         if (!hasValidBusinessCodeArgument(call, codeParameterIndex)) {
             violation(
@@ -938,7 +941,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                     field,
                     "MANGO-ARCH-MODEL-001 API model field requires @Schema(description)");
         }
-        if (input && !hasJakartaConstraint(field)) {
+        if (input && !hasProtocolFieldConstraint(field)) {
             violation(
                     context,
                     field,
@@ -1079,6 +1082,14 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                         annotation ->
                                 canonicalName(annotation.getTypeMirror())
                                         .startsWith("jakarta.validation.constraints."));
+    }
+
+    private boolean hasProtocolFieldConstraint(ASTFieldDeclaration field) {
+        if (hasJakartaConstraint(field)) {
+            return true;
+        }
+        return containsCompositeApiInput(field.getTypeNode().getTypeMirror())
+                && hasValidAnnotation(field);
     }
 
     private boolean containsCompositeApiInput(JTypeMirror type) {

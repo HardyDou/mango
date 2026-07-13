@@ -11,7 +11,7 @@ owner: Mango 支付能力负责人
 approver: HardyDou
 approvalEvidence: review/TDD-PAYMENT-DEBT.md
 upstreamDocumentId: SRS-PAYMENT-DEBT
-upstreamDocumentHash: 7399d9e72b83577ba4d58638b2686ea89a9e87ea4375d9f89923d942451ebfbe
+upstreamDocumentHash: 73388ce748045ef01184fb6596a3b58892a3a6fd5920c728c4709a71e38d6671
 ---
 
 # 支付模块历史架构债务治理技术设计文档
@@ -20,7 +20,7 @@ upstreamDocumentHash: 7399d9e72b83577ba4d58638b2686ea89a9e87ea4375d9f89923d94245
 
 | 决策ID | 问题 | 候选方案 | 选择 | 理由 | 来源ID或路径 | 是否推断 | 影响 | 风险 | 回退条件 |
 |---|---|---|---|---|---|---|---|---|---|
-| DEC-001 | 1,843 条问题跨四个子模块并存在级联关系 | 逐文件局部修复；保留兼容层分批迁移；一个分支按根因整体迁移 | 一个任务分支、一个最终交付，内部按测试基线、契约、服务、持久化、适配器和验证设置检查点 | 用户已确认无其它模块依赖并要求一步到位；整体迁移可避免第二套边界 | FR-002, FR-003, FR-005；用户审批记录 | 否 | 支付四子模块、支付前端、文档和正式债务预算 | 改动面大，必须用同一套业务不变量测试约束 | 任一业务不变量、数据值保持或完整架构门禁不能通过时停止交付，不保留半迁移兼容层 |
+| DEC-001 | 1,869 条问题跨四个子模块并存在级联关系 | 逐文件局部修复；保留兼容层分批迁移；一个分支按根因整体迁移 | 一个任务分支、一个最终交付，内部按测试基线、契约、服务、持久化、适配器和验证设置检查点 | 用户已确认无其它模块依赖并要求一步到位；整体迁移可避免第二套边界 | FR-002, FR-003, FR-005；用户审批记录 | 否 | 支付四子模块、支付前端、文档和正式债务预算 | 改动面大，必须用同一套业务不变量测试约束 | 任一业务不变量、数据值保持或完整架构门禁不能通过时停止交付，不保留半迁移兼容层 |
 | DEC-002 | 当前测试数量较多但没有统一改造前后基线 | 直接重构后补测试；只保存覆盖率；先补有效特征测试再改生产代码 | 先盘点并补订单、回调、退款、通知、对账、结算、租户和接口契约测试，生产代码未变时建立 before 基线，改造后运行同一入口 | 测试结果而非代码形态证明支付逻辑保持；符合 BAC-001/BAC-002 | FR-001, FR-002, NFR-001；`mango-payment-*/src/test` | 否 | 测试资产和证据基线 | 历史实现本身可能暴露真实缺陷 | 基线失败按事实记录并先修测试基础设施；不得弱化业务断言 |
 | DEC-003 | API、Controller、Service、Mapper、Entity 和 Feign 职责混合产生大部分级联问题 | 调低规则；保留旧类并新增规范类；直接迁移 canonical 结构 | API 只保留传输无关契约和协议模型；Controller 与 Feign 分别适配 HTTP；core 使用 `I*Service` 与 `*Service`；Mapper 只接收持久化类型；Entity 统一命名和基类 | 与 `rules/backend/03-api.md` 的机器门禁一一对应，删除根因可同时消除级联问题 | FR-002, FR-003, FR-005；MANGO-ARCH-TYPE/CTRL/SVC/MAPPER/ENTITY/FEIGN/ADAPTER | 否 | 353 个支付生产 Java 文件中的受影响边界 | 方法签名和转换遗漏会引起行为差异 | 契约目录测试、编译、业务特征测试和完整架构扫描任一失败即停止 |
 | DEC-004 | `PaymentCode` 位置与 Service 错误契约不一致，且大量 `Require` 使用裸码/消息 | 放宽规则；增加桥接枚举；直接迁移业务码 | 将 `PaymentCode` 移到 `io.mango.payment.api.enums`，保持现有数值和消息；所有业务前置条件统一使用 `Require + PaymentCode`，Controller 只返回成功结果 | 不改变业务错误语义，避免重复错误契约 | FR-002, FR-003；MANGO-ARCH-SVC-003/004/006、CTRL-004/013 | 否 | core、starter、remote、测试和 README 引用 | 错误码映射遗漏 | 用错误码快照与异常转换测试比对 code/message，禁止保留旧包入口 |
@@ -69,8 +69,8 @@ upstreamDocumentHash: 7399d9e72b83577ba4d58638b2686ea89a9e87ea4375d9f89923d94245
 | 接口ID | 系统需求ID | 调用方 | 所属模块 | 入口类型 | 方法与路径 | Command Query或VO | 返回契约 | 校验 | 权限租户或数据权限 | 幂等分页或排序 | 错误码 | 兼容策略 | 适用规范ruleId | 验证方式 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | API-001 | FR-003 | 支付管理前端、Java 消费者 | MOD-001, MOD-003, MOD-004 | 管理 API | GET /payment/payment-orders/detail | `Long id`；其它管理能力分别使用规范 Command/Query/VO | R<PaymentOrderVO> | Bean Validation + Service `Require` | 保留 `@SaCheckPermission`、租户上下文和数据条件 | 分页排序语义、写动作幂等键不变 | `PaymentCode` 数值和消息保持 | 详情/动作使用固定子路径和显式 query；完整目录由契约测试覆盖，不保留历史路径 | MANGO-ARCH-API/HTTP/MODEL/PATH/CTRL/FEIGN/ADAPTER | 接口目录、MVC 契约、Feign parity、权限与错误转换测试 |
-| API-002 | FR-003 | 外部支付应用 | MOD-001, MOD-003 | OpenAPI | GET /openapi/pay/orders/detail | `String bizOrderNo` 与 `PaymentOpenRequestCommand`；其它写操作使用 Create/Pay/Refund Command | R<PaymentOpenBusinessOrderVO> | appId、timestamp、nonce、signature、body 与业务字段校验 | 应用启用状态、IP 白名单、签名、防重放和租户归属 | nonce 唯一、业务单号幂等 | 原 `PaymentCode` 与 HTTP 失败语义保持 | 业务单号使用显式 query 或 body；请求签名使用实际新版 URI，完整目录同步迁移说明 | MANGO-ARCH-PATH/API/MODEL/ADAPTER/SVC | 固定签名向量、过期/重放/IP/租户、成功与失败接口测试 |
-| API-003 | FR-003 | 支付渠道 | MOD-001, MOD-003 | 渠道回调 | POST /payment/channel-callbacks | `PaymentChannelCallbackCommand` | R<PaymentChannelCallbackResultVO> | 渠道标识、签名、订单号、金额和状态校验 | 渠道配置、合同、租户与订单归属 | 渠道流水/事件防重 | 保持渠道签名失败、订单不存在和重复回调语义 | callback 使用固定资源路径与显式 query/body，渠道原生响应由独立适配方法处理 | MANGO-ARCH-PATH/API/MODEL/CTRL/SVC | Fuiou/MangoPay 签名、重复与金额不一致测试 |
+| API-002 | FR-003 | 外部支付应用 | MOD-001, MOD-003 | OpenAPI | POST /openapi/pay/orders/detail | `PaymentOpenRequestCommand` body 中显式 `bizOrderNo`；其它能力使用八个固定 create/detail POST 路径 | R<PaymentOpenBusinessOrderVO> | appId、tenantId、timestamp、nonce、signature、body 与业务字段校验 | 应用启用状态、IP 白名单、签名、防重放和租户归属 | nonce 唯一、业务单号幂等 | 原 `PaymentCode` 与 HTTP 失败语义保持 | 所有签名字段与业务标识统一放入请求 body；请求签名使用实际新版 URI，完整目录同步迁移说明 | MANGO-ARCH-PATH/API/MODEL/ADAPTER/SVC | 固定签名向量、过期/重放/IP/String tenant、成功与失败接口测试 |
+| API-003 | FR-003 | 支付渠道 | MOD-001, MOD-003 | 标准化渠道回调 | POST /payment/channel-callbacks | `PaymentChannelCallbackCommand` | R<PaymentChannelCallbackResultVO> | 渠道标识、签名、订单号、金额和状态校验 | INTERNAL 标准入口校验渠道配置、合同、租户与订单归属 | 渠道流水/事件防重 | 保持渠道签名失败、订单不存在和重复回调语义 | 公网 GET/POST `/payment/channel-callbacks/public?channelCode=...` 由函数式 endpoint 保留原始协议与纯文本 ACK，再转换为同一 canonical callback 处理模型 | MANGO-ARCH-PATH/API/MODEL/CTRL/SVC | Fuiou/MangoPay 签名、重复、金额不一致、GET/POST 原始 body/来源地址、ACK 与 PUBLIC 资源声明测试 |
 | API-004 | FR-003 | 支付任务与内部能力 | MOD-001, MOD-003, MOD-004 | 内部 API | POST /payment/tasks/expire-open-orders | 无客户端业务参数 | R<PaymentTaskDispatchResultVO> | 接口访问与任务上下文校验 | `@Inner`/权限、租户和数据归属 | 任务/通知/账单批次幂等 | 保持既有业务错误码 | 其它内部方法同样使用固定路径与显式 query/header/body，Controller 与 Feign 精确一致 | MANGO-ARCH-FEIGN/ADAPTER/API/CTRL | Controller/Feign 自动 parity 与内部访问测试 |
 | API-005 | FR-006 | 支付前端包 | MOD-005 | TypeScript HTTP client | GET /payment/payment-orders/detail | `ApiId id` | R<PaymentOrderVO> | 页面表单与后端约束对齐 | 保持菜单、按钮和接口权限映射 | 分页、排序和重复提交行为不变 | 显示后端明确错误 | 按 API-001 的唯一目录更新 URL 与 query/body，并保持所有主键字符串语义 | frontend rules | 包类型检查、构建、API 请求契约测试和页面入口回归 |
 
@@ -107,13 +107,13 @@ upstreamDocumentHash: 7399d9e72b83577ba4d58638b2686ea89a9e87ea4375d9f89923d94245
 
 | 测试用例ID | 系统验收ID | 设计项ID | 场景 | 优先级 | 测试层级 | 自动化判断 | 测试数据 | 权限或租户边界 | 稳定契约 | 执行入口 | 证据 | 失败处理 | 适用规范ruleId |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| TC-001 | SAC-001, SAC-002 | DEC-002, FLOW-001 | 现有支付 59 个测试类与新增有效用例组成统一 suite | P0 | 单元/组件/API/集成 | AUTO | 用例自有 `TEST_/IT_` 数据，无执行顺序依赖 | 明确租户或无租户纯规则 | 同一 Maven 命令、Surefire 用例集合与业务断言 | payment 四子模块 Maven test suite | `mango-docs/evidence/baselines/payment-architecture/latest/` | 任一失败阻断；before/after 记录精确差异 | test flow/backend test rules |
+| TC-001 | SAC-001, SAC-002 | DEC-002, FLOW-001 | 现有支付 59 个测试类、268 条基线用例与新增有效用例组成统一 suite | P0 | 单元/组件/API/集成 | AUTO | 用例自有 `TEST_/IT_` 数据，无执行顺序依赖 | 明确租户或无租户纯规则 | 同一 Maven 命令、Surefire 用例集合与业务断言 | payment 四子模块 Maven test suite | `mango-docs/evidence/baselines/payment-architecture/latest/` | 任一失败阻断；before/after 记录精确差异 | test flow/backend test rules |
 | TC-002 | SAC-002 | DM-001, FLOW-002, FLOW-003 | 金额、订单/退款状态、重复支付/退款完成、渠道回调与错误码 | P0 | 单元/组件 | AUTO | 固定金额边界、合法/非法状态、重复事件 | 固定测试租户和业务键 | Money 精度、状态表、idempotency key、PaymentCode code/message | 定向 JUnit 与 TC-001 | 同上 | 禁止只断言调用次数；业务结果不一致即阻断 | backend test rules |
 | TC-003 | SAC-002 | FLOW-004, ERR-002 | 通知、对账、差错、结算、离线收款/退款正常与失败 | P1 | 组件/集成 | AUTO | 唯一批次、账单、凭证和通知记录 | 同租户与异租户样本 | 状态、金额汇总、差异、重试次数和审计结果 | 定向 JUnit 与 TC-001 | 同上 | 外部系统仅替换边界；内部 Service/Mapper 主链路真实执行 | backend test rules |
 | TC-004 | SAC-004 | DM-003, API-001, API-003, API-004, SEC-001, ERR-001 | 全部 Api/Controller/Feign 方法目录与关键 MVC 成功、校验、权限、失败转换 | P0 | API/集成 | AUTO | 代表性合法/非法 Command/Query 和用户权限 | 有权/无权、同租户/异租户 | verb、path、binding、泛型、validation、permission、R/error body | starter/remote tests 与 TC-001 | 同上 | 任何未映射或三方不一致阻断 | API/architecture/backend test rules |
 | TC-005 | SAC-004 | API-002, SEC-002 | OpenAPI HMAC、timestamp、nonce、IP、URI、body 篡改与防重放 | P0 | 单元/API | AUTO | 固定 app secret/请求向量，仅测试资源 | 应用绑定租户与跨租户订单 | canonical request 与 signature 固定向量 | OpenAPI tests 与 TC-001 | 同上 | 不把密钥写入日志或证据；任一安全边界失败阻断 | security/backend test rules |
 | TC-006 | SAC-005 | DM-002, DB-001, DB-002, SEC-003, FLOW-006 | V3-V102 全量升级、值保持、索引/约束、Mapper 与双租户读写 | P0 | 数据库集成 | AUTO | 隔离 `mango_dev_*` MySQL，两个 `IT_PAY_` 租户和相同业务键 | 两租户完全隔离 | information_schema、逐行 tenant 值、记录数、唯一约束与查询结果 | migration/Mapper integration tests | 同上 | 数据库名不匹配安全前缀或任一值差异即停止 | persistence/backend test rules |
-| TC-007 | SAC-003 | DEC-003, DEC-007, MOD-006, ERR-003 | 检查器正反例与完整架构扫描/预算比较 | P0 | 规则单元/架构门禁 | AUTO | Java fixture 与完整 Reactor | 不涉及业务账号 | 正例继续阻断、反例通过、payment 1843→0、其它新增 0 | architecture rule tests + full verify/report/budget | 同上 | 不允许排除、降级或接受预算增加 | architecture budget rules |
+| TC-007 | SAC-003 | DEC-003, DEC-007, MOD-006, ERR-003 | 检查器正反例与完整架构扫描/预算比较 | P0 | 规则单元/架构门禁 | AUTO | Java fixture 与完整 Reactor | 不涉及业务账号 | 正例继续阻断、反例通过、payment 1,869→0、其它新增 0 | architecture rule tests + full verify/report/budget | 同上 | 不允许排除、降级或接受预算增加 | architecture budget rules |
 | TC-008 | SAC-004 | MOD-005, API-005, UI-001 | 支付前端类型、构建、API 请求和受影响页面入口 | P1 | 单元/组件/UI入口 | AUTO | 测试账号/租户与可清理支付数据或只读现有数据集 | 按页面权限和租户 | URL/query/body、页面正常/空/失败/无权限状态 | payment package tests/build + payment UI/E2E tag | 同上 | 真实入口环境不可用则记录 BLOCKED，不能用接口 200 代替页面结果 | frontend test rules |
 
 ## 11. 兼容、发布与能力文档影响
@@ -122,7 +122,7 @@ upstreamDocumentHash: 7399d9e72b83577ba4d58638b2686ea89a9e87ea4375d9f89923d94245
 |---|---|---|---|---|---|---|---|---|---|---|
 | IMP-001 | DEC-003, DEC-004, DEC-005, API-001, API-002, API-003, API-004 | Java/HTTP/Feign 消费者 | 历史混合契约、路径变量和错误码旧包 | canonical 单一契约、固定路径/query/body、PaymentCode 在 api.enums | 用户批准直接切换；无其它模块消费者；支付前端和 remote 同步 | 新版本整体升级；回滚代码与调用方必须同批，禁止协议混用 | 更新 payment 后端 README 与统一支付设计说明的接入/迁移章节 | 后续 Maven/npm 平台发布批次，本任务不发布 | TC-004, TC-005, TC-008 | 支付负责人 |
 | IMP-002 | DEC-006, DB-002 | payment 数据库消费者 | 数值 tenant_id | `VARCHAR(64)` String tenantId | migration 值保持，无双写兼容窗口 | 升级前备份；应用与 migration 同批；失败恢复备份和上一版本 | README 说明最低 schema 与租户类型 | 后续后端发布批次 | TC-006 | 支付负责人 |
-| IMP-003 | DEC-001, DEC-002, DEC-007, MOD-006, ERR-003 | 维护与测试资产 | 支付债务预算 1,843、无统一 before/after 基线 | 支付预算 0、长期 suite 与 latest 结果基线 | 不接受历史预算回升 | Git 回滚仅用于任务未交付；债务下降不得在后续回升 | 更新设计、计划、交付台账、测试交接与架构基线 | 当前 PR | TC-001 至 TC-008 | 支付负责人 |
+| IMP-003 | DEC-001, DEC-002, DEC-007, MOD-006, ERR-003 | 维护与测试资产 | 支付债务预算 1,869、无统一 before/after 基线 | 支付预算 0、长期 suite 与 latest 结果基线 | 不接受历史预算回升 | Git 回滚仅用于任务未交付；债务下降不得在后续回升 | 更新设计、计划、交付台账、测试交接与架构基线 | 当前 PR | TC-001 至 TC-008 | 支付负责人 |
 
 ## 12. 技术追踪矩阵
 

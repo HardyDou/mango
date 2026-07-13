@@ -1,13 +1,17 @@
 package io.mango.payment.core.service;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.ConfirmOfflineBankStatementMatchCommand;
 import io.mango.payment.api.command.ConfirmOfflineCollectionCommand;
 import io.mango.payment.api.command.CreateOfflineRefundCommand;
+import io.mango.payment.api.command.ImportOfflineBankStatementCommand;
 import io.mango.payment.api.command.SubmitOfflineTransferVoucherCommand;
 import io.mango.payment.api.enums.PaymentOfflineBankStatementBatchStatusEnum;
 import io.mango.payment.api.enums.PaymentOfflineBankStatementMatchStatusEnum;
@@ -26,8 +30,9 @@ import io.mango.payment.api.vo.PaymentOfflineCollectionStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineCollectionVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundVO;
+import io.mango.payment.api.vo.PaymentRefundOrderVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
 import io.mango.payment.core.entity.PaymentOfflineBankStatementBatchEntity;
 import io.mango.payment.core.entity.PaymentOfflineBankStatementItemEntity;
@@ -86,7 +91,7 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentOfflineChannelService {
+public class PaymentOfflineChannelService implements IPaymentOfflineChannelService {
 
     private static final DateTimeFormatter NO_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final String CHANNEL_CODE = PaymentChannelCode.OFFLINE_COLLECTION.name();
@@ -103,29 +108,30 @@ public class PaymentOfflineChannelService {
     private final PaymentApplicationMapper applicationMapper;
     private final PaymentRefundOrderMapper refundOrderMapper;
     private final PaymentTransactionFlowMapper transactionFlowMapper;
-    private final PaymentOrderStatusFlowService statusFlowService;
-    private final PaymentNotificationService notificationService;
-    private final PaymentSensitiveValueService sensitiveValueService;
+    private final PaymentOrderStatusFlowRecorder statusFlowService;
+    private final PaymentNotificationDispatcher notificationService;
+    private final PaymentSensitiveValueCodec sensitiveValueService;
     private final PaymentOperationAuditService auditService;
-    private final PaymentNumberService numberService;
+    private final PaymentNumberGenerator numberService;
 
     public PageResult<PaymentOfflineCollectionVO> pageOfflineCollections(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = offlineCollectionMapper.countOfflineCollections(tenantId, keyword, statusCode);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentOfflineCollectionVO> rows = offlineCollectionMapper.selectOfflineCollectionPage(
-                tenantId, keyword, statusCode, size, (page - 1) * size);
+        List<PaymentOfflineCollectionVO> rows = toApiList(offlineCollectionMapper.selectOfflineCollectionPage(
+                tenantId, keyword, statusCode, size, (page - 1) * size), PaymentOfflineCollectionVO.class);
         rows.forEach(this::fillCollectionSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentOfflineCollectionVO detailOfflineCollection(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID.getCode(), "线下收款 ID 不能为空");
-        PaymentOfflineCollectionVO vo = offlineCollectionMapper.selectOfflineCollectionDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID, "线下收款 ID 不能为空");
+        PaymentOfflineCollectionVO vo = toApi(offlineCollectionMapper.selectOfflineCollectionDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentOfflineCollectionVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_READONLY_RESOURCE_NOT_FOUND);
         fillCollectionSummary(vo);
         return vo;
@@ -142,16 +148,16 @@ public class PaymentOfflineChannelService {
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentOfflineCollectionVO submitTransferVoucher(SubmitOfflineTransferVoucherCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "提交转账凭证命令不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "提交转账凭证命令不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentOfflineCollectionEntity collection = offlineCollectionMapper.selectByPayOrderNoForUpdate(tenantId, command.getPayOrderNo());
         Require.notNull(collection, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
         Require.isTrue(CHANNEL_CODE.equals(collection.getChannelCode()), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID);
         Require.isTrue(isWaitingTransfer(collection.getCollectionStatus()) || isPendingConfirm(collection.getCollectionStatus()),
-                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID.getCode(), "只有待转账或待确认到账的线下收款允许提交凭证");
+                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID, "只有待转账或待确认到账的线下收款允许提交凭证");
         long transferAmount = Money.cents(command.getTransferAmount()).toPositiveCents("实际转账金额");
         Require.isTrue(transferAmount == Money.cents(collection.getAmount()).toPositiveCents("线下收款金额"),
-                PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "实际转账金额必须等于线下收款金额");
+                PaymentCode.PAYMENT_AMOUNT_INVALID, "实际转账金额必须等于线下收款金额");
         String voucherFileIds = normalizeFileIds(command.getVoucherFileIds(), "转账凭证");
         int updated = offlineCollectionMapper.submitTransferVoucher(
                 tenantId,
@@ -162,26 +168,26 @@ public class PaymentOfflineChannelService {
                 PaymentContextSupport.trimToNull(command.getSubmitRemark()));
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID);
         persistVoucherRows(tenantId, collection, voucherFileIds, LocalDateTime.now());
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_SUBMIT_OFFLINE_TRANSFER_VOUCHER,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_OFFLINE_COLLECTION,
                 String.valueOf(collection.getId()),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailOfflineCollection(collection.getId());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentOfflineCollectionVO confirmCollection(ConfirmOfflineCollectionCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "确认线下收款命令不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "确认线下收款命令不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentOfflineCollectionEntity collection = offlineCollectionMapper.selectEntityForUpdate(tenantId, command.getId());
         Require.notNull(collection, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
         Require.isTrue(CHANNEL_CODE.equals(collection.getChannelCode()), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID);
         Require.isTrue(isWaitingTransfer(collection.getCollectionStatus()) || isPendingConfirm(collection.getCollectionStatus()),
-                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID.getCode(), "只有待转账或待确认到账的线下收款允许确认到账");
+                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID, "只有待转账或待确认到账的线下收款允许确认到账");
         long confirmedAmount = Money.cents(command.getConfirmedAmount()).toPositiveCents("确认到账金额");
         Require.isTrue(confirmedAmount == Money.cents(collection.getAmount()).toPositiveCents("线下收款金额"),
-                PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "确认到账金额必须等于线下收款金额");
+                PaymentCode.PAYMENT_AMOUNT_INVALID, "确认到账金额必须等于线下收款金额");
         LocalDateTime now = LocalDateTime.now();
         confirmCollectionProjection(
                 tenantId,
@@ -198,36 +204,37 @@ public class PaymentOfflineChannelService {
                 collection.getId(),
                 PaymentContextSupport.currentUserId(),
                 now);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CONFIRM_OFFLINE_COLLECTION,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_OFFLINE_COLLECTION,
                 String.valueOf(collection.getId()),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailOfflineCollection(collection.getId());
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public PaymentOfflineBankStatementBatchVO importBankStatement(
-            byte[] fileContent,
-            String originalFileName,
-            Long statementFileId) {
-        Require.notNull(fileContent, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水 Excel 不能为空");
-        Require.isTrue(fileContent.length > 0, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水 Excel 不能为空");
+    public PaymentOfflineBankStatementBatchVO importBankStatement(ImportOfflineBankStatementCommand command) {
+        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水导入命令不能为空");
+        byte[] fileContent = command.getFileContent();
+        String originalFileName = command.getOriginalFilename();
+        Long statementFileId = command.getStatementFileId();
+        Require.notNull(fileContent, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水 Excel 不能为空");
+        Require.isTrue(fileContent.length > 0, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水 Excel 不能为空");
         String fileName = PaymentContextSupport.trimToNull(originalFileName);
-        Require.notBlank(fileName, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水文件名不能为空");
-        Require.isTrue(isExcelFile(fileName), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水只支持 xls/xlsx 文件");
+        Require.notBlank(fileName, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水文件名不能为空");
+        Require.isTrue(isExcelFile(fileName), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水只支持 xls/xlsx 文件");
         String fileDigest = sha256(fileContent);
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         Require.isTrue(offlineBankStatementBatchMapper.countImportedFile(tenantId, fileDigest) == 0,
-                PaymentCode.PAYMENT_RECONCILIATION_FILE_DUPLICATED.getCode(), "该银行流水文件已导入");
+                PaymentCode.PAYMENT_RECONCILIATION_FILE_DUPLICATED, "该银行流水文件已导入");
 
         LocalDateTime now = LocalDateTime.now();
         List<BankStatementRow> rows = parseBankStatementRows(fileContent);
-        Require.notEmpty(rows, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水明细不能为空");
+        Require.notEmpty(rows, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水明细不能为空");
 
         PaymentOfflineBankStatementBatchEntity batch = new PaymentOfflineBankStatementBatchEntity();
         batch.setId(IdWorker.getId());
-        batch.setBatchNo(numberService.next(PaymentNumberService.PAY_OFFLINE_BANK_BATCH_NO));
+        batch.setBatchNo(numberService.next(PaymentNumberGenerator.PAY_OFFLINE_BANK_BATCH_NO));
         batch.setBankAccountNoMask(firstNonNull(rows.stream().map(BankStatementRow::bankAccountNoMask).toList()));
         batch.setBankName(firstNonNull(rows.stream().map(BankStatementRow::bankName).toList()));
         batch.setStatementFileId(statementFileId);
@@ -253,55 +260,58 @@ public class PaymentOfflineChannelService {
             persistStatementItem(tenantId, batch, row, now);
         }
         offlineBankStatementBatchMapper.refreshSummary(tenantId, batch.getId());
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_IMPORT_OFFLINE_BANK_STATEMENT,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_OFFLINE_COLLECTION,
                 batch.getBatchNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailBankStatementBatch(batch.getId());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentOfflineBankStatementBatchVO confirmBankStatementMatches(ConfirmOfflineBankStatementMatchCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "确认银行流水匹配命令不能为空");
-        Require.notEmpty(command.getItemIds(), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水明细 ID 不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "确认银行流水匹配命令不能为空");
+        Require.notEmpty(command.getItemIds(), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水明细 ID 不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
         Long batchId = null;
         for (Long itemId : command.getItemIds()) {
-            Require.notNull(itemId, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水明细 ID 不能为空");
+            Require.notNull(itemId, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水明细 ID 不能为空");
             batchId = confirmBankStatementItem(tenantId, itemId, PaymentContextSupport.trimToNull(command.getConfirmRemark()));
         }
-        Require.notNull(batchId, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水明细 ID 不能为空");
+        Require.notNull(batchId, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水明细 ID 不能为空");
         offlineBankStatementBatchMapper.refreshSummary(tenantId, batchId);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CONFIRM_OFFLINE_BANK_STATEMENT_MATCH,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_OFFLINE_COLLECTION,
                 String.valueOf(batchId),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailBankStatementBatch(batchId);
     }
 
     public PageResult<PaymentOfflineBankStatementBatchVO> pageBankStatementBatches(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery actualQuery = query == null ? new PaymentConfigPageQuery() : query;
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         String keyword = PaymentContextSupport.trimToNull(actualQuery.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(actualQuery.getStatusCode());
         long total = offlineBankStatementBatchMapper.countBatches(tenantId, keyword, statusCode);
         long pageNum = actualQuery.getPage();
         long pageSize = actualQuery.getSize();
-        List<PaymentOfflineBankStatementBatchVO> rows = offlineBankStatementBatchMapper.selectBatchPage(
-                tenantId, keyword, statusCode, pageSize, (pageNum - 1) * pageSize);
+        List<PaymentOfflineBankStatementBatchVO> rows = toApiList(offlineBankStatementBatchMapper.selectBatchPage(
+                tenantId, keyword, statusCode, pageSize, (pageNum - 1) * pageSize),
+                PaymentOfflineBankStatementBatchVO.class);
         rows.forEach(this::fillBankStatementBatchSummary);
         return PageResult.of(rows, total, pageNum, pageSize);
     }
 
     public PaymentOfflineBankStatementBatchVO detailBankStatementBatch(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水批次 ID 不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
-        PaymentOfflineBankStatementBatchVO vo = offlineBankStatementBatchMapper.selectBatchDetail(tenantId, id);
+        Require.notNull(id, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水批次 ID 不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
+        PaymentOfflineBankStatementBatchVO vo = toApi(
+                offlineBankStatementBatchMapper.selectBatchDetail(tenantId, id), PaymentOfflineBankStatementBatchVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
         fillBankStatementBatchSummary(vo);
-        List<PaymentOfflineBankStatementItemVO> items = offlineBankStatementItemMapper.selectItemsByBatch(tenantId, id);
+        List<PaymentOfflineBankStatementItemVO> items = toApiList(
+                offlineBankStatementItemMapper.selectItemsByBatch(tenantId, id), PaymentOfflineBankStatementItemVO.class);
         items.forEach(this::fillBankStatementItemSummary);
         vo.setItems(items);
         return vo;
@@ -327,14 +337,14 @@ public class PaymentOfflineChannelService {
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentOfflineRefundVO createOfflineRefund(CreateOfflineRefundCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_REFUND_INVALID.getCode(), "创建线下退款命令不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notNull(command, PaymentCode.PAYMENT_OFFLINE_REFUND_INVALID, "创建线下退款命令不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentOfflineCollectionEntity collection = offlineCollectionMapper.selectEntityForUpdate(tenantId, command.getOfflineCollectionId());
         Require.notNull(collection, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
         Require.isTrue(CHANNEL_CODE.equals(collection.getChannelCode()), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID);
         Require.isTrue(PaymentOfflineCollectionStatusEnum.CONFIRMED.getCode().equals(collection.getCollectionStatus())
                         || PaymentOfflineCollectionStatusEnum.RECONCILED.getCode().equals(collection.getCollectionStatus()),
-                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID.getCode(), "只有已确认到账的线下收款允许退款");
+                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID, "只有已确认到账的线下收款允许退款");
         long refundAmount = Money.cents(command.getRefundAmount()).toPositiveCents("退款金额");
         long refundedAmount = normalizedAmount(refundOrderMapper.sumOccupyingRefundAmount(tenantId, collection.getPaymentOrderId()));
         long paidAmount = Money.cents(collection.getConfirmedAmount() == null ? collection.getAmount() : collection.getConfirmedAmount())
@@ -345,8 +355,8 @@ public class PaymentOfflineChannelService {
 
         PaymentBusinessOrderEntity businessOrder = businessOrderMapper.selectCashierBusinessOrder(tenantId, collection.getBusinessOrderId());
         Require.notNull(businessOrder, PaymentCode.PAYMENT_BUSINESS_ORDER_NOT_FOUND);
-        String offlineRefundNo = numberService.next(PaymentNumberService.PAY_OFFLINE_REFUND_NO);
-        String refundOrderNo = numberService.next(PaymentNumberService.PAY_REFUND_ORDER_NO);
+        String offlineRefundNo = numberService.next(PaymentNumberGenerator.PAY_OFFLINE_REFUND_NO);
+        String refundOrderNo = numberService.next(PaymentNumberGenerator.PAY_REFUND_ORDER_NO);
         PaymentRefundOrderEntity refundOrder = new PaymentRefundOrderEntity();
         refundOrder.setRefundOrderNo(refundOrderNo);
         refundOrder.setBizRefundNo(offlineRefundNo);
@@ -399,39 +409,39 @@ public class PaymentOfflineChannelService {
         Require.isTrue(businessUpdated == 1, PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED);
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS,
                 collection.getBusinessOrderId(),
                 businessOrder.getBizOrderNo(),
                 businessOrder.getStatus(),
                 nextBusinessRefundStatus(businessOrder, refundAmount),
-                PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK,
+                PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK,
                 refund.getOfflineRefundNo(),
                 now,
                 "线下收款通道退款凭证确认退款完成");
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_REFUND,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_REFUND,
                 refundOrder.getId(),
                 refundOrderNo,
                 null,
                 PaymentRefundOrderStatusEnum.REFUNDING.getCode(),
-                PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK,
+                PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK,
                 refund.getOfflineRefundNo(),
                 now,
                 "线下收款通道创建统一退款订单");
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_REFUND,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_REFUND,
                 refundOrder.getId(),
                 refundOrderNo,
                 PaymentRefundOrderStatusEnum.REFUNDING.getCode(),
                 PaymentRefundOrderStatusEnum.SUCCESS.getCode(),
-                PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK,
+                PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK,
                 refund.getOfflineRefundNo(),
                 now,
                 "线下收款通道凭证确认退款成功");
         PaymentTransactionFlowEntity flow = new PaymentTransactionFlowEntity();
-        flow.setFlowNo(numberService.next(PaymentNumberService.PAY_REFUND_FLOW_NO));
+        flow.setFlowNo(numberService.next(PaymentNumberGenerator.PAY_REFUND_FLOW_NO));
         flow.setBusinessOrderId(collection.getBusinessOrderId());
         flow.setPaymentOrderId(collection.getPaymentOrderId());
         flow.setRefundOrderId(refundOrder.getId());
@@ -444,31 +454,33 @@ public class PaymentOfflineChannelService {
         flow.setUpdatedAt(now);
         transactionFlowMapper.insert(flow);
         notifyRefundTerminal(tenantId, businessOrder, refundOrder.getId());
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CREATE_OFFLINE_REFUND,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_OFFLINE_REFUND,
                 String.valueOf(refund.getId()),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailOfflineRefund(refund.getId());
     }
 
     public PageResult<PaymentOfflineRefundVO> pageOfflineRefunds(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery actualQuery = query == null ? new PaymentConfigPageQuery() : query;
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         String keyword = PaymentContextSupport.trimToNull(actualQuery.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(actualQuery.getStatusCode());
         long total = offlineRefundMapper.countOfflineRefunds(tenantId, keyword, statusCode);
         long pageNum = actualQuery.getPage();
         long pageSize = actualQuery.getSize();
         long offset = (pageNum - 1) * pageSize;
-        List<PaymentOfflineRefundVO> rows = offlineRefundMapper.selectOfflineRefundPage(tenantId, keyword, statusCode, pageSize, offset);
+        List<PaymentOfflineRefundVO> rows = toApiList(offlineRefundMapper.selectOfflineRefundPage(
+                tenantId, keyword, statusCode, pageSize, offset), PaymentOfflineRefundVO.class);
         rows.forEach(this::fillRefundSummary);
         return PageResult.of(rows, total, pageNum, pageSize);
     }
 
     public PaymentOfflineRefundVO detailOfflineRefund(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_OFFLINE_REFUND_INVALID.getCode(), "线下退款 ID 不能为空");
-        PaymentOfflineRefundVO vo = offlineRefundMapper.selectOfflineRefundDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_OFFLINE_REFUND_INVALID, "线下退款 ID 不能为空");
+        PaymentOfflineRefundVO vo = toApi(offlineRefundMapper.selectOfflineRefundDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentOfflineRefundVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_OFFLINE_REFUND_NOT_FOUND);
         fillRefundSummary(vo);
         return vo;
@@ -488,7 +500,7 @@ public class PaymentOfflineChannelService {
     }
 
     private void confirmCollectionProjection(
-            Long tenantId,
+            String tenantId,
             PaymentOfflineCollectionEntity collection,
             long confirmedAmount,
             LocalDateTime eventTime,
@@ -523,23 +535,23 @@ public class PaymentOfflineChannelService {
         notifyPaymentTerminal(tenantId, collection.getPaymentOrderId(), businessOrder);
     }
 
-    private Long confirmBankStatementItem(Long tenantId, Long itemId, String confirmRemark) {
+    private Long confirmBankStatementItem(String tenantId, Long itemId, String confirmRemark) {
         PaymentOfflineBankStatementItemEntity item = offlineBankStatementItemMapper.selectEntityForUpdate(tenantId, itemId);
         Require.notNull(item, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
         Require.isTrue(PaymentOfflineBankStatementMatchStatusEnum.MATCHED_PENDING_CONFIRM.getCode().equals(item.getMatchStatus()),
-                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID.getCode(), "只有已匹配待确认的银行流水允许确认到账");
+                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID, "只有已匹配待确认的银行流水允许确认到账");
         Require.notNull(item.getMatchedOfflineCollectionId(),
-                PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水未匹配线下收款单");
+                PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水未匹配线下收款单");
         PaymentOfflineCollectionEntity collection = offlineCollectionMapper.selectEntityForUpdate(
                 tenantId,
                 item.getMatchedOfflineCollectionId());
         Require.notNull(collection, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
         Require.isTrue(CHANNEL_CODE.equals(collection.getChannelCode()), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID);
         Require.isTrue(isWaitingTransfer(collection.getCollectionStatus()) || isPendingConfirm(collection.getCollectionStatus()),
-                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID.getCode(), "线下收款单当前状态不允许通过银行流水确认");
+                PaymentCode.PAYMENT_OFFLINE_COLLECTION_STATE_INVALID, "线下收款单当前状态不允许通过银行流水确认");
         Require.isTrue(Money.cents(item.getAmount()).toPositiveCents("银行流水金额")
                         == Money.cents(collection.getAmount()).toPositiveCents("线下收款金额"),
-                PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "银行流水金额必须等于线下收款金额");
+                PaymentCode.PAYMENT_AMOUNT_INVALID, "银行流水金额必须等于线下收款金额");
         LocalDateTime now = LocalDateTime.now();
         confirmCollectionProjection(
                 tenantId,
@@ -570,7 +582,7 @@ public class PaymentOfflineChannelService {
     }
 
     private void persistVoucherRows(
-            Long tenantId,
+            String tenantId,
             PaymentOfflineCollectionEntity collection,
             String voucherFileIds,
             LocalDateTime now) {
@@ -597,7 +609,7 @@ public class PaymentOfflineChannelService {
     }
 
     private void persistStatementItem(
-            Long tenantId,
+            String tenantId,
             PaymentOfflineBankStatementBatchEntity batch,
             BankStatementRow row,
             LocalDateTime now) {
@@ -637,7 +649,7 @@ public class PaymentOfflineChannelService {
     }
 
     private void persistCollectionMatch(
-            Long tenantId,
+            String tenantId,
             PaymentOfflineBankStatementItemEntity item,
             MatchResult match,
             LocalDateTime now) {
@@ -662,7 +674,7 @@ public class PaymentOfflineChannelService {
         offlineCollectionMatchMapper.insert(entity);
     }
 
-    private MatchResult matchStatementRow(Long tenantId, BankStatementRow row) {
+    private MatchResult matchStatementRow(String tenantId, BankStatementRow row) {
         if (offlineBankStatementItemMapper.countExistingStatement(
                 tenantId,
                 row.bankAccountNoMask(),
@@ -716,9 +728,9 @@ public class PaymentOfflineChannelService {
         try (InputStream input = new BufferedInputStream(new ByteArrayInputStream(fileContent));
              var workbook = WorkbookFactory.create(input)) {
             Sheet sheet = workbook.getNumberOfSheets() == 0 ? null : workbook.getSheetAt(0);
-            Require.notNull(sheet, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水 Excel 没有工作表");
+            Require.notNull(sheet, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水 Excel 没有工作表");
             Row header = sheet.getRow(sheet.getFirstRowNum());
-            Require.notNull(header, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水 Excel 缺少表头");
+            Require.notNull(header, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水 Excel 缺少表头");
             Map<String, Integer> columns = headerColumns(header);
             List<BankStatementRow> rows = new ArrayList<>();
             for (int rowIndex = sheet.getFirstRowNum() + 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
@@ -730,7 +742,7 @@ public class PaymentOfflineChannelService {
             }
             return rows;
         } catch (IOException ex) {
-            return Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水 Excel 读取失败");
+            return Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水 Excel 读取失败");
         }
     }
 
@@ -783,7 +795,7 @@ public class PaymentOfflineChannelService {
 
     private String requiredCell(Row row, Map<String, Integer> columns, int rowNo, String... names) {
         String value = optionalCell(row, columns, names);
-        Require.notBlank(value, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "第 " + rowNo + " 行缺少 " + names[0]);
+        Require.notBlank(value, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "第 " + rowNo + " 行缺少 " + names[0]);
         return value;
     }
 
@@ -812,21 +824,21 @@ public class PaymentOfflineChannelService {
 
     private LocalDateTime parseTradeTime(Row row, Map<String, Integer> columns, int rowNo, String... names) {
         Integer index = columnIndex(columns, names);
-        Require.notNull(index, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水 Excel 缺少 " + names[0] + " 表头");
+        Require.notNull(index, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水 Excel 缺少 " + names[0] + " 表头");
         Cell cell = row.getCell(index);
-        Require.notNull(cell, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "第 " + rowNo + " 行缺少 " + names[0]);
+        Require.notNull(cell, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "第 " + rowNo + " 行缺少 " + names[0]);
         if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
             return cell.getLocalDateTimeCellValue();
         }
         String value = PaymentContextSupport.trimToNull(new DataFormatter(Locale.CHINA).formatCellValue(cell));
-        Require.notBlank(value, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "第 " + rowNo + " 行缺少 " + names[0]);
+        Require.notBlank(value, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "第 " + rowNo + " 行缺少 " + names[0]);
         try {
             return LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         } catch (DateTimeParseException ignored) {
             try {
                 return LocalDate.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay();
             } catch (DateTimeParseException ex) {
-                return Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "第 " + rowNo + " 行交易时间格式不正确");
+                return Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "第 " + rowNo + " 行交易时间格式不正确");
             }
         }
     }
@@ -838,7 +850,7 @@ public class PaymentOfflineChannelService {
                     .setScale(0, RoundingMode.HALF_UP)
                     .longValueExact();
         } catch (ArithmeticException | NumberFormatException ex) {
-            Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "第 " + rowNo + " 行金额格式不正确");
+            Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "第 " + rowNo + " 行金额格式不正确");
             return 0L;
         }
     }
@@ -856,7 +868,7 @@ public class PaymentOfflineChannelService {
             }
             return HexFormat.of().formatHex(digest.digest());
         } catch (IOException | NoSuchAlgorithmException ex) {
-            return Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), "银行流水文件摘要计算失败");
+            return Require.fail(PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, "银行流水文件摘要计算失败");
         }
     }
 
@@ -878,7 +890,7 @@ public class PaymentOfflineChannelService {
     }
 
     private void recordPaymentProjectionFlows(
-            Long tenantId,
+            String tenantId,
             PaymentOfflineCollectionEntity collection,
             PaymentBusinessOrderEntity businessOrder,
             long confirmedAmount,
@@ -887,28 +899,28 @@ public class PaymentOfflineChannelService {
             String flowRemark) {
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT,
                 collection.getPaymentOrderId(),
                 collection.getPayOrderNo(),
                 PaymentOrderStatusEnum.PAYING.getCode(),
                 PaymentOrderStatusEnum.SUCCESS.getCode(),
-                PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK,
+                PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK,
                 triggerNo,
                 eventTime,
                 flowRemark);
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS,
                 collection.getBusinessOrderId(),
                 businessOrder.getBizOrderNo(),
                 PaymentBusinessOrderStatusEnum.PAYING.getCode(),
                 PaymentBusinessOrderStatusEnum.PAID.getCode(),
-                PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK,
+                PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK,
                 triggerNo,
                 eventTime,
                 flowRemark);
         PaymentTransactionFlowEntity flow = new PaymentTransactionFlowEntity();
-        flow.setFlowNo(numberService.next(PaymentNumberService.PAY_FLOW_NO));
+        flow.setFlowNo(numberService.next(PaymentNumberGenerator.PAY_FLOW_NO));
         flow.setBusinessOrderId(collection.getBusinessOrderId());
         flow.setPaymentOrderId(collection.getPaymentOrderId());
         flow.setRefundOrderId(null);
@@ -922,36 +934,38 @@ public class PaymentOfflineChannelService {
         transactionFlowMapper.insert(flow);
     }
 
-    private void notifyPaymentTerminal(Long tenantId, Long paymentOrderId, PaymentBusinessOrderEntity businessOrder) {
-        PaymentApplication application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplication>()
-                .eq(PaymentApplication::getTenantId, tenantId)
-                .eq(PaymentApplication::getAppId, businessOrder.getAppCode())
-                .eq(PaymentApplication::getStatus, 1));
+    private void notifyPaymentTerminal(String tenantId, Long paymentOrderId, PaymentBusinessOrderEntity businessOrder) {
+        PaymentApplicationEntity application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplicationEntity>()
+                .eq(PaymentApplicationEntity::getTenantId, tenantId)
+                .eq(PaymentApplicationEntity::getAppId, businessOrder.getAppCode())
+                .eq(PaymentApplicationEntity::getStatus, 1));
         Require.notNull(application, PaymentCode.PAYMENT_APPLICATION_NOT_FOUND);
-        PaymentOrderVO paymentOrder = paymentOrderMapper.selectPaymentOrderById(tenantId, paymentOrderId);
+        PaymentOrderVO paymentOrder = toApi(
+                paymentOrderMapper.selectPaymentOrderById(tenantId, paymentOrderId), PaymentOrderVO.class);
         Require.notNull(paymentOrder, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         notificationService.notifyPaymentAfterCommit(application, businessOrder, paymentOrder);
     }
 
-    private void notifyRefundTerminal(Long tenantId, PaymentBusinessOrderEntity businessOrder, Long refundOrderId) {
-        PaymentApplication application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplication>()
-                .eq(PaymentApplication::getTenantId, tenantId)
-                .eq(PaymentApplication::getAppId, businessOrder.getAppCode())
-                .eq(PaymentApplication::getStatus, 1));
+    private void notifyRefundTerminal(String tenantId, PaymentBusinessOrderEntity businessOrder, Long refundOrderId) {
+        PaymentApplicationEntity application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplicationEntity>()
+                .eq(PaymentApplicationEntity::getTenantId, tenantId)
+                .eq(PaymentApplicationEntity::getAppId, businessOrder.getAppCode())
+                .eq(PaymentApplicationEntity::getStatus, 1));
         Require.notNull(application, PaymentCode.PAYMENT_APPLICATION_NOT_FOUND);
-        var refundOrder = refundOrderMapper.selectRefundOrderDetail(tenantId, refundOrderId);
+        PaymentRefundOrderVO refundOrder = toApi(
+                refundOrderMapper.selectRefundOrderDetail(tenantId, refundOrderId), PaymentRefundOrderVO.class);
         Require.notNull(refundOrder, PaymentCode.PAYMENT_REFUND_ORDER_NOT_FOUND);
         notificationService.notifyRefundAfterCommit(application, businessOrder, refundOrder);
     }
 
     private String normalizeFileIds(String fileIds, String fieldName) {
         String normalized = PaymentContextSupport.trimToNull(fileIds);
-        Require.notBlank(normalized, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), fieldName + "不能为空");
+        Require.notBlank(normalized, PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, fieldName + "不能为空");
         List<String> items = Arrays.stream(normalized.split(","))
                 .map(PaymentContextSupport::trimToNull)
                 .filter(item -> item != null)
                 .toList();
-        Require.isTrue(!items.isEmpty(), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID.getCode(), fieldName + "不能为空");
+        Require.isTrue(!items.isEmpty(), PaymentCode.PAYMENT_OFFLINE_COLLECTION_INVALID, fieldName + "不能为空");
         return String.join(",", items);
     }
 

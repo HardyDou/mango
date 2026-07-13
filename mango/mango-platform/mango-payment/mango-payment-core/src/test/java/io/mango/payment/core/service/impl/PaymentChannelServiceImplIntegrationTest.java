@@ -6,12 +6,12 @@ import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.SavePaymentChannelCapabilityCommand;
 import io.mango.payment.api.command.SavePaymentChannelCommand;
 import io.mango.payment.api.enums.PaymentChannelCode;
-import io.mango.payment.core.entity.PaymentChannel;
-import io.mango.payment.core.entity.PaymentChannelCapability;
+import io.mango.payment.core.entity.PaymentChannelEntity;
+import io.mango.payment.core.entity.PaymentChannelCapabilityEntity;
 import io.mango.payment.core.mapper.PaymentChannelCapabilityMapper;
 import io.mango.payment.core.mapper.PaymentChannelMapper;
 import io.mango.payment.core.service.PaymentOperationAuditService;
@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        PaymentChannelServiceImplIntegrationTest.TestConfig.class
+        PaymentChannelServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:payment_channel_service;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "mybatis-plus.mapper-locations=classpath:/mapper/payment/*.xml",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-class PaymentChannelServiceImplIntegrationTest {
+class PaymentChannelServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -65,7 +65,7 @@ class PaymentChannelServiceImplIntegrationTest {
     private PaymentChannelCapabilityMapper capabilityMapper;
 
     @Autowired
-    private PaymentChannelServiceImpl service;
+    private PaymentChannelService service;
 
     @Autowired
     private TestPaymentOperationAuditService auditService;
@@ -85,14 +85,14 @@ class PaymentChannelServiceImplIntegrationTest {
 
     @Test
     void createChannelPersistsChannelAndCapabilityThroughRealMappers() {
-        Long id = service.createChannel(command()).getData();
+        Long id = service.createChannel(command());
 
-        PaymentChannel channel = channelMapper.selectById(id);
-        assertThat(channel.getTenantId()).isEqualTo(1L);
+        PaymentChannelEntity channel = channelMapper.selectById(id);
+        assertThat(channel.getTenantId()).isEqualTo("1");
         assertThat(channel.getChannelCode()).isEqualTo("LIANLIAN_PAY");
         assertThat(channel.getEnvironment()).isEqualTo("PROD");
         assertThat(channel.getBillFetchModes()).isEqualTo("MANUAL,FTP");
-        PaymentChannelCapability capability = singleCapability(id);
+        PaymentChannelCapabilityEntity capability = singleCapability(id);
         assertThat(capability.getMethodCode()).isEqualTo("PERSONAL_WECHAT_QR");
         assertThat(capability.getTerminalType()).isEqualTo("WEB");
         assertThat(capability.getEnvironment()).isEqualTo("PROD");
@@ -227,7 +227,8 @@ class PaymentChannelServiceImplIntegrationTest {
                     capability_summary varchar(512),
                     bill_fetch_modes varchar(256),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -253,7 +254,8 @@ class PaymentChannelServiceImplIntegrationTest {
                     min_amount bigint,
                     max_amount bigint,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -264,12 +266,12 @@ class PaymentChannelServiceImplIntegrationTest {
     }
 
     private void createRelationTables() {
-        jdbcTemplate.execute("create table payment_channel_contract (id bigint primary key, channel_id bigint, tenant_id bigint, del_flag int default 0)");
-        jdbcTemplate.execute("create table payment_order (id bigint primary key, channel_id bigint, tenant_id bigint)");
-        jdbcTemplate.execute("create table payment_reconciliation (id bigint primary key, channel_code varchar(128), tenant_id bigint, del_flag int default 0)");
-        jdbcTemplate.execute("create table payment_settlement_summary (id bigint primary key, channel_code varchar(128), tenant_id bigint, del_flag int default 0)");
-        jdbcTemplate.execute("create table payment_channel_contract_capability (id bigint primary key, channel_capability_id bigint, tenant_id bigint, del_flag int default 0)");
-        jdbcTemplate.execute("create table payment_method_route_rule_item (id bigint primary key, contract_capability_id bigint, tenant_id bigint)");
+        jdbcTemplate.execute("create table payment_channel_contract (id bigint primary key, channel_id bigint, tenant_id varchar(64), org_id bigint, del_flag int default 0)");
+        jdbcTemplate.execute("create table payment_order (id bigint primary key, channel_id bigint, tenant_id varchar(64), org_id bigint)");
+        jdbcTemplate.execute("create table payment_reconciliation (id bigint primary key, channel_code varchar(128), tenant_id varchar(64), org_id bigint, del_flag int default 0)");
+        jdbcTemplate.execute("create table payment_settlement_summary (id bigint primary key, channel_code varchar(128), tenant_id varchar(64), org_id bigint, del_flag int default 0)");
+        jdbcTemplate.execute("create table payment_channel_contract_capability (id bigint primary key, channel_capability_id bigint, tenant_id varchar(64), org_id bigint, del_flag int default 0)");
+        jdbcTemplate.execute("create table payment_method_route_rule_item (id bigint primary key, contract_capability_id bigint, tenant_id varchar(64), org_id bigint)");
     }
 
     private void insertChannel(Long id, String channelCode, String channelType) {
@@ -294,9 +296,9 @@ class PaymentChannelServiceImplIntegrationTest {
                 id, channelId);
     }
 
-    private PaymentChannelCapability singleCapability(Long channelId) {
-        return capabilityMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PaymentChannelCapability>()
-                .eq(PaymentChannelCapability::getChannelId, channelId)).get(0);
+    private PaymentChannelCapabilityEntity singleCapability(Long channelId) {
+        return capabilityMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PaymentChannelCapabilityEntity>()
+                .eq(PaymentChannelCapabilityEntity::getChannelId, channelId)).get(0);
     }
 
     private Long countDeletedChannels() {
@@ -307,7 +309,7 @@ class PaymentChannelServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = PaymentChannelMapper.class)
-    @Import(PaymentChannelServiceImpl.class)
+    @Import(PaymentChannelService.class)
     static class TestConfig {
 
         @Bean
@@ -330,8 +332,8 @@ class PaymentChannelServiceImplIntegrationTest {
         }
 
         @Override
-        public void record(String operationAction, String resourceType, String resourceId, String operationResult) {
-            records.add(operationAction + "|" + resourceType + "|" + resourceId + "|" + operationResult);
+        public void record(PaymentOperationAuditService.AuditEntry entry) {
+            records.add(entry.operationAction() + "|" + entry.resourceType() + "|" + entry.resourceId() + "|" + entry.operationResult());
         }
 
         void clear() {

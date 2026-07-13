@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
 import io.mango.common.exception.BizException;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

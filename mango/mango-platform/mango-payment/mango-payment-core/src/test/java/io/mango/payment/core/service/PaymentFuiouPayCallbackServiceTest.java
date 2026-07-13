@@ -20,22 +20,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PaymentFuiouPayCallbackServiceTest {
+class PaymentFuiouPayCallbackHandlerTest {
 
     private static final String SCANPAY_PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCBv9K+"
             + "jiuHqXIehX81oyNSD2RfVn+KTPb7NRT5HDPFE35CjZJd7Fu40r0U2Cp7Eyhayv/mRS6ZqvBT/8tQqwp"
             + "UExTQQBbdZjfk+efb9bF9a+uCnAg0RsuqxeJ2r/rRTsORzVLJy+4GKcv06/p6CcBc5BI1gqSKmyyNBlgfkxLYewIDAQAB";
 
     private final PaymentFuiouXmlCodec xmlCodec = new PaymentFuiouXmlCodec();
-    private final PaymentFuiouSignService signService = new PaymentFuiouSignService();
+    private final PaymentFuiouSigner signService = new PaymentFuiouSigner();
     private final PaymentOrderMapper paymentOrderMapper = mock(PaymentOrderMapper.class);
     private final PaymentChannelContractMapper channelContractMapper = mock(PaymentChannelContractMapper.class);
     private final PaymentChannelCallbackService callbackService = mock(PaymentChannelCallbackService.class);
-    private final PaymentFuiouPayCallbackService service = new PaymentFuiouPayCallbackService(
+    private final PaymentFuiouPayCallbackHandler service = new PaymentFuiouPayCallbackHandler(
             xmlCodec,
             signService,
-            new PaymentFuiouGatewaySignService(),
-            new PaymentFuiouPayConfigParser(new ObjectMapper(), new PaymentSensitiveValueService(null)),
+            new PaymentFuiouGatewaySigner(),
+            new PaymentFuiouPayConfigParser(new ObjectMapper(), new PaymentSensitiveValueCodec(null)),
             paymentOrderMapper,
             channelContractMapper,
             callbackService);
@@ -43,7 +43,7 @@ class PaymentFuiouPayCallbackServiceTest {
     @Test
     @DisplayName("parseScanpayCallback should parse real fuiou success callback req")
     void parseScanpayCallback_realSuccessReq_parsesCommandFields() {
-        PaymentFuiouPayCallbackService.FuiouScanpayCallback callback =
+        PaymentFuiouPayCallbackHandler.FuiouScanpayCallback callback =
                 service.parseScanpayCallback(realScanpaySuccessReq());
 
         assertThat(callback.payOrderNo()).isEqualTo("PO2026061200000030");
@@ -62,11 +62,11 @@ class PaymentFuiouPayCallbackServiceTest {
     void handle_realSuccessReq_submitsStandardPaymentCallback() {
         PaymentOrderEntity order = new PaymentOrderEntity();
         order.setPayOrderNo("PO2026061200000030");
-        order.setTenantId(1L);
+        order.setTenantId("1");
         order.setContractId(331009L);
         order.setChannelCode(PaymentChannelCode.FUIOU_PAY.name());
         when(paymentOrderMapper.selectByPayOrderNo("PO2026061200000030")).thenReturn(order);
-        when(channelContractMapper.selectActiveConfigValuesJson(1L, 331009L)).thenReturn(configJson());
+        when(channelContractMapper.selectActiveConfigValuesJson("1", 331009L)).thenReturn(configJson());
 
         PaymentChannelCallbackHandleResult result = service.handle(new PaymentChannelRawCallback(
                 PaymentChannelCode.FUIOU_PAY.name(),

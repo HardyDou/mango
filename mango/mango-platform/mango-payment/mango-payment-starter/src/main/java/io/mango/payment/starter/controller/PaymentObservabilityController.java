@@ -5,7 +5,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.payment.api.PaymentObservabilityApi;
 import io.mango.payment.api.vo.PaymentObservabilitySnapshotVO;
-import io.mango.payment.core.service.PaymentObservabilityService;
+import io.mango.payment.core.service.IPaymentObservabilityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "支付可观测性", description = "支付域运行状态和告警快照接口")
 public class PaymentObservabilityController implements PaymentObservabilityApi {
 
-    private final PaymentObservabilityService observabilityService;
+    private final IPaymentObservabilityService observabilityService;
 
     @Override
     @GetMapping("/snapshot")

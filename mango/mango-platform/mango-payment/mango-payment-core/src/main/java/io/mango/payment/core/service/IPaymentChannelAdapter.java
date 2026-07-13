@@ -27,7 +27,7 @@ public interface IPaymentChannelAdapter {
      * @param command 支付命令
      * @return 通道支付结果
      */
-    PaymentApplyResult applyPayment(PaymentApplyCommand command);
+    PaymentApplyResult applyPayment(PaymentApplyInput command);
 
     /**
      * 支付订单创建后的通道扩展动作。
@@ -37,7 +37,7 @@ public interface IPaymentChannelAdapter {
      * @param order 已创建支付订单
      */
     default void afterPaymentOrderCreated(
-            PaymentApplyCommand command,
+            PaymentApplyInput command,
             PaymentApplyResult result,
             PaymentOrderEntity order) {
     }
@@ -48,7 +48,7 @@ public interface IPaymentChannelAdapter {
      * @param command 退款命令
      * @return 通道退款结果
      */
-    RefundApplyResult applyRefund(RefundApplyCommand command);
+    RefundApplyResult applyRefund(RefundApplyInput command);
 
     /**
      * 生成通道账单。
@@ -56,7 +56,7 @@ public interface IPaymentChannelAdapter {
      * @param command 账单生成命令
      * @return 通道账单结果
      */
-    ChannelBillResult generateBill(ChannelBillCommand command);
+    ChannelBillResult generateBill(ChannelBillInput command);
 
     /**
      * 主动查询支付订单状态。
@@ -64,7 +64,7 @@ public interface IPaymentChannelAdapter {
      * @param command 查单命令
      * @return 通道查询结果
      */
-    PaymentQueryResult queryPayment(PaymentQueryCommand command);
+    PaymentQueryResult queryPayment(PaymentQueryInput command);
 
     /**
      * 主动查询退款订单状态。
@@ -72,7 +72,7 @@ public interface IPaymentChannelAdapter {
      * @param command 查退款命令
      * @return 通道退款查询结果
      */
-    RefundQueryResult queryRefund(RefundQueryCommand command);
+    RefundQueryResult queryRefund(RefundQueryInput command);
 
     /**
      * 支付命令。
@@ -98,8 +98,8 @@ public interface IPaymentChannelAdapter {
      * @param payerName 网银付款户名
      * @param clientIp 付款人请求 IP
      */
-    record PaymentApplyCommand(
-            Long tenantId,
+    record PaymentApplyInput(
+            String tenantId,
             String channelCode,
             Long contractId,
             String contractConfigValuesJson,
@@ -138,8 +138,8 @@ public interface IPaymentChannelAdapter {
      * @param currency 币种
      * @param reason 退款原因
      */
-    record RefundApplyCommand(
-            Long tenantId,
+    record RefundApplyInput(
+            String tenantId,
             String channelCode,
             Long contractId,
             String refundOrderNo,
@@ -162,7 +162,7 @@ public interface IPaymentChannelAdapter {
      * @param contractId 签约配置 ID
      * @param billDate 账单日期
      */
-    record ChannelBillCommand(Long tenantId, String channelCode, Long contractId, LocalDate billDate) {
+    record ChannelBillInput(String tenantId, String channelCode, Long contractId, LocalDate billDate) {
     }
 
     /**
@@ -171,7 +171,7 @@ public interface IPaymentChannelAdapter {
      * @param tenantId 租户 ID
      * @param order 支付订单
      */
-    record PaymentQueryCommand(Long tenantId, PaymentOrderEntity order) {
+    record PaymentQueryInput(String tenantId, PaymentOrderEntity order) {
     }
 
     /**
@@ -180,7 +180,7 @@ public interface IPaymentChannelAdapter {
      * @param tenantId 租户 ID
      * @param refundOrder 退款订单
      */
-    record RefundQueryCommand(Long tenantId, PaymentRefundOrderVO refundOrder) {
+    record RefundQueryInput(String tenantId, PaymentRefundOrderVO refundOrder) {
     }
 
     /**

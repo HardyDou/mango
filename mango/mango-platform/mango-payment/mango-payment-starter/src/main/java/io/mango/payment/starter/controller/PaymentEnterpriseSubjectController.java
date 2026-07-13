@@ -10,6 +10,7 @@ import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentEnterpriseSubjectVO;
 import io.mango.payment.core.service.IPaymentEnterpriseSubjectService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -38,38 +39,38 @@ public class PaymentEnterpriseSubjectController implements PaymentEnterpriseSubj
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:enterprise-subject:list")
     @Operation(summary = "分页查询收款主体", description = "按当前租户查询收款主体")
     public R<PageResult<PaymentEnterpriseSubjectVO>> pageEnterpriseSubjects(@ParameterObject PaymentConfigPageQuery query) {
-        return enterpriseSubjectService.pageEnterpriseSubjects(query);
+        return R.ok(enterpriseSubjectService.pageEnterpriseSubjects(query));
     }
 
     @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:enterprise-subject:query")
     @Operation(summary = "查询收款主体详情", description = "按主体 ID 查询收款主体详情")
-    public R<PaymentEnterpriseSubjectVO> detailEnterpriseSubject(@Parameter(description = "主体 ID", required = true) @RequestParam Long id) {
-        return enterpriseSubjectService.detailEnterpriseSubject(id);
+    public R<PaymentEnterpriseSubjectVO> detailEnterpriseSubject(@Parameter(description = "主体 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(enterpriseSubjectService.detailEnterpriseSubject(id));
     }
 
     @Override
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:enterprise-subject:add")
     @Operation(summary = "新增收款主体", description = "创建收款主体")
-    public R<Long> createEnterpriseSubject(@RequestBody SavePaymentEnterpriseSubjectCommand command) {
-        return enterpriseSubjectService.createEnterpriseSubject(command);
+    public R<Long> createEnterpriseSubject(@Valid @RequestBody SavePaymentEnterpriseSubjectCommand command) {
+        return R.ok(enterpriseSubjectService.createEnterpriseSubject(command));
     }
 
     @Override
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:enterprise-subject:edit")
     @Operation(summary = "修改收款主体", description = "更新收款主体")
-    public R<Boolean> updateEnterpriseSubject(@RequestBody SavePaymentEnterpriseSubjectCommand command) {
-        return enterpriseSubjectService.updateEnterpriseSubject(command);
+    public R<Boolean> updateEnterpriseSubject(@Valid @RequestBody SavePaymentEnterpriseSubjectCommand command) {
+        return R.ok(enterpriseSubjectService.updateEnterpriseSubject(command));
     }
 
     @Override
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:enterprise-subject:delete")
     @Operation(summary = "删除收款主体", description = "按 ID 删除收款主体")
-    public R<Boolean> deleteEnterpriseSubject(@Parameter(description = "主体 ID", required = true) @RequestParam Long id) {
-        return enterpriseSubjectService.deleteEnterpriseSubject(id);
+    public R<Boolean> deleteEnterpriseSubject(@Parameter(description = "主体 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(enterpriseSubjectService.deleteEnterpriseSubject(id));
     }
 }

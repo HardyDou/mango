@@ -68,7 +68,7 @@
         <include refid="refundApprovalWhere"/>
     </select>
 
-    <select id="selectRefundApprovalPage" resultType="io.mango.payment.api.vo.PaymentRefundApprovalVO">
+    <select id="selectRefundApprovalPage" resultType="io.mango.payment.core.model.projection.PaymentRefundApprovalProjection">
         <include refid="refundApprovalSelect"/>
         <include refid="refundApprovalFrom"/>
         <include refid="refundApprovalWhere"/>
@@ -76,7 +76,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectRefundApprovalDetail" resultType="io.mango.payment.api.vo.PaymentRefundApprovalVO">
+    <select id="selectRefundApprovalDetail" resultType="io.mango.payment.core.model.projection.PaymentRefundApprovalProjection">
         <include refid="refundApprovalSelect"/>
         <include refid="refundApprovalFrom"/>
         where approval.tenant_id = #{tenantId}

@@ -11,11 +11,11 @@ public interface PaymentChannelQueryRecordMapper extends BaseMapper<PaymentChann
 
     @InterceptorIgnore(tenantLine = "true")
     long countByTenantAndPayOrderNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("payOrderNo") String payOrderNo);
 
     @InterceptorIgnore(tenantLine = "true")
     PaymentChannelQueryRecordEntity selectLastByTenantAndPayOrderNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("payOrderNo") String payOrderNo);
 }

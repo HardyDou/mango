@@ -4,15 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.CreatePaymentBusinessOrderCommand;
 import io.mango.payment.api.enums.PaymentBusinessOrderStatusEnum;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentBusinessOrderStatusVO;
 import io.mango.payment.api.vo.PaymentBusinessOrderVO;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
-import io.mango.payment.core.entity.PaymentEnterpriseSubject;
+import io.mango.payment.core.entity.PaymentEnterpriseSubjectEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentBusinessOrderMapper;
 import io.mango.payment.core.mapper.PaymentEnterpriseSubjectMapper;
@@ -23,36 +23,40 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
+
 @Service
 @RequiredArgsConstructor
-public class PaymentBusinessOrderService {
+public class PaymentBusinessOrderService implements IPaymentBusinessOrderService {
 
     private final PaymentApplicationMapper applicationMapper;
     private final PaymentEnterpriseSubjectMapper enterpriseSubjectMapper;
     private final PaymentBusinessOrderMapper businessOrderMapper;
-    private final PaymentOrderStatusFlowService statusFlowService;
-    private final PaymentNumberService numberService;
+    private final PaymentOrderStatusFlowRecorder statusFlowService;
+    private final PaymentNumberGenerator numberService;
     private final PaymentOrderViewSupport viewSupport;
 
     public PageResult<PaymentBusinessOrderVO> pageBusinessOrders(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         Long applicationId = resolved.getApplicationId();
         Long enterpriseSubjectId = resolved.getEnterpriseSubjectId();
         long total = businessOrderMapper.countBusinessOrders(tenantId, keyword, statusCode, applicationId, enterpriseSubjectId);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentBusinessOrderVO> rows = businessOrderMapper.selectBusinessOrderPage(
-                tenantId, keyword, statusCode, applicationId, enterpriseSubjectId, size, (page - 1) * size);
+        List<PaymentBusinessOrderVO> rows = toApiList(businessOrderMapper.selectBusinessOrderPage(
+                tenantId, keyword, statusCode, applicationId, enterpriseSubjectId, size, (page - 1) * size), PaymentBusinessOrderVO.class);
         rows.forEach(this::fillBusinessOrderStatusName);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentBusinessOrderVO detailBusinessOrder(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID.getCode(), "业务订单 ID 不能为空");
-        PaymentBusinessOrderVO vo = businessOrderMapper.selectBusinessOrderDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID, "业务订单 ID 不能为空");
+        PaymentBusinessOrderVO vo = toApi(businessOrderMapper.selectBusinessOrderDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentBusinessOrderVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_READONLY_RESOURCE_NOT_FOUND);
         fillBusinessOrderStatusName(vo);
         vo.setStatusFlows(viewSupport.listBusinessStatusFlows(id));
@@ -70,26 +74,26 @@ public class PaymentBusinessOrderService {
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentBusinessOrderVO createBusinessOrder(CreatePaymentBusinessOrderCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "创建业务订单命令不能为空");
-        Require.notBlank(command.getAppId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "AppId 不能为空");
-        Require.notBlank(command.getTitle(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "支付标题不能为空");
-        Require.notNull(command.getSubjectId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "收款主体 ID 不能为空");
-        Require.notNull(command.getAmount(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "订单金额不能为空");
+        Require.notNull(command, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "创建业务订单命令不能为空");
+        Require.notBlank(command.getAppId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "AppId 不能为空");
+        Require.notBlank(command.getTitle(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "支付标题不能为空");
+        Require.notNull(command.getSubjectId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "收款主体 ID 不能为空");
+        Require.notNull(command.getAmount(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "订单金额不能为空");
         Require.isTrue(command.getAmount() > 0, PaymentCode.PAYMENT_AMOUNT_INVALID);
         String appId = command.getAppId().trim();
         LocalDateTime now = LocalDateTime.now();
         String bizOrderNo = PaymentContextSupport.trimToNull(command.getBizOrderNo());
         if (bizOrderNo == null) {
-            bizOrderNo = numberService.next(PaymentNumberService.PAY_BIZ_ORDER_NO);
+            bizOrderNo = numberService.next(PaymentNumberGenerator.PAY_BIZ_ORDER_NO);
         }
-        Long tenantId = PaymentContextSupport.currentTenantId();
-        PaymentApplication application = selectRequiredApplication(tenantId, appId);
-        PaymentEnterpriseSubject subject = selectRequiredSubject(tenantId, command.getSubjectId());
+        String tenantId = PaymentContextSupport.currentTenantId();
+        PaymentApplicationEntity application = selectRequiredApplication(tenantId, appId);
+        PaymentEnterpriseSubjectEntity subject = selectRequiredSubject(tenantId, command.getSubjectId());
         Require.isTrue(businessOrderMapper.selectOne(new LambdaQueryWrapper<PaymentBusinessOrderEntity>()
                         .eq(PaymentBusinessOrderEntity::getTenantId, tenantId)
                         .eq(PaymentBusinessOrderEntity::getAppCode, application.getAppId())
                         .eq(PaymentBusinessOrderEntity::getBizOrderNo, bizOrderNo)) == null,
-                PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "业务订单号已存在");
+                PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "业务订单号已存在");
 
         PaymentBusinessOrderEntity entity = new PaymentBusinessOrderEntity();
         entity.setId(IdWorker.getId());
@@ -115,7 +119,7 @@ public class PaymentBusinessOrderService {
         businessOrderMapper.insert(entity);
         statusFlowService.record(
                 tenantId,
-                PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS,
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS,
                 entity.getId(),
                 entity.getBizOrderNo(),
                 null,
@@ -145,22 +149,22 @@ public class PaymentBusinessOrderService {
         vo.setPayDisabledReason("当前状态不可发起支付");
     }
 
-    private PaymentApplication selectRequiredApplication(Long tenantId, String appId) {
-        PaymentApplication application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplication>()
-                .eq(PaymentApplication::getTenantId, tenantId)
-                .eq(PaymentApplication::getAppId, appId));
+    private PaymentApplicationEntity selectRequiredApplication(String tenantId, String appId) {
+        PaymentApplicationEntity application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplicationEntity>()
+                .eq(PaymentApplicationEntity::getTenantId, tenantId)
+                .eq(PaymentApplicationEntity::getAppId, appId));
         Require.notNull(application, PaymentCode.PAYMENT_APPLICATION_NOT_FOUND);
         Require.isTrue(Integer.valueOf(1).equals(application.getStatus()),
-                PaymentCode.PAYMENT_APPLICATION_INVALID.getCode(), "支付应用未启用");
+                PaymentCode.PAYMENT_APPLICATION_INVALID, "支付应用未启用");
         return application;
     }
 
-    private PaymentEnterpriseSubject selectRequiredSubject(Long tenantId, Long subjectId) {
-        PaymentEnterpriseSubject subject = enterpriseSubjectMapper.selectById(subjectId);
+    private PaymentEnterpriseSubjectEntity selectRequiredSubject(String tenantId, Long subjectId) {
+        PaymentEnterpriseSubjectEntity subject = enterpriseSubjectMapper.selectById(subjectId);
         Require.notNull(subject, PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_NOT_FOUND);
         Require.isTrue(tenantId.equals(subject.getTenantId()), PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_NOT_FOUND);
         Require.isTrue(Integer.valueOf(1).equals(subject.getStatus()),
-                PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_INVALID.getCode(), "收款主体未启用");
+                PaymentCode.PAYMENT_ENTERPRISE_SUBJECT_INVALID, "收款主体未启用");
         return subject;
     }
 }

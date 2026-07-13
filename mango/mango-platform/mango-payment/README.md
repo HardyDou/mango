@@ -207,14 +207,14 @@ mango:
 | 支付结果 | `GET /payment/cashier/pay-result` |
 | 同步支付结果 | `POST /payment/cashier/pay-result/sync` |
 | 提交线下转账凭证 | `POST /payment/cashier/offline-collections/transfer-voucher` |
-| 创建开放订单 | `POST /openapi/pay/orders` |
-| 查询开放订单 | `GET /openapi/pay/orders/{bizOrderNo}` |
-| 获取开放收银台 | `POST /openapi/pay/orders/{bizOrderNo}/cashier` |
-| 开放支付 | `POST /openapi/pay/orders/{bizOrderNo}/pay` |
-| 查询支付订单 | `GET /openapi/pay/payment-orders/{payOrderNo}` |
-| 开放退款 | `POST /openapi/pay/refunds` |
-| 查询退款 | `GET /openapi/pay/refunds/{bizRefundNo}` |
-| 获取支付凭证 | `GET /openapi/pay/receipts/{bizOrderNo}` |
+| 创建开放订单 | `POST /openapi/pay/orders/create` |
+| 查询开放订单 | `POST /openapi/pay/orders/detail` |
+| 获取开放收银台 | `POST /openapi/pay/cashier/detail` |
+| 开放支付 | `POST /openapi/pay/payments/create` |
+| 查询支付订单 | `POST /openapi/pay/payments/detail` |
+| 开放退款 | `POST /openapi/pay/refunds/create` |
+| 查询退款 | `POST /openapi/pay/refunds/detail` |
+| 获取支付凭证 | `POST /openapi/pay/receipts/detail` |
 
 常用入参对象：
 
@@ -234,7 +234,8 @@ mango:
 
 1. migration 固化通道、通道能力、签约字段模板、默认签约、路由规则和必要权限。
 2. 通道适配器实现支付、查单、退款、查退款、关单、账单获取或账单解析。
-3. 回调入口接入 `PaymentChannelCallbackApi`，提交通道回调命令。
+3. 标准化内部回调接入 `PaymentChannelCallbackApi`；通道公网原始协议使用
+   `GET/POST /payment/channel-callbacks/public?channelCode=<通道编码>`，由通道处理器完成验签并返回原始纯文本 ACK。
 4. 对账接入账单获取源或文件导入。
 5. 记录请求摘要、响应摘要、通道交易号、通道退款号和错误原因，保证管理端能定位问题。
 
@@ -243,6 +244,10 @@ mango:
 ## 8. 数据与初始化
 
 Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
+
+`V102__payment_tenant_identifier_string.sql` 将全部支付表的 `tenant_id` 值保持转换为
+`VARCHAR(64)`，并补齐平台标准 `TenantEntity` 的可空 `org_id`。升级时数据库 migration
+必须先于新版应用启动完成；旧数值租户值会保留为相同十进制字符串。
 
 核心表按用途分组：
 
@@ -360,4 +365,15 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 
 ## 12. 变更影响记录
 
-- PaymentOpenApi 契约由 `PaymentOpenApiController` 承载，`IPaymentOpenApiService` 仅保留内部服务契约。该变更不改变支付开放接口方法签名、HTTP 路径、权限码、资源声明、编号规则和通知语义。
+- `PaymentCode` 位于 `io.mango.payment.api.enums`；API 契约不再携带 Spring MVC、文件上传或 I/O 异常类型。
+- 开放接口统一为固定 `POST` 路径和 `PaymentOpenRequestCommand` 请求体，签名路径由服务端固定写入，客户端不能覆盖。
+- 公网通道回调统一为固定函数式路由，并以 `API_RESOURCE` 声明 `PUBLIC` 访问模式；原始请求体、参数和纯文本 ACK 语义保持。
+- Mapper 只返回 core projection，Service 边界显式转换 API VO；支付实体统一继承平台 `TenantEntity`。
+
+支付四模块回归入口：
+
+```bash
+mvn -f mango/pom.xml \
+  -pl mango-platform/mango-payment/mango-payment-api,mango-platform/mango-payment/mango-payment-core,mango-platform/mango-payment/mango-payment-starter,mango-platform/mango-payment/mango-payment-starter-remote \
+  test
+```

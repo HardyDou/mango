@@ -55,7 +55,7 @@
         <include refid="differenceWhere"/>
     </select>
 
-    <select id="selectDifferencePage" resultType="io.mango.payment.api.vo.PaymentDifferenceVO">
+    <select id="selectDifferencePage" resultType="io.mango.payment.core.model.projection.PaymentDifferenceProjection">
         <include refid="differenceSelect"/>
         from payment_difference d
         left join payment_reconciliation r
@@ -67,7 +67,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectDifferenceDetail" resultType="io.mango.payment.api.vo.PaymentDifferenceVO">
+    <select id="selectDifferenceDetail" resultType="io.mango.payment.core.model.projection.PaymentDifferenceProjection">
         <include refid="differenceSelect"/>
         from payment_difference d
         left join payment_reconciliation r

@@ -30,7 +30,7 @@
                i.created_at as createTime
     </sql>
 
-    <select id="selectItemsByBatch" resultType="io.mango.payment.api.vo.PaymentOfflineBankStatementItemVO">
+    <select id="selectItemsByBatch" resultType="io.mango.payment.core.model.projection.PaymentOfflineBankStatementItemProjection">
         <include refid="itemSelect"/>
         from payment_offline_bank_statement_item i
         where i.tenant_id = #{tenantId}

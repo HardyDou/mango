@@ -9,7 +9,7 @@ import io.mango.payment.api.command.RetryPaymentNotificationRecordCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentNotificationRecordVO;
 import io.mango.payment.api.vo.PaymentNotificationStatusVO;
-import io.mango.payment.core.service.PaymentNotificationRecordService;
+import io.mango.payment.core.service.IPaymentNotificationRecordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +33,7 @@ import java.util.List;
 @Tag(name = "通知记录", description = "支付结果通知业务系统的发送和补偿接口")
 public class PaymentNotificationRecordController implements PaymentNotificationRecordApi {
 
-    private final PaymentNotificationRecordService notificationRecordService;
+    private final IPaymentNotificationRecordService notificationRecordService;
 
     @Override
     @GetMapping("/page")
@@ -47,7 +47,7 @@ public class PaymentNotificationRecordController implements PaymentNotificationR
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:notification-record:query")
     @Operation(summary = "查询通知记录详情", description = "按通知记录 ID 查询通知目标、响应、重试和人工补偿信息")
-    public R<PaymentNotificationRecordVO> detailNotificationRecord(@Parameter(description = "通知记录 ID", required = true) @RequestParam Long id) {
+    public R<PaymentNotificationRecordVO> detailNotificationRecord(@Parameter(description = "通知记录 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(notificationRecordService.detailNotificationRecord(id));
     }
 
@@ -71,7 +71,7 @@ public class PaymentNotificationRecordController implements PaymentNotificationR
     @PostMapping("/deliver-due")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:notification-record:deliver-due")
     @Operation(summary = "投递到期通知记录", description = "人工触发投递当前租户已到计划时间的支付或退款通知记录，不改变资金状态并记录操作审计")
-    public R<Integer> deliverDueNotificationRecords(@Parameter(description = "本次最多投递条数，1-100") @RequestParam(defaultValue = "20") long limit) {
+    public R<Integer> deliverDueNotificationRecords(@Parameter(description = "本次最多投递条数，1-100") @RequestParam(value = "limit", defaultValue = "20") long limit) {
         return R.ok(notificationRecordService.deliverDueNotificationRecords(limit));
     }
 }

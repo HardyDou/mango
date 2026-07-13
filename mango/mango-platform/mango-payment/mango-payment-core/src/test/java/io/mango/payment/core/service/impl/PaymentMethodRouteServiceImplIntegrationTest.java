@@ -5,13 +5,13 @@ import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.PaymentMethodRouteTrialCommand;
 import io.mango.payment.api.command.SavePaymentMethodRouteRuleCommand;
 import io.mango.payment.api.command.SavePaymentMethodRouteRuleItemCommand;
 import io.mango.payment.api.vo.PaymentMethodRouteTrialVO;
-import io.mango.payment.core.entity.PaymentMethodRouteRule;
-import io.mango.payment.core.entity.PaymentMethodRouteRuleItem;
+import io.mango.payment.core.entity.PaymentMethodRouteRuleEntity;
+import io.mango.payment.core.entity.PaymentMethodRouteRuleItemEntity;
 import io.mango.payment.core.mapper.PaymentMethodRouteRuleItemMapper;
 import io.mango.payment.core.mapper.PaymentMethodRouteRuleMapper;
 import io.mango.payment.core.service.PaymentOperationAuditService;
@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        PaymentMethodRouteServiceImplIntegrationTest.TestConfig.class
+        PaymentMethodRouteServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:payment_method_route_service;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "mybatis-plus.mapper-locations=classpath:/mapper/payment/*.xml",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-class PaymentMethodRouteServiceImplIntegrationTest {
+class PaymentMethodRouteServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -65,7 +65,7 @@ class PaymentMethodRouteServiceImplIntegrationTest {
     private PaymentMethodRouteRuleItemMapper routeRuleItemMapper;
 
     @Autowired
-    private PaymentMethodRouteServiceImpl service;
+    private PaymentMethodRouteService service;
 
     @Autowired
     private TestPaymentOperationAuditService auditService;
@@ -87,14 +87,14 @@ class PaymentMethodRouteServiceImplIntegrationTest {
     void createRouteRuleSavesRuleItemsAndAuditsThroughRealMappers() {
         insertReferenceData();
 
-        Long id = service.createRouteRule(command()).getData();
+        Long id = service.createRouteRule(command());
 
-        PaymentMethodRouteRule rule = routeRuleMapper.selectById(id);
-        assertThat(rule.getTenantId()).isEqualTo(1L);
+        PaymentMethodRouteRuleEntity rule = routeRuleMapper.selectById(id);
+        assertThat(rule.getTenantId()).isEqualTo("1");
         assertThat(rule.getRuleCode()).isEqualTo("ORDER_CENTER_WECHAT_MANGO_PAY_TEST");
         assertThat(rule.getMethodCode()).isEqualTo("PERSONAL_WECHAT_QR");
         assertThat(rule.getEnvironment()).isEqualTo("MANGO_PAY");
-        PaymentMethodRouteRuleItem item = singleRouteItem(id);
+        PaymentMethodRouteRuleItemEntity item = singleRouteItem(id);
         assertThat(item.getContractCapabilityId()).isEqualTo(333001L);
         assertThat(item.getPriority()).isEqualTo(10);
         assertThat(item.getWeight()).isEqualTo(100);
@@ -124,7 +124,7 @@ class PaymentMethodRouteServiceImplIntegrationTest {
         insertRouteRule(334001L, 1);
         insertRouteItem(335001L, 334001L, 333001L, 1L, 500000L, 1);
 
-        PaymentMethodRouteTrialVO result = service.trialRoute(trialCommand(9900L)).getData();
+        PaymentMethodRouteTrialVO result = service.trialRoute(trialCommand(9900L));
 
         assertThat(result.getMatched()).isTrue();
         assertThat(result.getMatchedRule().getRuleCode()).isEqualTo("ORDER_CENTER_WECHAT_MANGO_PAY");
@@ -139,7 +139,7 @@ class PaymentMethodRouteServiceImplIntegrationTest {
         insertRouteRule(334001L, 1);
         insertRouteItem(335001L, 334001L, 333001L, 1L, 500000L, 1);
 
-        PaymentMethodRouteTrialVO result = service.trialRoute(trialCommand(9900L)).getData();
+        PaymentMethodRouteTrialVO result = service.trialRoute(trialCommand(9900L));
 
         assertThat(result.getMatched()).isFalse();
         assertThat(result.getFilterReasons()).anyMatch(reason -> reason.contains("超过签约能力最大金额"));
@@ -220,7 +220,8 @@ class PaymentMethodRouteServiceImplIntegrationTest {
                     secret_configured int, secret_version int, secret_last_reset_time timestamp,
                     sign_algorithm varchar(64), ip_whitelist_enabled int, ip_whitelist varchar(512),
                     payload_encrypt_enabled int, notify_retry_policy varchar(512), demo_app int, status int,
-                    tenant_id bigint, del_flag int default 0,
+                    tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0,
                     created_by bigint, created_at timestamp default current_timestamp, updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
@@ -228,7 +229,8 @@ class PaymentMethodRouteServiceImplIntegrationTest {
                 create table payment_enterprise_subject (
                     id bigint primary key, subject_name varchar(128), credit_code varchar(512), credit_code_hash varchar(128),
                     bank_account_no varchar(512), bank_name varchar(128), license_file_id bigint, status int,
-                    tenant_id bigint, del_flag int default 0,
+                    tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0,
                     created_by bigint, created_at timestamp default current_timestamp, updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
@@ -239,28 +241,32 @@ class PaymentMethodRouteServiceImplIntegrationTest {
                     terminal_scope varchar(64), payment_material_type varchar(64), cashier_group_code varchar(64),
                     cashier_group_name varchar(128), cashier_group_sort int, icon_file_id bigint,
                     requires_bank_selection int, requires_qr_refresh int, description varchar(512), sort int, status int,
-                    tenant_id bigint, del_flag int default 0,
+                    tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0,
                     created_by bigint, created_at timestamp default current_timestamp, updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
         jdbcTemplate.execute("""
                 create table payment_channel (
                     id bigint primary key, channel_code varchar(128), channel_name varchar(128), environment varchar(64), status int,
-                    tenant_id bigint, del_flag int default 0, created_by bigint, created_at timestamp default current_timestamp,
+                    tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0, created_by bigint, created_at timestamp default current_timestamp,
                     updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
         jdbcTemplate.execute("""
                 create table payment_channel_contract (
                     id bigint primary key, contract_name varchar(128), channel_id bigint, environment varchar(64), status int,
-                    tenant_id bigint, del_flag int default 0, created_by bigint, created_at timestamp default current_timestamp,
+                    tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0, created_by bigint, created_at timestamp default current_timestamp,
                     updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
         jdbcTemplate.execute("""
                 create table payment_channel_capability (
                     id bigint primary key, channel_id bigint, method_code varchar(128), terminal_type varchar(64), environment varchar(64),
-                    min_amount bigint, max_amount bigint, status int, tenant_id bigint, del_flag int default 0,
+                    min_amount bigint, max_amount bigint, status int, tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0,
                     created_by bigint, created_at timestamp default current_timestamp, updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
@@ -268,7 +274,8 @@ class PaymentMethodRouteServiceImplIntegrationTest {
                 create table payment_channel_contract_capability (
                     id bigint primary key, contract_id bigint, channel_capability_id bigint, method_code varchar(128), terminal_type varchar(64),
                     fee_rate decimal(18,6), min_amount bigint, max_amount bigint, priority int, certificate_expire_time timestamp,
-                    status int, tenant_id bigint,
+                    status int, tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0, created_by bigint, created_at timestamp default current_timestamp,
                     updated_by bigint, updated_at timestamp default current_timestamp
                 )
@@ -280,18 +287,20 @@ class PaymentMethodRouteServiceImplIntegrationTest {
                 create table payment_method_route_rule (
                     id bigint primary key, rule_code varchar(128), rule_name varchar(128), app_id bigint, subject_id bigint,
                     method_code varchar(128), terminal_type varchar(64), environment varchar(64), route_mode varchar(64),
-                    fallback_enabled int, status int, tenant_id bigint, del_flag int default 0,
+                    fallback_enabled int, status int, tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0,
                     created_by bigint, created_at timestamp default current_timestamp, updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
         jdbcTemplate.execute("""
                 create table payment_method_route_rule_item (
                     id bigint primary key, rule_id bigint, contract_capability_id bigint, priority int, weight int,
-                    min_amount bigint, max_amount bigint, status int, tenant_id bigint, del_flag int default 0,
+                    min_amount bigint, max_amount bigint, status int, tenant_id varchar(64),
+                    org_id bigint, del_flag int default 0,
                     created_by bigint, created_at timestamp default current_timestamp, updated_by bigint, updated_at timestamp default current_timestamp
                 )
                 """);
-        jdbcTemplate.execute("create table payment_order (id bigint primary key, route_rule_id bigint, tenant_id bigint)");
+        jdbcTemplate.execute("create table payment_order (id bigint primary key, route_rule_id bigint, tenant_id varchar(64))");
     }
 
     private void insertReferenceData() {
@@ -322,14 +331,14 @@ class PaymentMethodRouteServiceImplIntegrationTest {
                         """, id, ruleId, capabilityId, minAmount, maxAmount, status);
     }
 
-    private PaymentMethodRouteRuleItem singleRouteItem(Long ruleId) {
-        return routeRuleItemMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PaymentMethodRouteRuleItem>()
-                .eq(PaymentMethodRouteRuleItem::getRuleId, ruleId)).get(0);
+    private PaymentMethodRouteRuleItemEntity singleRouteItem(Long ruleId) {
+        return routeRuleItemMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PaymentMethodRouteRuleItemEntity>()
+                .eq(PaymentMethodRouteRuleItemEntity::getRuleId, ruleId)).get(0);
     }
 
     @Configuration
     @MapperScan(basePackageClasses = PaymentMethodRouteRuleMapper.class)
-    @Import(PaymentMethodRouteServiceImpl.class)
+    @Import(PaymentMethodRouteService.class)
     static class TestConfig {
 
         @Bean
@@ -347,8 +356,8 @@ class PaymentMethodRouteServiceImplIntegrationTest {
         }
 
         @Override
-        public void record(String operationAction, String resourceType, String resourceId, String operationResult) {
-            records.add(operationAction + "|" + resourceType + "|" + resourceId + "|" + operationResult);
+        public void record(PaymentOperationAuditService.AuditEntry entry) {
+            records.add(entry.operationAction() + "|" + entry.resourceType() + "|" + entry.resourceId() + "|" + entry.operationResult());
         }
 
         void clear() {

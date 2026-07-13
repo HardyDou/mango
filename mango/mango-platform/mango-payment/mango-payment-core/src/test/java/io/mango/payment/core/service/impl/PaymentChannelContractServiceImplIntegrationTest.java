@@ -8,13 +8,13 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.crypto.impl.ICryptoService;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.RotatePaymentChannelContractCertificateCommand;
 import io.mango.payment.api.command.SavePaymentChannelContractCapabilityCommand;
 import io.mango.payment.api.command.SavePaymentChannelContractCommand;
 import io.mango.payment.core.entity.PaymentChannelCertificateRotationRecordEntity;
-import io.mango.payment.core.entity.PaymentChannelContract;
-import io.mango.payment.core.entity.PaymentChannelContractCapability;
+import io.mango.payment.core.entity.PaymentChannelContractEntity;
+import io.mango.payment.core.entity.PaymentChannelContractCapabilityEntity;
 import io.mango.payment.core.entity.PaymentChannelContractValueEntity;
 import io.mango.payment.core.mapper.PaymentChannelCertificateRotationRecordMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractCapabilityMapper;
@@ -51,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        PaymentChannelContractServiceImplIntegrationTest.TestConfig.class
+        PaymentChannelContractServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:payment_channel_contract_service;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -62,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "mybatis-plus.mapper-locations=classpath:/mapper/payment/*.xml",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-class PaymentChannelContractServiceImplIntegrationTest {
+class PaymentChannelContractServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -80,7 +80,7 @@ class PaymentChannelContractServiceImplIntegrationTest {
     private PaymentChannelCertificateRotationRecordMapper rotationRecordMapper;
 
     @Autowired
-    private PaymentChannelContractServiceImpl service;
+    private PaymentChannelContractService service;
 
     @Autowired
     private TestPaymentOperationAuditService auditService;
@@ -101,9 +101,9 @@ class PaymentChannelContractServiceImplIntegrationTest {
 
     @Test
     void createContractEncryptsSensitiveValuesAndPersistsCapabilityThroughRealMappers() {
-        Long id = service.createChannelContract(contractCommand()).getData();
+        Long id = service.createChannelContract(contractCommand());
 
-        PaymentChannelContract contract = contractMapper.selectById(id);
+        PaymentChannelContractEntity contract = contractMapper.selectById(id);
         assertThat(contract.getContractCode()).startsWith("ALLINPAY_320001_");
         assertThat(contract.getEnvironment()).isEqualTo("PROD");
         assertThat(contract.getConfigValuesJson()).contains("\"privateKey\":\"enc:ciphertext-value\"");
@@ -112,21 +112,21 @@ class PaymentChannelContractServiceImplIntegrationTest {
         assertThat(secretValue.getEncryptedValue()).isEqualTo("ciphertext-value");
         assertThat(secretValue.getValueText()).isNull();
         assertThat(secretValue.getSensitiveFlag()).isEqualTo(1);
-        PaymentChannelContractCapability capability = singleCapability(id);
+        PaymentChannelContractCapabilityEntity capability = singleCapability(id);
         assertThat(capability.getChannelCapabilityId()).isEqualTo(332001L);
         assertThat(capability.getMethodCode()).isEqualTo("PERSONAL_WECHAT_QR");
         assertThat(capability.getMinAmount()).isEqualTo(10L);
         assertThat(auditService.records).containsExactly(
                 "CREATE_CHANNEL_CONTRACT|PAYMENT_CHANNEL_CONTRACT|" + id + "|SUCCESS");
 
-        String masked = service.detailChannelContract(id).getData().getConfigValuesJson();
+        String masked = service.detailChannelContract(id).getConfigValuesJson();
         assertThat(masked).contains("\"privateKey\":\"******\"");
         assertThat(masked).doesNotContain("ciphertext-value");
     }
 
     @Test
     void createContractStoresFileValueAndRejectsFileAccessUrl() {
-        Long id = service.createChannelContract(fileContractCommand("900001")).getData();
+        Long id = service.createChannelContract(fileContractCommand("900001"));
 
         PaymentChannelContractValueEntity fileValue = value(id, "certificateFileId");
         assertThat(fileValue.getFileId()).isEqualTo(900001L);
@@ -142,9 +142,9 @@ class PaymentChannelContractServiceImplIntegrationTest {
 
     @Test
     void createOfflineCollectionContractDefaultsAccountFromSubject() {
-        Long id = service.createChannelContract(offlineContractCommand()).getData();
+        Long id = service.createChannelContract(offlineContractCommand());
 
-        PaymentChannelContract stored = contractMapper.selectById(id);
+        PaymentChannelContractEntity stored = contractMapper.selectById(id);
         assertThat(stored.getConfigValuesJson()).contains("\"accountName\":\"芒果科技有限公司\"");
         assertThat(stored.getConfigValuesJson()).contains("\"accountNo\":\"enc:subject-account\"");
         assertThat(stored.getConfigValuesJson()).contains("\"bankName\":\"招商银行上海分行\"");
@@ -163,7 +163,7 @@ class PaymentChannelContractServiceImplIntegrationTest {
 
         service.updateChannelContract(update);
 
-        PaymentChannelContract updated = contractMapper.selectById(331002L);
+        PaymentChannelContractEntity updated = contractMapper.selectById(331002L);
         assertThat(updated.getContractCode()).isEqualTo("ALLINPAY_MANGO_TECH");
         assertThat(countCapabilities(331002L)).isEqualTo(1L);
         assertThat(singleCapability(331002L).getId()).isEqualTo(331102L);
@@ -221,7 +221,7 @@ class PaymentChannelContractServiceImplIntegrationTest {
         LocalDateTime oldExpireTime = LocalDateTime.now().plusDays(5).truncatedTo(ChronoUnit.SECONDS);
         insertContractCapability(331102L, 331002L, 332001L, "PERSONAL_WECHAT_QR", 10, oldExpireTime);
 
-        assertThat(service.listExpiringCertificates(7).getData())
+        assertThat(service.listExpiringCertificates(7))
                 .extracting("contractCapabilityId")
                 .containsExactly(331102L);
 
@@ -236,8 +236,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
 
         service.rotateCertificate(command);
 
-        PaymentChannelContract contract = contractMapper.selectById(331002L);
-        PaymentChannelContractCapability capability = contractCapabilityMapper.selectById(331102L);
+        PaymentChannelContractEntity contract = contractMapper.selectById(331002L);
+        PaymentChannelContractCapabilityEntity capability = contractCapabilityMapper.selectById(331102L);
         PaymentChannelContractValueEntity value = value(331002L, "certificateFileId");
         PaymentChannelCertificateRotationRecordEntity record = rotationRecordMapper.selectList(null).get(0);
         assertThat(contract.getConfigValuesJson()).contains("\"certificateFileId\":\"900002\"");
@@ -312,16 +312,16 @@ class PaymentChannelContractServiceImplIntegrationTest {
                 .eq(PaymentChannelContractValueEntity::getFieldCode, fieldCode));
     }
 
-    private PaymentChannelContractCapability singleCapability(Long contractId) {
-        return contractCapabilityMapper.selectList(new LambdaQueryWrapper<PaymentChannelContractCapability>()
-                .eq(PaymentChannelContractCapability::getTenantId, 1L)
-                .eq(PaymentChannelContractCapability::getContractId, contractId)).get(0);
+    private PaymentChannelContractCapabilityEntity singleCapability(Long contractId) {
+        return contractCapabilityMapper.selectList(new LambdaQueryWrapper<PaymentChannelContractCapabilityEntity>()
+                .eq(PaymentChannelContractCapabilityEntity::getTenantId, 1L)
+                .eq(PaymentChannelContractCapabilityEntity::getContractId, contractId)).get(0);
     }
 
     private Long countCapabilities(Long contractId) {
-        return contractCapabilityMapper.selectCount(new LambdaQueryWrapper<PaymentChannelContractCapability>()
-                .eq(PaymentChannelContractCapability::getTenantId, 1L)
-                .eq(PaymentChannelContractCapability::getContractId, contractId));
+        return contractCapabilityMapper.selectCount(new LambdaQueryWrapper<PaymentChannelContractCapabilityEntity>()
+                .eq(PaymentChannelContractCapabilityEntity::getTenantId, 1L)
+                .eq(PaymentChannelContractCapabilityEntity::getContractId, contractId));
     }
 
     private Long countDeletedContracts(Long contractId) {
@@ -372,7 +372,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     bank_name varchar(128),
                     license_file_id bigint,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -393,7 +394,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     capability_summary varchar(512),
                     bill_fetch_modes varchar(256),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -416,7 +418,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     min_amount bigint,
                     max_amount bigint,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -429,7 +432,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     id bigint primary key,
                     method_code varchar(128),
                     method_name varchar(128),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -449,7 +453,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     config_values_json varchar(2048),
                     enabled_method_codes varchar(512),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -470,7 +475,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     priority int,
                     certificate_expire_time timestamp,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -488,7 +494,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     file_id bigint,
                     value_source varchar(64),
                     sensitive_flag int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -510,7 +517,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     operator_id bigint,
                     operator_name varchar(128),
                     rotate_time timestamp,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -529,7 +537,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     priority int,
                     weight int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -538,7 +547,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
                     id bigint primary key,
                     contract_id bigint,
                     contract_capability_id bigint,
-                    tenant_id bigint
+                    tenant_id varchar(64),
+                    org_id bigint
                 )
                 """);
     }
@@ -638,7 +648,7 @@ class PaymentChannelContractServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = PaymentChannelContractMapper.class)
-    @Import(PaymentChannelContractServiceImpl.class)
+    @Import(PaymentChannelContractService.class)
     static class TestConfig {
 
         @Bean
@@ -689,8 +699,8 @@ class PaymentChannelContractServiceImplIntegrationTest {
         }
 
         @Override
-        public void record(String operationAction, String resourceType, String resourceId, String operationResult) {
-            records.add(operationAction + "|" + resourceType + "|" + resourceId + "|" + operationResult);
+        public void record(PaymentOperationAuditService.AuditEntry entry) {
+            records.add(entry.operationAction() + "|" + entry.resourceType() + "|" + entry.resourceId() + "|" + entry.operationResult());
         }
 
         void clear() {

@@ -74,7 +74,7 @@
         <include refid="offlineRefundWhere"/>
     </select>
 
-    <select id="selectOfflineRefundPage" resultType="io.mango.payment.api.vo.PaymentOfflineRefundVO">
+    <select id="selectOfflineRefundPage" resultType="io.mango.payment.core.model.projection.PaymentOfflineRefundProjection">
         <include refid="offlineRefundSelect"/>
         <include refid="offlineRefundFrom"/>
         <include refid="offlineRefundWhere"/>
@@ -82,7 +82,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectOfflineRefundDetail" resultType="io.mango.payment.api.vo.PaymentOfflineRefundVO">
+    <select id="selectOfflineRefundDetail" resultType="io.mango.payment.core.model.projection.PaymentOfflineRefundProjection">
         <include refid="offlineRefundSelect"/>
         <include refid="offlineRefundFrom"/>
         where ofr.tenant_id = #{tenantId}

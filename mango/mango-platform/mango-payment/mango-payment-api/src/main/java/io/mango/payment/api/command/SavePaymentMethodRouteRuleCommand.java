@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -18,6 +19,7 @@ public class SavePaymentMethodRouteRuleCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "路由规则 ID。新增时为空，修改时必填")
+    @Positive(message = "路由规则 ID 必须大于 0")
     private Long id;
 
     @NotBlank(message = "路由规则编码不能为空")
@@ -31,9 +33,11 @@ public class SavePaymentMethodRouteRuleCommand implements Serializable {
     private String ruleName;
 
     @Schema(description = "应用 ID。为空表示当前租户通用")
+    @Positive(message = "应用 ID 必须大于 0")
     private Long appId;
 
     @Schema(description = "企业主体 ID。为空表示不限制主体")
+    @Positive(message = "企业主体 ID 必须大于 0")
     private Long subjectId;
 
     @NotBlank(message = "标准支付方式不能为空")

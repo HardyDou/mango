@@ -2,14 +2,14 @@ package io.mango.payment.core.service;
 
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.MangoPayVirtualPaymentCommand;
 import io.mango.payment.api.command.PaymentChannelCallbackCommand;
 import io.mango.payment.api.vo.MangoPayVirtualPaymentResultVO;
 import io.mango.payment.api.vo.PaymentChannelCallbackResultVO;
-import io.mango.payment.core.entity.PaymentMethod;
+import io.mango.payment.core.entity.PaymentMethodEntity;
 import io.mango.payment.core.entity.PaymentOrderEntity;
-import io.mango.payment.core.entity.PaymentVirtualChannelPayment;
+import io.mango.payment.core.entity.PaymentVirtualChannelPaymentEntity;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
 import io.mango.payment.core.mapper.PaymentMethodMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
@@ -37,7 +37,7 @@ class MangoPayVirtualPaymentServiceTest {
     private PaymentChannelCallbackService callbackService;
     private PaymentMangoPayScenarioControlService scenarioControlService;
     private PaymentChannelContractMapper channelContractMapper;
-    private PaymentNumberService numberService;
+    private PaymentNumberGenerator numberService;
     private MangoPayVirtualPaymentService service;
 
     @BeforeEach
@@ -48,8 +48,8 @@ class MangoPayVirtualPaymentServiceTest {
         callbackService = mock(PaymentChannelCallbackService.class);
         scenarioControlService = mock(PaymentMangoPayScenarioControlService.class);
         channelContractMapper = mock(PaymentChannelContractMapper.class);
-        numberService = mock(PaymentNumberService.class);
-        when(numberService.next(PaymentNumberService.PAY_MANGO_VIRTUAL_NO)).thenReturn("MP2026060600000001");
+        numberService = mock(PaymentNumberGenerator.class);
+        when(numberService.next(PaymentNumberGenerator.PAY_MANGO_VIRTUAL_NO)).thenReturn("MP2026060600000001");
         service = new MangoPayVirtualPaymentService(
                 virtualPaymentMapper,
                 paymentOrderMapper,
@@ -57,7 +57,7 @@ class MangoPayVirtualPaymentServiceTest {
                 callbackService,
                 scenarioControlService,
                 channelContractMapper,
-                new PaymentMangoPayResultMappingService(),
+                new PaymentMangoPayResultTranslator(),
                 numberService);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
@@ -77,12 +77,12 @@ class MangoPayVirtualPaymentServiceTest {
         command.setAmount(9900L);
         command.setPaymentMethodCode("PERSONAL_WECHAT_QR");
         command.setPayerName("张三");
-        ArgumentCaptor<PaymentVirtualChannelPayment> captor = ArgumentCaptor.forClass(PaymentVirtualChannelPayment.class);
+        ArgumentCaptor<PaymentVirtualChannelPaymentEntity> captor = ArgumentCaptor.forClass(PaymentVirtualChannelPaymentEntity.class);
         ArgumentCaptor<PaymentChannelCallbackCommand> callbackCaptor = ArgumentCaptor.forClass(PaymentChannelCallbackCommand.class);
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
-        when(virtualPaymentMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(null);
-        when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"SUCCESS\"}");
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(null);
+        when(channelContractMapper.selectActiveConfigValuesJson("1", 331001L)).thenReturn("{\"mangoPayScenario\":\"SUCCESS\"}");
         PaymentChannelCallbackResultVO callbackResult = new PaymentChannelCallbackResultVO();
         callbackResult.setStatus("SUCCESS");
         when(callbackService.handle(any(PaymentChannelCallbackCommand.class))).thenReturn(callbackResult);
@@ -91,8 +91,8 @@ class MangoPayVirtualPaymentServiceTest {
         MangoPayVirtualPaymentResultVO result = service.pay(command);
 
         verify(virtualPaymentMapper).insert(captor.capture());
-        PaymentVirtualChannelPayment entity = captor.getValue();
-        assertThat(entity.getTenantId()).isEqualTo(1L);
+        PaymentVirtualChannelPaymentEntity entity = captor.getValue();
+        assertThat(entity.getTenantId()).isEqualTo("1");
         assertThat(entity.getPayOrderNo()).isEqualTo("PO202606060001");
         assertThat(entity.getChannelTradeNo()).startsWith("MP");
         assertThat(entity.getCashierConfigId()).isEqualTo(350001L);
@@ -120,11 +120,11 @@ class MangoPayVirtualPaymentServiceTest {
     @DisplayName("pay should keep paying without callback when mango pay config returns processing")
     void pay_processingConfig_keepsPayingWithoutCallback() {
         MangoPayVirtualPaymentCommand command = command();
-        ArgumentCaptor<PaymentVirtualChannelPayment> captor = ArgumentCaptor.forClass(PaymentVirtualChannelPayment.class);
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        ArgumentCaptor<PaymentVirtualChannelPaymentEntity> captor = ArgumentCaptor.forClass(PaymentVirtualChannelPaymentEntity.class);
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
-        when(virtualPaymentMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(null);
-        when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"PROCESSING\"}");
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(null);
+        when(channelContractMapper.selectActiveConfigValuesJson("1", 331001L)).thenReturn("{\"mangoPayScenario\":\"PROCESSING\"}");
 
         MangoPayVirtualPaymentResultVO result = service.pay(command);
 
@@ -139,10 +139,10 @@ class MangoPayVirtualPaymentServiceTest {
     void pay_failedConfig_callsFailedCallback() {
         MangoPayVirtualPaymentCommand command = command();
         ArgumentCaptor<PaymentChannelCallbackCommand> callbackCaptor = ArgumentCaptor.forClass(PaymentChannelCallbackCommand.class);
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
-        when(virtualPaymentMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(null);
-        when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"FAILED\"}");
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(null);
+        when(channelContractMapper.selectActiveConfigValuesJson("1", 331001L)).thenReturn("{\"mangoPayScenario\":\"FAILED\"}");
         PaymentChannelCallbackResultVO callbackResult = new PaymentChannelCallbackResultVO();
         callbackResult.setStatus("FAILED");
         when(callbackService.handle(any(PaymentChannelCallbackCommand.class))).thenReturn(callbackResult);
@@ -161,11 +161,11 @@ class MangoPayVirtualPaymentServiceTest {
     void pay_controlledPaymentScenario_consumesScenarioAndCallsCallback() {
         MangoPayVirtualPaymentCommand command = command();
         ArgumentCaptor<PaymentChannelCallbackCommand> callbackCaptor = ArgumentCaptor.forClass(PaymentChannelCallbackCommand.class);
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
-        when(virtualPaymentMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(null);
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(null);
         when(scenarioControlService.consumePaymentScenario(331001L, "PAYMENT"))
-                .thenReturn(new PaymentMangoPayResultMappingService.PaymentChannelResult(
+                .thenReturn(new PaymentMangoPayResultTranslator.PaymentChannelResult(
                         "FAIL", "MANGO_PAY_PAY_FAILED", "FAIL", "FAILED"));
         PaymentChannelCallbackResultVO callbackResult = new PaymentChannelCallbackResultVO();
         callbackResult.setStatus("FAILED");
@@ -187,10 +187,10 @@ class MangoPayVirtualPaymentServiceTest {
     void pay_closedConfig_callsClosedCallback() {
         MangoPayVirtualPaymentCommand command = command();
         ArgumentCaptor<PaymentChannelCallbackCommand> callbackCaptor = ArgumentCaptor.forClass(PaymentChannelCallbackCommand.class);
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
-        when(virtualPaymentMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(null);
-        when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"CLOSED\"}");
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(null);
+        when(channelContractMapper.selectActiveConfigValuesJson("1", 331001L)).thenReturn("{\"mangoPayScenario\":\"CLOSED\"}");
         PaymentChannelCallbackResultVO callbackResult = new PaymentChannelCallbackResultVO();
         callbackResult.setStatus("CLOSED");
         when(callbackService.handle(any(PaymentChannelCallbackCommand.class))).thenReturn(callbackResult);
@@ -208,17 +208,17 @@ class MangoPayVirtualPaymentServiceTest {
     @DisplayName("pay should reject duplicate mango pay submission for same payment order")
     void pay_duplicateVirtualPayment_rejectsWithoutCallback() {
         MangoPayVirtualPaymentCommand command = command();
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
-        PaymentVirtualChannelPayment existing = new PaymentVirtualChannelPayment();
+        PaymentVirtualChannelPaymentEntity existing = new PaymentVirtualChannelPaymentEntity();
         existing.setPayOrderNo("PO202606060001");
         existing.setChannelTradeNo("MP202606060001000001");
-        when(virtualPaymentMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(existing);
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(existing);
 
         assertThatThrownBy(() -> service.pay(command))
                 .extracting("code")
                 .isEqualTo(PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode());
-        verify(virtualPaymentMapper, never()).insert(any(PaymentVirtualChannelPayment.class));
+        verify(virtualPaymentMapper, never()).insert(any(PaymentVirtualChannelPaymentEntity.class));
         verify(callbackService, never()).handle(any(PaymentChannelCallbackCommand.class));
     }
 
@@ -227,13 +227,13 @@ class MangoPayVirtualPaymentServiceTest {
     void pay_methodCodeMismatch_rejectsWithoutInsert() {
         MangoPayVirtualPaymentCommand command = command();
         command.setPaymentMethodCode("PERSONAL_ALIPAY_QR");
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
 
         assertThatThrownBy(() -> service.pay(command))
                 .extracting("code")
                 .isEqualTo(PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode());
-        verify(virtualPaymentMapper, never()).insert(any(PaymentVirtualChannelPayment.class));
+        verify(virtualPaymentMapper, never()).insert(any(PaymentVirtualChannelPaymentEntity.class));
         verify(callbackService, never()).handle(any(PaymentChannelCallbackCommand.class));
     }
 
@@ -241,13 +241,13 @@ class MangoPayVirtualPaymentServiceTest {
     @DisplayName("pay should convert concurrent duplicate virtual payment insert to business error")
     void pay_concurrentDuplicateInsert_rejectsWithoutCallback() {
         MangoPayVirtualPaymentCommand command = command();
-        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder());
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo("1", "PO202606060001")).thenReturn(paymentOrder());
         when(paymentMethodMapper.selectById(340001L)).thenReturn(paymentMethod("PERSONAL_WECHAT_QR"));
-        when(virtualPaymentMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001"))
+        when(virtualPaymentMapper.selectByTenantAndPayOrderNo("1", "PO202606060001"))
                 .thenReturn(null)
                 .thenReturn(existingVirtualPayment());
-        when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"SUCCESS\"}");
-        when(virtualPaymentMapper.insert(any(PaymentVirtualChannelPayment.class)))
+        when(channelContractMapper.selectActiveConfigValuesJson("1", 331001L)).thenReturn("{\"mangoPayScenario\":\"SUCCESS\"}");
+        when(virtualPaymentMapper.insert(any(PaymentVirtualChannelPaymentEntity.class)))
                 .thenThrow(new DuplicateKeyException("duplicate virtual payment pay order"));
 
         assertThatThrownBy(() -> service.pay(command))
@@ -272,7 +272,7 @@ class MangoPayVirtualPaymentServiceTest {
         order.setId(370001L);
         order.setPayOrderNo("PO202606060001");
         order.setContractId(331001L);
-        order.setTenantId(1L);
+        order.setTenantId("1");
         order.setCashierConfigId(350001L);
         order.setChannelCode("MANGO_PAY");
         order.setChannelMerchantNo("MANGO_PAY_MERCHANT_001");
@@ -282,17 +282,17 @@ class MangoPayVirtualPaymentServiceTest {
         return order;
     }
 
-    private PaymentMethod paymentMethod(String methodCode) {
-        PaymentMethod method = new PaymentMethod();
+    private PaymentMethodEntity paymentMethod(String methodCode) {
+        PaymentMethodEntity method = new PaymentMethodEntity();
         method.setId(340001L);
-        method.setTenantId(1L);
+        method.setTenantId("1");
         method.setMethodCode(methodCode);
         return method;
     }
 
-    private PaymentVirtualChannelPayment existingVirtualPayment() {
-        PaymentVirtualChannelPayment payment = new PaymentVirtualChannelPayment();
-        payment.setTenantId(1L);
+    private PaymentVirtualChannelPaymentEntity existingVirtualPayment() {
+        PaymentVirtualChannelPaymentEntity payment = new PaymentVirtualChannelPaymentEntity();
+        payment.setTenantId("1");
         payment.setPayOrderNo("PO202606060001");
         payment.setChannelTradeNo("MP202606060001000001");
         return payment;

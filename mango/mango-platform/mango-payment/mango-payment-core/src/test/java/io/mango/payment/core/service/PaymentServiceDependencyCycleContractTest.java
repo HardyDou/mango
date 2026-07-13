@@ -12,25 +12,25 @@ class PaymentServiceDependencyCycleContractTest {
 
     @Test
     void paymentExceptionRecordWritersShouldNotDependOnExceptionOrderHandlingService() {
-        assertDoesNotDeclareDependency(PaymentDuplicatePaymentService.class, PaymentExceptionOrderService.class);
-        assertDoesNotDeclareDependency(PaymentChannelSyncService.class, PaymentExceptionOrderService.class);
+        assertDoesNotDeclareDependency(PaymentDuplicatePaymentGuard.class, PaymentExceptionOrderService.class);
+        assertDoesNotDeclareDependency(PaymentChannelSynchronizer.class, PaymentExceptionOrderService.class);
         assertDoesNotDeclareDependency(PaymentChannelCallbackService.class, PaymentExceptionOrderService.class);
-        assertDoesNotDeclareDependency(PaymentChannelOrderCloseService.class, PaymentExceptionOrderService.class);
+        assertDoesNotDeclareDependency(PaymentChannelOrderCloseCoordinator.class, PaymentExceptionOrderService.class);
     }
 
     @Test
     void paymentExceptionRecordWritersShouldUseRecordService() {
-        assertDeclaresDependency(PaymentDuplicatePaymentService.class, PaymentExceptionOrderRecordService.class);
-        assertDeclaresDependency(PaymentChannelSyncService.class, PaymentExceptionOrderRecordService.class);
-        assertDeclaresDependency(PaymentChannelCallbackService.class, PaymentExceptionOrderRecordService.class);
-        assertDeclaresDependency(PaymentChannelOrderCloseService.class, PaymentExceptionOrderRecordService.class);
+        assertDeclaresDependency(PaymentDuplicatePaymentGuard.class, PaymentExceptionOrderRecorder.class);
+        assertDeclaresDependency(PaymentChannelSynchronizer.class, PaymentExceptionOrderRecorder.class);
+        assertDeclaresDependency(PaymentChannelCallbackService.class, PaymentExceptionOrderRecorder.class);
+        assertDeclaresDependency(PaymentChannelOrderCloseCoordinator.class, PaymentExceptionOrderRecorder.class);
     }
 
     @Test
     void paymentExceptionHandlingServiceMayCoordinatePaymentActions() {
-        assertDeclaresDependency(PaymentExceptionOrderService.class, PaymentChannelSyncService.class);
-        assertDeclaresDependency(PaymentExceptionOrderService.class, PaymentChannelOrderCloseService.class);
-        assertDeclaresDependency(PaymentExceptionOrderService.class, PaymentExceptionOrderRecordService.class);
+        assertDeclaresDependency(PaymentExceptionOrderService.class, PaymentChannelSynchronizer.class);
+        assertDeclaresDependency(PaymentExceptionOrderService.class, PaymentChannelOrderCloseCoordinator.class);
+        assertDeclaresDependency(PaymentExceptionOrderService.class, PaymentExceptionOrderRecorder.class);
     }
 
     private static void assertDoesNotDeclareDependency(Class<?> source, Class<?> dependency) {

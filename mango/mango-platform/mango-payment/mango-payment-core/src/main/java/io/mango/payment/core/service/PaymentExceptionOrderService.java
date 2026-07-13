@@ -2,7 +2,7 @@ package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.HandlePaymentExceptionOrderCommand;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
@@ -16,23 +16,26 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentExceptionOrderService {
+public class PaymentExceptionOrderService implements IPaymentExceptionOrderService {
 
-    public static final String TYPE_DUPLICATE_PAYMENT = PaymentExceptionOrderRecordService.TYPE_DUPLICATE_PAYMENT;
-    public static final String TYPE_PAY_TIMEOUT = PaymentExceptionOrderRecordService.TYPE_PAY_TIMEOUT;
-    public static final String TYPE_CHANNEL_FAILED = PaymentExceptionOrderRecordService.TYPE_CHANNEL_FAILED;
-    public static final String TYPE_REFUND_MISMATCH = PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH;
-    public static final String TYPE_CHANNEL_CALLBACK_FAILED = PaymentExceptionOrderRecordService.TYPE_CHANNEL_CALLBACK_FAILED;
-    public static final String TYPE_AMOUNT_MISMATCH = PaymentExceptionOrderRecordService.TYPE_AMOUNT_MISMATCH;
-    public static final String TYPE_STATUS_MISMATCH = PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH;
+    public static final String TYPE_DUPLICATE_PAYMENT = PaymentExceptionOrderRecorder.TYPE_DUPLICATE_PAYMENT;
+    public static final String TYPE_PAY_TIMEOUT = PaymentExceptionOrderRecorder.TYPE_PAY_TIMEOUT;
+    public static final String TYPE_CHANNEL_FAILED = PaymentExceptionOrderRecorder.TYPE_CHANNEL_FAILED;
+    public static final String TYPE_REFUND_MISMATCH = PaymentExceptionOrderRecorder.TYPE_REFUND_MISMATCH;
+    public static final String TYPE_CHANNEL_CALLBACK_FAILED = PaymentExceptionOrderRecorder.TYPE_CHANNEL_CALLBACK_FAILED;
+    public static final String TYPE_AMOUNT_MISMATCH = PaymentExceptionOrderRecorder.TYPE_AMOUNT_MISMATCH;
+    public static final String TYPE_STATUS_MISMATCH = PaymentExceptionOrderRecorder.TYPE_STATUS_MISMATCH;
 
-    public static final String SEVERITY_MEDIUM = PaymentExceptionOrderRecordService.SEVERITY_MEDIUM;
-    public static final String SEVERITY_HIGH = PaymentExceptionOrderRecordService.SEVERITY_HIGH;
+    public static final String SEVERITY_MEDIUM = PaymentExceptionOrderRecorder.SEVERITY_MEDIUM;
+    public static final String SEVERITY_HIGH = PaymentExceptionOrderRecorder.SEVERITY_HIGH;
 
     private static final Pattern PAYMENT_ORDER_NO_PATTERN = Pattern.compile("^PO\\d{16}$");
     private static final Pattern REFUND_ORDER_NO_PATTERN = Pattern.compile("^RO\\d{16}$");
@@ -49,26 +52,28 @@ public class PaymentExceptionOrderService {
 
     private final PaymentExceptionOrderMapper exceptionOrderMapper;
     private final PaymentOperationAuditService auditService;
-    private final PaymentChannelSyncService channelSyncService;
-    private final PaymentChannelOrderCloseService channelOrderCloseService;
-    private final PaymentExceptionOrderRecordService exceptionOrderRecordService;
+    private final PaymentChannelSynchronizer channelSyncService;
+    private final PaymentChannelOrderCloseCoordinator channelOrderCloseService;
+    private final PaymentExceptionOrderRecorder exceptionOrderRecordService;
 
     public PageResult<PaymentExceptionOrderVO> pageExceptionOrders(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = exceptionOrderMapper.countExceptionOrders(tenantId, keyword, statusCode);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentExceptionOrderVO> rows = exceptionOrderMapper.selectExceptionOrderPage(tenantId, keyword, statusCode, size, (page - 1) * size);
+        List<PaymentExceptionOrderVO> rows = toApiList(exceptionOrderMapper.selectExceptionOrderPage(
+                tenantId, keyword, statusCode, size, (page - 1) * size), PaymentExceptionOrderVO.class);
         rows.forEach(this::fillExceptionOrderSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentExceptionOrderVO detailExceptionOrder(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "异常订单 ID 不能为空");
-        PaymentExceptionOrderVO vo = exceptionOrderMapper.selectExceptionOrderDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "异常订单 ID 不能为空");
+        PaymentExceptionOrderVO vo = toApi(exceptionOrderMapper.selectExceptionOrderDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentExceptionOrderVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_EXCEPTION_ORDER_NOT_FOUND);
         fillExceptionOrderSummary(vo);
         return vo;
@@ -104,22 +109,22 @@ public class PaymentExceptionOrderService {
 
     public PaymentExceptionOrderVO handleExceptionOrder(HandlePaymentExceptionOrderCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID);
-        Require.notNull(command.getId(), PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "异常订单 ID 不能为空");
+        Require.notNull(command.getId(), PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "异常订单 ID 不能为空");
         String handleAction = PaymentContextSupport.trimToNull(command.getHandleAction());
         String handleReason = PaymentContextSupport.trimToNull(command.getHandleReason());
         String handleResult = PaymentContextSupport.trimToNull(command.getHandleResult());
         String handleEvidence = PaymentContextSupport.trimToNull(command.getHandleEvidence());
-        Require.notBlank(handleAction, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理动作不能为空");
-        Require.notBlank(handleReason, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理原因不能为空");
-        Require.notBlank(handleResult, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能为空");
+        Require.notBlank(handleAction, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理动作不能为空");
+        Require.notBlank(handleReason, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理原因不能为空");
+        Require.notBlank(handleResult, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理结果不能为空");
         Require.isTrue(EXCEPTION_ORDER_HANDLE_ACTIONS.contains(handleAction),
-                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理动作不受支持");
-        Require.isTrue(handleAction.length() <= 64, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理动作不能超过 64 个字符");
-        Require.isTrue(handleReason.length() <= 512, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理原因不能超过 512 个字符");
-        Require.isTrue(handleResult.length() <= 512, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能超过 512 个字符");
-        Require.isTrue(handleEvidence == null || handleEvidence.length() <= 512, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理凭据不能超过 512 个字符");
+                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理动作不受支持");
+        Require.isTrue(handleAction.length() <= 64, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理动作不能超过 64 个字符");
+        Require.isTrue(handleReason.length() <= 512, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理原因不能超过 512 个字符");
+        Require.isTrue(handleResult.length() <= 512, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理结果不能超过 512 个字符");
+        Require.isTrue(handleEvidence == null || handleEvidence.length() <= 512, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理凭据不能超过 512 个字符");
 
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentExceptionOrderEntity entity = exceptionOrderMapper.selectById(command.getId());
         Require.notNull(entity, PaymentCode.PAYMENT_EXCEPTION_ORDER_NOT_FOUND);
         Require.isTrue(tenantId.equals(entity.getTenantId()) && !Integer.valueOf(1).equals(entity.getDelFlag()),
@@ -127,9 +132,9 @@ public class PaymentExceptionOrderService {
         Require.isTrue(canHandleExceptionOrder(entity.getHandleStatus()),
                 PaymentCode.PAYMENT_EXCEPTION_ORDER_HANDLE_STATUS_INVALID);
         Require.isTrue(isActionAllowedForExceptionType(handleAction, entity.getExceptionType()),
-                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理动作不适用于当前异常类型");
+                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理动作不适用于当前异常类型");
         String nextHandleStatus = nextExceptionOrderHandleStatus(handleAction);
-        PaymentChannelSyncService.PaymentSyncResult channelQueryResult = activeQueryPayment(handleAction, entity.getRelatedOrderNo());
+        PaymentChannelSynchronizer.PaymentSyncResult channelQueryResult = activeQueryPayment(handleAction, entity.getRelatedOrderNo());
         if (channelQueryResult != null) {
             nextHandleStatus = "HANDLED";
             handleResult = handleResult + "；查单结果：支付订单 "
@@ -138,9 +143,9 @@ public class PaymentExceptionOrderService {
                     + channelQueryResult.status()
                     + (channelQueryResult.changed() ? "，已按通道结果推进" : "，本地状态未变化");
             Require.isTrue(handleResult.length() <= 512,
-                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能超过 512 个字符");
+                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理结果不能超过 512 个字符");
         }
-        PaymentChannelSyncService.RefundSyncResult refundQueryResult = activeQueryRefund(handleAction, entity.getRelatedOrderNo());
+        PaymentChannelSynchronizer.RefundSyncResult refundQueryResult = activeQueryRefund(handleAction, entity.getRelatedOrderNo());
         if (refundQueryResult != null) {
             nextHandleStatus = PaymentRefundOrderStatusEnum.REFUNDING.getCode().equals(normalizeRefundStatus(refundQueryResult.status()))
                     ? "PROCESSING"
@@ -151,9 +156,9 @@ public class PaymentExceptionOrderService {
                     + refundQueryResult.status()
                     + (refundQueryResult.changed() ? "，已按通道结果推进" : "，本地状态未变化");
             Require.isTrue(handleResult.length() <= 512,
-                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能超过 512 个字符");
+                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理结果不能超过 512 个字符");
         }
-        PaymentChannelOrderCloseService.CloseResult closeResult = closePaymentOrder(handleAction, entity.getRelatedOrderNo());
+        PaymentChannelOrderCloseCoordinator.CloseResult closeResult = closePaymentOrder(handleAction, entity.getRelatedOrderNo());
         if (closeResult != null) {
             nextHandleStatus = "CLOSED";
             handleResult = handleResult + "；关单结果：支付订单 "
@@ -162,7 +167,7 @@ public class PaymentExceptionOrderService {
                     + closeResult.status()
                     + (closeResult.changed() ? "，已关闭" : "，本地状态未变化");
             Require.isTrue(handleResult.length() <= 512,
-                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能超过 512 个字符");
+                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "处理结果不能超过 512 个字符");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -180,57 +185,41 @@ public class PaymentExceptionOrderService {
                 now);
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_EXCEPTION_ORDER_HANDLE_STATUS_INVALID);
 
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_HANDLE_EXCEPTION_ORDER,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_EXCEPTION_ORDER,
                 entity.getExceptionNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailExceptionOrder(command.getId());
     }
 
-    public PaymentExceptionOrderEntity createIfAbsent(
-            Long tenantId,
-            String relatedOrderNo,
-            String exceptionType,
-            String severity,
-            String reason,
-            LocalDateTime eventTime) {
-        return exceptionOrderRecordService.createIfAbsent(
-                tenantId,
-                relatedOrderNo,
-                exceptionType,
-                severity,
-                reason,
-                eventTime);
-    }
-
-    private PaymentChannelSyncService.PaymentSyncResult activeQueryPayment(String handleAction, String relatedOrderNo) {
+    private PaymentChannelSynchronizer.PaymentSyncResult activeQueryPayment(String handleAction, String relatedOrderNo) {
         if (!"ACTIVE_QUERY".equals(handleAction)) {
             return null;
         }
         String payOrderNo = PaymentContextSupport.trimToNull(relatedOrderNo);
         Require.isTrue(isPaymentOrderNo(payOrderNo),
-                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "主动查单动作必须关联支付订单号");
+                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "主动查单动作必须关联支付订单号");
         return channelSyncService.syncPaymentStatus(payOrderNo);
     }
 
-    private PaymentChannelSyncService.RefundSyncResult activeQueryRefund(String handleAction, String relatedOrderNo) {
+    private PaymentChannelSynchronizer.RefundSyncResult activeQueryRefund(String handleAction, String relatedOrderNo) {
         if (!"ACTIVE_REFUND_QUERY".equals(handleAction)) {
             return null;
         }
         String refundOrderNo = PaymentContextSupport.trimToNull(relatedOrderNo);
         Require.isTrue(isRefundOrderNo(refundOrderNo),
-                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "主动查退款动作必须关联退款订单号");
+                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "主动查退款动作必须关联退款订单号");
         return channelSyncService.syncRefundStatus(refundOrderNo);
     }
 
-    private PaymentChannelOrderCloseService.CloseResult closePaymentOrder(String handleAction, String relatedOrderNo) {
+    private PaymentChannelOrderCloseCoordinator.CloseResult closePaymentOrder(String handleAction, String relatedOrderNo) {
         if (!"CLOSE_PAYMENT_ORDER".equals(handleAction)) {
             return null;
         }
         String payOrderNo = PaymentContextSupport.trimToNull(relatedOrderNo);
         Require.isTrue(isPaymentOrderNo(payOrderNo),
-                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "关闭支付订单动作必须关联支付订单号");
+                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID, "关闭支付订单动作必须关联支付订单号");
         return channelOrderCloseService.closePaymentOrder(payOrderNo);
     }
 

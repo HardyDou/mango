@@ -1,0 +1,27 @@
+package io.mango.payment.core.entity;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.time.LocalDateTime;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@TableName("payment_operation_audit")
+public class PaymentOperationAuditEntity extends PaymentBaseEntity {
+
+    private Long operatorId;
+
+    private String operatorName;
+
+    private String operationAction;
+
+    private String resourceType;
+
+    private String resourceId;
+
+    private String operationResult;
+
+    private LocalDateTime operationTime;
+}

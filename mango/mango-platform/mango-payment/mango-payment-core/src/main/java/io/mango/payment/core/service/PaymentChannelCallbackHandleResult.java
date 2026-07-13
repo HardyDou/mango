@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 
 /**
  * 支付通道公网回调处理结果。
@@ -14,7 +14,7 @@ public record PaymentChannelCallbackHandleResult(String responseBody, String con
     private static final String DEFAULT_CONTENT_TYPE = "text/plain;charset=UTF-8";
 
     public static PaymentChannelCallbackHandleResult text(String responseBody) {
-        Require.notNull(responseBody, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "通道回调响应不能为空");
+        Require.notNull(responseBody, PaymentCode.PAYMENT_CHANNEL_INVALID, "通道回调响应不能为空");
         return new PaymentChannelCallbackHandleResult(responseBody, DEFAULT_CONTENT_TYPE);
     }
 }

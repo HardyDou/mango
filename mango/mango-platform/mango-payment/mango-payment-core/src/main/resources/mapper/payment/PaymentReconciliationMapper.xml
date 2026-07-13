@@ -46,7 +46,7 @@
         <include refid="reconciliationWhere"/>
     </select>
 
-    <select id="selectReconciliationPage" resultType="io.mango.payment.api.vo.PaymentReconciliationVO">
+    <select id="selectReconciliationPage" resultType="io.mango.payment.core.model.projection.PaymentReconciliationProjection">
         <include refid="reconciliationSelect"/>
         from payment_reconciliation r
         <include refid="reconciliationWhere"/>
@@ -54,7 +54,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectReconciliationDetail" resultType="io.mango.payment.api.vo.PaymentReconciliationVO">
+    <select id="selectReconciliationDetail" resultType="io.mango.payment.core.model.projection.PaymentReconciliationProjection">
         <include refid="reconciliationSelect"/>
         from payment_reconciliation r
         where r.tenant_id = #{tenantId}

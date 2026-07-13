@@ -16,19 +16,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PaymentDuplicateRefundCompletionServiceTest {
+class PaymentRefundCompletionDeduplicatorTest {
 
     private PaymentOrderMapper paymentOrderMapper;
-    private PaymentOrderStatusFlowService statusFlowService;
-    private PaymentDuplicateRefundCompletionService service;
+    private PaymentOrderStatusFlowRecorder statusFlowService;
+    private PaymentRefundCompletionDeduplicator service;
 
     @BeforeEach
     void setUp() {
         paymentOrderMapper = mock(PaymentOrderMapper.class);
-        statusFlowService = mock(PaymentOrderStatusFlowService.class);
-        service = new PaymentDuplicateRefundCompletionService(
+        statusFlowService = mock(PaymentOrderStatusFlowRecorder.class);
+        service = new PaymentRefundCompletionDeduplicator(
                 paymentOrderMapper,
-                new PaymentOrderStateService(),
+                new PaymentOrderStatePolicy(),
                 statusFlowService);
     }
 
@@ -37,25 +37,25 @@ class PaymentDuplicateRefundCompletionServiceTest {
     void completeIfDuplicateRefund_duplicateRefund_advancesPaymentOrder() {
         LocalDateTime eventTime = LocalDateTime.now();
         PaymentRefundOrderVO refundOrder = duplicateRefundOrder();
-        when(paymentOrderMapper.markDuplicatePaymentRefunded(1L, 370001L)).thenReturn(1);
+        when(paymentOrderMapper.markDuplicatePaymentRefunded("1", 370001L)).thenReturn(1);
 
         boolean result = service.completeIfDuplicateRefund(
-                1L,
+                "1",
                 refundOrder,
-                PaymentOrderStatusFlowService.SOURCE_REFUND_QUERY,
+                PaymentOrderStatusFlowRecorder.SOURCE_REFUND_QUERY,
                 "RO202606060001",
                 eventTime);
 
         assertThat(result).isTrue();
-        verify(paymentOrderMapper).markDuplicatePaymentRefunded(1L, 370001L);
+        verify(paymentOrderMapper).markDuplicatePaymentRefunded("1", 370001L);
         verify(statusFlowService).record(
-                eq(1L),
-                eq(PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT),
+                eq("1"),
+                eq(PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT),
                 eq(370001L),
                 eq("PO202606060001"),
                 eq("DUPLICATE_REFUNDING"),
                 eq("DUPLICATE_REFUNDED"),
-                eq(PaymentOrderStatusFlowService.SOURCE_REFUND_QUERY),
+                eq(PaymentOrderStatusFlowRecorder.SOURCE_REFUND_QUERY),
                 eq("RO202606060001"),
                 eq(eventTime),
                 eq("重复成功支付退款结果确认后推进支付订单状态"));
@@ -68,9 +68,9 @@ class PaymentDuplicateRefundCompletionServiceTest {
         refundOrder.setBizRefundNo("RF202606060001");
 
         boolean result = service.completeIfDuplicateRefund(
-                1L,
+                "1",
                 refundOrder,
-                PaymentOrderStatusFlowService.SOURCE_REFUND_QUERY,
+                PaymentOrderStatusFlowRecorder.SOURCE_REFUND_QUERY,
                 "RO202606060001",
                 LocalDateTime.now());
 

@@ -2,7 +2,7 @@ package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.RetryPaymentNotificationRecordCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentNotificationRecordVO;
@@ -16,31 +16,35 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
+
 @Service
 @RequiredArgsConstructor
-public class PaymentNotificationRecordService {
+public class PaymentNotificationRecordService implements IPaymentNotificationRecordService {
 
     private final PaymentNotificationRecordMapper notificationRecordMapper;
-    private final PaymentNotificationService notificationService;
+    private final PaymentNotificationDispatcher notificationService;
     private final PaymentOperationAuditService auditService;
 
     public PageResult<PaymentNotificationRecordVO> pageNotificationRecords(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = notificationRecordMapper.countNotificationRecords(tenantId, keyword, statusCode);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentNotificationRecordVO> rows = notificationRecordMapper.selectNotificationRecordPage(
-                tenantId, keyword, statusCode, size, (page - 1) * size);
+        List<PaymentNotificationRecordVO> rows = toApiList(notificationRecordMapper.selectNotificationRecordPage(
+                tenantId, keyword, statusCode, size, (page - 1) * size), PaymentNotificationRecordVO.class);
         rows.forEach(this::fillNotificationRecordSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentNotificationRecordVO detailNotificationRecord(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID.getCode(), "通知记录 ID 不能为空");
-        PaymentNotificationRecordVO vo = notificationRecordMapper.selectNotificationRecordDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID, "通知记录 ID 不能为空");
+        PaymentNotificationRecordVO vo = toApi(notificationRecordMapper.selectNotificationRecordDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentNotificationRecordVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_NOTIFICATION_RECORD_NOT_FOUND);
         fillNotificationRecordSummary(vo);
         return vo;
@@ -57,12 +61,12 @@ public class PaymentNotificationRecordService {
     @Transactional(rollbackFor = Exception.class)
     public PaymentNotificationRecordVO retryNotificationRecord(RetryPaymentNotificationRecordCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID);
-        Require.notNull(command.getId(), PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID.getCode(), "通知记录 ID 不能为空");
+        Require.notNull(command.getId(), PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID, "通知记录 ID 不能为空");
         String retryReason = PaymentContextSupport.trimToNull(command.getRetryReason());
-        Require.notBlank(retryReason, PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID.getCode(), "重推原因不能为空");
-        Require.isTrue(retryReason.length() <= 512, PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID.getCode(), "重推原因不能超过 512 个字符");
+        Require.notBlank(retryReason, PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID, "重推原因不能为空");
+        Require.isTrue(retryReason.length() <= 512, PaymentCode.PAYMENT_NOTIFICATION_RECORD_INVALID, "重推原因不能超过 512 个字符");
 
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentNotificationRecordEntity entity = notificationRecordMapper.selectById(command.getId());
         Require.notNull(entity, PaymentCode.PAYMENT_NOTIFICATION_RECORD_NOT_FOUND);
         Require.isTrue(tenantId.equals(entity.getTenantId()) && !Integer.valueOf(1).equals(entity.getDelFlag()),
@@ -70,7 +74,7 @@ public class PaymentNotificationRecordService {
         Require.isTrue(canRetryNotificationRecord(entity.getNotifyStatus()),
                 PaymentCode.PAYMENT_NOTIFICATION_RECORD_RETRY_STATUS_INVALID);
         Require.notBlank(entity.getPayloadJson(),
-                PaymentCode.PAYMENT_NOTIFICATION_RECORD_RETRY_STATUS_INVALID.getCode(), "通知报文快照不存在，不能人工重推");
+                PaymentCode.PAYMENT_NOTIFICATION_RECORD_RETRY_STATUS_INVALID, "通知报文快照不存在，不能人工重推");
 
         LocalDateTime now = LocalDateTime.now();
         Long operatorId = PaymentContextSupport.currentUserId();
@@ -85,21 +89,21 @@ public class PaymentNotificationRecordService {
                 PaymentContextSupport.currentPrincipalName());
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_NOTIFICATION_RECORD_RETRY_STATUS_INVALID);
 
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_RETRY_NOTIFICATION_RECORD,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_NOTIFICATION_RECORD,
                 entity.getNotificationNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailNotificationRecord(command.getId());
     }
 
     public int deliverDueNotificationRecords(long limit) {
         int delivered = notificationService.deliverDueNotificationRecords(limit);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_DELIVER_DUE_NOTIFICATION_RECORDS,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_NOTIFICATION_RECORD,
                 "DUE_NOTIFICATION_RECORDS",
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return delivered;
     }
 

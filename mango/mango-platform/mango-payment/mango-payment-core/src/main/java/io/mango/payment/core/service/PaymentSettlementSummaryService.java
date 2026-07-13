@@ -3,7 +3,7 @@ package io.mango.payment.core.service;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.ConfirmPaymentSettlementSummaryCommand;
 import io.mango.payment.api.command.GeneratePaymentSettlementSummaryCommand;
 import io.mango.payment.api.command.VoidPaymentSettlementSummaryCommand;
@@ -19,11 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
 import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentSettlementSummaryService {
+public class PaymentSettlementSummaryService implements IPaymentSettlementSummaryService {
 
     private static final String STATUS_GENERATED = "GENERATED";
     private static final String STATUS_CONFIRMED = "CONFIRMED";
@@ -36,19 +39,20 @@ public class PaymentSettlementSummaryService {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = normalizeCode(resolved.getStatusCode());
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         long total = settlementSummaryMapper.countSettlementSummaries(tenantId, keyword, statusCode);
         long page = resolved.getPage();
         long size = resolved.getSize();
-        List<PaymentSettlementSummaryVO> rows = settlementSummaryMapper.selectSettlementSummaryPage(
-                tenantId, keyword, statusCode, size, (page - 1) * size);
+        List<PaymentSettlementSummaryVO> rows = toApiList(settlementSummaryMapper.selectSettlementSummaryPage(
+                tenantId, keyword, statusCode, size, (page - 1) * size), PaymentSettlementSummaryVO.class);
         rows.forEach(this::fillSettlementSummary);
         return PageResult.of(rows, total, page, size);
     }
 
     public PaymentSettlementSummaryVO detailSettlementSummary(Long id) {
-        Require.notNull(id, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "结算汇总 ID 不能为空");
-        PaymentSettlementSummaryVO vo = settlementSummaryMapper.selectSettlementSummaryDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(id, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "结算汇总 ID 不能为空");
+        PaymentSettlementSummaryVO vo = toApi(settlementSummaryMapper.selectSettlementSummaryDetail(
+                PaymentContextSupport.currentTenantId(), id), PaymentSettlementSummaryVO.class);
         Require.notNull(vo, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_NOT_FOUND);
         fillSettlementSummary(vo);
         return vo;
@@ -65,12 +69,12 @@ public class PaymentSettlementSummaryService {
     public PaymentSettlementSummaryVO generateSettlementSummary(GeneratePaymentSettlementSummaryCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID);
         NormalizedScope scope = normalizeScope(command);
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentSettlementSummaryEntity existing = settlementSummaryMapper.selectByScope(
                 tenantId, scope.settlementDate(), scope.appCode(), scope.enterpriseSubjectId(), scope.channelCode());
         boolean rebuild = Boolean.TRUE.equals(command.getRebuild());
         Require.isTrue(existing == null,
-                PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_STATUS_INVALID.getCode(),
+                PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_STATUS_INVALID,
                 rebuild ? "已存在未作废结算汇总，不能重新生成" : "已存在未作废结算汇总，不能重复生成");
         Require.isTrue(hasCompletedReconciliation(tenantId, scope), PaymentCode.PAYMENT_SETTLEMENT_RECONCILIATION_REQUIRED);
 
@@ -108,19 +112,19 @@ public class PaymentSettlementSummaryService {
         entity.setUpdatedBy(operatorId);
         entity.setUpdatedAt(now);
         settlementSummaryMapper.insert(entity);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 rebuild ? PaymentOperationAuditService.ACTION_REBUILD_SETTLEMENT_SUMMARY : PaymentOperationAuditService.ACTION_GENERATE_SETTLEMENT_SUMMARY,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_SETTLEMENT_SUMMARY,
                 String.valueOf(entity.getId()),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailSettlementSummary(entity.getId());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentSettlementSummaryVO confirmSettlementSummary(ConfirmPaymentSettlementSummaryCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID);
-        Require.notNull(command.getId(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "结算汇总 ID 不能为空");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notNull(command.getId(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "结算汇总 ID 不能为空");
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentSettlementSummaryEntity entity = settlementSummaryMapper.selectById(command.getId());
         Require.notNull(entity, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_NOT_FOUND);
         Require.isTrue(tenantId.equals(entity.getTenantId()) && Integer.valueOf(0).equals(entity.getDelFlag()),
@@ -150,22 +154,22 @@ public class PaymentSettlementSummaryService {
                 PaymentContextSupport.currentPrincipalName(),
                 now);
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_STATUS_INVALID);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CONFIRM_SETTLEMENT_SUMMARY,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_SETTLEMENT_SUMMARY,
                 String.valueOf(entity.getId()),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailSettlementSummary(entity.getId());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentSettlementSummaryVO voidSettlementSummary(VoidPaymentSettlementSummaryCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID);
-        Require.notNull(command.getId(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "结算汇总 ID 不能为空");
+        Require.notNull(command.getId(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "结算汇总 ID 不能为空");
         String reason = PaymentContextSupport.trimToNull(command.getVoidReason());
-        Require.notBlank(reason, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "作废原因不能为空");
-        Require.isTrue(reason.length() <= 512, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "作废原因不能超过 512 个字符");
-        Long tenantId = PaymentContextSupport.currentTenantId();
+        Require.notBlank(reason, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "作废原因不能为空");
+        Require.isTrue(reason.length() <= 512, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "作废原因不能超过 512 个字符");
+        String tenantId = PaymentContextSupport.currentTenantId();
         PaymentSettlementSummaryEntity entity = settlementSummaryMapper.selectById(command.getId());
         Require.notNull(entity, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_NOT_FOUND);
         Require.isTrue(tenantId.equals(entity.getTenantId()) && Integer.valueOf(0).equals(entity.getDelFlag()),
@@ -182,27 +186,27 @@ public class PaymentSettlementSummaryService {
                 now,
                 reason);
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_STATUS_INVALID);
-        auditService.record(
+        auditService.record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_VOID_SETTLEMENT_SUMMARY,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_SETTLEMENT_SUMMARY,
                 String.valueOf(entity.getId()),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
         return detailSettlementSummary(entity.getId());
     }
 
     private NormalizedScope normalizeScope(GeneratePaymentSettlementSummaryCommand command) {
-        Require.notNull(command.getSettlementDate(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "结算日期不能为空");
+        Require.notNull(command.getSettlementDate(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "结算日期不能为空");
         String appCode = normalizeCode(command.getAppCode());
         String channelCode = normalizeCode(command.getChannelCode());
-        Require.notBlank(appCode, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "应用编码不能为空");
-        Require.notNull(command.getEnterpriseSubjectId(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "企业主体 ID 不能为空");
-        Require.notBlank(channelCode, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "通道编码不能为空");
-        Require.isTrue(appCode.length() <= 64, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "应用编码不能超过 64 个字符");
-        Require.isTrue(channelCode.length() <= 32, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID.getCode(), "通道编码不能超过 32 个字符");
+        Require.notBlank(appCode, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "应用编码不能为空");
+        Require.notNull(command.getEnterpriseSubjectId(), PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "企业主体 ID 不能为空");
+        Require.notBlank(channelCode, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "通道编码不能为空");
+        Require.isTrue(appCode.length() <= 64, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "应用编码不能超过 64 个字符");
+        Require.isTrue(channelCode.length() <= 32, PaymentCode.PAYMENT_SETTLEMENT_SUMMARY_INVALID, "通道编码不能超过 32 个字符");
         return new NormalizedScope(command.getSettlementDate(), appCode, command.getEnterpriseSubjectId(), channelCode);
     }
 
-    private SettlementSnapshot calculateSnapshot(Long tenantId, NormalizedScope scope) {
+    private SettlementSnapshot calculateSnapshot(String tenantId, NormalizedScope scope) {
         PaymentSettlementSummaryMapper.SettlementCalculation calculation = settlementSummaryMapper.selectSettlementCalculation(
                 tenantId, scope.settlementDate(), scope.appCode(), scope.enterpriseSubjectId(), scope.channelCode());
         PaymentSettlementSummaryMapper.DifferenceCalculation differences = settlementSummaryMapper.selectUnresolvedDifferenceCalculation(
@@ -229,7 +233,7 @@ public class PaymentSettlementSummaryService {
                 unresolvedAmount);
     }
 
-    private boolean hasCompletedReconciliation(Long tenantId, NormalizedScope scope) {
+    private boolean hasCompletedReconciliation(String tenantId, NormalizedScope scope) {
         return settlementSummaryMapper.countCompletedReconciliation(
                 tenantId, scope.settlementDate(), scope.channelCode()) > 0;
     }

@@ -1,6 +1,6 @@
 package io.mango.payment.core.service;
 
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.enums.PaymentOfflineBankStatementMatchStatusEnum;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +31,7 @@ class PaymentOfflineBankStatementExcelParserTest {
             null,
             null,
             null,
-            new PaymentSensitiveValueService(null),
+            new PaymentSensitiveValueCodec(null),
             null,
             null);
 

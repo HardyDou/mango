@@ -59,9 +59,12 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
 
 Require.notNull(order, "订单不存在");
+Require.isTrue(order.canPay(), OrderCode.ORDER_STATUS_INVALID, "当前订单状态不可支付");
 
 throw new BizException(400, "订单状态不允许操作");
 ```
+
+`Require` 支持 `BizCode`、自定义细化消息和原始异常链。需要在完成补偿后保持原运行时异常类型时，使用 `Require.rethrow(exception)`；不要把未知异常改写成不相关的业务错误码。
 
 分页返回：
 
@@ -93,7 +96,7 @@ PageResult<OrderVO> result = PageResult.of(rows, total, query.getPage(), query.g
 | `Query` | 查询请求基础类。 |
 | `PageQuery` | 分页查询请求，规范化页码和分页大小。 |
 | `PageResult<T>` | 分页返回，字段为 `list`、`total`、`page`、`size`、`pages`。 |
-| `Require` | 断言工具，失败时抛 `BizException`。 |
+| `Require` | 断言和失败工具；支持 `BizCode`、细化消息、cause 保留，以及补偿后的运行时异常原样重抛。 |
 
 业务模块自定义错误码示例：
 
