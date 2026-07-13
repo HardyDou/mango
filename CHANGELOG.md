@@ -19,13 +19,13 @@
 
 ### Published Packages
 
-The following are publication targets for this repair batch. Their status remains `PENDING` until repository and consumer verification succeeds.
+The following repair batch was published once and re-resolved through the consume repository by the completed release manifest.
 
 | Order | Target | Version / destination | Status |
 |---|---|---|---|
-| 1 | npm PMO bundle | `@mango/pmo@1.1.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
-| 2 | npm CLI | `@mango/cli@1.0.69` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
-| 3 | GitHub Release | `v2026.07.13-pmo-1.1.1-cli-1.0.69-release` | `PENDING` |
+| 1 | npm PMO bundle | `@mango/pmo@1.1.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
+| 2 | npm CLI | `@mango/cli@1.0.69` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED` |
+| 3 | GitHub Release | `v2026.07.13-pmo-1.1.1-cli-1.0.69-release` | `PUBLISHED` |
 
 ### Verification
 
@@ -37,7 +37,9 @@ The following are publication targets for this repair batch. Their status remain
 - `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
 - `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
-- PMO/CLI hosted and consume-registry tarball verification after publication.
+- Required PR check `pmo-doc-check`: PASS in 24m40s.
+- Release manifest: complete at `2026-07-13T08:52:50.165Z`; all 17 states are `passed` or reasoned `not_applicable`.
+- PMO/CLI hosted and consume-registry tarball verification: PASS; published integrities are recorded in `mango-docs/evidence/governance/release-v2026.07.13-pmo-1.1.1-cli-1.0.69-release.json`.
 
 ## v2026.07.13-maven-1.0.16-pmo-cli-release - 2026-07-13
 

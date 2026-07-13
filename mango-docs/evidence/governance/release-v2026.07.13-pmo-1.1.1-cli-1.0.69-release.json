@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v2026.07.13-pmo-1.1.1-cli-1.0.69-release",
+  "releaseUrl": "https://github.com/HardyDou/mango/releases/tag/v2026.07.13-pmo-1.1.1-cli-1.0.69-release",
+  "pullRequest": "https://github.com/HardyDou/mango/pull/457",
+  "mergeCommit": "65a8960c2949b14e15b59e67450e11a7ce32b73b",
+  "tagObject": "24b6fc2e35e650fd47081e4e9d8ea5ed25d9fac0",
+  "tagTarget": "65a8960c2949b14e15b59e67450e11a7ce32b73b",
+  "publishedAt": "2026-07-13T08:52:16Z",
+  "manifestCompletedAt": "2026-07-13T08:52:50.165Z",
+  "manifestCompleted": true,
+  "manifestConfigDigest": "112f499fc2b4ba4a22a69aaed845841af7be61943ce725fc26960001dcda22e8",
+  "artifacts": [
+    {
+      "kind": "maven",
+      "coordinate": "io.mango:*:1.0.16",
+      "status": "UNCHANGED_NOT_APPLICABLE",
+      "reason": "This npm-only hotfix does not change or republish Maven coordinates."
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/pmo@1.1.1",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-uLr9V0EEk89vwJtpUB8XjpptCo3gUJjmPj8ZwqH9KzUJLzSaLX0RXqmIzDggJ/65wcQIFFL3j4LodxBwsIf73Q==",
+      "shasum": "99c64f7fd2f1aa8b7834db665f14104d13a5d8ef",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/cli@1.0.69",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-zNOgxdBBVmi8AMhPhtMXVeGhXhIkL28t4pzodeinQQtGHghP32cEP5STUeBf37iiwCMrEj0891ENpIIz/2foRA==",
+      "shasum": "141ca77def2b4502b30041c99c440ba825fe81c7",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "Latest",
+      "consumeRepository": "https://hardydou.github.io/mango/",
+      "status": "VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "v2026.07.13-pmo-1.1.1-cli-1.0.69-release",
+      "status": "NOT_APPLICABLE",
+      "reason": "npm-only releases update and verify Latest without creating a Maven documentation snapshot."
+    }
+  ],
+  "stateSummary": {
+    "source": "passed",
+    "versions": "passed",
+    "changelog": "passed",
+    "readmes": "passed",
+    "tests": "passed",
+    "pr": "passed",
+    "tag": "passed",
+    "github-release": "passed",
+    "maven": "not_applicable",
+    "npm": "passed",
+    "cli-lock": "passed",
+    "private-registry-publish": "passed",
+    "private-registry-consume-verify": "passed",
+    "docs-latest": "passed",
+    "docs-snapshot": "not_applicable",
+    "post-verify": "passed",
+    "cleanup": "passed"
+  },
+  "releaseExecution": {
+    "freshManifest": true,
+    "repairInvoked": false,
+    "immutablePublishAttempts": {
+      "tag": 1,
+      "github-release": 1,
+      "npm": 1
+    },
+    "result": "COMPLETE"
+  },
+  "finalVerification": {
+    "requiredCheck": "PMO Documentation Checks / pmo-doc-check",
+    "requiredCheckResult": "PASS",
+    "requiredCheckDuration": "24m40s",
+    "architectureDebtCount": 9038,
+    "architectureDebtGate": "PASS",
+    "packageConsumerTypecheck": "PASS",
+    "npmHostedVerification": "PASS",
+    "npmConsumeVerification": "PASS",
+    "cliReleaseLock": "PASS",
+    "githubReleaseNotes": "PASS",
+    "docsLatest": "PASS"
+  }
+}
