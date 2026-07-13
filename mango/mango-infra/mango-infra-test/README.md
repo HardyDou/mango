@@ -10,6 +10,7 @@
 | 新增或修改 infra 公共能力后，需要跨模块集成测试 | Maven 依赖 / starter / Java API |
 | 需要验证 Redis、KV sorted set、Outbox、Realtime presence、WebSocket、上行 receiver 等组合行为 | Maven 依赖 / starter / Java API |
 | 需要用 H2 表模拟 infra_kv_entry 或用真实 Redis 验证 Redis store | Maven 依赖 / starter / Java API |
+| 需要验证 JDBC KV 原子写入及 Workflow Outbox 并发入队 | `JdbcKvStoreIntegrationTest`，支持 H2 MySQL mode 或隔离 MySQL 测试库 |
 
 
 ## 3. 能力边界
@@ -21,6 +22,7 @@
 测试覆盖范围包括：
 
 - KV store contract、Memory/Redis/JDBC fixture、capability、key namespace、serializer/converter。
+- JDBC KV `setIfAbsent`、计数器、事务回滚和 Workflow Outbox 并发入队回归。
 - KV Outbox 自动配置、message claim、ack、fail、requeue。
 - Domain event outbox 和 Redis Stream transport。
 - Realtime 多实例下行、上行、presence、receiver register。
@@ -39,6 +41,9 @@ mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test
 mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test -Dtest='*Kv*'
 mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test -Dtest='*Realtime*'
 mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test -Dtest='*Outbox*'
+mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am \
+  -Dtest=io.mango.infra.kv.starter.JdbcKvStoreIntegrationTest \
+  -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
 ## 6. 配置说明
@@ -48,6 +53,13 @@ mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test -Dtest='*Outbox*'
 - `src/test/resources/application-realtime-remote-test.yml`
 
 部分真实 Redis 集成测试要求本机 `localhost:6379` 可用且无密码；测试类注释会标明该要求。
+
+`JdbcKvStoreIntegrationTest` 默认使用 H2 MySQL mode。需要验证真实 MySQL 时，通过以下测试属性连接当前 worktree 的隔离数据库：
+
+- `kv.test.datasource.url`
+- `kv.test.datasource.username`
+- `kv.test.datasource.password`
+- `kv.test.datasource.driver-class-name`
 
 ## 7. API 与扩展
 本模块不导出生产 API。可复用测试 fixture 包括：
