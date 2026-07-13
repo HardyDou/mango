@@ -44,13 +44,39 @@ function run(fixture, extra = []) {
     '--baseline', fixture.baseline,
     '--json',
     ...extra
-  ], { encoding: 'utf8' });
+  ], { cwd: fixture.cwd, encoding: 'utf8' });
   return {
     status: result.status,
     stdout: result.stdout,
     stderr: result.stderr,
     report: result.stdout ? JSON.parse(result.stdout) : null
   };
+}
+
+function createSourceFixture(root) {
+  fs.mkdirSync(root, { recursive: true });
+  const source = path.join(root, 'mango/example/src/main/java/ExampleService.java');
+  fs.mkdirSync(path.dirname(source), { recursive: true });
+  fs.writeFileSync(source, 'class ExampleService {\n  private static final int LIMIT = 42;\n}\n');
+  const fixture = {
+    cwd: root,
+    root,
+    report: path.join(root, 'report.json'),
+    baseline: path.join(root, 'budget.json'),
+    baseBudget: path.join(root, 'base-budget.json')
+  };
+  writeReport(fixture.report, {
+    dependency: [],
+    archunit: [],
+    pmd: [{
+      ruleId: 'PMD-MAGIC',
+      subject: `${source}:2`,
+      message: 'Avoid magic literals'
+    }]
+  });
+  const initialized = spawnSync('git', ['init', '-q'], { cwd: root, encoding: 'utf8' });
+  assert.equal(initialized.status, 0, initialized.stderr);
+  return fixture;
 }
 
 function copyBaselineToBase(fixture) {
@@ -228,6 +254,24 @@ test('rejects replacing one historical issue with a new identity under the same 
     assert.equal(rejected.report.comparison.identityReductions.length, 1);
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('source identities are stable when GitHub repeats the repository name in the checkout path', () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-architecture-checkouts-'));
+  const local = createSourceFixture(path.join(parent, 'local-checkout'));
+  const runner = createSourceFixture(path.join(parent, 'mango/mango'));
+  try {
+    assert.equal(run(local, ['--write']).status, 0);
+    fs.copyFileSync(local.baseline, runner.baseline);
+    const checked = run(runner);
+    assert.equal(checked.status, 0, checked.stderr);
+    assert.deepEqual(
+      Object.keys(checked.report.current.identities),
+      Object.keys(JSON.parse(fs.readFileSync(local.baseline, 'utf8')).identities)
+    );
+  } finally {
+    fs.rmSync(parent, { recursive: true, force: true });
   }
 });
 

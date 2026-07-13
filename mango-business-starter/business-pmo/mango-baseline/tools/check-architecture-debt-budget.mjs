@@ -11,6 +11,7 @@ const ENGINE_FIELDS = {
   archunit: 'archUnitIssues',
   pmd: 'pmdIssues'
 };
+let cachedRepositoryRoot;
 
 function parseArgs(argv) {
   const args = {
@@ -77,6 +78,27 @@ function sha256(text) {
   return createHash('sha256').update(text).digest('hex');
 }
 
+function repositoryRoot() {
+  if (cachedRepositoryRoot) {
+    return cachedRepositoryRoot;
+  }
+  const repository = runGit(process.cwd(), ['rev-parse', '--show-toplevel'], 'cannot locate Git root');
+  if (repository.status !== 0) {
+    throw new Error(`cannot locate Git root: ${repository.stderr.trim()}`);
+  }
+  cachedRepositoryRoot = fs.realpathSync(repository.stdout.trim());
+  return cachedRepositoryRoot;
+}
+
+function repositoryRelativeSource(file) {
+  const absoluteFile = fs.realpathSync(path.resolve(file));
+  const relative = path.relative(repositoryRoot(), absoluteFile).split(path.sep).join('/');
+  if (!relative || relative === '..' || relative.startsWith('../')) {
+    throw new Error(`architecture issue source must be inside the Git repository: ${file}`);
+  }
+  return relative;
+}
+
 function normalizedIssueSubject(subject) {
   const normalized = String(subject).replaceAll('\\', '/');
   const source = normalized.match(/^(.*\.java):(\d+)$/u);
@@ -94,10 +116,7 @@ function normalizedIssueSubject(subject) {
   if (sourceLine === undefined) {
     throw new Error(`architecture issue source line is outside the file: ${subject}`);
   }
-  const mangoPath = file.replaceAll('\\', '/').indexOf('/mango/');
-  const relative = mangoPath >= 0
-    ? file.replaceAll('\\', '/').slice(mangoPath + 1)
-    : file.replaceAll('\\', '/');
+  const relative = repositoryRelativeSource(file);
   const normalizedLine = sourceLine.trim().replace(/\s+/gu, ' ');
   return `${relative}|source-line-sha256=${sha256(normalizedLine)}`;
 }
