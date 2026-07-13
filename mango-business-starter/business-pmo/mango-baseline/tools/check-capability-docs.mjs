@@ -169,50 +169,6 @@ function isPlaceholder(value) {
   );
 }
 
-function hasExplicitNotApplicableReason(prBody) {
-  const reason = lineValue(prBody, 'Not applicable reason');
-  if (!reason || isPlaceholder(reason)) {
-    return false;
-  }
-  const normalized = reason.toLowerCase();
-  if (
-    normalized.includes('state the concrete impact judgment') ||
-    normalized.includes('for example unchanged') ||
-    normalized.includes('public api/configuration/menu/permission') ||
-    normalized.includes('例如') ||
-    normalized.length < 20
-  ) {
-    return false;
-  }
-  return [
-    'unchanged',
-    'no change',
-    'does not change',
-    '不改变',
-    '未改变',
-    'public api',
-    '公开 api',
-    'configuration',
-    '配置',
-    'menu',
-    '菜单',
-    'permission',
-    '权限',
-    'tenant',
-    '租户',
-    'page',
-    '页面',
-    'startup',
-    '启动',
-    'validation',
-    '验收',
-    'runtime behavior',
-    'capability',
-    '运行时行为',
-    '能力'
-  ].some((keyword) => normalized.includes(keyword));
-}
-
 function validatePrBody(prBody, failures) {
   for (const section of requiredPrSections) {
     if (!prBody.includes(section)) {
@@ -221,6 +177,10 @@ function validatePrBody(prBody, failures) {
   }
   if (failures.length > 0) {
     return;
+  }
+
+  if (/^-[ \t]+Not applicable reason[ \t]*:/im.test(prBody)) {
+    failures.push('PR body must not include the standalone "Not applicable reason" field; explain not-applicable status in each corresponding Capability Docs field.');
   }
 
   for (const label of ['PMO preflight', 'Role / phase', 'Task paths', 'Loaded PMO files', 'PR type']) {
@@ -257,7 +217,7 @@ function validatePrBody(prBody, failures) {
 }
 
 function filledPrBody(options = {}) {
-  const notApplicableReason = options.notApplicableReason ?? 'this PR only changes governance checks and does not alter a runtime module capability.';
+  const forbiddenReason = options.forbiddenReason;
   return `## Summary
 
 - Tighten capability docs gate.
@@ -278,7 +238,7 @@ function filledPrBody(options = {}) {
 - Business guide: not applicable, no business integration scenario changed
 - PMO rules: updated, capability docs gate clarified
 - \`mango-pmo/rules/index.json\`: not applicable, no new PMO rule file
-- Not applicable reason: ${notApplicableReason}
+${forbiddenReason === undefined ? '' : `- Not applicable reason: ${forbiddenReason}\n`}
 
 ## Validation
 
@@ -312,6 +272,11 @@ function runSelfTest() {
       name: 'filled body passes',
       body: filledPrBody(),
       valid: true
+    },
+    {
+      name: 'standalone not applicable reason field fails',
+      body: filledPrBody({ forbiddenReason: 'runtime behavior is unchanged' }),
+      valid: false
     }
   ];
   const failures = [];
@@ -328,121 +293,106 @@ function runSelfTest() {
     }
   }
 
-  const noReasonBody = filledPrBody({ notApplicableReason: '' });
   const coverageCases = [
     {
       name: 'backend source needs own README or capability map',
       files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: false,
       expectedFailure: 'mango/mango-platform/mango-job/README.md'
     },
     {
       name: 'unrelated README cannot satisfy backend source',
       files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java', 'README.md'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: false,
       expectedFailure: 'mango/mango-platform/mango-job/README.md'
     },
     {
       name: 'module README satisfies backend source',
       files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java', 'mango/mango-platform/mango-job/README.md'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: true
     },
     {
       name: 'capability map satisfies backend source',
       files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java', 'mango-docs/capabilities/README.md'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: true
     },
     {
-      name: 'explicit not applicable reason allows missing docs',
+      name: 'standalone not applicable reason cannot allow missing docs',
       files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
-      body: filledPrBody(),
-      valid: true,
-      warning: true
-    },
-    {
-      name: 'template not applicable reason does not allow missing docs',
-      files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
-      body: filledPrBody({ notApplicableReason: 'state the concrete impact judgment, for example unchanged public API/configuration/menu/permission/tenant/page/startup/validation/runtime behavior.' }),
+      body: filledPrBody({ forbiddenReason: 'runtime behavior is unchanged' }),
       valid: false,
-      expectedFailure: 'Not applicable reason'
-    },
-    {
-      name: 'short vague not applicable reason does not allow missing docs',
-      files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
-      body: filledPrBody({ notApplicableReason: 'no change' }),
-      valid: false,
-      expectedFailure: 'Not applicable reason'
+      expectedFailures: ['Not applicable reason', 'mango/mango-platform/mango-job/README.md']
     },
     {
       name: 'frontend package source maps to package README',
       files: ['mango-ui/packages/job/src/index.ts'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: false,
       expectedFailure: 'mango-ui/packages/job/README.md'
     },
     {
       name: 'frontend package README satisfies source',
       files: ['mango-ui/packages/job/src/index.ts', 'mango-ui/packages/job/README.md'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: true
     },
     {
       name: 'top-level backend source maps to top-level README',
       files: ['mango/mango-common/src/main/java/io/mango/common/R.java'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: false,
       expectedFailure: 'mango/mango-common/README.md'
     },
     {
       name: 'business starter maps to root starter README',
       files: ['mango-business-starter/template/pom.xml'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: false,
       expectedFailure: 'mango-business-starter/README.md'
     },
     {
       name: 'file module changes need business upload guide',
       files: ['mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java', 'mango/mango-platform/mango-file/README.md'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: false,
       expectedFailure: 'file-upload-form.md'
     },
     {
       name: 'file module and business upload guide pass',
       files: ['mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java', 'mango/mango-platform/mango-file/README.md', 'mango-docs/guides/business-integration/file-upload-form.md'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: true
     },
     {
-      name: 'explicit not applicable reason does not allow missing business guide',
+      name: 'standalone not applicable reason does not allow missing business guide',
       files: ['mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java', 'mango/mango-platform/mango-file/README.md'],
-      body: filledPrBody(),
+      body: filledPrBody({ forbiddenReason: 'runtime behavior is unchanged' }),
       valid: false,
-      expectedFailure: 'file-upload-form.md'
+      expectedFailures: ['Not applicable reason', 'file-upload-form.md']
     },
     {
       name: 'PMO rule change needs index json',
       files: ['mango-pmo/rules/09-new-rule.md'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: false,
       expectedFailure: 'rules/index.json'
     },
     {
       name: 'PMO rule and index pass',
       files: ['mango-pmo/rules/09-new-rule.md', 'mango-pmo/rules/index.json'],
-      body: noReasonBody,
+      body: filledPrBody(),
       valid: true
     }
   ];
   for (const item of coverageCases) {
     const itemFailures = [];
-    const itemWarnings = [];
+    validatePrBody(item.body, itemFailures);
     checkRuleIndexCoverage(item.files, itemFailures);
-    checkCapabilityDocCoverage(item.files, item.body, itemFailures, itemWarnings);
+    checkCapabilityDocCoverage(item.files, itemFailures);
     const passed = itemFailures.length === 0;
     if (passed !== item.valid) {
       failures.push(`${item.name}: expected valid=${item.valid}, got valid=${passed}${itemFailures.length ? ` (${itemFailures.join('; ')})` : ''}`);
@@ -451,8 +401,10 @@ function runSelfTest() {
     if (item.expectedFailure && !itemFailures.some((failure) => failure.includes(item.expectedFailure))) {
       failures.push(`${item.name}: expected failure to mention ${item.expectedFailure}`);
     }
-    if (item.warning && itemWarnings.length === 0) {
-      failures.push(`${item.name}: expected warning when using explicit not-applicable reason`);
+    for (const expectedFailure of item.expectedFailures ?? []) {
+      if (!itemFailures.some((failure) => failure.includes(expectedFailure))) {
+        failures.push(`${item.name}: expected failure to mention ${expectedFailure}`);
+      }
     }
   }
 
@@ -620,17 +572,13 @@ function checkRuleIndexCoverage(files, failures) {
   }
 }
 
-function checkCapabilityDocCoverage(files, prBody, failures, warnings) {
+function checkCapabilityDocCoverage(files, failures) {
   const affectedReadmes = new Set(files.filter(isCapabilityAffectingFile).map(moduleReadmeFor).filter(Boolean));
   const changedCapabilityMap = files.some((file) => file.startsWith('mango-docs/capabilities/'));
   const missingReadmes = [...affectedReadmes].filter((readme) => !files.includes(readme));
   if (affectedReadmes.size > 0 && !changedCapabilityMap && missingReadmes.length > 0) {
     const message = `Capability-affecting files changed without their module README or capability map updates: ${missingReadmes.join(', ')}`;
-    if (hasExplicitNotApplicableReason(prBody)) {
-      warnings.push(`${message}; accepted because PR body includes an explicit not-applicable reason.`);
-    } else {
-      failures.push(`${message}; update docs or fill "Not applicable reason" with a concrete impact judgment, for example unchanged public API/configuration/menu/permission/startup/validation.`);
-    }
+    failures.push(`${message}; update the required module README or capability map.`);
   }
 
   const affectedGuides = new Set();
@@ -730,7 +678,6 @@ if (selfTest) {
 }
 
 const failures = [];
-const warnings = [];
 let files = [];
 try {
   files = changedFiles();
@@ -763,7 +710,7 @@ if (shouldValidatePrBody) {
   }
 }
 
-checkCapabilityDocCoverage(files, prBody, failures, warnings);
+checkCapabilityDocCoverage(files, failures);
 checkPlatformCapabilityEntrypoints(failures);
 
 const capabilityMap = fileExists('mango-docs/capabilities/README.md')
@@ -771,10 +718,6 @@ const capabilityMap = fileExists('mango-docs/capabilities/README.md')
   : '';
 if (capabilityMap && /必须|禁止|不得|不允许|只允许/.test(capabilityMap)) {
   failures.push('Capability map contains strong rule words; keep long-term rules in mango-pmo/rules and link them instead.');
-}
-
-if (warnings.length > 0) {
-  console.warn(`Capability docs warnings:\n${warnings.map((warning) => `- ${warning}`).join('\n')}`);
 }
 
 if (failures.length > 0) {

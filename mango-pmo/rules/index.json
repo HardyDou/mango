@@ -81,7 +81,7 @@
     },
     "process.capabilityDocs": {
       "path": "rules/08-capability-docs.md",
-      "reason": "能力说明维护规范与发布门禁"
+      "reason": "能力说明维护规范、逐字段不适用说明与发布门禁"
     },
     "process.releaseArtifacts": {
       "path": "rules/10-release-artifacts.md",
