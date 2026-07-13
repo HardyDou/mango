@@ -8,7 +8,7 @@ import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.ResponseHeaderOverrides;
 import io.mango.common.result.Require;
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.core.entity.FileStorageConfig;
 import org.springframework.util.StringUtils;
 

@@ -2,8 +2,9 @@
   "schemaVersion": 1,
   "repository": "HardyDou/mango",
   "branch": "main",
-  "observedAt": "2026-07-13T00:44:46Z",
+  "observedAt": "2026-07-13T04:56:25Z",
   "source": "GitHub REST API branch protection read-back",
+  "governanceMode": "single-owner",
   "requiredStatusChecks": {
     "strict": true,
     "checks": [
@@ -14,13 +15,15 @@
     ]
   },
   "pullRequestReviews": {
-    "requireCodeOwnerReviews": true,
-    "requiredApprovingReviewCount": 1,
-    "dismissStaleReviews": true
+    "requireCodeOwnerReviews": false,
+    "requiredApprovingReviewCount": 0,
+    "dismissStaleReviews": true,
+    "requireLastPushApproval": false
   },
   "requiredConversationResolution": true,
   "enforceAdmins": true,
   "allowForcePushes": false,
   "allowDeletions": false,
+  "policy": ".github/branch-protection-policy.json",
   "note": "This is an audit snapshot. GitHub live configuration remains authoritative."
 }

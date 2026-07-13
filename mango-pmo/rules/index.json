@@ -69,7 +69,7 @@
     },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
-      "reason": "AI 交付质量门禁、发布批次、Required Check、CODEOWNERS 和 Maven app 制品排除规则"
+      "reason": "AI 交付质量门禁、按模块历史架构债务递减、发布批次、单 Owner/多人维护分支保护、Required Check、CODEOWNERS 和 Maven app 制品排除规则"
     },
     "process.documentAssets": {
       "path": "rules/06-document-assets.md",
@@ -81,11 +81,11 @@
     },
     "process.capabilityDocs": {
       "path": "rules/08-capability-docs.md",
-      "reason": "能力说明维护规范与发布门禁"
+      "reason": "能力说明维护规范、逐字段不适用说明与发布门禁"
     },
     "process.releaseArtifacts": {
       "path": "rules/10-release-artifacts.md",
-      "reason": "npm、Maven、CLI、starter、模板、PMO、Skill 与文档发布批次及版本同步规范"
+      "reason": "npm、Maven、CLI、starter、模板、PMO、Skill 与文档发布批次、不可变制品恢复及版本同步规范"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",

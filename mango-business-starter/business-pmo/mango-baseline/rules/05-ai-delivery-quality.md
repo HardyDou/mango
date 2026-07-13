@@ -79,7 +79,7 @@
 
 任一检查失败时不得提交 PR 或合并。
 
-## 2.4 Required Check 与 CODEOWNERS 门禁
+## 2.4 Required Check、仓库治理模式与 CODEOWNERS 门禁
 
 PMO 治理使用以下稳定检查身份：
 
@@ -92,29 +92,34 @@ PMO 治理使用以下稳定检查身份：
 
 必须执行：
 
-- `main` 的 branch protection 或 ruleset 必须要求 `pmo-doc-check` 成功，并启用 Code Owner approval；CODEOWNERS 文件存在不等于审批已经启用。
+- `main` 的 branch protection 或 ruleset 必须要求 `pmo-doc-check` 成功；该机器门禁不因仓库治理模式变化而关闭。
+- 仓库必须在 `.github/branch-protection-policy.json` 声明 `single-owner` 或 `multi-maintainer`，并让远端 branch protection 与声明一致。
+- `single-owner` 适用于只有一个最终 Owner、该 Owner 需要创建并合并 PR、协作者不能构成稳定独立审批门禁的仓库。该模式必须把 required approving review count 设为 `0`、关闭远端 Code Owner approval，同时保留 CODEOWNERS 作为责任范围和可选评审路由；Owner 只能在 required check 成功、对话已解决后通过 PR 合并。
+- `multi-maintainer` 适用于至少两名可稳定承担独立评审的维护者。该模式必须要求至少一人批准并启用 Code Owner approval；CODEOWNERS 文件存在不等于审批已经启用。
+- 仓库治理模式变化必须作为独立治理变更，更新机器策略、PMO 规则和远端保护证据；禁止在每次发布时临时开关审批门禁。
 - 首次配置或修改保护规则时，必须从真实 PR 的 check-run 或 GitHub API 读取 context，禁止仅凭文档字符串猜测。
 - 修改 workflow `name`、job ID、job `name` 或触发事件时，必须在同一变更中同步 branch protection/ruleset 和本节；旧 required check 不得因改名永久 pending。
 - 业务项目的 `pmo-doc-check` 必须对每个 PR 运行，不得配置会跳过整个 workflow 的 `paths`/`paths-ignore`；文档或后端没有变化时可以在 job 内执行可审计的轻量判定，但稳定 check-run 必须产生结果。
 - 业务项目的同一 `pmo-doc-check` 必须执行 `check-document-set.mjs --root business-docs` 和完整后端 `mvn verify`；四类生命周期文档遗漏 `documentType`、使用未知类型、重复 ID、上游断链或摘要失效时必须失败。
 - `mango-pmo` 规则、合同、Agent、Skill、模板、Java 架构 checker、PMO workflow、业务模板和 PMO/CLI 发布脚本必须由 `.github/CODEOWNERS` 覆盖。
-- required check 成功只证明机器门禁通过，不能替代业务、架构、QA、发布或 Code Owner 的人工结论。
+- required check 成功只证明机器门禁通过，不能替代业务、架构、QA 或发布结论；`multi-maintainer` 还必须取得独立 Code Owner 结论，`single-owner` 由 Owner 的 PR 合并动作承担最终人工授权并保留 PR 记录。
 - 声明“分支保护已生效”前，必须提供远端 ruleset/branch protection 或受保护 PR 的验证证据。
 
 禁止：
 
-- 用 workflow 绿灯替代 Code Owner review。
+- `multi-maintainer` 用 workflow 绿灯替代 Code Owner review。
+- `single-owner` 关闭 required check、直接推送 `main`，或为单次发布临时关闭再恢复审批门禁。
 - 在未验证远端配置时声明 required check 已启用。
 - 为绕过失败而删除 required check、缩小 workflow 触发范围或把关键步骤改成非阻断。
 - 只在人工命令中列出单文档 checker，却不让 CI 自动扫描 `business-docs`。
 
 ## 2.5 历史架构债务与递减预算
 
-- **正向要求**：PR 显式使用 `changed`/`no-new-violations` 只阻断本次可归因的新违规；同一次完整 Reactor 检查仍统计全部历史问题，报告必须声明 `inventoryScope=full-reactor`、`issueInventory=all-detected-issues` 且实际/预期 Reactor 项目数相等。CI 使用 `base budget -> PR budget -> current full report` 三方比较，通过 `mango-pmo/baselines/architecture/debt-budget.json` 同时锁定规则计数和稳定问题身份多重集合。PMD 身份使用相对文件、规则、消息和违规源码行内容摘要，不使用易漂移的绝对路径或行号。历史问题被修复后必须运行 `check-architecture-debt-budget.mjs --write` 下调预算，后续不得回升。
-- **禁止项**：禁止让未改动文件的存量问题阻断普通新需求；禁止用历史预算放行本次新增违规；禁止在规则之间转移违规维持总数；禁止在同一 PR 手工抬高预算掩盖新增违规；禁止复用旧审批原因或把不完整 Reactor 报告当作全量清单。规则升级首次暴露存量债务时，只有 PMO 治理任务获得明确批准、记录非空原因、把该原因绑定到 base 预算 SHA-256、完成存量盘点并通过 Code Owner 审核，才允许 `--accept-increase`。
-- **正例**：PR 修改订单 Service，门禁只因该 Service 新增的 `BEAN-004` 失败；同时完整债务从 8744 降至 8738，提交者下调按规则预算，下一次上限固定为 8738。
-- **反例**：历史有 8744 条，所以本次新增 3 条也算 baseline。错误原因：baseline 只隔离旧事实，不授权新增违规。
-- **机器判定**：Maven `changed` 门禁先用 committed identity 多重集合扣除历史问题，只阻断剩余新身份；CI 随后执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"`。当前报告必须与 PR 预算逐规则、逐身份精确相等；PR 预算相对 base 的任一规则或身份增加必须包含新原因和精确 base 预算摘要；已有下降未写回递减预算时失败。“同规则修一条又新增一条”会因 identity 一减一增而失败。
+- **正向要求**：PR 使用 `changed`/`no-new-violations` 只阻断本次可归因的新违规；同一次完整 Reactor 检查仍统计全部历史问题。架构报告必须使用 schema v2，声明 `inventoryScope=full-reactor`、`issueInventory=all-detected-issues`，实际/预期 Reactor 项目数必须与 `modules` 目录相等，dependency、ArchUnit、PMD 和 blocking 问题都必须唯一归属 `moduleKey`。schema v4 预算同时保存全局和逐模块的规则计数、稳定 identity 多重集合；全局聚合必须由模块明细精确求和。历史问题修复后必须用同一份完整报告执行全局或 `--module ... --write` 下调预算，后续不得回升。
+- **禁止项**：禁止让未改动文件的存量问题阻断普通新需求；禁止用历史预算放行本次新增违规；禁止在规则或模块之间移动违规维持总数；禁止用部分 Reactor 报告、`unknown` 模块或重复执行单模块 Maven 构建修改正式预算；禁止在模块模式接受预算增加；禁止手工抬高总量、模块量或复用旧审批原因。规则升级首次暴露存量债务时，只能由获批 PMO 治理任务使用完整报告执行全局 `--write --accept-increase --reason`，并取得与仓库治理模式一致的人工授权。
+- **正例**：一次完整扫描记录全仓 9,038 条、`mango-platform/mango-system` 目录 492 条、其中 `mango-system-core` 233 条。清理 core 后，执行 `--module mango-system-core --write` 只降低该模块及全局聚合；提交前再执行无 `--module` 的全局检查，未清理模块保持原预算。
+- **反例**：从模块 A 删除一条旧 identity，同时在模块 B 新增同规则问题，并以“全仓总数没变”为由更新预算。错误原因：模块 B 的 identity 增加和跨模块转移都会失败，历史 baseline 只隔离旧事实，不授权替换或新增。
+- **机器判定**：Maven `changed` 门禁先用 Git base 的 committed identity 多重集合扣除历史问题，只阻断剩余新身份；CI 随后执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"`，对 `base budget -> PR budget -> current full report` 做全局及逐模块三方比较。模块清债使用可重复的 `--module <moduleKey|artifactId>` 读取同一报告；目录 selector 覆盖其全部 Reactor 子模块，artifactId 必须唯一。任一规则、identity 或模块归属增加、已有下降未写回、模块聚合与全局不一致、报告不完整或归属不唯一都必须失败。
 
 ## 3. 验收判定
 

@@ -102,25 +102,43 @@ class ArchitectureMojoTest {
         build.setSourceDirectory(projectRoot.resolve("src/main/java").toString());
         build.setOutputDirectory(classes.toString());
         MavenProject project = new MavenProject();
+        project.setGroupId("io.mango.test");
         project.setArtifactId("demo-core");
         project.setBuild(build);
+        Path pom = projectRoot.resolve("pom.xml");
+        Files.writeString(pom, "<project/>\n");
+        project.setFile(pom.toFile());
         project.addCompileSourceRoot(projectRoot.resolve("target/generated-sources").toString());
 
         ArchitectureMojo mojo = new ArchitectureMojo();
         setField(mojo, "excludedModules", List.of());
+        setField(mojo, "rootDirectory", projectRoot);
         Map<Path, ModuleRole> classDirectories = new LinkedHashMap<>();
         Map<Path, String> classDirectoryArtifacts = new LinkedHashMap<>();
+        Map<Path, String> classDirectoryModules = new LinkedHashMap<>();
         List<Path> sourceDirectories = new ArrayList<>();
         Method collect = ArchitectureMojo.class.getDeclaredMethod(
-                "collectJavaInputs", MavenProject.class, Map.class, Map.class, List.class);
+                "collectJavaInputs",
+                MavenProject.class,
+                Map.class,
+                Map.class,
+                Map.class,
+                List.class);
         collect.setAccessible(true);
-        collect.invoke(mojo, project, classDirectories, classDirectoryArtifacts, sourceDirectories);
+        collect.invoke(
+                mojo,
+                project,
+                classDirectories,
+                classDirectoryArtifacts,
+                classDirectoryModules,
+                sourceDirectories);
 
         assertEquals(Set.of(
                 projectRoot.resolve("src/main/java").toAbsolutePath().normalize(),
                 projectRoot.resolve("target/generated-sources").toAbsolutePath().normalize()),
                 Set.copyOf(sourceDirectories));
         assertEquals(Set.of(classes.toAbsolutePath().normalize()), classDirectories.keySet());
+        assertEquals(Map.of(classes.toAbsolutePath().normalize(), "."), classDirectoryModules);
     }
 
     @Test

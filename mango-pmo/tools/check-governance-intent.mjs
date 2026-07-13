@@ -2,6 +2,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  normalizeBranchProtectionEvidence,
+  validateBranchProtectionPolicy
+} from './branch-protection-policy.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -170,10 +174,10 @@ assertNotIncludes('mango-pmo/templates/module-readme.md', ['## 10. 验证方式'
 assertIncludes('.github/pull_request_template.md', [
   '## PMO / Scope',
   '## Capability Docs',
-  'Not applicable reason',
   '## Validation',
   '## PMO Exceptions'
 ], failures);
+assertNotIncludes('.github/pull_request_template.md', ['Not applicable reason'], failures);
 
 assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'node mango-pmo/tools/check-governance-intent.mjs',
@@ -182,6 +186,38 @@ assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'github.event.pull_request.base.sha',
   'github.event.pull_request.head.sha',
   'PR_BODY_FILE'
+], failures);
+
+assertIncludes('mango-pmo/rules/05-ai-delivery-quality.md', [
+  '.github/branch-protection-policy.json',
+  '`single-owner`',
+  '`multi-maintainer`',
+  'required approving review count',
+  'required check 成功'
+], failures);
+
+const branchProtectionPolicy = JSON.parse(read('.github/branch-protection-policy.json'));
+for (const failure of validateBranchProtectionPolicy(branchProtectionPolicy)) {
+  failures.push(`.github/branch-protection-policy.json: ${failure}`);
+}
+
+const branchProtectionEvidencePath = 'mango-docs/evidence/governance/main-branch-protection-2026-07-13.json';
+const branchProtectionEvidence = JSON.parse(read(branchProtectionEvidencePath));
+const observedBranchProtection = normalizeBranchProtectionEvidence(branchProtectionEvidence);
+if (JSON.stringify(observedBranchProtection) !== JSON.stringify(branchProtectionPolicy)) {
+  failures.push(`${branchProtectionEvidencePath}: observed branch protection must match .github/branch-protection-policy.json`);
+}
+if (branchProtectionEvidence.policy !== '.github/branch-protection-policy.json'
+  || branchProtectionEvidence.source !== 'GitHub REST API branch protection read-back'
+  || !branchProtectionEvidence.observedAt) {
+  failures.push(`${branchProtectionEvidencePath}: policy link, API source and observation time are required`);
+}
+
+assertIncludes('.github/CODEOWNERS', [
+  '/mango-pmo/',
+  '/.github/CODEOWNERS',
+  '/.github/branch-protection-policy.json',
+  '/.github/workflows/'
 ], failures);
 
 const index = JSON.parse(read('mango-pmo/rules/index.json'));

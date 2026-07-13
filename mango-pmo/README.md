@@ -16,9 +16,11 @@
 | 模板资产 | `templates/**` | PRD、详细设计、交付契约、验收证据模板 |
 | 文档生命周期 | `contracts/*.json`、`tools/check-*-requirements.mjs` | BRD、SRS、TDD、实施计划的结构、边界、追踪、审批和版本门禁 |
 | 文档集合门禁 | `tools/check-document-set.mjs` | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要 |
+| 模块架构债务预算 | `tools/check-architecture-debt-budget.mjs` | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减 |
 | 专项 Agent | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md` | 一个生命周期模板对应一个撰写 Agent |
 | 可安装 Skills | `skills/**` | 生命周期协调、四类文档、工程、QA、Issue、模块、发布和 PR review |
 | 全局实体例外 | `contracts/global-entity-exceptions.json` | 按 Entity/table/owner/审批/到期日管理精确例外 |
+| Mango 主仓分支保护策略 | `.github/branch-protection-policy.json`、`tools/branch-protection-policy.mjs` | 声明并校验单 Owner 或多人维护模式，同时固定 Required Check 和历史保护项 |
 
 Skill 按实际能力命名，而不是按发布包命名：只有治理编排使用 `mango-pmo-lifecycle`；需求、设计、工程、QA、Issue、模块、评审和发布分别使用各自领域名称，禁止统一套用含义不清的 `mango-pm-*` 前缀。
 
@@ -26,8 +28,12 @@ Skill 按实际能力命名，而不是按发布包命名：只有治理编排�
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm install -g @mango/cli --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.1.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.69 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.69 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
+
+两个 `npm view` 都返回精确版本后再执行安装。返回 404 表示该批次仍未发布，源码仓可见不等于业务项目已经可消费。
 
 生成后的业务项目以项目内锁定版本为准：先执行 `cd frontend && pnpm install` 安装 `frontend` 中声明的 `@mango/cli`，再通过 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能落后，不能作为业务项目版本依据。`scripts/dev-workspace.sh` 只保留为旧命令兼容入口。
 
@@ -38,8 +44,21 @@ npm install -g @mango/cli --registry http://nexus.inner.yunxinbaokeji.com/reposi
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo sync --project-dir .
-mango pmo upgrade --project-dir .
+mango pmo upgrade --project-dir . --to 1.1.1 --dry-run
+mango pmo upgrade --project-dir . --to 1.1.1 --sync-shell
+mango pmo check --project-dir . --locked
+```
+
+升级成功后，规则、合同、模板和 Agent 位于 `business-pmo/mango-baseline`，项目 Skill 位于 `.agents/skills`，版本身份位于 `business-pmo/pmo-lock.json`。项目级 Skill 已足够支持业务仓内的 Agent 路由，不要求同时安装用户级 Codex plugin。
+
+业务仓日常命令使用项目内 CLI：
+
+```bash
+cd frontend
+pnpm install
+pnpm exec mango pmo check --project-dir .. --locked
+pnpm exec mango workspace init
+pnpm exec mango dev doctor
 ```
 
 正式任务前执行：
@@ -61,6 +80,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | rules index JSON | `bundles` | 按关键词和路径加载的规则包 |
 | `baseline.json` | `packageVersion` | 业务仓当前 baseline 包版本 |
 | `baseline.json` | `files[].sha256` | 业务仓 baseline 漂移检查依据 |
+| Mango 主仓 `.github/branch-protection-policy.json` | `governanceMode`、Required Check、review 和历史保护字段 | GitHub `main` 分支保护的受版本控制期望状态 |
 
 ## 5. API 与扩展
 | API / 扩展点 | 输入 | 输出 |
@@ -69,6 +89,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | `delivery-contract-check.mjs` | design、ledger、mode | 台账覆盖和状态检查结果 |
 | `acceptance-evidence-check.mjs` | evidence、min rows | 验收证据表检查结果 |
 | `check-document-set.mjs` | business docs root | 自动发现并检查目录内生命周期文档及其上游关系 |
+| `check-architecture-debt-budget.mjs` | 完整 Reactor 报告、当前预算、可选 Git base ref 或模块选择器 | 全局或模块债务比较、递减要求和稳定身份差异 |
 | `@mango/pmo` | `dist/baseline.json`、`dist/baseline/**` | 可发布 PMO baseline 包 |
 | `@mango/pmo` plugin projection | `.codex-plugin/plugin.json`、`skills/**` | 与 npm 包同版本的 Codex plugin/Skill 投影 |
 | `mango pmo check` | business project root | baseline 漂移状态 |
@@ -94,6 +115,8 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | 输出任务规则 | `node business-pmo/mango-baseline/tools/pmo-preflight.mjs ...` |
 | 检查交付台账 | `node business-pmo/mango-baseline/tools/delivery-contract-check.mjs ...` |
 | 检查全部业务文档 | `node business-pmo/mango-baseline/tools/check-document-set.mjs --root business-docs` |
+| 检查全局架构债务预算 | `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref <base-sha>` |
+| 检查单个模块债务 | `node mango-pmo/tools/check-architecture-debt-budget.mjs --module <moduleKey\|artifactId>` |
 
 ## 8. 快速开始
 1. 在 Mango 主仓修改 `mango-pmo/**`。
@@ -109,6 +132,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | preflight Missing PMO file | rules index JSON 指向不存在文件 | 修复 `mango-pmo` 源并重新发布 baseline |
 | 业务路径未命中规则 | rules index JSON bundle paths 不覆盖业务目录 | 在 mango-pmo rules index 补充路径 |
 | 历史项目仍引用主仓路径 | 旧 `AGENTS.md` 未升级 | 执行 `mango pmo upgrade --project-dir . --write-agents` |
+| `npm view` 返回 404 | 目标 PMO/CLI 批次尚未发布 | 等待发布状态机完成并从 npm-group 回查后再升级业务项目 |
 
 ## 10. 相关文档
 - [PMO 总流程](./rules/00-dev-flow.md)

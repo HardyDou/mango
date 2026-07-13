@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v2026.07.13-maven-1.0.16-pmo-cli-release",
+  "releaseUrl": "https://github.com/HardyDou/mango/releases/tag/v2026.07.13-maven-1.0.16-pmo-cli-release",
+  "pullRequest": "https://github.com/HardyDou/mango/pull/455",
+  "mergeCommit": "fb7473ea2b93d49073a9a43cf3118558d9ae358d",
+  "publishedAt": "2026-07-13T07:27:30Z",
+  "manifestCompletedAt": "2026-07-13T07:38:05.490Z",
+  "manifestCompleted": true,
+  "artifacts": [
+    {
+      "kind": "maven",
+      "coordinate": "io.mango:*:1.0.16",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/maven-public/",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/pmo@1.1.0",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/cli@1.0.68",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "v2026.07.13-maven-1.0.16-pmo-cli-release",
+      "consumeRepository": "https://hardydou.github.io/mango/versions/v2026.07.13-maven-1.0.16-pmo-cli-release/",
+      "status": "PUBLISHED_AND_VERIFIED"
+    }
+  ],
+  "stateSummary": {
+    "source": "passed",
+    "versions": "passed",
+    "changelog": "passed",
+    "readmes": "passed",
+    "tests": "passed",
+    "pr": "passed",
+    "tag": "passed",
+    "github-release": "passed",
+    "maven": "passed",
+    "npm": "passed",
+    "cli-lock": "passed",
+    "private-registry-publish": "passed",
+    "private-registry-consume-verify": "passed",
+    "docs-latest": "passed",
+    "docs-snapshot": "passed",
+    "post-verify": "passed",
+    "cleanup": "passed"
+  },
+  "recoveryEvidence": [
+    {
+      "stage": "versions",
+      "fact": "The initial runtime config used the follow-up PR base instead of the last published release base. No immutable state had been attempted. The failed manifest was retained and a new manifest used 675e30df9e81e2baa715b5a017f3d67931ef1030 as the release-impact base."
+    },
+    {
+      "stage": "maven",
+      "fact": "The normal non-app Reactor deployed every target before mango-architecture-verification, whose full-Reactor gate rejected the app-excluded release Reactor. The sole missing POM was deployed once with deploy-file, then the complete non-app coordinate set passed consume-repository verification."
+    },
+    {
+      "stage": "npm",
+      "fact": "Repair incorrectly selected verify-only for the never-attempted pending npm state. PMO and CLI were each published once through the reviewed package publish command, then both passed hosted and consume-registry tarball verification. The state-machine regression is covered by the 1.1.1/1.0.69 repair batch."
+    }
+  ],
+  "finalVerification": {
+    "requiredCheck": "PMO Documentation Checks / pmo-doc-check",
+    "requiredCheckResult": "PASS",
+    "requiredCheckDuration": "23m3s",
+    "generatedBackendVersion": "1.0.16",
+    "generatedBackendGate": "PASS",
+    "mavenConsumeVerification": "PASS",
+    "npmConsumeVerification": "PASS"
+  }
+}

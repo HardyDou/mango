@@ -1,5 +1,25 @@
 # @mango/cli Changelog
 
+## 1.0.69 - 2026-07-13
+
+### Fixed
+
+- Fixed `mango release repair` so a pending immutable state with `attempts=0` executes its first reviewed publish adapter instead of verify-only.
+- Kept immutable recovery fail-closed: after any publish attempt, repair still requires the exact `{ "kind": "verify-existing" }` strategy and never republishes a passed or attempted immutable artifact.
+- Updated the PMO lock to `@mango/pmo@1.1.1`, which carries the matching release rule, Release Skill, and boundary evaluation.
+
+### Upgrade Notes
+
+- Install `@mango/cli@1.0.69` and run `mango pmo upgrade --project-dir . --to 1.1.1` before using release repair automation.
+- Mango Maven remains `1.0.16`; no backend dependency change is required for this CLI/PMO patch.
+
+### Verification
+
+- `node --test mango-ui/packages/mango-cli/tests/release-command.test.mjs`
+- `node mango-pmo/tests/skills/check-skill-evals.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+
 ## 1.0.68 - 2026-07-12
 
 ### Added

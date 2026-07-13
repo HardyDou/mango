@@ -25,11 +25,16 @@ pnpm -F @mango/pmo check
 业务项目使用：
 
 ```bash
-mango pmo check --project-dir .
+npm view @mango/pmo@1.1.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.69 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.69 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+mango pmo status --project-dir .
+mango pmo upgrade --project-dir . --to 1.1.1 --dry-run
+mango pmo upgrade --project-dir . --to 1.1.1 --sync-shell
 mango pmo check --project-dir . --locked
-mango pmo upgrade --project-dir . --to <version>
-mango pmo rollback --project-dir .
 ```
+
+升级会原子同步 `business-pmo/mango-baseline`、`business-pmo/pmo-lock.json`、项目 Agent 入口和 `.agents/skills`。项目级 Skill 与 PMO bundle 使用同一 manifest/hash，不需要逐个安装；用户级 Codex plugin 是独立的可选安装面，不由业务项目升级命令修改。
 
 ## 4. 配置说明
 | 配置入口 | 字段 | 含义 |
@@ -42,6 +47,7 @@ mango pmo rollback --project-dir .
 | `dist/baseline.json` | `files[].kind`、`files[].mode` | 文件职责和发布权限 |
 | `dist/baseline.json` | `contracts[]` | 文档 contract ID 和 schema revision |
 | `business-pmo/pmo-lock.json` | `packageVersion`、`bundleSha256` | 业务项目精确锁定的 PMO bundle |
+| 消费仓库 `.github/branch-protection-policy.json` | `governanceMode` 与保护字段 | 仓库自行声明的远端分支保护期望状态；不由 npm 包覆盖 |
 
 ## 5. API 与扩展
 | API / 扩展点 | 输入 | 输出 |
@@ -91,6 +97,7 @@ mango pmo rollback --project-dir .
 | 项目 Skill changed / extra | `.agents/skills` 中 PMO 管理文件被修改或残留 | 执行 `mango pmo sync` 修复当前锁定版本 |
 | Codex 中未出现插件 | 项目 Skill 已同步不等于用户级 plugin 已安装 | 从 npm 包根插件投影执行独立 Codex plugin 安装流程并新开会话 |
 | npm tarball 缺 baseline | 发布前未 build 或 files 配置错误 | 执行 pack dry-run 并检查 `package.json` |
+| `npm view` 返回 404 | 目标版本尚未进入消费仓库 | 等待发布状态机和 npm-group 回查完成，不使用源码目录冒充已发布包 |
 
 ## 10. 相关文档
 - [Mango PMO Baseline](../../../mango-pmo/README.md)

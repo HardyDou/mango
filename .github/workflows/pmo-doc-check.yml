@@ -22,6 +22,7 @@ jobs:
         run: |
           node --test \
             mango-pmo/tests/architecture-debt-budget.test.mjs \
+            mango-pmo/tests/branch-protection-policy.test.mjs \
             mango-pmo/tests/document-contract/document-contract.test.mjs \
             mango-pmo/tests/pmo-preflight.test.mjs \
             mango-pmo/tests/test-quality-check.test.mjs \

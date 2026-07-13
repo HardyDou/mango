@@ -8,6 +8,23 @@ import { fileURLToPath } from 'node:url';
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const checker = path.resolve(testDir, '../tools/check-architecture-debt-budget.mjs');
+const modules = [
+  {
+    moduleKey: 'mango-platform/order/order-api',
+    groupId: 'io.mango.order',
+    artifactId: 'order-api'
+  },
+  {
+    moduleKey: 'mango-platform/order/order-core',
+    groupId: 'io.mango.order',
+    artifactId: 'order-core'
+  },
+  {
+    moduleKey: 'mango-platform/billing/billing-core',
+    groupId: 'io.mango.billing',
+    artifactId: 'billing-core'
+  }
+];
 
 function createFixture(ruleIds) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-architecture-debt-'));
@@ -19,14 +36,15 @@ function createFixture(ruleIds) {
 }
 
 function writeReport(file, ruleIds, overrides = {}) {
-  const issue = (value) => typeof value === 'string'
-    ? { ruleId: value, subject: value, message: value }
-    : value;
+  const issue = (value, moduleKey) => typeof value === 'string'
+    ? { ruleId: value, subject: value, message: value, moduleKey }
+    : { moduleKey, ...value };
   fs.writeFileSync(file, JSON.stringify({
-    schemaVersion: 1,
-    dependencyIssues: ruleIds.dependency.map(issue),
-    archUnitIssues: ruleIds.archunit.map(issue),
-    pmdIssues: ruleIds.pmd.map(issue),
+    schemaVersion: 2,
+    modules,
+    dependencyIssues: ruleIds.dependency.map(value => issue(value, modules[0].moduleKey)),
+    archUnitIssues: ruleIds.archunit.map(value => issue(value, modules[1].moduleKey)),
+    pmdIssues: ruleIds.pmd.map(value => issue(value, modules[2].moduleKey)),
     blockingIssues: [],
     mode: 'changed',
     inventoryScope: 'full-reactor',
@@ -257,6 +275,161 @@ test('rejects replacing one historical issue with a new identity under the same 
   }
 });
 
+test('selects a module by artifactId or a module directory prefix', () => {
+  const fixture = createFixture({
+    dependency: ['DEP-1'],
+    archunit: ['ARCH-1', 'ARCH-2'],
+    pmd: ['PMD-1']
+  });
+  try {
+    assert.equal(run(fixture, ['--write']).status, 0);
+
+    const leaf = run(fixture, ['--module', 'order-core']);
+    assert.equal(leaf.status, 0, leaf.stderr);
+    assert.deepEqual(leaf.report.selectedModules, ['mango-platform/order/order-core']);
+    assert.equal(leaf.report.current.totalIssueCount, 2);
+
+    const directory = run(fixture, ['--module', 'mango-platform/order']);
+    assert.equal(directory.status, 0, directory.stderr);
+    assert.deepEqual(directory.report.selectedModules, [
+      'mango-platform/order/order-api',
+      'mango-platform/order/order-core'
+    ]);
+    assert.equal(directory.report.current.totalIssueCount, 3);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('ratchets only the selected module and preserves every other module budget', () => {
+  const fixture = createFixture({
+    dependency: [],
+    archunit: ['ARCH-1', 'ARCH-2'],
+    pmd: ['PMD-1']
+  });
+  try {
+    assert.equal(run(fixture, ['--write']).status, 0);
+    const before = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    writeReport(fixture.report, {
+      dependency: [],
+      archunit: ['ARCH-1'],
+      pmd: ['PMD-1']
+    });
+
+    const reduced = run(fixture, ['--module', 'order-core']);
+    assert.equal(reduced.status, 1);
+    assert.equal(reduced.report.action, 'ratchet-required');
+
+    const written = run(fixture, ['--module', 'order-core', '--write']);
+    assert.equal(written.status, 0, written.stderr);
+    assert.equal(written.report.action, 'module-ratcheted');
+    const after = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    assert.equal(after.modules['mango-platform/order/order-core'].totalIssueCount, 1);
+    assert.deepEqual(
+      after.modules['mango-platform/billing/billing-core'],
+      before.modules['mango-platform/billing/billing-core']
+    );
+    assert.equal(run(fixture).status, 0);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('rejects moving an unchanged identity between modules', () => {
+  const issue = { ruleId: 'ARCH-1', subject: 'OrderService', message: 'same issue' };
+  const fixture = createFixture({ dependency: [], archunit: [issue], pmd: [] });
+  try {
+    assert.equal(run(fixture, ['--write']).status, 0);
+    writeReport(fixture.report, {
+      dependency: [],
+      archunit: [{ ...issue, moduleKey: 'mango-platform/billing/billing-core' }],
+      pmd: []
+    });
+    const moved = run(fixture);
+    assert.equal(moved.status, 1);
+    assert.equal(moved.report.action, 'check');
+    assert.equal(moved.report.comparison.totalDelta, 0);
+    assert.equal(
+      moved.report.comparison.moduleComparisons.some(item => item.moduleKey === 'mango-platform/billing/billing-core'
+        && item.identityIncreases.length === 1),
+      true
+    );
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('rejects unknown and overlapping module selectors', () => {
+  const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
+  try {
+    assert.equal(run(fixture, ['--write']).status, 0);
+    assert.equal(run(fixture, ['--module', 'unknown-module']).status, 2);
+    assert.equal(run(fixture, [
+      '--module', 'mango-platform/order',
+      '--module', 'order-core'
+    ]).status, 2);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('rejects missing issue ownership and tampered module aggregates', () => {
+  const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
+  try {
+    writeReport(fixture.report, {
+      dependency: [],
+      archunit: [{
+        ruleId: 'ARCH-1',
+        subject: 'OrderService',
+        message: 'missing owner',
+        moduleKey: 'unknown/module'
+      }],
+      pmd: []
+    });
+    assert.equal(run(fixture, ['--write']).status, 2);
+
+    writeReport(fixture.report, { dependency: [], archunit: ['ARCH-1'], pmd: [] });
+    assert.equal(run(fixture, ['--write']).status, 0);
+    const tampered = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    tampered.modules['mango-platform/order/order-core'].totalIssueCount = 0;
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(tampered, null, 2)}\n`);
+    assert.equal(run(fixture).status, 2);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('migrates a schemaVersion 3 current budget but only reads it as a Git base', () => {
+  const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
+  try {
+    assert.equal(run(fixture, ['--write']).status, 0);
+    const current = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    const legacy = {
+      ...current,
+      schemaVersion: 3
+    };
+    delete legacy.modules;
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(legacy, null, 2)}\n`);
+
+    const required = run(fixture);
+    assert.equal(required.status, 1);
+    assert.equal(required.report.action, 'migration-required');
+    assert.equal(run(fixture, ['--module', 'order-core']).status, 2);
+
+    const migrated = run(fixture, ['--write']);
+    assert.equal(migrated.status, 0, migrated.stderr);
+    assert.equal(migrated.report.action, 'migrated');
+    fs.writeFileSync(fixture.baseBudget, `${JSON.stringify(legacy, null, 2)}\n`);
+    assert.equal(run(fixture, ['--base-budget', fixture.baseBudget]).status, 0);
+    assert.equal(run(fixture, [
+      '--module', 'order-core',
+      '--base-budget', fixture.baseBudget
+    ]).status, 2);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
 test('source identities are stable when GitHub repeats the repository name in the checkout path', () => {
   const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-architecture-checkouts-'));
   const local = createSourceFixture(path.join(parent, 'local-checkout'));
@@ -275,7 +448,7 @@ test('source identities are stable when GitHub repeats the repository name in th
   }
 });
 
-test('CI base-ref reads the committed base budget from Git', () => {
+test('CI base-ref reads a large committed base budget from Git', () => {
   const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
   try {
     const nestedBaseline = path.join(
@@ -284,6 +457,9 @@ test('CI base-ref reads the committed base budget from Git', () => {
     );
     fixture.baseline = nestedBaseline;
     assert.equal(run(fixture, ['--write']).status, 0);
+    const largeBudget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    largeBudget.testPadding = 'x'.repeat(2 * 1024 * 1024);
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(largeBudget, null, 2)}\n`);
     const git = (...args) => spawnSync('git', ['-C', fixture.root, ...args], {
       encoding: 'utf8',
       env: {
@@ -303,9 +479,60 @@ test('CI base-ref reads the committed base budget from Git', () => {
       '--baseline', fixture.baseline,
       '--base-ref', 'HEAD',
       '--json'
-    ], { cwd: fixture.root, encoding: 'utf8' });
+    ], {
+      cwd: fixture.root,
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024
+    });
     assert.equal(checked.status, 0, checked.stderr);
     assert.equal(JSON.parse(checked.stdout).action, 'check');
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('CI base-ref reads a budget larger than the child-process default buffer', () => {
+  const issues = Array.from({ length: 14_000 }, (_, index) => ({
+    ruleId: 'ARCH-LARGE-BASE',
+    subject: `LargeBaseService${index}`,
+    message: 'Existing governed architecture debt'
+  }));
+  const fixture = createFixture({ dependency: [], archunit: issues, pmd: [] });
+  try {
+    fixture.baseline = path.join(
+      fixture.root,
+      'mango-pmo/baselines/architecture/debt-budget.json'
+    );
+    const written = spawnSync(process.execPath, [
+      checker,
+      '--report', fixture.report,
+      '--baseline', fixture.baseline,
+      '--write'
+    ], { cwd: fixture.root, encoding: 'utf8' });
+    assert.equal(written.status, 0, written.stderr);
+    assert.ok(fs.statSync(fixture.baseline).size > 1024 * 1024);
+
+    const git = (...args) => spawnSync('git', ['-C', fixture.root, ...args], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: 'Mango Test',
+        GIT_AUTHOR_EMAIL: 'mango-test@example.invalid',
+        GIT_COMMITTER_NAME: 'Mango Test',
+        GIT_COMMITTER_EMAIL: 'mango-test@example.invalid'
+      }
+    });
+    assert.equal(git('init', '-q').status, 0);
+    assert.equal(git('add', '.').status, 0);
+    assert.equal(git('commit', '-qm', 'large baseline').status, 0);
+
+    const checked = spawnSync(process.execPath, [
+      checker,
+      '--report', fixture.report,
+      '--baseline', fixture.baseline,
+      '--base-ref', 'HEAD'
+    ], { cwd: fixture.root, encoding: 'utf8' });
+    assert.equal(checked.status, 0, checked.stderr);
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }

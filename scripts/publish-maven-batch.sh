@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
 MAVEN_ROOT="${REPO_ROOT}/mango"
+ARCHITECTURE_VERIFICATION_MODULE="mango-tools/mango-architecture-verification"
+ARCHITECTURE_VERIFICATION_DIR="${MAVEN_ROOT}/${ARCHITECTURE_VERIFICATION_MODULE}"
 
 usage() {
   cat <<'EOF'
@@ -213,11 +215,66 @@ collect_target_coordinates() {
   local coordinates_file="$1"
   (
     cd "${MAVEN_ROOT}"
-    mvn -q -pl "${project_list}" "-Drevision=${revision}" \
+    mvn -q -pl "${selected_project_list}" "-Drevision=${revision}" \
       org.codehaus.mojo:exec-maven-plugin:3.5.0:exec \
       -Dexec.executable=echo \
       '-Dexec.args=${project.groupId}:${project.artifactId}:${project.version}:${project.packaging}'
   ) | grep -E "^[^:]+:[^:]+:${revision}:[^:]+$" > "${coordinates_file}"
+}
+
+deploy_architecture_verification_pom() {
+  local pom_file="${ARCHITECTURE_VERIFICATION_DIR}/pom.xml"
+  local flattened_pom="${ARCHITECTURE_VERIFICATION_DIR}/.flattened-pom.xml"
+  local group_id artifact_id packaging repository_id repository_url
+  local flatten_args deploy_args
+
+  group_id="$(mvn_eval "${pom_file}" project.groupId)"
+  artifact_id="$(mvn_eval "${pom_file}" project.artifactId)"
+  packaging="$(mvn_eval "${pom_file}" project.packaging)"
+  repository_id="$(mvn_eval "${pom_file}" project.distributionManagement.repository.id)"
+  repository_url="$(mvn_eval "${pom_file}" project.distributionManagement.repository.url)"
+  if [[ -z "${group_id}" || -z "${artifact_id}" || "${packaging}" != "pom" \
+    || -z "${repository_id}" || -z "${repository_url}" ]]; then
+    echo "Unable to resolve architecture verification POM publication coordinates." >&2
+    exit 1
+  fi
+
+  flatten_args=(
+    -f "${pom_file}"
+    "-Drevision=${revision}"
+    -DskipTests
+    process-resources
+  )
+  deploy_args=(
+    org.apache.maven.plugins:maven-deploy-plugin:3.1.4:deploy-file
+    "-Dfile=${flattened_pom}"
+    "-DpomFile=${flattened_pom}"
+    "-DgroupId=${group_id}"
+    "-DartifactId=${artifact_id}"
+    "-Dversion=${revision}"
+    "-Dpackaging=pom"
+    -DgeneratePom=false
+    "-DrepositoryId=${repository_id}"
+    "-Durl=${repository_url}"
+  )
+
+  echo "Publishing self-verification POM without executing its full-Reactor verify phase"
+  printf 'Command: mvn'
+  printf ' %q' "${flatten_args[@]}"
+  printf '\n'
+  printf 'Command: mvn'
+  printf ' %q' "${deploy_args[@]}"
+  printf '\n'
+  if [[ "${dry_run}" == "true" ]]; then
+    return 0
+  fi
+
+  mvn "${flatten_args[@]}"
+  if [[ ! -f "${flattened_pom}" ]]; then
+    echo "Flattened architecture verification POM was not generated: ${flattened_pom}" >&2
+    exit 1
+  fi
+  mvn "${deploy_args[@]}"
 }
 
 artifact_url_base() {
@@ -309,19 +366,35 @@ if [[ "${include_apps}" != "true" ]]; then
   done
 fi
 
-project_list=""
+selected_project_list=""
+deploy_project_list=""
+publish_architecture_verification=false
 for target in "${targets[@]}"; do
   project="$(normalize_project "${target}")"
-  if [[ -z "${project_list}" ]]; then
-    project_list="${project}"
+  if [[ -z "${selected_project_list}" ]]; then
+    selected_project_list="${project}"
   else
-    project_list="${project_list},${project}"
+    selected_project_list="${selected_project_list},${project}"
+  fi
+  module_dir="$(resolve_module_dir "${target}")" || {
+    echo "Unable to resolve module directory: ${target}" >&2
+    exit 1
+  }
+  if [[ "${module_dir}" == "${ARCHITECTURE_VERIFICATION_DIR}" ]]; then
+    publish_architecture_verification=true
+  elif [[ -z "${deploy_project_list}" ]]; then
+    deploy_project_list="${project}"
+  else
+    deploy_project_list="${deploy_project_list},${project}"
   fi
 done
 
-mvn_args=(-pl "${project_list}" -am deploy "-Drevision=${revision}")
-if [[ "${skip_tests}" == "true" ]]; then
-  mvn_args+=(-DskipTests)
+declare -a mvn_args=()
+if [[ -n "${deploy_project_list}" ]]; then
+  mvn_args=(-pl "${deploy_project_list}" -am deploy "-Drevision=${revision}")
+  if [[ "${skip_tests}" == "true" ]]; then
+    mvn_args+=(-DskipTests)
+  fi
 fi
 
 echo "Maven root: ${MAVEN_ROOT}"
@@ -330,7 +403,8 @@ if [[ "${all_non_app}" == "true" ]]; then
 else
   echo "Publish scope: explicit Maven modules"
 fi
-echo "Selected modules: ${project_list}"
+echo "Selected modules: ${selected_project_list}"
+echo "Reactor deploy modules: ${deploy_project_list:-none}"
 echo "Revision: ${revision}"
 echo "Allow SNAPSHOT: ${allow_snapshot}"
 echo "Include app artifacts: ${include_apps}"
@@ -342,15 +416,20 @@ fi
 if [[ "${verify_publish}" == "true" ]]; then
   echo "Verification mode: ${verify_mode}"
 fi
-if [[ "${verify_only}" == "false" ]]; then
+if [[ "${verify_only}" == "false" && -n "${deploy_project_list}" ]]; then
   printf 'Command: mvn'
   printf ' %q' "${mvn_args[@]}"
   printf '\n'
 fi
 
-if [[ "${dry_run}" == "false" && "${verify_only}" == "false" ]]; then
-  cd "${MAVEN_ROOT}"
-  mvn "${mvn_args[@]}"
+if [[ "${verify_only}" == "false" ]]; then
+  if [[ "${dry_run}" == "false" && -n "${deploy_project_list}" ]]; then
+    cd "${MAVEN_ROOT}"
+    mvn "${mvn_args[@]}"
+  fi
+  if [[ "${publish_architecture_verification}" == "true" ]]; then
+    deploy_architecture_verification_pom
+  fi
 fi
 
 if [[ "${verify_publish}" != "true" ]]; then
