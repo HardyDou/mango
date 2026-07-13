@@ -137,7 +137,6 @@ mango:
 |--------|--------|------|
 | `mango.numgen.enabled` | `true` | 是否启用本应用内的编号生成 starter。 |
 | `mango.numgen.kv.rule-cache-ttl-seconds` | `300` | 生效规则缓存秒数。规则发布后如果短时间内仍看到旧格式，先看这个 TTL。 |
-| `mango.numgen.kv.allocation-lock-ttl-seconds` | `10` | 已废弃并忽略，仅为旧配置兼容保留。 |
 
 ## 8. 资源注入
 
