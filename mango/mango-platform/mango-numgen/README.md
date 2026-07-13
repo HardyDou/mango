@@ -121,7 +121,7 @@ const orderNo = await numgenApi.nextValue({
 
 ## 6. 配置说明
 
-YAML 配置用于控制编号能力是否启用，以及规则缓存和序列分配锁的时间。
+YAML 配置用于控制编号能力是否启用以及规则缓存时间。序列分配由业务数据库原子更新保证，不依赖 KV 分配锁。
 
 ```yaml
 mango:
@@ -129,7 +129,6 @@ mango:
     enabled: true
     kv:
       rule-cache-ttl-seconds: 300
-      allocation-lock-ttl-seconds: 10
 ```
 
 ## 7. YAML 配置字段
@@ -138,7 +137,7 @@ mango:
 |--------|--------|------|
 | `mango.numgen.enabled` | `true` | 是否启用本应用内的编号生成 starter。 |
 | `mango.numgen.kv.rule-cache-ttl-seconds` | `300` | 生效规则缓存秒数。规则发布后如果短时间内仍看到旧格式，先看这个 TTL。 |
-| `mango.numgen.kv.allocation-lock-ttl-seconds` | `10` | 序列分配锁 TTL。高并发取号时需要确保 KV 后端可用。 |
+| `mango.numgen.kv.allocation-lock-ttl-seconds` | `10` | 已废弃并忽略，仅为旧配置兼容保留。 |
 
 ## 8. 资源注入
 
@@ -368,7 +367,9 @@ PAY_MANGO_SCENARIO_NO
 
 ## 14. 压力测试（并发分发）
 
-测试方法：
+序列分配通过 `numgen_sequence` 唯一键上的原子 upsert 完成；冷启动和已存在序列使用同一条分配路径，不依赖 KV store 类型。
+
+H2 MySQL 模式快速回归：
 
 ```bash
 mvn -pl mango-platform/mango-numgen/mango-numgen-core \
@@ -383,29 +384,7 @@ mvn -pl mango-platform/mango-numgen/mango-numgen-core \
 - 统计重复率、冲突率、QPS、p50/p95/p99 延迟；
 - 校验“无重复编码”。
 
-### 14.1 memory 模式（默认内存 KV）
-
-```bash
-mvn -pl mango-platform/mango-numgen/mango-numgen-core \
-  -Dtest=NumgenServiceIntegrationTest#nextValue_concurrency_pressure_max_throughput \
-  -Dnumgen.test.kv.store.type=memory \
-  test
-```
-
-结果（2026-07-11）：
-
-| 指标 | 数值 |
-|---|---:|
-| 发送量 | 24,000 |
-| 成功数（非冲突） | 1,442 |
-| 冲突数 | 22,558 |
-| 冲突率 | 93.99% |
-| 重复编码 | 0 |
-| QPS | 9,198.73 |
-| 平均延迟 (ms) | 4.901 |
-| p50/p95/p99 (ms) | 0.509 / 23.183 / 101.241 |
-
-### 14.2 db 模式（MySQL）
+### 14.1 MySQL 验证
 
 ```bash
 # 先准备数据库
@@ -413,7 +392,6 @@ mysql -u root -h 127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS mango_numgen_test;"
 
 mvn -pl mango-platform/mango-numgen/mango-numgen-core \
   -Dtest=NumgenServiceIntegrationTest#nextValue_concurrency_pressure_max_throughput \
-  -Dnumgen.test.kv.store.type=jdbc \
   -Dnumgen.test.datasource.url='jdbc:mysql://127.0.0.1:3306/mango_numgen_test?useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false' \
   -Dnumgen.test.datasource.username=root \
   -Dnumgen.test.datasource.password= \
@@ -421,48 +399,17 @@ mvn -pl mango-platform/mango-numgen/mango-numgen-core \
   test
 ```
 
-结果（2026-07-11）：
+结果（2026-07-13，MySQL 8.4.8）：
 
 | 指标 | 数值 |
 |---|---:|
 | 发送量 | 24,000 |
-| 成功数（非冲突） | 2,565 |
-| 冲突数 | 21,435 |
-| 冲突率 | 89.31% |
+| 成功数（非冲突） | 24,000 |
+| 冲突数 | 0 |
+| 冲突率 | 0.00% |
 | 重复编码 | 0 |
-| QPS | 345.10 |
-| 平均延迟 (ms) | 137.756 |
-| p50/p95/p99 (ms) | 133.830 / 257.515 / 372.226 |
+| QPS | 1,101.58 |
+| 平均延迟 (ms) | 42.448 |
+| p50/p95/p99 (ms) | 40.323 / 115.753 / 198.384 |
 
-### 14.3 redis 模式
-
-```bash
-mvn -pl mango-platform/mango-numgen/mango-numgen-core \
-  -Dtest=NumgenServiceIntegrationTest#nextValue_concurrency_pressure_max_throughput \
-  -Dnumgen.test.kv.store.type=redis \
-  -Dmango.redis.host=127.0.0.1 \
-  -Dmango.redis.port=6379 \
-  -Dmango.redis.timeout=10000 \
-  -Dmango.redis.pool.maxActive=64 \
-  -Dmango.redis.pool.maxIdle=64 \
-  -Dmango.redis.pool.minIdle=8 \
-  -Dmango.redis.pool.maxWait=30000 \
-  -Dmango.redis.database=0 \
-  test
-```
-
-结果（2026-07-11）：
-
-| 指标 | 数值 |
-|---|---:|
-| 发送量 | 24,000 |
-| 成功数（非冲突） | 2,093 |
-| 冲突数 | 21,907 |
-| 冲突率 | 91.28% |
-| 重复编码 | 0 |
-| QPS | 9,302.28 |
-| 平均延迟 (ms) | 4.926 |
-| p50/p95/p99 (ms) | 0.972 / 24.498 / 69.087 |
-
-> 注：以上“冲突”是业务可重试/重排队的分发竞争结果，不代表重复编码；  
-> 三种模式均校验通过重复编码为 `0`。
+同一测试类还覆盖 5 线程并发创建冷序列，预期连续生成 `SO0001` 到 `SO0005`，且不出现 409、空指针或重复编号。

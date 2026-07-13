@@ -5,9 +5,6 @@ import cn.hutool.core.util.IdUtil;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +15,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * JdbcKvStore implementation using try-UPDATE-then-INSERT pattern.
- * Avoids ON DUPLICATE KEY UPDATE for better cross-database compatibility.
+ * JDBC KV store backed by atomic upsert statements supported by MySQL and H2 MySQL mode.
  */
-@Slf4j
 public class JdbcKvStore implements IKvStore, IKvSortedSet {
 
     public static final String DEFAULT_TABLE_NAME = "infra_kv_entry";
@@ -34,10 +29,6 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
 
     private static final Pattern TABLE_NAME_PATTERN = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final Snowflake ID_GENERATOR = IdUtil.getSnowflake();
-    private static final int MAX_LOCK_RETRY = 6;
-    private static final long LOCK_RETRY_BASE_MILLIS = 20L;
-    private static final long LOCK_RETRY_MAX_MILLIS = 120L;
-
     private final JdbcTemplate jdbcTemplate;
     private final String tableName;
 
@@ -58,33 +49,11 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
             return putNonPositiveTtl(key);
         }
         LocalDateTime currentTime = now();
-        for (int attempt = 0; ; attempt++) {
-            if (findActiveValue(key, currentTime).isPresent()) {
-                return false;
-            }
-            try {
-                replaceValue(key, value, currentTime.plusSeconds(expireSeconds));
-                return true;
-            } catch (PessimisticLockingFailureException e) {
-                if (attempt >= MAX_LOCK_RETRY) {
-                    log.debug("JdbcKvStore setIfAbsent lock contention exhausted, key={}", key, e);
-                    return false;
-                }
-                sleepForRetry(attempt);
-                continue;
-            } catch (DuplicateKeyException e) {
-                log.debug("JdbcKvStore setIfAbsent conflict, key={}", key, e);
-                return false;
-            }
-        }
-    }
-
-    private void sleepForRetry(int attempt) {
-        try {
-            Thread.sleep(Math.min(LOCK_RETRY_BASE_MILLIS * (1L << attempt), LOCK_RETRY_MAX_MILLIS));
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-        }
+        LocalDateTime expireTime = currentTime.plusSeconds(expireSeconds);
+        long candidateId = nextId();
+        jdbcTemplate.update(sqlUpsertIfExpired(), candidateId, key, value, expireTime,
+                currentTime, currentTime, currentTime);
+        return findIdByKey(key) == candidateId;
     }
 
     @Override
@@ -96,7 +65,7 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
             return;
         }
         LocalDateTime currentTime = now();
-        replaceValue(key, value, currentTime.plusSeconds(expireSeconds));
+        upsertValue(key, value, currentTime.plusSeconds(expireSeconds));
     }
 
     @Override
@@ -118,10 +87,7 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         Require.positive(windowSeconds, "windowSeconds must be positive, was: " + windowSeconds);
         LocalDateTime currentTime = now();
         LocalDateTime expireTime = currentTime.plusSeconds(windowSeconds);
-        int updated = incrementExistingValue(key, delta, expireTime, currentTime);
-        if (updated == 0) {
-            replaceValue(key, String.valueOf(delta), expireTime);
-        }
+        upsertIncrement(key, delta, expireTime, currentTime);
         return findLatestActiveValue(key, currentTime).map(Long::parseLong).orElse(0L);
     }
 
@@ -215,17 +181,21 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
             .findFirst();
     }
 
-    private void replaceValue(String key, String value, LocalDateTime expireTime) {
-        deleteByKey(key);
-        insertValue(key, value, expireTime);
+    private long findIdByKey(String key) {
+        return jdbcTemplate.queryForObject(sqlSelectIdByKey(), Long.class, key);
+    }
+
+    private void upsertValue(String key, String value, LocalDateTime expireTime) {
+        jdbcTemplate.update(sqlUpsertValue(), nextId(), key, value, expireTime);
     }
 
     private void insertValue(String key, String value, LocalDateTime expireTime) {
         jdbcTemplate.update(sqlInsertValue(), nextId(), key, value, expireTime);
     }
 
-    private int incrementExistingValue(String key, long delta, LocalDateTime expireTime, LocalDateTime currentTime) {
-        return jdbcTemplate.update(sqlIncrementActiveValue(), delta, expireTime, key, currentTime);
+    private void upsertIncrement(String key, long delta, LocalDateTime expireTime, LocalDateTime currentTime) {
+        jdbcTemplate.update(sqlUpsertIncrement(), nextId(), key, delta, expireTime,
+                currentTime, delta, delta, expireTime);
     }
 
     private void deleteByKey(String key) {
@@ -286,6 +256,10 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         return sqlSelectActiveValue() + " ORDER BY create_time DESC LIMIT 1";
     }
 
+    private String sqlSelectIdByKey() {
+        return "SELECT id FROM " + tableName + " WHERE kv_key = ? FOR UPDATE";
+    }
+
     private String sqlInsertValue() {
         return "INSERT INTO " + tableName + " (id, kv_key, kv_value, expire_time) VALUES (?, ?, ?, ?)";
     }
@@ -294,9 +268,23 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         return "DELETE FROM " + tableName + " WHERE kv_key = ?";
     }
 
-    private String sqlIncrementActiveValue() {
-        return "UPDATE " + tableName + " SET kv_value = " + SQL_SIGNED_VALUE + " + ?, expire_time = ?"
-            + SQL_ACTIVE_WHERE;
+    private String sqlUpsertValue() {
+        return sqlInsertValue()
+            + " ON DUPLICATE KEY UPDATE kv_value = VALUES(kv_value), expire_time = VALUES(expire_time)";
+    }
+
+    private String sqlUpsertIfExpired() {
+        return sqlInsertValue()
+            + " ON DUPLICATE KEY UPDATE"
+            + " id = CASE WHEN expire_time <= ? THEN VALUES(id) ELSE id END,"
+            + " kv_value = CASE WHEN expire_time <= ? THEN VALUES(kv_value) ELSE kv_value END,"
+            + " expire_time = CASE WHEN expire_time <= ? THEN VALUES(expire_time) ELSE expire_time END";
+    }
+
+    private String sqlUpsertIncrement() {
+        return sqlInsertValue()
+            + " ON DUPLICATE KEY UPDATE kv_value = CASE WHEN expire_time > ? THEN "
+            + SQL_SIGNED_VALUE + " + ? ELSE ? END, expire_time = ?";
     }
 
     private String sqlCountActiveByKey() {

@@ -11,8 +11,9 @@ public class NumgenKvProperties {
     private long ruleCacheTtlSeconds = 300L;
 
     /**
-     * Sequence allocation lock TTL.
+     * Retained for configuration compatibility. Sequence allocation now uses a database atomic upsert.
      */
+    @Deprecated(forRemoval = true)
     private long allocationLockTtlSeconds = 10L;
 
     public long getRuleCacheTtlSeconds() {
@@ -23,10 +24,12 @@ public class NumgenKvProperties {
         this.ruleCacheTtlSeconds = ruleCacheTtlSeconds;
     }
 
+    @Deprecated(forRemoval = true)
     public long getAllocationLockTtlSeconds() {
         return allocationLockTtlSeconds;
     }
 
+    @Deprecated(forRemoval = true)
     public void setAllocationLockTtlSeconds(long allocationLockTtlSeconds) {
         this.allocationLockTtlSeconds = allocationLockTtlSeconds;
     }
