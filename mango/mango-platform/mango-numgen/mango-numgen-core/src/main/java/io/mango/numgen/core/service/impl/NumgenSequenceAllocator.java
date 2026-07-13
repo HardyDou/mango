@@ -14,7 +14,7 @@ public class NumgenSequenceAllocator {
 
     private final NumgenSequenceMapper sequenceMapper;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Segment allocate(String genKey, Integer ruleVersion, String scopeKey, Long tenantId, int count) {
         Require.isTrue(count > 0, "编号序列分配数量必须大于0");
         String resolvedScopeKey = scopeKey == null || scopeKey.isBlank() ? "GLOBAL" : scopeKey;

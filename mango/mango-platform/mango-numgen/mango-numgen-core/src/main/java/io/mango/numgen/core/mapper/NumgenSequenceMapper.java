@@ -12,6 +12,13 @@ public interface NumgenSequenceMapper extends BaseMapper<NumgenSequence> {
                                  @Param("scopeKey") String scopeKey,
                                  @Param("tenantId") Long tenantId);
 
+    /**
+     * Atomically creates the scoped sequence or advances its current value.
+     *
+     * @param sequence initial sequence metadata
+     * @param step allocation size
+     * @return affected row count
+     */
     int upsertAndAllocate(@Param("sequence") NumgenSequence sequence,
                           @Param("step") int step);
 }

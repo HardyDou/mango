@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -182,7 +183,9 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     }
 
     private long findIdByKey(String key) {
-        return jdbcTemplate.queryForObject(sqlSelectIdByKey(), Long.class, key);
+        return Objects.requireNonNull(
+                jdbcTemplate.queryForObject(sqlSelectIdByKey(), Long.class, key),
+                "JDBC KV entry id must not be null: " + key);
     }
 
     private void upsertValue(String key, String value, LocalDateTime expireTime) {
