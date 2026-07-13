@@ -25,8 +25,9 @@ upstreamDocumentHash: 73388ce748045ef01184fb6596a3b58892a3a6fd5920c728c4709a71e3
 | DEC-003 | API、Controller、Service、Mapper、Entity 和 Feign 职责混合产生大部分级联问题 | 调低规则；保留旧类并新增规范类；直接迁移 canonical 结构 | API 只保留传输无关契约和协议模型；Controller 与 Feign 分别适配 HTTP；core 使用 `I*Service` 与 `*Service`；Mapper 只接收持久化类型；Entity 统一命名和基类 | 与 `rules/backend/03-api.md` 的机器门禁一一对应，删除根因可同时消除级联问题 | FR-002, FR-003, FR-005；MANGO-ARCH-TYPE/CTRL/SVC/MAPPER/ENTITY/FEIGN/ADAPTER | 否 | 353 个支付生产 Java 文件中的受影响边界 | 方法签名和转换遗漏会引起行为差异 | 契约目录测试、编译、业务特征测试和完整架构扫描任一失败即停止 |
 | DEC-004 | `PaymentCode` 位置与 Service 错误契约不一致，且大量 `Require` 使用裸码/消息 | 放宽规则；增加桥接枚举；直接迁移业务码 | 将 `PaymentCode` 移到 `io.mango.payment.api.enums`，保持现有数值和消息；所有业务前置条件统一使用 `Require + PaymentCode`，Controller 只返回成功结果 | 不改变业务错误语义，避免重复错误契约 | FR-002, FR-003；MANGO-ARCH-SVC-003/004/006、CTRL-004/013 | 否 | core、starter、remote、测试和 README 引用 | 错误码映射遗漏 | 用错误码快照与异常转换测试比对 code/message，禁止保留旧包入口 |
 | DEC-005 | 历史 HTTP 使用路径变量，API/Controller/Feign 绑定不一致 | 保留旧路径；同时暴露新旧路径；直接切换查询参数 | 所有简单标识改为显式命名的查询参数；复杂输入收敛为 Command/Query；Controller 和 Feign verb、完整 path、binding 精确一致；支付前端同步唯一新路径 | 用户已批准无兼容负担；单一契约可消除 PATH、CTRL、ADAPTER 和 FEIGN 级联问题 | FR-003, FR-006, SAC-004；MANGO-ARCH-PATH/CTRL/ADAPTER/FEIGN | 否 | 支付 HTTP 路径、签名 canonical request 和前端调用 | OpenAPI HMAC 使用 request URI，路径变化必须按新版契约验签 | 接口目录与 HMAC 固定向量测试必须同时通过；不保留双路由 |
-| DEC-006 | 支付实体自定义 `Long tenantId`，不符合平台 String 租户模型 | 规则豁免；继续数值租户；正式值保持迁移 | 所有租户业务实体继承 canonical `TenantEntity`，移除重复租户字段；新增 Flyway migration 将支付表 `tenant_id` 从数值列改为 `VARCHAR(64)`，原非空数值转为相同十进制字符串 | 平台上下文与其它模块已统一 String；值保持转换允许未来非数值租户且避免类型分叉 | FR-004, DR-002, NFR-003；MANGO-ARCH-ENTITY-003 | 否 | 支付实体、Mapper 条件、索引/唯一约束、migration 和测试数据 | 大量表和索引可能遗漏；字符排序与列宽可能影响查询 | 在隔离 MySQL 上执行历史 schema→新 migration，逐表核对值、索引、唯一约束与双租户查询；失败停止 |
+| DEC-006 | 支付实体自定义 `Long tenantId`，不符合平台 String 租户模型 | 规则豁免；继续数值租户；最终态初始化 | 所有租户业务实体继承 canonical `TenantEntity`，移除重复租户字段；支付 V1 直接创建 `VARCHAR(64)` tenant_id 与可空 `BIGINT` org_id | 平台上下文与其它模块已统一 String；项目尚未发布且只面向全新数据库，不需要先建数值列再转换 | FR-004, DR-002, NFR-003；MANGO-ARCH-ENTITY-003 | 否 | 支付实体、Mapper 条件、索引/唯一约束、V1 和测试数据 | 大量表和索引可能遗漏；最终结构可能偏离旧链结果 | 在隔离 MySQL 分别执行旧 V3-V102 链与新 V1，逐表核对列、索引和唯一约束，再执行双租户读写；失败停止 |
 | DEC-007 | BEAN-004 等检查可能把纯集合或异常对象误判为托管 Service | 为支付代码绕过；增加名单豁免；修正可证明误判的类型识别 | 先为检查器增加反例/正例回归；只排除明确非 Service 的 JDK/纯 Java 对象，仍阻断业务 Service 手工构造 | 不把检查器误报转嫁为无意义代码，同时不降低容器边界；仅在支付扫描仍命中已证明误判时实施 | FR-005, SAC-003；`mango-tools/mango-architecture-rules` | 是 | 架构规则测试与完整 Reactor 报告 | 过宽判断会放过真实违规 | 正例必须继续失败，反例必须通过；否则不修改检查器 |
+| DEC-008 | 未发布支付模块累积 V3-V102，且团队每次使用全新数据库 | 保留历史链；Flyway baseline 到 102；把历史文件机械合并；生成一个最终态 V1 | 以旧链在干净 MySQL 的最终 schema 为参照，生成一个可读、可重复执行于空库的 canonical V1，删除 V3-V102；只保留正式初始化配置，不携带运行态模拟记录或演示私钥 | `rules/backend/04-db.md` 明确允许未发布前重整初始化 SQL；用户确认只使用新数据库并批准调整。单一最终态 V1 消除百次无效中间变换、修补和敏感演示种子 | 用户 2026-07-13 批准；DB-002；PMO 数据库规则 | 否 | payment Flyway history、初始化数据、迁移测试、README、最终服务验证 | 已存在旧 payment Flyway history 的库不能原地升级；错误裁剪配置可能影响本地可用性 | 仅支持全新数据库；新旧 schema 指纹不一致、Flyway 启动失败或支付接口/页面回归失败即停止并恢复 V3-V102 |
 
 ## 2. 模块与依赖边界
 
@@ -50,7 +51,7 @@ upstreamDocumentHash: 73388ce748045ef01184fb6596a3b58892a3a6fd5920c728c4709a71e3
 | 模型ID | 当前状态 | 触发 | 目标状态 | 前置条件 | 副作用 | 失败处理 | 上游ID |
 |---|---|---|---|---|---|---|---|
 | DM-001 | before 基线状态 | 内部职责迁移 | after 已验证状态 | TC-001 至 TC-006 已建立并记录 before | 类名、包、签名和转换路径变化，业务值不变 | 任一不变量断言失败，定位为实现差异并在当前检查点修复 | SAC-001, SAC-002 |
-| DM-002 | 数值租户列 | V102 payment tenant string migration | 字符串租户列 | 历史 schema 可在隔离 MySQL 重放 | 列类型与相关索引元数据变化 | migration 失败回滚 schema；任务不交付，不修改历史 migration | SAC-005 |
+| DM-002 | 空数据库 | payment V1 初始化 | 字符串租户列 | 旧 V3-V102 最终 schema 已在隔离 MySQL 固化为参照 | 直接创建最终列与索引 | Flyway 失败即丢弃测试库并修正 V1；不支持旧 payment history 原地升级 | SAC-005 |
 | DM-003 | 历史混合契约 | 唯一映射迁移 | canonical 单一契约 | 用户批准无其它模块兼容要求 | 支付前端与 remote starter 调用同步 | 目录 parity 或接口测试失败即修正，不保留历史路由 | SAC-004 |
 
 ## 4. 系统流程、事务与一致性
@@ -62,7 +63,7 @@ upstreamDocumentHash: 73388ce748045ef01184fb6596a3b58892a3a6fd5920c728c4709a71e3
 | FLOW-003 | FR-002 | 退款申请、审批、执行与查询 | MOD-001, MOD-002, MOD-003 | 校验可退金额/状态→审批→渠道退款→状态/流水/通知 | 沿用退款与审批事务 | 沿用退款订单和审批状态 | 退款业务号与渠道退款号 | 防重复退款与重复完成保持 | 渠道失败、重复回调和查询恢复保持 | 可退金额、状态、错误和通知结果不变 |
 | FLOW-004 | FR-002 | 对账、差错、结算与离线收付 | MOD-001, MOD-002, MOD-003 | 账单获取/导入→匹配→差错处理→结算确认/作废；离线凭证/流水匹配 | 沿用各聚合事务 | 沿用对账、差错、结算、离线收退款状态 | 批次号、账单明细键和业务单号 | 批次/明细唯一性与状态条件保持 | 文件/渠道失败与人工处理边界保持 | 汇总金额、差异、状态和审计结果不变 |
 | FLOW-005 | FR-003, FR-006 | Java/HTTP/Feign/前端 | MOD-001, MOD-003, MOD-004, MOD-005 | Api 定义→Controller/Feign 重声明绑定→Service 调用→统一异常转换→前端调用 | Controller 无事务，事务留在 Service | 只由 Service 改业务状态 | 写动作沿用业务幂等键 | 适配器无额外并发状态 | 统一异常处理输出失败 `R` | 新版接口绑定正确、成功与失败契约一致 |
-| FLOW-006 | FR-004 | Flyway 与支付数据读写 | MOD-002 | 重放历史 migration→V102 改列类型→启动校验→双租户读写 | migration 原子 DDL 按 MySQL 能力执行；测试数据独立清理 | 业务状态不变 | 历史唯一键保持 | 索引和唯一约束重建后语义保持 | 失败停止 migration 和应用启动 | 历史数据与租户可见性保持 |
+| FLOW-006 | FR-004 | Flyway 与支付数据读写 | MOD-002 | 旧链生成结构参照→新空库执行 V1→结构指纹对比→启动服务→双租户读写 | V1 只初始化 schema 与正式配置；测试数据由用例创建并清理 | 空库无业务状态；业务状态机定义不变 | 唯一键与旧链最终态保持 | 索引和唯一约束语义保持 | 失败停止应用启动并丢弃测试库 | 新库结构、租户可见性和业务接口正确；不提供旧库升级路径 |
 
 ## 5. API 与远程契约设计
 
@@ -79,7 +80,7 @@ upstreamDocumentHash: 73388ce748045ef01184fb6596a3b58892a3a6fd5920c728c4709a71e3
 | 数据设计ID | 上游或模型ID | 表或实体 | 字段变化 | 约束 | 索引 | 租户审计 | Mapper边界 | 数据来源 | migration或回填 | 回滚或补偿 | 适用规范ruleId | 验证方式 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | DB-001 | DM-001, DR-001, FR-002 | 全部 payment 实体与 Mapper | 非 `*Entity` 类按聚合重命名；重复审计/租户字段移除并继承 canonical 基类；业务列和值不变 | 保留表名、主键、业务唯一约束、金额精度和状态列 | 保留现有索引语义 | 审计字段继承 canonical 基类；租户见 DB-002 | Mapper 直接继承 `BaseMapper<XxxEntity>`，参数/返回仅 Entity、id、Wrapper、Page 或 core Row/Criteria | 现有 payment migration 与业务写入 | 不为类重命名改表；XML namespace/result type 同步 | 代码回滚不改变数据；任何表/列不匹配由 schema checker 阻断 | MANGO-ARCH-MAPPER/ENTITY 与 persistence schema | H2 基础映射、MySQL migration/复杂 SQL、Mapper XML 与 manifest 检查 |
-| DB-002 | DM-002, DR-002, FR-004 | 所有含 `tenant_id` 的 payment 表 | `BIGINT`/数值 tenant_id → `VARCHAR(64)`；值保持为十进制字符串；允许空性保持 | 主键、外键、业务唯一约束和空性保持 | 重建受影响复合索引，列顺序与唯一性保持 | Entity 统一继承 `TenantEntity`，查询从 `MangoContextHolder.tenantId()` 取得 String | Wrapper、XML 与 core Criteria 使用 String tenantId | V3-V101 历史 payment schema | 新增 V102，只新增不修改历史 migration；无需业务回填脚本 | 在备份/隔离库验证后升级；失败停止；生产回退需恢复 schema 备份与上一版本 | MANGO-ARCH-ENTITY-003, rules/backend/07-persistence.md | 历史 migration 全量重放、information_schema 对比、双租户真实读写和唯一约束测试 |
+| DB-002 | DM-002, DR-002, FR-004 | 所有 payment 表与初始化配置 | V1 直接声明最终列；tenant_id 为 `VARCHAR(64)`，org_id 为可空 `BIGINT` | 主键、业务唯一约束、金额精度、空性和默认值与旧链最终态保持 | 索引名、列顺序与唯一性保持 | Entity 统一继承 `TenantEntity`，查询从 `MangoContextHolder.tenantId()` 取得 String | Wrapper、XML 与 core Criteria 使用 String tenantId | 旧 V3-V102 在一次性临时库的最终 schema；正式内建通道配置 | 删除 V3-V102，以 `V1__payment_platform.sql` 直接创建最终态；不初始化订单、退款、流水、异常、通知、对账等运行数据，不写演示私钥 | 仅支持丢弃未发布的新库重建；旧库如需保留必须继续使用重整前版本，本任务不提供升级兼容 | MANGO-ARCH-ENTITY-003, rules/backend/04-db.md, rules/backend/07-persistence.md | 新旧 information_schema 指纹对比、敏感/运行态种子扫描、Flyway 新库启动、双租户真实读写和唯一约束测试 |
 
 ## 7. 安全、权限、租户与数据边界
 
@@ -112,7 +113,7 @@ upstreamDocumentHash: 73388ce748045ef01184fb6596a3b58892a3a6fd5920c728c4709a71e3
 | TC-003 | SAC-002 | FLOW-004, ERR-002 | 通知、对账、差错、结算、离线收款/退款正常与失败 | P1 | 组件/集成 | AUTO | 唯一批次、账单、凭证和通知记录 | 同租户与异租户样本 | 状态、金额汇总、差异、重试次数和审计结果 | 定向 JUnit 与 TC-001 | 同上 | 外部系统仅替换边界；内部 Service/Mapper 主链路真实执行 | backend test rules |
 | TC-004 | SAC-004 | DM-003, API-001, API-003, API-004, SEC-001, ERR-001 | 全部 Api/Controller/Feign 方法目录与关键 MVC 成功、校验、权限、失败转换 | P0 | API/集成 | AUTO | 代表性合法/非法 Command/Query 和用户权限 | 有权/无权、同租户/异租户 | verb、path、binding、泛型、validation、permission、R/error body | starter/remote tests 与 TC-001 | 同上 | 任何未映射或三方不一致阻断 | API/architecture/backend test rules |
 | TC-005 | SAC-004 | API-002, SEC-002 | OpenAPI HMAC、timestamp、nonce、IP、URI、body 篡改与防重放 | P0 | 单元/API | AUTO | 固定 app secret/请求向量，仅测试资源 | 应用绑定租户与跨租户订单 | canonical request 与 signature 固定向量 | OpenAPI tests 与 TC-001 | 同上 | 不把密钥写入日志或证据；任一安全边界失败阻断 | security/backend test rules |
-| TC-006 | SAC-005 | DM-002, DB-001, DB-002, SEC-003, FLOW-006 | V3-V102 全量升级、值保持、索引/约束、Mapper 与双租户读写 | P0 | 数据库集成 | AUTO | 隔离 `mango_dev_*` MySQL，两个 `IT_PAY_` 租户和相同业务键 | 两租户完全隔离 | information_schema、逐行 tenant 值、记录数、唯一约束与查询结果 | migration/Mapper integration tests | 同上 | 数据库名不匹配安全前缀或任一值差异即停止 | persistence/backend test rules |
+| TC-006 | SAC-005 | DM-002, DB-001, DB-002, SEC-003, FLOW-006 | 空库 V1、旧链最终 schema 等价、无运行态/敏感种子、Mapper 与双租户读写 | P0 | 数据库集成 | AUTO | 两个隔离 `mango_dev_*` MySQL；两个 `IT_PAY_` 租户和相同业务键 | 两租户完全隔离 | information_schema 列/索引/约束指纹一致；V1 仅一条 Flyway history；运行态表为空；无演示私钥；唯一约束与查询结果正确 | migration/Mapper integration tests + 完整服务启动 | 同上 | 数据库名不匹配安全前缀、结构差异、敏感种子或任一读写差异即停止 | persistence/backend test rules |
 | TC-007 | SAC-003 | DEC-003, DEC-007, MOD-006, ERR-003 | 检查器正反例与完整架构扫描/预算比较 | P0 | 规则单元/架构门禁 | AUTO | Java fixture 与完整 Reactor | 不涉及业务账号 | 正例继续阻断、反例通过、payment 1,869→0、其它新增 0 | architecture rule tests + full verify/report/budget | 同上 | 不允许排除、降级或接受预算增加 | architecture budget rules |
 | TC-008 | SAC-004 | MOD-005, API-005, UI-001 | 支付前端类型、构建、API 请求和受影响页面入口 | P1 | 单元/组件/UI入口 | AUTO | 测试账号/租户与可清理支付数据或只读现有数据集 | 按页面权限和租户 | URL/query/body、页面正常/空/失败/无权限状态 | payment package tests/build + payment UI/E2E tag | 同上 | 真实入口环境不可用则记录 BLOCKED，不能用接口 200 代替页面结果 | frontend test rules |
 
@@ -121,14 +122,14 @@ upstreamDocumentHash: 73388ce748045ef01184fb6596a3b58892a3a6fd5920c728c4709a71e3
 | 影响ID | 设计项ID | 影响对象 | 当前行为 | 目标行为 | 兼容策略 | 升级或回滚 | README或能力地图 | 发布批次 | 验证 | 责任人 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | IMP-001 | DEC-003, DEC-004, DEC-005, API-001, API-002, API-003, API-004 | Java/HTTP/Feign 消费者 | 历史混合契约、路径变量和错误码旧包 | canonical 单一契约、固定路径/query/body、PaymentCode 在 api.enums | 用户批准直接切换；无其它模块消费者；支付前端和 remote 同步 | 新版本整体升级；回滚代码与调用方必须同批，禁止协议混用 | 更新 payment 后端 README 与统一支付设计说明的接入/迁移章节 | 后续 Maven/npm 平台发布批次，本任务不发布 | TC-004, TC-005, TC-008 | 支付负责人 |
-| IMP-002 | DEC-006, DB-002 | payment 数据库消费者 | 数值 tenant_id | `VARCHAR(64)` String tenantId | migration 值保持，无双写兼容窗口 | 升级前备份；应用与 migration 同批；失败恢复备份和上一版本 | README 说明最低 schema 与租户类型 | 后续后端发布批次 | TC-006 | 支付负责人 |
+| IMP-002 | DEC-006, DEC-008, DB-002 | payment 数据库消费者 | V3-V102 历史初始化链 | 单一 `V1__payment_platform.sql`，直接创建 `VARCHAR(64)` String tenantId 最终态 | 仅支持全新数据库，不提供旧 Flyway history 兼容 | 未发布环境丢弃数据库后重建；若必须保留旧库则继续使用重整前版本 | README 明确新库前提、V1 和禁止旧库原地升级 | 后续后端发布批次 | TC-006 | 支付负责人 |
 | IMP-003 | DEC-001, DEC-002, DEC-007, MOD-006, ERR-003 | 维护与测试资产 | 支付债务预算 1,869、无统一 before/after 基线 | 支付预算 0、长期 suite 与 latest 结果基线 | 不接受历史预算回升 | Git 回滚仅用于任务未交付；债务下降不得在后续回升 | 更新设计、计划、交付台账、测试交接与架构基线 | 当前 PR | TC-001 至 TC-008 | 支付负责人 |
 
 ## 12. 技术追踪矩阵
 
 | 上游ID | 设计项ID | 测试用例ID | 覆盖说明 |
 |---|---|---|---|
-| SC-001, SA-001, SA-002, FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, UC-001, UC-002, PG-001, BT-001, DR-001, DR-002, IR-001, NFR-001, NFR-002, NFR-003, SAC-001, SAC-002, SAC-003, SAC-004, SAC-005 | DEC-001, DEC-002, DEC-003, DEC-004, DEC-005, DEC-006, DEC-007, MOD-001, MOD-002, MOD-003, MOD-004, MOD-005, MOD-006, DM-001, DM-002, DM-003, FLOW-001, FLOW-002, FLOW-003, FLOW-004, FLOW-005, FLOW-006, API-001, API-002, API-003, API-004, API-005, DB-001, DB-002, SEC-001, SEC-002, SEC-003, ERR-001, ERR-002, ERR-003, UI-001, IMP-001, IMP-002, IMP-003 | TC-001, TC-002, TC-003, TC-004, TC-005, TC-006, TC-007, TC-008 | 全部系统需求映射到根因迁移、支付业务不变量、接口与安全、租户数据、前端入口和完整架构预算验证 |
+| SC-001, SA-001, SA-002, FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, UC-001, UC-002, PG-001, BT-001, DR-001, DR-002, IR-001, NFR-001, NFR-002, NFR-003, SAC-001, SAC-002, SAC-003, SAC-004, SAC-005 | DEC-001, DEC-002, DEC-003, DEC-004, DEC-005, DEC-006, DEC-007, DEC-008, MOD-001, MOD-002, MOD-003, MOD-004, MOD-005, MOD-006, DM-001, DM-002, DM-003, FLOW-001, FLOW-002, FLOW-003, FLOW-004, FLOW-005, FLOW-006, API-001, API-002, API-003, API-004, API-005, DB-001, DB-002, SEC-001, SEC-002, SEC-003, ERR-001, ERR-002, ERR-003, UI-001, IMP-001, IMP-002, IMP-003 | TC-001, TC-002, TC-003, TC-004, TC-005, TC-006, TC-007, TC-008 | 全部系统需求映射到根因迁移、支付业务不变量、接口与安全、租户数据、前端入口和完整架构预算验证 |
 
 ## 13. 阶段判定与审批
 
