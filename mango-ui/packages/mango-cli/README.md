@@ -126,7 +126,7 @@ mango docs path --project-dir demo-custom
 `mango docs pull` 默认从项目 `mango.config.json.mavenRepository` 拉取 `io.mango:mango-docs-bundle:<mangoBackendVersion>:jar`。业务仓没有 Mango 源码时，AI 和开发者应先读取 `mango docs path` 输出目录下的同版本文档，再参考在线文档或历史上下文。需要临时验证其它版本或仓库时使用：
 
 ```bash
-mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository http://nexus.inner.yunxinbaokeji.com/repository/maven-public/ --force
+mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository https://nexus.inner.yunxinbaokeji.com/repository/maven-public/ --force
 ```
 
 ## 6. 配置说明
@@ -143,7 +143,7 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository htt
 | `--version` | `1.0.0-SNAPSHOT` | 生成项目版本 | 渲染 Maven 和前端业务包版本 | `buildVariables` |
 | `--mango-version` | `release-versions.json` 的 `maven.mangoBackend` | Mango 后端 Maven 版本 | 写入生成项目 Maven 依赖版本 | `defaultVersions` |
 | `--npm-registry` | [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) | 生成项目 `.npmrc` registry | 前端安装 Mango NPM 包时使用 | `parseArgs` |
-| `--maven-repository` | [maven-public](http://nexus.inner.yunxinbaokeji.com/repository/maven-public/) | 生成项目 Maven 仓库 | 后端拉取 Mango Maven 包时使用 | `parseArgs` |
+| `--maven-repository` | [maven-public](https://nexus.inner.yunxinbaokeji.com/repository/maven-public/) | 生成项目 Maven 仓库 | 后端拉取 Mango Maven 包时使用 | `parseArgs` |
 | `--force` | `false` | 目标目录已存在时是否覆盖 | 为 true 时先删除目标目录再生成 | `main` |
 
 ### 6.2 mango.config.json

@@ -64,6 +64,7 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
     /Build the architecture gate prerequisites[\s\S]*?-pl :mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,
   );
   assert.doesNotMatch(workflow, /^\s+-am(?:d)?(?:\s|\\)/m);
+  assert.doesNotMatch(workflow, /Enforce full-Reactor architecture/u);
 });
 
 test('Java source maps to one Maven module plus the governed architecture aggregator', () => {
@@ -84,7 +85,7 @@ test('module POM selects its descendant Maven projects without selecting the who
   assert.ok(scope.projects.length < 20, `unexpectedly broad Maven scope: ${scope.projects.length}`);
 });
 
-test('root, parent, architecture gate and debt baseline changes require the full reactor', () => {
+test('global backend inputs use governance acceptance instead of a full PR reactor', () => {
   for (const file of [
     '.github/workflows/pmo-doc-check.yml',
     '.github/workflows/architecture-debt-inventory.yml',
@@ -93,7 +94,7 @@ test('root, parent, architecture gate and debt baseline changes require the full
     'mango/mango-tools/mango-maven-plugin/src/main/java/example/Gate.java',
     'mango-pmo/baselines/architecture/debt-budget.json',
   ]) {
-    assert.deepEqual(resolveMavenScope([file]), { mode: 'full', projects: [] }, file);
+    assert.deepEqual(resolveMavenScope([file]), { mode: 'governance', projects: [] }, file);
   }
 });
 
@@ -112,6 +113,6 @@ test('installed business baseline resolves backend modules from the project Git 
   );
   assert.deepEqual(
     resolveMavenScope(['backend/pom.xml'], project),
-    { mode: 'full', projects: [] },
+    { mode: 'governance', projects: [] },
   );
 });

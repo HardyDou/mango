@@ -8,6 +8,8 @@ const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const mangoVersion = process.env.MANGO_BACKEND_GATE_VERSION || releaseVersions.maven.mangoBackend;
+const mavenRepository = process.env.MANGO_BACKEND_GATE_REPOSITORY
+  || 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-generated-backend-gate-'));
 const projectName = 'mango-backend-gate-acceptance';
 const projectRoot = join(tempRoot, projectName);
@@ -50,6 +52,8 @@ try {
     'com.example',
     '--mango-version',
     mangoVersion,
+    '--maven-repository',
+    mavenRepository,
   ], tempRoot, 'generate acceptance project');
   runNode([
     cli,

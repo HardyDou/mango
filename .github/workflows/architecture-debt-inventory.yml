@@ -29,11 +29,17 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Build the architecture gate prerequisites
+        run: |
+          mvn -f mango/pom.xml \
+            -pl :mango-parent,:mango-common,:mango-tools \
+            -DskipTests \
+            install
+
       - name: Install the current architecture gate
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-architecture-rules,:mango-maven-plugin \
-            -am \
             -DskipTests=false \
             install
 

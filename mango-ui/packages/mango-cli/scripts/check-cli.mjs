@@ -16,6 +16,7 @@ process.env.MANGO_WORKSPACE_REGISTRY = join(tempRoot, 'workspaces.json');
 const fullProjectName = 'mango-full-acceptance';
 const customProjectName = 'mango-custom-acceptance';
 const customNoneProjectName = 'mango-custom-none-acceptance';
+const expectedMavenRepository = 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 
 try {
   assertPmoPackageBuilt();
@@ -110,6 +111,7 @@ try {
   assertIncludes(config.modules.optional, 'notice', 'full optional modules');
   assertIncludes(config.modules.optional, 'payment', 'full optional modules');
   assertEqual(config.mangoBackendVersion, releaseVersions.maven.mangoBackend, 'Mango backend Maven version lock');
+  assertEqual(config.mavenRepository, expectedMavenRepository, 'HTTPS Maven repository');
 
   const mainTs = readFileSync(join(projectRoot, 'frontend/src/main.ts'), 'utf8');
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
@@ -187,6 +189,9 @@ try {
   if (!pom.includes(`<mango.version>${releaseVersions.maven.mangoBackend}</mango.version>`)) {
     throw new Error('generated backend parent pom must use the CLI-owned fixed Mango Maven version lock');
   }
+  if (!pom.includes(`<url>${expectedMavenRepository}</url>`)) {
+    throw new Error('generated backend parent pom must use the HTTPS Mango Maven repository');
+  }
   if (!pom.includes('<mango.architecture.mode>full</mango.architecture.mode>')
     || !pom.includes('<mango.architecture.skip>false</mango.architecture.skip>')
     || !pom.includes('<mango.architecture.requireFullReactor>true</mango.architecture.requireFullReactor>')
@@ -258,13 +263,14 @@ try {
     'node business-pmo/mango-baseline/tools/check-document-set.mjs',
     '--root business-docs',
     'mvn -B -ntp -f backend/pom.xml',
+    "steps.scope.outputs.backend_mode == 'governance'",
+    '-pl architecture-verification',
+    'help:effective-pom',
     "steps.scope.outputs.backend_mode == 'partial'",
     '-pl "$MAVEN_PROJECTS"',
     '-Dmango.architecture.mode=changed',
     '-Dmango.architecture.requireFullReactor=false',
-    '-Dmango.architecture.mode=full',
     '-Dmango.architecture.skip=false',
-    '-Dmango.architecture.requireFullReactor=true',
     '-Dmango.check.rule=all',
     '-Dmango.check.gate=all',
     '-Dmango.check.staticFailurePolicy=block',
@@ -283,6 +289,10 @@ try {
   }
   if (/^\s+-(?:am|amd)\s*$/mu.test(pmoWorkflow)) {
     throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
+  }
+  if (pmoWorkflow.includes("backend_mode == 'full'")
+      || pmoWorkflow.includes('-Dmango.architecture.mode=full')) {
+    throw new Error('generated PR workflow must reserve full-Reactor inventory for scheduled or manual execution');
   }
   for (const expected of [
     '## Risk / Verification',

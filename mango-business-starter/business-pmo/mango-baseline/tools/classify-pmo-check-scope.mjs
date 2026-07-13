@@ -102,7 +102,7 @@ export function resolveMavenScope(files, repositoryRoot = root) {
   const mavenPrefix = sourceLayout ? 'mango' : 'backend';
   const mavenRoot = path.join(repositoryRoot, mavenPrefix);
   if (!fs.existsSync(path.join(mavenRoot, 'pom.xml'))) return { mode: 'none', projects: [] };
-  const fullReactor = normalized.some(file => matchesAny(file, [
+  const governanceGate = normalized.some(file => matchesAny(file, [
     /^\.github\/workflows\/(?:pmo-doc-check|architecture-debt-inventory)\.yml$/,
     new RegExp(`^${mavenPrefix}\\/pom\\.xml$`),
     ...(sourceLayout ? [
@@ -115,7 +115,7 @@ export function resolveMavenScope(files, repositoryRoot = root) {
     ]),
     /^mango-pmo\/baselines\/(?:architecture|mango-check)(?:\/|$)/,
   ]));
-  if (fullReactor) return { mode: 'full', projects: [] };
+  if (governanceGate) return { mode: 'governance', projects: [] };
 
   const backendFiles = normalized.filter(file => matchesAny(file, [
     /^mango\/.*\.java$/,
@@ -134,9 +134,11 @@ export function resolveMavenScope(files, repositoryRoot = root) {
   const projects = new Set([architectureProject]);
   for (const file of backendFiles) {
     const project = nearestMavenProject(file, repositoryRoot, mavenRoot);
-    if (!project || project === mavenRoot) return { mode: 'full', projects: [] };
+    if (!project || project === mavenRoot) return { mode: 'governance', projects: [] };
     if (file.endsWith('/pom.xml')) {
-      if (!fs.existsSync(path.join(repositoryRoot, file))) return { mode: 'full', projects: [] };
+      if (!fs.existsSync(path.join(repositoryRoot, file))) {
+        return { mode: 'governance', projects: [] };
+      }
       for (const descendant of listPomProjects(project, mavenRoot)) projects.add(descendant);
       continue;
     }

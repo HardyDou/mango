@@ -17,7 +17,7 @@
 | 文档生命周期 | `contracts/*.json`、`tools/check-*-requirements.mjs` | BRD、SRS、TDD、实施计划的结构、边界、追踪、审批和版本门禁 |
 | 文档集合门禁 | `tools/check-document-set.mjs` | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要 |
 | 风险与验证门禁 | `tools/risk-verification.mjs` | 校验需求影响、方案风险、二者最大值、`STATIC`、`UNIT`、`API`、`UI` 选择和跳过理由 |
-| CI 范围分类 | `tools/classify-pmo-check-scope.mjs` | 按 Git 改动选择 PMO、Java、发布投影和 README 检查，并解析受影响 Maven 模块 |
+| CI 范围分类 | `tools/classify-pmo-check-scope.mjs` | 按 Git 改动选择 PMO、Java、发布投影和 README 检查；业务代码解析直接受影响 Maven 模块，门禁治理改动进入独立验收模式 |
 | 模块架构债务预算 | `tools/check-architecture-debt-budget.mjs` | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减 |
 | 专项 Agent | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md` | 一个生命周期模板对应一个撰写 Agent |
 | 可安装 Skills | `skills/**` | 生命周期协调、四类文档、工程、QA、Issue、模块、发布和 PR review |
@@ -92,7 +92,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | `acceptance-evidence-check.mjs` | evidence、min rows | 验收证据表检查结果 |
 | `check-document-set.mjs` | business docs root | 自动发现并检查目录内生命周期文档及其上游关系 |
 | `risk-verification.mjs` | PR Markdown body | 风险最大值、验证类型集合、充分性和跳过理由检查结果 |
-| `classify-pmo-check-scope.mjs` | Git base/head | PMO/后端/投影/README 布尔范围、Maven partial/full 模式和 project selectors |
+| `classify-pmo-check-scope.mjs` | Git base/head | PMO/后端/投影/README 布尔范围、Maven `none`、`partial`、`governance` 模式和 project selectors |
 | `check-architecture-debt-budget.mjs` | 完整 Reactor 报告、当前预算、可选 Git base ref 或模块选择器 | 全局或模块债务比较、递减要求和稳定身份差异 |
 | `@mango/pmo` | `dist/baseline.json`、`dist/baseline/**` | 可发布 PMO baseline 包 |
 | `@mango/pmo` plugin projection | `.codex-plugin/plugin.json`、`skills/**` | 与 npm 包同版本的 Codex plugin/Skill 投影 |

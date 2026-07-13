@@ -9,6 +9,7 @@ PMO 1.2.0 / Mango Maven 1.0.17 规则升级首次识别出的存量问题，已�
 - 正向：先完成一次完整 Reactor 架构扫描；schema v2 报告的实际/预期项目数、`modules` 目录和所有问题 `moduleKey` 必须完整。再执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$(git merge-base HEAD origin/main)"`，同时比较主分支预算、PR 预算和当前报告。
 - 正向：查看目录聚合债务时执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-platform/mango-system`；查看单模块时可传唯一 artifactId，例如 `--module mango-system-core`。`--module` 可重复，所有查询复用同一份全 Reactor 报告。
 - 正向：某个模块债务减少后执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-system-core --write`，只降低所选模块并重新计算全局聚合；提交前仍须执行无 `--module` 的全局检查。
+- 正向：普通 PR 只执行直接改动模块的质量门禁，并用 `--baseline-only --base-ref <base-sha>` 校验已提交预算未被无授权抬高；完整 212 模块报告只由定时/手工 inventory 或明确的预算迁移生成，不因同一 PR 后续同步而重复扫描。
 - 禁止：为了让新违规通过而增加全局或模块预算；禁止把问题转移到其它模块、手工修改聚合、使用无法归属的问题、用部分 Reactor 报告写预算，或为每个模块重复运行全量 Maven 构建。
 - 例外：规则升级确需增加存量预算时，只能在未手工修改原预算的前提下使用完整报告执行全局 `--write --accept-increase --reason "<审批原因>"`。工具会把原因绑定到原预算 SHA-256；提交后必须用 `--base-ref` 复验，并取得与仓库 `single-owner` 或 `multi-maintainer` 模式一致的授权。合并后该记录作为不可扩张预算的审计证据保留；它不能授权未来增加，未来增加必须绑定新的 base 摘要。模块模式禁止 `--accept-increase`。
 

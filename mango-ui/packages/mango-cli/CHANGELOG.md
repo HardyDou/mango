@@ -6,7 +6,8 @@
 
 - Updated the exact PMO dependency to `@mango/pmo@1.2.0` and generated the matching PR risk/verification contract.
 - Generated `pmo-doc-check` now classifies changed paths before Java setup. Normal backend quality gates verify only directly changed Maven modules without `-am` or `-amd`; dependency builds and consumer compatibility remain separate risk-based verification steps. PMO sync, docs, and frontend-only changes skip the backend Reactor.
-- Kept fail-closed full-Reactor verification for root backend POM, architecture-verification, global architecture inputs, or workflow changes.
+- Route root backend POM, architecture-verification, global architecture inputs, and workflow changes to governance validation; ordinary PR quality checks remain limited to directly changed modules, while complete Reactor inventory runs only on schedule or manual request.
+- Use the HTTPS Nexus endpoint by default for generated business projects and generated-backend gate acceptance on clean CI runners.
 
 ### Upgrade Notes
 

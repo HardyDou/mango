@@ -101,6 +101,23 @@ function copyBaselineToBase(fixture) {
   fs.copyFileSync(fixture.baseline, fixture.baseBudget);
 }
 
+function runBaselineOnly(fixture, extra = []) {
+  const result = spawnSync(process.execPath, [
+    checker,
+    '--baseline', fixture.baseline,
+    '--base-budget', fixture.baseBudget,
+    '--baseline-only',
+    '--json',
+    ...extra
+  ], { cwd: fixture.cwd, encoding: 'utf8' });
+  return {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+    report: result.stdout ? JSON.parse(result.stdout) : null
+  };
+}
+
 test('initializes and verifies a full-Reactor architecture debt budget', () => {
   const fixture = createFixture({ dependency: ['DEP-1'], archunit: ['ARCH-1'], pmd: ['PMD-1'] });
   try {
@@ -210,6 +227,28 @@ test('accepts a governed increase only when its reason is bound to the exact bas
     tamperedBase.generatedAt = '2026-07-13T00:00:00.000Z';
     fs.writeFileSync(fixture.baseBudget, `${JSON.stringify(tamperedBase, null, 2)}\n`);
     assert.equal(run(fixture, ['--base-budget', fixture.baseBudget]).status, 1);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('baseline-only PR policy validates a governed increase without regenerating the full report', () => {
+  const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
+  try {
+    assert.equal(run(fixture, ['--write']).status, 0);
+    copyBaselineToBase(fixture);
+    writeReport(fixture.report, { dependency: [], archunit: ['ARCH-1', 'ARCH-2'], pmd: [] });
+    assert.equal(run(fixture, [
+      '--write', '--accept-increase', '--reason', 'reviewed rule expansion'
+    ]).status, 0);
+    const checked = runBaselineOnly(fixture);
+    assert.equal(checked.status, 0, checked.stderr);
+    assert.equal(checked.report.action, 'governed-increase-recorded');
+
+    const raised = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    raised.acceptedIncreaseFromSha256 = '0'.repeat(64);
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(raised, null, 2)}\n`);
+    assert.equal(runBaselineOnly(fixture).status, 1);
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }

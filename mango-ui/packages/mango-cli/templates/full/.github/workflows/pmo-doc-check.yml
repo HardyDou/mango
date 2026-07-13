@@ -61,21 +61,13 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Verify full backend Reactor and Mango architecture
-        if: steps.scope.outputs.backend_mode == 'full'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
+      - name: Validate backend governance POMs
+        if: steps.scope.outputs.backend_mode == 'governance'
         run: >-
           mvn -B -ntp -f backend/pom.xml
-          -Dmango.architecture.mode=full
-          -Dmango.architecture.base="$BASE_SHA"
-          -Dmango.architecture.skip=false
-          -Dmango.architecture.requireFullReactor=true
-          -Dmango.check.rule=all
-          -Dmango.check.gate=all
-          -Dmango.check.staticFailurePolicy=block
-          -Denforcer.skip=false
-          verify
+          -pl architecture-verification
+          -DskipTests
+          help:effective-pom
 
       - name: Verify affected backend modules and Mango architecture
         if: steps.scope.outputs.backend_mode == 'partial'
