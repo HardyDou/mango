@@ -3,6 +3,7 @@ package io.mango.file.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
@@ -34,6 +35,8 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Constructor arguments are Spring-managed configuration and routing collaborators")
 public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
 
     private final FileStorageConfigMapper mapper;

@@ -1,5 +1,6 @@
 package io.mango.file.core.storage;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.core.entity.FileStorageConfig;
 import io.mango.common.result.Require;
@@ -14,6 +15,8 @@ import java.util.Optional;
  * 文件存储路由。
  */
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Storage implementations are injected and managed by the Spring container")
 public class FileStorageRouter {
 
     private final List<FileStorage> storages;

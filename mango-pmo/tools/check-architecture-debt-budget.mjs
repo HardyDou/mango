@@ -7,6 +7,7 @@ import path from 'node:path';
 const SCHEMA_VERSION = 4;
 const LEGACY_SCHEMA_VERSION = 3;
 const REPORT_SCHEMA_VERSION = 2;
+const GIT_OUTPUT_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
 const ENGINE_FIELDS = {
   dependency: 'dependencyIssues',
   archunit: 'archUnitIssues',
@@ -498,7 +499,10 @@ function writeBudget(file, budget) {
 }
 
 function runGit(cwd, args, label) {
-  const result = spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
+  const result = spawnSync('git', ['-C', cwd, ...args], {
+    encoding: 'utf8',
+    maxBuffer: GIT_OUTPUT_MAX_BUFFER_BYTES
+  });
   if (result.error) {
     throw new Error(`${label}: ${result.error.message}`);
   }
@@ -894,8 +898,8 @@ try {
   } else {
     printText(result);
   }
-  process.exit(result.passed ? 0 : 1);
+  process.exitCode = result.passed ? 0 : 1;
 } catch (error) {
   console.error(`Architecture debt budget check failed: ${error.message}`);
-  process.exit(2);
+  process.exitCode = 2;
 }

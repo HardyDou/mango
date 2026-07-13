@@ -448,7 +448,7 @@ test('source identities are stable when GitHub repeats the repository name in th
   }
 });
 
-test('CI base-ref reads the committed base budget from Git', () => {
+test('CI base-ref reads a large committed base budget from Git', () => {
   const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
   try {
     const nestedBaseline = path.join(
@@ -457,6 +457,9 @@ test('CI base-ref reads the committed base budget from Git', () => {
     );
     fixture.baseline = nestedBaseline;
     assert.equal(run(fixture, ['--write']).status, 0);
+    const largeBudget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
+    largeBudget.testPadding = 'x'.repeat(2 * 1024 * 1024);
+    fs.writeFileSync(fixture.baseline, `${JSON.stringify(largeBudget, null, 2)}\n`);
     const git = (...args) => spawnSync('git', ['-C', fixture.root, ...args], {
       encoding: 'utf8',
       env: {
@@ -476,7 +479,11 @@ test('CI base-ref reads the committed base budget from Git', () => {
       '--baseline', fixture.baseline,
       '--base-ref', 'HEAD',
       '--json'
-    ], { cwd: fixture.root, encoding: 'utf8' });
+    ], {
+      cwd: fixture.root,
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024
+    });
     assert.equal(checked.status, 0, checked.stderr);
     assert.equal(JSON.parse(checked.stdout).action, 'check');
   } finally {
