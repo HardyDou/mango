@@ -5,6 +5,11 @@
   },
   "versions": [
     {
+      "version": "v2026.07.13-maven-1.0.16-pmo-cli-release",
+      "label": "1.0.16",
+      "path": "/versions/v2026.07.13-maven-1.0.16-pmo-cli-release/"
+    },
+    {
       "version": "v2026.07.11-maven-1.0.14-cli-release",
       "label": "1.0.14",
       "path": "/versions/v2026.07.11-maven-1.0.14-cli-release/"

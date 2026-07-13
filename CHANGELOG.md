@@ -31,7 +31,8 @@ The following are planned publication targets. Their status is `PENDING`; this r
 | 1 | Complete Mango backend non-app Maven reactor | `1.0.16` -> `http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/` | `PENDING` |
 | 2 | npm PMO bundle | `@mango/pmo@1.1.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
 | 3 | npm CLI | `@mango/cli@1.0.68` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
-| 4 | GitHub Release | release notes containing this dependency order and upgrade procedure | `PENDING` |
+| 4 | Versioned Mango Docs snapshot | `v2026.07.13-maven-1.0.16-pmo-cli-release` -> GitHub Pages | `PENDING` |
+| 5 | GitHub Release | release notes containing this dependency order and upgrade procedure | `PENDING` |
 
 ### Verification
 
@@ -44,6 +45,8 @@ Release-candidate package checks completed before final backend integration:
 - `node --test mango-ui/packages/mango-cli/tests/release-command.test.mjs`
 - `node --test mango-pmo/tests/architecture-debt-budget.test.mjs`
 - `npm pack --dry-run --json` from `mango-ui/packages/mango-pmo`
+- `npm --prefix mango-docs run docs:snapshot -- v2026.07.13-maven-1.0.16-pmo-cli-release`
+- `npm --prefix mango-docs run docs:build`
 
 Before changing any target to published, the final commit must also pass the complete Maven architecture suite, PMO lifecycle/document checks, template projection checks, package export and release-impact gates, registry lookups for all three version groups, a clean generated business-module compile, and GitHub Release verification.
 
