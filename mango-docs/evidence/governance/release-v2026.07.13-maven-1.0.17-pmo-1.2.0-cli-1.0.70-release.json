@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release",
+  "releaseUrl": "https://github.com/HardyDou/mango/releases/tag/v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release",
+  "pullRequests": [
+    "https://github.com/HardyDou/mango/pull/460",
+    "https://github.com/HardyDou/mango/pull/461"
+  ],
+  "mergeCommit": "ff4358f1954dd2366ae0b2ff632c2706280e1c40",
+  "tagObject": "829ee89f587aa1d0efbd2791a0c5095c8fabbbed",
+  "tagTarget": "ff4358f1954dd2366ae0b2ff632c2706280e1c40",
+  "publishedAt": "2026-07-13T13:39:04Z",
+  "manifestCompletedAt": "2026-07-13T13:45:03.941Z",
+  "manifestCompleted": true,
+  "manifestConfigDigest": "bf44f3a53898673742c265b42f90f3c50ca7fcde0be127cf4f9025e744a7f48a",
+  "artifacts": [
+    {
+      "kind": "maven",
+      "coordinate": "io.mango:*:1.0.17",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/maven-public/",
+      "verifiedCoordinates": 122,
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/pmo@1.2.0",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-3UmIcfWcqW4f2+lhllDHCXarkTxucaMQN60ICpyXdqMJ72MU7QI8LELxN6dWomPs1qxWdZokQxv+HM2d5VFTsw==",
+      "shasum": "9f7e0ce725843380012a2ebbf99b2d6655c188ea",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/cli@1.0.70",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-/Wu+SV1VaXOC4lUs7g1EOWpracjFFK70LnBwsCs7/5pN4lJNqIOxk7Dxa/8/SSR9RKEiTeNeEgFbi/biuwdqFQ==",
+      "shasum": "e99d10f43d38697f2c88e5d4d4aee69e70f877ab",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "Latest",
+      "consumeRepository": "https://hardydou.github.io/mango/",
+      "status": "VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release",
+      "consumeRepository": "https://hardydou.github.io/mango/versions/v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release/",
+      "status": "VERIFIED"
+    }
+  ],
+  "stateSummary": {
+    "source": "passed",
+    "versions": "passed",
+    "changelog": "passed",
+    "readmes": "passed",
+    "tests": "passed",
+    "pr": "passed",
+    "tag": "passed",
+    "github-release": "passed",
+    "maven": "passed",
+    "npm": "passed",
+    "cli-lock": "passed",
+    "private-registry-publish": "passed",
+    "private-registry-consume-verify": "passed",
+    "docs-latest": "passed",
+    "docs-snapshot": "passed",
+    "post-verify": "passed",
+    "cleanup": "passed"
+  },
+  "releaseExecution": {
+    "repairInvoked": false,
+    "immutablePublishAttempts": {
+      "tag": 1,
+      "github-release": 1,
+      "maven": 1,
+      "npm": 2
+    },
+    "npmFirstAttempt": {
+      "result": "BLOCKED_BEFORE_PUBLISH",
+      "reason": "GitHub Release notes were missing the required Published Packages, Upgrade Notes, and Verification sections.",
+      "targetVersionsExistedAfterAttempt": false,
+      "recovery": "The notes were corrected and the same manifest resumed; no Maven or npm artifact was republished."
+    },
+    "result": "COMPLETE"
+  },
+  "finalVerification": {
+    "requiredChecks": {
+      "pullRequest460": "PASS",
+      "pullRequest461": "PASS"
+    },
+    "mavenPublishedCoordinateHttpChecks": 122,
+    "generatedBackendGate": "PASS",
+    "npmHostedVerification": "PASS",
+    "npmConsumeVerification": "PASS",
+    "publishedCliConsumerInstall": "PASS",
+    "cliReleaseLock": "PASS",
+    "githubReleaseNotes": "PASS",
+    "docsLatest": "PASS",
+    "docsSnapshot": "PASS"
+  }
+}
