@@ -92,7 +92,20 @@ mvn -f mango/pom.xml verify \
   -Dmango.architecture.base=origin/main
 ```
 
-架构报告固定写入 `mango/target/mango-architecture-report.json`。默认 `changed` 模式先定位变更影响的问题，再只从 Git base SHA 的 `mango-pmo/baselines/architecture/debt-budget.json` 扣除已批准 stable identities，剩余身份才阻断；PR head 自己修改的预算不能豁免当前新增。报告仍包含全量存量：删除文件会被识别，父 POM 变化传播到全部子 Reactor，`module.properties` 变化传播到同领域类，外置全局 Entity 清单变化传播到 Entity 规则。`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、baseline schema/identity 非法、PMD 解析失败、ArchUnit 未导入到字节码或预期 Java 输入为零时均 fail-closed。
+架构报告固定写入 `mango/target/mango-architecture-report.json`。schema v2 报告包含完整 Reactor `modules` 目录，并为 dependency、ArchUnit、PMD 和 blocking 问题写入唯一 `moduleKey`；无法归属、坐标冲突或 Reactor 数量不完整时 fail-closed。默认 `changed` 模式先定位变更影响的问题，再只从 Git base SHA 的 `mango-pmo/baselines/architecture/debt-budget.json` 扣除已批准 stable identities，剩余身份才阻断；PR head 自己修改的预算不能豁免当前新增。报告仍包含全量存量：删除文件会被识别，父 POM 变化传播到全部子 Reactor，`module.properties` 变化传播到同领域类，外置全局 Entity 清单变化传播到 Entity 规则。`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、baseline schema/identity 非法、PMD 解析失败、ArchUnit 未导入到字节码或预期 Java 输入为零时均 fail-closed。
+
+一次完整 Reactor 扫描后，可复用同一报告查询或递减模块债务；目录 selector 覆盖其全部 Maven 子模块，唯一 artifactId 定位单模块：
+
+```bash
+node mango-pmo/tools/check-architecture-debt-budget.mjs \
+  --module mango-platform/mango-system
+node mango-pmo/tools/check-architecture-debt-budget.mjs \
+  --module mango-system-core --write
+node mango-pmo/tools/check-architecture-debt-budget.mjs \
+  --base-ref "$(git merge-base HEAD origin/main)"
+```
+
+正式预算使用 schema v4，逐模块明细与全局聚合必须精确一致。模块写入只允许持平或下降；禁止使用部分 Reactor 报告写预算、跨模块转移违规或在模块模式接受增加。提交前必须执行最后一条无 `--module` 的全局终检。
 
 业务模板的最终验证同时启用 POM-only `lockFullMode`、`lockFullReactor` 和 `requireFullScope`。即使 Enforcer 的 `requireProperty` 被 `skipRules` 跳过，架构插件仍拒绝 `mode=changed`；聚合静态检查要求每个实际包含 Java 编译源码的 Reactor 模块分别生成 PMD、Checkstyle 和 SpotBugs 报告，任一子模块缺报告都会阻断，纯 POM 聚合模块不要求报告。
 
@@ -107,7 +120,7 @@ mvn mango:check \
   -DreportFile=target/mango-check-report.json
 ```
 
-`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只服务仍由 `mango:check` 管理的存量规则。Java/Spring 架构红线不读取这个旧静态 baseline，而是读取 Git base 中独立的 schema-v3 architecture identity 预算；历史 identity 即使所在类被修改也不误阻断，同规则替换或任何新 identity 仍直接阻断。
+`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只服务仍由 `mango:check` 管理的存量规则。Java/Spring 架构红线不读取这个旧静态 baseline，而是读取 Git base 中独立的 schema-v4 architecture identity 预算；迁移窗口只读兼容 schema v3 顶层 identity。历史 identity 即使所在类被修改也不误阻断，同规则替换、跨模块移动或任何新 identity 仍直接阻断。
 
 `mango:architecture` 硬校验：Controller 实现 `XxxApi`、启用 `@Validated/@Valid`、只依赖 `IXxxService`、统一返回 `R<T>`；Service 使用 `Require + BizCode/ErrorCode` 校验业务前置条件且不返回或拼装 `R`；Entity、Mapper、Feign、Controller 和 Service 实现必须位于规定模块。
 

@@ -10,7 +10,8 @@
 - Use the new `mango release publish/status/verify/repair/registry doctor` state machine as the batch owner; registry roles are explicit, verification can run without republishing, and every state persists a non-empty auditable reason.
 - Require schema-v2 release evidence for every applicable terminal state, revalidate required-state applicability, and restrict immutable repair to `{kind: verify-existing}` backed by the existing verify adapter; `not_applicable` records a reason and decision time without fabricating a command.
 - Enforce Spring Service registration: business `XxxService implements IXxxService` uses `@Service`, replaceable framework defaults use starter `@Bean + @ConditionalOnMissingBean`, and direct construction or mutable static Service Locator patterns are rejected.
-- Track the 9,038-item full-Reactor architecture inventory with schema-v3 stable identities; Maven subtracts only base-SHA identities while CI compares base, PR, and current budgets so historical debt does not block unchanged violations and cannot authorize replacements.
+- Track the 9,038-item full-Reactor architecture inventory with schema-v2 module-aware reports and a schema-v4 budget across 212 Maven modules; Maven subtracts only base-SHA identities while CI compares base, PR, current and per-module aggregates so unchanged debt does not block new work, replacements and cross-module moves still fail, and each module can only ratchet downward.
+- Support an executable `single-owner` branch-protection mode for repositories where the sole Owner authors PRs: zero impossible self-approval requirements, unchanged strict `pmo-doc-check`, resolved conversations, administrator enforcement, and force-push/deletion protection; retain `multi-maintainer` for independent Code Owner approval.
 - Keep the package, template, checker, workflow, and capability documentation in one coordinated release candidate; none of the targets below are described as published until registry and consumer verification succeeds.
 
 ### Upgrade Notes
@@ -21,6 +22,7 @@
 4. Migrate CRUD services to `MangoTypedCrudService<Entity, CreateCommand, UpdateCommand, PageQuery, VO, Long>` and keep the implementation on `MangoCrudServiceImpl<Mapper, Entity>`; migrate Controllers to explicit `XxxApi` adapters before running Maven `verify`.
 5. `mango pmo sync` repairs the version recorded in `business-pmo/pmo-lock.json`; it does not select a newer PMO version. `rollback` only restores a verified local backup.
 6. Project Skill synchronization does not install or modify a user-level Codex plugin. User-profile plugin installation remains a separate explicit operation against the published `@mango/pmo` package.
+7. For historical architecture cleanup, run one complete Reactor scan, query with `check-architecture-debt-budget.mjs --module <moduleKey|artifactId>`, write only verified reductions with `--module ... --write`, then run the global `--base-ref` check before submission.
 
 ### Published Packages
 
@@ -44,6 +46,13 @@ Release-candidate package checks completed before final backend integration:
 - `node mango-ui/scripts/check-release-impact.mjs --self-test`
 - `node --test mango-ui/packages/mango-cli/tests/release-command.test.mjs`
 - `node --test mango-pmo/tests/architecture-debt-budget.test.mjs`
+- `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$(git merge-base HEAD origin/main)"`
+- `node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-platform/mango-system`
+- `node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-system-core`
+- `node --test mango-pmo/tests/branch-protection-policy.test.mjs`
+- `node mango-pmo/tools/check-governance-intent.mjs`
+- `mvn -f mango/pom.xml -pl :mango-maven-plugin -am test -DskipTests=false`
+- `MANGO_BACKEND_GATE_VERSION=1.0.0-SNAPSHOT node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
 - `npm pack --dry-run --json` from `mango-ui/packages/mango-pmo`
 - `npm --prefix mango-docs run docs:snapshot -- v2026.07.13-maven-1.0.16-pmo-cli-release`
 - `npm --prefix mango-docs run docs:build`

@@ -69,7 +69,7 @@
     },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
-      "reason": "AI 交付质量门禁、发布批次、Required Check、CODEOWNERS 和 Maven app 制品排除规则"
+      "reason": "AI 交付质量门禁、按模块历史架构债务递减、发布批次、单 Owner/多人维护分支保护、Required Check、CODEOWNERS 和 Maven app 制品排除规则"
     },
     "process.documentAssets": {
       "path": "rules/06-document-assets.md",

@@ -110,6 +110,7 @@ public class BadController {
   const pathFailure = runMaven(['clean', 'verify'], false, '@PathVariable violation');
   assertIncludes(pathFailure, 'Mango architecture gate found', 'path violation failure');
   const architectureReport = readJson(join(projectRoot, 'backend/target/mango-architecture-report.json'));
+  assertArchitectureModuleOwnership(architectureReport);
   const pathRules = new Set((architectureReport.blockingIssues || []).map(issue => issue.ruleId));
   if (!pathRules.has('MANGO-ARCH-PATH-001') || !pathRules.has('MANGO-ARCH-PATH-002')) {
     throw new Error(`path violation report missing PATH-001/002: ${JSON.stringify([...pathRules])}`);
@@ -299,6 +300,7 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
     `Generated backend gate PASS with Mango ${mangoVersion}: clean project accepted; `
       + 'PathVariable, direct ServiceImpl, tenant schema, module info, Checkstyle, manifest, '
       + 'PMD suppression, reserved namespace shadowing, '
+      + 'module-aware architecture report ownership, '
       + 'per-Java-module static report coverage, '
       + 'unregistered/mismatched global Entity cases, approved global Entity acceptance, '
       + 'and eleven fail-closed policy overrides rejected.\n',
@@ -361,6 +363,7 @@ function assertPassingReports() {
   }
   const architecture = readJson(architecturePath);
   const quality = readJson(qualityPath);
+  assertArchitectureModuleOwnership(architecture);
   if (architecture.mode !== 'full' || (architecture.blockingIssues || []).length !== 0) {
     throw new Error(`generated backend architecture report did not pass in full mode: ${architecturePath}`);
   }
@@ -369,6 +372,27 @@ function assertPassingReports() {
       || quality.staticFailurePolicy !== 'block'
       || quality.toolFailureCount !== 0) {
     throw new Error(`generated backend quality report is not fail-closed: ${qualityPath}`);
+  }
+}
+
+function assertArchitectureModuleOwnership(report) {
+  if (report.schemaVersion !== 2 || !Array.isArray(report.modules)) {
+    throw new Error('generated backend architecture report must use module-aware schema v2');
+  }
+  const moduleKeys = new Set(report.modules.map(module => module.moduleKey));
+  if (moduleKeys.size !== report.modules.length
+      || report.reactorProjectCount !== report.expectedProjectCount
+      || report.reactorProjectCount !== report.modules.length) {
+    throw new Error('generated backend architecture report has an incomplete Reactor module catalog');
+  }
+  for (const field of ['dependencyIssues', 'archUnitIssues', 'pmdIssues', 'blockingIssues']) {
+    if (!Array.isArray(report[field])) {
+      throw new Error(`generated backend architecture report is missing ${field}`);
+    }
+    const unowned = report[field].find(issue => !moduleKeys.has(issue.moduleKey));
+    if (unowned) {
+      throw new Error(`${field} contains an issue without valid module ownership: ${JSON.stringify(unowned)}`);
+    }
   }
 }
 

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "repository": "HardyDou/mango",
+  "branch": "main",
+  "governanceMode": "single-owner",
+  "requiredStatusChecks": {
+    "strict": true,
+    "contexts": [
+      "pmo-doc-check"
+    ]
+  },
+  "pullRequestReviews": {
+    "requireCodeOwnerReviews": false,
+    "requiredApprovingReviewCount": 0,
+    "dismissStaleReviews": true,
+    "requireLastPushApproval": false
+  },
+  "requiredConversationResolution": true,
+  "enforceAdmins": true,
+  "allowForcePushes": false,
+  "allowDeletions": false
+}

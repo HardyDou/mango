@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -29,8 +29,27 @@ run(resolveBin('vitepress'), ['build', '.vitepress/public-src'], {
 await rm(versionDir, { recursive: true, force: true });
 await mkdir(versionDir, { recursive: true });
 await cp(distRoot, versionDir, { recursive: true });
+await normalizeHtmlWhitespace(versionDir);
 
 console.log(`Built Mango Docs snapshot ${version} at versions/${version}`);
+
+async function normalizeHtmlWhitespace(root) {
+  for (const entry of await readdir(root, { withFileTypes: true })) {
+    const path = resolve(root, entry.name);
+    if (entry.isDirectory()) {
+      await normalizeHtmlWhitespace(path);
+      continue;
+    }
+    if (!entry.isFile() || !entry.name.endsWith('.html')) {
+      continue;
+    }
+    const content = await readFile(path, 'utf8');
+    const normalized = content.replace(/^[ \t]+$/gmu, '');
+    if (normalized !== content) {
+      await writeFile(path, normalized);
+    }
+  }
+}
 
 function parseVersionArg(args) {
   const raw =

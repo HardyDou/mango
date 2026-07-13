@@ -3,6 +3,7 @@
 /mango-pmo/ @HardyDou @chengkuankuan
 /mango-docs/ @HardyDou @chengkuankuan
 /.github/CODEOWNERS @HardyDou @chengkuankuan
+/.github/branch-protection-policy.json @HardyDou @chengkuankuan
 /.github/pull_request_template.md @HardyDou @chengkuankuan
 /.github/workflows/ @HardyDou @chengkuankuan
 
