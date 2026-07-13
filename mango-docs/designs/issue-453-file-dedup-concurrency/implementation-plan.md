@@ -11,7 +11,7 @@ owner: Mango 文件能力负责人
 approver: HardyDou
 approvalEvidence: review/PLAN-ISSUE-453.md
 upstreamDocumentId: TDD-ISSUE-453
-upstreamDocumentHash: 52f28971dc5499c9c18f4c189bcafd858db56f859943e29aac31351af63a70a1
+upstreamDocumentHash: cabb0a33dc6192d4eb878d2c79721c1a17cb1236e8e70c2aa34df0318800c2bc
 ---
 
 # 相同内容并发保存实施计划
@@ -26,8 +26,8 @@ upstreamDocumentHash: 52f28971dc5499c9c18f4c189bcafd858db56f859943e29aac31351af6
 
 | 任务ID | 技术设计ID | 交付物ID | 责任角色 | 路径或模块 | 前置任务 | 具体动作 | 完成标准 | 验证ID | 实施批次 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| TASK-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001 | DEL-001 | Dev | `mango-file-core` 文件服务实现 | NONE | 将物理对象和哈希映射创建收敛为唯一键竞争后的当前读复用，补偿清理失败方不同对象名，并保持非目标异常与公开行为不变 | 编译通过；所有保存入口复用同一幂等实现；不增加 KV、配置、公开契约和数据库变更 | VAL-001 | B1 | PLANNED |
-| TASK-002 | TC-453, IMP-001 | DEL-001 | Dev 与 QA | `mango-file-core` 测试及任务证据 | TASK-001 | 增加五线程真实 Mapper 与事务集成测试，执行受影响测试和质量门禁，记录基线并准备 PR | 五次成功、一对象、一映射、五结果、引用数五、存储对象一份；全部规定检查通过且证据可复核 | VAL-001, VAL-002 | B1 | PLANNED |
+| TASK-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001 | DEL-001 | Dev | `mango-file-core` 文件服务实现 | NONE | 将物理对象和哈希映射创建收敛为唯一键竞争后的当前读复用，补偿清理失败方不同对象名，并使用 `Require + FileCode` 保持 Service 错误契约与公开行为不变 | 编译通过；所有保存入口复用同一幂等实现；不直接抛出运行时异常；不增加 KV、配置、公开契约和数据库变更 | VAL-001 | B1 | PLANNED |
+| TASK-002 | TC-453, IMP-001 | DEL-001 | Dev 与 QA | `mango-file-core` 测试及任务证据 | TASK-001 | 增加五线程 Testcontainers MySQL 8.4 真实 Mapper、InnoDB 唯一约束与事务集成测试，执行受影响测试和质量门禁，记录基线并准备 PR | 五次成功、一对象、一映射、五结果、引用数五、存储对象一份；全部规定检查通过且证据可复核 | VAL-001, VAL-002 | B1 | PLANNED |
 
 ## 3. 顺序、依赖与里程碑
 
@@ -39,7 +39,7 @@ upstreamDocumentHash: 52f28971dc5499c9c18f4c189bcafd858db56f859943e29aac31351af6
 
 | 验证ID | 测试或验收ID | 任务ID | 验证层级 | 命令或步骤 | 环境 | 测试数据 | 权限或租户边界 | 预期结果 | 证据路径 | 责任人 | 失败处理 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| VAL-001 | TC-453 | TASK-001, TASK-002 | 并发集成与模块回归 | 执行 `FileServiceConcurrentSaveIntegrationTest`，随后执行 `mango-file-core` 测试 | 当前任务 worktree；H2 MySQL 模式隔离内存库；线程安全存储替身 | `IT_453_` 前缀、相同字节、五线程、同租户与同存储配置 | 测试租户 1001、测试用户 2001，不连接共享业务库 | 五次成功、一对象、一映射、五结果、引用数五、存储对象一份；现有回归不变 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | QA | 任一失败阻断提交；保留报告并在当前任务分支定位修复 |
+| VAL-001 | TC-453 | TASK-001, TASK-002 | 并发集成与模块回归 | 执行 `FileServiceConcurrentSaveIntegrationTest`，随后执行 `mango-file-core` 测试 | 当前任务 worktree；Testcontainers MySQL 8.4 一次性隔离数据库；线程安全存储替身 | `IT_453_` 前缀、相同字节、五线程、同租户与同存储配置 | 测试租户 1001、测试用户 2001，不连接共享业务库 | 五次成功、一对象、一映射、五结果、引用数五、存储对象一份；现有回归不变 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | QA | 任一失败阻断提交；保留报告并在当前任务分支定位修复，不得降级为 H2 |
 | VAL-002 | TC-453 | TASK-002 | 静态与交付门禁 | 执行 test-quality-check、Mockito 审计、delivery-contract-check、受影响模块 verify、PMD、Checkstyle 和 Mango 检查 | 当前任务 worktree与本地 Maven 环境 | 不写业务数据 | 不涉及账号或共享租户 | 检查全部通过，无新增测试替身风险和未说明变更 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | Dev | 失败即在当前任务分支修复并重新执行完整受影响验证 |
 
 ## 5. 数据、升级、发布与回滚步骤

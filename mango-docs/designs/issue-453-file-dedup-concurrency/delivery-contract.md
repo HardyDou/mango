@@ -66,7 +66,7 @@
 
 ## 6. 风险与限制
 
-- H2 MySQL 模式证明 Mapper、唯一约束和事务内竞争恢复，不声称覆盖 MySQL 专有执行计划。
+- Testcontainers MySQL 8.4 证明真实 InnoDB 唯一约束、事务隔离、锁定当前读和竞争恢复；测试仍只替换外部对象存储。
 - 对象存储使用线程安全替身以稳定制造并发窗口；被测持久化与服务目标真实执行。
 - 存储补偿失败只记录上下文，不得把已经成立的数据库复用反转为业务 500。
 
@@ -86,7 +86,7 @@
 
 | 基线 ID | 覆盖台账 ID | 覆盖用例 ID | E2E 脚本 | 测试命令 | 环境/版本 | 数据库或数据集 | 账号/租户标识 | 结果摘要 | 失败/阻塞/例外 | 报告/截图/日志路径 | 行为变化 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| BASELINE-453 | TASK-001 | TC-453 | EXCEPTION: 应用服务入口集成测试 | `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -Dtest=FileServiceConcurrentSaveIntegrationTest test` | Java 21.0.10、Maven 3.9.13、H2 MySQL 模式 | 隔离内存库与 `IT_453_` 数据集 | 用户 2001、租户 1001 | 五线程用例连续 5 轮通过；模块 42 个测试全部通过 | EXCEPTION: 全 Reactor 被主分支已有 Flyway 测试物料声明问题提前阻断，未运行到变更模块 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 从并发唯一键失败变为全部成功并复用物理内容 |
+| BASELINE-453 | TASK-001 | TC-453 | EXCEPTION: 应用服务入口集成测试 | `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -Dtest=FileServiceConcurrentSaveIntegrationTest test` | Java 21.0.10、Maven 3.9.13、Testcontainers MySQL 8.4 | 一次性隔离 MySQL 容器与 `IT_453_` 数据集 | 用户 2001、租户 1001 | 待实现后回填五线程与模块测试结果 | NONE | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 从并发唯一键失败变为全部成功并复用物理内容 |
 
 ## 10. 业务开发交接输出
 

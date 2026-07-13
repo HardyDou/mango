@@ -20,7 +20,7 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 
 | 决策ID | 问题 | 候选方案 | 选择 | 理由 | 来源ID或路径 | 是否推断 | 影响 | 风险 | 回退条件 |
 |---|---|---|---|---|---|---|---|---|---|
-| DEC-001 | 相同哈希首次并发保存时多个事务均先查未命中，后插入者触发唯一键冲突 | 分布式锁；数据库方言 upsert；保留唯一约束并恢复竞争失败 | 保留唯一约束作为最终仲裁，捕获明确的唯一键冲突后使用当前读查询并复用胜出对象 | 不依赖 Memory、Redis 或 JDBC 锁，不增加配置和方言 SQL；数据库不变量仍是唯一正确性来源 | FR-001, NFR-001, SAC-001；`FileServiceImpl.java`；Issue 453 | 否 | 文件对象与哈希映射创建改为幂等，所有现有保存入口受益 | 普通快照读可能看不到刚提交的胜出对象；失败方可能已写入不同对象名 | 当前读未能找到匹配的已完成对象时重新抛出原冲突，禁止吞掉非目标冲突 |
+| DEC-001 | 相同哈希首次并发保存时多个事务均先查未命中，后插入者触发唯一键冲突 | 分布式锁；数据库方言 upsert；保留唯一约束并恢复竞争失败 | 保留唯一约束作为最终仲裁，捕获明确的唯一键冲突后使用当前读查询并复用胜出对象 | 不依赖 Memory、Redis 或 JDBC 锁，不增加配置和方言 SQL；数据库不变量仍是唯一正确性来源 | FR-001, NFR-001, SAC-001；`FileServiceImpl.java`；Issue 453 | 否 | 文件对象与哈希映射创建改为幂等，所有现有保存入口受益 | 普通快照读可能看不到刚提交的胜出对象；失败方可能已写入不同对象名 | 当前读未能找到匹配的已完成对象时通过 `Require + FileCode.FILE_STORE_FAILED` 终止，禁止吞掉非目标冲突或直接抛出运行时异常 |
 
 ## 2. 模块与依赖边界
 
@@ -42,7 +42,7 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 
 | 流程设计ID | 系统需求ID | 调用入口 | 参与模块 | 处理顺序 | 事务边界 | 状态变化 | 幂等键 | 并发策略 | 外部失败与补偿 | 用户可见结果 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| FLOW-001 | FR-001, UC-001, SAC-001 | 现有文件上传、生成文件、资料打包及分片完成入口 | MOD-001 | 计算哈希并查询既有映射；写入存储；尝试插入物理对象；冲突时按唯一口径当前读胜出对象；幂等维护哈希映射；建立独立文件结果；原子增加引用数 | 沿用各公开保存方法现有事务，数据库写入同一事务；对象存储写入在事务外部资源上通过补偿收敛 | 首个事务创建物理对象，其余事务复用；每个事务创建自己的文件结果 | 存储配置、桶、文件哈希、文件大小 | 数据库唯一约束最终仲裁；明确捕获 DuplicateKeyException；使用 `LIMIT 1 FOR UPDATE` 当前读绕过旧快照；哈希映射执行同等幂等恢复 | 写入失败沿用既有失败；失败方对象名与胜出对象不同时删除失败方对象；删除失败记录上下文但不反转已成立的数据库复用 | 五次并发保存均返回独立可用结果且内容一致 |
+| FLOW-001 | FR-001, UC-001, SAC-001 | 现有文件上传、生成文件、资料打包及分片完成入口 | MOD-001 | 计算哈希并查询既有映射；写入存储；尝试插入物理对象；冲突时按唯一口径当前读胜出对象；幂等维护哈希映射；建立独立文件结果；原子增加引用数 | 沿用各公开保存方法现有事务，数据库写入同一事务；对象存储写入在事务外部资源上通过补偿收敛 | 首个事务创建物理对象，其余事务复用；每个事务创建自己的文件结果 | 存储配置、桶、文件哈希、文件大小 | 数据库唯一约束最终仲裁；明确捕获 DuplicateKeyException；使用 `LIMIT 1 FOR UPDATE` 当前读绕过旧快照；哈希映射执行同等幂等恢复 | 写入失败统一使用 `Require + FileCode` 保持 Service 错误契约；失败方对象名与胜出对象不同时删除失败方对象；删除失败记录上下文但不反转已成立的数据库复用 | 五次并发保存均返回独立可用结果且内容一致 |
 
 ## 5. API 与远程契约设计
 
@@ -54,7 +54,7 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 
 | 数据设计ID | 上游或模型ID | 表或实体 | 字段变化 | 约束 | 索引 | 租户审计 | Mapper边界 | 数据来源 | migration或回填 | 回滚或补偿 | 适用规范ruleId | 验证方式 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| DB-001 | DR-001, FR-001, DM-001 | `file_object`、`file_hash_mapping`、`file_record` 及现有实体 | 无 | 复用 `uk_file_object_hash_storage` 与 `uk_file_hash_mapping_target` | 无变化 | 沿用现有租户和审计字段 | 现有 Mapper 负责插入、当前读、更新和原子引用增量，不新增跨模块仓储 | 文件内容哈希、存储配置、租户上下文和保存请求 | 不需要 migration 或历史回填 | 非目标冲突重新抛出；失败方不同对象名执行存储删除补偿；代码回滚即可恢复旧行为 | rules/backend/04-db.md, rules/backend/07-persistence.md | H2 MySQL 模式使用真实 Mapper、唯一约束和事务执行五并发测试；模块 verify |
+| DB-001 | DR-001, FR-001, DM-001 | `file_object`、`file_hash_mapping`、`file_record` 及现有实体 | 无 | 复用 `uk_file_object_hash_storage` 与 `uk_file_hash_mapping_target` | 无变化 | 沿用现有租户和审计字段 | 现有 Mapper 负责插入、当前读、更新和原子引用增量，不新增跨模块仓储 | 文件内容哈希、存储配置、租户上下文和保存请求 | 不需要 migration 或历史回填 | 非目标冲突通过 `Require + FileCode.FILE_STORE_FAILED` 终止；失败方不同对象名执行存储删除补偿；代码回滚即可恢复旧行为 | rules/backend/04-db.md, rules/backend/07-persistence.md | Testcontainers MySQL 8.4 使用真实 Mapper、唯一约束、InnoDB 事务和默认隔离级别执行五并发测试；模块 verify |
 
 ## 7. 安全、权限、租户与数据边界
 
@@ -66,7 +66,7 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 
 | 错误设计ID | 系统需求ID | 失败场景 | 触发条件 | 错误码 | 异常类型 | 用户反馈 | 日志上下文 | 指标或告警 | 重试或补偿 | 敏感信息处理 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| ERR-001 | FR-001, UC-001, SAC-001 | 物理对象或哈希映射发生目标唯一键竞争 | 并发事务在先查未命中后同时插入相同唯一口径 | 不新增错误码；竞争恢复成功返回正常结果，恢复无法确认时沿用 FILE_STORE_FAILED | DuplicateKeyException 仅在精确插入边界捕获；无法回查时重新抛出 | 正常竞争不显示错误；真实存储或持久化失败保持既有反馈 | 失败方对象名、胜出对象名、存储配置、桶、哈希和大小；不记录文件正文 | 存储补偿失败记录警告日志 | 当前读一次确认胜出对象；不同对象名执行一次删除补偿，不做无界重试 | 不记录文件正文、访问凭证、token 或密钥 |
+| ERR-001 | FR-001, UC-001, SAC-001 | 物理对象或哈希映射发生目标唯一键竞争 | 并发事务在先查未命中后同时插入相同唯一口径 | 不新增错误码；竞争恢复成功返回正常结果，恢复无法确认时沿用 FILE_STORE_FAILED | DuplicateKeyException 仅在精确插入边界捕获；无法回查时调用 `Require.fail(FileCode.FILE_STORE_FAILED)` | 正常竞争不显示错误；真实存储或持久化失败保持既有反馈 | 失败方对象名、胜出对象名、存储配置、桶、哈希和大小；不记录文件正文 | 存储补偿失败记录警告日志 | 当前读一次确认胜出对象；不同对象名执行一次删除补偿，不做无界重试 | 不记录文件正文、访问凭证、token 或密钥 |
 
 ## 9. 前端结构与交互实现映射
 
@@ -78,7 +78,7 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 
 | 测试用例ID | 系统验收ID | 设计项ID | 场景 | 优先级 | 测试层级 | 自动化判断 | 测试数据 | 权限或租户边界 | 稳定契约 | 执行入口 | 证据 | 失败处理 | 适用规范ruleId |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| TC-453 | SAC-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | 五个线程从无既有对象开始并发保存完全相同字节 | P1 | 集成测试 | AUTO | `IT_453_` 唯一前缀、相同字节和同一存储配置；测试前重建隔离表，测试后销毁内存库 | 固定测试租户与用户；不接触共享数据库 | 真实 Mapper、唯一约束、Spring 事务、线程屏障和线程安全存储替身；断言五次成功、一对象、一映射、五结果、引用数五、存储对象一份 | `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -am -DskipTests=false -Dtest=FileServiceConcurrentSaveIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 任一断言失败即阻断提交并保留测试报告定位；不得降低并发数或断言 | rules/09-test-case-automation-flow.md, rules/backend/08-test.md |
+| TC-453 | SAC-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | 五个线程从无既有对象开始并发保存完全相同字节 | P1 | 集成测试 | AUTO | `IT_453_` 唯一前缀、相同字节和同一存储配置；Testcontainers MySQL 8.4 提供一次性隔离数据库，测试前重建目标表，容器销毁时清理 | 固定测试租户与用户；不接触共享数据库 | 真实 MySQL、真实 Mapper、唯一约束、Spring 事务、线程屏障和线程安全存储替身；断言五次成功、一对象、一映射、五结果、引用数五、存储对象一份 | `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -am -DskipTests=false -Dtest=FileServiceConcurrentSaveIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 任一断言失败即阻断提交并保留测试报告定位；不得降级为 H2、降低并发数或弱化断言 | rules/09-test-case-automation-flow.md, rules/backend/08-test.md |
 
 ## 11. 兼容、发布与能力文档影响
 
