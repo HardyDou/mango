@@ -650,6 +650,91 @@ class CheckMojoTest {
     }
 
     @Test
+    void finalizeResult_checkstyleBaselineMatchesAcrossLocaleAndLineDrift() throws Exception {
+        CheckIssue baselineIssue = checkstyleIssue(
+                "MagicNumberCheck", 12, "'5' 是一个魔术数字（直接常数）。");
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(baselineIssue);
+        Path baselineFile = tempDir.resolve("target/localized-checkstyle-baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        result.issues.add(checkstyleIssue("MagicNumberCheck", 18, "'5' is a magic number."));
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        tempDir,
+                        "mango-platform/mango-notice/src/main/java/Demo.java",
+                        null,
+                        baselineFile.toString(),
+                        "no-new-violations",
+                        "block"));
+
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+        assertTrue(result.passed);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+    }
+
+    @Test
+    void finalizeResult_checkstyleBaselineRejectsDifferentLiteralAcrossLocale() throws Exception {
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(checkstyleIssue(
+                "MagicNumberCheck", 12, "'5' 是一个魔术数字（直接常数）。"));
+        Path baselineFile = tempDir.resolve("target/replaced-checkstyle-baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        result.issues.add(checkstyleIssue("MagicNumberCheck", 18, "'6' is a magic number."));
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        tempDir,
+                        "mango-platform/mango-notice/src/main/java/Demo.java",
+                        null,
+                        baselineFile.toString(),
+                        "no-new-violations",
+                        "block"));
+
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+        assertFalse(result.passed);
+        assertEquals(1, result.newIssueCount);
+        assertEquals(0, result.baselineIssueCount);
+    }
+
+    @Test
+    void finalizeResult_checkstyleComplexityMatchesAcrossLocale() throws Exception {
+        CheckResult baseline = new CheckResult();
+        baseline.issues.add(checkstyleIssue(
+                "NPathComplexityCheck", 12, "方法分支复杂度： 1,542 （最多： 200 ）。"));
+        Path baselineFile = tempDir.resolve("target/localized-complexity-baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, objectMapper().writeValueAsString(baseline));
+
+        CheckResult result = new CheckResult();
+        result.issues.add(checkstyleIssue(
+                "NPathComplexityCheck",
+                18,
+                "NPath Complexity is 1,542 (max allowed is 200)."));
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        tempDir,
+                        "mango-platform/mango-notice/src/main/java/Demo.java",
+                        null,
+                        baselineFile.toString(),
+                        "no-new-violations",
+                        "block"));
+
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
+        assertTrue(result.passed);
+        assertEquals(0, result.newIssueCount);
+        assertEquals(1, result.baselineIssueCount);
+    }
+
+    @Test
     void finalizeResult_noNewViolationsDoesNotReuseOneBaselineForDuplicateStableIssues() throws Exception {
         // given
         CheckIssue baselineIssue = new CheckIssue();
@@ -701,6 +786,21 @@ class CheckMojoTest {
         assertEquals("FAIL", result.gateStatus);
         assertEquals(1, result.newIssueCount);
         assertEquals(1, result.baselineIssueCount);
+    }
+
+    private CheckIssue checkstyleIssue(String rule, int line, String description) {
+        CheckIssue issue = new CheckIssue();
+        issue.type = rule;
+        issue.severity = "MINOR";
+        issue.file = tempDir.resolve(
+                        "mango-platform/mango-notice/src/main/java/Demo.java")
+                .toString();
+        issue.line = line;
+        issue.description = description;
+        issue.rule = rule;
+        issue.reference = "auto-check-mapping.md";
+        issue.source = "checkstyle";
+        return issue;
     }
 
     @Test
