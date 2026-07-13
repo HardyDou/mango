@@ -1,10 +1,10 @@
 {
   "packageName": "@mango/pmo",
-  "packageVersion": "1.1.0",
+  "packageVersion": "1.1.1",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "aef945dd3b49af10add0adbf86dcb3d17e6679fd",
-  "bundleSha256": "c883e400ab1205c5080ab4f169bf4775adfc40d41cd93d4910f8fca2ae1efc3f",
+  "sourceCommit": "0470329d68bb226282e5e509ee2a0c2526120973",
+  "bundleSha256": "71479088d21e8c8d80dc5f93688ac143a5fbfd377feadc158f3b41e652c895ba",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -44,11 +44,11 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "6ffa7fb17c52f1a1b3f201aa9272b30800dd0f913f2d72e014d927612eac8f24",
+    "sha256": "9fd01793dcd55f9e336fdd6104e31f88eb7a08d1529ba6e06a2d22d9ff645483",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
-        "sha256": "965b2c511bda3f8fc1b9e11e663c3a99f132df9259cd411c9c423789ca5e0e4f",
+        "sha256": "bac2d707aa326d669ba43f058bcf9c2b5e718674b3478c5c0c10d031dcc70b98",
         "size": 738,
         "kind": "plugin",
         "mode": "0644"
@@ -195,8 +195,8 @@
       },
       {
         "path": "skills/mango-release/SKILL.md",
-        "sha256": "262fd67823bb03cfc1864fe01a9a764f8d5f4cb62a1e3252b23f7722b54d73da",
-        "size": 3263,
+        "sha256": "c45c34aa24e0927bdf6d63f43156837258049c3f9dfb760d30598b913d20237a",
+        "size": 3404,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -254,8 +254,8 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "57edf6a48580d0c24fe01159362d1d2f65f08dce6e070f4cd29bfa9c0079ce01",
-      "size": 8676,
+      "sha256": "894e373505801bedf0fe2221874890a913eebac7918bb55fb6fe36fcc48916aa",
+      "size": 9313,
       "kind": "documentation",
       "mode": "0644"
     },
@@ -324,7 +324,7 @@
     },
     {
       "path": "contracts/business-requirements.json",
-      "sha256": "d6e0ae1cf17bdbd7a37c6817221d3ad0c386bfc221dd7484b748c4aad46a10de",
+      "sha256": "86a4955e3ffc641551b61f132d62558b1315bd7b1c683d38348c3a8a1cfb1348",
       "size": 8252,
       "kind": "contract",
       "mode": "0644"
@@ -352,21 +352,21 @@
     },
     {
       "path": "contracts/implementation-plan.json",
-      "sha256": "2bff9d5990495e00cccc3c76e485bf3c7651cbb692416721fdc7f94665a3714e",
+      "sha256": "6f63d054c640212773b77932aaa2ff5e30a11a37780bd98c8c73242ba0531507",
       "size": 7702,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/system-requirements.json",
-      "sha256": "3964a74abdef08db33e4ccdb01003e89698fcf278782c097d75e1145e0fc0443",
+      "sha256": "62fe18a10c40ffb2333c1ec5c96ccb1e3ca8c36fd8048ba65255b2415ae9b216",
       "size": 8421,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/technical-design.json",
-      "sha256": "0d80c07ef83ba79340b1e1af03b93ccfcaf80785d6067a4959a323458de6be5b",
+      "sha256": "ca7f7c4187db56cb9d8789e91da16d1456933a572157995abe099411bc7f8e1e",
       "size": 9674,
       "kind": "contract",
       "mode": "0644"
@@ -443,8 +443,8 @@
     },
     {
       "path": "rules/10-release-artifacts.md",
-      "sha256": "d8a3a73766199d7cecfdd3f270ea0cddf8da770154d5268b7b7fc409a13fa771",
-      "size": 9120,
+      "sha256": "fac5ac05d0dc9f19bdd8f73b8a9514576e34a577b687c0ed18fe8a262d1c4084",
+      "size": 9305,
       "kind": "rule",
       "mode": "0644"
     },
@@ -604,8 +604,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "b03ec89530dce07b6d4dcaea99b278a00d0526367e46100ec67189ec7fe532fd",
-      "size": 24560,
+      "sha256": "82ece4c3fc4daef5ef689bbe4cb0d6a850da112c256358d2505c6efca0f141dd",
+      "size": 24584,
       "kind": "rule",
       "mode": "0644"
     },
@@ -807,8 +807,8 @@
     },
     {
       "path": "skills/mango-release/SKILL.md",
-      "sha256": "262fd67823bb03cfc1864fe01a9a764f8d5f4cb62a1e3252b23f7722b54d73da",
-      "size": 3263,
+      "sha256": "c45c34aa24e0927bdf6d63f43156837258049c3f9dfb760d30598b913d20237a",
+      "size": 3404,
       "kind": "skill",
       "mode": "0644"
     },
@@ -975,8 +975,8 @@
     },
     {
       "path": "tools/check-architecture-debt-budget.mjs",
-      "sha256": "5d433f7f203cc049be7240df72cc882873acd686e97c8e732149b327fd297341",
-      "size": 32246,
+      "sha256": "0bfe7671683323df6155f546670c291c570b9140de244d2d3696aa38c00dc855",
+      "size": 32336,
       "kind": "tool",
       "mode": "0644"
     },

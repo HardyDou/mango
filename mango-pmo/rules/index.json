@@ -85,7 +85,7 @@
     },
     "process.releaseArtifacts": {
       "path": "rules/10-release-artifacts.md",
-      "reason": "npm、Maven、CLI、starter、模板、PMO、Skill 与文档发布批次及版本同步规范"
+      "reason": "npm、Maven、CLI、starter、模板、PMO、Skill 与文档发布批次、不可变制品恢复及版本同步规范"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
