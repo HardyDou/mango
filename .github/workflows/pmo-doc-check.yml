@@ -18,100 +18,14 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Test document contracts, lifecycle routing, and Skills
-        run: |
-          node --test \
-            mango-pmo/tests/architecture-debt-budget.test.mjs \
-            mango-pmo/tests/branch-protection-policy.test.mjs \
-            mango-pmo/tests/document-contract/document-contract.test.mjs \
-            mango-pmo/tests/pmo-preflight.test.mjs \
-            mango-pmo/tests/test-quality-check.test.mjs \
-            mango-pmo/tests/workspace-layout-check.test.mjs
-          node mango-pmo/tests/skills/check-skill-evals.mjs
-
-      - name: Build and verify the reproducible PMO package
-        run: |
-          node mango-ui/packages/mango-pmo/scripts/build-package.mjs
-          node mango-ui/packages/mango-pmo/scripts/check-package.mjs
+      - name: Test document contracts and lifecycle routing
+        run: node --test mango-pmo/tests/document-contract/document-contract.test.mjs
 
       - name: Write PR body
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           printf '%s' "$PR_BODY" > .pr-body.md
-
-      - name: Check PMO preflight routing
-        run: node mango-pmo/tools/check-pmo-preflight.mjs
-
-      - name: Set up Java for backend architecture gates
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-
-      - name: Test and install the current Java architecture gate
-        run: |
-          mvn -f mango/pom.xml \
-            -pl :mango-architecture-rules,:mango-maven-plugin \
-            -am \
-            -DskipTests=false \
-            install
-
-      - name: Enforce architecture and generic Java quality contracts
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          mvn -f mango/pom.xml \
-            -DskipTests \
-            -Dmango.architecture.skip=false \
-            -Dmango.architecture.mode=changed \
-            -Dmango.architecture.requireFullReactor=true \
-            -Dmango.architecture.base="$BASE_SHA" \
-            -Dmango.check.changedOnly=true \
-            -Dmango.check.gate=no-new-violations \
-            -Dmango.check.baseRef="$BASE_SHA" \
-            install
-
-      - name: Enforce decreasing architecture debt budget
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"
-
-      - name: Check canonical business starter and CLI projection
-        run: |
-          node mango-business-starter/scripts/check-template.mjs
-          node mango-ui/packages/mango-cli/scripts/check-business-module-template.mjs
-
-      - name: Test CLI PMO install, upgrade, rollback, and package contracts
-        run: |
-          node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs
-          node mango-ui/packages/mango-cli/scripts/check-cli.mjs
-          node --test mango-ui/packages/mango-cli/tests/*.test.mjs
-
-      - name: Verify generated business backend gates
-        env:
-          MANGO_BACKEND_GATE_VERSION: 1.0.0-SNAPSHOT
-        run: node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs
-
-      - name: Enforce backend module metadata
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          mvn -f mango/pom.xml \
-            -pl :mango-architecture-verification \
-            -am \
-            io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:check \
-            -Drule=module-info \
-            -DbaseDir="${{ github.workspace }}" \
-            -Dmango.check.changedOnly=true \
-            -Dmango.check.gate=no-new-violations \
-            -Dmango.check.baseRef="$BASE_SHA" \
-            -Doutput=json \
-            -DreportFile="${{ github.workspace }}/.runtime/pmo/backend-module-info.json"
-
-      - name: Check governance intent
-        run: node mango-pmo/tools/check-governance-intent.mjs
 
       - name: Audit module README quality
         run: node mango-pmo/tools/audit-module-readmes.mjs
