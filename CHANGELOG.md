@@ -7,6 +7,7 @@
 - Fix `mango release repair` so a pending immutable state with no prior attempt executes its first reviewed publish adapter instead of verify-only.
 - Preserve immutable safety after an attempt: Maven, npm, tag, GitHub Release, and documentation snapshot recovery still requires `{ "kind": "verify-existing" }` and cannot republish an already attempted artifact.
 - Fix `scripts/publish-maven-batch.sh --all-non-app` so `mango-architecture-verification` is flattened and deployed as a POM without running its full-Reactor verify phase inside the app-excluded release Reactor.
+- Fix the architecture-debt base-ref reader so committed budgets larger than Node's default child-process buffer remain comparable in CI; the current 1.4 MiB, 9,038-item baseline now completes without `ENOBUFS`.
 - Publish the matching PMO rule, Release Skill, boundary eval, CLI test, Maven dry-run test, README instructions, and release evidence together.
 
 ### Upgrade Notes
@@ -30,6 +31,8 @@ The following are publication targets for this repair batch. Their status remain
 
 - `node --test mango-ui/packages/mango-cli/tests/release-command.test.mjs`
 - `node --test mango-pmo/tests/publish-maven-batch.test.mjs`
+- `node --test mango-pmo/tests/architecture-debt-budget.test.mjs`
+- `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref fb7473ea2b93d49073a9a43cf3118558d9ae358d`
 - `node mango-pmo/tests/skills/check-skill-evals.mjs`
 - `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
 - `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`

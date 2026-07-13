@@ -483,3 +483,50 @@ test('CI base-ref reads the committed base budget from Git', () => {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }
 });
+
+test('CI base-ref reads a budget larger than the child-process default buffer', () => {
+  const issues = Array.from({ length: 14_000 }, (_, index) => ({
+    ruleId: 'ARCH-LARGE-BASE',
+    subject: `LargeBaseService${index}`,
+    message: 'Existing governed architecture debt'
+  }));
+  const fixture = createFixture({ dependency: [], archunit: issues, pmd: [] });
+  try {
+    fixture.baseline = path.join(
+      fixture.root,
+      'mango-pmo/baselines/architecture/debt-budget.json'
+    );
+    const written = spawnSync(process.execPath, [
+      checker,
+      '--report', fixture.report,
+      '--baseline', fixture.baseline,
+      '--write'
+    ], { cwd: fixture.root, encoding: 'utf8' });
+    assert.equal(written.status, 0, written.stderr);
+    assert.ok(fs.statSync(fixture.baseline).size > 1024 * 1024);
+
+    const git = (...args) => spawnSync('git', ['-C', fixture.root, ...args], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: 'Mango Test',
+        GIT_AUTHOR_EMAIL: 'mango-test@example.invalid',
+        GIT_COMMITTER_NAME: 'Mango Test',
+        GIT_COMMITTER_EMAIL: 'mango-test@example.invalid'
+      }
+    });
+    assert.equal(git('init', '-q').status, 0);
+    assert.equal(git('add', '.').status, 0);
+    assert.equal(git('commit', '-qm', 'large baseline').status, 0);
+
+    const checked = spawnSync(process.execPath, [
+      checker,
+      '--report', fixture.report,
+      '--baseline', fixture.baseline,
+      '--base-ref', 'HEAD'
+    ], { cwd: fixture.root, encoding: 'utf8' });
+    assert.equal(checked.status, 0, checked.stderr);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
