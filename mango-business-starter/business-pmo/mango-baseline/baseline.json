@@ -3,8 +3,8 @@
   "packageVersion": "1.1.0",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "aef945dd3b49af10add0adbf86dcb3d17e6679fd",
-  "bundleSha256": "c883e400ab1205c5080ab4f169bf4775adfc40d41cd93d4910f8fca2ae1efc3f",
+  "sourceCommit": "b29fae7d8e253ba4058d549b9c5f3aadd81bed84",
+  "bundleSha256": "221ea42328ac10564e961732054ced46d25795f83fc292321e4515f9dade23c1",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -975,8 +975,8 @@
     },
     {
       "path": "tools/check-architecture-debt-budget.mjs",
-      "sha256": "5d433f7f203cc049be7240df72cc882873acd686e97c8e732149b327fd297341",
-      "size": 32246,
+      "sha256": "3365da53c37f3f858bdb1d5046a3bfb8a5063824aa0da91fac18cdead6eef973",
+      "size": 32360,
       "kind": "tool",
       "mode": "0644"
     },
