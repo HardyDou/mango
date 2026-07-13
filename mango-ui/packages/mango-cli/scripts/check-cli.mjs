@@ -1,6 +1,6 @@
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
@@ -2610,21 +2610,19 @@ function assertNoDirectDependency(pom, artifactId, label) {
 }
 
 function assertNoUnrenderedPlaceholders(projectRoot) {
-  const result = spawnSync('rg', [
-    '-n',
-    '\\{\\{',
-    '--glob',
-    '!business-pmo/mango-baseline/**',
-    '.',
-  ], {
-    cwd: projectRoot,
-    encoding: 'utf8',
-  });
-  if (result.status === 0) {
-    throw new Error(`generated project contains unrendered placeholders:\n${result.stdout}`);
-  }
-  if (result.status !== 1) {
-    throw new Error(`placeholder scan failed:\n${result.stdout}\n${result.stderr}`);
+  const placeholderFiles = walkFiles(projectRoot)
+    .map(file => ({
+      file,
+      relativePath: relative(projectRoot, file).split('\\').join('/'),
+    }))
+    .filter(({ relativePath }) => !relativePath.startsWith('business-pmo/mango-baseline/'))
+    .filter(({ file }) => readFileSync(file).includes('{{'))
+    .map(({ relativePath }) => relativePath)
+    .sort();
+  if (placeholderFiles.length > 0) {
+    throw new Error(
+      `generated project contains unrendered placeholders:\n${placeholderFiles.join('\n')}`,
+    );
   }
 }
 
