@@ -608,9 +608,8 @@ function checkAgainstBase(baseDocument, baseline, current) {
   }
   if (baseline.acceptedIncreaseReason !== null) {
     return {
-      passed: false,
-      action: 'stale-increase-reason',
-      message: 'Accepted-increase metadata is stale because the budget did not increase relative to the PR base.',
+      passed: true,
+      action: 'historical-increase-recorded',
       base: baseDocument.value,
       baseline,
       current,

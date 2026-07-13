@@ -215,18 +215,29 @@ test('accepts a governed increase only when its reason is bound to the exact bas
   }
 });
 
-test('rejects stale accepted-increase metadata when the PR budget did not increase', () => {
+test('keeps a prior accepted-increase record as inert audit evidence', () => {
   const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
   try {
     assert.equal(run(fixture, ['--write']).status, 0);
+    writeReport(fixture.report, { dependency: [], archunit: ['ARCH-1', 'ARCH-2'], pmd: [] });
+    assert.equal(
+      run(fixture, [
+        '--write', '--accept-increase', '--reason', 'prior reviewed rule adoption'
+      ]).status,
+      0
+    );
     copyBaselineToBase(fixture);
-    const budget = JSON.parse(fs.readFileSync(fixture.baseline, 'utf8'));
-    budget.acceptedIncreaseReason = 'stale prior approval';
-    budget.acceptedIncreaseFromSha256 = 'a'.repeat(64);
-    fs.writeFileSync(fixture.baseline, `${JSON.stringify(budget, null, 2)}\n`);
-    const rejected = run(fixture, ['--base-budget', fixture.baseBudget]);
-    assert.equal(rejected.status, 1);
-    assert.equal(rejected.report.action, 'stale-increase-reason');
+    const accepted = run(fixture, ['--base-budget', fixture.baseBudget]);
+    assert.equal(accepted.status, 0, accepted.stderr);
+    assert.equal(accepted.report.action, 'historical-increase-recorded');
+
+    writeReport(
+      fixture.report,
+      { dependency: [], archunit: ['ARCH-1', 'ARCH-2', 'ARCH-3'], pmd: [] }
+    );
+    const laterIncrease = run(fixture, ['--base-budget', fixture.baseBudget]);
+    assert.equal(laterIncrease.status, 1);
+    assert.equal(laterIncrease.report.action, 'check');
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }
