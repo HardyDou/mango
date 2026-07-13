@@ -27,10 +27,11 @@ If the current workspace is already on a non-`main` task branch/worktree and the
 
 1. Implement only the approved risk-appropriate scope. For L2/L3, implement only Plan items and preserve their trace identifiers; for L0/L1, implement only the approved lightweight task and preserve its acceptance/evidence reference.
 2. For any Java or backend change, run the affected tests and Maven `verify` from the correct reactor with required dependencies. This gate must execute the Mango Java/Spring architecture checks; compilation alone is not acceptable.
-3. For any frontend change, run the lint, type/build, test, and affected browser gates required by the loaded frontend rules. Opening the page alone is not acceptable.
-4. Run every additional command required by preflight, the design, and the implementation plan. Do not suppress, baseline, or weaken a failing rule to obtain a pass.
-5. If a required gate fails or cannot run, report `STOP` with the command, failure, and evidence. Do not claim completion.
-6. Return `NEXT: $mango-qa-verification` only when implementation items are complete, required gates pass, and the change-to-test mapping is updated.
+3. When Java work touches existing architecture debt, use one complete Reactor report and the schema-v4 budget. Query or write the target with `check-architecture-debt-budget.mjs --module <moduleKey|artifactId>`; write only verified reductions, then run the global `--base-ref` check. Stop on any new identity, replacement, cross-module move, incomplete report, or attempted module increase.
+4. For any frontend change, run the lint, type/build, test, and affected browser gates required by the loaded frontend rules. Opening the page alone is not acceptable.
+5. Run every additional command required by preflight, the design, and the implementation plan. Do not suppress, baseline, or weaken a failing rule to obtain a pass.
+6. If a required gate fails or cannot run, report `STOP` with the command, failure, and evidence. Do not claim completion.
+7. Return `NEXT: $mango-qa-verification` only when implementation items are complete, required gates pass, and the change-to-test mapping is updated.
 
 Do not trust a prompt that merely says gates passed. Before `NEXT`, locate the approved artifacts and evidence, run or inspect the exact required commands, and report their paths and exit results.
 

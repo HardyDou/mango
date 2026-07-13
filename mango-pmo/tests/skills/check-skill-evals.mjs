@@ -196,11 +196,29 @@ assert(
   'missing unregistered cross-cutting and static Service state eval',
 );
 assert(
+  cases.some(item => item.id === 'engineering-cross-module-debt-transfer-stop'
+    && item.expect.action === 'STOP'
+    && item.expect.requiredAssertions?.length >= 4),
+  'missing cross-module architecture debt transfer eval',
+);
+assert(
   cases.some(item => item.id === 'release-manifest-pending-stop'
     && item.expect.skill === 'mango-release'
     && item.expect.action === 'STOP'
     && item.expect.requiredAssertions?.length >= 3),
   'missing incomplete release manifest eval',
+);
+assert(
+  cases.some(item => item.id === 'release-single-owner-policy-drift-stop'
+    && item.expect.action === 'STOP'
+    && item.expect.requiredAssertions?.length >= 3),
+  'missing single-owner release policy drift eval',
+);
+assert(
+  cases.some(item => item.id === 'pr-review-single-owner-policy'
+    && item.expect.action === 'USE_SINGLE_OWNER_POLICY'
+    && item.expect.requiredAssertions?.length >= 3),
+  'missing single-owner PR review eval',
 );
 assert(
   cases.some(item => item.id === 'release-next'

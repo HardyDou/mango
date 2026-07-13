@@ -62,8 +62,12 @@ CLI 不负责：
 使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
 
 ```bash
+npm view @mango/pmo@1.1.0 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.68 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 npm install -g @mango/cli@1.0.68 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
+
+两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
 
 生成 full 项目：
 

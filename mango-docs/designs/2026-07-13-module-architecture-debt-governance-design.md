@@ -86,9 +86,8 @@ node mango-pmo/tools/check-architecture-debt-budget.mjs \
 
 选择器按以下顺序解析：
 
-1. 精确 `moduleKey`。
-2. 唯一 artifactId。
-3. `moduleKey` 目录前缀，选择其全部 Maven 子模块。
+1. `moduleKey` 路径，选择精确模块及其全部 Maven 子模块。
+2. 唯一 artifactId，选择单个 Maven 模块。
 
 未知选择器、歧义 artifactId、空选择结果或重复解析必须失败并列出原因。
 
