@@ -1,0 +1,1268 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_CHANNEL_CAPABILITY": [
+          {
+            "id": "2026071309000000046",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_WECHAT_QR.WEB.MANGO_PAY",
+            "name": "PERSONAL_WECHAT_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332001
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000047",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.CORPORATE_OFFLINE_ACCOUNT.WEB.MANGO_PAY",
+            "name": "CORPORATE_OFFLINE_ACCOUNT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332002
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000048",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_ALIPAY_H5.H5.MANGO_PAY",
+            "name": "PERSONAL_ALIPAY_H5",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332003
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_H5"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "H5"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000049",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.CORPORATE_EBANK_REDIRECT.WEB.MANGO_PAY",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332004
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000050",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330002.PERSONAL_WECHAT_QR.WEB.PROD",
+            "name": "PERSONAL_WECHAT_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332005
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330002
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000051",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330002.PERSONAL_ALIPAY_H5.H5.PROD",
+            "name": "PERSONAL_ALIPAY_H5",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332006
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330002
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_H5"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "H5"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000052",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_UNIONPAY_QR.WEB.MANGO_PAY",
+            "name": "PERSONAL_UNIONPAY_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332007
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_UNIONPAY_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000053",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_DEBIT_QUICK.WEB.MANGO_PAY",
+            "name": "PERSONAL_DEBIT_QUICK",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332008
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_DEBIT_QUICK"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000054",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_CREDIT_QUICK.WEB.MANGO_PAY",
+            "name": "PERSONAL_CREDIT_QUICK",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332009
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_CREDIT_QUICK"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000055",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_WALLET_QUICK.WEB.MANGO_PAY",
+            "name": "PERSONAL_WALLET_QUICK",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332010
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WALLET_QUICK"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000056",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_ALIPAY_QR.WEB.MANGO_PAY",
+            "name": "PERSONAL_ALIPAY_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332011
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000057",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_ALIPAY_PC.WEB.MANGO_PAY",
+            "name": "PERSONAL_ALIPAY_PC",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332012
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_PC"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000058",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330001.PERSONAL_EBANK_REDIRECT.WEB.MANGO_PAY",
+            "name": "PERSONAL_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332013
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000059",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330004.CORPORATE_OFFLINE_ACCOUNT.WEB.OFFLINE_COLLECTION",
+            "name": "CORPORATE_OFFLINE_ACCOUNT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332014
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330004
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 0
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000060",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330003.CORPORATE_EBANK_REDIRECT.WEB.PROD",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332015
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330003
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 1
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000061",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330005.PERSONAL_ALIPAY_QR.WEB.PROD",
+            "name": "PERSONAL_ALIPAY_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332016
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330005
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 0
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 1000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000062",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330005.PERSONAL_WECHAT_QR.WEB.PROD",
+            "name": "PERSONAL_WECHAT_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332017
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330005
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 0
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 1000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000063",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330005.PERSONAL_EBANK_REDIRECT.WEB.PROD",
+            "name": "PERSONAL_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332018
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330005
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 0
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000064",
+            "version": 1,
+            "bizKey": "payment.channel-capability.330005.CORPORATE_EBANK_REDIRECT.WEB.PROD",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 332019
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330005
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "supportsRefund": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsQuery": {
+                "type": "INT",
+                "value": 1
+              },
+              "supportsClose": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsBill": {
+                "type": "INT",
+                "value": 0
+              },
+              "supportsReconcile": {
+                "type": "INT",
+                "value": 0
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

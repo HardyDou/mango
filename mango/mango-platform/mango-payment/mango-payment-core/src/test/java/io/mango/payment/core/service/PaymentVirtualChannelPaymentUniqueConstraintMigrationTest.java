@@ -21,11 +21,11 @@ class PaymentVirtualChannelPaymentUniqueConstraintMigrationTest {
     void migration_containsPayOrderUniqueConstraint() throws IOException {
         String ddl;
         try (InputStream input = Objects.requireNonNull(getClass().getResourceAsStream(
-                "/db/migration/payment/V62__payment_virtual_payment_pay_order_unique.sql"))) {
+                "/db/migration/payment/V1__payment_platform.sql"))) {
             ddl = new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        assertThat(ddl).contains("UNIQUE KEY `uk_payment_virtual_pay_order` (`tenant_id`, `pay_order_no`)");
+        assertThat(ddl).contains("UNIQUE KEY `uk_payment_virtual_pay_order` (`tenant_id`,`pay_order_no`)");
     }
 
     @Test

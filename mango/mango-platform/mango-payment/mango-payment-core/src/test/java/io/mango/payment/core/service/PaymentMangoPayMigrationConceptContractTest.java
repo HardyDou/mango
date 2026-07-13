@@ -19,13 +19,12 @@ class PaymentMangoPayMigrationConceptContractTest {
     void migrations_createMangoPayCurrentTablesDirectly() throws IOException {
         String migrations = migrations();
 
-        assertThat(migrations).contains("CREATE TABLE IF NOT EXISTS `payment_virtual_channel_payment`");
+        assertThat(migrations).contains("CREATE TABLE `payment_virtual_channel_payment`");
         assertThat(migrations).contains("`virtual_payment_no` varchar(64) NOT NULL COMMENT '内置虚拟通道支付单号'");
-        assertThat(migrations).contains("CREATE TABLE IF NOT EXISTS `payment_mango_pay_scenario_control`");
+        assertThat(migrations).contains("CREATE TABLE `payment_mango_pay_scenario_control`");
         assertThat(migrations).contains("`channel_code` varchar(32) NOT NULL COMMENT '通道编码，仅支持 MANGO_PAY'");
-        assertThat(migrations).contains("`channel_code` = 'MANGO_PAY'");
-        assertThat(migrations).contains("`channel_type` = 'BUILTIN_VIRTUAL'");
-        assertThat(migrations).contains("`adapter_type` = 'MANGO_PAY'");
+        assertThat(migrations).contains("`adapter_type` varchar(64) NOT NULL DEFAULT 'UNCONFIGURED'");
+        assertThat(migrations).doesNotContain("INSERT INTO");
     }
 
     @Test

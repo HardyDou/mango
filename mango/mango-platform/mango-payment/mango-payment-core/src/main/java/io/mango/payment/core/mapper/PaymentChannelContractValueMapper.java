@@ -9,4 +9,6 @@ import org.apache.ibatis.annotations.Param;
 public interface PaymentChannelContractValueMapper extends BaseMapper<PaymentChannelContractValueEntity> {
 
     int deletePhysicallyByContractId(@Param("contractId") Long contractId, @Param("tenantId") String tenantId);
+
+    int deletePhysicallyById(@Param("id") Long id);
 }

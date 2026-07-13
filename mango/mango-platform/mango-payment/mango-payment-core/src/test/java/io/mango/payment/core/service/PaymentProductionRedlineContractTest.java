@@ -18,38 +18,14 @@ class PaymentProductionRedlineContractTest {
 
     private static final Path PAYMENT_MODULE_DIR = Path.of("..");
     private static final Path PAYMENT_UI_DIR = Path.of("../../../../mango-ui/packages/payment/src");
-    private static final Path LEGACY_SEED_MIGRATION =
-            Path.of("src/main/resources/db/migration/payment/V4__payment_mango_pay_seed.sql");
-    private static final Path SEED_CLEANUP_MIGRATION =
-            Path.of("src/main/resources/db/migration/payment/V64__payment_remove_seeded_business_runtime_data.sql");
+    private static final Path MIGRATION_DIR = Path.of("src/main/resources/db/migration/payment");
+    private static final Path PAYMENT_BASELINE = MIGRATION_DIR.resolve("V1__payment_platform.sql");
     private static final Pattern FORBIDDEN_PATTERN = Pattern.compile(
             "(?i)\\b(mock|fake|dummy|hardcode|hard-coded|todo|fixme)\\b|UnsupportedOperationException|固定成功|模拟|伪代码|沙箱|sandbox");
-    private static final List<String> SEEDED_RUNTIME_VALUES = List.of(
-            "BO202605250001",
-            "BO202605250002",
-            "BO202605250003",
-            "PO202605250001",
-            "PO202605250002",
-            "PO202605250003",
-            "RO202605250001",
-            "RO202605250002",
-            "BR202605250001",
-            "BR202605250002",
-            "FLOW202605250001",
-            "FLOW202605250002",
-            "FLOW202605250003",
-            "EX202605250001",
-            "EX202605250002",
-            "NT202605250001",
-            "NT202605250002",
-            "RC202605250001",
-            "RC202605250002",
-            "DF202605250001",
-            "DF202605250002",
-            "MANGO_PAY-T202605250001",
-            "MANGO_PAY-T202605250002",
-            "ALLINPAY-T202605250003"
-    );
+    private static final List<String> RETIRED_RUNTIME_VALUES = List.of(
+            "BO202605250001", "PO202605250001", "RO202605250001", "FLOW202605250001",
+            "EX202605250001", "NT202605250001", "RC202605250001", "DF202605250001",
+            "MANGO_PAY-T202605250001");
 
     @Test
     @DisplayName("payment production source should not contain redline delivery tokens")
@@ -62,27 +38,17 @@ class PaymentProductionRedlineContractTest {
     }
 
     @Test
-    @DisplayName("seeded runtime rows should remain covered by cleanup migration")
-    void seededRuntimeRows_shouldRemainCoveredByCleanupMigration() throws IOException {
-        String legacySeed = read(LEGACY_SEED_MIGRATION);
-        String cleanupMigration = read(SEED_CLEANUP_MIGRATION);
-
-        assertThat(legacySeed).containsSubsequence(
-                "INSERT INTO `payment_business_order`",
-                "INSERT INTO `payment_order`",
-                "INSERT INTO `payment_refund_order`",
-                "INSERT INTO `payment_transaction_flow`",
-                "INSERT INTO `payment_exception_order`",
-                "INSERT INTO `payment_notification_record`",
-                "INSERT INTO `payment_reconciliation`",
-                "INSERT INTO `payment_difference`",
-                "INSERT INTO `payment_settlement_summary`",
-                "INSERT INTO `payment_operation_audit`"
-        );
-        for (String value : SEEDED_RUNTIME_VALUES) {
-            assertThat(legacySeed).contains(value);
-            assertThat(cleanupMigration).contains(value);
+    @DisplayName("payment should expose one clean V1 without retired runtime values")
+    void paymentBaseline_shouldBeSingleAndRuntimeClean() throws IOException {
+        try (Stream<Path> migrations = Files.list(MIGRATION_DIR)) {
+            assertThat(migrations
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().matches("V[0-9]+__.+\\.sql"))
+                    .toList())
+                    .containsExactly(PAYMENT_BASELINE);
         }
+        String baseline = read(PAYMENT_BASELINE);
+        RETIRED_RUNTIME_VALUES.forEach(value -> assertThat(baseline).doesNotContain(value));
     }
 
     private Stream<Path> productionSourceFiles() throws IOException {

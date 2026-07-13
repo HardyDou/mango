@@ -1,0 +1,283 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_CHANNEL": [
+          {
+            "id": "2026071309000000037",
+            "version": 1,
+            "bizKey": "payment.channel.MANGO_PAY.MANGO_PAY",
+            "name": "芒果支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "channelCode": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "channelName": {
+                "type": "STRING",
+                "value": "芒果支付"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "channelType": {
+                "type": "STRING",
+                "value": "BUILTIN_VIRTUAL"
+              },
+              "adapterType": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "gatewayBaseUrl": {
+                "type": "STRING",
+                "value": "/payment/mango-pay/virtual"
+              },
+              "fieldTemplateJson": {
+                "type": "STRING",
+                "value": "[\n  {\"name\":\"merchantNo\",\"label\":\"商户号\",\"component\":\"input\",\"dataType\":\"string\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":1,\"group\":\"基础信息\"},\n  {\"name\":\"apiSecret\",\"label\":\"接口密钥\",\"component\":\"password\",\"dataType\":\"string\",\"required\":true,\"sensitive\":true,\"encrypted\":true,\"masked\":true,\"sort\":2,\"group\":\"安全凭证\"},\n  {\"name\":\"certificateFileId\",\"label\":\"商户证书文件\",\"component\":\"fileId\",\"dataType\":\"fileId\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":3,\"group\":\"安全凭证\"},\n  {\"name\":\"mangoPayScenario\",\"label\":\"支付场景控制\",\"component\":\"textarea\",\"dataType\":\"string\",\"required\":false,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":4,\"group\":\"场景控制\"},\n  {\"name\":\"mangoPayRefundScenario\",\"label\":\"退款场景控制\",\"component\":\"textarea\",\"dataType\":\"string\",\"required\":false,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":5,\"group\":\"场景控制\"}\n]"
+              },
+              "capabilitySummary": {
+                "type": "STRING",
+                "value": "内置虚拟支付通道，用于开发、内测和支付闭环验证，不允许删除"
+              },
+              "billFetchModes": {
+                "type": "STRING",
+                "value": "MANUAL,HTTP"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000038",
+            "version": 1,
+            "bizKey": "payment.channel.ALLINPAY.PROD",
+            "name": "通联支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 330002
+              },
+              "channelCode": {
+                "type": "STRING",
+                "value": "ALLINPAY"
+              },
+              "channelName": {
+                "type": "STRING",
+                "value": "通联支付"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "channelType": {
+                "type": "STRING",
+                "value": "AGGREGATOR"
+              },
+              "adapterType": {
+                "type": "STRING",
+                "value": "ALLINPAY"
+              },
+              "capabilitySummary": {
+                "type": "STRING",
+                "value": "通联支付通道，可按真实签约资料维护支付、退款、查单、账单和对账能力"
+              },
+              "billFetchModes": {
+                "type": "STRING",
+                "value": "MANUAL,FTP,FTPS,HTTP"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000039",
+            "version": 1,
+            "bizKey": "payment.channel.HUAXIA_BANK.PROD",
+            "name": "华夏银行",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 330003
+              },
+              "channelCode": {
+                "type": "STRING",
+                "value": "HUAXIA_BANK"
+              },
+              "channelName": {
+                "type": "STRING",
+                "value": "华夏银行"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "channelType": {
+                "type": "STRING",
+                "value": "BANK"
+              },
+              "adapterType": {
+                "type": "STRING",
+                "value": "HUAXIA_BANK"
+              },
+              "capabilitySummary": {
+                "type": "STRING",
+                "value": "华夏银行通道，可按真实签约资料维护企业网银、退款、查单、账单和对账能力"
+              },
+              "billFetchModes": {
+                "type": "STRING",
+                "value": "MANUAL,FTP,FTPS,HTTP"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000040",
+            "version": 1,
+            "bizKey": "payment.channel.OFFLINE_COLLECTION.OFFLINE_COLLECTION",
+            "name": "线下收款",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 330004
+              },
+              "channelCode": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION"
+              },
+              "channelName": {
+                "type": "STRING",
+                "value": "线下收款"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "channelType": {
+                "type": "STRING",
+                "value": "BUILTIN_OFFLINE"
+              },
+              "adapterType": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION"
+              },
+              "gatewayBaseUrl": {
+                "type": "STRING",
+                "value": "/payment/offline-collections"
+              },
+              "fieldTemplateJson": {
+                "type": "STRING",
+                "value": "[\n  {\"name\":\"accountName\",\"label\":\"收款户名\",\"component\":\"input\",\"dataType\":\"string\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":1,\"group\":\"收款账户\"},\n  {\"name\":\"accountNo\",\"label\":\"收款账号\",\"component\":\"input\",\"dataType\":\"string\",\"required\":true,\"sensitive\":true,\"encrypted\":true,\"masked\":true,\"sort\":2,\"group\":\"收款账户\"},\n  {\"name\":\"bankName\",\"label\":\"开户行\",\"component\":\"input\",\"dataType\":\"string\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":3,\"group\":\"收款账户\"}\n]"
+              },
+              "capabilitySummary": {
+                "type": "STRING",
+                "value": "内置线下收款通道，支持线下转账、凭证提交、财务确认到账和银行流水批量对账，不允许删除"
+              },
+              "billFetchModes": {
+                "type": "STRING",
+                "value": "MANUAL"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000041",
+            "version": 1,
+            "bizKey": "payment.channel.FUIOU_PAY.PROD",
+            "name": "富友支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 330005
+              },
+              "channelCode": {
+                "type": "STRING",
+                "value": "FUIOU_PAY"
+              },
+              "channelName": {
+                "type": "STRING",
+                "value": "富友支付"
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "channelType": {
+                "type": "STRING",
+                "value": "AGGREGATOR"
+              },
+              "adapterType": {
+                "type": "STRING",
+                "value": "FUIOU_PAY"
+              },
+              "gatewayBaseUrl": {
+                "type": "STRING",
+                "value": "https://fundwx.payfuiouo2o.com"
+              },
+              "fieldTemplateJson": {
+                "type": "STRING",
+                "value": "[\n      {\"name\":\"scanpayGatewayBaseUrl\",\"label\":\"扫码接口地址\",\"component\":\"url\",\"dataType\":\"url\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":1,\"group\":\"扫码支付\",\"placeholder\":\"https://fundwx.payfuiouo2o.com\"},\n      {\"name\":\"insCd\",\"label\":\"机构号\",\"component\":\"input\",\"dataType\":\"string\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":2,\"group\":\"扫码支付\"},\n      {\"name\":\"merchantNo\",\"label\":\"扫码商户号\",\"component\":\"input\",\"dataType\":\"string\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":3,\"group\":\"扫码支付\"},\n      {\"name\":\"operatorId\",\"label\":\"退款操作员\",\"component\":\"input\",\"dataType\":\"string\",\"required\":false,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":4,\"group\":\"扫码支付\"},\n      {\"name\":\"notifyUrl\",\"label\":\"扫码通知地址\",\"component\":\"url\",\"dataType\":\"url\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":5,\"group\":\"扫码支付\"},\n      {\"name\":\"privateKey\",\"label\":\"商户私钥\",\"component\":\"textarea\",\"dataType\":\"string\",\"required\":true,\"sensitive\":true,\"encrypted\":true,\"masked\":true,\"sort\":6,\"group\":\"扫码支付\",\"description\":\"富友开户资料提供的商户私钥，保存后加密并脱敏展示\"},\n      {\"name\":\"fuiouPublicKey\",\"label\":\"富友平台公钥\",\"component\":\"textarea\",\"dataType\":\"string\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":7,\"group\":\"扫码支付\",\"description\":\"富友开户资料提供的平台公钥\"},\n      {\"name\":\"gatewayMerchantNo\",\"label\":\"网关商户号\",\"component\":\"input\",\"dataType\":\"string\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":20,\"group\":\"网银支付\"},\n      {\"name\":\"gatewayMerchantKey\",\"label\":\"网关商户密钥\",\"component\":\"password\",\"dataType\":\"string\",\"required\":true,\"sensitive\":true,\"encrypted\":true,\"masked\":true,\"sort\":21,\"group\":\"网银支付\",\"description\":\"富友支付网关开户资料提供的商户密钥\"},\n      {\"name\":\"gatewayPayUrl\",\"label\":\"网关支付地址\",\"component\":\"url\",\"dataType\":\"url\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":22,\"group\":\"网银支付\",\"placeholder\":\"https://pay.fuioupay.com/smpGate.do\"},\n      {\"name\":\"gatewayQueryUrl\",\"label\":\"网关查单地址\",\"component\":\"url\",\"dataType\":\"url\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":23,\"group\":\"网银支付\",\"placeholder\":\"https://pay.fuioupay.com/smpAQueryGate.do\"},\n      {\"name\":\"gatewayPageNotifyUrl\",\"label\":\"页面跳转地址\",\"component\":\"url\",\"dataType\":\"url\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":24,\"group\":\"网银支付\"},\n      {\"name\":\"gatewayBackNotifyUrl\",\"label\":\"后台通知地址\",\"component\":\"url\",\"dataType\":\"url\",\"required\":true,\"sensitive\":false,\"encrypted\":false,\"masked\":false,\"sort\":25,\"group\":\"网银支付\"}\n    ]"
+              },
+              "capabilitySummary": {
+                "type": "STRING",
+                "value": "富友支付通道：扫码支付已接入微信扫码、支付宝扫码、查单和退款；网银支付已接入个人网银、企业网银发起支付和查单。扫码商户资料与网关商户资料在签约通道动态维护；通道内部参数由系统适配器处理，不作为商户维护项。网银退款和富友账单接口资料未确认前不开放对应能力。"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

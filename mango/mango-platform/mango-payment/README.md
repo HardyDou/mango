@@ -245,9 +245,10 @@ mango:
 
 Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 
-`V102__payment_tenant_identifier_string.sql` 将全部支付表的 `tenant_id` 值保持转换为
-`VARCHAR(64)`，并补齐平台标准 `TenantEntity` 的可空 `org_id`。升级时数据库 migration
-必须先于新版应用启动完成；旧数值租户值会保留为相同十进制字符串。
+支付模块尚未发布且只支持新数据库，Flyway 基线已归并为
+`V1__payment_platform.sql`。V1 只包含 DDL，不包含 `INSERT`、`UPDATE`、`DELETE`、演示数据、
+运行态订单或商户密钥；全部支付表的 `tenant_id` 为 `VARCHAR(64)`，并包含平台标准
+`TenantEntity` 的可空 `org_id`。不得把 V1 应用到已有 V3-V102 历史的数据库。
 
 核心表按用途分组：
 
@@ -262,9 +263,15 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 | 线下收款 | `payment_offline_collection`、`payment_offline_collection_voucher`、`payment_offline_bank_statement_batch`、`payment_offline_bank_statement_item`、`payment_offline_collection_match`、`payment_offline_refund_process` |
 | 开放接口和虚拟通道 | `payment_openapi_nonce`、`payment_virtual_channel_payment`、`payment_mango_pay_scenario_control` |
 
-初始化内容包括：
+初始化边界：
 
-- 支付基础表、通道能力、支付方式分类、收银台配置、路由规则、虚拟通道、富友通道配置和线下收款相关表。
+- 正式必需的支付方式分类、支付方式、通道、通道字段模板、通道能力和默认风控规则，由
+  `mango-payment-starter` 自己的 `META-INF/mango/resources/payment-common-*.json` 登记，默认加载。
+- 租户、应用、企业主体、银行账户、收银台、签约、签约能力和路由规则属于演示数据，由
+  `mango-payment-starter` 自己的 `META-INF/mango/demo/payment-demo-*.json` 登记；只有
+  `mango.resource.registry.demo-enabled=true` 时加载。
+- 业务订单、支付单、退款单、交易流水、通知、异常、对账、结算、账单批次和线下退款流程等
+  运行态数据不做任何初始化登记，只能由真实业务流程产生。
 - 支付编号规则依赖 `mango-numgen`，通过 `SEQUENCE_RULE` 资源注入；不要在业务代码或前端拼接订单号。
 - 支付昨日账单拉取任务依赖 `mango-job`，通过 `JOB_DEFINITION` 资源注入。
 - 支付结果、退款、异常、对账和结算提醒依赖 `mango-notice`，通过 `MESSAGE_TEMPLATE` 资源注入。
@@ -278,6 +285,8 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-domain.yml
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-numgen.yml
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-job.yml
+mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-{method-category,method,channel,channel-field-template,channel-capability,risk-rule}.json
+mango-payment-starter/src/main/resources/META-INF/mango/demo/payment-demo-*.json
 ```
 
 支持类型：
@@ -288,6 +297,12 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 | `SEQUENCE_RULE` | `numgen` | 登记支付编号规则 |
 | `JOB_DEFINITION` | `job` | 登记支付账单拉取任务 |
 | `MESSAGE_TEMPLATE` | `notice` | 登记支付通知模板 |
+| `PAYMENT_METHOD_CATEGORY`、`PAYMENT_METHOD` | `payment` | 登记正式支付方式基础数据 |
+| `PAYMENT_CHANNEL`、`PAYMENT_CHANNEL_FIELD_TEMPLATE`、`PAYMENT_CHANNEL_CAPABILITY` | `payment` | 登记正式通道及能力基础数据，不携带商户密钥 |
+| `PAYMENT_RISK_RULE` | `payment` | 登记默认风控规则 |
+| `PAYMENT_TENANT`、`PAYMENT_APPLICATION`、`PAYMENT_ENTERPRISE_SUBJECT`、`PAYMENT_SUBJECT_BANK_ACCOUNT` | `payment` | 仅在 demo 开关开启时登记演示接入主体 |
+| `PAYMENT_CASHIER_CONFIG`、`PAYMENT_CHANNEL_CONTRACT`、`PAYMENT_CHANNEL_CONTRACT_VALUE`、`PAYMENT_CHANNEL_CONTRACT_CAPABILITY` | `payment` | 仅在 demo 开关开启时登记演示收银台和签约数据 |
+| `PAYMENT_METHOD_ROUTE_RULE`、`PAYMENT_METHOD_ROUTE_RULE_ITEM` | `payment` | 仅在 demo 开关开启时登记演示路由 |
 
 `MESSAGE_TEMPLATE` 由 `PaymentMessageTemplateResourceProvider` 通过 Java Provider 注入，包含 `payment.order.success`、`payment.order.failed`、`payment.refund.success`、`payment.refund.failed`、`payment.refund.approval.created`、`payment.exception.order.created`、`payment.reconciliation.difference`、`payment.settlement.unresolved`。字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。支付通知节点只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败不影响支付主流程。
 

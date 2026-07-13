@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PaymentTenantEntityMigrationTest {
 
-    private static final String MIGRATION = "/db/migration/payment/V102__payment_tenant_identifier_string.sql";
+    private static final String MIGRATION = "/db/migration/payment/V1__payment_platform.sql";
 
     private static final Set<String> PAYMENT_TABLES = Set.of(
             "payment_application", "payment_enterprise_subject", "payment_channel", "payment_method",
@@ -46,11 +46,20 @@ class PaymentTenantEntityMigrationTest {
             ddl = new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        assertThat(ddl.lines().filter(line -> line.startsWith("ALTER TABLE `payment_")).count())
+        assertThat(ddl.lines().filter(line -> line.startsWith("CREATE TABLE `payment_")).count())
                 .isEqualTo(PAYMENT_TABLES.size());
-        PAYMENT_TABLES.forEach(table -> assertThat(ddl)
+        PAYMENT_TABLES.forEach(table -> assertThat(tableDdl(ddl, table))
                 .as(table)
-                .contains("ALTER TABLE `" + table + "` MODIFY COLUMN `tenant_id` varchar(64)")
-                .contains("ADD COLUMN `org_id` bigint DEFAULT NULL"));
+                .contains("`tenant_id` varchar(64)")
+                .contains("`org_id` bigint DEFAULT NULL"));
+    }
+
+    private String tableDdl(String ddl, String table) {
+        String marker = "CREATE TABLE `" + table + "`";
+        int start = ddl.indexOf(marker);
+        assertThat(start).as(marker).isGreaterThanOrEqualTo(0);
+        int end = ddl.indexOf(";", start);
+        assertThat(end).as(table + " statement end").isGreaterThan(start);
+        return ddl.substring(start, end + 1);
     }
 }

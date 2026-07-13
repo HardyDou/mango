@@ -1,0 +1,90 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_CHANNEL_CONTRACT_VALUE": [
+          {
+            "id": "2026071309000000085",
+            "version": 1,
+            "bizKey": "payment.channel-contract-value.331001.mangoPayScenario",
+            "name": "mangoPayScenario",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 3000000001
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "fieldCode": {
+                "type": "STRING",
+                "value": "mangoPayScenario"
+              },
+              "valueText": {
+                "type": "STRING",
+                "value": "SUCCESS"
+              },
+              "valueSource": {
+                "type": "STRING",
+                "value": "CONFIG"
+              },
+              "sensitiveFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000086",
+            "version": 1,
+            "bizKey": "payment.channel-contract-value.331001.merchantNo",
+            "name": "merchantNo",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 4000000001
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "fieldCode": {
+                "type": "STRING",
+                "value": "merchantNo"
+              },
+              "valueText": {
+                "type": "STRING",
+                "value": "MANGO_PAY_MERCHANT_001"
+              },
+              "valueSource": {
+                "type": "STRING",
+                "value": "COLUMN"
+              },
+              "sensitiveFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

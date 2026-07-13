@@ -27,14 +27,14 @@ class PaymentOrderUniqueConstraintMigrationTest {
     void migration_containsPaymentOrderUniqueConstraints() throws IOException {
         String ddl;
         try (InputStream input = Objects.requireNonNull(
-                getClass().getResourceAsStream("/db/migration/payment/V47__payment_order_unique_constraints.sql"))) {
+                getClass().getResourceAsStream("/db/migration/payment/V1__payment_platform.sql"))) {
             ddl = new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
 
         assertThat(ddl).contains("`channel_code` varchar(64) NOT NULL");
-        assertThat(ddl).contains("GENERATED ALWAYS AS (CASE WHEN `success_flag` = 1 THEN `business_order_id` ELSE NULL END)");
-        assertThat(ddl).contains("UNIQUE KEY `uk_payment_order_channel_trade` (`tenant_id`, `channel_code`, `channel_trade_no`)");
-        assertThat(ddl).contains("UNIQUE KEY `uk_payment_order_success_business` (`tenant_id`, `success_business_order_id`)");
+        assertThat(ddl).contains("GENERATED ALWAYS AS ((case when (`success_flag` = 1) then `business_order_id` else NULL end))");
+        assertThat(ddl).contains("UNIQUE KEY `uk_payment_order_channel_trade` (`tenant_id`,`channel_code`,`channel_trade_no`)");
+        assertThat(ddl).contains("UNIQUE KEY `uk_payment_order_success_business` (`tenant_id`,`success_business_order_id`)");
     }
 
     @Test

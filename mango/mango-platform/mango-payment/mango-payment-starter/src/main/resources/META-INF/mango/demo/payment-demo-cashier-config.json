@@ -1,0 +1,172 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_CASHIER_CONFIG": [
+          {
+            "id": "2026071309000000073",
+            "version": 1,
+            "bizKey": "payment.cashier-config.350001",
+            "name": "订单中心 Web 收银台",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 350001
+              },
+              "cashierName": {
+                "type": "STRING",
+                "value": "订单中心 Web 收银台"
+              },
+              "applicationId": {
+                "type": "LONG",
+                "value": 310001
+              },
+              "resultReturnUrl": {
+                "type": "STRING",
+                "value": "/payment/cashier-result"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "methodCodes": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT,CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "defaultMethodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "methodDisplayOrder": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT,CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "displayConfig": {
+                "type": "STRING",
+                "value": "{\"subtitle\": \"请确认订单金额后选择支付方式\"}"
+              },
+              "defaultCashier": {
+                "type": "INT",
+                "value": 1
+              },
+              "enterpriseSubjectIds": {
+                "type": "STRING",
+                "value": "320001"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000074",
+            "version": 1,
+            "bizKey": "payment.cashier-config.350002",
+            "name": "会员中心 Web 收银台",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 350002
+              },
+              "cashierName": {
+                "type": "STRING",
+                "value": "会员中心 Web 收银台"
+              },
+              "applicationId": {
+                "type": "LONG",
+                "value": 310002
+              },
+              "resultReturnUrl": {
+                "type": "STRING",
+                "value": "/payment/cashier-result"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "methodCodes": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT,CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "defaultMethodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "methodDisplayOrder": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT,CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "displayConfig": {
+                "type": "STRING",
+                "value": "{\"subtitle\": \"请确认订单金额后选择支付方式\"}"
+              },
+              "defaultCashier": {
+                "type": "INT",
+                "value": 1
+              },
+              "enterpriseSubjectIds": {
+                "type": "STRING",
+                "value": "320002"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000075",
+            "version": 1,
+            "bizKey": "payment.cashier-config.350003",
+            "name": "会员中心 App 收银台",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 350003
+              },
+              "cashierName": {
+                "type": "STRING",
+                "value": "会员中心 App 收银台"
+              },
+              "applicationId": {
+                "type": "LONG",
+                "value": 310002
+              },
+              "resultReturnUrl": {
+                "type": "STRING",
+                "value": "http://127.0.0.1:5173/#/payment/cashier-result"
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "defaultCashier": {
+                "type": "INT",
+                "value": 0
+              },
+              "enterpriseSubjectIds": {
+                "type": "STRING",
+                "value": "320002"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
