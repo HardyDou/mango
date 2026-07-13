@@ -12,12 +12,10 @@
 
 ## Capability Docs
 
-- Affected Mango capabilities:
-- Module README: updated / not applicable
-- Capability map: updated / not applicable
-- Business guide: updated / not applicable
-- PMO rules: updated / not applicable
-- `mango-pmo/rules/index.json`: updated / not applicable
+- Affected business capabilities:
+- Module README: updated / not applicable, with reason
+- Business guide: updated / not applicable, with reason
+- CHANGELOG: updated / not applicable, with reason
 
 ## Risk / Verification
 

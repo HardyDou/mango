@@ -252,7 +252,6 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
 
   for (const [property, value, message] of [
     ['mango.architecture.skip', 'true', 'MANGO-ARCH-ENGINE-015'],
-    ['mango.architecture.requireFullReactor', 'false', 'MANGO-ARCH-ENGINE-016'],
     ['mango.check.rule', 'static', 'Governed mango:check rule must remain all, actual=static'],
     ['mango.check.baseDir', 'backend/app', 'Governed mango:check baseDir must equal Maven execution root'],
     ['mango.check.gate', 'no-new-violations', 'Governed mango:check gate must remain all'],
@@ -267,34 +266,14 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
     ], false, `${property} override`);
     assertIncludes(policyFailure, message, `${property} override failure`);
   }
-  const modeFailure = runMaven([
+  runMaven([
+    '-pl',
+    'modules/order/order-core,architecture-verification',
     '-Dmango.architecture.mode=changed',
+    '-Dmango.architecture.requireFullReactor=false',
     '-Denforcer.skip=false',
     'validate',
-  ], false, 'architecture mode override');
-  assertIncludes(modeFailure, 'mango.architecture.mode must remain full', 'architecture mode override failure');
-  const skippedEnforcerRuleFailure = runMaven([
-    '-Denforcer.skipRules=requireProperty',
-    '-Dmango.architecture.mode=changed',
-    '-Dmango.architecture.base=HEAD',
-    'verify',
-  ], false, 'architecture mode override with Enforcer requireProperty skipped');
-  assertIncludes(
-    skippedEnforcerRuleFailure,
-    'No rules are configured',
-    'Enforcer skipRules must fail closed',
-  );
-  const skippedEnforcerModeFailure = runMaven([
-    '-Denforcer.skip=true',
-    '-Dmango.architecture.mode=changed',
-    '-Dmango.architecture.base=HEAD',
-    'verify',
-  ], false, 'architecture mode override with Enforcer skipped');
-  assertIncludes(
-    skippedEnforcerModeFailure,
-    'MANGO-ARCH-ENGINE-018',
-    'POM-only architecture mode lock failure',
-  );
+  ], true, 'affected-module architecture mode');
 
   process.stdout.write(
     `Generated backend gate PASS with Mango ${mangoVersion}: clean project accepted; `
@@ -303,7 +282,7 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
       + 'module-aware architecture report ownership, '
       + 'per-Java-module static report coverage, '
       + 'unregistered/mismatched global Entity cases, approved global Entity acceptance, '
-      + 'and eleven fail-closed policy overrides rejected.\n',
+      + 'affected-module mode accepted, and seven fail-closed policy overrides rejected.\n',
   );
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });

@@ -16,8 +16,8 @@
 7. 页面验收必须记录页面路径、菜单入口、操作步骤、测试数据、业务断言、UI 断言、截图、console/network 结果。
 8. 发布后必须验证发布仓库和业务消费入口都能拿到目标版本；模板、starter、CLI 或依赖变更必须给出升版结论和依据。
 9. 变更既有公共能力时，必须说明影响范围、兼容性、验证矩阵和发布策略。
-10. 新增、修改、删除或重构对外能力时，必须按任务 `L0-L3` 同步更新或说明不更新代码、README/使用说明、需求/设计文档、测试脚本和测试结果基线。
-11. 有 UI 影响时，UI/E2E 脚本必须覆盖本次交付影响的用户可见入口、关键业务流程、权限/租户/数据权限边界、关键异常或回归场景；无 UI 的 `L3` 任务必须执行 API/应用入口级流程测试。只打开页面、接口 200 或无明显报错不能作为完整断言。
+10. 新增、修改、删除或重构对外能力时，必须按真实能力影响同步更新或具体说明不更新代码、README/使用说明、需求/设计文档、测试脚本和测试结果基线；风险低不能豁免已经发生的对外说明变化。
+11. 按 `rules/09-test-case-automation-flow.md` 分别评估需求影响和解决方案风险，并为每个验收结果选择 `STATIC/UNIT/API/UI` 中最低成本的充分验证。UI 只覆盖本次用户可见布局/交互/浏览器结果；无 UI 的 L3 使用 API/应用真实入口，不伪造 UI。只打开页面、接口 200 或无明显报错不能作为完整断言。
 12. 测试结果基线必须记录测试命令、环境和版本、数据库名或测试数据集标识、账号/租户标识、通过/失败/阻塞/例外列表、证据路径和相对上一基线的行为变化；禁止记录密码、token、密钥。
 13. 任务结束必须确认无未说明变更、分支状态明确、服务关闭或说明保留原因。
 
@@ -66,11 +66,12 @@
 
 - 确认 base、head、最新提交和文件清单。
 - 按文件和 diff 判断改动类型、影响模块、接口/数据/配置/页面/发布物料变化。
-- 根据改动类型选择至少 3 个相关专家视角评审，例如 PMO、架构、后端、前端、QA、安全、支付、发布或文档治理。
+- 根据最终风险和影响面选择相关专家视角：L0/L1 至少一个直接相关视角，L2 至少两个，L3 至少三个；例如 PMO、架构、后端、前端、QA、安全、支付、发布或文档治理。禁止为局部视觉改动机械召集无关专家。
 - 专家评审必须输出阻断问题、非阻断建议和结论。
 - 存在阻断问题时不得合并；必须把问题登记到 PR 评论或评审结论中。
 - 无阻断问题时，合并前必须记录评审视角、验证命令、未验证项和风险。
 - 对外能力变更的 PR 门禁必须检查交付台账中适用的 UI/E2E 或入口级流程脚本和测试结果基线是否填写可复核路径，或有明确 `EXCEPTION` 依据。
+- PR 必须登记需求影响、解决方案风险、二者最大值形成的最终等级、所选 `STATIC/UNIT/API/UI`、充分性说明和每个跳过类型的理由。
 
 前端官方模块、admin 聚合入口、CLI 模块清单或样式发布物料发生变化时，PR 门禁必须包含：
 
@@ -100,7 +101,7 @@ PMO 治理使用以下稳定检查身份：
 - 首次配置或修改保护规则时，必须从真实 PR 的 check-run 或 GitHub API 读取 context，禁止仅凭文档字符串猜测。
 - 修改 workflow `name`、job ID、job `name` 或触发事件时，必须在同一变更中同步 branch protection/ruleset 和本节；旧 required check 不得因改名永久 pending。
 - 业务项目的 `pmo-doc-check` 必须对每个 PR 运行，不得配置会跳过整个 workflow 的 `paths`/`paths-ignore`；文档或后端没有变化时可以在 job 内执行可审计的轻量判定，但稳定 check-run 必须产生结果。
-- 业务项目的同一 `pmo-doc-check` 必须执行 `check-document-set.mjs --root business-docs` 和完整后端 `mvn verify`；四类生命周期文档遗漏 `documentType`、使用未知类型、重复 ID、上游断链或摘要失效时必须失败。
+- 业务项目的同一 `pmo-doc-check` 必须执行 `check-document-set.mjs --root business-docs`；有后端影响时，质量门禁只对直接修改的 Maven 模块执行 `mvn verify`，依赖构建和消费者兼容性另行验证；根 POM、全局 parent、架构规则/插件或门禁变化才执行完整 Reactor。四类生命周期文档遗漏 `documentType`、使用未知类型、重复 ID、上游断链或摘要失效时必须失败。
 - `mango-pmo` 规则、合同、Agent、Skill、模板、Java 架构 checker、PMO workflow、业务模板和 PMO/CLI 发布脚本必须由 `.github/CODEOWNERS` 覆盖。
 - required check 成功只证明机器门禁通过，不能替代业务、架构、QA 或发布结论；`multi-maintainer` 还必须取得独立 Code Owner 结论，`single-owner` 由 Owner 的 PR 合并动作承担最终人工授权并保留 PR 记录。
 - 声明“分支保护已生效”前，必须提供远端 ruleset/branch protection 或受保护 PR 的验证证据。
@@ -115,11 +116,11 @@ PMO 治理使用以下稳定检查身份：
 
 ## 2.5 历史架构债务与递减预算
 
-- **正向要求**：PR 使用 `changed`/`no-new-violations` 只阻断本次可归因的新违规；同一次完整 Reactor 检查仍统计全部历史问题。架构报告必须使用 schema v2，声明 `inventoryScope=full-reactor`、`issueInventory=all-detected-issues`，实际/预期 Reactor 项目数必须与 `modules` 目录相等，dependency、ArchUnit、PMD 和 blocking 问题都必须唯一归属 `moduleKey`。schema v4 预算同时保存全局和逐模块的规则计数、稳定 identity 多重集合；全局聚合必须由模块明细精确求和。历史问题修复后必须用同一份完整报告执行全局或 `--module ... --write` 下调预算，后续不得回升。
-- **禁止项**：禁止让未改动文件的存量问题阻断普通新需求；禁止用历史预算放行本次新增违规；禁止在规则或模块之间移动违规维持总数；禁止用部分 Reactor 报告、`unknown` 模块或重复执行单模块 Maven 构建修改正式预算；禁止在模块模式接受预算增加；禁止手工抬高总量、模块量或复用旧审批原因。规则升级首次暴露存量债务时，只能由获批 PMO 治理任务使用完整报告执行全局 `--write --accept-increase --reason`，并取得与仓库治理模式一致的人工授权。
-- **正例**：一次完整扫描记录全仓 9,038 条、`mango-platform/mango-system` 目录 492 条、其中 `mango-system-core` 233 条。清理 core 后，执行 `--module mango-system-core --write` 只降低该模块及全局聚合；提交前再执行无 `--module` 的全局检查，未清理模块保持原预算。
-- **反例**：从模块 A 删除一条旧 identity，同时在模块 B 新增同规则问题，并以“全仓总数没变”为由更新预算。错误原因：模块 B 的 identity 增加和跨模块转移都会失败，历史 baseline 只隔离旧事实，不授权替换或新增。
-- **机器判定**：Maven `changed` 门禁先用 Git base 的 committed identity 多重集合扣除历史问题，只阻断剩余新身份；CI 随后执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"`，对 `base budget -> PR budget -> current full report` 做全局及逐模块三方比较。模块清债使用可重复的 `--module <moduleKey|artifactId>` 读取同一报告；目录 selector 覆盖其全部 Reactor 子模块，artifactId 必须唯一。任一规则、identity 或模块归属增加、已有下降未写回、模块聚合与全局不一致、报告不完整或归属不唯一都必须失败。
+- **正向要求**：普通后端 PR 使用 Git 变更映射直接 Maven 模块；质量门禁只扫描这些模块，不使用 `-am` 或 `-amd` 扩大 Reactor。依赖构建、消费者编译和 API 兼容性验证属于独立验证步骤，按需求影响与方案风险选择；`changed`/`no-new-violations` 只阻断本次可归因的新违规，partial-reactor 报告只作为本次门禁证据。`.github/workflows/architecture-debt-inventory.yml` 定时或手工执行完整 Reactor，报告使用 schema v2、`inventoryScope=full-reactor`、`issueInventory=all-detected-issues`，全部问题唯一归属 `moduleKey`。schema v4 预算保存全局和逐模块规则计数与稳定 identity；历史问题修复后只能用同一份完整报告执行全局或 `--module ... --write` 下调，后续不得回升。
+- **禁止项**：禁止每个普通 PR 为历史盘点扫描全部 Reactor；禁止让未改动文件的存量问题阻断普通需求；禁止用历史预算放行本次新增违规；禁止只选直接文件而漏掉其所属 Maven 模块；禁止在 partial 质量门禁中使用 `-am` 或 `-amd` 扩大 Reactor；禁止使用 partial-reactor 报告、`unknown` 模块或重复单模块报告修改正式预算；禁止在规则或模块之间转移违规维持总数；禁止手工抬高预算。
+- **正例**：修改 `mango-system-core` 时，质量门禁只验证该模块并由架构验证模块执行规则，不扫描未修改的上下游；若方案改变公共 API，再单独选择消费者编译或 API 验证。定时完整扫描仍记录全仓 9,038 条和各模块余额。清理 core 后，从完整报告执行 `--module mango-system-core --write`，只降低该模块及全局聚合。
+- **反例**：每个 starter 同步 PR 都扫描 212 个 Maven 模块；或从模块 A 删除一条旧 identity、在模块 B 新增一条后以总数没变为由更新预算。错误原因：前者把历史盘点成本强加给无关变更，后者违反模块和 identity 单调递减。
+- **机器判定**：`classify-pmo-check-scope.mjs` 输出 `backend_mode` 和直接修改模块 selectors；partial 质量门禁使用 selectors 和 `requireFullReactor=false`，禁止 `-am`、`-amd`，仍由 base identity 只阻断新问题；根 POM、parent、架构门禁和基线变更 fail-closed 到 full。只有 full 报告才能运行 `check-architecture-debt-budget.mjs` 或 `--write`；任一规则、identity、模块归属增加或报告不完整都失败。
 
 ## 3. 验收判定
 

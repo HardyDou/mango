@@ -69,6 +69,7 @@ try {
     'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
     'backend/app/src/main/resources/application.yml',
     '.github/CODEOWNERS',
+    '.github/pull_request_template.md',
     '.github/workflows/pmo-doc-check.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/tools/check-document-set.mjs',
@@ -173,6 +174,7 @@ try {
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
   const architecturePom = readFileSync(join(projectRoot, 'backend/architecture-verification/pom.xml'), 'utf8');
   const pmoWorkflow = readFileSync(join(projectRoot, '.github/workflows/pmo-doc-check.yml'), 'utf8');
+  const pullRequestTemplate = readFileSync(join(projectRoot, '.github/pull_request_template.md'), 'utf8');
   const codeowners = readFileSync(join(projectRoot, '.github/CODEOWNERS'), 'utf8');
   const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
@@ -203,8 +205,8 @@ try {
     '<mode>${mango.architecture.mode}</mode>',
     '<skip>${mango.architecture.skip}</skip>',
     '<requireFullReactor>${mango.architecture.requireFullReactor}</requireFullReactor>',
-    '<lockFullReactor>true</lockFullReactor>',
-    '<lockFullMode>true</lockFullMode>',
+    '<lockFullReactor>false</lockFullReactor>',
+    '<lockFullMode>false</lockFullMode>',
     '<globalEntityManifest>${maven.multiModuleProjectDirectory}/../business-pmo/global-entity-exceptions.json</globalEntityManifest>',
     '<businessGroupPrefix>com.example</businessGroupPrefix>',
     '<property>mango.architecture.skip</property>',
@@ -251,9 +253,15 @@ try {
     'name: PMO Documentation Checks',
     'pmo-doc-check:',
     'actions/setup-node@v4',
+    'classify-pmo-check-scope.mjs',
+    'risk-verification.mjs',
     'node business-pmo/mango-baseline/tools/check-document-set.mjs',
     '--root business-docs',
     'mvn -B -ntp -f backend/pom.xml',
+    "steps.scope.outputs.backend_mode == 'partial'",
+    '-pl "$MAVEN_PROJECTS"',
+    '-Dmango.architecture.mode=changed',
+    '-Dmango.architecture.requireFullReactor=false',
     '-Dmango.architecture.mode=full',
     '-Dmango.architecture.skip=false',
     '-Dmango.architecture.requireFullReactor=true',
@@ -267,8 +275,26 @@ try {
       throw new Error(`generated PMO required-check workflow missing contract: ${expected}`);
     }
   }
+  if (!pmoWorkflow.includes('${{ github.event.pull_request.base.sha')) {
+    throw new Error('generated PMO workflow must preserve GitHub Actions expressions');
+  }
   if (/^\s+paths:/mu.test(pmoWorkflow)) {
     throw new Error('generated PMO required-check workflow must run for every PR; paths filters can leave the required check pending');
+  }
+  if (/^\s+-(?:am|amd)\s*$/mu.test(pmoWorkflow)) {
+    throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
+  }
+  for (const expected of [
+    '## Risk / Verification',
+    'Requirement impact:',
+    'Solution risk:',
+    'Final risk:',
+    'Selected verification:',
+    'Skipped verification:',
+  ]) {
+    if (!pullRequestTemplate.includes(expected)) {
+      throw new Error(`generated pull request template missing risk contract: ${expected}`);
+    }
   }
   for (const expected of [
     '/backend/pom.xml @backend-team @tech-lead',
@@ -277,6 +303,7 @@ try {
     '/backend/.mvn/ @platform-team @tech-lead',
     '/.mvn/ @platform-team @tech-lead',
     '/.github/CODEOWNERS @platform-team @tech-lead @pmo',
+    '/.github/pull_request_template.md @platform-team @tech-lead @pmo',
     '/.github/workflows/ @platform-team @tech-lead @pmo',
     '/business-docs/ @pm @tech-lead @qa',
   ]) {
@@ -2616,7 +2643,7 @@ function assertNoUnrenderedPlaceholders(projectRoot) {
       relativePath: relative(projectRoot, file).split('\\').join('/'),
     }))
     .filter(({ relativePath }) => !relativePath.startsWith('business-pmo/mango-baseline/'))
-    .filter(({ file }) => readFileSync(file).includes('{{'))
+    .filter(({ file }) => hasUnrenderedMangoPlaceholder(readFileSync(file)))
     .map(({ relativePath }) => relativePath)
     .sort();
   if (placeholderFiles.length > 0) {
@@ -2624,6 +2651,10 @@ function assertNoUnrenderedPlaceholders(projectRoot) {
       `generated project contains unrendered placeholders:\n${placeholderFiles.join('\n')}`,
     );
   }
+}
+
+function hasUnrenderedMangoPlaceholder(content) {
+  return /(^|[^$])\{\{[^{}\n]+}}/m.test(content);
 }
 
 function assertNoWorkspacePackageJsonInTemplates() {

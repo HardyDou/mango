@@ -1,7 +1,7 @@
 {
   "contractSchema": 1,
   "contractId": "document-lifecycle",
-  "schemaRevision": 1,
+  "schemaRevision": 2,
   "ruleSource": "mango-pmo/rules/product/05-document-lifecycle.md",
   "rules": {
     "risk": {"ruleId": "LIFE-RISK-001"},

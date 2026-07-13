@@ -18,7 +18,7 @@ For Java/backend defects, explicitly read `$PMO_ROOT/rules/backend/01-code.md`, 
 1. Establish a reproducible failure or return `ASK` for the missing environment, data, account, steps, expected behavior, or evidence.
 2. Compare the canonical baseline, identify attribution, and return `STOP` if the defect belongs to a different task that must be registered or routed separately.
 3. Record the root cause supported by evidence, implement the smallest complete fix, and preserve approved boundaries.
-4. Add or update the correct regression asset and run the L0-L3 level required by the canonical backend or frontend test rules.
+4. Assess requirement impact and the chosen fix separately, set final L0-L3 to their maximum, then add or update the correct regression asset and run the lowest-cost sufficient `STATIC/UNIT/API/UI` set required by the canonical rules.
 5. Return `STOP` when reproduction, root cause evidence, required gates, or regression evidence is incomplete.
 6. Return `NEXT: $mango-qa-verification` only with before-and-after evidence and no unexplained scope expansion.
 

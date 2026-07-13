@@ -1358,6 +1358,8 @@ class CheckMojoTest {
         List<String> command = Files.readAllLines(commandFile);
         assertTrue(command.contains("compile"));
         assertEquals(command.indexOf("compile") + 1, command.indexOf("pmd:check"));
+        assertFalse(command.contains("-am"));
+        assertFalse(command.contains("-amd"));
     }
 
     @Test

@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.70 - 2026-07-13
+
+### Changed
+
+- Updated the exact PMO dependency to `@mango/pmo@1.2.0` and generated the matching PR risk/verification contract.
+- Generated `pmo-doc-check` now classifies changed paths before Java setup. Normal backend quality gates verify only directly changed Maven modules without `-am` or `-amd`; dependency builds and consumer compatibility remain separate risk-based verification steps. PMO sync, docs, and frontend-only changes skip the backend Reactor.
+- Kept fail-closed full-Reactor verification for root backend POM, architecture-verification, global architecture inputs, or workflow changes.
+
+### Upgrade Notes
+
+- Install `@mango/cli@1.0.70`, run `mango pmo upgrade --project-dir . --to 1.2.0`, and then run `mango pmo check --project-dir . --locked`.
+- Fill the generated PR template's requirement impact, solution risk, final maximum, selected `STATIC/UNIT/API/UI`, sufficiency, and skipped-type reasons.
+- Publish Mango Maven `1.0.17` before this CLI, then upgrade generated and existing business backends to that version. It removes hidden dependency expansion from delegated static-analysis commands.
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+
 ## 1.0.69 - 2026-07-13
 
 ### Fixed

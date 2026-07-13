@@ -49,7 +49,8 @@
                 <artifactId>mango-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>
-                    <lockFullReactor>true</lockFullReactor>
+                    <!-- CI selects an audited affected Reactor for normal PRs and a full Reactor for governance scans. -->
+                    <lockFullReactor>false</lockFullReactor>
                     <allowedReverseControllers>
                         <allowedReverseController>io.mango.infra.realtime.starter.remote.RealtimeInboundRemoteController</allowedReverseController>
                         <allowedReverseController>io.mango.resource.starter.remote.ResourceTargetController</allowedReverseController>

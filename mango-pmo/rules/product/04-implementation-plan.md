@@ -7,7 +7,7 @@
 ## PLAN-SEC-001 文档控制与上游基线
 
 - **目的**：固定计划身份、风险等级、TDD 摘要、计划责任和审批状态。
-- **正向要求**：填写唯一 `documentId`、固定 `documentType: implementation-plan`、PMO/结构版本、与 TDD 一致的 `riskLevel` 和 `riskAssessmentEvidence`、状态动作、责任人与审批证据；上游必须是已批准 TDD 的 ID 和 SHA-256。
+- **正向要求**：填写唯一 `documentId`、固定 `documentType: implementation-plan`、PMO/结构版本、与 TDD 最终结论完全一致的 `riskLevel` 和 `riskAssessmentEvidence`、状态动作、责任人与审批证据；Plan 不重新评估或降低风险；上游必须是已批准 TDD 的 ID 和 SHA-256。
 - **禁止项**：禁止没有设计基线就拆任务；禁止自行降低风险等级；禁止上游变化后继续使用旧计划；禁止占位符进入正式计划。
 - **正例**：`PLAN-ANN-001` 引用 `TDD-ANN-001` 的完整摘要，风险等级保持 `L2`。
 - **反例**：按当前需求直接开发，设计边做边补。错误原因：计划没有经过批准的技术输入。

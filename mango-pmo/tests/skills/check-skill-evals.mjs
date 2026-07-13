@@ -149,6 +149,28 @@ assert(
     && item.expect.action === 'STOP'),
   'missing L3 no-skip lifecycle eval',
 );
+assert(
+  cases.some(item => item.id === 'technical-same-requirement-different-solution-risk'
+    && item.expect.action === 'COMPARE_SOLUTION_RISK'
+    && item.expect.requiredAssertions?.length >= 3),
+  'missing same requirement with different solution risk eval',
+);
+assert(
+  cases.some(item => item.id === 'engineering-one-line-tenant-fix-no-downgrade'
+    && item.expect.action === 'STOP'
+    && item.expect.forbid?.includes('L1')),
+  'missing one-line high-impact no-downgrade eval',
+);
+assert(
+  cases.some(item => item.id === 'qa-backend-l3-no-forced-ui'
+    && item.expect.action === 'SELECT_MINIMUM_SUFFICIENT'),
+  'missing backend L3 no-forced-UI eval',
+);
+assert(
+  cases.some(item => item.id === 'qa-unit-insufficient-for-tenant-transaction'
+    && item.expect.action === 'STOP'),
+  'missing tenant/transaction unit-insufficient eval',
+);
 
 const ruleIndex = JSON.parse(readFileSync(join(pmoRoot, 'rules/index.json'), 'utf8'));
 const releaseBundle = ruleIndex.bundles?.releaseArtifacts;

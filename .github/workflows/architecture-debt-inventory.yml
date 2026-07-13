@@ -1,0 +1,58 @@
+name: Mango Architecture Debt Inventory
+
+on:
+  schedule:
+    - cron: '0 18 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  architecture-debt-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install the current architecture gate
+        run: |
+          mvn -f mango/pom.xml \
+            -pl :mango-architecture-rules,:mango-maven-plugin \
+            -am \
+            -DskipTests=false \
+            install
+
+      - name: Inventory the full Reactor without allowing new violations
+        env:
+          BASE_SHA: ${{ github.sha }}^
+        run: |
+          mvn -f mango/pom.xml \
+            -DskipTests \
+            -Dmango.architecture.skip=false \
+            -Dmango.architecture.mode=changed \
+            -Dmango.architecture.requireFullReactor=true \
+            -Dmango.architecture.base="$BASE_SHA" \
+            -Dmango.check.changedOnly=true \
+            -Dmango.check.gate=no-new-violations \
+            -Dmango.check.baseRef="$BASE_SHA" \
+            verify
+
+      - name: Enforce the decreasing debt budget
+        env:
+          BASE_SHA: ${{ github.sha }}^
+        run: node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"

@@ -145,6 +145,19 @@ node business-pmo/mango-baseline/tools/check-lifecycle-handoff.mjs \
 
 checker 通过不等于自动审批。阶段状态和 `NEXT` 还需要规范指定的人工审批证据。
 
+### 5.1 风险与验证
+
+PR 模板分别记录需求影响和解决方案风险，最终等级取二者最大值。BRD/SRS 记录影响预评，TDD 固化最终等级，Plan 原样继承；L0/L1 不生成空的四阶段文档，方案升到 L2/L3 时在实施前切换完整链路。
+
+验证只使用 `STATIC`、`UNIT`、`API`、`UI` 四类口径。每个验收结果选择能够观察该结果的最低成本类型，并在 PR 中说明充分性和每个跳过类型的理由。例如只移动按钮位置且行为不变时，`STATIC + UI` 定向截图足够；后端租户/事务结果由真实 API 入口证明，没有浏览器入口时不添加空 UI 测试。
+
+```bash
+node business-pmo/mango-baseline/tools/risk-verification.mjs \
+  --body .pr-body.md
+```
+
+生成项目的 `pmo-doc-check` 始终产生 required check 结果，但只在后端路径受影响时启动 Java。普通后端质量门禁由 `classify-pmo-check-scope.mjs` 选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大 Reactor；依赖构建和消费者兼容性作为独立验证，根 POM、架构验证模块和全局架构输入才使用完整 Reactor。
+
 ## 6. 验收证据
 
 验收证据写入 `business-docs/evidence`，并执行：

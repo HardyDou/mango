@@ -152,11 +152,12 @@ Skill Eval 至少覆盖：
 
 - 通用轻量门禁始终执行：风险记录、PR 结构、能力文档影响和治理入口检查。
 - PMO 规则、合同、Skill、模板或包变化时执行 PMO 测试、Eval、包构建和投影检查。
-- Java、POM、Java 架构规则或后端模板变化时执行 Java 架构和债务门禁。
+- 普通 Java/POM 变化时映射直接修改的 Maven 模块，partial-reactor 质量门禁不使用 `-am` 或 `-amd` 扩大扫描；依赖构建和消费者兼容性作为独立验证。
+- 根/父 POM、Java 架构规则/插件、债务基线或门禁 workflow 变化时执行完整 Reactor；完整历史债务预算只接受 full-reactor 报告。
 - CLI、starter、PMO 投影或发布锁变化时执行 CLI/starter 消费检查。
 - README、能力地图或公开源码事实变化时执行相应 README/能力文档检查。
 
-纯前端局部布局变化不会执行 Java Reactor、Java 债务预算、CLI 和 starter 生成验证。后端 Java、POM、Java 架构规则或基线发生变化时仍执行完整架构清点；正式发布和定时治理继续执行全量兜底。
+纯前端局部布局变化不会执行 Java Reactor、Java 债务预算、CLI 和 starter 生成验证。普通后端 Java/POM 质量门禁只执行直接修改模块；构建和消费者兼容性按风险独立执行。全量历史债务清点移到 `.github/workflows/architecture-debt-inventory.yml` 的定时/手工入口。相同分类器、PR 模板和 partial/full 规则随 CLI 投影到生成业务项目。
 
 ## 8. 兼容与发布
 
@@ -172,7 +173,7 @@ Skill Eval 至少覆盖：
 3. 无 UI 的后端 `L3` 正例不选择 UI，仍能通过充分性评估。
 4. 用单元测试冒充权限、租户、事务或数据库证明的反例失败。
 5. 纯前端局部变更的 `pmo-doc-check` 不启动 Java、CLI 和 starter 重门禁。
-6. PMO、Java 架构和发布物料变更仍命中各自完整门禁。
+6. 普通 Java 质量门禁只选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd`；根/父 POM、架构规则/插件、债务基线和 workflow 变化仍命中完整 Reactor。
 7. PMO 包构建、starter 投影和 Skill Eval 无漂移。
 
 ## 10. 回滚
