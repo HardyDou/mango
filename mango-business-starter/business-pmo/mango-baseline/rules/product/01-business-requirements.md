@@ -7,7 +7,7 @@
 ## BRD-SEC-001 文档控制
 
 - **目的**：固定文档身份、所用 PMO 版本、结构修订、责任人与阶段状态，使文档可追溯且可判定是否允许移交。
-- **正向要求**：填写唯一 `documentId`、固定 `documentType: business-requirements`、`pmoVersion`、`schemaRevision`、`riskLevel`、`riskAssessmentEvidence`、`status`、`action`、负责人、审批人和审批证据；风险口径引用统一测试流程规则；BRD 没有上游文档，两个上游字段填写 `NONE`。
+- **正向要求**：填写唯一 `documentId`、固定 `documentType: business-requirements`、`pmoVersion`、`schemaRevision`、`riskLevel`、`riskAssessmentEvidence`、`status`、`action`、负责人、审批人和审批证据；BRD 的 `riskLevel` 只表示需求影响预评，证据只使用业务影响和失败后果，不假定实现方案；风险口径引用统一测试流程规则；BRD 没有上游文档，两个上游字段填写 `NONE`。
 - **禁止项**：禁止缺失元数据；禁止把 `NEXT` 当作作者声明；禁止在没有审批证据时标记 `APPROVED`；禁止填写模板占位符后提交。
 - **正例**：`documentId: BRD-ANN-001`，`status: APPROVED`，`action: NEXT`，审批证据指向已确认的评审记录。
 - **反例**：只在正文写“需求已确认，可以开发”。错误原因：没有稳定文档身份、结构版本和可校验审批证据。

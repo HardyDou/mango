@@ -13,6 +13,7 @@
 | 发布 manifest | `dist/baseline.json` | 记录 package version、source commit、bundle hash、contract revision 和逐文件元数据 |
 | Codex plugin 投影 | `.codex-plugin`、`skills` | npm 包根可安装插件；版本由 build 从 package metadata 生成 |
 | 业务同步 | `mango pmo sync/upgrade` | CLI 从本包安装业务仓 baseline |
+| 影响驱动门禁 | `dist/baseline/tools/risk-verification.mjs`、`classify-pmo-check-scope.mjs` | 校验需求/方案风险，并把 Java PR 限定到受影响 Maven 模块 |
 
 ## 3. 接入方式
 Mango 发布前执行：
@@ -25,12 +26,12 @@ pnpm -F @mango/pmo check
 业务项目使用：
 
 ```bash
-npm view @mango/pmo@1.1.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.69 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.69 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.2.0 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.70 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.70 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 mango pmo status --project-dir .
-mango pmo upgrade --project-dir . --to 1.1.1 --dry-run
-mango pmo upgrade --project-dir . --to 1.1.1 --sync-shell
+mango pmo upgrade --project-dir . --to 1.2.0 --dry-run
+mango pmo upgrade --project-dir . --to 1.2.0 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 

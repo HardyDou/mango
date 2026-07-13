@@ -7,7 +7,7 @@
 ## SRS-SEC-001 文档控制与上游基线
 
 - **目的**：固定 SRS 身份、规则版本和唯一 BRD 基线，防止基于过期业务需求继续设计。
-- **正向要求**：填写唯一 `documentId`、固定 `documentType: system-requirements`、版本、风险等级及评估证据、状态动作、责任人与审批证据；`upstreamDocumentId` 和 `upstreamDocumentHash` 必须对应已批准 BRD。
+- **正向要求**：填写唯一 `documentId`、固定 `documentType: system-requirements`、版本、风险等级及评估证据、状态动作、责任人与审批证据；SRS 的风险等级表示补充用户入口、系统行为、数据和非功能事实后的系统影响预评，不得低于 BRD，也不得假定技术方案；`upstreamDocumentId` 和 `upstreamDocumentHash` 必须对应已批准 BRD。
 - **禁止项**：禁止没有上游摘要；禁止引用 DRAFT/BLOCKED BRD；禁止在上游变化后保留 `APPROVED/NEXT`；禁止未审批即移交技术设计。
 - **正例**：`SRS-ANN-001` 引用 `BRD-ANN-001` 的完整 SHA-256，状态由门禁在评审后更新。
 - **反例**：上游写“最新版 PRD”。错误原因：来源不唯一、不可验证且沿用已废弃混合 PRD 概念。

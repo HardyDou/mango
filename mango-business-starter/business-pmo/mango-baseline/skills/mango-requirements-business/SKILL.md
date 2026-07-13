@@ -26,7 +26,7 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
 
 ## Execute
 
-1. Read repository facts and user-provided sources before asking questions, then establish the L0-L3 risk level. This four-document stage applies to L2/L3; for L0/L1, do not fabricate a BRD and route back to the approved lightweight lifecycle path.
+1. Read repository facts and user-provided sources before asking questions, then assess only the L0-L3 requirement impact from affected actors, business outcomes, boundaries, failure consequences and recovery facts. Do not assume a technical solution. This four-document stage applies when the governed path is L2/L3; for L0/L1, do not fabricate a BRD and route back to the approved lightweight lifecycle path.
 2. Choose one action:
    - `STOP`: requested content crosses the stage boundary, authoritative assets disagree, or a required source is unavailable.
    - `ASK`: a required business fact cannot be established. Ask one focused question and do not insert placeholders or invented facts.

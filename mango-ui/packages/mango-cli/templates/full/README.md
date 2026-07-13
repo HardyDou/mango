@@ -218,8 +218,8 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 3. 执行 `mango dev start`，确认后端 health 和前端页面可访问。
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。
 5. 通过 `mango module add` 新增业务模块，然后补齐表结构、菜单权限、租户边界、页面交互和测试。
-6. 在项目根执行 `mvn -f backend/pom.xml verify`；架构和 Mango 综合质量报告分别写入 `backend/target/mango-architecture-report.json`、`backend/target/mango-quality-report.json`。门禁固定使用完整 Reactor 和完整代码范围，`changedOnly`、`codeLevelExcludedModules` 等缩小范围的参数会直接失败。
-7. 在 GitHub `main` 分支保护中把 `PMO Documentation Checks / pmo-doc-check` 设为 required check，并启用 Code Owner review；该检查同时执行业务文档合同和后端 Java 架构门禁。
+6. 本地完整验收可执行 `mvn -f backend/pom.xml verify`；PR 中的稳定 `pmo-doc-check` 根据 Git 变更只选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大质量扫描范围。依赖构建和消费者兼容性作为独立验证；根 POM、架构验证模块和全局架构输入仍使用完整 Reactor，架构和质量报告写入 `backend/target`。
+7. 在 GitHub `main` 分支保护中把 `PMO Documentation Checks / pmo-doc-check` 设为 required check，并按仓库实际治理模式配置 review；PR 模板同时记录需求影响、方案风险、最终等级和最低成本充分验证。
 8. 每个业务能力完成后，把模块 README、交付契约、验证证据和 E2E 更新到业务仓库。
 
 ## 11. 问题排查

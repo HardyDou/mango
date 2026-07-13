@@ -18,21 +18,16 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Test document contracts, lifecycle routing, and Skills
-        run: |
-          node --test \
-            mango-pmo/tests/architecture-debt-budget.test.mjs \
-            mango-pmo/tests/branch-protection-policy.test.mjs \
-            mango-pmo/tests/document-contract/document-contract.test.mjs \
-            mango-pmo/tests/pmo-preflight.test.mjs \
-            mango-pmo/tests/test-quality-check.test.mjs \
-            mango-pmo/tests/workspace-layout-check.test.mjs
-          node mango-pmo/tests/skills/check-skill-evals.mjs
+      - name: Test document contracts and lifecycle routing
+        run: node --test mango-pmo/tests/document-contract/document-contract.test.mjs
 
-      - name: Build and verify the reproducible PMO package
+      - name: Classify affected governance and Maven scope
+        id: scope
         run: |
-          node mango-ui/packages/mango-pmo/scripts/build-package.mjs
-          node mango-ui/packages/mango-pmo/scripts/check-package.mjs
+          node mango-pmo/tools/classify-pmo-check-scope.mjs \
+            --base ${{ github.event.pull_request.base.sha }} \
+            --head ${{ github.event.pull_request.head.sha }} \
+            --output "$GITHUB_OUTPUT"
 
       - name: Write PR body
         env:
@@ -40,67 +35,122 @@ jobs:
         run: |
           printf '%s' "$PR_BODY" > .pr-body.md
 
+      - name: Check impact-driven risk and verification contract
+        env:
+          PR_BODY_FILE: .pr-body.md
+        run: node mango-pmo/tools/risk-verification.mjs
+
       - name: Check PMO preflight routing
         run: node mango-pmo/tools/check-pmo-preflight.mjs
 
+      - name: Test document contracts, lifecycle routing, and Skills
+        if: steps.scope.outputs.pmo == 'true'
+        run: |
+          node --test \
+            mango-pmo/tests/architecture-debt-budget.test.mjs \
+            mango-pmo/tests/branch-protection-policy.test.mjs \
+            mango-pmo/tests/document-contract/document-contract.test.mjs \
+            mango-pmo/tests/pmo-check-scope.test.mjs \
+            mango-pmo/tests/pmo-preflight.test.mjs \
+            mango-pmo/tests/risk-verification.test.mjs \
+            mango-pmo/tests/test-quality-check.test.mjs \
+            mango-pmo/tests/workspace-layout-check.test.mjs
+          node mango-pmo/tests/skills/check-skill-evals.mjs
+
+      - name: Build and verify the reproducible PMO package
+        if: steps.scope.outputs.pmo == 'true'
+        run: |
+          node mango-ui/packages/mango-pmo/scripts/build-package.mjs
+          node mango-ui/packages/mango-pmo/scripts/check-package.mjs
+
       - name: Set up Java for backend architecture gates
+        if: steps.scope.outputs.backend == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
 
+      - name: Build the architecture gate prerequisites
+        if: steps.scope.outputs.backend == 'true'
+        run: |
+          mvn -f mango/pom.xml \
+            -pl :mango-parent,:mango-common,:mango-tools \
+            -DskipTests \
+            install
+
       - name: Test and install the current Java architecture gate
+        if: steps.scope.outputs.backend == 'true'
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-architecture-rules,:mango-maven-plugin \
-            -am \
             -DskipTests=false \
             install
 
-      - name: Enforce architecture and generic Java quality contracts
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      - name: Build generated four-layer backend prerequisites
+        if: steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           mvn -f mango/pom.xml \
+            -pl :mango,:mango-infra,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter \
+            -DskipTests \
+            -Dcheckstyle.skip=true \
+            -Dpmd.skip=true \
+            -Dspotbugs.skip=true \
+            install
+
+      - name: Enforce affected-module architecture and Java quality contracts
+        if: steps.scope.outputs.backend_mode == 'partial'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MAVEN_PROJECTS: ${{ steps.scope.outputs.maven_projects }}
+        run: |
+          mvn -f mango/pom.xml \
+            -pl "$MAVEN_PROJECTS" \
             -DskipTests \
             -Dmango.architecture.skip=false \
             -Dmango.architecture.mode=changed \
-            -Dmango.architecture.requireFullReactor=true \
+            -Dmango.architecture.requireFullReactor=false \
             -Dmango.architecture.base="$BASE_SHA" \
             -Dmango.check.changedOnly=true \
             -Dmango.check.gate=no-new-violations \
             -Dmango.check.baseRef="$BASE_SHA" \
-            install
+            verify
 
-      - name: Enforce decreasing architecture debt budget
+      - name: Enforce committed architecture debt budget policy
+        if: steps.scope.outputs.backend == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"
+        run: >-
+          node mango-pmo/tools/check-architecture-debt-budget.mjs
+          --baseline-only
+          --base-ref "$BASE_SHA"
 
       - name: Check canonical business starter and CLI projection
+        if: steps.scope.outputs.projection == 'true'
         run: |
           node mango-business-starter/scripts/check-template.mjs
           node mango-ui/packages/mango-cli/scripts/check-business-module-template.mjs
 
       - name: Test CLI PMO install, upgrade, rollback, and package contracts
+        if: steps.scope.outputs.distribution == 'true'
         run: |
           node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs
           node mango-ui/packages/mango-cli/scripts/check-cli.mjs
           node --test mango-ui/packages/mango-cli/tests/*.test.mjs
 
       - name: Verify generated business backend gates
+        if: steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         env:
           MANGO_BACKEND_GATE_VERSION: 1.0.0-SNAPSHOT
         run: node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs
 
       - name: Enforce backend module metadata
+        if: steps.scope.outputs.backend == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-architecture-verification \
-            -am \
             io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:check \
             -Drule=module-info \
             -DbaseDir="${{ github.workspace }}" \
@@ -111,15 +161,19 @@ jobs:
             -DreportFile="${{ github.workspace }}/.runtime/pmo/backend-module-info.json"
 
       - name: Check governance intent
+        if: steps.scope.outputs.pmo == 'true'
         run: node mango-pmo/tools/check-governance-intent.mjs
 
       - name: Audit module README quality
+        if: steps.scope.outputs.readmes == 'true'
         run: node mango-pmo/tools/audit-module-readmes.mjs
 
       - name: Audit README source facts
+        if: steps.scope.outputs.readmes == 'true'
         run: node mango-pmo/tools/audit-readme-source-facts.mjs
 
       - name: Check business integration guides
+        if: steps.scope.outputs.readmes == 'true'
         run: node mango-pmo/tools/check-business-guides.mjs
 
       - name: Check capability docs governance

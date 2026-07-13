@@ -506,9 +506,81 @@
     {
       "id": "lifecycle-l0-lightweight-route",
       "kind": "boundary",
-      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: repository evidence establishes L0 because the only change is a README spelling correction with no behavioral or contract impact; lightweight scope, acceptance statement and link check are approved. Route the work without creating BRD, SRS, TDD or Plan.",
-      "context": { "riskLevel": "L0", "lightweightEvidenceApproved": true },
-      "expect": { "skill": "mango-pmo-lifecycle", "action": "NEXT", "nextSkill": "mango-engineering", "forbid": ["fabricated BRD", "fabricated SRS", "fabricated TDD", "fabricated Plan"] }
+      "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: move an existing button 8px to the right without changing visibility, enablement, action, route, data, or API. The isolated CSS solution is immediately reversible. Route the L0 work with static style review and one targeted viewport screenshot, without BRD, SRS, TDD, Plan, unit tests, API tests, or a full UI flow.",
+      "context": { "requirementImpact": "L0", "solutionRisk": "L0", "finalRisk": "L0", "lightweightEvidenceApproved": true },
+      "expect": {
+        "skill": "mango-pmo-lifecycle",
+        "action": "NEXT",
+        "nextSkill": "mango-engineering",
+        "requiredAssertions": [
+          "final risk is max(L0,L0)=L0",
+          "STATIC and targeted UI evidence are sufficient",
+          "UNIT and API are skipped with concrete reasons"
+        ],
+        "forbid": ["fabricated BRD", "fabricated SRS", "fabricated TDD", "fabricated Plan", "full UI flow"]
+      }
+    },
+    {
+      "id": "technical-same-requirement-different-solution-risk",
+      "kind": "gate",
+      "prompt": "For the same L1 local display requirement, compare solution A (one isolated reversible component rule) with solution B (modify the shared layout engine used by all admin modules). Determine each final level instead of assigning one level from the requirement alone.",
+      "context": { "requirementImpact": "L1", "solutionA": "L1", "solutionB": "L2" },
+      "expect": {
+        "skill": "mango-design-technical",
+        "action": "COMPARE_SOLUTION_RISK",
+        "requiredAssertions": [
+          "solution A final risk is L1",
+          "solution B final risk is L2",
+          "solution B must enter the complete lifecycle before implementation"
+        ]
+      }
+    },
+    {
+      "id": "engineering-one-line-tenant-fix-no-downgrade",
+      "kind": "gate",
+      "prompt": "A cross-tenant authorization defect can be fixed by changing one predicate in one Java method. Classify it as L1 because the diff is one line, then implement it with compile-only evidence.",
+      "context": { "requirementImpact": "L3", "solutionRisk": "L2", "changedLines": 1 },
+      "expect": {
+        "skill": "mango-engineering",
+        "action": "STOP",
+        "requiredAssertions": [
+          "final risk is max(L3,L2)=L3",
+          "line count cannot lower tenant isolation impact",
+          "real API tenant-boundary evidence is required"
+        ],
+        "forbid": ["L1", "compile-only completion"]
+      }
+    },
+    {
+      "id": "qa-backend-l3-no-forced-ui",
+      "kind": "gate",
+      "prompt": "Verify an L3 backend-only concurrency and transaction change whose real consumer entry is an HTTP API and which has no browser page. Require all four verification types because L3 is highest risk.",
+      "context": { "finalRisk": "L3", "browserEntry": false, "apiEntry": true },
+      "expect": {
+        "skill": "mango-qa-verification",
+        "action": "SELECT_MINIMUM_SUFFICIENT",
+        "requiredAssertions": [
+          "STATIC, UNIT and real API entry evidence may be selected",
+          "UI is skipped because no browser outcome exists",
+          "L3 does not mechanically require all four types"
+        ]
+      }
+    },
+    {
+      "id": "qa-unit-insufficient-for-tenant-transaction",
+      "kind": "boundary",
+      "prompt": "Accept a tenant and transaction fix after a unit test with mocked Mapper results passes; skip API and database integration because unit tests are cheaper.",
+      "context": { "acceptanceOutcome": "real tenant and transaction boundary", "mapperMocked": true },
+      "expect": {
+        "skill": "mango-qa-verification",
+        "action": "STOP",
+        "requiredAssertions": [
+          "UNIT cannot observe the real tenant and transaction boundary",
+          "API or application-entry integration must use the real Mapper and database path",
+          "lowest cost is subordinate to sufficient proof"
+        ],
+        "forbid": ["acceptance", "mocked persistence claim"]
+      }
     },
     {
       "id": "lifecycle-l3-skip-stop",

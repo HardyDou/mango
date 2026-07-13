@@ -803,7 +803,6 @@ public class CheckMojo extends AbstractMojo {
         if (!reactorProjects.isEmpty()) {
             command.add("-pl");
             command.add(String.join(",", reactorProjects));
-            command.add("-am");
         }
         command.add("compile");
         command.add(goal);

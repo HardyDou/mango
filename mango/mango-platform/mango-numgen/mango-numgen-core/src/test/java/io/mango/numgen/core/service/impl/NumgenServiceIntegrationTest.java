@@ -264,6 +264,42 @@ class NumgenServiceIntegrationTest {
     }
 
     @Test
+    void nextValue_concurrentColdSequence_allocatesEveryValueWithoutConflict() throws Exception {
+        seedPublishedAndDraftRules();
+        int threadCount = 5;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(threadCount);
+        List<String> generatedCodes = Collections.synchronizedList(new ArrayList<>());
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.execute(() -> {
+                try {
+                    start.await();
+                    NumgenNextCommand next = new NumgenNextCommand();
+                    next.setGenKey("ORDER_NO");
+                    generatedCodes.add(numgenService.nextValue(next));
+                } catch (Throwable t) {
+                    error.compareAndSet(null, t);
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        start.countDown();
+        assertThat(done.await(30, TimeUnit.SECONDS)).isTrue();
+        executor.shutdown();
+
+        assertThat(error.get()).isNull();
+        assertThat(generatedCodes)
+                .containsExactlyInAnyOrder("SO0001", "SO0002", "SO0003", "SO0004", "SO0005");
+        assertThat(longValue("numgen_sequence", "current_value",
+                "gen_key = 'ORDER_NO' AND scope_key = 'GLOBAL'")).isEqualTo(5L);
+    }
+
+    @Test
     void sequenceScope_isDerivedFromMarkedSegments() {
         seedScopedRule();
         NumgenNextCommand next = new NumgenNextCommand();

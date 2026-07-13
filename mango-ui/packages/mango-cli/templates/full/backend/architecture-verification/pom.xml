@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <name>{{projectPascal}} Architecture Verification</name>
-    <description>Fail-closed Mango Java architecture verification for the complete backend reactor</description>
+    <description>Fail-closed Mango Java architecture verification for an audited affected or complete backend reactor</description>
 
     <build>
         <plugins>
@@ -38,13 +38,13 @@
                                 </requireProperty>
                                 <requireProperty>
                                     <property>mango.architecture.mode</property>
-                                    <regex>full</regex>
-                                    <regexMessage>mango.architecture.mode must remain full</regexMessage>
+                                    <regex>changed|full</regex>
+                                    <regexMessage>mango.architecture.mode must be changed or full</regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>mango.architecture.requireFullReactor</property>
-                                    <regex>true</regex>
-                                    <regexMessage>mango.architecture.requireFullReactor must remain true</regexMessage>
+                                    <regex>true|false</regex>
+                                    <regexMessage>mango.architecture.requireFullReactor must be explicit</regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>mango.check.gate</property>
@@ -67,8 +67,8 @@
                 <artifactId>mango-maven-plugin</artifactId>
                 <version>${mango.version}</version>
                 <configuration>
-                    <lockFullReactor>true</lockFullReactor>
-                    <lockFullMode>true</lockFullMode>
+                    <lockFullReactor>false</lockFullReactor>
+                    <lockFullMode>false</lockFullMode>
                     <globalEntityManifest>${maven.multiModuleProjectDirectory}/../business-pmo/global-entity-exceptions.json</globalEntityManifest>
                     <businessGroupPrefixes>
                         <businessGroupPrefix>{{groupId}}</businessGroupPrefix>

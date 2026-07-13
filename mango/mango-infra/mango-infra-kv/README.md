@@ -18,6 +18,7 @@
 - 不替代专业消息队列。
 - 不自动保证跨租户隔离；key 设计必须包含业务域和必要上下文。
 - store 创建和 capability 创建是两步，选择 Redis store 不代表自动启用缓存、锁、限流等能力。
+- JDBC store 的并发写入使用 MySQL 原子 upsert；H2 测试环境需要启用 MySQL 兼容模式。
 
 ## 4. 模块入口
 - `mango-infra-kv-api`：store、capability、Outbox、注解和上下文契约。

@@ -55,13 +55,15 @@
 
 ## 5. 提交前验证
 
-至少执行与改动范围对应的检查：
+至少执行与改动范围和验收结果对应的检查；普通模块质量门禁只选择直接修改的 Maven 模块，不通过 `-am` 或 `-amd` 扩大扫描范围，禁止默认全仓：
 
 - `mvn test`
 - `mvn verify`
 - `mvn pmd:check`
 - `mvn checkstyle:check`
 - `mvn mango:check`
+
+根聚合 POM、全局 parent、架构规则/插件、债务基线或门禁 workflow 变化时才升级到完整 Reactor。历史债务全量盘点由独立定时/手工 workflow 执行；partial-reactor 仍必须阻断本次新增违规，但不得用于改写全局债务预算。
 
 ## 6. 提交要求
 
@@ -77,5 +79,6 @@
 - 没有设计就直接改跨模块边界
 - 没有完成需求拆解就直接建表、写接口或写 service
 - 没有验证就提交
+- 普通单模块变更无依据地扫描完整 Reactor，或只检查改动文件而漏掉其所属 Maven 模块
 - 直接修改生产数据结构
 - 用一次性脚本替代正式 migration

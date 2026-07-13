@@ -3,8 +3,8 @@ documentId: {{DOCUMENT_ID}}
 documentType: business-requirements
 pmoVersion: {{PMO_VERSION}}
 schemaRevision: 1
-riskLevel: {{RISK_LEVEL}}
-riskAssessmentEvidence: {{RISK_ASSESSMENT_EVIDENCE}}
+riskLevel: {{REQUIREMENT_IMPACT_LEVEL}}
+riskAssessmentEvidence: {{REQUIREMENT_IMPACT_EVIDENCE}}
 status: DRAFT
 action: WRITE
 owner: {{OWNER}}
