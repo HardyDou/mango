@@ -162,10 +162,21 @@ mvn mango:check \
 3. 执行 `mvn verify`。
 4. 检查生成文件是否符合 PMO 模板和模块边界。
 
+发布完整非应用后端批次使用：
+
+```bash
+scripts/publish-maven-batch.sh --all-non-app \
+  --release-version <version> \
+  --verify-base-url <maven-consume-repository>
+```
+
+脚本在一次 Reactor deploy 中发布普通平台模块，并把 `mango-architecture-verification` 的扁平化 POM 单独部署；这样不会在排除 `mango-app/**` 的发布 Reactor 中错误执行该模块的全 Reactor verify 阶段。发布后仍统一回查全部目标坐标。
+
 ## 11. 问题排查
 - `mango:check` 报存量问题：PR 模式使用 `no-new-violations` 和 baseline，但不能把新增问题放进 baseline。
 - 生成代码编译不过：脚手架只提供结构，业务字段、依赖和 mapper 仍要补齐。
 - 生成权限后页面仍无按钮：还需要菜单资源入库、角色授权和前端按钮权限接入。
+- Maven 批次只缺 `mango-architecture-verification` POM：使用当前 `publish-maven-batch.sh` 重新规划新版本发布；不可变版本已经尝试后只能先核对仓库事实，禁止整批重发。
 
 ## 12. 相关文档
 - [后端模块规范](../../mango-pmo/rules/backend/05-module.md)

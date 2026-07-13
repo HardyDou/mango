@@ -27,9 +27,9 @@ Skill 按实际能力命名，而不是按发布包命名：只有治理编排�
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm view @mango/pmo@1.1.0 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.68 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.68 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.1.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.69 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.69 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个 `npm view` 都返回精确版本后再执行安装。返回 404 表示该批次仍未发布，源码仓可见不等于业务项目已经可消费。
@@ -43,8 +43,8 @@ npm install -g @mango/cli@1.0.68 --registry http://nexus.inner.yunxinbaokeji.com
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo upgrade --project-dir . --to 1.1.0 --dry-run
-mango pmo upgrade --project-dir . --to 1.1.0 --sync-shell
+mango pmo upgrade --project-dir . --to 1.1.1 --dry-run
+mango pmo upgrade --project-dir . --to 1.1.1 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
