@@ -73,6 +73,8 @@ business_id / file_id / purpose / sort
 
 常用 Java API：
 
+文件模块业务码统一从 `io.mango.file.api.enums.FileCode` 导入。项目按新版本整体发布，不保留旧的 `io.mango.file.api.FileCode` 包路径；错误码常量、数值和消息未改变。
+
 | API | 用途 |
 |-----|------|
 | `FileApi.page(FileRecordPageQuery)` | 分页查询文件记录。 |

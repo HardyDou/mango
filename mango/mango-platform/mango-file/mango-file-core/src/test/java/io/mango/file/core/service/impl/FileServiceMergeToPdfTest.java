@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FileMergePdfEntryCommand;
 import io.mango.file.api.enums.FileAccessLevel;

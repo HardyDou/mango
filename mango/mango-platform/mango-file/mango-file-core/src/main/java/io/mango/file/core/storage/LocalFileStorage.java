@@ -1,6 +1,7 @@
 package io.mango.file.core.storage;
 
-import io.mango.file.api.FileCode;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.core.config.FileProperties;
 import io.mango.file.core.entity.FileStorageConfig;
 import io.mango.common.result.Require;
@@ -21,6 +22,8 @@ import java.util.Optional;
  * 本地磁盘文件存储。
  */
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "FileProperties is a Spring-managed configuration collaborator")
 public class LocalFileStorage implements FileStorage {
 
     private final FileProperties properties;

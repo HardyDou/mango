@@ -45,6 +45,8 @@ node mango-business-starter/scripts/sync-pmo-baseline.mjs --write
 node mango-business-starter/scripts/check-template.mjs
 ```
 
+当前 PMO 投影中的架构债务预算检查器支持读取超过 1 MiB 的 Git 基线，并在完整写出 JSON 结果后再按检查结论退出。该投影修复不改变业务项目的公开 API、配置、菜单、权限、租户、页面、启动、验收和运行时行为。
+
 ## 5. 接入方式
 业务开发者通常不直接复制本目录，而是通过 CLI 使用：
 

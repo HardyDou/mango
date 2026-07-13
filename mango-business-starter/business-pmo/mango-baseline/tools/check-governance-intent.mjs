@@ -174,10 +174,10 @@ assertNotIncludes('mango-pmo/templates/module-readme.md', ['## 10. 验证方式'
 assertIncludes('.github/pull_request_template.md', [
   '## PMO / Scope',
   '## Capability Docs',
-  'Not applicable reason',
   '## Validation',
   '## PMO Exceptions'
 ], failures);
+assertNotIncludes('.github/pull_request_template.md', ['Not applicable reason'], failures);
 
 assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'node mango-pmo/tools/check-governance-intent.mjs',

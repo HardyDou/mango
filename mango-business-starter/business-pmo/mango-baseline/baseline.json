@@ -3,8 +3,8 @@
   "packageVersion": "1.1.1",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "0470329d68bb226282e5e509ee2a0c2526120973",
-  "bundleSha256": "71479088d21e8c8d80dc5f93688ac143a5fbfd377feadc158f3b41e652c895ba",
+  "sourceCommit": "4c6195529079aac9d5cd42782cf9d1a456b707fb",
+  "bundleSha256": "b159afd8c040ee1dcc7e017fca7ba7c1ee6c6f15637757af6c1d6842bd191acf",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -429,8 +429,8 @@
     },
     {
       "path": "rules/08-capability-docs.md",
-      "sha256": "5c885d92d3ebab46ffaeab84b413b5947166c70d731aa36d815707bbcf16f5a6",
-      "size": 6789,
+      "sha256": "4baa8ad5404c1f8c2e04b693d2e62abf3a2f2548645f481ef17e51cfaeec4884",
+      "size": 7125,
       "kind": "rule",
       "mode": "0644"
     },
@@ -604,8 +604,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "82ece4c3fc4daef5ef689bbe4cb0d6a850da112c256358d2505c6efca0f141dd",
-      "size": 24584,
+      "sha256": "82a7f1f2910d3215c520b17ae4fe00f4c8a028746c21141f40842f6200f2eec7",
+      "size": 24611,
       "kind": "rule",
       "mode": "0644"
     },
@@ -975,8 +975,8 @@
     },
     {
       "path": "tools/check-architecture-debt-budget.mjs",
-      "sha256": "0bfe7671683323df6155f546670c291c570b9140de244d2d3696aa38c00dc855",
-      "size": 32336,
+      "sha256": "c356e39aa23ed252ec8c5b040a75d68025ef3bcce431ede7fc511d2691741c06",
+      "size": 32346,
       "kind": "tool",
       "mode": "0644"
     },
@@ -996,8 +996,8 @@
     },
     {
       "path": "tools/check-capability-docs.mjs",
-      "sha256": "8fa07b874f34266acda9a1e6f29cd836e4a0a1bc4b71f9823fbbcae92bbeb7ba",
-      "size": 27110,
+      "sha256": "63a2bc33dd0273ae89dcd968fc42a1135759137b3d597c55d99146565c817dbf",
+      "size": 25482,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1010,8 +1010,8 @@
     },
     {
       "path": "tools/check-governance-intent.mjs",
-      "sha256": "626e7edc2ca2e2ac94112fd7da99d3436218f607cdc21861c5b0d2257d6d5c59",
-      "size": 9178,
+      "sha256": "70a31a5c5e37b6ce81da05c74dc48ac73d413bc60f12bcfa80935cb6a78a3b1e",
+      "size": 9243,
       "kind": "tool",
       "mode": "0644"
     },
