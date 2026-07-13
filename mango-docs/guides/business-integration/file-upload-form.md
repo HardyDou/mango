@@ -192,6 +192,11 @@ pnpm -F @mango/file test
 
 ## 12. 变更影响记录
 
+- PR #454 将后端错误码类型的 Java 导入路径从 `io.mango.file.api.FileCode` 调整为
+  `io.mango.file.api.enums.FileCode`；业务后端如直接引用错误码需更新 import。错误码数值和消息、文件上传与去重
+  行为、HTTP/API 契约、fileId/fileIds 持久化、权限、租户、页面入口、启动方式及本场景验收步骤不变，不提供旧包
+  兼容类型。
+
 - PR #451 清理 file-preview engine 未被源码使用且目标仓库不可解析的旧 `javax.media:jai_core`、`javax.media:jai_codec` 构建依赖；现有源码编译和模块测试继续通过。该内部依赖清理不改变文件上传、回显、预览、下载的公开 API 与配置，不改变菜单、权限、租户、页面入口、启动方式、运行时行为或本场景验收步骤。
 
 - v2026.07.11-maven-1.0.14-cli-release 仅将当前后端实现向前发布为 Maven `1.0.14` 并更新 CLI 后端版本锁；不改变文件上传、回显、预览、下载 API、fileId/fileIds 持久化、权限、租户或本场景验收步骤。

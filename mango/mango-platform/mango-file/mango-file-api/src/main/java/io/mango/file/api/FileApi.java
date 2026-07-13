@@ -1,6 +1,7 @@
 package io.mango.file.api;
 
 import io.mango.common.exception.BizException;
+import io.mango.file.api.enums.FileCode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;

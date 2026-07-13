@@ -9,7 +9,7 @@ import com.qiniu.storage.Region;
 import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.core.entity.FileStorageConfig;
 import io.mango.common.result.Require;
 import org.springframework.util.StringUtils;

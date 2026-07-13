@@ -898,8 +898,8 @@ try {
   } else {
     printText(result);
   }
-  process.exit(result.passed ? 0 : 1);
+  process.exitCode = result.passed ? 0 : 1;
 } catch (error) {
   console.error(`Architecture debt budget check failed: ${error.message}`);
-  process.exit(2);
+  process.exitCode = 2;
 }

@@ -1,9 +1,10 @@
 package io.mango.file.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.SaveFileSettingsCommand;
 import io.mango.file.api.enums.FileAccessMode;
 import io.mango.file.api.enums.FileAccessLevel;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "FileProperties is a Spring-managed configuration collaborator")
 public class FileSettingsServiceImpl implements IFileSettingsService {
 
     private final FileSettingsMapper mapper;
