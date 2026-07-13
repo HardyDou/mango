@@ -53,8 +53,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
         requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public final class ArchitectureMojo extends AbstractMojo {
 
-    private static final int ARCHITECTURE_REPORT_SCHEMA_VERSION = 1;
-    private static final int DEBT_BASELINE_SCHEMA_VERSION = 3;
+    private static final int ARCHITECTURE_REPORT_SCHEMA_VERSION = 2;
+    private static final int DEBT_BASELINE_SCHEMA_VERSION = 4;
+    private static final int LEGACY_DEBT_BASELINE_SCHEMA_VERSION = 3;
     private static final String SCHEMA_VERSION_FIELD = "schemaVersion";
     private static final String FULL_REACTOR_SCOPE = "full-reactor";
     private static final String PARTIAL_REACTOR_SCOPE = "partial-reactor";
@@ -66,6 +67,8 @@ public final class ArchitectureMojo extends AbstractMojo {
     private static final String LEGACY_JAVA_VERSION_PREFIX = "1.";
     private static final String JAVA_SOURCE_MARKER = "/src/main/java/";
     private static final String JAVA_EXTENSION = ".java";
+    private static final String FORWARD_SLASH = "/";
+    private static final String BACKSLASH = "\\";
     private static final String POM_FILE = "pom.xml";
     private static final String MODULE_PROPERTIES =
             "src/main/resources/META-INF/mango/module.properties";
@@ -136,12 +139,15 @@ public final class ArchitectureMojo extends AbstractMojo {
         Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts =
                 moduleContracts(inputs.classDirectoryArtifacts());
         List<ArchitectureIssue> bytecodeIssues = checkBytecode(inputs, moduleContracts);
-        Map<String, String> classArtifacts =
-                collectClassArtifacts(inputs.classDirectoryArtifacts());
+        ClassOwnership classOwnership =
+                collectClassOwnership(
+                        inputs.classDirectoryArtifacts(), inputs.classDirectoryModules());
+        Map<String, String> classArtifacts = classOwnership.artifacts();
         List<ArchitectureIssue> sourceIssues = checkSources(inputs);
         List<ArchitectureIssue> allIssues =
                 combineIssues(inputs.dependencyIssues(), bytecodeIssues, sourceIssues);
         List<ArchitectureIssue> blockingIssues = blockingIssues(allIssues, classArtifacts);
+        List<ReactorModuleDescriptor> moduleDescriptors = reactorModuleDescriptors();
         long durationMillis = (System.nanoTime() - startedAt) / NANOS_PER_MILLISECOND;
         String inventoryScope = PARTIAL_REACTOR_SCOPE;
         if (requireFullReactor) {
@@ -150,10 +156,16 @@ public final class ArchitectureMojo extends AbstractMojo {
         ArchitectureReport report =
                 new ArchitectureReport(
                         ARCHITECTURE_REPORT_SCHEMA_VERSION,
-                        inputs.dependencyIssues(),
-                        bytecodeIssues,
-                        sourceIssues,
-                        blockingIssues,
+                        moduleDescriptors.stream()
+                                .map(ReactorModuleDescriptor::reportedModule)
+                                .toList(),
+                        reportIssues(
+                                inputs.dependencyIssues(),
+                                moduleDescriptors,
+                                classOwnership.modules()),
+                        reportIssues(bytecodeIssues, moduleDescriptors, classOwnership.modules()),
+                        reportIssues(sourceIssues, moduleDescriptors, classOwnership.modules()),
+                        reportIssues(blockingIssues, moduleDescriptors, classOwnership.modules()),
                         mode,
                         inventoryScope,
                         ALL_DETECTED_ISSUES,
@@ -192,6 +204,7 @@ public final class ArchitectureMojo extends AbstractMojo {
         List<ArchitectureIssue> dependencyIssues = new ArrayList<>();
         Map<Path, ModuleRole> classDirectories = new LinkedHashMap<>();
         Map<Path, String> classDirectoryArtifacts = new LinkedHashMap<>();
+        Map<Path, String> classDirectoryModules = new LinkedHashMap<>();
         List<Path> sourceDirectories = new ArrayList<>();
         Set<String> reactorArtifactIds =
                 session.getProjects().stream()
@@ -217,14 +230,22 @@ public final class ArchitectureMojo extends AbstractMojo {
                                     reactorArtifactIds,
                                     governedGroupPrefixes));
             collectJavaInputs(
-                    reactorProject, classDirectories, classDirectoryArtifacts, sourceDirectories);
+                    reactorProject,
+                    classDirectories,
+                    classDirectoryArtifacts,
+                    classDirectoryModules,
+                    sourceDirectories);
         }
         if (sourceDirectories.isEmpty()) {
             throw new MojoExecutionException(
                     "MANGO-ARCH-ENGINE-005 Reactor contains no Java source directories");
         }
         return new ReactorInputs(
-                dependencyIssues, classDirectories, classDirectoryArtifacts, sourceDirectories);
+                dependencyIssues,
+                classDirectories,
+                classDirectoryArtifacts,
+                classDirectoryModules,
+                sourceDirectories);
     }
 
     private Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts(
@@ -279,6 +300,220 @@ public final class ArchitectureMojo extends AbstractMojo {
         return allIssues;
     }
 
+    private List<ReactorModuleDescriptor> reactorModuleDescriptors()
+            throws MojoExecutionException {
+        Map<String, ReactorModuleDescriptor> byModuleKey = new LinkedHashMap<>();
+        Set<String> coordinates = new LinkedHashSet<>();
+        for (MavenProject project : session.getProjects()) {
+            validateReactorProject(project);
+            String key = moduleKey(project);
+            String coordinatesKey = project.getGroupId() + ":" + project.getArtifactId();
+            if (!coordinates.add(coordinatesKey)) {
+                throw new MojoExecutionException(
+                        "MANGO-ARCH-ENGINE-026 duplicate Reactor coordinates: "
+                                + coordinatesKey);
+            }
+            ReactorModuleDescriptor descriptor =
+                    new ReactorModuleDescriptor(
+                            key,
+                            project.getGroupId(),
+                            project.getArtifactId(),
+                            project.getBasedir().toPath().toAbsolutePath().normalize());
+            if (byModuleKey.putIfAbsent(key, descriptor) != null) {
+                throw new MojoExecutionException(
+                        "MANGO-ARCH-ENGINE-026 duplicate Reactor moduleKey: " + key);
+            }
+        }
+        return byModuleKey.values().stream()
+                .sorted(
+                        (left, right) ->
+                                left.moduleKey().compareTo(right.moduleKey()))
+                .toList();
+    }
+
+    private void validateReactorProject(MavenProject project) throws MojoExecutionException {
+        if (project == null) {
+            throw invalidReactorProject();
+        }
+        boolean missingCoordinates =
+                project.getGroupId() == null || project.getArtifactId() == null;
+        if (missingCoordinates) {
+            throw invalidReactorProject();
+        }
+        if (project.getGroupId().isBlank() || project.getArtifactId().isBlank()) {
+            throw invalidReactorProject();
+        }
+        if (project.getBasedir() == null) {
+            throw invalidReactorProject();
+        }
+    }
+
+    private MojoExecutionException invalidReactorProject() {
+        return new MojoExecutionException(
+                "MANGO-ARCH-ENGINE-026 Reactor project is missing module coordinates");
+    }
+
+    private String moduleKey(MavenProject project) throws MojoExecutionException {
+        if (project.getBasedir() == null) {
+            throw new MojoExecutionException(
+                    "MANGO-ARCH-ENGINE-026 Reactor project has no base directory: "
+                            + project.getArtifactId());
+        }
+        Path root = rootDirectory.toAbsolutePath().normalize();
+        Path base = project.getBasedir().toPath().toAbsolutePath().normalize();
+        if (!base.startsWith(root)) {
+            throw new MojoExecutionException(
+                    "MANGO-ARCH-ENGINE-026 Reactor project is outside the Maven root: " + base);
+        }
+        String relative = root.relativize(base).toString().replace('\\', '/');
+        if (relative.isBlank()) {
+            return ".";
+        }
+        return relative;
+    }
+
+    private List<ReportedArchitectureIssue> reportIssues(
+            List<ArchitectureIssue> issues,
+            List<ReactorModuleDescriptor> modules,
+            Map<String, String> classModules)
+            throws MojoExecutionException {
+        List<ReportedArchitectureIssue> reported = new ArrayList<>();
+        for (ArchitectureIssue issue : issues) {
+            reported.add(
+                    new ReportedArchitectureIssue(
+                            issue.ruleId(),
+                            issue.subject(),
+                            issue.message(),
+                            issueModuleKey(issue, modules, classModules)));
+        }
+        return List.copyOf(reported);
+    }
+
+    private String issueModuleKey(
+            ArchitectureIssue issue,
+            List<ReactorModuleDescriptor> modules,
+            Map<String, String> classModules)
+            throws MojoExecutionException {
+        String subject = issue.subject().replace('\\', '/');
+        String pathModule = pathSubjectModule(subject, modules);
+        if (pathModule != null) {
+            return pathModule;
+        }
+
+        int dependencySeparator = subject.indexOf(DEPENDENCY_ARROW);
+        if (dependencySeparator > 0) {
+            String sourceArtifact = subject.substring(0, dependencySeparator).trim();
+            Set<String> sourceModules =
+                    modules.stream()
+                            .filter(module -> module.artifactId().equals(sourceArtifact))
+                            .map(ReactorModuleDescriptor::moduleKey)
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (sourceModules.size() == 1) {
+                return sourceModules.iterator().next();
+            }
+            if (sourceModules.size() > 1) {
+                throw ambiguousIssueModule(issue, sourceModules);
+            }
+        }
+
+        String leadingClassModule = leadingClassModule(subject, classModules);
+        if (leadingClassModule != null) {
+            return leadingClassModule;
+        }
+
+        Set<String> referencedModules =
+                classModules.entrySet().stream()
+                        .filter(entry -> referencesClass(subject, entry.getKey()))
+                        .map(Map.Entry::getValue)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (referencedModules.size() == 1) {
+            return referencedModules.iterator().next();
+        }
+        if (referencedModules.size() > 1) {
+            throw ambiguousIssueModule(issue, referencedModules);
+        }
+        throw new MojoExecutionException(
+                "MANGO-ARCH-ENGINE-027 cannot attribute architecture issue to a Reactor module: "
+                        + issue.ruleId()
+                        + " "
+                        + issue.subject());
+    }
+
+    private MojoExecutionException ambiguousIssueModule(
+            ArchitectureIssue issue, Set<String> modules) {
+        return new MojoExecutionException(
+                "MANGO-ARCH-ENGINE-027 architecture issue has ambiguous module ownership: "
+                        + issue.ruleId()
+                        + " "
+                        + issue.subject()
+                        + " -> "
+                        + String.join(", ", modules));
+    }
+
+    private String pathSubjectModule(
+            String subject, List<ReactorModuleDescriptor> modules) {
+        if (!isSourcePathSubject(subject)) {
+            return null;
+        }
+        String source = subject.replaceFirst(":\\d+$", "");
+        try {
+            Path candidate = Path.of(source);
+            if (!candidate.isAbsolute()) {
+                candidate = rootDirectory.resolve(candidate);
+            }
+            candidate = candidate.toAbsolutePath().normalize();
+            ReactorModuleDescriptor owner = null;
+            int ownerDepth = -1;
+            for (ReactorModuleDescriptor module : modules) {
+                if (candidate.startsWith(module.baseDirectory())) {
+                    int depth = module.baseDirectory().getNameCount();
+                    if (depth > ownerDepth) {
+                        owner = module;
+                        ownerDepth = depth;
+                    }
+                }
+            }
+            if (owner == null) {
+                return null;
+            }
+            return owner.moduleKey();
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private boolean isSourcePathSubject(String subject) {
+        boolean hasPathSeparator =
+                subject.contains(FORWARD_SLASH) || subject.contains(BACKSLASH);
+        if (!hasPathSeparator) {
+            return false;
+        }
+        return subject.contains(JAVA_EXTENSION) || subject.contains(GENERATED_SOURCE_MARKER);
+    }
+
+    private String leadingClassModule(String subject, Map<String, String> classModules) {
+        int end = subject.length();
+        for (char delimiter : new char[] {'|', '#', ' ', '('}) {
+            int candidate = subject.indexOf(delimiter);
+            if (candidate >= 0 && candidate < end) {
+                end = candidate;
+            }
+        }
+        String candidate = subject.substring(0, end);
+        while (!candidate.isBlank()) {
+            String module = classModules.get(candidate);
+            if (module != null) {
+                return module;
+            }
+            int methodSeparator = candidate.lastIndexOf('.');
+            if (methodSeparator < 0) {
+                return null;
+            }
+            candidate = candidate.substring(0, methodSeparator);
+        }
+        return null;
+    }
+
     private List<ArchitectureIssue> blockingIssues(
             List<ArchitectureIssue> allIssues, Map<String, String> classArtifacts)
             throws MojoExecutionException {
@@ -313,10 +548,13 @@ public final class ArchitectureMojo extends AbstractMojo {
             throws MojoExecutionException {
         try {
             var baseline = new ObjectMapper().readTree(source);
-            if (baseline.path(SCHEMA_VERSION_FIELD).asInt(-1)
-                    != DEBT_BASELINE_SCHEMA_VERSION) {
+            int schemaVersion = baseline.path(SCHEMA_VERSION_FIELD).asInt(-1);
+            if (schemaVersion != DEBT_BASELINE_SCHEMA_VERSION
+                    && schemaVersion != LEGACY_DEBT_BASELINE_SCHEMA_VERSION) {
                 throw new MojoExecutionException(
                         "MANGO-ARCH-ENGINE-019 architecture debt baseline schemaVersion must be "
+                                + LEGACY_DEBT_BASELINE_SCHEMA_VERSION
+                                + " or "
                                 + DEBT_BASELINE_SCHEMA_VERSION
                                 + ": "
                                 + debtBaselineFile);
@@ -1128,6 +1366,7 @@ public final class ArchitectureMojo extends AbstractMojo {
             MavenProject reactorProject,
             Map<Path, ModuleRole> classDirectories,
             Map<Path, String> classDirectoryArtifacts,
+            Map<Path, String> classDirectoryModules,
             List<Path> sourceDirectories)
             throws MojoExecutionException {
         if (excludedModules.contains(reactorProject.getArtifactId())) {
@@ -1167,6 +1406,7 @@ public final class ArchitectureMojo extends AbstractMojo {
         classDirectories.put(
                 classDirectory, ModuleRole.fromArtifactId(reactorProject.getArtifactId()));
         classDirectoryArtifacts.put(classDirectory, reactorProject.getArtifactId());
+        classDirectoryModules.put(classDirectory, moduleKey(reactorProject));
     }
 
     private Set<Path> collectAuxiliaryClasspath(Collection<Path> reactorClassDirectories)
@@ -1199,10 +1439,18 @@ public final class ArchitectureMojo extends AbstractMojo {
         return classpath;
     }
 
-    private Map<String, String> collectClassArtifacts(Map<Path, String> directories)
+    private ClassOwnership collectClassOwnership(
+            Map<Path, String> artifactDirectories, Map<Path, String> moduleDirectories)
             throws MojoExecutionException {
-        Map<String, String> result = new LinkedHashMap<>();
-        for (Map.Entry<Path, String> entry : directories.entrySet()) {
+        Map<String, String> artifacts = new LinkedHashMap<>();
+        Map<String, String> modules = new LinkedHashMap<>();
+        for (Map.Entry<Path, String> entry : artifactDirectories.entrySet()) {
+            String moduleKey = moduleDirectories.get(entry.getKey());
+            if (moduleKey == null || moduleKey.isBlank()) {
+                throw new MojoExecutionException(
+                        "MANGO-ARCH-ENGINE-026 missing module ownership for class directory "
+                                + entry.getKey());
+            }
             try (var files = Files.walk(entry.getKey())) {
                 for (Path file :
                         files.filter(Files::isRegularFile)
@@ -1212,7 +1460,8 @@ public final class ArchitectureMojo extends AbstractMojo {
                     String className =
                             relative.substring(0, relative.length() - ".class".length())
                                     .replace('/', '.');
-                    result.put(className, entry.getValue());
+                    artifacts.put(className, entry.getValue());
+                    modules.put(className, moduleKey);
                 }
             } catch (IOException exception) {
                 throw new MojoExecutionException(
@@ -1220,7 +1469,7 @@ public final class ArchitectureMojo extends AbstractMojo {
                         exception);
             }
         }
-        return result;
+        return new ClassOwnership(Map.copyOf(artifacts), Map.copyOf(modules));
     }
 
     private Map<String, ModuleIdentity> loadModuleIdentities() throws MojoExecutionException {
@@ -1327,10 +1576,11 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     public record ArchitectureReport(
             int schemaVersion,
-            List<ArchitectureIssue> dependencyIssues,
-            List<ArchitectureIssue> archUnitIssues,
-            List<ArchitectureIssue> pmdIssues,
-            List<ArchitectureIssue> blockingIssues,
+            List<ReportedReactorModule> modules,
+            List<ReportedArchitectureIssue> dependencyIssues,
+            List<ReportedArchitectureIssue> archUnitIssues,
+            List<ReportedArchitectureIssue> pmdIssues,
+            List<ReportedArchitectureIssue> blockingIssues,
             String mode,
             String inventoryScope,
             String issueInventory,
@@ -1343,11 +1593,28 @@ public final class ArchitectureMojo extends AbstractMojo {
         }
     }
 
+    public record ReportedReactorModule(String moduleKey, String groupId, String artifactId) {}
+
+    public record ReportedArchitectureIssue(
+            String ruleId, String subject, String message, String moduleKey) {}
+
     private record ModuleIdentity(String moduleName, String modulePath) {}
+
+    private record ReactorModuleDescriptor(
+            String moduleKey, String groupId, String artifactId, Path baseDirectory) {
+
+        ReportedReactorModule reportedModule() {
+            return new ReportedReactorModule(moduleKey, groupId, artifactId);
+        }
+    }
+
+    private record ClassOwnership(
+            Map<String, String> artifacts, Map<String, String> modules) {}
 
     private record ReactorInputs(
             List<ArchitectureIssue> dependencyIssues,
             Map<Path, ModuleRole> classDirectories,
             Map<Path, String> classDirectoryArtifacts,
+            Map<Path, String> classDirectoryModules,
             List<Path> sourceDirectories) {}
 }

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "module-architecture-debt-baseline-migration",
+  "recordedAt": "2026-07-13T06:45:27Z",
+  "gitBase": "e901c8c3f39163851023d4bc6eaf05a7d822fada",
+  "architectureReport": {
+    "schemaVersion": 2,
+    "inventoryScope": "full-reactor",
+    "issueInventory": "all-detected-issues",
+    "reactorProjectCount": 212,
+    "expectedProjectCount": 212,
+    "moduleCount": 212,
+    "totalIssueCount": 9038,
+    "issuesWithoutModuleKey": 0
+  },
+  "debtBudget": {
+    "path": "mango-pmo/baselines/architecture/debt-budget.json",
+    "schemaVersion": 4,
+    "sha256": "81c0b3b59bb0358ec28fa70f2e5bf6ac457453fd166b05755772a9f715cf8d1c",
+    "totalIssueCount": 9038,
+    "moduleCount": 212,
+    "modulesWithDebt": 107
+  },
+  "moduleSamples": [
+    {
+      "selector": "mango-platform/mango-system",
+      "resolvedModuleCount": 4,
+      "totalIssueCount": 492
+    },
+    {
+      "selector": "mango-system-core",
+      "resolvedModuleCount": 1,
+      "moduleKey": "mango-platform/mango-system/mango-system-core",
+      "totalIssueCount": 233
+    }
+  ],
+  "validations": [
+    {
+      "command": "node --test mango-pmo/tests/architecture-debt-budget.test.mjs",
+      "result": "PASS",
+      "tests": 17
+    },
+    {
+      "command": "node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref e901c8c3f39163851023d4bc6eaf05a7d822fada",
+      "result": "PASS"
+    },
+    {
+      "command": "node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-platform/mango-system",
+      "result": "PASS"
+    },
+    {
+      "command": "node mango-pmo/tools/check-architecture-debt-budget.mjs --module mango-system-core",
+      "result": "PASS"
+    },
+    {
+      "command": "MANGO_BACKEND_GATE_VERSION=1.0.0-SNAPSHOT node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs",
+      "result": "PASS"
+    }
+  ],
+  "invariants": [
+    "New changes cannot add or replace an architecture identity.",
+    "Module debt can stay equal or decrease, but cannot increase.",
+    "Moving an identity between modules is rejected even when the global total is unchanged.",
+    "A complete Reactor report remains the only source allowed to update the formal budget."
+  ]
+}
