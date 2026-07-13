@@ -1,7 +1,11 @@
 package io.mango.infra.kv.starter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.kv.core.jdbc.JdbcKvStore;
+import io.mango.infra.kv.core.outbox.KvOutboxStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.aop.support.AopUtils;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -35,10 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * JdbcKvStore 集成测试 - H2 内存数据库（MySQL 兼容模式）
+ * JdbcKvStore 数据库集成测试。
  *
- * 验证 JdbcKvStore 在 H2（MySQL 兼容模式）下的真实 SQL 执行。
- * 复用 MySQL 版 SQL 脚本，无需单独写 H2 SQL。
+ * 默认使用 H2 MySQL 兼容模式，也支持通过 kv.test.datasource.* 切换到隔离的真实 MySQL 测试库。
  */
 @SpringBootTest(classes = {
         AopAutoConfiguration.class,
@@ -46,19 +50,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         KvStoreAutoConfiguration.class,
-        JdbcKvStoreH2IntegrationTest.TestConfig.class
+        JdbcKvStoreIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.url=${kv.test.datasource.url:jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}",
+        "spring.datasource.username=${kv.test.datasource.username:sa}",
+        "spring.datasource.password=${kv.test.datasource.password:}",
+        "spring.datasource.driver-class-name=${kv.test.datasource.driver-class-name:org.h2.Driver}",
         "spring.flyway.enabled=false",
         "mango.kv.store.type=jdbc",
         "mango.kv.provider.redis.host=localhost",
         "mango.kv.provider.redis.port=6379"
 })
-class JdbcKvStoreH2IntegrationTest {
+class JdbcKvStoreIntegrationTest {
 
         @Autowired
         private JdbcTemplate jdbcTemplate;
@@ -134,6 +138,8 @@ class JdbcKvStoreH2IntegrationTest {
                 assertTrue(kvStore.exists("expire_key"));
                 Thread.sleep(1100);
                 assertFalse(kvStore.exists("expire_key"));
+                assertTrue(kvStore.put("expire_key", "replaced", 3600));
+                assertEquals("replaced", kvStore.get("expire_key"));
         }
 
         @Test
@@ -189,10 +195,61 @@ class JdbcKvStoreH2IntegrationTest {
                 pool.shutdown();
 
                 assertTrue(error.get() == null, () -> "unexpected concurrency exception: " + error.get());
-                assertTrue(successCount.get() >= 1, "at least one request should obtain the lock");
+                assertEquals(1, successCount.get(), "only one request should obtain the lock");
                 assertEquals(threadCount * roundsPerThread,
                         successCount.get() + failureCount.get(), "every call should produce a return value");
                 assertEquals("v", kvStore.get("concurrency-hotspot"));
+        }
+
+        @Test
+        void outbox_concurrentWorkflowEnqueue_persistsEveryMessageWithoutExceptions() throws Exception {
+                int concurrency = 5;
+                int messagesPerWorker = 20;
+                int messageCount = concurrency * messagesPerWorker;
+                KvOutboxStore outboxStore = new KvOutboxStore(
+                        kvStore,
+                        new ObjectMapper().findAndRegisterModules());
+                ExecutorService pool = Executors.newFixedThreadPool(concurrency);
+                CountDownLatch startLatch = new CountDownLatch(1);
+                CountDownLatch doneLatch = new CountDownLatch(messageCount);
+                AtomicReference<Throwable> error = new AtomicReference<>();
+                List<OutboxMessage> messages = new ArrayList<>();
+
+                for (int i = 0; i < messageCount; i++) {
+                        OutboxMessage message = OutboxMessage.builder()
+                                .topic(OutboxTopics.DOMAIN_EVENT)
+                                .eventType("workflow.task.completed")
+                                .businessType("workflow")
+                                .businessKey("IT_ISSUE_452_" + i)
+                                .aggregateId("IT_PROCESS_" + i)
+                                .occurredAt(Instant.parse("2026-07-13T05:00:00Z").plusMillis(i))
+                                .build();
+                        messages.add(message);
+                        pool.execute(() -> {
+                                try {
+                                        startLatch.await();
+                                        outboxStore.enqueue(message);
+                                } catch (Throwable t) {
+                                        error.compareAndSet(null, t);
+                                } finally {
+                                        doneLatch.countDown();
+                                }
+                        });
+                }
+
+                startLatch.countDown();
+                assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "concurrent outbox enqueue timeout");
+                pool.shutdown();
+
+                assertNull(error.get(), () -> "unexpected outbox concurrency exception: " + error.get());
+                messages.forEach(message -> assertEquals(
+                        message.getMessageId(),
+                        outboxStore.findById(message.getMessageId()).getMessageId()));
+                assertEquals(messageCount, outboxStore.claimByTopic(
+                        "workflow-worker",
+                        OutboxTopics.DOMAIN_EVENT,
+                        messageCount,
+                        Instant.parse("2026-07-13T05:01:00Z")).size());
         }
 
         @Configuration(proxyBeanMethods = false)

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.numgen.core.mapper.NumgenSequenceMapper">
+
+    <select id="selectByScope" resultType="io.mango.numgen.core.entity.NumgenSequence">
+        select id,
+               gen_key,
+               rule_version,
+               scope_key,
+               current_value,
+               version,
+               tenant_id,
+               create_by,
+               update_by,
+               create_time,
+               update_time
+        from numgen_sequence
+        where gen_key = #{genKey}
+          and scope_key = #{scopeKey}
+          and tenant_id = #{tenantId}
+        limit 1
+    </select>
+
+    <insert id="upsertAndAllocate">
+        insert into numgen_sequence
+        (id, gen_key, rule_version, scope_key, current_value, version, tenant_id, create_time, update_time)
+        values
+        (#{sequence.id}, #{sequence.genKey}, #{sequence.ruleVersion}, #{sequence.scopeKey}, #{step}, 0,
+         #{sequence.tenantId}, now(), now())
+        on duplicate key update
+        rule_version = values(rule_version),
+        current_value = current_value + values(current_value),
+        version = version + 1,
+        update_time = now()
+    </insert>
+
+</mapper>
