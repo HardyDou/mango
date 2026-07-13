@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Test document contracts and lifecycle routing
+        run: node --test mango-pmo/tests/document-contract/document-contract.test.mjs
+
       - name: Classify affected governance and Maven scope
         id: scope
         run: |
