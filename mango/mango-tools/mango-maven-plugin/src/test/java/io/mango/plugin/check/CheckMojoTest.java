@@ -1198,10 +1198,14 @@ class CheckMojoTest {
         // given
         Files.writeString(tempDir.resolve("pom.xml"), "<project/>");
         Path slowMaven = tempDir.resolve("slow-mvn.sh");
+        Path childPidFile = tempDir.resolve("child.pid");
         Files.writeString(slowMaven, """
                 #!/bin/sh
-                sleep 5
-                """);
+                sleep 5 &
+                child_pid=$!
+                printf '%%s' "$child_pid" > "%s"
+                wait "$child_pid"
+                """.formatted(childPidFile));
         assertTrue(slowMaven.toFile().setExecutable(true));
 
         CheckMojo mojo = new CheckMojo();
@@ -1222,6 +1226,10 @@ class CheckMojoTest {
         assertInstanceOf(MojoExecutionException.class, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains("timed out after 1s"));
         assertTrue(exception.getCause().getMessage().contains("pmd:check"));
+        long childPid = Long.parseLong(Files.readString(childPidFile));
+        assertFalse(
+                ProcessHandle.of(childPid).map(ProcessHandle::isAlive).orElse(false),
+                "timeout must terminate delegated child processes");
     }
 
     @Test

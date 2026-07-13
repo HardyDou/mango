@@ -819,9 +819,7 @@ public class CheckMojo extends AbstractMojo {
                     readProcessOutputAsync(process.getInputStream());
             boolean completed = process.waitFor(staticTimeoutSeconds, TimeUnit.SECONDS);
             if (!completed) {
-                process.destroyForcibly();
-                process.waitFor(5, TimeUnit.SECONDS);
-                String output = awaitProcessOutput(outputFuture, 5);
+                String output = terminateProcessTree(process, outputFuture);
                 throw new MojoExecutionException(
                         "Static-analysis delegation timed out after "
                                 + staticTimeoutSeconds
@@ -852,6 +850,26 @@ public class CheckMojo extends AbstractMojo {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new MojoExecutionException("Delegated static-analysis goals were interrupted", e);
+        }
+    }
+
+    private String terminateProcessTree(
+            Process process, CompletableFuture<String> outputFuture) throws InterruptedException {
+        List<ProcessHandle> descendants = process.descendants().toList();
+        for (int index = descendants.size() - 1; index >= 0; index--) {
+            descendants.get(index).destroyForcibly();
+        }
+        process.destroyForcibly();
+        process.waitFor(1, TimeUnit.SECONDS);
+        descendants.stream()
+                .filter(ProcessHandle::isAlive)
+                .forEach(ProcessHandle::destroyForcibly);
+        try {
+            return awaitProcessOutput(outputFuture, 1);
+        } catch (MojoExecutionException exception) {
+            outputFuture.cancel(true);
+            return "Delegated process output unavailable after forced termination: "
+                    + exception.getMessage();
         }
     }
 
