@@ -11,7 +11,7 @@ owner: Mango 文件能力负责人
 approver: HardyDou
 approvalEvidence: review/PLAN-ISSUE-453.md
 upstreamDocumentId: TDD-ISSUE-453
-upstreamDocumentHash: cabb0a33dc6192d4eb878d2c79721c1a17cb1236e8e70c2aa34df0318800c2bc
+upstreamDocumentHash: 1d6b4486dea01fa8b02a30e0d9388751ba0530f1a82f65a3369632f574688730
 ---
 
 # 相同内容并发保存实施计划
@@ -20,27 +20,28 @@ upstreamDocumentHash: cabb0a33dc6192d4eb878d2c79721c1a17cb1236e8e70c2aa34df03188
 
 | 交付物ID | 技术设计ID | 交付物 | 路径或模块 | 完成状态定义 | 验收来源 | 不处理边界 |
 |---|---|---|---|---|---|---|
-| DEL-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, TC-453, IMP-001 | 文件对象与哈希映射并发幂等实现、五并发集成测试、设计与验收证据 | `mango-file-core`、`mango-docs/designs/issue-453-file-dedup-concurrency`、`mango-docs/evidence/issue-453-file-dedup-concurrency` | 五并发断言、现有模块测试、质量门禁和交付台账全部满足，分支提交并创建 PR | SAC-001, TC-453 | 不处理日志字段长度、前端、公开契约、配置、表结构及 KV 实现 |
+| DEL-001 | DEC-001, DEC-002, MOD-001, MOD-002, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, TC-453, IMP-001 | 文件对象与哈希映射并发幂等实现、规范业务码包路径、五并发集成测试、设计与验收证据 | `mango-file-api`、`mango-file-core`、`mango-file-starter-remote`、`mango-docs/designs/issue-453-file-dedup-concurrency`、`mango-docs/evidence/issue-453-file-dedup-concurrency` | 五并发断言、全 Reactor 编译、现有模块测试、质量门禁和交付台账全部满足，分支提交并更新 PR | SAC-001, TC-453 | 不处理日志字段长度、前端、配置、表结构及 KV 实现 |
 
 ## 2. 工作分解
 
 | 任务ID | 技术设计ID | 交付物ID | 责任角色 | 路径或模块 | 前置任务 | 具体动作 | 完成标准 | 验证ID | 实施批次 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| TASK-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001 | DEL-001 | Dev | `mango-file-core` 文件服务实现 | NONE | 将物理对象和哈希映射创建收敛为唯一键竞争后的当前读复用，补偿清理失败方不同对象名，并使用 `Require + FileCode` 保持 Service 错误契约与公开行为不变 | 编译通过；所有保存入口复用同一幂等实现；不直接抛出运行时异常；不增加 KV、配置、公开契约和数据库变更 | VAL-001 | B1 | PLANNED |
-| TASK-002 | TC-453, IMP-001 | DEL-001 | Dev 与 QA | `mango-file-core` 测试及任务证据 | TASK-001 | 增加五线程 Testcontainers MySQL 8.4 真实 Mapper、InnoDB 唯一约束与事务集成测试，执行受影响测试和质量门禁，记录基线并准备 PR | 五次成功、一对象、一映射、五结果、引用数五、存储对象一份；全部规定检查通过且证据可复核 | VAL-001, VAL-002 | B1 | PLANNED |
+| TASK-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001 | DEL-001 | Dev | `mango-file-core` 文件服务实现 | NONE | 将物理对象和哈希映射创建收敛为唯一键竞争后的当前读复用，补偿清理失败方不同对象名，并使用 `Require + FileCode` 保持 Service 错误契约与公开行为不变 | 编译通过；所有保存入口复用同一幂等实现；不直接抛出运行时异常；不增加 KV、配置和数据库变更 | VAL-001 | B1 | PLANNED |
+| TASK-002 | TC-453, IMP-001 | DEL-001 | Dev 与 QA | `mango-file-core` 测试及任务证据 | TASK-001 | 使用 `mango workspace init` 分配的专属本地 MySQL 8.4 增加五线程真实 Mapper、InnoDB 唯一约束与事务集成测试，执行受影响测试和质量门禁，记录基线并准备 PR | 数据库名保护、五次成功、一对象、一映射、五结果、引用数五、存储对象一份；全部规定检查通过且证据可复核 | VAL-001, VAL-002 | B1 | PLANNED |
+| TASK-003 | DEC-002, MOD-002, IMP-001 | DEL-001 | Dev | `mango-file-api` 及仓库内全部调用方 | TASK-001 | 将 `FileCode` 直接迁移到 `io.mango.file.api.enums`，删除旧包入口并更新全部引用；同步 README 和交付记录 | 常量、数值和消息不变；仓库无旧包引用；全 Reactor 编译和架构门禁通过 | VAL-002 | B1 | PLANNED |
 
 ## 3. 顺序、依赖与里程碑
 
 | 里程碑ID | 包含任务ID | 进入条件 | 完成条件 | 依赖 | 可并行任务 | 阻塞升级 | 责任人 |
 |---|---|---|---|---|---|---|---|
-| MS-001 | TASK-001, TASK-002 | TDD-ISSUE-453 已批准且生命周期移交通过 | 实现、五并发测试、模块门禁、证据、提交和 PR 均达到交付要求 | TASK-002 依赖 TASK-001 | NONE | 真实持久化测试不能稳定重现或质量门禁失败时停止提交，定位根因后在当前分支修复 | Mango 文件能力负责人 |
+| MS-001 | TASK-001, TASK-002, TASK-003 | TDD-ISSUE-453 已批准且生命周期移交通过 | 实现、业务码规范迁移、五并发测试、全 Reactor 编译、模块门禁、证据、提交和 PR 均达到交付要求 | TASK-002、TASK-003 依赖 TASK-001 | TASK-002 与 TASK-003 可并行 | 真实持久化测试不能稳定重现或质量门禁失败时停止提交，定位根因后在当前分支修复 | Mango 文件能力负责人 |
 
 ## 4. 验证计划
 
 | 验证ID | 测试或验收ID | 任务ID | 验证层级 | 命令或步骤 | 环境 | 测试数据 | 权限或租户边界 | 预期结果 | 证据路径 | 责任人 | 失败处理 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| VAL-001 | TC-453 | TASK-001, TASK-002 | 并发集成与模块回归 | 执行 `FileServiceConcurrentSaveIntegrationTest`，随后执行 `mango-file-core` 测试 | 当前任务 worktree；Testcontainers MySQL 8.4 一次性隔离数据库；线程安全存储替身 | `IT_453_` 前缀、相同字节、五线程、同租户与同存储配置 | 测试租户 1001、测试用户 2001，不连接共享业务库 | 五次成功、一对象、一映射、五结果、引用数五、存储对象一份；现有回归不变 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | QA | 任一失败阻断提交；保留报告并在当前任务分支定位修复，不得降级为 H2 |
-| VAL-002 | TC-453 | TASK-002 | 静态与交付门禁 | 执行 test-quality-check、Mockito 审计、delivery-contract-check、受影响模块 verify、PMD、Checkstyle 和 Mango 检查 | 当前任务 worktree与本地 Maven 环境 | 不写业务数据 | 不涉及账号或共享租户 | 检查全部通过，无新增测试替身风险和未说明变更 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | Dev | 失败即在当前任务分支修复并重新执行完整受影响验证 |
+| VAL-001 | TC-453 | TASK-001, TASK-002 | 并发集成与模块回归 | `mango workspace init` 后加载 `.mango/dev-workspace.env`，执行 `FileServiceConcurrentSaveIntegrationTest`，随后执行 `mango-file-core` 测试 | 当前任务 worktree；名称匹配 `mango_dev_*` 的专属本地 MySQL 8.4；线程安全存储替身 | `IT_453_` 前缀、相同字节、五线程、同租户与同存储配置 | 测试租户 1001、测试用户 2001，不连接共享业务库 | 五次成功、一对象、一映射、五结果、引用数五、存储对象一份；现有回归不变 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | QA | 数据库名保护或任一断言失败即阻断提交；不得降级为 H2 |
+| VAL-002 | TC-453 | TASK-002, TASK-003 | 静态与交付门禁 | 执行 test-quality-check、Mockito 审计、delivery-contract-check、全 Reactor 跳过测试安装与 Mango architecture/check 门禁、Checkstyle，并确认仓库无旧 `FileCode` 包引用 | 当前任务 worktree与本地 Maven 环境 | 不写业务数据 | 不涉及账号或共享租户 | 检查全部通过，无新增测试替身风险、架构违规或未说明变更；业务码常量与消息保持不变 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | Dev | 失败即在当前任务分支修复并重新执行完整受影响验证 |
 
 ## 5. 数据、升级、发布与回滚步骤
 
@@ -52,7 +53,7 @@ upstreamDocumentHash: cabb0a33dc6192d4eb878d2c79721c1a17cb1236e8e70c2aa34df03188
 
 | 文档项ID | 技术设计或交付物ID | 目标文档 | 变化 | 责任人 | 完成条件 | 检查命令 | 不适用依据 |
 |---|---|---|---|---|---|---|---|
-| DOC-001 | IMP-001, DEL-001, TASK-002 | 本任务 BRD、SRS、TDD、Plan、交付台账和测试结果基线 | 记录 Issue 453 的永久并发模型、测试入口、执行结果、风险和业务开发交接 | Dev | 文档 checker、生命周期、交付台账检查通过且证据路径存在 | `node mango-pmo/tools/check-document-set.mjs --root mango-docs/designs/issue-453-file-dedup-concurrency` | README 与能力地图不变，因为使用方式、接口、配置和数据结构均未变化 |
+| DOC-001 | IMP-001, DEL-001, TASK-002, TASK-003 | 本任务 BRD、SRS、TDD、Plan、交付台账、模块 README 和测试结果基线 | 记录 Issue 453 的永久并发模型、规范包路径、测试入口、执行结果、风险和业务开发交接 | Dev | 文档 checker、生命周期、交付台账检查通过且证据路径存在 | `node mango-pmo/tools/check-document-set.mjs --root mango-docs/designs/issue-453-file-dedup-concurrency` | 能力地图不变，因为业务能力、接口、配置和数据结构均未变化 |
 
 ## 7. 风险、阻塞与例外
 
@@ -64,7 +65,7 @@ upstreamDocumentHash: cabb0a33dc6192d4eb878d2c79721c1a17cb1236e8e70c2aa34df03188
 
 | 上游设计ID | 交付物ID | 任务ID | 验证ID | 里程碑发布文档或风险项ID | 覆盖说明 |
 |---|---|---|---|---|---|
-| DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, TC-453, IMP-001 | DEL-001 | TASK-001, TASK-002 | VAL-001, VAL-002 | MS-001, REL-001, DOC-001, RISK-001 | 所有技术设计均映射到实现、并发测试、质量门禁、证据、PR 和风险控制 |
+| DEC-001, DEC-002, MOD-001, MOD-002, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, TC-453, IMP-001 | DEL-001 | TASK-001, TASK-002, TASK-003 | VAL-001, VAL-002 | MS-001, REL-001, DOC-001, RISK-001 | 所有技术设计均映射到实现、业务码规范迁移、并发测试、质量门禁、证据、PR 和风险控制 |
 
 ## 9. 阶段判定与审批
 

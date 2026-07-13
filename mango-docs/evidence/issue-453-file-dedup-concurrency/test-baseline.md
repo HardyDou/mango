@@ -5,8 +5,8 @@
 - 执行日期：2026-07-13
 - 分支：`fix/issue-453-file-dedup-concurrency`
 - 测试入口：`FileServiceConcurrentSaveIntegrationTest`
-- 环境：OpenJDK 21.0.10、Apache Maven 3.9.13、H2 MySQL 模式
-- 数据边界：隔离内存数据库，租户 1001、用户 2001、`IT_453_` 文件前缀
+- 环境：OpenJDK 21.0.10、Apache Maven 3.9.13、worktree 专属本地 MySQL 8.4.8
+- 数据边界：`mango workspace init` 分配的 `mango_dev_mango_issue_453_178`，租户 1001、用户 2001、`IT_453_` 文件前缀
 - 持久化边界：真实 MyBatis Mapper、Spring 事务和数据库唯一约束；仅外部对象存储使用线程安全测试实现
 
 ## 2. 并发验收
@@ -14,6 +14,9 @@
 执行命令：
 
 ```bash
+set -a
+source .mango/dev-workspace.env
+set +a
 mvn -f mango/pom.xml \
   -pl mango-platform/mango-file/mango-file-core \
   -Dtest=FileServiceConcurrentSaveIntegrationTest test
@@ -33,6 +36,9 @@ mvn -f mango/pom.xml \
 执行命令：
 
 ```bash
+set -a
+source .mango/dev-workspace.env
+set +a
 mvn -f mango/pom.xml \
   -pl mango-platform/mango-file/mango-file-core test
 ```
@@ -43,13 +49,17 @@ mvn -f mango/pom.xml \
 
 以下检查通过：
 
-- `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -am -DskipTests verify`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -am -DskipTests install`，含 `mango-file-api` 及目标模块依赖编译。
 - `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core checkstyle:check`
 - 测试质量检查：1 个变更测试文件通过。
 - 后端测试替身审计：阻断 0、警告 0。
+- 文档集合、实施计划、生命周期 handoff 和交付台账检查通过。
+- 仓库内不存在旧 `io.mango.file.api.FileCode` 引用；业务码常量、数值和消息原样迁移到 `io.mango.file.api.enums.FileCode`。
+- 全 Reactor Mango architecture 与通用静态门禁通过：架构阻断 0，`newIssueCount=0`，工具失败 0，212 个模块构建成功。
+- 顺带消除 `FileServiceImpl` 被重新识别的 Checkstyle 告警；Spring 容器管理依赖的 SpotBugs `EI_EXPOSE_REP2` 使用带理由的精准注解抑制，真实装箱告警已通过代码修复。
 
-全 Reactor 含测试的 `verify` 在上游 `mango-infra-persistence-starter` 提前中止，原因为主分支已有的 `db/migration/link/V20260711001__link_high_version_seed.sql` 未在该测试上下文声明；尚未运行到本次变更模块。全量 Mango 专项检查也被同一高版本号整数解析问题和历史 Path 参数问题阻断。两项均不在 Issue 453 范围内，本次受影响模块测试、并发验收和变更文件质量门禁均已通过。
+全 Reactor 含测试的 `verify` 会在上游 `mango-infra-persistence-starter` 的既有 Flyway 测试上下文提前中止，尚未运行到本次变更模块，因此不作为本次目标模块验收替代项；本次使用全 Reactor 跳过测试的完整架构与静态门禁，并单独执行目标模块全部 42 个测试。
 
 ## 5. 验收结论
 
-`TC-453` 通过。数据库唯一约束作为并发最终仲裁，竞争失败线程通过当前读复用胜出对象；方案不依赖 Memory、Redis 或 JDBC KV 实现，因此三种运行模式无需新增锁、配置或分支逻辑。
+`TC-453` 通过。数据库唯一约束作为并发最终仲裁，竞争失败线程通过当前读复用胜出对象；方案不依赖 Memory、Redis 或 JDBC KV 实现，因此三种运行模式无需新增锁、配置或分支逻辑。`FileCode` 仅迁移包路径，错误码数值、消息及原有业务特性保持不变。

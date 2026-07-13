@@ -10,12 +10,13 @@
 - 对失败竞争方不同对象名的存储补偿清理。
 - 五线程、真实 Mapper、唯一约束和 Spring 事务的并发集成测试。
 - 受影响模块回归、静态质量门禁、交付证据和 PR。
+- `FileCode` 迁移到规范 `io.mango.file.api.enums` 包，仓库内引用同步更新，错误码数值、消息和业务行为不变。
 
 ## 3. 不做什么
 
 - 不引入 Memory、Redis、JDBC 锁或任何 KV 依赖。
-- 不修改公开接口、配置、数据库结构、前端和日志字段长度。
-- 不执行版本发布或合并 PR。
+- 不修改 HTTP/应用服务契约、配置、数据库结构、前端和日志字段长度。
+- 不执行版本发布；PR 合并按 Required Check 结果执行。
 
 ## 4. 设计输入
 
@@ -27,11 +28,11 @@
 
 ### 5.1 影响模块
 
-`mango/mango-platform/mango-file/mango-file-core`。
+`mango/mango-platform/mango-file/mango-file-api`、`mango-file-core` 与 `mango-file-starter-remote`。
 
 ### 5.2 接口变化
 
-无。所有公开方法、路径、入参与返回契约保持兼容。
+HTTP 和应用服务方法、路径、入参与返回契约不变。Java 业务码从 `io.mango.file.api.FileCode` 迁移到 `io.mango.file.api.enums.FileCode`；按用户确认的新版本策略不保留旧包入口，常量、数值与消息不变。
 
 ### 5.3 数据变化
 
@@ -51,8 +52,8 @@
 
 | 物料 | 是否需要更新 | 路径或 EXCEPTION 依据 |
 |---|---|---|
-| 代码 | 是 | `mango/mango-platform/mango-file/mango-file-core/src/main/java/io/mango/file/core/service/impl/FileServiceImpl.java` |
-| README/使用说明 | 否 | EXCEPTION: 公开使用方式、接口、配置和升级动作均不变化 |
+| 代码 | 是 | `mango-file-api` 的 `api/enums/FileCode.java`、`mango-file-core` 的 `FileServiceImpl.java` 及仓库内引用迁移 |
+| README/使用说明 | 是 | `mango/mango-platform/mango-file/README.md` 记录规范 import 路径 |
 | 需求文档 | 是 | `mango-docs/designs/issue-453-file-dedup-concurrency/business-requirements.md`、`system-requirements.md` |
 | 详细设计文档 | 是 | `mango-docs/designs/issue-453-file-dedup-concurrency/technical-design.md`、`implementation-plan.md` |
 | E2E 脚本 | 否 | EXCEPTION: 无 UI 变化；由公共应用服务入口的真实持久化并发集成测试覆盖 |
@@ -66,7 +67,7 @@
 
 ## 6. 风险与限制
 
-- Testcontainers MySQL 8.4 证明真实 InnoDB 唯一约束、事务隔离、锁定当前读和竞争恢复；测试仍只替换外部对象存储。
+- Worktree 专属本地 MySQL 8.4 证明真实 InnoDB 唯一约束、事务隔离、锁定当前读和竞争恢复；测试拒绝连接数据库名不匹配 `mango_dev_*` 的环境，并且只替换外部对象存储。
 - 对象存储使用线程安全替身以稳定制造并发窗口；被测持久化与服务目标真实执行。
 - 存储补偿失败只记录上下文，不得把已经成立的数据库复用反转为业务 500。
 
@@ -74,7 +75,7 @@
 
 | ID | 来源 | 要求 | 设计决策 | 代码交付物 | README/使用说明 | 需求/设计文档 | E2E 脚本 | 测试结果基线 | 验收方式 | 状态 | 证据文件 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| TASK-001 | Issue 453, BAC-001, SAC-001 | 五个相同内容并发保存全部成功并复用一个物理对象 | 数据库唯一约束最终仲裁，竞争失败后当前读胜出对象 | `mango/mango-platform/mango-file/mango-file-core/src/main/java/io/mango/file/core/service/impl/FileServiceImpl.java` | EXCEPTION: 未修改公开接口、配置或调用方式，无需更新使用说明 | `mango-docs/designs/issue-453-file-dedup-concurrency/business-requirements.md`、`system-requirements.md`、`technical-design.md`、`implementation-plan.md` | EXCEPTION: 无 UI；应用服务入口集成测试覆盖 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | TC-453 全部业务与持久化断言 | DONE | `mango/mango-platform/mango-file/mango-file-core/src/test/java/io/mango/file/core/service/impl/FileServiceConcurrentSaveIntegrationTest.java`、`mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` |
+| TASK-001 | Issue 453, BAC-001, SAC-001 | 五个相同内容并发保存全部成功并复用一个物理对象，相关代码符合 Service 业务码规范 | 数据库唯一约束最终仲裁，竞争失败后当前读胜出对象；`FileCode` 直接迁移到 `api.enums` | `mango-file-api` 的 `api/enums/FileCode.java`、`mango-file-core` 的 `FileServiceImpl.java` 及全部引用迁移 | `mango/mango-platform/mango-file/README.md` | `mango-docs/designs/issue-453-file-dedup-concurrency/business-requirements.md`、`system-requirements.md`、`technical-design.md`、`implementation-plan.md` | EXCEPTION: 无 UI；应用服务入口集成测试覆盖 | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | TC-453 全部业务与持久化断言、全 Reactor 编译及架构门禁 | DONE | `mango/mango-platform/mango-file/mango-file-core/src/test/java/io/mango/file/core/service/impl/FileServiceConcurrentSaveIntegrationTest.java`、`mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` |
 
 ## 8. 验收证据记录
 
@@ -86,10 +87,10 @@
 
 | 基线 ID | 覆盖台账 ID | 覆盖用例 ID | E2E 脚本 | 测试命令 | 环境/版本 | 数据库或数据集 | 账号/租户标识 | 结果摘要 | 失败/阻塞/例外 | 报告/截图/日志路径 | 行为变化 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| BASELINE-453 | TASK-001 | TC-453 | EXCEPTION: 应用服务入口集成测试 | `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -Dtest=FileServiceConcurrentSaveIntegrationTest test` | Java 21.0.10、Maven 3.9.13、Testcontainers MySQL 8.4 | 一次性隔离 MySQL 容器与 `IT_453_` 数据集 | 用户 2001、租户 1001 | 待实现后回填五线程与模块测试结果 | NONE | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 从并发唯一键失败变为全部成功并复用物理内容 |
+| BASELINE-453 | TASK-001 | TC-453 | EXCEPTION: 应用服务入口集成测试 | 加载 `.mango/dev-workspace.env` 后执行目标并发测试与 `mango-file-core` 全量测试 | Java 21.0.10、Maven 3.9.13、worktree 专属本地 MySQL 8.4.8 | `mango_dev_mango_issue_453_178` 与 `IT_453_` 数据集 | 用户 2001、租户 1001 | 并发测试连续 5/5 轮通过；模块 42/42 通过；失败、错误、跳过均为 0 | NONE | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 从并发唯一键失败变为全部成功并复用物理内容；业务码包路径规范化且数值和消息不变 |
 
 ## 10. 业务开发交接输出
 
 | 输出对象 | 交接内容 | 材料路径 | 执行入口 | 数据/账号边界 | 失败/例外处理 | 状态 |
 |---|---|---|---|---|---|---|
-| 业务开发者 | 升级到包含 Issue 453 修复的后端版本后移除通过改变 ZIP 内容规避重复哈希的逻辑；文件保存调用方式不变 | `mango-docs/designs/issue-453-file-dedup-concurrency/technical-design.md`、`delivery-contract.md`、`mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -Dtest=FileServiceConcurrentSaveIntegrationTest test` | 测试使用隔离内存库、用户 2001、租户 1001；业务环境沿用自身合法上下文 | 若仍出现相同唯一键错误，保留请求追踪与非敏感日志并升级 Mango Issue | DONE |
+| 业务开发者 | 升级到包含 Issue 453 修复的后端版本后移除通过改变 ZIP 内容规避重复哈希的逻辑；文件保存调用方式不变；直接引用业务码的 Java 代码改用 `io.mango.file.api.enums.FileCode` | `mango/mango-platform/mango-file/README.md`、`mango-docs/designs/issue-453-file-dedup-concurrency/technical-design.md`、`delivery-contract.md`、`mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | `set -a; source .mango/dev-workspace.env; set +a; mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core test` | 测试使用 worktree 专属 `mango_dev_*` 本地 MySQL、用户 2001、租户 1001；业务环境沿用自身合法上下文 | 若仍出现相同唯一键错误，保留请求追踪与非敏感日志并升级 Mango Issue | DONE |

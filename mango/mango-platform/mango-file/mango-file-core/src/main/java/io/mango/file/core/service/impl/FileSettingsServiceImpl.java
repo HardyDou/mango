@@ -3,7 +3,7 @@ package io.mango.file.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.SaveFileSettingsCommand;
 import io.mango.file.api.enums.FileAccessMode;
 import io.mango.file.api.enums.FileAccessLevel;

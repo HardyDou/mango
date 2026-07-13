@@ -1,7 +1,7 @@
 package io.mango.file.starter.remote;
 
 import io.mango.common.exception.BizException;
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.vo.FileDownloadVO;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;

@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.SaveFileStorageConfigCommand;
 import io.mango.file.api.command.TestFileStorageConfigCommand;
 import io.mango.file.api.enums.FileStorageType;

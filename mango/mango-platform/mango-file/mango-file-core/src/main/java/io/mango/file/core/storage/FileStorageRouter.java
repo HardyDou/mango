@@ -1,6 +1,6 @@
 package io.mango.file.core.storage;
 
-import io.mango.file.api.FileCode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.core.entity.FileStorageConfig;
 import io.mango.common.result.Require;
 import lombok.RequiredArgsConstructor;

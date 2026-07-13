@@ -21,12 +21,14 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 | 决策ID | 问题 | 候选方案 | 选择 | 理由 | 来源ID或路径 | 是否推断 | 影响 | 风险 | 回退条件 |
 |---|---|---|---|---|---|---|---|---|---|
 | DEC-001 | 相同哈希首次并发保存时多个事务均先查未命中，后插入者触发唯一键冲突 | 分布式锁；数据库方言 upsert；保留唯一约束并恢复竞争失败 | 保留唯一约束作为最终仲裁，捕获明确的唯一键冲突后使用当前读查询并复用胜出对象 | 不依赖 Memory、Redis 或 JDBC 锁，不增加配置和方言 SQL；数据库不变量仍是唯一正确性来源 | FR-001, NFR-001, SAC-001；`FileServiceImpl.java`；Issue 453 | 否 | 文件对象与哈希映射创建改为幂等，所有现有保存入口受益 | 普通快照读可能看不到刚提交的胜出对象；失败方可能已写入不同对象名 | 当前读未能找到匹配的已完成对象时通过 `Require + FileCode.FILE_STORE_FAILED` 终止，禁止吞掉非目标冲突或直接抛出运行时异常 |
+| DEC-002 | 文件服务新增 `Require` 调用触发业务码包路径规范门禁 | 绕过门禁；保留旧包兼容层；直接迁移规范包路径 | 将 `FileCode` 从 `io.mango.file.api` 迁移到 `io.mango.file.api.enums`，删除旧入口并更新仓库内全部引用 | 业务码数值、消息和调用语义完全不变；项目按新版本整体发布，用户明确无需历史包路径兼容 | rules/backend/03-api.md；用户 2026-07-13 指示 | 否 | Java import 路径变化，HTTP、应用服务、错误码数值和业务特性不变 | 外部源码若仍引用旧包路径需随版本升级修改 import | 全 Reactor 编译与架构门禁必须通过；不得保留重复枚举或兼容门面 |
 
 ## 2. 模块与依赖边界
 
 | 模块设计ID | 模块或包 | 职责 | 改动类型 | 依赖方向 | 公开能力 | 系统需求ID | 适用规范ruleId | 验证方式 |
 |---|---|---|---|---|---|---|---|---|
 | MOD-001 | `mango-file-core` 的文件服务实现与模块内测试 | 在现有事务中创建或复用物理文件对象、维护哈希映射和引用关系 | 局部实现与回归测试 | 保持 core 依赖现有持久化和存储抽象，不增加 KV 依赖 | 现有上传、生成文件、资料打包和分片完成能力，公开签名不变 | SC-001, SA-001, FR-001, UC-001, IR-001, NFR-001, SAC-001 | rules/backend/01-code.md, rules/backend/05-module.md, rules/backend/08-test.md | 受影响模块编译、五并发集成测试、现有模块测试和质量门禁 |
+| MOD-002 | `mango-file-api` 业务码契约 | 将文件业务码放入规范 `api.enums` 包并供 core、remote starter 与测试统一引用 | 包路径规范化 | 下游仍只依赖 `mango-file-api`，不改变模块依赖方向 | `FileCode` 常量集合、数值和消息不变 | SC-001, IR-001, NFR-001 | rules/backend/02-naming.md, rules/backend/03-api.md, rules/backend/05-module.md | 全 Reactor 编译、架构门禁与文件模块回归 |
 
 ## 3. 技术对象与状态模型
 
@@ -54,7 +56,7 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 
 | 数据设计ID | 上游或模型ID | 表或实体 | 字段变化 | 约束 | 索引 | 租户审计 | Mapper边界 | 数据来源 | migration或回填 | 回滚或补偿 | 适用规范ruleId | 验证方式 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| DB-001 | DR-001, FR-001, DM-001 | `file_object`、`file_hash_mapping`、`file_record` 及现有实体 | 无 | 复用 `uk_file_object_hash_storage` 与 `uk_file_hash_mapping_target` | 无变化 | 沿用现有租户和审计字段 | 现有 Mapper 负责插入、当前读、更新和原子引用增量，不新增跨模块仓储 | 文件内容哈希、存储配置、租户上下文和保存请求 | 不需要 migration 或历史回填 | 非目标冲突通过 `Require + FileCode.FILE_STORE_FAILED` 终止；失败方不同对象名执行存储删除补偿；代码回滚即可恢复旧行为 | rules/backend/04-db.md, rules/backend/07-persistence.md | Testcontainers MySQL 8.4 使用真实 Mapper、唯一约束、InnoDB 事务和默认隔离级别执行五并发测试；模块 verify |
+| DB-001 | DR-001, FR-001, DM-001 | `file_object`、`file_hash_mapping`、`file_record` 及现有实体 | 无 | 复用 `uk_file_object_hash_storage` 与 `uk_file_hash_mapping_target` | 无变化 | 沿用现有租户和审计字段 | 现有 Mapper 负责插入、当前读、更新和原子引用增量，不新增跨模块仓储 | 文件内容哈希、存储配置、租户上下文和保存请求 | 不需要 migration 或历史回填 | 非目标冲突通过 `Require + FileCode.FILE_STORE_FAILED` 终止；失败方不同对象名执行存储删除补偿；代码回滚即可恢复旧行为 | rules/backend/04-db.md, rules/backend/07-persistence.md | `mango workspace init` 分配的 worktree 专属 MySQL 8.4 数据库使用真实 Mapper、唯一约束、InnoDB 事务和默认隔离级别执行五并发测试；模块 verify |
 
 ## 7. 安全、权限、租户与数据边界
 
@@ -78,19 +80,19 @@ upstreamDocumentHash: 621143501dc466937951e1a84c4f88e329c5b1108a5cd0e9bf7e8a9586
 
 | 测试用例ID | 系统验收ID | 设计项ID | 场景 | 优先级 | 测试层级 | 自动化判断 | 测试数据 | 权限或租户边界 | 稳定契约 | 执行入口 | 证据 | 失败处理 | 适用规范ruleId |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| TC-453 | SAC-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | 五个线程从无既有对象开始并发保存完全相同字节 | P1 | 集成测试 | AUTO | `IT_453_` 唯一前缀、相同字节和同一存储配置；Testcontainers MySQL 8.4 提供一次性隔离数据库，测试前重建目标表，容器销毁时清理 | 固定测试租户与用户；不接触共享数据库 | 真实 MySQL、真实 Mapper、唯一约束、Spring 事务、线程屏障和线程安全存储替身；断言五次成功、一对象、一映射、五结果、引用数五、存储对象一份 | `mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -am -DskipTests=false -Dtest=FileServiceConcurrentSaveIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 任一断言失败即阻断提交并保留测试报告定位；不得降级为 H2、降低并发数或弱化断言 | rules/09-test-case-automation-flow.md, rules/backend/08-test.md |
+| TC-453 | SAC-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | 五个线程从无既有对象开始并发保存完全相同字节 | P1 | 集成测试 | AUTO | `IT_453_` 唯一前缀、相同字节和同一存储配置；测试只允许连接名称匹配 `mango_dev_*` 的 worktree 专属 MySQL 8.4 数据库，测试前重建目标表 | 固定测试租户与用户；不接触共享数据库 | 真实 MySQL、真实 Mapper、唯一约束、Spring 事务、线程屏障和线程安全存储替身；断言五次成功、一对象、一映射、五结果、引用数五、存储对象一份 | `set -a; source .mango/dev-workspace.env; set +a; mvn -f mango/pom.xml -pl mango-platform/mango-file/mango-file-core -Dtest=FileServiceConcurrentSaveIntegrationTest test` | `mango-docs/evidence/issue-453-file-dedup-concurrency/test-baseline.md` | 数据库名不匹配 `mango_dev_*` 或任一断言失败即阻断提交；不得降级为 H2、降低并发数或弱化断言 | rules/09-test-case-automation-flow.md, rules/backend/08-test.md |
 
 ## 11. 兼容、发布与能力文档影响
 
 | 影响ID | 设计项ID | 影响对象 | 当前行为 | 目标行为 | 兼容策略 | 升级或回滚 | README或能力地图 | 发布批次 | 验证 | 责任人 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| IMP-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001 | Mango 文件能力消费者与后端发布物 | 相同内容首次并发保存可能返回失败 | 相同请求全部成功并复用物理内容 | 公开 API、配置、数据结构及单线程行为兼容 | 随下一后端修复版本升级；回滚代码即可恢复旧行为，无数据迁移 | README 和能力地图不变，因为没有新增或修改使用方式；设计与验收证据记录行为修复 | 后端文件模块修复批次，本任务不执行发布 | 模块测试、质量门禁和 PR 检查 | Mango 文件能力负责人 |
+| IMP-001 | DEC-001, DEC-002, MOD-001, MOD-002, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001 | Mango 文件能力消费者与后端发布物 | 相同内容首次并发保存可能返回失败，文件业务码仍位于非规范包路径 | 相同请求全部成功并复用物理内容；业务码位于规范 `api.enums` 包 | HTTP、应用服务、配置、数据结构、错误码数值和单线程行为不变；Java 消费者随新版本更新 import，不保留旧路径兼容 | 随下一后端修复版本升级；回滚代码即可恢复旧行为，无数据迁移 | 更新模块 README 的 `FileCode` import 说明；能力地图不变，因为文件业务能力与接入流程未变化 | 后端文件模块修复批次，本任务不执行版本发布 | 全 Reactor 编译、模块测试、质量门禁和 PR 检查 | Mango 文件能力负责人 |
 
 ## 12. 技术追踪矩阵
 
 | 上游ID | 设计项ID | 测试用例ID | 覆盖说明 |
 |---|---|---|---|
-| SC-001, SA-001, FR-001, UC-001, PG-001, BT-001, DR-001, IR-001, NFR-001, SAC-001 | DEC-001, MOD-001, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | TC-453 | 全部系统需求由数据库仲裁、事务内恢复、存储补偿和五并发真实持久化断言覆盖 |
+| SC-001, SA-001, FR-001, UC-001, PG-001, BT-001, DR-001, IR-001, NFR-001, SAC-001 | DEC-001, DEC-002, MOD-001, MOD-002, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, IMP-001 | TC-453 | 全部系统需求由数据库仲裁、事务内恢复、规范业务码契约、存储补偿和五并发真实持久化断言覆盖 |
 
 ## 13. 阶段判定与审批
 

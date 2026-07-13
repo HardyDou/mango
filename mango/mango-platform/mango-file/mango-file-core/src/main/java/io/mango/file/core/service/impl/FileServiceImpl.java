@@ -5,11 +5,10 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.common.exception.BizException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.file.api.FileCode;
 import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
@@ -22,6 +21,7 @@ import io.mango.file.api.command.FilePackageEntryCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
+import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.enums.FileDuplicateNameStrategy;
 import io.mango.file.api.enums.FileInstantUploadScope;
 import io.mango.file.api.enums.FileMergeTargetFormat;
@@ -113,6 +113,8 @@ import java.util.zip.ZipOutputStream;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring collaborators are container-managed shared services; defensive copies are not applicable.")
 public class FileServiceImpl implements IFileService {
 
     private static final DateTimeFormatter DATE_PATH = DateTimeFormatter.ofPattern("yyyy/MM/dd");
@@ -120,7 +122,16 @@ public class FileServiceImpl implements IFileService {
     private static final long DEFAULT_CHUNK_SIZE = 10L * 1024 * 1024;
     private static final long MIN_CHUNK_SIZE = 5L * 1024 * 1024;
     private static final long UPLOAD_SESSION_EXPIRE_HOURS = 24L;
+    private static final long DEFAULT_ACCESS_EXPIRE_SECONDS = 86400L;
     private static final String PART_STATUS_COMPLETED = "COMPLETED";
+    private static final String NULL_CHARACTER = Character.toString(0);
+    private static final Set<ConvertFormat> MERGE_PDF_SOURCE_FORMATS = Set.of(
+            ConvertFormat.PDF,
+            ConvertFormat.JPEG,
+            ConvertFormat.PNG,
+            ConvertFormat.TIFF,
+            ConvertFormat.DOC,
+            ConvertFormat.DOCX);
 
     private final FileStorageRouter fileStorageRouter;
     private final IFileStorageConfigService storageConfigService;
@@ -281,8 +292,6 @@ public class FileServiceImpl implements IFileService {
             return result.content();
         } catch (IOException ex) {
             return Require.fail(FileCode.FILE_READ_FAILED);
-        } catch (BizException ex) {
-            throw ex;
         } catch (RuntimeException ex) {
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
@@ -293,12 +302,7 @@ public class FileServiceImpl implements IFileService {
         ConvertFormat format = ConvertFormat.parse(extension)
                 .orElseGet(() -> parseContentType(download.contentType()));
         Require.notNull(format, FileCode.FILE_EXTENSION_NOT_ALLOWED);
-        Require.isTrue(format == ConvertFormat.PDF
-                || format == ConvertFormat.JPEG
-                || format == ConvertFormat.PNG
-                || format == ConvertFormat.TIFF
-                || format == ConvertFormat.DOC
-                || format == ConvertFormat.DOCX, FileCode.FILE_EXTENSION_NOT_ALLOWED);
+        Require.isTrue(MERGE_PDF_SOURCE_FORMATS.contains(format), FileCode.FILE_EXTENSION_NOT_ALLOWED);
         return format;
     }
 
@@ -967,8 +971,10 @@ public class FileServiceImpl implements IFileService {
             fillConfiguredPreviewUrl(vo, record, settings);
             return;
         }
-        long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 86400L);
-        long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 86400L);
+        long previewExpireSeconds = positiveOrDefault(
+                settings.getPreviewExpireSeconds(), DEFAULT_ACCESS_EXPIRE_SECONDS);
+        long downloadExpireSeconds = positiveOrDefault(
+                settings.getAccessTokenExpireSeconds(), DEFAULT_ACCESS_EXPIRE_SECONDS);
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                 .ifPresent(url -> {
@@ -994,7 +1000,8 @@ public class FileServiceImpl implements IFileService {
         if (!requiresPreviewProvider(record, settings)) {
             return;
         }
-        long expireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 86400L);
+        long expireSeconds = positiveOrDefault(
+                settings.getPreviewExpireSeconds(), DEFAULT_ACCESS_EXPIRE_SECONDS);
         String sourceUrl = StringUtils.hasText(vo.getDirectDownloadUrl()) ? vo.getDirectDownloadUrl() : vo.getDownloadUrl();
         String previewUrl = FilePreviewUrlBuilder.build(settings.getPreviewProviderUrl(), record, sourceUrl, expireSeconds);
         vo.setDocumentPreviewUrl(fileAccessUrlAssembler.externalize(previewUrl));
@@ -1034,8 +1041,10 @@ public class FileServiceImpl implements IFileService {
                     });
             return;
         }
-        long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 86400L);
-        long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 86400L);
+        long previewExpireSeconds = positiveOrDefault(
+                settings.getPreviewExpireSeconds(), DEFAULT_ACCESS_EXPIRE_SECONDS);
+        long downloadExpireSeconds = positiveOrDefault(
+                settings.getAccessTokenExpireSeconds(), DEFAULT_ACCESS_EXPIRE_SECONDS);
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                     .ifPresent(url -> {
@@ -1423,7 +1432,7 @@ public class FileServiceImpl implements IFileService {
         entity.setFileSize(fileSize);
         entity.setContentType(trimToNull(contentType));
         entity.setStatus(FileObjectStatus.COMPLETED.value());
-        entity.setRefCount(refCount == null ? 0L : refCount);
+        entity.setRefCount(Objects.requireNonNullElse(refCount, 0L));
         LocalDateTime now = LocalDateTime.now();
         Long userId = MangoContextHolder.userId();
         entity.setCreatedBy(userId);
@@ -1435,9 +1444,7 @@ public class FileServiceImpl implements IFileService {
             return entity;
         } catch (DuplicateKeyException ex) {
             FileObjectEntity concurrentObject = findCompletedObjectForUpdate(storageConfig, hash, fileSize);
-            if (concurrentObject == null) {
-                throw ex;
-            }
+            Require.notNull(concurrentObject, FileCode.FILE_STORE_FAILED);
             cleanupRedundantStoredObject(storageConfig, objectName, concurrentObject, hash, fileSize);
             return concurrentObject;
         }
@@ -1476,9 +1483,7 @@ public class FileServiceImpl implements IFileService {
         } catch (DuplicateKeyException ex) {
             FileHashMappingEntity concurrentMapping = findHashMapping(
                     tenantId, storageConfig, hash, fileSize, settings, true);
-            if (concurrentMapping == null) {
-                throw ex;
-            }
+            Require.notNull(concurrentMapping, FileCode.FILE_STORE_FAILED);
             activateHashMapping(concurrentMapping, fileObject);
         }
     }
@@ -1675,12 +1680,18 @@ public class FileServiceImpl implements IFileService {
 
     private String normalizeZipFileName(String fileName) {
         String normalized = normalizeFileName(fileName);
-        return normalized.toLowerCase(Locale.ROOT).endsWith(".zip") ? normalized : normalized + ".zip";
+        if (normalized.toLowerCase(Locale.ROOT).endsWith(".zip")) {
+            return normalized;
+        }
+        return normalized + ".zip";
     }
 
     private String normalizePdfFileName(String fileName) {
         String normalized = normalizeFileName(fileName);
-        return normalized.toLowerCase(Locale.ROOT).endsWith(".pdf") ? normalized : normalized + ".pdf";
+        if (normalized.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
+            return normalized;
+        }
+        return normalized + ".pdf";
     }
 
     private String normalizeZipEntryPath(String value) {
@@ -1695,7 +1706,7 @@ public class FileServiceImpl implements IFileService {
             Require.isFalse(segment.isBlank()
                     || ".".equals(segment)
                     || "..".equals(segment)
-                    || segment.contains("\u0000"), FileCode.STORAGE_PATH_INVALID);
+                    || segment.contains(NULL_CHARACTER), FileCode.STORAGE_PATH_INVALID);
         }
         return path;
     }
@@ -1716,7 +1727,10 @@ public class FileServiceImpl implements IFileService {
     }
 
     private String trimToNull(String value) {
-        return StringUtils.hasText(value) ? value.trim() : null;
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
     }
 
     private String normalizeBizMeta(String value) {
@@ -1803,7 +1817,10 @@ public class FileServiceImpl implements IFileService {
             try (InputStream input = command.getInputStream(); OutputStream output = Files.newOutputStream(temp)) {
                 size = input.transferTo(output);
             }
-            long declaredSize = command.getFileSize() == null || command.getFileSize() <= 0 ? size : command.getFileSize();
+            long declaredSize = size;
+            if (command.getFileSize() != null && command.getFileSize() > 0) {
+                declaredSize = command.getFileSize();
+            }
             return new FileInput(() -> {
                 try {
                     return Files.newInputStream(temp);
@@ -1833,7 +1850,10 @@ public class FileServiceImpl implements IFileService {
             return "根目录";
         }
         FileDirectory directory = fileDirectoryMapper.selectById(directoryId);
-        return directory == null ? "" : directory.getDirectoryName();
+        if (directory == null) {
+            return "";
+        }
+        return directory.getDirectoryName();
     }
 
     /**
@@ -1847,7 +1867,10 @@ public class FileServiceImpl implements IFileService {
         private static String fileName(String value) {
             String normalized = value.replace("\\", "/");
             int slash = normalized.lastIndexOf('/');
-            return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+            if (slash >= 0) {
+                return normalized.substring(slash + 1);
+            }
+            return normalized;
         }
     }
 }

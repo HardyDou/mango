@@ -65,10 +65,11 @@ import static org.mockito.Mockito.when;
         FileServiceConcurrentSaveIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:file_concurrent;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.url=jdbc:mysql://${MANGO_DB_HOST:127.0.0.1}:${MANGO_DB_PORT:3306}/${MANGO_DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+        "spring.datasource.username=${MANGO_DB_USERNAME}",
+        "spring.datasource.password=${MANGO_DB_PASSWORD}",
+        "spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver",
+        "spring.datasource.hikari.transaction-isolation=TRANSACTION_REPEATABLE_READ",
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
@@ -91,6 +92,8 @@ class FileServiceConcurrentSaveIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        String databaseName = jdbcTemplate.queryForObject("select database()", String.class);
+        assertThat(databaseName).startsWith("mango_dev_");
         rebuildTables();
         fileStorage.reset(CONCURRENCY);
         executor = Executors.newFixedThreadPool(CONCURRENCY);
@@ -178,7 +181,7 @@ class FileServiceConcurrentSaveIntegrationTest {
                     primary key (id),
                     unique key uk_file_object_hash_storage
                         (storage_config_id, bucket_name, file_hash, file_size)
-                )
+                ) engine=InnoDB
                 """);
         jdbcTemplate.execute("""
                 create table file_hash_mapping (
@@ -199,7 +202,7 @@ class FileServiceConcurrentSaveIntegrationTest {
                     primary key (id),
                     unique key uk_file_hash_mapping_target
                         (scope_type, tenant_id, storage_config_id, file_hash, file_size)
-                )
+                ) engine=InnoDB
                 """);
         jdbcTemplate.execute("""
                 create table file_record (
@@ -230,7 +233,7 @@ class FileServiceConcurrentSaveIntegrationTest {
                     updated_time timestamp not null,
                     updated_at timestamp default current_timestamp,
                     primary key (id)
-                )
+                ) engine=InnoDB
                 """);
     }
 
