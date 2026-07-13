@@ -3,8 +3,8 @@
   "packageVersion": "1.2.0",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "0d91104fbabfa3342ce9830e051f6c89e85bfc03",
-  "bundleSha256": "8fce2a27709bfa56602c8bd09367f1674b82d8f042a5de5decce86fbf6ea1769",
+  "sourceCommit": "80e2b5a2b732afbd5d76d6db0273066e077eee34",
+  "bundleSha256": "200db7b901c808dbf02e0ad4fada6b5097b38664b7ab1f63847e13c117925ee6",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -604,8 +604,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "82a7f1f2910d3215c520b17ae4fe00f4c8a028746c21141f40842f6200f2eec7",
-      "size": 24611,
+      "sha256": "51ec2e659a655e1c7c0af3ba5648b46e0d3138f0c7cfc77ddb0b33974f728340",
+      "size": 24788,
       "kind": "rule",
       "mode": "0644"
     },

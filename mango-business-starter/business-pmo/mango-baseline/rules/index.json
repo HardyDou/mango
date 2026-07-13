@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -65,11 +65,11 @@
     },
     "process.testCaseAutomation": {
       "path": "rules/09-test-case-automation-flow.md",
-      "reason": "测试用例登记、自动化层级、稳定锚点、执行策略和结果基线流程"
+      "reason": "需求影响与方案风险取最大值、最低成本充分验证集、测试用例登记、自动化层级、执行策略和结果基线流程"
     },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
-      "reason": "AI 交付质量门禁、按模块历史架构债务递减、发布批次、单 Owner/多人维护分支保护、Required Check、CODEOWNERS 和 Maven app 制品排除规则"
+      "reason": "AI 交付质量门禁、直接修改 Maven 模块门禁、构建与质量分离、按模块历史架构债务递减、发布批次和 Required Check 规则"
     },
     "process.documentAssets": {
       "path": "rules/06-document-assets.md",
@@ -304,7 +304,7 @@
     "testCaseAutomation": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "paths": ["mango-pmo/templates/delivery-contract.md", "mango-pmo/rules/09-test-case-automation-flow.md"],
-      "keywords": ["测试用例", "用例登记", "用例管理", "自动化测试", "E2E 稳定", "E2E稳定", "稳定定位器", "语义锚点", "执行策略", "测试结果基线", "flaky", "Playwright"],
+      "keywords": ["需求影响", "方案风险", "风险等级", "最低成本", "充分验证", "直接修改模块", "构建是构建", "质量门禁", "测试用例", "用例登记", "用例管理", "自动化测试", "E2E 稳定", "E2E稳定", "稳定定位器", "语义锚点", "执行策略", "测试结果基线", "flaky", "Playwright"],
       "include": ["process.testCaseAutomation", "process.testAssets", "process.aiDeliveryQuality"]
     },
     "testAssets": {
