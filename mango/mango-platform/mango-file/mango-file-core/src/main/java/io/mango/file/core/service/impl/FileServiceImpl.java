@@ -73,6 +73,8 @@ import io.mango.infra.fileproc.render.command.MergePdfCommand;
 import io.mango.infra.fileproc.render.vo.PdfOperationResultVO;
 import io.mango.infra.fileproc.render.vo.PdfSourceVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -110,6 +112,7 @@ import java.util.zip.ZipOutputStream;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FileServiceImpl implements IFileService {
 
     private static final DateTimeFormatter DATE_PATH = DateTimeFormatter.ofPattern("yyyy/MM/dd");
@@ -358,7 +361,8 @@ public class FileServiceImpl implements IFileService {
             } catch (Exception e) {
                 return Require.fail(FileCode.FILE_STORE_FAILED);
             }
-            fileObject = createFileObject(tenantId, storageConfig, objectName, hash, input.fileSize, input.contentType, 0L);
+            fileObject = createOrReuseFileObject(tenantId, storageConfig, objectName, hash,
+                    input.fileSize, input.contentType, 0L);
             createHashMapping(tenantId, storageConfig, hash, input.fileSize, fileObject, settings);
         }
 
@@ -427,7 +431,8 @@ public class FileServiceImpl implements IFileService {
             if (fileObject == null) {
                 String objectName = generateObjectName(storageConfig, tenantId, 0L, originalFilename, fileExt, hash, settings);
                 fileStorageRouter.putObject(storageConfig, objectName, new ByteArrayInputStream(content), content.length, contentType);
-                fileObject = createFileObject(tenantId, storageConfig, objectName, hash, fileSize, contentType, 0L);
+                fileObject = createOrReuseFileObject(tenantId, storageConfig, objectName, hash,
+                        fileSize, contentType, 0L);
                 createHashMapping(tenantId, storageConfig, hash, fileSize, fileObject, settings);
             }
             FileRecord entity = createFileRecord(tenantId,
@@ -776,7 +781,7 @@ public class FileServiceImpl implements IFileService {
                 session.getStorageType(),
                 session.getBucketName());
         completePhysicalUpload(session, storageConfig, parts);
-        FileObjectEntity fileObject = createFileObject(session.getTenantId(),
+        FileObjectEntity fileObject = createOrReuseFileObject(session.getTenantId(),
                 storageConfig,
                 session.getObjectName(),
                 session.getFileHash(),
@@ -1362,13 +1367,52 @@ public class FileServiceImpl implements IFileService {
                 .last("LIMIT 1"));
     }
 
-    private FileObjectEntity createFileObject(Long tenantId,
-                                              FileStorageConfig storageConfig,
-                                              String objectName,
+    private FileObjectEntity findCompletedObjectForUpdate(FileStorageConfig storageConfig,
+                                                          String hash,
+                                                          Long fileSize) {
+        if (!StringUtils.hasText(hash) || fileSize == null) {
+            return null;
+        }
+        return fileObjectMapper.selectOne(new LambdaQueryWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
+                .eq(FileObjectEntity::getBucketName, storageConfig.getBucketName())
+                .eq(FileObjectEntity::getFileHash, hash)
+                .eq(FileObjectEntity::getFileSize, fileSize)
+                .eq(FileObjectEntity::getStatus, FileObjectStatus.COMPLETED.value())
+                .last("LIMIT 1 FOR UPDATE"));
+    }
+
+    private void cleanupRedundantStoredObject(FileStorageConfig storageConfig,
+                                              String uploadedObjectName,
+                                              FileObjectEntity concurrentObject,
                                               String hash,
-                                              Long fileSize,
-                                              String contentType,
-                                              Long refCount) {
+                                              Long fileSize) {
+        if (!StringUtils.hasText(uploadedObjectName)
+                || Objects.equals(uploadedObjectName, concurrentObject.getObjectName())) {
+            return;
+        }
+        try {
+            fileStorageRouter.removeObject(storageConfig, uploadedObjectName);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to clean redundant file object after deduplication conflict, "
+                            + "storageConfigId={}, bucket={}, uploadedObjectName={}, retainedObjectName={}, hash={}, size={}",
+                    normalizedStorageConfigId(storageConfig),
+                    storageConfig.getBucketName(),
+                    uploadedObjectName,
+                    concurrentObject.getObjectName(),
+                    hash,
+                    fileSize,
+                    ex);
+        }
+    }
+
+    private FileObjectEntity createOrReuseFileObject(Long tenantId,
+                                                     FileStorageConfig storageConfig,
+                                                     String objectName,
+                                                     String hash,
+                                                     Long fileSize,
+                                                     String contentType,
+                                                     Long refCount) {
         FileObjectEntity entity = new FileObjectEntity();
         entity.setTenantId(tenantId);
         entity.setStorageConfigId(normalizedStorageConfigId(storageConfig));
@@ -1386,8 +1430,17 @@ public class FileServiceImpl implements IFileService {
         entity.setCreatedTime(now);
         entity.setUpdatedBy(userId);
         entity.setUpdatedTime(now);
-        fileObjectMapper.insert(entity);
-        return entity;
+        try {
+            fileObjectMapper.insert(entity);
+            return entity;
+        } catch (DuplicateKeyException ex) {
+            FileObjectEntity concurrentObject = findCompletedObjectForUpdate(storageConfig, hash, fileSize);
+            if (concurrentObject == null) {
+                throw ex;
+            }
+            cleanupRedundantStoredObject(storageConfig, objectName, concurrentObject, hash, fileSize);
+            return concurrentObject;
+        }
     }
 
     private void createHashMapping(Long tenantId,
@@ -1399,19 +1452,9 @@ public class FileServiceImpl implements IFileService {
         if (!Boolean.TRUE.equals(settings.getInstantUploadEnabled()) || !StringUtils.hasText(hash) || fileSize == null) {
             return;
         }
-        FileHashMappingEntity existing = fileHashMappingMapper.selectOne(new LambdaQueryWrapper<FileHashMappingEntity>()
-                .eq(FileHashMappingEntity::getScopeType, hashScope(settings).name())
-                .eq(FileHashMappingEntity::getTenantId, hashTenantId(tenantId, settings))
-                .eq(FileHashMappingEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
-                .eq(FileHashMappingEntity::getFileHash, hash)
-                .eq(FileHashMappingEntity::getFileSize, fileSize)
-                .last("LIMIT 1"));
+        FileHashMappingEntity existing = findHashMapping(tenantId, storageConfig, hash, fileSize, settings, false);
         if (existing != null) {
-            existing.setObjectId(fileObject.getId());
-            existing.setStatus(1);
-            existing.setUpdatedBy(MangoContextHolder.userId());
-            existing.setUpdatedTime(LocalDateTime.now());
-            fileHashMappingMapper.updateById(existing);
+            activateHashMapping(existing, fileObject);
             return;
         }
         FileHashMappingEntity mapping = new FileHashMappingEntity();
@@ -1428,7 +1471,43 @@ public class FileServiceImpl implements IFileService {
         mapping.setCreatedTime(now);
         mapping.setUpdatedBy(userId);
         mapping.setUpdatedTime(now);
-        fileHashMappingMapper.insert(mapping);
+        try {
+            fileHashMappingMapper.insert(mapping);
+        } catch (DuplicateKeyException ex) {
+            FileHashMappingEntity concurrentMapping = findHashMapping(
+                    tenantId, storageConfig, hash, fileSize, settings, true);
+            if (concurrentMapping == null) {
+                throw ex;
+            }
+            activateHashMapping(concurrentMapping, fileObject);
+        }
+    }
+
+    private FileHashMappingEntity findHashMapping(Long tenantId,
+                                                  FileStorageConfig storageConfig,
+                                                  String hash,
+                                                  Long fileSize,
+                                                  FileSettingsVO settings,
+                                                  boolean forUpdate) {
+        String limit = forUpdate ? "LIMIT 1 FOR UPDATE" : "LIMIT 1";
+        return fileHashMappingMapper.selectOne(new LambdaQueryWrapper<FileHashMappingEntity>()
+                .eq(FileHashMappingEntity::getScopeType, hashScope(settings).name())
+                .eq(FileHashMappingEntity::getTenantId, hashTenantId(tenantId, settings))
+                .eq(FileHashMappingEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
+                .eq(FileHashMappingEntity::getFileHash, hash)
+                .eq(FileHashMappingEntity::getFileSize, fileSize)
+                .last(limit));
+    }
+
+    private void activateHashMapping(FileHashMappingEntity mapping, FileObjectEntity fileObject) {
+        if (Objects.equals(mapping.getObjectId(), fileObject.getId()) && Integer.valueOf(1).equals(mapping.getStatus())) {
+            return;
+        }
+        mapping.setObjectId(fileObject.getId());
+        mapping.setStatus(1);
+        mapping.setUpdatedBy(MangoContextHolder.userId());
+        mapping.setUpdatedTime(LocalDateTime.now());
+        fileHashMappingMapper.updateById(mapping);
     }
 
     private FileInstantUploadScope hashScope(FileSettingsVO settings) {
