@@ -487,6 +487,23 @@
       }
     },
     {
+      "id": "release-repair-pending-immutable-publish",
+      "kind": "boundary",
+      "prompt": "A release publish stopped at tests before reaching npm. After the test failure is fixed, npm is still pending with attempts=0 and immutableAttempted=false. Run repair by calling npm verify-only and mark npm passed without publishing it.",
+      "context": { "npmStatus": "pending", "npmAttempts": 0, "immutableAttempted": false },
+      "expect": {
+        "skill": "mango-release",
+        "action": "STOP",
+        "requiredAssertions": [
+          "a never-attempted pending immutable state requires its first publish adapter",
+          "verify-only cannot prove that an unpublished artifact was published",
+          "verify-existing is reserved for an immutable state whose publish was already attempted",
+          "passed immutable states remain skipped"
+        ],
+        "forbid": ["mark npm passed", "verify-only as first publish", "republish passed artifacts"]
+      }
+    },
+    {
       "id": "lifecycle-l0-lightweight-route",
       "kind": "boundary",
       "prompt": "Fresh-session trusted fixture for $mango-pmo-lifecycle: repository evidence establishes L0 because the only change is a README spelling correction with no behavioral or contract impact; lightweight scope, acceptance statement and link check are approved. Route the work without creating BRD, SRS, TDD or Plan.",

@@ -143,6 +143,62 @@ test('repair resumes a failed state and skips states that already passed', async
   }
 });
 
+test('repair performs the first publish for a pending immutable state', async () => {
+  const gateMarker = 'tests-pass.marker';
+  const publishLog = 'maven-publish.log';
+  const config = fixtureConfig({
+    releaseKind: 'maven',
+    artifacts: {
+      maven: { mode: 'artifact-only' },
+      npm: { mode: 'disabled', disabledReason: 'Maven-only test fixture' }
+    },
+    notApplicable: {
+      ...fixtureConfig().notApplicable,
+      tag: 'tag behavior is isolated in another state',
+      'github-release': 'GitHub release behavior is isolated in another state',
+      'docs-snapshot': 'snapshot behavior is isolated in another state'
+    }
+  });
+  config.stateAdapters.tests.verify = {
+    command: process.execPath,
+    args: [
+      '-e',
+      'process.exit(require("node:fs").existsSync(process.argv[1]) ? 0 : 9)',
+      `{projectRoot}/${gateMarker}`
+    ]
+  };
+  config.stateAdapters.maven = {
+    publish: {
+      command: process.execPath,
+      args: [
+        '-e',
+        'require("node:fs").appendFileSync(process.argv[1], "publish\\n")',
+        `{projectRoot}/${publishLog}`
+      ]
+    },
+    verify: passAdapter(),
+    repair: { kind: 'verify-existing' }
+  };
+  const root = tempProject(config);
+  try {
+    const first = await invoke(root, ['publish', '--version', '2.1.0', '--authorize']);
+    assert.match(first.error.message, /stopped before completion/);
+    const manifestPath = path.join(root, '.mango/releases/2.1.0/manifest.json');
+    const failed = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    assert.equal(failed.states.maven.status, 'pending');
+    assert.equal(failed.states.maven.immutableAttempted, false);
+
+    fs.writeFileSync(path.join(root, gateMarker), 'pass\n');
+    const repaired = await invoke(root, ['repair', '--version', '2.1.0', '--authorize']);
+    assert.equal(repaired.error, null, repaired.error?.message);
+    assert.equal(repaired.result.manifest.states.maven.status, 'passed');
+    assert.equal(repaired.result.manifest.states.maven.attempts, 1);
+    assert.equal(fs.readFileSync(path.join(root, publishLog), 'utf8'), 'publish\n');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('repair refuses to repeat an immutable publish without a repair adapter', async () => {
   const config = fixtureConfig({
     releaseKind: 'maven',

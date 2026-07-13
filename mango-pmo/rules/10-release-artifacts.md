@@ -49,7 +49,7 @@
 - **禁止项**：禁止绕过状态机直接声明整批发布完成；禁止把未执行状态写成 passed；禁止 `repair` 重发已经成功的不可变 Maven/npm/tag/Release/文档快照；禁止在项目或用户配置中持久化发布授权、token、password 或 URL userinfo。
 - **正例**：npm 发布成功但消费仓库回查失败，manifest 保留 npm passed 和 consume-verify failed；修复缓存后 `repair` 只运行 consume verify 和后续状态，不重新执行 npm publish。
 - **反例**：第二次执行整套脚本试图覆盖发布。错误原因：不可变版本可能已经存在，且无法区分发布失败与回查失败。
-- **机器判定**：`publish/repair` 只接受本次 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；配置优先级为 CLI > 环境变量 > 用户配置 > 项目配置；Maven/npm 分别显式选择 `private-registry/public-registry/artifact-only/disabled`，disabled 必须有原因，缺模式或 registry 时 doctor 和 publish 失败。completed 必须同时满足所有状态关闭、状态 applicability 与配置一致和全部适用状态 evidence 结构完整；必需状态禁止篡改为 `not_applicable`。不可变 repair 只接受精确的 `{kind: verify-existing}` 引用同状态 verify adapter，独立命令、空数组或额外字段均失败。
+- **机器判定**：`publish/repair` 只接受本次 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`；配置优先级为 CLI > 环境变量 > 用户配置 > 项目配置；Maven/npm 分别显式选择 `private-registry/public-registry/artifact-only/disabled`，disabled 必须有原因，缺模式或 registry 时 doctor 和 publish 失败。completed 必须同时满足所有状态关闭、状态 applicability 与配置一致和全部适用状态 evidence 结构完整；必需状态禁止篡改为 `not_applicable`。`repair` 遇到从未尝试的 pending 不可变状态时必须执行该状态的首次 publish；只有已经尝试过的不可变状态才允许使用精确的 `{kind: verify-existing}` 引用同状态 verify adapter，禁止把未发布制品直接标成验证通过。独立 repair 命令、空数组或额外字段均失败。
 
 ### 7.1 Registry 抽象与文档策略
 

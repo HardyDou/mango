@@ -791,7 +791,14 @@ function executeState(state, action, context) {
     };
   }
 
-  const effectiveAction = action === 'repair' && current.immutableCompleted ? 'verify' : action;
+  let effectiveAction = action;
+  if (action === 'repair' && IMMUTABLE_STATES.has(state)) {
+    if (!current.immutableAttempted) {
+      effectiveAction = 'publish';
+    } else if (current.immutableCompleted) {
+      effectiveAction = 'verify';
+    }
+  }
   const startedAt = now();
   const adapter = adapterFor(state, effectiveAction, context.config);
   let result;
