@@ -63,8 +63,19 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
     workflow,
     /Build the architecture gate prerequisites[\s\S]*?-pl :mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,
   );
+  assert.match(
+    workflow,
+    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
+  );
   assert.doesNotMatch(workflow, /^\s+-am(?:d)?(?:\s|\\)/m);
   assert.doesNotMatch(workflow, /Enforce full-Reactor architecture/u);
+
+  const generatedBackendGate = fs.readFileSync(
+    new URL('../../mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs', import.meta.url),
+    'utf8',
+  );
+  assert.match(generatedBackendGate, /pathToFileURL\(localMangoRepository\)/u);
+  assert.doesNotMatch(generatedBackendGate, /nexus\.inner\.yunxinbaokeji\.com/u);
 });
 
 test('Java source maps to one Maven module plus the governed architecture aggregator', () => {

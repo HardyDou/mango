@@ -3,19 +3,22 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
 const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const mangoVersion = process.env.MANGO_BACKEND_GATE_VERSION || releaseVersions.maven.mangoBackend;
-const mavenRepository = process.env.MANGO_BACKEND_GATE_REPOSITORY
-  || 'https://nexus.inner.yunxinbaokeji.com/repository/maven-public/';
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-generated-backend-gate-'));
+const localMangoRepository = join(tempRoot, 'mango-repository');
+mkdirSync(localMangoRepository, { recursive: true });
+const mavenRepository = process.env.MANGO_BACKEND_GATE_REPOSITORY
+  || `${pathToFileURL(localMangoRepository).href}/`;
 const projectName = 'mango-backend-gate-acceptance';
 const projectRoot = join(tempRoot, projectName);
-const appJavaRoot = join(
+const starterJavaRoot = join(
   projectRoot,
-  'backend/app/src/main/java/com/example/backendgate',
+  'backend/modules/order/order-starter/src/main/java/com/example/backendgate/order/starter',
 );
 const coreJavaRoot = join(
   projectRoot,
@@ -69,6 +72,7 @@ try {
     '--project-dir',
     '.',
   ], projectRoot, 'generate four-layer business module');
+  keepOnlyFourLayerBusinessReactor();
 
   runMaven(['clean', 'verify'], true, 'generated four-layer backend');
   assertPassingReports();
@@ -95,7 +99,7 @@ try {
   assertIncludes(missingChildReportFailure, 'order-api', 'missing PMD report module identity');
   writeFileSync(orderApiPom, originalOrderApiPom);
 
-  const badController = join(appJavaRoot, 'BadController.java');
+  const badController = join(starterJavaRoot, 'BadController.java');
   writeFileSync(badController, `package com.example.backendgate;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -121,7 +125,7 @@ public class BadController {
   }
   rmSync(badController);
 
-  const staticViolation = join(appJavaRoot, 'StaticViolation.java');
+  const staticViolation = join(starterJavaRoot, 'StaticViolation.java');
   writeFileSync(staticViolation, `package com.example.backendgate;
 
 public final class StaticViolation {
@@ -177,7 +181,7 @@ public final class SuppressedArchitectureService implements ISuppressedArchitect
 
   const reservedNamespaceSource = join(
     projectRoot,
-    'backend/app/src/main/java/io/mango/common/result/BusinessShadow.java',
+    'backend/modules/order/order-api/src/main/java/io/mango/common/result/BusinessShadow.java',
   );
   mkdirSync(dirname(reservedNamespaceSource), { recursive: true });
   writeFileSync(reservedNamespaceSource, `package io.mango.common.result;
@@ -301,6 +305,17 @@ function runNode(args, cwd, label) {
   if (result.status !== 0) {
     throw new Error(`${label} failed:\n${combinedOutput(result)}`);
   }
+}
+
+function keepOnlyFourLayerBusinessReactor() {
+  const backendPom = join(projectRoot, 'backend/pom.xml');
+  const original = readFileSync(backendPom, 'utf8');
+  const withoutPlatformApp = original.replace(/^\s*<module>app<\/module>\s*$/mu, '');
+  if (withoutPlatformApp === original) {
+    throw new Error('generated backend does not contain the expected platform app module');
+  }
+  writeFileSync(backendPom, withoutPlatformApp);
+  rmSync(join(projectRoot, 'backend/app'), { recursive: true, force: true });
 }
 
 function runMaven(goals, shouldPass, label) {
