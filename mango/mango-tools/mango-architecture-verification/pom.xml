@@ -81,6 +81,8 @@
                             <baseRef>${mango.check.baseRef}</baseRef>
                             <baselineFile>${maven.multiModuleProjectDirectory}/../mango-pmo/baselines/mango-check/no-new-violations-baseline.json</baselineFile>
                             <staticFailurePolicy>block</staticFailurePolicy>
+                            <!-- Clean CI runners need more than the generic 600s limit for full-Reactor SpotBugs. -->
+                            <staticTimeoutSeconds>1800</staticTimeoutSeconds>
                             <output>json</output>
                             <reportFile>${maven.multiModuleProjectDirectory}/target/mango-static-report.json</reportFile>
                         </configuration>
