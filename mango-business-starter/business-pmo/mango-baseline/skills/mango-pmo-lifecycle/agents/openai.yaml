@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango PMO Lifecycle"
+  short_description: "Route Mango work through every governed delivery stage"
+  default_prompt: "Use $mango-pmo-lifecycle to identify the current delivery stage and route the next governed action."
+policy:
+  allow_implicit_invocation: false

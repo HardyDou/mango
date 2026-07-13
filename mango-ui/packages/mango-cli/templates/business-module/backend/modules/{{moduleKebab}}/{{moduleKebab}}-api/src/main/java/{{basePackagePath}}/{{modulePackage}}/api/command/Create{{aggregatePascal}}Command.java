@@ -10,6 +10,8 @@ import java.io.Serializable;
 @Schema(description = "创建{{aggregateName}}命令")
 public class Create{{aggregatePascal}}Command implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Schema(description = "{{aggregateName}}名称")
     @NotBlank(message = "{{aggregateName}}名称不能为空")
     private String name;

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>{{groupId}}</groupId>
+        <artifactId>{{projectKebab}}-backend</artifactId>
+        <version>{{projectVersion}}</version>
+    </parent>
+
+    <artifactId>{{projectKebab}}-architecture-verification</artifactId>
+    <packaging>pom</packaging>
+
+    <name>{{projectPascal}} Architecture Verification</name>
+    <description>Fail-closed Mango Java architecture verification for the complete backend reactor</description>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <id>forbid-disabled-mango-architecture-gate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>
+                                    <property>mango.architecture.skip</property>
+                                    <regex>false</regex>
+                                    <regexMessage>mango.architecture.skip must remain false</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>mango.architecture.mode</property>
+                                    <regex>full</regex>
+                                    <regexMessage>mango.architecture.mode must remain full</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>mango.architecture.requireFullReactor</property>
+                                    <regex>true</regex>
+                                    <regexMessage>mango.architecture.requireFullReactor must remain true</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>mango.check.gate</property>
+                                    <regex>all</regex>
+                                    <regexMessage>mango.check.gate must remain all</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>mango.check.staticFailurePolicy</property>
+                                    <regex>block</regex>
+                                    <regexMessage>mango.check.staticFailurePolicy must remain block</regexMessage>
+                                </requireProperty>
+                            </rules>
+                            <failFast>true</failFast>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.mango.tools.maven.plugin</groupId>
+                <artifactId>mango-maven-plugin</artifactId>
+                <version>${mango.version}</version>
+                <configuration>
+                    <lockFullReactor>true</lockFullReactor>
+                    <lockFullMode>true</lockFullMode>
+                    <globalEntityManifest>${maven.multiModuleProjectDirectory}/../business-pmo/global-entity-exceptions.json</globalEntityManifest>
+                    <businessGroupPrefixes>
+                        <businessGroupPrefix>{{groupId}}</businessGroupPrefix>
+                    </businessGroupPrefixes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>mango-java-architecture-gate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>architecture</goal>
+                        </goals>
+                        <configuration>
+                            <mode>${mango.architecture.mode}</mode>
+                            <skip>${mango.architecture.skip}</skip>
+                            <requireFullReactor>${mango.architecture.requireFullReactor}</requireFullReactor>
+                            <reportFile>${maven.multiModuleProjectDirectory}/target/mango-architecture-report.json</reportFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>mango-project-quality-gate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rule>${mango.check.rule}</rule>
+                            <baseDir>${mango.check.baseDir}</baseDir>
+                            <gate>${mango.check.gate}</gate>
+                            <staticFailurePolicy>${mango.check.staticFailurePolicy}</staticFailurePolicy>
+                            <requireExecutionRoot>true</requireExecutionRoot>
+                            <requiredRule>all</requiredRule>
+                            <requiredGate>all</requiredGate>
+                            <requireBlockingStaticFailures>true</requireBlockingStaticFailures>
+                            <requireFullScope>true</requireFullScope>
+                            <reportFile>${maven.multiModuleProjectDirectory}/target/mango-quality-report.json</reportFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

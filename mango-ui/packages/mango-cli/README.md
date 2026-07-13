@@ -8,7 +8,7 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.58` |
+| 当前版本 | `1.0.68` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
@@ -22,9 +22,10 @@
 | 新建 Mango 业务项目 | `mango init <project> --preset full`、`mango init <project> --preset custom` | 新项目目录 |
 | custom 项目追加 Mango 可选能力 | `mango add file workflow --project-dir <dir>` | 前端依赖、页面注册、runtime config、后端 POM、`mango.config.json` |
 | 生成业务模块骨架 | `mango module add order --aggregate sales-order --project-dir <dir>` | `backend/modules`、`frontend/packages`、POM、Flyway 模块开关、业务配置 |
-| 检查和同步业务 PMO baseline | `mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| 检查和同步业务 PMO bundle | `mango pmo status`、`mango pmo check`、`mango pmo sync`、`mango pmo upgrade`、`mango pmo rollback` | `business-pmo`、`.agents/skills`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
 | 初始化和启动本地开发工作区 | `mango workspace init`、`mango workspace status`、`mango workspace doctor`、`mango dev doctor`、`mango dev start` | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/run` |
 | 拉取当前 Mango 版本文档包 | `mango docs pull`、`mango docs status`、`mango docs path` | `.mango/docs/<mango.version>` |
+| 编排可审计发布状态机 | `mango release publish/status/verify/repair`、`mango release registry doctor` | `.mango/releases/<version>/manifest.json` 或项目配置的证据目录 |
 | 查看发布说明 | `mango changelog` | 不改文件 |
 
 ## 3. 能力边界
@@ -40,10 +41,12 @@ CLI 负责：
 - 从 `templates/full` 渲染业务项目。
 - 根据 `release-versions.json` 锁定 Mango 后端 Maven 版本和 NPM 包版本。
 - 根据随包发布的 `admin-modules.json`、preset 和 module code 生成前端依赖、页面注册、样式入口、运行时模块配置和后端 Maven 依赖。
+- 为生成项目写入最后执行的 `backend/architecture-verification` 模块和后端 CI；`mvn verify` 在完整 Reactor、完整代码范围内同时执行 Mango 架构规则、P3C/PMD、Checkstyle 和 SpotBugs，并拒绝缩小检查范围的命令行覆盖。
 - 读取 `mango.dev.json`、`.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/dev-workspace.local.json`，启动本地开发应用。
 - 维护受 `mango-cli` marker 保护的代码块，例如 `backend/pom.xml`、`backend/app/pom.xml`、`frontend/src/main.ts`、`application.yml` 中的 managed block。
-- 同步业务 PMO baseline、兼容脚本和 Agent 入口。
-- 通过 `@mango/pmo` 安装版本化 PMO baseline，并用 `baseline.json` 校验业务仓是否漂移。
+- 同步业务 PMO baseline、项目级 Skill、兼容脚本和 Agent 入口。
+- 通过精确依赖的 `@mango/pmo` 安装版本化 PMO bundle，并用 `baseline.json`、`pmo-lock.json` 和逐文件 hash 校验业务仓是否漂移。
+- 原子升级或回滚 baseline、项目锁和 bundle-owned Skill；项目级 Skill 同步不修改用户级 Codex plugin 配置。
 - 按业务项目锁定的 Mango 后端版本，从 Maven 仓库拉取 `io.mango:mango-docs-bundle:<version>`，解包到 `.mango/docs/<version>`，供业务开发和 AI 优先读取同版本 README、能力文档、规则和示例。
 
 CLI 不负责：
@@ -59,7 +62,7 @@ CLI 不负责：
 使用内网 [npm-group](http://nexus.inner.yunxinbaokeji.com/repository/npm-group/) 安装：
 
 ```bash
-npm install -g @mango/cli@1.0.58 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.68 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 生成 full 项目：
@@ -76,7 +79,7 @@ pnpm exec mango dev start
 
 业务仓日常开发以项目内锁定的 `@mango/cli` 为准。进入生成项目的 `frontend` 后先安装依赖，再用 `pnpm exec mango workspace ...`、`pnpm exec mango dev ...` 和 `pnpm exec mango frontend ...` 执行本地开发命令。系统 `PATH` 上的 `mango` 可能是旧全局入口，不能作为业务项目 CLI 版本依据。
 
-生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --sync-shell` 或 `mango pmo sync --project-dir . --sync-shell`，再进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
+生成项目中的 `scripts/dev-workspace.sh` 只保留为历史兼容 shim，会把旧命令转发到 Mango CLI。历史项目升级时，先用全局 CLI 执行 `mango pmo upgrade --project-dir . --to 1.1.0 --sync-shell`；已经锁定到该 bundle 的项目只需用 `mango pmo sync --project-dir . --sync-shell` 修复当前锁。随后进入 `frontend` 安装项目内依赖，并在每个 active worktree 执行 `pnpm exec mango workspace init` 生成 `.mango/workspace.json` 并补齐 `.mango/dev-workspace.env`。
 
 生成 custom 项目：
 
@@ -101,9 +104,11 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 ```bash
 mango pmo status --project-dir demo-custom
 mango pmo check --project-dir demo-custom
+mango pmo check --project-dir demo-custom --locked
 mango pmo sync --project-dir demo-custom --dry-run
 mango pmo sync --project-dir demo-custom
-mango pmo upgrade --project-dir demo-custom
+mango pmo upgrade --project-dir demo-custom --to 1.1.0
+mango pmo rollback --project-dir demo-custom --dry-run
 ```
 
 拉取当前项目对应版本的 Mango 文档包：
@@ -225,6 +230,59 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango` 下的 `run`、`logs`、`<app>.log` | 安装和启动输出 | `mango dev start` | `mango dev logs <app>` 和失败诊断 |
 | `.mango/run/state.json` | 预留状态文件路径 | context 初始化 | 后续状态扩展 |
 
+### 6.5 可审计发布状态机
+
+`mango release` 固定维护 `source`、`versions`、`changelog`、`readmes`、`tests`、`pr`、`tag`、`github-release`、`maven`、`npm`、`cli-lock`、`private-registry-publish`、`private-registry-consume-verify`、`docs-latest`、`docs-snapshot`、`post-verify`、`cleanup`。每个状态只能是 `passed`、`failed`、`pending` 或 `not_applicable`，并必须有非空原因。适用且已执行的状态还必须逐次记录命令、工作目录、开始/完成时间、退出码和非空脱敏输出；`not_applicable` 因没有执行命令，只记录不适用原因和时间。
+
+```bash
+mango release registry doctor --project-dir .
+mango release status --version 1.0.16 --project-dir .
+mango release verify --version 1.0.16 --project-dir .
+mango release publish --version 1.0.16 --project-dir . --authorize
+mango release repair --version 1.0.16 --project-dir . --authorize
+```
+
+配置优先级固定为 CLI 参数、环境变量、用户配置 `~/.config/mango/release.json`、项目配置 `.mango-release.json`。`publish` 和 `repair` 的授权只能来自本次 `--authorize` 或 `MANGO_RELEASE_AUTHORIZED=1`，不能持久化到配置。Maven/npm 必须分别显式选择 `private-registry`、`public-registry`、`artifact-only` 或带原因的 `disabled`；没有隐式发布模式和 registry。
+
+项目配置中的 adapter 使用结构化命令，不经过 shell 字符串解释。下面示例复用已有 Maven/npm 发布与只读回查入口：
+
+```json
+{
+  "schemaVersion": 1,
+  "releaseKind": "mixed",
+  "artifacts": {
+    "maven": { "mode": "private-registry", "serverId": "mango-releases" },
+    "npm": { "mode": "private-registry", "tokenEnv": "MANGO_NPM_TOKEN" }
+  },
+  "stateAdapters": {
+    "maven": {
+      "publish": { "command": "scripts/publish-maven-batch.sh", "args": ["--all-non-app", "--release-version", "{version}", "--verify-base-url", "{mavenConsumeRegistry}"] },
+      "verify": { "command": "scripts/publish-maven-batch.sh", "args": ["--all-non-app", "--release-version", "{version}", "--verify-only", "--verify-base-url", "{mavenConsumeRegistry}"] }
+    },
+    "npm": {
+      "publish": [
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "pmo", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}"] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "cli", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}"] }
+      ],
+      "verify": [
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "pmo", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}"] },
+        { "command": "pnpm", "cwd": "mango-ui", "args": ["publish:pkg", "cli", "--verify-only", "--release-tag={tag}", "--publish-registry={npmPublishRegistry}", "--consume-registry={npmConsumeRegistry}"] }
+      ]
+    }
+  }
+}
+```
+
+| 场景 | 模式与地址示例 | 认证引用 |
+|------|----------------|----------|
+| Nexus | publish 指向 hosted/releases，consume 指向 group/public | Maven `settings.xml` 的 `serverId`；npm token 环境变量名 |
+| Artifactory | publish 指向 local repository，consume 指向 virtual repository | Maven `settings.xml` server ID；npm token 环境变量或 `npmConfig` |
+| GitHub Packages | `public-registry`，四类 URL 指向组织 package endpoint | CI secret 注入 token，配置只记录引用名 |
+| 只产出文件 | `artifact-only` | 不要求 registry 或凭据，adapter 只构建和校验制品 |
+| 禁用某类制品 | `disabled` + `disabledReason` | 对应状态为 `not_applicable`，禁止空原因 |
+
+四类 registry 地址分别用 `MANGO_RELEASE_MAVEN_PUBLISH_REGISTRY`、`MANGO_RELEASE_MAVEN_CONSUME_REGISTRY`、`MANGO_RELEASE_NPM_PUBLISH_REGISTRY`、`MANGO_RELEASE_NPM_CONSUME_REGISTRY` 注入。`repair` 跳过所有已 `passed` 状态；Maven、npm、tag、GitHub Release、文档快照尝试失败后，未配置专用 repair 策略时拒绝自动重试。不可变 repair 只接受精确对象 `{"kind":"verify-existing"}`，CLI 会调用同状态已经审核的 `verify` adapter，不接受独立 repair 命令、空数组或额外字段。adapter 输出进入 manifest 前会脱敏 token、password、Bearer、URL userinfo 和凭据环境变量值；缺任何必需 evidence 字段、applicability 与配置不一致或 completed 标记与状态不一致时，`status/verify/repair` 都拒绝读取 manifest。
+
 ## 7. API 与扩展
 ### 7.1 命令面
 
@@ -236,10 +294,16 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `mango docs pull` | 拉取当前 Mango 版本文档包 | `--project-dir`、`--version`、`--maven-repository`、`--force` | `.mango/docs/<version>`、`.mango/docs/current.json` |
 | `mango docs status` | 查看当前 Mango 版本文档包状态 | `--project-dir` | 不改文件 |
 | `mango docs path` | 输出本地文档包目录 | `--project-dir` | 不改文件 |
-| `mango pmo sync` | 同步 PMO baseline | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
-| `mango pmo status` | 查看业务仓 PMO baseline 状态 | `--project-dir` | 不改文件 |
-| `mango pmo check` | 校验业务仓 PMO baseline 是否等于当前 `@mango/pmo` | `--project-dir` | 不改文件 |
-| `mango pmo upgrade` | 按当前 `@mango/pmo` 升级业务仓 baseline | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell` | `business-pmo`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| `mango pmo sync` | 按 `pmo-lock.json` 修复 PMO baseline 和项目 Skill | `--project-dir`、`--dry-run`、`--write-agents`、`--sync-shell` | `business-pmo`、`.agents/skills`、部分 `business-docs`、`AGENTS.md`、兼容脚本 |
+| `mango pmo status` | 查看当前可用包或项目锁对应的 PMO 状态 | `--project-dir`、`--locked` | 不改文件 |
+| `mango pmo check` | 校验当前可用包或项目锁对应的 PMO baseline、manifest 和项目 Skill | `--project-dir`、`--locked` | 不改文件 |
+| `mango pmo upgrade` | 原子升级到 CLI 精确依赖的 `@mango/pmo` bundle | `--project-dir`、`--to`、`--dry-run`、`--write-agents`、`--sync-shell` | `business-pmo`、`.agents/skills`、部分 `business-docs`、`AGENTS.md`、兼容脚本、项目根 `.mango` 下的 PMO 备份目录 |
+| `mango pmo rollback` | 原子恢复已校验的本地 PMO 备份 | `--project-dir`、`--to`、`--dry-run` | `business-pmo`、`.agents/skills`、项目根 `.mango` 下的 PMO 备份目录 |
+| `mango release publish` | 按固定状态顺序执行发布并逐状态写证据 | `--version`、`--tag`、`--pr`、`--authorize`、registry/mode 参数 | release manifest、配置声明的外部制品 |
+| `mango release status` | 只读展示全部发布状态和原因 | `--version`、`--project-dir`、`--json` | 不改文件 |
+| `mango release verify` | 通过只读 adapter 重新验证状态 | `--version`、registry/mode 参数 | release manifest；不发布制品 |
+| `mango release repair` | 从失败/待执行状态恢复，跳过已成功不可变制品 | `--version`、`--authorize` | release manifest、缺失的发布动作 |
+| `mango release registry doctor` | 校验 artifact mode、四类 registry 角色和认证引用 | registry/mode 参数、`--json` | 不改文件 |
 | `mango workspace init` | 初始化本地开发工作区 | 无 | `.mango/workspace.json`、`.mango/dev-workspace.env`、缺失时创建 `mango.dev.json` |
 | `mango workspace status` | 打印 workspace 应用和端口 | 无 | 不改文件 |
 | `mango workspace list` | 查看本机 workspace registry | 无 | 不改文件 |
@@ -290,10 +354,12 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `templates/full/mango.dev.json` | 新项目开发工作区 manifest 模板 | 历史业务项目执行 `pmo sync --sync-shell` 时优先按真实目录探测生成；业务项目可用 `.mango/dev-workspace.local.json` 本机覆盖 |
 | `release-versions.json` | 锁定 Mango 后端固定 Maven 版本和前端 NPM 包版本 | 修改发布版本后必须跑 release version 检查 |
 | `scripts/check-cli.mjs` | CLI 生成契约自测 | 会生成 full 和 custom 项目并校验关键文件 |
+| `scripts/check-business-module-template.mjs` | canonical 业务模块投影检查 | 比较路径、大小、SHA-256 和执行位，阻断 CLI 镜像漂移 |
+| `scripts/check-generated-backend-gate.mjs` | 生成后端门禁验收 | 生成四层业务模块，正向执行 Maven verify，并反向验证 PathVariable、通用 Java 违规和 skip 绕过均被阻断 |
 | `scripts/check-release-versions.mjs` | 版本锁自测 | 可加 registry 检查已发布包 |
-| `templates/business-module` | 业务模块模板优先路径 | 当前包内没有该目录；源码运行时会回退到仓库根目录 `mango-business-starter` |
+| `templates/business-module` | 随 CLI 发布的业务模块模板 | 后端目录必须与 `mango-business-starter` canonical 模板完全一致 |
 
-业务模块模板限制要特别注意：`package.json` 的发布文件包含 `templates`，但当前实际存在的是 `templates/full`。如果只从已发布 NPM 包运行，`mango module add` 需要确认包内已经带上业务模块模板；在仓库源码内运行时才会回退到 `mango-business-starter`。
+已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。
 
 ## 8. 数据与初始化
 `@mango/cli` 自身不包含数据库 migration，也不会直接连接数据库。数据库结构和初始化数据来自生成项目引用的后端模块。
@@ -315,7 +381,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 | 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
 |-------------|---------------|--------|----------|-----------------|--------------|
-| 业务聚合列表页 | 由业务模块模板 `resource-manifest.json` 渲染 | 由业务模块模板按 module 和 aggregate 渲染 | `backend/modules/<module>/<module>-starter/src/main/resources/META-INF/mango/resource-manifest.json` | 模板资源清单定义 | `<module>-starter` 中生成的 Controller |
+| 业务聚合列表页 | 由业务模块模板 `resource-manifest.json` 渲染 | 由业务模块模板按 module 和 aggregate 渲染 | `backend/modules/<module>/<module>-starter/src/main/resources/META-INF/mango/resource-manifest.json` | 模板资源清单定义 | `<module>-starter` Controller 和 core Service |
 | Mango 平台页面 | 各 `@mango/*` 包的 admin pages | 各平台模块 README 登记 | 平台模块 migration 或 resource manifest | 各平台模块定义 | 各平台模块 Controller / Service |
 
 业务模块生成后需要检查：
@@ -323,6 +389,8 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 - `resource-manifest.json` 中 `moduleCode`、菜单 code、component key 与前端页面路径一致。
 - `frontend/src/main.ts` 已写入 `register<Module>Pages()`。
 - 后端 app POM 已加入 `<module>-starter` 依赖。
+- 后端生成 `Api`、实现该契约的 Controller 和 Feign，并使用 `MangoTypedCrudService`、`Require` 与模块 `BizCode`。
+- API 契约不携带 Spring MVC 传输注解，Controller 和 Feign 不生成 `PathVariable` 或 URI 模板参数。
 - 如果业务有租户隔离要求，应在生成模板基础上补充租户字段、查询条件和权限校验，CLI 不会替业务自动推断数据边界。
 
 ## 10. 快速开始
@@ -338,10 +406,11 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 已有业务项目同步：
 
 1. 在项目根目录确认有 `mango.config.json` 和 `mango.dev.json`。
-2. 先执行 `mango pmo sync --project-dir . --dry-run` 看计划。
-3. 没有风险后执行 `mango pmo sync --project-dir .`。
-4. 只有明确要同步兼容启动脚本时才加 `--sync-shell`。
-5. 如果 `AGENTS.md` 仍引用外部 `mango-pmo`，先人工确认，再用 `--write-agents` 迁移。
+2. 首次迁移或升版先执行 `mango pmo upgrade --project-dir . --to 1.1.0 --dry-run` 查看计划。
+3. 确认后执行相同 upgrade 命令，并用 `mango pmo check --project-dir . --locked` 校验项目锁、baseline 和项目 Skill。
+4. 已锁定项目发生文件漂移时执行 `mango pmo sync --project-dir .` 修复当前锁，不用 sync 隐式升版。
+5. 需要恢复时先执行 `mango pmo rollback --project-dir . --dry-run`；只有明确要同步兼容启动脚本时才加 `--sync-shell`。
+6. 如果 `AGENTS.md` 仍引用外部 `mango-pmo`，先人工确认，再用 `--write-agents` 迁移。
 
 ## 11. 问题排查
 | 问题 | 原因 | 处理方式 |
@@ -357,10 +426,16 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | 端口被占用 | 当前 worktree 分配的端口已被其他进程占用 | 先用 `mango dev status` 查看 owner，停止对应 worktree 或执行 `mango workspace release --workspace <path>` 后重试 |
 | 后端启动卡在 health，且数据库 `mango_dev_*` 不存在 | 自动建库前置条件不满足，或 CLI 未按预期执行建库 | 先查 `command -v mysql`、`MANGO_DB_AUTO_CREATE=true`、MySQL 连接配置和 `mango dev logs <backend>`；如果没有 `ensured database` 或 `failed to auto-create database` 输出，按 Mango issue runbook 登记 |
 | Vite app 启动后立即退出并提示 `vite: command not found` | 当前 worktree 前端依赖未安装，或 manifest 绕过了 package script 直接执行二进制 | 先执行 `pnpm -C <frontend-root> install --frozen-lockfile`；manifest 中 Vite app 优先使用 `dev -- --host <host> --port <port>` |
-| 已发布 CLI 运行 `module add` 找不到业务模块模板 | 当前发布包可能只包含 `templates/full` | 在仓库源码内运行，或把业务模块模板纳入 CLI 发布包后再发布 |
+| 业务模块投影检查失败 | CLI 镜像与 canonical starter 的路径或 hash 不一致 | 从 canonical 目录完整同步后重跑 `check:business-module-template` |
+| `release registry doctor` 提示 mode 或 registry 缺失 | 发布模式没有显式选择，或只配置 publish/consume 中的一侧 | 补齐 Maven/npm mode 和四类 registry 角色；禁止依赖默认地址 |
+| `repair adapter required after an immutable publish attempt` | Maven/npm/tag/Release/快照执行过但结果失败，工具无法证明重发安全 | 先查 manifest 与 registry 实际状态，再配置只补缺失动作的 repair adapter |
 | `mango dev logs <app>` 找不到日志 | 应用未通过 `mango dev start` 启动 | 先执行 `mango dev start <app>` |
 
 ## 12. 相关文档
+
+### 1.0.68 发布影响
+
+`@mango/cli@1.0.68` 精确依赖 `@mango/pmo@1.1.0`，并把新项目的 Mango Maven 后端锁升级为 `1.0.16`。Maven `1.0.16` 必须先发布，它提供 typed CRUD 契约、global Entity manifest 新契约和生成项目默认启用的架构门禁；已存在的 Maven `1.0.15` 不能解析该 manifest，禁止与本批次模板混用。PMO baseline、文档契约、专用 Agent、项目 Skill 和 Codex plugin 投影纳入同一可复现 bundle。业务项目通过 `pmo-lock.json` 锁定 bundle；`sync` 只修复当前锁，`upgrade --to` 显式升版，`rollback` 只恢复已校验备份。项目 Skill 写入 `.agents/skills`，不会安装或修改用户级 Codex plugin。
 
 ### 1.0.67 发布影响
 

@@ -192,6 +192,8 @@ pnpm -F @mango/file test
 
 ## 12. 变更影响记录
 
+- PR #451 清理 file-preview engine 未被源码使用且目标仓库不可解析的旧 `javax.media:jai_core`、`javax.media:jai_codec` 构建依赖；现有源码编译和模块测试继续通过。该内部依赖清理不改变文件上传、回显、预览、下载的公开 API 与配置，不改变菜单、权限、租户、页面入口、启动方式、运行时行为或本场景验收步骤。
+
 - v2026.07.11-maven-1.0.14-cli-release 仅将当前后端实现向前发布为 Maven `1.0.14` 并更新 CLI 后端版本锁；不改变文件上传、回显、预览、下载 API、fileId/fileIds 持久化、权限、租户或本场景验收步骤。
 
 - v2026.07.11-npm-readme-forward-release 以 `@mango/file@1.0.21` 向前发布已更正的 README 和精确依赖，不回退 `1.0.20` 的运行时变更。`FilePreviewPanel` 不再接受 `downloadPermission` prop，业务页面升级时需要删除该 prop；上传、预览和下载入口由登录态与后端文件访问校验决定，不再使用 `file:files:upload/query/download` 前端按钮权限隐藏。列表、归档、删除、目录和管理配置的细粒度权限不变。

@@ -1,0 +1,36 @@
+# PMO governance, lifecycle rules, contracts, agents, Skills, and templates.
+/AGENTS.md @HardyDou @chengkuankuan
+/mango-pmo/ @HardyDou @chengkuankuan
+/mango-docs/ @HardyDou @chengkuankuan
+/.github/CODEOWNERS @HardyDou @chengkuankuan
+/.github/pull_request_template.md @HardyDou @chengkuankuan
+/.github/workflows/ @HardyDou @chengkuankuan
+
+# Java/Spring architecture checker and its Maven execution path.
+/mango/pom.xml @HardyDou @chengkuankuan
+/mango/mango-tools/mango-architecture-rules/ @HardyDou @chengkuankuan
+/mango/mango-tools/mango-architecture-verification/ @HardyDou @chengkuankuan
+/mango/mango-tools/mango-maven-plugin/ @HardyDou @chengkuankuan
+
+# Canonical and published business templates.
+/mango-business-starter/ @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/templates/ @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/templates/full/.mvn/ @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/templates/full/backend/.mvn/ @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/templates/full/backend/config/quality/ @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/scripts/check-business-module-template.mjs @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/tests/business-module-template.test.mjs @HardyDou @chengkuankuan
+
+# PMO/CLI package metadata and release gates.
+/mango-ui/packages/mango-pmo/ @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/package.json @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/release-versions.json @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/CHANGELOG.md @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/src/release-command.mjs @HardyDou @chengkuankuan
+/mango-ui/packages/mango-cli/tests/release-command.test.mjs @HardyDou @chengkuankuan
+/mango-ui/scripts/check-package-exports.mjs @HardyDou @chengkuankuan
+/mango-ui/scripts/check-release-impact.mjs @HardyDou @chengkuankuan
+/mango-ui/scripts/publish-package.mjs @HardyDou @chengkuankuan
+/mango-ui/pnpm-lock.yaml @HardyDou @chengkuankuan
+/scripts/publish-maven-batch.sh @HardyDou @chengkuankuan

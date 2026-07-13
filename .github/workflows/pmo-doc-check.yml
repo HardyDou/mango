@@ -13,6 +13,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Node.js for PMO gates
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test document contracts, lifecycle routing, and Skills
+        run: |
+          node --test \
+            mango-pmo/tests/architecture-debt-budget.test.mjs \
+            mango-pmo/tests/document-contract/document-contract.test.mjs \
+            mango-pmo/tests/pmo-preflight.test.mjs \
+            mango-pmo/tests/test-quality-check.test.mjs \
+            mango-pmo/tests/workspace-layout-check.test.mjs
+          node mango-pmo/tests/skills/check-skill-evals.mjs
+
+      - name: Build and verify the reproducible PMO package
+        run: |
+          node mango-ui/packages/mango-pmo/scripts/build-package.mjs
+          node mango-ui/packages/mango-pmo/scripts/check-package.mjs
+
       - name: Write PR body
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
@@ -29,16 +49,54 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Enforce Java and Spring architecture contracts
+      - name: Test and install the current Java architecture gate
+        run: |
+          mvn -f mango/pom.xml \
+            -pl :mango-architecture-rules,:mango-maven-plugin \
+            -am \
+            -DskipTests=false \
+            install
+
+      - name: Enforce architecture and generic Java quality contracts
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           mvn -f mango/pom.xml \
-            -pl :mango-architecture-verification \
-            -am \
             -DskipTests \
+            -Dmango.architecture.skip=false \
+            -Dmango.architecture.mode=changed \
+            -Dmango.architecture.requireFullReactor=true \
             -Dmango.architecture.base="$BASE_SHA" \
+            -Dmango.check.changedOnly=true \
+            -Dmango.check.gate=no-new-violations \
+            -Dmango.check.baseRef="$BASE_SHA" \
             install
+
+      - name: Enforce decreasing architecture debt budget
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"
+
+      - name: Check canonical business starter and CLI projection
+        run: |
+          node mango-business-starter/scripts/check-template.mjs
+          node mango-ui/packages/mango-cli/scripts/check-business-module-template.mjs
+
+      - name: Test CLI PMO install, upgrade, rollback, and package contracts
+        run: |
+          node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs
+          node mango-ui/packages/mango-cli/scripts/check-cli.mjs
+          node --test mango-ui/packages/mango-cli/tests/*.test.mjs
+
+      - name: Verify generated business backend gates
+        env:
+          MANGO_BACKEND_GATE_VERSION: 1.0.0-SNAPSHOT
+        run: node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs
+
+      - name: Enforce backend module metadata
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
           mvn -f mango/pom.xml \
             -pl :mango-architecture-verification \
             -am \

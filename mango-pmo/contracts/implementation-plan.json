@@ -1,0 +1,165 @@
+{
+  "contractSchema": 1,
+  "contractId": "implementation-plan",
+  "documentType": "implementation-plan",
+  "documentIdPrefix": "PLAN",
+  "schemaRevision": 1,
+  "ruleSource": "mango-pmo/rules/product/04-implementation-plan.md",
+  "template": "mango-pmo/templates/implementation-plan.md",
+  "upstreamDocumentType": "technical-design",
+  "metadata": {
+    "ruleId": "PLAN-META-001",
+    "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
+    "fixed": {"documentType": "implementation-plan", "pmoVersion": "1.1.0", "schemaRevision": "1"}
+  },
+  "localPrefixes": ["DEL", "TASK", "MS", "VAL", "REL", "DOC", "RISK"],
+  "upstreamPrefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"],
+  "sections": [
+    {
+      "ruleId": "PLAN-STRUCT-010",
+      "title": "实施目标、范围与交付物",
+      "tables": [{
+        "headers": ["交付物ID", "技术设计ID", "交付物", "路径或模块", "完成状态定义", "验收来源", "不处理边界"],
+        "minRows": 1,
+        "defines": {"交付物ID": "DEL"},
+        "references": [{"column": "技术设计ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "PLAN-STRUCT-020",
+      "title": "工作分解",
+      "tables": [{
+        "headers": ["任务ID", "技术设计ID", "交付物ID", "责任角色", "路径或模块", "前置任务", "具体动作", "完成标准", "验证ID", "实施批次", "状态"],
+        "minRows": 1,
+        "defines": {"任务ID": "TASK"},
+        "references": [
+          {"column": "技术设计ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"], "required": true},
+          {"column": "交付物ID", "prefixes": ["DEL"], "required": true},
+          {"column": "前置任务", "prefixes": ["TASK"], "required": false, "allowNone": true},
+          {"column": "验证ID", "prefixes": ["VAL"], "required": true}
+        ],
+        "enums": {"状态": ["PLANNED", "BLOCKED"]}
+      }]
+    },
+    {
+      "ruleId": "PLAN-STRUCT-030",
+      "title": "顺序、依赖与里程碑",
+      "tables": [{
+        "headers": ["里程碑ID", "包含任务ID", "进入条件", "完成条件", "依赖", "可并行任务", "阻塞升级", "责任人"],
+        "minRows": 1,
+        "defines": {"里程碑ID": "MS"},
+        "references": [
+          {"column": "包含任务ID", "prefixes": ["TASK"], "required": true},
+          {"column": "可并行任务", "prefixes": ["TASK"], "required": false, "allowNone": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "PLAN-STRUCT-040",
+      "title": "验证计划",
+      "tables": [{
+        "headers": ["验证ID", "测试或验收ID", "任务ID", "验证层级", "命令或步骤", "环境", "测试数据", "权限或租户边界", "预期结果", "证据路径", "责任人", "失败处理"],
+        "minRows": 1,
+        "defines": {"验证ID": "VAL"},
+        "references": [
+          {"column": "测试或验收ID", "prefixes": ["TC"], "required": true},
+          {"column": "任务ID", "prefixes": ["TASK"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "PLAN-STRUCT-050",
+      "title": "数据、升级、发布与回滚步骤",
+      "tables": [{
+        "headers": ["发布步骤ID", "技术设计ID", "环境", "前置检查", "动作", "顺序", "数据备份或回填", "兼容窗口", "验证", "失败停止条件", "回滚或补偿", "责任人"],
+        "minRows": 1,
+        "defines": {"发布步骤ID": "REL"},
+        "references": [{"column": "技术设计ID", "prefixes": ["DEC", "DB", "IMP"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "PLAN-STRUCT-060",
+      "title": "文档与能力同步计划",
+      "tables": [{
+        "headers": ["文档项ID", "技术设计或交付物ID", "目标文档", "变化", "责任人", "完成条件", "检查命令", "不适用依据"],
+        "minRows": 1,
+        "defines": {"文档项ID": "DOC"},
+        "references": [{"column": "技术设计或交付物ID", "prefixes": ["IMP", "DEL", "TASK"], "required": true}]
+      }]
+    },
+    {
+      "ruleId": "PLAN-STRUCT-070",
+      "title": "风险、阻塞与例外",
+      "tables": [{
+        "headers": ["风险ID", "风险等级", "类型", "触发条件", "影响", "预防", "应对", "责任人", "截止时间", "状态", "例外ruleId", "例外批准与到期"],
+        "minRows": 1,
+        "defines": {"风险ID": "RISK"},
+        "enums": {
+          "风险等级": ["L0", "L1", "L2", "L3"],
+          "类型": ["RISK", "BLOCKER", "EXCEPTION"],
+          "状态": ["OPEN", "CLOSED", "BLOCKED"]
+        }
+      }]
+    },
+    {
+      "ruleId": "PLAN-TRACE-080",
+      "title": "实施追踪矩阵",
+      "tables": [{
+        "headers": ["上游设计ID", "交付物ID", "任务ID", "验证ID", "里程碑发布文档或风险项ID", "覆盖说明"],
+        "minRows": 1,
+        "references": [
+          {"column": "上游设计ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"], "required": true},
+          {"column": "交付物ID", "prefixes": ["DEL"], "required": true},
+          {"column": "任务ID", "prefixes": ["TASK"], "required": true},
+          {"column": "验证ID", "prefixes": ["VAL"], "required": true},
+          {"column": "里程碑发布文档或风险项ID", "prefixes": ["MS", "REL", "DOC", "RISK"], "required": true}
+        ]
+      }]
+    },
+    {
+      "ruleId": "PLAN-GATE-090",
+      "title": "阶段判定与审批",
+      "tables": [{
+        "headers": ["检查项", "结果", "证据"],
+        "minRows": 5,
+        "rowKeys": ["实施计划 checker", "生命周期 handoff", "依赖图", "未关闭阻断数量", "实施审批"]
+      }]
+    }
+  ],
+  "traceability": {
+    "ruleId": "PLAN-TRACE-080",
+    "section": "实施追踪矩阵",
+    "localCoveragePrefixes": ["DEL", "TASK", "MS", "VAL", "REL", "DOC", "RISK"]
+  },
+  "blocking": {
+    "ruleId": "PLAN-GATE-090",
+    "section": "风险、阻塞与例外",
+    "headers": ["风险ID", "风险等级", "类型", "触发条件", "影响", "预防", "应对", "责任人", "截止时间", "状态", "例外ruleId", "例外批准与到期"],
+    "stateColumn": "状态",
+    "blockingColumn": "类型",
+    "blockingValues": ["BLOCKER"],
+    "closedValues": ["CLOSED"]
+  },
+  "dependencyGraph": {
+    "ruleId": "PLAN-DEP-030",
+    "section": "工作分解",
+    "headers": ["任务ID", "技术设计ID", "交付物ID", "责任角色", "路径或模块", "前置任务", "具体动作", "完成标准", "验证ID", "实施批次", "状态"],
+    "nodeColumn": "任务ID",
+    "dependencyColumn": "前置任务"
+  },
+  "columnRules": [{
+    "ruleId": "PLAN-BOUNDARY-001",
+    "section": "工作分解",
+    "headers": ["任务ID", "技术设计ID", "交付物ID", "责任角色", "路径或模块", "前置任务", "具体动作", "完成标准", "验证ID", "实施批次", "状态"],
+    "columns": {
+      "具体动作": {
+        "forbiddenPatterns": ["未(?:修改|更新|修订).{0,12}TDD", "(?:新增|增加|设计|选用|引入).{0,24}(?:接口|端点|API|数据表|字段|索引|Redis|Kafka|消息队列|分布式锁|缓存)"]
+      }
+    }
+  }],
+  "forbidden": {
+    "ruleId": "PLAN-BOUNDARY-001",
+    "codeBlocks": true,
+    "literals": ["新增业务目标", "新增业务规则", "顺便增加功能", "需求以后补", "设计以后补", "已经完成开发", "测试已经通过", "发布已经完成"]
+  }
+}

@@ -9,6 +9,8 @@ import io.mango.infra.persistence.api.entity.TenantEntity;
 @TableName("{{moduleKebabSnake}}_{{aggregateKebabSnake}}")
 public class {{aggregatePascal}}Entity extends TenantEntity {
 
+    private static final long serialVersionUID = 1L;
+
     private String name;
 
     public String getName() {

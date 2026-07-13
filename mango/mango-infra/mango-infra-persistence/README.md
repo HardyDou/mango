@@ -17,7 +17,7 @@
 核心能力：
 
 - 实体基类：`BaseEntity`、`AuditableEntity`、`TenantEntity`。
-- CRUD 服务：`MangoCrudService`、`MangoCrudServiceImpl`，覆盖创建、更新、删除、批量删除、详情、列表、分页。
+- CRUD 服务：`MangoCrudService`、`MangoTypedCrudService`、`MangoCrudServiceImpl`，覆盖创建、更新、删除、批量删除、详情、列表、分页，并为业务 Service 提供完整泛型契约。
 - 查询条件：`@QueryField`、`@QueryIgnore`、`QueryType`，自动构造 MyBatis-Plus `QueryWrapper`。
 - 分页：默认注册 `PaginationInnerInterceptor`，返回 `PersistencePageResult`。
 - 租户隔离：默认注册 `TenantLineInnerInterceptor`，从 `MangoContextHolder.tenantId()` 读取租户。
@@ -596,17 +596,7 @@ public class OrderInvoiceEntity extends TenantEntity {
 }
 ```
 
-```java
-@Service
-public class OrderInvoiceService
-        extends MangoCrudServiceImpl<OrderInvoiceMapper, OrderInvoiceEntity> {
-
-    @Override
-    protected Class<OrderInvoiceEntity> entityType() {
-        return OrderInvoiceEntity.class;
-    }
-}
-```
+Service 按 [7.3 CRUD Service](#73-crud-service) 绑定 `MangoTypedCrudService` 六种业务类型，并由实现类继承 `MangoCrudServiceImpl<OrderInvoiceMapper, OrderInvoiceEntity>`。
 
 普通业务代码不要手写 `.eq(OrderInvoiceEntity::getTenantId, ...)`，也不要在创建时 `setTenantId(...)`。跨租户运营、租户初始化或全局表要单独建模，并通过 `mango.persistence.mybatis-plus.tenant.excluded-tables` 明确例外。
 
@@ -614,35 +604,21 @@ public class OrderInvoiceService
 
 标准 CRUD 查询通过覆写 `applyDataScope()` 接入数据权限。`tenant_id` 仍由租户插件处理，`created_by` 和 `org_id` 由 `DataScopeApplier` 根据授权模块的数据权限规则追加。
 
+在按 7.3 完成类型绑定的 `PaymentOrderService` 中覆写数据权限钩子：
+
 ```java
-@Service
-public class PaymentOrderService
-        extends MangoCrudServiceImpl<PaymentOrderMapper, PaymentOrderEntity> {
-
-    private final DataScopeApplier dataScopeApplier;
-
-    public PaymentOrderService(DataScopeApplier dataScopeApplier) {
-        this.dataScopeApplier = dataScopeApplier;
-    }
-
-    @Override
-    protected void applyDataScope(QueryWrapper<PaymentOrderEntity> wrapper, Object query) {
-        dataScopeApplier.apply(
-                wrapper,
-                "payment:order:list",
-                DataScopeMapping.builder()
-                        .tableName("payment_order")
-                        .selfField("created_by")
-                        .orgField("org_id")
-                        .tenantField("tenant_id")
-                        .build()
-        );
-    }
-
-    @Override
-    protected Class<PaymentOrderEntity> entityType() {
-        return PaymentOrderEntity.class;
-    }
+@Override
+protected void applyDataScope(QueryWrapper<PaymentOrderEntity> wrapper, Object query) {
+    dataScopeApplier.apply(
+            wrapper,
+            "payment:order:list",
+            DataScopeMapping.builder()
+                    .tableName("payment_order")
+                    .selfField("created_by")
+                    .orgField("org_id")
+                    .tenantField("tenant_id")
+                    .build()
+    );
 }
 ```
 
@@ -650,7 +626,7 @@ public class PaymentOrderService
 
 #### 分页
 
-普通单表分页直接复用 `MangoCrudServiceImpl.pageByQuery()` 和 `BaseCrudController` 的 `/page` 入口。查询对象继承 `PageQuery`，业务字段用 `@QueryField` 描述条件。
+普通单表分页由类型化 Service 的 `page(query)` 复用 `MangoCrudServiceImpl.pageByQuery()`。Controller 按 [7.4 Web CRUD Controller](#74-web-crud-controller) 显式实现 API 的 `/page` 适配；查询对象继承 `PageQuery`，业务字段用 `@QueryField` 描述条件。
 
 ```java
 @Getter
@@ -662,26 +638,6 @@ public class OrderInvoiceQuery extends PageQuery {
 
     @QueryField(type = QueryType.IN)
     private List<String> statusList;
-}
-```
-
-```java
-@RestController
-@RequestMapping("/order/invoices")
-public class OrderInvoiceController extends BaseCrudController<
-        OrderInvoiceService,
-        CreateOrderInvoiceCommand,
-        UpdateOrderInvoiceCommand,
-        OrderInvoiceQuery> {
-
-    public OrderInvoiceController(OrderInvoiceService service) {
-        super(service);
-    }
-
-    @Override
-    protected Class<OrderInvoiceQuery> queryType() {
-        return OrderInvoiceQuery.class;
-    }
 }
 ```
 
@@ -745,19 +701,107 @@ public interface OrderInvoiceReadMapper {
 
 ### 7.3 CRUD Service
 
-业务 Service 可以继承 `MangoCrudServiceImpl<M, E>`：
+CRUD 能力分为三层：
+
+| 类型 | 用途 |
+|------|------|
+| `MangoCrudService<E>` | 框架内部的通用 CRUD 契约，命令、查询和返回值使用宽类型，便于底层复用。 |
+| `MangoTypedCrudService<E, C, U, Q, V, ID>` | 业务 Service 接口使用的编译期契约，固定 Entity、创建命令、更新命令、分页查询、VO 和 ID 六种类型。 |
+| `MangoCrudServiceImpl<M, E>` | 基于 MyBatis-Plus 的默认实现和扩展钩子；业务实现类继续继承它，并实现自己的 `IXxxService`。 |
+
+`MangoTypedCrudService` 随计划中的 Mango Maven backend `1.0.16` 提供。已发布的 `1.0.15` 无法解析本批次的新 global Entity manifest 契约；在 `1.0.16` 完成仓库回查前，本节描述的是当前源码和发布候选行为。
+
+业务 Service 接口绑定完整类型：
+
+```java
+import io.mango.infra.persistence.api.crud.MangoTypedCrudService;
+
+public interface IOrderInvoiceService extends MangoTypedCrudService<
+        OrderInvoiceEntity,
+        CreateOrderInvoiceCommand,
+        UpdateOrderInvoiceCommand,
+        OrderInvoicePageQuery,
+        OrderInvoiceVO,
+        Long> {
+}
+```
+
+实现类保留 `MangoCrudServiceImpl<Mapper, Entity>`，并实现业务接口：
 
 ```java
 package com.example.order.service;
 
+import com.example.order.api.command.CreateOrderInvoiceCommand;
+import com.example.order.api.command.UpdateOrderInvoiceCommand;
+import com.example.order.api.enums.OrderInvoiceCode;
+import com.example.order.api.query.OrderInvoicePageQuery;
+import com.example.order.api.vo.OrderInvoiceVO;
 import com.example.order.entity.OrderInvoiceEntity;
 import com.example.order.mapper.OrderInvoiceMapper;
-import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
+import io.mango.common.result.Require;
+import io.mango.infra.persistence.api.crud.DeleteCommand;
+import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;
+import io.mango.infra.persistence.api.query.PersistencePageResult;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrderInvoiceService
-        extends MangoCrudServiceImpl<OrderInvoiceMapper, OrderInvoiceEntity> {
+        extends MangoCrudServiceImpl<OrderInvoiceMapper, OrderInvoiceEntity>
+        implements IOrderInvoiceService {
+
+    @Override
+    protected OrderInvoiceVO toVO(OrderInvoiceEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        OrderInvoiceVO vo = new OrderInvoiceVO();
+        vo.setId(entity.getId());
+        vo.setInvoiceNo(entity.getInvoiceNo());
+        return vo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long create(CreateOrderInvoiceCommand command) {
+        Require.notNull(command, OrderInvoiceCode.VALIDATION_ERROR);
+        Object id = createByCommand(command);
+        Require.isTrue(id instanceof Long, OrderInvoiceCode.VALIDATION_ERROR);
+        return (Long) id;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean update(UpdateOrderInvoiceCommand command) {
+        Require.notNull(command, OrderInvoiceCode.VALIDATION_ERROR);
+        Require.notNull(getById(command.getId()), OrderInvoiceCode.NOT_FOUND);
+        return updateByCommand(command);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean delete(DeleteCommand command) {
+        Require.notNull(command, OrderInvoiceCode.VALIDATION_ERROR);
+        Require.notNull(command.getId(), OrderInvoiceCode.VALIDATION_ERROR);
+        Require.notNull(getById(command.getId()), OrderInvoiceCode.NOT_FOUND);
+        return deleteById(command.getId());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public PersistencePageResult<OrderInvoiceVO> page(OrderInvoicePageQuery query) {
+        Require.notNull(query, OrderInvoiceCode.VALIDATION_ERROR);
+        return (PersistencePageResult<OrderInvoiceVO>) (PersistencePageResult<?>)
+                pageByQuery(query);
+    }
+
+    @Override
+    public OrderInvoiceVO detail(Long id) {
+        Require.notNull(id, OrderInvoiceCode.VALIDATION_ERROR);
+        OrderInvoiceEntity entity = getById(id);
+        Require.notNull(entity, OrderInvoiceCode.NOT_FOUND);
+        return toVO(entity);
+    }
 
     @Override
     protected Class<OrderInvoiceEntity> entityType() {
@@ -765,6 +809,17 @@ public class OrderInvoiceService
     }
 }
 ```
+
+业务实现类需要显式实现 `create`、`update`、`delete`、`page` 和 `detail`。这些类型化方法可以复用下表中的底层方法，但应在调用前完成 `Require + XxxCode implements BizCode` 业务前置条件校验，并把 Entity 转换为 VO。
+
+#### 7.3.1 从宽类型 CRUD 迁移
+
+1. 把 `IXxxService` 改为继承 `MangoTypedCrudService<Entity, CreateCommand, UpdateCommand, PageQuery, VO, Long>`。
+2. 让 `XxxService` 继续继承 `MangoCrudServiceImpl<Mapper, Entity>`，同时实现 `IXxxService`；实现类名称不再使用 `XxxServiceImpl`。
+3. 实现五个类型化方法，并分别委托 `createByCommand`、`updateByCommand`、`deleteById`、`pageByQuery`、`getById` 或 `detailById`。
+4. 覆写 `toVO(Entity)` 和 `entityType()`；对 `Object`、通配分页结果的转换只保留在 Service 实现内部，不向 Controller/API 扩散。
+5. 将 Controller 改为直接实现一个 `XxxApi`，只依赖 `IXxxService`，逐项映射 HTTP 方法并返回 `R.ok(service.xxx(...))`。
+6. 迁移后执行 Maven `verify`，确认 Entity/Mapper/Service/Controller/Feign 的类型、模块位置和 HTTP 映射同时通过架构门禁。
 
 默认行为：
 
@@ -794,43 +849,21 @@ applyDataScope
 entityType
 ```
 
-`applyDataScope(QueryWrapper<E> wrapper, Object query)` 默认是空实现。业务需要数据权限时，注入 `DataScopeApplier` 并声明资源编码、本人字段、组织字段：
+`applyDataScope(QueryWrapper<E> wrapper, Object query)` 默认是空实现。业务需要数据权限时，在已经实现类型化 CRUD 契约的 Service 中注入 `DataScopeApplier`，并覆写以下钩子：
 
 ```java
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import io.mango.infra.persistence.api.scope.DataScopeApplier;
-import io.mango.infra.persistence.api.scope.DataScopeMapping;
-import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
-import org.springframework.stereotype.Service;
-
-@Service
-public class PaymentOrderService
-        extends MangoCrudServiceImpl<PaymentOrderMapper, PaymentOrderEntity> {
-
-    private final DataScopeApplier dataScopeApplier;
-
-    public PaymentOrderService(DataScopeApplier dataScopeApplier) {
-        this.dataScopeApplier = dataScopeApplier;
-    }
-
-    @Override
-    protected void applyDataScope(QueryWrapper<PaymentOrderEntity> wrapper, Object query) {
-        dataScopeApplier.apply(
-                wrapper,
-                "payment:order:list",
-                DataScopeMapping.builder()
-                        .tableName("payment_order")
-                        .selfField("created_by")
-                        .orgField("org_id")
-                        .tenantField("tenant_id")
-                        .build()
-        );
-    }
-
-    @Override
-    protected Class<PaymentOrderEntity> entityType() {
-        return PaymentOrderEntity.class;
-    }
+@Override
+protected void applyDataScope(QueryWrapper<PaymentOrderEntity> wrapper, Object query) {
+    dataScopeApplier.apply(
+            wrapper,
+            "payment:order:list",
+            DataScopeMapping.builder()
+                    .tableName("payment_order")
+                    .selfField("created_by")
+                    .orgField("org_id")
+                    .tenantField("tenant_id")
+                    .build()
+    );
 }
 ```
 
@@ -851,51 +884,96 @@ public class PaymentOrderService
 
 ### 7.4 Web CRUD Controller
 
-`mango-infra-persistence-web-starter` 提供 `BaseCrudController<S, C, U, Q>`：
+新建或迁移后的业务 Controller 直接实现一个传输无关的 `XxxApi`，只依赖类型化 `IXxxService`。HTTP mapping 保留在 Controller 和 Feign adapter，不写入 API 契约：
 
 ```java
 package com.example.order.controller;
 
-import com.example.order.command.CreateOrderInvoiceCommand;
-import com.example.order.command.UpdateOrderInvoiceCommand;
-import com.example.order.query.OrderInvoiceQuery;
-import com.example.order.service.OrderInvoiceService;
-import io.mango.infra.persistence.web.starter.controller.BaseCrudController;
+import com.example.order.api.OrderInvoiceApi;
+import com.example.order.api.command.CreateOrderInvoiceCommand;
+import com.example.order.api.command.UpdateOrderInvoiceCommand;
+import com.example.order.api.query.OrderInvoicePageQuery;
+import com.example.order.api.vo.OrderInvoiceVO;
+import com.example.order.service.IOrderInvoiceService;
+import io.mango.common.result.R;
+import io.mango.infra.persistence.api.crud.DeleteCommand;
+import io.mango.infra.persistence.api.query.PersistencePageResult;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Validated
+@Tag(name = "订单发票", description = "订单发票管理接口")
 @RequestMapping("/order/invoices")
-public class OrderInvoiceController extends BaseCrudController<
-        OrderInvoiceService,
-        CreateOrderInvoiceCommand,
-        UpdateOrderInvoiceCommand,
-        OrderInvoiceQuery> {
+public class OrderInvoiceController implements OrderInvoiceApi {
 
-    public OrderInvoiceController(OrderInvoiceService service) {
-        super(service);
+    private final IOrderInvoiceService service;
+
+    public OrderInvoiceController(IOrderInvoiceService service) {
+        this.service = service;
     }
 
     @Override
-    protected Class<OrderInvoiceQuery> queryType() {
-        return OrderInvoiceQuery.class;
+    @Operation(summary = "创建订单发票", description = "创建一条订单发票业务记录")
+    @PostMapping("/create")
+    public R<Long> create(@RequestBody @Valid CreateOrderInvoiceCommand command) {
+        return R.ok(service.create(command));
+    }
+
+    @Override
+    @Operation(summary = "修改订单发票", description = "按业务标识修改订单发票")
+    @PostMapping("/update")
+    public R<Boolean> update(@RequestBody @Valid UpdateOrderInvoiceCommand command) {
+        return R.ok(service.update(command));
+    }
+
+    @Override
+    @Operation(summary = "删除订单发票", description = "按业务标识删除订单发票")
+    @PostMapping("/delete")
+    public R<Boolean> delete(@RequestBody @Valid DeleteCommand command) {
+        return R.ok(service.delete(command));
+    }
+
+    @Override
+    @Operation(summary = "分页查询订单发票", description = "按查询条件分页获取订单发票")
+    @GetMapping("/page")
+    public R<PersistencePageResult<OrderInvoiceVO>> page(
+            @ParameterObject @Valid OrderInvoicePageQuery query) {
+        return R.ok(service.page(query));
+    }
+
+    @Override
+    @Operation(summary = "查询订单发票详情", description = "按业务标识获取订单发票详情")
+    @GetMapping("/detail")
+    public R<OrderInvoiceVO> detail(
+            @Parameter(description = "业务标识") @RequestParam("id") @NotNull Long id) {
+        return R.ok(service.detail(id));
     }
 }
 ```
 
-继承后自动具备以下接口，实际前缀由 Controller 上的 `@RequestMapping` 决定：
+标准类型化契约包含以下入口，实际前缀由 Controller 的 `@RequestMapping` 和模块 `module-path` 决定：
 
 | 方法 | 路径 | 入参 | 行为 |
 |------|------|------|------|
-| `POST` | `/create` | 创建命令 JSON | 调用 `service.createByCommand` |
-| `POST` | `/update` | 更新命令 JSON | 调用 `service.updateByCommand` |
-| `POST` | `/delete` | `DeleteCommand{id}` | 调用 `service.deleteById` |
-| `POST` | `/batch-delete` | `BatchDeleteCommand{ids}` | 调用 `service.batchDeleteByIds` |
-| `GET` | `/detail?id=` | 主键 ID | 调用 `service.detailById` |
-| `GET` | `/page` | 查询对象 query string | 调用 `service.pageByQuery` |
-| `POST` | `/export` | 查询条件 JSON | 需要 Service 实现 `ExportableService` 且存在 `ExcelAdapter` |
-| `POST` | `/import` | multipart 文件 | 需要 Service 实现 `ImportableService` 且存在 `ExcelAdapter` |
-| `GET` | `/import-template` | 无 | 需要 Service 实现 `ImportableService` 且存在 `ExcelAdapter` |
+| `POST` | `/create` | `CreateXxxCommand` JSON | 调用 `service.create(command)` |
+| `POST` | `/update` | `UpdateXxxCommand` JSON | 调用 `service.update(command)` |
+| `POST` | `/delete` | `DeleteCommand` JSON | 调用 `service.delete(command)` |
+| `GET` | `/detail?id=` | 受校验的主键 ID | 调用 `service.detail(id)` |
+| `GET` | `/page` | `XxxPageQuery` query string | 调用 `service.page(query)` |
+
+`mango-infra-persistence-web-starter` 中的 `BaseCrudController<S, C, U, Q>` 继续作为存量兼容和导入导出编排能力存在，但新的业务 Controller 不再通过继承它生成。存量模块迁移时，把实际使用的 create/update/delete/detail/page/export/import 方法逐项移到实现 `XxxApi` 的 Controller；结构约束以 [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md) 为准。
 
 导入导出限制：
 
@@ -1052,13 +1130,13 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 - 如果业务接口要做按钮权限校验，需要在 Web、安全或 authorization 层声明，不由 persistence 处理。
 
 ## 10. 快速开始
-1. 引入 `mango-infra-persistence-starter`；需要标准 Controller 时再引入 `mango-infra-persistence-web-starter`。
+1. 引入 `mango-infra-persistence-starter`；需要导入导出、Excel Web 参数解析等能力时再引入 `mango-infra-persistence-web-starter`。
 2. 配置应用 `DataSource`，或配置 `mango.persistence.datasources` 多数据源。
 3. 为业务模块创建 `db/migration/<module>/V1__init.sql`，租户业务表包含 `id`、`tenant_id`、`org_id` 和审计字段。
 4. 实体继承 `TenantEntity` 或按同名字段自定义实体，Mapper 继承 MyBatis-Plus `BaseMapper<E>`。
 5. 查询对象继承项目分页查询基类，按需使用 `@QueryField` 和 `@QueryIgnore`。
-6. Service 继承 `MangoCrudServiceImpl`，覆写 `entityType()`；复杂数据范围覆写 `applyDataScope()`。
-7. Controller 继承 `BaseCrudController` 并声明资源路径；导入导出能力按需实现 `ExportableService` 或 `ImportableService`。
+6. `IXxxService` 继承 `MangoTypedCrudService`，`XxxService` 继承 `MangoCrudServiceImpl` 并实现类型化方法；复杂数据范围覆写 `applyDataScope()`。
+7. Controller 直接实现本域 `XxxApi`、注入 `IXxxService` 并逐项声明 HTTP mapping；导入导出能力按需实现 `ExportableService` 或 `ImportableService`。
 8. 给管理页面登记菜单、按钮权限和 API 权限；这一步属于业务模块自己的 authorization 资源初始化。
 9. 本地验证 Flyway、审计填充、租户隔离、分页查询和 Schema 校验。
 

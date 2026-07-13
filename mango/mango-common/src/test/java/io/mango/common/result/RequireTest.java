@@ -44,4 +44,24 @@ public class RequireTest {
                 .extracting("code")
                 .isEqualTo(404);
     }
+
+    @Test
+    void specializedAssertionsAcceptBizCode() {
+        assertThatThrownBy(() -> Require.notEmpty("", CommonCode.BAD_REQUEST))
+                .isInstanceOf(BizException.class)
+                .hasMessage(CommonCode.BAD_REQUEST.getMessage())
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+        assertThatThrownBy(() -> Require.positive(0, CommonCode.BAD_REQUEST))
+                .isInstanceOf(BizException.class)
+                .hasMessage(CommonCode.BAD_REQUEST.getMessage())
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+        assertThatThrownBy(() -> Require.nonNegative(-1, CommonCode.BAD_REQUEST))
+                .isInstanceOf(BizException.class)
+                .hasMessage(CommonCode.BAD_REQUEST.getMessage())
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+        assertThatThrownBy(() -> Require.inRange(4, 1, 3, CommonCode.BAD_REQUEST))
+                .isInstanceOf(BizException.class)
+                .hasMessage(CommonCode.BAD_REQUEST.getMessage())
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+    }
 }

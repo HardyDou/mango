@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Technical Design"
+  short_description: "Design governed Mango architecture from system requirements"
+  default_prompt: "Use $mango-design-technical to produce a traceable technical design from the approved system specification."
+policy:
+  allow_implicit_invocation: true

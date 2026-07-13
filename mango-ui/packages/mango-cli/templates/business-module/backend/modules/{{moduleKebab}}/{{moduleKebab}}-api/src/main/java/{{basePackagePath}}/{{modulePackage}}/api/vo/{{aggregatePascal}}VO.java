@@ -9,6 +9,8 @@ import java.io.Serializable;
 @Schema(description = "{{aggregateName}}返回对象")
 public class {{aggregatePascal}}VO implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Schema(description = "业务标识")
     private String id;
 

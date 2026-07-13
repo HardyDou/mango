@@ -1,0 +1,6 @@
+{
+  "base": "../valid/business-requirements.md",
+  "replace": "公告提交、审核和撤回",
+  "with": "NoticeController 提交、审核和撤回",
+  "expectedRuleId": "BRD-BOUNDARY-001"
+}

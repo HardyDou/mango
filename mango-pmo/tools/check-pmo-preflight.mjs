@@ -113,8 +113,8 @@ for (const item of cases) {
     continue;
   }
   const output = JSON.parse(result.stdout);
-  if (output.workspacePolicy?.mode !== item.mode) {
-    failures.push(`${item.name}: expected ${item.mode}, got ${output.workspacePolicy?.mode || '<missing>'}`);
+  if (output.classifiedWorkspacePolicy?.mode !== item.mode) {
+    failures.push(`${item.name}: expected ${item.mode}, got ${output.classifiedWorkspacePolicy?.mode || '<missing>'}`);
   }
   for (const expectedPath of item.mustRead || []) {
     const hasPath = (output.mustRead || []).some((entry) => entry.path === expectedPath);

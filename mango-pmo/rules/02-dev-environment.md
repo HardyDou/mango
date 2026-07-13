@@ -13,9 +13,11 @@
 - 所有代码、接口、数据库、测试、前端页面或构建配置改动必须在任务专用 Git worktree 中进行。
 - 任务 worktree 必须从最新 `main` 新建，并使用独立任务分支。
 - 一个任务或一个 PR 在本地只能对应一个开发 worktree。
+- 当前已位于非 `main` 分支或非主工作区时，用户明确要求解决的问题必须在当前工作区处理，禁止为该问题再次创建 worktree。
 - 验收返工、Review 修改、CI 修复和 PR 门禁修复必须复用该任务或 PR 的既有 worktree。
 - 新建 worktree 前，Agent 必须先执行 `git worktree list`，确认是否已有同一任务分支或 PR 分支对应的 worktree。
-- 只有新独立任务、用户明确拆分任务、原 worktree 丢失或用户明确要求重建时，才允许创建新的 worktree。
+- 只有当前位于主工作区、属于新独立任务、没有可复用任务 worktree，并且用户明确拆分任务或 preflight 判定需要时，才允许创建新的 worktree。
+- 用户表达无法确定为“当前解决”还是“登记 Issue”时，必须先询问，不得用新 worktree 代替确认。
 - 原 worktree 丢失或损坏时，必须基于原任务分支重建 worktree，不得另起无关联分支。
 - 主工作区只用于拉取 `main`、创建 worktree、查看状态和执行清理，不承载任务改动。
 - 只修改 PMO 规范、流程、Agent 入口、设计文档、Sprint 计划、交付记录或历史材料，且不影响服务代码、接口、数据库、测试、前端页面或构建配置时，可按 preflight 的 `main-direct-allowed` 结果在主工作区直接提交。
@@ -107,6 +109,8 @@
 ## 6. 运行时临时目录
 
 - 仓库内运行时临时文件统一放到 `<repo>/.runtime/`。
+- Git worktree 必须位于仓库目录之外的同级受控目录；禁止放入 `.runtime/worktrees/`、`.mango/worktrees/`、`.claude/worktrees/` 或仓库内其它目录。
+- `.mango/` 只保存当前工作区配置和本机 registry；`.claude/` 及其它 Agent 配置目录不得作为 Mango 运行时目录。
 - `.runtime/` 必须被 Git 忽略，禁止提交。
 - 测试 `mango-cli` 生成的新项目必须放到 `.runtime/projects/`。
 - 临时包缓存必须放到 `.runtime/package-store/`。
@@ -118,6 +122,7 @@
 
 - 需要启动本地服务时，Agent 必须使用 `mango dev start`、`mango dev start backend` 或 `mango dev start frontend`。
 - 需要修复验收、Review、CI 或 PR 门禁发现的问题时，Agent 必须先复用当前任务或 PR 的既有 worktree。
+- 已在非 `main` 任务工作区收到用户解决指令时，Agent 必须原地解决并禁止创建第二个 worktree。
 - 需要删除本地开发 worktree 时，Agent 必须先停止服务并释放 workspace 注册。
 - 启动前必须说明本次使用的后端端口、前端端口和数据库名。
 - 启动失败时必须先检查 `.mango/workspace.json`、`.mango/dev-workspace.env`、端口归属、数据库连接和启动日志。

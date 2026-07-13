@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 /**
  * 生成权限菜单 SQL
@@ -41,17 +42,18 @@ public class GenPermissionMojo extends AbstractMojo {
             Path outDir = Paths.get(outputDir);
             Files.createDirectories(outDir);
 
-            String sql = generateMenuSQL();
-            Files.writeString(outDir.resolve("menu_" + module + ".sql"), sql);
+            String moduleName = module.toLowerCase(Locale.ROOT);
+            Path outputFile = outDir.resolve("menu_" + moduleName + ".sql");
+            String sql = generateMenuSQL(moduleName);
+            Files.writeString(outputFile, sql);
 
-            getLog().info("Permission SQL generated: " + outDir.resolve("menu_" + module + ".sql"));
+            getLog().info("Permission SQL generated: " + outputFile);
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to generate permission SQL", e);
         }
     }
 
-    private String generateMenuSQL() {
-        String moduleName = module.toLowerCase();
+    private String generateMenuSQL(String moduleName) {
         String permPrefix = model + ":" + moduleName;
         long baseId = 900_000_000_000L + ((long) (moduleName.hashCode() & 0x7fffffff) * 10L);
         long rootMenuId = baseId + 1;

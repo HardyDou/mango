@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 5,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -13,7 +13,23 @@
   "rules": {
     "agent.pm": {
       "path": "agents/01-pm-agent.md",
-      "reason": "需求与 PRD 角色"
+      "reason": "需求生命周期入口与阶段路由角色"
+    },
+    "agent.businessRequirements": {
+      "path": "agents/business-requirements-agent.md",
+      "reason": "业务需求说明书专用角色"
+    },
+    "agent.systemRequirements": {
+      "path": "agents/system-requirements-agent.md",
+      "reason": "系统需求规格说明书专用角色"
+    },
+    "agent.technicalDesign": {
+      "path": "agents/technical-design-agent.md",
+      "reason": "技术设计文档专用角色"
+    },
+    "agent.implementationPlan": {
+      "path": "agents/implementation-plan-agent.md",
+      "reason": "实施计划专用角色"
     },
     "agent.techLead": {
       "path": "agents/02-tech-lead-agent.md",
@@ -53,7 +69,7 @@
     },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
-      "reason": "AI 交付质量门禁、发布批次和 Maven app 制品排除规则"
+      "reason": "AI 交付质量门禁、发布批次、Required Check、CODEOWNERS 和 Maven app 制品排除规则"
     },
     "process.documentAssets": {
       "path": "rules/06-document-assets.md",
@@ -67,6 +83,10 @@
       "path": "rules/08-capability-docs.md",
       "reason": "能力说明维护规范与发布门禁"
     },
+    "process.releaseArtifacts": {
+      "path": "rules/10-release-artifacts.md",
+      "reason": "npm、Maven、CLI、starter、模板、PMO、Skill 与文档发布批次及版本同步规范"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -77,7 +97,7 @@
     },
     "backend.api": {
       "path": "rules/backend/03-api.md",
-      "reason": "后端 API 规范"
+      "reason": "后端 API、Controller、Service、Mapper、Entity、Feign 与 Java 架构机器门禁规范"
     },
     "backend.db": {
       "path": "rules/backend/04-db.md",
@@ -93,7 +113,7 @@
     },
     "backend.persistence": {
       "path": "rules/backend/07-persistence.md",
-      "reason": "事务、持久化与业务 CRUD 基线规范"
+      "reason": "事务、持久化、业务 CRUD、表所有权与 Schema 证据规范"
     },
     "backend.test": {
       "path": "rules/backend/08-test.md",
@@ -135,17 +155,25 @@
       "path": "rules/frontend/06-monorepo-architecture.md",
       "reason": "前端 Monorepo 架构规范"
     },
-    "product.prd": {
-      "path": "rules/product/01-prd-template.md",
-      "reason": "PRD 模板规范"
+    "product.businessRequirements": {
+      "path": "rules/product/01-business-requirements.md",
+      "reason": "业务需求说明书章节、边界与移交规范"
     },
-    "product.sprint": {
-      "path": "rules/product/02-sprint.md",
-      "reason": "Sprint 规范"
+    "product.systemRequirements": {
+      "path": "rules/product/02-system-requirements.md",
+      "reason": "系统需求规格说明书章节、边界与移交规范"
     },
-    "product.detailedDesign": {
-      "path": "rules/product/03-detailed-design-template.md",
-      "reason": "详细设计模板规范"
+    "product.technicalDesign": {
+      "path": "rules/product/03-technical-design.md",
+      "reason": "技术设计文档章节、边界与移交规范"
+    },
+    "product.implementationPlan": {
+      "path": "rules/product/04-implementation-plan.md",
+      "reason": "实施计划章节、边界与移交规范"
+    },
+    "product.documentLifecycle": {
+      "path": "rules/product/05-document-lifecycle.md",
+      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪与门禁规范"
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",
@@ -169,18 +197,18 @@
     }
   },
   "roles": {
-    "pm": ["agent.pm", "product.prd"],
-    "tech-lead": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation"],
+    "pm": ["agent.pm", "product.documentLifecycle"],
+    "tech-lead": ["agent.techLead", "product.documentLifecycle", "process.testCaseAutomation"],
     "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
     "qa": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
+    "pmo": ["agent.pmo", "product.documentLifecycle", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
-    "requirement": ["product.prd", "process.testCaseAutomation"],
-    "design": ["agent.techLead", "product.detailedDesign", "process.testCaseAutomation"],
+    "requirement": ["product.documentLifecycle", "process.testCaseAutomation"],
+    "design": ["agent.techLead", "product.documentLifecycle", "process.testCaseAutomation"],
     "develop": ["agent.dev", "process.devEnvironment", "process.testCaseAutomation", "process.aiDeliveryQuality"],
     "verify": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "release": ["process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "release": ["process.testCaseAutomation", "process.aiDeliveryQuality", "process.releaseArtifacts"],
     "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "bundles": {
@@ -192,7 +220,7 @@
     "backendFlow": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango/**", "mango-platform/**", "mango-app/**", "backend", "backend/**"],
-      "keywords": ["后端", "Java", "Spring", "service", "Controller", "Mapper"],
+      "keywords": ["后端", "Java", "Spring", "service", "Service", "@Service", "@Bean", "@ConditionalOnMissingBean", "Service Locator", "Controller", "Mapper"],
       "include": ["backend.devFlow", "backend.code", "backend.naming"]
     },
     "mangoIssueRegistration": {
@@ -221,8 +249,8 @@
     },
     "backendApi": {
       "roles": ["tech-lead", "dev", "qa"],
-      "paths": ["mango/**/*Api.java", "mango/**/*Command.java", "mango/**/*Query.java", "mango/**/*VO.java", "mango/**/controller/**", "backend/**/*Api.java", "backend/**/*Command.java", "backend/**/*Query.java", "backend/**/*VO.java", "backend/**/controller/**"],
-      "keywords": ["接口", "API", "OpenAPI", "Knife4j", "Command", "Query", "VO", "Controller", "Service", "IXxxService", "ServiceImpl", "参数校验", "Bean Validation", "方法入参", "参数展开"],
+      "paths": ["mango/**/*Api.java", "mango/**/*Command.java", "mango/**/*Query.java", "mango/**/*VO.java", "mango/**/*Service.java", "mango/**/*ServiceImpl.java", "mango/**/controller/**", "backend/**/*Api.java", "backend/**/*Command.java", "backend/**/*Query.java", "backend/**/*VO.java", "backend/**/*Service.java", "backend/**/*ServiceImpl.java", "backend/**/controller/**"],
+      "keywords": ["接口", "API", "OpenAPI", "Knife4j", "Command", "Query", "VO", "Controller", "Service", "IXxxService", "ServiceImpl", "@Service", "@Bean", "@ConditionalOnMissingBean", "手工 new", "Service Locator", "@Transactional", "@Async", "@Cacheable", "@Scheduled", "参数校验", "Bean Validation", "方法入参", "参数展开"],
       "include": ["backend.api"]
     },
     "backendDb": {
@@ -306,20 +334,55 @@
       "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "worktree", "workspace", "mango workspace", "mango dev", "mango frontend", "dev-workspace", "前后端", "数据库名称", "清理", "workspace release", "keep-db"],
       "include": ["process.devEnvironment", "process.aiDeliveryQuality"]
     },
+    "businessRequirementsDocument": {
+      "roles": ["pm", "tech-lead", "pmo"],
+      "phases": ["requirement", "governance"],
+      "paths": ["**/business-requirements*.md", "**/brd-*.md", "mango-pmo/templates/business-requirements.md", "mango-pmo/contracts/business-requirements.json"],
+      "keywords": ["业务需求说明书", "业务需求文档", "BRD", "business requirements"],
+      "include": ["agent.businessRequirements", "product.businessRequirements", "product.documentLifecycle", "process.testCaseAutomation"]
+    },
+    "systemRequirementsDocument": {
+      "roles": ["pm", "tech-lead", "qa", "pmo"],
+      "phases": ["requirement", "design", "verify", "governance"],
+      "paths": ["**/system-requirements*.md", "**/srs-*.md", "mango-pmo/templates/system-requirements.md", "mango-pmo/contracts/system-requirements.json"],
+      "keywords": ["系统需求规格说明书", "系统需求文档", "SRS", "system requirements specification"],
+      "include": ["agent.systemRequirements", "product.systemRequirements", "product.documentLifecycle", "process.testCaseAutomation"]
+    },
+    "technicalDesignDocument": {
+      "roles": ["tech-lead", "dev", "qa", "pmo"],
+      "phases": ["design", "develop", "verify", "governance"],
+      "paths": ["**/technical-design*.md", "**/tdd-*.md", "mango-pmo/templates/technical-design.md", "mango-pmo/contracts/technical-design.json"],
+      "keywords": ["技术设计文档", "技术设计说明书", "TDD", "technical design document"],
+      "include": ["agent.technicalDesign", "product.technicalDesign", "product.documentLifecycle", "process.testCaseAutomation"]
+    },
+    "implementationPlanDocument": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "phases": ["design", "develop", "verify", "release", "governance"],
+      "paths": ["**/implementation-plan*.md", "**/plan-*.md", "mango-pmo/templates/implementation-plan.md", "mango-pmo/contracts/implementation-plan.json"],
+      "keywords": ["实施计划", "交付实施计划", "implementation plan"],
+      "include": ["agent.implementationPlan", "product.implementationPlan", "product.documentLifecycle", "process.testCaseAutomation", "process.aiDeliveryQuality"]
+    },
     "product": {
       "paths": ["mango-docs/**"],
-      "keywords": ["需求", "PRD", "原型", "详细设计", "设计文档", "关键对象", "关键业务流程", "业务规则", "状态机", "数据流图", "Sprint", "验收标准", "测试用例", "用例登记"],
-      "include": ["agent.pm", "product.prd", "product.detailedDesign", "product.sprint", "process.testCaseAutomation"]
+      "keywords": ["需求生命周期", "产品需求", "原型", "关键对象", "关键业务流程", "业务规则", "状态机", "数据流图", "验收标准", "测试用例", "用例登记"],
+      "include": ["agent.pm", "product.documentLifecycle", "process.testCaseAutomation"]
+    },
+    "releaseArtifacts": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "phases": ["release", "governance"],
+      "paths": ["mango-pmo/rules/10-release-artifacts.md", "mango-pmo/skills/**", "mango-ui/packages/mango-pmo/**", "mango-ui/packages/mango-cli/release-versions.json", "mango-ui/packages/mango-cli/scripts/check-release-versions.mjs", "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs", "mango-ui/packages/mango-cli/src/release-command.mjs", "mango-ui/packages/mango-cli/tests/release-command.test.mjs", "mango-ui/scripts/publish-package.mjs", "mango-ui/scripts/verify-npm-tarball.mjs", "scripts/publish-maven-batch.sh", "mango-business-starter/scripts/sync-pmo-baseline.mjs", "mango-business-starter/business-pmo/**"],
+      "keywords": ["发布 CLI", "CLI 发布", "发布 starter", "starter 发布", "发布模板", "模板发布", "发布 PMO", "PMO 发布", "发布 Skill", "Skill 发布", "发布文档", "发布矩阵", "版本矩阵", "release matrix", "release-versions.json", "sync-pmo-baseline", "mango release", "registry doctor", "release manifest", "publish/status/verify/repair"],
+      "include": ["process.releaseArtifacts", "process.aiDeliveryQuality"]
     },
     "releaseBackend": {
       "paths": [],
       "keywords": ["Maven 发布", "maven 发布", "JAR 发布", "jar 发布", "发布 jar", "发布后端", "批量 Maven 发布", "Maven 批量发布", "maven batch", "deploy maven"],
-      "include": ["backend.versioning", "process.aiDeliveryQuality"]
+      "include": ["process.releaseArtifacts", "process.aiDeliveryQuality"]
     },
     "releaseFrontend": {
       "paths": [],
       "keywords": ["npm 发布", "发布 npm", "发布前端组件", "发布组件", "Nexus npm", "npm 仓库", "多包发布", "批量发布", "batch publish", "release batch"],
-      "include": ["frontend.componentDevelopment", "frontend.monorepo", "process.aiDeliveryQuality"]
+      "include": ["frontend.componentDevelopment", "frontend.monorepo", "process.releaseArtifacts", "process.aiDeliveryQuality"]
     }
   }
 }

@@ -7,6 +7,10 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const uiRoot = resolve(scriptDir, '..');
 const packagesRoot = join(uiRoot, 'packages');
 const failures = [];
+const selectedPackage = process.argv
+  .find((arg) => arg.startsWith('--package='))
+  ?.slice('--package='.length) || '';
+let checkedPackages = 0;
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
@@ -67,6 +71,60 @@ function findDeclarationFiles(dir) {
   return files;
 }
 
+function assertPmoPackageExports(packageName, packageRoot, packageJson) {
+  for (const requiredEntry of ['dist', '.codex-plugin', 'skills']) {
+    if (!packageJson.files?.includes(requiredEntry)) {
+      addFailure(packageName, `files must include ${requiredEntry}`);
+    }
+  }
+
+  assertPath(packageName, packageRoot, 'exports..', packageJson.exports?.['.']);
+  assertPath(packageName, packageRoot, 'exports../baseline.json', packageJson.exports?.['./baseline.json']);
+
+  const pluginExport = packageJson.exports?.['./plugin.json'];
+  if (pluginExport !== './.codex-plugin/plugin.json') {
+    addFailure(packageName, `exports../plugin.json must be ./.codex-plugin/plugin.json, got ${pluginExport || '<missing>'}`);
+  } else {
+    assertPath(packageName, packageRoot, 'exports../plugin.json', pluginExport);
+  }
+
+  const skillsExport = packageJson.exports?.['./skills/*'];
+  if (skillsExport !== './skills/*') {
+    addFailure(packageName, `exports../skills/* must be ./skills/*, got ${skillsExport || '<missing>'}`);
+  }
+  const skillsRoot = join(packageRoot, 'skills');
+  if (!existsSync(skillsRoot) || !statSync(skillsRoot).isDirectory()) {
+    addFailure(packageName, 'published skills directory is missing');
+  } else if (findSkillFiles(skillsRoot).length === 0) {
+    addFailure(packageName, 'published skills directory contains no SKILL.md files');
+  }
+
+  const pluginManifestPath = join(packageRoot, '.codex-plugin/plugin.json');
+  if (existsSync(pluginManifestPath)) {
+    const pluginManifest = readJson(pluginManifestPath);
+    if (pluginManifest.version !== packageJson.version) {
+      addFailure(packageName, '.codex-plugin/plugin.json version must match package.json');
+    }
+    if (pluginManifest.skills !== './skills/') {
+      addFailure(packageName, '.codex-plugin/plugin.json skills must point to ./skills/');
+    }
+  }
+}
+
+function findSkillFiles(dir) {
+  const files = [];
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    const stat = statSync(path);
+    if (stat.isDirectory()) {
+      files.push(...findSkillFiles(path));
+    } else if (entry === 'SKILL.md') {
+      files.push(path);
+    }
+  }
+  return files;
+}
+
 function resolveDeclarationImport(fromFile, modulePath) {
   const base = resolve(dirname(fromFile), modulePath);
   const candidates = [
@@ -111,13 +169,16 @@ for (const packageDir of readdirSync(packagesRoot)) {
   if (!packageJson.name?.startsWith('@mango/') || packageJson.name === '@mango/cli') {
     continue;
   }
+  if (selectedPackage && packageJson.name !== selectedPackage) {
+    continue;
+  }
   if (packageJson.private) {
     continue;
   }
+  checkedPackages += 1;
   if (packageJson.name === '@mango/pmo') {
     assertPublishedFiles(packageJson.name, packageJson);
-    assertPath(packageJson.name, packageRoot, 'exports..', packageJson.exports?.['.']);
-    assertPath(packageJson.name, packageRoot, 'exports../baseline.json', packageJson.exports?.['./baseline.json']);
+    assertPmoPackageExports(packageJson.name, packageRoot, packageJson);
     continue;
   }
   assertPublishedFiles(packageJson.name, packageJson);
@@ -153,6 +214,10 @@ for (const packageDir of readdirSync(packagesRoot)) {
   for (const declarationPath of findDeclarationFiles(join(packageRoot, 'dist'))) {
     assertDeclaration(packageJson.name, packageRoot, declarationPath);
   }
+}
+
+if (selectedPackage && checkedPackages === 0) {
+  addFailure(selectedPackage, 'package was not found or is not a public package checked by this script');
 }
 
 if (failures.length > 0) {

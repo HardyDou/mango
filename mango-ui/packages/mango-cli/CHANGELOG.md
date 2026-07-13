@@ -1,5 +1,78 @@
 # @mango/cli Changelog
 
+## 1.0.68 - 2026-07-12
+
+### Added
+
+- Locked the CLI to `@mango/pmo@1.1.0`, whose reproducible bundle includes the canonical PMO rules, lifecycle templates,
+  document contracts, checkers, dedicated agents, project Skills, and package-root Codex plugin projection.
+- Added project PMO locks at `business-pmo/pmo-lock.json` and synchronized the bundle-owned Skills into
+  `.agents/skills` without modifying user-level Codex plugin configuration.
+- Added `mango pmo check --locked`, exact-version `mango pmo upgrade --to <version>`, and verified
+  `mango pmo rollback [--to <version>]` recovery from local bundle backups.
+- Added a deterministic canonical-to-CLI business-module projection gate over relative paths, file sizes, SHA-256
+  hashes, and executable modes.
+- Added a final `architecture-verification` Maven reactor module and generated GitHub workflow. A normal backend
+  `mvn verify` now runs the full Mango architecture engine, Mango project checks, and blocking P3C/PMD, Checkstyle,
+  and SpotBugs checks.
+- Added `mango release publish/status/verify/repair` and `mango release registry doctor` with a persisted state
+  manifest, explicit authorization, configuration precedence, output redaction, and immutable-artifact resume safety.
+
+### Changed
+
+- Advanced the generated backend lock to Mango Maven `1.0.16`. That backend batch must be published first because it
+  provides `MangoTypedCrudService` and the architecture gate consumed by this CLI template.
+- Made PMO installation and upgrade transactional: baseline files, the project lock, and project Skills are staged,
+  verified by hash, atomically switched, and cleaned of stale bundle-owned files.
+- Kept `mango pmo sync` pinned to the project lock. Moving to another PMO bundle now requires the explicit upgrade
+  command, while rollback only selects an already verified local backup.
+- Synchronized the published business-module backend template with the canonical starter so `module add` generates a
+  pure Api contract, matching Controller and Feign adapters, `MangoTypedCrudService`, module `BizCode`, and
+  `Require`-based service validation without `PathVariable` endpoints.
+- Removed implicit registry selection from the unified Maven/npm release adapters and added verify-only repository
+  back-checks so repair can validate already published artifacts without republishing them.
+- Upgraded release manifests to schema v2. Applicable terminal states now require complete command, working-directory,
+  timestamp, integer exit-code, and redacted-output evidence; required-state applicability is revalidated, and
+  immutable repair accepts only `{ "kind": "verify-existing" }` backed by the state's verify adapter.
+
+### Upgrade Notes
+
+- Publish and verify the full non-app Mango Maven `1.0.16` batch before publishing this CLI. Existing business
+  backends must move `<mango.version>` to `1.0.16` before adopting generated typed CRUD modules. Maven `1.0.15`
+  already exists but cannot parse this release candidate's global Entity manifest contract and is not compatible.
+- Install or upgrade the global CLI with `npm install -g @mango/cli@1.0.68 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+- In each business project, run `mango pmo upgrade --project-dir . --to 1.1.0`, then
+  `mango pmo check --project-dir . --locked` and review the generated project-level Skills under `.agents/skills`.
+- Project Skill synchronization does not install the package-root Codex plugin into a user profile. Plugin installation
+  remains a separate, explicit Codex operation against the published `@mango/pmo` package.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- `scripts/publish-maven-batch.sh --all-non-app --release-version 1.0.16 --dry-run`
+- `pnpm -C mango-ui --filter @mango/cli run check:business-module-template`
+- `MANGO_BACKEND_GATE_VERSION=1.0.16 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `pnpm -C mango-ui --filter @mango/cli test`
+- Generated custom project: `mvn -f backend/pom.xml verify` passed with the architecture and static-analysis reports.
+- Generated project with `@PathVariable`: `mvn -f backend/pom.xml verify` failed with `MANGO-ARCH-PATH-001/002`.
+- Generated project with a generic Java style violation: `mvn -f backend/pom.xml verify` failed in Checkstyle; attempts
+  to switch architecture/static checks to skip, partial reactor, changed, static-only, narrowed baseDir, no-new-only,
+  report-only, changed-files-only, or code-level module-exclusion modes failed in the governed Maven plugin configuration.
+- Generated project violations for direct MyBatis `ServiceImpl`, missing tenant schema, invalid module metadata, and a
+  missing global Entity exception manifest were each rejected by their owning architecture or Mango project gate.
+- Global Entity E2E accepted an approved exact Entity/table with no tenant columns, rejected the same Entity when
+  unregistered, and rejected a manifest table that differed from `@TableName` and migration.
+- Generated four-layer business module: `mvn -f backend/pom.xml verify` passed for all eight reactor projects.
+- `node --test mango-ui/packages/mango-cli/tests/business-module-template.test.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/pmo-bundle.test.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/release-command.test.mjs`
+- `node mango-ui/scripts/check-package-exports.mjs --package=@mango/pmo`
+- `npm pack --dry-run --json` from `mango-ui/packages/mango-pmo`
+- `node mango-ui/scripts/publish-package.mjs --verify-pmo-package-root=<extracted-package-root>`
+- `pnpm -C mango-ui release:impact --base=origin/main --head=HEAD`
+
 ## 1.0.67 - 2026-07-11
 
 ### Changed

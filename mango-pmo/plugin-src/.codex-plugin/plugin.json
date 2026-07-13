@@ -1,0 +1,23 @@
+{
+  "name": "mango-pmo",
+  "version": "1.1.0",
+  "description": "Governed Mango delivery lifecycle skills from business requirements through engineering and QA.",
+  "author": {
+    "name": "Mango"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Mango PMO",
+    "shortDescription": "Governed requirements, design, engineering, and QA workflows",
+    "longDescription": "Distribute the Mango PMO lifecycle and its specialized document, engineering, and QA skills as one versioned plugin.",
+    "developerName": "Mango",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use Mango PMO to route this work through the correct governed stage."
+    ]
+  }
+}

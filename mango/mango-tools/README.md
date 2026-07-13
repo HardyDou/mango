@@ -10,7 +10,7 @@
 | 能力 | 常用入口 |
 |------|----------|
 | PR 需要执行 Java/Spring 架构门禁 | `mvn verify`，专项调试使用 `mvn mango:architecture` |
-| 新增平台模块或业务模块时生成标准目录和基础文件 | Maven 依赖 / HTTP API / Java API |
+| 新增业务模块时生成标准目录和基础文件 | `mango module add`（`@mango/cli`） |
 | 快速生成 CRUD API、实体、Mapper、Service、Controller 等脚手架 | Maven 依赖 / HTTP API / Java API |
 | 根据接口或资源生成权限数据草稿 | Maven 依赖 / HTTP API / Java API |
 
@@ -40,13 +40,22 @@ mvn -f mango/pom.xml verify
 mvn -f mango/pom.xml mango:architecture
 ```
 
-或者在模块构建中使用插件 goal：
+业务模块必须使用发布版 CLI 的 canonical 模板：
 
 ```bash
-mvn -f mango/pom.xml mango:gen-module
+mango module add order --aggregate sales-order \
+  --aggregate-name 销售订单 --module-name 订单模块 --project-dir <dir>
+```
+
+已有模块内可继续使用其余插件 goal：
+
+```bash
 mvn -f mango/pom.xml mango:gen-crud
 mvn -f mango/pom.xml mango:gen-permission
 ```
+
+`mango:gen-module` 已 fail-closed 退役，调用时只返回迁移指引，不再生成可能绕过
+`api/core/starter/starter-remote`、typed CRUD 和 PMO 门禁的旧结构。
 
 具体参数以对应 Mojo 源码和 PMO 规则为准。
 
@@ -60,7 +69,7 @@ mvn -f mango/pom.xml mango:gen-permission
 | `reportFile` | `-DreportFile=target/mango-check-report.json` | JSON 报告路径。 |
 | `mango.check.gate` | `all` 或 `no-new-violations` | `all` 阻断所有问题；`no-new-violations` 只阻断新增问题。 |
 | `mango.check.changedFiles` | `path1,path2` | 显式指定变更文件。 |
-| `mango.check.changedOnly` | `true` | 对支持作用域的 Mango 自有规则只阻断变更文件内的问题，未命中变更文件的既有问题写入 `excludedIssues`。 |
+| `mango.check.changedOnly` | `true` | 将 `no-new-violations` 的新增问题限定到可信变更文件，并作用于支持范围过滤的 Mango 规则。必须同时提供 `changedFiles` 或可解析的 `baseRef`；静态门禁的范围外发现写入 `baselineIssues`，规则扫描主动排除的发现写入 `excludedIssues`。 |
 | `mango.check.baseRef` | `origin/main` | 未传 `changedFiles` 时用 Git diff 解析变更。 |
 | `mango.check.baselineFile` | `target/baseline.json` | 存量问题基线报告。 |
 | `mango.check.codeLevelExcludedModules` | `mango-platform/mango-file-preview` | 仅从 PMD、Checkstyle、SpotBugs 等代码级静态分析门禁中排除指定模块；Mango 自有规则仍会执行。 |
@@ -83,7 +92,9 @@ mvn -f mango/pom.xml verify \
   -Dmango.architecture.base=origin/main
 ```
 
-架构报告固定写入 `mango/target/mango-architecture-report.json`。默认 `changed` 模式只阻断变更文件或变更 POM 命中的问题，同时报告全量存量；`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、PMD 解析失败、ArchUnit 未导入到字节码或预期 Java 输入为零时均 fail-closed。
+架构报告固定写入 `mango/target/mango-architecture-report.json`。默认 `changed` 模式先定位变更影响的问题，再只从 Git base SHA 的 `mango-pmo/baselines/architecture/debt-budget.json` 扣除已批准 stable identities，剩余身份才阻断；PR head 自己修改的预算不能豁免当前新增。报告仍包含全量存量：删除文件会被识别，父 POM 变化传播到全部子 Reactor，`module.properties` 变化传播到同领域类，外置全局 Entity 清单变化传播到 Entity 规则。`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、baseline schema/identity 非法、PMD 解析失败、ArchUnit 未导入到字节码或预期 Java 输入为零时均 fail-closed。
+
+业务模板的最终验证同时启用 POM-only `lockFullMode`、`lockFullReactor` 和 `requireFullScope`。即使 Enforcer 的 `requireProperty` 被 `skipRules` 跳过，架构插件仍拒绝 `mode=changed`；聚合静态检查要求每个实际包含 Java 编译源码的 Reactor 模块分别生成 PMD、Checkstyle 和 SpotBugs 报告，任一子模块缺报告都会阻断，纯 POM 聚合模块不要求报告。
 
 使用仓库基线阻断新增问题：
 
@@ -96,7 +107,7 @@ mvn mango:check \
   -DreportFile=target/mango-check-report.json
 ```
 
-`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只服务仍由 `mango:check` 管理的存量规则。Java/Spring 架构红线不读取该 baseline；新增或修改文件命中 Enforcer、ArchUnit、PMD 7 任一架构规则时直接阻断。
+`mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 只服务仍由 `mango:check` 管理的存量规则。Java/Spring 架构红线不读取这个旧静态 baseline，而是读取 Git base 中独立的 schema-v3 architecture identity 预算；历史 identity 即使所在类被修改也不误阻断，同规则替换或任何新 identity 仍直接阻断。
 
 `mango:architecture` 硬校验：Controller 实现 `XxxApi`、启用 `@Validated/@Valid`、只依赖 `IXxxService`、统一返回 `R<T>`；Service 使用 `Require + BizCode/ErrorCode` 校验业务前置条件且不返回或拼装 `R`；Entity、Mapper、Feign、Controller 和 Service 实现必须位于规定模块。
 
@@ -120,7 +131,7 @@ mvn mango:check \
 |------|------|------|
 | `mango:architecture` | `ArchitectureMojo` | 聚合 Enforcer、ArchUnit、PMD 7 架构结果并阻断新增违规。 |
 | `mango:check` | `CheckMojo` | 执行 Mango 后端质量检查和 PR 门禁。 |
-| `mango:gen-module` | `GenModuleMojo` | 生成模块脚手架。 |
+| `mango:gen-module` | `GenModuleMojo` | 已退役；fail-closed 并指向 `mango module add`。 |
 | `mango:gen-crud` | `GenCrudMojo` | 生成 CRUD 脚手架。 |
 | `mango:gen-permission` | `GenPermissionMojo` | 生成权限资源草稿。 |
 
@@ -133,7 +144,7 @@ mvn mango:check \
 工具可生成或检查菜单、权限、API 资源相关文件；真正的菜单入库、角色授权和租户隔离仍由 `mango-authorization`、Flyway migration 和业务初始化流程负责。
 
 ## 10. 快速开始
-1. 使用 `gen-module` 或 `gen-crud` 生成初稿。
+1. 使用 `mango module add` 生成模块；仅在已有模块内使用 `gen-crud` 生成聚合初稿。
 2. 补齐业务模型、Controller 权限、migration、README、能力地图和测试。
 3. 执行 `mvn verify`。
 4. 检查生成文件是否符合 PMO 模板和模块边界。

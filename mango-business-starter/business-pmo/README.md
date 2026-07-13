@@ -12,6 +12,8 @@
 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 Must read |
 | `mango-baseline/tools/delivery-contract-check.mjs` | 校验设计和交付台账 |
 | `mango-baseline/tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
+| `mango-baseline/tools/check-document-set.mjs` | 扫描四类生命周期文档及其上游关系 |
+| `global-entity-exceptions.json` | 业务架构门禁显式读取的全局 Entity 例外清单，初始为空 |
 | 项目根 `AGENTS.md` | Agent 入口，只路由到 baseline，不复制长期规则正文 |
 
 ## 2. 功能清单
@@ -21,6 +23,7 @@
 | 规则路由 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 Must read。 |
 | 交付契约检查 | `delivery-contract-check.mjs` | 校验设计说明和交付台账。 |
 | 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
+| 文档集合门禁 | `check-document-set.mjs` | 自动识别 BRD、SRS、TDD、实施计划并阻断合同或链路错误。 |
 | baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
 | baseline 同步 | `mango pmo sync` | 从 CLI 模板同步 baseline、入口和兼容脚本。 |
 
@@ -61,6 +64,13 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
   --task "订单模块 E2E 验收" \
   --paths "frontend,backend,business-docs/evidence" \
   --json
+```
+
+业务文档集合检查：
+
+```bash
+node business-pmo/mango-baseline/tools/check-document-set.mjs \
+  --root business-docs
 ```
 
 交付台账检查：

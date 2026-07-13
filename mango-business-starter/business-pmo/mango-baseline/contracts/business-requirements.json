@@ -1,0 +1,221 @@
+{
+  "contractSchema": 1,
+  "contractId": "business-requirements",
+  "documentType": "business-requirements",
+  "documentIdPrefix": "BRD",
+  "schemaRevision": 1,
+  "ruleSource": "mango-pmo/rules/product/01-business-requirements.md",
+  "template": "mango-pmo/templates/business-requirements.md",
+  "metadata": {
+    "ruleId": "BRD-META-001",
+    "required": [
+      "documentId",
+      "documentType",
+      "pmoVersion",
+      "schemaRevision",
+      "riskLevel",
+      "riskAssessmentEvidence",
+      "status",
+      "action",
+      "owner",
+      "approver",
+      "approvalEvidence",
+      "upstreamDocumentId",
+      "upstreamDocumentHash"
+    ],
+    "fixed": {
+      "documentType": "business-requirements",
+      "pmoVersion": "1.1.0",
+      "schemaRevision": "1",
+      "upstreamDocumentId": "NONE",
+      "upstreamDocumentHash": "NONE"
+    }
+  },
+  "localPrefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BI", "BAC"],
+  "upstreamPrefixes": [],
+  "sections": [
+    {
+      "ruleId": "BRD-STRUCT-010",
+      "title": "业务背景与问题",
+      "tables": [
+        {
+          "headers": ["问题ID", "当前现状", "业务问题", "影响对象", "影响程度", "事实来源"],
+          "minRows": 1,
+          "defines": {"问题ID": "BP"}
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-020",
+      "title": "业务目标与成功口径",
+      "tables": [
+        {
+          "headers": ["目标ID", "来源问题ID", "目标对象", "当前基线", "目标值或完成条件", "统计周期", "统计口径"],
+          "minRows": 1,
+          "defines": {"目标ID": "BG"},
+          "references": [{"column": "来源问题ID", "prefixes": ["BP"], "required": true}]
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-030",
+      "title": "范围与不处理范围",
+      "tables": [
+        {
+          "headers": ["范围ID", "范围类型", "业务能力或场景", "适用对象", "边界说明", "对目标的影响"],
+          "minRows": 2,
+          "defines": {"范围ID": "BS"},
+          "enums": {"范围类型": ["纳入范围", "不处理范围"]},
+          "requiredEnumValues": {"范围类型": ["纳入范围", "不处理范围"]}
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-040",
+      "title": "业务参与者与术语",
+      "tables": [
+        {
+          "headers": ["参与者ID", "业务身份", "业务职责", "参与场景", "允许动作", "禁止动作", "业务原因"],
+          "minRows": 1,
+          "defines": {"参与者ID": "BA"}
+        },
+        {
+          "headers": ["术语", "业务含义", "主名称", "必要别名", "适用范围"],
+          "minRows": 1
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-050",
+      "title": "关键业务对象与生命周期",
+      "tables": [
+        {
+          "headers": ["对象ID", "对象名称", "业务含义", "唯一识别口径", "归属口径", "数量金额或有效期边界"],
+          "minRows": 1,
+          "defines": {"对象ID": "BO"}
+        },
+        {
+          "headers": ["对象ID", "业务状态", "状态含义", "进入条件", "退出条件", "允许动作", "禁止动作", "是否可逆", "是否终态"],
+          "minRows": 1,
+          "references": [{"column": "对象ID", "prefixes": ["BO"], "required": true}],
+          "enums": {"是否可逆": ["是", "否"], "是否终态": ["是", "否"]}
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-060",
+      "title": "业务场景与流程",
+      "tables": [
+        {
+          "headers": ["流程ID", "父流程ID", "流程名称", "业务目标", "参与者ID", "对象ID", "前置条件", "用户业务动作", "可观察业务结果", "异常或终止分支", "规则ID"],
+          "minRows": 1,
+          "defines": {"流程ID": "BF"},
+          "references": [
+            {"column": "父流程ID", "prefixes": ["BF"], "required": false, "allowNone": true},
+            {"column": "参与者ID", "prefixes": ["BA"], "required": true},
+            {"column": "对象ID", "prefixes": ["BO"], "required": true},
+            {"column": "规则ID", "prefixes": ["BR"], "required": true}
+          ]
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-070",
+      "title": "业务规则",
+      "tables": [
+        {
+          "headers": ["规则ID", "规则名称", "适用参与者ID", "触发条件", "判断口径", "允许结果", "禁止或失败结果", "业务反馈", "状态影响", "优先级", "例外"],
+          "minRows": 1,
+          "defines": {"规则ID": "BR"},
+          "references": [{"column": "适用参与者ID", "prefixes": ["BA"], "required": true}]
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-080",
+      "title": "业务约束、风险与待确认问题",
+      "tables": [
+        {
+          "headers": ["条目ID", "类型", "来源", "影响范围", "当前处理", "责任人", "截止时间", "状态", "是否阻断"],
+          "minRows": 1,
+          "defines": {"条目ID": "BI"},
+          "enums": {
+            "类型": ["业务约束", "业务风险", "业务假设", "待确认问题"],
+            "状态": ["OPEN", "CLOSED", "BLOCKED"],
+            "是否阻断": ["是", "否"]
+          }
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-STRUCT-090",
+      "title": "业务验收标准",
+      "tables": [
+        {
+          "headers": ["验收ID", "来源ID", "业务场景", "前置条件", "业务动作", "期望业务结果", "失败或边界结果"],
+          "minRows": 1,
+          "defines": {"验收ID": "BAC"},
+          "references": [{"column": "来源ID", "prefixes": ["BG", "BO", "BF", "BR"], "required": true}]
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-TRACE-100",
+      "title": "业务追踪矩阵",
+      "tables": [
+        {
+          "headers": ["来源ID", "关联ID", "业务验收ID", "覆盖说明"],
+          "minRows": 1,
+          "references": [
+            {"column": "来源ID", "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"], "required": true},
+            {"column": "关联ID", "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"], "required": true},
+            {"column": "业务验收ID", "prefixes": ["BAC"], "required": true}
+          ]
+        }
+      ]
+    },
+    {
+      "ruleId": "BRD-GATE-110",
+      "title": "阶段判定与审批",
+      "tables": [
+        {
+          "headers": ["检查项", "结果", "证据"],
+          "minRows": 4,
+          "rowKeys": ["业务需求 checker", "未关闭阻断数量", "例外", "业务审批"]
+        }
+      ]
+    }
+  ],
+  "traceability": {
+    "ruleId": "BRD-TRACE-100",
+    "section": "业务追踪矩阵",
+    "localCoveragePrefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"]
+  },
+  "blocking": {
+    "ruleId": "BRD-GATE-110",
+    "section": "业务约束、风险与待确认问题",
+    "headers": ["条目ID", "类型", "来源", "影响范围", "当前处理", "责任人", "截止时间", "状态", "是否阻断"],
+    "stateColumn": "状态",
+    "blockingColumn": "是否阻断",
+    "closedValues": ["CLOSED"]
+  },
+  "dependencyGraph": {
+    "ruleId": "BRD-PARENT-060",
+    "section": "业务场景与流程",
+    "headers": ["流程ID", "父流程ID", "流程名称", "业务目标", "参与者ID", "对象ID", "前置条件", "用户业务动作", "可观察业务结果", "异常或终止分支", "规则ID"],
+    "nodeColumn": "流程ID",
+    "dependencyColumn": "父流程ID"
+  },
+  "forbidden": {
+    "ruleId": "BRD-BOUNDARY-001",
+    "codeBlocks": true,
+    "literals": [
+      "@GetMapping", "@PostMapping", "@PutMapping", "@DeleteMapping", "@RequestMapping",
+      "Controller", "Feign", "MangoCrudService", "Mapper", "Entity", "DTO", "VO", "Command", "Query", "Payload",
+      "R<", "Require.", "ErrorCode", "permissionCode", "component key", "componentKey",
+      "/api/", "HTTP GET", "HTTP POST", "Spring MVC", "Redis", "Kafka", "CREATE TABLE", "ALTER TABLE", "VARCHAR", "BIGINT",
+      "migration", "starter-remote", "测试命令", "开发任务", "数据库表", "接口路径"
+    ],
+    "patterns": ["/[A-Za-z0-9_./-]*\\{[^}\\n]+\\}", "\\b[A-Z][A-Za-z0-9]*(?:Payload|Controller|FeignClient|Service|Mapper|Entity|DTO|VO|Command|Query)\\b"]
+  }
+}

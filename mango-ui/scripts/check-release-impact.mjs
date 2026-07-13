@@ -23,12 +23,21 @@ const args = process.argv.slice(2);
 const base = readArg('--base') || 'origin/main';
 const head = readArg('--head') || 'HEAD';
 const includeWorkingTree = !args.includes('--committed-only');
+if (args.includes('--self-test')) {
+  runSelfTest();
+  console.log('Release impact self-test passed.');
+  process.exit(0);
+}
 const changedFiles = readChangedFiles(base, head);
 const impactPackageNames = new Set();
 const mismatches = [];
 
 for (const file of changedFiles) {
   const normalizedFile = normalizeChangedFile(file);
+  if (isPublishedPmoSourceFile(normalizedFile)) {
+    impactPackageNames.add('@mango/pmo');
+    continue;
+  }
   const match = normalizedFile.match(/^mango-ui\/packages\/([^/]+)\/(.+)$/);
   if (!match) {
     continue;
@@ -132,7 +141,8 @@ function readChangedFiles(baseRef, headRef) {
   if (includeWorkingTree) {
     const workingTreeDiff = run('git', ['diff', '--name-only'], { capture: true });
     const stagedDiff = run('git', ['diff', '--cached', '--name-only'], { capture: true });
-    for (const output of [workingTreeDiff.stdout, stagedDiff.stdout]) {
+    const untracked = run('git', ['ls-files', '--others', '--exclude-standard'], { capture: true });
+    for (const output of [workingTreeDiff.stdout, stagedDiff.stdout, untracked.stdout]) {
       for (const file of output.split(/\r?\n/).filter(Boolean)) {
         files.add(file);
       }
@@ -162,6 +172,35 @@ function isReleaseImpactFile(packageFile) {
     return true;
   }
   return false;
+}
+
+function isPublishedPmoSourceFile(file) {
+  return /^mango-pmo\/(agents|rules|templates|contracts|tools|skills|plugin-src)\//.test(file)
+    || file === 'mango-pmo/README.md';
+}
+
+function runSelfTest() {
+  const published = [
+    'mango-pmo/rules/00-dev-flow.md',
+    'mango-pmo/contracts/business-requirements.contract.json',
+    'mango-pmo/skills/mango-requirements-business/SKILL.md',
+    'mango-pmo/plugin-src/.codex-plugin/plugin.json',
+    'mango-pmo/README.md',
+  ];
+  const ignored = [
+    'mango-pmo/baselines/mango-check/no-new-violations-baseline.json',
+    'mango-docs/plans/example.md',
+  ];
+  for (const file of published) {
+    if (!isPublishedPmoSourceFile(file)) {
+      throw new Error(`expected published PMO source impact: ${file}`);
+    }
+  }
+  for (const file of ignored) {
+    if (isPublishedPmoSourceFile(file)) {
+      throw new Error(`expected non-package PMO source to be ignored: ${file}`);
+    }
+  }
 }
 
 function resolveAffectedPackages(initialPackageNames) {

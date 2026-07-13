@@ -32,6 +32,11 @@ if (!packageArg) {
   process.exit(1);
 }
 
+if (!registry) {
+  console.error('Missing registry. Pass --registry=<url> or set MANGO_NPM_CONSUME_REGISTRY.');
+  process.exit(1);
+}
+
 const packageName = normalizePackageName(packageArg);
 const found = findPackage(packageName);
 

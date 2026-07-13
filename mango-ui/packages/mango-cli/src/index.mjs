@@ -7,6 +7,7 @@ import https from 'node:https';
 import { createRequire } from 'node:module';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runReleaseCli } from './release-command.mjs';
 
 const requireFromCli = createRequire(import.meta.url);
 const currentFile = fileURLToPath(import.meta.url);
@@ -267,10 +268,16 @@ Usage:
   mango docs pull [--project-dir <dir>] [--version <version>] [--maven-repository <url>] [--force]
   mango docs status [--project-dir <dir>]
   mango docs path [--project-dir <dir>]
-  mango pmo status --project-dir <dir>
-  mango pmo check --project-dir <dir>
+  mango pmo status --project-dir <dir> [--locked]
+  mango pmo check --project-dir <dir> [--locked]
   mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]
-  mango pmo upgrade --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]
+  mango pmo upgrade --project-dir <dir> [--to <version>] [--dry-run] [--write-agents] [--sync-shell]
+  mango pmo rollback --project-dir <dir> [--to <version>] [--dry-run]
+  mango release publish --version <version> [--authorize]
+  mango release status --version <version>
+  mango release verify --version <version>
+  mango release repair --version <version> [--authorize]
+  mango release registry doctor
   mango module add <module> --aggregate <name> [--aggregate-name <name>] [options]
   mango-cli init <project> --preset full [options]
   mango-cli add <module...> [options]
@@ -292,6 +299,8 @@ Options:
   --dry-run                Print PMO sync plan without modifying files
   --write-agents           Update root AGENTS.md during PMO sync when it points to an external mango-pmo
   --sync-shell             Sync generated startup shell scripts during PMO sync
+  --locked                 Check the project lock instead of the CLI's available PMO package
+  --to <version>           Exact @mango/pmo version for upgrade or rollback
   --force                  Overwrite existing target directory
   --help                   Show help
 
@@ -360,6 +369,11 @@ async function main(argv = process.argv.slice(2)) {
 
   if (args[0] === 'pmo') {
     runPmoCommand(args[1], args.slice(2));
+    return;
+  }
+
+  if (args[0] === 'release') {
+    await runReleaseCli(args.slice(1), { cwd: process.cwd() });
     return;
   }
 
@@ -543,6 +557,7 @@ function buildVariables(options) {
     mavenRepository: ensureTrailingSlash(options.mavenRepository),
     mangoBaselineCommit: readMangoBaselineCommit(),
     mangoCliVersion: readCliVersion(),
+    mangoPmoVersion: releaseVersions.npm?.['@mango/pmo'] || 'unknown',
     mangoBaselineSyncedAt: new Date().toISOString(),
   };
   return {
@@ -2763,18 +2778,23 @@ function tailFile(path, lineCount) {
   return `${lines.slice(Math.max(0, lines.length - lineCount)).join('\n')}\n`;
 }
 
+const PMO_LOCK_RELATIVE_PATH = 'business-pmo/pmo-lock.json';
+const PMO_BASELINE_RELATIVE_PATH = 'business-pmo/mango-baseline';
+const PMO_SKILL_STATE_RELATIVE_PATH = '.agents/skills/.mango-pmo.json';
+const PMO_RUNTIME_RELATIVE_PATH = '.mango/pmo';
+
 function runPmoCommand(command, argv) {
   if (command === 'status') {
     const options = parsePmoArgs(argv);
     const targetDir = resolve(process.cwd(), options.projectDir);
-    const status = getPmoStatus(targetDir);
+    const status = getPmoStatus(targetDir, { locked: options.locked });
     printPmoStatus(status);
     return;
   }
   if (command === 'check') {
     const options = parsePmoArgs(argv);
     const targetDir = resolve(process.cwd(), options.projectDir);
-    const status = getPmoStatus(targetDir);
+    const status = getPmoStatus(targetDir, { locked: options.locked });
     printPmoStatus(status);
     if (status.errors.length > 0 || status.warnings.length > 0) {
       process.exit(1);
@@ -2783,6 +2803,10 @@ function runPmoCommand(command, argv) {
   }
   if (command === 'sync' || command === 'upgrade') {
     syncPmoBaseline(argv, { command });
+    return;
+  }
+  if (command === 'rollback') {
+    rollbackPmoBaseline(argv);
     return;
   }
   fail(`unknown pmo command: ${command || ''}`);
@@ -2806,9 +2830,15 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
     mavenRepository: DEFAULT_MAVEN_REPOSITORY,
     modules: 'none',
   });
-  const baseline = loadPmoPackageBaseline();
+  const installedLock = readPmoLock(targetDir);
+  const availableBaseline = loadPmoPackageBaseline();
+  verifyPmoBundle(availableBaseline);
+  const baseline = command === 'sync' && installedLock
+    ? resolveLockedPmoBaseline(targetDir, installedLock, availableBaseline)
+    : resolveUpgradePmoBaseline(availableBaseline, options.to);
   const plan = [
     ...planPmoBaselineSync(targetDir, baseline),
+    ...planPmoSkillSync(targetDir, baseline),
     ...planTemplateSync('business-pmo/README.md', targetDir, variables),
     ...planBusinessDocsSync(targetDir, variables),
     planAgentsSync(targetDir, variables, options.writeAgents),
@@ -2820,15 +2850,30 @@ function syncPmoBaseline(argv, { command = 'sync' } = {}) {
   if (options.dryRun) {
     return;
   }
+  if (plan.some(item => item.scope === 'pmo-bundle' && item.action !== 'skip')) {
+    installPmoBundleAtomic(targetDir, baseline);
+  }
   for (const item of plan) {
-    if (item.action === 'skip' || item.action === 'warn') {
+    if (item.scope === 'pmo-bundle' || item.action === 'skip' || item.action === 'warn') {
+      continue;
+    }
+    if (item.action === 'delete') {
+      rmSync(item.targetPath, { recursive: true, force: true });
       continue;
     }
     writePlannedFile(item);
   }
-  writePmoBaselineManifest(targetDir, baseline.manifest);
+  const status = getPmoStatus(targetDir, { locked: true });
+  if (status.errors.length > 0 || status.warnings.length > 0) {
+    fail(`PMO baseline ${command} verification failed:\n${formatPmoStatusProblems(status)}`);
+  }
   const synced = summary.add + summary.update;
-  process.stdout.write(`PMO baseline ${command} complete: ${synced} files written, ${summary.skip} skipped.\n`);
+  process.stdout.write(
+    `PMO baseline ${command} complete: ${synced} files written, ${summary.delete || 0} removed, ${summary.skip} skipped.\n`,
+  );
+  process.stdout.write(
+    `Project PMO skills are synchronized under .agents/skills; no user-level Codex plugin installation was performed.\n`,
+  );
 }
 
 function parsePmoArgs(argv) {
@@ -2837,6 +2882,8 @@ function parsePmoArgs(argv) {
     dryRun: false,
     writeAgents: false,
     syncShell: false,
+    locked: false,
+    to: '',
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -2850,6 +2897,26 @@ function parsePmoArgs(argv) {
     }
     if (arg === '--sync-shell') {
       result.syncShell = true;
+      continue;
+    }
+    if (arg === '--locked') {
+      result.locked = true;
+      continue;
+    }
+    if (arg.startsWith('--to=')) {
+      result.to = arg.slice('--to='.length);
+      if (!result.to) {
+        fail('missing value for --to');
+      }
+      continue;
+    }
+    if (arg === '--to') {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) {
+        fail('missing value for --to');
+      }
+      result.to = next;
+      index += 1;
       continue;
     }
     if (arg === '--project-dir') {
@@ -2917,65 +2984,146 @@ function planPmoBaselineSync(targetDir, baseline) {
   for (const file of baseline.manifest.files || []) {
     const targetRelative = `business-pmo/mango-baseline/${file.path}`;
     const sourceFile = join(baseline.root, file.path);
-    plan.push(buildFilePlanItem(targetRelative, join(targetDir, targetRelative), readRenderedBaselineFile(sourceFile)));
+    plan.push({
+      ...buildFilePlanItem(targetRelative, join(targetDir, targetRelative), readRenderedBaselineFile(sourceFile)),
+      scope: 'pmo-bundle',
+    });
   }
-  plan.push(buildFilePlanItem(
+  plan.push({ ...buildFilePlanItem(
     'business-pmo/mango-baseline/baseline.json',
     join(targetDir, 'business-pmo/mango-baseline/baseline.json'),
     `${JSON.stringify(baseline.manifest, null, 2)}\n`,
-  ));
+  ), scope: 'pmo-bundle' });
+  plan.push({ ...buildFilePlanItem(
+    PMO_LOCK_RELATIVE_PATH,
+    join(targetDir, PMO_LOCK_RELATIVE_PATH),
+    `${JSON.stringify(createPmoLock(baseline.manifest), null, 2)}\n`,
+  ), scope: 'pmo-bundle' });
+
+  const expected = new Set([
+    ...(baseline.manifest.files || []).map(file => file.path),
+    'baseline.json',
+  ]);
+  const installedRoot = join(targetDir, PMO_BASELINE_RELATIVE_PATH);
+  if (existsSync(installedRoot)) {
+    for (const file of walkPmoFiles(installedRoot)) {
+      const relativePath = toPosix(relative(installedRoot, file));
+      if (!expected.has(relativePath)) {
+        plan.push({
+          action: 'delete',
+          path: `${PMO_BASELINE_RELATIVE_PATH}/${relativePath}`,
+          targetPath: file,
+          scope: 'pmo-bundle',
+        });
+      }
+    }
+  }
   return plan;
 }
 
 function readRenderedBaselineFile(sourceFile) {
-  return readFileSync(sourceFile, 'utf8');
-}
-
-function writePmoBaselineManifest(targetDir, manifest) {
-  const manifestPath = join(targetDir, 'business-pmo/mango-baseline/baseline.json');
-  mkdirSync(dirname(manifestPath), { recursive: true });
-  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  return readFileSync(sourceFile);
 }
 
 function installPmoBaseline(targetDir) {
   const baseline = loadPmoPackageBaseline();
-  const baselineDir = join(targetDir, 'business-pmo/mango-baseline');
-  rmSync(baselineDir, { recursive: true, force: true });
-  for (const file of baseline.manifest.files || []) {
-    const sourceFile = join(baseline.root, file.path);
-    const targetPath = join(baselineDir, file.path);
-    mkdirSync(dirname(targetPath), { recursive: true });
-    copyFileSync(sourceFile, targetPath);
-    if (file.path.startsWith('tools/') && file.path.endsWith('.mjs')) {
-      chmodSync(targetPath, 0o755);
-    }
-  }
-  writePmoBaselineManifest(targetDir, baseline.manifest);
+  verifyPmoBundle(baseline);
+  installPmoBundleAtomic(targetDir, baseline);
 }
 
-function getPmoStatus(targetDir) {
-  const baseline = loadPmoPackageBaseline();
-  const baselineDir = join(targetDir, 'business-pmo/mango-baseline');
-  const installedManifestPath = join(baselineDir, 'baseline.json');
+function getPmoStatus(targetDir, { locked = false } = {}) {
+  const baselineDir = join(targetDir, PMO_BASELINE_RELATIVE_PATH);
   const errors = [];
   const warnings = [];
   if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
     errors.push(`project directory not found: ${targetDir}`);
-    return { targetDir, baseline, baselineDir, errors, warnings, missing: [], changed: [], extra: [] };
+    return {
+      targetDir,
+      baseline: emptyPmoBaseline(baselineDir),
+      baselineDir,
+      errors,
+      warnings,
+      missing: [],
+      changed: [],
+      extra: [],
+      skillMissing: [],
+      skillChanged: [],
+      skillExtra: [],
+      locked,
+    };
   }
   if (!existsSync(baselineDir)) {
     errors.push('business-pmo/mango-baseline is missing. Run mango pmo sync --project-dir .');
-    return { targetDir, baseline, baselineDir, errors, warnings, missing: [], changed: [], extra: [] };
+    return {
+      targetDir,
+      baseline: emptyPmoBaseline(baselineDir),
+      baselineDir,
+      errors,
+      warnings,
+      missing: [],
+      changed: [],
+      extra: [],
+      skillMissing: [],
+      skillChanged: [],
+      skillExtra: [],
+      locked,
+    };
   }
-  if (!existsSync(installedManifestPath)) {
-    warnings.push('baseline.json is missing. Run mango pmo sync --project-dir . to install a versioned manifest.');
+
+  const lock = readPmoLock(targetDir, { strict: false });
+  let installedBaseline;
+  try {
+    installedBaseline = loadInstalledPmoBaseline(targetDir);
+  } catch (error) {
+    errors.push(error.message);
   }
+  if (!installedBaseline) {
+    errors.push('baseline.json is missing. Run mango pmo sync --project-dir . to install a versioned manifest.');
+  }
+
+  let baseline = installedBaseline || emptyPmoBaseline(baselineDir);
+  if (locked) {
+    if (!lock) {
+      errors.push(`${PMO_LOCK_RELATIVE_PATH} is missing; run mango pmo upgrade --project-dir .`);
+    } else if (installedBaseline) {
+      checkPmoLockMatchesManifest(lock, installedBaseline.manifest, errors);
+    }
+  } else {
+    try {
+      baseline = loadPmoPackageBaseline();
+      verifyPmoBundle(baseline);
+      if (installedBaseline && !samePmoBundle(installedBaseline.manifest, baseline.manifest)) {
+        warnings.push(
+          `installed PMO ${formatPmoIdentity(installedBaseline.manifest)} differs from available ${formatPmoIdentity(baseline.manifest)}`,
+        );
+      }
+      if (lock && !samePmoBundle(lock, baseline.manifest)) {
+        warnings.push(`project PMO lock differs from available ${formatPmoIdentity(baseline.manifest)}`);
+      }
+    } catch (error) {
+      errors.push(error.message);
+    }
+  }
+
   const comparison = comparePmoBaselineFiles(baselineDir, baseline.manifest);
   if (comparison.missing.length > 0) {
     errors.push(`${comparison.missing.length} baseline files are missing`);
   }
   if (comparison.changed.length > 0) {
     warnings.push(`${comparison.changed.length} baseline files differ from ${baseline.manifest.packageName}@${baseline.manifest.packageVersion}`);
+  }
+  if (comparison.extra.length > 0) {
+    errors.push(`${comparison.extra.length} stale baseline files are not declared by the PMO manifest`);
+  }
+  const skillComparison = comparePmoSkillProjection(targetDir, baseline.manifest);
+  if (skillComparison.missing.length > 0) {
+    errors.push(`${skillComparison.missing.length} project PMO skill files are missing`);
+  }
+  if (skillComparison.changed.length > 0) {
+    warnings.push(`${skillComparison.changed.length} project PMO skill files differ from the locked bundle`);
+  }
+  if (skillComparison.extra.length > 0) {
+    errors.push(`${skillComparison.extra.length} stale project PMO skill files remain installed`);
   }
   return {
     targetDir,
@@ -2984,6 +3132,13 @@ function getPmoStatus(targetDir) {
     errors,
     warnings,
     ...comparison,
+    skillMissing: skillComparison.missing,
+    skillChanged: skillComparison.changed,
+    skillExtra: skillComparison.extra,
+    skillExpectedFiles: skillComparison.expectedFiles,
+    skillExpectedRoots: skillComparison.expectedRoots,
+    lock,
+    locked,
   };
 }
 
@@ -2997,13 +3152,17 @@ function comparePmoBaselineFiles(baselineDir, manifest) {
       missing.push(filePath);
       continue;
     }
-    const actualHash = hashFile(targetPath);
-    if (actualHash !== file.sha256) {
+    const content = readFileSync(targetPath);
+    const actualHash = createHash('sha256').update(content).digest('hex');
+    const actualMode = process.platform === 'win32'
+      ? file.mode
+      : (statSync(targetPath).mode & 0o111 ? '0755' : '0644');
+    if (actualHash !== file.sha256 || content.length !== file.size || actualMode !== file.mode) {
       changed.push(filePath);
     }
   }
   const expectedPaths = new Set([...expected.keys(), 'baseline.json']);
-  const extra = walkFiles(baselineDir)
+  const extra = walkPmoFiles(baselineDir)
     .map(file => toPosix(relative(baselineDir, file)))
     .filter(file => !expectedPaths.has(file));
   return { missing, changed, extra };
@@ -3011,8 +3170,17 @@ function comparePmoBaselineFiles(baselineDir, manifest) {
 
 function printPmoStatus(status) {
   process.stdout.write(`Project: ${status.targetDir}\n`);
-  process.stdout.write(`Baseline: ${status.baseline.manifest.packageName}@${status.baseline.manifest.packageVersion}\n`);
+  process.stdout.write(`Mode: ${status.locked ? 'locked project bundle' : 'available package'}\n`);
+  process.stdout.write(`Baseline: ${formatPmoIdentity(status.baseline.manifest)}\n`);
+  if (status.lock) {
+    process.stdout.write(`Lock: ${formatPmoIdentity(status.lock)}\n`);
+  }
   process.stdout.write(`Files: ${status.baseline.manifest.files?.length || 0} expected, ${status.missing.length} missing, ${status.changed.length} changed, ${status.extra.length} extra\n`);
+  process.stdout.write(
+    `Skills: ${status.skillExpectedRoots || 0} roots, ${status.skillExpectedFiles || 0} expected, `
+    + `${status.skillMissing.length} missing, ${status.skillChanged.length} changed, ${status.skillExtra.length} extra\n`,
+  );
+  process.stdout.write('Codex plugin: project skills checked; user-level plugin installation is not managed by this command.\n');
   for (const warning of status.warnings) {
     process.stdout.write(`warn    ${warning}\n`);
   }
@@ -3028,6 +3196,705 @@ function printPmoStatus(status) {
   if (status.errors.length === 0 && status.warnings.length === 0) {
     process.stdout.write('PMO baseline is current.\n');
   }
+}
+
+function resolveUpgradePmoBaseline(availableBaseline, requestedVersion) {
+  if (requestedVersion && availableBaseline.manifest.packageVersion !== requestedVersion) {
+    fail(
+      `@mango/pmo@${requestedVersion} is not available to this CLI. `
+      + `The resolved package is ${formatPmoIdentity(availableBaseline.manifest)}; run the project-local CLI that locks the requested PMO package.`,
+    );
+  }
+  return availableBaseline;
+}
+
+function resolveLockedPmoBaseline(targetDir, lock, availableBaseline) {
+  if (samePmoBundle(lock, availableBaseline.manifest)) {
+    return availableBaseline;
+  }
+  for (const backup of listPmoBackups(targetDir)) {
+    if (samePmoBundle(lock, backup.manifest)) {
+      verifyPmoBundle(backup);
+      return backup;
+    }
+  }
+  fail(
+    `mango pmo sync repairs the locked ${formatPmoIdentity(lock)}, but this CLI resolved `
+    + `${formatPmoIdentity(availableBaseline.manifest)} and no matching local backup exists. `
+    + `Use a project-local CLI with the locked @mango/pmo dependency or run mango pmo upgrade --to ${availableBaseline.manifest.packageVersion}.`,
+  );
+}
+
+function createPmoLock(manifest) {
+  return {
+    schemaVersion: 1,
+    packageName: manifest.packageName,
+    packageVersion: manifest.packageVersion,
+    bundleSha256: manifest.bundleSha256,
+    sourceCommit: manifest.sourceCommit,
+    manifestSchemaVersion: manifest.schemaVersion,
+    contracts: (manifest.contracts || []).map(contract => ({
+      contractId: contract.contractId,
+      schemaRevision: contract.schemaRevision,
+    })),
+  };
+}
+
+function readPmoLock(targetDir, { strict = true } = {}) {
+  const path = join(targetDir, PMO_LOCK_RELATIVE_PATH);
+  if (!existsSync(path)) {
+    return null;
+  }
+  try {
+    const lock = JSON.parse(readFileSync(path, 'utf8'));
+    if (lock.schemaVersion !== 1
+      || lock.packageName !== '@mango/pmo'
+      || typeof lock.packageVersion !== 'string'
+      || !isSha256(lock.bundleSha256)
+      || !Array.isArray(lock.contracts)) {
+      throw new Error(`invalid PMO project lock: ${PMO_LOCK_RELATIVE_PATH}`);
+    }
+    return lock;
+  } catch (error) {
+    if (strict) {
+      throw error;
+    }
+    return null;
+  }
+}
+
+function loadInstalledPmoBaseline(targetDir) {
+  const root = join(targetDir, PMO_BASELINE_RELATIVE_PATH);
+  const manifestPath = join(root, 'baseline.json');
+  if (!existsSync(manifestPath)) {
+    return null;
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch (error) {
+    throw new Error(`cannot parse installed PMO manifest: ${error.message}`);
+  }
+  validatePmoManifest(manifest);
+  return { root, manifest };
+}
+
+function verifyPmoBundle(baseline) {
+  validatePmoManifest(baseline.manifest);
+  const comparison = comparePmoBaselineFiles(baseline.root, baseline.manifest);
+  if (comparison.missing.length > 0 || comparison.changed.length > 0 || comparison.extra.length > 0) {
+    throw new Error(
+      `invalid ${formatPmoIdentity(baseline.manifest)} package bundle; `
+      + `missing=${comparison.missing.join(',') || '-'} changed=${comparison.changed.join(',') || '-'} extra=${comparison.extra.join(',') || '-'}`,
+    );
+  }
+}
+
+function validatePmoManifest(manifest) {
+  if (manifest.packageName !== '@mango/pmo' || typeof manifest.packageVersion !== 'string') {
+    throw new Error('invalid @mango/pmo manifest package identity');
+  }
+  if (manifest.schemaVersion !== 2) {
+    throw new Error(`unsupported @mango/pmo manifest schemaVersion: ${manifest.schemaVersion}`);
+  }
+  if (typeof manifest.sourceCommit !== 'string' || !/^[0-9a-f]{40}$/i.test(manifest.sourceCommit)) {
+    throw new Error('invalid @mango/pmo manifest sourceCommit');
+  }
+  if (!isSha256(manifest.bundleSha256) || !Array.isArray(manifest.files) || !Array.isArray(manifest.contracts)) {
+    throw new Error('invalid @mango/pmo bundle manifest');
+  }
+  if (manifest.plugin !== null && manifest.plugin !== undefined) {
+    if (manifest.plugin.path !== 'package-root'
+      || !isSha256(manifest.plugin.sha256)
+      || !Array.isArray(manifest.plugin.files)) {
+      throw new Error('invalid @mango/pmo plugin projection descriptor');
+    }
+    const pluginPaths = new Set();
+    for (const file of manifest.plugin.files) {
+      if (!isSafePmoPath(file.path)
+        || pluginPaths.has(file.path)
+        || !isSha256(file.sha256)
+        || !Number.isInteger(file.size)
+        || !['0644', '0755'].includes(file.mode)
+        || file.kind !== 'plugin') {
+        throw new Error(`invalid @mango/pmo plugin projection file: ${file.path}`);
+      }
+      pluginPaths.add(file.path);
+    }
+    const pluginSha = createHash('sha256').update(JSON.stringify(manifest.plugin.files)).digest('hex');
+    if (pluginSha !== manifest.plugin.sha256) {
+      throw new Error('@mango/pmo plugin projection hash mismatch');
+    }
+  }
+
+  const paths = new Set();
+  const filesByPath = new Map();
+  for (const file of manifest.files) {
+    if (!isSafePmoPath(file.path) || paths.has(file.path)) {
+      throw new Error(`invalid or duplicate @mango/pmo manifest path: ${file.path}`);
+    }
+    paths.add(file.path);
+    filesByPath.set(file.path, file);
+    if (!isSha256(file.sha256)
+      || !Number.isInteger(file.size)
+      || file.size < 0
+      || !['0644', '0755'].includes(file.mode)
+      || !['agent', 'rule', 'template', 'contract', 'tool', 'skill', 'documentation', 'asset'].includes(file.kind)) {
+      throw new Error(`invalid @mango/pmo manifest file descriptor: ${file.path}`);
+    }
+  }
+  const contractIds = new Set();
+  for (const contract of manifest.contracts) {
+    if (!contract.contractId
+      || contractIds.has(contract.contractId)
+      || !Number.isInteger(contract.schemaRevision)
+      || contract.schemaRevision < 1
+      || filesByPath.get(contract.path)?.kind !== 'contract') {
+      throw new Error(`invalid @mango/pmo contract descriptor: ${contract.contractId || '<missing>'}`);
+    }
+    contractIds.add(contract.contractId);
+  }
+  const actualBundleSha = createHash('sha256')
+    .update(JSON.stringify({ files: manifest.files, contracts: manifest.contracts, plugin: manifest.plugin ?? null }))
+    .digest('hex');
+  if (actualBundleSha !== manifest.bundleSha256) {
+    throw new Error(`@mango/pmo bundle hash mismatch: ${manifest.bundleSha256}`);
+  }
+}
+
+function checkPmoLockMatchesManifest(lock, manifest, failures) {
+  if (!samePmoBundle(lock, manifest)) {
+    failures.push(
+      `project PMO lock ${formatPmoIdentity(lock)} does not match installed ${formatPmoIdentity(manifest)}`,
+    );
+  }
+  const expectedContracts = JSON.stringify(createPmoLock(manifest).contracts);
+  if (JSON.stringify(lock.contracts) !== expectedContracts) {
+    failures.push('project PMO lock contract revisions do not match the installed manifest');
+  }
+  if (lock.sourceCommit !== manifest.sourceCommit || lock.manifestSchemaVersion !== manifest.schemaVersion) {
+    failures.push('project PMO lock source or manifest schema does not match the installed manifest');
+  }
+}
+
+function samePmoBundle(left, right) {
+  return left?.packageName === right?.packageName
+    && left?.packageVersion === right?.packageVersion
+    && left?.bundleSha256 === right?.bundleSha256;
+}
+
+function emptyPmoBaseline(root) {
+  return {
+    root,
+    manifest: {
+      packageName: '@mango/pmo',
+      packageVersion: '<missing>',
+      bundleSha256: '',
+      files: [],
+      contracts: [],
+    },
+  };
+}
+
+function formatPmoIdentity(value) {
+  const hash = value?.bundleSha256 ? `#${value.bundleSha256.slice(0, 12)}` : '';
+  return `${value?.packageName || '@mango/pmo'}@${value?.packageVersion || '<missing>'}${hash}`;
+}
+
+function formatPmoStatusProblems(status) {
+  return [...status.errors.map(value => `error ${value}`), ...status.warnings.map(value => `warn ${value}`)].join('\n');
+}
+
+function isSha256(value) {
+  return typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value);
+}
+
+function isSafePmoPath(path) {
+  return typeof path === 'string'
+    && path.length > 0
+    && !path.startsWith('/')
+    && !path.includes('\\')
+    && path.split('/').every(segment => segment && segment !== '.' && segment !== '..');
+}
+
+function planPmoSkillSync(targetDir, baseline) {
+  const plan = [];
+  const projection = createPmoSkillProjection(baseline.manifest);
+  for (const file of projection.files) {
+    const sourceFile = join(baseline.root, `skills/${file.path}`);
+    const targetRelative = `.agents/skills/${file.path}`;
+    plan.push({
+      ...buildFilePlanItem(targetRelative, join(targetDir, targetRelative), readFileSync(sourceFile)),
+      scope: 'pmo-bundle',
+    });
+  }
+  plan.push({ ...buildFilePlanItem(
+    PMO_SKILL_STATE_RELATIVE_PATH,
+    join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH),
+    `${JSON.stringify(projection, null, 2)}\n`,
+  ), scope: 'pmo-bundle' });
+
+  const currentState = resolvePreviousPmoSkillOwnership(targetDir, { strict: false });
+  const expectedFiles = new Set(projection.files.map(file => file.path));
+  for (const root of currentState?.roots || []) {
+    const rootPath = join(targetDir, '.agents/skills', root);
+    if (!existsSync(rootPath)) {
+      continue;
+    }
+    for (const file of walkPmoFiles(rootPath)) {
+      const relativePath = toPosix(relative(join(targetDir, '.agents/skills'), file));
+      if (!expectedFiles.has(relativePath)) {
+        plan.push({
+          action: 'delete',
+          path: `.agents/skills/${relativePath}`,
+          targetPath: file,
+          scope: 'pmo-bundle',
+        });
+      }
+    }
+  }
+  return plan;
+}
+
+function createPmoSkillProjection(manifest) {
+  const files = (manifest.files || [])
+    .filter(file => file.kind === 'skill' && file.path.startsWith('skills/'))
+    .map(file => ({
+      path: file.path.slice('skills/'.length),
+      sha256: file.sha256,
+      size: file.size,
+      mode: file.mode,
+    }))
+    .sort((left, right) => left.path.localeCompare(right.path));
+  for (const file of files) {
+    if (!isSafePmoPath(file.path) || !file.path.includes('/')) {
+      throw new Error(`invalid project PMO skill projection path: ${file.path}`);
+    }
+  }
+  const roots = [...new Set(files.map(file => file.path.split('/')[0]))].sort();
+  return {
+    schemaVersion: 1,
+    packageName: manifest.packageName,
+    packageVersion: manifest.packageVersion,
+    bundleSha256: manifest.bundleSha256,
+    roots,
+    files,
+  };
+}
+
+function readPmoSkillState(targetDir, { strict = true } = {}) {
+  const path = join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH);
+  if (!existsSync(path)) {
+    return null;
+  }
+  try {
+    const state = JSON.parse(readFileSync(path, 'utf8'));
+    if (state.schemaVersion !== 1
+      || state.packageName !== '@mango/pmo'
+      || !Array.isArray(state.roots)
+      || !Array.isArray(state.files)
+      || !isSha256(state.bundleSha256)) {
+      throw new Error(`invalid project PMO skill state: ${PMO_SKILL_STATE_RELATIVE_PATH}`);
+    }
+    for (const root of state.roots) {
+      if (!isSafePmoPath(root) || root.includes('/')) {
+        throw new Error(`invalid managed PMO skill root: ${root}`);
+      }
+    }
+    return state;
+  } catch (error) {
+    if (strict) {
+      throw error;
+    }
+    return null;
+  }
+}
+
+function resolvePreviousPmoSkillOwnership(targetDir, { strict = true, trustedManifest = null } = {}) {
+  const lockExists = existsSync(join(targetDir, PMO_LOCK_RELATIVE_PATH));
+  const stateExists = existsSync(join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH));
+  if (!lockExists && !stateExists) {
+    return null;
+  }
+  try {
+    const installed = loadInstalledPmoBaseline(targetDir);
+    const lock = readPmoLock(targetDir, { strict: false });
+    if (!installed) {
+      throw new Error('cannot establish PMO skill ownership because the installed manifest is missing');
+    }
+    const projection = createPmoSkillProjection(installed.manifest);
+    if (lock && samePmoBundle(lock, installed.manifest)) {
+      return projection;
+    }
+    if (trustedManifest && samePmoBundle(trustedManifest, installed.manifest)) {
+      return projection;
+    }
+    throw new Error('cannot establish PMO skill ownership from the project lock or trusted target bundle');
+  } catch (error) {
+    if (strict) {
+      throw error;
+    }
+    return null;
+  }
+}
+
+function comparePmoSkillProjection(targetDir, manifest) {
+  const projection = createPmoSkillProjection(manifest);
+  const skillRoot = join(targetDir, '.agents/skills');
+  const state = readPmoSkillState(targetDir, { strict: false });
+  const missing = [];
+  const changed = [];
+  const extra = [];
+
+  if (!state) {
+    missing.push(PMO_SKILL_STATE_RELATIVE_PATH);
+  } else if (!samePmoBundle(state, manifest)
+    || JSON.stringify(state.roots) !== JSON.stringify(projection.roots)
+    || JSON.stringify(state.files) !== JSON.stringify(projection.files)) {
+    changed.push(PMO_SKILL_STATE_RELATIVE_PATH);
+  }
+
+  const expected = new Map(projection.files.map(file => [file.path, file]));
+  for (const [relativePath, file] of expected) {
+    const path = join(skillRoot, relativePath);
+    if (!existsSync(path)) {
+      missing.push(`.agents/skills/${relativePath}`);
+      continue;
+    }
+    const content = readFileSync(path);
+    const actualMode = process.platform === 'win32'
+      ? file.mode
+      : (statSync(path).mode & 0o111 ? '0755' : '0644');
+    if (content.length !== file.size
+      || createHash('sha256').update(content).digest('hex') !== file.sha256
+      || actualMode !== file.mode) {
+      changed.push(`.agents/skills/${relativePath}`);
+    }
+  }
+
+  for (const root of projection.roots) {
+    const rootPath = join(skillRoot, root);
+    for (const file of walkPmoFiles(rootPath)) {
+      const relativePath = toPosix(relative(skillRoot, file));
+      if (!expected.has(relativePath)) {
+        extra.push(`.agents/skills/${relativePath}`);
+      }
+    }
+  }
+  return {
+    missing,
+    changed,
+    extra,
+    expectedFiles: projection.files.length,
+    expectedRoots: projection.roots.length,
+  };
+}
+
+function installPmoBundleAtomic(targetDir, baseline) {
+  verifyPmoBundle(baseline);
+  const projection = createPmoSkillProjection(baseline.manifest);
+  const previousSkillState = resolvePreviousPmoSkillOwnership(targetDir, {
+    strict: true,
+    trustedManifest: baseline.manifest,
+  });
+  const liveBaseline = join(targetDir, PMO_BASELINE_RELATIVE_PATH);
+  const liveLock = join(targetDir, PMO_LOCK_RELATIVE_PATH);
+  const liveSkillRoot = join(targetDir, '.agents/skills');
+  const liveSkillState = join(targetDir, PMO_SKILL_STATE_RELATIVE_PATH);
+
+  for (const root of projection.roots) {
+    const rootPath = join(liveSkillRoot, root);
+    if (existsSync(rootPath) && !previousSkillState?.roots?.includes(root)) {
+      throw new Error(
+        `cannot install PMO skill ${root}: .agents/skills/${root} exists but is not owned by the current PMO bundle`,
+      );
+    }
+  }
+
+  const transactionId = `${Date.now()}-${randomBytes(4).toString('hex')}`;
+  const runtimeRoot = join(targetDir, PMO_RUNTIME_RELATIVE_PATH);
+  const transactionRoot = join(runtimeRoot, 'transactions', transactionId);
+  const stagedBaseline = join(transactionRoot, 'baseline');
+  const stagedSkills = join(transactionRoot, 'skills');
+  const stagedSkillState = join(transactionRoot, 'skill-state.json');
+  const stagedLock = join(transactionRoot, 'pmo-lock.json');
+  const backupRoot = join(runtimeRoot, 'backups', transactionId);
+  const backupBaseline = join(backupRoot, 'baseline');
+  const backupSkills = join(backupRoot, 'skills');
+  const backupSkillState = join(backupRoot, 'skill-state.json');
+  const backupLock = join(backupRoot, 'pmo-lock.json');
+
+  preparePmoTransaction({
+    baseline,
+    projection,
+    stagedBaseline,
+    stagedSkills,
+    stagedSkillState,
+    stagedLock,
+  });
+  mkdirSync(backupRoot, { recursive: true });
+
+  let movedBaseline = false;
+  let movedLock = false;
+  let movedSkillState = false;
+  const movedSkillRoots = [];
+  let installedBaseline = false;
+  let newLockInstalled = false;
+  let installedSkillState = false;
+  const installedSkillRoots = [];
+  try {
+    if (existsSync(liveBaseline)) {
+      mkdirSync(dirname(backupBaseline), { recursive: true });
+      renameSync(liveBaseline, backupBaseline);
+      movedBaseline = true;
+    }
+    if (existsSync(liveLock)) {
+      renameSync(liveLock, backupLock);
+      movedLock = true;
+    }
+    if (existsSync(liveSkillState)) {
+      renameSync(liveSkillState, backupSkillState);
+      movedSkillState = true;
+    }
+    for (const root of previousSkillState?.roots || []) {
+      const source = join(liveSkillRoot, root);
+      if (!existsSync(source)) {
+        continue;
+      }
+      const target = join(backupSkills, root);
+      mkdirSync(dirname(target), { recursive: true });
+      renameSync(source, target);
+      movedSkillRoots.push(root);
+    }
+
+    mkdirSync(dirname(liveBaseline), { recursive: true });
+    renameSync(stagedBaseline, liveBaseline);
+    installedBaseline = true;
+    mkdirSync(liveSkillRoot, { recursive: true });
+    for (const root of projection.roots) {
+      renameSync(join(stagedSkills, root), join(liveSkillRoot, root));
+      installedSkillRoots.push(root);
+    }
+    renameSync(stagedSkillState, liveSkillState);
+    installedSkillState = true;
+    mkdirSync(dirname(liveLock), { recursive: true });
+    renameSync(stagedLock, liveLock);
+    newLockInstalled = true;
+
+    const installed = loadInstalledPmoBaseline(targetDir);
+    verifyPmoBundle(installed);
+    const verifiedLock = readPmoLock(targetDir);
+    const failures = [];
+    checkPmoLockMatchesManifest(verifiedLock, installed.manifest, failures);
+    const skills = comparePmoSkillProjection(targetDir, installed.manifest);
+    if (skills.missing.length > 0 || skills.changed.length > 0 || skills.extra.length > 0) {
+      failures.push(
+        `project PMO skill projection mismatch; missing=${skills.missing.join(',') || '-'} changed=${skills.changed.join(',') || '-'} extra=${skills.extra.join(',') || '-'}`,
+      );
+    }
+    if (failures.length > 0) {
+      throw new Error(failures.join('\n'));
+    }
+  } catch (error) {
+    const recoveryFailures = [];
+    if (installedBaseline) {
+      attemptPmoRecovery(() => rmSync(liveBaseline, { recursive: true, force: true }), 'remove failed baseline', recoveryFailures);
+    }
+    if (movedBaseline && existsSync(backupBaseline)) {
+      attemptPmoRecovery(() => {
+        mkdirSync(dirname(liveBaseline), { recursive: true });
+        renameSync(backupBaseline, liveBaseline);
+      }, 'restore previous baseline', recoveryFailures);
+    }
+    if (newLockInstalled) {
+      attemptPmoRecovery(() => rmSync(liveLock, { force: true }), 'remove failed PMO lock', recoveryFailures);
+    }
+    if (movedLock && existsSync(backupLock)) {
+      attemptPmoRecovery(() => {
+        mkdirSync(dirname(liveLock), { recursive: true });
+        renameSync(backupLock, liveLock);
+      }, 'restore previous PMO lock', recoveryFailures);
+    }
+    for (const root of installedSkillRoots) {
+      attemptPmoRecovery(
+        () => rmSync(join(liveSkillRoot, root), { recursive: true, force: true }),
+        `remove failed PMO skill ${root}`,
+        recoveryFailures,
+      );
+    }
+    for (const root of movedSkillRoots) {
+      const source = join(backupSkills, root);
+      if (existsSync(source)) {
+        attemptPmoRecovery(() => {
+          mkdirSync(liveSkillRoot, { recursive: true });
+          renameSync(source, join(liveSkillRoot, root));
+        }, `restore previous PMO skill ${root}`, recoveryFailures);
+      }
+    }
+    if (installedSkillState) {
+      attemptPmoRecovery(() => rmSync(liveSkillState, { force: true }), 'remove failed PMO skill state', recoveryFailures);
+    }
+    if (movedSkillState && existsSync(backupSkillState)) {
+      attemptPmoRecovery(() => {
+        mkdirSync(dirname(liveSkillState), { recursive: true });
+        renameSync(backupSkillState, liveSkillState);
+      }, 'restore previous PMO skill state', recoveryFailures);
+    }
+    attemptPmoRecovery(() => rmSync(transactionRoot, { recursive: true, force: true }), 'clean PMO transaction staging', recoveryFailures);
+    if (existsSync(backupRoot) && walkPmoFiles(backupRoot).length === 0) {
+      attemptPmoRecovery(() => rmSync(backupRoot, { recursive: true, force: true }), 'clean empty PMO backup', recoveryFailures);
+    }
+    const recovery = recoveryFailures.length === 0
+      ? 'previous project bundle restored'
+      : `recovery incomplete: ${recoveryFailures.join('; ')}`;
+    throw new Error(`PMO bundle transaction failed (${recovery}): ${error.message}`);
+  }
+
+  rmSync(transactionRoot, { recursive: true, force: true });
+  if (!movedBaseline && !movedLock && movedSkillRoots.length === 0 && !movedSkillState) {
+    rmSync(backupRoot, { recursive: true, force: true });
+  }
+  prunePmoBackupDirectories(targetDir, 5);
+}
+
+function attemptPmoRecovery(action, label, failures) {
+  try {
+    action();
+  } catch (error) {
+    failures.push(`${label}: ${error.message}`);
+  }
+}
+
+function preparePmoTransaction({
+  baseline,
+  projection,
+  stagedBaseline,
+  stagedSkills,
+  stagedSkillState,
+  stagedLock,
+}) {
+  mkdirSync(stagedBaseline, { recursive: true });
+  for (const file of baseline.manifest.files) {
+    copyPmoFile(join(baseline.root, file.path), join(stagedBaseline, file.path), file.mode);
+  }
+  writeFileSync(join(stagedBaseline, 'baseline.json'), `${JSON.stringify(baseline.manifest, null, 2)}\n`);
+  verifyPmoBundle({ root: stagedBaseline, manifest: baseline.manifest });
+
+  mkdirSync(stagedSkills, { recursive: true });
+  for (const file of projection.files) {
+    copyPmoFile(
+      join(baseline.root, 'skills', file.path),
+      join(stagedSkills, file.path),
+      file.mode,
+    );
+  }
+  writeFileSync(stagedSkillState, `${JSON.stringify(projection, null, 2)}\n`);
+  writeFileSync(stagedLock, `${JSON.stringify(createPmoLock(baseline.manifest), null, 2)}\n`);
+}
+
+function copyPmoFile(source, target, mode) {
+  mkdirSync(dirname(target), { recursive: true });
+  copyFileSync(source, target);
+  chmodSync(target, mode === '0755' ? 0o755 : 0o644);
+}
+
+function rollbackPmoBaseline(argv) {
+  const options = parsePmoArgs(argv);
+  const targetDir = resolve(process.cwd(), options.projectDir);
+  if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
+    fail(`project directory not found: ${targetDir}`);
+  }
+  const backups = listPmoBackups(targetDir)
+    .filter(backup => !options.to || backup.manifest.packageVersion === options.to);
+  if (backups.length === 0) {
+    fail(
+      options.to
+        ? `no PMO backup found for @mango/pmo@${options.to}`
+        : 'no PMO backup is available for rollback',
+    );
+  }
+  const selected = backups[0];
+  process.stdout.write(
+    `PMO rollback ${options.dryRun ? 'dry-run ' : ''}target: ${formatPmoIdentity(selected.manifest)}\n`,
+  );
+  if (options.dryRun) {
+    return;
+  }
+  installPmoBundleAtomic(targetDir, selected);
+  const status = getPmoStatus(targetDir, { locked: true });
+  if (status.errors.length > 0 || status.warnings.length > 0) {
+    fail(`PMO rollback verification failed:\n${formatPmoStatusProblems(status)}`);
+  }
+  process.stdout.write(`PMO rollback complete: ${formatPmoIdentity(selected.manifest)}\n`);
+}
+
+function listPmoBackups(targetDir) {
+  const root = join(targetDir, PMO_RUNTIME_RELATIVE_PATH, 'backups');
+  if (!existsSync(root)) {
+    return [];
+  }
+  const backups = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const backupRoot = join(root, entry.name);
+    const baselineRoot = join(backupRoot, 'baseline');
+    const manifestPath = join(baselineRoot, 'baseline.json');
+    const lockPath = join(backupRoot, 'pmo-lock.json');
+    if (!existsSync(manifestPath) || !existsSync(lockPath)) {
+      continue;
+    }
+    try {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      const lock = JSON.parse(readFileSync(lockPath, 'utf8'));
+      validatePmoManifest(manifest);
+      if (!samePmoBundle(lock, manifest)) {
+        continue;
+      }
+      const backup = { root: baselineRoot, manifest, backupRoot, name: entry.name };
+      verifyPmoBundle(backup);
+      backups.push(backup);
+    } catch {
+      // Incomplete transactions are ignored and never selected for repair or rollback.
+    }
+  }
+  return backups.sort((left, right) => right.name.localeCompare(left.name));
+}
+
+function prunePmoBackupDirectories(targetDir, keep) {
+  const root = join(targetDir, PMO_RUNTIME_RELATIVE_PATH, 'backups');
+  if (!existsSync(root)) {
+    return;
+  }
+  const directories = readdirSync(root, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name)
+    .sort((left, right) => right.localeCompare(left));
+  for (const directory of directories.slice(keep)) {
+    rmSync(join(root, directory), { recursive: true, force: true });
+  }
+}
+
+function walkPmoFiles(root) {
+  if (!existsSync(root)) {
+    return [];
+  }
+  const files = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const path = join(root, entry.name);
+    if (entry.isSymbolicLink()) {
+      throw new Error(`symbolic links are not allowed in PMO managed directories: ${path}`);
+    }
+    if (entry.isDirectory()) {
+      files.push(...walkPmoFiles(path));
+    } else if (entry.isFile()) {
+      files.push(path);
+    } else {
+      throw new Error(`unsupported entry in PMO managed directory: ${path}`);
+    }
+  }
+  return files;
 }
 
 function planShellSync(targetDir, variables, syncShell) {
@@ -3195,13 +4062,15 @@ function summarizeSyncPlan(plan) {
   return plan.reduce((summary, item) => {
     summary[item.action] = (summary[item.action] || 0) + 1;
     return summary;
-  }, { add: 0, update: 0, skip: 0, warn: 0 });
+  }, { add: 0, update: 0, delete: 0, skip: 0, warn: 0 });
 }
 
 function printPmoSyncPlan(targetDir, plan, dryRun, command = 'sync') {
   const summary = summarizeSyncPlan(plan);
   process.stdout.write(`${dryRun ? 'PMO baseline dry-run plan' : `PMO baseline ${command} plan`} for ${relativeOrAbsolute(process.cwd(), targetDir)}\n`);
-  process.stdout.write(`  add: ${summary.add}, update: ${summary.update}, skip: ${summary.skip}, warn: ${summary.warn}\n`);
+  process.stdout.write(
+    `  add: ${summary.add}, update: ${summary.update}, delete: ${summary.delete}, skip: ${summary.skip}, warn: ${summary.warn}\n`,
+  );
   for (const item of plan) {
     const reason = item.reason ? ` (${item.reason})` : '';
     process.stdout.write(`  ${item.action.padEnd(6)} ${item.path}${reason}\n`);

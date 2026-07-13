@@ -1,18 +1,22 @@
 {
   "name": "@mango/pmo",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "private": false,
   "type": "module",
-  "description": "Versioned Mango PMO baseline for business projects.",
+  "description": "Versioned Mango PMO baseline, document contracts, and lifecycle skills.",
   "files": [
     "dist",
+    ".codex-plugin",
+    "skills",
     "README.md",
     "package.json"
   ],
   "exports": {
     ".": "./dist/baseline.json",
     "./baseline.json": "./dist/baseline.json",
-    "./baseline/*": "./dist/baseline/*"
+    "./baseline/*": "./dist/baseline/*",
+    "./plugin.json": "./.codex-plugin/plugin.json",
+    "./skills/*": "./skills/*"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"

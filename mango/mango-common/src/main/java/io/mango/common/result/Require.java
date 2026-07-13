@@ -11,8 +11,7 @@ public final class Require {
 
     private static final BizCode DEFAULT_BIZ_CODE = CommonCode.BAD_REQUEST;
 
-    private Require() {
-    }
+    private Require() {}
 
     // ==================== Object 断言 ====================
 
@@ -155,6 +154,16 @@ public final class Require {
     }
 
     /**
+     * 断言字符串非空。
+     *
+     * @param str 待校验字符串。
+     * @param bizCode 失败错误码。
+     */
+    public static void notEmpty(String str, BizCode bizCode) {
+        failWhen(str == null || str.isEmpty(), bizCode, bizCode.getMessage());
+    }
+
+    /**
      * 断言字符串非空白。
      *
      * @param str 待校验字符串。
@@ -231,6 +240,16 @@ public final class Require {
     }
 
     /**
+     * 断言数值大于 0。
+     *
+     * @param number 待校验值。
+     * @param bizCode 失败错误码。
+     */
+    public static void positive(long number, BizCode bizCode) {
+        failWhen(number <= 0, bizCode, bizCode.getMessage());
+    }
+
+    /**
      * 断言数值大于等于 0。
      *
      * @param number 待校验值。
@@ -238,6 +257,16 @@ public final class Require {
      */
     public static void nonNegative(long number, String message) {
         failWhen(number < 0, DEFAULT_BIZ_CODE, message);
+    }
+
+    /**
+     * 断言数值大于等于 0。
+     *
+     * @param number 待校验值。
+     * @param bizCode 失败错误码。
+     */
+    public static void nonNegative(long number, BizCode bizCode) {
+        failWhen(number < 0, bizCode, bizCode.getMessage());
     }
 
     /**
@@ -250,6 +279,18 @@ public final class Require {
      */
     public static void inRange(long value, long min, long max, String message) {
         failWhen(value < min || value > max, DEFAULT_BIZ_CODE, message);
+    }
+
+    /**
+     * 断言数值在闭区间内。
+     *
+     * @param value 待校验值。
+     * @param min 最小值。
+     * @param max 最大值。
+     * @param bizCode 失败错误码。
+     */
+    public static void inRange(long value, long min, long max, BizCode bizCode) {
+        failWhen(value < min || value > max, bizCode, bizCode.getMessage());
     }
 
     // ==================== Failure ====================

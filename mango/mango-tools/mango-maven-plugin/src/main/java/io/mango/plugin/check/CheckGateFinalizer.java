@@ -1,6 +1,7 @@
 package io.mango.plugin.check;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.IOException;
@@ -12,7 +13,10 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class CheckGateFinalizer {
     private static final String GATE_ALL = "all";
@@ -28,19 +32,22 @@ class CheckGateFinalizer {
     private static final String CURRENT_DIR_PREFIX = "./";
     private static final String CHANGED_FILE_SEPARATOR = ",";
     private static final String LINE_SEPARATOR_PATTERN = "\\R";
+    private static final String SOURCE_CHECKSTYLE = "checkstyle";
     private static final Set<String> FILE_LEVEL_COUNT_RULES = Set.of("filelengthcheck");
+    private static final Pattern CHECKSTYLE_IDENTITY_TOKEN_PATTERN =
+            Pattern.compile("'([^']*)'|\\b\\d[\\d,_]*(?:\\.\\d+)?[a-zA-Z]?\\b");
     private static final Set<String> NON_WAIVABLE_CHANGED_RULES = Set.of("MODULE_INFO");
-    private static final Set<String> REPOSITORY_ROOT_SEGMENTS = Set.of(
-            "mango-parent",
-            "mango-common",
-            "mango-tools",
-            "mango-infra",
-            "mango-platform",
-            "mango-admin-starter",
-            "mango-app",
-            "mango-extension");
-    private static final Consumer<String> NO_WARNING_SINK = warning -> {
-    };
+    private static final Set<String> REPOSITORY_ROOT_SEGMENTS =
+            Set.of(
+                    "mango-parent",
+                    "mango-common",
+                    "mango-tools",
+                    "mango-infra",
+                    "mango-platform",
+                    "mango-admin-starter",
+                    "mango-app",
+                    "mango-extension");
+    private static final Consumer<String> NO_WARNING_SINK = warning -> {};
 
     private final ObjectMapper objectMapper;
     private final CheckGateOptions options;
@@ -50,7 +57,8 @@ class CheckGateFinalizer {
         this(objectMapper, options, NO_WARNING_SINK);
     }
 
-    CheckGateFinalizer(ObjectMapper objectMapper, CheckGateOptions options, Consumer<String> warningSink) {
+    CheckGateFinalizer(
+            ObjectMapper objectMapper, CheckGateOptions options, Consumer<String> warningSink) {
         this.objectMapper = objectMapper;
         this.options = options;
         this.warningSink = warningSink;
@@ -84,10 +92,15 @@ class CheckGateFinalizer {
     }
 
     private void finalizeNoNewViolations(CheckResult result) throws MojoExecutionException {
+        if (options.changedOnly() && !hasChangedFileSource()) {
+            throw new MojoExecutionException(
+                    "mango.check.changedOnly=true requires -Dmango.check.changedFiles or"
+                            + " -Dmango.check.baseRef with a resolvable baseDir");
+        }
         Set<String> changedFileSet = resolveChangedFiles(result);
         result.changedFiles.addAll(changedFileSet);
         Map<String, Integer> baselineFingerprints = loadBaselineFingerprints(result);
-        boolean hasBaseline = !baselineFingerprints.isEmpty();
+        boolean hasBaseline = hasConfiguredBaseline();
         for (CheckIssue issue : result.issues) {
             issue.fingerprint = fingerprint(issue);
             issue.inChangedFiles = isChangedIssue(issue, changedFileSet);
@@ -105,38 +118,58 @@ class CheckGateFinalizer {
         if (!hasBaseline && changedFileSet.isEmpty()) {
             result.gateStatus = STATUS_INCONCLUSIVE;
             result.passed = false;
-            result.addGateMessage("no-new-violations gate requires changed files; set "
-                    + "-Dmango.check.changedFiles, -Dmango.check.baseRef or -Dmango.check.baselineFile");
+            result.addGateMessage(
+                    "no-new-violations gate requires changed files; set -Dmango.check.changedFiles,"
+                            + " -Dmango.check.baseRef or -Dmango.check.baselineFile");
         }
         applyToolFailureMessages(result);
+    }
+
+    private boolean hasChangedFileSource() {
+        if (options.changedFiles() != null && !options.changedFiles().isBlank()) {
+            return true;
+        }
+        return options.basePath() != null
+                && options.baseRef() != null
+                && !options.baseRef().isBlank();
+    }
+
+    private boolean hasConfiguredBaseline() {
+        return options.baselineFile() != null && !options.baselineFile().isBlank();
     }
 
     private boolean isNewIssue(CheckIssue issue, Set<String> changedFileSet, boolean hasBaseline) {
         if (issue.inChangedFiles && isNonWaivableChangedRule(issue)) {
             return true;
         }
+        if (hasBaseline && issue.baseline) {
+            return false;
+        }
+        if (options.changedOnly()) {
+            return issue.inChangedFiles;
+        }
         if (hasBaseline) {
-            if (issue.baseline) {
-                return false;
-            }
             return changedFileSet.isEmpty() || issue.inChangedFiles;
         }
         return issue.inChangedFiles;
     }
 
     private boolean isNonWaivableChangedRule(CheckIssue issue) {
-        return issue != null && issue.rule != null
+        return issue != null
+                && issue.rule != null
                 && NON_WAIVABLE_CHANGED_RULES.contains(issue.rule.toUpperCase(Locale.ROOT));
     }
 
-    private boolean consumeBaselineMatch(Map<String, Integer> baselineFingerprints, CheckIssue issue) {
+    private boolean consumeBaselineMatch(
+            Map<String, Integer> baselineFingerprints, CheckIssue issue) {
         if (consumeFingerprint(baselineFingerprints, issue.fingerprint)) {
             return true;
         }
         return consumeFingerprint(baselineFingerprints, stableFingerprint(issue));
     }
 
-    private boolean consumeFingerprint(Map<String, Integer> baselineFingerprints, String fingerprint) {
+    private boolean consumeFingerprint(
+            Map<String, Integer> baselineFingerprints, String fingerprint) {
         Integer count = baselineFingerprints.get(fingerprint);
         if (count == null || count <= 0) {
             return false;
@@ -204,7 +237,10 @@ class CheckGateFinalizer {
         if (POLICY_REPORT.equals(normalized) || POLICY_BLOCK.equals(normalized)) {
             return normalized;
         }
-        warningSink.accept("Unknown mango.check.staticFailurePolicy: " + staticFailurePolicy + "; fallback to block");
+        warningSink.accept(
+                "Unknown mango.check.staticFailurePolicy: "
+                        + staticFailurePolicy
+                        + "; fallback to block");
         return POLICY_BLOCK;
     }
 
@@ -228,7 +264,9 @@ class CheckGateFinalizer {
             if (baseRef != null && !baseRef.isBlank()) {
                 Set<String> actual = changedFilesFromGit(result, baseRef);
                 if (!declared.equals(actual)) {
-                    throw new MojoExecutionException("mango.check.changedFiles does not match trusted git diff from " + baseRef);
+                    throw new MojoExecutionException(
+                            "mango.check.changedFiles does not match trusted git diff from "
+                                    + baseRef);
                 }
             }
             return declared;
@@ -248,9 +286,11 @@ class CheckGateFinalizer {
         return files;
     }
 
-    private Set<String> changedFilesFromGit(CheckResult result, String baseRef) throws MojoExecutionException {
+    private Set<String> changedFilesFromGit(CheckResult result, String baseRef)
+            throws MojoExecutionException {
         LinkedHashSet<String> files = new LinkedHashSet<>();
-        ProcessBuilder processBuilder = new ProcessBuilder("git", "diff", "--name-only", baseRef.trim() + "...HEAD");
+        ProcessBuilder processBuilder =
+                new ProcessBuilder("git", "diff", "--name-only", baseRef.trim() + "...HEAD");
         processBuilder.directory(options.basePath().toFile());
         processBuilder.redirectErrorStream(true);
         try {
@@ -258,7 +298,8 @@ class CheckGateFinalizer {
             String output = new String(process.getInputStream().readAllBytes());
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                throw new MojoExecutionException("Failed to resolve changed files from " + baseRef + ": " + output.trim());
+                throw new MojoExecutionException(
+                        "Failed to resolve changed files from " + baseRef + ": " + output.trim());
             }
             for (String line : output.split(LINE_SEPARATOR_PATTERN)) {
                 addNormalizedFile(files, line);
@@ -268,7 +309,8 @@ class CheckGateFinalizer {
             throw new MojoExecutionException("Failed to resolve changed files from git diff", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new MojoExecutionException("Interrupted while resolving changed files from git diff", e);
+            throw new MojoExecutionException(
+                    "Interrupted while resolving changed files from git diff", e);
         }
     }
 
@@ -279,15 +321,16 @@ class CheckGateFinalizer {
         }
     }
 
-    private Map<String, Integer> loadBaselineFingerprints(CheckResult result) throws MojoExecutionException {
+    private Map<String, Integer> loadBaselineFingerprints(CheckResult result)
+            throws MojoExecutionException {
         LinkedHashMap<String, Integer> fingerprints = new LinkedHashMap<>();
         Path baselinePath = baselinePath();
         if (baselinePath == null) {
             return fingerprints;
         }
         if (!Files.exists(baselinePath)) {
-            result.addGateMessage("baseline file does not exist: " + baselinePath);
-            return fingerprints;
+            throw new MojoExecutionException(
+                    "Mango check baseline file does not exist: " + baselinePath);
         }
         try {
             CheckResult baseline = objectMapper.readValue(baselinePath.toFile(), CheckResult.class);
@@ -298,7 +341,8 @@ class CheckGateFinalizer {
             }
             return fingerprints;
         } catch (IOException e) {
-            throw new MojoExecutionException("Failed to read mango check baseline: " + baselinePath, e);
+            throw new MojoExecutionException(
+                    "Failed to read mango check baseline: " + baselinePath, e);
         }
     }
 
@@ -351,7 +395,8 @@ class CheckGateFinalizer {
     }
 
     private String fingerprint(CheckIssue issue) {
-        return String.join("|",
+        return String.join(
+                "|",
                 safeLower(issue.source),
                 safeLower(issue.rule),
                 normalizeIssueFile(issue.file),
@@ -360,7 +405,8 @@ class CheckGateFinalizer {
     }
 
     private String stableFingerprint(CheckIssue issue) {
-        return String.join("|",
+        return String.join(
+                "|",
                 safeLower(issue.source),
                 safeLower(issue.rule),
                 normalizeIssueFile(issue.file),
@@ -370,9 +416,25 @@ class CheckGateFinalizer {
     private String stableFingerprintText(CheckIssue issue) {
         String text = normalizeFingerprintText(issue.description);
         if (FILE_LEVEL_COUNT_RULES.contains(safeLower(issue.rule))) {
-            return text.replaceAll("\\d+", "#");
+            return "";
+        }
+        if (SOURCE_CHECKSTYLE.equals(safeLower(issue.source))) {
+            return localeIndependentCheckstyleTokens(text);
         }
         return text;
+    }
+
+    private String localeIndependentCheckstyleTokens(String text) {
+        Matcher matcher = CHECKSTYLE_IDENTITY_TOKEN_PATTERN.matcher(text);
+        Set<String> tokens = new TreeSet<>();
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                tokens.add("literal:" + matcher.group(1));
+            } else {
+                tokens.add("number:" + matcher.group().replace(",", "").replace("_", ""));
+            }
+        }
+        return String.join(",", tokens);
     }
 
     private String normalizeFingerprintText(String value) {

@@ -37,6 +37,14 @@
 
 模板默认生成的是一个业务聚合的 CRUD 管理页面，不是完整业务系统。
 
+`business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
+[文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
+
+```bash
+node mango-business-starter/scripts/sync-pmo-baseline.mjs --write
+node mango-business-starter/scripts/check-template.mjs
+```
+
 ## 5. 接入方式
 业务开发者通常不直接复制本目录，而是通过 CLI 使用：
 

@@ -1,6 +1,6 @@
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
@@ -22,6 +22,7 @@ try {
   assertNoBundledTemplatePmoBaseline();
   assertPublishedPnpmPmoResolution(tempRoot);
   assertNoWorkspacePackageJsonInTemplates();
+  assertQualityConfigsMatchPluginSources();
   assertPackagedAdminModules();
 
   const result = spawnSync(process.execPath, [
@@ -62,10 +63,20 @@ try {
     'scripts/backend-dev.sh',
     'backend/pom.xml',
     'backend/app/pom.xml',
+    'backend/architecture-verification/pom.xml',
+    'backend/config/quality/checkstyle.xml',
+    'backend/config/quality/pmd-p3c.xml',
     'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
     'backend/app/src/main/resources/application.yml',
+    '.github/CODEOWNERS',
+    '.github/workflows/pmo-doc-check.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+    'business-pmo/mango-baseline/tools/check-document-set.mjs',
     'business-pmo/mango-baseline/baseline.json',
+    'business-pmo/global-entity-exceptions.json',
+    'business-pmo/pmo-lock.json',
+    '.agents/skills/.mango-pmo.json',
+    '.agents/skills/mango-pmo-lifecycle/SKILL.md',
     'business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs',
     'business-pmo/mango-baseline/templates/acceptance-evidence.md',
     'topologies/monolith/README.md',
@@ -76,6 +87,17 @@ try {
     if (!existsSync(join(projectRoot, file))) {
       throw new Error(`missing generated file: ${file}`);
     }
+  }
+
+  const globalEntityManifest = JSON.parse(readFileSync(
+    join(projectRoot, 'business-pmo/global-entity-exceptions.json'),
+    'utf8',
+  ));
+  assertEqual(globalEntityManifest.contractId, 'global-entity-exceptions', 'global Entity contract id');
+  assertEqual(globalEntityManifest.schemaRevision, 1, 'global Entity schema revision');
+  assertEqual(globalEntityManifest.version, 1, 'global Entity manifest version');
+  if (!Array.isArray(globalEntityManifest.exceptions) || globalEntityManifest.exceptions.length !== 0) {
+    throw new Error('generated global Entity manifest must start with an empty exceptions array');
   }
 
   const config = JSON.parse(readFileSync(join(projectRoot, 'mango.config.json'), 'utf8'));
@@ -149,6 +171,9 @@ try {
 
   const pom = readFileSync(join(projectRoot, 'backend/pom.xml'), 'utf8');
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
+  const architecturePom = readFileSync(join(projectRoot, 'backend/architecture-verification/pom.xml'), 'utf8');
+  const pmoWorkflow = readFileSync(join(projectRoot, '.github/workflows/pmo-doc-check.yml'), 'utf8');
+  const codeowners = readFileSync(join(projectRoot, '.github/CODEOWNERS'), 'utf8');
   const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
   const devManifest = JSON.parse(readFileSync(join(projectRoot, 'mango.dev.json'), 'utf8'));
@@ -159,6 +184,105 @@ try {
   }
   if (!pom.includes(`<mango.version>${releaseVersions.maven.mangoBackend}</mango.version>`)) {
     throw new Error('generated backend parent pom must use the CLI-owned fixed Mango Maven version lock');
+  }
+  if (!pom.includes('<mango.architecture.mode>full</mango.architecture.mode>')
+    || !pom.includes('<mango.architecture.skip>false</mango.architecture.skip>')
+    || !pom.includes('<mango.architecture.requireFullReactor>true</mango.architecture.requireFullReactor>')
+    || !pom.includes('<mango.check.rule>all</mango.check.rule>')
+    || !pom.includes('<mango.check.baseDir>${maven.multiModuleProjectDirectory}</mango.check.baseDir>')
+    || !pom.includes('<mango.check.gate>all</mango.check.gate>')
+    || !pom.includes('<mango.check.staticFailurePolicy>block</mango.check.staticFailurePolicy>')
+    || !pom.includes('<module>architecture-verification</module>')
+    || pom.lastIndexOf('<module>architecture-verification</module>') < pom.lastIndexOf('<!-- mango-cli:business-modules:end -->')) {
+    throw new Error('generated backend parent pom must keep the fail-closed architecture verifier last');
+  }
+  for (const expected of [
+    '<artifactId>mango-maven-plugin</artifactId>',
+    '<version>${mango.version}</version>',
+    '<goal>architecture</goal>',
+    '<mode>${mango.architecture.mode}</mode>',
+    '<skip>${mango.architecture.skip}</skip>',
+    '<requireFullReactor>${mango.architecture.requireFullReactor}</requireFullReactor>',
+    '<lockFullReactor>true</lockFullReactor>',
+    '<lockFullMode>true</lockFullMode>',
+    '<globalEntityManifest>${maven.multiModuleProjectDirectory}/../business-pmo/global-entity-exceptions.json</globalEntityManifest>',
+    '<businessGroupPrefix>com.example</businessGroupPrefix>',
+    '<property>mango.architecture.skip</property>',
+    '<property>mango.architecture.mode</property>',
+    '<property>mango.architecture.requireFullReactor</property>',
+    '<goal>check</goal>',
+    '<rule>${mango.check.rule}</rule>',
+    '<baseDir>${mango.check.baseDir}</baseDir>',
+    '<gate>${mango.check.gate}</gate>',
+    '<staticFailurePolicy>${mango.check.staticFailurePolicy}</staticFailurePolicy>',
+    '<requireExecutionRoot>true</requireExecutionRoot>',
+    '<requiredRule>all</requiredRule>',
+    '<requiredGate>all</requiredGate>',
+    '<requireBlockingStaticFailures>true</requireBlockingStaticFailures>',
+    '<requireFullScope>true</requireFullScope>',
+    '<property>mango.check.gate</property>',
+    '<property>mango.check.staticFailurePolicy</property>',
+  ]) {
+    if (!architecturePom.includes(expected)) {
+      throw new Error(`generated architecture verification pom missing contract: ${expected}`);
+    }
+  }
+  if (architecturePom.includes('<excludedModules>')) {
+    throw new Error('generated architecture verification pom must not exclude reactor modules');
+  }
+  for (const expected of [
+    '<artifactId>maven-pmd-plugin</artifactId>',
+    '<version>3.16.0</version>',
+    '<ruleset>${maven.multiModuleProjectDirectory}/config/quality/pmd-p3c.xml</ruleset>',
+    '<artifactId>p3c-pmd</artifactId>',
+    '<artifactId>maven-checkstyle-plugin</artifactId>',
+    '<configLocation>${maven.multiModuleProjectDirectory}/config/quality/checkstyle.xml</configLocation>',
+    '<violationSeverity>warning</violationSeverity>',
+    '<artifactId>spotbugs-maven-plugin</artifactId>',
+    '<threshold>Medium</threshold>',
+    '<xmlOutput>true</xmlOutput>',
+    '<spotbugsXmlOutputFilename>spotbugsXml.xml</spotbugsXmlOutputFilename>',
+  ]) {
+    if (!pom.includes(expected)) {
+      throw new Error(`generated backend parent pom missing Java quality contract: ${expected}`);
+    }
+  }
+  for (const expected of [
+    'name: PMO Documentation Checks',
+    'pmo-doc-check:',
+    'actions/setup-node@v4',
+    'node business-pmo/mango-baseline/tools/check-document-set.mjs',
+    '--root business-docs',
+    'mvn -B -ntp -f backend/pom.xml',
+    '-Dmango.architecture.mode=full',
+    '-Dmango.architecture.skip=false',
+    '-Dmango.architecture.requireFullReactor=true',
+    '-Dmango.check.rule=all',
+    '-Dmango.check.gate=all',
+    '-Dmango.check.staticFailurePolicy=block',
+    '-Denforcer.skip=false',
+    'verify',
+  ]) {
+    if (!pmoWorkflow.includes(expected)) {
+      throw new Error(`generated PMO required-check workflow missing contract: ${expected}`);
+    }
+  }
+  if (/^\s+paths:/mu.test(pmoWorkflow)) {
+    throw new Error('generated PMO required-check workflow must run for every PR; paths filters can leave the required check pending');
+  }
+  for (const expected of [
+    '/backend/pom.xml @backend-team @tech-lead',
+    '/backend/architecture-verification/ @backend-team @tech-lead',
+    '/backend/config/quality/ @platform-team @tech-lead',
+    '/backend/.mvn/ @platform-team @tech-lead',
+    '/.mvn/ @platform-team @tech-lead',
+    '/.github/CODEOWNERS @platform-team @tech-lead @pmo',
+    '/.github/workflows/ @platform-team @tech-lead @pmo',
+    '/business-docs/ @pm @tech-lead @qa',
+  ]) {
+    if (!codeowners.includes(expected)) {
+      throw new Error(`generated CODEOWNERS does not protect the architecture gate: ${expected}`);
+    }
   }
   assertManagedDependency(pom, 'io.mango.platform.file', 'mango-file-api');
   assertManagedDependency(pom, 'io.mango.platform.file.preview', 'mango-file-preview-api');
@@ -518,10 +642,16 @@ try {
   }
   for (const file of [
     'backend/modules/contract/README.md',
+    'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/ContractApi.java',
     'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/command/UpdateSealCommand.java',
+    'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/enums/SealCode.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/entity/SealEntity.java',
     'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/mapper/SealMapper.java',
+    'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/ISealService.java',
+    'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/impl/SealService.java',
+    'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java',
     'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json',
+    'backend/modules/contract/contract-starter-remote/src/main/java/com/example/custom/contract/starter/remote/ContractFeignClient.java',
     'frontend/packages/contract-api/src/api.ts',
     'frontend/packages/contract/style.css',
     'frontend/packages/contract/src/index.ts',
@@ -556,6 +686,39 @@ try {
     || !modulePom.includes('<artifactId>swagger-annotations</artifactId>')) {
     throw new Error('module add did not provide business backend dependency management');
   }
+  const moduleApiPom = readFileSync(join(customRoot, 'backend/modules/contract/contract-api/pom.xml'), 'utf8');
+  for (const expected of [
+    '<artifactId>mango-common</artifactId>',
+    '<artifactId>swagger-annotations</artifactId>',
+    '<artifactId>mango-infra-persistence-api</artifactId>',
+    '<artifactId>jakarta.validation-api</artifactId>',
+  ]) {
+    if (!moduleApiPom.includes(expected)) {
+      throw new Error(`module add API POM missing contract dependency: ${expected}`);
+    }
+  }
+  for (const forbidden of [
+    '<artifactId>mango-infra-persistence-starter</artifactId>',
+    '<artifactId>spring-web</artifactId>',
+    '<artifactId>spring-boot-starter-web</artifactId>',
+  ]) {
+    if (moduleApiPom.includes(forbidden)) {
+      throw new Error(`module add API POM contains runtime dependency: ${forbidden}`);
+    }
+  }
+  const moduleCorePom = readFileSync(join(customRoot, 'backend/modules/contract/contract-core/pom.xml'), 'utf8');
+  for (const expected of [
+    '<artifactId>contract-api</artifactId>',
+    '<artifactId>mango-infra-persistence-api</artifactId>',
+    '<artifactId>spring-context</artifactId>',
+  ]) {
+    if (!moduleCorePom.includes(expected)) {
+      throw new Error(`module add core POM missing boundary dependency: ${expected}`);
+    }
+  }
+  if (moduleCorePom.includes('<artifactId>mango-infra-persistence-starter</artifactId>')) {
+    throw new Error('module add core POM must not depend on the persistence starter');
+  }
   if (!moduleAppPom.includes('<artifactId>contract-starter</artifactId>')) {
     throw new Error('module add did not register app dependency');
   }
@@ -566,7 +729,20 @@ try {
     join(customRoot, 'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/service/ISealService.java'),
     'utf8',
   );
-  if (!moduleServiceInterface.includes('extends MangoCrudService<SealEntity>')) {
+  for (const expected of [
+    'extends MangoTypedCrudService<',
+    'SealEntity,',
+    'CreateSealCommand,',
+    'UpdateSealCommand,',
+    'SealPageQuery,',
+    'SealVO,',
+    'Long>',
+  ]) {
+    if (!moduleServiceInterface.includes(expected)) {
+      throw new Error(`module add typed CRUD service interface missing: ${expected}`);
+    }
+  }
+  if (moduleServiceInterface.includes('extends MangoCrudService<SealEntity>')) {
     throw new Error('module add did not generate typed Mango CRUD service interface');
   }
   const moduleService = readFileSync(
@@ -574,6 +750,13 @@ try {
     'utf8',
   );
   if (!moduleService.includes('extends MangoCrudServiceImpl<SealMapper, SealEntity>')
+    || !moduleService.includes('Require.notNull(command, SealCode.VALIDATION_ERROR)')
+    || !moduleService.includes('Require.notNull(getById(command.getId()), SealCode.NOT_FOUND)')
+    || !moduleService.includes('@Transactional(rollbackFor = Exception.class)')
+    || !moduleService.includes('public Long create(CreateSealCommand command)')
+    || !moduleService.includes('public boolean delete(DeleteCommand command)')
+    || !moduleService.includes('public PersistencePageResult<SealVO> page(SealPageQuery query)')
+    || !moduleService.includes('public SealVO detail(Long id)')
     || moduleService.includes('com.baomidou.mybatisplus.extension.service.impl.ServiceImpl')
     || moduleService.includes('extends ServiceImpl<')
     || moduleService.includes('selectPage')
@@ -585,8 +768,56 @@ try {
     join(customRoot, 'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java'),
     'utf8',
   );
-  if (!moduleController.includes('extends BaseCrudController') || !moduleController.includes('@RequestMapping("/contract/seals")')) {
-    throw new Error('module add did not generate standard CRUD controller');
+  for (const expected of [
+    'public class ContractController implements ContractApi',
+    '@Validated',
+    '@RequestMapping("/contract/seals")',
+    '@PostMapping("/create")',
+    'public R<Long> create(',
+    '@PostMapping("/update")',
+    '@PostMapping("/delete")',
+    '@GetMapping("/page")',
+    '@GetMapping("/detail")',
+    '@RequestParam("id")',
+    'return R.ok(sealService.',
+    '创建合同印章',
+    '修改合同印章',
+    '删除合同印章',
+    '分页查询合同印章',
+    '查询合同印章详情',
+  ]) {
+    if (!moduleController.includes(expected)) {
+      throw new Error(`module add controller missing API adapter contract: ${expected}`);
+    }
+  }
+  if (moduleController.includes('extends BaseCrudController')
+    || moduleController.includes('PathVariable')
+    || moduleController.includes('/{')) {
+    throw new Error('module add generated a legacy or path-variable controller');
+  }
+  const moduleFeign = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-starter-remote/src/main/java/com/example/custom/contract/starter/remote/ContractFeignClient.java'),
+    'utf8',
+  );
+  for (const expected of [
+    'public interface ContractFeignClient extends ContractApi',
+    '@FeignClient(',
+    'contextId = "contractFeignClient"',
+    'path = "/contract/seals"',
+    '@PostMapping("/create")',
+    '@PostMapping("/update")',
+    '@PostMapping("/delete")',
+    '@GetMapping("/page")',
+    '@SpringQueryMap',
+    '@GetMapping("/detail")',
+    '@RequestParam("id")',
+  ]) {
+    if (!moduleFeign.includes(expected)) {
+      throw new Error(`module add Feign adapter missing contract: ${expected}`);
+    }
+  }
+  if (moduleFeign.includes('PathVariable') || moduleFeign.includes('/{')) {
+    throw new Error('module add generated a path-variable Feign contract');
   }
   const moduleMigration = readFileSync(
     join(customRoot, 'backend/modules/contract/contract-core/src/main/resources/db/migration/contract/V1__init_contract.sql'),
@@ -672,10 +903,51 @@ try {
     join(customRoot, 'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/ContractApi.java'),
     'utf8',
   );
-  for (const expected of ['创建合同印章', '修改合同印章', '删除合同印章', '分页查询合同印章', '查询合同印章详情']) {
+  for (const expected of [
+    'public interface ContractApi',
+    'R<Long> create(@Valid CreateSealCommand command)',
+    'R<Boolean> update(@Valid UpdateSealCommand command)',
+    'R<Boolean> delete(@Valid DeleteCommand command)',
+    'R<PersistencePageResult<SealVO>> page(@Valid SealPageQuery query)',
+    'R<SealVO> detail(@NotNull Long id)',
+  ]) {
     if (!moduleApiJava.includes(expected)) {
-      throw new Error(`module add did not render aggregate display name in API documentation: ${expected}`);
+      throw new Error(`module add API contract missing typed method: ${expected}`);
     }
+  }
+  for (const forbidden of [
+    'org.springframework.web.bind.annotation',
+    '@RequestMapping',
+    '@GetMapping',
+    '@PostMapping',
+    '@RequestBody',
+    '@RequestParam',
+    'PathVariable',
+    '/{',
+  ]) {
+    if (moduleApiJava.includes(forbidden)) {
+      throw new Error(`module add API contract contains transport concern: ${forbidden}`);
+    }
+  }
+  const moduleBizCode = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/enums/SealCode.java'),
+    'utf8',
+  );
+  for (const expected of [
+    'public enum SealCode implements BizCode',
+    'NOT_FOUND(404, "合同印章不存在")',
+    'VALIDATION_ERROR(400, "合同印章参数校验失败")',
+  ]) {
+    if (!moduleBizCode.includes(expected)) {
+      throw new Error(`module add BizCode contract missing: ${expected}`);
+    }
+  }
+  const generatedBackendJava = walkFiles(join(customRoot, 'backend/modules/contract'))
+    .filter(file => file.endsWith('.java'))
+    .map(file => readFileSync(file, 'utf8'))
+    .join('\n');
+  if (generatedBackendJava.includes('PathVariable') || generatedBackendJava.includes('/{')) {
+    throw new Error('module add backend template must not generate path-variable endpoints');
   }
   const moduleMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!moduleMain.includes("import { registerContractPages } from '@mango-custom-acceptance/contract';")
@@ -767,15 +1039,15 @@ function assertNoBundledTemplatePmoBaseline() {
 }
 
 function assertPmoPackageBuilt() {
-  const build = spawnSync('pnpm', ['--filter', '@mango/pmo', 'build'], {
-    cwd: resolve(packageRoot, '../..'),
+  const build = spawnSync(process.execPath, ['scripts/build-package.mjs'], {
+    cwd: pmoPackageRoot,
     encoding: 'utf8',
   });
   if (build.status !== 0) {
     throw new Error(`@mango/pmo build failed:\n${build.stdout}\n${build.stderr}`);
   }
-  const check = spawnSync('pnpm', ['--filter', '@mango/pmo', 'check'], {
-    cwd: resolve(packageRoot, '../..'),
+  const check = spawnSync(process.execPath, ['scripts/check-package.mjs'], {
+    cwd: pmoPackageRoot,
     encoding: 'utf8',
   });
   if (check.status !== 0) {
@@ -797,16 +1069,15 @@ function assertPublishedPnpmPmoResolution(tempRoot) {
     cpSync(join(packageRoot, file), join(publishedCliRoot, file));
   }
   cpSync(join(packageRoot, 'src'), join(publishedCliRoot, 'src'), { recursive: true });
+  cpSync(join(packageRoot, 'templates'), join(publishedCliRoot, 'templates'), { recursive: true });
   cpSync(join(pmoPackageRoot, 'package.json'), join(publishedPmoRoot, 'package.json'));
   cpSync(join(pmoPackageRoot, 'dist'), join(publishedPmoRoot, 'dist'), { recursive: true });
 
   const projectRoot = join(tempRoot, 'published-pnpm-business');
-  const baselineRoot = join(projectRoot, 'business-pmo/mango-baseline');
-  mkdirSync(baselineRoot, { recursive: true });
-  cpSync(join(pmoPackageRoot, 'dist/baseline'), baselineRoot, { recursive: true });
-  cpSync(join(pmoPackageRoot, 'dist/baseline.json'), join(baselineRoot, 'baseline.json'));
+  mkdirSync(projectRoot, { recursive: true });
 
   const publishedCli = join(publishedCliRoot, 'src/index.mjs');
+  assertCommandOk([publishedCli, 'pmo', 'upgrade', '--project-dir', projectRoot], projectRoot, 'published pnpm mango pmo upgrade');
   const status = assertCommandOk([publishedCli, 'pmo', 'status', '--project-dir', projectRoot], projectRoot, 'published pnpm mango pmo status');
   if (!status.stdout.includes('Baseline: @mango/pmo@') || status.stdout.includes('@mango/cli-template')) {
     throw new Error(`published pnpm CLI should consume @mango/pmo baseline:\n${status.stdout}`);
@@ -1743,11 +2014,18 @@ function waitForCallLogLines(callLog, expectedCount) {
 }
 
 function assertPmoCommands(projectRoot) {
+  const lock = JSON.parse(readFileSync(join(projectRoot, 'business-pmo/pmo-lock.json'), 'utf8'));
+  const installedManifest = JSON.parse(readFileSync(join(projectRoot, 'business-pmo/mango-baseline/baseline.json'), 'utf8'));
+  const skillState = JSON.parse(readFileSync(join(projectRoot, '.agents/skills/.mango-pmo.json'), 'utf8'));
+  assertEqual(lock.packageVersion, installedManifest.packageVersion, 'PMO lock package version');
+  assertEqual(lock.bundleSha256, installedManifest.bundleSha256, 'PMO lock bundle hash');
+  assertIncludes(skillState.roots, 'mango-pmo-lifecycle', 'project PMO skill roots');
   const status = assertCommandOk([cli, 'pmo', 'status', '--project-dir', projectRoot], projectRoot, 'generated mango pmo status');
   if (!status.stdout.includes('Baseline: @mango/pmo@') || !status.stdout.includes('PMO baseline is current.')) {
     throw new Error(`pmo status should report current @mango/pmo baseline:\n${status.stdout}`);
   }
   assertCommandOk([cli, 'pmo', 'check', '--project-dir', projectRoot], projectRoot, 'generated mango pmo check');
+  assertCommandOk([cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'], projectRoot, 'generated locked mango pmo check');
   const dryRun = assertCommandOk([cli, 'pmo', 'upgrade', '--project-dir', projectRoot, '--dry-run'], projectRoot, 'generated mango pmo upgrade dry-run');
   if (!dryRun.stdout.includes('PMO baseline dry-run plan')) {
     throw new Error(`pmo upgrade --dry-run should print plan:\n${dryRun.stdout}`);
@@ -1767,6 +2045,54 @@ function assertPmoCommands(projectRoot) {
     throw new Error(`pmo sync should repair tampered baseline:\n${syncResult.stdout}`);
   }
   assertEqual(readFileSync(tamperedPath, 'utf8'), original, 'tampered baseline after pmo sync');
+
+  const stalePath = join(projectRoot, 'business-pmo/mango-baseline/rules/stale-rule.md');
+  writeFileSync(stalePath, '# stale PMO rule\n');
+  const staleCheck = spawnSync(process.execPath, [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (staleCheck.status === 0 || !staleCheck.stdout.includes('stale baseline files')) {
+    throw new Error(`pmo check --locked should reject stale bundle files:\n${staleCheck.stdout}\n${staleCheck.stderr}`);
+  }
+  assertCommandOk([cli, 'pmo', 'sync', '--project-dir', projectRoot], projectRoot, 'generated mango pmo stale cleanup');
+  if (existsSync(stalePath)) {
+    throw new Error('pmo sync must remove stale files that are absent from the locked manifest');
+  }
+
+  const skillPath = join(projectRoot, '.agents/skills/mango-pmo-lifecycle/SKILL.md');
+  const originalSkill = readFileSync(skillPath, 'utf8');
+  writeFileSync(skillPath, `${originalSkill}\ncorrupt\n`);
+  const skillCheck = spawnSync(process.execPath, [cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (skillCheck.status === 0 || !skillCheck.stdout.includes('project PMO skill files differ')) {
+    throw new Error(`pmo check --locked should reject changed project skills:\n${skillCheck.stdout}\n${skillCheck.stderr}`);
+  }
+  const skillRepair = assertCommandOk([cli, 'pmo', 'sync', '--project-dir', projectRoot], projectRoot, 'generated mango pmo skill repair');
+  if (!skillRepair.stdout.includes('no user-level Codex plugin installation was performed')) {
+    throw new Error(`pmo sync must distinguish project skill sync from global plugin installation:\n${skillRepair.stdout}`);
+  }
+  assertEqual(readFileSync(skillPath, 'utf8'), originalSkill, 'tampered project skill after pmo sync');
+
+  const unavailableUpgrade = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'upgrade',
+    '--project-dir',
+    projectRoot,
+    '--to',
+    '0.0.0-test',
+  ], { cwd: projectRoot, encoding: 'utf8' });
+  if (unavailableUpgrade.status === 0 || !unavailableUpgrade.stderr.includes('is not available to this CLI')) {
+    throw new Error(`pmo upgrade --to should reject unavailable exact versions:\n${unavailableUpgrade.stdout}\n${unavailableUpgrade.stderr}`);
+  }
+  const rollback = assertCommandOk([cli, 'pmo', 'rollback', '--project-dir', projectRoot], projectRoot, 'generated mango pmo rollback');
+  if (!rollback.stdout.includes('PMO rollback complete')) {
+    throw new Error(`pmo rollback should restore a verified backup:\n${rollback.stdout}`);
+  }
+  assertCommandOk([cli, 'pmo', 'check', '--project-dir', projectRoot, '--locked'], projectRoot, 'rolled back mango pmo check');
 }
 
 function assertPmoSyncCommand(tempRoot) {
@@ -1847,6 +2173,9 @@ function assertPmoSyncCommand(tempRoot) {
     'business-pmo/README.md',
     'business-pmo/mango-baseline/README.md',
     'business-pmo/mango-baseline/baseline.json',
+    'business-pmo/pmo-lock.json',
+    '.agents/skills/.mango-pmo.json',
+    '.agents/skills/mango-pmo-lifecycle/SKILL.md',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/rules/backend/07-persistence.md',
     'business-docs/plans/example-contract.md',
@@ -2281,14 +2610,19 @@ function assertNoDirectDependency(pom, artifactId, label) {
 }
 
 function assertNoUnrenderedPlaceholders(projectRoot) {
-  const result = spawnSync('rg', ['-n', '\\{\\{', projectRoot], {
-    encoding: 'utf8',
-  });
-  if (result.status === 0) {
-    throw new Error(`generated project contains unrendered placeholders:\n${result.stdout}`);
-  }
-  if (result.status !== 1) {
-    throw new Error(`placeholder scan failed:\n${result.stdout}\n${result.stderr}`);
+  const placeholderFiles = walkFiles(projectRoot)
+    .map(file => ({
+      file,
+      relativePath: relative(projectRoot, file).split('\\').join('/'),
+    }))
+    .filter(({ relativePath }) => !relativePath.startsWith('business-pmo/mango-baseline/'))
+    .filter(({ file }) => readFileSync(file).includes('{{'))
+    .map(({ relativePath }) => relativePath)
+    .sort();
+  if (placeholderFiles.length > 0) {
+    throw new Error(
+      `generated project contains unrendered placeholders:\n${placeholderFiles.join('\n')}`,
+    );
   }
 }
 
@@ -2297,6 +2631,25 @@ function assertNoWorkspacePackageJsonInTemplates() {
   const packageJsonFiles = walkFiles(templateRoot).filter(file => file.endsWith('/package.json'));
   if (packageJsonFiles.length > 0) {
     throw new Error(`template package.json files are parsed by workspace tooling; use package.json.template instead:\n${packageJsonFiles.join('\n')}`);
+  }
+}
+
+function assertQualityConfigsMatchPluginSources() {
+  const repoRoot = resolve(packageRoot, '../../..');
+  const pairs = [
+    ['checkstyle.xml', 'checkstyle.xml'],
+    ['pmd-p3c.xml', 'pmd-p3c.xml'],
+  ];
+  for (const [templateName, sourceName] of pairs) {
+    const template = readFileSync(join(packageRoot, 'templates/full/backend/config/quality', templateName));
+    const source = readFileSync(join(
+      repoRoot,
+      'mango/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java',
+      sourceName,
+    ));
+    if (!template.equals(source)) {
+      throw new Error(`generated Java quality config differs from mango-maven-plugin source: ${templateName}`);
+    }
   }
 }
 

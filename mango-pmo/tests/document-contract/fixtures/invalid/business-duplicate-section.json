@@ -1,0 +1,6 @@
+{
+  "base": "../valid/business-requirements.md",
+  "replace": "## 11. 阶段判定与审批",
+  "with": "## 9. 业务验收标准",
+  "expectedRuleId": "BRD-STRUCT-090"
+}

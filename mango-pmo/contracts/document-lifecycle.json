@@ -1,0 +1,25 @@
+{
+  "contractSchema": 1,
+  "contractId": "document-lifecycle",
+  "schemaRevision": 1,
+  "ruleSource": "mango-pmo/rules/product/05-document-lifecycle.md",
+  "rules": {
+    "risk": {"ruleId": "LIFE-RISK-001"},
+    "order": {"ruleId": "LIFE-ORDER-010"},
+    "hash": {"ruleId": "LIFE-HASH-020"},
+    "trace": {"ruleId": "LIFE-TRACE-030"},
+    "gate": {"ruleId": "LIFE-GATE-040"}
+  },
+  "stages": [
+    {"key": "brd", "documentType": "business-requirements", "contract": "mango-pmo/contracts/business-requirements.json"},
+    {"key": "srs", "documentType": "system-requirements", "contract": "mango-pmo/contracts/system-requirements.json"},
+    {"key": "tdd", "documentType": "technical-design", "contract": "mango-pmo/contracts/technical-design.json"},
+    {"key": "plan", "documentType": "implementation-plan", "contract": "mango-pmo/contracts/implementation-plan.json"}
+  ],
+  "requiredStagesByRisk": {
+    "L0": [],
+    "L1": [],
+    "L2": ["brd", "srs", "tdd", "plan"],
+    "L3": ["brd", "srs", "tdd", "plan"]
+  }
+}

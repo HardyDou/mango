@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Defect Fix"
+  short_description: "Reproduce and minimally fix a concrete Mango defect"
+  default_prompt: "Use $mango-defect-fix to reproduce, attribute, repair, and regress this concrete defect."
+policy:
+  allow_implicit_invocation: true

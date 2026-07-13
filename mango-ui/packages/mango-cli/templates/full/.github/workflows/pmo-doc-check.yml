@@ -1,0 +1,45 @@
+name: PMO Documentation Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pmo-doc-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check PMO document contracts
+        run: >-
+          node business-pmo/mango-baseline/tools/check-document-set.mjs
+          --root business-docs
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Verify backend and Mango architecture
+        run: >-
+          mvn -B -ntp -f backend/pom.xml
+          -Dmango.architecture.mode=full
+          -Dmango.architecture.skip=false
+          -Dmango.architecture.requireFullReactor=true
+          -Dmango.check.rule=all
+          -Dmango.check.gate=all
+          -Dmango.check.staticFailurePolicy=block
+          -Denforcer.skip=false
+          verify

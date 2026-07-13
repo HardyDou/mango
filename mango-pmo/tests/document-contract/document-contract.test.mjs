@@ -1,0 +1,296 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+import { loadContract, repositoryPath } from '../../tools/document-contract/contract-loader.mjs';
+import { checkDocumentSet } from '../../tools/check-document-set.mjs';
+import { parseMarkdown, tableKey } from '../../tools/document-contract/markdown-ast.mjs';
+import { sha256, validateLifecycle } from '../../tools/document-contract/lifecycle.mjs';
+import { validateDocument } from '../../tools/document-contract/validator.mjs';
+
+const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const FIXTURES = path.join(TEST_DIR, 'fixtures');
+
+const STAGES = [
+  {
+    name: 'business-requirements',
+    contract: 'mango-pmo/contracts/business-requirements.json',
+    valid: 'business-requirements.md'
+  },
+  {
+    name: 'system-requirements',
+    contract: 'mango-pmo/contracts/system-requirements.json',
+    valid: 'system-requirements.md'
+  },
+  {
+    name: 'technical-design',
+    contract: 'mango-pmo/contracts/technical-design.json',
+    valid: 'technical-design.md'
+  },
+  {
+    name: 'implementation-plan',
+    contract: 'mango-pmo/contracts/implementation-plan.json',
+    valid: 'implementation-plan.md'
+  }
+];
+
+function readFixture(relativePath) {
+  return fs.readFileSync(path.join(FIXTURES, relativePath), 'utf8');
+}
+
+function hydrateLifecycle() {
+  const brd = readFixture('valid/business-requirements.md');
+  const srs = readFixture('valid/system-requirements.md').replace('0'.repeat(64), sha256(brd));
+  const tdd = readFixture('valid/technical-design.md').replace('0'.repeat(64), sha256(srs));
+  const plan = readFixture('valid/implementation-plan.md').replace('0'.repeat(64), sha256(tdd));
+  return {
+    brd: { source: brd, resolved: path.join(FIXTURES, 'valid/business-requirements.md') },
+    srs: { source: srs, resolved: path.join(FIXTURES, 'valid/system-requirements.md') },
+    tdd: { source: tdd, resolved: path.join(FIXTURES, 'valid/technical-design.md') },
+    plan: { source: plan, resolved: path.join(FIXTURES, 'valid/implementation-plan.md') }
+  };
+}
+
+function writeHydratedDocumentSet(t) {
+  const root = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'mango-pmo-document-set-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.cpSync(path.join(FIXTURES, 'valid/review'), path.join(root, 'review'), { recursive: true });
+  const documents = hydrateLifecycle();
+  for (const [key, document] of Object.entries(documents)) {
+    fs.writeFileSync(path.join(root, `${key}.md`), document.source);
+  }
+  return root;
+}
+
+for (const stage of STAGES) {
+  test(`${stage.name} 正例通过合同检查`, () => {
+    const contract = loadContract(stage.contract);
+    const result = validateDocument(readFixture(`valid/${stage.valid}`), contract, {
+      documentPath: path.join(FIXTURES, 'valid', stage.valid)
+    });
+    assert.deepEqual(result.findings, []);
+  });
+
+  test(`${stage.name} 模板与合同章节和表格一致`, () => {
+    const contract = loadContract(stage.contract);
+    const ast = parseMarkdown(fs.readFileSync(repositoryPath(contract.template), 'utf8'));
+    assert.deepEqual(ast.sections.map((section) => section.logicalTitle), contract.sections.map((section) => section.title));
+    for (const sectionSpec of contract.sections) {
+      const section = ast.sections.find((candidate) => candidate.logicalTitle === sectionSpec.title);
+      assert.ok(section, `missing section ${sectionSpec.title}`);
+      const actual = new Set(section.tables.map((table) => tableKey(table.headers)));
+      for (const tableSpec of sectionSpec.tables) assert.ok(actual.has(tableKey(tableSpec.headers)), `missing table in ${sectionSpec.title}`);
+    }
+  });
+}
+
+test('文档 pmoVersion 必须与版本化合同一致', () => {
+  const contract = loadContract('mango-pmo/contracts/business-requirements.json');
+  const source = readFixture('valid/business-requirements.md').replace(
+    'pmoVersion: 1.1.0',
+    'pmoVersion: 9.9.9'
+  );
+  const result = validateDocument(source, contract);
+  assert.ok(result.findings.some((finding) =>
+    finding.ruleId === 'BRD-META-001' && finding.message.includes('pmoVersion 必须为 1.1.0')));
+});
+
+test('NEXT 的本地审批证据必须存在且禁止路径穿越', () => {
+  const contract = loadContract('mango-pmo/contracts/business-requirements.json');
+  const documentPath = path.join(FIXTURES, 'valid/business-requirements.md');
+  const source = readFixture('valid/business-requirements.md');
+  const missing = validateDocument(
+    source.replace('review/BRD-ANN-001.md', 'review/NOT-FOUND.md'),
+    contract,
+    { documentPath }
+  );
+  assert.ok(missing.findings.some((finding) =>
+    finding.ruleId === 'BRD-META-001' && finding.message.includes('本地审批证据不存在')));
+  const traversal = validateDocument(
+    source.replace('review/BRD-ANN-001.md', '../review/BRD-ANN-001.md'),
+    contract,
+    { documentPath }
+  );
+  assert.ok(traversal.findings.some((finding) =>
+    finding.ruleId === 'BRD-META-001' && finding.message.includes('路径穿越')));
+});
+
+test('每个规范章节都包含完整章节级契约', () => {
+  const ruleSources = [
+    ...STAGES.map((stage) => loadContract(stage.contract).ruleSource),
+    'mango-pmo/rules/product/05-document-lifecycle.md'
+  ];
+  const labels = ['**目的**', '**正向要求**', '**禁止项**', '**正例**', '**反例**', '**机器判定**'];
+  for (const ruleSource of ruleSources) {
+    const ast = parseMarkdown(fs.readFileSync(repositoryPath(ruleSource), 'utf8'));
+    for (const section of ast.sections) {
+      const text = section.nodes.map((node) => node.value ?? node.title ?? '').join('\n');
+      for (const label of labels) assert.ok(text.includes(label), `${ruleSource} / ${section.title} 缺少 ${label}`);
+    }
+  }
+});
+
+test('规则和模板没有 trailing blank line', () => {
+  const files = [
+    ...STAGES.flatMap((stage) => {
+      const contract = loadContract(stage.contract);
+      return [contract.ruleSource, contract.template];
+    }),
+    'mango-pmo/rules/product/05-document-lifecycle.md'
+  ];
+  for (const file of files) {
+    const content = fs.readFileSync(repositoryPath(file), 'utf8');
+    assert.ok(content.endsWith('\n'), `${file} 必须以换行结束`);
+    assert.ok(!content.endsWith('\n\n'), `${file} 不能以空白行结束`);
+  }
+});
+
+test('反例变异必须命中声明的 ruleId', () => {
+  const contractByBase = new Map(STAGES.map((stage) => [stage.valid, loadContract(stage.contract)]));
+  const specs = fs.readdirSync(path.join(FIXTURES, 'invalid')).filter((name) => name.endsWith('.json') && name !== 'l2-blank-context.json');
+  for (const name of specs) {
+    const specPath = path.join(FIXTURES, 'invalid', name);
+    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+    const basePath = path.resolve(path.dirname(specPath), spec.base);
+    const base = fs.readFileSync(basePath, 'utf8');
+    assert.ok(base.includes(spec.replace), `${name} 的 replace 片段不存在`);
+    const invalid = base.replace(spec.replace, spec.with);
+    const contract = contractByBase.get(path.basename(basePath));
+    const result = validateDocument(invalid, contract);
+    assert.ok(result.findings.some((finding) => finding.ruleId === spec.expectedRuleId), `${name} 未命中 ${spec.expectedRuleId}`);
+  }
+});
+
+test('完整 L2 生命周期通过摘要、审批和双向追踪检查', () => {
+  const result = validateLifecycle(hydrateLifecycle(), { riskLevel: 'L2' });
+  assert.deepEqual(result.findings, []);
+});
+
+test('业务文档集合自动发现并检查四阶段文档', (t) => {
+  const root = writeHydratedDocumentSet(t);
+  const result = checkDocumentSet(root);
+  assert.equal(result.documents.length, 4);
+  assert.deepEqual(result.findings, []);
+});
+
+test('业务文档集合阻断缺少类型、未知类型和失效摘要', (t) => {
+  const root = writeHydratedDocumentSet(t);
+  fs.writeFileSync(path.join(root, 'missing-type.md'), '# 绕过合同的业务需求说明书\n');
+  fs.writeFileSync(path.join(root, 'unknown-type.md'), '---\ndocumentType: combined-prd\n---\n\n# 混合 PRD\n');
+  const brdPath = path.join(root, 'brd.md');
+  fs.writeFileSync(brdPath, `${fs.readFileSync(brdPath, 'utf8').trimEnd()}\n\n未经下游同步的变更\n`);
+
+  const result = checkDocumentSet(root);
+  assert.ok(result.findings.some((item) => item.ruleId === 'LIFE-ORDER-010' && item.file.endsWith('missing-type.md')));
+  assert.ok(result.findings.some((item) => item.ruleId === 'LIFE-ORDER-010' && item.message.includes('combined-prd')));
+  assert.ok(result.findings.some((item) => item.ruleId === 'LIFE-HASH-020'));
+});
+
+test('L2/L3 支持按当前阶段执行连续 handoff，不要求未来文档提前存在', () => {
+  const documents = hydrateLifecycle();
+  const staged = validateLifecycle(
+    { brd: documents.brd, srs: documents.srs },
+    { riskLevel: 'L2', throughStage: 'srs' }
+  );
+  assert.deepEqual(staged.findings, []);
+
+  const missingUpstream = validateLifecycle(
+    { srs: documents.srs },
+    { riskLevel: 'L2', throughStage: 'srs' }
+  );
+  assert.ok(missingUpstream.findings.some((finding) => finding.ruleId === 'LIFE-ORDER-010'));
+});
+
+test('上游内容变化会使下游摘要立即失效', () => {
+  const documents = hydrateLifecycle();
+  documents.brd.source = `${documents.brd.source.trimEnd()}\n\n变更后的业务事实\n`;
+  const result = validateLifecycle(documents, { riskLevel: 'L2' });
+  assert.ok(result.findings.some((finding) => finding.ruleId === 'LIFE-HASH-020'));
+});
+
+test('blank-context 的 L2 复杂任务不能跳过任一阶段', () => {
+  const spec = JSON.parse(readFixture('invalid/l2-blank-context.json'));
+  const result = validateLifecycle({}, { riskLevel: spec.riskLevel });
+  assert.ok(result.findings.some((finding) => finding.ruleId === spec.expectedRuleId));
+  assert.ok(result.findings.some((finding) => finding.ruleId === 'LIFE-RISK-001'));
+});
+
+test('L0 非行为任务不会被强制套用四阶段文档', () => {
+  const result = validateLifecycle({}, { riskLevel: 'L0' });
+  assert.deepEqual(result.findings, []);
+});
+
+test('旧 check-prd 只转发新文档类型并阻断混合 PRD', () => {
+  const checker = repositoryPath('mango-pmo/tools/check-prd.mjs');
+  const valid = path.join(FIXTURES, 'valid/business-requirements.md');
+  const accepted = spawnSync(process.execPath, [checker, '--prd', valid], { encoding: 'utf8' });
+  assert.equal(accepted.status, 0, accepted.stdout + accepted.stderr);
+
+  const legacy = repositoryPath('mango-pmo/templates/sample-prd-announcement.md');
+  const rejected = spawnSync(process.execPath, [checker, '--prd', legacy], { encoding: 'utf8' });
+  assert.equal(rejected.status, 1);
+  assert.match(rejected.stderr, /LEGACY-PRD-MIGRATION-001/);
+});
+
+test('AI 自批和伪造审批证据不能获得 NEXT', () => {
+  const contract = loadContract('mango-pmo/contracts/business-requirements.json');
+  const invalid = readFixture('valid/business-requirements.md')
+    .replace('approver: 业务负责人', 'approver: AI Agent')
+    .replace('approvalEvidence: review/BRD-ANN-001', 'approvalEvidence: invented-by-agent');
+  const result = validateDocument(invalid, contract);
+  assert.ok(result.findings.some((finding) => finding.ruleId === 'BRD-META-001'));
+  assert.ok(result.findings.some((finding) => finding.message.includes('人工审批人')));
+});
+
+test('BRD/SRS 阻断路径模板、技术类型、框架词和 Markdown 拆词绕过', () => {
+  const brdContract = loadContract('mango-pmo/contracts/business-requirements.json');
+  const brd = readFixture('valid/business-requirements.md');
+  for (const injected of [
+    '/announcements/{announcementId}/approval + ApprovalPayload',
+    'NoticeCont**roller** 负责审批'
+  ]) {
+    const invalid = brd.replace('审核决定依赖线下消息传递', injected);
+    assert.notEqual(invalid, brd, 'test mutation must change the BRD fixture');
+    const result = validateDocument(invalid, brdContract);
+    assert.ok(result.findings.some((finding) => finding.ruleId === 'BRD-BOUNDARY-001'), injected);
+  }
+
+  const srsContract = loadContract('mango-pmo/contracts/system-requirements.json');
+  const srs = readFixture('valid/system-requirements.md');
+  const invalidSrs = srs.replace(
+    '记录提交、审核和撤回过程并展示当前结果',
+    '系统使用 Spring MVC、Redis 和 Kafka'
+  );
+  assert.notEqual(invalidSrs, srs, 'test mutation must change the SRS fixture');
+  const srsResult = validateDocument(invalidSrs, srsContract);
+  assert.ok(srsResult.findings.some((finding) => finding.ruleId === 'SRS-BOUNDARY-001'));
+});
+
+test('TDD API 表阻断路径变量和持久化模型泄漏', () => {
+  const contract = loadContract('mango-pmo/contracts/technical-design.json');
+  const source = readFixture('valid/technical-design.md');
+  const pathVariable = validateDocument(source.replace('POST /notices/submit', 'GET /notices/{id}'), contract);
+  assert.ok(pathVariable.findings.some((finding) => finding.ruleId === 'TDD-BOUNDARY-001'));
+  const entityLeak = validateDocument(source.replace('SubmitNoticeCommand and NoticeVO', 'NoticeEntity'), contract);
+  assert.ok(entityLeak.findings.some((finding) => finding.ruleId === 'TDD-BOUNDARY-001'));
+});
+
+test('实施计划阻断未修订 TDD 的新增设计及代码块藏匿', () => {
+  const contract = loadContract('mango-pmo/contracts/implementation-plan.json');
+  const source = readFixture('valid/implementation-plan.md');
+  const redesign = validateDocument(
+    source.replace('按设计实现契约、模型、流程、安全、交互和测试', '未修改 TDD，增加批量端点并选用 Redis 锁'),
+    contract
+  );
+  assert.ok(redesign.findings.some((finding) => finding.ruleId === 'PLAN-BOUNDARY-001'));
+  const hidden = validateDocument(source.replace('## 9. 阶段判定与审批', '```text\n新增接口并选用 Redis\n```\n\n## 9. 阶段判定与审批'), contract);
+  assert.ok(hidden.findings.some((finding) => finding.ruleId === 'PLAN-BOUNDARY-001'));
+  const neutralDecision = validateDocument(
+    source.replace('按设计实现契约、模型、流程、安全、交互和测试', '最终决定受 API-001 的既有设计和验证结果约束'),
+    contract
+  );
+  assert.equal(neutralDecision.findings.some((finding) => finding.ruleId === 'PLAN-BOUNDARY-001'), false);
+});

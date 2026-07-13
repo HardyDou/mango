@@ -14,6 +14,13 @@
 | 规则路由 | rules index JSON | 维护规则、角色、阶段和 bundle 映射 |
 | 角色定义 | `agents/**` | PM、Tech Lead、Dev、QA、PMO 的职责说明 |
 | 模板资产 | `templates/**` | PRD、详细设计、交付契约、验收证据模板 |
+| 文档生命周期 | `contracts/*.json`、`tools/check-*-requirements.mjs` | BRD、SRS、TDD、实施计划的结构、边界、追踪、审批和版本门禁 |
+| 文档集合门禁 | `tools/check-document-set.mjs` | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要 |
+| 专项 Agent | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md` | 一个生命周期模板对应一个撰写 Agent |
+| 可安装 Skills | `skills/**` | 生命周期协调、四类文档、工程、QA、Issue、模块、发布和 PR review |
+| 全局实体例外 | `contracts/global-entity-exceptions.json` | 按 Entity/table/owner/审批/到期日管理精确例外 |
+
+Skill 按实际能力命名，而不是按发布包命名：只有治理编排使用 `mango-pmo-lifecycle`；需求、设计、工程、QA、Issue、模块、评审和发布分别使用各自领域名称，禁止统一套用含义不清的 `mango-pm-*` 前缀。
 
 ## 3. 接入方式
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
@@ -61,7 +68,9 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | `pmo-preflight.mjs` | role、phase、task、paths | Must read、workspace policy、required checks |
 | `delivery-contract-check.mjs` | design、ledger、mode | 台账覆盖和状态检查结果 |
 | `acceptance-evidence-check.mjs` | evidence、min rows | 验收证据表检查结果 |
+| `check-document-set.mjs` | business docs root | 自动发现并检查目录内生命周期文档及其上游关系 |
 | `@mango/pmo` | `dist/baseline.json`、`dist/baseline/**` | 可发布 PMO baseline 包 |
+| `@mango/pmo` plugin projection | `.codex-plugin/plugin.json`、`skills/**` | 与 npm 包同版本的 Codex plugin/Skill 投影 |
 | `mango pmo check` | business project root | baseline 漂移状态 |
 | `mango pmo upgrade` | business project root | 已升级 baseline 快照 |
 
@@ -84,6 +93,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | 升级历史业务 baseline | `mango pmo upgrade --project-dir .` |
 | 输出任务规则 | `node business-pmo/mango-baseline/tools/pmo-preflight.mjs ...` |
 | 检查交付台账 | `node business-pmo/mango-baseline/tools/delivery-contract-check.mjs ...` |
+| 检查全部业务文档 | `node business-pmo/mango-baseline/tools/check-document-set.mjs --root business-docs` |
 
 ## 8. 快速开始
 1. 在 Mango 主仓修改 `mango-pmo/**`。

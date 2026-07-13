@@ -25,12 +25,12 @@ Options:
                         Alias for --revision
   --allow-snapshot      Allow an explicit *-SNAPSHOT revision
   --run-tests           Run tests; default is -DskipTests
+  --verify-only        Verify already published artifacts without running deploy
   --skip-verify         Skip artifact verification after deploy
   --verify-mode <mode>  Verification mode: http or maven; default is http
   --verify-base-url <url>
-                        HTTP verification repository URL; default is
-                        MANGO_MAVEN_VERIFY_BASE_URL or the internal maven-public
-                        repository
+                        HTTP verification repository URL; required unless
+                        MANGO_MAVEN_VERIFY_BASE_URL is set
   --verify-transitive   Resolve transitive dependencies during Maven verification
   --verify-repo <path>  Shared verification local repo; default is
                         .runtime/maven-publish-verify-batch
@@ -57,7 +57,8 @@ allow_snapshot=false
 revision="${MANGO_MAVEN_REVISION:-}"
 verify_repo="${MANGO_MAVEN_VERIFY_REPO:-${REPO_ROOT}/.runtime/maven-publish-verify-batch}"
 verify_work_dir="${MANGO_MAVEN_VERIFY_WORK_DIR:-${REPO_ROOT}/.runtime/maven-publish-verify-work}"
-verify_base_url="${MANGO_MAVEN_VERIFY_BASE_URL:-http://nexus.inner.yunxinbaokeji.com/repository/maven-public}"
+verify_base_url="${MANGO_MAVEN_VERIFY_BASE_URL:-}"
+verify_only=false
 
 validate_revision() {
   local value="$1"
@@ -118,6 +119,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-verify)
       verify_publish=false
+      ;;
+    --verify-only)
+      verify_only=true
       ;;
     --verify-mode)
       if [[ $# -lt 2 || "$2" == -* ]]; then
@@ -191,6 +195,10 @@ validate_revision "${revision}"
 if [[ "${verify_mode}" != "http" && "${verify_mode}" != "maven" ]]; then
   echo "Invalid verification mode: ${verify_mode}" >&2
   echo "Use --verify-mode http or --verify-mode maven." >&2
+  exit 1
+fi
+if [[ "${verify_publish}" == "true" && "${verify_mode}" == "http" && -z "${verify_base_url}" ]]; then
+  echo "HTTP verification requires --verify-base-url or MANGO_MAVEN_VERIFY_BASE_URL." >&2
   exit 1
 fi
 verify_base_url="${verify_base_url%/}"
@@ -322,19 +330,25 @@ if [[ "${all_non_app}" == "true" ]]; then
 else
   echo "Publish scope: explicit Maven modules"
 fi
-echo "Publishing modules: ${project_list}"
+echo "Selected modules: ${project_list}"
 echo "Revision: ${revision}"
 echo "Allow SNAPSHOT: ${allow_snapshot}"
 echo "Include app artifacts: ${include_apps}"
-echo "Mode: one reactor deploy for all selected modules and required upstream modules"
+if [[ "${verify_only}" == "true" ]]; then
+  echo "Mode: verification only; deploy is skipped"
+else
+  echo "Mode: one reactor deploy for all selected modules and required upstream modules"
+fi
 if [[ "${verify_publish}" == "true" ]]; then
   echo "Verification mode: ${verify_mode}"
 fi
-printf 'Command: mvn'
-printf ' %q' "${mvn_args[@]}"
-printf '\n'
+if [[ "${verify_only}" == "false" ]]; then
+  printf 'Command: mvn'
+  printf ' %q' "${mvn_args[@]}"
+  printf '\n'
+fi
 
-if [[ "${dry_run}" == "false" ]]; then
+if [[ "${dry_run}" == "false" && "${verify_only}" == "false" ]]; then
   cd "${MAVEN_ROOT}"
   mvn "${mvn_args[@]}"
 fi

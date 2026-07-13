@@ -49,7 +49,7 @@ function assertNoLongTermRuleLanguage(file, failures) {
 }
 
 const failures = [];
-const entryFiles = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
+const entryFiles = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'mango-pmo/AGENTS.md'];
 
 assertIncludes('AGENTS.md', [
   '只做入口和路由',
@@ -89,6 +89,15 @@ for (const entryFile of entryFiles) {
     '解决冲突、修复问题或形成交付结论'
   ], failures);
 }
+
+assertIncludes('mango-pmo/AGENTS.md', [
+  '只做 `mango-pmo` 子目录入口和路由',
+  '[rules/00-dev-flow.md]',
+  '[rules/06-document-assets.md]',
+  '[rules/08-capability-docs.md]',
+  '[agents/05-pmo-agent.md]',
+  'node tools/pmo-preflight.mjs'
+], failures);
 
 assertIncludes('mango-docs/README.md', [
   'Mango 能力地图',
