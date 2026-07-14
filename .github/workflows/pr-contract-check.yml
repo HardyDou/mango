@@ -30,7 +30,7 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"
+        run: git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"
 
       - name: Write PR body
         env:

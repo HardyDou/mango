@@ -215,7 +215,7 @@ assertIncludes('.github/workflows/pr-contract-check.yml', [
   'ref: ${{ github.event.pull_request.base.sha }}',
   'mango-pmo/tools/check-capability-docs.mjs',
   'mango-pmo/tools/risk-verification.mjs',
-  'git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"',
+  'git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"',
   'node mango-pmo/tools/check-capability-docs.mjs',
   'node mango-pmo/tools/risk-verification.mjs',
   'PR_BODY_FILE'

@@ -59,7 +59,7 @@ test('PR body edits run only the trusted lightweight contract gate', () => {
   assert.match(workflow, /types: \[opened, edited, reopened, synchronize, ready_for_review\]/);
   assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
   assert.match(workflow, /sparse-checkout: \|[\s\S]*?check-capability-docs\.mjs[\s\S]*?risk-verification\.mjs/);
-  assert.match(workflow, /git fetch --no-tags --depth=1 origin "\$BASE_SHA" "\$HEAD_SHA"/);
+  assert.match(workflow, /git fetch --no-tags origin "\$BASE_SHA" "\$HEAD_SHA"/);
   assert.match(workflow, /node mango-pmo\/tools\/risk-verification\.mjs/);
   assert.match(workflow, /node mango-pmo\/tools\/check-capability-docs\.mjs[\s\S]*?--base \$\{\{ github\.event\.pull_request\.base\.sha \}\}[\s\S]*?--head \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
   assert.match(workflow, /group: pr-contract-check-\$\{\{ github\.event\.pull_request\.number \}\}/);
