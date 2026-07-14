@@ -732,10 +732,22 @@ public class CheckMojo extends AbstractMojo {
         }
 
         cleanStaticReports(rootPath);
-        invokeMavenGoals(rootPath, List.of("pmd:check", "checkstyle:check", "spotbugs:spotbugs"));
+        invokeMavenGoals(rootPath, staticAnalysisReportGoals());
         collectPmdIssues(rootPath);
         collectCheckstyleIssues(rootPath);
         collectSpotbugsIssues(rootPath);
+    }
+
+    /**
+     * Runs report-producing goals and leaves gate enforcement to {@link CheckGateFinalizer}.
+     *
+     * <p>The {@code pmd:check} and {@code checkstyle:check} goals enforce each tool's complete
+     * historical result set before Mango can classify changed-file violations. That makes a
+     * {@code no-new-violations} gate fail on pre-existing debt. Report goals preserve all findings
+     * while allowing Mango to apply the configured gate consistently.
+     */
+    List<String> staticAnalysisReportGoals() {
+        return List.of("pmd:pmd", "checkstyle:checkstyle", "spotbugs:spotbugs");
     }
 
     private void cleanStaticReports(Path rootPath) throws MojoExecutionException {

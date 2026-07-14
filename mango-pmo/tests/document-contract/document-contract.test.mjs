@@ -97,12 +97,12 @@ for (const stage of STAGES) {
 test('文档 pmoVersion 必须与版本化合同一致', () => {
   const contract = loadContract('mango-pmo/contracts/business-requirements.json');
   const source = readFixture('valid/business-requirements.md').replace(
-    'pmoVersion: 1.2.4',
+    'pmoVersion: 1.2.5',
     'pmoVersion: 9.9.9'
   );
   const result = validateDocument(source, contract);
   assert.ok(result.findings.some((finding) =>
-    finding.ruleId === 'BRD-META-001' && finding.message.includes('pmoVersion 必须为 1.2.4')));
+    finding.ruleId === 'BRD-META-001' && finding.message.includes('pmoVersion 必须为 1.2.5')));
 });
 
 test('NEXT 的本地审批证据必须存在且禁止路径穿越', () => {
@@ -227,6 +227,47 @@ test('业务文档集合阻断缺少类型、未知类型和失效摘要', (t) =
   assert.ok(result.findings.some((item) => item.ruleId === 'LIFE-ORDER-010' && item.file.endsWith('missing-type.md')));
   assert.ok(result.findings.some((item) => item.ruleId === 'LIFE-ORDER-010' && item.message.includes('combined-prd')));
   assert.ok(result.findings.some((item) => item.ruleId === 'LIFE-HASH-020'));
+});
+
+test('业务文档集合仅允许哈希锁定的历史生命周期文档', (t) => {
+  const root = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'mango-pmo-legacy-docs-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const legacyPath = path.join(root, 'legacy-plan.md');
+  const legacySource = '# 历史实施计划\n\n存量内容。\n';
+  fs.writeFileSync(legacyPath, legacySource);
+  fs.writeFileSync(path.join(root, '.mango-pmo-legacy-documents.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    documents: [{
+      path: 'legacy-plan.md',
+      sha256: sha256(legacySource),
+      reason: 'PMO 合同启用前形成，单独迁移',
+    }],
+  }, null, 2)}\n`);
+
+  const pinned = checkDocumentSet(root);
+  assert.deepEqual(pinned.findings, []);
+  assert.equal(pinned.legacyDocuments.length, 1);
+
+  fs.writeFileSync(legacyPath, `${legacySource}\n未经基线批准的变化\n`);
+  const changed = checkDocumentSet(root);
+  assert.ok(changed.findings.some((item) =>
+    item.ruleId === 'LIFE-HASH-020' && item.file === legacyPath));
+});
+
+test('业务文档集合阻断失效或越界的历史文档基线项', (t) => {
+  const root = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'mango-pmo-stale-docs-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(root, '.mango-pmo-legacy-documents.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    documents: [
+      { path: 'missing-plan.md', sha256: '0'.repeat(64), reason: '待迁移' },
+      { path: '../outside.md', sha256: '0'.repeat(64), reason: '非法路径' },
+    ],
+  }, null, 2)}\n`);
+
+  const result = checkDocumentSet(root);
+  assert.ok(result.findings.some((item) => item.message.includes('历史文档基线路径非法')));
+  assert.ok(result.findings.some((item) => item.message.includes('历史文档基线项已失效')));
 });
 
 test('L2/L3 支持按当前阶段执行连续 handoff，不要求未来文档提前存在', () => {

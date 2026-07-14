@@ -35,6 +35,7 @@ import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
 import io.mango.workflow.api.WorkflowProcessApi;
 import io.mango.workflow.api.WorkflowBusinessApplyApi;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
+import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
@@ -74,7 +75,10 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
     private final PlatformTransactionManager transactionManager;
 
     public PageResult<PaymentRefundApprovalVO> pageRefundApprovals(PaymentConfigPageQuery query) {
-        PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
+        PaymentConfigPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new PaymentConfigPageQuery();
+        }
         String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
         String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
         String tenantId = PaymentContextSupport.currentTenantId();
@@ -341,10 +345,14 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
                         || PaymentRefundApprovalStatusEnum.PENDING.getCode().equals(approval.getStatus()),
                 PaymentCode.PAYMENT_REFUND_APPROVAL_STATUS_INVALID);
         LocalDateTime now = LocalDateTime.now();
+        String reviewReason = PaymentContextSupport.trimToNull(reason);
+        if (reviewReason == null) {
+            reviewReason = "工作流审批拒绝";
+        }
         approval.setStatus(PaymentRefundApprovalStatusEnum.REJECTED.getCode());
         approval.setReviewerId(null);
         approval.setReviewerName(WORKFLOW_REVIEWER_NAME);
-        approval.setReviewReason(PaymentContextSupport.trimToNull(reason) == null ? "工作流审批拒绝" : reason.trim());
+        approval.setReviewReason(reviewReason);
         approval.setReviewTime(now);
         approval.setWorkflowProcessInstanceId(PaymentContextSupport.trimToNull(processInstanceId));
         approval.setWorkflowApplyStatus(WorkflowApplyStatus.REJECTED.name());
@@ -377,7 +385,10 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
     }
 
     private long normalizedAmount(Long amount) {
-        return amount == null ? 0L : amount;
+        if (amount == null) {
+            return 0L;
+        }
+        return amount;
     }
 
     private WorkflowProcessInstanceVO startRefundApprovalWorkflow(PaymentRefundApprovalEntity approval, PaymentOrderVO paymentOrder) {
@@ -400,7 +411,7 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
         variables.put("refundAmount", approval.getRefundAmount());
         variables.put("appId", approval.getAppId());
         variables.put("businessOrderId", approval.getBusinessOrderId());
-        command.setVariables(variables);
+        command.setVariables(WorkflowJsonRequest.of(variables));
         WorkflowProcessInstanceVO process = PaymentRemoteResultSupport.requireData(
                 workflowProcessApi.start(command),
                 PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,
@@ -496,6 +507,10 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
     }
 
     private void markWorkflowStartFailed(String tenantId, String approvalNo, String reason) {
+        String failureReason = PaymentContextSupport.trimToNull(reason);
+        if (failureReason == null) {
+            failureReason = "退款审批工作流启动失败";
+        }
         int updated = refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
                 .eq("tenant_id", tenantId)
                 .eq("approval_no", approvalNo)
@@ -504,9 +519,7 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
                 .set("status", PaymentRefundApprovalStatusEnum.WORKFLOW_START_FAILED.getCode())
                 .set("reviewer_id", PaymentContextSupport.currentUserId())
                 .set("reviewer_name", PaymentContextSupport.currentPrincipalName())
-                .set("review_reason", PaymentContextSupport.trimToNull(reason) == null
-                        ? "退款审批工作流启动失败"
-                        : reason)
+                .set("review_reason", failureReason)
                 .set("review_time", LocalDateTime.now())
                 .set("updated_by", PaymentContextSupport.currentUserId())
                 .set("updated_at", LocalDateTime.now()));
@@ -518,6 +531,10 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
             String tenantId,
             String approvalNo,
             WorkflowBusinessApplyProgressVO progress) {
+        String applyStatus = null;
+        if (progress.getApplyStatus() != null) {
+            applyStatus = progress.getApplyStatus().name();
+        }
         refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
                 .eq("tenant_id", tenantId)
                 .eq("approval_no", approvalNo)
@@ -525,8 +542,7 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
                 .set("workflow_apply_id", progress.getApplyId())
                 .set("workflow_process_instance_id",
                         PaymentContextSupport.trimToNull(progress.getProcessInstanceId()))
-                .set("workflow_apply_status",
-                        progress.getApplyStatus() == null ? null : progress.getApplyStatus().name())
+                .set("workflow_apply_status", applyStatus)
                 .set("workflow_apply_status_name",
                         PaymentContextSupport.trimToNull(progress.getApplyStatusName()))
                 .set("workflow_current_task_names",

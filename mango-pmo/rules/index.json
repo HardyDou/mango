@@ -69,7 +69,7 @@
     },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
-      "reason": "AI 交付质量门禁、快速 PR 合同与重型 PMO Required Check 解耦、可配置业务仓目录、直接修改 Maven 模块门禁、构建与质量分离、按模块历史架构债务递减和发布批次规则"
+      "reason": "AI 交付质量门禁、快速 PR 合同与重型 PMO Required Check 解耦、可配置业务仓目录、历史生命周期文档哈希基线、直接修改 Maven 模块门禁、构建与质量分离、按模块历史架构债务递减和发布批次规则"
     },
     "process.documentAssets": {
       "path": "rules/06-document-assets.md",
