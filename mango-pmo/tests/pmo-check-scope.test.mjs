@@ -4,7 +4,19 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { classifyChangedFiles, resolveMavenScope } from '../tools/classify-pmo-check-scope.mjs';
+import {
+  classifyChangedFiles,
+  resolveDependencyBuildProjects,
+  resolveMavenScope,
+} from '../tools/classify-pmo-check-scope.mjs';
+
+function workflowStep(workflow, name) {
+  const marker = `      - name: ${name}`;
+  const start = workflow.indexOf(marker);
+  assert.notEqual(start, -1, `workflow step not found: ${name}`);
+  const end = workflow.indexOf('\n      - name:', start + marker.length);
+  return workflow.slice(start, end === -1 ? workflow.length : end);
+}
 
 test('frontend-only button layout avoids Java, PMO, CLI and starter suites', () => {
   assert.deepEqual(
@@ -119,7 +131,17 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
     workflow,
     /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
   );
-  assert.doesNotMatch(workflow, /^\s+-am(?:d)?(?:\s|\\)/m);
+  const dependencyBuild = workflowStep(workflow, 'Build affected-module dependency prerequisites');
+  assert.match(dependencyBuild, /MAVEN_DEPENDENCY_PROJECTS/);
+  assert.match(dependencyBuild, /^\s+-am(?:\s|\\)/m);
+  assert.doesNotMatch(dependencyBuild, /mango-architecture-verification/);
+
+  const qualityGate = workflowStep(
+    workflow,
+    'Enforce affected-module architecture and Java quality contracts',
+  );
+  assert.match(qualityGate, /MAVEN_PROJECTS/);
+  assert.doesNotMatch(qualityGate, /^\s+-am(?:d)?(?:\s|\\)/m);
   assert.doesNotMatch(workflow, /Enforce full-Reactor architecture/u);
 
   const generatedBackendGate = fs.readFileSync(
@@ -139,6 +161,37 @@ test('Java source maps to one Maven module plus the governed architecture aggreg
     ':mango-architecture-verification',
     'mango-platform/mango-system/mango-system-core',
   ]);
+  assert.deepEqual(resolveDependencyBuildProjects(scope), [
+    'mango-platform/mango-system/mango-system-core',
+  ]);
+});
+
+test('business dependency builds exclude the architecture aggregator from upstream expansion', t => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-business-dependency-scope-'));
+  t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(project, 'backend/order'), { recursive: true });
+  fs.mkdirSync(path.join(project, 'backend/architecture-verification'), { recursive: true });
+  fs.writeFileSync(path.join(project, 'backend/pom.xml'), '<project/>\n');
+  fs.writeFileSync(path.join(project, 'backend/order/pom.xml'), '<project/>\n');
+  fs.writeFileSync(path.join(project, 'backend/architecture-verification/pom.xml'), '<project/>\n');
+
+  const scope = resolveMavenScope([
+    'backend/order/src/main/java/com/example/OrderService.java',
+  ], project);
+  assert.deepEqual(scope.projects, ['architecture-verification', 'order']);
+  assert.deepEqual(resolveDependencyBuildProjects(scope), ['order']);
+});
+
+test('partial dependency builds fail closed when no non-gate project remains', () => {
+  assert.throws(
+    () => resolveDependencyBuildProjects({
+      mode: 'partial',
+      projects: [':mango-architecture-verification'],
+    }),
+    /must contain at least one project besides architecture verification/,
+  );
+  assert.deepEqual(resolveDependencyBuildProjects({ mode: 'none', projects: [] }), []);
+  assert.deepEqual(resolveDependencyBuildProjects({ mode: 'governance', projects: [] }), []);
 });
 
 test('module POM selects its descendant Maven projects without selecting the whole reactor', () => {

@@ -94,6 +94,20 @@ jobs:
             -DskipTests=false \
             install
 
+      - name: Build affected-module dependency prerequisites
+        if: steps.scope.outputs.backend_mode == 'partial'
+        env:
+          MAVEN_DEPENDENCY_PROJECTS: ${{ steps.scope.outputs.maven_dependency_projects }}
+        run: |
+          mvn -f mango/pom.xml \
+            -pl "$MAVEN_DEPENDENCY_PROJECTS" \
+            -am \
+            -DskipTests \
+            -Dcheckstyle.skip=true \
+            -Dpmd.skip=true \
+            -Dspotbugs.skip=true \
+            install
+
       - name: Build generated four-layer backend prerequisites
         if: steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |

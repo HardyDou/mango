@@ -226,6 +226,17 @@ export function resolveMavenScope(files, repositoryRoot = root) {
   return { mode: 'partial', projects: [...projects].sort() };
 }
 
+export function resolveDependencyBuildProjects(mavenScope) {
+  if (mavenScope.mode !== 'partial') return [];
+  const projects = mavenScope.projects.filter(project =>
+    project !== ':mango-architecture-verification'
+    && project !== 'architecture-verification');
+  if (projects.length === 0) {
+    throw new Error('Partial Maven scope must contain at least one project besides architecture verification.');
+  }
+  return projects;
+}
+
 function parseArgs(argv) {
   const result = { base: '', head: '', output: process.env.GITHUB_OUTPUT || '' };
   for (let index = 0; index < argv.length; index += 1) {
@@ -255,12 +266,14 @@ export function runScopeClassifierCli(argv = process.argv.slice(2)) {
     }
     const scope = classifyChangedFiles(files);
     const maven = resolveMavenScope(files);
+    const dependencyProjects = resolveDependencyBuildProjects(maven);
     const projectPaths = resolveProjectPaths(root);
     if (args.output) {
       const lines = [
         ...Object.entries(scope).map(([key, value]) => `${key}=${value}`),
         `backend_mode=${maven.mode}`,
         `maven_projects=${maven.projects.join(',')}`,
+        `maven_dependency_projects=${dependencyProjects.join(',')}`,
         `backend_root=${projectPaths.backend}`,
         `backend_pom=${projectPaths.backend}/pom.xml`,
         `frontend_root=${projectPaths.frontend}`,
