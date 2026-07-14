@@ -1209,7 +1209,7 @@ importers:
   packages/mango-cli:
     dependencies:
       '@mango/pmo':
-        specifier: 1.2.4
+        specifier: 1.2.5
         version: link:../mango-pmo
 
   packages/mango-pmo: {}

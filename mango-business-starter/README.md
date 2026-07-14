@@ -49,6 +49,8 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 scope classifier 会为 partial 后端 PR 同时输出质量模块 `maven_projects` 和依赖准备模块 `maven_dependency_projects`。标准 workflow 先用后者执行带 `-am` 的跳过测试安装，再用前者执行不带 `-am`、`-amd` 的直接模块质量门禁。这样新 Runner 不依赖历史 Maven 缓存，也不会把上游模块的存量质量问题扩大到当前 PR。
 
+PMO 合同启用前形成、尚未迁移的生命周期文档可以在业务文档根目录的 `.mango-pmo-legacy-documents.json` 中逐文件登记相对路径、SHA-256 和迁移原因。该基线只锁定完全相同的存量内容：文件变化、删除、越界、重复或已经迁移为正式 `documentType` 时都会失败；新生命周期文档不能通过该文件绕过合同。
+
 ## 5. 接入方式
 业务开发者通常不直接复制本目录，而是通过 CLI 使用：
 
@@ -223,6 +225,7 @@ Controller 使用 `BaseCrudController`，类级路径由 module 和 aggregate �
 | 模板校验通过但业务链路失败 | `check-template.mjs` 只校验模板静态契约 | 生成项目后继续跑 Maven、前端构建、后端启动和 E2E |
 | partial PR 报 Mango 上游 SNAPSHOT 找不到 | Runner 本地仓库为空，旧 workflow 直接进入质量阶段 | 升级业务 PMO baseline，确认依赖准备步骤使用 `maven_dependency_projects` 和 `-am install`，质量步骤仍不带 `-am` |
 | 嵌套静态分析报架构治理属性缺失 | 旧版 Mango Maven 插件把 `architecture-verification` 带入了 PMD、Checkstyle、SpotBugs 的二次 Maven | 升级到包含治理聚合模块过滤的 Mango Maven 插件；外层 `mvn verify` 继续保留架构门禁 |
+| 纯升级 PR 被旧实施计划缺少 `documentType` 阻断 | PMO 合同启用前的历史计划尚未迁移 | 使用 PMO 1.2.5+，将每份存量文档按路径和当前 SHA-256 登记到 `.mango-pmo-legacy-documents.json`；内容变化后需迁移或重新审批基线 |
 | 已生成项目升级模板困难 | 业务代码已经改过，不能直接覆盖 | 用 CLI managed block 同步可管理部分，其余人工迁移 |
 
 ## 12. 相关文档

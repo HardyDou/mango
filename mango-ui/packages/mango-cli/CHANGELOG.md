@@ -1,5 +1,45 @@
 # @mango/cli Changelog
 
+## 1.0.76 - 2026-07-14
+
+### Changed
+
+- Lock generated and upgraded business frontend projects to `@mango/link-page@1.0.5` so they consume the published public link page visual polish.
+
+### Fixed
+
+- Normalize Windows local tarball paths in package consumer typecheck, keeping local packed-tarball verification usable from release worktrees.
+
+### Upgrade Notes
+
+- Publish `@mango/link-page@1.0.5` before installing `@mango/cli@1.0.76`.
+- Existing business projects that use the public link page package can upgrade `@mango/link-page` directly; new generated projects receive the updated lock from this CLI version.
+
+### Verification
+
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ --keep-temp`
+- `pnpm release:impact --base=origin/main --head=HEAD`
+
+## 1.0.75 - 2026-07-14
+
+### Fixed
+
+- Make aggregated PMD and Checkstyle execution produce reports first so Mango can apply `no-new-violations` to changed files instead of failing on historical findings before classification.
+- Add a path- and SHA-256-pinned baseline for lifecycle documents created before PMO contracts, while continuing to reject changed legacy documents and all ungoverned new documents.
+- Lock the CLI to `@mango/pmo@1.2.5` and Mango Maven `1.0.19`.
+
+### Upgrade Notes
+
+- Publish Mango Maven `1.0.19` and `@mango/pmo@1.2.5` before installing `@mango/cli@1.0.75`.
+- Run `mango pmo upgrade --project-dir . --to 1.2.5`, update the business backend to Mango Maven `1.0.19`, add an approved legacy-document hash baseline where required, and run the final required check once.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -Dtest=CheckMojoTest test`
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+
 ## 1.0.74 - 2026-07-14
 
 ### Changed

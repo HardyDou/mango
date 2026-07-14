@@ -18,6 +18,8 @@ const CONTRACTS = new Map(STAGES.map(([type, contractPath]) => [type, loadContra
 const STAGE_INDEX = new Map(STAGES.map(([type], index) => [type, index]));
 const DOCUMENT_ID_MARKER = /^(?:BRD|SRS|TDD|PLAN)-/u;
 const TITLE_MARKER = /(?:业务需求说明书|系统需求规格说明书|技术设计文档|实施计划|business requirements|system requirements|technical design|implementation plan)/iu;
+const LEGACY_BASELINE_FILE = '.mango-pmo-legacy-documents.json';
+const SHA256_PATTERN = /^[a-f0-9]{64}$/u;
 
 function finding(ruleId, message, file = null, line = null) {
   return {
@@ -53,17 +55,60 @@ function looksLikeLifecycleDocument(ast) {
   return ast.headings.some((heading) => heading.level === 1 && TITLE_MARKER.test(heading.title));
 }
 
+function loadLegacyBaseline(root, findings) {
+  const baselinePath = path.join(root, LEGACY_BASELINE_FILE);
+  const entries = new Map();
+  if (!fs.existsSync(baselinePath)) return { baselinePath, entries };
+  let baseline;
+  try {
+    baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
+  } catch (error) {
+    findings.push(finding('LIFE-ORDER-010', `历史文档基线不是合法 JSON：${error.message}`, baselinePath));
+    return { baselinePath, entries };
+  }
+  if (baseline?.schemaVersion !== 1 || !Array.isArray(baseline.documents)) {
+    findings.push(finding('LIFE-ORDER-010', '历史文档基线必须使用 schemaVersion=1 和 documents 数组', baselinePath));
+    return { baselinePath, entries };
+  }
+  for (const item of baseline.documents) {
+    const relativePath = String(item?.path ?? '').replaceAll('\\', '/').trim();
+    const expectedHash = String(item?.sha256 ?? '').trim().toLowerCase();
+    const reason = String(item?.reason ?? '').trim();
+    const resolved = path.resolve(root, relativePath);
+    const insideRoot = resolved.startsWith(`${root}${path.sep}`);
+    if (!relativePath || path.isAbsolute(relativePath) || !insideRoot) {
+      findings.push(finding('LIFE-ORDER-010', `历史文档基线路径非法：${relativePath || '<缺失>'}`, baselinePath));
+      continue;
+    }
+    if (!SHA256_PATTERN.test(expectedHash) || !reason) {
+      findings.push(finding('LIFE-ORDER-010', `历史文档基线必须提供 sha256 和 reason：${relativePath}`, baselinePath));
+      continue;
+    }
+    if (entries.has(resolved)) {
+      findings.push(finding('LIFE-ORDER-010', `历史文档基线路径重复：${relativePath}`, baselinePath));
+      continue;
+    }
+    entries.set(resolved, { relativePath, expectedHash, reason });
+  }
+  return { baselinePath, entries };
+}
+
 export function checkDocumentSet(rootPath) {
   const root = path.resolve(rootPath || 'business-docs');
   const findings = [];
   const documents = [];
+  const legacyDocuments = [];
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
     return {
       root,
       documents,
+      legacyDocuments,
       findings: [finding('LIFE-ORDER-010', `业务文档目录不存在或不是目录：${root}`, root)],
     };
   }
+
+  const legacyBaseline = loadLegacyBaseline(root, findings);
+  const consumedLegacyEntries = new Set();
 
   for (const file of markdownFiles(root, findings)) {
     const source = fs.readFileSync(file, 'utf8');
@@ -71,7 +116,15 @@ export function checkDocumentSet(rootPath) {
     const type = String(ast.frontmatter.values.documentType ?? '').trim();
     if (!type) {
       if (looksLikeLifecycleDocument(ast)) {
-        findings.push(finding('LIFE-ORDER-010', '生命周期文档缺少 frontmatter documentType，不能绕过合同检查', file));
+        const legacy = legacyBaseline.entries.get(path.resolve(file));
+        if (!legacy) {
+          findings.push(finding('LIFE-ORDER-010', '生命周期文档缺少 frontmatter documentType，不能绕过合同检查', file));
+        } else if (sha256(source) !== legacy.expectedHash) {
+          findings.push(finding('LIFE-HASH-020', '历史生命周期文档内容已变化，必须迁移为正式合同文档或更新经批准的基线', file));
+        } else {
+          consumedLegacyEntries.add(path.resolve(file));
+          legacyDocuments.push({ file, sha256: legacy.expectedHash, reason: legacy.reason });
+        }
       }
       continue;
     }
@@ -85,6 +138,16 @@ export function checkDocumentSet(rootPath) {
     documents.push(document);
     for (const item of result.findings) {
       findings.push({ ...item, file });
+    }
+  }
+
+  for (const [resolved, legacy] of legacyBaseline.entries) {
+    if (!consumedLegacyEntries.has(resolved)) {
+      findings.push(finding(
+        'LIFE-ORDER-010',
+        `历史文档基线项已失效，目标必须仍是缺少 documentType 的生命周期文档：${legacy.relativePath}`,
+        legacyBaseline.baselinePath,
+      ));
     }
   }
 
@@ -134,7 +197,7 @@ export function checkDocumentSet(rootPath) {
     }
   }
 
-  return { root, documents, findings };
+  return { root, documents, legacyDocuments, findings };
 }
 
 function parseArgs(argv) {
@@ -159,12 +222,14 @@ export function runDocumentSetCli(argv = process.argv.slice(2)) {
     process.stdout.write(`${JSON.stringify({
       root: result.root,
       checkedDocuments: result.documents.map((document) => document.file),
+      pinnedLegacyDocuments: result.legacyDocuments,
       findings: result.findings,
     }, null, 2)}\n`);
   } else {
     process.stdout.write('\n=== 业务文档集合检查 ===\n');
     process.stdout.write(`目录：${result.root}\n`);
     process.stdout.write(`生命周期文档：${result.documents.length}\n`);
+    process.stdout.write(`哈希锁定的历史文档：${result.legacyDocuments.length}\n`);
     for (const item of result.findings) {
       const location = [item.file, item.line ? `line ${item.line}` : ''].filter(Boolean).join(':');
       process.stdout.write(`[FAIL] ${item.ruleId}${location ? ` (${location})` : ''} ${item.message}\n`);

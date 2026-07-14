@@ -7,12 +7,15 @@
   --mango-link-page-primary: var(--el-color-primary, #1f6feb);
   --mango-link-page-green: #16824a;
   --mango-link-page-amber: #946200;
+  --mango-link-page-shadow: 0 16px 42px rgba(36, 48, 74, .08);
   box-sizing: border-box;
+  position: relative;
   min-width: 0;
   min-height: 100%;
   overflow-x: hidden;
   background:
-    linear-gradient(180deg, #f8fafc 0, #ffffff 260px);
+    linear-gradient(135deg, rgba(232, 243, 255, .96) 0%, rgba(244, 250, 246, .92) 48%, rgba(255, 249, 239, .84) 100%),
+    linear-gradient(180deg, #f8fbff 0, #ffffff 520px);
   color: var(--mango-link-page-text);
   container-type: inline-size;
 }
@@ -25,10 +28,12 @@
 }
 
 .mango-link-page__hero {
+  position: relative;
+  z-index: 1;
   display: grid;
   justify-items: center;
   gap: 16px;
-  padding: 76px 24px 30px;
+  padding: 70px 24px 32px;
   text-align: center;
 }
 
@@ -36,8 +41,8 @@
   max-width: 920px;
   margin: 0;
   color: var(--mango-link-page-text);
-  font-size: 42px;
-  font-weight: 650;
+  font-size: 40px;
+  font-weight: 700;
   line-height: 1.18;
 }
 
@@ -62,15 +67,15 @@
   border-radius: 999px;
   background: #ffffff;
   box-shadow:
-    0 0 0 1px var(--mango-link-page-border) inset,
-    0 10px 28px rgba(30, 41, 59, .06);
+    0 0 0 1px rgba(113, 128, 150, .22) inset,
+    0 14px 34px rgba(36, 48, 74, .10);
 }
 
 .mango-link-page__search .el-input__wrapper:hover,
 .mango-link-page__search .el-input__wrapper.is-focus {
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--mango-link-page-primary) 34%, var(--mango-link-page-border)) inset,
-    0 12px 30px rgba(30, 41, 59, .1);
+    0 16px 36px rgba(31, 111, 235, .13);
 }
 
 .mango-link-page__search .el-input__inner {
@@ -83,10 +88,13 @@
   min-height: 48px;
   border-radius: 999px;
   font-weight: 600;
+  box-shadow: 0 12px 26px rgba(31, 111, 235, .22);
 }
 
 .mango-link-page__body {
-  width: min(1160px, 100%);
+  position: relative;
+  z-index: 1;
+  width: min(1320px, 100%);
   min-height: 280px;
   margin: 0 auto;
   padding: 0 24px 64px;
@@ -100,16 +108,25 @@
 
 .mango-link-page__results {
   margin-bottom: 34px;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid color-mix(in srgb, var(--mango-link-page-primary) 18%, var(--mango-link-page-border));
   border-radius: 8px;
-  background: color-mix(in srgb, var(--mango-link-page-primary) 5%, #ffffff);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 255, 255, .9)),
+    color-mix(in srgb, var(--mango-link-page-primary) 7%, #ffffff);
+  box-shadow: var(--mango-link-page-shadow);
 }
 
 .mango-link-page__group {
   display: grid;
   gap: 14px;
   min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(223, 229, 238, .72);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .72);
+  box-shadow: 0 12px 32px rgba(36, 48, 74, .05);
+  backdrop-filter: blur(8px);
 }
 
 .mango-link-page__section-head {
@@ -123,8 +140,8 @@
 .mango-link-page__section-head h2 {
   margin: 0;
   color: var(--mango-link-page-text);
-  font-size: 20px;
-  font-weight: 650;
+  font-size: 19px;
+  font-weight: 700;
   line-height: 1.3;
 }
 
@@ -158,24 +175,27 @@
 .mango-link-page__compact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 14px;
+  gap: 20px;
   min-width: 0;
 }
 
 .mango-link-page__compact-grid {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 10px;
+  gap: 14px;
 }
 
 .mango-link-page__card,
 .mango-link-page__compact-card {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   min-width: 0;
-  border: 1px solid var(--mango-link-page-border);
+  overflow: hidden;
+  border: 1px solid rgba(223, 229, 238, .9);
   border-radius: 8px;
-  background: var(--mango-link-page-surface);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(249, 251, 254, .98));
   color: inherit;
   cursor: pointer;
   font: inherit;
@@ -190,7 +210,7 @@
 .mango-link-page__card {
   gap: 14px;
   min-height: 124px;
-  padding: 18px;
+  padding: 18px 18px 18px 20px;
 }
 
 .mango-link-page__compact-card {
@@ -202,8 +222,18 @@
 .mango-link-page__card:hover,
 .mango-link-page__compact-card:hover {
   border-color: color-mix(in srgb, var(--mango-link-page-primary) 32%, var(--mango-link-page-border));
-  box-shadow: 0 14px 34px rgba(30, 41, 59, .1);
+  box-shadow: 0 18px 40px rgba(36, 48, 74, .12);
   transform: translateY(-1px);
+}
+
+.mango-link-page__card::before,
+.mango-link-page__compact-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--mango-link-page-primary), var(--mango-link-page-green));
+  opacity: .34;
+  content: "";
 }
 
 .mango-link-page__card:focus-visible,
@@ -224,11 +254,13 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 1px solid #e7ecf3;
+  border: 1px solid rgba(216, 224, 235, .94);
   border-radius: 8px;
-  background: #f7f9fc;
+  background:
+    linear-gradient(135deg, #ffffff, #f2f6fb);
   color: var(--mango-link-page-primary);
   flex: 0 0 auto;
+  box-shadow: 0 8px 18px rgba(36, 48, 74, .07);
 }
 
 .mango-link-page__logo {
@@ -282,7 +314,7 @@
 }
 
 .mango-link-page__card-main {
-  gap: 6px;
+  gap: 7px;
 }
 
 .mango-link-page__compact-main {
@@ -316,10 +348,41 @@
   white-space: nowrap;
 }
 
+.mango-link-page__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mango-link-page__tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 112px;
+  min-height: 22px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid rgba(203, 213, 225, .74);
+  border-radius: 999px;
+  background: rgba(241, 245, 249, .78);
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mango-link-page__tag.is-recommended {
+  border-color: rgba(217, 119, 6, .22);
+  background: rgba(255, 247, 237, .92);
+  color: #a16207;
+}
+
 .mango-link-page__summary {
   display: -webkit-box;
   overflow: hidden;
-  color: #435266;
+  color: #526070;
   font-size: 14px;
   line-height: 1.5;
   -webkit-box-orient: vertical;
@@ -335,8 +398,9 @@
   padding: 38px 22px;
   border: 1px solid var(--mango-link-page-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, .9);
   color: var(--mango-link-page-muted);
+  box-shadow: var(--mango-link-page-shadow);
   text-align: center;
 }
 
@@ -378,6 +442,10 @@
 
   .mango-link-page__body {
     padding: 0 14px 42px;
+  }
+
+  .mango-link-page__group {
+    padding: 14px;
   }
 
   .mango-link-page__card-grid,

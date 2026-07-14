@@ -1,5 +1,70 @@
 # Mango Changelog
 
+## v2026.07.14-link-page-1.0.5-cli-1.0.76-release - 2026-07-14
+
+### Changed
+
+- Publish `@mango/link-page@1.0.5` with the merged public link page visual polish from PR #487.
+- Keep the existing component API and data contract unchanged while shipping the updated background, spacing, tag, and card styles through the package `style.css` entry.
+- Publish `@mango/cli@1.0.76` so generated and upgraded business projects lock `@mango/link-page` to `1.0.5`.
+- Add an npm release contract for `@mango/link-page` so future tarball verification checks the JavaScript entry, type entry, style entry, and link-page style marker.
+- Normalize local tarball paths in the generated package-consumer typecheck so the shared npm publish gate works on Windows release worktrees.
+
+### Upgrade Notes
+
+1. Upgrade business projects that consume the public link page package to `@mango/link-page@1.0.5`.
+2. Continue importing the package style through `@mango/link-page/style.css`; no prop, event, API, route, permission, or data migration is required.
+3. Install `@mango/cli@1.0.76` before generating or upgrading projects that should receive the `@mango/link-page@1.0.5` release lock.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm link page package | `@mango/link-page@1.0.5` -> Nexus npm hosted | `PENDING_PUBLISH` |
+| 2 | npm CLI package | `@mango/cli@1.0.76` -> Nexus npm hosted | `PENDING_PUBLISH` |
+| 3 | GitHub Release | `v2026.07.14-link-page-1.0.5-cli-1.0.76-release` | `PENDING_CREATE` |
+
+### Verification
+
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm --filter @mango/link-page build`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm release:impact --base=origin/main --head=HEAD`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ --keep-temp`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg @mango/link-page --dry-run --skip-shared-gates --publish-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/ --consume-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg @mango/cli --dry-run --skip-shared-gates --publish-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/ --consume-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- After publishing: verify `@mango/link-page@1.0.5` and `@mango/cli@1.0.76` from both `npm-hosted` and `npm-group`, then run `pnpm release:verify-npm` for both packages against `npm-group`.
+
+## v2026.07.14-maven-1.0.19-pmo-1.2.5-cli-1.0.75-gate-baseline-release - 2026-07-14
+
+### Fixed
+
+- Fix [Issue #491](https://github.com/HardyDou/mango/issues/491): aggregated PMD and Checkstyle now produce complete reports before Mango applies `no-new-violations`, so historical findings remain visible without terminating the changed-file gate before classification.
+- Keep static-analysis execution errors blocking under `staticFailurePolicy=block`; the fix does not skip PMD, Checkstyle, SpotBugs, or downgrade the required gate.
+- Add `.mango-pmo-legacy-documents.json` for lifecycle documents created before PMO contracts. Every exception is pinned to a repository-relative path and SHA-256; changed, stale, duplicate, or out-of-root entries fail closed, and new lifecycle documents cannot use the baseline.
+
+### Upgrade Notes
+
+1. Publish and verify Mango Maven `1.0.19` and `@mango/pmo@1.2.5` before installing `@mango/cli@1.0.75`.
+2. Run `mango pmo upgrade --project-dir . --to 1.2.5`, upgrade the business backend's `<mango.version>` to `1.0.19`, and register only approved pre-contract documents in the hash baseline.
+3. Run one final required check for the upgraded business commit; do not retry unchanged runs based on older artifacts.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.19` -> Nexus Maven hosted | `PENDING` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.5` -> Nexus npm hosted | `PENDING` |
+| 3 | npm CLI | `@mango/cli@1.0.75` -> Nexus npm hosted | `PENDING` |
+| 4 | GitHub Release | `v2026.07.14-maven-1.0.19-pmo-1.2.5-cli-1.0.75-gate-baseline-release` | `PENDING` |
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -Dtest=CheckMojoTest test`
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- PMO package build/check, business baseline projection, CLI release lock, capability documentation, README source facts, and workspace layout all passed.
+
 ## v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release - 2026-07-14
 
 ### Changed
