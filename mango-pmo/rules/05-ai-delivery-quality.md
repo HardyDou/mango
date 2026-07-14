@@ -86,6 +86,10 @@ PMO 治理使用以下稳定检查身份：
 
 | 项目 | 固定值 |
 |---|---|
+| PR 合同 Workflow 文件 | GitHub：`.github/workflows/pr-contract-check.yml` |
+| PR 合同 Workflow 名称 | `PR Contract Checks` |
+| PR 合同 Job ID / 默认 check-run 名称 | `pr-contract-check` |
+| PR 合同页面显示 | `PR Contract Checks / pr-contract-check` |
 | Workflow 文件 | GitHub：`.github/workflows/pmo-doc-check.yml`；Gitea：`.gitea/workflows/pmo-doc-check.yml` |
 | Workflow 名称 | `PMO Documentation Checks` |
 | Job ID / 默认 check-run 名称 | `pmo-doc-check` |
@@ -93,13 +97,14 @@ PMO 治理使用以下稳定检查身份：
 
 必须执行：
 
-- `main` 的 branch protection 或 ruleset 必须要求 `pmo-doc-check` 成功；GitHub 与 Gitea 使用各自标准 Workflow 文件，但稳定检查身份和门禁含义不变，该机器门禁不因仓库治理模式变化而关闭。
+- Mango 主仓 `main` 的 branch protection 或 ruleset 必须同时要求秒级 `pr-contract-check` 和重型 `pmo-doc-check` 成功；GitHub PR body 的 `edited` 事件只重跑前者，代码 SHA 未变化时禁止因此重跑后者。Gitea 和业务仓继续使用各自标准 `pmo-doc-check` Workflow；稳定检查身份和门禁含义不因仓库治理模式变化而关闭。
 - 仓库必须在 `.github/branch-protection-policy.json` 声明 `single-owner` 或 `multi-maintainer`，并让远端 branch protection 与声明一致。
 - `single-owner` 适用于只有一个最终 Owner、该 Owner 需要创建并合并 PR、协作者不能构成稳定独立审批门禁的仓库。该模式必须把 required approving review count 设为 `0`、关闭远端 Code Owner approval，同时保留 CODEOWNERS 作为责任范围和可选评审路由；Owner 只能在 required check 成功、对话已解决后通过 PR 合并。
 - `multi-maintainer` 适用于至少两名可稳定承担独立评审的维护者。该模式必须要求至少一人批准并启用 Code Owner approval；CODEOWNERS 文件存在不等于审批已经启用。
 - 仓库治理模式变化必须作为独立治理变更，更新机器策略、PMO 规则和远端保护证据；禁止在每次发布时临时开关审批门禁。
 - 首次配置或修改保护规则时，必须从真实 PR 的 check-run 或 GitHub API 读取 context，禁止仅凭文档字符串猜测。
 - 修改 workflow `name`、job ID、job `name` 或触发事件时，必须在同一变更中同步 branch protection/ruleset 和本节；旧 required check 不得因改名永久 pending。
+- `pr-contract-check` 必须从受信任的 base SHA 读取合同 checker，只检出必需脚本并校验 PR body；禁止在该 Workflow 启动 pnpm、Java、Maven 或生成项目验证。
 - 业务项目的 `pmo-doc-check` 必须对每个 PR 运行，不得配置会跳过整个 workflow 的 `paths`/`paths-ignore`；文档或后端没有变化时可以在 job 内执行可审计的轻量判定，但稳定 check-run 必须产生结果。
 - 业务项目的同一 `pmo-doc-check` 必须从 `mango.config.json.paths` 读取后端、前端和业务文档根目录，并对 `paths.businessDocs` 执行 `check-document-set.mjs`；缺失配置时使用 `backend`、`frontend`、`business-docs` 默认值，配置存在但后端 POM 不存在时必须失败，禁止静默跳过。有后端影响时，质量门禁只对直接修改的 Maven 模块执行 `mvn verify`，依赖构建和消费者兼容性另行验证；根 POM、全局 parent、架构规则/插件或门禁变化才执行完整 Reactor。四类生命周期文档遗漏 `documentType`、使用未知类型、重复 ID、上游断链或摘要失效时必须失败。
 - `mango-pmo` 规则、合同、Agent、Skill、模板、Java 架构 checker、PMO workflow、业务模板和 PMO/CLI 发布脚本必须由 `.github/CODEOWNERS` 覆盖。

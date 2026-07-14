@@ -201,13 +201,23 @@ assertNotIncludes('.github/pull_request_template.md', ['Not applicable reason'],
 
 assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'node mango-pmo/tools/classify-pmo-check-scope.mjs',
-  'node mango-pmo/tools/risk-verification.mjs',
-  "steps.scope.outputs.backend_mode == 'partial'",
+  "needs.preflight_scope.outputs.backend_mode == 'partial'",
   'node mango-pmo/tools/check-governance-intent.mjs',
   'node mango-pmo/tools/audit-module-readmes.mjs',
   'node mango-pmo/tools/audit-readme-source-facts.mjs',
   'github.event.pull_request.base.sha',
-  'github.event.pull_request.head.sha',
+  'github.event.pull_request.head.sha'
+], failures);
+assertIncludes('.github/workflows/pr-contract-check.yml', [
+  'name: PR Contract Checks',
+  'types: [opened, edited, reopened, synchronize, ready_for_review]',
+  'pr-contract-check:',
+  'ref: ${{ github.event.pull_request.base.sha }}',
+  'mango-pmo/tools/check-capability-docs.mjs',
+  'mango-pmo/tools/risk-verification.mjs',
+  'git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"',
+  'node mango-pmo/tools/check-capability-docs.mjs',
+  'node mango-pmo/tools/risk-verification.mjs',
   'PR_BODY_FILE'
 ], failures);
 assertSectionNotIncludes(
@@ -231,7 +241,7 @@ for (const failure of validateBranchProtectionPolicy(branchProtectionPolicy)) {
   failures.push(`.github/branch-protection-policy.json: ${failure}`);
 }
 
-const branchProtectionEvidencePath = 'mango-docs/evidence/governance/main-branch-protection-2026-07-13.json';
+const branchProtectionEvidencePath = 'mango-docs/evidence/governance/main-branch-protection-2026-07-14.json';
 const branchProtectionEvidence = JSON.parse(read(branchProtectionEvidencePath));
 const observedBranchProtection = normalizeBranchProtectionEvidence(branchProtectionEvidence);
 if (JSON.stringify(observedBranchProtection) !== JSON.stringify(branchProtectionPolicy)) {

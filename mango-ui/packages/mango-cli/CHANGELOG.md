@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.74 - 2026-07-14
+
+### Changed
+
+- Split GitHub code-SHA checks into parallel PMO, docs, CLI, and Java jobs while preserving the stable `pmo-doc-check` result.
+- Add the lightweight `pr-contract-check` path for PR description edits, cancel obsolete SHA runs, and keep generated GitHub/Gitea partial Maven quality checks limited to directly changed modules.
+- Run generated-backend acceptance only for behavior-changing generators, templates, Java gates, or governance inputs; reduce its Maven invocations from 19 to 9 with no `clean` calls.
+- Lock the CLI to `@mango/pmo@1.2.4`; Mango Maven remains `1.0.18`.
+
+### Upgrade Notes
+
+- Publish `@mango/pmo@1.2.4` before installing `@mango/cli@1.0.74`.
+- Run `mango pmo upgrade --project-dir . --to 1.2.4`, synchronize the GitHub/Gitea workflow, and require `pr-contract-check` plus `pmo-doc-check` on GitHub.
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
+- `node --test mango-pmo/tests/pmo-check-scope.test.mjs mango-pmo/tests/branch-protection-policy.test.mjs`
+- Full generated-backend acceptance with exactly 9 Maven invocations.
+
 ## 1.0.73 - 2026-07-14
 
 ### Fixed

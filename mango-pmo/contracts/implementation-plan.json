@@ -10,7 +10,7 @@
   "metadata": {
     "ruleId": "PLAN-META-001",
     "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
-    "fixed": {"documentType": "implementation-plan", "pmoVersion": "1.2.3", "schemaRevision": "1"}
+    "fixed": {"documentType": "implementation-plan", "pmoVersion": "1.2.4", "schemaRevision": "1"}
   },
   "localPrefixes": ["DEL", "TASK", "MS", "VAL", "REL", "DOC", "RISK"],
   "upstreamPrefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"],

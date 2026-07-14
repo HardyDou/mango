@@ -77,13 +77,51 @@ function logicalFilePath(file, paths) {
   return file;
 }
 
+function changesGeneratedBackendBehavior(file) {
+  if (matchesAny(file, [
+    /(?:^|\/)README\.md$/,
+    /(?:^|\/)CHANGELOG\.md$/,
+    /^mango-pmo\/contracts(?:\/|$)/,
+    /^mango-pmo\/(?:plugin-src\/\.codex-plugin\/plugin\.json|release-lock\.json)$/,
+    /^mango-ui\/packages\/mango-pmo\/(?:package\.json|\.codex-plugin\/plugin\.json|dist\/baseline\.json)$/,
+    /^mango-ui\/packages\/mango-cli\/(?:package\.json|release-versions\.json|src\/release-command\.mjs|scripts\/check-release-versions\.mjs)$/,
+    /^mango-business-starter\/business-pmo\/(?:pmo-lock\.json|mango-baseline\/(?:baseline\.json|contracts(?:\/|$)))/,
+    /^business-pmo\/(?:pmo-lock\.json|mango-baseline\/(?:baseline\.json|contracts(?:\/|$)))/,
+  ])) {
+    return false;
+  }
+
+  return matchesAny(file, [
+    /^\.github\/workflows\/(?:pmo-doc-check|architecture-debt-inventory)\.yml$/,
+    /^mango\.config\.json$/,
+    /^mango\/pom\.xml$/,
+    /^mango\/mango-parent(?:\/|$)/,
+    /^mango\/mango-tools\/mango-(?:architecture-rules|maven-plugin|architecture-verification)(?:\/|$)/,
+    /^mango-pmo\/baselines\/(?:architecture|mango-check)(?:\/|$)/,
+    /^mango-pmo\/tools\/(?:classify-pmo-check-scope|check-governance-intent)\.mjs$/,
+    /^(?:mango-business-starter\/)?business-pmo\/mango-baseline\/tools\/(?:classify-pmo-check-scope|check-governance-intent)\.mjs$/,
+    /^mango-business-starter\/backend(?:\/|$)/,
+    /^mango-business-starter\/scripts\/check-template\.mjs$/,
+    /^mango-ui\/packages\/mango-cli\/templates\/full\/backend(?:\/|$)/,
+    /^mango-ui\/packages\/mango-cli\/src(?:\/|$)/,
+    /^mango-ui\/packages\/mango-cli\/scripts\/(?:check-cli|check-business-module-template|check-generated-backend-gate)\.mjs$/,
+  ]);
+}
+
 export function classifyChangedFiles(files, repositoryRoot = root) {
   const paths = resolveProjectPaths(repositoryRoot);
   const normalized = [...new Set(files.map(file => logicalFilePath(file.trim(), paths)).filter(Boolean))].sort();
   const workflowChanged = normalized.some(file =>
     /^\.github\/workflows\/(?:pmo-doc-check|architecture-debt-inventory)\.yml$/.test(file));
   if (workflowChanged || normalized.includes('mango.config.json')) {
-    return { pmo: true, backend: true, projection: true, distribution: true, readmes: true };
+    return {
+      pmo: true,
+      backend: true,
+      projection: true,
+      distribution: true,
+      readmes: true,
+      generated_backend: true,
+    };
   }
 
   const packagedPmo = normalized.some(file => matchesAny(file, [
@@ -94,6 +132,7 @@ export function classifyChangedFiles(files, repositoryRoot = root) {
     /^business-pmo\/mango-baseline\//,
     /^\.agents\/skills\//,
     /^mango-ui\/packages\/mango-pmo\//,
+    /^\.github\/workflows\/pr-contract-check\.yml$/,
     /^\.github\/(?:pull_request_template\.md|CODEOWNERS|branch-protection-policy\.json)$/,
     /^(?:AGENTS|CLAUDE|GEMINI)\.md$/,
   ]));
@@ -124,8 +163,9 @@ export function classifyChangedFiles(files, repositoryRoot = root) {
     /^mango-ui\/packages\/.*\.(?:ts|tsx|vue|js|mjs|json|css|scss|less)$/,
     /^frontend\/.*\.(?:ts|tsx|vue|js|mjs|json|css|scss|less)$/,
   ]));
+  const generated_backend = normalized.some(changesGeneratedBackendBehavior);
 
-  return { pmo, backend, projection, distribution, readmes };
+  return { pmo, backend, projection, distribution, readmes, generated_backend };
 }
 
 function listPomProjects(directory, mangoRoot) {

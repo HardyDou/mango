@@ -1,5 +1,38 @@
 # Mango Changelog
 
+## v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release - 2026-07-14
+
+### Changed
+
+- Split the required PR gate into parallel PMO, CLI/JavaScript, Java, and documentation jobs behind the stable `pmo-doc-check` result.
+- Add a trusted, two-minute `pr-contract-check` for PR-body risk and capability contracts; editing the PR body no longer starts Maven, Java, pnpm, or the heavy code gate.
+- Cancel obsolete code-SHA runs, cache pnpm and Maven inputs, and classify generated-backend behavior independently so version, changelog, README, release-lock, and PMO-contract-only changes skip generated backend acceptance.
+- Reduce generated-backend acceptance from 19 Maven invocations to 9 and remove all 13 `clean` executions while retaining positive, negative, fail-closed, static-analysis, architecture, schema, metadata, and affected-module coverage.
+- Ship the same dependency-build separation and precise partial quality scope through the generated GitHub and Gitea workflows. No full Reactor PR gate and no human approval are introduced.
+- Keep the Jenkins release workspace Git object database between builds, stop fetching unrelated tags, and bootstrap Maven from a fast mirror with the Apache official SHA-512 and official-source fallback.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.74` only after both it and `@mango/pmo@1.2.4` resolve from `npm-group`; Mango Maven remains `1.0.18`.
+2. Run `mango pmo upgrade --project-dir . --to 1.2.4`, then synchronize the repository-host workflow.
+3. On GitHub, require `pr-contract-check` and `pmo-doc-check`; a green result merges automatically without human Review.
+
+### Release Batch
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm PMO bundle | `@mango/pmo@1.2.4` -> Nexus npm hosted | `READY_TO_PUBLISH` |
+| 2 | npm CLI | `@mango/cli@1.0.74` -> Nexus npm hosted | `WAITING_FOR_PMO` |
+| 3 | GitHub Release | `v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release` | `WAITING_FOR_ARTIFACTS` |
+
+### Verification
+
+- `node --test mango-pmo/tests/pmo-check-scope.test.mjs mango-pmo/tests/branch-protection-policy.test.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/generated-backend-gate-contract.test.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.18 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- Workflow YAML parsing, PMO package build/check, baseline sync, governance intent, and live branch-protection read-back.
+
 ## v2026.07.14-maven-1.0.18-pmo-1.2.3-cli-1.0.73-release - 2026-07-14
 
 ### Fixed

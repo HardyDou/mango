@@ -2,12 +2,20 @@
   "schemaVersion": 1,
   "repository": "HardyDou/mango",
   "branch": "main",
+  "observedAt": "2026-07-14T04:20:58Z",
+  "source": "GitHub REST API branch protection read-back",
   "governanceMode": "single-owner",
   "requiredStatusChecks": {
     "strict": true,
-    "contexts": [
-      "pmo-doc-check",
-      "pr-contract-check"
+    "checks": [
+      {
+        "context": "pmo-doc-check",
+        "appId": 15368
+      },
+      {
+        "context": "pr-contract-check",
+        "appId": null
+      }
     ]
   },
   "pullRequestReviews": {
@@ -19,5 +27,7 @@
   "requiredConversationResolution": true,
   "enforceAdmins": true,
   "allowForcePushes": false,
-  "allowDeletions": false
+  "allowDeletions": false,
+  "policy": ".github/branch-protection-policy.json",
+  "note": "This is an audit snapshot. GitHub live configuration remains authoritative."
 }
