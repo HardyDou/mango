@@ -28,8 +28,8 @@ jobs:
       - name: Classify affected Maven scope
         id: scope
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
+          HEAD_SHA: ${{ gitea.event.pull_request.head.sha || gitea.sha }}
         run: |
           node business-pmo/mango-baseline/tools/classify-pmo-check-scope.mjs \
             --base "$BASE_SHA" \
@@ -37,13 +37,13 @@ jobs:
             --output "$GITHUB_OUTPUT"
 
       - name: Write PR body
-        if: github.event_name == 'pull_request'
+        if: gitea.event_name == 'pull_request'
         env:
-          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BODY: ${{ gitea.event.pull_request.body }}
         run: printf '%s' "$PR_BODY" > .pr-body.md
 
       - name: Check impact-driven risk and verification contract
-        if: github.event_name == 'pull_request'
+        if: gitea.event_name == 'pull_request'
         env:
           PR_BODY_FILE: .pr-body.md
         run: node business-pmo/mango-baseline/tools/risk-verification.mjs
@@ -76,7 +76,7 @@ jobs:
       - name: Verify affected backend modules and Mango architecture
         if: steps.scope.outputs.backend_mode == 'partial'
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
+          BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
           BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
           MAVEN_PROJECTS: ${{ steps.scope.outputs.maven_projects }}
         run: >-

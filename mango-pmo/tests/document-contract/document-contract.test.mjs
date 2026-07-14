@@ -97,12 +97,12 @@ for (const stage of STAGES) {
 test('文档 pmoVersion 必须与版本化合同一致', () => {
   const contract = loadContract('mango-pmo/contracts/business-requirements.json');
   const source = readFixture('valid/business-requirements.md').replace(
-    'pmoVersion: 1.2.1',
+    'pmoVersion: 1.2.2',
     'pmoVersion: 9.9.9'
   );
   const result = validateDocument(source, contract);
   assert.ok(result.findings.some((finding) =>
-    finding.ruleId === 'BRD-META-001' && finding.message.includes('pmoVersion 必须为 1.2.1')));
+    finding.ruleId === 'BRD-META-001' && finding.message.includes('pmoVersion 必须为 1.2.2')));
 });
 
 test('NEXT 的本地审批证据必须存在且禁止路径穿越', () => {

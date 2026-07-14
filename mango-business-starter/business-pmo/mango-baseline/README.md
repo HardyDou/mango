@@ -17,7 +17,7 @@
 | 文档生命周期 | `contracts/*.json`、`tools/check-*-requirements.mjs` | BRD、SRS、TDD、实施计划的结构、边界、追踪、审批和版本门禁 |
 | 文档集合门禁 | `tools/check-document-set.mjs` | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要 |
 | 风险与验证门禁 | `tools/risk-verification.mjs` | 校验需求影响、方案风险、二者最大值、`STATIC`、`UNIT`、`API`、`UI` 选择和跳过理由 |
-| CI 范围分类 | `tools/classify-pmo-check-scope.mjs` | 按 Git 改动选择 PMO、Java、发布投影和 README 检查；业务代码解析直接受影响 Maven 模块，门禁治理改动进入独立验收模式 |
+| CI 范围分类 | `tools/classify-pmo-check-scope.mjs` | 按 Git 改动选择 PMO、Java、发布投影和 README 检查；从 `mango.config.json.paths` 读取业务仓目录，解析直接受影响 Maven 模块，门禁治理改动进入独立验收模式 |
 | 模块架构债务预算 | `tools/check-architecture-debt-budget.mjs` | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减 |
 | 专项 Agent | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md` | 一个生命周期模板对应一个撰写 Agent |
 | 可安装 Skills | `skills/**` | 生命周期协调、四类文档、工程、QA、Issue、模块、发布和 PR review |
@@ -30,9 +30,9 @@ Skill 按实际能力命名，而不是按发布包命名：只有治理编排�
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm view @mango/pmo@1.2.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.71 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.71 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.2.2 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.72 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.72 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个 `npm view` 都返回精确版本后再执行安装。返回 404 表示该批次仍未发布，源码仓可见不等于业务项目已经可消费。
@@ -46,8 +46,8 @@ npm install -g @mango/cli@1.0.71 --registry http://nexus.inner.yunxinbaokeji.com
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo upgrade --project-dir . --to 1.2.1 --dry-run
-mango pmo upgrade --project-dir . --to 1.2.1 --sync-shell
+mango pmo upgrade --project-dir . --to 1.2.2 --dry-run
+mango pmo upgrade --project-dir . --to 1.2.2 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
@@ -82,6 +82,7 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | rules index JSON | `bundles` | 按关键词和路径加载的规则包 |
 | `baseline.json` | `packageVersion` | 业务仓当前 baseline 包版本 |
 | `baseline.json` | `files[].sha256` | 业务仓 baseline 漂移检查依据 |
+| 业务仓 `mango.config.json` | `paths.backend`、`paths.frontend`、`paths.businessDocs` | 声明后端、前端和业务文档的仓库相对目录，供 GitHub/Gitea 标准门禁统一解析 |
 | Mango 主仓 `.github/branch-protection-policy.json` | `governanceMode`、Required Check、review 和历史保护字段 | GitHub `main` 分支保护的受版本控制期望状态 |
 
 ## 5. API 与扩展

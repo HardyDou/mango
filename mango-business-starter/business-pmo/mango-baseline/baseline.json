@@ -1,10 +1,10 @@
 {
   "packageName": "@mango/pmo",
-  "packageVersion": "1.2.1",
+  "packageVersion": "1.2.2",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "f9aca465feae91523a0e21e7547faaf1356d27aa",
-  "bundleSha256": "bca978404bfd14a96d5b9236a961ebb13efb2b21a14dd436c107766ee14688aa",
+  "sourceCommit": "0840d0e363ce6df37eb14f22bb538e16a4e5a306",
+  "bundleSha256": "da4d24528b316a9f833fa37f90a17465674a14f6c922abb2760b377838ca6fb7",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -44,11 +44,11 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "654633cb1659bda6ea8286ccd2b793737ebfb7eb25b207febb493ddc391ac3aa",
+    "sha256": "926d359f0e683e7778ba928cc338f0b3d35a0989c475e87f022e43bc0ff14796",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
-        "sha256": "c571904517a89c3c2de5ed15b7048e3a0568e3f4ddc967dff403031d401a1178",
+        "sha256": "02a255498001467e7bc437abe2ea6e9f7920b5b0b98f26cffc8896b335a5cc56",
         "size": 738,
         "kind": "plugin",
         "mode": "0644"
@@ -254,8 +254,8 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "8169ef5151b4a7c4a427c9fda45c488f9a21006ac98060bf96063468596ca2a8",
-      "size": 9987,
+      "sha256": "13ab44f1863c70e4b03a880fc6f1f64ec58e583fdbb2c65abe44896482a4620a",
+      "size": 10227,
       "kind": "documentation",
       "mode": "0644"
     },
@@ -324,7 +324,7 @@
     },
     {
       "path": "contracts/business-requirements.json",
-      "sha256": "9262753ffbf06c27687f9dddefe56767d3df76390d5b0ae038044504f05cb6c4",
+      "sha256": "9505fbc9adb8f2b099ae9285ed8824457ae657adbec6da86983206a22b2b25d1",
       "size": 8252,
       "kind": "contract",
       "mode": "0644"
@@ -352,21 +352,21 @@
     },
     {
       "path": "contracts/implementation-plan.json",
-      "sha256": "ef3f0ab239f2baf23c748f133a06a5e9c54e44f5001931a5571c274ded1382e2",
+      "sha256": "7008117dbaa6c4c3b36248cf05941e8845083bac83a6fd4129a4e0a56a1100de",
       "size": 7702,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/system-requirements.json",
-      "sha256": "995e3efaf1f49dc67c1b64ed0225bdc1371760b08ddee4ed90b04df99c74da81",
+      "sha256": "01c166da4ea50fce6137121463ef4e46051a46273b6b2e56ffe09d51690a99b1",
       "size": 8421,
       "kind": "contract",
       "mode": "0644"
     },
     {
       "path": "contracts/technical-design.json",
-      "sha256": "bd9f5084d6e6bf1108999937fcce380ae223c124c20586957b771e32429dce63",
+      "sha256": "7f335194d263a922cf15626c628b925ae297d92eb3e1fe1dd3127ad1c40b3254",
       "size": 9674,
       "kind": "contract",
       "mode": "0644"
@@ -408,8 +408,8 @@
     },
     {
       "path": "rules/05-ai-delivery-quality.md",
-      "sha256": "65ceb67bf20f7cf681af3f7fa9f914eca6d75a3964b8348fe1d321adc82225d6",
-      "size": 13850,
+      "sha256": "511d5ead9738d09d998d6589e27f89eb77441adbd84044345a614db5db92442f",
+      "size": 14239,
       "kind": "rule",
       "mode": "0644"
     },
@@ -443,8 +443,8 @@
     },
     {
       "path": "rules/10-release-artifacts.md",
-      "sha256": "fac5ac05d0dc9f19bdd8f73b8a9514576e34a577b687c0ed18fe8a262d1c4084",
-      "size": 9305,
+      "sha256": "44cf2a88d5f105afa7c59f9705a40a98f761525c21caa7a3fecc485b334d13d2",
+      "size": 9774,
       "kind": "rule",
       "mode": "0644"
     },
@@ -604,8 +604,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "51ec2e659a655e1c7c0af3ba5648b46e0d3138f0c7cfc77ddb0b33974f728340",
-      "size": 24788,
+      "sha256": "36bb756967a10a0272f780f8a0b4b1e8692d8a3516774a2687c25eabe719ecc1",
+      "size": 24866,
       "kind": "rule",
       "mode": "0644"
     },
@@ -1059,8 +1059,8 @@
     },
     {
       "path": "tools/classify-pmo-check-scope.mjs",
-      "sha256": "bbf3c5fca4d4675d49fbd43921dd32dfdf446a2d95ada6e3084835a32b148fec",
-      "size": 8286,
+      "sha256": "66468f9f1ab90d1c48ff5b5475028121d38e922619b08bec6204a7596f44243e",
+      "size": 11518,
       "kind": "tool",
       "mode": "0644"
     },
