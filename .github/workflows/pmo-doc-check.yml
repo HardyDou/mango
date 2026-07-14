@@ -70,8 +70,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: pnpm
-          cache-dependency-path: mango-ui/pnpm-lock.yaml
 
       - name: Test document contracts, lifecycle routing, and Skills
         if: needs.preflight_scope.outputs.pmo == 'true'
@@ -116,8 +114,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: pnpm
-          cache-dependency-path: mango-ui/pnpm-lock.yaml
 
       - name: Build and verify the reproducible PMO package for CLI tests
         if: needs.preflight_scope.outputs.distribution == 'true'
