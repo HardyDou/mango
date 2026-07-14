@@ -5,8 +5,9 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.workflow.api.vo.WorkflowEventPayloadVO;
-import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowFormInstance;
+import io.mango.workflow.api.vo.WorkflowJsonVO;
+import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -36,7 +37,7 @@ public class WorkflowEventPublisher {
     }
 
     public void publishProcessStarted(
-            WorkflowDefinition definition,
+            WorkflowDefinitionEntity definition,
             ProcessInstance instance,
             Map<String, Object> variables) {
         Require.notNull(definition, "流程定义不能为空");
@@ -52,7 +53,7 @@ public class WorkflowEventPublisher {
 
     public void publishTaskCompleted(
             Task task,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String comment) {
         publishTaskEvent(WorkflowDomainEvents.TASK_COMPLETED, task, formInstance, variables, comment);
@@ -60,7 +61,7 @@ public class WorkflowEventPublisher {
 
     public void publishTaskAdvanced(
             Task completedTask,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String comment,
             boolean ended,
@@ -79,7 +80,7 @@ public class WorkflowEventPublisher {
 
     public void publishTaskRejected(
             Task task,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String comment) {
         publishTaskEvent(WorkflowDomainEvents.TASK_REJECTED, task, formInstance, variables, comment);
@@ -87,7 +88,7 @@ public class WorkflowEventPublisher {
 
     public void publishTaskSaved(
             Task task,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String comment,
             WorkflowBusinessApplyVO businessApply) {
@@ -96,7 +97,7 @@ public class WorkflowEventPublisher {
 
     public void publishTaskClaimed(
             Task task,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             WorkflowBusinessApplyVO businessApply) {
         publishTaskEvent(WorkflowDomainEvents.TASK_CLAIMED, task, formInstance, variables, null, businessApply);
@@ -104,7 +105,7 @@ public class WorkflowEventPublisher {
 
     public void publishTaskUnclaimed(
             Task task,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             WorkflowBusinessApplyVO businessApply) {
         publishTaskEvent(WorkflowDomainEvents.TASK_UNCLAIMED, task, formInstance, variables, null, businessApply);
@@ -112,14 +113,14 @@ public class WorkflowEventPublisher {
 
     public void publishProcessCompleted(
             String processInstanceId,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables) {
         publishProcessEvent(WorkflowDomainEvents.PROCESS_COMPLETED, processInstanceId, formInstance, variables);
     }
 
     public void publishProcessRejected(
             String processInstanceId,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String reason) {
         WorkflowEventPayloadVO payload = basePayload(WorkflowDomainEvents.PROCESS_REJECTED, processInstanceId, variables);
@@ -129,7 +130,7 @@ public class WorkflowEventPublisher {
 
     public void publishProcessEnded(
             String processInstanceId,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String reason) {
         WorkflowEventPayloadVO payload = basePayload(WorkflowDomainEvents.PROCESS_ENDED, processInstanceId, variables);
@@ -140,7 +141,7 @@ public class WorkflowEventPublisher {
     private void publishTaskEvent(
             String eventType,
             Task task,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String comment) {
         publishTaskEvent(eventType, task, formInstance, variables, comment, null);
@@ -149,7 +150,7 @@ public class WorkflowEventPublisher {
     private void publishTaskEvent(
             String eventType,
             Task task,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables,
             String comment,
             WorkflowBusinessApplyVO businessApply) {
@@ -220,7 +221,7 @@ public class WorkflowEventPublisher {
     private void publishProcessEvent(
             String eventType,
             String processInstanceId,
-            WorkflowFormInstance formInstance,
+            WorkflowFormInstanceEntity formInstance,
             Map<String, Object> variables) {
         WorkflowEventPayloadVO payload = basePayload(eventType, processInstanceId, variables);
         publish(eventType, businessKey(formInstance, variables), variables, payload);
@@ -255,7 +256,7 @@ public class WorkflowEventPublisher {
         payload.setBusinessType(stringVar(variables, VAR_BUSINESS_TYPE));
         payload.setBusinessKey(stringVar(variables, VAR_BUSINESS_KEY));
         payload.setApplyId(stringVar(variables, VAR_APPLY_ID));
-        payload.setVariables(variables == null ? Map.of() : new LinkedHashMap<>(variables));
+        payload.setVariables(WorkflowJsonVO.of(variables));
         return payload;
     }
 
@@ -269,7 +270,7 @@ public class WorkflowEventPublisher {
         map.put("businessType", payload.getBusinessType());
         map.put("businessKey", payload.getBusinessKey());
         map.put("applyId", numericStringOrValue(payload.getApplyId()));
-        map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables());
+        map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables().toMap());
         map.put("processDefinitionId", payload.getProcessDefinitionId());
         map.put("definitionId", payload.getDefinitionId());
         map.put("definitionKey", payload.getDefinitionKey());
@@ -305,7 +306,7 @@ public class WorkflowEventPublisher {
         return map;
     }
 
-    private String businessKey(WorkflowFormInstance formInstance, Map<String, Object> variables) {
+    private String businessKey(WorkflowFormInstanceEntity formInstance, Map<String, Object> variables) {
         if (formInstance != null && formInstance.getBusinessKey() != null && !formInstance.getBusinessKey().isBlank()) {
             return formInstance.getBusinessKey();
         }

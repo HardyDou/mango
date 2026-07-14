@@ -6,7 +6,8 @@
   "requiredStatusChecks": {
     "strict": true,
     "contexts": [
-      "pmo-doc-check"
+      "pmo-doc-check",
+      "pr-contract-check"
     ]
   },
   "pullRequestReviews": {

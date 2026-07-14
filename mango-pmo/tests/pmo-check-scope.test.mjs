@@ -13,28 +13,56 @@ import {
 test('frontend-only button layout avoids Java, PMO, CLI and starter suites', () => {
   assert.deepEqual(
     classifyChangedFiles(['mango-ui/packages/rbac/src/views/RoleView.vue']),
-    { pmo: false, backend: false, projection: false, distribution: false, readmes: true },
+    {
+      pmo: false,
+      backend: false,
+      projection: false,
+      distribution: false,
+      readmes: true,
+      generated_backend: false,
+    },
   );
 });
 
 test('plain design document keeps only common lightweight gates', () => {
   assert.deepEqual(
     classifyChangedFiles(['mango-docs/designs/button-position.md']),
-    { pmo: false, backend: false, projection: false, distribution: false, readmes: false },
+    {
+      pmo: false,
+      backend: false,
+      projection: false,
+      distribution: false,
+      readmes: false,
+      generated_backend: false,
+    },
   );
 });
 
 test('backend Java triggers architecture and README audits without CLI tests', () => {
   assert.deepEqual(
     classifyChangedFiles(['mango/mango-platform/mango-system/mango-system-core/src/main/java/example/UserService.java']),
-    { pmo: false, backend: true, projection: false, distribution: false, readmes: true },
+    {
+      pmo: false,
+      backend: true,
+      projection: false,
+      distribution: false,
+      readmes: true,
+      generated_backend: false,
+    },
   );
 });
 
 test('packaged PMO rules trigger PMO tests and projection checks', () => {
   assert.deepEqual(
     classifyChangedFiles(['mango-pmo/rules/09-test-case-automation-flow.md']),
-    { pmo: true, backend: false, projection: true, distribution: false, readmes: false },
+    {
+      pmo: true,
+      backend: false,
+      projection: true,
+      distribution: false,
+      readmes: false,
+      generated_backend: false,
+    },
   );
 });
 
@@ -43,6 +71,50 @@ test('CLI or starter changes trigger distribution and projection checks', () => 
   assert.equal(cli.distribution, true);
   assert.equal(cli.projection, true);
   assert.equal(cli.backend, false);
+  assert.equal(cli.generated_backend, true);
+});
+
+test('generated backend validation only follows behavior-changing templates, generators and Java gates', () => {
+  for (const file of [
+    'mango/mango-tools/mango-architecture-rules/src/main/java/example/Rule.java',
+    'mango/mango-tools/mango-maven-plugin/src/main/java/example/Gate.java',
+    'mango-business-starter/backend/modules/{{moduleKebab}}/pom.xml',
+    'mango-ui/packages/mango-cli/templates/full/backend/pom.xml',
+    'mango-ui/packages/mango-cli/src/index.mjs',
+    'mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs',
+  ]) {
+    assert.equal(classifyChangedFiles([file]).generated_backend, true, file);
+  }
+});
+
+test('version, changelog, README, PMO contract projection and release locks skip generated backend validation', () => {
+  for (const file of [
+    'CHANGELOG.md',
+    'mango-business-starter/README.md',
+    'mango-ui/packages/mango-cli/CHANGELOG.md',
+    'mango-ui/packages/mango-cli/package.json',
+    'mango-ui/packages/mango-cli/release-versions.json',
+    'mango-ui/packages/mango-pmo/package.json',
+    'mango-pmo/contracts/technical-design.json',
+    'mango-pmo/release-lock.json',
+    'mango-business-starter/business-pmo/pmo-lock.json',
+    'mango-business-starter/business-pmo/mango-baseline/baseline.json',
+    'mango-business-starter/business-pmo/mango-baseline/contracts/technical-design.json',
+  ]) {
+    assert.equal(classifyChangedFiles([file]).generated_backend, false, file);
+  }
+});
+
+test('unknown critical generated-backend governance inputs fail closed', () => {
+  for (const file of [
+    'mango/pom.xml',
+    'mango/mango-parent/new-governance.xml',
+    'mango-pmo/baselines/mango-check/new-policy.json',
+    'mango-pmo/tools/classify-pmo-check-scope.mjs',
+    'business-pmo/mango-baseline/tools/classify-pmo-check-scope.mjs',
+  ]) {
+    assert.equal(classifyChangedFiles([file]).generated_backend, true, file);
+  }
 });
 
 test('governance workflow changes self-verify every conditional suite', () => {
@@ -53,10 +125,31 @@ test('governance workflow changes self-verify every conditional suite', () => {
   ]) {
     assert.deepEqual(
       classifyChangedFiles([file]),
-      { pmo: true, backend: true, projection: true, distribution: true, readmes: true },
+      {
+        pmo: true,
+        backend: true,
+        projection: true,
+        distribution: true,
+        readmes: true,
+        generated_backend: true,
+      },
       file,
     );
   }
+});
+
+test('fast PR contract workflow self-verifies PMO without starting Java or generated backend gates', () => {
+  assert.deepEqual(
+    classifyChangedFiles(['.github/workflows/pr-contract-check.yml']),
+    {
+      pmo: true,
+      backend: false,
+      projection: false,
+      distribution: false,
+      readmes: false,
+      generated_backend: false,
+    },
+  );
 });
 
 test('business repositories resolve custom paths from mango.config.json', t => {
@@ -111,10 +204,24 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
     new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
     'utf8',
   );
+  assert.match(workflow, /pull_request:\n\s+types: \[opened, synchronize, reopened\]/);
+  assert.doesNotMatch(workflow, /types: \[[^\]]*edited[^\]]*\]/);
   assert.match(
     workflow,
-    /Build and verify the reproducible PMO package\n\s+if: steps\.scope\.outputs\.pmo == 'true' \|\| steps\.scope\.outputs\.distribution == 'true' \|\| steps\.scope\.outputs\.backend_mode == 'governance'[\s\S]*?build-package\.mjs[\s\S]*?check-package\.mjs/,
+    /concurrency:\n\s+group: pmo-doc-check-\$\{\{ github\.event\.pull_request\.number \}\}\n\s+cancel-in-progress: true/,
   );
+  for (const job of ['pmo', 'cli_js', 'java', 'docs']) {
+    assert.match(
+      workflow,
+      new RegExp(`\\n  ${job}:\\n[\\s\\S]*?\\n    needs: preflight_scope`),
+      job,
+    );
+  }
+  assert.match(
+    workflow,
+    /Build and verify the reproducible PMO package[\s\S]*?build-package\.mjs[\s\S]*?check-package\.mjs/,
+  );
+  assert.match(workflow, /generated_backend: \$\{\{ steps\.scope\.outputs\.generated_backend \}\}/);
   assert.match(
     workflow,
     /Build the architecture gate prerequisites[\s\S]*?-pl :mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,
@@ -128,9 +235,9 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
   )?.[0] ?? '';
   assert.match(
     dependencyBuild,
-    /if: steps\.scope\.outputs\.backend_mode == 'partial' && steps\.scope\.outputs\.maven_dependency_projects != ''/,
+    /needs\.preflight_scope\.outputs\.backend_mode == 'partial'[\s\S]*?needs\.preflight_scope\.outputs\.maven_dependency_projects != ''/,
   );
-  assert.match(dependencyBuild, /MAVEN_DEPENDENCY_PROJECTS: \$\{\{ steps\.scope\.outputs\.maven_dependency_projects \}\}/);
+  assert.match(dependencyBuild, /MAVEN_DEPENDENCY_PROJECTS: \$\{\{ needs\.preflight_scope\.outputs\.maven_dependency_projects \}\}/);
   assert.match(dependencyBuild, /-pl "\$MAVEN_DEPENDENCY_PROJECTS"[\s\S]*?\n\s+-am \\/);
   assert.match(dependencyBuild, /-DskipTests[\s\S]*?-Dcheckstyle\.skip=true[\s\S]*?-Dpmd\.skip=true[\s\S]*?-Dspotbugs\.skip=true[\s\S]*?install/);
 
@@ -140,6 +247,14 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
   assert.match(qualityGate, /-pl "\$MAVEN_PROJECTS"/);
   assert.doesNotMatch(qualityGate, /^\s+-am(?:d)?(?:\s|\\)/m);
   assert.doesNotMatch(workflow, /Enforce full-Reactor architecture/u);
+  assert.match(
+    workflow,
+    /Verify generated business backend gates[\s\S]*?needs\.preflight_scope\.outputs\.generated_backend == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /Build the local PMO bundle for generated project acceptance[\s\S]*?mango-pmo\/scripts\/build-package\.mjs[\s\S]*?Build the architecture gate prerequisites/,
+  );
 
   const generatedBackendGate = fs.readFileSync(
     new URL('../../mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs', import.meta.url),
@@ -147,6 +262,13 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
   );
   assert.match(generatedBackendGate, /pathToFileURL\(localMangoRepository\)/u);
   assert.doesNotMatch(generatedBackendGate, /nexus\.inner\.yunxinbaokeji\.com/u);
+
+  const stableSummary = workflow.match(/\n  pmo-doc-check:\n[\s\S]*$/)?.[0] ?? '';
+  assert.match(stableSummary, /name: pmo-doc-check/);
+  assert.match(stableSummary, /needs: \[preflight_scope, pmo, cli_js, java, docs\]/);
+  assert.match(stableSummary, /if: \$\{\{ always\(\) \}\}/);
+  assert.match(stableSummary, /success\|skipped\) ;;/);
+  assert.match(stableSummary, /\*\) exit 1 ;;/);
 });
 
 test('Java source maps to one Maven module plus the governed architecture aggregator', () => {

@@ -1,0 +1,11 @@
+{
+  "mode": "CUSTOM",
+  "rules": [],
+  "fields": [],
+  "customConfig": {
+    "submitPath": "/workflow/custom-apply",
+    "viewPath": "/workflow/business-form",
+    "applyPageKey": "workflow.expense.apply",
+    "approvePageKey": "workflow.expense.approve"
+  }
+}

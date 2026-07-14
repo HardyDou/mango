@@ -3,7 +3,7 @@ package io.mango.workflow.core.engine;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
-import io.mango.workflow.api.WorkflowCode;
+import io.mango.workflow.api.enums.WorkflowCode;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.JavaDelegate;

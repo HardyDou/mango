@@ -1,0 +1,10 @@
+{
+  "mode": "DYNAMIC",
+  "fields": [
+    {"type":"input","field":"applicant","title":"申请人","props":{"placeholder":"请输入申请人"},"validate":[{"required":true,"message":"申请人不能为空","trigger":"blur"}]},
+    {"type":"inputNumber","field":"days","title":"请假天数","props":{"min":1,"placeholder":"请输入请假天数"},"validate":[{"required":true,"message":"请假天数不能为空","trigger":"blur"}]},
+    {"type":"datePicker","field":"startDate","title":"开始日期","props":{"type":"date","valueFormat":"YYYY-MM-DD"},"validate":[{"required":true,"message":"开始日期不能为空","trigger":"blur"}]},
+    {"type":"datePicker","field":"endDate","title":"结束日期","props":{"type":"date","valueFormat":"YYYY-MM-DD"},"validate":[{"required":true,"message":"结束日期不能为空","trigger":"blur"}]},
+    {"type":"textarea","field":"reason","title":"请假事由","props":{"placeholder":"请输入请假事由"},"validate":[{"required":true,"message":"请假事由不能为空","trigger":"blur"}]}
+  ]
+}

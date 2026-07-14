@@ -1,5 +1,6 @@
 package io.mango.cms.core.service.impl;
 
+import io.mango.cms.api.enums.CmsCode;
 import io.mango.cms.api.enums.CmsStatus;
 import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
@@ -19,7 +20,7 @@ final class CmsSupport {
 
     static String currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
-        Require.notBlank(tenantId, "租户上下文不能为空");
+        Require.notBlank(tenantId, CmsCode.CMS_BUSINESS_ERROR, "租户上下文不能为空");
         return tenantId;
     }
 
@@ -35,7 +36,7 @@ final class CmsSupport {
     }
 
     static String trimRequired(String value, String message) {
-        Require.notBlank(value, message);
+        Require.notBlank(value, CmsCode.CMS_BUSINESS_ERROR, message);
         return value.trim();
     }
 
@@ -64,5 +65,27 @@ final class CmsSupport {
         } catch (IllegalArgumentException ex) {
             throw new BizException(message);
         }
+    }
+
+    static <T> T defaultIfNull(T value, T defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    static <E extends Enum<E>> String enumNameOrDefault(
+            Class<E> enumType, String value, String defaultValue, String message) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return enumName(enumType, value, message);
+    }
+
+    static String removePrefix(String value, String prefix) {
+        if (value.startsWith(prefix)) {
+            return value.substring(prefix.length());
+        }
+        return value;
     }
 }

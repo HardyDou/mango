@@ -63,6 +63,22 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Build affected-module upstream dependencies
+        if: steps.scope.outputs.backend_mode == 'partial' && steps.scope.outputs.maven_dependency_projects != ''
+        env:
+          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
+          MAVEN_DEPENDENCY_PROJECTS: ${{ steps.scope.outputs.maven_dependency_projects }}
+        run: >-
+          mvn -B -ntp -f "$BACKEND_POM"
+          -pl "$MAVEN_DEPENDENCY_PROJECTS"
+          -am
+          -DskipTests
+          -Denforcer.skip=true
+          -Dcheckstyle.skip=true
+          -Dpmd.skip=true
+          -Dspotbugs.skip=true
+          install
+
       - name: Validate backend governance POMs
         if: steps.scope.outputs.backend_mode == 'governance'
         env:

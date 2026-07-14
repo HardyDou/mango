@@ -44,7 +44,7 @@ public class WorkflowTaskRecordVO {
     private String comment;
 
     @Schema(description = "处理变量")
-    private Map<String, Object> variables;
+    private WorkflowJsonVO variables;
 
     @Schema(description = "处理时间")
     private LocalDateTime createdTime;

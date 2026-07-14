@@ -1,5 +1,9 @@
 package io.mango.workflow.api.command;
 
+import jakarta.validation.constraints.NotNull;
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
+
+
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -39,6 +43,7 @@ public class CreateWorkflowBusinessApplyCommand {
     private String applySummary;
 
     @Schema(description = "Mango流程定义ID")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long processDefinitionId;
 
     @Schema(description = "流程定义编码")
@@ -46,6 +51,7 @@ public class CreateWorkflowBusinessApplyCommand {
     private String processDefinitionKey;
 
     @Schema(description = "渲染模式")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private WorkflowApplyRenderMode renderMode = WorkflowApplyRenderMode.DYNAMIC_FORM;
 
     @Schema(description = "自定义申请页Key")
@@ -61,12 +67,15 @@ public class CreateWorkflowBusinessApplyCommand {
     private String formKey;
 
     @Schema(description = "表单版本")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Integer formVersion;
 
     @Schema(description = "动态表单JSON快照")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String formJsonSnapshot;
 
     @Schema(description = "动态表单数据快照")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String formDataSnapshot;
 
     @Schema(description = "业务快照引用")
@@ -78,11 +87,16 @@ public class CreateWorkflowBusinessApplyCommand {
     private String snapshotDigest;
 
     @Schema(description = "重新申请来源ID")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long reapplyFromApplyId;
 
     @Schema(description = "流程变量")
-    private Map<String, Object> variables;
+    @NotNull(groups = WorkflowOptionalValidation.class)
+    @jakarta.validation.Valid
+    private WorkflowJsonRequest variables;
 
     @Schema(description = "扩展配置")
-    private Map<String, Object> extension;
+    @NotNull(groups = WorkflowOptionalValidation.class)
+    @jakarta.validation.Valid
+    private WorkflowJsonRequest extension;
 }

@@ -18,12 +18,6 @@ create table ACT_GE_BYTEARRAY (
     primary key (ID_)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE utf8_bin;
 
-insert into ACT_GE_PROPERTY
-values ('common.schema.version', '7.0.0.0', 1);
-
-insert into ACT_GE_PROPERTY
-values ('next.dbid', '1', 1);
-
 create table ACT_RU_IDENTITYLINK (
     ID_ varchar(64),
     REV_ integer,
@@ -45,8 +39,6 @@ create index ACT_IDX_IDENT_LNK_GROUP on ACT_RU_IDENTITYLINK(GROUP_ID_);
 create index ACT_IDX_IDENT_LNK_SCOPE on ACT_RU_IDENTITYLINK(SCOPE_ID_, SCOPE_TYPE_);
 create index ACT_IDX_IDENT_LNK_SUB_SCOPE on ACT_RU_IDENTITYLINK(SUB_SCOPE_ID_, SCOPE_TYPE_);
 create index ACT_IDX_IDENT_LNK_SCOPE_DEF on ACT_RU_IDENTITYLINK(SCOPE_DEFINITION_ID_, SCOPE_TYPE_);
-
-insert into ACT_GE_PROPERTY values ('identitylink.schema.version', '7.0.0.0', 1);
 
 create table ACT_RU_ENTITYLINK (
     ID_ varchar(64),
@@ -72,8 +64,6 @@ create index ACT_IDX_ENT_LNK_REF_SCOPE on ACT_RU_ENTITYLINK(REF_SCOPE_ID_, REF_S
 create index ACT_IDX_ENT_LNK_ROOT_SCOPE on ACT_RU_ENTITYLINK(ROOT_SCOPE_ID_, ROOT_SCOPE_TYPE_, LINK_TYPE_);
 create index ACT_IDX_ENT_LNK_SCOPE_DEF on ACT_RU_ENTITYLINK(SCOPE_DEFINITION_ID_, SCOPE_TYPE_, LINK_TYPE_);
 
-insert into ACT_GE_PROPERTY values ('entitylink.schema.version', '7.0.0.0', 1);
-
 create table ACT_RU_EVENT_SUBSCR (
     ID_ varchar(64) not null,
     REV_ integer,
@@ -97,8 +87,6 @@ create table ACT_RU_EVENT_SUBSCR (
 
 create index ACT_IDX_EVENT_SUBSCR_CONFIG_ on ACT_RU_EVENT_SUBSCR(CONFIGURATION_);
 create index ACT_IDX_EVENT_SUBSCR_SCOPEREF_ on ACT_RU_EVENT_SUBSCR(SCOPE_ID_, SCOPE_TYPE_);
-
-insert into ACT_GE_PROPERTY values ('eventsubscription.schema.version', '7.0.0.0', 1);
 
 create table ACT_RU_TASK (
     ID_ varchar(64),
@@ -139,8 +127,6 @@ create index ACT_IDX_TASK_SCOPE on ACT_RU_TASK(SCOPE_ID_, SCOPE_TYPE_);
 create index ACT_IDX_TASK_SUB_SCOPE on ACT_RU_TASK(SUB_SCOPE_ID_, SCOPE_TYPE_);
 create index ACT_IDX_TASK_SCOPE_DEF on ACT_RU_TASK(SCOPE_DEFINITION_ID_, SCOPE_TYPE_);
 
-insert into ACT_GE_PROPERTY values ('task.schema.version', '7.0.0.0', 1);
-
 create table ACT_RU_VARIABLE (
     ID_ varchar(64) not null,
     REV_ integer,
@@ -168,8 +154,6 @@ alter table ACT_RU_VARIABLE
     add constraint ACT_FK_VAR_BYTEARRAY 
     foreign key (BYTEARRAY_ID_) 
     references ACT_GE_BYTEARRAY (ID_);
-
-insert into ACT_GE_PROPERTY values ('variable.schema.version', '7.0.0.0', 1);
 
 create table ACT_RU_JOB (
     ID_ varchar(64) NOT NULL,
@@ -430,8 +414,6 @@ create index ACT_IDX_EJOB_SCOPE on ACT_RU_EXTERNAL_JOB(SCOPE_ID_, SCOPE_TYPE_);
 create index ACT_IDX_EJOB_SUB_SCOPE on ACT_RU_EXTERNAL_JOB(SUB_SCOPE_ID_, SCOPE_TYPE_);
 create index ACT_IDX_EJOB_SCOPE_DEF on ACT_RU_EXTERNAL_JOB(SCOPE_DEFINITION_ID_, SCOPE_TYPE_);
 
-insert into ACT_GE_PROPERTY values ('job.schema.version', '7.0.0.0', 1);
-
 create table FLW_RU_BATCH (
     ID_ varchar(64) not null,
     REV_ integer,
@@ -470,8 +452,6 @@ alter table FLW_RU_BATCH_PART
     add constraint FLW_FK_BATCH_PART_PARENT
     foreign key (BATCH_ID_)
     references FLW_RU_BATCH (ID_);
-
-insert into ACT_GE_PROPERTY values ('batch.schema.version', '7.0.0.0', 1);
 
 create table ACT_RE_DEPLOYMENT (
     ID_ varchar(64),
@@ -792,12 +772,6 @@ alter table ACT_PROCDEF_INFO
     add constraint ACT_UNIQ_INFO_PROCDEF
     unique (PROC_DEF_ID_);
 
-insert into ACT_GE_PROPERTY
-values ('schema.version', '7.0.0.0', 1);
-
-insert into ACT_GE_PROPERTY
-values ('schema.history', 'create(7.0.0.0)', 1);
-
 create table ACT_HI_IDENTITYLINK (
     ID_ varchar(64),
     GROUP_ID_ varchar(255),
@@ -1037,9 +1011,11 @@ create index ACT_IDX_HI_TASK_INST_PROCINST on ACT_HI_TASKINST(PROC_INST_ID_);
 -- Mango workflow configuration schema.
 CREATE TABLE IF NOT EXISTS `workflow_category` (
   `id` bigint NOT NULL COMMENT '流程分类ID',
-  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `category_name` varchar(64) NOT NULL COMMENT '分类名称',
   `category_code` varchar(64) NOT NULL COMMENT '分类编码',
+  `domain_code` varchar(64) NOT NULL DEFAULT 'COMMON' COMMENT '业务域编码',
   `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-停用 1-启用',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
@@ -1051,15 +1027,18 @@ CREATE TABLE IF NOT EXISTS `workflow_category` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '标准更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_workflow_category_code` (`tenant_id`,`category_code`),
+  KEY `idx_workflow_category_domain` (`tenant_id`,`domain_code`),
   KEY `idx_workflow_category_status` (`status`,`sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程分类表';
 
 CREATE TABLE IF NOT EXISTS `workflow_definition` (
   `id` bigint NOT NULL COMMENT '流程定义ID',
-  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
   `category_id` bigint NOT NULL COMMENT '流程分类ID',
+  `domain_code` varchar(64) NOT NULL DEFAULT 'COMMON' COMMENT '业务域编码',
   `org_id` bigint DEFAULT NULL COMMENT '所属组织ID',
   `admin_users` varchar(1000) DEFAULT NULL COMMENT '流程管理员用户名JSON数组',
+  `start_entry_visible` tinyint(1) NOT NULL DEFAULT '1' COMMENT '启动入口是否可见: 0-隐藏 1-可见',
   `icon` varchar(512) DEFAULT NULL COMMENT '流程图标',
   `definition_name` varchar(128) NOT NULL COMMENT '流程名称',
   `definition_key` varchar(128) NOT NULL COMMENT '流程编码，对应 Flowable process id',
@@ -1086,6 +1065,8 @@ CREATE TABLE IF NOT EXISTS `workflow_definition` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_workflow_definition_key` (`tenant_id`,`definition_key`),
   KEY `idx_workflow_definition_category` (`category_id`),
+  KEY `idx_workflow_definition_domain` (`tenant_id`,`domain_code`),
+  KEY `idx_workflow_definition_start_entry` (`tenant_id`,`start_entry_visible`),
   KEY `idx_workflow_definition_org` (`org_id`),
   KEY `idx_workflow_definition_status` (`status`),
   KEY `idx_workflow_definition_source_template` (`source_template_id`),
@@ -1094,7 +1075,8 @@ CREATE TABLE IF NOT EXISTS `workflow_definition` (
 
 CREATE TABLE IF NOT EXISTS `workflow_template_category` (
   `id` bigint NOT NULL COMMENT '流程模板分类ID',
-  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `parent_id` bigint DEFAULT NULL COMMENT '父级分类ID',
   `category_name` varchar(64) NOT NULL COMMENT '分类名称',
   `category_code` varchar(64) NOT NULL COMMENT '分类编码',
@@ -1116,7 +1098,8 @@ CREATE TABLE IF NOT EXISTS `workflow_template_category` (
 
 CREATE TABLE IF NOT EXISTS `workflow_template` (
   `id` bigint NOT NULL COMMENT '流程模板ID',
-  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `template_name` varchar(128) NOT NULL COMMENT '模板名称',
   `template_code` varchar(128) NOT NULL COMMENT '模板编码',
   `template_category_id` bigint DEFAULT NULL COMMENT '流程模板分类ID',
@@ -1151,7 +1134,8 @@ CREATE TABLE IF NOT EXISTS `workflow_template` (
 
 CREATE TABLE IF NOT EXISTS `workflow_node_definition` (
   `id` bigint NOT NULL COMMENT '节点定义ID',
-  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `node_definition_code` varchar(64) NOT NULL COMMENT '节点定义编码',
   `node_type` varchar(64) NOT NULL COMMENT '节点类型',
   `node_name` varchar(64) NOT NULL COMMENT '节点名称',
@@ -1181,12 +1165,14 @@ CREATE TABLE IF NOT EXISTS `workflow_node_definition` (
 
 CREATE TABLE IF NOT EXISTS `workflow_definition_version` (
   `id` bigint NOT NULL COMMENT '发布版本ID',
-  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
   `definition_id` bigint NOT NULL COMMENT '流程定义ID',
   `version_no` int NOT NULL COMMENT 'Mango发布版本号',
   `category_id` bigint DEFAULT NULL COMMENT '发布时流程分类ID快照',
+  `domain_code` varchar(64) NOT NULL DEFAULT 'COMMON' COMMENT '业务域编码',
   `org_id` bigint DEFAULT NULL COMMENT '发布时所属组织ID快照',
   `admin_users` varchar(1000) DEFAULT NULL COMMENT '发布时流程管理员用户名JSON数组快照',
+  `start_entry_visible` tinyint(1) NOT NULL DEFAULT '1' COMMENT '发布时启动入口是否可见快照: 0-隐藏 1-可见',
   `icon` varchar(512) DEFAULT NULL COMMENT '发布时流程图标快照',
   `definition_name` varchar(128) DEFAULT NULL COMMENT '发布时流程名称快照',
   `definition_key` varchar(128) DEFAULT NULL COMMENT '发布时流程编码快照',
@@ -1210,6 +1196,7 @@ CREATE TABLE IF NOT EXISTS `workflow_definition_version` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_workflow_definition_version` (`tenant_id`,`definition_id`,`version_no`),
   KEY `idx_workflow_version_definition` (`definition_id`,`version_no`),
+  KEY `idx_workflow_definition_version_domain` (`tenant_id`,`domain_code`),
   KEY `idx_workflow_version_deployment` (`deployment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程定义发布版本表';
 
@@ -1227,7 +1214,8 @@ CREATE TABLE IF NOT EXISTS `workflow_definition_version` (
 
 CREATE TABLE IF NOT EXISTS `workflow_form_instance` (
   `id` bigint NOT NULL COMMENT '主键',
-  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `process_instance_id` varchar(128) NOT NULL COMMENT '流程实例ID',
   `business_key` varchar(128) DEFAULT NULL COMMENT '业务主键',
   `definition_id` bigint DEFAULT NULL COMMENT 'Mango流程定义ID',
@@ -1254,7 +1242,8 @@ CREATE TABLE IF NOT EXISTS `workflow_form_instance` (
 
 CREATE TABLE IF NOT EXISTS `workflow_task_record` (
   `id` bigint NOT NULL COMMENT '主键',
-  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `process_instance_id` varchar(128) NOT NULL COMMENT '流程实例ID',
   `task_id` varchar(128) DEFAULT NULL COMMENT '任务ID',
   `task_name` varchar(255) DEFAULT NULL COMMENT '任务名称',
@@ -1278,7 +1267,8 @@ CREATE TABLE IF NOT EXISTS `workflow_task_record` (
 
 CREATE TABLE IF NOT EXISTS `workflow_copied_task` (
   `id` bigint NOT NULL COMMENT '主键',
-  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `process_instance_id` varchar(128) NOT NULL COMMENT '流程实例ID',
   `process_definition_id` varchar(128) DEFAULT NULL COMMENT 'Flowable流程定义ID',
   `process_name` varchar(255) DEFAULT NULL COMMENT '流程名称',
@@ -1307,7 +1297,8 @@ CREATE TABLE IF NOT EXISTS `workflow_copied_task` (
 
 CREATE TABLE IF NOT EXISTS `workflow_business_apply` (
   `id` bigint NOT NULL COMMENT '主键',
-  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `apply_code` varchar(128) NOT NULL COMMENT '申请编号',
   `business_type` varchar(128) NOT NULL COMMENT '业务类型',
   `business_key` varchar(128) NOT NULL COMMENT '业务主键',
@@ -1356,7 +1347,8 @@ CREATE TABLE IF NOT EXISTS `workflow_business_apply` (
 
 CREATE TABLE IF NOT EXISTS `workflow_business_apply_current_task` (
   `id` bigint NOT NULL COMMENT '主键',
-  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `apply_id` bigint NOT NULL COMMENT '申请ID',
   `business_type` varchar(128) NOT NULL COMMENT '业务类型',
   `business_key` varchar(128) NOT NULL COMMENT '业务主键',
@@ -1382,7 +1374,8 @@ CREATE TABLE IF NOT EXISTS `workflow_business_apply_current_task` (
 
 CREATE TABLE IF NOT EXISTS `workflow_business_apply_status_log` (
   `id` bigint NOT NULL COMMENT '主键',
-  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织ID',
   `apply_id` bigint NOT NULL COMMENT '申请ID',
   `from_status` varchar(32) DEFAULT NULL COMMENT '变更前状态',
   `to_status` varchar(32) NOT NULL COMMENT '变更后状态',

@@ -23,7 +23,7 @@ public class WorkflowProcessDetailVO {
     private String formJson;
 
     @Schema(description = "当前变量")
-    private Map<String, Object> variables;
+    private WorkflowJsonVO variables;
 
     @Schema(description = "申请/审批页面渲染协议")
     private WorkflowRenderConfigVO renderConfig;

@@ -1,0 +1,21 @@
+{
+  "id":"startEvent","nodeName":"发起人","nodeType":"ROOT","conditionNodes":[],"properties":{},
+  "childNode": {
+    "id":"leave_manager_approve","nodeName":"直属主管审批","nodeType":"APPROVAL","bpmnType":"userTask","executionType":"USER_TASK","conditionNodes":[],
+    "properties":{"approvalConfig":{
+      "assigneeType":"SPECIFIED_USER","assigneeIds":["admin"],"roleIds":[],"postIds":[],"orgIds":[],
+      "approvalMode":"COUNTERSIGN","emptyAssigneeStrategy":"TO_ADMIN","emptyAssigneeUserIds":[],"rejectStrategy":"END_PROCESS","formPermissions":{},
+      "actions":{"save":{"enabled":false,"label":"暂存","requireComment":false,"order":10},"transfer":{"enabled":false,"label":"转办","requireComment":false,"order":20},"addSign":{"enabled":false,"label":"加签","requireComment":false,"order":30},"reject":{"enabled":true,"label":"驳回","requireComment":true,"danger":true,"order":40},"returnTask":{"enabled":false,"label":"退回","requireComment":true,"order":45},"complete":{"enabled":true,"label":"通过","requireComment":false,"order":50}},
+      "extension":{"sectionPreset":"MANAGER_APPROVE"},"eventNotify":{"enabled":false,"type":"HTTP","method":"POST","timeoutMillis":5000},"initiatorSelectMultiple":false
+    }},
+    "childNode": {
+      "id":"hr_record","nodeName":"人事备案","nodeType":"APPROVAL","bpmnType":"userTask","executionType":"USER_TASK","conditionNodes":[],"childNode":null,
+      "properties":{"approvalConfig":{
+        "assigneeType":"SPECIFIED_USER","assigneeIds":["admin"],"roleIds":[],"postIds":[],"orgIds":[],
+        "approvalMode":"COUNTERSIGN","emptyAssigneeStrategy":"TO_ADMIN","emptyAssigneeUserIds":[],"rejectStrategy":"END_PROCESS","formPermissions":{},
+        "actions":{"save":{"enabled":false,"label":"暂存","requireComment":false,"order":10},"transfer":{"enabled":false,"label":"转办","requireComment":false,"order":20},"addSign":{"enabled":false,"label":"加签","requireComment":false,"order":30},"reject":{"enabled":true,"label":"驳回","requireComment":true,"danger":true,"order":40},"returnTask":{"enabled":false,"label":"退回","requireComment":true,"order":45},"complete":{"enabled":true,"label":"通过","requireComment":false,"order":50}},
+        "extension":{"sectionPreset":"HR_RECORD"},"eventNotify":{"enabled":false,"type":"HTTP","method":"POST","timeoutMillis":5000},"initiatorSelectMultiple":false
+      }}
+    }
+  }
+}

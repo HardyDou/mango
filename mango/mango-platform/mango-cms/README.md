@@ -134,7 +134,23 @@ mango:
 
 ## 9. 数据与初始化
 
-CMS 表通过 Flyway 迁移创建，迁移路径为 `db/migration/mango-cms/V{version}__{description}.sql`，按模块隔离。
+CMS 按数据用途分层登记：
+
+- Flyway 只负责 DDL。新库通过 `db/migration/mango-cms/V1__init_mango_cms.sql` 一次创建最终表结构，不写菜单、业务数据或演示数据。
+- 正式资源放在 `META-INF/mango/resources/`。CMS 当前只登记 `cms-common-menu.json`；此类资源默认同步。
+- 必须初始化的业务数据也应按资源类型放在 `META-INF/mango/resources/`，不能写进 Flyway。CMS 当前没有必须初始化的业务数据。
+- 演示资源按 CMS 业务类型拆分放在 `META-INF/mango/demo/`，默认不加载；仅在明确开启 Demo 时同步。
+
+本地显式开启 Demo：
+
+```yaml
+mango:
+  resource:
+    registry:
+      demo-enabled: true
+```
+
+也可以使用启动参数 `--mango.resource.registry.demo-enabled=true`。Demo 声明使用 `INIT_ONLY`，只用于空白开发/演示环境，不覆盖已存在的业务数据。
 
 主要表：
 
@@ -150,7 +166,7 @@ CMS 表通过 Flyway 迁移创建，迁移路径为 `db/migration/mango-cms/V{ve
 | `cms_content_publish` | 内容发布关系 |
 | `cms_site_setting` | 站点扩展配置 |
 
-种子数据迁移 `V5__seed_demo_site.sql` 提供演示站点、栏目、导航和 Banner，供本地开发预览。
+显式 Demo 共登记 71 条资源，包括 3 个站点及其配置、栏目、导航、Banner、广告、投放、内容和发布关系。文件 ID 保持为空，因此 Demo 不依赖文件模块的预置记录。
 
 ## 10. 管理入口
 

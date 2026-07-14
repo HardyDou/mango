@@ -10,7 +10,7 @@ GitHub 保留 PR、主分支和手工发布入口。公网前置 Job 校验 main
 - Jenkins Job 配置：`jenkins/mango-maven-release-job.xml`
 - Jenkins Job：`mango-maven-release`
 
-Job XML 内联的是上述 Jenkinsfile 的完全一致快照，单元测试会阻止两者漂移。这样 Jenkins 启动构建时无需先为读取 Jenkinsfile 克隆整仓，仓库只在 Pipeline 的精确 SHA 阶段检出一次。
+Job XML 内联的是上述 Jenkinsfile 的完全一致快照，单元测试会阻止两者漂移。这样 Jenkins 启动构建时无需先为读取 Jenkinsfile 克隆整仓。Pipeline 首次检出精确 SHA 后保留工作区的 Git 对象库；后续构建先执行 `reset --hard` 和 `clean -ffdx`，只获取新增对象并且不下载无关 tags。
 
 GitHub Workflow 只允许从 `main` 手工执行，默认 `dry_run=true`。正式发布要求输入版本等于 `mango-ui/packages/mango-cli/release-versions.json` 的 `maven.mangoBackend`，并要求 `CHANGELOG.md` 已记录该 Maven 版本。
 
@@ -46,6 +46,8 @@ MANGO_MAVEN_VERIFY_BASE_URL
 ```
 
 `MANGO_RELEASE_REPO_URL` 可以指向内网 Gitea 镜像；Pipeline 最多等待 60 秒让镜像出现 GitHub 指定 SHA，并验证该 SHA 可从镜像 `main` 到达。`MANGO_MAVEN_VERIFY_BASE_URL` 指向内网 Nexus Maven 消费仓库。
+
+Jenkins 首次缺少 Maven 3.9.9 时优先从高速镜像下载，随后使用 Apache 官方 `.sha512` 校验；镜像不可用时回退 Apache 官方归档。安装结果保存在 `${JENKINS_HOME}/.tools`，后续发布不会再次下载 Maven。
 
 正式发布固定调用：
 

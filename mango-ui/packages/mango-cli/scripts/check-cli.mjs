@@ -274,10 +274,8 @@ try {
     'node business-pmo/mango-baseline/tools/check-document-set.mjs',
     '--root "$BUSINESS_DOCS_ROOT"',
     'mvn -B -ntp -f "$BACKEND_POM"',
-    "steps.scope.outputs.backend_mode == 'governance'",
     '-pl architecture-verification',
     'help:effective-pom',
-    "steps.scope.outputs.backend_mode == 'partial'",
     '-pl "$MAVEN_PROJECTS"',
     '-Dmango.architecture.mode=changed',
     '-Dmango.architecture.requireFullReactor=false',
@@ -297,6 +295,36 @@ try {
       }
     }
   }
+  for (const expected of [
+    'concurrency:',
+    "github.event.action == 'edited' && 'contract' || 'code'",
+    'cancel-in-progress: true',
+    'preflight_scope:',
+    'maven_dependency_projects: ${{ steps.scope.outputs.maven_dependency_projects }}',
+    'pmo:\n    name: PMO contract gates\n    needs: preflight_scope',
+    'docs:\n    name: PMO document gates\n    needs: preflight_scope',
+    'backend:\n    name: Affected backend gates\n    needs: preflight_scope',
+    "needs.preflight_scope.outputs.backend_mode == 'governance'",
+    "needs.preflight_scope.outputs.backend_mode == 'partial'",
+    'pmo-doc-check:\n    name: pmo-doc-check',
+    'needs: [preflight_scope, pmo, docs, backend]',
+    'if: ${{ always() }}',
+    'success|skipped) ;;',
+  ]) {
+    if (!pmoWorkflow.includes(expected)) {
+      throw new Error(`generated GitHub PMO workflow missing parallel contract: ${expected}`);
+    }
+  }
+  for (const expected of [
+    'pmo-doc-check:\n    runs-on: ubuntu-latest',
+    "steps.scope.outputs.backend_mode == 'governance'",
+    "steps.scope.outputs.backend_mode == 'partial'",
+    'steps.scope.outputs.maven_dependency_projects',
+  ]) {
+    if (!giteaPmoWorkflow.includes(expected)) {
+      throw new Error(`generated Gitea PMO workflow missing compatible scope contract: ${expected}`);
+    }
+  }
   if (!pmoWorkflow.includes('${{ github.event.pull_request.base.sha')) {
     throw new Error('generated PMO workflow must preserve GitHub Actions expressions');
   }
@@ -307,12 +335,19 @@ try {
     if (/^\s+paths:/mu.test(workflow)) {
       throw new Error('generated PMO required-check workflow must run for every PR; paths filters can leave the required check pending');
     }
-    if (/^\s+-(?:am|amd)\s*$/mu.test(workflow)) {
-      throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
-    }
     if (workflow.includes("backend_mode == 'full'")
         || workflow.includes('-Dmango.architecture.mode=full')) {
       throw new Error('generated PR workflow must reserve full-Reactor inventory for scheduled or manual execution');
+    }
+    const dependencyBuild = extractNamedWorkflowStep(workflow, 'Build affected-module upstream dependencies');
+    if (!/^\s+-am\s*$/mu.test(dependencyBuild)
+        || !dependencyBuild.includes('-DskipTests')
+        || !dependencyBuild.includes('install')) {
+      throw new Error('generated dependency build must install affected upstream modules with an isolated -am build');
+    }
+    const qualityGate = extractNamedWorkflowStep(workflow, 'Verify affected backend modules and Mango architecture');
+    if (/^\s+-(?:am|amd)\s*$/mu.test(qualityGate)) {
+      throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
     }
   }
   for (const expected of [
@@ -1063,6 +1098,18 @@ function assertEqual(actual, expected, field) {
   if (actual !== expected) {
     throw new Error(`${field} expected ${expected}, got ${actual}`);
   }
+}
+
+function extractNamedWorkflowStep(workflow, name) {
+  const marker = `      - name: ${name}`;
+  const start = workflow.indexOf(marker);
+  if (start < 0) {
+    throw new Error(`generated PMO workflow missing step: ${name}`);
+  }
+  const remainder = workflow.slice(start + marker.length);
+  const boundary = remainder.search(/\n(?:      - name:|  [A-Za-z0-9_-]+:)/u);
+  const end = boundary >= 0 ? start + marker.length + boundary : workflow.length;
+  return workflow.slice(start, end);
 }
 
 function assertIncludes(values, expected, field) {

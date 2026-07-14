@@ -1,5 +1,9 @@
 package io.mango.workflow.api.command;
 
+import jakarta.validation.constraints.NotNull;
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
+
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,5 +27,7 @@ public class SaveWorkflowTaskDraftCommand {
     private String comment;
 
     @Schema(description = "审批表单变量草稿")
-    private Map<String, Object> variables;
+    @NotNull(groups = WorkflowOptionalValidation.class)
+    @jakarta.validation.Valid
+    private WorkflowJsonRequest variables;
 }

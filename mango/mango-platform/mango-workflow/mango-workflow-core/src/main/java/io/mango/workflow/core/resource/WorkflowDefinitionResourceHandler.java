@@ -15,12 +15,12 @@ import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
-import io.mango.workflow.api.WorkflowCode;
+import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
-import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowDefinitionVersion;
+import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowDefinitionVersionEntity;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
@@ -98,18 +98,17 @@ public class WorkflowDefinitionResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         Payload payload = Payload.from(resource, objectMapper, resourceLoader);
-        R<WorkflowDeployVO> result = withTenant(payload.tenantId(),
+        WorkflowDeployVO result = withTenant(payload.tenantId(),
                 () -> workflowDefinitionService.ensurePublished(payload.command()));
-        Require.isTrue(result != null && result.isSuccess(), WorkflowCode.DEFINITION_INVALID.getCode(),
-                result == null ? "流程定义资源同步失败" : result.getMsg());
-        WorkflowDefinition definition = find(payload.tenantId(), payload.command().getDefinitionKey());
+        Require.notNull(result, WorkflowCode.DEFINITION_INVALID, "流程定义资源同步失败");
+        WorkflowDefinitionEntity definition = find(payload.tenantId(), payload.command().getDefinitionKey());
         return ResourceSyncResult.of(definition == null ? null : definition.getId(), TARGET_TABLE,
                 "Workflow definition synced: " + payload.command().getDefinitionKey());
     }
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        WorkflowDefinition definition = resolve(resource);
+        WorkflowDefinitionEntity definition = resolve(resource);
         if (definition == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow definition not found");
         }
@@ -123,22 +122,22 @@ public class WorkflowDefinitionResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        WorkflowDefinition definition = resolve(resource);
+        WorkflowDefinitionEntity definition = resolve(resource);
         if (definition == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow definition not found");
         }
-        versionMapper.delete(new LambdaQueryWrapper<WorkflowDefinitionVersion>()
-                .eq(WorkflowDefinitionVersion::getDefinitionId, definition.getId()));
+        versionMapper.delete(new LambdaQueryWrapper<WorkflowDefinitionVersionEntity>()
+                .eq(WorkflowDefinitionVersionEntity::getDefinitionId, definition.getId()));
         definitionMapper.deleteById(definition.getId());
         return ResourceSyncResult.of(definition.getId(), TARGET_TABLE,
                 "Workflow definition deleted: " + definition.getDefinitionKey());
     }
 
-    private WorkflowDefinition resolve(ResourceDeclaration resource) {
+    private WorkflowDefinitionEntity resolve(ResourceDeclaration resource) {
         Long tenantId = WorkflowResourceFields.longValue(resource, "tenantId", false, DEFAULT_TENANT_ID);
         String definitionKey = WorkflowResourceFields.text(resource, "definitionKey", false);
         if (StringUtils.hasText(definitionKey)) {
-            WorkflowDefinition definition = find(tenantId, definitionKey.trim());
+            WorkflowDefinitionEntity definition = find(tenantId, definitionKey.trim());
             if (definition != null) {
                 return definition;
             }
@@ -147,10 +146,10 @@ public class WorkflowDefinitionResourceHandler implements ResourceHandler {
         return targetId == null ? null : definitionMapper.selectById(targetId);
     }
 
-    private WorkflowDefinition find(Long tenantId, String definitionKey) {
-        return definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinition>()
-                .eq(WorkflowDefinition::getTenantId, tenantId)
-                .eq(WorkflowDefinition::getDefinitionKey, definitionKey)
+    private WorkflowDefinitionEntity find(Long tenantId, String definitionKey) {
+        return definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
+                .eq(WorkflowDefinitionEntity::getTenantId, tenantId)
+                .eq(WorkflowDefinitionEntity::getDefinitionKey, definitionKey)
                 .last("limit 1"));
     }
 

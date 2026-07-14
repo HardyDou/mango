@@ -12,7 +12,7 @@ mango:
           target-module: workflow
           fields:
             categoryId: { type: LONG, value: 1 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             categoryCode: { type: STRING, value: COMMON }
             categoryName: { type: STRING, value: 通用流程 }
             domainCode: { type: STRING, value: COMMON }
@@ -27,7 +27,7 @@ mango:
           target-module: workflow
           fields:
             categoryId: { type: LONG, value: 1 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             categoryCode: { type: STRING, value: COMMON_TEMPLATE }
             categoryName: { type: STRING, value: 通用模板 }
             icon: { type: STRING, value: CollectionTag }
@@ -42,7 +42,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000001 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: ROOT }
             nodeType: { type: STRING, value: ROOT }
             nodeName: { type: STRING, value: 发起人 }
@@ -63,7 +63,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000002 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: APPROVAL }
             nodeType: { type: STRING, value: APPROVAL }
             nodeName: { type: STRING, value: 审批节点 }
@@ -84,7 +84,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000003 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: CC }
             nodeType: { type: STRING, value: CC }
             nodeName: { type: STRING, value: 抄送节点 }
@@ -105,7 +105,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000004 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: EXCLUSIVE_GATEWAY }
             nodeType: { type: STRING, value: EXCLUSIVE_GATEWAY }
             nodeName: { type: STRING, value: 条件分支 }
@@ -126,7 +126,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000005 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: PARALLEL_GATEWAY }
             nodeType: { type: STRING, value: PARALLEL_GATEWAY }
             nodeName: { type: STRING, value: 并行分支 }
@@ -147,7 +147,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000006 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: SERVICE_BEAN }
             nodeType: { type: STRING, value: SERVICE }
             nodeName: { type: STRING, value: Bean服务任务 }
@@ -168,7 +168,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000007 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: SERVICE_HTTP }
             nodeType: { type: STRING, value: SERVICE }
             nodeName: { type: STRING, value: HTTP服务任务 }
@@ -189,7 +189,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000008 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: SERVICE_REMOTE }
             nodeType: { type: STRING, value: SERVICE }
             nodeName: { type: STRING, value: 远程服务任务 }
@@ -210,7 +210,7 @@ mango:
           target-module: workflow
           fields:
             nodeDefinitionId: { type: LONG, value: 360000009 }
-            tenantId: { type: LONG, value: 1 }
+            tenantId: { type: STRING, value: "1" }
             nodeDefinitionCode: { type: STRING, value: EVENT_PUBLISH }
             nodeType: { type: STRING, value: SERVICE }
             nodeName: { type: STRING, value: 事件发布任务 }

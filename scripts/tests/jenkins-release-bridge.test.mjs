@@ -92,6 +92,11 @@ test('tracked Jenkins pipeline publishes only the governed non-app batch at the 
   assert.match(source, /git merge-base --is-ancestor "\$\{GIT_SHA\}" FETCH_HEAD/)
   assert.match(source, /scripts\/publish-maven-batch\.sh/)
   assert.match(source, /--all-non-app/)
+  assert.match(
+    source,
+    /MAVEN_ARGS = "-s \$\{JENKINS_HOME\}\/\.m2\/settings\.xml"/,
+    'every Maven invocation must read the persisted Jenkins release credentials',
+  )
   assert.equal(
     (source.match(/sh '''#!\/usr\/bin\/env bash/g) ?? []).length,
     4,
