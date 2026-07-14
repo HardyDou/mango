@@ -62,4 +62,4 @@ pnpm -C mango-ui --filter @mango/notice build
 - 未配置真实 Email、SMS、WeCom、DingTalk、微信公众号供应商账户，因此只验证了内部投递决策、持久化状态和站内信成功，未向外部供应商真实发消息。
 - 页面产品交互没有变化，本次用接口、请求目录与前端包构建验证，未重复浏览器 E2E。
 - 按用户要求未执行全仓检查；远端 PR 门禁负责仓库级验证。
-- 本报告记录的是提交 PR 前结果，PR 与合并状态另行更新。
+- PR [#497](https://github.com/HardyDou/mango/pull/497) 已提交；本报告更新时尚未合并。

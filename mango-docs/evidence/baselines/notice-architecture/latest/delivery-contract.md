@@ -55,12 +55,12 @@ V1-V17 折叠为单一纯 DDL V1，等价建立 20 张最终表。管理员邮�
 
 | 用例 ID | 来源 AC | 场景 | 优先级 | 测试层级 | 自动化判断 | 测试数据 | 稳定契约 | 执行入口 | 证据 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| TC-001 | SAC-001,SAC-002 | 配置、发送、记录、Outbox 和渠道副作用 | P0 | 单元/API | AUTO | H2 fixture 与渠道替身 | 返回、状态、版本、幂等和发送请求 | Notice 十一模块 Maven test | `report.md` | AUTOMATED |
-| TC-002 | SAC-003 | 本人消息动作、未读数、公告发布/确认 | P0 | API | AUTO | 多用户、多租户消息与公告 | 归属、动作、确认和状态 | 同一 Maven test | `report.md` | AUTOMATED |
-| TC-003 | SAC-004 | 两个 Java API、全部 HTTP/Feign、权限和仓内 URL | P0 | API | AUTO | 反射、路由与请求 fixture | 方法、字段、verb/path/binding/permission | Maven test+前端定向检查 | `report.md` | AUTOMATED |
-| TC-004 | SAC-005 | 单一纯 DDL V1、20 表 schema 和新库启动 | P0 | API | AUTO | 独立 workspace MySQL | schema hash、零 Flyway DML、health | Maven test+CLI backend start | `report.md` | AUTOMATED |
-| TC-005 | SAC-005 | 正式/Demo/运行态资源边界 | P1 | API | AUTO | 正式与显式 Demo 声明 | 默认无个人联系和运行态数据 | Maven resource test+新库查询 | `report.md` | AUTOMATED |
-| TC-006 | SAC-005 | Workflow→Payment 消费者兼容和完整启动 | P0 | API | AUTO | 退款审批 JSON、独立新库 | DTO JSON 等价、Payment test、health | Payment 定向 test+monolith start | `report.md` | AUTOMATED |
+| TC-001 | AC-001 | 配置、发送、记录、Outbox 和渠道副作用 | P0 | API | AUTO | H2 fixture 与渠道替身 | 返回、状态、版本、幂等和发送请求 | Notice 十一模块 Maven test | `report.md` | AUTOMATED |
+| TC-002 | AC-002 | 本人消息动作、未读数、公告发布/确认 | P0 | API | AUTO | 多用户、多租户消息与公告 | 归属、动作、确认和状态 | 同一 Maven test | `report.md` | AUTOMATED |
+| TC-003 | AC-003 | 两个 Java API、全部 HTTP/Feign、权限和仓内 URL | P0 | API | AUTO | 反射、路由与请求 fixture | 方法、字段、verb/path/binding/permission | Maven test+前端定向检查 | `report.md` | AUTOMATED |
+| TC-004 | AC-004 | 单一纯 DDL V1、20 表 schema 和新库启动 | P0 | API | AUTO | 独立 workspace MySQL | schema hash、零 Flyway DML、health | Maven test+CLI backend start | `report.md` | AUTOMATED |
+| TC-005 | AC-005 | 正式/Demo/运行态资源边界 | P1 | API | AUTO | 正式与显式 Demo 声明 | 默认无个人联系和运行态数据 | Maven resource test+新库查询 | `report.md` | AUTOMATED |
+| TC-006 | AC-006 | Workflow→Payment 消费者兼容和完整启动 | P0 | API | AUTO | 退款审批 JSON、独立新库 | DTO JSON 等价、Payment test、health | Payment 定向 test+monolith start | `report.md` | AUTOMATED |
 
 ## 6. 风险与限制
 
@@ -70,17 +70,17 @@ V1-V17 折叠为单一纯 DDL V1，等价建立 20 张最终表。管理员邮�
 
 | ID | 来源 | 要求 | 设计决策 | 代码交付物 | README/使用说明 | 需求/设计文档 | E2E 脚本 | 测试结果基线 | 验收方式 | 状态 | 证据文件 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| TASK-001 | 用户要求、SAC-001至SAC-004 | 先建立有价值基线 | 保留71条并新增7条高风险契约保护 | Notice tests、remote test dependency | Notice README待最终同步 | Notice 四阶段规格 | EXCEPTION：后端领域与协议由自动测试直接观察 | `report.md` | before 78/78、test quality PASS | DONE | `report.md` |
-| TASK-002 | 用户要求、SAC-001至SAC-004 | 十一模块一次到最终边界 | 窄服务、选择性 CRUD、规范实体/Mapper/SPI、固定路径 | `mango-platform/mango-notice` | Notice README | TDD/Plan | EXCEPTION：页面交互不变 | `report.md` | 82条同组 after、663→0 | DONE | `report.md` |
-| TASK-003 | 用户要求、SAC-005 | Flyway 只负责最终 DDL | V1-V17 折叠为纯 DDL V1 | core migration | Notice README | TDD/Plan | EXCEPTION：数据库结构无浏览器结果 | `report.md` | schema hash 等价、零 DML、新库启动 | DONE | `report.md` |
-| TASK-004 | 用户要求、SAC-005 | 正式/Demo/运行态分层 | 用户联系方式和运行态数据不初始化 | starter resources | Notice README | TDD/Plan | EXCEPTION：资源同步无新增 UI | `report.md` | 默认数据集合和声明检查 | DONE | `report.md` |
-| TASK-005 | 用户要求、SAC-005 | 完整应用兼容、PR 和合并 | 等价修复 Payment 直接消费者，最新 main 同步一次 | Payment direct consumer、docs | README/capability map | Plan | EXCEPTION：完整后端启动提供系统证据 | `report.md` | Payment test、health、required check | IN_PROGRESS | `report.md` |
+| TASK-001 | 用户要求、SAC-001至SAC-004 | 先建立有价值基线 | 保留71条并新增7条高风险契约保护 | `mango/mango-platform/mango-notice` | `mango/mango-platform/mango-notice/README.md` | `mango-docs/designs/notice-architecture-debt` | EXCEPTION: 用户确认页面交互不变，后端领域与协议由自动测试直接观察 | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` | before 78/78、test quality PASS | DONE | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` |
+| TASK-002 | 用户要求、SAC-001至SAC-004 | 十一模块一次到最终边界 | 窄服务、选择性 CRUD、规范实体/Mapper/SPI、固定路径 | `mango/mango-platform/mango-notice` | `mango/mango-platform/mango-notice/README.md` | `mango-docs/designs/notice-architecture-debt/technical-design.md` | EXCEPTION: 用户确认页面产品交互不变，请求目录和前端构建提供直接证据 | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` | 82条同组 after、663→0 | DONE | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` |
+| TASK-003 | 用户要求、SAC-005 | Flyway 只负责最终 DDL | V1-V17 折叠为纯 DDL V1 | `mango/mango-platform/mango-notice/mango-notice-core/src/main/resources/db/migration/notice/V1__init_notice.sql` | `mango/mango-platform/mango-notice/README.md` | `mango-docs/designs/notice-architecture-debt/technical-design.md` | EXCEPTION: 数据库结构没有浏览器结果，schema hash 和新库启动直接验证 | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` | schema hash 等价、零 DML、新库启动 | DONE | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` |
+| TASK-004 | 用户要求、SAC-005 | 正式/Demo/运行态分层 | 用户联系方式和运行态数据不初始化 | `mango/mango-platform/mango-notice/mango-notice-starter/src/main/resources/META-INF/mango/resources` | `mango/mango-platform/mango-notice/README.md` | `mango-docs/designs/notice-architecture-debt/technical-design.md` | EXCEPTION: 资源同步无新增 UI，新库数据集合查询直接验证初始化边界 | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` | 默认数据集合和声明检查 | DONE | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` |
+| TASK-005 | 用户要求、SAC-005 | 完整应用兼容和 PR 提交 | 等价修复 Payment 直接消费者，最新 main 同步一次 | `mango/mango-platform/mango-payment` | `mango/mango-platform/mango-notice/README.md` | `mango-docs/designs/notice-architecture-debt/implementation-plan.md` | EXCEPTION: 完整后端启动和真实接口提供系统证据，无新增浏览器行为 | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` | Payment test、health、PR #497 | DONE | `mango-docs/evidence/baselines/notice-architecture/latest/report.md` |
 
 ## 8. 验收证据记录
 
 | 台账 ID | 用例 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|---|
-| TASK-001 | TC-001至TC-003 | Notice 十一模块测试入口 | 配置、发送、消息、公告、API/HTTP/Feign、schema 和资源 | 71条既有+7条契约 | 78/78；API/HTTP/Feign hash、20表集合和正式资源边界被冻结 | EXCEPTION：无新增 UI | EXCEPTION：before 自动测试不经浏览器 | `report.md` 与 surefire reports | PASS |
+| TASK-001 | TC-001,TC-002,TC-003 | Notice 十一模块测试入口 | 配置、发送、消息、公告、API/HTTP/Feign、schema 和资源 | 71条既有+7条契约 | 78/78；API/HTTP/Feign hash、20表集合和正式资源边界被冻结 | EXCEPTION：无新增 UI | EXCEPTION：before 自动测试不经浏览器 | `report.md` 与 surefire reports | PASS |
 | TASK-003 | TC-004 | Notice migration/启动 | 最终结构和正式新库 | `mango_dev_mango_notice_architecture_debt_184` | before/after schema hash 一致、20 表、Flyway V1 成功、health UP | EXCEPTION：数据库结构无 UI | 端口 18184 health 与 10 个接口均成功 | `.mango/run/logs/notice-debug-6.log`、`report.md` | PASS |
 | TASK-004 | TC-005 | 正式资源/新库 | 初始化边界 | tenant 1 新库 | 业务类型24、渠道配置2；个人和运行态数据0 | EXCEPTION：资源同步无 UI | 数据库查询符合边界 | `report.md` | PASS |
 | TASK-005 | TC-006 | monolith | 事件租户、Payment 兼容和完整启动 | 登录事件、退款审批 JSON、独立新库 | 直接消费者测试通过；任务 tenant=1；站内信成功；health UP | EXCEPTION：后端启动 | 10个接口 HTTP 200/code 200 | `.mango/run/logs/notice-debug-6.log`、`report.md` | PASS |
@@ -89,11 +89,11 @@ V1-V17 折叠为单一纯 DDL V1，等价建立 20 张最终表。管理员邮�
 
 | 基线 ID | 覆盖台账 ID | 覆盖用例 ID | E2E 脚本 | 测试命令 | 环境/版本 | 数据库或数据集 | 账号/租户标识 | 结果摘要 | 失败/阻塞/例外 | 报告/截图/日志路径 | 行为变化 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| BASELINE-001 | TASK-001 | TC-001至TC-003 | EXCEPTION：后端改前基线 | Notice 十一 artifact `test` | Java 21.0.10、Maven 3.9.13 | H2 fixture、渠道替身 | tenant 1/2、user A/B | channel 29、core 38、starter 9、remote 2，共78/78 | 无；Mockito/JCL为既有警告 | `report.md` 与 surefire reports | 生产代码尚未修改 |
-| BASELINE-002 | TASK-001至TASK-005 | TC-001至TC-006 | EXCEPTION：无新增浏览器行为 | 同一入口82条、定向 architecture、前端包构建、直接消费者 test、单体新库启动 | Java 21.0.10、Maven 3.9.13、MySQL 8.4 | H2 fixture与独立新库 | tenant 1/2 | 82/82；架构663→0；schema hash一致；health与10接口通过 | 外部供应商未配置；按要求未跑全仓检查 | `report.md`、surefire、`.mango/run/logs/notice-debug-6.log` | 内部架构、固定路径和初始化政策有意调整；业务结果保持 |
+| BASELINE-001 | TASK-001 | TC-001,TC-002,TC-003 | EXCEPTION：后端改前基线 | Notice 十一 artifact `test` | Java 21.0.10、Maven 3.9.13 | H2 fixture、渠道替身 | tenant 1/2、user A/B | channel 29、core 38、starter 9、remote 2，共78/78 | 无；Mockito/JCL为既有警告 | `report.md` 与 surefire reports | 生产代码尚未修改 |
+| BASELINE-002 | TASK-001,TASK-002,TASK-003,TASK-004,TASK-005 | TC-001,TC-002,TC-003,TC-004,TC-005,TC-006 | EXCEPTION：无新增浏览器行为 | 同一入口82条、定向 architecture、前端包构建、直接消费者 test、单体新库启动 | Java 21.0.10、Maven 3.9.13、MySQL 8.4 | H2 fixture与独立新库 | tenant 1/2 | 82/82；架构663→0；schema hash一致；health与10接口通过 | 外部供应商未配置；按要求未跑全仓检查 | `report.md`、surefire、`.mango/run/logs/notice-debug-6.log` | 内部架构、固定路径和初始化政策有意调整；业务结果保持 |
 
 ## 10. 业务开发交接输出
 
 | 输出对象 | 交接内容 | 材料路径 | 执行入口 | 数据/账号边界 | 失败/例外处理 | 状态 |
 |---|---|---|---|---|---|---|
-| Mango Notice 业务开发者 | 使用唯一固定路径、选择性 CRUD 服务和单一新库 V1；正式资源默认，Demo 显式；复用同组测试 | Notice README 与本交付契约 | Notice 十一模块定向 test | 每个 workspace 独立新库；运行态由用户操作形成 | 测试查 surefire；启动/资源失败查 workspace 日志 | READY |
+| Mango Notice 业务开发者 | 使用唯一固定路径、选择性 CRUD 服务和单一新库 V1；正式资源默认，Demo 显式；复用同组测试 | `mango/mango-platform/mango-notice/README.md`、`mango-docs/evidence/baselines/notice-architecture/latest/delivery-contract.md` | `mvn -f mango/pom.xml -pl <eleven notice artifacts> test` | 每个 workspace 独立新库；运行态由用户操作形成 | 测试查 surefire；启动/资源失败查 workspace 日志 | DONE |
