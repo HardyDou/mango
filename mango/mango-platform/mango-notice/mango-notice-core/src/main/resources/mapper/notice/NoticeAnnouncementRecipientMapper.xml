@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.notice.core.mapper.NoticeAnnouncementRecipientMapper">
+
+    <select id="selectMyAnnouncementPage"
+            resultType="io.mango.notice.core.entity.NoticeAnnouncementRecipientEntity">
+        select r.*
+        from notice_announcement_recipient r
+        join notice_announcement a on a.id = r.announcement_id
+        where r.user_id = #{userId}
+          and a.status = 'PUBLISHED'
+          and (a.valid_start_time is null or a.valid_start_time &lt;= #{now})
+          and (a.valid_end_time is null or a.valid_end_time &gt; #{now})
+        <if test="unreadOnly != null and unreadOnly">
+            and r.read_status = 'UNREAD'
+        </if>
+        <if test="pendingConfirmOnly != null and pendingConfirmOnly">
+            and r.confirm_status = 'PENDING'
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (a.title like concat('%', #{keyword}, '%')
+                 or a.content like concat('%', #{keyword}, '%'))
+        </if>
+        order by a.pinned desc, a.publish_time desc, r.created_at desc
+    </select>
+
+    <select id="countByAnnouncement" resultType="java.lang.Long">
+        select count(1)
+        from notice_announcement_recipient
+        where announcement_id = #{announcementId}
+    </select>
+
+    <select id="countReadByAnnouncement" resultType="java.lang.Long">
+        select count(1)
+        from notice_announcement_recipient
+        where announcement_id = #{announcementId}
+          and read_status = 'READ'
+    </select>
+
+    <select id="countPendingConfirmByAnnouncement" resultType="java.lang.Long">
+        select count(1)
+        from notice_announcement_recipient
+        where announcement_id = #{announcementId}
+          and confirm_status = 'PENDING'
+    </select>
+
+    <select id="countConfirmedByAnnouncement" resultType="java.lang.Long">
+        select count(1)
+        from notice_announcement_recipient
+        where announcement_id = #{announcementId}
+          and confirm_status = 'CONFIRMED'
+    </select>
+</mapper>

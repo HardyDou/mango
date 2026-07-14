@@ -81,7 +81,7 @@ class PaymentRefundApprovalWorkflowDefinitionInitializerTest {
         private String appCode;
 
         TestWorkflowDefinitionService() {
-            super(new NoopWorkflowDefinitionApi(), new ObjectMapper());
+            super(org.mockito.Mockito.mock(WorkflowDefinitionApi.class), new ObjectMapper());
         }
 
         @Override
@@ -95,11 +95,4 @@ class PaymentRefundApprovalWorkflowDefinitionInitializerTest {
         }
     }
 
-    private static class NoopWorkflowDefinitionApi implements WorkflowDefinitionApi {
-
-        @Override
-        public R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command) {
-            return R.ok();
-        }
-    }
 }

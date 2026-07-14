@@ -9,7 +9,7 @@ import com.sun.net.httpserver.HttpServer;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.payment.api.vo.PaymentOpenNotificationVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
@@ -315,16 +315,17 @@ class PaymentNotificationDispatcherTest {
             service.notifyPaymentAfterCommit(application(), businessOrder(server.url()), paymentOrder("FAILED"));
 
             assertThat(publishedEvents)
-                    .filteredOn(NoticeSendEvent.class::isInstance)
+                    .filteredOn(NoticeSendEventCommand.class::isInstance)
                     .singleElement()
                     .satisfies(event -> {
-                        NoticeSendEvent notice = (NoticeSendEvent) event;
+                        NoticeSendEventCommand notice = (NoticeSendEventCommand) event;
+                        assertThat(notice.getTenantId()).isEqualTo("1");
                         assertThat(notice.getBizType()).isEqualTo("payment.order.failed");
                         assertThat(notice.getMessageScene()).isEqualTo("payment.order.failed");
                         assertThat(notice.getMessageSubject().getSubjectType()).isEqualTo("PAYMENT_ORDER");
                         assertThat(notice.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
                         assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("payment:payment-order");
-                        assertThat(notice.getMessageData()).containsEntry("payOrderNo", "PO202606060001");
+                        assertThat(notice.getMessageData().toMap()).containsEntry("payOrderNo", "PO202606060001");
                         assertThat(notice.getMessageActions())
                                 .extracting("actionCode")
                                 .containsExactly("VIEW_PAYMENT_ORDER", "HANDLE_PAYMENT_EXCEPTION");

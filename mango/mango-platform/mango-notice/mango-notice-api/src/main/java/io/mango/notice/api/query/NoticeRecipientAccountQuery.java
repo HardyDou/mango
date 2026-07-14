@@ -12,8 +12,10 @@ import lombok.Data;
 public class NoticeRecipientAccountQuery {
 
     @Schema(description = "用户 ID；为空时使用当前用户")
+    @jakarta.validation.constraints.Positive
     private Long userId;
 
     @Schema(description = "账户类型")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticeRecipientAccountType accountType;
 }

@@ -1,20 +1,17 @@
 package io.mango.notice.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeSendStatus;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Data
-@TableName("notice_send_record")
-public class NoticeSendRecordEntity {
-
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+@EqualsAndHashCode(callSuper = true)
+@TableName(value = "notice_send_record", excludeProperty = {"orgId", "createdBy", "updatedBy"})
+public class NoticeSendRecordEntity extends NoticeBaseEntity {
 
     private Long taskId;
 
@@ -56,9 +53,4 @@ public class NoticeSendRecordEntity {
 
     private LocalDateTime sentAt;
 
-    private String tenantId;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
 }

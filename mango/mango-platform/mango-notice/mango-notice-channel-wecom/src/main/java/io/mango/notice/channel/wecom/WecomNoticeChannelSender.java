@@ -1,7 +1,7 @@
 package io.mango.notice.channel.wecom;
 
 import io.mango.notice.api.enums.NoticeChannelType;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class WecomNoticeChannelSender implements NoticeChannelSender {
     }
 
     @Override
-    public ChannelSendResult send(ChannelSendCommand command) {
+    public ChannelSendResult send(NoticeChannelMessage command) {
         if (StringUtils.hasText(readString(command.getChannelConfigJson(), WEBHOOK_URL))) {
             return ChannelSendResult.providerSuccess("wecom-robot-" + command.getSendRecordId(), "{\"status\":\"ACCEPTED\"}");
         }
@@ -49,7 +49,7 @@ public class WecomNoticeChannelSender implements NoticeChannelSender {
         try {
             int agentId = Integer.parseInt(config.agentId());
             String accessToken = accessTokenProvider.getAccessToken(config.corpId(), config.secret());
-            WecomMessageSendResponse response = messageClient.sendText(accessToken, new WecomTextMessageRequest(
+            WecomSendResult response = messageClient.sendText(accessToken, new WecomTextMessage(
                     command.getWecomUserId(),
                     agentId,
                     buildContent(command)));
@@ -66,7 +66,7 @@ public class WecomNoticeChannelSender implements NoticeChannelSender {
         }
     }
 
-    private String buildContent(ChannelSendCommand command) {
+    private String buildContent(NoticeChannelMessage command) {
         if (!StringUtils.hasText(command.getTitle())) {
             return command.getContent();
         }

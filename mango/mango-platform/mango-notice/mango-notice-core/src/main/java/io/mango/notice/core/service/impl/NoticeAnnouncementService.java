@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.notice.api.command.NoticeAnnouncementTargetCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
 import io.mango.notice.api.command.NoticeRecipientTargetCommand;
@@ -14,6 +15,7 @@ import io.mango.notice.api.enums.NoticeAnnouncementConfirmStatus;
 import io.mango.notice.api.enums.NoticeAnnouncementStatus;
 import io.mango.notice.api.enums.NoticeAnnouncementTargetType;
 import io.mango.notice.api.enums.NoticeChannelType;
+import io.mango.notice.api.enums.NoticeCode;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeReadStatus;
 import io.mango.notice.api.enums.NoticeRecipientTargetType;
@@ -52,6 +54,7 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     private final NoticeAnnouncementMapper announcementMapper;
     private final NoticeAnnouncementTargetMapper targetMapper;
     private final NoticeAnnouncementRecipientMapper recipientMapper;
+
     private final NoticeRecipientResolver recipientResolver;
     private final INoticeService noticeService;
 
@@ -89,6 +92,7 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public NoticeAnnouncementVO createAnnouncement(SaveNoticeAnnouncementCommand command) {
+        Require.notNull(command, NoticeCode.NOTICE_BUSINESS_ERROR, "公告保存命令不能为空");
         NoticeAnnouncementEntity entity = new NoticeAnnouncementEntity();
         applySaveCommand(entity, command);
         entity.setStatus(NoticeAnnouncementStatus.DRAFT);
@@ -101,7 +105,7 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     @Transactional(rollbackFor = Exception.class)
     public NoticeAnnouncementVO updateAnnouncement(Long id, SaveNoticeAnnouncementCommand command) {
         NoticeAnnouncementEntity entity = requireAnnouncement(id);
-        Require.isTrue(entity.getStatus() == NoticeAnnouncementStatus.DRAFT, "只有草稿公告允许编辑");
+        Require.isTrue(entity.getStatus() == NoticeAnnouncementStatus.DRAFT, NoticeCode.NOTICE_BUSINESS_ERROR, "只有草稿公告允许编辑");
         applySaveCommand(entity, command);
         announcementMapper.updateById(entity);
         saveTargets(id, command.getTargets());
@@ -112,13 +116,13 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     @Transactional(rollbackFor = Exception.class)
     public boolean publishAnnouncement(Long id, PublishNoticeAnnouncementCommand command) {
         NoticeAnnouncementEntity entity = requireAnnouncement(id);
-        Require.isTrue(entity.getStatus() == NoticeAnnouncementStatus.DRAFT, "只有草稿公告允许发布");
+        Require.isTrue(entity.getStatus() == NoticeAnnouncementStatus.DRAFT, NoticeCode.NOTICE_BUSINESS_ERROR, "只有草稿公告允许发布");
         applyPublishCommand(entity, command);
         validateValidTime(entity);
         List<NoticeAnnouncementTargetCommand> targets = publishTargets(id, command);
         validateTargets(targets);
         List<NoticeRecipientCommand> recipients = deduplicateRecipients(resolveRecipients(targets));
-        Require.isTrue(!recipients.isEmpty(), "公告发布对象未解析到可接收用户");
+        Require.isTrue(!recipients.isEmpty(), NoticeCode.NOTICE_BUSINESS_ERROR, "公告发布对象未解析到可接收用户");
         saveTargets(id, targets);
         saveRecipients(id, recipients, Boolean.TRUE.equals(entity.getConfirmRequired()));
         entity.setStatus(NoticeAnnouncementStatus.PUBLISHED);
@@ -134,7 +138,7 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     @Transactional(rollbackFor = Exception.class)
     public boolean offlineAnnouncement(Long id) {
         NoticeAnnouncementEntity entity = requireAnnouncement(id);
-        Require.isTrue(entity.getStatus() == NoticeAnnouncementStatus.PUBLISHED, "只有已发布公告允许下线");
+        Require.isTrue(entity.getStatus() == NoticeAnnouncementStatus.PUBLISHED, NoticeCode.NOTICE_BUSINESS_ERROR, "只有已发布公告允许下线");
         entity.setStatus(NoticeAnnouncementStatus.OFFLINE);
         announcementMapper.updateById(entity);
         return true;
@@ -152,8 +156,9 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     }
 
     @Override
-    public PageResult<NoticeAnnouncementVO> pageMyAnnouncements(Long userId, MyNoticeAnnouncementPageQuery query) {
-        Require.notNull(userId, "当前用户不能为空");
+    public PageResult<NoticeAnnouncementVO> pageMyAnnouncements(MyNoticeAnnouncementPageQuery query) {
+        Long userId = currentUserId();
+        Require.notNull(userId, NoticeCode.NOTICE_BUSINESS_ERROR, "当前用户不能为空");
         Page<NoticeAnnouncementRecipientEntity> page = recipientMapper.selectMyAnnouncementPage(
                 new Page<>(query.getPageNum(), query.getPageSize()),
                 userId,
@@ -173,7 +178,8 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public NoticeAnnouncementVO getMyAnnouncement(Long id, Long userId) {
+    public NoticeAnnouncementVO getMyAnnouncement(Long id) {
+        Long userId = currentUserId();
         NoticeAnnouncementRecipientEntity recipient = requireUserRecipient(id, userId);
         NoticeAnnouncementEntity entity = requireVisiblePublishedAnnouncement(id);
         if (recipient.getReadStatus() != NoticeReadStatus.READ) {
@@ -186,11 +192,12 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean confirmMyAnnouncement(Long id, Long userId) {
+    public boolean confirmMyAnnouncement(Long id) {
+        Long userId = currentUserId();
         NoticeAnnouncementRecipientEntity recipient = requireUserRecipient(id, userId);
         NoticeAnnouncementEntity entity = requireVisiblePublishedAnnouncement(id);
-        Require.isTrue(Boolean.TRUE.equals(entity.getConfirmRequired()), "公告无需确认");
-        Require.isTrue(recipient.getConfirmStatus() == NoticeAnnouncementConfirmStatus.PENDING, "公告已确认或无需确认");
+        Require.isTrue(Boolean.TRUE.equals(entity.getConfirmRequired()), NoticeCode.NOTICE_BUSINESS_ERROR, "公告无需确认");
+        Require.isTrue(recipient.getConfirmStatus() == NoticeAnnouncementConfirmStatus.PENDING, NoticeCode.NOTICE_BUSINESS_ERROR, "公告已确认或无需确认");
         recipient.setReadStatus(NoticeReadStatus.READ);
         if (recipient.getReadTime() == null) {
             recipient.setReadTime(LocalDateTime.now());
@@ -243,7 +250,7 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
 
     private void validateValidTime(NoticeAnnouncementEntity entity) {
         if (entity.getValidStartTime() != null && entity.getValidEndTime() != null) {
-            Require.isTrue(entity.getValidStartTime().isBefore(entity.getValidEndTime()), "公告有效开始时间必须早于结束时间");
+            Require.isTrue(entity.getValidStartTime().isBefore(entity.getValidEndTime()), NoticeCode.NOTICE_BUSINESS_ERROR, "公告有效开始时间必须早于结束时间");
         }
     }
 
@@ -262,15 +269,15 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     }
 
     private void validateTargets(List<NoticeAnnouncementTargetCommand> targets) {
-        Require.notNull(targets, "公告发布对象不能为空");
-        Require.isTrue(!targets.isEmpty(), "公告发布对象不能为空");
+        Require.notNull(targets, NoticeCode.NOTICE_BUSINESS_ERROR, "公告发布对象不能为空");
+        Require.isTrue(!targets.isEmpty(), NoticeCode.NOTICE_BUSINESS_ERROR, "公告发布对象不能为空");
         long allCount = targets.stream().filter(target -> target.getTargetType() == NoticeAnnouncementTargetType.ALL).count();
-        Require.isTrue(allCount <= 1, "全员发布对象只能选择一次");
-        Require.isTrue(allCount == 0 || targets.size() == 1, "全员发布不能和组织、角色、用户混用");
+        Require.isTrue(allCount <= 1, NoticeCode.NOTICE_BUSINESS_ERROR, "全员发布对象只能选择一次");
+        Require.isTrue(allCount == 0 || targets.size() == 1, NoticeCode.NOTICE_BUSINESS_ERROR, "全员发布不能和组织、角色、用户混用");
         targets.forEach(target -> {
-            Require.notNull(target.getTargetType(), "公告发布对象类型不能为空");
+            Require.notNull(target.getTargetType(), NoticeCode.NOTICE_BUSINESS_ERROR, "公告发布对象类型不能为空");
             if (target.getTargetType() != NoticeAnnouncementTargetType.ALL) {
-                Require.notNull(target.getTargetId(), "公告发布对象ID不能为空");
+                Require.notNull(target.getTargetId(), NoticeCode.NOTICE_BUSINESS_ERROR, "公告发布对象ID不能为空");
             }
         });
     }
@@ -375,26 +382,26 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
     }
 
     private NoticeAnnouncementEntity requireAnnouncement(Long id) {
-        Require.notNull(id, "公告ID不能为空");
+        Require.notNull(id, NoticeCode.NOTICE_BUSINESS_ERROR, "公告ID不能为空");
         NoticeAnnouncementEntity entity = announcementMapper.selectById(id);
-        Require.notNull(entity, "公告不存在");
+        Require.notNull(entity, NoticeCode.NOTICE_BUSINESS_ERROR, "公告不存在");
         return entity;
     }
 
     private NoticeAnnouncementEntity requireVisiblePublishedAnnouncement(Long id) {
         NoticeAnnouncementEntity entity = requireAnnouncement(id);
-        Require.isTrue(isVisiblePublished(entity), "公告不存在或不可访问");
+        Require.isTrue(isVisiblePublished(entity), NoticeCode.NOTICE_BUSINESS_ERROR, "公告不存在或不可访问");
         return entity;
     }
 
     private NoticeAnnouncementRecipientEntity requireUserRecipient(Long id, Long userId) {
-        Require.notNull(userId, "当前用户不能为空");
+        Require.notNull(userId, NoticeCode.NOTICE_BUSINESS_ERROR, "当前用户不能为空");
         LambdaQueryWrapper<NoticeAnnouncementRecipientEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(NoticeAnnouncementRecipientEntity::getAnnouncementId, id);
         wrapper.eq(NoticeAnnouncementRecipientEntity::getUserId, userId);
         wrapper.last("limit 1");
         NoticeAnnouncementRecipientEntity recipient = recipientMapper.selectOne(wrapper);
-        Require.notNull(recipient, "公告不存在或不可访问");
+        Require.notNull(recipient, NoticeCode.NOTICE_BUSINESS_ERROR, "公告不存在或不可访问");
         return recipient;
     }
 
@@ -405,6 +412,12 @@ public class NoticeAnnouncementService implements INoticeAnnouncementService {
         LocalDateTime now = LocalDateTime.now();
         return (entity.getValidStartTime() == null || !entity.getValidStartTime().isAfter(now))
                 && (entity.getValidEndTime() == null || entity.getValidEndTime().isAfter(now));
+    }
+
+    private Long currentUserId() {
+        Long userId = MangoContextHolder.userId();
+        Require.notNull(userId, NoticeCode.NOTICE_BUSINESS_ERROR, "缺少当前用户上下文");
+        return userId;
     }
 
     private long nullToZero(Long value) {

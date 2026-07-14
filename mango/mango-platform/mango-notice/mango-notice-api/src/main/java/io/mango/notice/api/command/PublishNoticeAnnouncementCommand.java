@@ -20,18 +20,23 @@ public class PublishNoticeAnnouncementCommand implements Serializable {
     private Long id;
 
     @Schema(description = "有效开始时间。不传则使用公告草稿值")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private LocalDateTime validStartTime;
 
     @Schema(description = "有效结束时间。不传则使用公告草稿值")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private LocalDateTime validEndTime;
 
     @Schema(description = "是否置顶。不传则使用公告草稿值")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean pinned;
 
     @Schema(description = "是否需要用户确认。不传则使用公告草稿值")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean confirmRequired;
 
     @Schema(description = "是否同步生成系统消息提醒。不传则使用公告草稿值")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean syncMessageEnabled;
 
     @Valid

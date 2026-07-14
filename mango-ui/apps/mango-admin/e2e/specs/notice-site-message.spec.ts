@@ -378,15 +378,14 @@ test.describe('通知中心 E2E', () => {
       const request = route.request();
       const url = new URL(request.url());
       if (url.pathname.includes('/channel-templates')) {
-        const parts = url.pathname.split('/');
-        const businessTypeId = parts[parts.indexOf('business-types') + 1];
-        const channelType = parts[parts.indexOf('channel-templates') + 1];
+        const businessTypeId = url.searchParams.get('businessTypeId') || '';
         if (request.method() === 'GET') {
           await route.fulfill({ status: 200, contentType: 'application/json', body: ok(templates[businessTypeId] || []) });
           return;
         }
         if (request.method() === 'PUT') {
           const body = request.postDataJSON();
+          const channelType = body.channelType;
           const saved = {
             id: `${businessTypeId}-${channelType}-${Date.now()}`,
             businessTypeId,
@@ -408,14 +407,16 @@ test.describe('通知中心 E2E', () => {
         return;
       }
       if (url.pathname.includes('/config-versions')) {
-        const parts = url.pathname.split('/');
-        const businessTypeId = parts[parts.indexOf('business-types') + 1];
+        const businessTypeId = url.searchParams.get('businessTypeId') || '';
+        if (url.pathname.endsWith('/activate')) {
+          await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+          return;
+        }
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(businessConfigVersions[businessTypeId] || []) });
         return;
       }
       if (url.pathname.includes('/config-draft')) {
-        const parts = url.pathname.split('/');
-        const businessTypeId = parts[parts.indexOf('business-types') + 1];
+        const businessTypeId = url.searchParams.get('businessTypeId') || '';
         if (request.method() === 'PUT') {
           const body = request.postDataJSON();
           const existing = businessConfigVersions[businessTypeId] || [];
@@ -467,7 +468,7 @@ test.describe('通知中心 E2E', () => {
       }
       if (request.method() === 'PUT') {
         const body = request.postDataJSON();
-        const id = url.pathname.split('/').pop();
+        const id = url.searchParams.get('id');
         const index = businessTypes.findIndex(item => item.id === id);
         if (index >= 0) {
           businessTypes[index] = { ...businessTypes[index], ...body };
@@ -476,7 +477,7 @@ test.describe('通知中心 E2E', () => {
         return;
       }
       if (request.method() === 'DELETE') {
-        const id = url.pathname.split('/').pop();
+        const id = url.searchParams.get('id');
         const index = businessTypes.findIndex(item => item.id === id);
         if (index >= 0) businessTypes.splice(index, 1);
         delete businessConfigVersions[String(id)];
@@ -641,11 +642,22 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ count }) });
     });
     await page.route('**/api/notice/site/my/messages**', async (route) => {
-      if (route.request().method() === 'GET') {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (request.method() === 'GET' && url.pathname.endsWith('/detail')) {
+        const messageId = url.searchParams.get('id');
+        const message = messageId === realtimeMessage.id
+          ? realtimeMessage
+          : messages.find(item => item.id === messageId);
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(message || null) });
+        return;
+      }
+      if (request.method() === 'GET') {
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: messages, total: messages.length, page: 1, size: 10 }) });
         return;
       }
-      if (route.request().method() === 'POST' && route.request().url().includes('/actions/ACKNOWLEDGE')) {
+      if (request.method() === 'POST' && url.pathname.endsWith('/actions')) {
+        const body = request.postDataJSON();
         const action = messages[0].actions.find(item => item.actionCode === 'ACKNOWLEDGE');
         if (action) {
           action.status = 'PROCESSING';
@@ -655,44 +667,41 @@ test.describe('通知中心 E2E', () => {
           contentType: 'application/json',
           body: ok({
             id: 'action-request-1001',
-            messageId: '1001',
-            actionCode: 'ACKNOWLEDGE',
+            messageId: body.messageId,
+            actionCode: body.actionCode,
             status: 'PROCESSING',
           }),
         });
         return;
       }
+      if (url.pathname.endsWith('/read-batch')) {
+        const body = request.postDataJSON();
+        messages.forEach((item) => {
+          if (body.ids.includes(item.id)) {
+            item.readStatus = 'READ';
+          }
+        });
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+        return;
+      }
+      if (url.pathname.endsWith('/read-all')) {
+        messages.forEach(item => { item.readStatus = 'READ'; });
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+        return;
+      }
+      if (url.pathname.endsWith('/read')) {
+        const message = messages.find(item => item.id === url.searchParams.get('id'));
+        if (message) message.readStatus = 'READ';
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+        return;
+      }
+      if (url.pathname.endsWith('/delete')) {
+        const index = messages.findIndex(item => item.id === url.searchParams.get('id'));
+        if (index >= 0) messages.splice(index, 1);
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+        return;
+      }
       await route.continue();
-    });
-    await page.route('**/api/notice/site/my/messages/1001', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(messages[0]) });
-    });
-    await page.route('**/api/notice/site/my/messages/2002', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(realtimeMessage) });
-    });
-    await page.route('**/api/notice/site/my/messages/2002/read', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
-    });
-    await page.route('**/api/notice/site/my/messages/1001/read', async (route) => {
-      messages[0].readStatus = 'READ';
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
-    });
-    await page.route('**/api/notice/site/my/messages/read-batch', async (route) => {
-      const body = route.request().postDataJSON();
-      messages.forEach((item) => {
-        if (body.ids.includes(item.id)) {
-          item.readStatus = 'READ';
-        }
-      });
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
-    });
-    await page.route('**/api/notice/site/my/messages/1001/delete', async (route) => {
-      messages.splice(0, 1);
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
-    });
-    await page.route('**/api/notice/site/my/messages/read-all', async (route) => {
-      messages.forEach(item => { item.readStatus = 'READ'; });
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
     });
 
     await login(page);
@@ -771,11 +780,11 @@ test.describe('通知中心 E2E', () => {
     await page.locator('.el-message-box').getByRole('button', { name: '取消' }).click();
     await expect(page.getByText('系统错误，请刷新页面')).toHaveCount(0);
     await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
-    const deleteBusiness = page.waitForRequest(request => request.method() === 'DELETE' && request.url().includes('/api/notice/business-types/'));
+    const deleteBusiness = page.waitForRequest(request => request.method() === 'DELETE' && request.url().includes('/api/notice/business-types?id=2'));
     await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '删除' }).click();
     await page.locator('.el-message-box').getByRole('button', { name: '删除', exact: true }).click();
     const deleteBusinessRequest = await deleteBusiness;
-    expect(deleteBusinessRequest.url()).toContain('/api/notice/business-types/2');
+    expect(deleteBusinessRequest.url()).toContain('/api/notice/business-types?id=2');
     await expect(page.getByText('order.shipped', { exact: true })).toHaveCount(0);
 
     await page.getByRole('menuitem', { name: '发送任务' }).click();
@@ -948,10 +957,11 @@ test.describe('通知中心 E2E', () => {
     await expect(siteMessageRow.getByRole('button', { name: '标记处理' })).toBeVisible();
     await expect(siteMessageRow.getByRole('button', { name: '查看设置' })).toBeVisible();
     const actionRequest = page.waitForRequest(request =>
-      request.method() === 'POST' && request.url().includes('/api/notice/site/my/messages/1001/actions/ACKNOWLEDGE')
+      request.method() === 'POST' && request.url().includes('/api/notice/site/my/messages/actions')
     );
     await siteMessageRow.getByRole('button', { name: '标记处理' }).click();
     const actionRequestBody = (await actionRequest).postDataJSON();
+    expect(actionRequestBody).toMatchObject({ messageId: '1001', actionCode: 'ACKNOWLEDGE' });
     expect(actionRequestBody.input).toMatchObject({
       bizType: 'WORKFLOW_APPROVED',
       bizId: 'WF-1',

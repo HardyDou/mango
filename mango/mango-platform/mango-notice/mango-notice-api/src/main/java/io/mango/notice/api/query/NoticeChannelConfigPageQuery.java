@@ -13,14 +13,18 @@ public class NoticeChannelConfigPageQuery implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "页码")
+    @jakarta.validation.constraints.Positive
     private long pageNum = 1;
 
     @Schema(description = "每页数量")
+    @jakarta.validation.constraints.Positive
     private long pageSize = 10;
 
     @Schema(description = "渠道类型")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticeChannelType channelType;
 
     @Schema(description = "是否启用")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean enabled;
 }

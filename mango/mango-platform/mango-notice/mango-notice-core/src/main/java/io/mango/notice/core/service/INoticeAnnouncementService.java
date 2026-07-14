@@ -24,9 +24,9 @@ public interface INoticeAnnouncementService {
 
     NoticeAnnouncementStatsVO getAnnouncementStats(Long id);
 
-    PageResult<NoticeAnnouncementVO> pageMyAnnouncements(Long userId, MyNoticeAnnouncementPageQuery query);
+    PageResult<NoticeAnnouncementVO> pageMyAnnouncements(MyNoticeAnnouncementPageQuery query);
 
-    NoticeAnnouncementVO getMyAnnouncement(Long id, Long userId);
+    NoticeAnnouncementVO getMyAnnouncement(Long id);
 
-    boolean confirmMyAnnouncement(Long id, Long userId);
+    boolean confirmMyAnnouncement(Long id);
 }

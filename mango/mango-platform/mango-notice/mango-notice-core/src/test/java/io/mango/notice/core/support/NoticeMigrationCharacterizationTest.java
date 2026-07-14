@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -19,6 +20,8 @@ class NoticeMigrationCharacterizationTest {
 
     private static final Pattern CREATE_TABLE = Pattern.compile(
             "(?i)CREATE\\s+TABLE\\s+IF\\s+NOT\\s+EXISTS\\s+`([^`]+)`");
+    private static final Pattern DML = Pattern.compile(
+            "(?im)^\\s*(INSERT|UPDATE|DELETE|REPLACE)\\s+");
 
     private static final Set<String> EXPECTED_TABLES = Set.of(
             "notice_announcement",
@@ -44,7 +47,12 @@ class NoticeMigrationCharacterizationTest {
 
     @Test
     void migrationsDescribeTheCompleteCurrentNoticeSchema() throws IOException, URISyntaxException {
-        String sql = migrationSql();
+        List<Path> migrations = migrations();
+        assertThat(migrations)
+                .extracting(path -> path.getFileName().toString())
+                .containsExactly("V1__init_notice.sql");
+
+        String sql = read(migrations.getFirst());
 
         Matcher matcher = CREATE_TABLE.matcher(sql);
         Set<String> tables = new TreeSet<>();
@@ -62,16 +70,16 @@ class NoticeMigrationCharacterizationTest {
                 .contains("`message_actions_json`")
                 .contains("`notice_site_message_action_request`")
                 .contains("`notice_announcement_recipient`");
+        assertThat(DML.matcher(sql).find()).isFalse();
     }
 
-    private String migrationSql() throws IOException, URISyntaxException {
+    private List<Path> migrations() throws IOException, URISyntaxException {
         Path root = Path.of(getClass().getClassLoader().getResource("db/migration/notice").toURI());
         try (var paths = Files.list(root)) {
             return paths
                     .filter(path -> path.getFileName().toString().endsWith(".sql"))
                     .sorted()
-                    .map(this::read)
-                    .collect(Collectors.joining("\n"));
+                    .collect(Collectors.toList());
         }
     }
 

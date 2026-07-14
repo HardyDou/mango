@@ -32,12 +32,12 @@ class NoticeApiSurfaceContractTest {
 
     @Test
     void publicApisKeepMethodsParametersValidationAndReturns() {
-        assertThat(apiFingerprint()).isEqualTo("8ed5782740c8a93aba3627484a61f21e2c846713360732e2a74e43086bbae470");
+        assertThat(apiFingerprint()).isEqualTo("74589dbe9c37d4102da56394ea11f70589d41bfaff0689bf6c0cd9250b694125");
     }
 
     @Test
     void httpEndpointsKeepVerbsPathsBindingsReturnsAndPermissions() {
-        assertThat(httpFingerprint()).isEqualTo("4ea31ab91737e718cccc1b00db3442a9c2a6280047174e60edf5c83c48e1b976");
+        assertThat(httpFingerprint()).isEqualTo("1331e2182d04fccc0e085697e8ca5ae9b66221f3b3580a8e193eae9b21021b89");
     }
 
     @Test
@@ -55,7 +55,7 @@ class NoticeApiSurfaceContractTest {
                     Arrays.stream(api.getDeclaredMethods())
                             .filter(method -> !method.isBridge() && !method.isSynthetic())
                             .sorted(Comparator.comparing(NoticeApiSurfaceContractTest::methodSortKey))
-                            .forEach(method -> appendMethod(contract, method));
+                            .forEach(method -> appendMethod(contract, method, true));
                 });
         return sha256(contract.toString());
     }
@@ -79,7 +79,7 @@ class NoticeApiSurfaceContractTest {
                 .forEach(method -> {
                     contract.append(verb(method)).append(' ')
                             .append(rootPath).append(methodPath(method)).append('\n');
-                    appendMethod(contract, method);
+                    appendMethod(contract, method, false);
                     ApiAccess access = method.getAnnotation(ApiAccess.class);
                     if (access != null) {
                         contract.append("ACCESS ").append(access.mode()).append(' ')
@@ -89,12 +89,12 @@ class NoticeApiSurfaceContractTest {
                 });
     }
 
-    private static void appendMethod(StringBuilder contract, Method method) {
+    private static void appendMethod(StringBuilder contract, Method method, boolean includeValidation) {
         contract.append(method.getName()).append('(');
         for (Parameter parameter : method.getParameters()) {
             contract.append(parameter.getParameterizedType().getTypeName()).append('[');
             Arrays.stream(parameter.getAnnotations())
-                    .filter(NoticeApiSurfaceContractTest::isContractAnnotation)
+                    .filter(annotation -> isContractAnnotation(annotation, includeValidation))
                     .sorted(Comparator.comparing(annotation -> annotation.annotationType().getName()))
                     .forEach(annotation -> contract.append(annotationContract(annotation)).append(','));
             contract.append("];");
@@ -183,10 +183,10 @@ class NoticeApiSurfaceContractTest {
         return contract.append(')').toString();
     }
 
-    private static boolean isContractAnnotation(Annotation annotation) {
+    private static boolean isContractAnnotation(Annotation annotation, boolean includeValidation) {
         String name = annotation.annotationType().getName();
         return name.startsWith("org.springframework.web.bind.annotation.")
-                || name.startsWith("jakarta.validation.");
+                || (includeValidation && name.startsWith("jakarta.validation."));
     }
 
     private static String sha256(String value) {

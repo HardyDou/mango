@@ -18,11 +18,14 @@ public class NoticeAnnouncementTargetCommand implements Serializable {
     private NoticeAnnouncementTargetType targetType;
 
     @Schema(description = "发布对象ID。ALL 可为空")
+    @jakarta.validation.constraints.Positive
     private Long targetId;
 
     @Schema(description = "发布对象名称，仅用于快照回显")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String targetName;
 
     @Schema(description = "组织是否包含下级。首期保存快照，解析由身份服务目标接口负责")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean includeChildren;
 }

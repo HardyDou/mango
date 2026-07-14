@@ -17,10 +17,13 @@ import net.sourceforge.pmd.lang.java.ast.JModifier;
 import net.sourceforge.pmd.lang.java.ast.ModifierOwner;
 import net.sourceforge.pmd.lang.java.rule.AbstractJavaRule;
 import net.sourceforge.pmd.lang.java.symbols.JClassSymbol;
+import net.sourceforge.pmd.lang.java.symbols.JFormalParamSymbol;
+import net.sourceforge.pmd.lang.java.symbols.JMethodSymbol;
 import net.sourceforge.pmd.lang.java.types.JArrayType;
 import net.sourceforge.pmd.lang.java.types.JClassType;
 import net.sourceforge.pmd.lang.java.types.JTypeMirror;
 import net.sourceforge.pmd.lang.java.types.JWildcardType;
+import net.sourceforge.pmd.lang.java.types.Substitution;
 import net.sourceforge.pmd.reporting.RuleContext;
 
 import java.util.List;
@@ -360,7 +363,14 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                     parameter,
                     "MANGO-ARCH-CTRL-007 write Command/Request body must be required");
         }
-        if (requiresValidAnnotation(requestBody, writeRequestModel)
+        boolean apiOwnsValidation = apiContractOwnsParameterValidation(method, parameter);
+        if (apiOwnsValidation && hasValidAnnotation(parameter)) {
+            violation(
+                    context,
+                    parameter,
+                    "MANGO-ARCH-CTRL-003 overriding Controller parameter must not repeat API-owned @Valid");
+        } else if (requiresValidAnnotation(requestBody, writeRequestModel)
+                && !apiOwnsValidation
                 && !hasValidAnnotation(parameter)) {
             violation(
                     context,
@@ -389,6 +399,54 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
 
     private boolean hasValidAnnotation(ASTFormalParameter parameter) {
         return VALID_ANNOTATIONS.stream().anyMatch(name -> hasAnnotation(parameter, name));
+    }
+
+    private boolean apiContractOwnsParameterValidation(
+            ASTMethodDeclaration method, ASTFormalParameter parameter) {
+        ASTTypeDeclaration controller = method.ancestors(ASTTypeDeclaration.class).first();
+        if (controller == null || !implementsApiContract(controller)) {
+            return false;
+        }
+        int parameterIndex = method.getFormalParameters().toList().indexOf(parameter);
+        return parameterIndex >= 0
+                && controller.getSuperInterfaceTypeNodes().toList().stream()
+                        .filter(node -> node.getSimpleName().endsWith("Api"))
+                        .map(node -> node.getTypeMirror())
+                        .filter(JClassType.class::isInstance)
+                        .map(JClassType.class::cast)
+                        .flatMap(type -> type.getSymbol().getDeclaredMethods().stream())
+                        .filter(apiMethod -> apiMethod.getSimpleName().equals(method.getName()))
+                        .filter(apiMethod -> hasSameParameterTypes(method, apiMethod))
+                        .map(JMethodSymbol::getFormalParameters)
+                        .filter(parameters -> parameterIndex < parameters.size())
+                        .map(parameters -> parameters.get(parameterIndex))
+                        .anyMatch(this::hasValidAnnotation);
+    }
+
+    private boolean hasSameParameterTypes(
+            ASTMethodDeclaration method, JMethodSymbol apiMethod) {
+        if (method.getArity() != apiMethod.getArity()) {
+            return false;
+        }
+        for (int index = 0; index < method.getArity(); index++) {
+            String controllerType =
+                    canonicalName(method.getFormalParameters().get(index).getTypeMirror());
+            String apiType =
+                    canonicalName(
+                            apiMethod
+                                    .getFormalParameters()
+                                    .get(index)
+                                    .getTypeMirror(Substitution.EMPTY));
+            if (!controllerType.equals(apiType)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasValidAnnotation(JFormalParamSymbol parameter) {
+        return parameter.getDeclaredAnnotations().stream()
+                .anyMatch(annotation -> annotation.isOfType("jakarta.validation.Valid"));
     }
 
     private void inspectSimpleHttpParameter(ASTFormalParameter parameter, RuleContext context) {

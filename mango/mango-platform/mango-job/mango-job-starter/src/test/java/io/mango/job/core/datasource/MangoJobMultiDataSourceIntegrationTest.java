@@ -1214,7 +1214,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                     assertThat(notice.getBizId()).isEqualTo(String.valueOf(instanceId));
                     assertThat(notice.getUserIds()).containsExactly(216L);
                     assertThat(notice.getIdempotentKey()).startsWith("mango-job:alarm:");
-                    assertThat(notice.getParams())
+                    assertThat(notice.getParams().toMap())
                             .containsEntry("jobCode", "native-failed-alarm")
                             .containsEntry("noticeTemplateCode", MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED_SITE_TEMPLATE)
                             .containsEntry("errorSummary", "handler failed intentionally");

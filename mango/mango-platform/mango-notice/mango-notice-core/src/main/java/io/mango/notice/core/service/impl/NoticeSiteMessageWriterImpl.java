@@ -16,7 +16,7 @@ import io.mango.notice.core.entity.NoticeSiteMessageActionEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageEntity;
 import io.mango.notice.core.mapper.NoticeSiteMessageActionMapper;
 import io.mango.notice.core.mapper.NoticeSiteMessageMapper;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +32,7 @@ public class NoticeSiteMessageWriterImpl implements SiteNoticeMessageWriter {
  private final ObjectMapper objectMapper;
 
  @Override
- public SiteNoticeMessageWriteResult write(ChannelSendCommand command) {
+ public SiteNoticeMessageWriteResult write(NoticeChannelMessage command) {
  NoticeSiteMessageEntity entity = new NoticeSiteMessageEntity();
  entity.setTaskId(command.getTaskId());
  entity.setSendRecordId(command.getSendRecordId());
@@ -56,7 +56,7 @@ public class NoticeSiteMessageWriterImpl implements SiteNoticeMessageWriter {
  return new SiteNoticeMessageWriteResult(entity.getId(), unreadCount);
  }
 
- private void applyMessageProtocol(NoticeSiteMessageEntity entity, ChannelSendCommand command) {
+ private void applyMessageProtocol(NoticeSiteMessageEntity entity, NoticeChannelMessage command) {
  entity.setMessageScene(command.getMessageScene());
  NoticeSiteMessageSubjectCommand subject = command.getMessageSubject();
  if (subject != null) {
@@ -75,7 +75,7 @@ public class NoticeSiteMessageWriterImpl implements SiteNoticeMessageWriter {
  entity.setExpireTime(command.getMessageExpireTime());
  }
 
- private void writeActions(NoticeSiteMessageEntity message, ChannelSendCommand command) {
+ private void writeActions(NoticeSiteMessageEntity message, NoticeChannelMessage command) {
  if (command.getMessageActions() == null || command.getMessageActions().isEmpty()) {
  return;
  }

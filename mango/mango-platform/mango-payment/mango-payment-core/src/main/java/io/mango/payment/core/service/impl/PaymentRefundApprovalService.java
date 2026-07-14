@@ -35,6 +35,7 @@ import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
 import io.mango.workflow.api.WorkflowProcessApi;
 import io.mango.workflow.api.WorkflowBusinessApplyApi;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
+import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
@@ -400,7 +401,7 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
         variables.put("refundAmount", approval.getRefundAmount());
         variables.put("appId", approval.getAppId());
         variables.put("businessOrderId", approval.getBusinessOrderId());
-        command.setVariables(variables);
+        command.setVariables(WorkflowJsonRequest.of(variables));
         WorkflowProcessInstanceVO process = PaymentRemoteResultSupport.requireData(
                 workflowProcessApi.start(command),
                 PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID,

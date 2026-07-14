@@ -74,7 +74,7 @@ class NoticeOutboxDispatcherTest {
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = OutboxMessage.builder()
                 .messageId("notice-1001")
-                .eventType(NoticeOutboxMessageMapper.EVENT_TYPE)
+                .eventType(NoticeOutboxMessageFactory.EVENT_TYPE)
                 .attemptCount(1)
                 .payload(Map.of("taskId", 1001L))
                 .headers(Map.of(MangoContextHeaders.TENANT_ID, "1"))
@@ -123,7 +123,7 @@ class NoticeOutboxDispatcherTest {
     void toOutboxMessage_includesCurrentTenantHeader() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
 
-        OutboxMessage message = NoticeOutboxMessageMapper.toOutboxMessage(1001L, NOW);
+        OutboxMessage message = NoticeOutboxMessageFactory.toOutboxMessage(1001L, NOW);
 
         assertEquals(OutboxTopics.NOTICE, message.getTopic());
         assertEquals("1", message.getHeaders().get(MangoContextHeaders.TENANT_ID));
@@ -218,7 +218,7 @@ class NoticeOutboxDispatcherTest {
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = OutboxMessage.builder()
                 .messageId("notice-1001")
-                .eventType(NoticeOutboxMessageMapper.EVENT_TYPE)
+                .eventType(NoticeOutboxMessageFactory.EVENT_TYPE)
                 .attemptCount(1)
                 .payload(Map.of("taskId", "1001"))
                 .build();
@@ -239,7 +239,7 @@ class NoticeOutboxDispatcherTest {
         INoticeService noticeService = mock(INoticeService.class);
         OutboxMessage message = OutboxMessage.builder()
                 .messageId("notice-missing-task")
-                .eventType(NoticeOutboxMessageMapper.EVENT_TYPE)
+                .eventType(NoticeOutboxMessageFactory.EVENT_TYPE)
                 .attemptCount(1)
                 .payload(Map.of())
                 .build();
@@ -266,7 +266,7 @@ class NoticeOutboxDispatcherTest {
         return OutboxMessage.builder()
                 .messageId("notice-" + taskId)
                 .topic(OutboxTopics.NOTICE)
-                .eventType(NoticeOutboxMessageMapper.EVENT_TYPE)
+                .eventType(NoticeOutboxMessageFactory.EVENT_TYPE)
                 .attemptCount(attemptCount)
                 .payload(Map.of("taskId", taskId))
                 .build();

@@ -17,6 +17,7 @@ public class SaveNoticeAnnouncementCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "公告ID。新增时为空，修改时必填")
+    @jakarta.validation.constraints.Positive
     private Long id;
 
     @NotBlank(message = "公告标题不能为空")
@@ -29,18 +30,23 @@ public class SaveNoticeAnnouncementCommand implements Serializable {
     private String content;
 
     @Schema(description = "有效开始时间")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private LocalDateTime validStartTime;
 
     @Schema(description = "有效结束时间")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private LocalDateTime validEndTime;
 
     @Schema(description = "是否置顶")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean pinned;
 
     @Schema(description = "是否需要用户确认")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean confirmRequired;
 
     @Schema(description = "发布时是否同步生成系统消息提醒")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean syncMessageEnabled;
 
     @Valid

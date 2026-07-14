@@ -17,6 +17,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.notice</groupId>
+            <artifactId>mango-notice-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.feign</groupId>
             <artifactId>mango-infra-feign-starter</artifactId>
             <version>${project.version}</version>

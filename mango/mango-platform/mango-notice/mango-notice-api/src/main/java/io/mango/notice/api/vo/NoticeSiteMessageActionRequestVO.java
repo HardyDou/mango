@@ -5,8 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-
 @Data
 @Schema(description = "系统消息动作请求视图")
 public class NoticeSiteMessageActionRequestVO {
@@ -33,7 +31,7 @@ public class NoticeSiteMessageActionRequestVO {
     private String failReason;
 
     @Schema(description = "业务处理结果")
-    private Map<String, Object> result;
+    private NoticeJsonVO result;
 
     @Schema(description = "创建时间")
     private LocalDateTime createdAt;

@@ -15,7 +15,7 @@ public class NoticeChannelConfigVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "ID")
+    @Schema(description = "主键 ID")
     private Long id;
 
     @Schema(description = "渠道类型")

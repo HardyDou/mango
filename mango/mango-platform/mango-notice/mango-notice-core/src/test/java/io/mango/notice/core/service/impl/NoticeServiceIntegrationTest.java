@@ -20,6 +20,8 @@ import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxMessageQuery;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
@@ -27,6 +29,7 @@ import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.notice.api.command.CompleteNoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.ExecuteNoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeJsonRequest;
 import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
@@ -56,6 +59,8 @@ import io.mango.notice.core.entity.NoticeSiteMessageActionEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageActionRequestEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageEntity;
 import io.mango.notice.core.entity.NoticeTaskEntity;
+import io.mango.notice.core.integration.NoticeIdentityGateway;
+import io.mango.notice.core.integration.NoticeOrgGateway;
 import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
 import io.mango.notice.core.mapper.NoticeBusinessConfigVersionMapper;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
@@ -66,9 +71,9 @@ import io.mango.notice.core.mapper.NoticeSiteMessageActionMapper;
 import io.mango.notice.core.mapper.NoticeSiteMessageActionRequestMapper;
 import io.mango.notice.core.mapper.NoticeSiteMessageMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
-import io.mango.notice.core.outbox.NoticeOutboxMessageMapper;
+import io.mango.notice.core.outbox.NoticeOutboxMessageFactory;
 import io.mango.notice.core.service.NoticeRecipientResolver;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import io.mango.org.api.SysOrgApi;
@@ -78,6 +83,7 @@ import io.mango.org.api.command.UpdateOrgCommand;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -167,6 +173,8 @@ class NoticeServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1L, "default", "notice-test", null, null, null, null, "test"));
         resetSchema();
         outboxStore.clear();
         realtimeApi.clear();
@@ -174,6 +182,11 @@ class NoticeServiceIntegrationTest {
         identityUserApi.clear();
         identityUserApi.addUser(1L, "张三", "zhangsan@example.com", "13800000001");
         identityUserApi.addUser(2L, "李四", "lisi@example.com", "13800000002");
+    }
+
+    @AfterEach
+    void tearDown() {
+        MangoContextHolder.clear();
     }
 
     @Test
@@ -206,7 +219,7 @@ class NoticeServiceIntegrationTest {
 
         assertThat(outboxStore.messages).hasSize(1);
         OutboxMessage outbox = outboxStore.messages.get(0);
-        assertThat(outbox.getEventType()).isEqualTo(NoticeOutboxMessageMapper.EVENT_TYPE);
+        assertThat(outbox.getEventType()).isEqualTo(NoticeOutboxMessageFactory.EVENT_TYPE);
         assertThat(outbox.getPayload()).containsEntry("taskId", task.getId());
     }
 
@@ -300,10 +313,11 @@ class NoticeServiceIntegrationTest {
         NoticeSiteMessageEntity message = siteMessageMapper.selectList(new LambdaQueryWrapper<NoticeSiteMessageEntity>()
                 .eq(NoticeSiteMessageEntity::getUserId, 1L)).get(0);
 
-        var first = noticeService.executeSiteMessageAction(message.getId(), "approve", 1L,
-                new ExecuteNoticeSiteMessageActionCommand());
-        var second = noticeService.executeSiteMessageAction(message.getId(), "approve", 1L,
-                new ExecuteNoticeSiteMessageActionCommand());
+        ExecuteNoticeSiteMessageActionCommand executeCommand = new ExecuteNoticeSiteMessageActionCommand();
+        executeCommand.setMessageId(message.getId());
+        executeCommand.setActionCode("approve");
+        var first = noticeService.executeSiteMessageAction(executeCommand);
+        var second = noticeService.executeSiteMessageAction(executeCommand);
 
         assertThat(first.getRequestId()).isEqualTo(second.getRequestId());
         assertThat(first.getStatus()).isEqualTo(NoticeSiteMessageActionRequestStatus.REQUESTED);
@@ -328,17 +342,19 @@ class NoticeServiceIntegrationTest {
         noticeService.executeTask(singleTask().getId());
         NoticeSiteMessageEntity message = siteMessageMapper.selectList(new LambdaQueryWrapper<NoticeSiteMessageEntity>()
                 .eq(NoticeSiteMessageEntity::getUserId, 1L)).get(0);
-        var request = noticeService.executeSiteMessageAction(message.getId(), "approve", 1L,
-                new ExecuteNoticeSiteMessageActionCommand());
+        ExecuteNoticeSiteMessageActionCommand executeCommand = new ExecuteNoticeSiteMessageActionCommand();
+        executeCommand.setMessageId(message.getId());
+        executeCommand.setActionCode("approve");
+        var request = noticeService.executeSiteMessageAction(executeCommand);
         CompleteNoticeSiteMessageActionCommand command = new CompleteNoticeSiteMessageActionCommand();
         command.setRequestId(request.getRequestId());
         command.setStatus(NoticeSiteMessageActionRequestStatus.SUCCEEDED);
-        command.setResult(Map.of("approved", true));
+        command.setResult(NoticeJsonRequest.of(Map.of("approved", true)));
 
         var result = noticeService.completeSiteMessageAction(command);
 
         assertThat(result.getStatus()).isEqualTo(NoticeSiteMessageActionRequestStatus.SUCCEEDED);
-        assertThat(result.getResult()).containsEntry("approved", true);
+        assertThat(result.getResult().toMap()).containsEntry("approved", true);
         NoticeSiteMessageActionRequestEntity persistedRequest = siteMessageActionRequestMapper.selectOne(
                 new LambdaQueryWrapper<NoticeSiteMessageActionRequestEntity>()
                         .eq(NoticeSiteMessageActionRequestEntity::getRequestId, request.getRequestId()));
@@ -352,12 +368,14 @@ class NoticeServiceIntegrationTest {
 
     @Test
     void siteMessageReadAndDeleteOnlyAffectCurrentUsersVisibleRows() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(8L, "default", "notice-test", null, null, null, null, "test"));
         insertSiteMessage(100L, 8L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL);
         insertSiteMessage(101L, 9L, NoticeReadStatus.UNREAD, NoticeDeleteStatus.NORMAL);
 
-        assertThat(noticeService.markSiteMessageRead(100L, 8L)).isTrue();
-        assertThat(noticeService.deleteSiteMessage(100L, 8L)).isTrue();
-        assertThat(noticeService.markSiteMessageRead(101L, 8L)).isFalse();
+        assertThat(noticeService.markSiteMessageRead(100L)).isTrue();
+        assertThat(noticeService.deleteSiteMessage(100L)).isTrue();
+        assertThat(noticeService.markSiteMessageRead(101L)).isFalse();
 
         NoticeSiteMessageEntity own = siteMessageMapper.selectById(100L);
         NoticeSiteMessageEntity other = siteMessageMapper.selectById(101L);
@@ -424,7 +442,7 @@ class NoticeServiceIntegrationTest {
         command.setBizId("job-1001");
         command.setUserIds(List.of(1L, 2L));
         command.setChannelTypes(List.of(NoticeChannelType.SITE));
-        command.setParams(Map.of("jobName", "ETL-01", "errorCode", "E500"));
+        command.setParams(NoticeJsonRequest.of(Map.of("jobName", "ETL-01", "errorCode", "E500")));
         return command;
     }
 
@@ -440,9 +458,9 @@ class NoticeServiceIntegrationTest {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         target.setTargetKey("workflowTaskDetail");
-        target.setParams(Map.of("taskId", "task-1001"));
+        target.setParams(NoticeJsonRequest.of(Map.of("taskId", "task-1001")));
         command.setMessageTarget(target);
-        command.setMessageData(Map.of("processInstanceId", "pi-1001"));
+        command.setMessageData(NoticeJsonRequest.of(Map.of("processInstanceId", "pi-1001")));
         NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
         action.setActionCode("approve");
         action.setActionLabel("同意");
@@ -900,7 +918,18 @@ class NoticeServiceIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = NoticeBusinessChannelTemplateMapper.class)
-    @Import({NoticeService.class, NoticeSiteMessageWriterImpl.class})
+    @Import({
+            NoticeService.class,
+            NoticeDeliveryService.class,
+            NoticeConfigurationService.class,
+            NoticeRecordOperationService.class,
+            NoticeRecipientSettingService.class,
+            NoticeSiteMessageService.class,
+            NoticeWecomSyncService.class,
+            NoticeSiteMessageWriterImpl.class,
+            NoticeIdentityGateway.class,
+            NoticeOrgGateway.class
+    })
     static class TestConfig {
 
         @Bean
@@ -963,7 +992,7 @@ class NoticeServiceIntegrationTest {
         }
 
         @Override
-        public ChannelSendResult send(ChannelSendCommand command) {
+        public ChannelSendResult send(NoticeChannelMessage command) {
             return ChannelSendResult.success(messageWriter.write(command).messageId());
         }
     }

@@ -3,7 +3,7 @@ package io.mango.workflow.starter.notice;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.workflow.api.WorkflowEventTypes;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEvent;
@@ -31,13 +31,15 @@ class WorkflowNoticeDomainEventSubscriberTest {
                 .payload("processInstanceId", "PI-1001")
                 .payload("taskId", "TASK-1001")
                 .payload("assignee", "1001")
+                .payload("tenantId", "1")
                 .payload("definitionName", "费用报销")
                 .build();
 
         subscriber.onEvent(event);
 
         assertThat(events).singleElement().satisfies(published -> {
-            NoticeSendEvent notice = (NoticeSendEvent) published;
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getTenantId()).isEqualTo("1");
             assertThat(notice.getBizType()).isEqualTo("workflow.task.assigned");
             assertThat(notice.getUserId()).isEqualTo(1001L);
             assertThat(notice.getMessageScene()).isEqualTo("workflow.task.assigned");
@@ -45,7 +47,7 @@ class WorkflowNoticeDomainEventSubscriberTest {
             assertThat(notice.getMessageSubject().getSubjectId()).isEqualTo("PI-1001");
             assertThat(notice.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
             assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:detail");
-            assertThat(notice.getMessageData()).containsEntry("taskId", "TASK-1001");
+            assertThat(notice.getMessageData().toMap()).containsEntry("taskId", "TASK-1001");
             assertThat(notice.getMessageActions()).singleElement().satisfies(action -> {
                 assertThat(action.getActionCode()).isEqualTo("OPEN_WORKFLOW");
                 assertThat(action.getActionLabel()).isEqualTo("处理任务");

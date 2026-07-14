@@ -16,7 +16,7 @@ public class NoticeAnnouncementVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "ID")
+    @Schema(description = "主键 ID")
     private Long id;
 
     @Schema(description = "公告标题")

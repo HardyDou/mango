@@ -35,7 +35,8 @@ import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeJsonRequest;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.system.api.SysLoginLogApi;
 import io.mango.system.api.po.SysLoginLogPo;
 import jakarta.servlet.http.Cookie;
@@ -187,19 +188,20 @@ public class AuthController implements AuthApi {
         params.put("loginTime", LocalDateTime.now().toString());
         params.put("appCode", firstText(response.getAppCode(), command.getAppCode()));
         NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
-        eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType("auth.login.success")
-                .bizId(String.valueOf(response.getUserId()))
-                .userId(response.getUserId())
-                .params(params)
-                .messageScene("auth.login.success")
-                .messageSubject(subject("AUTH_LOGIN", String.valueOf(response.getUserId()), response.getUsername()))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)))
-                .priority(NoticePriority.LOW)
-                .idempotentKey("auth.login.success:" + response.getUserId() + ":" + System.currentTimeMillis())
-                .build());
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(response.getTenantId());
+        event.setBizType("auth.login.success");
+        event.setBizId(String.valueOf(response.getUserId()));
+        event.setUserId(response.getUserId());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene("auth.login.success");
+        event.setMessageSubject(subject("AUTH_LOGIN", String.valueOf(response.getUserId()), response.getUsername()));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)));
+        event.setPriority(NoticePriority.LOW);
+        event.setIdempotentKey("auth.login.success:" + response.getUserId() + ":" + System.currentTimeMillis());
+        eventPublisher.publishEvent(event);
     }
 
     private void publishLoginLockedNotice(LoginCommand command, String clientIp) {
@@ -208,18 +210,19 @@ public class AuthController implements AuthApi {
         params.put("clientIp", clientIp);
         params.put("loginTime", LocalDateTime.now().toString());
         NoticeSiteMessageTargetCommand target = routeTarget("system:user", params);
-        eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType("auth.login.locked")
-                .bizId(command.getUsername())
-                .params(params)
-                .messageScene("auth.login.locked")
-                .messageSubject(subject("AUTH_LOGIN_LOCK", command.getUsername(), command.getUsername()))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(List.of(routeAction("VIEW_USER", "查看账号", target)))
-                .priority(NoticePriority.HIGH)
-                .idempotentKey("auth.login.locked:" + command.getUsername() + ":" + clientIp)
-                .build());
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(firstText(command.getTenantId(), MangoContextHolder.tenantId()));
+        event.setBizType("auth.login.locked");
+        event.setBizId(command.getUsername());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene("auth.login.locked");
+        event.setMessageSubject(subject("AUTH_LOGIN_LOCK", command.getUsername(), command.getUsername()));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(List.of(routeAction("VIEW_USER", "查看账号", target)));
+        event.setPriority(NoticePriority.HIGH);
+        event.setIdempotentKey("auth.login.locked:" + command.getUsername() + ":" + clientIp);
+        eventPublisher.publishEvent(event);
     }
 
     private NoticeSiteMessageSubjectCommand subject(String subjectType, String subjectId, String subjectName) {
@@ -234,7 +237,7 @@ public class AuthController implements AuthApi {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         target.setTargetKey(targetKey);
-        target.setParams(params);
+        target.setParams(NoticeJsonRequest.of(params));
         return target;
     }
 

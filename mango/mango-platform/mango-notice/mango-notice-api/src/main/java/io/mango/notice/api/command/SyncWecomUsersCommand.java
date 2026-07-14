@@ -13,6 +13,7 @@ public class SyncWecomUsersCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "企业微信渠道配置 ID；为空时使用第一个启用的企业微信渠道配置")
+    @jakarta.validation.constraints.Positive
     private Long channelConfigId;
 
     @Schema(description = "企业微信 CorpId；为空时从渠道配置读取")
@@ -24,35 +25,46 @@ public class SyncWecomUsersCommand implements Serializable {
     private String secret;
 
     @Schema(description = "企业微信部门 ID；为空时按同步目标自动解析")
+    @jakarta.validation.constraints.Positive
     private Long departmentId;
 
     @Schema(description = "Mango 同步目标组织 ID；公司同步时作为组织挂载点，部门同步时作为成员归属部门")
+    @jakarta.validation.constraints.Positive
     private Long targetOrgId;
 
     @Schema(description = "Mango 同步目标组织类型：1-集团，2-公司，3-部门，4-小组")
+    @jakarta.validation.constraints.Min(0)
     private Integer targetOrgType;
 
     @Schema(description = "是否同步子部门成员")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean fetchChild = true;
 
     @Schema(description = "是否同步组织架构")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean syncDepartments = true;
 
     @Schema(description = "是否同步成员")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean syncUsers = true;
 
     @Schema(description = "已同步且数据未变化时是否跳过")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean skipUnchanged = true;
 
     @Schema(description = "是否创建缺失成员")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean createMissingUsers = true;
 
     @Schema(description = "是否更新已匹配成员资料")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean updateMatchedUsers = true;
 
     @Schema(description = "是否绑定企业微信通知接收账户")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean bindNoticeAccount = true;
 
     @Schema(description = "是否绑定企业微信登录身份")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean bindLoginIdentity = true;
 }

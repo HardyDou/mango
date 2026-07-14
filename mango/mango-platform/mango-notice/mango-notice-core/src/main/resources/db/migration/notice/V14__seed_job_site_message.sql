@@ -1,2 +1,0 @@
--- Job site message template seed moved to mango-resource.
--- See mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-message.yml.

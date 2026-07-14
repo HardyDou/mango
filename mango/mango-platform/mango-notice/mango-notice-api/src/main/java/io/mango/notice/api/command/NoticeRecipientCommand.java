@@ -13,26 +13,34 @@ public class NoticeRecipientCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "用户ID")
+    @jakarta.validation.constraints.Positive
     private Long userId;
 
     @Schema(description = "接收人名称")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String recipientName;
 
     @Schema(description = "手机号")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String mobile;
 
     @Schema(description = "邮箱")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String email;
 
     @Schema(description = "微信 openid")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String wechatOpenid;
 
     @Schema(description = "企业微信用户ID")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String wecomUserId;
 
     @Schema(description = "钉钉用户ID")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String dingtalkUserId;
 
     @Schema(description = "外部联系人标识")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String externalId;
 }

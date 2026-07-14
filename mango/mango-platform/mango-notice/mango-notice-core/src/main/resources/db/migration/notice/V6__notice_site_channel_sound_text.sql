@@ -1,1 +1,0 @@
--- Default notice channel sound text is registered through mango-resource MESSAGE_CHANNEL.
