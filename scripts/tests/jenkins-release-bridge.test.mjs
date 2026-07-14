@@ -11,6 +11,7 @@ const root = path.resolve(testDir, '..', '..')
 const bridge = path.join(root, 'scripts', 'ci', 'jenkins-release-bridge.sh')
 const jenkinsfile = path.join(root, 'jenkins', 'mango-maven-release.Jenkinsfile')
 const jenkinsJob = path.join(root, 'jenkins', 'mango-maven-release-job.xml')
+const releaseWorkflow = path.join(root, '.github', 'workflows', 'maven-release.yml')
 
 const baseEnv = {
   ...process.env,
@@ -99,4 +100,14 @@ test('tracked Jenkins pipeline publishes only the governed non-app batch at the 
   assert.match(job, /<name>REQUEST_ID<\/name>/)
   assert.match(job, /<defaultValue>true<\/defaultValue>/)
   assert.match(job, /<scriptPath>jenkins\/mango-maven-release\.Jenkinsfile<\/scriptPath>/)
+})
+
+test('release runner downloads only the approved bridge artifact instead of cloning Mango', async () => {
+  const workflow = await readFile(releaseWorkflow, 'utf8')
+  const runnerJob = workflow.split('  internal-jenkins-release:')[1]
+
+  assert.match(workflow, /actions\/upload-artifact@v4/)
+  assert.match(runnerJob, /actions\/download-artifact@v4/)
+  assert.match(runnerJob, /\.release-bridge\/jenkins-release-bridge\.sh/)
+  assert.doesNotMatch(runnerJob, /actions\/checkout@/)
 })

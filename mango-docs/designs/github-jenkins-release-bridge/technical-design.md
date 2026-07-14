@@ -27,7 +27,7 @@ upstreamDocumentHash: ced6e052286a1fa28d84ef35ff2cacfc87f2cb2df01978a845cb9b8244
 
 | 模块设计ID | 模块或包 | 职责 | 改动类型 | 依赖方向 | 公开能力 | 系统需求ID | 适用规范ruleId | 验证方式 |
 |---|---|---|---|---|---|---|---|---|
-| MOD-001 | `.github/workflows/maven-release.yml` | GitHub 手工入口、main 与版本前置检查、Runner 路由和结果摘要 | 新增 | GitHub Workflow 调用仓库脚本，不直接访问 Jenkins | Mango Maven Release 手工 Workflow | FR-001, UC-001, PG-001, BT-001 | rules/05-ai-delivery-quality.md | YAML 静态检查与真实 workflow_dispatch dry-run |
+| MOD-001 | `.github/workflows/maven-release.yml` | GitHub 手工入口、main 与版本前置检查、桥接脚本 artifact 交接、Runner 路由和结果摘要 | 新增 | 公网 Job 从批准 SHA 上传单文件短期 artifact；内网 Runner 不克隆 Mango 仓库，只下载该 artifact 并调用 Jenkins | Mango Maven Release 手工 Workflow | FR-001, UC-001, PG-001, BT-001 | rules/05-ai-delivery-quality.md | YAML 静态检查、Runner 无 checkout 断言与真实 workflow_dispatch dry-run |
 | MOD-002 | `scripts/ci/jenkins-release-bridge.sh` | 校验输入、隐藏凭据、触发 Jenkins、轮询队列和构建、传播取消与结果 | 新增 | 只依赖 curl、jq 和 Jenkins Remote API | GitHub Runner 内部桥接命令 | FR-001, DR-001, IR-001, NFR-001 | rules/backend/06-security.md | Node 测试使用假 Jenkins 响应覆盖成功和参数失败 |
 | MOD-003 | `jenkins/mango-maven-release.Jenkinsfile` | 精确检出、main 可达性、版本契约、Maven 工具缓存和非 app 发布 | 替换 Jenkins 内联定义 | Jenkinsfile 调用现有 Maven batch 脚本；Nexus 凭据继续由 Jenkins Maven 配置提供 | Jenkins `mango-maven-release` Pipeline | FR-001, SAC-001 | rules/05-ai-delivery-quality.md | Jenkins dry-run、精确 SHA 与 Nexus 版本前后对比 |
 
@@ -46,7 +46,7 @@ upstreamDocumentHash: ced6e052286a1fa28d84ef35ff2cacfc87f2cb2df01978a845cb9b8244
 
 | 流程设计ID | 系统需求ID | 调用入口 | 参与模块 | 处理顺序 | 事务边界 | 状态变化 | 幂等键 | 并发策略 | 外部失败与补偿 | 用户可见结果 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| FLOW-001 | FR-001, UC-001, SAC-001 | GitHub `workflow_dispatch` | MOD-001, MOD-002, MOD-003 | GitHub 校验 main 与版本；Release Runner 触发 Jenkins；Jenkins 重试等待镜像 SHA、检出并校验 main 可达；执行 batch；桥接轮询并回传 | 无跨系统数据库事务；不可变制品由发布前冲突检查和 Nexus 坐标保证 | DM-001 从 QUEUED 到 RUNNING 再到最终状态 | REQUEST_ID；正式制品再由 Maven 坐标唯一约束 | GitHub concurrency 与 Jenkins disableConcurrentBuilds 均串行 | GitHub 取消或桥接超时调用 Jenkins stop/cancel；正式发布失败后只允许按现有发布修复流程验证已尝试状态 | GitHub 显示前置检查、内网任务、构建号和最终同色结果 |
+| FLOW-001 | FR-001, UC-001, SAC-001 | GitHub `workflow_dispatch` | MOD-001, MOD-002, MOD-003 | GitHub 校验 main 与版本并上传单文件桥接 artifact；Release Runner 下载该 artifact 后触发 Jenkins，不重复克隆仓库；Jenkins 重试等待镜像 SHA、检出并校验 main 可达；执行 batch；桥接轮询并回传 | 无跨系统数据库事务；不可变制品由发布前冲突检查和 Nexus 坐标保证 | DM-001 从 QUEUED 到 RUNNING 再到最终状态 | REQUEST_ID；正式制品再由 Maven 坐标唯一约束 | GitHub concurrency 与 Jenkins disableConcurrentBuilds 均串行 | GitHub 取消或桥接超时调用 Jenkins stop/cancel；正式发布失败后只允许按现有发布修复流程验证已尝试状态 | GitHub 显示前置检查、内网任务、构建号和最终同色结果 |
 
 ## 5. API 与远程契约设计
 

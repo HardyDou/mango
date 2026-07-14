@@ -11,7 +11,7 @@ owner: Mango 发布实施负责人
 approver: HardyDou
 approvalEvidence: review/PLAN-GITHUB-JENKINS-RELEASE.md
 upstreamDocumentId: TDD-GITHUB-JENKINS-RELEASE
-upstreamDocumentHash: 8c4adda2c95a725e6b6e6d4ad74f130ebe675e93eda0201794291a1ddc0ea2b9
+upstreamDocumentHash: a6351cc1dced469b9f73722075a01e95830f4e853857a2f82b5ce70b86574d04
 ---
 
 # GitHub 到内网 Jenkins 发布实施计划
@@ -29,7 +29,7 @@ upstreamDocumentHash: 8c4adda2c95a725e6b6e6d4ad74f130ebe675e93eda0201794291a1ddc
 | 任务ID | 技术设计ID | 交付物ID | 责任角色 | 路径或模块 | 前置任务 | 具体动作 | 完成标准 | 验证ID | 实施批次 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | TASK-001 | DEC-001, DEC-002, MOD-001, MOD-002, MOD-003, DM-001, FLOW-001, API-001, DB-001, SEC-001, ERR-001, UI-001, TC-001, IMP-001 | DEL-001 | Dev/发布工程 | 任务 worktree | NONE | 实现 Workflow、桥接脚本、Jenkinsfile、测试和说明；执行本地门禁 | VAL-001 与 VAL-002 全部通过，提交中没有敏感值 | VAL-001, VAL-002 | batch-1 | PLANNED |
-| TASK-002 | DEC-001, MOD-001, MOD-002, SEC-001, UI-001, IMP-001 | DEL-002 | 发布工程 | GitHub 与内网服务器 | TASK-001 | 合并 PR 后创建 Environment；安装独立系统用户的仓库 Runner；凭据只进入 Runner 服务环境 | GitHub 显示 Runner online；服务重启后自动恢复；PR Workflow 不引用该标签 | VAL-003 | batch-2 | PLANNED |
+| TASK-002 | DEC-001, MOD-001, MOD-002, SEC-001, UI-001, IMP-001 | DEL-002 | 发布工程 | GitHub 与内网服务器 | TASK-001 | 合并 PR 后创建 Environment；安装独立系统用户的仓库 Runner；凭据只进入 Runner 服务环境；公网 Job 通过单文件 artifact 交付桥接脚本，Runner 不克隆 Mango 仓库 | GitHub 显示 Runner online；服务重启后自动恢复；PR Workflow 不引用该标签；内网 Job 不执行 actions/checkout | VAL-003 | batch-2 | PLANNED |
 | TASK-003 | DEC-002, MOD-003, FLOW-001, API-001, DB-001, SEC-001, ERR-001, TC-002, IMP-001 | DEL-002, DEL-003 | 发布工程/QA | Jenkins `mango-maven-release` | TASK-002 | 备份 Job 与 compose；配置运行时地址和新 Pipeline；从 main 发起唯一 prerelease dry-run；比较 Nexus 前后 | GitHub 与 Jenkins 同一 SHA、版本、请求号和成功结果；Nexus 无新增目标版本；证据完成 | VAL-003 | batch-3 | PLANNED |
 
 ## 3. 顺序、依赖与里程碑

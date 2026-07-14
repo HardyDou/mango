@@ -1,6 +1,6 @@
 # GitHub 到内网 Jenkins 发布桥接
 
-GitHub 保留 PR、主分支和手工发布入口。内网 `mango-release` Self-hosted Runner 主动通过 HTTPS 443 连接 GitHub，领取发布任务后调用只在内网可达的 Jenkins；Jenkins 使用精确 Git SHA 执行 Maven 非 app 发布批次，并把最终状态经 Runner 返回 GitHub。
+GitHub 保留 PR、主分支和手工发布入口。公网前置 Job 校验 main 后只把受批准的桥接脚本作为短期 artifact 交给内网 `mango-release` Self-hosted Runner，Runner 无需克隆 Mango 仓库，主动调用只在内网可达的 Jenkins；Jenkins 再使用精确 Git SHA 执行 Maven 非 app 发布批次，并把最终状态经 Runner 返回 GitHub。
 
 ## 入口
 
