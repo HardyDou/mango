@@ -7,11 +7,15 @@ import io.mango.cms.api.CmsSiteApi;
 import io.mango.cms.core.service.ICmsAdminService;
 import io.mango.cms.core.service.ICmsSiteService;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,5 +57,45 @@ class CmsControllerContractTest {
                         .isNotNull();
             }
         }
+    }
+
+    @Test
+    void cmsControllers_完整实现两个公开Api方法集合() {
+        assertThat(apiMethodKeys(CmsAdminController.class, CmsAdminApi.class))
+                .containsExactlyInAnyOrderElementsOf(apiMethodKeys(CmsAdminApi.class, CmsAdminApi.class));
+        assertThat(apiMethodKeys(CmsSiteController.class, CmsSiteApi.class))
+                .containsExactlyInAnyOrderElementsOf(apiMethodKeys(CmsSiteApi.class, CmsSiteApi.class));
+    }
+
+    @Test
+    void criticalHttpRoutesAndPermissions_remainStable() throws NoSuchMethodException {
+        Method approve = CmsAdminController.class.getDeclaredMethod(
+                "approveContent", io.mango.cms.api.command.UpdateCmsContentReviewCommand.class);
+        assertThat(approve.getAnnotation(PostMapping.class).value()).containsExactly("/contents/approve");
+        assertThat(approve.getAnnotation(ApiAccess.class).permission()).isEqualTo("cms:content:approve");
+
+        Method resolve = CmsSiteController.class.getDeclaredMethod(
+                "resolveSite", io.mango.cms.api.query.SiteResolveQuery.class);
+        assertThat(resolve.getAnnotation(GetMapping.class).value()).containsExactly("/sites/resolve");
+
+        Method preview = CmsSiteController.class.getDeclaredMethod(
+                "publicFile", Long.class, io.mango.cms.api.query.SiteResolveQuery.class);
+        assertThat(preview.getAnnotation(GetMapping.class).value()).containsExactly("/files/public-preview");
+    }
+
+    private static Set<String> apiMethodKeys(Class<?> implementation, Class<?> apiType) {
+        Set<String> apiNames = Arrays.stream(apiType.getDeclaredMethods())
+                .map(Method::getName)
+                .collect(Collectors.toSet());
+        return Arrays.stream(implementation.getDeclaredMethods())
+                .filter(method -> apiNames.contains(method.getName()))
+                .map(CmsControllerContractTest::methodKey)
+                .collect(Collectors.toSet());
+    }
+
+    private static String methodKey(Method method) {
+        return method.getName() + Arrays.toString(Arrays.stream(method.getParameterTypes())
+                .map(Class::getName)
+                .toArray(String[]::new));
     }
 }

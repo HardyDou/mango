@@ -11,7 +11,7 @@ owner: Mango CMS 实施负责人
 approver: HardyDou
 approvalEvidence: review/PLAN-CMS-DEBT.md
 upstreamDocumentId: TDD-CMS-DEBT
-upstreamDocumentHash: 24ff2bc9ff0955c2a5762dfb2f7b357058203893b1e96051aa41aa913d7a727c
+upstreamDocumentHash: 1ded4b27ba7a42088706b5c1909ae4943a777d11687938512aab47f9c0d572cb
 ---
 
 # CMS 历史债务治理实施计划

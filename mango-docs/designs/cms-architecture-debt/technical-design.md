@@ -76,7 +76,7 @@ upstreamDocumentHash: a51006624ce223ef4e65e60d219012ebd0cb76b6b959d777c11c1580eb
 
 | 数据设计ID | 上游或模型ID | 表或实体 | 字段变化 | 约束 | 索引 | 租户审计 | Mapper边界 | 数据来源 | migration或回填 | 回滚或补偿 | 适用规范ruleId | 验证方式 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| DB-001 | DM-001, DM-002, DR-001, DR-002 | 现有 13 张 `cms_*` 表及 Entity | 不改变当前 V1-V10 最终字段，仅在新 V1 表达最终结构 | 主键、唯一约束、逻辑删除和关联语义保持 | 当前最终索引名称、列顺序和唯一性保持 | String tenantId、orgId、created/updated 字段保持 | Mapper 只使用 Entity、id、Wrapper、Page 和内部 Row/Criteria | 空数据库 | 生成纯 DDL `V1__init_mango_cms.sql`，无 INSERT/UPDATE/DELETE/跨模块表访问 | 仅支持新库；失败丢弃测试库并修正 V1 | `rules/backend/04-db.md`、MANGO-ARCH-MAPPER/ENTITY/PERSISTENCE_SCHEMA | 旧链最终 schema 与新 V1 指纹、Flyway migrate 和读写验证 |
+| DB-001 | DM-001, DM-002, DR-001, DR-002 | 现有 12 张 `cms_*` 表及 Entity | 不改变当前 V1-V10 最终字段，仅在新 V1 表达最终结构 | 主键、唯一约束、逻辑删除和关联语义保持 | 当前最终索引名称、列顺序和唯一性保持 | String tenantId、orgId、created/updated 字段保持 | Mapper 只使用 Entity、id、Wrapper、Page 和内部 Row/Criteria | 空数据库 | 生成纯 DDL `V1__init_mango_cms.sql`，无 INSERT/UPDATE/DELETE/跨模块表访问 | 仅支持新库；失败丢弃测试库并修正 V1 | `rules/backend/04-db.md`、MANGO-ARCH-MAPPER/ENTITY/PERSISTENCE_SCHEMA | 旧链最终 schema 与新 V1 指纹、Flyway migrate 和读写验证 |
 | DB-002 | DM-003, DR-003 | 正式菜单与 CMS Demo 对象 | 业务表无新增字段 | type/version/bizKey、业务唯一键和依赖键稳定 | 复用业务表现有索引 | Demo 显式 tenantId/orgId；handler 填充审计 | 类型化 handler 调用本域 Mapper，不访问其它模块表 | `META-INF/mango/resources/cms-common-menu.json` 与 `META-INF/mango/demo/cms-demo-*.json` | 由 Resource Registry 默认/显式登记，不做 Flyway 回填 | handler 事务失败停止；禁用 Demo 后新库不加载，已加载数据不承诺自动删除 | Resource Registry 使用说明与 `rules/backend/04-db.md` | 默认/显式初始化集成测试、条数/依赖/幂等断言 |
 
 ## 7. 安全、权限、租户与数据边界
