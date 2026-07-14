@@ -24,7 +24,7 @@
 - 协议模型使用普通 class；禁止用 record 作为 Command/Query/Request/VO/Response，禁止继承非协议模型基类。
 - 嵌套 Command/Query/Request 字段必须使用 `@Valid` 级联校验；字段类型只能是标量、枚举、同类协议模型及受支持的单泛型容器。
 - 查询参数必须声明校验约束。
-- Controller 或 `Api` 必须使用 `@Validated` 或等效机制开启参数校验。
+- `XxxApi` 统一声明方法参数的 Bean Validation 约束，包括复合入参的 `@Valid`；Controller 使用 `@Validated` 或等效机制开启方法校验。实现 `XxxApi` 的 Controller 禁止在覆盖方法上重复声明参数约束，避免违反 Bean Validation 的继承规则；未实现 API 契约的独立 Controller 才在 `@RequestBody` 参数上直接声明 `@Valid`。
 
 ## 2.1 Service 入参规则
 
@@ -93,7 +93,7 @@
 | 层 | 必须负责 | 绝对禁止 |
 |---|---|---|
 | `XxxApi` | 传输无关的协议方法、Command/Query/VO、校验约束、统一 `R<T>` 返回 | Entity/PO、Spring MVC/Feign 注解、实现逻辑、裸返回值 |
-| `XxxController` | 直接声明 `@RestController`，实现唯一一个 `XxxApi`、协议适配、`@Validated`、必填 `@RequestBody @Valid`、调用 `IXxxService`、直接返回 `R.ok(service.xxx(...))` | 继承 Controller 基类，Mapper/Entity/Feign/具体 Service 依赖，硬编码返回值，自行拼装失败 `R`，业务判断和持久化 |
+| `XxxController` | 直接声明 `@RestController`，实现唯一一个 `XxxApi`、协议适配、`@Validated`、必填 `@RequestBody`、继承 API 参数校验、调用 `IXxxService`、直接返回 `R.ok(service.xxx(...))` | 在覆盖方法上重复 API 参数约束、继承 Controller 基类，Mapper/Entity/Feign/具体 Service 依赖，硬编码返回值，自行拼装失败 `R`，业务判断和持久化 |
 | `IXxxService`/实现 | 业务编排、业务前置条件、Command/Query 到持久化模型转换、事务和状态结果 | 返回或拼装 `R`，直接实现 `XxxApi`，用 `if/throw`、裸异常或静默 return 代替 `Require` |
 | `XxxMapper` | Entity/id/Wrapper/分页及 core 内部 `Criteria`/`Row` 等类型化持久化模型的数据访问 | `Object`、`Map`、Command/Query/Request/Response/VO/DTO、Controller/Feign/Service/传输上下文、注解 SQL、跨域表访问 |
 
@@ -163,7 +163,7 @@
 - 在 API 契约中硬编码服务发现名
 - 业务 API 用文件访问地址代替文件 ID
 - API 写死本应来自数据库、配置、字典服务或真实接口的数据
-- Controller 缺少 `@Validated` 或 `@RequestBody` 缺少 `@Valid`
+- Controller 缺少 `@Validated`；独立 Controller 的 `@RequestBody` 缺少 `@Valid`；或实现 `XxxApi` 时在覆盖方法上重复 API 参数约束
 - Controller 未实现 `XxxApi`，或依赖 Mapper、Entity、FeignClient、具体 `XxxService`
 - Controller/API HTTP 方法不返回 `R<T>`，或返回 Entity/PO
 - Service 返回 `R<T>`、调用 `R.ok/R.fail`、直接抛裸运行时/业务异常
@@ -187,7 +187,7 @@
 ### 8.2 类型位置与 Controller
 
 - `MANGO-ARCH-TYPE-001`：Controller 位于 starter；`MANGO-ARCH-TYPE-002`：Controller 直接且只实现一个本域 Api；`MANGO-ARCH-TYPE-003`：字段只能是非 static 的 `I*Service`；`MANGO-ARCH-TYPE-004`：Service 实现位于 core；`MANGO-ARCH-TYPE-005`：`XxxService` 实现 `IXxxService`；`MANGO-ARCH-TYPE-006`：Mapper 位于 core；`MANGO-ARCH-TYPE-007`：业务 Entity 位于 core；`MANGO-ARCH-TYPE-008`：Service 禁止实现 HTTP API；`MANGO-ARCH-TYPE-009`：Api 位于 api；`MANGO-ARCH-TYPE-010`：业务 api 只允许契约类型，`io.mango.infra.persistence.api` 作为 canonical 持久化类型系统可提供基础抽象和不可变值类型；`MANGO-ARCH-TYPE-011`：`IXxxService` 位于 core。
-- `MANGO-ARCH-CTRL-001`：要求 `@Validated`；`MANGO-ARCH-CTRL-002`：源码字段只依赖 `I*Service`；`MANGO-ARCH-CTRL-003`：body 要求 `@Valid`；`MANGO-ARCH-CTRL-004`：只允许直接返回 canonical `R.ok(...)`；`MANGO-ARCH-CTRL-005`：逐项重声明 Api mapping、保留精确泛型且禁止 Api 外方法；`MANGO-ARCH-CTRL-006`：GET 禁止 body；`MANGO-ARCH-CTRL-007`：写 Command/Request 使用 required body；`MANGO-ARCH-CTRL-008`：唯一根路径匹配 module-path；`MANGO-ARCH-CTRL-009`：禁止 Controller 继承；`MANGO-ARCH-CTRL-010`：禁止 throw；`MANGO-ARCH-CTRL-011`：直接声明 canonical RestController；`MANGO-ARCH-CTRL-012`：根 mapping 只能一个 path 且无 method/params/headers/consumes/produces 条件；`MANGO-ARCH-CTRL-013`：`R.ok` 必须包装 `I*Service` 调用结果，禁止硬编码 payload。
+- `MANGO-ARCH-CTRL-001`：要求 `@Validated`；`MANGO-ARCH-CTRL-002`：源码字段只依赖 `I*Service`；`MANGO-ARCH-CTRL-003`：独立 Controller 的 body 要求 `@Valid`，实现 Api 的覆盖方法必须继承 Api 参数约束且禁止重复 `@Valid`；`MANGO-ARCH-CTRL-004`：只允许直接返回 canonical `R.ok(...)`；`MANGO-ARCH-CTRL-005`：逐项重声明 Api mapping、保留精确泛型且禁止 Api 外方法；`MANGO-ARCH-CTRL-006`：GET 禁止 body；`MANGO-ARCH-CTRL-007`：写 Command/Request 使用 required body；`MANGO-ARCH-CTRL-008`：唯一根路径匹配 module-path；`MANGO-ARCH-CTRL-009`：禁止 Controller 继承；`MANGO-ARCH-CTRL-010`：禁止 throw；`MANGO-ARCH-CTRL-011`：直接声明 canonical RestController；`MANGO-ARCH-CTRL-012`：根 mapping 只能一个 path 且无 method/params/headers/consumes/produces 条件；`MANGO-ARCH-CTRL-013`：`R.ok` 必须包装 `I*Service` 调用结果，禁止硬编码 payload。
 
 ### 8.3 Service、Mapper 与 Entity
 
