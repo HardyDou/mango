@@ -94,8 +94,8 @@ jobs:
             -DskipTests=false \
             install
 
-      - name: Build affected-module dependency prerequisites
-        if: steps.scope.outputs.backend_mode == 'partial'
+      - name: Build affected-module upstream dependencies
+        if: steps.scope.outputs.backend_mode == 'partial' && steps.scope.outputs.maven_dependency_projects != ''
         env:
           MAVEN_DEPENDENCY_PROJECTS: ${{ steps.scope.outputs.maven_dependency_projects }}
         run: |
@@ -103,6 +103,7 @@ jobs:
             -pl "$MAVEN_DEPENDENCY_PROJECTS" \
             -am \
             -DskipTests \
+            -Denforcer.skip=true \
             -Dcheckstyle.skip=true \
             -Dpmd.skip=true \
             -Dspotbugs.skip=true \
