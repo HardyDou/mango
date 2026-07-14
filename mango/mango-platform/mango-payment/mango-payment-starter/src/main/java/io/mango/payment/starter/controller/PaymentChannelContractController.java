@@ -7,12 +7,15 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentChannelContractApi;
 import io.mango.payment.api.command.RotatePaymentChannelContractCertificateCommand;
+import io.mango.payment.api.command.SavePaymentChannelBillSourceCommand;
 import io.mango.payment.api.command.SavePaymentChannelContractCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentChannelCertificateExpiryVO;
 import io.mango.payment.api.vo.PaymentChannelCertificateRotationRecordVO;
+import io.mango.payment.api.vo.PaymentChannelBillSourceVO;
 import io.mango.payment.api.vo.PaymentChannelContractVO;
 import io.mango.payment.core.service.IPaymentChannelContractService;
+import io.mango.payment.core.service.IPaymentReconciliationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,6 +43,7 @@ import java.util.List;
 public class PaymentChannelContractController implements PaymentChannelContractApi {
 
     private final IPaymentChannelContractService channelContractService;
+    private final IPaymentReconciliationService reconciliationService;
 
     @Override
     @GetMapping("/page")
@@ -79,6 +83,22 @@ public class PaymentChannelContractController implements PaymentChannelContractA
     @Operation(summary = "删除通道签约配置", description = "按 ID 删除通道签约配置")
     public R<Boolean> deleteChannelContract(@Parameter(description = "签约配置 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(channelContractService.deleteChannelContract(id));
+    }
+
+    @Override
+    @GetMapping("/bill-sources/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel-contract:list")
+    @Operation(summary = "分页查询签约通道账单获取源", description = "按当前租户和签约通道查询账单获取方式配置")
+    public R<PageResult<PaymentChannelBillSourceVO>> pageBillSources(@ParameterObject PaymentConfigPageQuery query) {
+        return R.ok(reconciliationService.pageBillSources(query));
+    }
+
+    @Override
+    @PostMapping("/bill-sources")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel-contract:edit")
+    @Operation(summary = "保存签约通道账单获取源", description = "新增或更新签约通道的手动、FTP、FTPS 或 HTTP 账单获取配置")
+    public R<PaymentChannelBillSourceVO> saveBillSource(@RequestBody SavePaymentChannelBillSourceCommand command) {
+        return R.ok(reconciliationService.saveBillSource(command));
     }
 
     @Override

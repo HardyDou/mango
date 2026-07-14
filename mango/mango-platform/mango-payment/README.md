@@ -275,6 +275,9 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
   `mango-payment-starter` 自己的 `META-INF/mango/demo` 目录登记，文件名统一以
   `payment-demo-` 开头；只有
   `mango.resource.registry.demo-enabled=true` 时加载。
+- 富友演示签约使用富友官方公开测试商户资料，包括扫码商户私钥和 PC 网关商户密钥；这些值只存在于
+  demo 声明中，Resource Handler 写库前使用当前环境的 `PaymentSensitiveValueCodec` 加密，正式资源不携带
+  任何商户密钥。
 - 业务订单、支付单、退款单、交易流水、通知、异常、对账、结算、账单批次和线下退款流程等
   运行态数据不做任何初始化登记，只能由真实业务流程产生。
 - 支付编号规则依赖 `mango-numgen`，通过 `SEQUENCE_RULE` 资源注入；不要在业务代码或前端拼接订单号。

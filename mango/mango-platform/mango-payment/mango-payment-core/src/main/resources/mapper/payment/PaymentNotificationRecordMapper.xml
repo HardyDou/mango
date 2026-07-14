@@ -110,7 +110,7 @@
         limit #{limit}
     </select>
 
-    <select id="selectDueNotificationTenantIds" resultType="long">
+    <select id="selectDueNotificationTenantIds" resultType="string">
         select nr.tenant_id
         from payment_notification_record nr
         where nr.del_flag = 0

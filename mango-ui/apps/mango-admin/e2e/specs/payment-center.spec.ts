@@ -980,8 +980,8 @@ async function setSwitch(page: Page, label: string, enabled: boolean) {
 
 async function openPaymentPage(page: Page, path: string, heading: string) {
   await page.goto('/#/home');
-  await page.getByRole('button', { name: '支付中心' }).click();
-  await expect(page.getByText('应用接入')).toBeVisible({ timeout: 10000 });
+  await page.getByRole('button', { name: '平台能力' }).click();
+  await expect(page.getByText('支付管理', { exact: true })).toBeVisible({ timeout: 10000 });
   await page.goto(path);
   await expect(page.getByRole('heading', { name: heading })).toBeVisible({ timeout: 10000 });
 }
@@ -1963,6 +1963,22 @@ function configureOrderCenterNotificationSecret() {
 
 function setMangoPayScenario(scenario: 'SUCCESS' | 'PAYING' | 'FAILED') {
   mysqlExec(`
+    UPDATE payment_method_route_rule
+    SET environment = 'MANGO_PAY',
+        updated_by = 1001,
+        updated_at = NOW()
+    WHERE tenant_id = 1
+      AND id = 334001
+      AND del_flag = 0;
+
+    UPDATE payment_method_route_rule_item
+    SET contract_capability_id = 333001,
+        updated_by = 1001,
+        updated_at = NOW()
+    WHERE tenant_id = 1
+      AND rule_id = 334001
+      AND del_flag = 0;
+
     UPDATE payment_channel_contract
     SET config_values_json = JSON_SET(COALESCE(NULLIF(config_values_json, ''), '{}'), '$.mangoPayScenario', '${scenario}'),
         updated_at = NOW()
@@ -3163,7 +3179,7 @@ test.describe('支付中心 E2E', () => {
       await expect(trialDialog.getByText(`E2E 微信扫码芒果支付路由 ${suffix}`)).toBeVisible();
       await page.screenshot({ path: 'test-results/payment-method-route.png', fullPage: true });
 
-      await trialDialog.getByRole('button', { name: '关闭' }).click();
+      await trialDialog.getByRole('button', { name: '关闭', exact: true }).click();
       await routeDialog.locator('.el-dialog__headerbtn').first().click();
 
       const deleteResponse = await page.request.delete('/api/payment/method-routes', {
@@ -3211,7 +3227,7 @@ test.describe('支付中心 E2E', () => {
     }
   });
 
-  test('支付中心菜单授权符合设计入口', async ({ page }) => {
+  test('支付管理菜单授权符合平台能力入口', async ({ page }) => {
     await login(page);
     const headers = await apiHeaders(page);
 
@@ -3222,11 +3238,13 @@ test.describe('支付中心 E2E', () => {
     const menuBody = await expectBusinessOk<MenuNode[]>(menuResponse);
     const menuNames = collectMenuNames(menuBody.data || []);
     expect(menuNames).toEqual(expect.arrayContaining([
-      '支付中心',
+      '平台能力',
+      '支付管理',
       '应用接入',
       '支付通道',
       '交易订单',
       '对账结算',
+      '线下支付',
       '应用管理',
       '企业主体',
       '签约通道',
@@ -3236,6 +3254,7 @@ test.describe('支付中心 E2E', () => {
       '业务订单',
       '支付订单',
       '退款订单',
+      '退款审批',
       '交易流水',
       '异常订单',
       '通知记录',
@@ -3243,6 +3262,8 @@ test.describe('支付中心 E2E', () => {
       '差异处理',
       '结算汇总',
       '操作审计',
+      '线下收款订单',
+      '线下退款订单',
     ]));
     expect(menuNames).not.toContain('租户收银台');
     expect(menuNames).not.toContain('App 收银台');
@@ -3381,6 +3402,25 @@ test.describe('支付中心 E2E', () => {
     const runtimeErrors = collectRuntimeErrors(page);
     await login(page);
     const headers = await apiHeaders(page);
+    const fixtureSuffix = `${Date.now()}`;
+    const fixtureExceptionId = Number(`95${fixtureSuffix.slice(-9)}`);
+    const fixtureExceptionNo = `EX-DISPLAY-${fixtureSuffix}`;
+
+    // 运行态订单不属于 demo 初始化数据；展示测试显式准备自己的验收记录。
+    prepareSettlementScenario(fixtureSuffix, `2026-11-${String(10 + Number(fixtureSuffix.slice(-1))).padStart(2, '0')}`);
+    mysqlExec(`
+      INSERT INTO payment_exception_order
+        (id, exception_no, related_order_no, exception_type, severity, handle_status, reason, tenant_id, created_by, created_at, updated_by, updated_at, del_flag)
+      VALUES
+        (${fixtureExceptionId}, '${fixtureExceptionNo}', 'DISPLAY-ORDER-${fixtureSuffix}', 'CHANNEL_FAILED', 'HIGH', 'PENDING', 'E2E 列表字段展示验收', 1, 1001, NOW(), 1001, NOW(), 0)
+      ON DUPLICATE KEY UPDATE
+        severity = VALUES(severity),
+        handle_status = VALUES(handle_status),
+        reason = VALUES(reason),
+        updated_by = 1001,
+        updated_at = NOW(),
+        del_flag = 0
+    `);
 
     await openPaymentPage(page, '/#/payment/methods', '支付方式');
     await page.getByPlaceholder('名称 / 编码').fill('PERSONAL_WECHAT_QR');
@@ -3544,7 +3584,7 @@ test.describe('支付中心 E2E', () => {
     });
     const menuBody = await expectBusinessOk<MenuNode[]>(menuResponse);
     const menuNames = collectMenuNames(menuBody.data || []);
-    expect(menuNames).toEqual(expect.arrayContaining(['支付中心', '支付通道', '线下支付', '线下收款订单']));
+    expect(menuNames).toEqual(expect.arrayContaining(['平台能力', '支付管理', '支付通道', '线下支付', '线下收款订单']));
 
     const statusesResponse = await page.request.get('/api/payment/offline-collections/statuses', { headers });
     const statusesBody = await expectBusinessOk<Array<{ statusCode?: string; statusName?: string }>>(statusesResponse);
@@ -6117,9 +6157,9 @@ test.describe('支付中心 E2E', () => {
       return items;
     });
     try {
-      const existingSourcesResponse = await page.request.get('/api/payment/reconciliations/bill-sources/page', {
+      const existingSourcesResponse = await page.request.get('/api/payment/channel-contracts/bill-sources/page', {
         headers,
-        params: { page: '1', size: '50', keyword: 'MANGO_PAY' },
+        params: { page: '1', size: '50', contractId: '331001' },
       });
       const existingSourcesBody = await expectBusinessOk<PageData>(existingSourcesResponse);
       const existingSource = (existingSourcesBody.data?.list || []).find(item =>
@@ -6127,11 +6167,11 @@ test.describe('支付中心 E2E', () => {
       ) as PaymentChannelBillSource | undefined;
       let sourceId = existingSource?.id;
       if (existingSource?.id) {
-        await page.request.post('/api/payment/reconciliations/bill-sources', {
+        await page.request.post('/api/payment/channel-contracts/bill-sources', {
           headers,
           data: {
             id: existingSource.id,
-            channelCode: 'MANGO_PAY',
+            contractId: '331001',
             fetchMode: 'HTTP',
             endpoint: billSource.url,
             pageMode: 'PAGE',
@@ -6139,10 +6179,10 @@ test.describe('支付中心 E2E', () => {
           },
         });
       } else {
-        const saveSourceResponse = await page.request.post('/api/payment/reconciliations/bill-sources', {
+        const saveSourceResponse = await page.request.post('/api/payment/channel-contracts/bill-sources', {
           headers,
           data: {
-            channelCode: 'MANGO_PAY',
+            contractId: '331001',
             fetchMode: 'HTTP',
             endpoint: billSource.url,
             pageMode: 'PAGE',
@@ -6154,11 +6194,7 @@ test.describe('支付中心 E2E', () => {
       }
       expect(sourceId).toBeTruthy();
 
-      await openPaymentPage(page, '/#/payment/reconciliations', '对账管理');
-      const [modeResponse] = await Promise.all([
-        page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/bill-fetch-modes')),
-        page.getByRole('button', { name: '配置获取方式' }).click(),
-      ]);
+      const modeResponse = await page.request.get('/api/payment/reconciliations/bill-fetch-modes', { headers });
       const modeBody = await expectBusinessOk<Array<{ fetchMode: string; fetchModeName: string }>>(modeResponse);
       expect(modeBody.data).toEqual(expect.arrayContaining([
         expect.objectContaining({ fetchMode: 'HTTP', fetchModeName: 'HTTP 接口' }),
@@ -6166,17 +6202,16 @@ test.describe('支付中心 E2E', () => {
         expect.objectContaining({ fetchMode: 'FTPS', fetchModeName: 'FTPS 拉取' }),
         expect.objectContaining({ fetchMode: 'MANUAL', fetchModeName: '手动上传' }),
       ]));
-      const sourceDialog = page.getByRole('dialog').filter({ hasText: '通道账单获取方式' }).last();
-      await expect(sourceDialog).toBeVisible({ timeout: 10000 });
-      await expect(sourceDialog.getByText('MANGO_PAY').first()).toBeVisible();
-      await expect(sourceDialog.getByText('HTTP 接口').first()).toBeVisible();
-      await sourceDialog.locator('.el-dialog__headerbtn').click({ timeout: 10000 });
-      await expect(sourceDialog).toBeHidden({ timeout: 10000 });
 
-      await page.getByRole('button', { name: '发起获取' }).click();
+      await openPaymentPage(page, '/#/payment/reconciliations', '对账管理');
+      const [sourceResponse] = await Promise.all([
+        page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/bill-sources/page')),
+        page.getByRole('button', { name: '发起获取' }).click(),
+      ]);
+      await expectBusinessOk<PageData>(sourceResponse);
       const fetchDialog = page.getByRole('dialog').filter({ hasText: '发起通道账单获取' }).last();
       await expect(fetchDialog).toBeVisible({ timeout: 10000 });
-      await chooseSelect(page, '获取方式', 'MANGO_PAY / HTTP 接口');
+      await chooseSelect(page, '账单源', 'MANGO_PAY / HTTP 接口');
       await expect(formItem(page, '账单日期').locator('input')).toHaveValue(billDate);
       const [fetchResponse] = await Promise.all([
         page.waitForResponse(response => response.url().includes('/api/payment/reconciliations/bill-fetch') && response.request().method() === 'POST'),
@@ -6193,13 +6228,6 @@ test.describe('支付中心 E2E', () => {
       )).toBeTruthy();
       await expect(page.locator('.el-message').filter({ hasText: '账单获取并对账完成' }).last()).toBeVisible({ timeout: 10000 });
       expect(billSource.requests.some(url => url.includes('billDate=') && url.includes('page=1'))).toBeTruthy();
-
-      await page.getByRole('button', { name: '配置获取方式' }).click();
-      const batchDialog = page.getByRole('dialog').filter({ hasText: '通道账单获取方式' }).last();
-      await expect(batchDialog.getByText('最近获取批次')).toBeVisible({ timeout: 10000 });
-      await expect(batchDialog.getByText(fetchBody.data?.reconciliationNo || '').first()).toBeVisible({ timeout: 10000 });
-      await expect(batchDialog.getByText('获取成功').first()).toBeVisible();
-      await batchDialog.locator('.el-dialog__headerbtn').click();
 
       const fetchBatchResponse = await page.request.get('/api/payment/reconciliations/bill-fetch-batches/page', {
         headers,
@@ -6459,6 +6487,9 @@ test.describe('支付中心 E2E', () => {
       const firstResultBody = await expectBusinessOk<CashierPayResult>(firstResultResponse);
       expect(firstResultBody.data?.status).toBe('PAYING');
 
+      const returnNavigationPromise = page.waitForRequest(request =>
+        request.isNavigationRequest() && request.url() === 'https://business.example.test/payment/result'
+      );
       finishProcessingPayment(payBody.data?.payOrderNo || '');
       const successResultPromise = page.waitForResponse(async (response) => {
         if (!response.url().includes('/api/payment/cashier/pay-result')) {
@@ -6468,10 +6499,7 @@ test.describe('支付中心 E2E', () => {
         return body.data?.status === 'SUCCESS';
       });
       await successResultPromise;
-      await cashierPage.getByRole('button', { name: '我已完成支付' }).click();
-      await expect(page.getByRole('dialog').filter({ hasText: '支付结果' }).getByText('支付成功', { exact: true })).toBeVisible({ timeout: 10000 });
-      await page.getByRole('dialog').filter({ hasText: '支付结果' }).getByRole('button', { name: '确定' }).click();
-      await expect(page.getByRole('dialog').filter({ hasText: '支付结果' })).toBeHidden({ timeout: 10000 });
+      await returnNavigationPromise;
     } finally {
       setMangoPayScenario('SUCCESS');
     }
@@ -6703,12 +6731,9 @@ test.describe('支付中心 E2E', () => {
     });
     const bankStatementResponse = await page.request.post('/api/payment/offline-collections/bank-statements/import', {
       headers,
-      multipart: {
-        file: {
-          name: `offline-bank-statement-${Date.now()}.xlsx`,
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          buffer: bankStatementBuffer,
-        },
+      data: {
+        fileContent: bankStatementBuffer.toString('base64'),
+        originalFilename: `offline-bank-statement-${Date.now()}.xlsx`,
       },
     });
     const bankStatementBody = await expectBusinessOk<PaymentOfflineBankStatementBatch>(bankStatementResponse);

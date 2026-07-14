@@ -69,11 +69,11 @@ class PaymentResourceDeclarationContractTest {
     }
 
     @Test
-    @DisplayName("payment resource declarations should preserve channel capabilities without merchant secrets")
-    void declarationsPreserveCapabilitiesWithoutMerchantSecrets() throws IOException {
-        List<DeclaredResource> all = Stream.concat(
-                declarations(FORMAL_ROOT, "payment-common-").stream(),
-                declarations(DEMO_ROOT, "payment-demo-").stream()).toList();
+    @DisplayName("payment resources should isolate approved Fuiou public test credentials in demo declarations")
+    void declarationsIsolateApprovedFuiouPublicTestCredentials() throws IOException {
+        List<DeclaredResource> formal = declarations(FORMAL_ROOT, "payment-common-");
+        List<DeclaredResource> demo = declarations(DEMO_ROOT, "payment-demo-");
+        List<DeclaredResource> all = Stream.concat(formal.stream(), demo.stream()).toList();
         String declarations = all.stream().map(resource -> resource.node().toString()).reduce("", String::concat);
 
         assertThat(declarations)
@@ -85,13 +85,29 @@ class PaymentResourceDeclarationContractTest {
                 .contains("CORPORATE_EBANK_REDIRECT")
                 .contains("mangoPayScenario")
                 .contains("mangoPayRefundScenario")
-                .doesNotContain("MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJc")
-                .doesNotContain("vau6p7ldawpezyaugc0kopdrrwm4gkpu")
                 .doesNotContain("27.185.20.146")
                 .doesNotContain("douxy.inner.yunxinbaokeji.com")
                 .doesNotContain("gatewayUrl");
 
-        all.forEach(resource -> {
+        String formalDeclarations = formal.stream()
+                .map(resource -> resource.node().toString())
+                .reduce("", String::concat);
+        assertThat(formalDeclarations)
+                .doesNotContain("MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJc")
+                .doesNotContain("vau6p7ldawpezyaugc0kopdrrwm4gkpu");
+
+        DeclaredResource fuiouDemo = demo.stream()
+                .filter(resource -> "payment.channel-contract.FUIOU_PAY_MANGO_TECH".equals(resource.bizKey()))
+                .findFirst()
+                .orElseThrow();
+        JsonNode fuiouConfig = MAPPER.readTree(
+                fuiouDemo.node().path("fields").path("configValuesJson").path("value").asText());
+        assertThat(fuiouConfig.path("privateKey").asText())
+                .startsWith("MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJc");
+        assertThat(fuiouConfig.path("gatewayMerchantKey").asText())
+                .isEqualTo("vau6p7ldawpezyaugc0kopdrrwm4gkpu");
+
+        demo.stream().filter(resource -> resource != fuiouDemo).forEach(resource -> {
             JsonNode config = resource.node().path("fields").path("configValuesJson").path("value");
             if (!config.isMissingNode() && !config.isNull()) {
                 assertThat(SECRET_KEY.matcher(config.asText()).find())

@@ -438,6 +438,10 @@ async function loadFetchBatches() {
   fetchBatchRows.value = page.list;
 }
 
+function sourceOptionLabel(source: PaymentChannelBillSource) {
+  return `${source.channelCode || source.channelName || '-'} / ${source.fetchModeName || source.fetchMode || '-'}`;
+}
+
 function addBillItem() {
   importForm.items.push(createBillItem());
 }

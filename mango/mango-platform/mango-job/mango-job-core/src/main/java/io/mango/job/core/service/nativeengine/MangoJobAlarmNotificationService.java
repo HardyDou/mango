@@ -10,6 +10,7 @@ import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
 import io.mango.job.core.mapper.MangoJobAlarmRuleMapper;
 import io.mango.notice.api.NoticeApi;
+import io.mango.notice.api.command.NoticeJsonRequest;
 import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
 import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
 import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
@@ -95,11 +96,11 @@ public class MangoJobAlarmNotificationService {
         command.setContent(errorSummary);
         Map<String, Object> params = noticeParams(rule, definition, instance, errorSummary);
         NoticeSiteMessageTargetCommand target = routeTarget("job:instance", params);
-        command.setParams(params);
+        command.setParams(NoticeJsonRequest.of(params));
         command.setMessageScene(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
         command.setMessageSubject(subject("JOB_INSTANCE", String.valueOf(instance.getId()), definition.getJobName()));
         command.setMessageTarget(target);
-        command.setMessageData(params);
+        command.setMessageData(NoticeJsonRequest.of(params));
         command.setMessageActions(List.of(routeAction("VIEW_INSTANCE", "查看实例", target)));
         command.setPriority(NoticePriority.HIGH);
         command.setUserId(instance.getTriggerUserId());
@@ -157,7 +158,7 @@ public class MangoJobAlarmNotificationService {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         target.setTargetKey(targetKey);
-        target.setParams(params);
+        target.setParams(NoticeJsonRequest.of(params));
         return target;
     }
 

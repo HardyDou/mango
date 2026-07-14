@@ -149,6 +149,8 @@ public class CmsResourceHandlerConfiguration {
 
     private static Map<String, String> fields(String... fieldNames) {
         Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("createdBy", "created_by");
+        fields.put("updatedBy", "updated_by");
         for (String fieldName : fieldNames) {
             if ("targetId".equals(fieldName)) {
                 fields.put(fieldName, "id");

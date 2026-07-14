@@ -26,6 +26,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "siteName": {
                 "type": "STRING",
                 "value": "演示站点"
@@ -100,6 +108,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "siteName": {
                 "type": "STRING",
                 "value": "帮助中心"
@@ -171,6 +187,14 @@
                 "value": "1"
               },
               "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
                 "type": "LONG",
                 "value": "1"
               },

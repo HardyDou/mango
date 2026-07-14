@@ -26,6 +26,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "siteId": {
                 "type": "LONG",
                 "value": "2070000000000000001"
@@ -76,6 +84,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "siteId": {
                 "type": "LONG",
                 "value": "2070000000000001001"
@@ -123,6 +139,14 @@
                 "value": "1"
               },
               "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
                 "type": "LONG",
                 "value": "1"
               },

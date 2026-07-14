@@ -82,6 +82,16 @@ class CmsResourceDeclarationContractTest {
                         .matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
             }
         }));
+        demo.forEach(resource -> {
+            assertThat(resource.node().path("fields").path("createdBy").path("type").asText())
+                    .as(resource.bizKey()).isEqualTo("LONG");
+            assertThat(resource.node().path("fields").path("createdBy").path("value").asText())
+                    .as(resource.bizKey()).isEqualTo("1");
+            assertThat(resource.node().path("fields").path("updatedBy").path("type").asText())
+                    .as(resource.bizKey()).isEqualTo("LONG");
+            assertThat(resource.node().path("fields").path("updatedBy").path("value").asText())
+                    .as(resource.bizKey()).isEqualTo("1");
+        });
         demo.stream()
                 .filter(resource -> CmsResourceTypes.SITE_CATEGORY.equals(resource.type()))
                 .forEach(resource -> assertThat(resource.node().path("fields").path("visibleStatus").path("value")
