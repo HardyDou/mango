@@ -1,5 +1,23 @@
 # @mango/cli Changelog
 
+## 1.0.77 - 2026-07-14
+
+### Fixed
+
+- Lock generated and upgraded business backends to Mango Maven `1.0.20`, where the `architecture` goal exposes Maven/Plexus-bindable `java.io.File` parameters instead of the unsupported `java.nio.file.Path` interface.
+- Add a Maven plugin harness regression that configures all architecture path parameters through a real plugin POM.
+
+### Upgrade Notes
+
+- Publish Mango Maven `1.0.20` before installing `@mango/cli@1.0.77`.
+- Existing business projects blocked by `Cannot create instance of interface java.nio.file.Path` can directly upgrade their Mango backend version to `1.0.20`; no PMO, source-code, database, API, menu, permission, or runtime configuration migration is required.
+
+### Verification
+
+- `mvn -pl mango-tools/mango-maven-plugin -am -DskipTests=false -Dtest=ArchitectureMojoTest,ArchitectureMojoBindingTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `node mango-pmo/tools/test-quality-check.mjs --base origin/main`
+
 ## 1.0.76 - 2026-07-14
 
 ### Changed

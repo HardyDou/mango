@@ -47,3 +47,21 @@ test('an explicit Maven batch can include the version-matched docs bundle', () =
   assert.match(result.stdout, /-DartifactId=mango-docs-bundle/);
   assert.match(result.stdout, /-Dversion=1\.0\.18/);
 });
+
+test('all-non-app discovery excludes nested Maven test fixtures', () => {
+  const result = spawnSync(
+    path.join(root, 'scripts/publish-maven-batch.sh'),
+    [
+      '--all-non-app',
+      '--release-version',
+      '1.0.20',
+      '--skip-verify',
+      '--dry-run'
+    ],
+    { cwd: root, encoding: 'utf8' }
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /Publish scope: all non-app Maven modules/);
+  assert.doesNotMatch(result.stdout, /src\/test\/resources\/architecture-path-binding/);
+});

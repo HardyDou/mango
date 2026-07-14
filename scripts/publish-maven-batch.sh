@@ -402,7 +402,14 @@ discover_non_app_targets() {
       continue
     fi
     targets+=("${module_path}")
-  done < <(find "${MAVEN_ROOT}" -name pom.xml -not -path '*/target/*' -print | sort)
+  done < <(
+    find "${MAVEN_ROOT}" \
+      -name pom.xml \
+      -not -path '*/target/*' \
+      -not -path '*/src/*' \
+      -print \
+      | sort
+  )
 }
 
 is_app_module_dir() {

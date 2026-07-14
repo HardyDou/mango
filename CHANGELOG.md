@@ -1,5 +1,34 @@
 # Mango Changelog
 
+## v2026.07.14-maven-1.0.20-cli-1.0.77-path-binding-release - 2026-07-14
+
+### Fixed
+
+- Fix [Issue #496](https://github.com/HardyDou/mango/issues/496): change all configurable `architecture` goal path parameters from the non-instantiable `java.nio.file.Path` interface to Maven/Plexus-bindable `java.io.File`, converting to `Path` only inside the plugin.
+- Cover `reportFile`, `rootDirectory`, `debtBaselineFile`, and `globalEntityManifest`; the latter is fixed proactively because it used the same unsupported descriptor type.
+- Add a Maven plugin harness regression that loads a real plugin POM and binds all four parameters through Maven's component configurator.
+
+### Upgrade Notes
+
+1. Publish and verify Mango Maven `1.0.20`, then publish `@mango/cli@1.0.77`.
+2. Business repositories blocked by `Cannot create instance of interface java.nio.file.Path` should upgrade their backend Mango version to `1.0.20` and rerun only the failed current-SHA required check once.
+3. No PMO baseline, source-code, database, API, menu, permission, tenant, or runtime configuration migration is required.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.20` -> Nexus Maven hosted | `PENDING` |
+| 2 | npm CLI | `@mango/cli@1.0.77` -> Nexus npm hosted | `PENDING` |
+| 3 | GitHub Release | `v2026.07.14-maven-1.0.20-cli-1.0.77-path-binding-release` | `PENDING` |
+
+### Verification
+
+- `mvn -pl mango-tools/mango-maven-plugin -am -DskipTests=false -Dtest=ArchitectureMojoTest,ArchitectureMojoBindingTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- Generated plugin descriptor declares all four architecture path parameters as `java.io.File`.
+- `pnpm --filter @mango/cli run check:release-versions`
+- `node mango-pmo/tools/test-quality-check.mjs --base origin/main`
+
 ## v2026.07.14-link-page-1.0.5-cli-1.0.76-release - 2026-07-14
 
 ### Changed
