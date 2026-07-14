@@ -2,6 +2,7 @@ package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.payment.api.enums.PaymentCode;
 import org.springframework.util.StringUtils;
 
 public final class PaymentContextSupport {
@@ -9,14 +10,10 @@ public final class PaymentContextSupport {
     private PaymentContextSupport() {
     }
 
-    public static Long currentTenantId() {
+    public static String currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
-        Require.notBlank(tenantId, "缺少当前机构上下文");
-        try {
-            return Long.valueOf(tenantId);
-        } catch (NumberFormatException e) {
-            return Require.fail(400, "当前机构上下文不是有效数字: " + tenantId);
-        }
+        Require.notBlank(tenantId, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID, "缺少当前机构上下文");
+        return tenantId.trim();
     }
 
     public static Long currentUserId() {

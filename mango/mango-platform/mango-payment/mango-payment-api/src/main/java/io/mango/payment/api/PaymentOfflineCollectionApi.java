@@ -5,6 +5,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.command.ConfirmOfflineBankStatementMatchCommand;
 import io.mango.payment.api.command.ConfirmOfflineCollectionCommand;
 import io.mango.payment.api.command.CreateOfflineRefundCommand;
+import io.mango.payment.api.command.ImportOfflineBankStatementCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentOfflineBankStatementBatchStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineBankStatementBatchVO;
@@ -16,7 +17,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 
-import java.io.IOException;
 import java.util.List;
 
 @Validated
@@ -38,7 +38,8 @@ public interface PaymentOfflineCollectionApi {
 
     R<List<PaymentOfflineBankStatementMatchStatusVO>> listOfflineBankStatementMatchStatuses();
 
-    R<PaymentOfflineBankStatementBatchVO> importOfflineBankStatement(byte[] fileContent, String originalFilename, Long statementFileId) throws IOException;
+    R<PaymentOfflineBankStatementBatchVO> importOfflineBankStatement(
+            @Valid ImportOfflineBankStatementCommand command);
 
     R<PaymentOfflineBankStatementBatchVO> confirmOfflineBankStatementMatch(@Valid ConfirmOfflineBankStatementMatchCommand command);
 

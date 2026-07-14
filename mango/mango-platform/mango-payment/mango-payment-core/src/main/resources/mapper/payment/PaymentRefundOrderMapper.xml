@@ -90,7 +90,7 @@
         </if>
     </select>
 
-    <select id="selectRefundOrderPage" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+    <select id="selectRefundOrderPage" resultType="io.mango.payment.core.model.projection.PaymentRefundOrderProjection">
         <include refid="refundOrderSelect"/>
         <include refid="refundOrderFrom"/>
         <include refid="refundOrderWhere"/>
@@ -98,7 +98,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectRefundOrderDetail" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+    <select id="selectRefundOrderDetail" resultType="io.mango.payment.core.model.projection.PaymentRefundOrderProjection">
         <include refid="refundOrderSelect"/>
         <include refid="refundOrderFrom"/>
         where ro.tenant_id = #{tenantId}
@@ -107,7 +107,7 @@
         limit 1
     </select>
 
-    <select id="selectOpenRefundOrder" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+    <select id="selectOpenRefundOrder" resultType="io.mango.payment.core.model.projection.PaymentRefundOrderProjection">
         <include refid="refundOrderSelect"/>
         <include refid="refundOrderFrom"/>
         where ro.tenant_id = #{tenantId}
@@ -117,7 +117,7 @@
         limit 1
     </select>
 
-    <select id="selectByTenantAndRefundOrderNo" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+    <select id="selectByTenantAndRefundOrderNo" resultType="io.mango.payment.core.model.projection.PaymentRefundOrderProjection">
         <include refid="refundOrderSelect"/>
         <include refid="refundOrderFrom"/>
         where ro.tenant_id = #{tenantId}
@@ -126,7 +126,7 @@
         limit 1
     </select>
 
-    <select id="selectByTenantAndChannelRefundNo" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+    <select id="selectByTenantAndChannelRefundNo" resultType="io.mango.payment.core.model.projection.PaymentRefundOrderProjection">
         <include refid="refundOrderSelect"/>
         <include refid="refundOrderFrom"/>
         where ro.tenant_id = #{tenantId}

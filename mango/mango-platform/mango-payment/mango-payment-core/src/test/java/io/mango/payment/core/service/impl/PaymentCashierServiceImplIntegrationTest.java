@@ -18,11 +18,11 @@ import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.model.PaymentChannelBillItemRow;
 import io.mango.payment.core.service.IPaymentChannelAdapter;
 import io.mango.payment.core.service.PaymentChannelAdapterRegistry;
-import io.mango.payment.core.service.PaymentChannelSyncService;
-import io.mango.payment.core.service.PaymentNumberService;
-import io.mango.payment.core.service.PaymentOrderStateService;
-import io.mango.payment.core.service.PaymentOrderStatusFlowService;
-import io.mango.payment.core.service.PaymentSensitiveValueService;
+import io.mango.payment.core.service.PaymentChannelSynchronizer;
+import io.mango.payment.core.service.PaymentNumberGenerator;
+import io.mango.payment.core.service.PaymentOrderStatePolicy;
+import io.mango.payment.core.service.PaymentOrderStatusFlowRecorder;
+import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        PaymentCashierServiceImplIntegrationTest.TestConfig.class
+        PaymentCashierServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:payment_cashier_service;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -65,7 +65,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "mybatis-plus.mapper-locations=classpath:/mapper/payment/*.xml",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-class PaymentCashierServiceImplIntegrationTest {
+class PaymentCashierServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -83,7 +83,7 @@ class PaymentCashierServiceImplIntegrationTest {
     private PaymentChannelContractCapabilityMapper contractCapabilityMapper;
 
     @Autowired
-    private PaymentCashierServiceImpl service;
+    private PaymentCashierService service;
 
     @Autowired
     private TestPaymentChannelAdapter mangoPayAdapter;
@@ -92,13 +92,13 @@ class PaymentCashierServiceImplIntegrationTest {
     private TestOfflinePaymentChannelAdapter offlineAdapter;
 
     @Autowired
-    private TestPaymentOrderStatusFlowService statusFlowService;
+    private TestPaymentOrderStatusFlowRecorder statusFlowService;
 
     @Autowired
-    private TestPaymentChannelSyncService channelSyncService;
+    private TestPaymentChannelSynchronizer channelSyncService;
 
     @Autowired
-    private TestPaymentNumberService numberService;
+    private TestPaymentNumberGenerator numberService;
 
     @BeforeEach
     void setUp() {
@@ -120,13 +120,13 @@ class PaymentCashierServiceImplIntegrationTest {
 
     @Test
     void detailSessionUsesRealCashierOrderRouteSqlAndMasksSubjectValues() {
-        var result = service.detailSession(350001L, 360001L).getData();
+        var result = service.detailSession(350001L, 360001L);
 
-        assertThat(cashierConfigMapper.selectByIdIgnoreTenant(350001L).getTenantId()).isEqualTo(1L);
-        assertThat(businessOrderMapper.selectCashierBusinessOrder(1L, 360001L).getBizOrderNo())
+        assertThat(cashierConfigMapper.selectByIdIgnoreTenant(350001L).getTenantId()).isEqualTo("1");
+        assertThat(businessOrderMapper.selectCashierBusinessOrder("1", 360001L).getBizOrderNo())
                 .isEqualTo("BO202606060001");
         assertThat(contractCapabilityMapper.selectRoutedCashierCapability(
-                1L, 310001L, 320001L, "PERSONAL_WECHAT_QR", "WEB", 9900L).getChannelCode())
+                "1", 310001L, 320001L, "PERSONAL_WECHAT_QR", "WEB", 9900L).getChannelCode())
                 .isEqualTo("MANGO_PAY");
         assertThat(result.getSubject().getCreditCode()).isEqualTo("9131****001X");
         assertThat(result.getSubject().getBankAccountNo()).isEqualTo("6222****0001");
@@ -137,7 +137,7 @@ class PaymentCashierServiceImplIntegrationTest {
 
     @Test
     void payPersistsPaymentOrderUpdatesApplyResultAndAdvancesBusinessOrderThroughRealMappers() {
-        PaymentCashierPayResultVO result = service.pay(payCommand("PERSONAL_WECHAT_QR")).getData();
+        PaymentCashierPayResultVO result = service.pay(payCommand("PERSONAL_WECHAT_QR"));
 
         PaymentOrderEntity order = paymentOrderMapper.selectByPayOrderNo("PO2026060600000001");
         PaymentBusinessOrderEntity businessOrder = businessOrderMapper.selectById(360001L);
@@ -165,7 +165,7 @@ class PaymentCashierServiceImplIntegrationTest {
         switchCashierToOfflineOnly();
         numberService.nextValue = "PO2026060600000002";
 
-        PaymentCashierPayResultVO result = service.pay(payCommand("CORPORATE_OFFLINE_ACCOUNT")).getData();
+        PaymentCashierPayResultVO result = service.pay(payCommand("CORPORATE_OFFLINE_ACCOUNT"));
 
         PaymentOrderEntity order = paymentOrderMapper.selectByPayOrderNo("PO2026060600000002");
         assertThat(result.getChannelCode()).isEqualTo("OFFLINE_COLLECTION");
@@ -182,7 +182,7 @@ class PaymentCashierServiceImplIntegrationTest {
     void payReturnsExistingProcessingResultThroughRealPayResultSql() {
         insertProcessingPaymentOrder("PO2026060600000099");
 
-        PaymentCashierPayResultVO result = service.pay(payCommand("PERSONAL_WECHAT_QR")).getData();
+        PaymentCashierPayResultVO result = service.pay(payCommand("PERSONAL_WECHAT_QR"));
 
         assertThat(result.getPayOrderNo()).isEqualTo("PO2026060600000099");
         assertThat(result.getStatus()).isEqualTo("PAYING");
@@ -211,7 +211,7 @@ class PaymentCashierServiceImplIntegrationTest {
     private void resetSchema() {
         jdbcTemplate.execute("""
                 create alias if not exists FIND_IN_SET for
-                "io.mango.payment.core.service.impl.PaymentCashierServiceImplIntegrationTest.findInSet"
+                "io.mango.payment.core.service.impl.PaymentCashierServiceIntegrationTest.findInSet"
                 """);
         jdbcTemplate.execute("drop table if exists payment_transaction_flow");
         jdbcTemplate.execute("drop table if exists payment_order");
@@ -261,7 +261,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     notify_retry_policy varchar(512),
                     demo_app int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -279,7 +280,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     bank_name varchar(128),
                     license_file_id bigint,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -300,7 +302,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     result_return_url varchar(512),
                     display_config varchar(1024),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -328,7 +331,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     description varchar(512),
                     sort int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -352,7 +356,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     capability_summary varchar(512),
                     bill_fetch_modes varchar(256),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -375,7 +380,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     min_amount bigint,
                     max_amount bigint,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -396,7 +402,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     config_values_json varchar(1024),
                     enabled_method_codes varchar(512),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -417,7 +424,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     priority int,
                     certificate_expire_time timestamp,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -438,7 +446,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     route_mode varchar(64),
                     fallback_enabled int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -456,7 +465,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     min_amount bigint,
                     max_amount bigint,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -483,7 +493,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     notify_url varchar(512),
                     return_url varchar(512),
                     extend_info varchar(1024),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -511,7 +522,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     success_flag int,
                     pay_time timestamp,
                     expire_time timestamp,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
                     updated_by bigint,
@@ -523,7 +535,8 @@ class PaymentCashierServiceImplIntegrationTest {
                     id bigint primary key,
                     flow_no varchar(128),
                     payment_order_id bigint,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     created_at timestamp default current_timestamp
                 )
                 """);
@@ -667,7 +680,7 @@ class PaymentCashierServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = PaymentCashierConfigMapper.class)
-    @Import(PaymentCashierServiceImpl.class)
+    @Import(PaymentCashierService.class)
     static class TestConfig {
 
         @Bean
@@ -688,23 +701,23 @@ class PaymentCashierServiceImplIntegrationTest {
         }
 
         @Bean
-        PaymentOrderStateService paymentOrderStateService() {
-            return new PaymentOrderStateService();
+        PaymentOrderStatePolicy paymentOrderStateService() {
+            return new PaymentOrderStatePolicy();
         }
 
         @Bean
-        TestPaymentOrderStatusFlowService paymentOrderStatusFlowService() {
-            return new TestPaymentOrderStatusFlowService();
+        TestPaymentOrderStatusFlowRecorder paymentOrderStatusFlowService() {
+            return new TestPaymentOrderStatusFlowRecorder();
         }
 
         @Bean
-        TestPaymentChannelSyncService paymentChannelSyncService() {
-            return new TestPaymentChannelSyncService();
+        TestPaymentChannelSynchronizer paymentChannelSyncService() {
+            return new TestPaymentChannelSynchronizer();
         }
 
         @Bean
-        PaymentSensitiveValueService paymentSensitiveValueService() {
-            return new PaymentSensitiveValueService(null) {
+        PaymentSensitiveValueCodec paymentSensitiveValueService() {
+            return new PaymentSensitiveValueCodec(null) {
                 @Override
                 public String mask(String value, int left, int right) {
                     if ("enc:credit-ciphertext".equals(value)) {
@@ -719,8 +732,8 @@ class PaymentCashierServiceImplIntegrationTest {
         }
 
         @Bean
-        TestPaymentNumberService paymentNumberService() {
-            return new TestPaymentNumberService();
+        TestPaymentNumberGenerator paymentNumberService() {
+            return new TestPaymentNumberGenerator();
         }
 
         @Bean
@@ -734,11 +747,11 @@ class PaymentCashierServiceImplIntegrationTest {
         }
     }
 
-    static class TestPaymentNumberService extends PaymentNumberService {
+    static class TestPaymentNumberGenerator extends PaymentNumberGenerator {
 
         private String nextValue;
 
-        TestPaymentNumberService() {
+        TestPaymentNumberGenerator() {
             super(null);
         }
 
@@ -748,17 +761,17 @@ class PaymentCashierServiceImplIntegrationTest {
         }
     }
 
-    static class TestPaymentOrderStatusFlowService extends PaymentOrderStatusFlowService {
+    static class TestPaymentOrderStatusFlowRecorder extends PaymentOrderStatusFlowRecorder {
 
         private final List<String> records = new ArrayList<>();
 
-        TestPaymentOrderStatusFlowService() {
+        TestPaymentOrderStatusFlowRecorder() {
             super(null);
         }
 
         @Override
         public void record(
-                Long tenantId,
+                String tenantId,
                 String orderType,
                 Long orderId,
                 String orderNo,
@@ -776,11 +789,11 @@ class PaymentCashierServiceImplIntegrationTest {
         }
     }
 
-    static class TestPaymentChannelSyncService extends PaymentChannelSyncService {
+    static class TestPaymentChannelSynchronizer extends PaymentChannelSynchronizer {
 
         private final List<String> synced = new ArrayList<>();
 
-        TestPaymentChannelSyncService() {
+        TestPaymentChannelSynchronizer() {
             super(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         }
 
@@ -797,7 +810,7 @@ class PaymentCashierServiceImplIntegrationTest {
 
     static class TestPaymentChannelAdapter implements IPaymentChannelAdapter {
 
-        protected IPaymentChannelAdapter.PaymentApplyCommand lastPaymentCommand;
+        protected IPaymentChannelAdapter.PaymentApplyInput lastPaymentCommand;
         protected PaymentOrderEntity createdOrder;
 
         @Override
@@ -806,7 +819,7 @@ class PaymentCashierServiceImplIntegrationTest {
         }
 
         @Override
-        public PaymentApplyResult applyPayment(PaymentApplyCommand command) {
+        public PaymentApplyResult applyPayment(PaymentApplyInput command) {
             this.lastPaymentCommand = command;
             PaymentCashierPayMaterialVO material = new PaymentCashierPayMaterialVO();
             material.setMaterialType("QR");
@@ -821,27 +834,27 @@ class PaymentCashierServiceImplIntegrationTest {
         }
 
         @Override
-        public void afterPaymentOrderCreated(PaymentApplyCommand command, PaymentApplyResult result, PaymentOrderEntity order) {
+        public void afterPaymentOrderCreated(PaymentApplyInput command, PaymentApplyResult result, PaymentOrderEntity order) {
             this.createdOrder = order;
         }
 
         @Override
-        public RefundApplyResult applyRefund(RefundApplyCommand command) {
+        public RefundApplyResult applyRefund(RefundApplyInput command) {
             throw new AssertionError("Refund is outside this cashier test.");
         }
 
         @Override
-        public ChannelBillResult generateBill(ChannelBillCommand command) {
+        public ChannelBillResult generateBill(ChannelBillInput command) {
             return new ChannelBillResult(List.<PaymentChannelBillItemRow>of());
         }
 
         @Override
-        public PaymentQueryResult queryPayment(PaymentQueryCommand command) {
+        public PaymentQueryResult queryPayment(PaymentQueryInput command) {
             throw new AssertionError("Query is outside this cashier test.");
         }
 
         @Override
-        public RefundQueryResult queryRefund(RefundQueryCommand command) {
+        public RefundQueryResult queryRefund(RefundQueryInput command) {
             throw new AssertionError("Refund query is outside this cashier test.");
         }
 
@@ -859,7 +872,7 @@ class PaymentCashierServiceImplIntegrationTest {
         }
 
         @Override
-        public PaymentApplyResult applyPayment(PaymentApplyCommand command) {
+        public PaymentApplyResult applyPayment(PaymentApplyInput command) {
             this.lastPaymentCommand = command;
             PaymentCashierPayMaterialVO material = new PaymentCashierPayMaterialVO();
             material.setMaterialType("TRANSFER_ACCOUNT");

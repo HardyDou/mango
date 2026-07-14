@@ -8,4 +8,9 @@
         where contract_id = #{contractId}
           and tenant_id = #{tenantId}
     </delete>
+
+    <delete id="deletePhysicallyById">
+        delete from payment_channel_contract_value
+        where id = #{id}
+    </delete>
 </mapper>

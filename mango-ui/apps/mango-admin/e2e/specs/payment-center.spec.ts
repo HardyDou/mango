@@ -1863,30 +1863,36 @@ function signPaymentOpenApi(method: string, path: string, body: string, appSecre
   return createHmac('sha256', appSecret).update(canonical).digest('base64');
 }
 
-function openApiHeaders(options: {
+function openApiRequestBody(options: {
   appId: string;
   appSecret: string;
-  method: string;
   path: string;
   body?: string;
   nonce: string;
   timestamp?: string;
+  bizOrderNo?: string;
+  payOrderNo?: string;
+  bizRefundNo?: string;
 }) {
   const timestamp = options.timestamp || Math.floor(Date.now() / 1000).toString();
+  const body = options.body || '';
   return {
-    AppId: options.appId,
+    body,
+    appId: options.appId,
     tenantId: '1',
     timestamp,
-    nonce: options.nonce,
     signature: signPaymentOpenApi(
-      options.method,
+      'POST',
       options.path,
-      options.body || '',
+      body,
       options.appSecret,
       timestamp,
       options.nonce,
     ),
-    'Content-Type': 'application/json',
+    nonce: options.nonce,
+    bizOrderNo: options.bizOrderNo,
+    payOrderNo: options.payOrderNo,
+    bizRefundNo: options.bizRefundNo,
   };
 }
 
@@ -2585,7 +2591,7 @@ test.describe('支付中心 E2E', () => {
     const appSecret = `openapi-e2e-secret-${suffix}`;
     const cashierConfigId = 359901;
     const bizOrderNo = `OPENAPI-BO-${suffix}`;
-    const createPath = '/openapi/pay/orders';
+    const createPath = '/openapi/pay/orders/create';
     prepareOpenApiPaymentAccess(appId, appSecret, cashierConfigId);
     const notifyReceiver = await startPaymentNotifyReceiver();
 
@@ -2606,16 +2612,15 @@ test.describe('支付中心 E2E', () => {
         },
       };
       const createBody = JSON.stringify(createPayload);
-      const createResponse = await page.request.post('/api/openapi/pay/orders', {
-        headers: openApiHeaders({
+      const createRequest = openApiRequestBody({
           appId,
           appSecret,
-          method: 'POST',
           path: createPath,
           body: createBody,
           nonce: `create-${suffix}`,
-        }),
-        data: createBody,
+      });
+      const createResponse = await page.request.post('/api/openapi/pay/orders/create', {
+        data: createRequest,
       });
       const createResult = await expectBusinessOk<PaymentBusinessOrder>(createResponse);
       expect(createResult.data?.bizOrderNo).toBe(bizOrderNo);
@@ -2623,79 +2628,76 @@ test.describe('支付中心 E2E', () => {
       expectMoneyCents(createResult.data?.amount, 128800);
       expect(createResult.data?.status).toBe('TO_PAY');
 
-      const repeatResponse = await page.request.post('/api/openapi/pay/orders', {
-      headers: openApiHeaders({
+    const repeatRequest = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: createPath,
         body: createBody,
         nonce: `repeat-${suffix}`,
-      }),
-      data: createBody,
+    });
+    const repeatResponse = await page.request.post('/api/openapi/pay/orders/create', {
+      data: repeatRequest,
     });
     const repeatResult = await expectBusinessOk<PaymentBusinessOrder>(repeatResponse);
     expect(String(repeatResult.data?.id || '')).toBe(String(createResult.data?.id || ''));
 
     const conflictBody = JSON.stringify({ ...createPayload, amount: 129900 });
-    const conflictResponse = await page.request.post('/api/openapi/pay/orders', {
-      headers: openApiHeaders({
+    const conflictRequest = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: createPath,
         body: conflictBody,
         nonce: `conflict-${suffix}`,
-      }),
-      data: conflictBody,
+    });
+    const conflictResponse = await page.request.post('/api/openapi/pay/orders/create', {
+      data: conflictRequest,
     });
     const conflictResult = await expectBusinessError<PaymentBusinessOrder>(conflictResponse);
     expect(conflictResult.code).toBe(3794);
 
-    const replayHeaders = openApiHeaders({
+    const replayRequest = openApiRequestBody({
       appId,
       appSecret,
-      method: 'POST',
       path: createPath,
       body: createBody,
       nonce: `replay-${suffix}`,
     });
-    const replayFirstResponse = await page.request.post('/api/openapi/pay/orders', {
-      headers: replayHeaders,
-      data: createBody,
+    const replayFirstResponse = await page.request.post('/api/openapi/pay/orders/create', {
+      data: replayRequest,
     });
     await expectBusinessOk<PaymentBusinessOrder>(replayFirstResponse);
-    const replaySecondResponse = await page.request.post('/api/openapi/pay/orders', {
-      headers: replayHeaders,
-      data: createBody,
+    const replaySecondResponse = await page.request.post('/api/openapi/pay/orders/create', {
+      data: replayRequest,
     });
     const replaySecondResult = await expectBusinessError<PaymentBusinessOrder>(replaySecondResponse);
     expect(replaySecondResult.code).toBe(3793);
 
-    const detailPath = `/openapi/pay/orders/${bizOrderNo}`;
-    const detailResponse = await page.request.get(`/api/openapi/pay/orders/${bizOrderNo}`, {
-      headers: openApiHeaders({
+    const detailPath = '/openapi/pay/orders/detail';
+    const detailBody = openApiRequestBody({
         appId,
         appSecret,
-        method: 'GET',
         path: detailPath,
         nonce: `detail-${suffix}`,
-      }),
+        bizOrderNo,
+    });
+    const detailResponse = await page.request.post('/api/openapi/pay/orders/detail', {
+      data: detailBody,
     });
     const detailResult = await expectBusinessOk<PaymentBusinessOrder>(detailResponse);
     expect(String(detailResult.data?.id || '')).toBe(String(createResult.data?.id || ''));
     expect(detailResult.data?.bizOrderNo).toBe(bizOrderNo);
     expectMoneyCents(detailResult.data?.amount, 128800);
 
-    const cashierPath = `/openapi/pay/orders/${bizOrderNo}/cashier`;
-    const cashierResponse = await page.request.post(`/api/openapi/pay/orders/${bizOrderNo}/cashier`, {
-      headers: openApiHeaders({
+    const cashierPath = '/openapi/pay/cashier/detail';
+    const cashierBody = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: cashierPath,
         nonce: `cashier-${suffix}`,
-      }),
+        bizOrderNo,
+    });
+    const cashierResponse = await page.request.post('/api/openapi/pay/cashier/detail', {
+      data: cashierBody,
     });
     const cashierResult = await expectBusinessOk<PaymentOpenCashier>(cashierResponse);
     expect(String(cashierResult.data?.cashierConfigId || '')).toBe(String(cashierConfigId));
@@ -2705,18 +2707,18 @@ test.describe('支付中心 E2E', () => {
       `/payment/cashier-configs/${cashierConfigId}/cashier?businessOrderId=${createResult.data?.id}`,
     );
 
-    const payPath = `/openapi/pay/orders/${bizOrderNo}/pay`;
+    const payPath = '/openapi/pay/payments/create';
     const payBody = JSON.stringify({ methodCode: 'PERSONAL_WECHAT_QR' });
-    const payResponse = await page.request.post(`/api/openapi/pay/orders/${bizOrderNo}/pay`, {
-      headers: openApiHeaders({
+    const payRequest = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: payPath,
         body: payBody,
         nonce: `pay-${suffix}`,
-      }),
-      data: payBody,
+        bizOrderNo,
+    });
+    const payResponse = await page.request.post('/api/openapi/pay/payments/create', {
+      data: payRequest,
     });
     const payResult = await expectBusinessOk<PaymentOpenPaymentOrder>(payResponse);
     expect(payResult.data?.payOrderNo).toBeTruthy();
@@ -2762,15 +2764,16 @@ test.describe('支付中心 E2E', () => {
     expect(paymentNotification.signAlgorithm).toBe('HMAC_SHA256');
     expect(paymentNotification.signature).toBeTruthy();
 
-    const paymentOrderPath = `/openapi/pay/payment-orders/${payResult.data?.payOrderNo}`;
-    const paymentOrderResponse = await page.request.get(`/api/openapi/pay/payment-orders/${payResult.data?.payOrderNo}`, {
-      headers: openApiHeaders({
+    const paymentOrderPath = '/openapi/pay/payments/detail';
+    const paymentOrderBody = openApiRequestBody({
         appId,
         appSecret,
-        method: 'GET',
         path: paymentOrderPath,
         nonce: `payment-detail-${suffix}`,
-      }),
+        payOrderNo: payResult.data?.payOrderNo,
+    });
+    const paymentOrderResponse = await page.request.post('/api/openapi/pay/payments/detail', {
+      data: paymentOrderBody,
     });
     const paymentOrderResult = await expectBusinessOk<PaymentOpenPaymentOrder>(paymentOrderResponse);
     expect(paymentOrderResult.data?.payOrderNo).toBe(payResult.data?.payOrderNo);
@@ -2783,15 +2786,16 @@ test.describe('支付中心 E2E', () => {
     expect(paymentOrderResult.data?.channelTradeNo).toBe(paymentNotification.channelTradeNo);
     expect(paymentOrderResult.data?.flowNo).toBeTruthy();
 
-    const receiptPath = `/openapi/pay/receipts/${bizOrderNo}`;
-    const receiptResponse = await page.request.get(`/api/openapi/pay/receipts/${bizOrderNo}`, {
-      headers: openApiHeaders({
+    const receiptPath = '/openapi/pay/receipts/detail';
+    const receiptBody = openApiRequestBody({
         appId,
         appSecret,
-        method: 'GET',
         path: receiptPath,
         nonce: `receipt-${suffix}`,
-      }),
+        bizOrderNo,
+    });
+    const receiptResponse = await page.request.post('/api/openapi/pay/receipts/detail', {
+      data: receiptBody,
     });
     const receiptResult = await expectBusinessOk<PaymentOpenReceipt>(receiptResponse);
     expect(receiptResult.data?.receiptNo).toBe(`RCPT-${bizOrderNo}-${payResult.data?.payOrderNo}`);
@@ -2809,7 +2813,7 @@ test.describe('支付中心 E2E', () => {
     expect(receiptResult.data?.issuedTime).toBeTruthy();
 
     const bizRefundNo = `OPENAPI-RF-${suffix}`;
-    const refundPath = '/openapi/pay/refunds';
+    const refundPath = '/openapi/pay/refunds/create';
     const refundPayload = {
       tenantId: 1,
       appId,
@@ -2819,16 +2823,15 @@ test.describe('支付中心 E2E', () => {
       reason: 'OpenAPI E2E 退款申请',
     };
     const refundBody = JSON.stringify(refundPayload);
-    const refundResponse = await page.request.post('/api/openapi/pay/refunds', {
-      headers: openApiHeaders({
+    const refundRequest = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: refundPath,
         body: refundBody,
         nonce: `refund-${suffix}`,
-      }),
-      data: refundBody,
+    });
+    const refundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+      data: refundRequest,
     });
     const refundResult = await expectBusinessOk<PaymentOpenRefundOrder>(refundResponse);
     expect(refundResult.data?.refundOrderNo).toBeTruthy();
@@ -2845,32 +2848,30 @@ test.describe('支付中心 E2E', () => {
     expect(refundResult.data?.channelTradeNo).toBe(paymentOrderResult.data?.channelTradeNo);
     expect(refundResult.data?.channelRefundNo).toContain(String(refundResult.data?.refundOrderNo || ''));
 
-    const repeatRefundResponse = await page.request.post('/api/openapi/pay/refunds', {
-      headers: openApiHeaders({
+    const repeatRefundRequest = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: refundPath,
         body: refundBody,
         nonce: `refund-repeat-${suffix}`,
-      }),
-      data: refundBody,
+    });
+    const repeatRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+      data: repeatRefundRequest,
     });
     const repeatRefundResult = await expectBusinessOk<PaymentOpenRefundOrder>(repeatRefundResponse);
     expect(String(repeatRefundResult.data?.id || '')).toBe(String(refundResult.data?.id || ''));
     expect(repeatRefundResult.data?.refundOrderNo).toBe(refundResult.data?.refundOrderNo);
 
     const conflictRefundBody = JSON.stringify({ ...refundPayload, refundAmount: 39900 });
-    const conflictRefundResponse = await page.request.post('/api/openapi/pay/refunds', {
-      headers: openApiHeaders({
+    const conflictRefundRequest = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: refundPath,
         body: conflictRefundBody,
         nonce: `refund-conflict-${suffix}`,
-      }),
-      data: conflictRefundBody,
+    });
+    const conflictRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+      data: conflictRefundRequest,
     });
     const conflictRefundResult = await expectBusinessError<PaymentOpenRefundOrder>(conflictRefundResponse);
     expect(conflictRefundResult.code).toBe(3794);
@@ -2880,29 +2881,29 @@ test.describe('支付中心 E2E', () => {
       bizRefundNo: `OPENAPI-RF-EXCEEDED-${suffix}`,
       refundAmount: 200000,
     });
-    const exceededRefundResponse = await page.request.post('/api/openapi/pay/refunds', {
-      headers: openApiHeaders({
+    const exceededRefundRequest = openApiRequestBody({
         appId,
         appSecret,
-        method: 'POST',
         path: refundPath,
         body: exceededRefundBody,
         nonce: `refund-exceeded-${suffix}`,
-      }),
-      data: exceededRefundBody,
+    });
+    const exceededRefundResponse = await page.request.post('/api/openapi/pay/refunds/create', {
+      data: exceededRefundRequest,
     });
     const exceededRefundResult = await expectBusinessError<PaymentOpenRefundOrder>(exceededRefundResponse);
     expect(exceededRefundResult.code).toBe(3802);
 
-    const refundDetailPath = `/openapi/pay/refunds/${bizRefundNo}`;
-    const refundDetailResponse = await page.request.get(`/api/openapi/pay/refunds/${bizRefundNo}`, {
-      headers: openApiHeaders({
+    const refundDetailPath = '/openapi/pay/refunds/detail';
+    const refundDetailBody = openApiRequestBody({
         appId,
         appSecret,
-        method: 'GET',
         path: refundDetailPath,
         nonce: `refund-detail-${suffix}`,
-      }),
+        bizRefundNo,
+    });
+    const refundDetailResponse = await page.request.post('/api/openapi/pay/refunds/detail', {
+      data: refundDetailBody,
     });
     const refundDetailResult = await expectBusinessOk<PaymentOpenRefundOrder>(refundDetailResponse);
     expect(refundDetailResult.data?.refundOrderNo).toBe(refundResult.data?.refundOrderNo);

@@ -8,6 +8,7 @@ import io.mango.payment.api.PaymentOfflineCollectionApi;
 import io.mango.payment.api.command.ConfirmOfflineBankStatementMatchCommand;
 import io.mango.payment.api.command.ConfirmOfflineCollectionCommand;
 import io.mango.payment.api.command.CreateOfflineRefundCommand;
+import io.mango.payment.api.command.ImportOfflineBankStatementCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentOfflineBankStatementBatchStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineBankStatementBatchVO;
@@ -15,7 +16,7 @@ import io.mango.payment.api.vo.PaymentOfflineBankStatementMatchStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineCollectionStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineCollectionVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundVO;
-import io.mango.payment.core.service.PaymentOfflineChannelService;
+import io.mango.payment.core.service.IPaymentOfflineChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,9 +30,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 import java.util.List;
 
 @Validated
@@ -41,7 +39,7 @@ import java.util.List;
 @Tag(name = "线下收款", description = "线下转账收款、凭证、确认到账和银行流水导入接口")
 public class PaymentOfflineCollectionController implements PaymentOfflineCollectionApi {
 
-    private final PaymentOfflineChannelService offlineChannelService;
+    private final IPaymentOfflineChannelService offlineChannelService;
 
     @Override
     @GetMapping("/page")
@@ -55,7 +53,7 @@ public class PaymentOfflineCollectionController implements PaymentOfflineCollect
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-collection:query")
     @Operation(summary = "查询线下收款详情", description = "按线下收款 ID 查询收款账户、对账码、关联支付订单和到账状态")
-    public R<PaymentOfflineCollectionVO> detailOfflineCollection(@Parameter(description = "线下收款 ID", required = true) @RequestParam Long id) {
+    public R<PaymentOfflineCollectionVO> detailOfflineCollection(@Parameter(description = "线下收款 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(offlineChannelService.detailOfflineCollection(id));
     }
 
@@ -87,7 +85,7 @@ public class PaymentOfflineCollectionController implements PaymentOfflineCollect
     @GetMapping("/bank-statements/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-collection:bank-statement:query")
     @Operation(summary = "查询线下银行流水批次详情", description = "按批次 ID 查询银行流水明细、匹配状态和确认结果")
-    public R<PaymentOfflineBankStatementBatchVO> detailOfflineBankStatement(@Parameter(description = "银行流水批次 ID", required = true) @RequestParam Long id) {
+    public R<PaymentOfflineBankStatementBatchVO> detailOfflineBankStatement(@Parameter(description = "银行流水批次 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(offlineChannelService.detailBankStatementBatch(id));
     }
 
@@ -107,21 +105,13 @@ public class PaymentOfflineCollectionController implements PaymentOfflineCollect
         return R.ok(offlineChannelService.listBankStatementMatchStatuses());
     }
 
+    @Override
     @PostMapping("/bank-statements/import")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-collection:bank-statement:import")
-    @Operation(summary = "导入线下银行流水 Excel", description = "后端解析银行流水 Excel，落批次和明细，并按对账码、金额和状态生成匹配结果")
+    @Operation(summary = "导入线下银行流水 Excel", description = "解析 Base64 文件内容，落批次和明细并生成匹配结果")
     public R<PaymentOfflineBankStatementBatchVO> importOfflineBankStatement(
-            @Parameter(description = "银行流水 Excel 文件", required = true) @RequestParam("file") MultipartFile file,
-            @Parameter(description = "文件中心 ID，可为空") @RequestParam(required = false) Long statementFileId) throws IOException {
-        return importOfflineBankStatement(file.getBytes(), file.getOriginalFilename(), statementFileId);
-    }
-
-    @Override
-    public R<PaymentOfflineBankStatementBatchVO> importOfflineBankStatement(
-            byte[] fileContent,
-            String originalFilename,
-            Long statementFileId) throws IOException {
-        return R.ok(offlineChannelService.importBankStatement(fileContent, originalFilename, statementFileId));
+            @Valid @RequestBody ImportOfflineBankStatementCommand command) {
+        return R.ok(offlineChannelService.importBankStatement(command));
     }
 
     @Override

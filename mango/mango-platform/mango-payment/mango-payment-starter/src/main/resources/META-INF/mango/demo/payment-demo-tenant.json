@@ -1,0 +1,48 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_TENANT": [
+          {
+            "id": "2026071309000000066",
+            "version": 1,
+            "bizKey": "payment.tenant.TENANT_1",
+            "name": "默认支付租户",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 300001
+              },
+              "tenantCode": {
+                "type": "STRING",
+                "value": "TENANT_1"
+              },
+              "tenantName": {
+                "type": "STRING",
+                "value": "默认支付租户"
+              },
+              "platformTenantId": {
+                "type": "LONG",
+                "value": 1
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

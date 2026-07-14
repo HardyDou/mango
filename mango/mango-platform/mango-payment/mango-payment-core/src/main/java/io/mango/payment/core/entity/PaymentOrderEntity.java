@@ -1,7 +1,6 @@
 package io.mango.payment.core.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.mango.infra.persistence.api.entity.AuditableEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -10,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("payment_order")
-public class PaymentOrderEntity extends AuditableEntity {
+public class PaymentOrderEntity extends PaymentBaseEntity {
 
     private String payOrderNo;
 
@@ -45,6 +44,4 @@ public class PaymentOrderEntity extends AuditableEntity {
     private LocalDateTime payTime;
 
     private LocalDateTime expireTime;
-
-    private Long tenantId;
 }

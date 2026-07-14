@@ -7,14 +7,14 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PaymentMangoPayResultMappingServiceTest {
+class PaymentMangoPayResultTranslatorTest {
 
-    private final PaymentMangoPayResultMappingService service = new PaymentMangoPayResultMappingService();
+    private final PaymentMangoPayResultTranslator service = new PaymentMangoPayResultTranslator();
 
     @Test
     @DisplayName("mapPayment should map special return codes to unified payment status")
     void mapPayment_mapsReturnCodes() {
-        PaymentMangoPayResultMappingService.PaymentChannelResult defaultResult = service.mapPayment(Map.of());
+        PaymentMangoPayResultTranslator.PaymentChannelResult defaultResult = service.mapPayment(Map.of());
         assertThat(defaultResult.resultType()).isEqualTo("PROCESSING");
         assertThat(defaultResult.status()).isEqualTo("PAYING");
         assertPayment("SUCCESS", "SUCCESS", "SUCCESS");
@@ -29,7 +29,7 @@ class PaymentMangoPayResultMappingServiceTest {
     @Test
     @DisplayName("mapRefund should map special return codes to unified refund status")
     void mapRefund_mapsReturnCodes() {
-        PaymentMangoPayResultMappingService.RefundChannelResult defaultResult = service.mapRefund(Map.of());
+        PaymentMangoPayResultTranslator.RefundChannelResult defaultResult = service.mapRefund(Map.of());
         assertThat(defaultResult.resultType()).isEqualTo("PROCESSING");
         assertThat(defaultResult.status()).isEqualTo("REFUNDING");
         assertRefund("SUCCESS", "SUCCESS", "SUCCESS");
@@ -42,7 +42,7 @@ class PaymentMangoPayResultMappingServiceTest {
     }
 
     private void assertPayment(String scenario, String resultType, String status) {
-        PaymentMangoPayResultMappingService.PaymentChannelResult result = service.mapPayment(
+        PaymentMangoPayResultTranslator.PaymentChannelResult result = service.mapPayment(
                 Map.of("mangoPayScenario", scenario));
         assertThat(result.returnCode()).isEqualTo(scenario);
         assertThat(result.resultType()).isEqualTo(resultType);
@@ -50,7 +50,7 @@ class PaymentMangoPayResultMappingServiceTest {
     }
 
     private void assertRefund(String scenario, String resultType, String status) {
-        PaymentMangoPayResultMappingService.RefundChannelResult result = service.mapRefund(
+        PaymentMangoPayResultTranslator.RefundChannelResult result = service.mapRefund(
                 Map.of("mangoPayRefundScenario", scenario));
         assertThat(result.returnCode()).isEqualTo(scenario);
         assertThat(result.resultType()).isEqualTo(resultType);

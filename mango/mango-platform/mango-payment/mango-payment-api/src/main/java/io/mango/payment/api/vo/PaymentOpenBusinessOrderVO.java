@@ -15,7 +15,7 @@ public class PaymentOpenBusinessOrderVO {
     @Schema(description = "业务订单号")
     private String bizOrderNo;
 
-    @Schema(description = "AppId")
+    @Schema(description = "支付应用 AppId")
     private String appId;
 
     @Schema(description = "订单标题")

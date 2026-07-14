@@ -1,8 +1,11 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentObservabilityService;
+
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.api.vo.PaymentChannelCertificateExpiryVO;
+import io.mango.payment.core.model.projection.PaymentChannelCertificateExpiryProjection;
 import io.mango.payment.api.vo.PaymentObservabilitySnapshotVO;
 import io.mango.payment.core.mapper.PaymentChannelContractCapabilityMapper;
 import io.mango.payment.core.mapper.PaymentDifferenceMapper;
@@ -72,20 +75,20 @@ class PaymentObservabilityServiceTest {
     @Test
     @DisplayName("currentSnapshot should calculate minimum metrics from real mapper counts")
     void currentSnapshot_calculatesMinimumMetricsFromMapperCounts() {
-        when(paymentOrderMapper.countPaymentOrdersByStatus(1L, null)).thenReturn(10L);
-        when(paymentOrderMapper.countPaymentOrdersByStatus(1L, "SUCCESS")).thenReturn(8L);
-        when(paymentOrderMapper.countPaymentOrdersByStatus(1L, "FAILED")).thenReturn(2L);
-        when(paymentOrderMapper.countProcessingPaymentBacklog(1L)).thenReturn(3L);
-        when(paymentOrderMapper.selectChannelFailureMetrics(1L)).thenReturn(List.of(channelMetric("MANGO_PAY", 10L, 3L)));
-        when(refundOrderMapper.countRefundOrdersByStatus(1L, null)).thenReturn(4L);
-        when(refundOrderMapper.countRefundOrdersByStatus(1L, "SUCCESS")).thenReturn(3L);
-        when(refundOrderMapper.countRefundOrdersByStatus(1L, "FAILED")).thenReturn(1L);
-        when(exceptionOrderMapper.countCallbackFailureExceptionOrders(1L)).thenReturn(1L);
-        when(notificationRecordMapper.countFailedNotificationRecords(1L)).thenReturn(2L);
-        when(differenceMapper.countDifferences(1L, null, null)).thenReturn(1L);
-        when(exceptionOrderMapper.countExceptionOrders(1L, null, "PENDING")).thenReturn(1L);
-        when(exceptionOrderMapper.countExceptionOrders(1L, null, "PROCESSING")).thenReturn(1L);
-        when(contractCapabilityMapper.selectExpiringCertificates(eq(1L), any(), any())).thenReturn(List.of(expiringCertificate()));
+        when(paymentOrderMapper.countPaymentOrdersByStatus("1", null)).thenReturn(10L);
+        when(paymentOrderMapper.countPaymentOrdersByStatus("1", "SUCCESS")).thenReturn(8L);
+        when(paymentOrderMapper.countPaymentOrdersByStatus("1", "FAILED")).thenReturn(2L);
+        when(paymentOrderMapper.countProcessingPaymentBacklog("1")).thenReturn(3L);
+        when(paymentOrderMapper.selectChannelFailureMetrics("1")).thenReturn(List.of(channelMetric("MANGO_PAY", 10L, 3L)));
+        when(refundOrderMapper.countRefundOrdersByStatus("1", null)).thenReturn(4L);
+        when(refundOrderMapper.countRefundOrdersByStatus("1", "SUCCESS")).thenReturn(3L);
+        when(refundOrderMapper.countRefundOrdersByStatus("1", "FAILED")).thenReturn(1L);
+        when(exceptionOrderMapper.countCallbackFailureExceptionOrders("1")).thenReturn(1L);
+        when(notificationRecordMapper.countFailedNotificationRecords("1")).thenReturn(2L);
+        when(differenceMapper.countDifferences("1", null, null)).thenReturn(1L);
+        when(exceptionOrderMapper.countExceptionOrders("1", null, "PENDING")).thenReturn(1L);
+        when(exceptionOrderMapper.countExceptionOrders("1", null, "PROCESSING")).thenReturn(1L);
+        when(contractCapabilityMapper.selectExpiringCertificates(eq("1"), any(), any())).thenReturn(List.of(expiringCertificate()));
 
         PaymentObservabilitySnapshotVO snapshot = service.currentSnapshot();
 
@@ -116,14 +119,14 @@ class PaymentObservabilityServiceTest {
     @Test
     @DisplayName("currentSnapshot should not alert success rate when there is no denominator")
     void currentSnapshot_noDenominator_hasFullRateAndNoSuccessRateAlert() {
-        when(paymentOrderMapper.countPaymentOrdersByStatus(1L, null)).thenReturn(0L);
-        when(paymentOrderMapper.countPaymentOrdersByStatus(1L, "SUCCESS")).thenReturn(0L);
-        when(paymentOrderMapper.countPaymentOrdersByStatus(1L, "FAILED")).thenReturn(0L);
-        when(refundOrderMapper.countRefundOrdersByStatus(1L, null)).thenReturn(0L);
-        when(refundOrderMapper.countRefundOrdersByStatus(1L, "SUCCESS")).thenReturn(0L);
-        when(refundOrderMapper.countRefundOrdersByStatus(1L, "FAILED")).thenReturn(0L);
-        when(paymentOrderMapper.selectChannelFailureMetrics(1L)).thenReturn(List.of());
-        when(contractCapabilityMapper.selectExpiringCertificates(eq(1L), any(), any())).thenReturn(List.of());
+        when(paymentOrderMapper.countPaymentOrdersByStatus("1", null)).thenReturn(0L);
+        when(paymentOrderMapper.countPaymentOrdersByStatus("1", "SUCCESS")).thenReturn(0L);
+        when(paymentOrderMapper.countPaymentOrdersByStatus("1", "FAILED")).thenReturn(0L);
+        when(refundOrderMapper.countRefundOrdersByStatus("1", null)).thenReturn(0L);
+        when(refundOrderMapper.countRefundOrdersByStatus("1", "SUCCESS")).thenReturn(0L);
+        when(refundOrderMapper.countRefundOrdersByStatus("1", "FAILED")).thenReturn(0L);
+        when(paymentOrderMapper.selectChannelFailureMetrics("1")).thenReturn(List.of());
+        when(contractCapabilityMapper.selectExpiringCertificates(eq("1"), any(), any())).thenReturn(List.of());
 
         PaymentObservabilitySnapshotVO snapshot = service.currentSnapshot();
 
@@ -140,8 +143,8 @@ class PaymentObservabilityServiceTest {
         return metric;
     }
 
-    private PaymentChannelCertificateExpiryVO expiringCertificate() {
-        PaymentChannelCertificateExpiryVO vo = new PaymentChannelCertificateExpiryVO();
+    private PaymentChannelCertificateExpiryProjection expiringCertificate() {
+        PaymentChannelCertificateExpiryProjection vo = new PaymentChannelCertificateExpiryProjection();
         vo.setChannelCode("MANGO_PAY");
         return vo;
     }

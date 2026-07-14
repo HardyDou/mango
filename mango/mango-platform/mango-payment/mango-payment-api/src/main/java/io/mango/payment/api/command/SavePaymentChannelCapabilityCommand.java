@@ -2,7 +2,12 @@ package io.mango.payment.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,6 +19,7 @@ public class SavePaymentChannelCapabilityCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "通道能力 ID。新增时为空")
+    @Positive(message = "通道能力 ID 必须大于 0")
     private Long id;
 
     @NotBlank(message = "标准支付方式编码不能为空")
@@ -25,27 +31,40 @@ public class SavePaymentChannelCapabilityCommand implements Serializable {
     private String terminalType;
 
     @Schema(description = "内部路由域，服务端按支付通道派生，保存时无需传入")
+    @Size(max = 32, message = "内部路由域不能超过 32 个字符")
     private String environment;
 
     @Schema(description = "是否支持退款：1-支持，0-不支持")
+    @Min(value = 0, message = "退款能力标记不能小于 0")
+    @Max(value = 1, message = "退款能力标记不能大于 1")
     private Integer supportsRefund;
 
     @Schema(description = "是否支持查单：1-支持，0-不支持")
+    @Min(value = 0, message = "查单能力标记不能小于 0")
+    @Max(value = 1, message = "查单能力标记不能大于 1")
     private Integer supportsQuery;
 
     @Schema(description = "是否支持关单：1-支持，0-不支持")
+    @Min(value = 0, message = "关单能力标记不能小于 0")
+    @Max(value = 1, message = "关单能力标记不能大于 1")
     private Integer supportsClose;
 
     @Schema(description = "是否支持账单：1-支持，0-不支持")
+    @Min(value = 0, message = "账单能力标记不能小于 0")
+    @Max(value = 1, message = "账单能力标记不能大于 1")
     private Integer supportsBill;
 
     @Schema(description = "是否支持对账：1-支持，0-不支持")
+    @Min(value = 0, message = "对账能力标记不能小于 0")
+    @Max(value = 1, message = "对账能力标记不能大于 1")
     private Integer supportsReconcile;
 
     @Schema(description = "最小金额，单位分")
+    @PositiveOrZero(message = "最小金额不能小于 0")
     private Long minAmount;
 
     @Schema(description = "最大金额，单位分")
+    @PositiveOrZero(message = "最大金额不能小于 0")
     private Long maxAmount;
 
     @NotNull(message = "通道能力状态不能为空")

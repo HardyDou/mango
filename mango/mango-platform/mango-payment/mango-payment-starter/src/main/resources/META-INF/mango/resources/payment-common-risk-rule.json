@@ -1,0 +1,64 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_RISK_RULE": [
+          {
+            "id": "2026071309000000065",
+            "version": 1,
+            "bizKey": "payment.risk-rule.DEFAULT_POSITIVE_AMOUNT",
+            "name": "默认支付金额正数校验",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 390001
+              },
+              "ruleCode": {
+                "type": "STRING",
+                "value": "DEFAULT_POSITIVE_AMOUNT"
+              },
+              "ruleName": {
+                "type": "STRING",
+                "value": "默认支付金额正数校验"
+              },
+              "ruleScope": {
+                "type": "STRING",
+                "value": "TENANT"
+              },
+              "riskType": {
+                "type": "STRING",
+                "value": "AMOUNT_LIMIT"
+              },
+              "thresholdAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "actionType": {
+                "type": "STRING",
+                "value": "REJECT"
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

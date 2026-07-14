@@ -3,6 +3,7 @@ package io.mango.payment.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -15,6 +16,7 @@ public class SavePaymentApplicationCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "应用 ID。新增时为空，修改时必填")
+    @Positive(message = "应用 ID 必须大于 0")
     private Long id;
 
     @NotBlank(message = "应用名称不能为空")

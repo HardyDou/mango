@@ -9,12 +9,15 @@ import io.mango.payment.api.vo.PaymentOfflineCollectionVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
 public interface PaymentCashierApi {
 
-    R<PaymentCashierSessionVO> detailSession(@NotNull(message = "收银台配置 ID 不能为空") Long cashierConfigId, Long businessOrderId);
+    R<PaymentCashierSessionVO> detailSession(
+            @NotNull(message = "收银台配置 ID 不能为空") Long cashierConfigId,
+            @Positive(message = "业务订单 ID 必须大于 0") Long businessOrderId);
 
     R<PaymentCashierPayResultVO> pay(@Valid PaymentCashierPayCommand command);
 

@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class PaymentOrderStateServiceTest {
+class PaymentOrderStatePolicyTest {
 
-    private final PaymentOrderStateService service = new PaymentOrderStateService();
+    private final PaymentOrderStatePolicy service = new PaymentOrderStatePolicy();
 
     @Test
     @DisplayName("business order state machine should allow only documented transitions")

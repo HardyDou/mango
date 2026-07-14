@@ -13,43 +13,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PaymentMangoPayRuntimeResidualMigrationTest {
 
     @Test
-    @DisplayName("mango pay residual migration should keep adapter default unconfigured")
-    void migration_keepsAdapterDefaultUnconfigured() throws IOException {
-        String migration = migration();
-
-        assertThat(migration).contains("MODIFY COLUMN `adapter_type` varchar(64) NOT NULL DEFAULT 'UNCONFIGURED'");
-        assertThat(migration).doesNotContain("DEFAULT 'MANGO_PAY'");
+    @DisplayName("V1 should keep unconfigured as the channel adapter default")
+    void baseline_keepsAdapterDefaultUnconfigured() throws IOException {
+        assertThat(migration())
+                .contains("`adapter_type` varchar(64) NOT NULL DEFAULT 'UNCONFIGURED'")
+                .doesNotContain("DEFAULT 'MANGO_PAY'");
     }
 
     @Test
-    @DisplayName("mango pay residual migration should only maintain mango pay current state")
-    void migration_onlyMaintainsMangoPayCurrentState() throws IOException {
-        String migration = migration();
-
-        assertThat(migration).contains("WHERE `channel_code` = 'MANGO_PAY'");
-        assertThat(migration).contains("WHERE `contract_code` = 'MANGO_PAY_MANGO_TECH'");
-        assertThat(migration).contains("`channel_type` = 'BUILTIN_VIRTUAL'");
-        assertThat(migration).contains("`adapter_type` = 'MANGO_PAY'");
-        assertThat(migration).contains("mangoPayScenario");
-        assertThat(migration).contains("mangoPayRefundScenario");
+    @DisplayName("V1 should provide the MangoPay scenario schema without built-in configuration rows")
+    void baseline_providesMangoPayScenarioSchemaWithoutConfigurationRows() throws IOException {
+        assertThat(migration())
+                .contains("CREATE TABLE `payment_mango_pay_scenario_control`")
+                .doesNotContain("INSERT INTO")
+                .doesNotContain("'MANGO_PAY','芒果支付'");
     }
 
     @Test
-    @DisplayName("mango pay residual migration should not keep legacy runtime concepts")
-    void migration_doesNotKeepLegacyRuntimeConcepts() throws IOException {
-        String migration = migration();
-
-        assertThat(migration).doesNotContain(legacyUpperSandbox());
-        assertThat(migration).doesNotContain(legacyLowerSandbox());
-        assertThat(migration).doesNotContain(legacyChineseSandbox());
-        assertThat(migration).doesNotContain(legacyUpperSpecial());
-        assertThat(migration).doesNotContain(legacyLowerSpecial());
-        assertThat(migration).doesNotContain(legacyChineseSpecialChannel());
+    @DisplayName("V1 should not restore retired MangoPay runtime concepts")
+    void baseline_doesNotRestoreRetiredRuntimeConcepts() throws IOException {
+        assertThat(migration())
+                .doesNotContain(legacyUpperSandbox())
+                .doesNotContain(legacyLowerSandbox())
+                .doesNotContain(legacyChineseSandbox())
+                .doesNotContain(legacyUpperSpecial())
+                .doesNotContain(legacyLowerSpecial())
+                .doesNotContain(legacyChineseSpecialChannel());
     }
 
     private String migration() throws IOException {
         try (InputStream input = Objects.requireNonNull(getClass().getResourceAsStream(
-                "/db/migration/payment/V63__payment_mango_pay_runtime_residual_guard.sql"))) {
+                "/db/migration/payment/V1__payment_platform.sql"))) {
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
     }

@@ -1,17 +1,22 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentOperationAuditService;
+import io.mango.payment.core.service.impl.PaymentRefundApprovalService;
+
 import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.enums.PaymentRefundApprovalStatusEnum;
 import io.mango.payment.api.command.CreatePaymentOpenRefundCommand;
 import io.mango.payment.api.command.CreatePaymentRefundApprovalCommand;
 import io.mango.payment.api.vo.PaymentOpenRefundOrderVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundApprovalVO;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.model.projection.PaymentOrderProjection;
+import io.mango.payment.core.model.projection.PaymentRefundApprovalProjection;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentRefundApprovalEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
@@ -49,10 +54,10 @@ class PaymentRefundApprovalServiceTest {
     private PaymentApplicationMapper applicationMapper;
     private PaymentOrderMapper paymentOrderMapper;
     private PaymentRefundOrderMapper refundOrderMapper;
-    private PaymentRefundApplyService refundApplyService;
-    private PaymentOrderStateService orderStateService;
+    private PaymentRefundApplyCoordinator refundApplyService;
+    private PaymentOrderStatePolicy orderStateService;
     private PaymentOperationAuditService auditService;
-    private PaymentNumberService numberService;
+    private PaymentNumberGenerator numberService;
     private WorkflowProcessApi workflowProcessApi;
     private WorkflowBusinessApplyApi workflowBusinessApplyApi;
     private PaymentRefundApprovalService service;
@@ -63,14 +68,14 @@ class PaymentRefundApprovalServiceTest {
         applicationMapper = mock(PaymentApplicationMapper.class);
         paymentOrderMapper = mock(PaymentOrderMapper.class);
         refundOrderMapper = mock(PaymentRefundOrderMapper.class);
-        refundApplyService = mock(PaymentRefundApplyService.class);
-        orderStateService = new PaymentOrderStateService();
+        refundApplyService = mock(PaymentRefundApplyCoordinator.class);
+        orderStateService = new PaymentOrderStatePolicy();
         auditService = mock(PaymentOperationAuditService.class);
-        numberService = mock(PaymentNumberService.class);
+        numberService = mock(PaymentNumberGenerator.class);
         workflowProcessApi = mock(WorkflowProcessApi.class);
         workflowBusinessApplyApi = mock(WorkflowBusinessApplyApi.class);
-        when(numberService.next(PaymentNumberService.PAY_BIZ_REFUND_NO)).thenReturn("BR2026060600000001");
-        when(numberService.next(PaymentNumberService.PAY_REFUND_APPROVAL_NO)).thenReturn("RA2026060600000001");
+        when(numberService.next(PaymentNumberGenerator.PAY_BIZ_REFUND_NO)).thenReturn("BR2026060600000001");
+        when(numberService.next(PaymentNumberGenerator.PAY_REFUND_APPROVAL_NO)).thenReturn("RA2026060600000001");
         when(refundApprovalMapper.update(eq(null), any(UpdateWrapper.class))).thenReturn(1);
         when(refundApprovalMapper.updateById(any(PaymentRefundApprovalEntity.class))).thenReturn(1);
         service = new PaymentRefundApprovalService(
@@ -97,11 +102,11 @@ class PaymentRefundApprovalServiceTest {
     @Test
     @DisplayName("createRefundApproval should include pending approvals in refundable validation")
     void createRefundApproval_pendingApprovalsOccupyRefundableAmount() {
-        PaymentOrderVO paymentOrder = paymentOrder();
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        PaymentOrderProjection paymentOrder = paymentOrder();
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(5000L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(1000L);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(5000L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(1000L);
 
         assertThatThrownBy(() -> service.createRefundApproval(createCommand()))
                 .isInstanceOf(BizException.class)
@@ -112,13 +117,13 @@ class PaymentRefundApprovalServiceTest {
     @Test
     @DisplayName("createRefundApproval should enter approval only after workflow starts")
     void createRefundApproval_workflowStarted_entersApproval() {
-        PaymentOrderVO paymentOrder = paymentOrder();
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        PaymentOrderProjection paymentOrder = paymentOrder();
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(0L);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(0L);
         when(workflowProcessApi.start(any())).thenReturn(R.ok(workflowProcess()));
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(approvalDetail("IN_APPROVAL"));
+        when(refundApprovalMapper.selectRefundApprovalDetail("1", 390001L)).thenReturn(approvalDetail("IN_APPROVAL"));
         ArgumentCaptor<PaymentRefundApprovalEntity> approvalCaptor = ArgumentCaptor.forClass(PaymentRefundApprovalEntity.class);
         ArgumentCaptor<UpdateWrapper<PaymentRefundApprovalEntity>> updateCaptor = ArgumentCaptor.forClass(UpdateWrapper.class);
         when(refundApprovalMapper.insert(any(PaymentRefundApprovalEntity.class))).thenAnswer(invocation -> {
@@ -136,30 +141,30 @@ class PaymentRefundApprovalServiceTest {
         assertThat(updateCaptor.getValue().getParamNameValuePairs())
                 .containsValue(PaymentRefundApprovalStatusEnum.IN_APPROVAL.getCode());
         assertThat(result.getStatus()).isEqualTo(PaymentRefundApprovalStatusEnum.IN_APPROVAL.getCode());
-        verify(auditService).record(
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                 "RA2026060600000001",
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
     }
 
     @Test
     @DisplayName("createRefundApproval should keep in-approval status when success audit throws")
     void createRefundApproval_workflowStartedAndAuditFailed_keepsStartedStatus() {
-        PaymentOrderVO paymentOrder = paymentOrder();
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        PaymentOrderProjection paymentOrder = paymentOrder();
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(0L);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(0L);
         when(workflowProcessApi.start(any())).thenReturn(R.ok(workflowProcess()));
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(approvalDetail("IN_APPROVAL"));
+        when(refundApprovalMapper.selectRefundApprovalDetail("1", 390001L)).thenReturn(approvalDetail("IN_APPROVAL"));
         doThrow(new IllegalStateException("审计不可用"))
                 .when(auditService)
-                .record(
+                .record(new PaymentOperationAuditService.AuditEntry(
                         PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
                         PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                         "RA2026060600000001",
-                        PaymentOperationAuditService.RESULT_SUCCESS);
+                        PaymentOperationAuditService.RESULT_SUCCESS));
         when(refundApprovalMapper.insert(any(PaymentRefundApprovalEntity.class))).thenAnswer(invocation -> {
             PaymentRefundApprovalEntity entity = invocation.getArgument(0);
             entity.setId(390001L);
@@ -178,11 +183,11 @@ class PaymentRefundApprovalServiceTest {
     @Test
     @DisplayName("createRefundApproval should mark local approval failed when workflow start fails")
     void createRefundApproval_workflowStartFailed_releasesApprovalOccupation() {
-        PaymentOrderVO paymentOrder = paymentOrder();
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        PaymentOrderProjection paymentOrder = paymentOrder();
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(0L);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(0L);
         when(workflowProcessApi.start(any())).thenReturn(R.fail(PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "工作流不可用"));
         ArgumentCaptor<PaymentRefundApprovalEntity> approvalCaptor = ArgumentCaptor.forClass(PaymentRefundApprovalEntity.class);
         ArgumentCaptor<UpdateWrapper<PaymentRefundApprovalEntity>> updateCaptor = ArgumentCaptor.forClass(UpdateWrapper.class);
@@ -197,21 +202,21 @@ class PaymentRefundApprovalServiceTest {
         assertThat(updateCaptor.getValue().getParamNameValuePairs())
                 .containsValue(PaymentRefundApprovalStatusEnum.WORKFLOW_START_FAILED.getCode());
         verify(refundApprovalMapper, never()).selectRefundApprovalDetail(any(), any());
-        verify(auditService).record(
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                 "RA2026060600000001",
-                PaymentOperationAuditService.RESULT_REJECTED);
+                PaymentOperationAuditService.RESULT_REJECTED));
     }
 
     @Test
     @DisplayName("createRefundApproval should preserve workflow exception when failure compensation fails")
     void createRefundApproval_workflowStartFailedAndCompensationFailed_preservesWorkflowException() {
-        PaymentOrderVO paymentOrder = paymentOrder();
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        PaymentOrderProjection paymentOrder = paymentOrder();
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(0L);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(0L);
         when(workflowProcessApi.start(any()))
                 .thenReturn(R.fail(PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "工作流不可用"));
         when(refundApprovalMapper.update(eq(null), any(UpdateWrapper.class))).thenReturn(0);
@@ -228,20 +233,20 @@ class PaymentRefundApprovalServiceTest {
     @Test
     @DisplayName("createRefundApproval should keep failed status when failure audit throws")
     void createRefundApproval_workflowStartFailedAndAuditFailed_keepsFailedStatus() {
-        PaymentOrderVO paymentOrder = paymentOrder();
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        PaymentOrderProjection paymentOrder = paymentOrder();
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(0L);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(0L);
         when(workflowProcessApi.start(any()))
                 .thenReturn(R.fail(PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "工作流不可用"));
         doThrow(new IllegalStateException("审计不可用"))
                 .when(auditService)
-                .record(
+                .record(new PaymentOperationAuditService.AuditEntry(
                         PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
                         PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                         "RA2026060600000001",
-                        PaymentOperationAuditService.RESULT_REJECTED);
+                        PaymentOperationAuditService.RESULT_REJECTED));
         ArgumentCaptor<UpdateWrapper<PaymentRefundApprovalEntity>> updateCaptor = ArgumentCaptor.forClass(UpdateWrapper.class);
 
         assertThatThrownBy(() -> service.createRefundApproval(createCommand()))
@@ -260,18 +265,18 @@ class PaymentRefundApprovalServiceTest {
     @Test
     @DisplayName("createRefundApproval should accept workflow synchronous completion before start returns")
     void createRefundApproval_workflowCompletedSynchronously_returnsFinalApproval() {
-        PaymentOrderVO paymentOrder = paymentOrder();
+        PaymentOrderProjection paymentOrder = paymentOrder();
         PaymentRefundApprovalEntity approved = approvalEntity(PaymentRefundApprovalStatusEnum.APPROVED.getCode());
         approved.setApprovalNo("RA2026060600000001");
         approved.setRefundOrderId(380001L);
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(0L);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(0L);
         when(workflowProcessApi.start(any())).thenReturn(R.ok(workflowProcess()));
         when(refundApprovalMapper.update(eq(null), any(UpdateWrapper.class))).thenReturn(0);
-        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate(1L, "RA2026060600000001")).thenReturn(approved);
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(approvalDetail("APPROVED"));
+        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate("1", "RA2026060600000001")).thenReturn(approved);
+        when(refundApprovalMapper.selectRefundApprovalDetail("1", 390001L)).thenReturn(approvalDetail("APPROVED"));
         when(refundApprovalMapper.insert(any(PaymentRefundApprovalEntity.class))).thenAnswer(invocation -> {
             PaymentRefundApprovalEntity entity = invocation.getArgument(0);
             entity.setId(390001L);
@@ -284,28 +289,28 @@ class PaymentRefundApprovalServiceTest {
         assertThat(approved.getWorkflowProcessInstanceId()).isEqualTo("PROC-1");
         assertThat(approved.getWorkflowApplyId()).isEqualTo(390001L);
         verify(refundApprovalMapper).updateById(approved);
-        verify(auditService).record(
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                 "RA2026060600000001",
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
     }
 
     @Test
     @DisplayName("createRefundApproval should reuse workflow start failed approval for same biz refund number")
     void createRefundApproval_retryWorkflowStartFailedApproval_reusesExistingApproval() {
-        PaymentOrderVO paymentOrder = paymentOrder();
+        PaymentOrderProjection paymentOrder = paymentOrder();
         PaymentRefundApprovalEntity failed = approvalEntity(PaymentRefundApprovalStatusEnum.WORKFLOW_START_FAILED.getCode());
         failed.setApprovalNo("RA2026060600000001");
         failed.setReviewReason("工作流不可用");
         failed.setReviewTime(LocalDateTime.of(2026, 6, 7, 10, 5));
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
+        when(paymentOrderMapper.selectPaymentOrderById("1", 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundApprovalMapper.selectEntityByBizRefundNoForUpdate(1L, "app_openapi", "MANUAL-REFUND-001")).thenReturn(failed);
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
-        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.selectEntityByBizRefundNoForUpdate("1", "app_openapi", "MANUAL-REFUND-001")).thenReturn(failed);
+        when(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).thenReturn(0L);
+        when(refundApprovalMapper.sumPendingApprovalAmount("1", 370001L)).thenReturn(0L);
         when(workflowProcessApi.start(any())).thenReturn(R.ok(workflowProcess()));
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(approvalDetail("IN_APPROVAL"));
+        when(refundApprovalMapper.selectRefundApprovalDetail("1", 390001L)).thenReturn(approvalDetail("IN_APPROVAL"));
 
         PaymentRefundApprovalVO result = service.createRefundApproval(createCommand());
 
@@ -325,32 +330,33 @@ class PaymentRefundApprovalServiceTest {
                 null, "1", "workflow", "INTERNAL", "SYSTEM", "SYSTEM", null, "internal-admin"));
         PaymentRefundApprovalEntity entity = approvalEntity("IN_APPROVAL");
         entity.setApplicantId(1001L);
-        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate(1L, "RFA202606070001")).thenReturn(entity);
+        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate("1", "RFA202606070001")).thenReturn(entity);
         when(applicationMapper.selectOne(any())).thenReturn(application());
         PaymentOpenRefundOrderVO refundOrder = new PaymentOpenRefundOrderVO();
         refundOrder.setId(380001L);
         refundOrder.setRefundOrderNo("RO202606070001");
-        when(refundApplyService.applyRefund(any(), any(), eq(PaymentOrderStatusFlowService.SOURCE_MANUAL_REFUND_APPROVAL), eq("RFA202606070001"), eq(true)))
+        when(refundApplyService.applyRefund(any(), any(), eq(PaymentOrderStatusFlowRecorder.SOURCE_MANUAL_REFUND_APPROVAL), eq("RFA202606070001"), eq(true)))
                 .thenReturn(refundOrder);
         ArgumentCaptor<CreatePaymentOpenRefundCommand> refundCommandCaptor = ArgumentCaptor.forClass(CreatePaymentOpenRefundCommand.class);
 
-        service.approveByWorkflow(1L, "RFA202606070001", "PROC-1");
+        service.approveByWorkflow(
+                new PaymentRefundApprovalWorkflowContext("1", "RFA202606070001", "PROC-1", null));
 
         verify(refundApplyService).applyRefund(
                 any(),
                 refundCommandCaptor.capture(),
-                eq(PaymentOrderStatusFlowService.SOURCE_MANUAL_REFUND_APPROVAL),
+                eq(PaymentOrderStatusFlowRecorder.SOURCE_MANUAL_REFUND_APPROVAL),
                 eq("RFA202606070001"),
                 eq(true));
         assertThat(refundCommandCaptor.getValue().getBizRefundNo()).isEqualTo("MANUAL-REFUND-001");
         assertThat(entity.getRefundOrderId()).isEqualTo(380001L);
         assertThat(entity.getStatus()).isEqualTo("APPROVED");
         verify(refundApprovalMapper, times(2)).updateById(entity);
-        verify(auditService).record(
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_APPROVE_REFUND_APPROVAL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                 "RFA202606070001",
-                PaymentOperationAuditService.RESULT_SUCCESS);
+                PaymentOperationAuditService.RESULT_SUCCESS));
     }
 
     @Test
@@ -360,19 +366,20 @@ class PaymentRefundApprovalServiceTest {
                 null, "1", "workflow", "INTERNAL", "SYSTEM", "SYSTEM", null, "internal-admin"));
         PaymentRefundApprovalEntity entity = approvalEntity("IN_APPROVAL");
         entity.setApplicantId(1001L);
-        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate(1L, "RFA202606070001")).thenReturn(entity);
+        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate("1", "RFA202606070001")).thenReturn(entity);
 
-        service.rejectByWorkflow(1L, "RFA202606070001", "PROC-1", "资料不完整");
+        service.rejectByWorkflow(
+                new PaymentRefundApprovalWorkflowContext("1", "RFA202606070001", "PROC-1", "资料不完整"));
 
         assertThat(entity.getStatus()).isEqualTo("REJECTED");
         assertThat(entity.getReviewerName()).isEqualTo("workflow");
         assertThat(entity.getReviewReason()).isEqualTo("资料不完整");
         verify(refundApprovalMapper).updateById(entity);
-        verify(auditService).record(
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
                 PaymentOperationAuditService.ACTION_REJECT_REFUND_APPROVAL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
                 "RFA202606070001",
-                PaymentOperationAuditService.RESULT_REJECTED);
+                PaymentOperationAuditService.RESULT_REJECTED));
     }
 
     private CreatePaymentRefundApprovalCommand createCommand() {
@@ -385,17 +392,17 @@ class PaymentRefundApprovalServiceTest {
         return command;
     }
 
-    private PaymentApplication application() {
-        PaymentApplication application = new PaymentApplication();
+    private PaymentApplicationEntity application() {
+        PaymentApplicationEntity application = new PaymentApplicationEntity();
         application.setId(310001L);
-        application.setTenantId(1L);
+        application.setTenantId("1");
         application.setAppId("app_openapi");
         application.setStatus(1);
         return application;
     }
 
-    private PaymentOrderVO paymentOrder() {
-        PaymentOrderVO vo = new PaymentOrderVO();
+    private PaymentOrderProjection paymentOrder() {
+        PaymentOrderProjection vo = new PaymentOrderProjection();
         vo.setId(370001L);
         vo.setBusinessOrderId(360001L);
         vo.setPayOrderNo("PO202606070001");
@@ -427,13 +434,13 @@ class PaymentRefundApprovalServiceTest {
         entity.setRefundAmount(3000L);
         entity.setReason("后台受控退款");
         entity.setStatus(status);
-        entity.setTenantId(1L);
+        entity.setTenantId("1");
         entity.setApplyTime(LocalDateTime.of(2026, 6, 7, 10, 0));
         return entity;
     }
 
-    private PaymentRefundApprovalVO approvalDetail(String status) {
-        PaymentRefundApprovalVO vo = new PaymentRefundApprovalVO();
+    private PaymentRefundApprovalProjection approvalDetail(String status) {
+        PaymentRefundApprovalProjection vo = new PaymentRefundApprovalProjection();
         vo.setId(390001L);
         vo.setApprovalNo("RFA202606070001");
         vo.setStatus(status);

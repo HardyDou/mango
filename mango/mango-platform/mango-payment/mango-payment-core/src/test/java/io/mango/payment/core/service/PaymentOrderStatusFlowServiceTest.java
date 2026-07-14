@@ -18,15 +18,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-class PaymentOrderStatusFlowServiceTest {
+class PaymentOrderStatusFlowRecorderTest {
 
     private PaymentOrderStatusFlowMapper statusFlowMapper;
-    private PaymentOrderStatusFlowService service;
+    private PaymentOrderStatusFlowRecorder service;
 
     @BeforeEach
     void setUp() {
         statusFlowMapper = mock(PaymentOrderStatusFlowMapper.class);
-        service = new PaymentOrderStatusFlowService(statusFlowMapper);
+        service = new PaymentOrderStatusFlowRecorder(statusFlowMapper);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -43,29 +43,29 @@ class PaymentOrderStatusFlowServiceTest {
         ArgumentCaptor<PaymentOrderStatusFlowEntity> captor = ArgumentCaptor.forClass(PaymentOrderStatusFlowEntity.class);
 
         service.record(
-                1L,
-                PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT,
+                "1",
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT,
                 370001L,
                 "PO202606060001",
                 "PAYING",
                 "SUCCESS",
-                PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK,
+                PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK,
                 "CH202606060001",
                 happenTime,
                 "通道回调成功");
 
         verify(statusFlowMapper).insert(captor.capture());
         PaymentOrderStatusFlowEntity entity = captor.getValue();
-        assertThat(entity.getOrderType()).isEqualTo(PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT);
+        assertThat(entity.getOrderType()).isEqualTo(PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT);
         assertThat(entity.getOrderNo()).isEqualTo("PO202606060001");
         assertThat(entity.getFromStatus()).isEqualTo("PAYING");
         assertThat(entity.getToStatus()).isEqualTo("SUCCESS");
-        assertThat(entity.getTriggerSource()).isEqualTo(PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK);
+        assertThat(entity.getTriggerSource()).isEqualTo(PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK);
         assertThat(entity.getTriggerNo()).isEqualTo("CH202606060001");
         assertThat(entity.getOperatorId()).isEqualTo(1001L);
         assertThat(entity.getOperatorName()).isEqualTo("admin");
         assertThat(entity.getHappenTime()).isEqualTo(happenTime);
-        assertThat(entity.getTenantId()).isEqualTo(1L);
+        assertThat(entity.getTenantId()).isEqualTo("1");
         assertThat(entity.getDelFlag()).isZero();
     }
 
@@ -73,13 +73,13 @@ class PaymentOrderStatusFlowServiceTest {
     @DisplayName("record should reject missing target status")
     void record_missingTargetStatus_rejects() {
         assertThatThrownBy(() -> service.record(
-                1L,
-                PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT,
+                "1",
+                PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT,
                 370001L,
                 "PO202606060001",
                 "PAYING",
                 "",
-                PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK,
+                PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK,
                 "CH202606060001",
                 LocalDateTime.now(),
                 "通道回调成功"))

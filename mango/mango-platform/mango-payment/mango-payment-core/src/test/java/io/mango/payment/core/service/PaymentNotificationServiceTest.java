@@ -1,5 +1,8 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+import io.mango.payment.core.service.impl.PaymentObservabilityService;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
@@ -10,13 +13,13 @@ import io.mango.notice.api.event.NoticeSendEvent;
 import io.mango.payment.api.vo.PaymentOpenNotificationVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
 import io.mango.payment.core.entity.PaymentNotificationRecordEntity;
-import io.mango.payment.core.entity.PaymentMangoPayScenarioControl;
+import io.mango.payment.core.entity.PaymentMangoPayScenarioControlEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentNotificationRecordMapper;
-import io.mango.payment.core.service.PaymentSensitiveValueService;
+import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,19 +46,20 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 
-class PaymentNotificationServiceTest {
+class PaymentNotificationDispatcherTest {
 
     private final PaymentNotificationRecordMapper notificationRecordMapper = mock(PaymentNotificationRecordMapper.class);
     private final PaymentApplicationMapper applicationMapper = mock(PaymentApplicationMapper.class);
     private final PaymentMangoPayScenarioControlService scenarioControlService = mock(PaymentMangoPayScenarioControlService.class);
-    private final PaymentSensitiveValueService sensitiveValueService = mock(PaymentSensitiveValueService.class);
+    private final PaymentSensitiveValueCodec sensitiveValueService = mock(PaymentSensitiveValueCodec.class);
     private final PaymentObservabilityService observabilityService = mock(PaymentObservabilityService.class);
-    private final PaymentNumberService numberService = mock(PaymentNumberService.class);
+    private final PaymentNumberGenerator numberService = mock(PaymentNumberGenerator.class);
     private final List<Object> publishedEvents = new ArrayList<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final PaymentNotificationService service = new PaymentNotificationService(
+    private final PaymentNotificationDispatcher service = new PaymentNotificationDispatcher(
             notificationRecordMapper,
             applicationMapper,
             objectMapper,
@@ -70,7 +74,7 @@ class PaymentNotificationServiceTest {
     @BeforeEach
     void setUp() {
         when(sensitiveValueService.decrypt("enc:openapi-secret-ciphertext")).thenReturn("openapi-secret");
-        when(numberService.next(PaymentNumberService.PAY_NOTIFY_NO))
+        when(numberService.next(PaymentNumberGenerator.PAY_NOTIFY_NO))
                 .thenReturn("NT2026060600000001", "NT2026060600000002", "NT2026060600000003");
     }
 
@@ -115,14 +119,14 @@ class PaymentNotificationServiceTest {
             assertThat(payload.path("notificationType").asText()).isEqualTo("PAYMENT_SUCCESS");
             assertThat(payload.path("bizOrderNo").asText()).isEqualTo("BIZ_OPENAPI_001");
             assertThat(payload.path("signature").asText()).isNotBlank();
-            verify(observabilityService).logSummary(
-                    eq("BUSINESS_NOTIFICATION"),
-                    eq("PO202606060001"),
-                    eq("SUCCESS"),
-                    eq(8800L),
-                    eq("MANGO_PAY"),
-                    any(Long.class),
-                    eq("SUCCESS"));
+            verify(observabilityService).logSummary(argThat(summary ->
+                    "BUSINESS_NOTIFICATION".equals(summary.event())
+                            && "PO202606060001".equals(summary.orderNo())
+                            && "SUCCESS".equals(summary.status())
+                            && Long.valueOf(8800L).equals(summary.amount())
+                            && "MANGO_PAY".equals(summary.channelCode())
+                            && summary.durationMillis() >= 0
+                            && "SUCCESS".equals(summary.result())));
         } finally {
             server.stop();
         }
@@ -138,7 +142,7 @@ class PaymentNotificationServiceTest {
             PaymentOpenNotificationVO payload = new PaymentOpenNotificationVO();
             payload.setNotifyNo("NT202606060001");
             payload.setNotificationType("PAYMENT_SUCCESS");
-            payload.setTenantId(1L);
+            payload.setTenantId("1");
             payload.setAppId("app_openapi");
             payload.setBizOrderNo("BIZ_OPENAPI_001");
             payload.setPayOrderNo("PO202606060001");
@@ -147,7 +151,7 @@ class PaymentNotificationServiceTest {
 
             PaymentNotificationRecordEntity due = new PaymentNotificationRecordEntity();
             due.setId(410001L);
-            due.setTenantId(1L);
+            due.setTenantId("1");
             due.setNotificationNo(payload.getNotifyNo());
             due.setRelatedOrderNo(payload.getPayOrderNo());
             due.setNotificationType(payload.getNotificationType());
@@ -156,9 +160,9 @@ class PaymentNotificationServiceTest {
             due.setRetryTimes(0);
             due.setNextRetryTime(LocalDateTime.now().minusMinutes(1));
             due.setPayloadJson(objectMapper.writeValueAsString(payload));
-            when(notificationRecordMapper.selectDueNotificationRecords(eq(1L), any(LocalDateTime.class), eq(20L)))
+            when(notificationRecordMapper.selectDueNotificationRecords(eq("1"), any(LocalDateTime.class), eq(20L)))
                     .thenReturn(List.of(due));
-            when(notificationRecordMapper.claimDueNotificationRecord(eq(1L), eq(410001L), any(LocalDateTime.class), eq(1001L)))
+            when(notificationRecordMapper.claimDueNotificationRecord(eq("1"), eq(410001L), any(LocalDateTime.class), eq(1001L)))
                     .thenReturn(1);
             List<PaymentNotificationRecordEntity> updatedRecords = captureDeliveryResults();
 
@@ -185,11 +189,11 @@ class PaymentNotificationServiceTest {
         try {
             PaymentOpenNotificationVO payload = duePayload("NT202606060002", "PO202606060002");
             PaymentNotificationRecordEntity due = dueRecord(410002L, payload, server.url(), 0);
-            PaymentApplication application = application();
+            PaymentApplicationEntity application = application();
             application.setStatus(1);
-            when(notificationRecordMapper.selectDueNotificationRecords(eq(1L), any(LocalDateTime.class), eq(20L)))
+            when(notificationRecordMapper.selectDueNotificationRecords(eq("1"), any(LocalDateTime.class), eq(20L)))
                     .thenReturn(List.of(due));
-            when(notificationRecordMapper.claimDueNotificationRecord(eq(1L), eq(410002L), any(LocalDateTime.class), eq(1001L)))
+            when(notificationRecordMapper.claimDueNotificationRecord(eq("1"), eq(410002L), any(LocalDateTime.class), eq(1001L)))
                     .thenReturn(1);
             when(applicationMapper.selectOne(any())).thenReturn(application);
             List<PaymentNotificationRecordEntity> updatedRecords = captureDeliveryResults();
@@ -216,11 +220,11 @@ class PaymentNotificationServiceTest {
         try {
             PaymentOpenNotificationVO payload = duePayload("NT202606060003", "PO202606060003");
             PaymentNotificationRecordEntity due = dueRecord(410003L, payload, server.url(), 2);
-            PaymentApplication application = application();
+            PaymentApplicationEntity application = application();
             application.setStatus(1);
-            when(notificationRecordMapper.selectDueNotificationRecords(eq(1L), any(LocalDateTime.class), eq(20L)))
+            when(notificationRecordMapper.selectDueNotificationRecords(eq("1"), any(LocalDateTime.class), eq(20L)))
                     .thenReturn(List.of(due));
-            when(notificationRecordMapper.claimDueNotificationRecord(eq(1L), eq(410003L), any(LocalDateTime.class), eq(1001L)))
+            when(notificationRecordMapper.claimDueNotificationRecord(eq("1"), eq(410003L), any(LocalDateTime.class), eq(1001L)))
                     .thenReturn(1);
             when(applicationMapper.selectOne(any())).thenReturn(application);
             List<PaymentNotificationRecordEntity> updatedRecords = captureDeliveryResults();
@@ -269,7 +273,7 @@ class PaymentNotificationServiceTest {
     void createAndDeliverPayment_callbackDelay_persistsPendingRecordWithoutHttpPost() throws Exception {
         CapturedServer server = startServer(200, "SUCCESS");
         List<PaymentNotificationRecordEntity> insertedRecords = captureInsertedRecords();
-        PaymentMangoPayScenarioControl scenario = new PaymentMangoPayScenarioControl();
+        PaymentMangoPayScenarioControlEntity scenario = new PaymentMangoPayScenarioControlEntity();
         scenario.setCallbackDelayMinutes(10);
         when(scenarioControlService.consumeCallbackDelayScenario(331001L)).thenReturn(scenario);
         try {
@@ -431,7 +435,7 @@ class PaymentNotificationServiceTest {
         List<PaymentNotificationRecordEntity> records = new ArrayList<>();
         doAnswer(invocation -> {
             PaymentNotificationRecordEntity snapshot = new PaymentNotificationRecordEntity();
-            snapshot.setTenantId(invocation.getArgument(0, Long.class));
+            snapshot.setTenantId(invocation.getArgument(0, String.class));
             snapshot.setId(invocation.getArgument(1, Long.class));
             snapshot.setNotifyStatus(invocation.getArgument(2, String.class));
             snapshot.setResponseCode(invocation.getArgument(3, String.class));
@@ -452,9 +456,9 @@ class PaymentNotificationServiceTest {
         return records;
     }
 
-    private PaymentApplication application() {
-        PaymentApplication application = new PaymentApplication();
-        application.setTenantId(1L);
+    private PaymentApplicationEntity application() {
+        PaymentApplicationEntity application = new PaymentApplicationEntity();
+        application.setTenantId("1");
         application.setAppId("app_openapi");
         application.setAppSecret("enc:openapi-secret-ciphertext");
         application.setNotifyRetryPolicy("1m,5m,15m");
@@ -464,7 +468,7 @@ class PaymentNotificationServiceTest {
     private PaymentBusinessOrderEntity businessOrder(String notifyUrl) {
         PaymentBusinessOrderEntity order = new PaymentBusinessOrderEntity();
         order.setId(360001L);
-        order.setTenantId(1L);
+        order.setTenantId("1");
         order.setAppCode("app_openapi");
         order.setBizOrderNo("BIZ_OPENAPI_001");
         order.setNotifyUrl(notifyUrl);
@@ -510,7 +514,7 @@ class PaymentNotificationServiceTest {
         PaymentOpenNotificationVO payload = new PaymentOpenNotificationVO();
         payload.setNotifyNo(notificationNo);
         payload.setNotificationType("PAYMENT_SUCCESS");
-        payload.setTenantId(1L);
+        payload.setTenantId("1");
         payload.setAppId("app_openapi");
         payload.setBizOrderNo("BIZ_OPENAPI_001");
         payload.setPayOrderNo(payOrderNo);
@@ -522,7 +526,7 @@ class PaymentNotificationServiceTest {
     private PaymentNotificationRecordEntity dueRecord(Long id, PaymentOpenNotificationVO payload, String targetUrl, int retryTimes) throws IOException {
         PaymentNotificationRecordEntity due = new PaymentNotificationRecordEntity();
         due.setId(id);
-        due.setTenantId(1L);
+        due.setTenantId("1");
         due.setNotificationNo(payload.getNotifyNo());
         due.setRelatedOrderNo(payload.getPayOrderNo());
         due.setNotificationType(payload.getNotificationType());

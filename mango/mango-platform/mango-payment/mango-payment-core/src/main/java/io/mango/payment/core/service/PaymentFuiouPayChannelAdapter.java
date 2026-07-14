@@ -1,8 +1,10 @@
 package io.mango.payment.core.service;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+
 import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.enums.PaymentChannelCode;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
@@ -10,7 +12,7 @@ import io.mango.payment.api.vo.PaymentCashierPayMaterialVO;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
-import io.mango.payment.core.entity.PaymentMethod;
+import io.mango.payment.core.entity.PaymentMethodEntity;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
 import io.mango.payment.core.mapper.PaymentMethodMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
@@ -66,8 +68,8 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     private static final Pattern XML_FIELD_PATTERN = Pattern.compile("<([a-zA-Z0-9_]+)>(.*?)</\\1>", Pattern.DOTALL);
 
     private final PaymentFuiouPayConfigParser configParser;
-    private final PaymentFuiouSignService signService;
-    private final PaymentFuiouGatewaySignService gatewaySignService;
+    private final PaymentFuiouSigner signService;
+    private final PaymentFuiouGatewaySigner gatewaySignService;
     private final PaymentFuiouHttpClient httpClient;
     private final PaymentChannelContractMapper channelContractMapper;
     private final PaymentMethodMapper methodMapper;
@@ -81,7 +83,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     }
 
     @Override
-    public PaymentApplyResult applyPayment(PaymentApplyCommand command) {
+    public PaymentApplyResult applyPayment(PaymentApplyInput command) {
         validatePaymentCommand(command);
         PaymentFuiouPayConfig config = configParser.parse(command.contractConfigValuesJson());
         if (isPcGatewayMethod(command.methodCode())) {
@@ -92,9 +94,9 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         Map<String, String> request = preCreateRequest(command, config);
         Map<String, String> response = call(config, "/preCreate", request);
         String resultCode = response.get("result_code");
-        Require.isTrue(RESULT_SUCCESS.equals(resultCode), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(),
+        Require.isTrue(RESULT_SUCCESS.equals(resultCode), PaymentCode.PAYMENT_CASHIER_PAY_INVALID,
                 "富友下单失败：" + response.getOrDefault("result_msg", resultCode));
-        Require.notBlank(response.get("qr_code"), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "富友下单未返回二维码");
+        Require.notBlank(response.get("qr_code"), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "富友下单未返回二维码");
         PaymentCashierPayMaterialVO material = new PaymentCashierPayMaterialVO();
         material.setMaterialType(command.paymentMaterialType());
         material.setQrContent(response.get("qr_code"));
@@ -109,16 +111,16 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     }
 
     @Override
-    public RefundApplyResult applyRefund(RefundApplyCommand command) {
+    public RefundApplyResult applyRefund(RefundApplyInput command) {
         validateRefundCommand(command);
-        Require.isTrue(isScanpayMethod(command.methodCode()), PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(),
+        Require.isTrue(isScanpayMethod(command.methodCode()), PaymentCode.PAYMENT_REFUND_ORDER_INVALID,
                 "富友网银退款接口资料未配置，当前仅开放微信扫码和支付宝扫码退款");
         PaymentFuiouPayConfig config = configParser.parse(requiredContractConfig(command.tenantId(), command.contractId()));
         configParser.validateForScanpay(config);
         Map<String, String> request = refundRequest(command, config);
         Map<String, String> response = call(config, "/commonRefund", request);
         String resultCode = response.get("result_code");
-        Require.isTrue(RESULT_SUCCESS.equals(resultCode), PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(),
+        Require.isTrue(RESULT_SUCCESS.equals(resultCode), PaymentCode.PAYMENT_REFUND_ORDER_INVALID,
                 "富友退款申请失败：" + response.getOrDefault("result_msg", resultCode));
         return new RefundApplyResult(
                 "FUIOU_REFUND_APPLIED",
@@ -129,22 +131,22 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     }
 
     @Override
-    public ChannelBillResult generateBill(ChannelBillCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "富友账单命令不能为空");
-        Require.notNull(command.contractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "富友账单缺少签约通道 ID");
-        Require.notNull(command.billDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "富友账单日期不能为空");
+    public ChannelBillResult generateBill(ChannelBillInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "富友账单命令不能为空");
+        Require.notNull(command.contractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "富友账单缺少签约通道 ID");
+        Require.notNull(command.billDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "富友账单日期不能为空");
         PaymentFuiouPayConfig config = configParser.parse(requiredContractConfig(command.tenantId(), command.contractId()));
         LocalDate nextBillDate = command.billDate().plusDays(1);
         List<PaymentChannelBillItemRow> rows = new ArrayList<>();
         appendPaymentBillRows(command, config, nextBillDate, rows);
         appendRefundBillRows(command, config, nextBillDate, rows);
-        Require.notEmpty(rows, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期内没有富友确认成功的支付或退款订单");
+        Require.notEmpty(rows, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单日期内没有富友确认成功的支付或退款订单");
         return new ChannelBillResult(rows);
     }
 
     @Override
-    public PaymentQueryResult queryPayment(PaymentQueryCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode(), "富友支付查单命令不能为空");
+    public PaymentQueryResult queryPayment(PaymentQueryInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_ORDER_STATE_INVALID, "富友支付查单命令不能为空");
         Require.notNull(command.order(), PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         PaymentFuiouPayConfig config = configParser.parse(requiredContractConfig(command.tenantId(), command.order().getContractId()));
         String methodCode = requiredMethodCode(command.tenantId(), command.order().getMethodId());
@@ -158,10 +160,10 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     }
 
     @Override
-    public RefundQueryResult queryRefund(RefundQueryCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "富友退款查单命令不能为空");
+    public RefundQueryResult queryRefund(RefundQueryInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "富友退款查单命令不能为空");
         Require.notNull(command.refundOrder(), PaymentCode.PAYMENT_REFUND_ORDER_NOT_FOUND);
-        Require.isTrue(isScanpayMethod(command.refundOrder().getMethodCode()), PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(),
+        Require.isTrue(isScanpayMethod(command.refundOrder().getMethodCode()), PaymentCode.PAYMENT_REFUND_ORDER_INVALID,
                 "富友网银退款查单接口资料未配置，当前仅开放微信扫码和支付宝扫码退款查单");
         PaymentFuiouPayConfig config = configParser.parse(requiredContractConfig(command.tenantId(), command.refundOrder().getContractId()));
         configParser.validateForScanpay(config);
@@ -170,37 +172,37 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         return new RefundQueryResult("FUIOU_REFUND_QUERY", response.get("result_code"), response.get("trans_stat"), status);
     }
 
-    private void validatePaymentCommand(PaymentApplyCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "富友支付命令不能为空");
-        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友通道编码不正确");
-        Require.notBlank(command.payOrderNo(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
+    private void validatePaymentCommand(PaymentApplyInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "富友支付命令不能为空");
+        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID, "富友通道编码不正确");
+        Require.notBlank(command.payOrderNo(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "支付订单号不能为空");
         Require.isTrue(isScanpayMethod(command.methodCode()) || isPcGatewayMethod(command.methodCode()),
-                PaymentCode.PAYMENT_METHOD_INVALID.getCode(), "当前富友通道仅开放微信扫码、支付宝扫码、个人网银和企业网银能力");
+                PaymentCode.PAYMENT_METHOD_INVALID, "当前富友通道仅开放微信扫码、支付宝扫码、个人网银和企业网银能力");
         Require.isTrue((isScanpayMethod(command.methodCode()) && MATERIAL_QR.equals(command.paymentMaterialType()))
                         || (isPcGatewayMethod(command.methodCode()) && MATERIAL_HTML_FORM.equals(command.paymentMaterialType())),
-                PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "富友支付方式与支付物料不匹配");
-        Require.notNull(command.amount(), PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "支付金额不能为空");
-        Require.isTrue(command.amount() > 0, PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "支付金额必须大于 0");
+                PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "富友支付方式与支付物料不匹配");
+        Require.notNull(command.amount(), PaymentCode.PAYMENT_AMOUNT_INVALID, "支付金额不能为空");
+        Require.isTrue(command.amount() > 0, PaymentCode.PAYMENT_AMOUNT_INVALID, "支付金额必须大于 0");
         if (isScanpayMethod(command.methodCode())) {
-            Require.notBlank(command.clientIp(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "富友支付缺少付款人请求 IP");
+            Require.notBlank(command.clientIp(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "富友支付缺少付款人请求 IP");
         }
         if (isPcGatewayMethod(command.methodCode())) {
-            Require.notBlank(command.payerBankCode(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "富友网银支付缺少银行编码");
+            Require.notBlank(command.payerBankCode(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "富友网银支付缺少银行编码");
         }
     }
 
-    private void validateRefundCommand(RefundApplyCommand command) {
-        Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "富友退款命令不能为空");
-        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友通道编码不正确");
-        Require.notBlank(command.refundOrderNo(), PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "退款订单号不能为空");
-        Require.notBlank(command.payOrderNo(), PaymentCode.PAYMENT_ORDER_NOT_FOUND.getCode(), "原支付订单号不能为空");
-        Require.notNull(command.payAmount(), PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "原支付金额不能为空");
-        Require.notNull(command.amount(), PaymentCode.PAYMENT_AMOUNT_INVALID.getCode(), "退款金额不能为空");
+    private void validateRefundCommand(RefundApplyInput command) {
+        Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "富友退款命令不能为空");
+        Require.isTrue(CHANNEL_CODE.equals(command.channelCode()), PaymentCode.PAYMENT_CHANNEL_INVALID, "富友通道编码不正确");
+        Require.notBlank(command.refundOrderNo(), PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "退款订单号不能为空");
+        Require.notBlank(command.payOrderNo(), PaymentCode.PAYMENT_ORDER_NOT_FOUND, "原支付订单号不能为空");
+        Require.notNull(command.payAmount(), PaymentCode.PAYMENT_AMOUNT_INVALID, "原支付金额不能为空");
+        Require.notNull(command.amount(), PaymentCode.PAYMENT_AMOUNT_INVALID, "退款金额不能为空");
         Require.isTrue(command.amount() > 0 && command.amount() <= command.payAmount(),
-                PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED.getCode(), "退款金额必须大于 0 且不能超过原支付金额");
+                PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED, "退款金额必须大于 0 且不能超过原支付金额");
     }
 
-    Map<String, String> preCreateRequest(PaymentApplyCommand command, PaymentFuiouPayConfig config) {
+    Map<String, String> preCreateRequest(PaymentApplyInput command, PaymentFuiouPayConfig config) {
         Map<String, String> fields = baseFields(config);
         fields.put("version", "1");
         fields.put("order_type", orderType(command.methodCode()));
@@ -221,7 +223,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         return fields;
     }
 
-    private Map<String, String> queryRequest(PaymentQueryCommand command, PaymentFuiouPayConfig config) {
+    private Map<String, String> queryRequest(PaymentQueryInput command, PaymentFuiouPayConfig config) {
         Map<String, String> fields = baseFields(config);
         fields.put("version", "1");
         fields.put("order_type", orderType(requiredMethodCode(command.tenantId(), command.order().getMethodId())));
@@ -230,7 +232,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         return fields;
     }
 
-    private Map<String, String> refundRequest(RefundApplyCommand command, PaymentFuiouPayConfig config) {
+    private Map<String, String> refundRequest(RefundApplyInput command, PaymentFuiouPayConfig config) {
         Map<String, String> fields = baseFields(config);
         fields.put("version", "1.0");
         fields.put("order_type", orderType(command.methodCode()));
@@ -244,7 +246,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     }
 
     private void appendPaymentBillRows(
-            ChannelBillCommand command,
+            ChannelBillInput command,
             PaymentFuiouPayConfig config,
             LocalDate nextBillDate,
             List<PaymentChannelBillItemRow> rows) {
@@ -274,7 +276,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     }
 
     private void appendRefundBillRows(
-            ChannelBillCommand command,
+            ChannelBillInput command,
             PaymentFuiouPayConfig config,
             LocalDate nextBillDate,
             List<PaymentChannelBillItemRow> rows) {
@@ -285,9 +287,10 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
                 command.billDate(),
                 nextBillDate);
         for (PaymentRefundOrderEntity refund : refunds) {
-            PaymentRefundOrderVO refundOrder = refundOrderMapper.selectByTenantAndRefundOrderNo(command.tenantId(), refund.getRefundOrderNo());
+            PaymentRefundOrderVO refundOrder = toApi(refundOrderMapper.selectByTenantAndRefundOrderNo(
+                    command.tenantId(), refund.getRefundOrderNo()), PaymentRefundOrderVO.class);
             Require.notNull(refundOrder, PaymentCode.PAYMENT_REFUND_ORDER_NOT_FOUND);
-            Require.isTrue(isScanpayMethod(refundOrder.getMethodCode()), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(),
+            Require.isTrue(isScanpayMethod(refundOrder.getMethodCode()), PaymentCode.PAYMENT_RECONCILIATION_INVALID,
                     "富友网银退款接口资料未配置，不能生成网银退款账单");
             configParser.validateForScanpay(config);
             Map<String, String> response = call(config, "/refundQuery", refundQueryRequest(refundOrder, config));
@@ -376,7 +379,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
                 valueOrDefault(parseFuiouDate(response.get("reserved_fy_settle_dt")), order.getPayTime()));
     }
 
-    Map<String, String> refundQueryRequest(RefundQueryCommand command, PaymentFuiouPayConfig config) {
+    Map<String, String> refundQueryRequest(RefundQueryInput command, PaymentFuiouPayConfig config) {
         Map<String, String> fields = baseFields(config);
         fields.put("version", "1.0");
         fields.put("refund_order_no", command.refundOrder().getRefundOrderNo());
@@ -400,7 +403,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         if (METHOD_ALIPAY_QR.equals(methodCode)) {
             return ORDER_TYPE_ALIPAY;
         }
-        throw new BizException(PaymentCode.PAYMENT_METHOD_INVALID.getCode(), "当前富友通道仅开放微信扫码和支付宝扫码能力");
+        return Require.fail(PaymentCode.PAYMENT_METHOD_INVALID, "当前富友通道仅开放微信扫码和支付宝扫码能力");
     }
 
     private boolean isScanpayMethod(String methodCode) {
@@ -414,11 +417,11 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     private Map<String, String> call(PaymentFuiouPayConfig config, String path, Map<String, String> request) {
         Map<String, String> response = httpClient.post(config.scanpayGatewayBaseUrl() + path, request);
         Require.isTrue(signService.verify(response, config.fuiouPublicKey()),
-                PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友响应验签失败");
+                PaymentCode.PAYMENT_CHANNEL_INVALID, "富友响应验签失败");
         return response;
     }
 
-    private PaymentApplyResult applyPcGatewayPayment(PaymentApplyCommand command, PaymentFuiouPayConfig config) {
+    private PaymentApplyResult applyPcGatewayPayment(PaymentApplyInput command, PaymentFuiouPayConfig config) {
         Map<String, String> fields = pcGatewayPayRequest(command, config);
         PaymentCashierPayMaterialVO material = new PaymentCashierPayMaterialVO();
         material.setMaterialType(command.paymentMaterialType());
@@ -433,7 +436,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
                 material);
     }
 
-    Map<String, String> pcGatewayPayRequest(PaymentApplyCommand command, PaymentFuiouPayConfig config) {
+    Map<String, String> pcGatewayPayRequest(PaymentApplyInput command, PaymentFuiouPayConfig config) {
         Map<String, String> fields = new LinkedHashMap<>();
         fields.put("mchnt_cd", config.gatewayMerchantNo());
         fields.put("order_id", command.payOrderNo());
@@ -451,7 +454,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         return fields;
     }
 
-    private PaymentQueryResult queryPcGatewayPayment(PaymentQueryCommand command, PaymentFuiouPayConfig config) {
+    private PaymentQueryResult queryPcGatewayPayment(PaymentQueryInput command, PaymentFuiouPayConfig config) {
         Map<String, String> response = queryPcGatewayPaymentResponse(command.order(), config);
         return mapPcGatewayPaymentQuery(response);
     }
@@ -466,7 +469,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         String plain = plainXml(body);
         String md5 = PaymentContextSupport.trimToNull(response.get("md5"));
         Require.isTrue(md5 != null && md5.equalsIgnoreCase(gatewaySignService.signPlain(plain, config.gatewayMerchantKey())),
-                PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友网关查单响应验签失败");
+                PaymentCode.PAYMENT_CHANNEL_INVALID, "富友网关查单响应验签失败");
         return response;
     }
 
@@ -490,21 +493,21 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
     }
 
     private Map<String, String> parsePcGatewayQueryResponse(String body) {
-        Require.notBlank(body, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友网关查单响应为空");
+        Require.notBlank(body, PaymentCode.PAYMENT_CHANNEL_INVALID, "富友网关查单响应为空");
         Map<String, String> fields = new LinkedHashMap<>();
         Matcher matcher = XML_FIELD_PATTERN.matcher(body);
         while (matcher.find()) {
             fields.put(matcher.group(1), matcher.group(2));
         }
-        Require.notBlank(fields.get("order_id"), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友网关查单响应缺少订单号");
-        Require.notBlank(fields.get("md5"), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友网关查单响应缺少签名");
+        Require.notBlank(fields.get("order_id"), PaymentCode.PAYMENT_CHANNEL_INVALID, "富友网关查单响应缺少订单号");
+        Require.notBlank(fields.get("md5"), PaymentCode.PAYMENT_CHANNEL_INVALID, "富友网关查单响应缺少签名");
         return fields;
     }
 
     private String plainXml(String body) {
         int start = body.indexOf("<plain>");
         int end = body.indexOf("</plain>");
-        Require.isTrue(start >= 0 && end > start, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友网关查单响应缺少 plain 报文");
+        Require.isTrue(start >= 0 && end > start, PaymentCode.PAYMENT_CHANNEL_INVALID, "富友网关查单响应缺少 plain 报文");
         return body.substring(start + "<plain>".length(), end);
     }
 
@@ -527,7 +530,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         if (METHOD_CORPORATE_EBANK.equals(methodCode)) {
             return PC_GATEWAY_ORDER_PAY_TYPE_B2B;
         }
-        throw new BizException(PaymentCode.PAYMENT_METHOD_INVALID.getCode(), "当前富友网关仅开放个人网银和企业网银能力");
+        return Require.fail(PaymentCode.PAYMENT_METHOD_INVALID, "当前富友网关仅开放个人网银和企业网银能力");
     }
 
     private String pcGatewayExpire(LocalDateTime expireTime) {
@@ -565,22 +568,23 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         return new PaymentQueryResult("FUIOU_PAYMENT_QUERY", resultCode, transStat, PaymentOrderStatusEnum.FAILED.getCode());
     }
 
-    private String requiredContractConfig(Long tenantId, Long contractId) {
-        Require.notNull(tenantId, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "富友租户 ID 不能为空");
-        Require.notNull(contractId, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "富友签约 ID 不能为空");
+    private String requiredContractConfig(String tenantId, Long contractId) {
+        Require.notNull(tenantId, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "富友租户 ID 不能为空");
+        Require.notNull(contractId, PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID, "富友签约 ID 不能为空");
         String configValuesJson = channelContractMapper.selectActiveConfigValuesJson(tenantId, contractId);
-        Require.notBlank(configValuesJson, PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND.getCode(), "富友签约配置不存在或未启用");
+        Require.notBlank(configValuesJson, PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND, "富友签约配置不存在或未启用");
         return configValuesJson;
     }
 
-    private String requiredMethodCode(Long tenantId, Long methodId) {
-        Require.notNull(tenantId, PaymentCode.PAYMENT_METHOD_INVALID.getCode(), "富友查单缺少租户 ID");
-        Require.notNull(methodId, PaymentCode.PAYMENT_METHOD_INVALID.getCode(), "富友查单缺少支付方式 ID");
-        PaymentMethod method = methodMapper.selectById(methodId);
-        Require.isTrue(method != null
-                        && tenantId.equals(method.getTenantId())
-                        && Integer.valueOf(0).equals(method.getDelFlag()),
-                PaymentCode.PAYMENT_METHOD_NOT_FOUND.getCode(), "原支付方式不存在");
+    private String requiredMethodCode(String tenantId, Long methodId) {
+        Require.notNull(tenantId, PaymentCode.PAYMENT_METHOD_INVALID, "富友查单缺少租户 ID");
+        Require.notNull(methodId, PaymentCode.PAYMENT_METHOD_INVALID, "富友查单缺少支付方式 ID");
+        PaymentMethodEntity method = methodMapper.selectById(methodId);
+        if (method == null
+                || !tenantId.equals(method.getTenantId())
+                || !Integer.valueOf(0).equals(method.getDelFlag())) {
+            return Require.fail(PaymentCode.PAYMENT_METHOD_NOT_FOUND, "原支付方式不存在");
+        }
         return method.getMethodCode();
     }
 
@@ -644,7 +648,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         try {
             return Long.valueOf(normalized);
         } catch (NumberFormatException ex) {
-            throw new BizException(PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "富友账单金额格式不正确", ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "富友账单金额格式不正确", ex);
         }
     }
 
@@ -660,7 +664,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         try {
             return LocalDateTime.parse(normalized, TIME_FORMATTER);
         } catch (DateTimeParseException ex) {
-            throw new BizException(PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "富友交易时间格式不正确", ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "富友交易时间格式不正确", ex);
         }
     }
 
@@ -672,7 +676,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         try {
             return LocalDate.parse(normalized, DateTimeFormatter.BASIC_ISO_DATE).atStartOfDay();
         } catch (DateTimeParseException ex) {
-            throw new BizException(PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "富友清算日期格式不正确", ex);
+            return Require.fail(PaymentCode.PAYMENT_RECONCILIATION_INVALID, "富友清算日期格式不正确", ex);
         }
     }
 

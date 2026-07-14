@@ -6,12 +6,11 @@ import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.CreatePaymentApplicationCommand;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
-import io.mango.payment.core.service.PaymentOperationAuditService;
-import io.mango.payment.core.service.PaymentSensitiveValueService;
+import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        PaymentApplicationServiceImplIntegrationTest.TestConfig.class
+        PaymentApplicationServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:payment_application_service;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -50,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "mybatis-plus.mapper-locations=classpath:/mapper/payment/*.xml",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-class PaymentApplicationServiceImplIntegrationTest {
+class PaymentApplicationServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -59,13 +58,13 @@ class PaymentApplicationServiceImplIntegrationTest {
     private PaymentApplicationMapper applicationMapper;
 
     @Autowired
-    private PaymentApplicationServiceImpl service;
+    private PaymentApplicationService service;
 
     @Autowired
     private TestPaymentOperationAuditService auditService;
 
     @Autowired
-    private TestPaymentSensitiveValueService sensitiveValueService;
+    private TestPaymentSensitiveValueCodec sensitiveValueService;
 
     @BeforeEach
     void setUp() {
@@ -85,12 +84,12 @@ class PaymentApplicationServiceImplIntegrationTest {
     void createApplicationEncryptsStoredSecretAndReturnsPlaintextOnlyOnceThroughRealMapper() {
         CreatePaymentApplicationCommand command = createCommand();
 
-        String plaintextSecret = service.createApplication(command).getData().getAppSecret();
+        String plaintextSecret = service.createApplication(command).getAppSecret();
 
         assertThat(plaintextSecret).isNotBlank();
-        PaymentApplication persisted = singleApplication();
+        PaymentApplicationEntity persisted = singleApplication();
         assertThat(persisted.getId()).isNotNull();
-        assertThat(persisted.getTenantId()).isEqualTo(1L);
+        assertThat(persisted.getTenantId()).isEqualTo("1");
         assertThat(persisted.getAppId()).startsWith("app_");
         assertThat(persisted.getAppName()).isEqualTo("开放接口应用");
         assertThat(persisted.getPayloadEncryptEnabled()).isEqualTo(1);
@@ -106,7 +105,7 @@ class PaymentApplicationServiceImplIntegrationTest {
     @Test
     void deleteApplicationRejectsWhenRelatedCashierConfigExistsThroughRealMapperSql() {
         insertApplication(310001L, "app_order_center");
-        insertCashierConfig(350001L, 310001L, 1L, 0);
+        insertCashierConfig(350001L, 310001L, "1", 0);
 
         assertThatThrownBy(() -> service.deleteApplication(310001L))
                 .isInstanceOf(BizException.class)
@@ -120,7 +119,7 @@ class PaymentApplicationServiceImplIntegrationTest {
     @Test
     void deleteApplicationLogicalDeletesWhenNoRelationsThroughRealMapperSql() {
         insertApplication(310001L, "app_order_center");
-        insertCashierConfig(350001L, 310001L, 1L, 1);
+        insertCashierConfig(350001L, 310001L, "1", 1);
 
         service.deleteApplication(310001L);
 
@@ -172,7 +171,8 @@ class PaymentApplicationServiceImplIntegrationTest {
                     notify_retry_policy varchar(512),
                     demo_app int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -187,7 +187,8 @@ class PaymentApplicationServiceImplIntegrationTest {
                 create table payment_cashier_config (
                     id bigint primary key,
                     application_id bigint,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -196,7 +197,8 @@ class PaymentApplicationServiceImplIntegrationTest {
                     id bigint primary key,
                     app_code varchar(128),
                     biz_order_no varchar(128),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -205,7 +207,8 @@ class PaymentApplicationServiceImplIntegrationTest {
                     id bigint primary key,
                     business_order_id bigint,
                     pay_order_no varchar(128),
-                    tenant_id bigint
+                    tenant_id varchar(64),
+                    org_id bigint
                 )
                 """);
         jdbcTemplate.execute("""
@@ -213,7 +216,8 @@ class PaymentApplicationServiceImplIntegrationTest {
                     id bigint primary key,
                     payment_order_id bigint,
                     refund_order_no varchar(128),
-                    tenant_id bigint
+                    tenant_id varchar(64),
+                    org_id bigint
                 )
                 """);
         jdbcTemplate.execute("""
@@ -222,14 +226,16 @@ class PaymentApplicationServiceImplIntegrationTest {
                     business_order_id bigint,
                     payment_order_id bigint,
                     refund_order_id bigint,
-                    tenant_id bigint
+                    tenant_id varchar(64),
+                    org_id bigint
                 )
                 """);
         jdbcTemplate.execute("""
                 create table payment_exception_order (
                     id bigint primary key,
                     related_order_no varchar(128),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -238,7 +244,8 @@ class PaymentApplicationServiceImplIntegrationTest {
                     id bigint primary key,
                     notification_no varchar(128),
                     related_order_no varchar(128),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -246,7 +253,8 @@ class PaymentApplicationServiceImplIntegrationTest {
                 create table payment_difference (
                     id bigint primary key,
                     related_order_no varchar(128),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -262,7 +270,7 @@ class PaymentApplicationServiceImplIntegrationTest {
                 id, appId);
     }
 
-    private void insertCashierConfig(Long id, Long applicationId, Long tenantId, Integer delFlag) {
+    private void insertCashierConfig(Long id, Long applicationId, String tenantId, Integer delFlag) {
         jdbcTemplate.update("""
                         insert into payment_cashier_config (id, application_id, tenant_id, del_flag)
                         values (?, ?, ?, ?)
@@ -270,9 +278,9 @@ class PaymentApplicationServiceImplIntegrationTest {
                 id, applicationId, tenantId, delFlag);
     }
 
-    private PaymentApplication singleApplication() {
-        return applicationMapper.selectList(new LambdaQueryWrapper<PaymentApplication>()
-                .orderByAsc(PaymentApplication::getCreatedAt)).get(0);
+    private PaymentApplicationEntity singleApplication() {
+        return applicationMapper.selectList(new LambdaQueryWrapper<PaymentApplicationEntity>()
+                .orderByAsc(PaymentApplicationEntity::getCreatedAt)).get(0);
     }
 
     private Long countDeletedApplications() {
@@ -283,7 +291,7 @@ class PaymentApplicationServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = PaymentApplicationMapper.class)
-    @Import(PaymentApplicationServiceImpl.class)
+    @Import(PaymentApplicationService.class)
     static class TestConfig {
 
         @Bean
@@ -292,8 +300,8 @@ class PaymentApplicationServiceImplIntegrationTest {
         }
 
         @Bean
-        TestPaymentSensitiveValueService paymentSensitiveValueService() {
-            return new TestPaymentSensitiveValueService();
+        TestPaymentSensitiveValueCodec paymentSensitiveValueService() {
+            return new TestPaymentSensitiveValueCodec();
         }
     }
 
@@ -306,8 +314,8 @@ class PaymentApplicationServiceImplIntegrationTest {
         }
 
         @Override
-        public void record(String operationAction, String resourceType, String resourceId, String operationResult) {
-            records.add(operationAction + "|" + resourceType + "|" + resourceId + "|" + operationResult);
+        public void record(PaymentOperationAuditService.AuditEntry entry) {
+            records.add(entry.operationAction() + "|" + entry.resourceType() + "|" + entry.resourceId() + "|" + entry.operationResult());
         }
 
         void clear() {
@@ -315,11 +323,11 @@ class PaymentApplicationServiceImplIntegrationTest {
         }
     }
 
-    static class TestPaymentSensitiveValueService extends PaymentSensitiveValueService {
+    static class TestPaymentSensitiveValueCodec extends PaymentSensitiveValueCodec {
 
         private final List<String> encryptedPlaintexts = new ArrayList<>();
 
-        TestPaymentSensitiveValueService() {
+        TestPaymentSensitiveValueCodec() {
             super(null);
         }
 

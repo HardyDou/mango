@@ -8,7 +8,7 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.crypto.impl.ICryptoService;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.PaymentCashierPayCommand;
 import io.mango.payment.api.command.PaymentOpenRequestCommand;
 import io.mango.payment.api.vo.PaymentCashierPayResultVO;
@@ -29,11 +29,11 @@ import io.mango.payment.core.model.PaymentChannelBillItemRow;
 import io.mango.payment.core.service.IPaymentCashierService;
 import io.mango.payment.core.service.IPaymentChannelAdapter;
 import io.mango.payment.core.service.PaymentChannelAdapterRegistry;
-import io.mango.payment.core.service.PaymentNumberService;
-import io.mango.payment.core.service.PaymentOrderStateService;
-import io.mango.payment.core.service.PaymentOrderStatusFlowService;
-import io.mango.payment.core.service.PaymentRefundApplyService;
-import io.mango.payment.core.service.PaymentSensitiveValueService;
+import io.mango.payment.core.service.PaymentNumberGenerator;
+import io.mango.payment.core.service.PaymentOrderStatePolicy;
+import io.mango.payment.core.service.PaymentOrderStatusFlowRecorder;
+import io.mango.payment.core.service.PaymentRefundApplyCoordinator;
+import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -110,7 +110,7 @@ public class PaymentOpenApiServiceIntegrationTest {
     private TestPaymentCashierService cashierService;
 
     @Autowired
-    private TestPaymentNumberService numberService;
+    private TestPaymentNumberGenerator numberService;
 
     @Autowired
     private TestPaymentChannelAdapter channelAdapter;
@@ -140,8 +140,8 @@ public class PaymentOpenApiServiceIntegrationTest {
 
         PaymentOpenBusinessOrderVO result = service.createOrder(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
-                signature("POST", "/openapi/pay/orders", body, timestamp, nonce),
-                "/openapi/pay/orders", null, null, null, null)).getData();
+                signature("POST", "/openapi/pay/orders/create", body, timestamp, nonce),
+                "/openapi/pay/orders/create", null, null, null, null));
 
         PaymentBusinessOrderEntity order = businessOrderMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PaymentBusinessOrderEntity>()
                 .eq(PaymentBusinessOrderEntity::getTenantId, 1L)
@@ -172,6 +172,33 @@ public class PaymentOpenApiServiceIntegrationTest {
     }
 
     @Test
+    void createOrderAcceptsCanonicalStringTenantIdentifier() {
+        String tenantId = "tenant-alpha";
+        jdbcTemplate.update("update payment_application set tenant_id = ? where app_id = ?", tenantId, APP_ID);
+        jdbcTemplate.update("update payment_cashier_config set tenant_id = ? where id = 350001", tenantId);
+        String body = createOrderBody("BIZ_OPENAPI_STRING_TENANT", 8800L)
+                .replace("\"tenantId\":1", "\"tenantId\":\"" + tenantId + "\"");
+        String timestamp = timestamp();
+        String nonce = "nonce-string-tenant";
+        String path = "/openapi/pay/orders/create";
+
+        PaymentOpenBusinessOrderVO result = service.createOrder(openRequest(
+                body, APP_ID, tenantId, timestamp, nonce,
+                signature("POST", path, body, timestamp, nonce),
+                path, null, null, null, null));
+
+        assertThat(result.getBizOrderNo()).isEqualTo("BIZ_OPENAPI_STRING_TENANT");
+        assertThat(jdbcTemplate.queryForObject(
+                "select tenant_id from payment_business_order where biz_order_no = ?",
+                String.class,
+                "BIZ_OPENAPI_STRING_TENANT")).isEqualTo(tenantId);
+        assertThat(jdbcTemplate.queryForObject(
+                "select tenant_id from payment_openapi_nonce where nonce = ?",
+                String.class,
+                nonce)).isEqualTo(tenantId);
+    }
+
+    @Test
     void createOrderRejectsReplayNonceThroughRealUniqueConstraint() {
         String body = createOrderBody("BIZ_OPENAPI_002", 8800L);
         String timestamp = timestamp();
@@ -179,13 +206,13 @@ public class PaymentOpenApiServiceIntegrationTest {
 
         service.createOrder(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
-                signature("POST", "/openapi/pay/orders", body, timestamp, nonce),
-                "/openapi/pay/orders", null, null, null, null));
+                signature("POST", "/openapi/pay/orders/create", body, timestamp, nonce),
+                "/openapi/pay/orders/create", null, null, null, null));
 
         assertThatThrownBy(() -> service.createOrder(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
-                signature("POST", "/openapi/pay/orders", body, timestamp, nonce),
-                "/openapi/pay/orders", null, null, null, null)))
+                signature("POST", "/openapi/pay/orders/create", body, timestamp, nonce),
+                "/openapi/pay/orders/create", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getMessage());
     }
@@ -198,15 +225,15 @@ public class PaymentOpenApiServiceIntegrationTest {
 
         PaymentOpenBusinessOrderVO existing = service.createOrder(openRequest(
                 sameBody, APP_ID, TENANT_ID, timestamp, "nonce-idempotent-same",
-                signature("POST", "/openapi/pay/orders", sameBody, timestamp, "nonce-idempotent-same"),
-                "/openapi/pay/orders", null, null, null, null)).getData();
+                signature("POST", "/openapi/pay/orders/create", sameBody, timestamp, "nonce-idempotent-same"),
+                "/openapi/pay/orders/create", null, null, null, null));
 
         String conflictingBody = createOrderBody("BIZ_OPENAPI_001", 9900L);
         assertThat(existing.getId()).isEqualTo(360001L);
         assertThatThrownBy(() -> service.createOrder(openRequest(
                 conflictingBody, APP_ID, TENANT_ID, timestamp, "nonce-idempotent-conflict",
-                signature("POST", "/openapi/pay/orders", conflictingBody, timestamp, "nonce-idempotent-conflict"),
-                "/openapi/pay/orders", null, null, null, null)))
+                signature("POST", "/openapi/pay/orders/create", conflictingBody, timestamp, "nonce-idempotent-conflict"),
+                "/openapi/pay/orders/create", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT.getMessage());
     }
@@ -220,33 +247,33 @@ public class PaymentOpenApiServiceIntegrationTest {
 
         PaymentOpenCashierVO cashier = service.cashier(openRequest(
                 "", APP_ID, TENANT_ID, cashierTimestamp, cashierNonce,
-                signature("POST", "/openapi/pay/orders/BIZ_OPENAPI_001/cashier", "", cashierTimestamp, cashierNonce),
-                "/openapi/pay/orders/BIZ_OPENAPI_001/cashier", null, "BIZ_OPENAPI_001", null, null)).getData();
+                signature("POST", "/openapi/pay/cashier/detail", "", cashierTimestamp, cashierNonce),
+                "/openapi/pay/cashier/detail", null, "BIZ_OPENAPI_001", null, null));
 
         String payBody = "{\"methodCode\":\"PERSONAL_WECHAT_QR\"}";
         String payTimestamp = timestamp();
         PaymentOpenPaymentOrderVO payResult = service.pay(openRequest(
                 payBody, APP_ID, TENANT_ID, payTimestamp, "nonce-pay",
-                signature("POST", "/openapi/pay/orders/BIZ_OPENAPI_001/pay", payBody, payTimestamp, "nonce-pay"),
-                "/openapi/pay/orders/BIZ_OPENAPI_001/pay", "192.0.2.20", "BIZ_OPENAPI_001", null, null)).getData();
+                signature("POST", "/openapi/pay/payments/create", payBody, payTimestamp, "nonce-pay"),
+                "/openapi/pay/payments/create", "192.0.2.20", "BIZ_OPENAPI_001", null, null));
 
         String detailTimestamp = timestamp();
         PaymentOpenPaymentOrderVO detail = service.detailPaymentOrder(openRequest(
                 null, APP_ID, TENANT_ID, detailTimestamp, "nonce-payment-detail",
-                signature("GET", "/openapi/pay/payment-orders/PO202606060001", "", detailTimestamp, "nonce-payment-detail"),
-                "/openapi/pay/payment-orders/PO202606060001", null, null, "PO202606060001", null)).getData();
+                signature("POST", "/openapi/pay/payments/detail", "", detailTimestamp, "nonce-payment-detail"),
+                "/openapi/pay/payments/detail", null, null, "PO202606060001", null));
 
         String receiptTimestamp = timestamp();
         PaymentOpenReceiptVO receipt = service.receipt(openRequest(
                 null, APP_ID, TENANT_ID, receiptTimestamp, "nonce-receipt",
-                signature("GET", "/openapi/pay/receipts/BIZ_OPENAPI_001", "", receiptTimestamp, "nonce-receipt"),
-                "/openapi/pay/receipts/BIZ_OPENAPI_001", null, "BIZ_OPENAPI_001", null, null)).getData();
+                signature("POST", "/openapi/pay/receipts/detail", "", receiptTimestamp, "nonce-receipt"),
+                "/openapi/pay/receipts/detail", null, "BIZ_OPENAPI_001", null, null));
 
         assertThat(cashier.getCashierConfigId()).isEqualTo(350001L);
         assertThat(cashier.getCashierUrl()).isEqualTo("/payment/cashier-configs/350001/cashier?businessOrderId=360001");
         assertThat(cashierService.lastCommand.getBusinessOrderId()).isEqualTo(360001L);
         assertThat(cashierService.lastCommand.getMethodCode()).isEqualTo("PERSONAL_WECHAT_QR");
-        assertThat(paymentOrderMapper.selectLatestFlowNo(1L, 370001L))
+        assertThat(paymentOrderMapper.selectLatestFlowNo("1", 370001L))
                 .isEqualTo("FLOW202606060001");
         assertThat(payResult.getPayOrderNo()).isEqualTo("PO202606060001");
         assertThat(detail.getStatus()).isEqualTo("SUCCESS");
@@ -263,8 +290,8 @@ public class PaymentOpenApiServiceIntegrationTest {
 
         PaymentOpenRefundOrderVO result = service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, "nonce-refund",
-                signature("POST", "/openapi/pay/refunds", body, timestamp, "nonce-refund"),
-                "/openapi/pay/refunds", null, null, null, null)).getData();
+                signature("POST", "/openapi/pay/refunds/create", body, timestamp, "nonce-refund"),
+                "/openapi/pay/refunds/create", null, null, null, null));
 
         PaymentRefundOrderEntity entity = refundOrderMapper.selectById(result.getId());
         Integer flowCount = jdbcTemplate.queryForObject("""
@@ -294,11 +321,11 @@ public class PaymentOpenApiServiceIntegrationTest {
         String body = refundBody("RF_OPENAPI_001", 3300L);
         String timestamp = timestamp();
 
-        assertThat(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).isEqualTo(7000L);
+        assertThat(refundOrderMapper.sumOccupyingRefundAmount("1", 370001L)).isEqualTo(7000L);
         assertThatThrownBy(() -> service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, "nonce-refund-exceeded",
-                signature("POST", "/openapi/pay/refunds", body, timestamp, "nonce-refund-exceeded"),
-                "/openapi/pay/refunds", null, null, null, null)))
+                signature("POST", "/openapi/pay/refunds/create", body, timestamp, "nonce-refund-exceeded"),
+                "/openapi/pay/refunds/create", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED.getMessage());
     }
@@ -316,8 +343,8 @@ public class PaymentOpenApiServiceIntegrationTest {
 
         PaymentOpenRefundOrderVO result = service.detailRefund(openRequest(
                 null, APP_ID, TENANT_ID, timestamp, "nonce-refund-detail",
-                signature("GET", "/openapi/pay/refunds/RF_OPENAPI_001", "", timestamp, "nonce-refund-detail"),
-                "/openapi/pay/refunds/RF_OPENAPI_001", null, null, null, "RF_OPENAPI_001")).getData();
+                signature("POST", "/openapi/pay/refunds/detail", "", timestamp, "nonce-refund-detail"),
+                "/openapi/pay/refunds/detail", null, null, null, "RF_OPENAPI_001"));
 
         assertThat(result.getRefundOrderNo()).isEqualTo("RO202606060001");
         assertThat(result.getPayOrderNo()).isEqualTo("PO202606060001");
@@ -377,7 +404,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     notify_retry_policy varchar(512),
                     demo_app int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -390,7 +418,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     id bigint primary key,
                     subject_name varchar(128),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -411,7 +440,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     result_return_url varchar(512),
                     display_config varchar(1024),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -425,7 +455,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     method_code varchar(128),
                     method_name varchar(128),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -439,7 +470,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     channel_code varchar(128),
                     channel_name varchar(128),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -457,7 +489,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     merchant_no varchar(128),
                     config_values_json varchar(1024),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -484,7 +517,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     notify_url varchar(512),
                     return_url varchar(512),
                     extend_info varchar(1024),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -498,7 +532,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     app_id varchar(128),
                     nonce varchar(128),
                     expire_time timestamp,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -513,7 +548,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     payment_order_id bigint,
                     refund_amount bigint,
                     status varchar(64),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0
                 )
                 """);
@@ -537,7 +573,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     success_flag int,
                     pay_time timestamp,
                     expire_time timestamp,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
                     updated_by bigint,
@@ -555,7 +592,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     reason varchar(512),
                     status varchar(64),
                     refund_time timestamp,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
                     updated_by bigint,
@@ -568,7 +606,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     flow_no varchar(128),
                     payment_order_id bigint,
                     refund_order_id bigint,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     created_at timestamp default current_timestamp
                 )
                 """);
@@ -586,7 +625,8 @@ public class PaymentOpenApiServiceIntegrationTest {
                     operator_name varchar(128),
                     happen_time timestamp,
                     remark varchar(512),
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -750,10 +790,10 @@ public class PaymentOpenApiServiceIntegrationTest {
     @Configuration
     @Import({
             PaymentOpenApiService.class,
-            PaymentOrderStateService.class,
-            PaymentOrderStatusFlowService.class,
-            PaymentRefundApplyService.class,
-            PaymentSensitiveValueService.class,
+            PaymentOrderStatePolicy.class,
+            PaymentOrderStatusFlowRecorder.class,
+            PaymentRefundApplyCoordinator.class,
+            PaymentSensitiveValueCodec.class,
             PaymentChannelAdapterRegistry.class
     })
     @MapperScan("io.mango.payment.core.mapper")
@@ -798,8 +838,8 @@ public class PaymentOpenApiServiceIntegrationTest {
         }
 
         @Bean
-        PaymentNumberService paymentNumberService() {
-            return new TestPaymentNumberService();
+        PaymentNumberGenerator paymentNumberService() {
+            return new TestPaymentNumberGenerator();
         }
 
         @Bean
@@ -818,12 +858,12 @@ public class PaymentOpenApiServiceIntegrationTest {
         private PaymentCashierPayCommand lastCommand;
 
         @Override
-        public R<PaymentCashierSessionVO> detailSession(Long cashierConfigId, Long businessOrderId) {
+        public PaymentCashierSessionVO detailSession(Long cashierConfigId, Long businessOrderId) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public R<PaymentCashierPayResultVO> pay(PaymentCashierPayCommand command) {
+        public PaymentCashierPayResultVO pay(PaymentCashierPayCommand command) {
             this.lastCommand = command;
             PaymentCashierPayResultVO result = new PaymentCashierPayResultVO();
             result.setPayOrderNo("PO202606060001");
@@ -831,16 +871,16 @@ public class PaymentOpenApiServiceIntegrationTest {
             result.setStatus("PAYING");
             result.setMethodCode(command.getMethodCode());
             result.setAmount(8800L);
-            return R.ok(result);
+            return result;
         }
 
         @Override
-        public R<PaymentCashierPayResultVO> payResult(String payOrderNo) {
+        public PaymentCashierPayResultVO payResult(String payOrderNo) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public R<PaymentCashierPayResultVO> syncPayResult(String payOrderNo) {
+        public PaymentCashierPayResultVO syncPayResult(String payOrderNo) {
             throw new UnsupportedOperationException();
         }
 
@@ -849,11 +889,11 @@ public class PaymentOpenApiServiceIntegrationTest {
         }
     }
 
-    static class TestPaymentNumberService extends PaymentNumberService {
+    static class TestPaymentNumberGenerator extends PaymentNumberGenerator {
 
         private String nextRefundOrderNo = "RO2026060600000001";
 
-        TestPaymentNumberService() {
+        TestPaymentNumberGenerator() {
             super(null);
         }
 
@@ -870,7 +910,7 @@ public class PaymentOpenApiServiceIntegrationTest {
 
         private String refundStatus = "SUCCESS";
         private String channelRefundNo = "MRRO2026060600000001";
-        private RefundApplyCommand lastRefundCommand;
+        private RefundApplyInput lastRefundCommand;
 
         @Override
         public String channelCode() {
@@ -878,28 +918,28 @@ public class PaymentOpenApiServiceIntegrationTest {
         }
 
         @Override
-        public PaymentApplyResult applyPayment(PaymentApplyCommand command) {
+        public PaymentApplyResult applyPayment(PaymentApplyInput command) {
             throw new UnsupportedOperationException("payment is covered by cashier service in this OpenAPI test");
         }
 
         @Override
-        public RefundApplyResult applyRefund(RefundApplyCommand command) {
+        public RefundApplyResult applyRefund(RefundApplyInput command) {
             this.lastRefundCommand = command;
             return new RefundApplyResult("TEST", "SUCCESS", "SYNC", refundStatus, channelRefundNo);
         }
 
         @Override
-        public ChannelBillResult generateBill(ChannelBillCommand command) {
+        public ChannelBillResult generateBill(ChannelBillInput command) {
             return new ChannelBillResult(List.<PaymentChannelBillItemRow>of());
         }
 
         @Override
-        public PaymentQueryResult queryPayment(PaymentQueryCommand command) {
+        public PaymentQueryResult queryPayment(PaymentQueryInput command) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public RefundQueryResult queryRefund(RefundQueryCommand command) {
+        public RefundQueryResult queryRefund(RefundQueryInput command) {
             throw new UnsupportedOperationException();
         }
     }

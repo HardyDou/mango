@@ -1,3 +1,0 @@
--- No-op by design.
--- Simulated payment runtime data must not be inserted by formal Flyway migration.
--- Demo and E2E orders belong to dedicated test fixtures or dev/demo seed scripts.

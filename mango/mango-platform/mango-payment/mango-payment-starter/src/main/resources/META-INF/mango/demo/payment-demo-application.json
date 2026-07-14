@@ -1,0 +1,122 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_APPLICATION": [
+          {
+            "id": "2026071309000000067",
+            "version": 1,
+            "bizKey": "payment.application.app_order_center",
+            "name": "订单中心示例应用",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 310001
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "app_order_center"
+              },
+              "appName": {
+                "type": "STRING",
+                "value": "订单中心示例应用"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "signAlgorithm": {
+                "type": "STRING",
+                "value": "HMAC_SHA256"
+              },
+              "payloadEncryptEnabled": {
+                "type": "INT",
+                "value": 0
+              },
+              "secretConfigured": {
+                "type": "INT",
+                "value": 0
+              },
+              "secretVersion": {
+                "type": "INT",
+                "value": 0
+              },
+              "demoApp": {
+                "type": "INT",
+                "value": 1
+              },
+              "ipWhitelistEnabled": {
+                "type": "INT",
+                "value": 0
+              }
+            }
+          },
+          {
+            "id": "2026071309000000068",
+            "version": 1,
+            "bizKey": "payment.application.app_member_center",
+            "name": "会员中心示例应用",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 310002
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "app_member_center"
+              },
+              "appName": {
+                "type": "STRING",
+                "value": "会员中心示例应用"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "signAlgorithm": {
+                "type": "STRING",
+                "value": "HMAC_SHA256"
+              },
+              "payloadEncryptEnabled": {
+                "type": "INT",
+                "value": 0
+              },
+              "secretConfigured": {
+                "type": "INT",
+                "value": 0
+              },
+              "secretVersion": {
+                "type": "INT",
+                "value": 0
+              },
+              "demoApp": {
+                "type": "INT",
+                "value": 1
+              },
+              "ipWhitelistEnabled": {
+                "type": "INT",
+                "value": 0
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

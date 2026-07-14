@@ -51,7 +51,7 @@
         <include refid="fetchBatchWhere"/>
     </select>
 
-    <select id="selectFetchBatchPage" resultType="io.mango.payment.api.vo.PaymentChannelBillFetchBatchVO">
+    <select id="selectFetchBatchPage" resultType="io.mango.payment.core.model.projection.PaymentChannelBillFetchBatchProjection">
         <include refid="fetchBatchSelect"/>
         from payment_channel_bill_fetch_batch b
         left join payment_reconciliation r

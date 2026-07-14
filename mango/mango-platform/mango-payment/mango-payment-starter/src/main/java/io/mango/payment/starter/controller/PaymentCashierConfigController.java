@@ -39,15 +39,15 @@ public class PaymentCashierConfigController implements PaymentCashierConfigApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:cashier-config:list")
     @Operation(summary = "分页查询收银台配置", description = "按当前租户查询收银台配置")
     public R<PageResult<PaymentCashierConfigVO>> pageCashierConfigs(@ParameterObject PaymentConfigPageQuery query) {
-        return cashierConfigService.pageCashierConfigs(query);
+        return R.ok(cashierConfigService.pageCashierConfigs(query));
     }
 
     @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:cashier-config:query")
     @Operation(summary = "查询收银台配置详情", description = "按收银台配置 ID 查询详情")
-    public R<PaymentCashierConfigVO> detailCashierConfig(@Parameter(description = "收银台配置 ID", required = true) @RequestParam Long id) {
-        return cashierConfigService.detailCashierConfig(id);
+    public R<PaymentCashierConfigVO> detailCashierConfig(@Parameter(description = "收银台配置 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(cashierConfigService.detailCashierConfig(id));
     }
 
     @Override
@@ -55,7 +55,7 @@ public class PaymentCashierConfigController implements PaymentCashierConfigApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:cashier-config:add")
     @Operation(summary = "新增收银台配置", description = "创建收银台配置")
     public R<Long> createCashierConfig(@Valid @RequestBody SavePaymentCashierConfigCommand command) {
-        return cashierConfigService.createCashierConfig(command);
+        return R.ok(cashierConfigService.createCashierConfig(command));
     }
 
     @Override
@@ -63,14 +63,14 @@ public class PaymentCashierConfigController implements PaymentCashierConfigApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:cashier-config:edit")
     @Operation(summary = "修改收银台配置", description = "更新收银台配置")
     public R<Boolean> updateCashierConfig(@Valid @RequestBody SavePaymentCashierConfigCommand command) {
-        return cashierConfigService.updateCashierConfig(command);
+        return R.ok(cashierConfigService.updateCashierConfig(command));
     }
 
     @Override
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:cashier-config:delete")
     @Operation(summary = "删除收银台配置", description = "受控逻辑删除收银台配置；存在支付订单或芒果支付记录时拒绝删除")
-    public R<Boolean> deleteCashierConfig(@Parameter(description = "收银台配置 ID", required = true) @RequestParam Long id) {
-        return cashierConfigService.deleteCashierConfig(id);
+    public R<Boolean> deleteCashierConfig(@Parameter(description = "收银台配置 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(cashierConfigService.deleteCashierConfig(id));
     }
 }

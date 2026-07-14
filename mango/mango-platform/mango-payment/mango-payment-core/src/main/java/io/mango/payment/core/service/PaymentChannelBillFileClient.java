@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.core.entity.PaymentChannelBillSourceEntity;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -37,24 +37,24 @@ public class PaymentChannelBillFileClient {
     public RemoteBillFile fetch(PaymentChannelBillSourceEntity source) {
         String fetchMode = source.getFetchMode();
         Require.isTrue("FTP".equals(fetchMode) || "FTPS".equals(fetchMode),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取方式必须是 FTP 或 FTPS");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "账单获取方式必须是 FTP 或 FTPS");
         Endpoint endpoint = parseEndpoint(source.getEndpoint(), "FTPS".equals(fetchMode) ? DEFAULT_FTPS_PORT : DEFAULT_FTP_PORT);
         String remotePath = PaymentContextSupport.trimToNull(source.getRemotePath());
-        Require.notBlank(remotePath, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 远端路径不能为空");
+        Require.notBlank(remotePath, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 远端路径不能为空");
         FTPClient client = "FTPS".equals(fetchMode) ? new FTPSClient(true) : new FTPClient();
         client.setConnectTimeout(CONNECT_TIMEOUT_MILLIS);
         client.setDataTimeout(Duration.ofMillis(DATA_TIMEOUT_MILLIS));
         try {
             client.connect(endpoint.host(), endpoint.port());
             Require.isTrue(FTPReply.isPositiveCompletion(client.getReplyCode()),
-                    PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), fetchMode + " 服务器连接失败");
+                    PaymentCode.PAYMENT_RECONCILIATION_INVALID, fetchMode + " 服务器连接失败");
             login(client, source.getCredentialRef());
             client.enterLocalPassiveMode();
             client.setFileType(FTP.BINARY_FILE_TYPE);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             boolean retrieved = client.retrieveFile(remotePath, output);
             Require.isTrue(retrieved,
-                    PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), fetchMode + " 账单文件读取失败：" + remotePath);
+                    PaymentCode.PAYMENT_RECONCILIATION_INVALID, fetchMode + " 账单文件读取失败：" + remotePath);
             String body = output.toString(StandardCharsets.UTF_8);
             return new RemoteBillFile(fileName(remotePath), body);
         } catch (IOException ex) {
@@ -68,23 +68,23 @@ public class PaymentChannelBillFileClient {
         String ref = PaymentContextSupport.trimToNull(credentialRef);
         if (ref == null) {
             Require.isTrue(client.login("anonymous", "anonymous@localhost"),
-                    PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 匿名登录失败");
+                    PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 匿名登录失败");
             return;
         }
         Optional<PaymentChannelBillCredentialProvider.Credential> credential = resolveCredential(ref);
         Require.isTrue(credential.isPresent(),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "未找到 FTP/FTPS 认证配置引用：" + ref);
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "未找到 FTP/FTPS 认证配置引用：" + ref);
         PaymentChannelBillCredentialProvider.Credential value = credential.get();
-        Require.notBlank(value.username(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 认证用户名不能为空");
+        Require.notBlank(value.username(), PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 认证用户名不能为空");
         Require.isTrue(client.login(value.username(), value.password() == null ? "" : value.password()),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 登录失败");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 登录失败");
     }
 
     private Endpoint parseEndpoint(String endpoint, int defaultPort) {
         String value = PaymentContextSupport.trimToNull(endpoint);
-        Require.notBlank(value, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 服务器地址不能为空");
+        Require.notBlank(value, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 服务器地址不能为空");
         Require.isTrue(!value.contains("@"),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 服务器地址不能包含账号密码");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 服务器地址不能包含账号密码");
         String normalized = value
                 .replaceFirst("(?i)^ftp://", "")
                 .replaceFirst("(?i)^ftps://", "");
@@ -100,13 +100,13 @@ public class PaymentChannelBillFileClient {
             try {
                 port = Integer.parseInt(normalized.substring(colonIndex + 1));
             } catch (NumberFormatException ex) {
-                Require.isTrue(false, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 服务器端口无效");
+                Require.isTrue(false, PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 服务器端口无效");
             }
         }
         Require.isTrue(StringUtils.hasText(host),
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 服务器地址不能为空");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 服务器地址不能为空");
         Require.isTrue(port > 0 && port <= 65535,
-                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 服务器端口无效");
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID, "FTP/FTPS 服务器端口无效");
         return new Endpoint(host, port);
     }
 

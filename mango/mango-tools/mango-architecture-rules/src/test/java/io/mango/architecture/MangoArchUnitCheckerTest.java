@@ -551,6 +551,19 @@ class MangoArchUnitCheckerTest {
     }
 
     @Test
+    void serviceMayConstructNonServiceValueEvenWhenSameTypeIsRegisteredAsBean() {
+        JavaClasses classes = importClasses(
+                CollectionAllocatingService.class,
+                RegisteredValueConfiguration.class);
+
+        assertThat(checker.check(classes, javaClass ->
+                javaClass.getName().equals(CollectionAllocatingService.class.getName())
+                        ? ModuleRole.CORE : ModuleRole.STARTER))
+                .extracting(ArchitectureIssue::ruleId)
+                .doesNotContain("MANGO-ARCH-BEAN-004");
+    }
+
+    @Test
     void crossCuttingAnnotationRequiresSpringRegistration() {
         JavaClasses classes = importClasses(UnmanagedTransactionalWorker.class);
 
@@ -1066,6 +1079,21 @@ class MangoArchUnitCheckerTest {
     static final class NewingOrderController implements OrderApi {
         void createService() {
             new CompliantOrderService();
+        }
+    }
+
+    @Service
+    static final class CollectionAllocatingService {
+        java.util.LinkedHashMap<String, String> values() {
+            return new java.util.LinkedHashMap<>();
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static final class RegisteredValueConfiguration {
+        @Bean
+        java.util.LinkedHashMap<String, String> registeredValues() {
+            return new java.util.LinkedHashMap<>();
         }
     }
 

@@ -13,7 +13,7 @@ import static org.mockito.Mockito.when;
 
 class PaymentFuiouPayConfigParserTest {
 
-    private final PaymentSensitiveValueService sensitiveValueService = mock(PaymentSensitiveValueService.class);
+    private final PaymentSensitiveValueCodec sensitiveValueService = mock(PaymentSensitiveValueCodec.class);
     private final PaymentFuiouPayConfigParser parser = new PaymentFuiouPayConfigParser(
             new ObjectMapper(),
             sensitiveValueService);

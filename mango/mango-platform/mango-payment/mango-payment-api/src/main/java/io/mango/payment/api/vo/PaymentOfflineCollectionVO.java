@@ -30,7 +30,7 @@ public class PaymentOfflineCollectionVO {
     @Schema(description = "支付标题")
     private String title;
 
-    @Schema(description = "AppId")
+    @Schema(description = "支付应用 AppId")
     private String appId;
 
     @Schema(description = "通道 ID")

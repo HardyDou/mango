@@ -58,20 +58,20 @@ jobs:
           node mango-pmo/tests/skills/check-skill-evals.mjs
 
       - name: Set up pnpm for PMO tarball verification
-        if: steps.scope.outputs.pmo == 'true'
+        if: steps.scope.outputs.pmo == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         uses: pnpm/action-setup@v4
         with:
           version: 11.10.0
           run_install: false
 
       - name: Build and verify the reproducible PMO package
-        if: steps.scope.outputs.pmo == 'true'
+        if: steps.scope.outputs.pmo == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           node mango-ui/packages/mango-pmo/scripts/build-package.mjs
           node mango-ui/packages/mango-pmo/scripts/check-package.mjs
 
       - name: Set up Java for backend architecture gates
-        if: steps.scope.outputs.backend == 'true'
+        if: steps.scope.outputs.backend == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         uses: actions/setup-java@v4
         with:
           distribution: temurin

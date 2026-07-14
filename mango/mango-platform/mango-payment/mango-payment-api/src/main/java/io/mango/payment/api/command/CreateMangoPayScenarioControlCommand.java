@@ -3,6 +3,8 @@ package io.mango.payment.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,6 +22,7 @@ public class CreateMangoPayScenarioControlCommand implements Serializable {
     private String channelCode;
 
     @Schema(description = "签约配置 ID。为空时对芒果支付全局生效；不为空时仅对该签约下一笔交易生效")
+    @Positive(message = "签约配置 ID 必须大于 0")
     private Long contractId;
 
     @NotBlank(message = "场景类型不能为空")
@@ -36,9 +39,11 @@ public class CreateMangoPayScenarioControlCommand implements Serializable {
     private String billDifferenceType;
 
     @Schema(description = "账单差异金额，单位分，仅 BILL 场景使用")
+    @PositiveOrZero(message = "账单差异金额不能小于 0")
     private Long differenceAmount;
 
     @Schema(description = "回调延迟分钟数，仅 CALLBACK_DELAY 场景使用")
+    @PositiveOrZero(message = "回调延迟分钟数不能小于 0")
     private Integer callbackDelayMinutes;
 
     @NotNull(message = "生效次数不能为空")

@@ -10,7 +10,7 @@ import io.mango.payment.api.vo.PaymentCashierPayResultVO;
 import io.mango.payment.api.vo.PaymentCashierSessionVO;
 import io.mango.payment.api.vo.PaymentOfflineCollectionVO;
 import io.mango.payment.core.service.IPaymentCashierService;
-import io.mango.payment.core.service.PaymentOfflineChannelService;
+import io.mango.payment.core.service.IPaymentOfflineChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,16 +37,16 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class PaymentCashierController implements PaymentCashierApi {
 
     private final IPaymentCashierService cashierService;
-    private final PaymentOfflineChannelService offlineChannelService;
+    private final IPaymentOfflineChannelService offlineChannelService;
 
     @Override
     @GetMapping("/session")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询付款人收银台会话")
     @Operation(summary = "查询收银台会话", description = "按收银台配置和业务订单生成付款人可见的收银台会话视图")
     public R<PaymentCashierSessionVO> detailSession(
-            @Parameter(description = "收银台配置 ID", required = true) @NotNull(message = "收银台配置 ID 不能为空") @RequestParam Long cashierConfigId,
-            @Parameter(description = "业务订单 ID。后台预览可为空") @RequestParam(required = false) Long businessOrderId) {
-        return cashierService.detailSession(cashierConfigId, businessOrderId);
+            @Parameter(description = "收银台配置 ID", required = true) @NotNull(message = "收银台配置 ID 不能为空") @RequestParam("cashierConfigId") Long cashierConfigId,
+            @Parameter(description = "业务订单 ID。后台预览可为空") @RequestParam(value = "businessOrderId", required = false) Long businessOrderId) {
+        return R.ok(cashierService.detailSession(cashierConfigId, businessOrderId));
     }
 
     @Override
@@ -56,7 +56,7 @@ public class PaymentCashierController implements PaymentCashierApi {
     public R<PaymentCashierPayResultVO> pay(@Valid @RequestBody PaymentCashierPayCommand command) {
         HttpServletRequest request = currentRequest();
         command.setClientIp(resolveClientIp(request));
-        return cashierService.pay(command);
+        return R.ok(cashierService.pay(command));
     }
 
     @Override
@@ -64,8 +64,8 @@ public class PaymentCashierController implements PaymentCashierApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询付款人收银台支付结果")
     @Operation(summary = "查询收银台支付结果", description = "按支付订单号查询真实支付订单状态，用于收银台等待回调或查单后刷新结果")
     public R<PaymentCashierPayResultVO> payResult(
-            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam String payOrderNo) {
-        return cashierService.payResult(payOrderNo);
+            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam("payOrderNo") String payOrderNo) {
+        return R.ok(cashierService.payResult(payOrderNo));
     }
 
     @Override
@@ -73,8 +73,8 @@ public class PaymentCashierController implements PaymentCashierApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "付款人确认付款后同步支付结果")
     @Operation(summary = "同步收银台支付结果", description = "付款人确认已付款后调用支付通道查单，并返回最新收银台支付结果")
     public R<PaymentCashierPayResultVO> syncPayResult(
-            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam String payOrderNo) {
-        return cashierService.syncPayResult(payOrderNo);
+            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam("payOrderNo") String payOrderNo) {
+        return R.ok(cashierService.syncPayResult(payOrderNo));
     }
 
     @Override

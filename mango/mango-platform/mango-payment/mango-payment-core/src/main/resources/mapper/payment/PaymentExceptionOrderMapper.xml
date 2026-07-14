@@ -53,7 +53,7 @@
           and eo.handle_status in ('PENDING', 'PROCESSING')
     </select>
 
-    <select id="selectExceptionOrderPage" resultType="io.mango.payment.api.vo.PaymentExceptionOrderVO">
+    <select id="selectExceptionOrderPage" resultType="io.mango.payment.core.model.projection.PaymentExceptionOrderProjection">
         <include refid="exceptionOrderSelect"/>
         from payment_exception_order eo
         <include refid="exceptionOrderWhere"/>
@@ -61,7 +61,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectExceptionOrderDetail" resultType="io.mango.payment.api.vo.PaymentExceptionOrderVO">
+    <select id="selectExceptionOrderDetail" resultType="io.mango.payment.core.model.projection.PaymentExceptionOrderProjection">
         <include refid="exceptionOrderSelect"/>
         from payment_exception_order eo
         where eo.tenant_id = #{tenantId}

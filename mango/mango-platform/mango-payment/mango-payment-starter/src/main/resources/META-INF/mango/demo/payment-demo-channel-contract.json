@@ -1,0 +1,532 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_CHANNEL_CONTRACT": [
+          {
+            "id": "2026071309000000076",
+            "version": 1,
+            "bizKey": "payment.channel-contract.MANGO_PAY_MANGO_TECH",
+            "name": "芒果科技芒果支付签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "MANGO_PAY_MANGO_TECH"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果科技芒果支付签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320001
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "MANGO_PAY_MERCHANT_001"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "mango-pay-app"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{\"mangoPayScenario\": \"SUCCESS\"}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000077",
+            "version": 1,
+            "bizKey": "payment.channel-contract.ALLINPAY_MANGO_TECH",
+            "name": "芒果科技通联支付签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331002
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "ALLINPAY_MANGO_TECH"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果科技通联支付签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320001
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330002
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "ALLINPAY_MERCHANT_001"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000078",
+            "version": 1,
+            "bizKey": "payment.channel-contract.HUAXIA_BANK_MANGO_TECH",
+            "name": "芒果科技华夏银行签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331003
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "HUAXIA_BANK_MANGO_TECH"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果科技华夏银行签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320001
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330003
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "HUAXIA_MERCHANT_001"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "huaxia-bank-app"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000079",
+            "version": 1,
+            "bizKey": "payment.channel-contract.OFFLINE_COLLECTION_MANGO_TECH",
+            "name": "芒果科技线下收款签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331004
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION_MANGO_TECH"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果科技线下收款签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320001
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330004
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION_MERCHANT_001"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "offline-collection-app"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{\"bankName\": \"招商银行上海分行\", \"accountNo\": \"622200000000000001\", \"accountName\": \"芒果科技有限公司\", \"voucherRequired\": true, \"reconciliationCodeRequired\": true}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000080",
+            "version": 1,
+            "bizKey": "payment.channel-contract.MANGO_PAY_MANGO_SERVICE",
+            "name": "芒果服务芒果支付签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331005
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "MANGO_PAY_MANGO_SERVICE"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果服务芒果支付签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320002
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "MANGO_PAY"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "MANGO_PAY_MERCHANT_002"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "mango-pay-service-app"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000081",
+            "version": 1,
+            "bizKey": "payment.channel-contract.ALLINPAY_MANGO_SERVICE",
+            "name": "芒果服务通联支付签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331006
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "ALLINPAY_MANGO_SERVICE"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果服务通联支付签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320002
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330002
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "ALLINPAY_MERCHANT_002"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "allinpay-service-app"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_ALIPAY_PC,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000082",
+            "version": 1,
+            "bizKey": "payment.channel-contract.HUAXIA_BANK_MANGO_SERVICE",
+            "name": "芒果服务华夏银行签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331007
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "HUAXIA_BANK_MANGO_SERVICE"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果服务华夏银行签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320002
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330003
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "HUAXIA_MERCHANT_002"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "huaxia-bank-service-app"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000083",
+            "version": 1,
+            "bizKey": "payment.channel-contract.OFFLINE_COLLECTION_MANGO_SERVICE",
+            "name": "芒果服务线下收款签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331008
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION_MANGO_SERVICE"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果服务线下收款签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320002
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330004
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "OFFLINE_COLLECTION_MERCHANT_002"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "offline-collection-service-app"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{\"bankName\": \"华夏银行上海分行\", \"accountNo\": \"622200000000000002\", \"accountName\": \"芒果服务有限公司\", \"voucherRequired\": true, \"reconciliationCodeRequired\": true}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000084",
+            "version": 1,
+            "bizKey": "payment.channel-contract.FUIOU_PAY_MANGO_TECH",
+            "name": "芒果科技富友支付签约",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 331009
+              },
+              "contractCode": {
+                "type": "STRING",
+                "value": "FUIOU_PAY_MANGO_TECH"
+              },
+              "contractName": {
+                "type": "STRING",
+                "value": "芒果科技富友支付签约"
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320001
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330005
+              },
+              "environment": {
+                "type": "STRING",
+                "value": "PROD"
+              },
+              "merchantNo": {
+                "type": "STRING",
+                "value": "0002900F0370542"
+              },
+              "appId": {
+                "type": "STRING",
+                "value": "fuiou-pay-mango-tech"
+              },
+              "configValuesJson": {
+                "type": "STRING",
+                "value": "{\"insCd\": \"08A9999999\", \"notifyUrl\": \"https://payment.example.com/api/payment/channel-callbacks/fuiou_pay\", \"merchantNo\": \"0002900F0370542\", \"operatorId\": \"mango\", \"gatewayPayUrl\": \"http://www-2.wg.fuiou.com:13195/smpGate.do\", \"fuiouPublicKey\": \"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCBv9K+jiuHqXIehX81oyNSD2RfVn+KTPb7NRT5HDPFE35CjZJd7Fu40r0U2Cp7Eyhayv/mRS6ZqvBT/8tQqwpUExTQQBbdZjfk+efb9bF9a+uCnAg0RsuqxeJ2r/rRTsORzVLJy+4GKcv06/p6CcBc5BI1gqSKmyyNBlgfkxLYewIDAQAB\", \"gatewayQueryUrl\": \"http://www-2.wg.fuiou.com:13195/smpAQueryGate.do\", \"gatewayMerchantNo\": \"0001000F0040992\", \"gatewayBackNotifyUrl\": \"https://payment.example.com/api/payment/channel-callbacks/fuiou_pay\", \"gatewayPageNotifyUrl\": \"https://payment.example.com/payment/fuiou/return\", \"scanpayGatewayBaseUrl\": \"https://fundwx.payfuiouo2o.com\"}"
+              },
+              "enabledMethodCodes": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR,PERSONAL_ALIPAY_QR,PERSONAL_EBANK_REDIRECT,CORPORATE_EBANK_REDIRECT"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

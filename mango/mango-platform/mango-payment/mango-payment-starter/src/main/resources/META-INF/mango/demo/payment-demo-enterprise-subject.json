@@ -1,0 +1,98 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_ENTERPRISE_SUBJECT": [
+          {
+            "id": "2026071309000000069",
+            "version": 1,
+            "bizKey": "payment.enterprise-subject.91310000MA1PAY001X",
+            "name": "芒果科技有限公司",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 320001
+              },
+              "subjectName": {
+                "type": "STRING",
+                "value": "芒果科技有限公司"
+              },
+              "creditCode": {
+                "type": "STRING",
+                "value": "91310000MA1PAY001X"
+              },
+              "creditCodeHash": {
+                "type": "STRING",
+                "value": "e399c8278c9ab6bb6679ddf011e960c6d4e4e4c515da27634b9785eaaee046aa"
+              },
+              "bankAccountNo": {
+                "type": "STRING",
+                "value": "622200000000000001"
+              },
+              "bankName": {
+                "type": "STRING",
+                "value": "招商银行上海分行"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000070",
+            "version": 1,
+            "bizKey": "payment.enterprise-subject.91310000MA1PAY002X",
+            "name": "芒果服务有限公司",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 320002
+              },
+              "subjectName": {
+                "type": "STRING",
+                "value": "芒果服务有限公司"
+              },
+              "creditCode": {
+                "type": "STRING",
+                "value": "91310000MA1PAY002X"
+              },
+              "creditCodeHash": {
+                "type": "STRING",
+                "value": "bf9be899272afb6f17af4471e45afe30110a0befbcce1bb1cd688f7d04f400ea"
+              },
+              "bankAccountNo": {
+                "type": "STRING",
+                "value": "622200000000000002"
+              },
+              "bankName": {
+                "type": "STRING",
+                "value": "华夏银行上海分行"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

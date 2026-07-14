@@ -82,7 +82,7 @@
         <include refid="offlineCollectionWhere"/>
     </select>
 
-    <select id="selectOfflineCollectionPage" resultType="io.mango.payment.api.vo.PaymentOfflineCollectionVO">
+    <select id="selectOfflineCollectionPage" resultType="io.mango.payment.core.model.projection.PaymentOfflineCollectionProjection">
         <include refid="offlineCollectionSelect"/>
         <include refid="offlineCollectionFrom"/>
         <include refid="offlineCollectionWhere"/>
@@ -90,7 +90,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectOfflineCollectionDetail" resultType="io.mango.payment.api.vo.PaymentOfflineCollectionVO">
+    <select id="selectOfflineCollectionDetail" resultType="io.mango.payment.core.model.projection.PaymentOfflineCollectionProjection">
         <include refid="offlineCollectionSelect"/>
         <include refid="offlineCollectionFrom"/>
         where oc.tenant_id = #{tenantId}

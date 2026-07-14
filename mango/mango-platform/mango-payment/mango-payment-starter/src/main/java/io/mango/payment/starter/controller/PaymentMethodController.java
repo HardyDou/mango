@@ -11,6 +11,7 @@ import io.mango.payment.api.vo.PaymentMethodCategoryVO;
 import io.mango.payment.api.vo.PaymentMethodVO;
 import io.mango.payment.core.service.IPaymentMethodService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class PaymentMethodController implements PaymentMethodApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:list")
     @Operation(summary = "分页查询支付方式", description = "按当前租户查询支付方式")
     public R<PageResult<PaymentMethodVO>> pageMethods(@ParameterObject PaymentConfigPageQuery query) {
-        return methodService.pageMethods(query);
+        return R.ok(methodService.pageMethods(query));
     }
 
     @Override
@@ -47,38 +48,38 @@ public class PaymentMethodController implements PaymentMethodApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:list")
     @Operation(summary = "查询支付方式分类字典", description = "按当前租户查询启用的三级支付方式分类")
     public R<java.util.List<PaymentMethodCategoryVO>> listMethodCategories() {
-        return methodService.listMethodCategories();
+        return R.ok(methodService.listMethodCategories());
     }
 
     @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:query")
     @Operation(summary = "查询支付方式详情", description = "按支付方式 ID 查询详情")
-    public R<PaymentMethodVO> detailMethod(@Parameter(description = "支付方式 ID", required = true) @RequestParam Long id) {
-        return methodService.detailMethod(id);
+    public R<PaymentMethodVO> detailMethod(@Parameter(description = "支付方式 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(methodService.detailMethod(id));
     }
 
     @Override
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:add")
     @Operation(summary = "新增支付方式", description = "创建支付方式")
-    public R<Long> createMethod(@RequestBody SavePaymentMethodCommand command) {
-        return methodService.createMethod(command);
+    public R<Long> createMethod(@Valid @RequestBody SavePaymentMethodCommand command) {
+        return R.ok(methodService.createMethod(command));
     }
 
     @Override
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:edit")
     @Operation(summary = "修改支付方式", description = "更新支付方式")
-    public R<Boolean> updateMethod(@RequestBody SavePaymentMethodCommand command) {
-        return methodService.updateMethod(command);
+    public R<Boolean> updateMethod(@Valid @RequestBody SavePaymentMethodCommand command) {
+        return R.ok(methodService.updateMethod(command));
     }
 
     @Override
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:delete")
     @Operation(summary = "删除支付方式", description = "按 ID 删除支付方式")
-    public R<Boolean> deleteMethod(@Parameter(description = "支付方式 ID", required = true) @RequestParam Long id) {
-        return methodService.deleteMethod(id);
+    public R<Boolean> deleteMethod(@Parameter(description = "支付方式 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(methodService.deleteMethod(id));
     }
 }

@@ -1,0 +1,106 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_SUBJECT_BANK_ACCOUNT": [
+          {
+            "id": "2026071309000000071",
+            "version": 1,
+            "bizKey": "payment.subject-bank-account.320001.622200000000000001",
+            "name": "芒果科技有限公司",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 1000000001
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320001
+              },
+              "accountName": {
+                "type": "STRING",
+                "value": "芒果科技有限公司"
+              },
+              "accountNo": {
+                "type": "STRING",
+                "value": "622200000000000001"
+              },
+              "bankName": {
+                "type": "STRING",
+                "value": "招商银行上海分行"
+              },
+              "accountType": {
+                "type": "STRING",
+                "value": "CORPORATE"
+              },
+              "defaultAccount": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000072",
+            "version": 1,
+            "bizKey": "payment.subject-bank-account.320002.622200000000000002",
+            "name": "芒果服务有限公司",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 1000000002
+              },
+              "subjectId": {
+                "type": "LONG",
+                "value": 320002
+              },
+              "accountName": {
+                "type": "STRING",
+                "value": "芒果服务有限公司"
+              },
+              "accountNo": {
+                "type": "STRING",
+                "value": "622200000000000002"
+              },
+              "bankName": {
+                "type": "STRING",
+                "value": "华夏银行上海分行"
+              },
+              "accountType": {
+                "type": "STRING",
+                "value": "CORPORATE"
+              },
+              "defaultAccount": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

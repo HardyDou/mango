@@ -9,6 +9,8 @@ import io.mango.payment.api.vo.PaymentChannelCertificateExpiryVO;
 import io.mango.payment.api.vo.PaymentChannelCertificateRotationRecordVO;
 import io.mango.payment.api.vo.PaymentChannelContractVO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 
@@ -27,7 +29,9 @@ public interface PaymentChannelContractApi {
 
     R<Boolean> deleteChannelContract(@NotNull(message = "签约配置 ID 不能为空") Long id);
 
-    R<List<PaymentChannelCertificateExpiryVO>> listExpiringCertificates(Integer warningDays);
+    R<List<PaymentChannelCertificateExpiryVO>> listExpiringCertificates(
+            @Min(value = 1, message = "预警天数不能小于 1")
+            @Max(value = 365, message = "预警天数不能大于 365") Integer warningDays);
 
     R<PaymentChannelCertificateRotationRecordVO> rotateCertificate(
             @Valid RotatePaymentChannelContractCertificateCommand command);

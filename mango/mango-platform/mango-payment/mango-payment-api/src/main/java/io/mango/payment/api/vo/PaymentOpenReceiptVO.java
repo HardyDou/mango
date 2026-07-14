@@ -18,7 +18,7 @@ public class PaymentOpenReceiptVO {
     @Schema(description = "支付订单号")
     private String payOrderNo;
 
-    @Schema(description = "AppId")
+    @Schema(description = "支付应用 AppId")
     private String appId;
 
     @Schema(description = "支付标题")

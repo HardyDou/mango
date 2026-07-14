@@ -9,7 +9,7 @@
            and tenant_id = #{tenantId}
     </delete>
 
-    <select id="selectItemsByRuleId" resultType="io.mango.payment.api.vo.PaymentMethodRouteRuleItemVO">
+    <select id="selectItemsByRuleId" resultType="io.mango.payment.core.model.projection.PaymentMethodRouteRuleItemProjection">
         select rri.id,
                rri.rule_id as ruleId,
                rri.contract_capability_id as contractCapabilityId,

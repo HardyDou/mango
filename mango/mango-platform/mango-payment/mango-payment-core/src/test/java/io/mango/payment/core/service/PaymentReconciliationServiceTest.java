@@ -1,25 +1,32 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+import io.mango.payment.core.service.impl.PaymentObservabilityService;
+import io.mango.payment.core.service.impl.PaymentOperationAuditService;
+import io.mango.payment.core.service.impl.PaymentReconciliationService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
+import io.mango.payment.api.command.PaymentReconciliationBillItemCommand;
 import io.mango.payment.api.vo.PaymentReconciliationVO;
+import io.mango.payment.core.model.projection.PaymentReconciliationProjection;
 import io.mango.payment.core.entity.PaymentChannelBillFetchBatchEntity;
 import io.mango.payment.core.entity.PaymentChannelBillSourceEntity;
 import io.mango.payment.core.entity.PaymentChannelBillDetailEntity;
-import io.mango.payment.core.entity.PaymentChannel;
+import io.mango.payment.core.entity.PaymentChannelEntity;
 import io.mango.payment.core.entity.PaymentDifferenceEntity;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
-import io.mango.payment.core.entity.PaymentChannelContract;
+import io.mango.payment.core.entity.PaymentChannelContractEntity;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
 import io.mango.payment.core.entity.PaymentReconciliationEntity;
-import io.mango.payment.core.entity.PaymentMangoPayScenarioControl;
+import io.mango.payment.core.entity.PaymentMangoPayScenarioControlEntity;
 import io.mango.payment.core.entity.PaymentTransactionFlowEntity;
 import io.mango.payment.core.mapper.PaymentChannelBillBatchMapper;
 import io.mango.payment.core.mapper.PaymentChannelBillDetailMapper;
@@ -59,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -82,10 +90,10 @@ class PaymentReconciliationServiceTest {
     private PaymentTransactionFlowMapper transactionFlowMapper;
     private PaymentOperationAuditService auditService;
     private PaymentMangoPayScenarioControlService scenarioControlService;
-    private PaymentOrderStatusFlowService statusFlowService;
-    private PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
+    private PaymentOrderStatusFlowRecorder statusFlowService;
+    private PaymentRefundCompletionDeduplicator duplicateRefundCompletionService;
     private PaymentObservabilityService observabilityService;
-    private PaymentNumberService numberService;
+    private PaymentNumberGenerator numberService;
     private PaymentReconciliationService service;
 
     @BeforeEach
@@ -104,16 +112,16 @@ class PaymentReconciliationServiceTest {
         transactionFlowMapper = mock(PaymentTransactionFlowMapper.class);
         auditService = mock(PaymentOperationAuditService.class);
         scenarioControlService = mock(PaymentMangoPayScenarioControlService.class);
-        statusFlowService = mock(PaymentOrderStatusFlowService.class);
-        duplicateRefundCompletionService = mock(PaymentDuplicateRefundCompletionService.class);
+        statusFlowService = mock(PaymentOrderStatusFlowRecorder.class);
+        duplicateRefundCompletionService = mock(PaymentRefundCompletionDeduplicator.class);
         observabilityService = mock(PaymentObservabilityService.class);
-        numberService = mock(PaymentNumberService.class);
+        numberService = mock(PaymentNumberGenerator.class);
         when(numberService.next(anyString())).thenAnswer(invocation -> switch (invocation.getArgument(0, String.class)) {
-            case PaymentNumberService.PAY_RECON_BATCH_NO -> "RC2026060600000001";
-            case PaymentNumberService.PAY_DIFF_NO -> "DF2026060600000001";
-            case PaymentNumberService.PAY_FLOW_NO -> "PF2026060600000001";
-            case PaymentNumberService.PAY_REFUND_FLOW_NO -> "RF2026060600000001";
-            case PaymentNumberService.PAY_FEE_FLOW_NO -> "FF2026060600000001";
+            case PaymentNumberGenerator.PAY_RECON_BATCH_NO -> "RC2026060600000001";
+            case PaymentNumberGenerator.PAY_DIFF_NO -> "DF2026060600000001";
+            case PaymentNumberGenerator.PAY_FLOW_NO -> "PF2026060600000001";
+            case PaymentNumberGenerator.PAY_REFUND_FLOW_NO -> "RF2026060600000001";
+            case PaymentNumberGenerator.PAY_FEE_FLOW_NO -> "FF2026060600000001";
             default -> "NO2026060600000001";
         });
         service = new PaymentReconciliationService(
@@ -134,8 +142,8 @@ class PaymentReconciliationServiceTest {
                         channelContractMapper,
                         reconciliationMapper,
                         scenarioControlService,
-                        new PaymentMangoPayResultMappingService()))),
-                new PaymentOrderStateService(),
+                        new PaymentMangoPayResultTranslator()))),
+                new PaymentOrderStatePolicy(),
                 statusFlowService,
                 duplicateRefundCompletionService,
                 observabilityService,
@@ -149,16 +157,16 @@ class PaymentReconciliationServiceTest {
                 .thenReturn(List.of());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
-        PaymentChannelContract contract = new PaymentChannelContract();
+        PaymentChannelContractEntity contract = new PaymentChannelContractEntity();
         contract.setId(331001L);
-        contract.setTenantId(1L);
+        contract.setTenantId("1");
         contract.setChannelId(330001L);
         contract.setStatus(1);
         contract.setDelFlag(0);
         when(channelContractMapper.selectById(331001L)).thenReturn(contract);
-        PaymentChannel channel = new PaymentChannel();
+        PaymentChannelEntity channel = new PaymentChannelEntity();
         channel.setId(330001L);
-        channel.setTenantId(1L);
+        channel.setTenantId("1");
         channel.setChannelCode("MANGO_PAY");
         channel.setStatus(1);
         channel.setDelFlag(0);
@@ -182,9 +190,9 @@ class PaymentReconciliationServiceTest {
     @Test
     @DisplayName("saveBillSource should reject fetch mode unsupported by channel definition")
     void saveBillSource_unsupportedChannelFetchMode_rejects() {
-        PaymentChannel channel = new PaymentChannel();
+        PaymentChannelEntity channel = new PaymentChannelEntity();
         channel.setId(330001L);
-        channel.setTenantId(1L);
+        channel.setTenantId("1");
         channel.setChannelCode("MANGO_PAY");
         channel.setStatus(1);
         channel.setDelFlag(0);
@@ -214,7 +222,7 @@ class PaymentReconciliationServiceTest {
         try (SimpleFtpServer ftpServer = new SimpleFtpServer("/bills/2026-06-06.json", billBody)) {
             PaymentChannelBillSourceEntity source = new PaymentChannelBillSourceEntity();
             source.setId(900001L);
-            source.setTenantId(1L);
+            source.setTenantId("1");
             source.setDelFlag(0);
             source.setEnabled(1);
             source.setChannelCode("MANGO_PAY");
@@ -222,7 +230,7 @@ class PaymentReconciliationServiceTest {
             source.setEndpoint("127.0.0.1:" + ftpServer.port());
             source.setRemotePath("/bills/2026-06-06.json");
             when(billSourceMapper.selectById(900001L)).thenReturn(source);
-            when(reconciliationMapper.countImportedFile(eq(1L), eq("MANGO_PAY"), eq(billDate), anyString()))
+            when(reconciliationMapper.countImportedFile(eq("1"), eq("MANGO_PAY"), eq(billDate), anyString()))
                     .thenReturn(0L);
             PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
             paymentOrder.setId(200001L);
@@ -230,9 +238,9 @@ class PaymentReconciliationServiceTest {
             paymentOrder.setBusinessOrderId(100001L);
             paymentOrder.setAmount(9900L);
             paymentOrder.setStatus("SUCCESS");
-            when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "FTP-PO001")).thenReturn(paymentOrder);
-            when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("MATCHED"));
-            when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+            when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "FTP-PO001")).thenReturn(paymentOrder);
+            when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("MATCHED"));
+            when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
             FetchPaymentChannelBillCommand command = new FetchPaymentChannelBillCommand();
             command.setSourceId(900001L);
@@ -269,7 +277,7 @@ class PaymentReconciliationServiceTest {
         try (SimpleFtpServer ftpServer = new SimpleFtpServer("/bills/2026-06-06.json", "{\"items\":[]}")) {
             PaymentChannelBillSourceEntity source = new PaymentChannelBillSourceEntity();
             source.setId(900002L);
-            source.setTenantId(1L);
+            source.setTenantId("1");
             source.setDelFlag(0);
             source.setEnabled(1);
             source.setChannelCode("MANGO_PAY");
@@ -296,11 +304,11 @@ class PaymentReconciliationServiceTest {
     @DisplayName("generateMangoPayVirtualBill should use real payment and refund rows")
     void generateMangoPayVirtualBill_withRealRows_createsMatchedBatch() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.selectMangoPayBillItems(1L, "MANGO_PAY", billDate, billDate.plusDays(1)))
+        when(reconciliationMapper.selectMangoPayBillItems("1", "MANGO_PAY", billDate, billDate.plusDays(1)))
                 .thenReturn(List.of(
                         billRow("CASHIER-PO001", "PAYMENT", 9900L, 12L, LocalDateTime.of(2026, 6, 6, 10, 0)),
                         billRow("CASHIER-REFUND-RO001", "REFUND", 3900L, 8L, LocalDateTime.of(2026, 6, 6, 11, 0))));
-        when(reconciliationMapper.countImportedFile(eq(1L), eq("MANGO_PAY"), eq(billDate), anyString()))
+        when(reconciliationMapper.countImportedFile(eq("1"), eq("MANGO_PAY"), eq(billDate), anyString()))
                 .thenReturn(0L);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setId(200001L);
@@ -308,17 +316,17 @@ class PaymentReconciliationServiceTest {
         paymentOrder.setBusinessOrderId(100001L);
         paymentOrder.setAmount(9900L);
         paymentOrder.setStatus("SUCCESS");
-        when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
+        when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
         PaymentRefundOrderEntity refundOrder = new PaymentRefundOrderEntity();
         refundOrder.setId(300001L);
         refundOrder.setRefundOrderNo("RO001");
         refundOrder.setPaymentOrderId(200001L);
         refundOrder.setRefundAmount(3900L);
         refundOrder.setStatus("SUCCESS");
-        when(refundOrderMapper.selectEntityByTenantAndChannelRefundNo(1L, "CASHIER-REFUND-RO001")).thenReturn(refundOrder);
-        when(paymentOrderMapper.selectEntityByTenantAndId(1L, 200001L)).thenReturn(paymentOrder);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("MATCHED"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(refundOrderMapper.selectEntityByTenantAndChannelRefundNo("1", "CASHIER-REFUND-RO001")).thenReturn(refundOrder);
+        when(paymentOrderMapper.selectEntityByTenantAndId("1", 200001L)).thenReturn(paymentOrder);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("MATCHED"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         GenerateMangoPayVirtualBillCommand command = new GenerateMangoPayVirtualBillCommand();
         command.setChannelCode("MANGO_PAY");
@@ -354,28 +362,28 @@ class PaymentReconciliationServiceTest {
         assertThat(flowCaptor.getAllValues().get(1).getBusinessOrderId()).isEqualTo(100001L);
         assertThat(flowCaptor.getAllValues().get(1).getPaymentOrderId()).isEqualTo(200001L);
         assertThat(flowCaptor.getAllValues().get(1).getRefundOrderId()).isEqualTo(300001L);
-        verify(auditService).record(
-                eq(PaymentOperationAuditService.ACTION_GENERATE_MANGO_PAY_CHANNEL_BILL),
-                eq(PaymentOperationAuditService.RESOURCE_PAYMENT_RECONCILIATION),
-                eq(reconciliation.getReconciliationNo()),
-                eq(PaymentOperationAuditService.RESULT_SUCCESS));
-        verify(observabilityService).logSummary(
-                eq("RECONCILIATION_BATCH"),
-                eq(reconciliation.getReconciliationNo()),
-                eq("MATCHED"),
-                eq(13800L),
-                eq("MANGO_PAY"),
-                any(Long.class),
-                eq(PaymentOperationAuditService.RESULT_SUCCESS));
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
+                PaymentOperationAuditService.ACTION_GENERATE_MANGO_PAY_CHANNEL_BILL,
+                PaymentOperationAuditService.RESOURCE_PAYMENT_RECONCILIATION,
+                reconciliation.getReconciliationNo(),
+                PaymentOperationAuditService.RESULT_SUCCESS));
+        verify(observabilityService).logSummary(argThat(summary ->
+                "RECONCILIATION_BATCH".equals(summary.event())
+                        && reconciliation.getReconciliationNo().equals(summary.orderNo())
+                        && "MATCHED".equals(summary.status())
+                        && Long.valueOf(13800L).equals(summary.amount())
+                        && "MANGO_PAY".equals(summary.channelCode())
+                        && summary.durationMillis() >= 0
+                        && PaymentOperationAuditService.RESULT_SUCCESS.equals(summary.result())));
     }
 
     @Test
     @DisplayName("generateMangoPayVirtualBill should reject duplicate generated bill")
     void generateMangoPayVirtualBill_duplicateDigest_rejects() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.selectMangoPayBillItems(1L, "MANGO_PAY", billDate, billDate.plusDays(1)))
+        when(reconciliationMapper.selectMangoPayBillItems("1", "MANGO_PAY", billDate, billDate.plusDays(1)))
                 .thenReturn(List.of(billRow("CASHIER-PO001", "PAYMENT", 9900L, 0L, LocalDateTime.of(2026, 6, 6, 10, 0))));
-        when(reconciliationMapper.countImportedFile(eq(1L), eq("MANGO_PAY"), eq(billDate), anyString()))
+        when(reconciliationMapper.countImportedFile(eq("1"), eq("MANGO_PAY"), eq(billDate), anyString()))
                 .thenReturn(1L);
 
         GenerateMangoPayVirtualBillCommand command = new GenerateMangoPayVirtualBillCommand();
@@ -393,21 +401,21 @@ class PaymentReconciliationServiceTest {
     @DisplayName("generateMangoPayVirtualBill should apply next bill difference control")
     void generateMangoPayVirtualBill_billDifferenceControl_createsAmountDifference() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.selectMangoPayBillItems(1L, "MANGO_PAY", billDate, billDate.plusDays(1)))
+        when(reconciliationMapper.selectMangoPayBillItems("1", "MANGO_PAY", billDate, billDate.plusDays(1)))
                 .thenReturn(List.of(billRow("CASHIER-PO001", "PAYMENT", 9900L, 0L, LocalDateTime.of(2026, 6, 6, 10, 0))));
-        PaymentMangoPayScenarioControl scenario = new PaymentMangoPayScenarioControl();
+        PaymentMangoPayScenarioControlEntity scenario = new PaymentMangoPayScenarioControlEntity();
         scenario.setBillDifferenceType("AMOUNT_PLUS");
         scenario.setDifferenceAmount(100L);
         when(scenarioControlService.consumeBillScenario(331001L)).thenReturn(scenario);
-        when(reconciliationMapper.countImportedFile(eq(1L), eq("MANGO_PAY"), eq(billDate), anyString()))
+        when(reconciliationMapper.countImportedFile(eq("1"), eq("MANGO_PAY"), eq(billDate), anyString()))
                 .thenReturn(0L);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setPayOrderNo("PO001");
         paymentOrder.setAmount(9900L);
         paymentOrder.setStatus("SUCCESS");
-        when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("DIFFERENCE"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("DIFFERENCE"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         GenerateMangoPayVirtualBillCommand command = new GenerateMangoPayVirtualBillCommand();
         command.setChannelCode("MANGO_PAY");
@@ -430,22 +438,22 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should match refund bill amount")
     void importReconciliation_refundAmountMismatch_createsDifference() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-refund"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-refund"))
                 .thenReturn(0L);
         PaymentRefundOrderEntity refundOrder = new PaymentRefundOrderEntity();
         refundOrder.setRefundOrderNo("RO001");
         refundOrder.setRefundAmount(3900L);
         refundOrder.setStatus("SUCCESS");
-        when(refundOrderMapper.selectEntityByTenantAndChannelRefundNo(1L, "CASHIER-REFUND-RO001")).thenReturn(refundOrder);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("DIFFERENCE"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(refundOrderMapper.selectEntityByTenantAndChannelRefundNo("1", "CASHIER-REFUND-RO001")).thenReturn(refundOrder);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("DIFFERENCE"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
         command.setBillDate(billDate);
         command.setBillFileName("refund.bill");
         command.setFileDigest("digest-refund");
-        ImportPaymentReconciliationCommand.BillItem item = new ImportPaymentReconciliationCommand.BillItem();
+        PaymentReconciliationBillItemCommand item = new PaymentReconciliationBillItemCommand();
         item.setChannelTradeNo("CASHIER-REFUND-RO001");
         item.setTradeType("refund");
         item.setAmount(4000L);
@@ -468,7 +476,7 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should compensate paying payment order when channel bill proves success")
     void importReconciliation_payingPaymentBillMatched_compensatesSuccessState() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-payment-compensate"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-payment-compensate"))
                 .thenReturn(0L);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setId(200001L);
@@ -476,17 +484,17 @@ class PaymentReconciliationServiceTest {
         paymentOrder.setBusinessOrderId(100001L);
         paymentOrder.setAmount(9900L);
         paymentOrder.setStatus("PAYING");
-        when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "CASHIER-PO-COMP"))
+        when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "CASHIER-PO-COMP"))
                 .thenReturn(paymentOrder);
-        when(paymentOrderMapper.updatePayingQueryResult(eq(1L), eq(200001L), eq("SUCCESS"), eq(1), any()))
+        when(paymentOrderMapper.updatePayingQueryResult(eq("1"), eq(200001L), eq("SUCCESS"), eq(1), any()))
                 .thenReturn(1);
-        when(businessOrderMapper.markCashierPaySuccess(1L, 100001L, 9900L)).thenReturn(1);
+        when(businessOrderMapper.markCashierPaySuccess("1", 100001L, 9900L)).thenReturn(1);
         PaymentBusinessOrderEntity businessOrder = new PaymentBusinessOrderEntity();
         businessOrder.setBizOrderNo("BO-COMP");
         businessOrder.setStatus("PAYING");
-        when(businessOrderMapper.selectCashierBusinessOrder(1L, 100001L)).thenReturn(businessOrder);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("MATCHED"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(businessOrderMapper.selectCashierBusinessOrder("1", 100001L)).thenReturn(businessOrder);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("MATCHED"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
@@ -499,31 +507,31 @@ class PaymentReconciliationServiceTest {
         PaymentReconciliationVO result = service.importReconciliation(command);
 
         assertThat(result.getMatchStatusName()).isEqualTo("已平账");
-        verify(paymentOrderMapper).updatePayingQueryResult(eq(1L), eq(200001L), eq("SUCCESS"), eq(1), eq(LocalDateTime.of(2026, 6, 6, 10, 0)));
-        verify(businessOrderMapper).markCashierPaySuccess(1L, 100001L, 9900L);
+        verify(paymentOrderMapper).updatePayingQueryResult(eq("1"), eq(200001L), eq("SUCCESS"), eq(1), eq(LocalDateTime.of(2026, 6, 6, 10, 0)));
+        verify(businessOrderMapper).markCashierPaySuccess("1", 100001L, 9900L);
         ArgumentCaptor<PaymentTransactionFlowEntity> flowCaptor = ArgumentCaptor.forClass(PaymentTransactionFlowEntity.class);
         verify(transactionFlowMapper).insert(flowCaptor.capture());
         assertThat(flowCaptor.getValue().getFlowType()).isEqualTo("PAY_SUCCESS");
         assertThat(flowCaptor.getValue().getAmount()).isEqualTo(9900L);
         verify(statusFlowService).record(
-                eq(1L),
-                eq(PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT),
+                eq("1"),
+                eq(PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT),
                 eq(200001L),
                 eq("PO-COMP"),
                 eq("PAYING"),
                 eq("SUCCESS"),
-                eq(PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE),
+                eq(PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE),
                 eq("CASHIER-PO-COMP"),
                 any(),
                 eq("对账账单确认支付成功并补偿推进支付订单状态"));
         verify(statusFlowService).record(
-                eq(1L),
-                eq(PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS),
+                eq("1"),
+                eq(PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS),
                 eq(100001L),
                 eq("BO-COMP"),
                 eq("PAYING"),
                 eq("PAID"),
-                eq(PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE),
+                eq(PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE),
                 eq("CASHIER-PO-COMP"),
                 any(),
                 eq("对账账单确认支付成功并补偿推进业务订单状态"));
@@ -534,7 +542,7 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should not compensate paying payment order when amount mismatches")
     void importReconciliation_payingPaymentAmountMismatch_createsDifferenceOnly() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-payment-mismatch"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-payment-mismatch"))
                 .thenReturn(0L);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setId(200001L);
@@ -542,10 +550,10 @@ class PaymentReconciliationServiceTest {
         paymentOrder.setBusinessOrderId(100001L);
         paymentOrder.setAmount(9900L);
         paymentOrder.setStatus("PAYING");
-        when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "CASHIER-PO-MISMATCH"))
+        when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "CASHIER-PO-MISMATCH"))
                 .thenReturn(paymentOrder);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("DIFFERENCE"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("DIFFERENCE"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
@@ -571,7 +579,7 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should compensate refunding order when channel bill proves success")
     void importReconciliation_refundingBillMatched_compensatesSuccessState() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-refund-compensate"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-refund-compensate"))
                 .thenReturn(0L);
         PaymentRefundOrderEntity refundOrder = new PaymentRefundOrderEntity();
         refundOrder.setId(300001L);
@@ -579,24 +587,24 @@ class PaymentReconciliationServiceTest {
         refundOrder.setPaymentOrderId(200001L);
         refundOrder.setRefundAmount(3900L);
         refundOrder.setStatus("REFUNDING");
-        when(refundOrderMapper.selectEntityByTenantAndChannelRefundNo(1L, "CASHIER-REFUND-COMP"))
+        when(refundOrderMapper.selectEntityByTenantAndChannelRefundNo("1", "CASHIER-REFUND-COMP"))
                 .thenReturn(refundOrder);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setId(200001L);
         paymentOrder.setBusinessOrderId(100001L);
         paymentOrder.setAmount(9900L);
         paymentOrder.setStatus("SUCCESS");
-        when(paymentOrderMapper.selectEntityByTenantAndId(1L, 200001L)).thenReturn(paymentOrder);
-        when(refundOrderMapper.updateRefundingQueryResult(eq(1L), eq(300001L), eq("SUCCESS"), any())).thenReturn(1);
+        when(paymentOrderMapper.selectEntityByTenantAndId("1", 200001L)).thenReturn(paymentOrder);
+        when(refundOrderMapper.updateRefundingQueryResult(eq("1"), eq(300001L), eq("SUCCESS"), any())).thenReturn(1);
         PaymentBusinessOrderEntity businessOrder = new PaymentBusinessOrderEntity();
         businessOrder.setBizOrderNo("BO-COMP");
         businessOrder.setStatus("SUCCESS");
         businessOrder.setPaidAmount(9900L);
         businessOrder.setRefundedAmount(0L);
-        when(businessOrderMapper.selectCashierBusinessOrder(1L, 100001L)).thenReturn(businessOrder);
-        when(businessOrderMapper.updateRefundProgress(1L, 100001L, 3900L)).thenReturn(1);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("MATCHED"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(businessOrderMapper.selectCashierBusinessOrder("1", 100001L)).thenReturn(businessOrder);
+        when(businessOrderMapper.updateRefundProgress("1", 100001L, 3900L)).thenReturn(1);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("MATCHED"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
@@ -609,31 +617,31 @@ class PaymentReconciliationServiceTest {
         PaymentReconciliationVO result = service.importReconciliation(command);
 
         assertThat(result.getMatchStatusName()).isEqualTo("已平账");
-        verify(refundOrderMapper).updateRefundingQueryResult(eq(1L), eq(300001L), eq("SUCCESS"), eq(LocalDateTime.of(2026, 6, 6, 11, 0)));
-        verify(businessOrderMapper).updateRefundProgress(1L, 100001L, 3900L);
+        verify(refundOrderMapper).updateRefundingQueryResult(eq("1"), eq(300001L), eq("SUCCESS"), eq(LocalDateTime.of(2026, 6, 6, 11, 0)));
+        verify(businessOrderMapper).updateRefundProgress("1", 100001L, 3900L);
         ArgumentCaptor<PaymentTransactionFlowEntity> flowCaptor = ArgumentCaptor.forClass(PaymentTransactionFlowEntity.class);
         verify(transactionFlowMapper).insert(flowCaptor.capture());
         assertThat(flowCaptor.getValue().getFlowType()).isEqualTo("REFUND_SUCCESS");
         assertThat(flowCaptor.getValue().getAmount()).isEqualTo(3900L);
         verify(statusFlowService).record(
-                eq(1L),
-                eq(PaymentOrderStatusFlowService.ORDER_TYPE_REFUND),
+                eq("1"),
+                eq(PaymentOrderStatusFlowRecorder.ORDER_TYPE_REFUND),
                 eq(300001L),
                 eq("RO-COMP"),
                 eq("REFUNDING"),
                 eq("SUCCESS"),
-                eq(PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE),
+                eq(PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE),
                 eq("CASHIER-REFUND-COMP"),
                 any(),
                 eq("对账账单确认退款成功并补偿推进退款订单状态"));
         verify(statusFlowService).record(
-                eq(1L),
-                eq(PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS),
+                eq("1"),
+                eq(PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS),
                 eq(100001L),
                 eq("BO-COMP"),
                 eq("SUCCESS"),
                 eq("PARTIAL_REFUNDED"),
-                eq(PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE),
+                eq(PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE),
                 eq("CASHIER-REFUND-COMP"),
                 any(),
                 eq("对账账单确认退款成功并补偿推进业务订单状态"));
@@ -644,13 +652,13 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should create differences for local successful orders missing from channel bill")
     void importReconciliation_localSuccessfulOrdersMissingFromBill_createsDifferences() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-local-missing"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-local-missing"))
                 .thenReturn(0L);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setPayOrderNo("PO-MISSING");
         paymentOrder.setAmount(9900L);
         when(paymentOrderMapper.selectSuccessfulChannelOrdersMissingInBill(
-                1L,
+                "1",
                 "MANGO_PAY",
                 billDate,
                 billDate.plusDays(1),
@@ -660,7 +668,7 @@ class PaymentReconciliationServiceTest {
         refundOrder.setRefundOrderNo("RO-MISSING");
         refundOrder.setRefundAmount(3900L);
         when(refundOrderMapper.selectSuccessfulChannelRefundsMissingInBill(
-                1L,
+                "1",
                 "MANGO_PAY",
                 billDate,
                 billDate.plusDays(1),
@@ -672,9 +680,9 @@ class PaymentReconciliationServiceTest {
         matchedOrder.setBusinessOrderId(100001L);
         matchedOrder.setAmount(9900L);
         matchedOrder.setStatus("SUCCESS");
-        when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "CASHIER-PO001")).thenReturn(matchedOrder);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("DIFFERENCE"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "CASHIER-PO001")).thenReturn(matchedOrder);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("DIFFERENCE"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
@@ -704,7 +712,7 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should not duplicate existing channel fee flow")
     void importReconciliation_existingChannelFeeFlow_doesNotDuplicate() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-fee"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-fee"))
                 .thenReturn(0L);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setId(200001L);
@@ -712,12 +720,12 @@ class PaymentReconciliationServiceTest {
         paymentOrder.setBusinessOrderId(100001L);
         paymentOrder.setAmount(9900L);
         paymentOrder.setStatus("SUCCESS");
-        when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
+        when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
         PaymentTransactionFlowEntity existing = new PaymentTransactionFlowEntity();
         existing.setAmount(12L);
-        when(transactionFlowMapper.selectChannelFeeFlowByPaymentOrder(1L, 200001L)).thenReturn(existing);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("MATCHED"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(transactionFlowMapper.selectChannelFeeFlowByPaymentOrder("1", 200001L)).thenReturn(existing);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("MATCHED"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
@@ -738,7 +746,7 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should create difference when existing channel fee flow amount mismatches")
     void importReconciliation_existingChannelFeeFlowAmountMismatch_createsDifference() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-fee-mismatch"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-fee-mismatch"))
                 .thenReturn(0L);
         PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
         paymentOrder.setId(200001L);
@@ -746,12 +754,12 @@ class PaymentReconciliationServiceTest {
         paymentOrder.setBusinessOrderId(100001L);
         paymentOrder.setAmount(9900L);
         paymentOrder.setStatus("SUCCESS");
-        when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
+        when(paymentOrderMapper.selectByTenantAndChannelTradeNo("1", "MANGO_PAY", "CASHIER-PO001")).thenReturn(paymentOrder);
         PaymentTransactionFlowEntity existing = new PaymentTransactionFlowEntity();
         existing.setAmount(10L);
-        when(transactionFlowMapper.selectChannelFeeFlowByPaymentOrder(1L, 200001L)).thenReturn(existing);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("DIFFERENCE"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(transactionFlowMapper.selectChannelFeeFlowByPaymentOrder("1", 200001L)).thenReturn(existing);
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("DIFFERENCE"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
@@ -776,10 +784,10 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should not create channel fee flow for standalone fee bill item")
     void importReconciliation_standaloneFeeBillItem_doesNotCreateFlow() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-standalone-fee"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-standalone-fee"))
                 .thenReturn(0L);
-        when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("MATCHED"));
-        when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+        when(reconciliationMapper.selectReconciliationDetail(eq("1"), any())).thenReturn(reconciliationVO("MATCHED"));
+        when(billDetailMapper.selectBillDetails(eq("1"), any())).thenReturn(List.of());
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
         command.setChannelCode("MANGO_PAY");
@@ -800,7 +808,7 @@ class PaymentReconciliationServiceTest {
     @DisplayName("importReconciliation should reject amount total overflow through money boundary")
     void importReconciliation_amountTotalOverflow_rejects() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.countImportedFile(1L, "MANGO_PAY", billDate, "digest-overflow"))
+        when(reconciliationMapper.countImportedFile("1", "MANGO_PAY", billDate, "digest-overflow"))
                 .thenReturn(0L);
 
         ImportPaymentReconciliationCommand command = new ImportPaymentReconciliationCommand();
@@ -808,9 +816,9 @@ class PaymentReconciliationServiceTest {
         command.setBillDate(billDate);
         command.setBillFileName("overflow.bill");
         command.setFileDigest("digest-overflow");
-        ImportPaymentReconciliationCommand.BillItem first = billItem(
+        PaymentReconciliationBillItemCommand first = billItem(
                 "CASHIER-PO001", "payment", Long.MAX_VALUE, 0L, LocalDateTime.of(2026, 6, 6, 10, 0));
-        ImportPaymentReconciliationCommand.BillItem second = billItem(
+        PaymentReconciliationBillItemCommand second = billItem(
                 "CASHIER-PO002", "payment", 1L, 0L, LocalDateTime.of(2026, 6, 6, 10, 1));
         command.setItems(List.of(first, second));
 
@@ -823,9 +831,9 @@ class PaymentReconciliationServiceTest {
     @DisplayName("generateMangoPayVirtualBill should reject plus difference overflow through money boundary")
     void generateMangoPayVirtualBill_billDifferenceOverflow_rejects() {
         LocalDate billDate = LocalDate.of(2026, 6, 6);
-        when(reconciliationMapper.selectMangoPayBillItems(1L, "MANGO_PAY", billDate, billDate.plusDays(1)))
+        when(reconciliationMapper.selectMangoPayBillItems("1", "MANGO_PAY", billDate, billDate.plusDays(1)))
                 .thenReturn(List.of(billRow("CASHIER-PO001", "PAYMENT", Long.MAX_VALUE, 0L, LocalDateTime.of(2026, 6, 6, 10, 0))));
-        PaymentMangoPayScenarioControl scenario = new PaymentMangoPayScenarioControl();
+        PaymentMangoPayScenarioControlEntity scenario = new PaymentMangoPayScenarioControlEntity();
         scenario.setBillDifferenceType("AMOUNT_PLUS");
         scenario.setDifferenceAmount(1L);
         when(scenarioControlService.consumeBillScenario(331001L)).thenReturn(scenario);
@@ -855,13 +863,13 @@ class PaymentReconciliationServiceTest {
         return row;
     }
 
-    private ImportPaymentReconciliationCommand.BillItem billItem(
+    private PaymentReconciliationBillItemCommand billItem(
             String channelTradeNo,
             String tradeType,
             Long amount,
             Long fee,
             LocalDateTime tradeTime) {
-        ImportPaymentReconciliationCommand.BillItem item = new ImportPaymentReconciliationCommand.BillItem();
+        PaymentReconciliationBillItemCommand item = new PaymentReconciliationBillItemCommand();
         item.setChannelTradeNo(channelTradeNo);
         item.setTradeType(tradeType);
         item.setAmount(amount);
@@ -870,8 +878,8 @@ class PaymentReconciliationServiceTest {
         return item;
     }
 
-    private PaymentReconciliationVO reconciliationVO(String status) {
-        PaymentReconciliationVO vo = new PaymentReconciliationVO();
+    private PaymentReconciliationProjection reconciliationVO(String status) {
+        PaymentReconciliationProjection vo = new PaymentReconciliationProjection();
         vo.setId(500001L);
         vo.setMatchStatus(status);
         return vo;

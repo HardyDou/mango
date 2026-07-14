@@ -11,7 +11,7 @@ import io.mango.payment.api.command.VoidPaymentSettlementSummaryCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentSettlementSummaryStatusVO;
 import io.mango.payment.api.vo.PaymentSettlementSummaryVO;
-import io.mango.payment.core.service.PaymentSettlementSummaryService;
+import io.mango.payment.core.service.IPaymentSettlementSummaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +35,7 @@ import java.util.List;
 @Tag(name = "结算汇总", description = "支付域财务结算汇总接口")
 public class PaymentSettlementSummaryController implements PaymentSettlementSummaryApi {
 
-    private final PaymentSettlementSummaryService settlementSummaryService;
+    private final IPaymentSettlementSummaryService settlementSummaryService;
 
     @Override
     @GetMapping("/page")
@@ -49,7 +49,7 @@ public class PaymentSettlementSummaryController implements PaymentSettlementSumm
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:settlement-summary:query")
     @Operation(summary = "查询结算汇总详情", description = "按结算汇总 ID 查询生成、确认、作废和汇总指标")
-    public R<PaymentSettlementSummaryVO> detailSettlementSummary(@Parameter(description = "结算汇总 ID", required = true) @RequestParam Long id) {
+    public R<PaymentSettlementSummaryVO> detailSettlementSummary(@Parameter(description = "结算汇总 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(settlementSummaryService.detailSettlementSummary(id));
     }
 

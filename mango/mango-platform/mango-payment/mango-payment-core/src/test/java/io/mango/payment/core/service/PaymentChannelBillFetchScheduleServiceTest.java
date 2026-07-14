@@ -1,5 +1,7 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentReconciliationService;
+
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
@@ -23,19 +25,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PaymentChannelBillFetchScheduleServiceTest {
+class PaymentChannelBillFetchSchedulerTest {
 
     private PaymentChannelBillSourceMapper billSourceMapper;
     private PaymentChannelBillFetchBatchMapper billFetchBatchMapper;
     private PaymentReconciliationService reconciliationService;
-    private PaymentChannelBillFetchScheduleService service;
+    private PaymentChannelBillFetchScheduler service;
 
     @BeforeEach
     void setUp() {
         billSourceMapper = mock(PaymentChannelBillSourceMapper.class);
         billFetchBatchMapper = mock(PaymentChannelBillFetchBatchMapper.class);
         reconciliationService = mock(PaymentReconciliationService.class);
-        service = new PaymentChannelBillFetchScheduleService(billSourceMapper, billFetchBatchMapper, reconciliationService);
+        service = new PaymentChannelBillFetchScheduler(billSourceMapper, billFetchBatchMapper, reconciliationService);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -52,15 +54,15 @@ class PaymentChannelBillFetchScheduleServiceTest {
         PaymentChannelBillSourceEntity skipped = source(101L, "MANGO_PAY", "HTTP");
         PaymentChannelBillSourceEntity fetched = source(102L, "OFFLINE_COLLECTION", "FTP");
         PaymentChannelBillSourceEntity failed = source(103L, "TONG_LIAN", "FTPS");
-        when(billSourceMapper.selectEnabledAutomaticSources(1L)).thenReturn(List.of(skipped, fetched, failed));
-        when(billFetchBatchMapper.countSuccessfulFetch(1L, 101L, billDate)).thenReturn(1L);
-        when(billFetchBatchMapper.countSuccessfulFetch(1L, 102L, billDate)).thenReturn(0L);
-        when(billFetchBatchMapper.countSuccessfulFetch(1L, 103L, billDate)).thenReturn(0L);
+        when(billSourceMapper.selectEnabledAutomaticSources("1")).thenReturn(List.of(skipped, fetched, failed));
+        when(billFetchBatchMapper.countSuccessfulFetch("1", 101L, billDate)).thenReturn(1L);
+        when(billFetchBatchMapper.countSuccessfulFetch("1", 102L, billDate)).thenReturn(0L);
+        when(billFetchBatchMapper.countSuccessfulFetch("1", 103L, billDate)).thenReturn(0L);
         when(reconciliationService.fetchChannelBill(any(FetchPaymentChannelBillCommand.class)))
                 .thenReturn(null)
                 .thenThrow(new IllegalArgumentException("远端账单不可用"));
 
-        PaymentChannelBillFetchScheduleService.ScheduledBillFetchResult result =
+        PaymentChannelBillFetchScheduler.ScheduledBillFetchResult result =
                 service.fetchScheduledChannelBills(billDate);
 
         assertThat(result.totalCount()).isEqualTo(3);
@@ -81,7 +83,7 @@ class PaymentChannelBillFetchScheduleServiceTest {
     private PaymentChannelBillSourceEntity source(Long id, String channelCode, String fetchMode) {
         PaymentChannelBillSourceEntity entity = new PaymentChannelBillSourceEntity();
         entity.setId(id);
-        entity.setTenantId(1L);
+        entity.setTenantId("1");
         entity.setChannelCode(channelCode);
         entity.setFetchMode(fetchMode);
         entity.setEnabled(1);

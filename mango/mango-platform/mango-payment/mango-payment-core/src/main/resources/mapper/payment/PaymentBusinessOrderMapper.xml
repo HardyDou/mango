@@ -127,7 +127,7 @@
         <include refid="businessOrderWhere"/>
     </select>
 
-    <select id="selectBusinessOrderPage" resultType="io.mango.payment.api.vo.PaymentBusinessOrderVO">
+    <select id="selectBusinessOrderPage" resultType="io.mango.payment.core.model.projection.PaymentBusinessOrderProjection">
         <include refid="businessOrderSelect"/>
         <include refid="businessOrderFrom"/>
         <include refid="businessOrderWhere"/>
@@ -135,7 +135,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectBusinessOrderDetail" resultType="io.mango.payment.api.vo.PaymentBusinessOrderVO">
+    <select id="selectBusinessOrderDetail" resultType="io.mango.payment.core.model.projection.PaymentBusinessOrderProjection">
         <include refid="businessOrderSelect"/>
         <include refid="businessOrderFrom"/>
         where bo.tenant_id = #{tenantId}

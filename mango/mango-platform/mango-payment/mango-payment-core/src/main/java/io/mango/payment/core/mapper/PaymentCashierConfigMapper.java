@@ -2,15 +2,15 @@ package io.mango.payment.core.mapper;
 
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.payment.core.entity.PaymentCashierConfig;
+import io.mango.payment.core.entity.PaymentCashierConfigEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface PaymentCashierConfigMapper extends BaseMapper<PaymentCashierConfig> {
+public interface PaymentCashierConfigMapper extends BaseMapper<PaymentCashierConfigEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentCashierConfig selectByIdIgnoreTenant(@Param("id") Long id);
+    PaymentCashierConfigEntity selectByIdIgnoreTenant(@Param("id") Long id);
 
-    long countDeleteRelations(@Param("tenantId") Long tenantId, @Param("cashierConfigId") Long cashierConfigId);
+    long countDeleteRelations(@Param("tenantId") String tenantId, @Param("cashierConfigId") Long cashierConfigId);
 }

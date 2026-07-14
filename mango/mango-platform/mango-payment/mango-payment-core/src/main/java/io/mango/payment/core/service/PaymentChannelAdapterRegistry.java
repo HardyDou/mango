@@ -1,7 +1,7 @@
 package io.mango.payment.core.service;
 
 import io.mango.common.result.Require;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,9 +23,9 @@ public class PaymentChannelAdapterRegistry {
 
     public IPaymentChannelAdapter requireAdapter(String channelCode) {
         String normalized = normalize(channelCode);
-        Require.notBlank(normalized, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "支付通道编码不能为空");
+        Require.notBlank(normalized, PaymentCode.PAYMENT_CHANNEL_INVALID, "支付通道编码不能为空");
         IPaymentChannelAdapter adapter = adapters.get(normalized);
-        Require.notNull(adapter, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "支付通道适配器未接入");
+        Require.notNull(adapter, PaymentCode.PAYMENT_CHANNEL_INVALID, "支付通道适配器未接入");
         return adapter;
     }
 

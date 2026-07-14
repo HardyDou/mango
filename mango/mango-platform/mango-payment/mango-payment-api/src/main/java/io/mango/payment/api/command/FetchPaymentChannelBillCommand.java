@@ -2,6 +2,7 @@ package io.mango.payment.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -23,8 +24,10 @@ public class FetchPaymentChannelBillCommand implements Serializable {
     private LocalDate billDate;
 
     @Schema(description = "请求开始时间。HTTP 获取默认使用账单日 00:00:00")
+    @PastOrPresent(message = "请求开始时间不能晚于当前时间")
     private LocalDateTime startTime;
 
     @Schema(description = "请求结束时间。HTTP 获取默认使用账单日次日 00:00:00")
+    @PastOrPresent(message = "请求结束时间不能晚于当前时间")
     private LocalDateTime endTime;
 }

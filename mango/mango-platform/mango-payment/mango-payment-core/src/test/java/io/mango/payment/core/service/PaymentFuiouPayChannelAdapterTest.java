@@ -4,7 +4,7 @@ import io.mango.common.exception.BizException;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
-import io.mango.payment.core.entity.PaymentMethod;
+import io.mango.payment.core.entity.PaymentMethodEntity;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
 
 class PaymentFuiouPayChannelAdapterTest {
 
-    private final PaymentFuiouSignService signService = mock(PaymentFuiouSignService.class);
-    private final PaymentFuiouGatewaySignService gatewaySignService = new PaymentFuiouGatewaySignService();
+    private final PaymentFuiouSigner signService = mock(PaymentFuiouSigner.class);
+    private final PaymentFuiouGatewaySigner gatewaySignService = new PaymentFuiouGatewaySigner();
     private final PaymentOrderMapper paymentOrderMapper = mock(PaymentOrderMapper.class);
     private final PaymentRefundOrderMapper refundOrderMapper = mock(PaymentRefundOrderMapper.class);
     private final PaymentFuiouPayChannelAdapter adapter = new PaymentFuiouPayChannelAdapter(
@@ -156,7 +156,7 @@ class PaymentFuiouPayChannelAdapterTest {
         when(signService.sign(any(), eq("merchant-private-key"))).thenReturn("signed-value");
 
         Map<String, String> request = adapter.refundQueryRequest(
-                new IPaymentChannelAdapter.RefundQueryCommand(1L, refundOrder()),
+                new IPaymentChannelAdapter.RefundQueryInput("1", refundOrder()),
                 config());
 
         assertThat(request)
@@ -207,14 +207,14 @@ class PaymentFuiouPayChannelAdapterTest {
         PaymentFuiouPayConfigParser configParser = mock(PaymentFuiouPayConfigParser.class);
         when(configParser.parse("{}")).thenReturn(config());
         when(paymentOrderMapper.selectSuccessfulChannelOrdersForBill(
-                eq(1L),
+                eq("1"),
                 eq("FUIOU_PAY"),
                 eq(331009L),
                 eq(LocalDate.of(2026, 6, 12)),
                 eq(LocalDate.of(2026, 6, 13))))
                 .thenReturn(List.of());
         when(refundOrderMapper.selectSuccessfulChannelRefundsForBill(
-                eq(1L),
+                eq("1"),
                 eq("FUIOU_PAY"),
                 eq(331009L),
                 eq(LocalDate.of(2026, 6, 12)),
@@ -230,8 +230,8 @@ class PaymentFuiouPayChannelAdapterTest {
                 paymentOrderMapper,
                 refundOrderMapper);
 
-        assertThatThrownBy(() -> billAdapter.generateBill(new IPaymentChannelAdapter.ChannelBillCommand(
-                1L,
+        assertThatThrownBy(() -> billAdapter.generateBill(new IPaymentChannelAdapter.ChannelBillInput(
+                "1",
                 "FUIOU_PAY",
                 331009L,
                 LocalDate.of(2026, 6, 12))))
@@ -250,14 +250,14 @@ class PaymentFuiouPayChannelAdapterTest {
         PaymentOrderEntity order = successfulPaymentOrder(billDate.atTime(10, 30));
         when(configParser.parse("{}")).thenReturn(config());
         when(paymentOrderMapper.selectSuccessfulChannelOrdersForBill(
-                eq(1L), eq("FUIOU_PAY"), eq(331009L), eq(billDate), eq(billDate.plusDays(1))))
+                eq("1"), eq("FUIOU_PAY"), eq(331009L), eq(billDate), eq(billDate.plusDays(1))))
                 .thenReturn(List.of(order));
         when(refundOrderMapper.selectSuccessfulChannelRefundsForBill(
-                eq(1L), eq("FUIOU_PAY"), eq(331009L), eq(billDate), eq(billDate.plusDays(1))))
+                eq("1"), eq("FUIOU_PAY"), eq(331009L), eq(billDate), eq(billDate.plusDays(1))))
                 .thenReturn(List.of());
-        PaymentMethod method = new PaymentMethod();
+        PaymentMethodEntity method = new PaymentMethodEntity();
         method.setId(320001L);
-        method.setTenantId(1L);
+        method.setTenantId("1");
         method.setMethodCode("PERSONAL_WECHAT_QR");
         method.setDelFlag(0);
         when(methodMapper.selectById(320001L)).thenReturn(method);
@@ -281,19 +281,19 @@ class PaymentFuiouPayChannelAdapterTest {
                 refundOrderMapper);
 
         IPaymentChannelAdapter.ChannelBillResult result = billAdapter.generateBill(
-                new IPaymentChannelAdapter.ChannelBillCommand(1L, "FUIOU_PAY", 331009L, billDate));
+                new IPaymentChannelAdapter.ChannelBillInput("1", "FUIOU_PAY", 331009L, billDate));
 
         assertThat(result.rows()).hasSize(1);
         verify(httpClient).post(eq("https://fundwx.payfuiouo2o.com/hisTradeQuery"), any());
     }
 
-    private IPaymentChannelAdapter.PaymentApplyCommand paymentApplyCommand(String methodCode, String clientIp) {
+    private IPaymentChannelAdapter.PaymentApplyInput paymentApplyCommand(String methodCode, String clientIp) {
         return paymentApplyCommand(methodCode, clientIp, null);
     }
 
-    private IPaymentChannelAdapter.PaymentApplyCommand paymentApplyCommand(String methodCode, String clientIp, LocalDateTime expireTime) {
-        return new IPaymentChannelAdapter.PaymentApplyCommand(
-                1L,
+    private IPaymentChannelAdapter.PaymentApplyInput paymentApplyCommand(String methodCode, String clientIp, LocalDateTime expireTime) {
+        return new IPaymentChannelAdapter.PaymentApplyInput(
+                "1",
                 "FUIOU_PAY",
                 331009L,
                 "{}",
@@ -315,9 +315,9 @@ class PaymentFuiouPayChannelAdapterTest {
                 clientIp);
     }
 
-    private IPaymentChannelAdapter.PaymentApplyCommand ebankPaymentApplyCommand(String methodCode) {
-        return new IPaymentChannelAdapter.PaymentApplyCommand(
-                1L,
+    private IPaymentChannelAdapter.PaymentApplyInput ebankPaymentApplyCommand(String methodCode) {
+        return new IPaymentChannelAdapter.PaymentApplyInput(
+                "1",
                 "FUIOU_PAY",
                 331009L,
                 "{}",
@@ -350,7 +350,7 @@ class PaymentFuiouPayChannelAdapterTest {
     private PaymentOrderEntity successfulPaymentOrder(LocalDateTime payTime) {
         PaymentOrderEntity order = new PaymentOrderEntity();
         order.setId(1L);
-        order.setTenantId(1L);
+        order.setTenantId("1");
         order.setPayOrderNo("PO202606060001");
         order.setMethodId(320001L);
         order.setAmount(1L);
@@ -380,7 +380,7 @@ class PaymentFuiouPayChannelAdapterTest {
     private io.mango.payment.core.mapper.PaymentChannelContractMapper tenantConfigMapper(String configValuesJson) {
         io.mango.payment.core.mapper.PaymentChannelContractMapper mapper =
                 mock(io.mango.payment.core.mapper.PaymentChannelContractMapper.class);
-        when(mapper.selectActiveConfigValuesJson(1L, 331009L)).thenReturn(configValuesJson);
+        when(mapper.selectActiveConfigValuesJson("1", 331009L)).thenReturn(configValuesJson);
         return mapper;
     }
 }

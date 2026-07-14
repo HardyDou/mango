@@ -46,7 +46,7 @@
         <include refid="batchWhere"/>
     </select>
 
-    <select id="selectBatchPage" resultType="io.mango.payment.api.vo.PaymentOfflineBankStatementBatchVO">
+    <select id="selectBatchPage" resultType="io.mango.payment.core.model.projection.PaymentOfflineBankStatementBatchProjection">
         <include refid="batchSelect"/>
         from payment_offline_bank_statement_batch b
         <include refid="batchWhere"/>
@@ -54,7 +54,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectBatchDetail" resultType="io.mango.payment.api.vo.PaymentOfflineBankStatementBatchVO">
+    <select id="selectBatchDetail" resultType="io.mango.payment.core.model.projection.PaymentOfflineBankStatementBatchProjection">
         <include refid="batchSelect"/>
         from payment_offline_bank_statement_batch b
         where b.tenant_id = #{tenantId}

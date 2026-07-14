@@ -79,7 +79,7 @@
         <include refid="settlementWhere"/>
     </select>
 
-    <select id="selectSettlementSummaryPage" resultType="io.mango.payment.api.vo.PaymentSettlementSummaryVO">
+    <select id="selectSettlementSummaryPage" resultType="io.mango.payment.core.model.projection.PaymentSettlementSummaryProjection">
         <include refid="settlementSelect"/>
         <include refid="settlementFrom"/>
         <include refid="settlementWhere"/>
@@ -87,7 +87,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectSettlementSummaryDetail" resultType="io.mango.payment.api.vo.PaymentSettlementSummaryVO">
+    <select id="selectSettlementSummaryDetail" resultType="io.mango.payment.core.model.projection.PaymentSettlementSummaryProjection">
         <include refid="settlementSelect"/>
         <include refid="settlementFrom"/>
         where ss.tenant_id = #{tenantId}

@@ -3,7 +3,6 @@ package io.mango.payment.core.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.mango.infra.persistence.api.entity.AuditableEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,7 +12,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("payment_offline_bank_statement_item")
-public class PaymentOfflineBankStatementItemEntity extends AuditableEntity {
+public class PaymentOfflineBankStatementItemEntity extends PaymentBaseEntity {
 
     private Long batchId;
 
@@ -62,8 +61,6 @@ public class PaymentOfflineBankStatementItemEntity extends AuditableEntity {
     private String confirmedByName;
 
     private String confirmRemark;
-
-    private Long tenantId;
 
     @TableLogic
     @TableField("del_flag")

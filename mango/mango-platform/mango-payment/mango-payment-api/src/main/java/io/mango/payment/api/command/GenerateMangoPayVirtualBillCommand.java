@@ -3,6 +3,7 @@ package io.mango.payment.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -21,6 +22,7 @@ public class GenerateMangoPayVirtualBillCommand implements Serializable {
     private String channelCode;
 
     @Schema(description = "签约配置 ID。用于消费指定签约的账单差异场景控制")
+    @Positive(message = "签约配置 ID 必须大于 0")
     private Long contractId;
 
     @NotNull(message = "账单日期不能为空")

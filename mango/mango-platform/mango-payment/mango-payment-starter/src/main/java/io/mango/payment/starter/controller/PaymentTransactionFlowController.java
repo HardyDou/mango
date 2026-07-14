@@ -7,7 +7,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentTransactionFlowApi;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentTransactionFlowVO;
-import io.mango.payment.core.service.PaymentTransactionFlowService;
+import io.mango.payment.core.service.IPaymentTransactionFlowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "交易流水", description = "支付域资金事件流水接口")
 public class PaymentTransactionFlowController implements PaymentTransactionFlowApi {
 
-    private final PaymentTransactionFlowService transactionFlowService;
+    private final IPaymentTransactionFlowService transactionFlowService;
 
     @Override
     @GetMapping("/page")
@@ -40,7 +40,7 @@ public class PaymentTransactionFlowController implements PaymentTransactionFlowA
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:transaction-flow:query")
     @Operation(summary = "查询交易流水详情", description = "按交易流水 ID 查询支付域资金事件明细和关联订单")
-    public R<PaymentTransactionFlowVO> detailTransactionFlow(@Parameter(description = "交易流水 ID", required = true) @RequestParam Long id) {
+    public R<PaymentTransactionFlowVO> detailTransactionFlow(@Parameter(description = "交易流水 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(transactionFlowService.detailTransactionFlow(id));
     }
 }
