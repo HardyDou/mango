@@ -72,6 +72,10 @@
 | `PaymentNotificationRecordApi` | 查询通知记录、重试通知、投递到期通知。 |
 | `PaymentTaskApi` | 处理超时未支付订单、查询处理中订单，通常由任务调度调用。 |
 
+退款审批发起工作流时，支付模块通过 `WorkflowJsonRequest` 传递流程变量，与
+`mango-workflow-api` 的类型化 JSON 协议保持一致；业务侧仍使用
+`PaymentRefundApprovalApi`，无需自行组装工作流变量。
+
 ## 4. 前端接入
 
 管理后台接入页面和 API：
