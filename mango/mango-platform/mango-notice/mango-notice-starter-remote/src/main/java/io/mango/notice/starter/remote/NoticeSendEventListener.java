@@ -1,15 +1,13 @@
 package io.mango.notice.starter.remote;
 
 import io.mango.notice.api.NoticeApi;
-import io.mango.notice.api.command.SendNoticeCommand;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeSendEventCommand;
+import io.mango.notice.support.context.NoticeEventContextExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-
-import java.util.LinkedHashMap;
 
 /**
  * Sends notice events through the remote notice API after the owning business
@@ -23,32 +21,13 @@ public class NoticeSendEventListener {
     private final NoticeApi noticeApi;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    public void onNoticeSendEvent(NoticeSendEvent event) {
+    public void onNoticeSendEvent(NoticeSendEventCommand event) {
         try {
-            noticeApi.send(toCommand(event));
+            NoticeEventContextExecutor.run(event, () -> noticeApi.send(event));
         } catch (RuntimeException ex) {
             log.warn("Send remote notice event failed. bizType={}, bizId={}",
                     event.getBizType(), event.getBizId(), ex);
         }
     }
 
-    private SendNoticeCommand toCommand(NoticeSendEvent event) {
-        SendNoticeCommand command = new SendNoticeCommand();
-        command.setBizType(event.getBizType());
-        command.setBizId(event.getBizId());
-        command.setUserId(event.getUserId());
-        command.setUserIds(event.getUserIds());
-        command.setRecipientRuleCode(event.getRecipientRuleCode());
-        command.setChannelTypes(event.getChannelTypes());
-        command.setParams(event.getParams() == null ? null : new LinkedHashMap<>(event.getParams()));
-        command.setMessageScene(event.getMessageScene());
-        command.setMessageSubject(event.getMessageSubject());
-        command.setMessageTarget(event.getMessageTarget());
-        command.setMessageData(event.getMessageData() == null ? null : new LinkedHashMap<>(event.getMessageData()));
-        command.setMessageActions(event.getMessageActions());
-        command.setMessageExpireTime(event.getMessageExpireTime());
-        command.setPriority(event.getPriority());
-        command.setIdempotentKey(event.getIdempotentKey());
-        return command;
-    }
 }

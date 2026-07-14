@@ -1,6 +1,5 @@
 package io.mango.notice.starter.controller;
 
-import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -49,13 +48,11 @@ import io.mango.notice.core.service.INoticeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -73,13 +70,12 @@ import java.util.List;
 public class NoticeController implements NoticeApi {
 
  private final INoticeService noticeService;
- private final ISecurityContextProvider securityContextProvider;
 
  @Override
  @PostMapping("/send")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:task:create")
  @Operation(summary = "按业务类型发送通知", description = "按业务类型已启用渠道模板生成通知任务和发送记录")
- public R<NoticeSendResultVO> send(@RequestBody @Valid SendNoticeCommand command) {
+ public R<NoticeSendResultVO> send(@RequestBody SendNoticeCommand command) {
  return R.ok(noticeService.send(command));
  }
 
@@ -87,7 +83,7 @@ public class NoticeController implements NoticeApi {
  @PostMapping("/site/messages")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:create")
  @Operation(summary = "发送系统消息", description = "管理端快捷发送系统消息，仍走统一任务和发送记录")
- public R<NoticeSendResultVO> sendSiteMessage(@RequestBody @Valid SendNoticeCommand command) {
+ public R<NoticeSendResultVO> sendSiteMessage(@RequestBody SendNoticeCommand command) {
  command.setChannelTypes(List.of(NoticeChannelType.SITE));
  return R.ok(noticeService.send(command));
  }
@@ -104,99 +100,111 @@ public class NoticeController implements NoticeApi {
  @PostMapping("/business-types")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:create")
  @Operation(summary = "创建业务通知配置", description = "创建业务类型和参数 schema")
- public R<NoticeBusinessTypeVO> createBusinessType(@RequestBody @Valid CreateNoticeBusinessTypeCommand command) {
+ public R<NoticeBusinessTypeVO> createBusinessType(@RequestBody CreateNoticeBusinessTypeCommand command) {
  return R.ok(noticeService.createBusinessType(command));
  }
 
  @Override
- @PutMapping("/business-types/{id}")
+ @PutMapping("/business-types")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:edit")
  @Operation(summary = "更新业务通知基础信息", description = "只更新业务类型名称、分组和描述；运行时发布配置通过草稿和发布接口维护")
- public R<NoticeBusinessTypeVO> updateBusinessType(@PathVariable Long id,
- @RequestBody @Valid UpdateNoticeBusinessTypeCommand command) {
+ public R<NoticeBusinessTypeVO> updateBusinessType(
+ @Parameter(description = "业务消息配置ID", required = true) @RequestParam("id") Long id,
+ @RequestBody UpdateNoticeBusinessTypeCommand command) {
  return R.ok(noticeService.updateBusinessType(id, command));
  }
 
  @Override
- @DeleteMapping("/business-types/{id}")
+ @DeleteMapping("/business-types")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:delete")
  @Operation(summary = "删除业务消息配置", description = "删除业务消息定义、配置版本和渠道模板；存在待发送或发送中任务时不允许删除")
- public R<Boolean> deleteBusinessType(@Parameter(description = "业务消息配置ID", required = true) @PathVariable Long id) {
+ public R<Boolean> deleteBusinessType(
+ @Parameter(description = "业务消息配置ID", required = true) @RequestParam("id") Long id) {
  return R.ok(noticeService.deleteBusinessType(id));
  }
 
  @Override
- @PostMapping("/business-types/{id}/enable")
+ @PostMapping("/business-types/enable")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:enable")
  @Operation(summary = "启用业务通知配置", description = "启用业务类型")
- public R<Boolean> enableBusinessType(@PathVariable Long id) {
+ public R<Boolean> enableBusinessType(
+ @Parameter(description = "业务消息配置ID", required = true) @RequestParam("id") Long id) {
  return R.ok(noticeService.enableBusinessType(id));
  }
 
  @Override
- @PostMapping("/business-types/{id}/disable")
+ @PostMapping("/business-types/disable")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:enable")
  @Operation(summary = "停用业务通知配置", description = "停用业务类型")
- public R<Boolean> disableBusinessType(@PathVariable Long id) {
+ public R<Boolean> disableBusinessType(
+ @Parameter(description = "业务消息配置ID", required = true) @RequestParam("id") Long id) {
  return R.ok(noticeService.disableBusinessType(id));
  }
 
  @Override
- @GetMapping("/business-types/{businessTypeId}/config-versions")
+ @GetMapping("/business-types/config-versions")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:view")
  @Operation(summary = "查询业务发布配置版本", description = "查询业务类型参数 schema、默认优先级和幂等策略的草稿、生效与历史版本")
- public R<List<NoticeBusinessConfigVersionVO>> listBusinessConfigVersions(@PathVariable Long businessTypeId) {
+ public R<List<NoticeBusinessConfigVersionVO>> listBusinessConfigVersions(
+ @Parameter(description = "业务类型ID", required = true) @RequestParam("businessTypeId") Long businessTypeId) {
  return R.ok(noticeService.listBusinessConfigVersions(businessTypeId));
  }
 
  @Override
- @PutMapping("/business-types/{businessTypeId}/config-draft")
+ @PutMapping("/business-types/config-draft")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:edit")
  @Operation(summary = "保存业务发布配置草稿", description = "保存业务类型参数 schema、默认优先级和幂等策略草稿，保存后不立即生效")
- public R<NoticeBusinessConfigVersionVO> saveBusinessConfigDraft(@PathVariable Long businessTypeId,
- @RequestBody @Valid SaveNoticeBusinessConfigCommand command) {
+ public R<NoticeBusinessConfigVersionVO> saveBusinessConfigDraft(
+ @Parameter(description = "业务类型ID", required = true) @RequestParam("businessTypeId") Long businessTypeId,
+ @RequestBody SaveNoticeBusinessConfigCommand command) {
  return R.ok(noticeService.saveBusinessConfigDraft(businessTypeId, command));
  }
 
  @Override
- @PostMapping("/business-types/{businessTypeId}/config-draft/publish")
+ @PostMapping("/business-types/config-draft/publish")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:publish")
  @Operation(summary = "发布业务发布配置草稿", description = "发布业务类型运行时配置，旧生效版本转历史，新草稿成为当前生效版本")
- public R<Boolean> publishBusinessConfigDraft(@PathVariable Long businessTypeId) {
+ public R<Boolean> publishBusinessConfigDraft(
+ @Parameter(description = "业务类型ID", required = true) @RequestParam("businessTypeId") Long businessTypeId) {
  return R.ok(noticeService.publishBusinessConfigDraft(businessTypeId));
  }
 
  @Override
- @PostMapping("/business-types/{businessTypeId}/config-versions/{version}/activate")
+ @PostMapping("/business-types/config-versions/activate")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:publish")
  @Operation(summary = "启用业务配置历史版本", description = "复制指定历史版本生成新版本并发布，保留版本审计链路")
- public R<Boolean> activateBusinessConfigVersion(@PathVariable Long businessTypeId, @PathVariable Integer version) {
+ public R<Boolean> activateBusinessConfigVersion(
+ @Parameter(description = "业务类型ID", required = true) @RequestParam("businessTypeId") Long businessTypeId,
+ @Parameter(description = "配置版本", required = true) @RequestParam("version") Integer version) {
  return R.ok(noticeService.activateBusinessConfigVersion(businessTypeId, version));
  }
 
  @Override
- @GetMapping("/business-types/{businessTypeId}/channel-templates")
+ @GetMapping("/business-types/channel-templates")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:view")
  @Operation(summary = "查询业务渠道模板", description = "查询业务类型下各渠道模板")
- public R<List<NoticeChannelTemplateVO>> listChannelTemplates(@PathVariable Long businessTypeId) {
+ public R<List<NoticeChannelTemplateVO>> listChannelTemplates(
+ @Parameter(description = "业务类型ID", required = true) @RequestParam("businessTypeId") Long businessTypeId) {
  return R.ok(noticeService.listChannelTemplates(businessTypeId));
  }
 
  @Override
- @PutMapping("/business-types/{businessTypeId}/channel-templates/{channelType}")
+ @PutMapping("/business-types/channel-templates")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:edit")
  @Operation(summary = "保存业务渠道模板", description = "保存指定业务类型下的渠道模板草稿")
- public R<NoticeChannelTemplateVO> saveChannelTemplate(@PathVariable Long businessTypeId,
- @PathVariable NoticeChannelType channelType, @RequestBody @Valid SaveNoticeChannelTemplateCommand command) {
- return R.ok(noticeService.saveChannelTemplate(businessTypeId, channelType, command));
+ public R<NoticeChannelTemplateVO> saveChannelTemplate(
+ @Parameter(description = "业务类型ID", required = true) @RequestParam("businessTypeId") Long businessTypeId,
+ @RequestBody SaveNoticeChannelTemplateCommand command) {
+ return R.ok(noticeService.saveChannelTemplate(businessTypeId, command));
  }
 
  @Override
- @PostMapping("/business-types/{businessTypeId}/channel-templates/{channelType}/publish")
+ @PostMapping("/business-types/channel-templates/publish")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:publish")
  @Operation(summary = "发布业务渠道模板", description = "发布草稿模板为当前生效版本")
- public R<Boolean> publishChannelTemplate(@PathVariable Long businessTypeId,
- @PathVariable NoticeChannelType channelType) {
+ public R<Boolean> publishChannelTemplate(
+ @Parameter(description = "业务类型ID", required = true) @RequestParam("businessTypeId") Long businessTypeId,
+ @Parameter(description = "渠道类型", required = true) @RequestParam("channelType") NoticeChannelType channelType) {
  return R.ok(noticeService.publishChannelTemplate(businessTypeId, channelType));
  }
 
@@ -212,7 +220,7 @@ public class NoticeController implements NoticeApi {
  @PostMapping("/channels")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:create")
  @Operation(summary = "保存渠道配置", description = "保存短信、邮件、微信、企微、钉钉等渠道配置")
- public R<NoticeChannelConfigVO> saveChannelConfig(@RequestBody @Valid SaveNoticeChannelConfigCommand command) {
+ public R<NoticeChannelConfigVO> saveChannelConfig(@RequestBody SaveNoticeChannelConfigCommand command) {
  return R.ok(noticeService.saveChannelConfig(command));
  }
 
@@ -220,7 +228,8 @@ public class NoticeController implements NoticeApi {
  @GetMapping("/internal/wecom-login-config")
  @ApiAccess(mode = ApiResourceAccessMode.INTERNAL, desc = "内部读取企业微信扫码登录配置")
  @Operation(summary = "内部读取企业微信扫码登录配置", description = "内部接口。供认证服务读取企业微信渠道配置，Secret 不对前端开放")
- public R<NoticeWecomLoginConfigVO> getWecomLoginConfig(@RequestParam(required = false) Long channelConfigId) {
+ public R<NoticeWecomLoginConfigVO> getWecomLoginConfig(
+ @Parameter(description = "渠道配置ID") @RequestParam(value = "channelConfigId", required = false) Long channelConfigId) {
  return R.ok(noticeService.getWecomLoginConfig(channelConfigId));
  }
 
@@ -228,7 +237,8 @@ public class NoticeController implements NoticeApi {
  @DeleteMapping("/channels")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:delete")
  @Operation(summary = "删除渠道配置", description = "删除未被消息模板引用且非系统内置的渠道配置")
- public R<Boolean> deleteChannelConfig(@Parameter(description = "渠道配置ID", required = true) @RequestParam Long id) {
+ public R<Boolean> deleteChannelConfig(
+ @Parameter(description = "渠道配置ID", required = true) @RequestParam("id") Long id) {
  return R.ok(noticeService.deleteChannelConfig(id));
  }
 
@@ -249,10 +259,11 @@ public class NoticeController implements NoticeApi {
  }
 
  @Override
- @PostMapping("/records/{id}/retry")
+ @PostMapping("/records/retry")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
  @Operation(summary = "重试发送记录", description = "对失败、等待重试或最终失败的发送记录立即重试")
- public R<Boolean> retrySendRecord(@Parameter(description = "发送记录ID", required = true) @PathVariable Long id) {
+ public R<Boolean> retrySendRecord(
+ @Parameter(description = "发送记录ID", required = true) @RequestParam("id") Long id) {
  return R.ok(noticeService.retrySendRecord(id));
  }
 
@@ -260,17 +271,17 @@ public class NoticeController implements NoticeApi {
  @PostMapping("/records/retry-batch")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
  @Operation(summary = "批量重试发送记录", description = "批量对失败、等待重试或最终失败的发送记录立即重试")
- public R<Boolean> retrySendRecords(@RequestBody @Valid RetryNoticeSendRecordsCommand command) {
+ public R<Boolean> retrySendRecords(@RequestBody RetryNoticeSendRecordsCommand command) {
  return R.ok(noticeService.retrySendRecords(command));
  }
 
  @Override
- @PostMapping("/records/{id}/manual-success")
+ @PostMapping("/records/manual-success")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
  @Operation(summary = "标记发送记录人工成功", description = "用于外部实际已成功但系统未收到成功回执的失败记录")
  public R<Boolean> markSendRecordManualSuccess(
- @Parameter(description = "发送记录ID", required = true) @PathVariable Long id,
- @RequestBody @Valid HandleNoticeSendRecordCommand command) {
+ @Parameter(description = "发送记录ID", required = true) @RequestParam("id") Long id,
+ @RequestBody HandleNoticeSendRecordCommand command) {
  return R.ok(noticeService.markSendRecordManualSuccess(id, command));
  }
 
@@ -278,16 +289,17 @@ public class NoticeController implements NoticeApi {
  @PostMapping("/records/manual-success-batch")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
  @Operation(summary = "批量标记发送记录人工成功", description = "批量用于外部实际已成功但系统未收到成功回执的失败记录")
- public R<Boolean> markSendRecordsManualSuccess(@RequestBody @Valid HandleNoticeSendRecordsCommand command) {
+ public R<Boolean> markSendRecordsManualSuccess(@RequestBody HandleNoticeSendRecordsCommand command) {
  return R.ok(noticeService.markSendRecordsManualSuccess(command));
  }
 
  @Override
- @PostMapping("/records/{id}/ignore")
+ @PostMapping("/records/ignore")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
  @Operation(summary = "忽略发送失败", description = "将失败记录标记为已忽略，不再进入失败重试池")
- public R<Boolean> ignoreSendRecord(@Parameter(description = "发送记录ID", required = true) @PathVariable Long id,
- @RequestBody @Valid HandleNoticeSendRecordCommand command) {
+ public R<Boolean> ignoreSendRecord(
+ @Parameter(description = "发送记录ID", required = true) @RequestParam("id") Long id,
+ @RequestBody HandleNoticeSendRecordCommand command) {
  return R.ok(noticeService.ignoreSendRecord(id, command));
  }
 
@@ -295,7 +307,7 @@ public class NoticeController implements NoticeApi {
  @PostMapping("/records/ignore-batch")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
  @Operation(summary = "批量忽略发送失败", description = "批量将失败记录标记为已忽略，不再进入失败重试池")
- public R<Boolean> ignoreSendRecords(@RequestBody @Valid HandleNoticeSendRecordsCommand command) {
+ public R<Boolean> ignoreSendRecords(@RequestBody HandleNoticeSendRecordsCommand command) {
  return R.ok(noticeService.ignoreSendRecords(command));
  }
 
@@ -311,7 +323,7 @@ public class NoticeController implements NoticeApi {
  @PutMapping("/settings")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:setting:edit")
  @Operation(summary = "保存通知设置", description = "保存当前机构通知提示、重试和保留周期设置")
- public R<Boolean> saveSettings(@RequestBody @Valid SaveNoticeSettingsCommand command) {
+ public R<Boolean> saveSettings(@RequestBody SaveNoticeSettingsCommand command) {
  return R.ok(noticeService.saveSettings(command));
  }
 
@@ -320,39 +332,43 @@ public class NoticeController implements NoticeApi {
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:view")
  @Operation(summary = "查询通知接收账户", description = "权限接口。查询当前用户或指定用户的通知接收账户")
  public R<List<NoticeRecipientAccountVO>> listRecipientAccounts(@ParameterObject NoticeRecipientAccountQuery query) {
- return R.ok(noticeService.listRecipientAccounts(currentUserId(), query));
+ return R.ok(noticeService.listRecipientAccounts(query));
  }
 
  @Override
  @PostMapping("/recipient-accounts")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
  @Operation(summary = "保存通知接收账户", description = "权限接口。新增或更新手机号、邮箱等通知接收账户")
- public R<NoticeRecipientAccountVO> saveRecipientAccount(@RequestBody @Valid SaveNoticeRecipientAccountCommand command) {
- return R.ok(noticeService.saveRecipientAccount(currentUserId(), command));
+ public R<NoticeRecipientAccountVO> saveRecipientAccount(@RequestBody SaveNoticeRecipientAccountCommand command) {
+ return R.ok(noticeService.saveRecipientAccount(command));
  }
 
  @Override
  @PostMapping("/wecom/users/sync")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:add")
  @Operation(summary = "同步企业微信用户", description = "从企业微信通讯录同步成员，并绑定企业微信通知接收账户")
- public R<WecomUserSyncResultVO> syncWecomUsers(@RequestBody @Valid SyncWecomUsersCommand command) {
+ public R<WecomUserSyncResultVO> syncWecomUsers(@RequestBody SyncWecomUsersCommand command) {
  return R.ok(noticeService.syncWecomUsers(command));
  }
 
  @Override
- @PostMapping("/recipient-accounts/{id}/disable")
+ @PostMapping("/recipient-accounts/disable")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
  @Operation(summary = "禁用通知接收账户", description = "权限接口。禁用当前用户或指定用户的通知接收账户")
- public R<Boolean> disableRecipientAccount(@PathVariable Long id, @RequestParam(required = false) Long userId) {
- return R.ok(noticeService.disableRecipientAccount(currentUserId(), id, userId));
+ public R<Boolean> disableRecipientAccount(
+ @Parameter(description = "接收账户ID", required = true) @RequestParam("id") Long id,
+ @Parameter(description = "目标用户ID") @RequestParam(value = "userId", required = false) Long userId) {
+ return R.ok(noticeService.disableRecipientAccount(id, userId));
  }
 
  @Override
- @PostMapping("/recipient-accounts/{id}/default")
+ @PostMapping("/recipient-accounts/default")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
  @Operation(summary = "设置默认通知接收账户", description = "权限接口。设置同类型默认通知接收账户")
- public R<Boolean> setDefaultRecipientAccount(@PathVariable Long id, @RequestParam(required = false) Long userId) {
- return R.ok(noticeService.setDefaultRecipientAccount(currentUserId(), id, userId));
+ public R<Boolean> setDefaultRecipientAccount(
+ @Parameter(description = "接收账户ID", required = true) @RequestParam("id") Long id,
+ @Parameter(description = "目标用户ID") @RequestParam(value = "userId", required = false) Long userId) {
+ return R.ok(noticeService.setDefaultRecipientAccount(id, userId));
  }
 
  @Override
@@ -360,15 +376,15 @@ public class NoticeController implements NoticeApi {
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:view")
  @Operation(summary = "查询通知接收偏好", description = "权限接口。查询用户按全局、业务域或单消息维度配置的接收偏好")
  public R<List<NoticeReceivePreferenceVO>> listReceivePreferences(@ParameterObject NoticeReceivePreferenceQuery query) {
- return R.ok(noticeService.listReceivePreferences(currentUserId(), query));
+ return R.ok(noticeService.listReceivePreferences(query));
  }
 
  @Override
  @PutMapping("/receive-preferences")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
  @Operation(summary = "保存通知接收偏好", description = "权限接口。保存用户对业务域、单消息、渠道和接收账户的接收偏好")
- public R<NoticeReceivePreferenceVO> saveReceivePreference(@RequestBody @Valid SaveNoticeReceivePreferenceCommand command) {
- return R.ok(noticeService.saveReceivePreference(currentUserId(), command));
+ public R<NoticeReceivePreferenceVO> saveReceivePreference(@RequestBody SaveNoticeReceivePreferenceCommand command) {
+ return R.ok(noticeService.saveReceivePreference(command));
  }
 
  @Override
@@ -376,27 +392,25 @@ public class NoticeController implements NoticeApi {
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
  @Operation(summary = "分页查询我的系统消息", description = "权限接口。分页查询当前用户系统消息")
  public R<PageResult<NoticeSiteMessageVO>> listSiteMessages(@ParameterObject NoticeSiteMessagePageQuery query) {
- return R.ok(noticeService.listSiteMessages(currentUserId(), query));
+ return R.ok(noticeService.listSiteMessages(query));
  }
 
  @Override
- @GetMapping("/site/my/messages/{id}")
+ @GetMapping("/site/my/messages/detail")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
  @Operation(summary = "获取我的系统消息详情", description = "权限接口。查询当前用户可见的系统消息详情")
- public R<NoticeSiteMessageVO> getSiteMessage(@Parameter(description = "系统消息ID") @PathVariable Long id) {
- NoticeSiteMessageVO message = noticeService.getSiteMessage(id, currentUserId());
- return message == null ? R.fail(404, "系统消息不存在") : R.ok(message);
+ public R<NoticeSiteMessageVO> getSiteMessage(
+ @Parameter(description = "系统消息ID", required = true) @RequestParam("id") Long id) {
+ return R.ok(noticeService.getSiteMessage(id));
  }
 
  @Override
- @PostMapping("/site/my/messages/{id}/actions/{actionCode}")
+ @PostMapping("/site/my/messages/actions")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
  @Operation(summary = "执行我的系统消息动作", description = "权限接口。提交当前用户可见系统消息的受控动作入口")
  public R<NoticeSiteMessageActionRequestVO> executeSiteMessageAction(
- @Parameter(description = "系统消息ID") @PathVariable Long id,
- @Parameter(description = "动作编码") @PathVariable String actionCode,
- @RequestBody(required = false) @Valid ExecuteNoticeSiteMessageActionCommand command) {
- return R.ok(noticeService.executeSiteMessageAction(id, actionCode, currentUserId(), command));
+ @RequestBody ExecuteNoticeSiteMessageActionCommand command) {
+ return R.ok(noticeService.executeSiteMessageAction(command));
  }
 
  @Override
@@ -404,7 +418,7 @@ public class NoticeController implements NoticeApi {
  @ApiAccess(mode = ApiResourceAccessMode.INTERNAL, desc = "内部完成系统消息动作")
  @Operation(summary = "内部完成系统消息动作", description = "内部接口。业务模块完成动作处理后回写请求和动作状态")
  public R<NoticeSiteMessageActionRequestVO> completeSiteMessageAction(
- @RequestBody @Valid CompleteNoticeSiteMessageActionCommand command) {
+ @RequestBody CompleteNoticeSiteMessageActionCommand command) {
  return R.ok(noticeService.completeSiteMessageAction(command));
  }
 
@@ -413,23 +427,24 @@ public class NoticeController implements NoticeApi {
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
  @Operation(summary = "获取我的系统消息未读数", description = "权限接口。查询当前用户系统消息未读数量")
  public R<NoticeUnreadCountVO> unreadCount() {
- return R.ok(noticeService.unreadCount(currentUserId()));
+ return R.ok(noticeService.unreadCount());
  }
 
  @Override
- @PostMapping("/site/my/messages/{id}/read")
+ @PostMapping("/site/my/messages/read")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
  @Operation(summary = "标记我的系统消息已读", description = "权限接口。标记当前用户的一条系统消息为已读")
- public R<Boolean> markSiteMessageRead(@Parameter(description = "系统消息ID") @PathVariable Long id) {
- return R.ok(noticeService.markSiteMessageRead(id, currentUserId()));
+ public R<Boolean> markSiteMessageRead(
+ @Parameter(description = "系统消息ID", required = true) @RequestParam("id") Long id) {
+ return R.ok(noticeService.markSiteMessageRead(id));
  }
 
  @Override
  @PostMapping("/site/my/messages/read-batch")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
  @Operation(summary = "批量标记我的系统消息已读", description = "权限接口。批量标记当前用户系统消息为已读")
- public R<Boolean> markSiteMessagesRead(@RequestBody @Valid MarkNoticeReadCommand command) {
- return R.ok(noticeService.markSiteMessagesRead(command, currentUserId()));
+ public R<Boolean> markSiteMessagesRead(@RequestBody MarkNoticeReadCommand command) {
+ return R.ok(noticeService.markSiteMessagesRead(command));
  }
 
  @Override
@@ -437,18 +452,15 @@ public class NoticeController implements NoticeApi {
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
  @Operation(summary = "全部标记已读", description = "权限接口。标记当前用户全部未读系统消息为已读")
  public R<Boolean> markAllSiteMessagesRead() {
- return R.ok(noticeService.markAllSiteMessagesRead(currentUserId()));
+ return R.ok(noticeService.markAllSiteMessagesRead());
  }
 
  @Override
- @PostMapping("/site/my/messages/{id}/delete")
+ @PostMapping("/site/my/messages/delete")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
  @Operation(summary = "删除我的系统消息", description = "权限接口。删除当前用户的一条系统消息")
- public R<Boolean> deleteSiteMessage(@Parameter(description = "系统消息ID") @PathVariable Long id) {
- return R.ok(noticeService.deleteSiteMessage(id, currentUserId()));
- }
-
- private Long currentUserId() {
- return securityContextProvider.currentContext().userId();
+ public R<Boolean> deleteSiteMessage(
+ @Parameter(description = "系统消息ID", required = true) @RequestParam("id") Long id) {
+ return R.ok(noticeService.deleteSiteMessage(id));
  }
 }

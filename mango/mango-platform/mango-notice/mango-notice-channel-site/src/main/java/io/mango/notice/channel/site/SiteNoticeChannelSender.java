@@ -2,7 +2,7 @@ package io.mango.notice.channel.site;
 
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.notice.api.enums.NoticeChannelType;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class SiteNoticeChannelSender implements NoticeChannelSender {
     }
 
     @Override
-    public ChannelSendResult send(ChannelSendCommand command) {
+    public ChannelSendResult send(NoticeChannelMessage command) {
         SiteNoticeMessageWriteResult result = messageWriter.write(command);
         try {
             realtimeApi.publishToUser(command.getUserId(), "notice",

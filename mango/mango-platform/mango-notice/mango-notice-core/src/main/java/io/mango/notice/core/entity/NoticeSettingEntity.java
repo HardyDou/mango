@@ -1,27 +1,20 @@
 package io.mango.notice.core.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Data
-@TableName("notice_setting")
-public class NoticeSettingEntity {
-
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+@EqualsAndHashCode(callSuper = true)
+@TableName(value = "notice_setting", excludeProperty = {
+        "orgId", "createdBy", "createdAt", "updatedBy"
+})
+public class NoticeSettingEntity extends NoticeBaseEntity {
 
     private String settingKey;
 
     private String settingValue;
 
-    private String tenantId;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
 }

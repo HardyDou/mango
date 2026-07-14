@@ -1,8 +1,8 @@
 package io.mango.notice.channel.site;
 
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 
 public interface SiteNoticeMessageWriter {
 
-    SiteNoticeMessageWriteResult write(ChannelSendCommand command);
+    SiteNoticeMessageWriteResult write(NoticeChannelMessage message);
 }

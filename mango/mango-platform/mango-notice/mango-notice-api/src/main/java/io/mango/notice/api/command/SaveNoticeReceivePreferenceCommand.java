@@ -18,6 +18,7 @@ public class SaveNoticeReceivePreferenceCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "用户 ID；为空时使用当前用户")
+    @jakarta.validation.constraints.Positive
     private Long userId;
 
     @NotNull(message = "范围类型不能为空")
@@ -25,9 +26,11 @@ public class SaveNoticeReceivePreferenceCommand implements Serializable {
     private NoticeReceivePreferenceScopeType scopeType;
 
     @Schema(description = "范围值：业务域或业务类型；GLOBAL 为空")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String scopeValue;
 
     @Schema(description = "渠道类型；为空表示总开关")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticeChannelType channelType;
 
     @NotNull(message = "是否接收不能为空")
@@ -35,5 +38,6 @@ public class SaveNoticeReceivePreferenceCommand implements Serializable {
     private Boolean enabled;
 
     @Schema(description = "指定接收账户 ID")
+    @jakarta.validation.constraints.Positive
     private Long accountId;
 }

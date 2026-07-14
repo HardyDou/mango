@@ -24,9 +24,11 @@ public class NoticeSiteMessageActionCommand implements Serializable {
     private String actionLabel;
 
     @Schema(description = "交互类型")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticeSiteMessageActionInteractionType interactionType = NoticeSiteMessageActionInteractionType.EVENT;
 
     @Schema(description = "动作事件类型，EVENT 动作必填")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String eventType;
 
     @Valid
@@ -34,14 +36,18 @@ public class NoticeSiteMessageActionCommand implements Serializable {
     private NoticeSiteMessageTargetCommand target;
 
     @Schema(description = "是否需要确认")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean confirmRequired = false;
 
     @Schema(description = "输入 JSON Schema")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String inputSchema;
 
     @Schema(description = "排序")
+    @jakarta.validation.constraints.Min(0)
     private Integer sortOrder = 0;
 
     @Schema(description = "动作过期时间")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private LocalDateTime expireTime;
 }

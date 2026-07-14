@@ -1,7 +1,7 @@
 package io.mango.notice.channel.dingtalk;
 
 import io.mango.notice.api.enums.NoticeChannelType;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import org.springframework.stereotype.Component;
@@ -21,7 +21,7 @@ public class DingtalkNoticeChannelSender implements NoticeChannelSender {
  }
 
  @Override
- public ChannelSendResult send(ChannelSendCommand command) {
+ public ChannelSendResult send(NoticeChannelMessage command) {
  if (StringUtils.hasText(readString(command.getChannelConfigJson(), WEBHOOK_URL))) {
  return ChannelSendResult.providerSuccess("dingtalk-robot-" + command.getSendRecordId(), "{\"status\":\"ACCEPTED\"}");
  }

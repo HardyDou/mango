@@ -140,11 +140,11 @@ export function createBusinessType(data: Partial<NoticeBusinessType>) {
 }
 
 export function updateBusinessType(id: string, data: Partial<NoticeBusinessType>) {
-  return put<NoticeBusinessType>(`/notice/business-types/${id}`, data);
+  return put<NoticeBusinessType>('/notice/business-types', data, { params: { id } });
 }
 
 export function deleteBusinessType(id: string) {
-  return del<boolean>(`/notice/business-types/${id}`);
+  return del<boolean>('/notice/business-types', { params: { id } });
 }
 
 function normalizeDomainOption(item: any): NoticeDomainOption {
@@ -157,27 +157,29 @@ function normalizeDomainOption(item: any): NoticeDomainOption {
 }
 
 export function getBusinessConfigVersions(businessTypeId: string) {
-  return get<NoticeBusinessConfigVersion[]>(`/notice/business-types/${businessTypeId}/config-versions`);
+  return get<NoticeBusinessConfigVersion[]>('/notice/business-types/config-versions', { params: { businessTypeId } });
 }
 
 export function saveBusinessConfigDraft(businessTypeId: string, data: Partial<NoticeBusinessConfigVersion>) {
-  return put<NoticeBusinessConfigVersion>(`/notice/business-types/${businessTypeId}/config-draft`, data);
+  return put<NoticeBusinessConfigVersion>('/notice/business-types/config-draft', data, { params: { businessTypeId } });
 }
 
 export function publishBusinessConfigDraft(businessTypeId: string) {
-  return post<boolean>(`/notice/business-types/${businessTypeId}/config-draft/publish`);
+  return post<boolean>('/notice/business-types/config-draft/publish', undefined, { params: { businessTypeId } });
 }
 
 export function activateBusinessConfigVersion(businessTypeId: string, version: number) {
-  return post<boolean>(`/notice/business-types/${businessTypeId}/config-versions/${version}/activate`);
+  return post<boolean>('/notice/business-types/config-versions/activate', undefined, {
+    params: { businessTypeId, version },
+  });
 }
 
 export function getChannelTemplates(businessTypeId: string) {
-  return get<NoticeChannelTemplate[]>(`/notice/business-types/${businessTypeId}/channel-templates`);
+  return get<NoticeChannelTemplate[]>('/notice/business-types/channel-templates', { params: { businessTypeId } });
 }
 
 export function saveChannelTemplate(businessTypeId: string, channelType: NoticeChannelType, data: Partial<NoticeChannelTemplate>) {
-  return put<NoticeChannelTemplate>(`/notice/business-types/${businessTypeId}/channel-templates/${channelType}`, {
+  return put<NoticeChannelTemplate>('/notice/business-types/channel-templates', {
     channelType,
     templateName: data.templateName,
     titleTemplate: data.titleTemplate,
@@ -186,11 +188,13 @@ export function saveChannelTemplate(businessTypeId: string, channelType: NoticeC
     variableMapping: data.variableMapping,
     enabled: data.enabled,
     channelConfigId: data.channelConfigId,
-  });
+  }, { params: { businessTypeId } });
 }
 
 export function publishChannelTemplate(businessTypeId: string, channelType: NoticeChannelType) {
-  return post<boolean>(`/notice/business-types/${businessTypeId}/channel-templates/${channelType}/publish`);
+  return post<boolean>('/notice/business-types/channel-templates/publish', undefined, {
+    params: { businessTypeId, channelType },
+  });
 }
 
 export function getChannelConfigs(params?: Record<string, unknown>, options?: { silentError?: boolean }) {
@@ -214,7 +218,7 @@ export function getSendRecords(params?: Record<string, unknown>) {
 }
 
 export function retrySendRecord(id: string) {
-  return post<boolean>(`/notice/records/${id}/retry`);
+  return post<boolean>('/notice/records/retry', undefined, { params: { id } });
 }
 
 export function retrySendRecords(ids: string[]) {
@@ -222,7 +226,7 @@ export function retrySendRecords(ids: string[]) {
 }
 
 export function markSendRecordManualSuccess(id: string, reason: string) {
-  return post<boolean>(`/notice/records/${id}/manual-success`, { reason });
+  return post<boolean>('/notice/records/manual-success', { reason }, { params: { id } });
 }
 
 export function markSendRecordsManualSuccess(ids: string[], reason: string) {
@@ -230,7 +234,7 @@ export function markSendRecordsManualSuccess(ids: string[], reason: string) {
 }
 
 export function ignoreSendRecord(id: string, reason: string) {
-  return post<boolean>(`/notice/records/${id}/ignore`, { reason });
+  return post<boolean>('/notice/records/ignore', { reason }, { params: { id } });
 }
 
 export function ignoreSendRecords(ids: string[], reason: string) {
@@ -242,11 +246,13 @@ export function getMySiteMessages(params?: NoticeSiteMessagePageQuery) {
 }
 
 export function getMySiteMessageDetail(id: string) {
-  return get<NoticeSiteMessage>(`/notice/site/my/messages/${id}`);
+  return get<NoticeSiteMessage>('/notice/site/my/messages/detail', { params: { id } });
 }
 
 export function executeMySiteMessageAction(id: string, actionCode: string, input?: Record<string, unknown>) {
-  return post<NoticeSiteMessageActionRequest>(`/notice/site/my/messages/${id}/actions/${actionCode}`, {
+  return post<NoticeSiteMessageActionRequest>('/notice/site/my/messages/actions', {
+    messageId: id,
+    actionCode,
     input: input || {},
   });
 }
@@ -312,11 +318,11 @@ export function saveRecipientAccount(data: Partial<NoticeRecipientAccount> & {
 }
 
 export function disableRecipientAccount(id: string, userId?: string) {
-  return post<boolean>(`/notice/recipient-accounts/${id}/disable`, undefined, { params: { userId } });
+  return post<boolean>('/notice/recipient-accounts/disable', undefined, { params: { id, userId } });
 }
 
 export function setDefaultRecipientAccount(id: string, userId?: string) {
-  return post<boolean>(`/notice/recipient-accounts/${id}/default`, undefined, { params: { userId } });
+  return post<boolean>('/notice/recipient-accounts/default', undefined, { params: { id, userId } });
 }
 
 export function getReceivePreferences(params?: {
@@ -412,7 +418,7 @@ export function getMyUnreadCount() {
 }
 
 export function markMySiteMessageRead(id: string) {
-  return post<boolean>(`/notice/site/my/messages/${id}/read`);
+  return post<boolean>('/notice/site/my/messages/read', undefined, { params: { id } });
 }
 
 export function markMySiteMessagesRead(ids: string[]) {
@@ -424,7 +430,7 @@ export function markAllMySiteMessagesRead() {
 }
 
 export function deleteMySiteMessage(id: string) {
-  return post<boolean>(`/notice/site/my/messages/${id}/delete`);
+  return post<boolean>('/notice/site/my/messages/delete', undefined, { params: { id } });
 }
 
 export const noticeApi = {

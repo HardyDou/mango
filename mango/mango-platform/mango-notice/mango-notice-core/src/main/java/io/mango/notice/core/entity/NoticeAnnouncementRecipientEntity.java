@@ -1,22 +1,17 @@
 package io.mango.notice.core.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.mango.notice.api.enums.NoticeAnnouncementConfirmStatus;
 import io.mango.notice.api.enums.NoticeReadStatus;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("notice_announcement_recipient")
-public class NoticeAnnouncementRecipientEntity {
-
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+public class NoticeAnnouncementRecipientEntity extends NoticeBaseEntity {
 
     private Long announcementId;
 
@@ -30,19 +25,4 @@ public class NoticeAnnouncementRecipientEntity {
 
     private LocalDateTime confirmTime;
 
-    private String tenantId;
-
-    private Long orgId;
-
-    @TableField(fill = FieldFill.INSERT)
-    private Long createdBy;
-
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private Long updatedBy;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
 }

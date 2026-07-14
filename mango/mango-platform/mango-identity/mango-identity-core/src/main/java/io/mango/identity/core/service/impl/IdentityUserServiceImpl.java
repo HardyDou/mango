@@ -39,7 +39,8 @@ import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeJsonRequest;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -427,38 +428,40 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         Map<String, Object> params = baseUserParams(user);
         params.put("createdAt", user.getCreateTime() == null ? null : user.getCreateTime().toString());
         NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
-        eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType("identity.user.created")
-                .bizId(String.valueOf(user.getUserId()))
-                .userId(user.getUserId())
-                .params(params)
-                .messageScene("identity.user.created")
-                .messageSubject(userSubject(user))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)))
-                .priority(NoticePriority.NORMAL)
-                .idempotentKey("identity.user.created:" + user.getUserId())
-                .build());
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(user.getTenantId());
+        event.setBizType("identity.user.created");
+        event.setBizId(String.valueOf(user.getUserId()));
+        event.setUserId(user.getUserId());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene("identity.user.created");
+        event.setMessageSubject(userSubject(user));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)));
+        event.setPriority(NoticePriority.NORMAL);
+        event.setIdempotentKey("identity.user.created:" + user.getUserId());
+        eventPublisher.publishEvent(event);
     }
 
     private void publishPasswordResetNotice(IdentityUser user) {
         Map<String, Object> params = baseUserParams(user);
         params.put("resetAt", LocalDateTime.now().toString());
         NoticeSiteMessageTargetCommand target = routeTarget("account:password", params);
-        eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType("identity.password.reset")
-                .bizId(String.valueOf(user.getUserId()))
-                .userId(user.getUserId())
-                .params(params)
-                .messageScene("identity.password.reset")
-                .messageSubject(userSubject(user))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(List.of(routeAction("CHANGE_PASSWORD", "修改密码", target)))
-                .priority(NoticePriority.HIGH)
-                .idempotentKey("identity.password.reset:" + user.getUserId() + ":" + System.currentTimeMillis())
-                .build());
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(user.getTenantId());
+        event.setBizType("identity.password.reset");
+        event.setBizId(String.valueOf(user.getUserId()));
+        event.setUserId(user.getUserId());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene("identity.password.reset");
+        event.setMessageSubject(userSubject(user));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(List.of(routeAction("CHANGE_PASSWORD", "修改密码", target)));
+        event.setPriority(NoticePriority.HIGH);
+        event.setIdempotentKey("identity.password.reset:" + user.getUserId() + ":" + System.currentTimeMillis());
+        eventPublisher.publishEvent(event);
     }
 
     private void publishExternalIdentityNotice(IdentityUser user, ExternalIdentityBindingEntity binding,
@@ -468,19 +471,20 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         params.put("externalUserId", binding.getExternalUserId());
         params.put(timeParam, LocalDateTime.now().toString());
         NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
-        eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType(bizType)
-                .bizId(user.getUserId() + ":" + binding.getProvider() + ":" + binding.getExternalUserId())
-                .userId(user.getUserId())
-                .params(params)
-                .messageScene(bizType)
-                .messageSubject(userSubject(user))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)))
-                .priority(NoticePriority.NORMAL)
-                .idempotentKey(bizType + ":" + user.getUserId() + ":" + binding.getExternalUserId())
-                .build());
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(user.getTenantId());
+        event.setBizType(bizType);
+        event.setBizId(user.getUserId() + ":" + binding.getProvider() + ":" + binding.getExternalUserId());
+        event.setUserId(user.getUserId());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene(bizType);
+        event.setMessageSubject(userSubject(user));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)));
+        event.setPriority(NoticePriority.NORMAL);
+        event.setIdempotentKey(bizType + ":" + user.getUserId() + ":" + binding.getExternalUserId());
+        eventPublisher.publishEvent(event);
     }
 
     private Map<String, Object> baseUserParams(IdentityUser user) {
@@ -504,7 +508,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         target.setTargetKey(targetKey);
-        target.setParams(params);
+        target.setParams(NoticeJsonRequest.of(params));
         return target;
     }
 

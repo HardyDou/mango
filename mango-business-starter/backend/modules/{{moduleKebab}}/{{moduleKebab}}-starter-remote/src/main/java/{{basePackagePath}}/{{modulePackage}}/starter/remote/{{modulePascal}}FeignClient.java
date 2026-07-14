@@ -8,8 +8,6 @@ import {{basePackage}}.{{modulePackage}}.api.vo.{{aggregatePascal}}VO;
 import io.mango.common.result.R;
 import io.mango.infra.persistence.api.crud.DeleteCommand;
 import io.mango.infra.persistence.api.query.PersistencePageResult;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,22 +26,22 @@ public interface {{modulePascal}}FeignClient extends {{modulePascal}}Api {
 
     @Override
     @PostMapping("/create")
-    R<Long> create(@RequestBody @Valid Create{{aggregatePascal}}Command command);
+    R<Long> create(@RequestBody Create{{aggregatePascal}}Command command);
 
     @Override
     @PostMapping("/update")
-    R<Boolean> update(@RequestBody @Valid Update{{aggregatePascal}}Command command);
+    R<Boolean> update(@RequestBody Update{{aggregatePascal}}Command command);
 
     @Override
     @PostMapping("/delete")
-    R<Boolean> delete(@RequestBody @Valid DeleteCommand command);
+    R<Boolean> delete(@RequestBody DeleteCommand command);
 
     @Override
     @GetMapping("/page")
     R<PersistencePageResult<{{aggregatePascal}}VO>> page(
-            @SpringQueryMap @Valid {{aggregatePascal}}PageQuery query);
+            @SpringQueryMap {{aggregatePascal}}PageQuery query);
 
     @Override
     @GetMapping("/detail")
-    R<{{aggregatePascal}}VO> detail(@RequestParam("id") @NotNull Long id);
+    R<{{aggregatePascal}}VO> detail(@RequestParam("id") Long id);
 }

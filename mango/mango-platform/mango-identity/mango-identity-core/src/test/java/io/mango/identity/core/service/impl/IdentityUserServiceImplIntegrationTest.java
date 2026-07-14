@@ -24,7 +24,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.system.api.SysConfigApi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -252,9 +252,10 @@ class IdentityUserServiceImplIntegrationTest {
         assertThat(bindings.get(0).getProvider()).isEqualTo("WECOM");
         assertThat(bindings.get(0).getCorpId()).isEqualTo("corp");
         assertThat(bindings.get(0).getExternalUserId()).isEqualTo("wecom_user");
-        assertThat(applicationEvents.stream(NoticeSendEvent.class).toList())
+        assertThat(applicationEvents.stream(NoticeSendEventCommand.class).toList())
                 .singleElement()
                 .satisfies(event -> {
+                    assertThat(event.getTenantId()).isEqualTo("1");
                     assertThat(event.getBizType()).isEqualTo("auth.wecom.login.bound");
                     assertThat(event.getMessageSubject().getSubjectType()).isEqualTo("IDENTITY_USER");
                     assertThat(event.getMessageSubject().getSubjectId()).isEqualTo("1002");

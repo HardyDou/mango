@@ -1,7 +1,7 @@
 package io.mango.notice.channel.wecom;
 
 import io.mango.notice.api.enums.NoticeChannelType;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +14,7 @@ class WecomNoticeChannelSenderTest {
 
     private final WecomNoticeChannelSender sender = new WecomNoticeChannelSender(
             (corpId, corpSecret) -> "token-" + corpId,
-            (accessToken, request) -> new WecomMessageSendResponse("{\"errcode\":0}", null));
+            (accessToken, request) -> new WecomSendResult("{\"errcode\":0}", null));
 
     @Test
     void channelType_returnsWecom() {
@@ -23,7 +23,7 @@ class WecomNoticeChannelSenderTest {
 
     @Test
     void send_missingUserAndRobot_returnsNonRetryableFailure() {
-        ChannelSendResult result = sender.send(new ChannelSendCommand());
+        ChannelSendResult result = sender.send(new NoticeChannelMessage());
 
         assertFalse(result.isSuccess());
         assertEquals("WECOM_USER_EMPTY", result.getFailCode());
@@ -33,7 +33,7 @@ class WecomNoticeChannelSenderTest {
 
     @Test
     void send_missingConfig_returnsNonRetryableFailure() {
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(4001L);
         command.setWecomUserId("zhangsan");
         command.setContent("待办提醒");
@@ -58,9 +58,9 @@ class WecomNoticeChannelSenderTest {
                     assertEquals("zhangsan", request.toUser());
                     assertEquals(1000003, request.agentId());
                     assertEquals("审批提醒\n请处理待办", request.content());
-                    return new WecomMessageSendResponse("{\"errcode\":0,\"errmsg\":\"ok\",\"msgid\":\"msg-001\"}", "msg-001");
+                    return new WecomSendResult("{\"errcode\":0,\"errmsg\":\"ok\",\"msgid\":\"msg-001\"}", "msg-001");
                 });
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(4001L);
         command.setWecomUserId("zhangsan");
         command.setTitle("审批提醒");
@@ -80,9 +80,9 @@ class WecomNoticeChannelSenderTest {
                 (corpId, corpSecret) -> "access-token",
                 (accessToken, request) -> {
                     assertEquals(1000003, request.agentId());
-                    return new WecomMessageSendResponse("{\"errcode\":0}", null);
+                    return new WecomSendResult("{\"errcode\":0}", null);
                 });
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(4003L);
         command.setWecomUserId("zhangsan");
         command.setContent("请处理待办");
@@ -101,7 +101,7 @@ class WecomNoticeChannelSenderTest {
                 (accessToken, request) -> {
                     throw new WecomApiException("WECOM_SEND_40003", "企业微信消息发送失败：invalid userid", false);
                 });
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(4004L);
         command.setWecomUserId("unknown");
         command.setContent("请处理待办");
@@ -120,7 +120,7 @@ class WecomNoticeChannelSenderTest {
         WecomNoticeChannelSender robotSender = new WecomNoticeChannelSender(
                 (corpId, corpSecret) -> fail("robot webhook should not request access token"),
                 (accessToken, request) -> fail("robot webhook should not send app message"));
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(4002L);
         command.setChannelConfigJson("{\"webhookUrl\":\"https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test\"}");
 

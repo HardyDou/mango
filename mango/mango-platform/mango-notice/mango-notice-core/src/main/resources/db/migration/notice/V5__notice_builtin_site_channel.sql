@@ -1,1 +1,0 @@
--- Default notice channel data is registered through mango-resource MESSAGE_CHANNEL.

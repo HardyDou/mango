@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.notice.core.mapper.NoticeTaskMapper">
+
+    <select id="selectTenantIdById" resultType="java.lang.String">
+        select tenant_id
+        from notice_task
+        where id = #{id}
+    </select>
+</mapper>

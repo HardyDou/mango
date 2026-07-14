@@ -14,7 +14,7 @@ public class NoticeBusinessConfigVersionVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "ID")
+    @Schema(description = "主键 ID")
     private Long id;
 
     @Schema(description = "业务类型 ID")

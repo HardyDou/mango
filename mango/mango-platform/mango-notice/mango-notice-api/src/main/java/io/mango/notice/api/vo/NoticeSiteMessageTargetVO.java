@@ -4,8 +4,6 @@ import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.util.Map;
-
 @Data
 @Schema(description = "系统消息跳转目标视图")
 public class NoticeSiteMessageTargetVO {
@@ -17,7 +15,7 @@ public class NoticeSiteMessageTargetVO {
     private String targetKey;
 
     @Schema(description = "目标参数")
-    private Map<String, Object> params;
+    private NoticeJsonVO params;
 
     @Schema(description = "打开方式")
     private String openMode;

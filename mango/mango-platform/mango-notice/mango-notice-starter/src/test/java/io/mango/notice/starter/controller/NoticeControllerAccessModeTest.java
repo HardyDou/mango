@@ -28,7 +28,7 @@ class NoticeControllerAccessModeTest {
         assertPermission("listSiteMessages", "notice:site:view", NoticeSiteMessagePageQuery.class);
         assertPermission("getSiteMessage", "notice:site:view", Long.class);
         assertPermission("executeSiteMessageAction", "notice:site:edit",
-                Long.class, String.class, ExecuteNoticeSiteMessageActionCommand.class);
+                ExecuteNoticeSiteMessageActionCommand.class);
         assertPermission("unreadCount", "notice:site:view");
         assertPermission("markSiteMessageRead", "notice:site:edit", Long.class);
         assertPermission("markSiteMessagesRead", "notice:site:edit", MarkNoticeReadCommand.class);

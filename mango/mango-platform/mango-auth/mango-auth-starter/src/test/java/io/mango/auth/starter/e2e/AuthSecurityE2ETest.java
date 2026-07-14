@@ -31,7 +31,7 @@ import io.mango.identity.api.vo.AuthUserInfo;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
@@ -134,9 +134,10 @@ class AuthSecurityE2ETest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("1:admin"));
 
-        assertThat(applicationEvents.stream(NoticeSendEvent.class).toList())
+        assertThat(applicationEvents.stream(NoticeSendEventCommand.class).toList())
                 .singleElement()
                 .satisfies(event -> {
+                    assertThat(event.getTenantId()).isEqualTo("1");
                     assertThat(event.getBizType()).isEqualTo("auth.login.success");
                     assertThat(event.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
                     assertThat(event.getMessageTarget().getTargetKey()).isEqualTo("account:profile");
@@ -305,9 +306,10 @@ class AuthSecurityE2ETest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode()));
 
-        assertThat(applicationEvents.stream(NoticeSendEvent.class).toList())
+        assertThat(applicationEvents.stream(NoticeSendEventCommand.class).toList())
                 .singleElement()
                 .satisfies(event -> {
+                    assertThat(event.getTenantId()).isEqualTo("1");
                     assertThat(event.getBizType()).isEqualTo("auth.login.locked");
                     assertThat(event.getMessageSubject().getSubjectType()).isEqualTo("AUTH_LOGIN_LOCK");
                     assertThat(event.getMessageTarget().getTargetKey()).isEqualTo("system:user");

@@ -145,6 +145,118 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void controllerImplementationInheritsParameterValidationFromApiContract() {
+        Report report = analyze(
+                "example/OrderController.java", """
+                package example;
+                import io.mango.architecture.pmd.fixture.CreateOrderCommand;
+                import io.mango.architecture.pmd.fixture.ValidatedOrderApi;
+                import io.mango.common.result.R;
+                import io.swagger.v3.oas.annotations.Operation;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.PostMapping;
+                import org.springframework.web.bind.annotation.RequestBody;
+                import org.springframework.web.bind.annotation.RestController;
+                @Validated
+                @Tag(name = "订单", description = "订单管理")
+                @RestController
+                final class OrderController implements ValidatedOrderApi {
+                    @Operation(summary = "创建订单", description = "创建一条订单")
+                    @PostMapping
+                    public R<String> create(@RequestBody CreateOrderCommand command) {
+                        return R.ok("ok");
+                    }
+                }
+                """,
+                "io/swagger/v3/oas/annotations/Operation.java", """
+                package io.swagger.v3.oas.annotations;
+                public @interface Operation { String summary(); String description(); }
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/PostMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface PostMapping {}
+                """,
+                "org/springframework/web/bind/annotation/RequestBody.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RequestBody {}
+                """);
+
+        assertThat(messages(report))
+                .doesNotContain("MANGO-ARCH-CTRL-003 @RequestBody parameter requires @Valid");
+        assertThat(report.getProcessingErrors()).isEmpty();
+    }
+
+    @Test
+    void controllerImplementationMustNotRepeatApiOwnedValid() {
+        Report report = analyze(
+                "example/OrderController.java", """
+                package example;
+                import io.mango.architecture.pmd.fixture.CreateOrderCommand;
+                import io.mango.architecture.pmd.fixture.ValidatedOrderApi;
+                import io.mango.common.result.R;
+                import io.swagger.v3.oas.annotations.Operation;
+                import io.swagger.v3.oas.annotations.tags.Tag;
+                import jakarta.validation.Valid;
+                import org.springdoc.core.annotations.ParameterObject;
+                import org.springframework.validation.annotation.Validated;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                @Validated
+                @Tag(name = "订单", description = "订单管理")
+                @RestController
+                final class OrderController implements ValidatedOrderApi {
+                    @Override
+                    @Operation(summary = "查询订单", description = "按查询条件获取订单")
+                    @GetMapping
+                    public R<String> create(@Valid @ParameterObject CreateOrderCommand command) {
+                        return R.ok("ok");
+                    }
+                }
+                """,
+                "io/swagger/v3/oas/annotations/Operation.java", """
+                package io.swagger.v3.oas.annotations;
+                public @interface Operation { String summary(); String description(); }
+                """,
+                "io/swagger/v3/oas/annotations/tags/Tag.java", """
+                package io.swagger.v3.oas.annotations.tags;
+                public @interface Tag { String name(); String description(); }
+                """,
+                "org/springframework/validation/annotation/Validated.java", """
+                package org.springframework.validation.annotation;
+                public @interface Validated {}
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springdoc/core/annotations/ParameterObject.java", """
+                package org.springdoc.core.annotations;
+                public @interface ParameterObject {}
+                """,
+                "org/springframework/web/bind/annotation/GetMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface GetMapping {}
+                """);
+
+        assertThat(messages(report))
+                .contains("MANGO-ARCH-CTRL-003 overriding Controller parameter must not repeat API-owned @Valid");
+        assertThat(report.getProcessingErrors()).isEmpty();
+    }
+
+    @Test
     void requireWithBusinessCodePassesAndStringCodeFails() {
         Report report = analyze(
                 "example/core/service/PaymentService.java", """

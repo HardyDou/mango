@@ -7,8 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Map;
-
 @Data
 @Schema(description = "完成系统消息动作命令")
 public class CompleteNoticeSiteMessageActionCommand implements Serializable {
@@ -24,11 +22,14 @@ public class CompleteNoticeSiteMessageActionCommand implements Serializable {
     private NoticeSiteMessageActionRequestStatus status;
 
     @Schema(description = "失败码")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String failCode;
 
     @Schema(description = "失败原因")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String failReason;
 
     @Schema(description = "业务处理结果")
-    private Map<String, Object> result;
+    @jakarta.validation.Valid
+    private NoticeJsonRequest result;
 }

@@ -12,7 +12,7 @@ final class AliyunSmsGateway implements SmsGateway {
     private static final String SUCCESS_CODE = "OK";
 
     @Override
-    public SmsGatewayResponse send(SmsGatewayRequest request) {
+    public SmsGatewayResult send(SmsGatewayPayload request) {
         AliyunSmsConfig config = (AliyunSmsConfig) request.config();
         try {
             Client client = new Client(new Config()
@@ -31,9 +31,9 @@ final class AliyunSmsGateway implements SmsGateway {
             String code = body.getCode();
             String snapshot = snapshot(body);
             if (SUCCESS_CODE.equalsIgnoreCase(code)) {
-                return SmsGatewayResponse.success(body.getBizId(), snapshot);
+                return SmsGatewayResult.success(body.getBizId(), snapshot);
             }
-            return SmsGatewayResponse.failed("ALIYUN_SMS_" + nullToUnknown(code),
+            return SmsGatewayResult.failed("ALIYUN_SMS_" + nullToUnknown(code),
                     "阿里云短信发送失败：" + nullToDefault(body.getMessage(), code),
                     retryable(code), snapshot);
         } catch (SmsGatewayException ex) {

@@ -2,6 +2,8 @@ package io.mango.notice.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.common.vo.PageResult;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.api.command.NoticeAnnouncementTargetCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
@@ -22,6 +24,7 @@ import io.mango.notice.core.mapper.NoticeAnnouncementTargetMapper;
 import io.mango.notice.core.service.INoticeService;
 import io.mango.notice.core.service.NoticeRecipientResolver;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mybatis.spring.annotation.MapperScan;
@@ -85,9 +88,16 @@ class NoticeAnnouncementServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(8L, "default", "notice-test", null, null, null, null, "test"));
         resetSchema();
         recipientResolver.clear();
         reset(noticeService);
+    }
+
+    @AfterEach
+    void tearDown() {
+        MangoContextHolder.clear();
     }
 
     @Test
@@ -150,7 +160,7 @@ class NoticeAnnouncementServiceIntegrationTest {
         jdbcTemplate.update("update notice_announcement set status = 'OFFLINE' where id = 100");
         insertRecipient(1001L, 100L, 8L, NoticeReadStatus.UNREAD, NoticeAnnouncementConfirmStatus.NOT_REQUIRED);
 
-        assertThatThrownBy(() -> announcementService.getMyAnnouncement(100L, 8L))
+        assertThatThrownBy(() -> announcementService.getMyAnnouncement(100L))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("公告不存在或不可访问");
 
@@ -163,7 +173,7 @@ class NoticeAnnouncementServiceIntegrationTest {
         insertPublishedAnnouncement(100L, false);
         insertRecipient(1001L, 100L, 8L, NoticeReadStatus.UNREAD, NoticeAnnouncementConfirmStatus.NOT_REQUIRED);
 
-        NoticeAnnouncementVO vo = announcementService.getMyAnnouncement(100L, 8L);
+        NoticeAnnouncementVO vo = announcementService.getMyAnnouncement(100L);
 
         NoticeAnnouncementRecipientEntity persisted = recipientMapper.selectById(1001L);
         assertThat(vo.getReadStatus()).isEqualTo(NoticeReadStatus.READ);
@@ -177,7 +187,7 @@ class NoticeAnnouncementServiceIntegrationTest {
         insertPublishedAnnouncement(100L, true);
         insertRecipient(1001L, 100L, 8L, NoticeReadStatus.UNREAD, NoticeAnnouncementConfirmStatus.PENDING);
 
-        assertThat(announcementService.confirmMyAnnouncement(100L, 8L)).isTrue();
+        assertThat(announcementService.confirmMyAnnouncement(100L)).isTrue();
 
         NoticeAnnouncementRecipientEntity persisted = recipientMapper.selectById(1001L);
         assertThat(persisted.getReadStatus()).isEqualTo(NoticeReadStatus.READ);
@@ -198,7 +208,7 @@ class NoticeAnnouncementServiceIntegrationTest {
         query.setPendingConfirmOnly(true);
         query.setKeyword("升级");
 
-        PageResult<NoticeAnnouncementVO> result = announcementService.pageMyAnnouncements(8L, query);
+        PageResult<NoticeAnnouncementVO> result = announcementService.pageMyAnnouncements(query);
 
         assertThat(result.getTotal()).isEqualTo(1L);
         assertThat(result.getList()).hasSize(1);

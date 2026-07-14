@@ -94,6 +94,22 @@ noticeApi.send(command);
 </dependency>
 ```
 
+### 3.3 服务职责边界
+
+`NoticeService` 只作为 `INoticeService` 的兼容门面，负责入口参数校验和职责转发，不再直接持有 Mapper 或实现业务事务。核心实现按能力拆分：
+
+| 服务 | 职责 |
+|------|------|
+| `NoticeConfigurationService` | 业务类型、配置版本、渠道模板和渠道配置 |
+| `NoticeDeliveryService` | 任务创建、接收人解析、模板渲染、渠道路由和实际投递 |
+| `NoticeRecordOperationService` | 任务/记录查询、失败重试、人工成功和忽略失败 |
+| `NoticeRecipientSettingService` | 全局设置、接收账户和接收偏好 |
+| `NoticeSiteMessageService` | 我的站内信、已读状态和动作请求 |
+| `NoticeWecomSyncService` | 企业微信用户同步 |
+| `NoticeAnnouncementService` | 公告草稿、发布、下线和接收快照 |
+
+只有完整实现 `MangoTypedCrudService<E,C,U,Q,V,ID>` 标准契约的单实体 CRUD 服务才使用 `MangoCrudServiceImpl`。Notice 的配置、公告、接收设置都包含发布、状态流转或多实体事务，不是标准单实体 CRUD，因此保持领域服务实现，避免为了继承基类而扭曲接口和事务边界。
+
 ## 4. 前端接入
 
 通知前端能力在 `@mango/notice`：
@@ -611,28 +627,21 @@ notice:announcement:offline
 
 ## 12. 数据与初始化
 
-Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
+Flyway 路径为 `mango-notice-core/src/main/resources/db/migration/notice`，新数据库只执行 `V1__init_notice.sql`。该脚本一次创建最终的 20 张通知表，只包含 DDL，不包含 `INSERT`、`UPDATE`、`DELETE`、账号、模板或演示数据。
 
-| 脚本 | 内容 |
+正式必需资源由 `mango-notice-starter` 在 `META-INF/mango/resources/` 中按 Notice 模块登记，文件统一使用 `notice-common-` 前缀：
+
+| 资源 | 用途 |
 |------|------|
-| `V1__init_notice_site_message.sql` | 初始化通知业务、任务、记录、站内信等基础表。 |
-| `V2__notice_business_config_version.sql` | 增加业务配置版本。 |
-| `V3__notice_send_record_biz_context.sql` | 补充发送记录业务上下文字段。 |
-| `V4__notice_definition_channel_route.sql` | 增加定义和渠道路由相关字段。 |
-| `V5__notice_builtin_site_channel.sql` | 内置站内信渠道已迁移到 `mango-resource`。 |
-| `V6__notice_site_channel_sound_text.sql` | 补充站内信声音文本。 |
-| `V7__notice_task_recipient_targets_snapshot.sql` | 增加接收目标快照。 |
-| `V8__notice_builtin_site_channel_default_tenant.sql` | 默认租户站内信渠道已迁移到 `mango-resource`。 |
-| `V9__notice_receive_preference.sql` | 初始化接收偏好表。 |
-| `V10__seed_admin_recipient_account.sql` | 初始化管理员接收账户。 |
-| `V11__seed_email_rich_templates.sql` | 初始化邮件富文本模板。 |
-| `V12__notice_wecom_sync_mapping.sql` | 初始化企微同步映射表。 |
-| `V13__notice_business_domain.sql` | 通知业务类型接入业务域。 |
-| `V14__seed_job_site_message.sql` | 定时任务站内信模板已迁移到 `mango-job` 的 `job-common-message.yml`。 |
-| `V15__notice_announcement.sql` | 增加公告、公告发布对象快照和用户级接收记录。 |
-| `V16__notice_announcement_audit_fields.sql` | 为公告、发布对象和用户接收记录补齐组织与审计字段。 |
+| `notice-common-domain.yml` | 通知业务域 |
+| `notice-common-menu.json` | 通知中心菜单与权限入口 |
+| `notice-common-message.yml` | 默认站内信内部通道 |
 
-核心表包括 `notice_business_type`、`notice_business_config_version`、`notice_business_channel_template`、`notice_channel_config`、`notice_task`、`notice_recipient`、`notice_send_record`、`notice_site_message`、`notice_retry_log`、`notice_callback_log`、`notice_setting`、`notice_recipient_account`、`notice_receive_preference`、`notice_wecom_sync_mapping`、`notice_announcement`、`notice_announcement_target`、`notice_announcement_recipient`。
+这些资源属于模块运行所需的正式声明，不是演示数据。管理员接收账户、业务模板和第三方渠道账号不再自动初始化。认证、任务、支付、工作流等模块需要的通知模板由各自 starter 在自己的 `META-INF/mango/resources/` 中登记，Notice 不集中代管其他模块数据。
+
+Notice 当前不提供演示数据。以后新增示例业务或示例账号时，必须放入 `mango-notice-starter/src/main/resources/META-INF/mango/demo/`，文件使用 `notice-demo-` 前缀并采用 `INIT_ONLY`；只有显式设置 `mango.resource.registry.demo-enabled=true` 才能加载，禁止写回 Flyway 或正式资源目录。
+
+核心表包括 `notice_announcement`、`notice_announcement_recipient`、`notice_announcement_target`、`notice_audit_log`、`notice_business_channel_template`、`notice_business_config_version`、`notice_business_type`、`notice_callback_log`、`notice_channel_config`、`notice_receive_preference`、`notice_recipient`、`notice_recipient_account`、`notice_retry_log`、`notice_send_record`、`notice_setting`、`notice_site_message`、`notice_site_message_action`、`notice_site_message_action_request`、`notice_task`、`notice_wecom_sync_mapping`。
 
 通知异步分发依赖 `mango-infra-kv` outbox。部署时要确认 outbox 存储可用，否则任务可能创建成功但不会被后台 worker 分发。
 

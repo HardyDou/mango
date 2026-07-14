@@ -42,6 +42,8 @@ import io.mango.notice.api.vo.NoticeUnreadCountVO;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import io.mango.notice.api.vo.WecomUserSyncResultVO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 
@@ -51,55 +53,55 @@ public interface NoticeApi {
 
     R<NoticeSendResultVO> sendSiteMessage(@Valid SendNoticeCommand command);
 
-    R<PageResult<NoticeBusinessTypeVO>> listBusinessTypes(NoticeBusinessTypePageQuery query);
+    R<PageResult<NoticeBusinessTypeVO>> listBusinessTypes(@Valid NoticeBusinessTypePageQuery query);
 
     R<NoticeBusinessTypeVO> createBusinessType(@Valid CreateNoticeBusinessTypeCommand command);
 
-    R<NoticeBusinessTypeVO> updateBusinessType(Long id, @Valid UpdateNoticeBusinessTypeCommand command);
+    R<NoticeBusinessTypeVO> updateBusinessType(@Positive Long id, @Valid UpdateNoticeBusinessTypeCommand command);
 
-    R<Boolean> deleteBusinessType(Long id);
+    R<Boolean> deleteBusinessType(@Positive Long id);
 
-    R<Boolean> enableBusinessType(Long id);
+    R<Boolean> enableBusinessType(@Positive Long id);
 
-    R<Boolean> disableBusinessType(Long id);
+    R<Boolean> disableBusinessType(@Positive Long id);
 
-    R<List<NoticeBusinessConfigVersionVO>> listBusinessConfigVersions(Long businessTypeId);
+    R<List<NoticeBusinessConfigVersionVO>> listBusinessConfigVersions(@Positive Long businessTypeId);
 
-    R<NoticeBusinessConfigVersionVO> saveBusinessConfigDraft(Long businessTypeId,
+    R<NoticeBusinessConfigVersionVO> saveBusinessConfigDraft(@Positive Long businessTypeId,
             @Valid SaveNoticeBusinessConfigCommand command);
 
-    R<Boolean> publishBusinessConfigDraft(Long businessTypeId);
+    R<Boolean> publishBusinessConfigDraft(@Positive Long businessTypeId);
 
-    R<Boolean> activateBusinessConfigVersion(Long businessTypeId, Integer version);
+    R<Boolean> activateBusinessConfigVersion(@Positive Long businessTypeId, @Positive Integer version);
 
-    R<List<NoticeChannelTemplateVO>> listChannelTemplates(Long businessTypeId);
+    R<List<NoticeChannelTemplateVO>> listChannelTemplates(@Positive Long businessTypeId);
 
-    R<NoticeChannelTemplateVO> saveChannelTemplate(Long businessTypeId, NoticeChannelType channelType,
+    R<NoticeChannelTemplateVO> saveChannelTemplate(@Positive Long businessTypeId,
             @Valid SaveNoticeChannelTemplateCommand command);
 
-    R<Boolean> publishChannelTemplate(Long businessTypeId, NoticeChannelType channelType);
+    R<Boolean> publishChannelTemplate(@Positive Long businessTypeId, @NotNull NoticeChannelType channelType);
 
-    R<PageResult<NoticeChannelConfigVO>> listChannelConfigs(NoticeChannelConfigPageQuery query);
+    R<PageResult<NoticeChannelConfigVO>> listChannelConfigs(@Valid NoticeChannelConfigPageQuery query);
 
     R<NoticeChannelConfigVO> saveChannelConfig(@Valid SaveNoticeChannelConfigCommand command);
 
-    R<NoticeWecomLoginConfigVO> getWecomLoginConfig(Long channelConfigId);
+    R<NoticeWecomLoginConfigVO> getWecomLoginConfig(@Positive Long channelConfigId);
 
-    R<Boolean> deleteChannelConfig(Long id);
+    R<Boolean> deleteChannelConfig(@Positive Long id);
 
-    R<PageResult<NoticeTaskVO>> listTasks(NoticeTaskPageQuery query);
+    R<PageResult<NoticeTaskVO>> listTasks(@Valid NoticeTaskPageQuery query);
 
-    R<PageResult<NoticeSendRecordVO>> listSendRecords(NoticeSendRecordPageQuery query);
+    R<PageResult<NoticeSendRecordVO>> listSendRecords(@Valid NoticeSendRecordPageQuery query);
 
-    R<Boolean> retrySendRecord(Long id);
+    R<Boolean> retrySendRecord(@Positive Long id);
 
     R<Boolean> retrySendRecords(@Valid RetryNoticeSendRecordsCommand command);
 
-    R<Boolean> markSendRecordManualSuccess(Long id, @Valid HandleNoticeSendRecordCommand command);
+    R<Boolean> markSendRecordManualSuccess(@Positive Long id, @Valid HandleNoticeSendRecordCommand command);
 
     R<Boolean> markSendRecordsManualSuccess(@Valid HandleNoticeSendRecordsCommand command);
 
-    R<Boolean> ignoreSendRecord(Long id, @Valid HandleNoticeSendRecordCommand command);
+    R<Boolean> ignoreSendRecord(@Positive Long id, @Valid HandleNoticeSendRecordCommand command);
 
     R<Boolean> ignoreSendRecords(@Valid HandleNoticeSendRecordsCommand command);
 
@@ -107,25 +109,25 @@ public interface NoticeApi {
 
     R<Boolean> saveSettings(@Valid SaveNoticeSettingsCommand command);
 
-    R<List<NoticeRecipientAccountVO>> listRecipientAccounts(NoticeRecipientAccountQuery query);
+    R<List<NoticeRecipientAccountVO>> listRecipientAccounts(@Valid NoticeRecipientAccountQuery query);
 
     R<NoticeRecipientAccountVO> saveRecipientAccount(@Valid SaveNoticeRecipientAccountCommand command);
 
     R<WecomUserSyncResultVO> syncWecomUsers(@Valid SyncWecomUsersCommand command);
 
-    R<Boolean> disableRecipientAccount(Long id, Long userId);
+    R<Boolean> disableRecipientAccount(@Positive Long id, @Positive Long userId);
 
-    R<Boolean> setDefaultRecipientAccount(Long id, Long userId);
+    R<Boolean> setDefaultRecipientAccount(@Positive Long id, @Positive Long userId);
 
-    R<List<NoticeReceivePreferenceVO>> listReceivePreferences(NoticeReceivePreferenceQuery query);
+    R<List<NoticeReceivePreferenceVO>> listReceivePreferences(@Valid NoticeReceivePreferenceQuery query);
 
     R<NoticeReceivePreferenceVO> saveReceivePreference(@Valid SaveNoticeReceivePreferenceCommand command);
 
-    R<PageResult<NoticeSiteMessageVO>> listSiteMessages(NoticeSiteMessagePageQuery query);
+    R<PageResult<NoticeSiteMessageVO>> listSiteMessages(@Valid NoticeSiteMessagePageQuery query);
 
-    R<NoticeSiteMessageVO> getSiteMessage(Long id);
+    R<NoticeSiteMessageVO> getSiteMessage(@Positive Long id);
 
-    R<NoticeSiteMessageActionRequestVO> executeSiteMessageAction(Long id, String actionCode,
+    R<NoticeSiteMessageActionRequestVO> executeSiteMessageAction(
             @Valid ExecuteNoticeSiteMessageActionCommand command);
 
     R<NoticeSiteMessageActionRequestVO> completeSiteMessageAction(
@@ -133,11 +135,11 @@ public interface NoticeApi {
 
     R<NoticeUnreadCountVO> unreadCount();
 
-    R<Boolean> markSiteMessageRead(Long id);
+    R<Boolean> markSiteMessageRead(@Positive Long id);
 
     R<Boolean> markSiteMessagesRead(@Valid MarkNoticeReadCommand command);
 
     R<Boolean> markAllSiteMessagesRead();
 
-    R<Boolean> deleteSiteMessage(Long id);
+    R<Boolean> deleteSiteMessage(@Positive Long id);
 }

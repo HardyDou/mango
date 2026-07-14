@@ -18,20 +18,26 @@ public class UpdateNoticeBusinessTypeCommand implements Serializable {
     private String bizName;
 
     @Schema(description = "业务分组")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String bizGroup;
 
     @Schema(description = "业务域编码")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String domainCode;
 
     @Schema(description = "说明")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String description;
 
     @Schema(description = "参数 schema JSON")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String paramsSchema;
 
     @Schema(description = "默认优先级")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticePriority defaultPriority = NoticePriority.NORMAL;
 
     @Schema(description = "幂等策略")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String idempotentStrategy;
 }
