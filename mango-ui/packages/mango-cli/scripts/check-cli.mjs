@@ -1,4 +1,4 @@
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
@@ -2469,6 +2469,10 @@ function assertPmoSyncCommand(tempRoot) {
 
 function assertDevWorkspaceRegistryAllocation(tempRoot) {
   const registryPath = join(tempRoot, 'workspaces.json');
+  const testHome = join(tempRoot, 'workspace-home');
+  mkdirSync(testHome, { recursive: true });
+  process.env.HOME = testHome;
+  process.env.USERPROFILE = testHome;
   const roots = [join(tempRoot, 'workspace-a'), join(tempRoot, 'workspace-b')];
   for (const root of roots) {
     mkdirSync(root, { recursive: true });
@@ -2502,6 +2506,14 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
   }
   const workspaces = roots.map(root => JSON.parse(readFileSync(join(root, '.mango/workspace.json'), 'utf8')));
   const envs = roots.map(root => parseSimpleEnv(readFileSync(join(root, '.mango/dev-workspace.env'), 'utf8')));
+  const sharedMavenRepository = join(testHome, '.m2/repository');
+  for (const root of roots) {
+    const workspaceMavenRepository = join(root, '.mango/m2/repository');
+    if (!lstatSync(workspaceMavenRepository).isSymbolicLink()
+      || realpathSync(workspaceMavenRepository) !== realpathSync(sharedMavenRepository)) {
+      throw new Error(`workspace init should link the worktree Maven repository to the shared user repository: ${workspaceMavenRepository}`);
+    }
+  }
   if (workspaces[0].slot === workspaces[1].slot
     || workspaces[0].backendPort === workspaces[1].backendPort
     || workspaces[0].frontendPort === workspaces[1].frontendPort
@@ -2545,6 +2557,31 @@ function assertDevWorkspaceRegistryAllocation(tempRoot) {
   }
   assertEqual(readFileSync(join(roots[0], '.mango/dev-workspace.env'), 'utf8'), before, 'existing dev-workspace.env after repeat init');
   assertEqual(readFileSync(join(roots[0], '.mango/workspace.json'), 'utf8'), workspaceBefore, 'existing workspace.json after repeat init');
+  if (realpathSync(join(roots[0], '.mango/m2/repository')) !== realpathSync(sharedMavenRepository)) {
+    throw new Error('mango workspace init repeat should preserve the shared Maven repository link');
+  }
+
+  const isolatedMavenRoot = join(tempRoot, 'workspace-isolated-maven');
+  const isolatedMavenRepository = join(isolatedMavenRoot, '.mango/m2/repository');
+  mkdirSync(isolatedMavenRepository, { recursive: true });
+  writeFileSync(join(isolatedMavenRoot, 'mango.dev.json'), '{"version":1,"groups":{"default":[]},"apps":{}}\n');
+  writeFileSync(join(isolatedMavenRepository, '.keep'), 'isolated\n');
+  const isolatedMavenInit = spawnSync('env', [
+    `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
+    process.execPath,
+    cli,
+    'workspace',
+    'init',
+  ], {
+    cwd: isolatedMavenRoot,
+    encoding: 'utf8',
+  });
+  if (isolatedMavenInit.status !== 0
+    || !isolatedMavenInit.stdout.includes('preserving existing Maven repository')
+    || lstatSync(isolatedMavenRepository).isSymbolicLink()
+    || readFileSync(join(isolatedMavenRepository, '.keep'), 'utf8') !== 'isolated\n') {
+    throw new Error(`workspace init should preserve an explicitly isolated Maven repository:\n${isolatedMavenInit.stdout}\n${isolatedMavenInit.stderr}`);
+  }
 
   writeFileSync(join(roots[0], '.mango/dev-workspace.env'), [
     'MANGO_BACKEND_PORT=5555',
@@ -2766,7 +2803,11 @@ function walkFiles(root) {
   const result = [];
   for (const entry of readdirSync(root)) {
     const fullPath = join(root, entry);
-    if (statSync(fullPath).isDirectory()) {
+    const fileStat = lstatSync(fullPath);
+    if (fileStat.isSymbolicLink()) {
+      continue;
+    }
+    if (fileStat.isDirectory()) {
       result.push(...walkFiles(fullPath));
     } else {
       result.push(fullPath);

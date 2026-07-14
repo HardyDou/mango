@@ -28,7 +28,7 @@
     "@mango/template": "1.0.21",
     "@mango/workflow": "1.0.27",
     "@mango/workflow-business-example": "1.0.26",
-    "@mango/cli": "1.0.77",
+    "@mango/cli": "1.0.78",
     "@mango/home": "1.0.5",
     "@mango/api-schema": "1.0.2"
   }
