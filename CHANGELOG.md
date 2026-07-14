@@ -1,30 +1,44 @@
 # Mango Changelog
 
-## v2026.07.14-cli-1.0.78-workspace-maven-cache-release - 2026-07-14
+## v2026.07.14-maven-1.0.21-platform-debt-release - 2026-07-14
 
 ### Fixed
 
 - Fix [Issue #507](https://github.com/HardyDou/mango/issues/507): initialize `.mango/m2/repository` as a directory link to `~/.m2/repository` during `mango workspace init`, so fresh worktrees reuse the user's Maven dependency cache instead of downloading everything again.
 - Preserve a pre-existing real directory or link, keeping explicitly isolated Maven repositories opt-in and preventing destructive initialization.
+- Complete the Payment, CMS, Workflow, and Notice historical-debt corrections from PR #502, including clean-database initialization, API validation ownership, notification integration, Payment demo resources, and current management-page contracts.
+- Make the Java architecture gate recognize external API and Service interface stubs in partial Reactor scans while retaining full interface and method parity checks when the interface bytecode is available.
+- Include the previously merged Notice architecture cleanup and PMO delivery-assurance update in the first unpublished package versions after the prior release batch.
 
 ### Upgrade Notes
 
-1. Publish and verify `@mango/cli@1.0.78`.
-2. Upgrade the project-local CLI and run `mango workspace init` once in every active worktree; no business `mango.dev.json` edit or manual filesystem workaround is required.
-3. No PMO, Mango Maven, source-code, database, API, menu, permission, tenant, or runtime configuration migration is required.
+1. Publish and verify Mango Maven `1.0.21`, then publish `@mango/pmo@1.2.6`, `@mango/notice@1.0.23`, `@mango/payment@1.0.13`, `@mango/admin-shell@1.0.41`, `@mango/admin@1.0.46`, and `@mango/cli@1.0.78` in dependency order.
+2. Upgrade existing business backends to Mango Maven `1.0.21`; new databases receive the corrected V1 schemas and module resources automatically. Existing databases do not replay V1 and require no destructive migration for this fresh-database correction batch.
+3. Upgrade frontend packages through `@mango/admin@1.0.46`, or update Notice and Payment packages directly when consumed independently. Run `mango pmo upgrade --project-dir . --to 1.2.6` for the current delivery-assurance baseline.
+4. Upgrade the project-local CLI to `@mango/cli@1.0.78` and run `mango workspace init` once in every active worktree; no business `mango.dev.json` edit or manual filesystem workaround is required.
 
 ### Published Packages
 
 | Order | Target | Version / destination | Pre-release status |
 |---|---|---|---|
-| 1 | npm CLI | `@mango/cli@1.0.78` -> Nexus npm hosted | `PENDING` |
-| 2 | GitHub Release | `v2026.07.14-cli-1.0.78-workspace-maven-cache-release` | `PENDING` |
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.21` -> Nexus Maven hosted | `PENDING` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.6` -> Nexus npm hosted | `PENDING` |
+| 3 | npm Notice | `@mango/notice@1.0.23` -> Nexus npm hosted | `PENDING` |
+| 4 | npm Payment | `@mango/payment@1.0.13` -> Nexus npm hosted | `PENDING` |
+| 5 | npm Admin Shell | `@mango/admin-shell@1.0.41` -> Nexus npm hosted | `PENDING` |
+| 6 | npm Admin | `@mango/admin@1.0.46` -> Nexus npm hosted | `PENDING` |
+| 7 | npm CLI | `@mango/cli@1.0.78` -> Nexus npm hosted | `PENDING` |
+| 8 | GitHub Release | `v2026.07.14-maven-1.0.21-platform-debt-release` | `PENDING` |
 
 ### Verification
 
-- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
-- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
-- `pnpm --filter @mango/cli run check:release-versions`
+- PR #502: Payment 36/36 and Workflow 14/14 browser E2E, focused Payment/CMS/Workflow/Notice API and persistence checks, and the exact partial-Reactor Java gate all passed.
+- `pnpm -C mango-ui release:impact --base=v2026.07.14-maven-1.0.20-cli-1.0.77-path-binding-release --head=HEAD`
+- `pnpm -C mango-ui admin:styles:check && pnpm -C mango-ui admin:module-styles:check`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.21 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- Internal Nexus publication is complete only after hosted/group repository back-check and clean consumer verification.
 - `node mango-pmo/tools/workspace-layout-check.mjs --root .`
 
 ## v2026.07.14-maven-1.0.20-cli-1.0.77-path-binding-release - 2026-07-14

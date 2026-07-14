@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.45",
+  "version": "1.0.46",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "1.0.20",
-    "@mango/admin-shell": "1.0.40",
+    "@mango/admin-shell": "1.0.41",
     "@mango/app-runtime": "1.0.3",
     "@mango/auth": "1.0.15",
     "@mango/cms": "1.0.10",
@@ -54,9 +54,9 @@
   "peerDependencies": {
     "@mango/calendar": "1.0.21",
     "@mango/file": "1.0.21",
-    "@mango/notice": "1.0.22",
+    "@mango/notice": "1.0.23",
     "@mango/numgen": "1.0.21",
-    "@mango/payment": "1.0.12",
+    "@mango/payment": "1.0.13",
     "@mango/template": "1.0.21",
     "@mango/workflow": "1.0.27",
     "@mango/workflow-business-example": "1.0.26",

@@ -6,11 +6,12 @@
 
 - Fix [Issue #507](https://github.com/HardyDou/mango/issues/507): make `mango workspace init` create `.mango/m2/repository` as a directory link to the user's `~/.m2/repository`, avoiding repeated Maven dependency downloads in fresh worktrees.
 - Keep initialization idempotent and preserve any existing real directory or link that represents an explicitly isolated Maven repository.
+- Lock generated and upgraded business projects to Mango Maven `1.0.21`, `@mango/pmo@1.2.6`, `@mango/notice@1.0.23`, `@mango/payment@1.0.13`, `@mango/admin-shell@1.0.41`, and `@mango/admin@1.0.46`.
 
 ### Upgrade Notes
 
 - Upgrade the project-local CLI to `@mango/cli@1.0.78`, then run `mango workspace init` once in each active worktree.
-- No business `mango.dev.json`, Maven coordinates, PMO bundle, database, API, menu, permission, tenant, or runtime configuration migration is required.
+- Upgrade existing business backends to Mango Maven `1.0.21` and run `mango pmo upgrade --project-dir . --to 1.2.6`; no business `mango.dev.json` edit is required.
 
 ### Verification
 
