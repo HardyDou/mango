@@ -446,6 +446,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 业务仓安装新 CLI 后执行 `mango pmo upgrade --project-dir . --to 1.2.5`，将后端 `<mango.version>` 升到 `1.0.19`，对既有历史文档登记哈希基线后只运行一次最终 required check。
 
+本次 `release-versions.json` 同步锁定 `@mango/link-page@1.0.5`，使新生成或升级后的业务前端消费公共链接首页时拿到已发布的样式优化版本。该锁定不改变 CLI 命令、模板结构、后端 Maven 版本、页面注册方式或运行时配置；业务项目仍按 `@mango/link-page` README 引入组件和 `@mango/link-page/style.css`。
+
+发布验证脚本同时规范 Windows release worktree 下的本地 tarball 路径写法，避免反斜杠进入临时消费者 `package.json` 后被 YAML/包管理器解析错误。该修复只影响 `package-consumer:typecheck` 使用本地 pack 产物做消费方类型检查的流程，不改变业务项目安装已发布 npm 包的方式。
+
 ### 1.0.74 发布影响
 
 `@mango/cli@1.0.74` 精确依赖 `@mango/pmo@1.2.4`，把 PR 描述合同拆为秒级 `pr-contract-check`，并将代码 SHA 门禁拆为 PMO、文档、CLI 和 Java 并行任务。新 SHA 会取消旧代码检查；纯版本、README 和发布锁变更不再运行生成后端验收，生成后端门禁的 Maven 启动次数从 19 次降为 9 次且不再执行 `clean`。Mango Maven 继续使用 `1.0.18`。
