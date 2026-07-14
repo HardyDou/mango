@@ -8,7 +8,7 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.76` |
+| 当前版本 | `1.0.77` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
@@ -63,8 +63,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.2.5 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.76 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.76 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.77 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.77 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -439,6 +439,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 | `mango dev logs <app>` 找不到日志 | 应用未通过 `mango dev start` 启动 | 先执行 `mango dev start <app>` |
 
 ## 12. 相关文档
+
+### 1.0.77 发布影响
+
+`@mango/cli@1.0.77` 将后端 Mango Maven 锁升级为 `1.0.20`，修复 Maven 3 无法为 `architecture` goal 绑定 `java.nio.file.Path` 参数的问题。已有业务项目可直接把后端 Mango 版本升级到 `1.0.20`；本次不改变 PMO 版本、CLI 命令、模板结构、API、数据库、菜单、权限、租户或运行时配置。
 
 ### 1.0.76 发布影响
 
