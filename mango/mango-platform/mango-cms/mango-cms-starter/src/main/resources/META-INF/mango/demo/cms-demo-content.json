@@ -1,0 +1,1091 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_CONTENT": [
+          {
+            "id": "20260714110000020",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000000501",
+            "name": "CMS 演示数据 cms_content 2070000000000000501",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000501"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "内容管理平台 3.0 发布，发布时效迈入秒级时代"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "全新架构与智能审核上线"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "演示站点正式发布内容管理平台 3.0，依托分布式发布引擎与智能审核模型，将平均发布时效从小时级压缩至秒级。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>秒级发布成为现实</h2><p>演示站点今日正式发布内容管理平台 3.0。新平台采用分布式发布架构与智能审核引擎，将平均发布时效从小时级压缩至秒级。</p><p>平台已通过安全测评，累计服务内容超 200 万条。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "演示编辑部"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "内容运营"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000000104"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000021",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000000502",
+            "name": "CMS 演示数据 cms_content 2070000000000000502",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000502"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "演示站点中标某省公共服务平台内容系统项目"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "省级内容数字化再加速"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "演示站点成功中标某省公共服务平台内容数字化建设项目，将提供统一的内容发布、核验与风控服务。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>省级内容数字化再加速</h2><p>演示站点成功中标某省公共服务平台内容数字化建设项目。项目将建设覆盖全省的内容发布与核验体系。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "演示编辑部"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "内容运营"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000000104"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000022",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000000503",
+            "name": "CMS 演示数据 cms_content 2070000000000000503",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000503"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "智能审核图谱上线，拦截违规内容准确率达 99.2%"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "让违规内容无所遁形"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "演示站点自研智能审核图谱正式上线，通过多维关系建模与实时行为分析，对违规内容的拦截准确率达到 99.2%。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>让违规内容无所遁形</h2><p>演示站点自研智能审核图谱正式上线。通过多维关系建模与实时行为分析，违规内容拦截准确率达 99.2%。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "演示编辑部"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "内容运营"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000000104"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000023",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000001501",
+            "name": "CMS 演示数据 cms_content 2070000000000001501",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001501"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "如何完成首次登录"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "从选择租户到进入管理后台"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "首次登录时先选择租户，输入账号密码后进入工作台；如启用首次改密策略，系统会引导用户先完成密码修改。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>首次登录流程</h2><p>选择租户后输入账号和密码，系统会校验账号状态、安全策略和登录失败次数。</p><p>如果账号被要求首次改密，请按页面提示设置符合规则的新密码。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "帮助中心"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001101"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "如何完成首次登录"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,首次登录"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "首次登录、租户选择与首次改密说明。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000024",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000001502",
+            "name": "CMS 演示数据 cms_content 2070000000000001502",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001502"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "账号锁定后如何处理"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "登录失败锁定与管理员解锁"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "连续登录失败达到系统参数配置的阈值后，账号会被锁定；管理员可在用户管理中执行解锁。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>账号锁定规则</h2><p>系统会按配置统计近一段时间内的连续登录失败次数，达到阈值后锁定账号。</p><p>真实用户会落库锁定，不存在的用户名只在 KV 中记录过程数据。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "帮助中心"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001102"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "账号锁定后如何处理"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,账号锁定,解锁"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "登录失败锁定和管理员解锁说明。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000025",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000001503",
+            "name": "CMS 演示数据 cms_content 2070000000000001503",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001503"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "站点内容如何发布"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "栏目、导航和内容发布关系"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "内容发布前需要准备站点、栏目、导航和内容发布关系；发布后前台站点通过公开接口读取。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>内容发布链路</h2><p>站点配置用于管理 SEO、版权和联系信息，栏目决定内容归属，导航决定前台入口。</p><p>内容状态与发布关系都满足公开条件后，前台站点即可读取。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "帮助中心"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001103"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "站点内容如何发布"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,CMS,内容发布"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "CMS 站点内容发布链路说明。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000026",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000001504",
+            "name": "CMS 演示数据 cms_content 2070000000000001504",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001504"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "页面没有导航数据怎么办"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "排查域名、站点状态和导航状态"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "如果帮助中心或演示站点没有导航数据，请先确认域名解析到正确站点，再检查导航是否启用。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>导航数据排查</h2><p>前台站点通过当前域名解析站点，再按站点读取启用状态的导航。</p><p>如果域名配置错误、站点停用或导航未启用，页面会显示为空。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "帮助中心"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001104"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "页面没有导航数据怎么办"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,导航数据,站点配置"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "站点导航数据缺失的排查说明。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000027",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000002501",
+            "name": "CMS 演示数据 cms_content 2070000000000002501",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002501"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "Mango Admin 提供统一运营后台"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "统一权限、菜单和业务应用入口"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "Mango Admin 将权限、菜单、工作流、内容管理和消息能力整合到统一管理后台。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>统一运营后台</h2><p>Mango Admin 提供统一权限、菜单、业务应用入口和可扩展的模块能力。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "企业官网"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002101"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "Mango Admin 提供统一运营后台"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango Admin,运营后台"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "统一运营后台能力介绍。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000028",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000002502",
+            "name": "CMS 演示数据 cms_content 2070000000000002502",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002502"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "企业内容运营解决方案上线"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "多站点、栏目、导航和广告统一管理"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "通过 CMS 能力，企业可统一维护官网、帮助中心和活动页面。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>内容运营解决方案</h2><p>CMS 支持站点、栏目、导航、广告位和发布内容的统一管理。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "企业官网"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002102"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "企业内容运营解决方案上线"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango CMS,内容运营"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "企业内容运营解决方案。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000029",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000002503",
+            "name": "CMS 演示数据 cms_content 2070000000000002503",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002503"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "Mango 安全策略基线完成升级"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "首次改密、复杂度校验和登录失败锁定"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "账号安全策略支持系统参数配置，覆盖首次改密、密码复杂度和登录失败锁定。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>安全策略基线</h2><p>系统参数可控制首次改密、密码复杂度规则和登录失败锁定策略。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "企业官网"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002103"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "Mango 安全策略基线完成升级"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,安全策略"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "账号安全策略升级动态。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000030",
+            "version": 1,
+            "bizKey": "cms.content.2070000000000002504",
+            "name": "CMS 演示数据 cms_content 2070000000000002504",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002504"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "关于 Mango 团队"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "专注企业级应用底座与业务中台"
+              },
+              "summary": {
+                "type": "STRING",
+                "value": "Mango 团队持续建设企业级应用底座，提供后台、工作流、内容管理和通知能力。"
+              },
+              "contentType": {
+                "type": "STRING",
+                "value": "ARTICLE"
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "body": {
+                "type": "STRING",
+                "value": "<h2>关于 Mango</h2><p>Mango 专注企业级应用底座与业务中台能力建设。</p>"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "attachmentFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "source": {
+                "type": "STRING",
+                "value": "企业官网"
+              },
+              "author": {
+                "type": "STRING",
+                "value": "Mango 团队"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002104"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "关于 Mango 团队"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,关于我们"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "Mango 团队介绍。"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "reviewComment": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

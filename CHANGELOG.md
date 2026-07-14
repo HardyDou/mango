@@ -1,5 +1,36 @@
 # Mango Changelog
 
+## v2026.07.14-maven-1.0.18-pmo-1.2.3-cli-1.0.73-release - 2026-07-14
+
+### Fixed
+
+- Fix [Issue #480](https://github.com/HardyDou/mango/issues/480): a clean PR runner now installs the directly changed Maven modules' upstream SNAPSHOT prerequisites before the partial quality gate. The quality gate itself remains limited to directly changed modules and does not use `-am` or `-amd`.
+- Fix [Issue #481](https://github.com/HardyDou/mango/issues/481): nested PMD, Checkstyle, and SpotBugs invocations from `mango:check` exclude the architecture-verification aggregator while the outer architecture gate remains enabled.
+- Publish the matching scope classifier, governance guard, generated GitHub/Gitea workflow baseline, PMO bundle, and CLI release lock together so business repositories do not need local workarounds.
+
+### Upgrade Notes
+
+1. Publish and verify the non-app Mango Maven `1.0.18` batch first.
+2. Install `@mango/cli@1.0.73` only after `@mango/pmo@1.2.3` and the CLI both resolve from `npm-group`.
+3. Run `mango pmo upgrade --project-dir . --to 1.2.3`, synchronize the repository-host workflow, and upgrade the business backend's `<mango.version>` to `1.0.18`.
+4. Existing PRs blocked by #480 or #481 should update to this release batch and rerun the required check once; unchanged failed runs must not be repeatedly retried.
+
+### Release Batch
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.18` -> Nexus Maven hosted | `READY_TO_PUBLISH` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.3` -> Nexus npm hosted | `WAITING_FOR_MAVEN` |
+| 3 | npm CLI | `@mango/cli@1.0.73` -> Nexus npm hosted | `WAITING_FOR_PMO` |
+| 4 | GitHub Release | `v2026.07.14-maven-1.0.18-pmo-1.2.3-cli-1.0.73-release` | `WAITING_FOR_ARTIFACTS` |
+
+### Verification
+
+- `node --test mango-pmo/tests/pmo-check-scope.test.mjs`
+- `mvn -q -f mango/pom.xml -pl mango-tools/mango-maven-plugin verify`
+- Clean local Maven repository: prerequisite `-am install` followed by a direct-module partial quality gate completed with `BUILD SUCCESS`.
+- GitHub implementation PR [#483](https://github.com/HardyDou/mango/pull/483) passed `PMO Documentation Checks / pmo-doc-check` before merge.
+
 ## v2026.07.14-pmo-1.2.2-cli-1.0.72-release - 2026-07-14
 
 ### Changed
