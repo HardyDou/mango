@@ -2,14 +2,12 @@ package io.mango.payment.starter.workflow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
-import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.core.integration.PaymentRemoteOutcome;
 import io.mango.payment.core.service.PaymentRefundApprovalWorkflowPublisher;
 import io.mango.payment.starter.PaymentProperties;
 import io.mango.workflow.api.WorkflowDefinitionApi;
-import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 class PaymentRefundApprovalWorkflowDefinitionInitializerTest {
 
@@ -81,7 +80,7 @@ class PaymentRefundApprovalWorkflowDefinitionInitializerTest {
         private String appCode;
 
         TestWorkflowDefinitionService() {
-            super(new NoopWorkflowDefinitionApi(), new ObjectMapper());
+            super(mock(WorkflowDefinitionApi.class), new ObjectMapper());
         }
 
         @Override
@@ -95,11 +94,4 @@ class PaymentRefundApprovalWorkflowDefinitionInitializerTest {
         }
     }
 
-    private static class NoopWorkflowDefinitionApi implements WorkflowDefinitionApi {
-
-        @Override
-        public R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command) {
-            return R.ok();
-        }
-    }
 }
