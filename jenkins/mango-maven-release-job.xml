@@ -61,6 +61,7 @@ pipeline {
   environment {
     MAVEN_VERSION = '3.9.9'
     MAVEN_HOME = "${JENKINS_HOME}/.tools/apache-maven-3.9.9"
+    MAVEN_ARGS = "-s ${JENKINS_HOME}/.m2/settings.xml"
     LANG = 'C.UTF-8'
     LC_ALL = 'C.UTF-8'
   }
