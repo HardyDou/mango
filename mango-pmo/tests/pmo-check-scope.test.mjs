@@ -44,6 +44,7 @@ test('CLI or starter changes trigger distribution and projection checks', () => 
 test('governance workflow changes self-verify every conditional suite', () => {
   for (const file of [
     '.github/workflows/pmo-doc-check.yml',
+    '.gitea/workflows/pmo-doc-check.yml',
     '.github/workflows/architecture-debt-inventory.yml',
   ]) {
     assert.deepEqual(
@@ -52,6 +53,53 @@ test('governance workflow changes self-verify every conditional suite', () => {
       file,
     );
   }
+});
+
+test('business repositories resolve custom paths from mango.config.json', t => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-custom-business-scope-'));
+  t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(project, 'baohan-backend/order'), { recursive: true });
+  fs.mkdirSync(path.join(project, 'baohan-backend/architecture-verification'), { recursive: true });
+  fs.writeFileSync(path.join(project, 'baohan-backend/pom.xml'), '<project/>\n');
+  fs.writeFileSync(path.join(project, 'baohan-backend/order/pom.xml'), '<project/>\n');
+  fs.writeFileSync(path.join(project, 'baohan-backend/architecture-verification/pom.xml'), '<project/>\n');
+  fs.writeFileSync(path.join(project, 'mango.config.json'), JSON.stringify({
+    paths: {
+      backend: 'baohan-backend',
+      frontend: 'baohan-ui',
+      businessDocs: 'business-docs',
+    },
+  }));
+
+  assert.equal(
+    classifyChangedFiles([
+      'baohan-backend/order/src/main/java/com/example/OrderService.java',
+    ], project).backend,
+    true,
+  );
+  assert.deepEqual(
+    resolveMavenScope([
+      'baohan-backend/order/src/main/java/com/example/OrderService.java',
+    ], project),
+    { mode: 'partial', projects: ['architecture-verification', 'order'] },
+  );
+  assert.deepEqual(
+    resolveMavenScope(['.gitea/workflows/pmo-doc-check.yml'], project),
+    { mode: 'governance', projects: [] },
+  );
+});
+
+test('configured backend paths fail closed when their root POM is absent', t => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-invalid-business-scope-'));
+  t.after(() => fs.rmSync(project, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(project, 'mango.config.json'), JSON.stringify({
+    paths: { backend: 'missing-backend' },
+  }));
+
+  assert.throws(
+    () => resolveMavenScope(['README.md'], project),
+    /Configured backend POM does not exist: missing-backend\/pom\.xml/,
+  );
 });
 
 test('clean CI builds explicit architecture prerequisites without expanding the quality reactor', () => {

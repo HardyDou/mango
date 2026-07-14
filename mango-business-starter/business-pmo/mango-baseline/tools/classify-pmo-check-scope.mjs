@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 const toolDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = resolveRepositoryRoot(toolDirectory);
+const defaultProjectPaths = {
+  backend: 'backend',
+  frontend: 'frontend',
+  businessDocs: 'business-docs',
+};
 
 function resolveRepositoryRoot(start) {
   try {
@@ -22,11 +27,62 @@ function matchesAny(file, patterns) {
   return patterns.some(pattern => pattern.test(file));
 }
 
-export function classifyChangedFiles(files) {
-  const normalized = [...new Set(files.map(file => file.trim()).filter(Boolean))].sort();
+function normalizeProjectPath(value, fallback, field) {
+  const candidate = typeof value === 'string' && value.trim() ? value.trim() : fallback;
+  const normalized = candidate.replaceAll('\\', '/').replace(/^\.\//u, '').replace(/\/$/u, '');
+  if (!normalized
+    || path.posix.isAbsolute(normalized)
+    || normalized.split('/').includes('..')
+    || normalized.includes('\n')
+    || normalized.includes('\r')) {
+    throw new Error(`mango.config.json paths.${field} must be a repository-relative path`);
+  }
+  return normalized;
+}
+
+export function resolveProjectPaths(repositoryRoot = root) {
+  const configPath = path.join(repositoryRoot, 'mango.config.json');
+  let configured = {};
+  if (fs.existsSync(configPath)) {
+    try {
+      configured = JSON.parse(fs.readFileSync(configPath, 'utf8')).paths || {};
+    } catch (error) {
+      throw new Error(`Cannot read mango.config.json paths: ${error.message}`);
+    }
+  }
+  return {
+    backend: normalizeProjectPath(configured.backend, defaultProjectPaths.backend, 'backend'),
+    frontend: normalizeProjectPath(configured.frontend, defaultProjectPaths.frontend, 'frontend'),
+    businessDocs: normalizeProjectPath(
+      configured.businessDocs,
+      defaultProjectPaths.businessDocs,
+      'businessDocs',
+    ),
+  };
+}
+
+function logicalFilePath(file, paths) {
+  const mappings = [
+    [paths.backend, 'backend'],
+    [paths.frontend, 'frontend'],
+    [paths.businessDocs, 'business-docs'],
+  ].sort((left, right) => right[0].length - left[0].length);
+  for (const [configured, logical] of mappings) {
+    if (file === configured) return logical;
+    if (file.startsWith(`${configured}/`)) return `${logical}/${file.slice(configured.length + 1)}`;
+  }
+  if (/^\.gitea\/workflows\/(?:pmo-doc-check|architecture-debt-inventory)\.yml$/u.test(file)) {
+    return file.replace(/^\.gitea/u, '.github');
+  }
+  return file;
+}
+
+export function classifyChangedFiles(files, repositoryRoot = root) {
+  const paths = resolveProjectPaths(repositoryRoot);
+  const normalized = [...new Set(files.map(file => logicalFilePath(file.trim(), paths)).filter(Boolean))].sort();
   const workflowChanged = normalized.some(file =>
     /^\.github\/workflows\/(?:pmo-doc-check|architecture-debt-inventory)\.yml$/.test(file));
-  if (workflowChanged) {
+  if (workflowChanged || normalized.includes('mango.config.json')) {
     return { pmo: true, backend: true, projection: true, distribution: true, readmes: true };
   }
 
@@ -99,18 +155,34 @@ function nearestMavenProject(file, repositoryRoot, mavenRoot) {
 export function resolveMavenScope(files, repositoryRoot = root) {
   const normalized = [...new Set(files.map(file => file.trim()).filter(Boolean))].sort();
   const sourceLayout = fs.existsSync(path.join(repositoryRoot, 'mango/pom.xml'));
-  const mavenPrefix = sourceLayout ? 'mango' : 'backend';
+  const projectPaths = resolveProjectPaths(repositoryRoot);
+  const mavenPrefix = sourceLayout ? 'mango' : projectPaths.backend;
   const mavenRoot = path.join(repositoryRoot, mavenPrefix);
-  if (!fs.existsSync(path.join(mavenRoot, 'pom.xml'))) return { mode: 'none', projects: [] };
+  if (!fs.existsSync(path.join(mavenRoot, 'pom.xml'))) {
+    if (fs.existsSync(path.join(repositoryRoot, 'mango.config.json'))) {
+      throw new Error(`Configured backend POM does not exist: ${mavenPrefix}/pom.xml`);
+    }
+    return { mode: 'none', projects: [] };
+  }
+  const escapedMavenPrefix = mavenPrefix.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  const mavenPomPattern = new RegExp(`^${escapedMavenPrefix}\\/(?:pom\\.xml|.*\\/pom\\.xml)$`);
+  const mavenJavaPattern = new RegExp(`^${escapedMavenPrefix}\\/.*\\.java$`);
+  const mavenMetadataPattern = new RegExp(
+    `^${escapedMavenPrefix}\\/.*\\/src\\/main\\/resources\\/META-INF\\/mango\\/module\\.properties$`,
+  );
+  const architecturePattern = new RegExp(`^${escapedMavenPrefix}\\/architecture-verification(?:\\/|$)`);
+  const qualityPattern = new RegExp(`^${escapedMavenPrefix}\\/(?:\\.mvn|config\\/quality)(?:\\/|$)`);
   const governanceGate = normalized.some(file => matchesAny(file, [
     /^\.github\/workflows\/(?:pmo-doc-check|architecture-debt-inventory)\.yml$/,
-    new RegExp(`^${mavenPrefix}\\/pom\\.xml$`),
+    /^\.gitea\/workflows\/(?:pmo-doc-check|architecture-debt-inventory)\.yml$/,
+    /^mango\.config\.json$/,
+    new RegExp(`^${escapedMavenPrefix}\\/pom\\.xml$`),
     ...(sourceLayout ? [
       /^mango\/mango-parent(?:\/|$)/,
       /^mango\/mango-tools\/mango-(?:architecture-rules|maven-plugin|architecture-verification)(?:\/|$)/,
     ] : [
-      /^backend\/architecture-verification(?:\/|$)/,
-      /^backend\/(?:\.mvn|config\/quality)(?:\/|$)/,
+      architecturePattern,
+      qualityPattern,
       /^business-pmo\/global-entity-exceptions\.json$/,
     ]),
     /^mango-pmo\/baselines\/(?:architecture|mango-check)(?:\/|$)/,
@@ -121,9 +193,9 @@ export function resolveMavenScope(files, repositoryRoot = root) {
     /^mango\/.*\.java$/,
     /^mango\/(?:pom\.xml|.*\/pom\.xml)$/,
     /^mango\/.*\/src\/main\/resources\/META-INF\/mango\/module\.properties$/,
-    /^backend\/.*\.java$/,
-    /^backend\/(?:pom\.xml|.*\/pom\.xml)$/,
-    /^backend\/.*\/src\/main\/resources\/META-INF\/mango\/module\.properties$/,
+    mavenJavaPattern,
+    mavenPomPattern,
+    mavenMetadataPattern,
     /^mango-pmo\/baselines\/(?:architecture|mango-check)(?:\/|$)/,
   ]));
   if (backendFiles.length === 0) return { mode: 'none', projects: [] };
@@ -183,11 +255,16 @@ export function runScopeClassifierCli(argv = process.argv.slice(2)) {
     }
     const scope = classifyChangedFiles(files);
     const maven = resolveMavenScope(files);
+    const projectPaths = resolveProjectPaths(root);
     if (args.output) {
       const lines = [
         ...Object.entries(scope).map(([key, value]) => `${key}=${value}`),
         `backend_mode=${maven.mode}`,
         `maven_projects=${maven.projects.join(',')}`,
+        `backend_root=${projectPaths.backend}`,
+        `backend_pom=${projectPaths.backend}/pom.xml`,
+        `frontend_root=${projectPaths.frontend}`,
+        `business_docs_root=${projectPaths.businessDocs}`,
       ].join('\n');
       fs.appendFileSync(args.output, `${lines}\n`);
     }

@@ -26,12 +26,12 @@ pnpm -F @mango/pmo check
 业务项目使用：
 
 ```bash
-npm view @mango/pmo@1.2.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.71 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.71 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.2.2 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.72 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.72 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 mango pmo status --project-dir .
-mango pmo upgrade --project-dir . --to 1.2.1 --dry-run
-mango pmo upgrade --project-dir . --to 1.2.1 --sync-shell
+mango pmo upgrade --project-dir . --to 1.2.2 --dry-run
+mango pmo upgrade --project-dir . --to 1.2.2 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
@@ -48,6 +48,7 @@ mango pmo check --project-dir . --locked
 | `dist/baseline.json` | `files[].kind`、`files[].mode` | 文件职责和发布权限 |
 | `dist/baseline.json` | `contracts[]` | 文档 contract ID 和 schema revision |
 | `business-pmo/pmo-lock.json` | `packageVersion`、`bundleSha256` | 业务项目精确锁定的 PMO bundle |
+| 业务仓 `mango.config.json` | `paths.backend`、`paths.frontend`、`paths.businessDocs` | 标准 scope classifier 与 GitHub/Gitea workflow 使用的项目目录 |
 | 消费仓库 `.github/branch-protection-policy.json` | `governanceMode` 与保护字段 | 仓库自行声明的远端分支保护期望状态；不由 npm 包覆盖 |
 
 ## 5. API 与扩展

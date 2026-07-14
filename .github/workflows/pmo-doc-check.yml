@@ -79,7 +79,7 @@ jobs:
           cache: maven
 
       - name: Build the architecture gate prerequisites
-        if: steps.scope.outputs.backend == 'true'
+        if: steps.scope.outputs.backend == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-parent,:mango-common,:mango-tools \
@@ -87,7 +87,7 @@ jobs:
             install
 
       - name: Test and install the current Java architecture gate
-        if: steps.scope.outputs.backend == 'true'
+        if: steps.scope.outputs.backend == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-architecture-rules,:mango-maven-plugin \

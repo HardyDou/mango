@@ -72,6 +72,7 @@ try {
     '.github/CODEOWNERS',
     '.github/pull_request_template.md',
     '.github/workflows/pmo-doc-check.yml',
+    '.gitea/workflows/pmo-doc-check.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/tools/check-document-set.mjs',
     'business-pmo/mango-baseline/baseline.json',
@@ -112,6 +113,9 @@ try {
   assertIncludes(config.modules.optional, 'payment', 'full optional modules');
   assertEqual(config.mangoBackendVersion, releaseVersions.maven.mangoBackend, 'Mango backend Maven version lock');
   assertEqual(config.mavenRepository, expectedMavenRepository, 'HTTPS Maven repository');
+  assertEqual(config.paths.backend, 'backend', 'backend path');
+  assertEqual(config.paths.frontend, 'frontend', 'frontend path');
+  assertEqual(config.paths.businessDocs, 'business-docs', 'business docs path');
 
   const mainTs = readFileSync(join(projectRoot, 'frontend/src/main.ts'), 'utf8');
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
@@ -176,6 +180,7 @@ try {
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
   const architecturePom = readFileSync(join(projectRoot, 'backend/architecture-verification/pom.xml'), 'utf8');
   const pmoWorkflow = readFileSync(join(projectRoot, '.github/workflows/pmo-doc-check.yml'), 'utf8');
+  const giteaPmoWorkflow = readFileSync(join(projectRoot, '.gitea/workflows/pmo-doc-check.yml'), 'utf8');
   const pullRequestTemplate = readFileSync(join(projectRoot, '.github/pull_request_template.md'), 'utf8');
   const codeowners = readFileSync(join(projectRoot, '.github/CODEOWNERS'), 'utf8');
   const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
@@ -198,6 +203,8 @@ try {
     || !pom.includes('<mango.check.rule>all</mango.check.rule>')
     || !pom.includes('<mango.check.baseDir>${maven.multiModuleProjectDirectory}</mango.check.baseDir>')
     || !pom.includes('<mango.check.gate>all</mango.check.gate>')
+    || !pom.includes('<mango.check.changedOnly>false</mango.check.changedOnly>')
+    || !pom.includes('<mango.check.requireFullScope>true</mango.check.requireFullScope>')
     || !pom.includes('<mango.check.staticFailurePolicy>block</mango.check.staticFailurePolicy>')
     || !pom.includes('<module>architecture-verification</module>')
     || pom.lastIndexOf('<module>architecture-verification</module>') < pom.lastIndexOf('<!-- mango-cli:business-modules:end -->')) {
@@ -221,13 +228,17 @@ try {
     '<rule>${mango.check.rule}</rule>',
     '<baseDir>${mango.check.baseDir}</baseDir>',
     '<gate>${mango.check.gate}</gate>',
+    '<changedOnly>${mango.check.changedOnly}</changedOnly>',
+    '<baseRef>${mango.check.baseRef}</baseRef>',
     '<staticFailurePolicy>${mango.check.staticFailurePolicy}</staticFailurePolicy>',
     '<requireExecutionRoot>true</requireExecutionRoot>',
     '<requiredRule>all</requiredRule>',
-    '<requiredGate>all</requiredGate>',
+    '<requiredGate>${mango.check.gate}</requiredGate>',
     '<requireBlockingStaticFailures>true</requireBlockingStaticFailures>',
-    '<requireFullScope>true</requireFullScope>',
+    '<requireFullScope>${mango.check.requireFullScope}</requireFullScope>',
     '<property>mango.check.gate</property>',
+    '<property>mango.check.changedOnly</property>',
+    '<property>mango.check.requireFullScope</property>',
     '<property>mango.check.staticFailurePolicy</property>',
   ]) {
     if (!architecturePom.includes(expected)) {
@@ -261,8 +272,8 @@ try {
     'classify-pmo-check-scope.mjs',
     'risk-verification.mjs',
     'node business-pmo/mango-baseline/tools/check-document-set.mjs',
-    '--root business-docs',
-    'mvn -B -ntp -f backend/pom.xml',
+    '--root "$BUSINESS_DOCS_ROOT"',
+    'mvn -B -ntp -f "$BACKEND_POM"',
     "steps.scope.outputs.backend_mode == 'governance'",
     '-pl architecture-verification',
     'help:effective-pom',
@@ -272,27 +283,37 @@ try {
     '-Dmango.architecture.requireFullReactor=false',
     '-Dmango.architecture.skip=false',
     '-Dmango.check.rule=all',
-    '-Dmango.check.gate=all',
+    '-Dmango.check.gate=no-new-violations',
+    '-Dmango.check.changedOnly=true',
+    '-Dmango.check.baseRef="$BASE_SHA"',
+    '-Dmango.check.requireFullScope=false',
     '-Dmango.check.staticFailurePolicy=block',
     '-Denforcer.skip=false',
     'verify',
   ]) {
-    if (!pmoWorkflow.includes(expected)) {
-      throw new Error(`generated PMO required-check workflow missing contract: ${expected}`);
+    for (const workflow of [pmoWorkflow, giteaPmoWorkflow]) {
+      if (!workflow.includes(expected)) {
+        throw new Error(`generated PMO required-check workflow missing contract: ${expected}`);
+      }
     }
   }
   if (!pmoWorkflow.includes('${{ github.event.pull_request.base.sha')) {
     throw new Error('generated PMO workflow must preserve GitHub Actions expressions');
   }
-  if (/^\s+paths:/mu.test(pmoWorkflow)) {
-    throw new Error('generated PMO required-check workflow must run for every PR; paths filters can leave the required check pending');
+  if (!giteaPmoWorkflow.includes('${{ gitea.event.pull_request.base.sha')) {
+    throw new Error('generated PMO workflow must preserve Gitea Actions expressions');
   }
-  if (/^\s+-(?:am|amd)\s*$/mu.test(pmoWorkflow)) {
-    throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
-  }
-  if (pmoWorkflow.includes("backend_mode == 'full'")
-      || pmoWorkflow.includes('-Dmango.architecture.mode=full')) {
-    throw new Error('generated PR workflow must reserve full-Reactor inventory for scheduled or manual execution');
+  for (const workflow of [pmoWorkflow, giteaPmoWorkflow]) {
+    if (/^\s+paths:/mu.test(workflow)) {
+      throw new Error('generated PMO required-check workflow must run for every PR; paths filters can leave the required check pending');
+    }
+    if (/^\s+-(?:am|amd)\s*$/mu.test(workflow)) {
+      throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
+    }
+    if (workflow.includes("backend_mode == 'full'")
+        || workflow.includes('-Dmango.architecture.mode=full')) {
+      throw new Error('generated PR workflow must reserve full-Reactor inventory for scheduled or manual execution');
+    }
   }
   for (const expected of [
     '## Risk / Verification',

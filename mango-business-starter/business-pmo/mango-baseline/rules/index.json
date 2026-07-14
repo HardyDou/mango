@@ -69,7 +69,7 @@
     },
     "process.aiDeliveryQuality": {
       "path": "rules/05-ai-delivery-quality.md",
-      "reason": "AI 交付质量门禁、直接修改 Maven 模块门禁、构建与质量分离、按模块历史架构债务递减、发布批次和 Required Check 规则"
+      "reason": "AI 交付质量门禁、可配置业务仓目录、GitHub/Gitea Required Check、直接修改 Maven 模块门禁、构建与质量分离、按模块历史架构债务递减和发布批次规则"
     },
     "process.documentAssets": {
       "path": "rules/06-document-assets.md",
@@ -85,7 +85,7 @@
     },
     "process.releaseArtifacts": {
       "path": "rules/10-release-artifacts.md",
-      "reason": "npm、Maven、CLI、starter、模板、PMO、Skill 与文档发布批次、不可变制品恢复及版本同步规范"
+      "reason": "npm、Maven、同版本 Maven 文档包、CLI、starter、模板、PMO、Skill 发布批次、不可变制品恢复及版本同步规范"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
@@ -371,7 +371,7 @@
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "phases": ["release", "governance"],
       "paths": ["mango-pmo/rules/10-release-artifacts.md", "mango-pmo/skills/**", "mango-ui/packages/mango-pmo/**", "mango-ui/packages/mango-cli/release-versions.json", "mango-ui/packages/mango-cli/scripts/check-release-versions.mjs", "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs", "mango-ui/packages/mango-cli/src/release-command.mjs", "mango-ui/packages/mango-cli/tests/release-command.test.mjs", "mango-ui/scripts/publish-package.mjs", "mango-ui/scripts/verify-npm-tarball.mjs", "scripts/publish-maven-batch.sh", "mango-business-starter/scripts/sync-pmo-baseline.mjs", "mango-business-starter/business-pmo/**"],
-      "keywords": ["发布 CLI", "CLI 发布", "发布 starter", "starter 发布", "发布模板", "模板发布", "发布 PMO", "PMO 发布", "发布 Skill", "Skill 发布", "发布文档", "发布矩阵", "版本矩阵", "release matrix", "release-versions.json", "sync-pmo-baseline", "mango release", "registry doctor", "release manifest", "publish/status/verify/repair"],
+      "keywords": ["发布 CLI", "CLI 发布", "发布 starter", "starter 发布", "发布模板", "模板发布", "发布 PMO", "PMO 发布", "发布 Skill", "Skill 发布", "发布文档", "mango-docs-bundle", "发布矩阵", "版本矩阵", "release matrix", "release-versions.json", "sync-pmo-baseline", "mango release", "registry doctor", "release manifest", "publish/status/verify/repair"],
       "include": ["process.releaseArtifacts", "process.aiDeliveryQuality"]
     },
     "releaseBackend": {

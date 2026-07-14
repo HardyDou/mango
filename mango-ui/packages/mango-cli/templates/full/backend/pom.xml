@@ -37,6 +37,9 @@
         <mango.check.rule>all</mango.check.rule>
         <mango.check.baseDir>${maven.multiModuleProjectDirectory}</mango.check.baseDir>
         <mango.check.gate>all</mango.check.gate>
+        <mango.check.changedOnly>false</mango.check.changedOnly>
+        <mango.check.baseRef></mango.check.baseRef>
+        <mango.check.requireFullScope>true</mango.check.requireFullScope>
         <mango.check.staticFailurePolicy>block</mango.check.staticFailurePolicy>
     </properties>
 
