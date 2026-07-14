@@ -1,7 +1,7 @@
 ---
 documentId: PLAN-CMS-DEBT
 documentType: implementation-plan
-pmoVersion: 1.2.1
+pmoVersion: 1.2.2
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: requirement=L3，后台内容状态、公开读取、租户和初始化属于核心链路；solution=L3，一次性调整四层契约、领域服务、错误边界、持久化初始化和演示资源；final=max(requirement,solution)
@@ -11,7 +11,7 @@ owner: Mango CMS 实施负责人
 approver: HardyDou
 approvalEvidence: review/PLAN-CMS-DEBT.md
 upstreamDocumentId: TDD-CMS-DEBT
-upstreamDocumentHash: 1ded4b27ba7a42088706b5c1909ae4943a777d11687938512aab47f9c0d572cb
+upstreamDocumentHash: 907cf084c3ee3cf06a724caa18f51e23cb2000674ed486e4208bb10203f98d9b
 ---
 
 # CMS 历史债务治理实施计划

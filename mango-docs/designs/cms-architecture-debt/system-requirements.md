@@ -1,7 +1,7 @@
 ---
 documentId: SRS-CMS-DEBT
 documentType: system-requirements
-pmoVersion: 1.2.1
+pmoVersion: 1.2.2
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: 系统影响覆盖后台内容维护、审核发布、公开访问、文件访问、租户数据和新环境初始化，任何差异均可能影响核心内容链路或数据安全
@@ -11,7 +11,7 @@ owner: Mango CMS 系统分析负责人
 approver: HardyDou
 approvalEvidence: review/SRS-CMS-DEBT.md
 upstreamDocumentId: BRD-CMS-DEBT
-upstreamDocumentHash: 65adb354a05deb139108b365eed2aa9ed1f5078f0ccc4878866fc4e6770e7670
+upstreamDocumentHash: 686bcf23ce5436058441a3cc2116e8e1ad118f43a50b8549adf8da33b8fbf4a0
 ---
 
 # CMS 历史债务治理系统需求规格说明书

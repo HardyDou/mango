@@ -111,7 +111,7 @@ Test quality PASS: 8 file(s)
 | 显式 Demo 资源 | 9 类、71 条注册与同步均成功 |
 | Demo 行数 | site 3、setting 3、category 13、content 11、publish 11、navigation 22、banner 1、advertisement 4、delivery 3 |
 | Demo 合法性 | 13 个栏目全部 `ENABLED`；所有演示文件 ID 均为空 |
-| Demo 前端 | `mango-site-demo-app` HTTP 200，Vite 页面与 `/api` 代理均可用 |
+| Demo 前端冒烟 | `mango-site-demo-app` HTTP 200，HTML 标题/挂载点与 `/api` 代理均可用 |
 
 公开接口实测：
 
@@ -129,6 +129,10 @@ Test quality PASS: 8 file(s)
 定向架构验证覆盖 CMS API、core、starter、remote 和 architecture-verification：依赖违规、
 ArchUnit、PMD、新增阻断问题均为 0。治理前记录的 1,126 个 CMS 正式架构问题全部归零；
 静态门禁的 110 个输出均属于基线，新增问题为 0。
+
+当前会话未提供 in-app browser 控制入口，因此没有取得浏览器截图和 console/network 证据；
+该项登记为 UI 例外，不将前端 HTTP 可访问冒充完整浏览器 UI 验收。后端真实数据库、公开
+API、前端 HTML 与 `/api` 代理结果不受此例外影响。
 
 ## 7. 改造后停止条件
 

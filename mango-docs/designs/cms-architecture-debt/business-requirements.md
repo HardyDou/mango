@@ -1,7 +1,7 @@
 ---
 documentId: BRD-CMS-DEBT
 documentType: business-requirements
-pmoVersion: 1.2.1
+pmoVersion: 1.2.2
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: 内容运营、公开内容消费、租户隔离、发布状态与新环境初始化均属于核心业务结果，失败会造成越权维护、未发布内容泄露或环境不可用
