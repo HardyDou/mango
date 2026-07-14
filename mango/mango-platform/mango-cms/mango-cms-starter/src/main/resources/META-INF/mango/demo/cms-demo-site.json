@@ -1,0 +1,235 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_SITE": [
+          {
+            "id": "20260714110000001",
+            "version": 1,
+            "bizKey": "cms.site.2070000000000000001",
+            "name": "CMS 演示数据 cms_site 2070000000000000001",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteName": {
+                "type": "STRING",
+                "value": "演示站点"
+              },
+              "siteCode": {
+                "type": "STRING",
+                "value": "demo"
+              },
+              "logoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "description": {
+                "type": "STRING",
+                "value": "CMS 演示站点"
+              },
+              "domain": {
+                "type": "STRING",
+                "value": "127.0.0.1:5193"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "defaultLanguage": {
+                "type": "STRING",
+                "value": "zh-CN"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "演示站点 · 内容管理平台"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "CMS,内容管理,演示站点"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "这是一个基于 Mango CMS 的演示站点，用于展示站点解析、导航、栏目、Banner、广告与内容发布能力。"
+              },
+              "footerCopyright": {
+                "type": "STRING",
+                "value": "© 2026 演示站点 保留所有权利"
+              },
+              "icpRecord": {
+                "type": "STRING",
+                "value": "演示ICP备2026000001号"
+              },
+              "contactInfo": {
+                "type": "STRING",
+                "value": "商务咨询：demo@example.com；服务时间：工作日 09:00-18:00"
+              }
+            }
+          },
+          {
+            "id": "20260714110000002",
+            "version": 1,
+            "bizKey": "cms.site.2070000000000001001",
+            "name": "CMS 演示数据 cms_site 2070000000000001001",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteName": {
+                "type": "STRING",
+                "value": "帮助中心"
+              },
+              "siteCode": {
+                "type": "STRING",
+                "value": "mango-help"
+              },
+              "logoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "description": {
+                "type": "STRING",
+                "value": "Mango 帮助中心"
+              },
+              "domain": {
+                "type": "STRING",
+                "value": "127.0.0.1:5192"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "defaultLanguage": {
+                "type": "STRING",
+                "value": "zh-CN"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "Mango 帮助中心"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,帮助中心,使用文档"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "Mango 帮助中心提供入门、权限、安全、内容管理与常见问题说明。"
+              },
+              "footerCopyright": {
+                "type": "STRING",
+                "value": "© 2026 Mango 帮助中心"
+              },
+              "icpRecord": {
+                "type": "STRING",
+                "value": "帮助ICP备2026000001号"
+              },
+              "contactInfo": {
+                "type": "STRING",
+                "value": "服务支持：help@example.com；服务时间：工作日 09:00-18:00"
+              }
+            }
+          },
+          {
+            "id": "20260714110000003",
+            "version": 1,
+            "bizKey": "cms.site.2070000000000002001",
+            "name": "CMS 演示数据 cms_site 2070000000000002001",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteName": {
+                "type": "STRING",
+                "value": "Mango 企业官网"
+              },
+              "siteCode": {
+                "type": "STRING",
+                "value": "mango-enterprise"
+              },
+              "logoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "description": {
+                "type": "STRING",
+                "value": "面向企业数字化的一体化平台官网演示站点"
+              },
+              "domain": {
+                "type": "STRING",
+                "value": "127.0.0.1:5191"
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "defaultLanguage": {
+                "type": "STRING",
+                "value": "zh-CN"
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "Mango 企业数字化平台"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,企业官网,数字化平台"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "Mango 企业官网展示平台能力、解决方案、新闻动态与企业介绍。"
+              },
+              "footerCopyright": {
+                "type": "STRING",
+                "value": "© 2026 Mango 企业官网"
+              },
+              "icpRecord": {
+                "type": "STRING",
+                "value": "企业ICP备2026000001号"
+              },
+              "contactInfo": {
+                "type": "STRING",
+                "value": "商务咨询：enterprise@example.com；服务时间：工作日 09:00-18:00"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -9,6 +9,7 @@ import io.mango.cms.api.enums.CmsAccessType;
 import io.mango.cms.api.enums.CmsBannerMediaType;
 import io.mango.cms.api.enums.CmsContentStatus;
 import io.mango.cms.api.enums.CmsPublishStatus;
+import io.mango.cms.api.enums.CmsCode;
 import io.mango.cms.api.query.SiteAdvertisementQuery;
 import io.mango.cms.api.query.SiteBannerQuery;
 import io.mango.cms.api.query.SiteCategoryQuery;
@@ -40,7 +41,6 @@ import io.mango.cms.core.mapper.CmsNavigationMapper;
 import io.mango.cms.core.mapper.CmsSiteCategoryMapper;
 import io.mango.cms.core.mapper.CmsSiteMapper;
 import io.mango.cms.core.service.ICmsSiteService;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
@@ -62,6 +62,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Service
 @RequiredArgsConstructor
 public class CmsSiteService implements ICmsSiteService {
@@ -78,18 +79,18 @@ public class CmsSiteService implements ICmsSiteService {
     private final CmsContentPublishMapper publishMapper;
     private final ObjectProvider<FileApi> fileApiProvider;
     @Override
-    public R<SiteResolveVO> resolveSite(SiteResolveQuery query) {
-        return R.ok(toResolveVO(resolveSiteEntity(query == null ? new SiteResolveQuery() : query)));
+    public SiteResolveVO resolveSite(SiteResolveQuery query) {
+        return toResolveVO(resolveSiteEntity(query == null ? new SiteResolveQuery() : query));
     }
 
     @Override
-    public R<SiteVO> detailSite(SiteResolveQuery query) {
+    public SiteVO detailSite(SiteResolveQuery query) {
         CmsSiteEntity site = resolveSiteEntity(query == null ? new SiteResolveQuery() : query);
-        return R.ok(toPublicSiteVO(site));
+        return toPublicSiteVO(site);
     }
 
     @Override
-    public R<List<SiteCategoryVO>> treeCategories(SiteCategoryQuery query) {
+    public List<SiteCategoryVO> treeCategories(SiteCategoryQuery query) {
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(query));
         List<SiteCategoryVO> tree = siteCategoryMapper.selectList(new LambdaQueryWrapper<CmsSiteCategoryEntity>()
                         .eq(CmsSiteCategoryEntity::getTenantId, site.getTenantId())
@@ -101,11 +102,11 @@ public class CmsSiteService implements ICmsSiteService {
                 .stream()
                 .map(this::toPublicSiteCategoryVO)
                 .toList();
-        return R.ok(buildCategoryTree(tree.stream().filter(this::publicCategory).toList()));
+        return buildCategoryTree(tree.stream().filter(this::publicCategory).toList());
     }
 
     @Override
-    public R<List<SiteNavigationVO>> listNavigations(SiteNavigationQuery query) {
+    public List<SiteNavigationVO> listNavigations(SiteNavigationQuery query) {
         SiteNavigationQuery resolved = query == null ? new SiteNavigationQuery() : query;
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(resolved));
         List<CmsNavigationEntity> records = navigationMapper.selectList(new LambdaQueryWrapper<CmsNavigationEntity>()
@@ -114,11 +115,11 @@ public class CmsSiteService implements ICmsSiteService {
                 .eq(StringUtils.hasText(resolved.getNavType()), CmsNavigationEntity::getNavType, resolved.getNavType())
                 .eq(CmsNavigationEntity::getStatus, CmsSupport.ENABLED)
                 .orderByAsc(CmsNavigationEntity::getSort));
-        return R.ok(records.stream().map(this::toPublicNavigationVO).toList());
+        return records.stream().map(this::toPublicNavigationVO).toList();
     }
 
     @Override
-    public R<List<SiteBannerVO>> listBanners(SiteBannerQuery query) {
+    public List<SiteBannerVO> listBanners(SiteBannerQuery query) {
         SiteBannerQuery resolved = query == null ? new SiteBannerQuery() : query;
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(resolved));
         LocalDateTime now = LocalDateTime.now();
@@ -127,7 +128,7 @@ public class CmsSiteService implements ICmsSiteService {
                 .map(this::toPublicBannerVO)
                 .toList();
         if (!deliveryBanners.isEmpty()) {
-            return R.ok(deliveryBanners);
+            return deliveryBanners;
         }
         List<CmsBannerEntity> records = bannerMapper.selectList(new LambdaQueryWrapper<CmsBannerEntity>()
                 .eq(CmsBannerEntity::getTenantId, site.getTenantId())
@@ -135,14 +136,14 @@ public class CmsSiteService implements ICmsSiteService {
                 .eq(StringUtils.hasText(resolved.getPosition()), CmsBannerEntity::getPosition, resolved.getPosition())
                 .eq(CmsBannerEntity::getStatus, CmsSupport.ENABLED)
                 .orderByAsc(CmsBannerEntity::getSort));
-        return R.ok(records.stream()
+        return records.stream()
                 .filter(item -> CmsSupport.isEffective(item.getStartTime(), item.getEndTime(), now))
                 .map(this::toPublicBannerVO)
-                .toList());
+                .toList();
     }
 
     @Override
-    public R<List<SiteAdvertisementVO>> listAdvertisements(SiteAdvertisementQuery query) {
+    public List<SiteAdvertisementVO> listAdvertisements(SiteAdvertisementQuery query) {
         SiteAdvertisementQuery resolved = query == null ? new SiteAdvertisementQuery() : query;
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(resolved));
         LocalDateTime now = LocalDateTime.now();
@@ -151,7 +152,7 @@ public class CmsSiteService implements ICmsSiteService {
                 .map(item -> toPublicAdvertisementVO(site, item))
                 .toList();
         if (!deliveries.isEmpty()) {
-            return R.ok(deliveries);
+            return deliveries;
         }
         List<CmsAdvertisementEntity> records = advertisementMapper.selectList(new LambdaQueryWrapper<CmsAdvertisementEntity>()
                 .eq(CmsAdvertisementEntity::getTenantId, site.getTenantId())
@@ -159,10 +160,10 @@ public class CmsSiteService implements ICmsSiteService {
                 .eq(StringUtils.hasText(resolved.getPosition()), CmsAdvertisementEntity::getPosition, resolved.getPosition())
                 .eq(CmsAdvertisementEntity::getStatus, CmsSupport.ENABLED)
                 .orderByAsc(CmsAdvertisementEntity::getSort));
-        return R.ok(records.stream()
+        return records.stream()
                 .filter(item -> CmsSupport.isEffective(item.getStartTime(), item.getEndTime(), now))
                 .map(this::toPublicAdvertisementVO)
-                .toList());
+                .toList();
     }
 
     private List<AdDeliveryWithPosition> listEffectiveDeliveries(CmsSiteEntity site,
@@ -197,7 +198,7 @@ public class CmsSiteService implements ICmsSiteService {
     }
 
     @Override
-    public R<PageResult<SiteContentVO>> pageContents(SiteContentPageQuery query) {
+    public PageResult<SiteContentVO> pageContents(SiteContentPageQuery query) {
         SiteContentPageQuery resolved = query == null ? new SiteContentPageQuery() : query;
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(resolved));
         LocalDateTime now = LocalDateTime.now();
@@ -214,34 +215,34 @@ public class CmsSiteService implements ICmsSiteService {
         List<SiteContentVO> list = page.getRecords().stream()
                 .map(content -> toPublicContentVO(site, content, findEffectivePublish(site, content.getId(), resolved.getCategoryId(), now)))
                 .toList();
-        return R.ok(PageResult.of(list, page.getTotal(), page.getCurrent(), page.getSize()));
+        return PageResult.of(list, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
     @Override
-    public R<SiteContentVO> detailContent(SiteContentDetailQuery query) {
-        Require.notNull(query, "内容详情查询不能为空");
+    public SiteContentVO detailContent(SiteContentDetailQuery query) {
+        Require.notNull(query, CmsCode.CMS_BUSINESS_ERROR, "内容详情查询不能为空");
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(query));
         CmsContentEntity content = contentMapper.selectById(query.getContentId());
-        Require.notNull(content, "内容不存在");
-        Require.isTrue(publicContent(content, site.getTenantId(), LocalDateTime.now()), "内容不存在");
+        Require.notNull(content, CmsCode.CMS_BUSINESS_ERROR, "内容不存在");
+        Require.isTrue(publicContent(content, site.getTenantId(), LocalDateTime.now()), CmsCode.CMS_BUSINESS_ERROR, "内容不存在");
         CmsContentPublishEntity publish = findEffectivePublish(site, content.getId(), query.getCategoryId(), LocalDateTime.now());
-        Require.notNull(publish, "内容不存在");
-        return R.ok(toPublicContentVO(site, content, publish));
+        Require.notNull(publish, CmsCode.CMS_BUSINESS_ERROR, "内容不存在");
+        return toPublicContentVO(site, content, publish);
     }
 
     @Override
     public FileDownloadVO publicFile(Long id, SiteResolveQuery query) {
-        Require.notNull(id, "文件ID不能为空");
+        Require.notNull(id, CmsCode.CMS_BUSINESS_ERROR, "文件ID不能为空");
         CmsSiteEntity site = resolveSiteEntity(query == null ? new SiteResolveQuery() : query);
-        Require.isTrue(isPublicSiteFile(site, String.valueOf(id)), "文件不存在");
+        Require.isTrue(isPublicSiteFile(site, String.valueOf(id)), CmsCode.CMS_BUSINESS_ERROR, "文件不存在");
         FileApi fileApi = fileApiProvider.getIfAvailable();
-        Require.notNull(fileApi, "文件服务不可用");
+        Require.notNull(fileApi, CmsCode.CMS_BUSINESS_ERROR, "文件服务不可用");
         return withTenantContext(site.getTenantId(), () -> fileApi.downloadForService(id));
     }
 
     private CmsSiteEntity resolveSiteEntity(SiteResolveQuery query) {
-        Require.notNull(query, "站点查询不能为空");
-        Require.isTrue(StringUtils.hasText(query.getSiteCode()) || StringUtils.hasText(query.getDomain()), "站点编码或域名不能为空");
+        Require.notNull(query, CmsCode.CMS_BUSINESS_ERROR, "站点查询不能为空");
+        Require.isTrue(StringUtils.hasText(query.getSiteCode()) || StringUtils.hasText(query.getDomain()), CmsCode.CMS_BUSINESS_ERROR, "站点编码或域名不能为空");
         String tenantId = CmsSupport.currentTenantIdOrNull();
         validateResolveScope(query, tenantId);
         LambdaQueryWrapper<CmsSiteEntity> wrapper = new LambdaQueryWrapper<CmsSiteEntity>()
@@ -253,14 +254,14 @@ public class CmsSiteService implements ICmsSiteService {
             wrapper.eq(CmsSiteEntity::getSiteCode, query.getSiteCode().trim());
         }
         List<CmsSiteEntity> sites = siteMapper.selectList(wrapper);
-        Require.isTrue(sites.size() == 1, "站点不存在或不唯一");
+        Require.isTrue(sites.size() == 1, CmsCode.CMS_BUSINESS_ERROR, "站点不存在或不唯一");
         return sites.get(0);
     }
 
     static void validateResolveScope(SiteResolveQuery query, String tenantId) {
         if (!StringUtils.hasText(tenantId)) {
-            Require.isTrue(StringUtils.hasText(query.getDomain()), "匿名站点解析必须提供域名");
-            Require.isTrue(!StringUtils.hasText(query.getSiteCode()), "匿名站点解析不能使用站点编码");
+            Require.isTrue(StringUtils.hasText(query.getDomain()), CmsCode.CMS_BUSINESS_ERROR, "匿名站点解析必须提供域名");
+            Require.isTrue(!StringUtils.hasText(query.getSiteCode()), CmsCode.CMS_BUSINESS_ERROR, "匿名站点解析不能使用站点编码");
         }
     }
 

@@ -1,0 +1,357 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_ADVERTISEMENT": [
+          {
+            "id": "20260714110000065",
+            "version": 1,
+            "bizKey": "cms.advertisement.2070000000000000701",
+            "name": "CMS 演示数据 cms_advertisement 2070000000000000701",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000701"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "adCode": {
+                "type": "STRING",
+                "value": "demo-about-hero"
+              },
+              "adName": {
+                "type": "STRING",
+                "value": "关于我们页 Banner"
+              },
+              "position": {
+                "type": "STRING",
+                "value": "ABOUT_HERO"
+              },
+              "positionType": {
+                "type": "STRING",
+                "value": "BANNER"
+              },
+              "supportedMaterialTypes": {
+                "type": "STRING",
+                "value": "SINGLE_IMAGE"
+              },
+              "width": {
+                "type": "INT",
+                "value": null
+              },
+              "height": {
+                "type": "INT",
+                "value": null
+              },
+              "remark": {
+                "type": "STRING",
+                "value": "关于我们页主视觉广告位"
+              },
+              "adType": {
+                "type": "STRING",
+                "value": null
+              },
+              "materialFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "/about"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000066",
+            "version": 1,
+            "bizKey": "cms.advertisement.2070000000000001701",
+            "name": "CMS 演示数据 cms_advertisement 2070000000000001701",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001701"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "adCode": {
+                "type": "STRING",
+                "value": "help-home-hero"
+              },
+              "adName": {
+                "type": "STRING",
+                "value": "帮助中心首页主视觉"
+              },
+              "position": {
+                "type": "STRING",
+                "value": "HELP_HOME_HERO"
+              },
+              "positionType": {
+                "type": "STRING",
+                "value": "CUSTOM"
+              },
+              "supportedMaterialTypes": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "width": {
+                "type": "INT",
+                "value": null
+              },
+              "height": {
+                "type": "INT",
+                "value": null
+              },
+              "remark": {
+                "type": "STRING",
+                "value": "帮助中心首页主视觉文案"
+              },
+              "adType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "materialFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "#contents"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000067",
+            "version": 1,
+            "bizKey": "cms.advertisement.2070000000000002701",
+            "name": "CMS 演示数据 cms_advertisement 2070000000000002701",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002701"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "adCode": {
+                "type": "STRING",
+                "value": "enterprise-home-hero"
+              },
+              "adName": {
+                "type": "STRING",
+                "value": "企业官网首页主视觉"
+              },
+              "position": {
+                "type": "STRING",
+                "value": "HOME_HERO"
+              },
+              "positionType": {
+                "type": "STRING",
+                "value": "BANNER"
+              },
+              "supportedMaterialTypes": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "width": {
+                "type": "INT",
+                "value": null
+              },
+              "height": {
+                "type": "INT",
+                "value": null
+              },
+              "remark": {
+                "type": "STRING",
+                "value": "企业官网首页主视觉"
+              },
+              "adType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "materialFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "#products"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000068",
+            "version": 1,
+            "bizKey": "cms.advertisement.2070000000000002702",
+            "name": "CMS 演示数据 cms_advertisement 2070000000000002702",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002702"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "adCode": {
+                "type": "STRING",
+                "value": "enterprise-home-float"
+              },
+              "adName": {
+                "type": "STRING",
+                "value": "企业官网首页运营公告"
+              },
+              "position": {
+                "type": "STRING",
+                "value": "HOME_FLOAT"
+              },
+              "positionType": {
+                "type": "STRING",
+                "value": "CUSTOM"
+              },
+              "supportedMaterialTypes": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "width": {
+                "type": "INT",
+                "value": null
+              },
+              "height": {
+                "type": "INT",
+                "value": null
+              },
+              "remark": {
+                "type": "STRING",
+                "value": "企业官网首页运营公告"
+              },
+              "adType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "materialFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "/news"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
