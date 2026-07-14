@@ -1,5 +1,8 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentOperationAuditService;
+import io.mango.payment.core.service.impl.PaymentRefundApprovalService;
+
 import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -336,7 +339,8 @@ class PaymentRefundApprovalServiceTest {
                 .thenReturn(refundOrder);
         ArgumentCaptor<CreatePaymentOpenRefundCommand> refundCommandCaptor = ArgumentCaptor.forClass(CreatePaymentOpenRefundCommand.class);
 
-        service.approveByWorkflow("1", "RFA202606070001", "PROC-1");
+        service.approveByWorkflow(
+                new PaymentRefundApprovalWorkflowContext("1", "RFA202606070001", "PROC-1", null));
 
         verify(refundApplyService).applyRefund(
                 any(),
@@ -364,7 +368,8 @@ class PaymentRefundApprovalServiceTest {
         entity.setApplicantId(1001L);
         when(refundApprovalMapper.selectEntityByApprovalNoForUpdate("1", "RFA202606070001")).thenReturn(entity);
 
-        service.rejectByWorkflow("1", "RFA202606070001", "PROC-1", "资料不完整");
+        service.rejectByWorkflow(
+                new PaymentRefundApprovalWorkflowContext("1", "RFA202606070001", "PROC-1", "资料不完整"));
 
         assertThat(entity.getStatus()).isEqualTo("REJECTED");
         assertThat(entity.getReviewerName()).isEqualTo("workflow");

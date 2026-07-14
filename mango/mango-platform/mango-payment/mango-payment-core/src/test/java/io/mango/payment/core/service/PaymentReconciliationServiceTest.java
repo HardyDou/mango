@@ -1,5 +1,10 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+import io.mango.payment.core.service.impl.PaymentObservabilityService;
+import io.mango.payment.core.service.impl.PaymentOperationAuditService;
+import io.mango.payment.core.service.impl.PaymentReconciliationService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -61,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -361,14 +367,14 @@ class PaymentReconciliationServiceTest {
                 PaymentOperationAuditService.RESOURCE_PAYMENT_RECONCILIATION,
                 reconciliation.getReconciliationNo(),
                 PaymentOperationAuditService.RESULT_SUCCESS));
-        verify(observabilityService).logSummary(
-                eq("RECONCILIATION_BATCH"),
-                eq(reconciliation.getReconciliationNo()),
-                eq("MATCHED"),
-                eq(13800L),
-                eq("MANGO_PAY"),
-                any(Long.class),
-                eq(PaymentOperationAuditService.RESULT_SUCCESS));
+        verify(observabilityService).logSummary(argThat(summary ->
+                "RECONCILIATION_BATCH".equals(summary.event())
+                        && reconciliation.getReconciliationNo().equals(summary.orderNo())
+                        && "MATCHED".equals(summary.status())
+                        && Long.valueOf(13800L).equals(summary.amount())
+                        && "MANGO_PAY".equals(summary.channelCode())
+                        && summary.durationMillis() >= 0
+                        && PaymentOperationAuditService.RESULT_SUCCESS.equals(summary.result())));
     }
 
     @Test

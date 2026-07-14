@@ -1,5 +1,7 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentOperationAuditService;
+
 import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
 
 import io.mango.common.result.Require;

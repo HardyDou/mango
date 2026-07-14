@@ -1,5 +1,8 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+import io.mango.payment.core.service.impl.PaymentObservabilityService;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
@@ -43,6 +46,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 
 class PaymentNotificationDispatcherTest {
@@ -115,14 +119,14 @@ class PaymentNotificationDispatcherTest {
             assertThat(payload.path("notificationType").asText()).isEqualTo("PAYMENT_SUCCESS");
             assertThat(payload.path("bizOrderNo").asText()).isEqualTo("BIZ_OPENAPI_001");
             assertThat(payload.path("signature").asText()).isNotBlank();
-            verify(observabilityService).logSummary(
-                    eq("BUSINESS_NOTIFICATION"),
-                    eq("PO202606060001"),
-                    eq("SUCCESS"),
-                    eq(8800L),
-                    eq("MANGO_PAY"),
-                    any(Long.class),
-                    eq("SUCCESS"));
+            verify(observabilityService).logSummary(argThat(summary ->
+                    "BUSINESS_NOTIFICATION".equals(summary.event())
+                            && "PO202606060001".equals(summary.orderNo())
+                            && "SUCCESS".equals(summary.status())
+                            && Long.valueOf(8800L).equals(summary.amount())
+                            && "MANGO_PAY".equals(summary.channelCode())
+                            && summary.durationMillis() >= 0
+                            && "SUCCESS".equals(summary.result())));
         } finally {
             server.stop();
         }

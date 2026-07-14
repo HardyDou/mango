@@ -1,5 +1,9 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.MangoPayVirtualPaymentService;
+import io.mango.payment.core.service.impl.PaymentChannelCallbackService;
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.api.enums.PaymentCode;

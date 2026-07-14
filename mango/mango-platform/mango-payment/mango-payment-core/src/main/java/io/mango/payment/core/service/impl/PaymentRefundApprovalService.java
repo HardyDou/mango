@@ -1,4 +1,12 @@
-package io.mango.payment.core.service;
+package io.mango.payment.core.service.impl;
+
+import io.mango.payment.core.service.IPaymentRefundApprovalService;
+import io.mango.payment.core.service.PaymentContextSupport;
+import io.mango.payment.core.service.PaymentNumberGenerator;
+import io.mango.payment.core.service.PaymentOrderStatePolicy;
+import io.mango.payment.core.service.PaymentOrderStatusFlowRecorder;
+import io.mango.payment.core.service.PaymentRefundApplyCoordinator;
+import io.mango.payment.core.service.PaymentRefundApprovalWorkflowContext;
 
 import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
 import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
@@ -227,6 +235,7 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
         orderStateService.requireRefundAmount(refundAmount, paymentOrder.getAmount(), occupyingRefundAmount + pendingApprovalAmount);
     }
 
+    @Override
     public void syncWorkflowProjection(String tenantId, String approvalNo) {
         Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "租户 ID 不能为空");
         Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批单号不能为空");
@@ -243,7 +252,12 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
         });
     }
 
-    void approveByWorkflow(String tenantId, String approvalNo, String processInstanceId) {
+    @Override
+    public void approveByWorkflow(PaymentRefundApprovalWorkflowContext context) {
+        Require.notNull(context, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID);
+        String tenantId = context.tenantId();
+        String approvalNo = context.approvalNo();
+        String processInstanceId = context.processInstanceId();
         Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "租户 ID 不能为空");
         Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批单号不能为空");
         PaymentRefundApprovalEntity approval = inTransaction(() -> markApprovalWorkflowApproved(tenantId, approvalNo, processInstanceId));
@@ -309,7 +323,13 @@ public class PaymentRefundApprovalService implements IPaymentRefundApprovalServi
     }
 
     @Transactional(rollbackFor = Exception.class)
-    void rejectByWorkflow(String tenantId, String approvalNo, String processInstanceId, String reason) {
+    @Override
+    public void rejectByWorkflow(PaymentRefundApprovalWorkflowContext context) {
+        Require.notNull(context, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID);
+        String tenantId = context.tenantId();
+        String approvalNo = context.approvalNo();
+        String processInstanceId = context.processInstanceId();
+        String reason = context.reason();
         Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "租户 ID 不能为空");
         Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID, "退款审批单号不能为空");
         PaymentRefundApprovalEntity approval = refundApprovalMapper.selectEntityByApprovalNoForUpdate(tenantId, approvalNo);

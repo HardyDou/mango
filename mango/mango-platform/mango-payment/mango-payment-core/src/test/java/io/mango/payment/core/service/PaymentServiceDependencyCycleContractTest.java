@@ -1,5 +1,8 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentChannelCallbackService;
+import io.mango.payment.core.service.impl.PaymentExceptionOrderService;
+
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;

@@ -1,4 +1,15 @@
-package io.mango.payment.core.service;
+package io.mango.payment.core.service.impl;
+
+import io.mango.payment.core.service.IPaymentChannelCallbackService;
+import io.mango.payment.core.service.PaymentContextSupport;
+import io.mango.payment.core.service.PaymentDuplicatePaymentGuard;
+import io.mango.payment.core.service.PaymentExceptionOrderRecorder;
+import io.mango.payment.core.service.PaymentNotificationDispatcher;
+import io.mango.payment.core.service.PaymentNumberGenerator;
+import io.mango.payment.core.service.PaymentObservabilitySummary;
+import io.mango.payment.core.service.PaymentOrderStatePolicy;
+import io.mango.payment.core.service.PaymentOrderStatusFlowRecorder;
+import io.mango.payment.core.service.PaymentRefundCompletionDeduplicator;
 
 import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
 
@@ -111,8 +122,9 @@ public class PaymentChannelCallbackService implements IPaymentChannelCallbackSer
                     PaymentExceptionOrderRecorder.SEVERITY_HIGH,
                     "通道支付回调终态与本地支付订单终态不一致，本地状态：" + currentStatus + "，通道状态：" + targetStatus,
                     eventTime);
-            observabilityService.logSummary("CHANNEL_PAYMENT_CALLBACK", order.getPayOrderNo(), targetStatus,
-                    order.getAmount(), channelCode, elapsedMillis(startedAt), "TERMINAL_CONFLICT");
+            observabilityService.logSummary(new PaymentObservabilitySummary(
+                    "CHANNEL_PAYMENT_CALLBACK", order.getPayOrderNo(), targetStatus,
+                    order.getAmount(), channelCode, elapsedMillis(startedAt), "TERMINAL_CONFLICT"));
             return result(false, order.getPayOrderNo(), currentStatus, paymentOrderMapper.selectLatestFlowNo(tenantId, order.getId()),
                     "通道支付回调终态与本地终态不一致，已登记异常订单");
         }
@@ -181,8 +193,9 @@ public class PaymentChannelCallbackService implements IPaymentChannelCallbackSer
                     eventTime);
         }
         notifyPaymentTerminal(tenantId, order.getId(), order.getBusinessOrderId());
-        observabilityService.logSummary("CHANNEL_PAYMENT_CALLBACK", order.getPayOrderNo(), targetStatus,
-                order.getAmount(), channelCode, elapsedMillis(startedAt), "CHANGED");
+        observabilityService.logSummary(new PaymentObservabilitySummary(
+                "CHANNEL_PAYMENT_CALLBACK", order.getPayOrderNo(), targetStatus,
+                order.getAmount(), channelCode, elapsedMillis(startedAt), "CHANGED"));
         return result(true, order.getPayOrderNo(), targetStatus, flowNo, "已按通道回调推进支付订单状态");
     }
 
@@ -254,8 +267,9 @@ public class PaymentChannelCallbackService implements IPaymentChannelCallbackSer
                     PaymentExceptionOrderRecorder.SEVERITY_HIGH,
                     "通道退款回调终态与本地退款订单终态不一致，本地状态：" + currentStatus + "，通道状态：" + targetStatus,
                     eventTime);
-            observabilityService.logSummary("CHANNEL_REFUND_CALLBACK", refundOrder.getRefundOrderNo(), targetStatus,
-                    refundOrder.getRefundAmount(), channelCode, elapsedMillis(startedAt), "TERMINAL_CONFLICT");
+            observabilityService.logSummary(new PaymentObservabilitySummary(
+                    "CHANNEL_REFUND_CALLBACK", refundOrder.getRefundOrderNo(), targetStatus,
+                    refundOrder.getRefundAmount(), channelCode, elapsedMillis(startedAt), "TERMINAL_CONFLICT"));
             return result(false, refundOrder.getRefundOrderNo(), currentStatus,
                     refundOrderMapper.selectLatestFlowNo(tenantId, refundOrder.getId()), "通道退款回调终态与本地终态不一致，已登记异常订单");
         }
@@ -334,8 +348,9 @@ public class PaymentChannelCallbackService implements IPaymentChannelCallbackSer
         }
         refundOrder.setStatus(targetStatus);
         notifyRefundTerminal(tenantId, refundOrder);
-        observabilityService.logSummary("CHANNEL_REFUND_CALLBACK", refundOrder.getRefundOrderNo(), targetStatus,
-                refundOrder.getRefundAmount(), channelCode, elapsedMillis(startedAt), "CHANGED");
+        observabilityService.logSummary(new PaymentObservabilitySummary(
+                "CHANNEL_REFUND_CALLBACK", refundOrder.getRefundOrderNo(), targetStatus,
+                refundOrder.getRefundAmount(), channelCode, elapsedMillis(startedAt), "CHANGED"));
         return result(true, refundOrder.getRefundOrderNo(), targetStatus, flowNo, "已按通道回调推进退款订单状态");
     }
 

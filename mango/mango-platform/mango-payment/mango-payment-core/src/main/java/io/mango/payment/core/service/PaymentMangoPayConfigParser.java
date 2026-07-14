@@ -11,14 +11,14 @@ import io.mango.payment.api.enums.PaymentCode;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-final class PaymentMangoPayConfigParser {
+public final class PaymentMangoPayConfigParser {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private PaymentMangoPayConfigParser() {
     }
 
-    static Map<String, String> parse(String value) {
+    public static Map<String, String> parse(String value) {
         String normalized = PaymentContextSupport.trimToNull(value);
         if (normalized == null) {
             return Map.of();

@@ -1,4 +1,10 @@
-package io.mango.payment.core.service;
+package io.mango.payment.core.service.impl;
+
+import io.mango.payment.core.service.IMangoPayVirtualPaymentService;
+import io.mango.payment.core.service.PaymentContextSupport;
+import io.mango.payment.core.service.PaymentMangoPayConfigParser;
+import io.mango.payment.core.service.PaymentMangoPayResultTranslator;
+import io.mango.payment.core.service.PaymentNumberGenerator;
 
 import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;

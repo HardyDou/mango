@@ -14,45 +14,45 @@ import java.util.function.Function;
 
 @Component
 @RequiredArgsConstructor
-class PaymentOrderViewSupport {
+public class PaymentOrderViewSupport {
 
     private final PaymentOrderStatusFlowRecorder statusFlowService;
 
-    List<PaymentOrderStatusFlowVO> listBusinessStatusFlows(Long orderId) {
+    public List<PaymentOrderStatusFlowVO> listBusinessStatusFlows(Long orderId) {
         return listStatusFlows(PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS, orderId, PaymentBusinessOrderStatusEnum::labelOf);
     }
 
-    List<PaymentOrderStatusFlowVO> listPaymentStatusFlows(Long orderId) {
+    public List<PaymentOrderStatusFlowVO> listPaymentStatusFlows(Long orderId) {
         return listStatusFlows(PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT, orderId, PaymentOrderStatusEnum::labelOf);
     }
 
-    List<PaymentOrderStatusFlowVO> listRefundStatusFlows(Long orderId) {
+    public List<PaymentOrderStatusFlowVO> listRefundStatusFlows(Long orderId) {
         return listStatusFlows(PaymentOrderStatusFlowRecorder.ORDER_TYPE_REFUND, orderId, this::refundStatusName);
     }
 
-    boolean isExpiredOpenBusinessOrder(String status, LocalDateTime expireTime) {
+    public boolean isExpiredOpenBusinessOrder(String status, LocalDateTime expireTime) {
         return expireTime != null
                 && !expireTime.isAfter(LocalDateTime.now())
                 && (PaymentBusinessOrderStatusEnum.TO_PAY.getCode().equals(status)
                 || PaymentBusinessOrderStatusEnum.PAYING.getCode().equals(status));
     }
 
-    boolean isExpiredOpenPaymentOrder(String status, LocalDateTime expireTime) {
+    public boolean isExpiredOpenPaymentOrder(String status, LocalDateTime expireTime) {
         return expireTime != null
                 && !expireTime.isAfter(LocalDateTime.now())
                 && (PaymentOrderStatusEnum.CREATED.getCode().equals(status)
                 || PaymentOrderStatusEnum.PAYING.getCode().equals(status));
     }
 
-    String refundStatusName(String status) {
+    public String refundStatusName(String status) {
         return PaymentRefundOrderStatusEnum.labelOf(normalizeRefundStatus(status));
     }
 
-    String normalizeRefundStatus(String status) {
+    public String normalizeRefundStatus(String status) {
         return "PROCESSING".equals(status) ? PaymentRefundOrderStatusEnum.REFUNDING.getCode() : status;
     }
 
-    String transactionFlowTypeName(String flowType) {
+    public String transactionFlowTypeName(String flowType) {
         if ("PAY_SUCCESS".equals(flowType) || "PAYMENT".equals(flowType)) {
             return "支付成功收入";
         }

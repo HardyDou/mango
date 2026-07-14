@@ -1,5 +1,7 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
@@ -75,7 +77,7 @@ public class PaymentNotificationDispatcher {
     private final TaskExecutor mangoContextExecutor;
     private final PaymentMangoPayScenarioControlService scenarioControlService;
     private final PaymentSensitiveValueCodec sensitiveValueService;
-    private final PaymentObservabilityService observabilityService;
+    private final IPaymentObservabilityService observabilityService;
     private final PaymentNumberGenerator numberService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -87,7 +89,7 @@ public class PaymentNotificationDispatcher {
             @Qualifier("mangoContextExecutor") TaskExecutor mangoContextExecutor,
             PaymentMangoPayScenarioControlService scenarioControlService,
             PaymentSensitiveValueCodec sensitiveValueService,
-            PaymentObservabilityService observabilityService,
+            IPaymentObservabilityService observabilityService,
             PaymentNumberGenerator numberService,
             ApplicationEventPublisher eventPublisher) {
         this.notificationRecordMapper = notificationRecordMapper;
@@ -478,8 +480,9 @@ public class PaymentNotificationDispatcher {
             String result) {
         String orderNo = payload.getRefundOrderNo() == null ? payload.getPayOrderNo() : payload.getRefundOrderNo();
         Long amount = payload.getRefundAmount() == null ? payload.getAmount() : payload.getRefundAmount();
-        observabilityService.logSummary("BUSINESS_NOTIFICATION", orderNo, record.getNotifyStatus(),
-                amount, payload.getChannelCode(), elapsedMillis(startedAt), result);
+        observabilityService.logSummary(new PaymentObservabilitySummary(
+                "BUSINESS_NOTIFICATION", orderNo, record.getNotifyStatus(),
+                amount, payload.getChannelCode(), elapsedMillis(startedAt), result));
     }
 
     private void persistOrDeliver(

@@ -1,5 +1,8 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentChannelCallbackService;
+import io.mango.payment.core.service.impl.PaymentObservabilityService;
+
 import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -31,6 +34,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -140,14 +144,14 @@ class PaymentChannelCallbackServiceTest {
                 eq(eventTime),
                 eq("通道支付回调确认支付成功"));
         verify(notificationService).notifyPaymentAfterCommit(any(PaymentApplicationEntity.class), any(PaymentBusinessOrderEntity.class), any(PaymentOrderVO.class));
-        verify(observabilityService).logSummary(
-                eq("CHANNEL_PAYMENT_CALLBACK"),
-                eq("PO202606060001"),
-                eq("SUCCESS"),
-                eq(9900L),
-                eq("MANGO_PAY"),
-                any(Long.class),
-                eq("CHANGED"));
+        verify(observabilityService).logSummary(argThat(summary ->
+                "CHANNEL_PAYMENT_CALLBACK".equals(summary.event())
+                        && "PO202606060001".equals(summary.orderNo())
+                        && "SUCCESS".equals(summary.status())
+                        && Long.valueOf(9900L).equals(summary.amount())
+                        && "MANGO_PAY".equals(summary.channelCode())
+                        && summary.durationMillis() >= 0
+                        && "CHANGED".equals(summary.result())));
     }
 
     @Test

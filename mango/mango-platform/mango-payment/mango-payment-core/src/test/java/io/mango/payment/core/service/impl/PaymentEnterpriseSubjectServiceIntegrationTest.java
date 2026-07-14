@@ -13,7 +13,6 @@ import io.mango.payment.core.entity.PaymentEnterpriseSubjectEntity;
 import io.mango.payment.core.entity.PaymentSubjectBankAccountEntity;
 import io.mango.payment.core.mapper.PaymentEnterpriseSubjectMapper;
 import io.mango.payment.core.mapper.PaymentSubjectBankAccountMapper;
-import io.mango.payment.core.service.PaymentOperationAuditService;
 import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

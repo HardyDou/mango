@@ -20,7 +20,6 @@ import io.mango.payment.core.mapper.PaymentChannelCertificateRotationRecordMappe
 import io.mango.payment.core.mapper.PaymentChannelContractCapabilityMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractValueMapper;
-import io.mango.payment.core.service.PaymentOperationAuditService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

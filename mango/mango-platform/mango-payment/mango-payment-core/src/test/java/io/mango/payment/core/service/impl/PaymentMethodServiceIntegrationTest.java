@@ -12,7 +12,6 @@ import io.mango.payment.api.vo.PaymentMethodCategoryVO;
 import io.mango.payment.core.entity.PaymentMethodEntity;
 import io.mango.payment.core.mapper.PaymentMethodCategoryMapper;
 import io.mango.payment.core.mapper.PaymentMethodMapper;
-import io.mango.payment.core.service.PaymentOperationAuditService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

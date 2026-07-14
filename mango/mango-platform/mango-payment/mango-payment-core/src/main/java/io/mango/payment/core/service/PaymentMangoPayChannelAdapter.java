@@ -1,5 +1,7 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+
 import io.mango.common.result.Require;
 import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;

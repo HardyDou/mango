@@ -1,5 +1,6 @@
 package io.mango.payment.core.service;
 
+
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -26,7 +27,7 @@ public class PaymentRefundApprovalWorkflowSubscriber implements DomainEventSubsc
             WorkflowEventTypes.TASK_COMPLETED,
             WorkflowEventTypes.TASK_REJECTED);
 
-    private final PaymentRefundApprovalService refundApprovalService;
+    private final IPaymentRefundApprovalService refundApprovalService;
 
     @Override
     public String eventType() {
@@ -37,7 +38,7 @@ public class PaymentRefundApprovalWorkflowSubscriber implements DomainEventSubsc
     public void onEvent(DomainEvent event) {
         if (event == null
                 || !SUPPORTED_EVENTS.contains(event.getEventType())
-                || !PaymentRefundApprovalService.WORKFLOW_BUSINESS_TYPE.equals(event.getBusinessType())) {
+                || !IPaymentRefundApprovalService.WORKFLOW_BUSINESS_TYPE.equals(event.getBusinessType())) {
             return;
         }
         String approvalNo = PaymentContextSupport.trimToNull(event.getBusinessKey());
@@ -51,9 +52,11 @@ public class PaymentRefundApprovalWorkflowSubscriber implements DomainEventSubsc
             ensureContext(tenantId);
             refundApprovalService.syncWorkflowProjection(tenantId, approvalNo);
             if (WorkflowEventTypes.PROCESS_COMPLETED.equals(event.getEventType())) {
-                refundApprovalService.approveByWorkflow(tenantId, approvalNo, processInstanceId);
+                refundApprovalService.approveByWorkflow(
+                        new PaymentRefundApprovalWorkflowContext(tenantId, approvalNo, processInstanceId, null));
             } else if (WorkflowEventTypes.PROCESS_REJECTED.equals(event.getEventType())) {
-                refundApprovalService.rejectByWorkflow(tenantId, approvalNo, processInstanceId, reason);
+                refundApprovalService.rejectByWorkflow(
+                        new PaymentRefundApprovalWorkflowContext(tenantId, approvalNo, processInstanceId, reason));
             }
         } finally {
             MangoContextHolder.set(previous);

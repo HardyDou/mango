@@ -1,4 +1,9 @@
-package io.mango.payment.core.service;
+package io.mango.payment.core.service.impl;
+
+import io.mango.payment.core.service.IPaymentObservabilityService;
+import io.mango.payment.core.service.PaymentContextSupport;
+import io.mango.payment.core.service.PaymentObservabilityProperties;
+import io.mango.payment.core.service.PaymentObservabilitySummary;
 
 import io.mango.common.result.Require;
 import io.mango.payment.api.enums.PaymentCode;
@@ -77,24 +82,19 @@ public class PaymentObservabilityService implements IPaymentObservabilityService
         return snapshot;
     }
 
-    void logSummary(
-            String event,
-            String orderNo,
-            String status,
-            Long amount,
-            String channelCode,
-            long durationMillis,
-            String result) {
-        Require.notBlank(event, PaymentCode.PAYMENT_OBSERVABILITY_INVALID, "摘要日志事件不能为空");
+    @Override
+    public void logSummary(PaymentObservabilitySummary summary) {
+        Require.notNull(summary, PaymentCode.PAYMENT_OBSERVABILITY_INVALID, "摘要日志不能为空");
+        Require.notBlank(summary.event(), PaymentCode.PAYMENT_OBSERVABILITY_INVALID, "摘要日志事件不能为空");
         LOGGER.info(
                 "payment.summary event={} orderNo={} status={} amount={} channel={} durationMs={} result={}",
-                event,
-                safe(orderNo),
-                safe(status),
-                amount,
-                safe(channelCode),
-                durationMillis,
-                safe(result));
+                summary.event(),
+                safe(summary.orderNo()),
+                safe(summary.status()),
+                summary.amount(),
+                safe(summary.channelCode()),
+                summary.durationMillis(),
+                safe(summary.result()));
     }
 
     private List<PaymentObservabilityAlertVO> alerts(PaymentObservabilitySnapshotVO snapshot, String tenantId) {

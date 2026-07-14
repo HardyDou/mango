@@ -1,4 +1,15 @@
-package io.mango.payment.core.service;
+package io.mango.payment.core.service.impl;
+
+import io.mango.payment.core.service.IPaymentChannelAdapter;
+import io.mango.payment.core.service.IPaymentReconciliationService;
+import io.mango.payment.core.service.PaymentChannelAdapterRegistry;
+import io.mango.payment.core.service.PaymentChannelBillFileClient;
+import io.mango.payment.core.service.PaymentContextSupport;
+import io.mango.payment.core.service.PaymentNumberGenerator;
+import io.mango.payment.core.service.PaymentOrderStatePolicy;
+import io.mango.payment.core.service.PaymentOrderStatusFlowRecorder;
+import io.mango.payment.core.service.PaymentObservabilitySummary;
+import io.mango.payment.core.service.PaymentRefundCompletionDeduplicator;
 
 import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
 import static io.mango.payment.core.model.PaymentProjectionConverter.toApiList;
@@ -493,9 +504,10 @@ public class PaymentReconciliationService implements IPaymentReconciliationServi
                 PaymentOperationAuditService.RESOURCE_PAYMENT_RECONCILIATION,
                 reconciliation.getReconciliationNo(),
                 PaymentOperationAuditService.RESULT_SUCCESS));
-        observabilityService.logSummary("RECONCILIATION_BATCH", reconciliation.getReconciliationNo(),
+        observabilityService.logSummary(new PaymentObservabilitySummary(
+                "RECONCILIATION_BATCH", reconciliation.getReconciliationNo(),
                 reconciliation.getMatchStatus(), reconciliation.getTotalAmount(), channelCode,
-                elapsedMillis(startedAt), PaymentOperationAuditService.RESULT_SUCCESS);
+                elapsedMillis(startedAt), PaymentOperationAuditService.RESULT_SUCCESS));
         return detailReconciliation(reconciliation.getId());
     }
 

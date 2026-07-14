@@ -1,5 +1,8 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+import io.mango.payment.core.service.impl.PaymentObservabilityService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -35,6 +38,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -188,14 +192,14 @@ class PaymentChannelSynchronizerTest {
                 eq("PO202606060001"),
                 any(LocalDateTime.class),
                 eq("主动查单确认支付成功"));
-        verify(observabilityService).logSummary(
-                eq("CHANNEL_PAYMENT_QUERY"),
-                eq("PO202606060001"),
-                eq("SUCCESS"),
-                eq(9900L),
-                eq("MANGO_PAY"),
-                any(Long.class),
-                eq("UPDATED"));
+        verify(observabilityService).logSummary(argThat(summary ->
+                "CHANNEL_PAYMENT_QUERY".equals(summary.event())
+                        && "PO202606060001".equals(summary.orderNo())
+                        && "SUCCESS".equals(summary.status())
+                        && Long.valueOf(9900L).equals(summary.amount())
+                        && "MANGO_PAY".equals(summary.channelCode())
+                        && summary.durationMillis() >= 0
+                        && "UPDATED".equals(summary.result())));
     }
 
     @Test

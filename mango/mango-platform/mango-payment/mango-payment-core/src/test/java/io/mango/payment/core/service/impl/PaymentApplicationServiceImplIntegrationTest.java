@@ -10,7 +10,6 @@ import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.CreatePaymentApplicationCommand;
 import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
-import io.mango.payment.core.service.PaymentOperationAuditService;
 import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

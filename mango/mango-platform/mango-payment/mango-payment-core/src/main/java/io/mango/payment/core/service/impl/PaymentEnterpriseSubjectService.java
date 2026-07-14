@@ -15,7 +15,6 @@ import io.mango.payment.core.mapper.PaymentEnterpriseSubjectMapper;
 import io.mango.payment.core.mapper.PaymentSubjectBankAccountMapper;
 import io.mango.payment.core.service.IPaymentEnterpriseSubjectService;
 import io.mango.payment.core.service.PaymentContextSupport;
-import io.mango.payment.core.service.PaymentOperationAuditService;
 import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

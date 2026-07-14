@@ -1,5 +1,6 @@
 package io.mango.payment.core.service;
 
+
 import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,7 +55,7 @@ public class PaymentChannelSynchronizer {
     private final PaymentRefundCompletionDeduplicator duplicateRefundCompletionService;
     private final PaymentChannelAdapterRegistry channelAdapterRegistry;
     private final ObjectMapper objectMapper;
-    private final PaymentObservabilityService observabilityService;
+    private final IPaymentObservabilityService observabilityService;
     private final PaymentExceptionOrderRecorder exceptionOrderRecordService;
     private final PaymentNumberGenerator numberService;
     private final PlatformTransactionManager transactionManager;
@@ -401,13 +402,15 @@ public class PaymentChannelSynchronizer {
     }
 
     private void logSummary(PaymentOrderEntity order, String status, long startedAt, String result) {
-        observabilityService.logSummary("CHANNEL_PAYMENT_QUERY", order.getPayOrderNo(), status,
-                order.getAmount(), order.getChannelCode(), elapsedMillis(startedAt), result);
+        observabilityService.logSummary(new PaymentObservabilitySummary(
+                "CHANNEL_PAYMENT_QUERY", order.getPayOrderNo(), status,
+                order.getAmount(), order.getChannelCode(), elapsedMillis(startedAt), result));
     }
 
     private void logRefundSummary(PaymentRefundOrderVO refundOrder, String status, long startedAt, String result) {
-        observabilityService.logSummary("CHANNEL_REFUND_QUERY", refundOrder.getRefundOrderNo(), status,
-                refundOrder.getRefundAmount(), refundOrder.getChannelCode(), elapsedMillis(startedAt), result);
+        observabilityService.logSummary(new PaymentObservabilitySummary(
+                "CHANNEL_REFUND_QUERY", refundOrder.getRefundOrderNo(), status,
+                refundOrder.getRefundAmount(), refundOrder.getChannelCode(), elapsedMillis(startedAt), result));
     }
 
     private void notifyPaymentTerminal(String tenantId, Long paymentOrderId, Long businessOrderId) {

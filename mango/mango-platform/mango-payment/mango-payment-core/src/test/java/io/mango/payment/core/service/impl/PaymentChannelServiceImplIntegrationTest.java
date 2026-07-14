@@ -14,7 +14,6 @@ import io.mango.payment.core.entity.PaymentChannelEntity;
 import io.mango.payment.core.entity.PaymentChannelCapabilityEntity;
 import io.mango.payment.core.mapper.PaymentChannelCapabilityMapper;
 import io.mango.payment.core.mapper.PaymentChannelMapper;
-import io.mango.payment.core.service.PaymentOperationAuditService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
