@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
 import { createRequire } from 'node:module';
+import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runReleaseCli } from './release-command.mjs';
@@ -1004,6 +1005,7 @@ function initDevWorkspace(context) {
   const mangoDir = join(context.root, '.mango');
   const envPath = join(mangoDir, 'dev-workspace.env');
   mkdirSync(mangoDir, { recursive: true });
+  ensureWorkspaceMavenRepository(context.root);
   const workspace = ensureWorkspaceConfig(context.root);
   if (!existsSync(envPath)) {
     writeFileSync(envPath, defaultDevWorkspaceEnv(context.root, workspace));
@@ -1021,6 +1023,45 @@ function initDevWorkspace(context) {
     for (const warning of warnings) {
       process.stdout.write(`warn    mango.dev.json ${warning}\n`);
     }
+  }
+}
+
+function ensureWorkspaceMavenRepository(root) {
+  const sharedRepository = join(process.env.HOME || process.env.USERPROFILE || homedir(), '.m2', 'repository');
+  const workspaceRepository = join(root, '.mango', 'm2', 'repository');
+  mkdirSync(sharedRepository, { recursive: true });
+  mkdirSync(dirname(workspaceRepository), { recursive: true });
+
+  let workspaceRepositoryStat;
+  try {
+    workspaceRepositoryStat = lstatSync(workspaceRepository);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  if (workspaceRepositoryStat) {
+    if (workspaceRepositoryStat.isSymbolicLink()
+      && haveSameRealPath(workspaceRepository, sharedRepository)) {
+      process.stdout.write(`Shared Maven repository already initialized: ${relativeOrAbsolute(process.cwd(), workspaceRepository)}\n`);
+      return;
+    }
+    process.stdout.write(`warn    preserving existing Maven repository: ${relativeOrAbsolute(process.cwd(), workspaceRepository)}\n`);
+    return;
+  }
+
+  symlinkSync(sharedRepository, workspaceRepository, process.platform === 'win32' ? 'junction' : 'dir');
+  process.stdout.write(`Created shared Maven repository: ${relativeOrAbsolute(process.cwd(), workspaceRepository)} -> ${sharedRepository}\n`);
+}
+
+function haveSameRealPath(firstPath, secondPath) {
+  try {
+    const first = realpathSync(firstPath);
+    const second = realpathSync(secondPath);
+    return process.platform === 'win32' ? first.toLowerCase() === second.toLowerCase() : first === second;
+  } catch {
+    return false;
   }
 }
 
