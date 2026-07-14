@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
@@ -193,7 +193,8 @@ function verifyPublishedPmoFile(packageRoot, packageRelativePath, entry, kind) {
     || typeof entry?.sha256 !== 'string'
     || !/^[0-9a-f]{64}$/i.test(entry.sha256)
     || !Number.isInteger(entry.size)
-    || entry.size < 0) {
+    || entry.size < 0
+    || !['0644', '0755'].includes(entry.mode)) {
     console.error(`Published @mango/pmo ${kind} manifest contains an invalid file descriptor: ${packageRelativePath}`);
     process.exit(1);
   }
@@ -204,7 +205,10 @@ function verifyPublishedPmoFile(packageRoot, packageRelativePath, entry, kind) {
   }
   const content = readFileSync(filePath);
   const actualHash = sha256(content);
-  if (content.length !== entry.size || actualHash !== entry.sha256) {
+  const actualMode = process.platform === 'win32'
+    ? entry.mode
+    : (statSync(filePath).mode & 0o111 ? '0755' : '0644');
+  if (content.length !== entry.size || actualHash !== entry.sha256 || actualMode !== entry.mode) {
     console.error(`Published @mango/pmo ${kind} file differs from its manifest: ${packageRelativePath}`);
     process.exit(1);
   }
