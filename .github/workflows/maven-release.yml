@@ -1,0 +1,119 @@
+name: Mango Maven Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Maven release version; dry-run may use a unique prerelease version
+        required: true
+        type: string
+      dry_run:
+        description: Validate the exact commit and release commands without publishing to Nexus
+        required: true
+        default: true
+        type: boolean
+      run_tests:
+        description: Run Maven tests inside the Jenkins release batch
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mango-maven-release
+  cancel-in-progress: false
+
+jobs:
+  release-preflight:
+    name: Release metadata check
+    runs-on: ubuntu-latest
+    outputs:
+      git_sha: ${{ steps.contract.outputs.git_sha }}
+      release_version: ${{ steps.contract.outputs.release_version }}
+      request_id: ${{ steps.contract.outputs.request_id }}
+    steps:
+      - name: Checkout requested main commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate release request
+        id: contract
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "Maven release workflow can only run from main. Current ref: ${GITHUB_REF}" >&2
+            exit 1
+          fi
+          if ! printf '%s' "${RELEASE_VERSION}" | grep -Eq '^[0-9]+(\.[0-9]+){2,}([-+][0-9A-Za-z][0-9A-Za-z.-]*)?$'; then
+            echo "Invalid Maven release version: ${RELEASE_VERSION}" >&2
+            exit 1
+          fi
+          git fetch --force origin main
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/main; then
+            echo "Requested commit is not reachable from origin/main: ${GITHUB_SHA}" >&2
+            exit 1
+          fi
+          locked_version="$(node -e 'const v=require("./mango-ui/packages/mango-cli/release-versions.json"); process.stdout.write(v.maven.mangoBackend)')"
+          if [ "${DRY_RUN}" = "false" ] && [ "${RELEASE_VERSION}" != "${locked_version}" ]; then
+            echo "Formal release version must equal release-versions.json. requested=${RELEASE_VERSION}, locked=${locked_version}" >&2
+            exit 1
+          fi
+          if [ "${DRY_RUN}" = "false" ] && ! grep -Fq "maven-${RELEASE_VERSION}" CHANGELOG.md; then
+            echo "CHANGELOG.md does not contain maven-${RELEASE_VERSION}." >&2
+            exit 1
+          fi
+          {
+            echo "git_sha=${GITHUB_SHA}"
+            echo "release_version=${RELEASE_VERSION}"
+            echo "request_id=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          } >> "${GITHUB_OUTPUT}"
+
+  internal-jenkins-release:
+    name: Internal Jenkins release
+    needs: release-preflight
+    environment: mango-release
+    runs-on: [self-hosted, linux, x64, mango-release]
+    timeout-minutes: 190
+    steps:
+      - name: Checkout the exact approved commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-preflight.outputs.git_sha }}
+          fetch-depth: 1
+
+      - name: Trigger and wait for internal Jenkins
+        id: jenkins
+        env:
+          GIT_SHA: ${{ needs.release-preflight.outputs.git_sha }}
+          RELEASE_VERSION: ${{ needs.release-preflight.outputs.release_version }}
+          REQUEST_ID: ${{ needs.release-preflight.outputs.request_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          RUN_TESTS: ${{ inputs.run_tests }}
+        run: scripts/ci/jenkins-release-bridge.sh
+
+      - name: Write release summary
+        if: always()
+        env:
+          BUILD_URL: ${{ steps.jenkins.outputs.jenkins_build_url }}
+          BUILD_NUMBER: ${{ steps.jenkins.outputs.jenkins_build_number }}
+          BUILD_RESULT: ${{ steps.jenkins.outputs.jenkins_result }}
+          RELEASE_VERSION: ${{ needs.release-preflight.outputs.release_version }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          {
+            echo "## Internal Jenkins Maven release"
+            echo
+            echo "- Version: \`${RELEASE_VERSION}\`"
+            echo "- Dry run: \`${DRY_RUN}\`"
+            echo "- Jenkins build: \`${BUILD_NUMBER:-not-started}\`"
+            echo "- Jenkins result: \`${BUILD_RESULT:-unavailable}\`"
+            if [ -n "${BUILD_URL}" ]; then
+              echo "- Internal build URL: ${BUILD_URL}"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
