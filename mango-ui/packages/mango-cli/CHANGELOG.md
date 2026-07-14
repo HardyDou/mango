@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.73 - 2026-07-14
+
+### Fixed
+
+- Lock generated and upgraded business backends to Mango Maven `1.0.18`, which prepares upstream SNAPSHOT prerequisites on clean PR runners without expanding the actual partial quality gate.
+- Lock the CLI to `@mango/pmo@1.2.3`, carrying the matching scope classifier, governance guard, and GitHub/Gitea workflow baseline.
+- Keep nested static-analysis invocations away from the architecture-verification aggregator while preserving the outer architecture gate.
+
+### Upgrade Notes
+
+- Publish Mango Maven `1.0.18` and `@mango/pmo@1.2.3` before installing `@mango/cli@1.0.73`.
+- Run `mango pmo upgrade --project-dir . --to 1.2.3`, then update the business backend to Mango Maven `1.0.18` and rerun the required PR check once.
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+
 ## 1.0.72 - 2026-07-14
 
 ### Fixed
