@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -15,8 +16,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import io.mango.architecture.ModuleRole;
+
 import io.mango.architecture.ArchitectureIssue;
+import io.mango.architecture.ModuleRole;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.project.MavenProject;
@@ -24,6 +26,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class ArchitectureMojoTest {
+
+    @Test
+    void configurablePathsUseMavenBindableFileType() throws Exception {
+        for (String fieldName :
+                List.of(
+                        "reportFile",
+                        "rootDirectory",
+                        "debtBaselineFile",
+                        "globalEntityManifest")) {
+            assertEquals(
+                    File.class,
+                    ArchitectureMojo.class.getDeclaredField(fieldName).getType(),
+                    fieldName);
+        }
+    }
 
     @Test
     void changedPathsAreRelativeToNestedMavenRoot(@TempDir Path repository) throws Exception {
@@ -55,9 +72,9 @@ class ArchitectureMojoTest {
         Files.writeString(repository.resolve("README.md"), "changed outside\n");
 
         ArchitectureMojo mojo = new ArchitectureMojo();
-        setField(mojo, "rootDirectory", mavenRoot);
+        setField(mojo, "rootDirectory", mavenRoot.toFile());
         setField(mojo, "gitBase", "HEAD");
-        setField(mojo, "globalEntityManifest", manifest);
+        setField(mojo, "globalEntityManifest", manifest.toFile());
 
         Method method = ArchitectureMojo.class.getDeclaredMethod("gitChangedPaths");
         method.setAccessible(true);
@@ -112,7 +129,7 @@ class ArchitectureMojoTest {
 
         ArchitectureMojo mojo = new ArchitectureMojo();
         setField(mojo, "excludedModules", List.of());
-        setField(mojo, "rootDirectory", projectRoot);
+        setField(mojo, "rootDirectory", projectRoot.toFile());
         Map<Path, ModuleRole> classDirectories = new LinkedHashMap<>();
         Map<Path, String> classDirectoryArtifacts = new LinkedHashMap<>();
         Map<Path, String> classDirectoryModules = new LinkedHashMap<>();
@@ -199,7 +216,7 @@ class ArchitectureMojoTest {
         when(session.getProjects()).thenReturn(List.of(parent, order, orderCore, billing));
 
         ArchitectureMojo mojo = new ArchitectureMojo();
-        setField(mojo, "rootDirectory", root.resolve("backend"));
+        setField(mojo, "rootDirectory", root.resolve("backend").toFile());
         setField(mojo, "session", session);
 
         assertEquals(Set.of("backend-parent", "order-parent", "order-core", "billing-core"),
@@ -256,7 +273,7 @@ class ArchitectureMojoTest {
     @Test
     void globalEntityManifestChangePromotesOnlyEntityRules(@TempDir Path root) throws Exception {
         ArchitectureMojo mojo = new ArchitectureMojo();
-        setField(mojo, "rootDirectory", root);
+        setField(mojo, "rootDirectory", root.toFile());
         ArchitectureIssue entity = new ArchitectureIssue(
                 "MANGO-ARCH-ENTITY-003", "com.example.OrderEntity", "entity");
         ArchitectureIssue controller = new ArchitectureIssue(
@@ -293,7 +310,7 @@ class ArchitectureMojoTest {
     @Test
     void readmeOnlyChangeDoesNotPromoteHistoricalJavaIssue(@TempDir Path root) throws Exception {
         ArchitectureMojo mojo = new ArchitectureMojo();
-        setField(mojo, "rootDirectory", root);
+        setField(mojo, "rootDirectory", root.toFile());
         ArchitectureIssue historical = new ArchitectureIssue(
                 "MANGO-ARCH-TYPE-003", "com.example.OrderController", "historical");
         ArchitectureIssue generated = new ArchitectureIssue(
@@ -321,7 +338,7 @@ class ArchitectureMojoTest {
         Path mavenRoot = repository.resolve("mango");
         Files.createDirectories(mavenRoot);
         ArchitectureMojo mojo = new ArchitectureMojo();
-        setField(mojo, "rootDirectory", mavenRoot);
+        setField(mojo, "rootDirectory", mavenRoot.toFile());
         ArchitectureIssue historical = new ArchitectureIssue(
                 "MANGO-ARCH-BEAN-001", "com.example.OrderService", "missing @Service");
         ArchitectureIssue replacement = new ArchitectureIssue(
@@ -348,7 +365,7 @@ class ArchitectureMojoTest {
                 "{\"schemaVersion\":3,\"identities\":{\""
                         + replacementIdentity
                         + "\":1}}\n");
-        setField(mojo, "debtBaselineFile", baseline);
+        setField(mojo, "debtBaselineFile", baseline.toFile());
         setField(mojo, "resolvedGitBase", "HEAD");
 
         Method filter = ArchitectureMojo.class.getDeclaredMethod(
@@ -373,7 +390,7 @@ class ArchitectureMojoTest {
         Files.createDirectories(source.getParent());
         Files.writeString(source, "class Demo {}\n");
         ArchitectureMojo mojo = new ArchitectureMojo();
-        setField(mojo, "rootDirectory", mavenRoot);
+        setField(mojo, "rootDirectory", mavenRoot.toFile());
         Method identityMethod =
                 ArchitectureMojo.class.getDeclaredMethod("issueIdentity", ArchitectureIssue.class);
         identityMethod.setAccessible(true);

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.mango.tests</groupId>
+    <artifactId>architecture-path-binding</artifactId>
+    <version>1.0.0</version>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.mango.tools.maven.plugin</groupId>
+                <artifactId>mango-maven-plugin</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+                <configuration>
+                    <reportFile>${project.basedir}/target/architecture-report.json</reportFile>
+                    <rootDirectory>${project.basedir}</rootDirectory>
+                    <debtBaselineFile>${project.basedir}/debt-budget.json</debtBaselineFile>
+                    <globalEntityManifest>${project.basedir}/global-entity-exceptions.json</globalEntityManifest>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

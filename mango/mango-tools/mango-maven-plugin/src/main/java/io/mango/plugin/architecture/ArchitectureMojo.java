@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -85,13 +86,13 @@ public final class ArchitectureMojo extends AbstractMojo {
     @Parameter(
             defaultValue =
                     "${maven.multiModuleProjectDirectory}/target/mango-architecture-report.json")
-    private Path reportFile;
+    private File reportFile;
 
     @Parameter(
             defaultValue = "${maven.multiModuleProjectDirectory}",
             readonly = true,
             required = true)
-    private Path rootDirectory;
+    private File rootDirectory;
 
     @Parameter(property = "mango.architecture.base")
     private String gitBase;
@@ -100,7 +101,7 @@ public final class ArchitectureMojo extends AbstractMojo {
             property = "mango.architecture.debtBaselineFile",
             defaultValue =
                     "${maven.multiModuleProjectDirectory}/../mango-pmo/baselines/architecture/debt-budget.json")
-    private Path debtBaselineFile;
+    private File debtBaselineFile;
 
     @Parameter(property = "mango.architecture.mode", defaultValue = "changed")
     private String mode;
@@ -117,7 +118,7 @@ public final class ArchitectureMojo extends AbstractMojo {
     @Parameter(property = "mango.architecture.skip", defaultValue = "false")
     private boolean skip;
 
-    @Parameter private Path globalEntityManifest;
+    @Parameter private File globalEntityManifest;
 
     @Parameter private List<String> businessGroupPrefixes = List.of();
 
@@ -275,7 +276,8 @@ public final class ArchitectureMojo extends AbstractMojo {
         MangoArchUnitChecker checker =
                 new MangoArchUnitChecker(
                         Set.copyOf(allowedReverseControllers),
-                        GlobalEntityManifestLoader.load(rootDirectory, globalEntityManifest));
+                        GlobalEntityManifestLoader.load(
+                                rootDirectory.toPath(), toPath(globalEntityManifest)));
         return checker.check(inputs.classDirectories(), moduleContracts);
     }
 
@@ -359,7 +361,7 @@ public final class ArchitectureMojo extends AbstractMojo {
                     "MANGO-ARCH-ENGINE-026 Reactor project has no base directory: "
                             + project.getArtifactId());
         }
-        Path root = rootDirectory.toAbsolutePath().normalize();
+        Path root = rootDirectory.toPath().toAbsolutePath().normalize();
         Path base = project.getBasedir().toPath().toAbsolutePath().normalize();
         if (!base.startsWith(root)) {
             throw new MojoExecutionException(
@@ -459,7 +461,7 @@ public final class ArchitectureMojo extends AbstractMojo {
         try {
             Path candidate = Path.of(source);
             if (!candidate.isAbsolute()) {
-                candidate = rootDirectory.resolve(candidate);
+                candidate = rootDirectory.toPath().resolve(candidate);
             }
             candidate = candidate.toAbsolutePath().normalize();
             ReactorModuleDescriptor owner = null;
@@ -525,7 +527,7 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     private List<ArchitectureIssue> newIssuesAgainstDebtBaseline(
             List<ArchitectureIssue> changedIssues) throws MojoExecutionException {
-        String baseBudget = readFileFromGitBase(debtBaselineFile);
+        String baseBudget = readFileFromGitBase(debtBaselineFile.toPath());
         if (baseBudget.isBlank()) {
             return changedIssues;
         }
@@ -637,7 +639,7 @@ public final class ArchitectureMojo extends AbstractMojo {
     }
 
     private Path repositoryRoot() {
-        Path normalizedRoot = rootDirectory.toAbsolutePath().normalize();
+        Path normalizedRoot = rootDirectory.toPath().toAbsolutePath().normalize();
         if (normalizedRoot.getFileName() != null
                 && "mango".equals(normalizedRoot.getFileName().toString())
                 && normalizedRoot.getParent() != null) {
@@ -1088,6 +1090,7 @@ public final class ArchitectureMojo extends AbstractMojo {
                         path ->
                                 subject.startsWith(
                                         rootDirectory
+                                                .toPath()
                                                 .resolve(path)
                                                 .toAbsolutePath()
                                                 .normalize()
@@ -1233,7 +1236,7 @@ public final class ArchitectureMojo extends AbstractMojo {
             return;
         }
         Path repositoryRoot = canonicalPath(Path.of(roots.get(0)));
-        Path mavenRoot = canonicalPath(rootDirectory);
+        Path mavenRoot = canonicalPath(rootDirectory.toPath());
         Set<String> repositoryChanges =
                 new LinkedHashSet<>(
                         runGitAt(
@@ -1285,16 +1288,18 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     private List<Path> globalEntityManifestCandidates() {
         if (globalEntityManifest != null) {
-            Path configured = globalEntityManifest;
+            Path configured = globalEntityManifest.toPath();
             if (!configured.isAbsolute()) {
-                configured = rootDirectory.resolve(configured);
+                configured = rootDirectory.toPath().resolve(configured);
             }
             return List.of(configured.toAbsolutePath().normalize());
         }
         return List.of(
-                rootDirectory.resolve("business-pmo/global-entity-exceptions.json"),
-                rootDirectory.resolve("../business-pmo/global-entity-exceptions.json"),
-                rootDirectory.resolve("../mango-pmo/contracts/global-entity-exceptions.json"));
+                rootDirectory.toPath().resolve("business-pmo/global-entity-exceptions.json"),
+                rootDirectory.toPath().resolve("../business-pmo/global-entity-exceptions.json"),
+                rootDirectory
+                        .toPath()
+                        .resolve("../mango-pmo/contracts/global-entity-exceptions.json"));
     }
 
     private String resolveDefaultBase() throws MojoExecutionException {
@@ -1316,7 +1321,7 @@ public final class ArchitectureMojo extends AbstractMojo {
     }
 
     private List<String> runGit(String... arguments) throws MojoExecutionException {
-        return runGitAt(rootDirectory.toAbsolutePath().normalize(), arguments);
+        return runGitAt(rootDirectory.toPath().toAbsolutePath().normalize(), arguments);
     }
 
     private List<String> runGitAt(Path directory, String... arguments)
@@ -1355,6 +1360,7 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     private String relativePath(Path path) {
         return rootDirectory
+                .toPath()
                 .toAbsolutePath()
                 .normalize()
                 .relativize(path.toAbsolutePath().normalize())
@@ -1564,14 +1570,18 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     private void writeReport(ArchitectureReport report) throws MojoExecutionException {
         try {
-            Files.createDirectories(reportFile.toAbsolutePath().normalize().getParent());
+            Files.createDirectories(reportFile.toPath().toAbsolutePath().normalize().getParent());
             new ObjectMapper()
                     .enable(SerializationFeature.INDENT_OUTPUT)
-                    .writeValue(reportFile.toFile(), report);
+                    .writeValue(reportFile, report);
         } catch (IOException exception) {
             throw new MojoExecutionException(
                     "MANGO-ARCH-ENGINE-007 unable to write report " + reportFile, exception);
         }
+    }
+
+    private static Path toPath(File file) {
+        return file == null ? null : file.toPath();
     }
 
     public record ArchitectureReport(
