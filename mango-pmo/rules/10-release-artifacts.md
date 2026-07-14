@@ -9,10 +9,10 @@
 
 ## 2. 发布批次与依赖顺序
 
-- **正向要求**：同一业务能力跨制品变化时必须形成一个 release batch，按“规范/契约与运行时实现 -> Maven/npm 基础制品 -> 聚合包 -> CLI/starter/模板 -> PMO 安装包与文档 -> 消费项目验证”的顺序发布；每一步记录输入版本、输出版本和前置回查证据。
-- **禁止项**：禁止先发布依赖方再发布被依赖方；禁止单独升级 CLI、starter 或 PMO 投影而遗漏其运行时插件、规则、模板或版本锁；禁止把源码仓库内可用误当成已发布仓库可用。
-- **正例**：先发布支持新 Java 架构契约的 Maven 插件并从 Nexus 拉取验证，再发布引用该版本的 CLI 和 starter，最后在空目录生成业务项目执行 `clean verify`。
-- **反例**：本机 snapshot 测试通过后直接发布 CLI，但业务开发者安装 CLI 后只能解析到旧 Maven 插件，生成项目首次 `verify` 即失败。
+- **正向要求**：同一业务能力跨制品变化时必须形成一个 release batch，按“规范/契约与运行时实现 -> Maven/npm 基础制品 -> 聚合包 -> CLI/starter/模板 -> PMO 安装包与文档 -> 消费项目验证”的顺序发布；每一步记录输入版本、输出版本和前置回查证据。正式 Maven 批次必须执行 `scripts/publish-maven-batch.sh --all-non-app --release-version <version>`；该命令在同一批次内先发布非 app Reactor，再把当前提交的 `mango-docs/**` 打包并发布为同版本 `io.mango:mango-docs-bundle:<version>`。
+- **禁止项**：禁止先发布依赖方再发布被依赖方；禁止单独升级 CLI、starter 或 PMO 投影而遗漏其运行时插件、规则、模板或版本锁；禁止把源码仓库内可用误当成已发布仓库可用；禁止把 `mango-docs-bundle` 留作批次外人工补发或在缺少该坐标时宣告 Maven 批次完成。
+- **正例**：执行一次 `--all-non-app`，发布支持新 Java 架构契约的 Maven Reactor 和同版本文档包，再发布引用该版本的 CLI 和 starter。
+- **反例**：只发布 Maven Reactor，事后再依赖维护者手工运行 `deploy:deploy-file` 补发文档包。错误原因：发布清单没有包含业务升级必需物料，步骤容易遗漏。
 
 ## 3. 规范、模板、Agent、Skill 与安装包一致性
 
@@ -30,7 +30,7 @@
 
 ## 5. 发布、仓库回查与消费验证
 
-- **正向要求**：发布必须使用仓库规范指定的 batch 入口；发布后从目标 Maven/npm 仓库重新解析精确版本和关键文件，使用干净临时目录验证 CLI/Skill 安装、项目生成、模块生成、构建和业务消费入口；所有证据绑定 registry、坐标、版本、校验和与时间。
+- **正向要求**：发布必须使用仓库规范指定的 batch 入口；Maven 批次只调用 `publish-maven-batch.sh`，不再维护独立文档包发布命令；发布后从目标 Maven/npm 仓库重新解析精确版本和关键文件，使用干净临时目录验证 CLI/Skill 安装、项目生成、模块生成、构建和业务消费入口；所有证据绑定 registry、坐标、版本、校验和与时间。
 - **禁止项**：禁止以本地仓库、workspace link、缓存 tarball 或未清理的生成目录代替发布后回查；禁止只看到 HTTP 200 或版本号存在就判定内容正确；禁止发布 app 部署制品进入默认平台 Maven 批次。
 - **正例**：Nexus 回查 npm tarball 的 manifest/Skill/README，Maven 使用临时 local repository 拉取目标插件，随后生成项目完成全量门禁。
 - **反例**：`npm publish` 成功后未安装 tarball、未验证 `dist/baseline`，也未确认 Maven 插件版本，却声明整个 Mango 批次完成。

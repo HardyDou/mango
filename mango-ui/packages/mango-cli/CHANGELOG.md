@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.72 - 2026-07-14
+
+### Fixed
+
+- Read backend, frontend, and business-document roots from `mango.config.json.paths`; a repository using `baohan-backend/` is no longer silently classified as having no backend changes.
+- Fail closed when the configured backend POM is missing, and feed the resolved backend POM and business-document root to the standard workflow.
+- Ship equivalent GitHub and Gitea `pmo-doc-check` templates. Direct-module checks continue without `-am` or `-amd` and compare no-new violations against the PR base.
+- Include `io.mango:mango-docs-bundle:<version>` in the existing `publish-maven-batch.sh --all-non-app` release step so a Maven release cannot omit its version-matched CLI documentation source.
+
+### Upgrade Notes
+
+- Install `@mango/cli@1.0.72`, configure non-default repository roots under `mango.config.json.paths`, and run `mango pmo upgrade --project-dir . --to 1.2.2`.
+- Synchronize the standard workflow for the repository host, then configure `PMO Documentation Checks / pmo-doc-check` as a required check. Mango Maven remains `1.0.17`.
+
+### Verification
+
+- `node --test mango-pmo/tests/pmo-check-scope.test.mjs mango-pmo/tests/publish-maven-batch.test.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
+
 ## 1.0.71 - 2026-07-14
 
 ### Fixed

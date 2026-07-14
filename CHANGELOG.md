@@ -1,5 +1,39 @@
 # Mango Changelog
 
+## v2026.07.14-pmo-1.2.2-cli-1.0.72-release - 2026-07-14
+
+### Changed
+
+- Fix [Issue #470](https://github.com/HardyDou/mango/issues/470): standard `pmo-doc-check` now reads repository-relative backend, frontend, and business-document roots from `mango.config.json.paths` instead of assuming `backend/`, `frontend/`, and `business-docs/`.
+- Resolve the configured backend POM and directly changed Maven modules from the same path configuration; an invalid configured backend path now fails closed instead of producing a green check that skipped Java.
+- Publish equivalent GitHub and Gitea workflow templates with the stable `PMO Documentation Checks / pmo-doc-check` identity. Partial backend checks remain limited to directly modified modules without `-am` or `-amd` and use the no-new-violations gate against the PR base.
+- Reuse the existing explicit architecture-prerequisite build for distribution-only and governance checks so a clean GitHub runner has `mango-common` and the current gate plugin before generated-backend acceptance; no new workflow step or Reactor expansion is added.
+- Make `scripts/publish-maven-batch.sh --all-non-app` publish the committed `mango-docs/**` tree as `io.mango:mango-docs-bundle:<version>` in the same Maven batch. The release no longer depends on a separate manual `deploy:deploy-file` step.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.72` after both it and `@mango/pmo@1.2.2` resolve from `npm-group`; Mango Maven remains `1.0.17`.
+2. In a historical business repository, set the real roots once, for example `"paths": { "backend": "baohan-backend", "frontend": "frontend", "businessDocs": "business-docs" }`.
+3. Run `mango pmo upgrade --project-dir . --to 1.2.2`, then synchronize the standard `.gitea/workflows/pmo-doc-check.yml` or `.github/workflows/pmo-doc-check.yml` for the hosting platform.
+4. Configure `PMO Documentation Checks / pmo-doc-check` as a required check in the business repository. This is repository-host configuration, not part of the Mango package release.
+
+### Release Targets
+
+| Order | Target | Version | Status |
+|---|---|---|---|
+| 1 | npm PMO bundle | `@mango/pmo@1.2.2` | `PLANNED` |
+| 2 | npm CLI | `@mango/cli@1.0.72` | `PLANNED` |
+| 3 | GitHub Release | `v2026.07.14-pmo-1.2.2-cli-1.0.72-release` | `PLANNED` |
+
+### Verification
+
+- `node --test mango-pmo/tests/pmo-check-scope.test.mjs mango-pmo/tests/publish-maven-batch.test.mjs`
+- `pnpm -C mango-ui --filter @mango/pmo build && pnpm -C mango-ui --filter @mango/pmo check`
+- `node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+
 ## v2026.07.14-pmo-1.2.1-cli-1.0.71-release - 2026-07-14
 
 ### Fixed

@@ -262,9 +262,7 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
     ['mango.architecture.skip', 'true', 'MANGO-ARCH-ENGINE-015'],
     ['mango.check.rule', 'static', 'Governed mango:check rule must remain all, actual=static'],
     ['mango.check.baseDir', 'backend/app', 'Governed mango:check baseDir must equal Maven execution root'],
-    ['mango.check.gate', 'no-new-violations', 'Governed mango:check gate must remain all'],
     ['mango.check.staticFailurePolicy', 'report', 'Governed mango:check staticFailurePolicy must remain block'],
-    ['mango.check.changedOnly', 'true', 'Governed mango:check requires full scope; changedOnly=true is forbidden'],
     ['mango.check.codeLevelExcludedModules', 'x', 'Governed mango:check requires full scope; codeLevelExcludedModules is forbidden'],
   ]) {
     const policyFailure = runMaven([
@@ -279,6 +277,9 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
     'modules/order/order-core,architecture-verification',
     '-Dmango.architecture.mode=changed',
     '-Dmango.architecture.requireFullReactor=false',
+    '-Dmango.check.gate=no-new-violations',
+    '-Dmango.check.changedOnly=true',
+    '-Dmango.check.requireFullScope=false',
     '-Denforcer.skip=false',
     'validate',
   ], true, 'affected-module architecture mode');
@@ -290,7 +291,7 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
       + 'module-aware architecture report ownership, '
       + 'per-Java-module static report coverage, '
       + 'unregistered/mismatched global Entity cases, approved global Entity acceptance, '
-      + 'affected-module mode accepted, and seven fail-closed policy overrides rejected.\n',
+      + 'affected-module mode accepted, and five fail-closed policy overrides rejected.\n',
   );
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });

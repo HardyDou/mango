@@ -62,3 +62,16 @@ npx playwright test
 - 前端包先确认集成形态。标记为 Admin Shell 或 Admin Pages 的包主要服务管理后台，不适合直接用于官网或 C 端站点。
 - 新增或修改能力时，同步 README、能力地图和必要的业务接入手册。
 - 正式交付、验证、发布、提交、PR 或规范治理前，按 [AGENTS.md](./AGENTS.md) 和 PMO preflight 判断需读取的规则。
+
+## 5. 发布入口
+
+Maven 正式批次只执行统一入口：
+
+```bash
+scripts/publish-maven-batch.sh \
+  --all-non-app \
+  --release-version <version> \
+  --verify-base-url <maven-consume-registry>
+```
+
+`--all-non-app` 明确包含非 app Maven Reactor 和同版本 `io.mango:mango-docs-bundle`，文档包不设独立发布命令。跨 Maven、npm、GitHub Release 和文档站的批次仍由 `mango release publish/status/verify/repair` 记录状态；完整约束见 [发布制品与版本同步规范](./mango-pmo/rules/10-release-artifacts.md)。

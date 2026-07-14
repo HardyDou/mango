@@ -48,8 +48,18 @@
                                 </requireProperty>
                                 <requireProperty>
                                     <property>mango.check.gate</property>
-                                    <regex>all</regex>
-                                    <regexMessage>mango.check.gate must remain all</regexMessage>
+                                    <regex>all|no-new-violations</regex>
+                                    <regexMessage>mango.check.gate must be all or no-new-violations</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>mango.check.changedOnly</property>
+                                    <regex>true|false</regex>
+                                    <regexMessage>mango.check.changedOnly must be explicit</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>mango.check.requireFullScope</property>
+                                    <regex>true|false</regex>
+                                    <regexMessage>mango.check.requireFullScope must be explicit</regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>mango.check.staticFailurePolicy</property>
@@ -98,12 +108,14 @@
                             <rule>${mango.check.rule}</rule>
                             <baseDir>${mango.check.baseDir}</baseDir>
                             <gate>${mango.check.gate}</gate>
+                            <changedOnly>${mango.check.changedOnly}</changedOnly>
+                            <baseRef>${mango.check.baseRef}</baseRef>
                             <staticFailurePolicy>${mango.check.staticFailurePolicy}</staticFailurePolicy>
                             <requireExecutionRoot>true</requireExecutionRoot>
                             <requiredRule>all</requiredRule>
-                            <requiredGate>all</requiredGate>
+                            <requiredGate>${mango.check.gate}</requiredGate>
                             <requireBlockingStaticFailures>true</requireBlockingStaticFailures>
-                            <requireFullScope>true</requireFullScope>
+                            <requireFullScope>${mango.check.requireFullScope}</requireFullScope>
                             <reportFile>${maven.multiModuleProjectDirectory}/target/mango-quality-report.json</reportFile>
                         </configuration>
                     </execution>
