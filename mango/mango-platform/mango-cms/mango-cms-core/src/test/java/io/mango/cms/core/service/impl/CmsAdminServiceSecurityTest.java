@@ -23,7 +23,7 @@ import io.mango.cms.core.mapper.CmsContentTagRelMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
 import io.mango.cms.core.mapper.CmsSiteCategoryMapper;
 import io.mango.cms.core.mapper.CmsSiteMapper;
-import io.mango.cms.core.mapper.CmsSiteSettingMapper;
+import io.mango.cms.core.service.ICmsSiteSettingService;
 import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.file.api.FileApi;
@@ -63,7 +63,6 @@ class CmsAdminServiceSecurityTest {
     private final CmsBannerMapper bannerMapper = mock(CmsBannerMapper.class);
     private final CmsAdvertisementMapper advertisementMapper = mock(CmsAdvertisementMapper.class);
     private final CmsAdDeliveryMapper adDeliveryMapper = mock(CmsAdDeliveryMapper.class);
-    private final CmsSiteSettingMapper siteSettingMapper = mock(CmsSiteSettingMapper.class);
 
     @BeforeEach
     void setUp() {
@@ -79,7 +78,7 @@ class CmsAdminServiceSecurityTest {
     @Test
     void pageSites_应用统一数据权限资源和字段映射() {
         RecordingDataScopeApplier applier = new RecordingDataScopeApplier();
-        CmsAdminService service = service(applier, null);
+        CmsSiteAdminService service = siteService(applier, null);
         when(siteMapper.selectPage(any(), any(QueryWrapper.class))).thenReturn(new Page<CmsSiteEntity>(1, 10));
 
         service.pageSites(new CmsSitePageQuery());
@@ -103,7 +102,7 @@ class CmsAdminServiceSecurityTest {
         site.setSiteCode("main");
         site.setSiteName("Main");
         when(siteMapper.selectOne(any(Wrapper.class))).thenReturn(site);
-        CmsAdminService service = service(applier, null);
+        CmsSiteAdminService service = siteService(applier, null);
 
         service.detailSite(10L);
 
@@ -115,7 +114,7 @@ class CmsAdminServiceSecurityTest {
     void createSite_文件引用不存在或不可见时拒绝保存() {
         FileApi fileApi = mock(FileApi.class);
         when(fileApi.get(11L)).thenReturn(R.fail("文件不存在"));
-        CmsAdminService service = service(null, fileApi);
+        CmsSiteAdminService service = siteService(null, fileApi);
 
         SaveCmsSiteCommand command = siteCommand("11");
 
@@ -129,7 +128,7 @@ class CmsAdminServiceSecurityTest {
         FileApi fileApi = mock(FileApi.class);
         FileRecordVO uploading = file(12L, FileRecordStatus.UPLOADING.value(), 0, "image/png");
         when(fileApi.get(12L)).thenReturn(R.ok(uploading));
-        CmsAdminService service = service(null, fileApi);
+        CmsSiteAdminService service = siteService(null, fileApi);
 
         assertThatThrownBy(() -> service.createSite(siteCommand("mango-file:12")))
                 .isInstanceOf(BizException.class)
@@ -157,7 +156,7 @@ class CmsAdminServiceSecurityTest {
         site.setSiteCode("main");
         site.setSiteName("Main Site");
         when(siteMapper.selectOne(any(Wrapper.class))).thenReturn(null, site);
-        CmsAdminService service = service(null, fileApi);
+        CmsSiteAdminService service = siteService(null, fileApi);
 
         service.createSite(siteCommand("21"));
 
@@ -169,7 +168,7 @@ class CmsAdminServiceSecurityTest {
         CmsContentEntity content = content(31L, CmsContentStatus.DRAFT.name());
         when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
         when(contentMapper.updateById(content)).thenReturn(1);
-        CmsAdminService service = service(null, null);
+        CmsContentService service = contentService(null, null);
 
         service.submitContent(offlineCommand(31L));
 
@@ -181,7 +180,7 @@ class CmsAdminServiceSecurityTest {
     void submitContent_rejectsStatesOtherThanDraftOrRejected() {
         CmsContentEntity content = content(32L, CmsContentStatus.PUBLISHED.name());
         when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
-        CmsAdminService service = service(null, null);
+        CmsContentService service = contentService(null, null);
 
         assertThatThrownBy(() -> service.submitContent(offlineCommand(32L)))
                 .isInstanceOf(BizException.class)
@@ -194,7 +193,7 @@ class CmsAdminServiceSecurityTest {
         CmsContentEntity content = content(33L, CmsContentStatus.PENDING_REVIEW.name());
         when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
         when(contentMapper.updateById(content)).thenReturn(1);
-        CmsAdminService service = service(null, null);
+        CmsContentService service = contentService(null, null);
         UpdateCmsContentReviewCommand command = reviewCommand(33L, "  approved  ");
 
         service.approveContent(command);
@@ -210,7 +209,7 @@ class CmsAdminServiceSecurityTest {
         CmsContentEntity content = content(34L, CmsContentStatus.PENDING_REVIEW.name());
         when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
         when(contentMapper.updateById(content)).thenReturn(1);
-        CmsAdminService service = service(null, null);
+        CmsContentService service = contentService(null, null);
 
         service.rejectContent(reviewCommand(34L, "  needs changes  "));
 
@@ -222,7 +221,7 @@ class CmsAdminServiceSecurityTest {
     void deleteContent_requiresPublishedContentToBeTakenOfflineFirst() {
         CmsContentEntity content = content(35L, CmsContentStatus.PUBLISHED.name());
         when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
-        CmsAdminService service = service(null, null);
+        CmsContentService service = contentService(null, null);
 
         assertThatThrownBy(() -> service.deleteContent(35L))
                 .isInstanceOf(BizException.class)
@@ -239,7 +238,7 @@ class CmsAdminServiceSecurityTest {
         category.setSiteId(99L);
         when(siteMapper.selectOne(any(Wrapper.class))).thenReturn(site);
         when(siteCategoryMapper.selectOne(any(Wrapper.class))).thenReturn(category);
-        CmsAdminService service = service(null, null);
+        CmsContentPublishService service = publishService(null);
         BatchCmsContentPublishCommand command = new BatchCmsContentPublishCommand();
         command.setSiteId(41L);
         command.setContentIds(List.of(43L));
@@ -251,22 +250,37 @@ class CmsAdminServiceSecurityTest {
         verify(contentMapper, never()).selectOne(any(Wrapper.class));
     }
 
-    private CmsAdminService service(DataScopeApplier dataScopeApplier, FileApi fileApi) {
-        return new CmsAdminService(
-                contentCategoryMapper,
-                contentTagMapper,
-                contentTagRelMapper,
+    private CmsSiteAdminService siteService(DataScopeApplier dataScopeApplier, FileApi fileApi) {
+        return new CmsSiteAdminService(
                 siteMapper,
                 siteCategoryMapper,
-                contentMapper,
                 publishMapper,
                 navigationMapper,
                 bannerMapper,
                 advertisementMapper,
                 adDeliveryMapper,
-                siteSettingMapper,
+                mock(ICmsSiteSettingService.class),
                 provider(dataScopeApplier),
                 provider(fileApi));
+    }
+
+    private CmsContentService contentService(DataScopeApplier dataScopeApplier, FileApi fileApi) {
+        return new CmsContentService(
+                contentCategoryMapper,
+                contentTagMapper,
+                contentTagRelMapper,
+                contentMapper,
+                provider(dataScopeApplier),
+                provider(fileApi));
+    }
+
+    private CmsContentPublishService publishService(DataScopeApplier dataScopeApplier) {
+        return new CmsContentPublishService(
+                siteMapper,
+                siteCategoryMapper,
+                contentMapper,
+                publishMapper,
+                provider(dataScopeApplier));
     }
 
     private static SaveCmsSiteCommand siteCommand(String logoFileId) {

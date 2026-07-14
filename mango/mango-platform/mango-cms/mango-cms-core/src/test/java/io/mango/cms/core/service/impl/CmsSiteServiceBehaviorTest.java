@@ -22,7 +22,6 @@ import io.mango.cms.core.mapper.CmsNavigationMapper;
 import io.mango.cms.core.mapper.CmsSiteCategoryMapper;
 import io.mango.cms.core.mapper.CmsSiteMapper;
 import io.mango.common.exception.BizException;
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -81,10 +80,9 @@ class CmsSiteServiceBehaviorTest {
         when(siteMapper.selectList(any())).thenReturn(List.of(site));
         CmsSiteService service = service(null);
 
-        R<SiteResolveVO> result = service.resolveSite(domainQuery("www.example.test"));
+        SiteResolveVO result = service.resolveSite(domainQuery("www.example.test"));
 
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getData())
+        assertThat(result)
                 .extracting(SiteResolveVO::getSiteId, SiteResolveVO::getSiteCode,
                         SiteResolveVO::getSiteName, SiteResolveVO::getSeoTitle)
                 .containsExactly(10L, "main", "Main Site", "Mango CMS");
@@ -156,9 +154,9 @@ class CmsSiteServiceBehaviorTest {
         when(siteCategoryMapper.selectById(40L)).thenReturn(category);
         CmsSiteService service = service(null);
 
-        R<SiteContentVO> result = service.detailContent(contentQuery(20L));
+        SiteContentVO result = service.detailContent(contentQuery(20L));
 
-        assertThat(result.getData())
+        assertThat(result)
                 .extracting(SiteContentVO::getId, SiteContentVO::getTitle,
                         SiteContentVO::getCategoryId, SiteContentVO::getCategoryName,
                         SiteContentVO::getCoverUrl)
@@ -230,12 +228,12 @@ class CmsSiteServiceBehaviorTest {
         query.setRecommendationType("HOME");
         query.setKeyword("mango");
 
-        R<PageResult<SiteContentVO>> result = service.pageContents(query);
+        PageResult<SiteContentVO> result = service.pageContents(query);
 
-        assertThat(result.getData().getTotal()).isEqualTo(11L);
-        assertThat(result.getData().getPage()).isEqualTo(2L);
-        assertThat(result.getData().getSize()).isEqualTo(5L);
-        assertThat(result.getData().getList()).extracting(SiteContentVO::getTitle)
+        assertThat(result.getTotal()).isEqualTo(11L);
+        assertThat(result.getPage()).isEqualTo(2L);
+        assertThat(result.getSize()).isEqualTo(5L);
+        assertThat(result.getList()).extracting(SiteContentVO::getTitle)
                 .containsExactly("Visible article");
     }
 

@@ -4,7 +4,7 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsAdminApi;
 import io.mango.cms.api.CmsSiteApi;
-import io.mango.cms.core.service.ICmsAdminService;
+import io.mango.cms.core.service.ICmsContentService;
 import io.mango.cms.core.service.ICmsSiteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,7 +44,7 @@ class CmsControllerContractTest {
     void cmsApi_只由Controller承载() {
         assertThat(CmsAdminApi.class).isAssignableFrom(CmsAdminController.class);
         assertThat(CmsSiteApi.class).isAssignableFrom(CmsSiteController.class);
-        assertThat(CmsAdminApi.class.isAssignableFrom(ICmsAdminService.class)).isFalse();
+        assertThat(CmsAdminApi.class.isAssignableFrom(ICmsContentService.class)).isFalse();
         assertThat(CmsSiteApi.class.isAssignableFrom(ICmsSiteService.class)).isFalse();
     }
 
@@ -78,9 +78,6 @@ class CmsControllerContractTest {
                 "resolveSite", io.mango.cms.api.query.SiteResolveQuery.class);
         assertThat(resolve.getAnnotation(GetMapping.class).value()).containsExactly("/sites/resolve");
 
-        Method preview = CmsSiteController.class.getDeclaredMethod(
-                "publicFile", Long.class, io.mango.cms.api.query.SiteResolveQuery.class);
-        assertThat(preview.getAnnotation(GetMapping.class).value()).containsExactly("/files/public-preview");
     }
 
     private static Set<String> apiMethodKeys(Class<?> implementation, Class<?> apiType) {
