@@ -17,13 +17,13 @@
 3. Run `mango pmo upgrade --project-dir . --to 1.2.2`, then synchronize the standard `.gitea/workflows/pmo-doc-check.yml` or `.github/workflows/pmo-doc-check.yml` for the hosting platform.
 4. Configure `PMO Documentation Checks / pmo-doc-check` as a required check in the business repository. This is repository-host configuration, not part of the Mango package release.
 
-### Release Targets
+### Published Packages
 
-| Order | Target | Version | Status |
+| Order | Target | Version / destination | Status |
 |---|---|---|---|
-| 1 | npm PMO bundle | `@mango/pmo@1.2.2` | `PLANNED` |
-| 2 | npm CLI | `@mango/cli@1.0.72` | `PLANNED` |
-| 3 | GitHub Release | `v2026.07.14-pmo-1.2.2-cli-1.0.72-release` | `PLANNED` |
+| 1 | npm PMO bundle | `@mango/pmo@1.2.2` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm CLI | `@mango/cli@1.0.72` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 3 | GitHub Release | `v2026.07.14-pmo-1.2.2-cli-1.0.72-release` | `PUBLISHED` |
 
 ### Verification
 
@@ -33,6 +33,9 @@
 - `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
 - `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
 - `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+- Required implementation PR check `pmo-doc-check` passed in 7m07s; the release-record check passed in 1m00s.
+- The release state manifest completed all 17 fixed states at `2026-07-14T02:41:08.818Z`; Maven and the versioned docs snapshot were explicitly not applicable for this npm-only release.
+- Fresh `npm-group` reads and a clean install verified `@mango/pmo@1.2.2` and `@mango/cli@1.0.72`; immutable coordinates and checksums are recorded in `mango-docs/evidence/governance/release-v2026.07.14-pmo-1.2.2-cli-1.0.72-release.json`.
 
 ## v2026.07.14-pmo-1.2.1-cli-1.0.71-release - 2026-07-14
 
