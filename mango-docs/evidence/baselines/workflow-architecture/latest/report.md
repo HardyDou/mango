@@ -6,6 +6,8 @@
 
 定向架构债务由 845 条降为 0：Dependency 0、ArchUnit 0、PMD 0。验证范围仅为 Workflow 四个 Maven 子模块及其架构门禁，不代表全仓检查。
 
+最新 main 的通用静态门禁会按文件身份关联历史问题。服务与实体重命名后，旧 Workflow 身份无法继续匹配；本次按最终代码重新登记该模块静态身份，Workflow 通用静态库存由 989 条降为 511 条，门禁结果为 `newIssueCount=0`、`toolFailureCount=0`。这 511 条仍是递减基线，不计入已清零的 Dependency/ArchUnit/PMD 正式架构债务，也不允许后续新增。
+
 新 MySQL 8.4 数据库的完整单体应用启动成功，`/actuator/health` 返回 `UP`。Workflow 只有 `V1__init_workflow.sql`，成功建立 12 张业务表；Flyway 不写 `ACT_GE_PROPERTY`，引擎启动前的正式初始化器按缺失项登记 Flowable 必需元数据，随后 Flowable 正常建立引擎。默认启动时示例流程为 0 条。
 
 ## 2. 改前与改后对比
@@ -18,6 +20,7 @@
 | Dependency 债务 | 0 | 0 | 无回归 |
 | ArchUnit 债务 | 119 | 0 | 清零 |
 | PMD 正式债务 | 726 | 0 | 清零 |
+| 通用静态身份库存 | 989 | 511 | 净减少 478；新问题 0 |
 | Workflow Flyway | V1-V4，含引擎数据 | 单一纯 DDL V1 | 符合新库政策 |
 | 默认 Demo | 启动代码默认写入 3 套 | 0 | 默认环境无演示数据 |
 

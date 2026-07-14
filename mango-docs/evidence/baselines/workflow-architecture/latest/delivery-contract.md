@@ -39,7 +39,7 @@
 | 基线 ID | 覆盖台账 ID | 覆盖用例 ID | E2E 脚本 | 测试命令 | 环境/版本 | 数据库或数据集 | 账号/租户标识 | 结果摘要 | 失败/阻塞/例外 | 报告/截图/日志路径 | 行为变化 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | BASELINE-001 | TASK-001 | TC-001,TC-002,TC-003 | EXCEPTION: 前端生产代码未变，后端改前基线 | Workflow 四模块 `test` | Java 21.0.10、Maven 3.9.13 | H2 Flowable fixture | tenant 1、admin/发起人/审批人 | Core 37/37、Starter 6/6，总计 43/43 | 无 | `report.md` 与 surefire reports | 生产代码尚未修改 |
-| BASELINE-002 | TASK-001 至 TASK-004 | TC-001 至 TC-005 | EXCEPTION: 后端/API/数据库交付，无新增浏览器行为 | Workflow 四模块 `test`、定向 architecture、单体新库启动 | Java 21.0.10、Maven 3.9.13、MySQL 8.4 | H2 fixture 与独立新库 | tenant 1 | Core 40/40、Starter 8/8；架构 0；health UP | 本机文件预览需关闭并提供测试 SM4 key，均非 Workflow 缺陷 | `report.md` | 内部架构和初始化政策有意调整，业务结果受测试保护 |
+| BASELINE-002 | TASK-001 至 TASK-004 | TC-001 至 TC-005 | EXCEPTION: 后端/API/数据库交付，无新增浏览器行为 | Workflow 四模块 `test`、定向 architecture/static、单体新库启动 | Java 21.0.10、Maven 3.9.13、MySQL 8.4 | H2 fixture 与独立新库 | tenant 1 | Core 40/40、Starter 8/8；架构 0；通用静态库存 989→511 且新问题 0；health UP | 本机文件预览需关闭并提供测试 SM4 key，均非 Workflow 缺陷 | `report.md` | 内部架构和初始化政策有意调整，业务结果受测试保护 |
 
 ## 6. 业务开发交接输出
 
