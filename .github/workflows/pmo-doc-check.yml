@@ -71,7 +71,7 @@ jobs:
           node mango-ui/packages/mango-pmo/scripts/check-package.mjs
 
       - name: Set up Java for backend architecture gates
-        if: steps.scope.outputs.backend == 'true'
+        if: steps.scope.outputs.backend == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
