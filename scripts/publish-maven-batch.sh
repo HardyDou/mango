@@ -461,7 +461,7 @@ done
 
 declare -a mvn_args=()
 if [[ -n "${deploy_project_list}" ]]; then
-  mvn_args=(-pl "${deploy_project_list}" -am deploy "-Drevision=${revision}")
+  mvn_args=(-pl "${deploy_project_list}" -am clean deploy "-Drevision=${revision}")
   if [[ "${skip_tests}" == "true" ]]; then
     mvn_args+=(-DskipTests)
   fi
