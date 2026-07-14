@@ -3,8 +3,8 @@
   "packageVersion": "1.2.2",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "7dc743715570f6f9bf719a7735395cd0df773447",
-  "bundleSha256": "974e75f10a1d3bd834d24bc0b17de749f9d4b2d7289a5306ee8748b4709ef551",
+  "sourceCommit": "507f27d75e0012137e9dc809ed63ba0e92367888",
+  "bundleSha256": "68a4d34c61dc4696b06a91205c33c373e200ee11310dde19bbc14b07de31f8db",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -408,8 +408,8 @@
     },
     {
       "path": "rules/05-ai-delivery-quality.md",
-      "sha256": "511d5ead9738d09d998d6589e27f89eb77441adbd84044345a614db5db92442f",
-      "size": 14239,
+      "sha256": "7c2483e604d2e89599152ef0be62e149825cbb4d4a12ee4429266e6b9e9e22cd",
+      "size": 14850,
       "kind": "rule",
       "mode": "0644"
     },
@@ -604,8 +604,8 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "36bb756967a10a0272f780f8a0b4b1e8692d8a3516774a2687c25eabe719ecc1",
-      "size": 24866,
+      "sha256": "bb52e91d434d851c6553130f228cbbaf43f076c4160a045f10616309af0b85c7",
+      "size": 24890,
       "kind": "rule",
       "mode": "0644"
     },
@@ -968,8 +968,8 @@
     },
     {
       "path": "tools/branch-protection-policy.mjs",
-      "sha256": "0b46bb49a22caa70f0896957777ebbda74e5a92cca3d06217d17fc02dcc1a300",
-      "size": 3114,
+      "sha256": "db6dcedcbeee1b6a1b9d2637a3c5f3b719e1f28bfc3bb28083500278fea393ea",
+      "size": 3182,
       "kind": "tool",
       "mode": "0644"
     },
@@ -996,8 +996,8 @@
     },
     {
       "path": "tools/check-capability-docs.mjs",
-      "sha256": "63a2bc33dd0273ae89dcd968fc42a1135759137b3d597c55d99146565c817dbf",
-      "size": 25482,
+      "sha256": "6b457e94e14a4b1d9ea9155d63aa0017bc4f143959e1f5e5a59c090983029cbe",
+      "size": 25443,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1010,8 +1010,8 @@
     },
     {
       "path": "tools/check-governance-intent.mjs",
-      "sha256": "7e67def4cd4655cd3d1ecaa3dc369623913b20f5026c0a4395506a078c776e2f",
-      "size": 10413,
+      "sha256": "d483bd2ee440db44ca9b98ebb38410a60c1553a5e8f45f179110091a7d3cb9b4",
+      "size": 10880,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1059,8 +1059,8 @@
     },
     {
       "path": "tools/classify-pmo-check-scope.mjs",
-      "sha256": "54f79faae56dc5bebf2a2d5eb6d5f85aac2843bfa0af59a2b606655d3565121c",
-      "size": 11965,
+      "sha256": "a1c5fd2241a5950db793d94c47b54d1f689af0958c2408f4c2b55fd6c0d4a37a",
+      "size": 13886,
       "kind": "tool",
       "mode": "0644"
     },

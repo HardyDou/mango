@@ -15,6 +15,8 @@ mkdirSync(localMangoRepository, { recursive: true });
 const mavenRepository = process.env.MANGO_BACKEND_GATE_REPOSITORY
   || `${pathToFileURL(localMangoRepository).href}/`;
 const projectName = 'mango-backend-gate-acceptance';
+const MAX_MAVEN_INVOCATIONS = 9;
+let mavenInvocationCount = 0;
 const projectRoot = join(tempRoot, projectName);
 const starterJavaRoot = join(
   projectRoot,
@@ -28,7 +30,6 @@ const migrationPath = join(
   projectRoot,
   'backend/modules/order/order-core/src/main/resources/db/migration/order/V1__init_order.sql',
 );
-const entityPath = join(coreJavaRoot, 'entity/SalesOrderEntity.java');
 const invalidApiModuleInfo = join(
   projectRoot,
   'backend/modules/order/order-api/src/main/resources/META-INF/mango/module.properties',
@@ -39,6 +40,8 @@ const invalidApiResources = join(
 );
 const globalEntityManifest = join(projectRoot, 'business-pmo/global-entity-exceptions.json');
 const orderApiPom = join(projectRoot, 'backend/modules/order/order-api/pom.xml');
+const architectureVerificationPom = join(projectRoot, 'backend/architecture-verification/pom.xml');
+const globalReferenceEntity = join(coreJavaRoot, 'entity/GlobalReferenceEntity.java');
 
 try {
   runNode([
@@ -73,8 +76,10 @@ try {
     '.',
   ], projectRoot, 'generate four-layer business module');
   keepOnlyFourLayerBusinessReactor();
+  addApprovedGlobalEntityFixture();
+  assertGeneratedPolicyContract();
 
-  runMaven(['clean', 'verify'], true, 'generated four-layer backend');
+  runMaven(['verify'], true, 'generated four-layer backend');
   assertPassingReports();
 
   const originalOrderApiPom = readFileSync(orderApiPom, 'utf8');
@@ -86,8 +91,12 @@ try {
     throw new Error('unable to inject child-module PMD skip acceptance fixture');
   }
   writeFileSync(orderApiPom, pmdSkippedOrderApiPom);
+  rmSync(join(projectRoot, 'backend/modules/order/order-api/target'), {
+    recursive: true,
+    force: true,
+  });
   const missingChildReportFailure = runMaven(
-    ['clean', 'verify'],
+    ['verify'],
     false,
     'missing child-module PMD report',
   );
@@ -115,30 +124,6 @@ public class BadController {
     }
 }
 `);
-  const pathFailure = runMaven(['clean', 'verify'], false, '@PathVariable violation');
-  assertIncludes(pathFailure, 'Mango architecture gate found', 'path violation failure');
-  const architectureReport = readJson(join(projectRoot, 'backend/target/mango-architecture-report.json'));
-  assertArchitectureModuleOwnership(architectureReport);
-  const pathRules = new Set((architectureReport.blockingIssues || []).map(issue => issue.ruleId));
-  if (!pathRules.has('MANGO-ARCH-PATH-001') || !pathRules.has('MANGO-ARCH-PATH-002')) {
-    throw new Error(`path violation report missing PATH-001/002: ${JSON.stringify([...pathRules])}`);
-  }
-  rmSync(badController);
-
-  const staticViolation = join(starterJavaRoot, 'StaticViolation.java');
-  writeFileSync(staticViolation, `package com.example.backendgate;
-
-public final class StaticViolation {
-
-\tpublic int value() {
-        return 42;
-    }
-}
-`);
-  const staticFailure = runMaven(['clean', 'verify'], false, 'generic Java style violation');
-  assertIncludes(staticFailure, 'Checkstyle violations', 'static-analysis failure');
-  rmSync(staticViolation);
-
   const suppressedServiceContract = join(
     coreJavaRoot,
     'service/ISuppressedArchitectureService.java',
@@ -170,29 +155,6 @@ public final class SuppressedArchitectureService implements ISuppressedArchitect
     }
 }
 `);
-  const suppressionFailure = runMaven(
-    ['clean', 'verify'],
-    false,
-    'suppressed PMD architecture violation',
-  );
-  assertArchitectureRule('MANGO-ARCH-SVC-001', suppressionFailure);
-  rmSync(suppressedService);
-  rmSync(suppressedServiceContract);
-
-  const reservedNamespaceSource = join(
-    projectRoot,
-    'backend/modules/order/order-api/src/main/java/io/mango/common/result/BusinessShadow.java',
-  );
-  mkdirSync(dirname(reservedNamespaceSource), { recursive: true });
-  writeFileSync(reservedNamespaceSource, `package io.mango.common.result;
-
-public final class BusinessShadow {
-}
-`);
-  const namespaceFailure = runMaven(['clean', 'verify'], false, 'reserved namespace shadow');
-  assertIncludes(namespaceFailure, 'MANGO-ARCH-ENGINE-017', 'reserved namespace failure');
-  rmSync(reservedNamespaceSource);
-
   const directService = join(coreJavaRoot, 'service/impl/DirectServiceImpl.java');
   writeFileSync(directService, `package com.example.backendgate.order.core.service.impl;
 
@@ -205,9 +167,73 @@ import org.springframework.stereotype.Service;
 public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderEntity> {
 }
 `);
-  runMaven(['clean', 'verify'], false, 'direct MyBatis ServiceImpl violation');
-  assertArchitectureRule('MANGO-ARCH-SVC-014');
-  rmSync(directService);
+  const unregisteredGlobalEntity = join(coreJavaRoot, 'entity/UnregisteredGlobalEntity.java');
+  writeFileSync(unregisteredGlobalEntity, globalEntitySource(
+    'UnregisteredGlobalEntity',
+    'order_unregistered_global',
+  ));
+  const approvedMigration = readFileSync(migrationPath, 'utf8');
+  writeFileSync(migrationPath, `${approvedMigration}${globalEntityTableSql('order_unregistered_global')}`);
+  writeFileSync(globalEntityManifest, globalEntityManifestJson('wrong_global_table'));
+
+  const architectureFailure = runMaven(
+    ['verify'],
+    false,
+    'combined architecture violations',
+  );
+  assertIncludes(architectureFailure, 'Mango architecture gate found', 'architecture failure');
+  assertArchitectureModuleOwnership(
+    readJson(join(projectRoot, 'backend/target/mango-architecture-report.json')),
+  );
+  for (const ruleId of [
+    'MANGO-ARCH-PATH-001',
+    'MANGO-ARCH-PATH-002',
+    'MANGO-ARCH-SVC-001',
+    'MANGO-ARCH-SVC-014',
+    'MANGO-ARCH-ENTITY-003',
+    'MANGO-ARCH-ENTITY-004',
+  ]) {
+    assertArchitectureRule(ruleId, architectureFailure);
+  }
+  for (const source of [
+    badController,
+    suppressedService,
+    suppressedServiceContract,
+    directService,
+    unregisteredGlobalEntity,
+  ]) {
+    removeJavaFixture(source);
+  }
+  writeFileSync(migrationPath, approvedMigration);
+  writeFileSync(globalEntityManifest, globalEntityManifestJson('order_global_reference'));
+
+  const reservedNamespaceSource = join(
+    projectRoot,
+    'backend/modules/order/order-api/src/main/java/io/mango/common/result/BusinessShadow.java',
+  );
+  mkdirSync(dirname(reservedNamespaceSource), { recursive: true });
+  writeFileSync(reservedNamespaceSource, `package io.mango.common.result;
+
+public final class BusinessShadow {
+}
+`);
+  const namespaceFailure = runMaven(['verify'], false, 'reserved namespace shadow');
+  assertIncludes(namespaceFailure, 'MANGO-ARCH-ENGINE-017', 'reserved namespace failure');
+  removeJavaFixture(reservedNamespaceSource);
+
+  const staticViolation = join(starterJavaRoot, 'StaticViolation.java');
+  writeFileSync(staticViolation, `package com.example.backendgate;
+
+public final class StaticViolation {
+
+\tpublic int value() {
+        return 42;
+    }
+}
+`);
+  const staticFailure = runMaven(['verify'], false, 'generic Java style violation');
+  assertIncludes(staticFailure, 'Checkstyle violations', 'static-analysis failure');
+  removeJavaFixture(staticViolation);
 
   const originalMigration = readFileSync(migrationPath, 'utf8');
   const missingTenantMigration = originalMigration.replace('    tenant_id VARCHAR(64) NULL,\n', '');
@@ -215,63 +241,32 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
     throw new Error('generated migration does not contain the expected tenant_id declaration');
   }
   writeFileSync(migrationPath, missingTenantMigration);
-  runMaven(['clean', 'verify'], false, 'missing tenant migration violation');
-  assertMangoCheckRule('PERSISTENCE_SCHEMA');
-  writeFileSync(migrationPath, originalMigration);
-
   mkdirSync(dirname(invalidApiModuleInfo), { recursive: true });
   writeFileSync(invalidApiModuleInfo, 'module-name=order\nmodule-path=order\n');
-  runMaven(['clean', 'verify'], false, 'invalid module info violation');
+  runMaven(['verify'], false, 'combined project-quality violations');
+  assertMangoCheckRule('PERSISTENCE_SCHEMA');
   assertMangoCheckRule('MODULE_INFO');
-  rmSync(invalidApiResources, { recursive: true, force: true });
-
-  const originalEntity = readFileSync(entityPath, 'utf8');
-  const globalEntity = originalEntity
-    .replace('import io.mango.infra.persistence.api.entity.TenantEntity;',
-      'import io.mango.infra.persistence.api.entity.AuditableEntity;')
-    .replace('extends TenantEntity', 'extends AuditableEntity');
-  const globalMigration = originalMigration
-    .replace('    tenant_id VARCHAR(64) NULL,\n', '')
-    .replace('    org_id BIGINT NULL,\n', '');
-  if (globalEntity === originalEntity || globalMigration === originalMigration) {
-    throw new Error('unable to transform generated tenant entity into the global Entity acceptance fixture');
-  }
-  writeFileSync(entityPath, globalEntity);
-  writeFileSync(migrationPath, globalMigration);
-  runMaven(['clean', 'verify'], false, 'unregistered global Entity violation');
-  assertArchitectureRule('MANGO-ARCH-ENTITY-003');
-
-  writeFileSync(globalEntityManifest, globalEntityManifestJson('order_sales_order'));
-  runMaven(['clean', 'verify'], true, 'approved global Entity');
-  assertPassingReports();
-
-  writeFileSync(globalEntityManifest, globalEntityManifestJson('wrong_global_table'));
-  runMaven(['clean', 'verify'], false, 'global Entity table mismatch');
-  assertArchitectureRule('MANGO-ARCH-ENTITY-004');
-  writeFileSync(entityPath, originalEntity);
   writeFileSync(migrationPath, originalMigration);
-  writeFileSync(globalEntityManifest, emptyGlobalEntityManifestJson());
+  rmSync(invalidApiResources, { recursive: true, force: true });
 
   const originalManifest = readFileSync(globalEntityManifest, 'utf8');
   rmSync(globalEntityManifest);
-  const manifestFailure = runMaven(['clean', 'verify'], false, 'missing global entity manifest');
+  const manifestFailure = runMaven(['verify'], false, 'missing global entity manifest');
   assertIncludes(manifestFailure, 'MANGO-ARCH-ENGINE-014', 'missing global entity manifest failure');
   writeFileSync(globalEntityManifest, originalManifest);
 
-  for (const [property, value, message] of [
-    ['mango.architecture.skip', 'true', 'MANGO-ARCH-ENGINE-015'],
-    ['mango.check.rule', 'static', 'Governed mango:check rule must remain all, actual=static'],
-    ['mango.check.baseDir', 'backend/app', 'Governed mango:check baseDir must equal Maven execution root'],
-    ['mango.check.staticFailurePolicy', 'report', 'Governed mango:check staticFailurePolicy must remain block'],
-    ['mango.check.codeLevelExcludedModules', 'x', 'Governed mango:check requires full scope; codeLevelExcludedModules is forbidden'],
-  ]) {
-    const policyFailure = runMaven([
-      `-D${property}=${value}`,
-      '-Denforcer.skip=true',
-      'verify',
-    ], false, `${property} override`);
-    assertIncludes(policyFailure, message, `${property} override failure`);
-  }
+  const architecturePolicyFailure = runMaven([
+    '-pl',
+    'architecture-verification',
+    '-Dmango.architecture.skip=true',
+    '-Denforcer.skip=true',
+    `io.mango.tools.maven.plugin:mango-maven-plugin:${mangoVersion}:architecture`,
+  ], false, 'mango.architecture.skip override');
+  assertIncludes(
+    architecturePolicyFailure,
+    'MANGO-ARCH-ENGINE-015',
+    'mango.architecture.skip override failure',
+  );
   runMaven([
     '-pl',
     'modules/order/order-core,architecture-verification',
@@ -284,14 +279,18 @@ public class DirectServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOrderE
     'validate',
   ], true, 'affected-module architecture mode');
 
+  assertMavenInvocationBudget();
+
   process.stdout.write(
-    `Generated backend gate PASS with Mango ${mangoVersion}: clean project accepted; `
+    `Generated backend gate PASS with Mango ${mangoVersion} in ${mavenInvocationCount} Maven invocations: `
+      + 'clean project accepted; '
       + 'PathVariable, direct ServiceImpl, tenant schema, module info, Checkstyle, manifest, '
       + 'PMD suppression, reserved namespace shadowing, '
       + 'module-aware architecture report ownership, '
       + 'per-Java-module static report coverage, '
       + 'unregistered/mismatched global Entity cases, approved global Entity acceptance, '
-      + 'affected-module mode accepted, and five fail-closed policy overrides rejected.\n',
+      + 'affected-module mode accepted, generated policy wiring locked, and representative '
+      + 'architecture policy bypass rejected.\n',
   );
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
@@ -319,7 +318,59 @@ function keepOnlyFourLayerBusinessReactor() {
   rmSync(join(projectRoot, 'backend/app'), { recursive: true, force: true });
 }
 
+function addApprovedGlobalEntityFixture() {
+  writeFileSync(
+    globalReferenceEntity,
+    globalEntitySource('GlobalReferenceEntity', 'order_global_reference'),
+  );
+  writeFileSync(
+    migrationPath,
+    `${readFileSync(migrationPath, 'utf8')}${globalEntityTableSql('order_global_reference')}`,
+  );
+  writeFileSync(globalEntityManifest, globalEntityManifestJson('order_global_reference'));
+}
+
+function assertGeneratedPolicyContract() {
+  const pom = readFileSync(architectureVerificationPom, 'utf8');
+  for (const expected of [
+    '<skip>${mango.architecture.skip}</skip>',
+    '<rule>${mango.check.rule}</rule>',
+    '<baseDir>${mango.check.baseDir}</baseDir>',
+    '<staticFailurePolicy>${mango.check.staticFailurePolicy}</staticFailurePolicy>',
+    '<requireExecutionRoot>true</requireExecutionRoot>',
+    '<requiredRule>all</requiredRule>',
+    '<requireBlockingStaticFailures>true</requireBlockingStaticFailures>',
+    '<requireFullScope>${mango.check.requireFullScope}</requireFullScope>',
+  ]) {
+    assertIncludes(pom, expected, 'generated fail-closed policy contract');
+  }
+  if (pom.includes('<codeLevelExcludedModules>')) {
+    throw new Error('generated policy contract must not allow code-level module exclusions');
+  }
+}
+
+function removeJavaFixture(sourcePath) {
+  rmSync(sourcePath, { force: true });
+  const sourceMarker = '/src/main/java/';
+  const markerIndex = sourcePath.indexOf(sourceMarker);
+  if (markerIndex < 0) {
+    throw new Error(`Java fixture is outside src/main/java: ${sourcePath}`);
+  }
+  const moduleRoot = sourcePath.slice(0, markerIndex);
+  const classRelativePath = sourcePath
+    .slice(markerIndex + sourceMarker.length)
+    .replace(/\.java$/u, '.class');
+  rmSync(join(moduleRoot, 'target/classes', classRelativePath), { force: true });
+}
+
 function runMaven(goals, shouldPass, label) {
+  mavenInvocationCount += 1;
+  if (mavenInvocationCount > MAX_MAVEN_INVOCATIONS) {
+    throw new Error(
+      `Maven invocation budget exceeded before ${label}: `
+        + `${mavenInvocationCount} > ${MAX_MAVEN_INVOCATIONS}`,
+    );
+  }
   const defaultProperties = [
     '-Dmango.architecture.mode=full',
     '-Dmango.architecture.skip=false',
@@ -352,6 +403,15 @@ function runMaven(goals, shouldPass, label) {
     throw new Error(`${label} unexpectedly passed`);
   }
   return combinedOutput(result);
+}
+
+function assertMavenInvocationBudget() {
+  if (mavenInvocationCount !== MAX_MAVEN_INVOCATIONS) {
+    throw new Error(
+      `generated backend gate Maven invocation contract changed: `
+        + `${mavenInvocationCount} != ${MAX_MAVEN_INVOCATIONS}`,
+    );
+  }
 }
 
 function assertPassingReports() {
@@ -426,7 +486,7 @@ function globalEntityManifestJson(table) {
     schemaRevision: 1,
     version: 1,
     exceptions: [{
-      entity: 'com.example.backendgate.order.core.entity.SalesOrderEntity',
+      entity: 'com.example.backendgate.order.core.entity.GlobalReferenceEntity',
       table,
       owner: 'order-team',
       reason: 'Approved platform-wide sales order reference data',
@@ -437,13 +497,45 @@ function globalEntityManifestJson(table) {
   }, null, 2)}\n`;
 }
 
-function emptyGlobalEntityManifestJson() {
-  return `${JSON.stringify({
-    contractId: 'global-entity-exceptions',
-    schemaRevision: 1,
-    version: 1,
-    exceptions: [],
-  }, null, 2)}\n`;
+function globalEntitySource(className, table) {
+  return `package com.example.backendgate.order.core.entity;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.mango.infra.persistence.api.entity.AuditableEntity;
+
+/**
+ * Global reference data acceptance fixture.
+ */
+@TableName("${table}")
+public class ${className} extends AuditableEntity {
+
+    private static final long serialVersionUID = 1L;
+
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+`;
+}
+
+function globalEntityTableSql(table) {
+  return `
+CREATE TABLE ${table} (
+    id BIGINT NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    created_by BIGINT NULL,
+    created_at DATETIME NULL,
+    updated_by BIGINT NULL,
+    updated_at DATETIME NULL,
+    PRIMARY KEY (id)
+);
+`;
 }
 
 function combinedOutput(result) {
