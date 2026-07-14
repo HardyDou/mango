@@ -17,6 +17,7 @@ pipeline {
     LANG = 'C.UTF-8'
     LC_ALL = 'C.UTF-8'
     GITHUB_REPOSITORY = 'HardyDou/mango'
+    MANGO_RELEASE_POLLER_URL = 'https://raw.githubusercontent.com/HardyDou/mango/main/scripts/ci/github-release-jenkins-poller.sh'
     MANGO_RELEASE_FALLBACK_REPO_URL = 'https://github.com/HardyDou/mango.git'
     MANGO_RELEASE_STATE_DIR = "${JENKINS_HOME}/release-state/mango"
     MANGO_RELEASE_POLL_OUTPUT = "${WORKSPACE}/.runtime/internal-release-candidate.properties"
@@ -30,31 +31,15 @@ pipeline {
       steps {
         sh '''#!/usr/bin/env bash
           set -euo pipefail
-          if [ -d .git ]; then
-            git reset --hard
-            git clean -ffdx
-            git remote set-url origin "${MANGO_RELEASE_REPO_URL}"
-          else
-            git init .
-            git remote add origin "${MANGO_RELEASE_REPO_URL}"
-          fi
-          source_ready=false
-          for attempt in $(seq 1 3); do
-            if git fetch --force --no-tags origin main &&
-              git cat-file -e "FETCH_HEAD:scripts/ci/github-release-jenkins-poller.sh"; then
-              source_ready=true
-              break
-            fi
-            echo "Watcher source is not visible from the Gitea mirror; retry ${attempt}/3."
-            sleep 5
-          done
-          if [ "${source_ready}" != "true" ]; then
-            echo "Gitea mirror is delayed; loading the watcher from public GitHub main."
-            git remote remove watcher-fallback 2>/dev/null || true
-            git remote add watcher-fallback "${MANGO_RELEASE_FALLBACK_REPO_URL}"
-            git fetch --force --no-tags watcher-fallback main
-          fi
-          git checkout --detach FETCH_HEAD
+          mkdir -p scripts/ci .runtime
+          poller_tmp="scripts/ci/github-release-jenkins-poller.sh.tmp"
+          trap 'rm -f "${poller_tmp}"' EXIT
+          curl -L --connect-timeout 5 --max-time 20 --retry 2 --retry-all-errors \
+            -fsS -o "${poller_tmp}" "${MANGO_RELEASE_POLLER_URL}"
+          bash -n "${poller_tmp}"
+          mv "${poller_tmp}" scripts/ci/github-release-jenkins-poller.sh
+          chmod 0755 scripts/ci/github-release-jenkins-poller.sh
+          trap - EXIT
           test -x scripts/ci/github-release-jenkins-poller.sh
         '''
       }
@@ -101,6 +86,9 @@ pipeline {
       steps {
         sh '''#!/usr/bin/env bash
           set -euo pipefail
+          if [ ! -d .git ]; then
+            git init -b main .
+          fi
           validate_source() {
             local remote_name="$1"
             local remote_url="$2"
@@ -116,15 +104,15 @@ pipeline {
 
           source_ready=false
           for attempt in $(seq 1 3); do
-            if validate_source release-mirror "${MANGO_RELEASE_REPO_URL}"; then
+            if validate_source release-primary "${MANGO_RELEASE_REPO_URL}"; then
               source_ready=true
               break
             fi
-            echo "Release source is not visible from the Gitea mirror; retry ${attempt}/3."
+            echo "Release source is not visible from the primary repository; retry ${attempt}/3."
             sleep 5
           done
           if [ "${source_ready}" != "true" ]; then
-            echo "Gitea mirror is delayed; validating the exact release tag from public GitHub."
+            echo "Primary repository is delayed; validating the exact release tag from public GitHub."
             validate_source release-fallback "${MANGO_RELEASE_FALLBACK_REPO_URL}"
           fi
 

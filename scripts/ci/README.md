@@ -2,7 +2,7 @@
 
 GitHub 只负责公开仓库的 PR、合并、tag 和 Release。GitHub Release 发布后，公网 GitHub-hosted Runner 在数秒内校验 tag、精确 SHA、`main` 可达性、版本锁和 CHANGELOG，并给该 Release 附加唯一机器授权清单 `mango-internal-release-request-v1.json`。GitHub 不再连接内网，也不再依赖私有 Self-hosted Runner。
 
-内网 Jenkins Job `mango-github-release-watcher` 每两分钟读取公开 Release feed，只消费带上述授权清单的新 Release。它先校验清单、tag、SHA、版本锁和防倒退规则，再以精确参数调用 `mango-maven-release`。源码优先从内网 Gitea 镜像读取；镜像延迟超过 15 秒时只读拉取 GitHub 上同一个精确 SHA，避免等待 Gitea 的 10–20 分钟镜像周期。制品始终只由内网 Jenkins 发布到 Nexus。
+内网 Jenkins Job `mango-github-release-watcher` 每两分钟读取公开 Release feed，只消费带上述授权清单的新 Release。它先校验清单、tag、SHA、版本锁和防倒退规则，再以精确参数调用 `mango-maven-release`。Mango 的事实源始终是 GitHub；Jenkins 从 GitHub 读取精确 SHA，制品始终只由内网 Jenkins 发布到 Nexus。Gitea 镜像仅可作为以后按需启用的缓存，不参与发布授权判断。
 
 ## 入口
 
@@ -39,7 +39,7 @@ MANGO_RELEASE_REPO_URL
 MANGO_MAVEN_VERIFY_BASE_URL
 ```
 
-`MANGO_RELEASE_REPO_URL` 指向内网 Gitea 的 `FrameWork/mango` 镜像。轮询公开 Atom feed 和公开 Release asset 不使用 GitHub API，因此不需要 GitHub Token，也不会消耗匿名 API 配额。Maven 发布凭据继续只保存在 Jenkins 的 `${JENKINS_HOME}/.m2/settings.xml`。
+`MANGO_RELEASE_REPO_URL` 当前指向公开主仓 `https://github.com/HardyDou/mango.git`。watcher 通过 GitHub Raw CDN 读取单个约 9KB 的 poller 脚本，不再为每次轮询 fetch/checkout 整仓。轮询公开 Atom feed 和公开 Release asset 不使用 GitHub API，因此不需要 GitHub Token，也不会消耗匿名 API 配额。Maven 发布凭据继续只保存在 Jenkins 的 `${JENKINS_HOME}/.m2/settings.xml`。
 
 正式发布固定调用：
 

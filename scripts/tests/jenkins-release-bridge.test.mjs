@@ -140,7 +140,12 @@ test('internal watcher is scheduled, idempotent and delegates only an exact form
 
   assert.match(source, /cron\('H\/2 \* \* \* \*'\)/)
   assert.match(source, /github-release-jenkins-poller\.sh discover/)
-  assert.match(source, /git cat-file -e "FETCH_HEAD:scripts\/ci\/github-release-jenkins-poller\.sh"/)
+  assert.match(source, /raw\.githubusercontent\.com\/HardyDou\/mango\/main\/scripts\/ci\/github-release-jenkins-poller\.sh/)
+  assert.match(source, /curl -L --connect-timeout 5 --max-time 20/)
+  assert.match(source, /mkdir -p scripts\/ci \.runtime/)
+  assert.match(source, /bash -n "\$\{poller_tmp\}"/)
+  assert.doesNotMatch(source, /--filter=blob:none/)
+  assert.doesNotMatch(source, /git checkout --detach FETCH_HEAD/)
   assert.match(source, /github-release-jenkins-poller\.sh claim/)
   assert.match(source, /github-release-jenkins-poller\.sh success/)
   assert.match(source, /github-release-jenkins-poller\.sh failed/)
@@ -148,7 +153,6 @@ test('internal watcher is scheduled, idempotent and delegates only an exact form
   assert.match(source, /booleanParam\(name: 'DRY_RUN', value: false\)/)
   assert.match(source, /refs\/tags\/\$\{RELEASE_TAG\}/)
   assert.match(source, /git merge-base --is-ancestor/)
-  assert.match(source, /loading the watcher from public GitHub main/)
   assert.match(source, /timeout\(time: 180, unit: 'MINUTES'\)/)
   assert.match(job, /<spec>H\/2 \* \* \* \*<\/spec>/)
   const inlinePipeline = job.match(/<script><!\[CDATA\[\n([\s\S]*?)\n\]\]><\/script>/)?.[1]
@@ -176,6 +180,42 @@ printf '<feed><entry><link href="https://github.com/HardyDou/mango/releases/tag/
   const discover = spawnSync('bash', [poller, 'discover'], { cwd: root, env, encoding: 'utf8' })
   assert.equal(discover.status, 0, `${discover.stdout}\n${discover.stderr}`)
   assert.equal(await readFile(output, 'utf8'), 'ACTION=none\n')
+})
+
+test('poller ignores a release whose manifest has no Maven component', async () => {
+  const temp = await mkdtemp(path.join(os.tmpdir(), 'mango-release-poller-no-maven-test-'))
+  const fakeCurl = path.join(temp, 'curl')
+  const state = path.join(temp, 'state')
+  const output = path.join(temp, 'candidate.properties')
+  const tag = 'v2026.08.01-no-maven-release'
+  const sha = 'd'.repeat(40)
+  await writeFile(fakeCurl, `#!/usr/bin/env bash
+set -euo pipefail
+output=''
+url="\${!#}"
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == '-o' ]]; then output="$2"; shift 2; continue; fi
+  shift
+done
+if [[ "$url" == *.atom ]]; then
+  printf '<feed><entry><link href="https://github.com/HardyDou/mango/releases/tag/${tag}"/></entry></feed>'
+else
+  printf '%s' '{"schema":"mango.internal-release-request/v1","repository":"HardyDou/mango","releaseId":202,"tag":"${tag}","sourceSha":"${sha}","components":{"maven":null}}' > "$output"
+  printf '200'
+fi
+`)
+  await chmod(fakeCurl, 0o755)
+  const env = {
+    ...process.env,
+    PATH: `${temp}:${process.env.PATH}`,
+    MANGO_RELEASE_STATE_DIR: state,
+    MANGO_RELEASE_POLL_OUTPUT: output,
+  }
+
+  const discover = spawnSync('bash', [poller, 'discover'], { cwd: root, env, encoding: 'utf8' })
+  assert.equal(discover.status, 0, `${discover.stdout}\n${discover.stderr}`)
+  assert.equal(await readFile(output, 'utf8'), 'ACTION=none\n')
+  assert.match(await readFile(path.join(state, 'ledger.tsv'), 'utf8'), new RegExp(`ignored-no-maven\\t202\\t${tag}\\t-\\t${sha}`))
 })
 
 test('poller claims a request once and a failed immutable batch is never auto-retried', async () => {
