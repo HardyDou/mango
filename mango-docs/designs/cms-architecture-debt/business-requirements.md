@@ -5,11 +5,11 @@ pmoVersion: 1.2.1
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: 内容运营、公开内容消费、租户隔离、发布状态与新环境初始化均属于核心业务结果，失败会造成越权维护、未发布内容泄露或环境不可用
-status: DRAFT
-action: WRITE
+status: APPROVED
+action: NEXT
 owner: Mango CMS 能力负责人
 approver: HardyDou
-approvalEvidence: review/PROPOSAL-CMS-DEBT.md
+approvalEvidence: review/BRD-CMS-DEBT.md
 upstreamDocumentId: NONE
 upstreamDocumentHash: NONE
 ---
@@ -116,4 +116,4 @@ upstreamDocumentHash: NONE
 | 业务需求 checker | PASS | `node mango-pmo/tools/check-business-requirements.mjs --document mango-docs/designs/cms-architecture-debt/business-requirements.md`，2026-07-14 通过 |
 | 未关闭阻断数量 | 0 | BI-001、BI-002 已关闭 |
 | 例外 | 0 | 无 |
-| 业务审批 | 待书面复核 | `review/PROPOSAL-CMS-DEBT.md` 记录方案方向批准，书面规格待用户复核 |
+| 业务审批 | APPROVED | `review/BRD-CMS-DEBT.md` |

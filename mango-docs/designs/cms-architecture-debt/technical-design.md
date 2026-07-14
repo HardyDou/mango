@@ -5,13 +5,13 @@ pmoVersion: 1.2.1
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: requirement=L3，后台内容状态、公开读取、租户和初始化属于核心链路；solution=L3，一次性调整四层契约、领域服务、错误边界、持久化初始化和演示资源；final=max(requirement,solution)
-status: DRAFT
-action: WRITE
+status: APPROVED
+action: NEXT
 owner: Mango CMS Tech Lead
 approver: HardyDou
-approvalEvidence: review/PROPOSAL-CMS-DEBT.md
+approvalEvidence: review/TDD-CMS-DEBT.md
 upstreamDocumentId: SRS-CMS-DEBT
-upstreamDocumentHash: 1915ef3a572fa40bd741ac271339f66cee6964a9d6a1150a060bd0bda8af3740
+upstreamDocumentHash: a51006624ce223ef4e65e60d219012ebd0cb76b6b959d777c11c1580eb2dbfd1
 ---
 
 # CMS 历史债务治理技术设计文档
@@ -129,7 +129,7 @@ upstreamDocumentHash: 1915ef3a572fa40bd741ac271339f66cee6964a9d6a1150a060bd0bda8
 | 检查项 | 结果 | 证据 |
 |---|---|---|
 | 技术设计 checker | PASS | `node mango-pmo/tools/check-technical-design.mjs --document mango-docs/designs/cms-architecture-debt/technical-design.md`，2026-07-14 通过 |
-| 生命周期 handoff | 待书面复核后执行 | 上游摘要已记录，待文档批准后执行阶段移交 |
-| 专项规范检查计划 | 已设计 | TC-001 至 TC-005 覆盖 STATIC、UNIT、API、UI；四类均有具体观察对象 |
+| 生命周期 handoff | PASS | `node mango-pmo/tools/check-lifecycle-handoff.mjs --brd mango-docs/designs/cms-architecture-debt/business-requirements.md --srs mango-docs/designs/cms-architecture-debt/system-requirements.md --tdd mango-docs/designs/cms-architecture-debt/technical-design.md --risk L3 --through tdd` |
+| 专项规范检查计划 | PASS | TC-001 至 TC-005 覆盖 STATIC、UNIT、API、UI；四类均有具体观察对象、执行入口、稳定契约与失败处理 |
 | 未关闭阻断数量 | 0 | 无未关闭阻断 |
-| Tech Lead 审批 | 待书面复核 | `review/PROPOSAL-CMS-DEBT.md` 记录方案方向批准，书面规格待用户复核 |
+| Tech Lead 审批 | APPROVED | `review/TDD-CMS-DEBT.md` |

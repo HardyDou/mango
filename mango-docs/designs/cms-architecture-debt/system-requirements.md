@@ -5,13 +5,13 @@ pmoVersion: 1.2.1
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: 系统影响覆盖后台内容维护、审核发布、公开访问、文件访问、租户数据和新环境初始化，任何差异均可能影响核心内容链路或数据安全
-status: DRAFT
-action: WRITE
+status: APPROVED
+action: NEXT
 owner: Mango CMS 系统分析负责人
 approver: HardyDou
-approvalEvidence: review/PROPOSAL-CMS-DEBT.md
+approvalEvidence: review/SRS-CMS-DEBT.md
 upstreamDocumentId: BRD-CMS-DEBT
-upstreamDocumentHash: 8f49884854e7f7928979ded3a09ed3c27da240c6e7e994011d67f60cb9cdd871
+upstreamDocumentHash: 65adb354a05deb139108b365eed2aa9ed1f5078f0ccc4878866fc4e6770e7670
 ---
 
 # CMS 历史债务治理系统需求规格说明书
@@ -114,15 +114,15 @@ upstreamDocumentHash: 8f49884854e7f7928979ded3a09ed3c27da240c6e7e994011d67f60cb9
 
 | 上游ID | 系统需求ID | 系统验收ID | 覆盖说明 |
 |---|---|---|---|
-| BS-001, BG-001, BF-001, BA-001, BA-002, BO-001, BO-002, BR-001, BR-002, BAC-001 | SC-001, SA-001, SA-002, FR-001, FR-002, UC-001, PG-001, BT-001, BT-002, DR-001, NFR-001 | SAC-001, SAC-002 | 覆盖管理、审核、发布、状态和兼容行为 |
-| BS-001, BG-001, BF-002, BA-003, BO-001, BO-002, BR-003, BAC-002 | SC-002, SA-003, FR-003, FR-004, UC-002, PG-002, BT-003, DR-002, IR-001, NFR-002 | SAC-003, SAC-004 | 覆盖公开读取和文件访问边界 |
-| BS-002, BS-003, BG-002, BF-003, BA-004, BR-004, BAC-003, BAC-004 | SC-003, SA-004, FR-005, FR-006, UC-003, DR-003, NFR-003 | SAC-005 | 覆盖正式和演示初始化 |
+| BP-001, BS-001, BG-001, BF-001, BA-001, BA-002, BO-001, BO-002, BR-001, BR-002, BAC-001 | SC-001, SA-001, SA-002, FR-001, FR-002, UC-001, PG-001, BT-001, BT-002, DR-001, NFR-001 | SAC-001, SAC-002 | 覆盖管理、审核、发布、状态和兼容行为 |
+| BP-001, BS-001, BG-001, BF-002, BA-003, BO-001, BO-002, BR-003, BAC-002 | SC-002, SA-003, FR-003, FR-004, UC-002, PG-002, BT-003, DR-002, IR-001, NFR-002 | SAC-003, SAC-004 | 覆盖公开读取和文件访问边界 |
+| BP-002, BS-002, BS-003, BG-002, BF-003, BA-004, BR-004, BAC-003, BAC-004 | SC-003, SA-004, FR-005, FR-006, UC-003, DR-003, NFR-003 | SAC-005 | 覆盖正式和演示初始化 |
 
 ## 11. 阶段判定与审批
 
 | 检查项 | 结果 | 证据 |
 |---|---|---|
 | 系统需求 checker | PASS | `node mango-pmo/tools/check-system-requirements.mjs --document mango-docs/designs/cms-architecture-debt/system-requirements.md`，2026-07-14 通过 |
-| 生命周期 handoff | 待书面复核后执行 | 上游摘要已记录，待文档批准后执行阶段移交 |
+| 生命周期 handoff | PASS | `node mango-pmo/tools/check-lifecycle-handoff.mjs --brd mango-docs/designs/cms-architecture-debt/business-requirements.md --srs mango-docs/designs/cms-architecture-debt/system-requirements.md --risk L3 --through srs` |
 | 未关闭阻断数量 | 0 | 无未关闭阻断 |
-| 系统需求审批 | 待书面复核 | `review/PROPOSAL-CMS-DEBT.md` 记录方案方向批准，书面规格待用户复核 |
+| 系统需求审批 | APPROVED | `review/SRS-CMS-DEBT.md` |

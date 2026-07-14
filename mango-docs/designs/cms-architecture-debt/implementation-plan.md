@@ -5,13 +5,13 @@ pmoVersion: 1.2.1
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: requirement=L3，后台内容状态、公开读取、租户和初始化属于核心链路；solution=L3，一次性调整四层契约、领域服务、错误边界、持久化初始化和演示资源；final=max(requirement,solution)
-status: DRAFT
-action: WRITE
+status: APPROVED
+action: NEXT
 owner: Mango CMS 实施负责人
 approver: HardyDou
-approvalEvidence: review/PROPOSAL-CMS-DEBT.md
+approvalEvidence: review/PLAN-CMS-DEBT.md
 upstreamDocumentId: TDD-CMS-DEBT
-upstreamDocumentHash: 62dcfd4b0484dfc91099dfd28a2cd3949884e419d316d9e8da0336a229cf24d1
+upstreamDocumentHash: 24ff2bc9ff0955c2a5762dfb2f7b357058203893b1e96051aa41aa913d7a727c
 ---
 
 # CMS 历史债务治理实施计划
@@ -96,7 +96,7 @@ upstreamDocumentHash: 62dcfd4b0484dfc91099dfd28a2cd3949884e419d316d9e8da0336a229
 | 检查项 | 结果 | 证据 |
 |---|---|---|
 | 实施计划 checker | PASS | `node mango-pmo/tools/check-implementation-plan.mjs --document mango-docs/designs/cms-architecture-debt/implementation-plan.md`，2026-07-14 通过 |
-| 生命周期 handoff | 待书面复核后执行 | 上游摘要已记录，待文档批准后执行完整阶段移交 |
-| 依赖图 | 已设计 | TASK-001→TASK-002→TASK-003→TASK-004；TASK-001→TASK-005→TASK-006；最后 TASK-007，无环 |
+| 生命周期 handoff | PASS | `node mango-pmo/tools/check-lifecycle-handoff.mjs --brd mango-docs/designs/cms-architecture-debt/business-requirements.md --srs mango-docs/designs/cms-architecture-debt/system-requirements.md --tdd mango-docs/designs/cms-architecture-debt/technical-design.md --plan mango-docs/designs/cms-architecture-debt/implementation-plan.md --risk L3` |
+| 依赖图 | PASS | TASK-001→TASK-002→TASK-003→TASK-004；TASK-001→TASK-005→TASK-006；最后 TASK-007，无环 |
 | 未关闭阻断数量 | 0 | RISK-001 至 RISK-003 均有预防和应对，无开放阻断 |
-| 实施审批 | 待书面复核 | `review/PROPOSAL-CMS-DEBT.md` 记录方案方向批准，书面规格待用户复核 |
+| 实施审批 | APPROVED | `review/PLAN-CMS-DEBT.md` |
