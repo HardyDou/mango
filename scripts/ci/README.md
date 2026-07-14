@@ -1,40 +1,34 @@
-# GitHub 到内网 Jenkins 发布桥接
+# GitHub Release 到内网 Jenkins 主动发布
 
-GitHub 保留 PR、主分支和手工发布入口。公网前置 Job 校验 main 后只把受批准的桥接脚本作为短期 artifact 交给内网 `mango-release` Self-hosted Runner，Runner 无需克隆 Mango 仓库，主动调用只在内网可达的 Jenkins；Jenkins 再使用精确 Git SHA 执行 Maven 非 app 发布批次，并把最终状态经 Runner 返回 GitHub。
+GitHub 只负责公开仓库的 PR、合并、tag 和 Release。GitHub Release 发布后，公网 GitHub-hosted Runner 在数秒内校验 tag、精确 SHA、`main` 可达性、版本锁和 CHANGELOG，并给该 Release 附加唯一机器授权清单 `mango-internal-release-request-v1.json`。GitHub 不再连接内网，也不再依赖私有 Self-hosted Runner。
+
+内网 Jenkins Job `mango-github-release-watcher` 每两分钟读取公开 Release feed，只消费带上述授权清单的新 Release。它先校验清单、tag、SHA、版本锁和防倒退规则，再以精确参数调用 `mango-maven-release`。源码优先从内网 Gitea 镜像读取；镜像延迟超过 15 秒时只读拉取 GitHub 上同一个精确 SHA，避免等待 Gitea 的 10–20 分钟镜像周期。制品始终只由内网 Jenkins 发布到 Nexus。
 
 ## 入口
 
-- GitHub Workflow：`.github/workflows/maven-release.yml`
-- Runner 桥接脚本：`scripts/ci/jenkins-release-bridge.sh`
-- Jenkins Pipeline：`jenkins/mango-maven-release.Jenkinsfile`
-- Jenkins Job 配置：`jenkins/mango-maven-release-job.xml`
-- Jenkins Job：`mango-maven-release`
+- GitHub 请求 Workflow：`.github/workflows/maven-release.yml`
+- 内网轮询器：`scripts/ci/github-release-jenkins-poller.sh`
+- 轮询 Pipeline：`jenkins/mango-github-release-watcher.Jenkinsfile`
+- 轮询 Job 配置：`jenkins/mango-github-release-watcher-job.xml`
+- Maven Pipeline：`jenkins/mango-maven-release.Jenkinsfile`
+- Maven Job 配置：`jenkins/mango-maven-release-job.xml`
+- Jenkins Job：`mango-github-release-watcher` -> `mango-maven-release`
 
-Job XML 内联的是上述 Jenkinsfile 的完全一致快照，单元测试会阻止两者漂移。这样 Jenkins 启动构建时无需先为读取 Jenkinsfile 克隆整仓。Pipeline 首次检出精确 SHA 后保留工作区的 Git 对象库；后续构建先执行 `reset --hard` 和 `clean -ffdx`，只获取新增对象并且不下载无关 tags。
+两个 Job XML 都内联对应 Jenkinsfile 的完全一致快照，测试会阻止漂移。Jenkins 启动构建时无需为了读取 Pipeline 再克隆整仓。
 
-GitHub Workflow 只允许从 `main` 手工执行，默认 `dry_run=true`。正式发布要求输入版本等于 `mango-ui/packages/mango-cli/release-versions.json` 的 `maven.mangoBackend`，并要求 `CHANGELOG.md` 已记录该 Maven 版本。
+## 幂等、防倒退和失败处理
 
-## 内网 Runner 配置
+Jenkins 状态保存在 `${JENKINS_HOME}/release-state/mango/ledger.tsv`：
 
-Runner 使用标签：
+- 部署时先用 `bootstrap` 把既有 Release 记为基线，历史版本不会重放。
+- 没有机器授权清单的 Release 永远不会发布。
+- 不含 Maven 版本的 Release 记为 `ignored-no-maven`，不会误触发后端发布。
+- 只有精确 tag/SHA 和版本合同校验完成后才写入 `claimed`。
+- Nexus 回查全部成功后写入 `success`；发布失败写入 `failed`。
+- `claimed`、`failed` 和 `success` 都不会被定时任务自动重试，避免不可变 Maven 制品在部分 deploy 后被覆盖。
+- 低于或等于最近成功 Maven 版本的候选记为 `blocked-rollback`。
 
-```text
-self-hosted
-linux
-x64
-mango-release
-```
-
-以下配置只保存在 Runner 服务环境中，不提交仓库：
-
-```text
-JENKINS_URL
-JENKINS_USER
-JENKINS_API_TOKEN
-JENKINS_JOB=mango-maven-release
-```
-
-Jenkins API Token 不写入 Workflow、日志或 GitHub Secret。Runner 通过临时 `netrc` 调用 Jenkins，脚本退出时删除临时凭据文件。
+失败后的修复必须先判断 Nexus 已存在的坐标：已经上传的制品只做 `verify-existing`，未尝试的坐标才允许首次 publish；禁止整批盲目重跑。
 
 ## Jenkins 运行时配置
 
@@ -45,9 +39,7 @@ MANGO_RELEASE_REPO_URL
 MANGO_MAVEN_VERIFY_BASE_URL
 ```
 
-`MANGO_RELEASE_REPO_URL` 可以指向内网 Gitea 镜像；Pipeline 最多等待 60 秒让镜像出现 GitHub 指定 SHA，并验证该 SHA 可从镜像 `main` 到达。`MANGO_MAVEN_VERIFY_BASE_URL` 指向内网 Nexus Maven 消费仓库。
-
-Jenkins 首次缺少 Maven 3.9.9 时优先从高速镜像下载，随后使用 Apache 官方 `.sha512` 校验；镜像不可用时回退 Apache 官方归档。安装结果保存在 `${JENKINS_HOME}/.tools`，后续发布不会再次下载 Maven。
+`MANGO_RELEASE_REPO_URL` 指向内网 Gitea 的 `FrameWork/mango` 镜像。轮询公开 Atom feed 和公开 Release asset 不使用 GitHub API，因此不需要 GitHub Token，也不会消耗匿名 API 配额。Maven 发布凭据继续只保存在 Jenkins 的 `${JENKINS_HOME}/.m2/settings.xml`。
 
 正式发布固定调用：
 
@@ -58,13 +50,18 @@ scripts/publish-maven-batch.sh \
   --verify-base-url <internal-nexus-url>
 ```
 
-不会默认发布 `mango-app/**`、`*-app` 或 capability app 部署制品。发布凭据继续由 Jenkins 的 Maven `settings.xml` 管理。
+默认不发布 `mango-app/**`、`*-app` 或 capability app 部署制品。
 
-## 验证
+## GitHub Release 与最终完成语义
+
+GitHub Release 表示“公开版本已经授权内网消费”，不是 Nexus 发布完成。只有 Jenkins `mango-maven-release` 成功且目标 Nexus 的所有坐标回查通过，内网制品发布才算完成。GitHub Workflow 通常在数秒内完成；Jenkins 最迟约两分钟发现请求。
+
+## 验证与部署
 
 ```bash
-bash -n scripts/ci/jenkins-release-bridge.sh
+bash -n scripts/ci/github-release-jenkins-poller.sh
 node --test scripts/tests/jenkins-release-bridge.test.mjs
+node mango-pmo/tools/workspace-layout-check.mjs --root .
 ```
 
-首次联通只执行唯一 prerelease 版本的 dry-run；确认 GitHub、Runner、Jenkins 三段状态一致后，才允许在人工确认下执行 `dry_run=false`。
+部署顺序固定为：停用旧 GitHub 私有 Runner 发布入口；安装 watcher Job 但先不启用；执行 `bootstrap`；启用两分钟定时器；用一个不含 Maven 版本的唯一 prerelease 验证发现、去重和精确 SHA（只会记录 `ignored-no-maven`，不会调用 Maven 发布 Job）；最后才允许正式 Release 自动发布。禁止双入口同时正式 deploy。需要验证 Maven dry-run 时，只能从 Jenkins 手工参数入口执行。

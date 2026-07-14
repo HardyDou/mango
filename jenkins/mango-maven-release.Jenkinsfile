@@ -23,6 +23,7 @@ pipeline {
     MAVEN_ARGS = "-s ${JENKINS_HOME}/.m2/settings.xml"
     LANG = 'C.UTF-8'
     LC_ALL = 'C.UTF-8'
+    MANGO_RELEASE_FALLBACK_REPO_URL = 'https://github.com/HardyDou/mango.git'
   }
 
   stages {
@@ -67,22 +68,38 @@ pipeline {
               git remote add origin "${MANGO_RELEASE_REPO_URL}"
             fi
             fetched=false
-            for attempt in $(seq 1 12); do
+            for attempt in $(seq 1 3); do
               if git fetch --force --no-tags origin "${GIT_SHA}"; then
                 fetched=true
                 break
               fi
-              echo "Commit is not visible from the configured mirror yet; retry ${attempt}/12."
+              echo "Commit is not visible from the configured mirror yet; retry ${attempt}/3."
               sleep 5
             done
+            if [ "${fetched}" != "true" ]; then
+              echo "Mirror is delayed; fetching the exact public release commit without waiting for the next mirror cycle."
+              git remote remove release-fallback 2>/dev/null || true
+              git remote add release-fallback "${MANGO_RELEASE_FALLBACK_REPO_URL}"
+              git fetch --force --no-tags release-fallback "${GIT_SHA}"
+              fetched=true
+            fi
             if [ "${fetched}" != "true" ]; then
               echo "Unable to fetch requested commit: ${GIT_SHA}" >&2
               exit 1
             fi
             git checkout --detach "${GIT_SHA}"
             test "$(git rev-parse HEAD)" = "${GIT_SHA}"
-            git fetch --force --no-tags origin main
-            git merge-base --is-ancestor "${GIT_SHA}" FETCH_HEAD
+            main_ready=false
+            if git fetch --force --no-tags origin main &&
+              git merge-base --is-ancestor "${GIT_SHA}" FETCH_HEAD; then
+              main_ready=true
+            fi
+            if [ "${main_ready}" != "true" ]; then
+              git remote remove release-fallback 2>/dev/null || true
+              git remote add release-fallback "${MANGO_RELEASE_FALLBACK_REPO_URL}"
+              git fetch --force --no-tags release-fallback main
+              git merge-base --is-ancestor "${GIT_SHA}" FETCH_HEAD
+            fi
             git status --short --branch
           '''
         }
