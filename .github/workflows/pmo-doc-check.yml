@@ -58,7 +58,7 @@ jobs:
           node mango-pmo/tests/skills/check-skill-evals.mjs
 
       - name: Build and verify the reproducible PMO package
-        if: steps.scope.outputs.pmo == 'true'
+        if: steps.scope.outputs.pmo == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           node mango-ui/packages/mango-pmo/scripts/build-package.mjs
           node mango-ui/packages/mango-pmo/scripts/check-package.mjs
