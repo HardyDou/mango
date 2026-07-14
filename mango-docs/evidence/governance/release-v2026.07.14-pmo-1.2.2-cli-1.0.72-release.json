@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v2026.07.14-pmo-1.2.2-cli-1.0.72-release",
+  "releaseUrl": "https://github.com/HardyDou/mango/releases/tag/v2026.07.14-pmo-1.2.2-cli-1.0.72-release",
+  "implementationPullRequest": "https://github.com/HardyDou/mango/pull/473",
+  "releaseRecordPullRequest": "https://github.com/HardyDou/mango/pull/475",
+  "mergeCommit": "4ca66ebf9c898083aa89729737213f49d6fb3515",
+  "tagObject": "add6da4eddae8d641ad12d308b1115ea57dcc31d",
+  "tagTarget": "4ca66ebf9c898083aa89729737213f49d6fb3515",
+  "publishedAt": "2026-07-14T02:40:48Z",
+  "manifestCompletedAt": "2026-07-14T02:41:08.818Z",
+  "manifestCompleted": true,
+  "manifestConfigDigest": "4a3d4083db105c16695a434330df50c730e9cc471693f971991add4de380920a",
+  "artifacts": [
+    {
+      "kind": "maven",
+      "coordinate": "io.mango:*:1.0.17",
+      "status": "UNCHANGED_NOT_APPLICABLE",
+      "reason": "This npm-only PMO and CLI release keeps Mango Maven 1.0.17 unchanged and does not republish it."
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/pmo@1.2.2",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-Upc6ikaTq+HVCoWHfvR45gsC8nwPSHwJrzBBmexl+yOz8pu1V9xo4SLzK0LszxHAmvTepwUnfVBd5F8KDYZpxg==",
+      "shasum": "cecdf516d4e2103a764ad1089d5c61e6d3a2d81c",
+      "bundleSha256": "72d05d0aa0c6084c0552e0b727558a5d8dbea1414e334c6e6bf634cabdcf391f",
+      "sourceCommit": "4ca66ebf9c898083aa89729737213f49d6fb3515",
+      "manifestFileCount": 127,
+      "packageFileCount": 159,
+      "verifiedExecutableModes": {
+        "tools/audit-backend-test-mocks.mjs": "0755",
+        "tools/delivery-contract-check.mjs": "0755",
+        "tools/pmo-preflight.mjs": "0755"
+      },
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/cli@1.0.72",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-YCffitEBCXrRpm33CYR5/7z8CF1yKOitwf1MeSzMEdUJy8BnPubyucF0JHM4rqlCKTG5n16/yTjpjuehGdPHaQ==",
+      "shasum": "caf37cd7d4ea8b2904b4ee68f359f73a8092689c",
+      "packageFileCount": 77,
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "Latest",
+      "consumeRepository": "https://hardydou.github.io/mango/",
+      "status": "VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "v2026.07.14-pmo-1.2.2-cli-1.0.72-release",
+      "status": "NOT_APPLICABLE",
+      "reason": "npm-only releases verify Latest without creating a Maven documentation snapshot."
+    }
+  ],
+  "stateSummary": {
+    "source": "passed",
+    "versions": "passed",
+    "changelog": "passed",
+    "readmes": "passed",
+    "tests": "passed",
+    "pr": "passed",
+    "tag": "passed",
+    "github-release": "passed",
+    "maven": "not_applicable",
+    "npm": "passed",
+    "cli-lock": "passed",
+    "private-registry-publish": "passed",
+    "private-registry-consume-verify": "passed",
+    "docs-latest": "passed",
+    "docs-snapshot": "not_applicable",
+    "post-verify": "passed",
+    "cleanup": "passed"
+  },
+  "releaseExecution": {
+    "freshManifest": true,
+    "repairInvoked": false,
+    "publishInvocations": 1,
+    "immutableStateAttempts": {
+      "tag": 1,
+      "github-release": 1,
+      "npm": 1
+    },
+    "result": "COMPLETE"
+  },
+  "finalVerification": {
+    "requiredCheck": "PMO Documentation Checks / pmo-doc-check",
+    "implementationCheckResult": "PASS",
+    "implementationCheckDuration": "7m07s",
+    "implementationCheckRun": "https://github.com/HardyDou/mango/actions/runs/29301000220",
+    "releaseRecordCheckResult": "PASS",
+    "releaseRecordCheckDuration": "1m00s",
+    "releaseRecordCheckRun": "https://github.com/HardyDou/mango/actions/runs/29301554046",
+    "npmHostedVerification": "PASS",
+    "npmConsumeVerification": "PASS",
+    "publishedPmoPackageRootVerification": "PASS",
+    "publishedPmoExecutableModeVerification": "PASS",
+    "cliReleaseLock": "PASS",
+    "githubReleaseNotes": "PASS",
+    "docsLatest": "PASS",
+    "cleanCliConsumer": {
+      "coordinate": "@mango/cli@1.0.72",
+      "command": "npm install --prefix .runtime/release-cli-consumer-1.0.72 @mango/cli@1.0.72 --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "installResult": "PASS",
+      "helpResult": "PASS"
+    }
+  }
+}
