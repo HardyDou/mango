@@ -11,23 +11,22 @@ import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.JavaParameter;
 import com.tngtech.archunit.core.domain.JavaParameterizedType;
 import com.tngtech.archunit.core.domain.JavaType;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
 
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-/** Bytecode architecture checks. Every Reactor class directory is imported in one ArchUnit pass. */
+/** Bytecode architecture checks. Reactor subjects and internal dependency bytecode are imported in one pass. */
 public final class MangoArchUnitChecker {
 
     private static final String REST_CONTROLLER =
@@ -152,38 +151,42 @@ public final class MangoArchUnitChecker {
 
     public List<ArchitectureIssue> check(Map<Path, ModuleRole> classDirectories) {
         Map<Path, ModuleRole> normalized = normalizeAndValidate(classDirectories);
-        return importAndCheck(normalized, Map.of(), false);
+        return importAndCheck(normalized, Map.of(), List.of(), false);
     }
 
     public List<ArchitectureIssue> check(
             Map<Path, ModuleRole> classDirectories, Map<Path, ModuleContract> moduleContracts) {
+        return check(classDirectories, moduleContracts, List.of());
+    }
+
+    public List<ArchitectureIssue> check(
+            Map<Path, ModuleRole> classDirectories,
+            Map<Path, ModuleContract> moduleContracts,
+            Collection<Path> dependencyClasspath) {
         Map<Path, ModuleRole> normalized = normalizeAndValidate(classDirectories);
         Map<Path, ModuleContract> normalizedContracts = new LinkedHashMap<>();
         moduleContracts.forEach(
                 (path, contract) ->
                         normalizedContracts.put(path.toAbsolutePath().normalize(), contract));
-        return importAndCheck(normalized, normalizedContracts, true);
+        return importAndCheck(normalized, normalizedContracts, dependencyClasspath, true);
     }
 
     private List<ArchitectureIssue> importAndCheck(
             Map<Path, ModuleRole> normalized,
             Map<Path, ModuleContract> moduleContracts,
+            Collection<Path> dependencyClasspath,
             boolean requireFeignContract) {
-        JavaClasses classes;
-        try {
-            classes = new ClassFileImporter().importPaths(normalized.keySet());
-        } catch (RuntimeException exception) {
-            throw new IllegalStateException(
-                    "MANGO-ARCH-ENGINE-002 ArchUnit failed to import Reactor bytecode", exception);
-        }
-        if (classes.isEmpty()) {
+        ArchUnitImportScope importScope =
+                ArchUnitImportScope.load(normalized.keySet(), dependencyClasspath);
+        if (importScope.classes().isEmpty()) {
             throw new IllegalStateException("MANGO-ARCH-ENGINE-003 ArchUnit imported zero classes");
         }
         return check(
-                classes,
+                importScope.classes(),
                 javaClass -> roleOf(javaClass, normalized),
-                javaClass -> valueOf(javaClass, moduleContracts),
-                requireFeignContract);
+                javaClass -> ArchUnitImportScope.valueOf(javaClass, moduleContracts),
+                requireFeignContract,
+                importScope::isSubject);
     }
 
     public List<ArchitectureIssue> check(
@@ -203,9 +206,19 @@ public final class MangoArchUnitChecker {
             Function<JavaClass, ModuleRole> roleResolver,
             Function<JavaClass, ModuleContract> contractResolver,
             boolean requireFeignContract) {
+        return check(classes, roleResolver, contractResolver, requireFeignContract, ignored -> true);
+    }
+
+    private List<ArchitectureIssue> check(
+            JavaClasses classes,
+            Function<JavaClass, ModuleRole> roleResolver,
+            Function<JavaClass, ModuleContract> contractResolver,
+            boolean requireFeignContract,
+            Predicate<JavaClass> subjectFilter) {
         List<ArchitectureIssue> issues = new ArrayList<>();
         Map<String, JavaClass> feignContexts = new LinkedHashMap<>();
-        List<JavaClass> orderedClasses = orderedClasses(classes);
+        List<JavaClass> orderedClasses =
+                orderedClasses(classes).stream().filter(subjectFilter).toList();
         Map<String, BeanRegistration> beanRegistrations = beanRegistrations(orderedClasses);
         for (JavaClass javaClass : orderedClasses) {
             ModuleRole role = roleResolver.apply(javaClass);
@@ -405,31 +418,12 @@ public final class MangoArchUnitChecker {
     }
 
     private ModuleRole roleOf(JavaClass javaClass, Map<Path, ModuleRole> roots) {
-        ModuleRole role = valueOf(javaClass, roots);
+        ModuleRole role = ArchUnitImportScope.valueOf(javaClass, roots);
         if (role == null) {
             throw new IllegalStateException(
                     "MANGO-ARCH-ENGINE-004 class is outside Reactor roots: " + javaClass.getName());
         }
         return role;
-    }
-
-    private <T> T valueOf(JavaClass javaClass, Map<Path, T> roots) {
-        URI uri =
-                javaClass
-                        .getSource()
-                        .orElseThrow(
-                                () ->
-                                        new IllegalStateException(
-                                                "MANGO-ARCH-ENGINE-004 class has no bytecode"
-                                                        + " source: "
-                                                        + javaClass.getName()))
-                        .getUri();
-        Path source = Path.of(uri).toAbsolutePath().normalize();
-        return roots.entrySet().stream()
-                .filter(entry -> source.startsWith(entry.getKey()))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(null);
     }
 
     private void checkController(

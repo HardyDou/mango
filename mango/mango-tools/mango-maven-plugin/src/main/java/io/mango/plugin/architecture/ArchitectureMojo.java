@@ -15,10 +15,12 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectDependenciesResolver;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -74,6 +76,7 @@ public final class ArchitectureMojo extends AbstractMojo {
     private static final String MODULE_PROPERTIES =
             "src/main/resources/META-INF/mango/module.properties";
     private static final String ENTITY_RULE_PREFIX = "MANGO-ARCH-ENTITY-";
+    private static final String MANGO_GROUP_PREFIX = "io.mango";
     private static final String GENERATED_SOURCE_MARKER = "/target/generated-sources/";
     private static final String DEPENDENCY_ARROW = " ->";
     private static final String REFERENCE_ARROW = "-> ";
@@ -82,6 +85,8 @@ public final class ArchitectureMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
+
+    @Component private ProjectDependenciesResolver projectDependenciesResolver;
 
     @Parameter(
             defaultValue =
@@ -139,7 +144,15 @@ public final class ArchitectureMojo extends AbstractMojo {
         validateReservedNamespaces(inputs.sourceDirectories());
         Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts =
                 moduleContracts(inputs.classDirectoryArtifacts());
-        List<ArchitectureIssue> bytecodeIssues = checkBytecode(inputs, moduleContracts);
+        Set<Path> internalDependencyClasspath =
+                new InternalDependencyClasspathResolver(projectDependenciesResolver)
+                        .resolve(
+                                session,
+                                session.getProjects(),
+                                inputs.classDirectories().keySet(),
+                                internalDependencyGroupPrefixes());
+        List<ArchitectureIssue> bytecodeIssues =
+                checkBytecode(inputs, moduleContracts, internalDependencyClasspath);
         ClassOwnership classOwnership =
                 collectClassOwnership(
                         inputs.classDirectoryArtifacts(), inputs.classDirectoryModules());
@@ -271,14 +284,28 @@ public final class ArchitectureMojo extends AbstractMojo {
     }
 
     private List<ArchitectureIssue> checkBytecode(
-            ReactorInputs inputs, Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts)
+            ReactorInputs inputs,
+            Map<Path, MangoArchUnitChecker.ModuleContract> moduleContracts,
+            Set<Path> internalDependencyClasspath)
             throws MojoExecutionException {
         MangoArchUnitChecker checker =
                 new MangoArchUnitChecker(
                         Set.copyOf(allowedReverseControllers),
                         GlobalEntityManifestLoader.load(
                                 rootDirectory.toPath(), toPath(globalEntityManifest)));
-        return checker.check(inputs.classDirectories(), moduleContracts);
+        return checker.check(
+                inputs.classDirectories(), moduleContracts, internalDependencyClasspath);
+    }
+
+    private Set<String> internalDependencyGroupPrefixes() {
+        Set<String> prefixes = new LinkedHashSet<>();
+        prefixes.add(MANGO_GROUP_PREFIX);
+        if (businessGroupPrefixes != null) {
+            businessGroupPrefixes.stream()
+                    .filter(prefix -> prefix != null && !prefix.isBlank())
+                    .forEach(prefixes::add);
+        }
+        return prefixes;
     }
 
     private List<ArchitectureIssue> checkSources(ReactorInputs inputs)
@@ -1581,7 +1608,10 @@ public final class ArchitectureMojo extends AbstractMojo {
     }
 
     private static Path toPath(File file) {
-        return file == null ? null : file.toPath();
+        if (file == null) {
+            return null;
+        }
+        return file.toPath();
     }
 
     public record ArchitectureReport(

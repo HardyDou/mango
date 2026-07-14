@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -22,6 +23,10 @@ import io.mango.architecture.ModuleRole;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.DependencyResolutionResult;
+import org.apache.maven.project.ProjectDependenciesResolver;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.Dependency;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -156,6 +161,95 @@ class ArchitectureMojoTest {
                 Set.copyOf(sourceDirectories));
         assertEquals(Set.of(classes.toAbsolutePath().normalize()), classDirectories.keySet());
         assertEquals(Map.of(classes.toAbsolutePath().normalize(), "."), classDirectoryModules);
+    }
+
+    @Test
+    void partialReactorUsesOnlyActualInternalDependencyClosure(@TempDir Path root)
+            throws Exception {
+        Path reactorClasses = root.resolve("order-starter/target/classes");
+        Path coreJar = root.resolve("repository/order-core-2.jar");
+        Path apiJar = root.resolve("repository/order-api-3.jar");
+        Path unrelatedJar = root.resolve("repository/unrelated-1.jar");
+        Files.createDirectories(reactorClasses);
+        Files.createDirectories(coreJar.getParent());
+        Files.createFile(coreJar);
+        Files.createFile(apiJar);
+        Files.createFile(unrelatedJar);
+
+        MavenProject project = new MavenProject();
+        project.setGroupId("io.mango.test");
+        project.setArtifactId("order-starter");
+        DependencyResolutionResult result = mock(DependencyResolutionResult.class);
+        when(result.getUnresolvedDependencies()).thenReturn(List.of());
+        when(result.getResolvedDependencies())
+                .thenReturn(List.of(
+                        dependency("io.mango.test", "order-core", "2", coreJar),
+                        dependency("io.mango.test", "order-api", "3", apiJar),
+                        dependency("org.example", "unrelated", "1", unrelatedJar)));
+        ProjectDependenciesResolver resolver = mock(ProjectDependenciesResolver.class);
+        when(resolver.resolve(any())).thenReturn(result);
+        MavenSession session = mock(MavenSession.class);
+        Set<Path> classpath = new InternalDependencyClasspathResolver(resolver)
+                .resolve(session, List.of(project), Set.of(reactorClasses), Set.of("io.mango"));
+
+        assertEquals(Set.of(reactorClasses, coreJar, apiJar), classpath);
+    }
+
+    @Test
+    void unresolvedInternalDependencyFailsClosed(@TempDir Path root) throws Exception {
+        MavenProject project = new MavenProject();
+        project.setArtifactId("order-starter");
+        DependencyResolutionResult result = mock(DependencyResolutionResult.class);
+        when(result.getUnresolvedDependencies())
+                .thenReturn(List.of(dependency(
+                        "io.mango.test", "order-core", "2", root.resolve("missing.jar"))));
+        ProjectDependenciesResolver resolver = mock(ProjectDependenciesResolver.class);
+        when(resolver.resolve(any())).thenReturn(result);
+
+        var error = assertThrows(
+                org.apache.maven.plugin.MojoExecutionException.class,
+                () -> new InternalDependencyClasspathResolver(resolver)
+                        .resolve(
+                                mock(MavenSession.class),
+                                List.of(project),
+                                Set.of(),
+                                Set.of("io.mango")));
+
+        assertTrue(error.getMessage().contains("MANGO-ARCH-ENGINE-010"));
+        assertTrue(error.getMessage().contains("order-core"));
+    }
+
+    @Test
+    void resolvedInternalDependencyWithoutFileFailsClosed() throws Exception {
+        MavenProject project = new MavenProject();
+        project.setArtifactId("order-starter");
+        DefaultArtifact artifact =
+                new DefaultArtifact("io.mango.test", "order-core", "jar", "2");
+        DependencyResolutionResult result = mock(DependencyResolutionResult.class);
+        when(result.getUnresolvedDependencies()).thenReturn(List.of());
+        when(result.getResolvedDependencies())
+                .thenReturn(List.of(new Dependency(artifact, "compile")));
+        ProjectDependenciesResolver resolver = mock(ProjectDependenciesResolver.class);
+        when(resolver.resolve(any())).thenReturn(result);
+
+        var error = assertThrows(
+                org.apache.maven.plugin.MojoExecutionException.class,
+                () -> new InternalDependencyClasspathResolver(resolver)
+                        .resolve(
+                                mock(MavenSession.class),
+                                List.of(project),
+                                Set.of(),
+                                Set.of("io.mango")));
+
+        assertTrue(error.getMessage().contains("MANGO-ARCH-ENGINE-010"));
+        assertTrue(error.getMessage().contains("no resolved file"));
+    }
+
+    private Dependency dependency(
+            String groupId, String artifactId, String version, Path file) {
+        DefaultArtifact artifact = new DefaultArtifact(
+                groupId, artifactId, "", "jar", version, Map.of(), file.toFile());
+        return new Dependency(artifact, "compile");
     }
 
     @Test

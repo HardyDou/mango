@@ -11,9 +11,12 @@ import java.net.URISyntaxException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -710,6 +713,90 @@ class MangoArchUnitCheckerTest {
         List<ArchitectureIssue> worktreeIssues = checker.check(Map.of(testClasses, ModuleRole.OTHER));
         List<ArchitectureIssue> ordinaryIssues = checker.check(Map.of(ordinaryClasses, ModuleRole.OTHER));
         assertThat(worktreeIssues).isNotEmpty().isEqualTo(ordinaryIssues);
+    }
+
+    @Test
+    void partialReactorResolvesContractsFromInternalDependencyClasspath(
+            @TempDir Path temporaryDirectory) throws IOException {
+        Path reactorClasses = temporaryDirectory.resolve("reactor-classes");
+        Path dependencyClasses = temporaryDirectory.resolve("dependency-classes");
+        compileClasses(
+                dependencyClasses,
+                Map.of(
+                        "fixture/ExternalApi.java", "package fixture; public interface ExternalApi {}",
+                        "fixture/IExternalService.java",
+                                "package fixture; public interface IExternalService {}",
+                        "fixture/DependencyController.java",
+                                """
+                                package fixture;
+                                import org.springframework.web.bind.annotation.RestController;
+                                @RestController
+                                public final class DependencyController {}
+                                """),
+                System.getProperty("java.class.path"));
+        compileClasses(
+                reactorClasses,
+                Map.of(
+                        "fixture/PartialController.java",
+                                """
+                                package fixture;
+                                import org.springframework.web.bind.annotation.RestController;
+                                @RestController
+                                public final class PartialController implements ExternalApi {
+                                    private final IExternalService service = null;
+                                }
+                                """),
+                System.getProperty("java.class.path")
+                        + System.getProperty("path.separator")
+                        + dependencyClasses);
+
+        assertThat(checker.check(Map.of(reactorClasses, ModuleRole.STARTER)))
+                .extracting(ArchitectureIssue::ruleId)
+                .contains("MANGO-ARCH-TYPE-002", "MANGO-ARCH-TYPE-003");
+        List<ArchitectureIssue> resolvedIssues = checker.check(
+                Map.of(reactorClasses, ModuleRole.STARTER), Map.of(), Set.of(dependencyClasses));
+        assertThat(resolvedIssues)
+                .extracting(ArchitectureIssue::ruleId)
+                .doesNotContain("MANGO-ARCH-TYPE-002", "MANGO-ARCH-TYPE-003");
+        assertThat(resolvedIssues)
+                .noneMatch(issue -> issue.subject().contains("DependencyController"));
+    }
+
+    @Test
+    void duplicateDependencyBytecodeFailsClosed(@TempDir Path temporaryDirectory)
+            throws IOException {
+        Path reactorClasses = temporaryDirectory.resolve("reactor-classes");
+        Path dependencyClasses = temporaryDirectory.resolve("dependency-classes");
+        Map<String, String> duplicate =
+                Map.of("fixture/Duplicate.java", "package fixture; public class Duplicate {}");
+        compileClasses(reactorClasses, duplicate, System.getProperty("java.class.path"));
+        compileClasses(dependencyClasses, duplicate, System.getProperty("java.class.path"));
+
+        assertThatThrownBy(() -> checker.check(
+                        Map.of(reactorClasses, ModuleRole.STARTER),
+                        Map.of(),
+                        Set.of(dependencyClasses)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("MANGO-ARCH-ENGINE-027")
+                .hasMessageContaining("fixture.Duplicate");
+    }
+
+    private void compileClasses(Path output, Map<String, String> sources, String classpath)
+            throws IOException {
+        Path sourceRoot = output.resolveSibling(output.getFileName() + "-sources");
+        Files.createDirectories(output);
+        List<String> sourceFiles = new ArrayList<>();
+        for (Map.Entry<String, String> source : sources.entrySet()) {
+            Path sourceFile = sourceRoot.resolve(source.getKey());
+            Files.createDirectories(sourceFile.getParent());
+            Files.writeString(sourceFile, source.getValue());
+            sourceFiles.add(sourceFile.toString());
+        }
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        List<String> arguments = new ArrayList<>(
+                List.of("--release", "17", "-classpath", classpath, "-d", output.toString()));
+        arguments.addAll(sourceFiles);
+        assertThat(compiler.run(null, null, null, arguments.toArray(String[]::new))).isZero();
     }
 
     private void copyTree(Path source, Path target) throws IOException {
