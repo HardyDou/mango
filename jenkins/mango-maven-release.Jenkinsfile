@@ -111,7 +111,7 @@ pipeline {
           sh '''#!/usr/bin/env bash
             set -euo pipefail
             locked_version="$(awk -F'"' '/"mangoBackend"/ {print $4; exit}' mango-ui/packages/mango-cli/release-versions.json)"
-            if ! printf '%s' "${locked_version}" | grep -Eq '^[0-9]+(\.[0-9]+){2,}([-+][0-9A-Za-z][0-9A-Za-z.-]*)?$'; then
+            if ! printf '%s' "${locked_version}" | grep -Eq '^[0-9]+([.][0-9]+){2,}([-+][0-9A-Za-z][0-9A-Za-z.-]*)?$'; then
               echo "Unable to read a valid Mango backend lock from release-versions.json: ${locked_version}" >&2
               exit 1
             fi
