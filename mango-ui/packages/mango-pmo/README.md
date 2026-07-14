@@ -9,7 +9,7 @@
 | 能力 | 入口 | 说明 |
 |------|------|------|
 | 构建 baseline | `pnpm -F @mango/pmo build` | 复制 `mango-pmo` 到 `dist/baseline` |
-| 校验 baseline | `pnpm -F @mango/pmo check` | 校验必备文件、manifest hash 和 preflight |
+| 校验 baseline | `pnpm -F @mango/pmo check` | 校验必备文件、manifest、preflight 及真实 `pnpm pack` 的 hash、size、mode |
 | 发布 manifest | `dist/baseline.json` | 记录 package version、source commit、bundle hash、contract revision 和逐文件元数据 |
 | Codex plugin 投影 | `.codex-plugin`、`skills` | npm 包根可安装插件；版本由 build 从 package metadata 生成 |
 | 业务同步 | `mango pmo sync/upgrade` | CLI 从本包安装业务仓 baseline |
@@ -26,12 +26,12 @@ pnpm -F @mango/pmo check
 业务项目使用：
 
 ```bash
-npm view @mango/pmo@1.2.0 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.70 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.70 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.2.1 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.71 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.71 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 mango pmo status --project-dir .
-mango pmo upgrade --project-dir . --to 1.2.0 --dry-run
-mango pmo upgrade --project-dir . --to 1.2.0 --sync-shell
+mango pmo upgrade --project-dir . --to 1.2.1 --dry-run
+mango pmo upgrade --project-dir . --to 1.2.1 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
@@ -84,7 +84,7 @@ mango pmo check --project-dir . --locked
 1. 修改根目录 `mango-pmo/**`。
 2. 执行 `pnpm -F @mango/pmo build`。
 3. 执行 `pnpm -F @mango/pmo check`。
-4. 发布前执行 `pnpm -F @mango/pmo pack --dry-run` 确认 tarball 内容。
+4. `check` 会执行真实 `pnpm pack` 并逐文件校验 tarball；发布后还必须从消费仓库下载并运行 package-root 校验。
 5. 业务项目通过 `mango pmo upgrade --to <version>` 原子更新 baseline、项目锁和项目级 Skill。
 6. 使用 `mango pmo check --locked` 校验项目锁；需要恢复时执行 `mango pmo rollback`。
 
@@ -98,6 +98,7 @@ mango pmo check --project-dir . --locked
 | 项目 Skill changed / extra | `.agents/skills` 中 PMO 管理文件被修改或残留 | 执行 `mango pmo sync` 修复当前锁定版本 |
 | Codex 中未出现插件 | 项目 Skill 已同步不等于用户级 plugin 已安装 | 从 npm 包根插件投影执行独立 Codex plugin 安装流程并新开会话 |
 | npm tarball 缺 baseline | 发布前未 build 或 files 配置错误 | 执行 pack dry-run 并检查 `package.json` |
+| npm tarball 的工具 mode 与 manifest 不一致 | 打包器没有保留 manifest 声明的可执行权限 | 不发布该 tarball；同步 `publishConfig.executableFiles` 后重新执行 build/check，并使用新的补丁版本 |
 | `npm view` 返回 404 | 目标版本尚未进入消费仓库 | 等待发布状态机和 npm-group 回查完成，不使用源码目录冒充已发布包 |
 
 ## 10. 相关文档

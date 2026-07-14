@@ -1,5 +1,37 @@
 # Mango Changelog
 
+## v2026.07.14-pmo-1.2.1-cli-1.0.71-release - 2026-07-14
+
+### Fixed
+
+- Fix [Issue #464](https://github.com/HardyDou/mango/issues/464): `pnpm publish` normalized three PMO tool files to `0644` while the bundle manifest declared `0755`, causing business-project PMO upgrades to fail integrity verification.
+- Declare every manifest-owned executable through `publishConfig.executableFiles` so the PMO tarball preserves executable modes without weakening the bundle contract.
+- Run a real `pnpm pack` before publication and verify each packed baseline/plugin file's hash, size, and mode against the generated manifest.
+- Extend post-publication verification to reject a downloaded PMO tarball whose file mode differs from its manifest, with a regression test covering the exact `0755` to `0644` failure.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.71` from `npm-group` only after `@mango/pmo@1.2.1` and the CLI both resolve at their exact versions.
+2. Run `mango pmo upgrade --project-dir . --to 1.2.1 --dry-run`, review the plan, then run the upgrade and `mango pmo check --project-dir . --locked`.
+3. Do not use `@mango/pmo@1.2.0` / `@mango/cli@1.0.70` for business upgrades. Those immutable artifacts remain historical evidence of the packaging defect.
+4. Mango Maven remains `1.0.17`; this patch does not require a backend dependency upgrade.
+
+### Published Packages
+
+| Order | Target | Version / destination | Status |
+|---|---|---|---|
+| 1 | npm PMO bundle | `@mango/pmo@1.2.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
+| 2 | npm CLI | `@mango/cli@1.0.71` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
+| 3 | GitHub Release | `v2026.07.14-pmo-1.2.1-cli-1.0.71-release` | `PENDING` |
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `node --test mango-ui/packages/mango-cli/tests/pmo-bundle.test.mjs`
+- `node mango-ui/scripts/publish-package.mjs --verify-pmo-package-root=<extracted-package-root>` rejects the historical `@mango/pmo@1.2.0` tarball because its executable mode differs from the manifest.
+- Business consumer dry-run against `/Users/hardy/Work/Yunxin/baohan-system-mango-pmo-1.2.0`: local `@mango/cli@1.0.71` / `@mango/pmo@1.2.1` tarballs produced `add: 99, update: 36, delete: 0, skip: 30, warn: 0`; the business worktree remained unchanged.
+
 ## v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release - 2026-07-13
 
 ### Changed
@@ -24,13 +56,13 @@
 
 ### Published Packages
 
-The release state machine completed the following target batch and verified every consumable artifact through its configured consume endpoint.
+The release state machine completed the following target batch. Its 2026-07-13 verifier checked content hashes and sizes but omitted file modes; Issue #464 later invalidated the PMO/CLI upgrade pair, which is superseded by `@mango/pmo@1.2.1` / `@mango/cli@1.0.71`.
 
 | Order | Target | Version / destination | Status |
 |---|---|---|---|
 | 1 | Maven non-app backend batch | `io.mango:*:1.0.17` -> Nexus Maven hosted | `PUBLISHED_AND_VERIFIED` |
-| 2 | npm PMO bundle | `@mango/pmo@1.2.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
-| 3 | npm CLI | `@mango/cli@1.0.70` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.0` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED; SUPERSEDED_BY_1.2.1` |
+| 3 | npm CLI | `@mango/cli@1.0.70` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED; SUPERSEDED_BY_1.0.71` |
 | 4 | GitHub Release | `v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release` | `PUBLISHED` |
 
 ### Verification

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
@@ -207,12 +207,23 @@ test('published PMO package exports plugin Skills and rejects a tampered bundle'
       cpSync(join(pmoRoot, directory), join(packageRoot, directory), { recursive: true });
     }
     const skillPath = join(packageRoot, 'skills/mango-pmo-lifecycle/SKILL.md');
-    writeFileSync(skillPath, `${readFileSync(skillPath, 'utf8')}\ntampered\n`);
+    const originalSkill = readFileSync(skillPath, 'utf8');
+    writeFileSync(skillPath, `${originalSkill}\ntampered\n`);
     const tampered = runFailure([
       publishPackage,
       `--verify-pmo-package-root=${packageRoot}`,
     ], uiRoot);
     assert.match(tampered.stderr, /plugin file differs from its manifest/);
+
+    if (process.platform !== 'win32') {
+      writeFileSync(skillPath, originalSkill);
+      chmodSync(join(packageRoot, 'dist/baseline/tools/pmo-preflight.mjs'), 0o644);
+      const wrongMode = runFailure([
+        publishPackage,
+        `--verify-pmo-package-root=${packageRoot}`,
+      ], uiRoot);
+      assert.match(wrongMode.stderr, /baseline file differs from its manifest/);
+    }
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }

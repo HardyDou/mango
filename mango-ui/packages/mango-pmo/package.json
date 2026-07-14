@@ -1,6 +1,6 @@
 {
   "name": "@mango/pmo",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": false,
   "type": "module",
   "description": "Versioned Mango PMO baseline, document contracts, and lifecycle skills.",
@@ -19,7 +19,12 @@
     "./skills/*": "./skills/*"
   },
   "publishConfig": {
-    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+    "executableFiles": [
+      "dist/baseline/tools/audit-backend-test-mocks.mjs",
+      "dist/baseline/tools/delivery-contract-check.mjs",
+      "dist/baseline/tools/pmo-preflight.mjs"
+    ]
   },
   "scripts": {
     "build": "node scripts/build-package.mjs",
