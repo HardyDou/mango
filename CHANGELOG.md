@@ -18,11 +18,11 @@
 
 ### Published Packages
 
-| Order | Target | Version / destination | Pre-release status |
+| Order | Target | Version / destination | Status |
 |---|---|---|---|
-| 1 | npm link page package | `@mango/link-page@1.0.5` -> Nexus npm hosted | `PENDING_PUBLISH` |
-| 2 | npm CLI package | `@mango/cli@1.0.76` -> Nexus npm hosted | `PENDING_PUBLISH` |
-| 3 | GitHub Release | `v2026.07.14-link-page-1.0.5-cli-1.0.76-release` | `PENDING_CREATE` |
+| 1 | npm link page package | `@mango/link-page@1.0.5` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm CLI package | `@mango/cli@1.0.76` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 3 | GitHub Release | `v2026.07.14-link-page-1.0.5-cli-1.0.76-release` | `PUBLISHED` |
 
 ### Verification
 
