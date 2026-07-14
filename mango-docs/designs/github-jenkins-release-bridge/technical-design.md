@@ -29,7 +29,7 @@ upstreamDocumentHash: ced6e052286a1fa28d84ef35ff2cacfc87f2cb2df01978a845cb9b8244
 |---|---|---|---|---|---|---|---|---|
 | MOD-001 | `.github/workflows/maven-release.yml` | GitHub 手工入口、main 与版本前置检查、桥接脚本 artifact 交接、Runner 路由和结果摘要 | 新增 | 公网 Job 从批准 SHA 上传单文件短期 artifact；内网 Runner 不克隆 Mango 仓库，只下载该 artifact 并调用 Jenkins | Mango Maven Release 手工 Workflow | FR-001, UC-001, PG-001, BT-001 | rules/05-ai-delivery-quality.md | YAML 静态检查、Runner 无 checkout 断言与真实 workflow_dispatch dry-run |
 | MOD-002 | `scripts/ci/jenkins-release-bridge.sh` | 校验输入、隐藏凭据、触发 Jenkins、轮询队列和构建、传播取消与结果 | 新增 | 只依赖 curl、jq 和 Jenkins Remote API | GitHub Runner 内部桥接命令 | FR-001, DR-001, IR-001, NFR-001 | rules/backend/06-security.md | Node 测试使用假 Jenkins 响应覆盖成功和参数失败 |
-| MOD-003 | `jenkins/mango-maven-release.Jenkinsfile` | 精确检出、main 可达性、版本契约、Maven 工具缓存和非 app 发布 | 替换 Jenkins 内联定义 | Jenkinsfile 调用现有 Maven batch 脚本；Nexus 凭据继续由 Jenkins Maven 配置提供 | Jenkins `mango-maven-release` Pipeline | FR-001, SAC-001 | rules/05-ai-delivery-quality.md | Jenkins dry-run、精确 SHA 与 Nexus 版本前后对比 |
+| MOD-003 | `jenkins/mango-maven-release.Jenkinsfile`, `jenkins/mango-maven-release-job.xml` | 精确检出、main 可达性、版本契约、Maven 工具缓存和非 app 发布 | Job XML 内联与受版本控制 Jenkinsfile 完全一致的 Pipeline 快照 | Jenkins 启动时不为读取 Jenkinsfile 预先克隆整仓；Pipeline 只按批准 SHA 检出一次并调用现有 Maven batch 脚本；Nexus 凭据继续由 Jenkins Maven 配置提供 | Jenkins `mango-maven-release` Pipeline | FR-001, SAC-001 | rules/05-ai-delivery-quality.md | 单元测试比较内联脚本与 Jenkinsfile；Jenkins dry-run、精确 SHA 与 Nexus 版本前后对比 |
 
 ## 3. 技术对象与状态模型
 

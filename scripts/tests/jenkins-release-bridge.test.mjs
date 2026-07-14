@@ -45,6 +45,10 @@ test('bridge maps a successful Jenkins build to success without printing the API
   await writeFile(fakeCurl, `#!/usr/bin/env bash
 set -euo pipefail
 args="$*"
+if [[ "$args" == *"jenkins.ui.internal"* && "$args" == *"api/json"* ]]; then
+  printf 'build API must use the configured internal Jenkins URL\n' >&2
+  exit 8
+fi
 if [[ "$args" == *"buildWithParameters"* ]]; then
   headers=""
   while [[ $# -gt 0 ]]; do
@@ -54,7 +58,7 @@ if [[ "$args" == *"buildWithParameters"* ]]; then
   printf 'HTTP/1.1 201 Created\\r\\nLocation: http://jenkins.internal:8081/queue/item/7/\\r\\n\\r\\n' > "$headers"
   printf '201'
 elif [[ "$args" == *"/queue/item/7/api/json"* ]]; then
-  printf '{"cancelled":false,"executable":{"url":"http://jenkins.internal:8081/job/mango-maven-release/42/"}}'
+  printf '{"cancelled":false,"executable":{"url":"https://jenkins.ui.internal/job/mango-maven-release/42/"}}'
 elif [[ "$args" == *"/job/mango-maven-release/42/api/json"* ]]; then
   printf '{"building":false,"result":"SUCCESS","number":42,"url":"http://jenkins.internal:8081/job/mango-maven-release/42/"}'
 else
@@ -79,6 +83,7 @@ fi
   const outputs = await readFile(outputFile, 'utf8')
   assert.match(outputs, /jenkins_build_number=42/)
   assert.match(outputs, /jenkins_result=SUCCESS/)
+  assert.match(outputs, /jenkins_build_url=https:\/\/jenkins\.ui\.internal\/job\/mango-maven-release\/42\//)
 })
 
 test('tracked Jenkins pipeline publishes only the governed non-app batch at the exact SHA', async () => {
@@ -99,7 +104,9 @@ test('tracked Jenkins pipeline publishes only the governed non-app batch at the 
   assert.match(job, /<name>RELEASE_VERSION<\/name>/)
   assert.match(job, /<name>REQUEST_ID<\/name>/)
   assert.match(job, /<defaultValue>true<\/defaultValue>/)
-  assert.match(job, /<scriptPath>jenkins\/mango-maven-release\.Jenkinsfile<\/scriptPath>/)
+  const inlinePipeline = job.match(/<script><!\[CDATA\[\n([\s\S]*?)\n\]\]><\/script>/)?.[1]
+  assert.equal(inlinePipeline, source.trimEnd(), 'tracked Job XML must embed the exact reviewed Jenkinsfile')
+  assert.doesNotMatch(job, /CpsScmFlowDefinition/)
 })
 
 test('release runner downloads only the approved bridge artifact instead of cloning Mango', async () => {
