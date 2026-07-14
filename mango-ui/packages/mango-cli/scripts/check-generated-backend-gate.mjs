@@ -232,7 +232,7 @@ public final class StaticViolation {
 }
 `);
   const staticFailure = runMaven(['verify'], false, 'generic Java style violation');
-  assertIncludes(staticFailure, 'Checkstyle violations', 'static-analysis failure');
+  assertStaticAnalysisFailure('checkstyle', staticFailure);
   removeJavaFixture(staticViolation);
 
   const originalMigration = readFileSync(migrationPath, 'utf8');
@@ -471,6 +471,19 @@ function assertMangoCheckRule(ruleId) {
   const rules = new Set((report.issues || []).map(issue => issue.rule));
   if (!rules.has(ruleId)) {
     throw new Error(`Mango quality report missing ${ruleId}: ${JSON.stringify([...rules])}`);
+  }
+}
+
+function assertStaticAnalysisFailure(source, failureOutput = '') {
+  const report = readJson(join(projectRoot, 'backend/target/mango-quality-report.json'));
+  const matchingIssues = (report.newIssues || []).filter(issue => issue.source === source);
+  if (report.passed
+      || report.toolFailureCount !== 0
+      || matchingIssues.length === 0) {
+    throw new Error(
+      `Mango quality report missing blocking ${source} issues: ${JSON.stringify(report)}`
+        + (failureOutput ? `\nMaven failure:\n${failureOutput}` : ''),
+    );
   }
 }
 

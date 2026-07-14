@@ -1379,6 +1379,20 @@ class CheckMojoTest {
     }
 
     @Test
+    void staticAnalysisReportGoals_deferViolationEnforcementToMangoGate() {
+        // given
+        CheckMojo mojo = new CheckMojo();
+
+        // when
+        List<String> goals = mojo.staticAnalysisReportGoals();
+
+        // then
+        assertEquals(List.of("pmd:pmd", "checkstyle:checkstyle", "spotbugs:spotbugs"), goals);
+        assertFalse(goals.contains("pmd:check"));
+        assertFalse(goals.contains("checkstyle:check"));
+    }
+
+    @Test
     void staticReportScanIncludesTargetAndMissingReportFailsClosed() throws Exception {
         Path report = tempDir.resolve("demo/target/pmd.xml");
         Files.createDirectories(report.getParent());

@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.75 - 2026-07-14
+
+### Fixed
+
+- Make aggregated PMD and Checkstyle execution produce reports first so Mango can apply `no-new-violations` to changed files instead of failing on historical findings before classification.
+- Add a path- and SHA-256-pinned baseline for lifecycle documents created before PMO contracts, while continuing to reject changed legacy documents and all ungoverned new documents.
+- Lock the CLI to `@mango/pmo@1.2.5` and Mango Maven `1.0.19`.
+
+### Upgrade Notes
+
+- Publish Mango Maven `1.0.19` and `@mango/pmo@1.2.5` before installing `@mango/cli@1.0.75`.
+- Run `mango pmo upgrade --project-dir . --to 1.2.5`, update the business backend to Mango Maven `1.0.19`, add an approved legacy-document hash baseline where required, and run the final required check once.
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -Dtest=CheckMojoTest test`
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
+
 ## 1.0.74 - 2026-07-14
 
 ### Changed
