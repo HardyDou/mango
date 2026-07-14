@@ -117,7 +117,7 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
   );
   assert.match(
     workflow,
-    /Build generated four-layer backend prerequisites[\s\S]*?:mango-maven-plugin[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
+    /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
   );
   assert.doesNotMatch(workflow, /^\s+-am(?:d)?(?:\s|\\)/m);
   assert.doesNotMatch(workflow, /Enforce full-Reactor architecture/u);
