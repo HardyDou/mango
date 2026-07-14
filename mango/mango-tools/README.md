@@ -92,6 +92,8 @@ mvn -f mango/pom.xml verify \
   -Dmango.architecture.base=origin/main
 ```
 
+标准 partial PR 门禁把依赖准备和质量扫描分成两个阶段。干净 Runner 先对直接受影响模块执行带 `-am` 的跳过测试安装，把尚未发布的上游 SNAPSHOT 放入本地 Maven 仓库；随后质量阶段仍只选择直接受影响模块和外层架构验证模块，不带 `-am` 或 `-amd`。`mango:check` 委托 PMD、Checkstyle、SpotBugs 时只传入包含代码的 Reactor 模块，不把 `architecture-verification` 或 `mango-architecture-verification` 再次带入嵌套 Maven。外层 `mvn verify` 的架构检查不受影响。
+
 架构报告固定写入 `mango/target/mango-architecture-report.json`。schema v2 报告包含完整 Reactor `modules` 目录，并为 dependency、ArchUnit、PMD 和 blocking 问题写入唯一 `moduleKey`；无法归属、坐标冲突或 Reactor 数量不完整时 fail-closed。默认 `changed` 模式先定位变更影响的问题，再只从 Git base SHA 的 `mango-pmo/baselines/architecture/debt-budget.json` 扣除已批准 stable identities，剩余身份才阻断；PR head 自己修改的预算不能豁免当前新增。报告仍包含全量存量：删除文件会被识别，父 POM 变化传播到全部子 Reactor，`module.properties` 变化传播到同领域类，外置全局 Entity 清单变化传播到 Entity 规则。`-Dmango.architecture.mode=full` 用于专项全量治理。Git base 无法解析、baseline schema/identity 非法、PMD 解析失败、ArchUnit 未导入到字节码或预期 Java 输入为零时均 fail-closed。
 
 一次完整 Reactor 扫描后，可复用同一报告查询或递减模块债务；目录 selector 覆盖其全部 Maven 子模块，唯一 artifactId 定位单模块：
@@ -176,6 +178,8 @@ scripts/publish-maven-batch.sh --all-non-app \
 
 ## 11. 问题排查
 - `mango:check` 报存量问题：PR 模式使用 `no-new-violations` 和 baseline，但不能把新增问题放进 baseline。
+- partial PR 在干净 Runner 报上游 SNAPSHOT 找不到：确认 workflow 已先执行受影响模块的依赖安装阶段，并且 scope classifier 输出了非空 `maven_dependency_projects`；不要给后续质量命令追加 `-am`。
+- `mango:check` 的嵌套 Maven 报 `mango.architecture.skip` 等治理属性缺失：确认使用的 Mango Maven 插件已经包含治理聚合模块过滤；架构验证应由外层 `mvn verify` 执行，不应进入 PMD、Checkstyle、SpotBugs 的嵌套 Reactor。
 - 生成代码编译不过：脚手架只提供结构，业务字段、依赖和 mapper 仍要补齐。
 - 生成权限后页面仍无按钮：还需要菜单资源入库、角色授权和前端按钮权限接入。
 - Maven 批次只缺 `mango-architecture-verification` POM：使用当前 `publish-maven-batch.sh` 重新规划新版本发布；不可变版本已经尝试后只能先核对仓库事实，禁止整批重发。
