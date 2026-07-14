@@ -278,6 +278,14 @@ try {
     '-pl architecture-verification',
     'help:effective-pom',
     "steps.scope.outputs.backend_mode == 'partial'",
+    'Build affected backend dependency prerequisites',
+    'MAVEN_DEPENDENCY_PROJECTS',
+    '-am',
+    '-DskipTests',
+    '-Dcheckstyle.skip=true',
+    '-Dpmd.skip=true',
+    '-Dspotbugs.skip=true',
+    'install',
     '-pl "$MAVEN_PROJECTS"',
     '-Dmango.architecture.mode=changed',
     '-Dmango.architecture.requireFullReactor=false',
@@ -307,8 +315,17 @@ try {
     if (/^\s+paths:/mu.test(workflow)) {
       throw new Error('generated PMO required-check workflow must run for every PR; paths filters can leave the required check pending');
     }
-    if (/^\s+-(?:am|amd)\s*$/mu.test(workflow)) {
+    const qualityGate = workflow.slice(workflow.indexOf('Verify affected backend modules and Mango architecture'));
+    if (/^\s+-(?:am|amd)\s*$/mu.test(qualityGate)) {
       throw new Error('generated partial quality gate must not expand Maven scope with -am or -amd');
+    }
+    const dependencyBuild = workflow.slice(
+      workflow.indexOf('Build affected backend dependency prerequisites'),
+      workflow.indexOf('Verify affected backend modules and Mango architecture'),
+    );
+    if (!/^\s+-am\s*$/mu.test(dependencyBuild)
+        || dependencyBuild.includes('architecture-verification')) {
+      throw new Error('generated dependency build must expand only non-gate Maven prerequisites');
     }
     if (workflow.includes("backend_mode == 'full'")
         || workflow.includes('-Dmango.architecture.mode=full')) {
