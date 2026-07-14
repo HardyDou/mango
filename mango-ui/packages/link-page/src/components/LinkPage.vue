@@ -121,6 +121,12 @@
                 </span>
                 <span class="mango-link-page__card-main">
                   <strong>{{ item.name || '-' }}</strong>
+                  <span v-if="item.recommended || visibleTags(item).length > 0" class="mango-link-page__meta">
+                    <span v-if="item.recommended" class="mango-link-page__tag is-recommended">推荐</span>
+                    <span v-for="tag in visibleTags(item)" :key="`${itemKey(item)}:${tag}`" class="mango-link-page__tag">
+                      {{ tag }}
+                    </span>
+                  </span>
                   <span class="mango-link-page__url" :title="item.url">{{ displayUrl(item.url) || '-' }}</span>
                   <span v-if="item.summary" class="mango-link-page__summary">{{ item.summary }}</span>
                 </span>
@@ -342,6 +348,10 @@ function itemInitial(item: LinkPublicItem) {
     return latin[0].slice(0, 2).toUpperCase();
   }
   return value.slice(0, 1).toUpperCase();
+}
+
+function visibleTags(item: LinkPublicItem) {
+  return (item.tags || []).filter(Boolean).slice(0, 4);
 }
 
 function normalizeIconUrl(value?: string) {
