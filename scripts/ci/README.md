@@ -1,8 +1,27 @@
-# GitHub Release 到内网 Jenkins 主动发布
+# Maven 发布入口与 Jenkins 主动发布
 
 GitHub 只负责公开仓库的 PR、合并、tag 和 Release。GitHub Release 发布后，公网 GitHub-hosted Runner 在数秒内校验 tag、精确 SHA、`main` 可达性、版本锁和 CHANGELOG，并给该 Release 附加唯一机器授权清单 `mango-internal-release-request-v1.json`。GitHub 不再连接内网，也不再依赖私有 Self-hosted Runner。
 
-内网 Jenkins Job `mango-github-release-watcher` 每两分钟读取公开 Release feed，只消费带上述授权清单的新 Release。它先校验清单、tag、SHA、版本锁和防倒退规则，再以精确参数调用 `mango-maven-release`。Mango 的事实源始终是 GitHub；Jenkins 从 GitHub 读取精确 SHA，制品始终只由内网 Jenkins 发布到 Nexus。Gitea 镜像仅可作为以后按需启用的缓存，不参与发布授权判断。
+内网 Jenkins Job `mango-github-release-watcher` 每两分钟读取公开 Release feed，只消费带上述授权清单的新 Release。它先校验清单、tag、SHA、版本锁和防倒退规则，再以精确参数调用 `mango-maven-release`。Mango 的事实源始终是 GitHub；Jenkins 从 GitHub 读取精确 SHA。Gitea 镜像仅可作为以后按需启用的缓存，不参与发布授权判断。
+
+## 当前运行策略（2026-07-14）
+
+Jenkins 自动 Maven 发布暂不作为正式入口。当前由发布负责人在主仓本机工作区执行正式批量脚本，以减少 watcher 轮询、内网 Git 同步和 Jenkins 调度等待。Jenkins Pipeline、Job 和状态账本保留，完成性能与稳定性优化并重新验收前不得与本机入口同时发布。
+
+发布前确认当前提交是计划发布的 `main` 提交且工作区无未说明改动，然后先清理 Maven 构建目录，再执行完整非 app 批次：
+
+```bash
+mvn -f mango/pom.xml clean \
+  -Drevision=<version> \
+  -DskipTests
+
+scripts/publish-maven-batch.sh \
+  --all-non-app \
+  --release-version <version> \
+  --verify-base-url http://nexus.inner.yunxinbaokeji.com/repository/maven-public/
+```
+
+发布成功必须以 Nexus 回查为准。至少确认目标坐标可从 `maven-public` 下载；涉及 Flyway 整理时，还要从 Nexus 重新下载对应 core JAR，核对迁移文件清单和 SHA-256，不能用发布前的 `~/.m2` 缓存代替仓库证据。同版本删除后重发时，必须同时确认 hosted、`maven-public` 和本机 `~/.m2` 三份制品校验和一致。
 
 ## 入口
 
@@ -54,7 +73,7 @@ scripts/publish-maven-batch.sh \
 
 ## GitHub Release 与最终完成语义
 
-GitHub Release 表示“公开版本已经授权内网消费”，不是 Nexus 发布完成。只有 Jenkins `mango-maven-release` 成功且目标 Nexus 的所有坐标回查通过，内网制品发布才算完成。GitHub Workflow 通常在数秒内完成；Jenkins 最迟约两分钟发现请求。
+GitHub Release 表示公开版本事实，不代表 Nexus 已发布完成。当前只有本机正式批量脚本成功且目标 Nexus 的所有坐标与关键内容回查通过，内网制品发布才算完成。重新启用 Jenkins 后，再由 `mango-maven-release` 成功和同一组 Nexus 回查共同构成完成条件。
 
 ## 验证与部署
 
