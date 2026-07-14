@@ -19,7 +19,8 @@ import static org.springframework.web.servlet.function.RouterFunctions.route;
 @ComponentScan({
     "io.mango.cms.core.service",
     "io.mango.cms.starter.controller",
-    "io.mango.cms.starter.endpoint"
+    "io.mango.cms.starter.endpoint",
+    "io.mango.cms.starter.resource"
 })
 public class CmsAutoConfiguration {
 

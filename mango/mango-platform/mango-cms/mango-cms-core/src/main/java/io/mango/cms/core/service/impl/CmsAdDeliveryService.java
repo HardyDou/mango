@@ -53,7 +53,7 @@ public class CmsAdDeliveryService implements ICmsAdDeliveryService {
 
     @Override
     public PageResult<CmsAdDeliveryVO> pageAdDeliveries(CmsAdDeliveryPageQuery query) {
-        CmsAdDeliveryPageQuery resolved = query == null ? new CmsAdDeliveryPageQuery() : query;
+        CmsAdDeliveryPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsAdDeliveryPageQuery());
         IPage<CmsAdDeliveryEntity> page = adDeliveryMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 adDeliveryWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toAdDeliveryVO).toList(),
@@ -114,15 +114,16 @@ public class CmsAdDeliveryService implements ICmsAdDeliveryService {
         entity.setHtmlContent(CmsSupport.trimToNull(command.getHtmlContent()));
         entity.setImageFileId(validateDeliveryImage(materialType, command.getImageFileId()));
         entity.setImageFileIds(validateDeliveryImages(materialType, command.getImageFileIds()));
-        entity.setVideoFileId(CmsAdvertisementType.VIDEO.name().equals(materialType)
-                ? validateVideoFile(command.getVideoFileId(), "广告视频文件")
-                : null);
-        entity.setCoverFileId(CmsAdvertisementType.VIDEO.name().equals(materialType)
-                ? validateImageFile(command.getCoverFileId(), "广告视频封面")
-                : null);
+        if (CmsAdvertisementType.VIDEO.name().equals(materialType)) {
+            entity.setVideoFileId(validateVideoFile(command.getVideoFileId(), "广告视频文件"));
+            entity.setCoverFileId(validateImageFile(command.getCoverFileId(), "广告视频封面"));
+        } else {
+            entity.setVideoFileId(null);
+            entity.setCoverFileId(null);
+        }
         entity.setJumpUrl(normalizePublicUrl(command.getJumpUrl(), "广告跳转地址非法"));
-        entity.setOpenTarget(command.getOpenTarget() == null ? CmsOpenTarget.SELF.name()
-                : CmsSupport.enumName(CmsOpenTarget.class, command.getOpenTarget(), "打开方式非法"));
+        entity.setOpenTarget(CmsSupport.enumNameOrDefault(
+                CmsOpenTarget.class, command.getOpenTarget(), CmsOpenTarget.SELF.name(), "打开方式非法"));
         entity.setStartTime(command.getStartTime());
         entity.setEndTime(command.getEndTime());
         if (entity.getStartTime() != null && entity.getEndTime() != null) {
@@ -278,7 +279,8 @@ public class CmsAdDeliveryService implements ICmsAdDeliveryService {
         FileApi fileApi = fileApiProvider.getIfAvailable();
         Require.notNull(fileApi, CmsCode.CMS_BUSINESS_ERROR, fieldName + "能力不可用");
         FileRecordVO file = CmsFileResponse.requireRecord(fileApi.get(fileId), fieldName);
-        Require.isTrue(FileRecordStatus.COMPLETED.value() == (file.getStatus() == null ? -1 : file.getStatus()), CmsCode.CMS_BUSINESS_ERROR, fieldName + "未上传完成");
+        Require.isTrue(FileRecordStatus.COMPLETED.value() == CmsSupport.defaultIfNull(file.getStatus(), -1),
+                CmsCode.CMS_BUSINESS_ERROR, fieldName + "未上传完成");
         Require.isTrue(file.getArchived() == null || file.getArchived() == 0, CmsCode.CMS_BUSINESS_ERROR, fieldName + "已归档");
         if (StringUtils.hasText(contentTypePrefix)) {
             String contentType = CmsSupport.trimToNull(file.getContentType());
@@ -288,7 +290,7 @@ public class CmsAdDeliveryService implements ICmsAdDeliveryService {
     }
 
     private Long parseFileId(String value, String fieldName) {
-        String raw = value.startsWith("mango-file:") ? value.substring("mango-file:".length()) : value;
+        String raw = CmsSupport.removePrefix(value, "mango-file:");
         Require.isTrue(raw.matches("\\d+"), CmsCode.CMS_BUSINESS_ERROR, fieldName + "格式非法");
         return Long.valueOf(raw);
     }

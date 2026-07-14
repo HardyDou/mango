@@ -1,0 +1,295 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_AD_DELIVERY": [
+          {
+            "id": "20260714110000069",
+            "version": 1,
+            "bizKey": "cms.ad-delivery.2070000000000001801",
+            "name": "CMS 演示数据 cms_ad_delivery 2070000000000001801",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001801"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "adId": {
+                "type": "LONG",
+                "value": "2070000000000001701"
+              },
+              "deliveryName": {
+                "type": "STRING",
+                "value": "帮助中心首页主视觉投放"
+              },
+              "materialType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "帮助中心"
+              },
+              "textContent": {
+                "type": "STRING",
+                "value": "覆盖账号安全、权限配置、内容管理和常见问题，帮助团队快速完成系统验收。"
+              },
+              "richContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "htmlContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileIds": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "#contents"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000070",
+            "version": 1,
+            "bizKey": "cms.ad-delivery.2070000000000002801",
+            "name": "CMS 演示数据 cms_ad_delivery 2070000000000002801",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002801"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "adId": {
+                "type": "LONG",
+                "value": "2070000000000002701"
+              },
+              "deliveryName": {
+                "type": "STRING",
+                "value": "企业官网首页主视觉投放"
+              },
+              "materialType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "Mango 企业数字化平台"
+              },
+              "textContent": {
+                "type": "STRING",
+                "value": "统一后台、流程引擎、内容运营和通知中心，支撑企业应用快速交付。"
+              },
+              "richContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "htmlContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileIds": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "#products"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000071",
+            "version": 1,
+            "bizKey": "cms.ad-delivery.2070000000000002802",
+            "name": "CMS 演示数据 cms_ad_delivery 2070000000000002802",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002802"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "adId": {
+                "type": "LONG",
+                "value": "2070000000000002702"
+              },
+              "deliveryName": {
+                "type": "STRING",
+                "value": "企业官网首页运营公告投放"
+              },
+              "materialType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "安全策略基线已上线"
+              },
+              "textContent": {
+                "type": "STRING",
+                "value": "首次改密、复杂度规则和登录失败锁定已支持系统参数配置。"
+              },
+              "richContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "htmlContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileIds": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "/news"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

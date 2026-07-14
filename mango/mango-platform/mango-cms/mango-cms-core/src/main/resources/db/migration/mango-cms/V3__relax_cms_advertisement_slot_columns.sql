@@ -1,4 +1,0 @@
-ALTER TABLE cms_advertisement
-    MODIFY COLUMN ad_type VARCHAR(32) NULL,
-    MODIFY COLUMN ad_name VARCHAR(128) NOT NULL,
-    MODIFY COLUMN position VARCHAR(64) NOT NULL;

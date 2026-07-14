@@ -40,7 +40,7 @@ public class CmsContentTagService implements ICmsContentTagService {
 
     @Override
     public PageResult<CmsContentTagVO> pageContentTags(CmsContentTagPageQuery query) {
-        CmsContentTagPageQuery resolved = query == null ? new CmsContentTagPageQuery() : query;
+        CmsContentTagPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsContentTagPageQuery());
         IPage<CmsContentTagEntity> page = contentTagMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 contentTagWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toContentTagVO).toList(),
@@ -49,7 +49,7 @@ public class CmsContentTagService implements ICmsContentTagService {
 
     @Override
     public List<CmsContentTagVO> listContentTags(CmsContentTagPageQuery query) {
-        CmsContentTagPageQuery resolved = query == null ? new CmsContentTagPageQuery() : query;
+        CmsContentTagPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsContentTagPageQuery());
         if (!StringUtils.hasText(resolved.getStatus())) {
             resolved.setStatus(CmsSupport.ENABLED);
         }

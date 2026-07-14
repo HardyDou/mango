@@ -53,7 +53,7 @@ public class CmsContentPublishService implements ICmsContentPublishService {
 
     @Override
     public PageResult<CmsContentPublishVO> pagePublishes(CmsContentPublishPageQuery query) {
-        CmsContentPublishPageQuery resolved = query == null ? new CmsContentPublishPageQuery() : query;
+        CmsContentPublishPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsContentPublishPageQuery());
         IPage<CmsContentPublishEntity> page = publishMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 publishWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toPublishVO).toList(),
@@ -112,17 +112,20 @@ public class CmsContentPublishService implements ICmsContentPublishService {
             entity.setSiteId(command.getSiteId());
             entity.setCategoryId(categoryId);
         }
-        entity.setPublishStatus(command.getScheduledPublishTime() == null
-                ? CmsPublishStatus.PUBLISHED.name() : CmsPublishStatus.SCHEDULED.name());
-        entity.setPublishTime(command.getPublishTime() == null ? LocalDateTime.now() : command.getPublishTime());
+        if (command.getScheduledPublishTime() == null) {
+            entity.setPublishStatus(CmsPublishStatus.PUBLISHED.name());
+        } else {
+            entity.setPublishStatus(CmsPublishStatus.SCHEDULED.name());
+        }
+        entity.setPublishTime(CmsSupport.defaultIfNull(command.getPublishTime(), LocalDateTime.now()));
         entity.setScheduledPublishTime(command.getScheduledPublishTime());
         entity.setOfflineTime(command.getOfflineTime());
         entity.setTop(Boolean.TRUE.equals(command.getTop()));
-        entity.setTopScope(command.getTopScope() == null ? CmsTopScope.NONE.name()
-                : CmsSupport.enumName(CmsTopScope.class, command.getTopScope(), "置顶范围非法"));
+        entity.setTopScope(CmsSupport.enumNameOrDefault(
+                CmsTopScope.class, command.getTopScope(), CmsTopScope.NONE.name(), "置顶范围非法"));
         entity.setRecommended(Boolean.TRUE.equals(command.getRecommended()));
-        entity.setRecommendationType(command.getRecommendationType() == null ? CmsRecommendationType.NONE.name()
-                : CmsSupport.enumName(CmsRecommendationType.class, command.getRecommendationType(), "推荐类型非法"));
+        entity.setRecommendationType(CmsSupport.enumNameOrDefault(CmsRecommendationType.class,
+                command.getRecommendationType(), CmsRecommendationType.NONE.name(), "推荐类型非法"));
         entity.setSort(CmsSupport.defaultSort(command.getSort()));
         if (create) {
             publishMapper.insert(entity);
@@ -241,7 +244,7 @@ public class CmsContentPublishService implements ICmsContentPublishService {
     }
 
     private String escapeSqlLiteral(String value) {
-        return value == null ? "" : value.replace("'", "''");
+        return CmsSupport.defaultIfNull(value, "").replace("'", "''");
     }
 
     private static DataScopeMapping cmsScope(String tableName) {

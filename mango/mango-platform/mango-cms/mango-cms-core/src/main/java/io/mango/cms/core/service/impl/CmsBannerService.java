@@ -45,7 +45,7 @@ public class CmsBannerService implements ICmsBannerService {
 
     @Override
     public PageResult<CmsBannerVO> pageBanners(CmsBannerPageQuery query) {
-        CmsBannerPageQuery resolved = query == null ? new CmsBannerPageQuery() : query;
+        CmsBannerPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsBannerPageQuery());
         IPage<CmsBannerEntity> page = bannerMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 bannerWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toBannerVO).toList(),
@@ -98,9 +98,11 @@ public class CmsBannerService implements ICmsBannerService {
         entity.setSubtitle(CmsSupport.trimToNull(command.getSubtitle()));
         String mediaType = CmsSupport.enumName(CmsBannerMediaType.class, command.getMediaType(), "媒体类型非法");
         entity.setMediaType(mediaType);
-        entity.setMediaFileId(CmsBannerMediaType.VIDEO.name().equals(mediaType)
-                ? validateVideoFile(command.getMediaFileId(), "Banner 媒体文件")
-                : validateImageFile(command.getMediaFileId(), "Banner 媒体文件"));
+        if (CmsBannerMediaType.VIDEO.name().equals(mediaType)) {
+            entity.setMediaFileId(validateVideoFile(command.getMediaFileId(), "Banner 媒体文件"));
+        } else {
+            entity.setMediaFileId(validateImageFile(command.getMediaFileId(), "Banner 媒体文件"));
+        }
         entity.setJumpUrl(normalizePublicUrl(command.getJumpUrl(), "Banner 跳转地址非法"));
         entity.setStartTime(command.getStartTime());
         entity.setEndTime(command.getEndTime());
@@ -198,7 +200,8 @@ public class CmsBannerService implements ICmsBannerService {
         FileApi fileApi = fileApiProvider.getIfAvailable();
         Require.notNull(fileApi, CmsCode.CMS_BUSINESS_ERROR, fieldName + "能力不可用");
         FileRecordVO file = CmsFileResponse.requireRecord(fileApi.get(fileId), fieldName);
-        Require.isTrue(FileRecordStatus.COMPLETED.value() == (file.getStatus() == null ? -1 : file.getStatus()), CmsCode.CMS_BUSINESS_ERROR, fieldName + "未上传完成");
+        Require.isTrue(FileRecordStatus.COMPLETED.value() == CmsSupport.defaultIfNull(file.getStatus(), -1),
+                CmsCode.CMS_BUSINESS_ERROR, fieldName + "未上传完成");
         Require.isTrue(file.getArchived() == null || file.getArchived() == 0, CmsCode.CMS_BUSINESS_ERROR, fieldName + "已归档");
         if (StringUtils.hasText(contentTypePrefix)) {
             String contentType = CmsSupport.trimToNull(file.getContentType());
@@ -208,7 +211,7 @@ public class CmsBannerService implements ICmsBannerService {
     }
 
     private Long parseFileId(String value, String fieldName) {
-        String raw = value.startsWith("mango-file:") ? value.substring("mango-file:".length()) : value;
+        String raw = CmsSupport.removePrefix(value, "mango-file:");
         Require.isTrue(raw.matches("\\d+"), CmsCode.CMS_BUSINESS_ERROR, fieldName + "格式非法");
         return Long.valueOf(raw);
     }

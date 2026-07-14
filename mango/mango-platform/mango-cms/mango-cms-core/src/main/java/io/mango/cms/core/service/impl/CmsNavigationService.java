@@ -51,7 +51,7 @@ public class CmsNavigationService implements ICmsNavigationService {
 
     @Override
     public PageResult<CmsNavigationVO> pageNavigations(CmsNavigationPageQuery query) {
-        CmsNavigationPageQuery resolved = query == null ? new CmsNavigationPageQuery() : query;
+        CmsNavigationPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsNavigationPageQuery());
         IPage<CmsNavigationEntity> page = navigationMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 navigationWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toNavigationVO).toList(),
@@ -112,8 +112,8 @@ public class CmsNavigationService implements ICmsNavigationService {
         entity.setCategoryId(command.getCategoryId());
         entity.setContentId(command.getContentId());
         entity.setExternalUrl(normalizePublicUrl(command.getExternalUrl(), "导航外链地址非法"));
-        entity.setOpenTarget(command.getOpenTarget() == null ? CmsOpenTarget.SELF.name()
-                : CmsSupport.enumName(CmsOpenTarget.class, command.getOpenTarget(), "打开方式非法"));
+        entity.setOpenTarget(CmsSupport.enumNameOrDefault(
+                CmsOpenTarget.class, command.getOpenTarget(), CmsOpenTarget.SELF.name(), "打开方式非法"));
         entity.setSort(CmsSupport.defaultSort(command.getSort()));
         entity.setStatus(CmsSupport.defaultStatus(command.getStatus()));
     }

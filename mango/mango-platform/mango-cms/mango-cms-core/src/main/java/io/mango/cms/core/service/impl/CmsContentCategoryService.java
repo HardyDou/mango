@@ -45,7 +45,7 @@ public class CmsContentCategoryService implements ICmsContentCategoryService {
 
     @Override
     public PageResult<CmsContentCategoryVO> pageContentCategories(CmsContentCategoryPageQuery query) {
-        CmsContentCategoryPageQuery resolved = query == null ? new CmsContentCategoryPageQuery() : query;
+        CmsContentCategoryPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsContentCategoryPageQuery());
         IPage<CmsContentCategoryEntity> page = contentCategoryMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 contentCategoryWrapper(resolved));
@@ -55,7 +55,7 @@ public class CmsContentCategoryService implements ICmsContentCategoryService {
 
     @Override
     public List<CmsContentCategoryVO> listContentCategories(CmsContentCategoryPageQuery query) {
-        CmsContentCategoryPageQuery resolved = query == null ? new CmsContentCategoryPageQuery() : query;
+        CmsContentCategoryPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsContentCategoryPageQuery());
         if (!StringUtils.hasText(resolved.getStatus())) {
             resolved.setStatus(CmsSupport.ENABLED);
         }
@@ -65,7 +65,7 @@ public class CmsContentCategoryService implements ICmsContentCategoryService {
 
     @Override
     public List<CmsContentCategoryVO> treeContentCategories(CmsContentCategoryPageQuery query) {
-        CmsContentCategoryPageQuery resolved = query == null ? new CmsContentCategoryPageQuery() : query;
+        CmsContentCategoryPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsContentCategoryPageQuery());
         List<CmsContentCategoryEntity> records = contentCategoryMapper.selectList(contentCategoryWrapper(resolved));
         return buildContentCategoryTree(records.stream().map(this::toContentCategoryVO).toList());
     }
@@ -154,14 +154,15 @@ public class CmsContentCategoryService implements ICmsContentCategoryService {
         List<CmsContentCategoryVO> roots = new ArrayList<>();
         items.forEach(item -> map.put(item.getId(), item));
         for (CmsContentCategoryVO item : items) {
-            Long parentId = item.getParentId() == null ? CmsSupport.ROOT_PARENT_ID : item.getParentId();
+            Long parentId = CmsSupport.defaultIfNull(item.getParentId(), CmsSupport.ROOT_PARENT_ID);
             if (parentId == CmsSupport.ROOT_PARENT_ID || !map.containsKey(parentId)) {
                 roots.add(item);
             } else {
                 map.get(parentId).getChildren().add(item);
             }
         }
-        Comparator<CmsContentCategoryVO> comparator = Comparator.comparing(vo -> vo.getSort() == null ? 0 : vo.getSort());
+        Comparator<CmsContentCategoryVO> comparator = Comparator.comparing(
+                vo -> CmsSupport.defaultIfNull(vo.getSort(), 0));
         roots.sort(comparator);
         map.values().forEach(item -> item.getChildren().sort(comparator));
         return roots;

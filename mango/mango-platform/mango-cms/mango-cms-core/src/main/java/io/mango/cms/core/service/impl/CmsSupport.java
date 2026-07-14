@@ -66,4 +66,26 @@ final class CmsSupport {
             throw new BizException(message);
         }
     }
+
+    static <T> T defaultIfNull(T value, T defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    static <E extends Enum<E>> String enumNameOrDefault(
+            Class<E> enumType, String value, String defaultValue, String message) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return enumName(enumType, value, message);
+    }
+
+    static String removePrefix(String value, String prefix) {
+        if (value.startsWith(prefix)) {
+            return value.substring(prefix.length());
+        }
+        return value;
+    }
 }

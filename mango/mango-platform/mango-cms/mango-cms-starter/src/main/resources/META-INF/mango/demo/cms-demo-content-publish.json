@@ -1,0 +1,783 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_CONTENT_PUBLISH": [
+          {
+            "id": "20260714110000031",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000000601",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000000601",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000601"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000000501"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000000104"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              }
+            }
+          },
+          {
+            "id": "20260714110000032",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000000602",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000000602",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000602"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000000502"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000000104"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              }
+            }
+          },
+          {
+            "id": "20260714110000033",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000000603",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000000603",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000603"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000000503"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000000104"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              }
+            }
+          },
+          {
+            "id": "20260714110000034",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000001601",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000001601",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001601"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000001501"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001101"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": "SITE"
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": "HELP_HOME"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              }
+            }
+          },
+          {
+            "id": "20260714110000035",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000001602",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000001602",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001602"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000001502"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001102"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": "HELP_HOME"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              }
+            }
+          },
+          {
+            "id": "20260714110000036",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000001603",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000001603",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001603"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000001503"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001103"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": "HELP_HOME"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              }
+            }
+          },
+          {
+            "id": "20260714110000037",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000001604",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000001604",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001604"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000001504"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001104"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              }
+            }
+          },
+          {
+            "id": "20260714110000038",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000002601",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000002601",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002601"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000002501"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002101"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": "SITE"
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": "HOME"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              }
+            }
+          },
+          {
+            "id": "20260714110000039",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000002602",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000002602",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002602"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000002502"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002102"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": "HOME"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              }
+            }
+          },
+          {
+            "id": "20260714110000040",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000002603",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000002603",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002603"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000002503"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002103"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": true
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": "HOME"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              }
+            }
+          },
+          {
+            "id": "20260714110000041",
+            "version": 1,
+            "bizKey": "cms.content-publish.2070000000000002604",
+            "name": "CMS 演示数据 cms_content_publish 2070000000000002604",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002604"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": "2070000000000002504"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002104"
+              },
+              "publishStatus": {
+                "type": "STRING",
+                "value": "PUBLISHED"
+              },
+              "publishTime": {
+                "type": "DATETIME",
+                "value": "2026-07-14 09:53:24"
+              },
+              "scheduledPublishTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "offlineTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "top": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "topScope": {
+                "type": "STRING",
+                "value": null
+              },
+              "recommended": {
+                "type": "BOOLEAN",
+                "value": false
+              },
+              "recommendationType": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

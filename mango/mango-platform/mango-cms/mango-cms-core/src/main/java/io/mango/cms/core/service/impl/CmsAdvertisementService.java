@@ -45,7 +45,7 @@ public class CmsAdvertisementService implements ICmsAdvertisementService {
 
     @Override
     public PageResult<CmsAdvertisementVO> pageAdvertisements(CmsAdvertisementPageQuery query) {
-        CmsAdvertisementPageQuery resolved = query == null ? new CmsAdvertisementPageQuery() : query;
+        CmsAdvertisementPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsAdvertisementPageQuery());
         IPage<CmsAdvertisementEntity> page = advertisementMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 advertisementWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toAdvertisementVO).toList(),

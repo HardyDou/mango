@@ -37,7 +37,10 @@ public class CmsSiteSettingService implements ICmsSiteSettingService {
                 .eq(CmsSiteSettingEntity::getTenantId, CmsSupport.currentTenantId())
                 .eq(CmsSiteSettingEntity::getSiteId, siteId)
                 .last("LIMIT 1"));
-        return entity == null ? null : toSiteSettingVO(entity);
+        if (entity == null) {
+            return null;
+        }
+        return toSiteSettingVO(entity);
     }
 
     @Override
@@ -60,7 +63,10 @@ public class CmsSiteSettingService implements ICmsSiteSettingService {
         entity.setFooterCopyright(CmsSupport.trimToNull(command.getFooterCopyright()));
         entity.setIcpRecord(CmsSupport.trimToNull(command.getIcpRecord()));
         entity.setContactInfo(CmsSupport.trimToNull(command.getContactInfo()));
-        return create ? siteSettingMapper.insert(entity) > 0 : siteSettingMapper.updateById(entity) > 0;
+        if (create) {
+            return siteSettingMapper.insert(entity) > 0;
+        }
+        return siteSettingMapper.updateById(entity) > 0;
     }
 
     private CmsSiteEntity requireSite(Long id) {

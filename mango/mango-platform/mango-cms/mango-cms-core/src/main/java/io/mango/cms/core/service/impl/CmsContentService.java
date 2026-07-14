@@ -58,7 +58,7 @@ public class CmsContentService implements ICmsContentService {
 
     @Override
     public PageResult<CmsContentVO> pageContents(CmsContentPageQuery query) {
-        CmsContentPageQuery resolved = query == null ? new CmsContentPageQuery() : query;
+        CmsContentPageQuery resolved = CmsSupport.defaultIfNull(query, new CmsContentPageQuery());
         IPage<CmsContentEntity> page = contentMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 contentWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toContentVO).toList(),
@@ -311,7 +311,8 @@ public class CmsContentService implements ICmsContentService {
         FileApi fileApi = fileApiProvider.getIfAvailable();
         Require.notNull(fileApi, CmsCode.CMS_BUSINESS_ERROR, fieldName + "能力不可用");
         FileRecordVO file = CmsFileResponse.requireRecord(fileApi.get(fileId), fieldName);
-        Require.isTrue(FileRecordStatus.COMPLETED.value() == (file.getStatus() == null ? -1 : file.getStatus()), CmsCode.CMS_BUSINESS_ERROR, fieldName + "未上传完成");
+        Require.isTrue(FileRecordStatus.COMPLETED.value() == CmsSupport.defaultIfNull(file.getStatus(), -1),
+                CmsCode.CMS_BUSINESS_ERROR, fieldName + "未上传完成");
         Require.isTrue(file.getArchived() == null || file.getArchived() == 0, CmsCode.CMS_BUSINESS_ERROR, fieldName + "已归档");
         if (StringUtils.hasText(contentTypePrefix)) {
             String contentType = CmsSupport.trimToNull(file.getContentType());
@@ -334,7 +335,7 @@ public class CmsContentService implements ICmsContentService {
     }
 
     private Long parseFileId(String value, String fieldName) {
-        String raw = value.startsWith("mango-file:") ? value.substring("mango-file:".length()) : value;
+        String raw = CmsSupport.removePrefix(value, "mango-file:");
         Require.isTrue(raw.matches("\\d+"), CmsCode.CMS_BUSINESS_ERROR, fieldName + "格式非法");
         return Long.valueOf(raw);
     }

@@ -121,8 +121,8 @@ public class CmsSiteCategoryService implements ICmsSiteCategoryService {
         entity.setExternalUrl(normalizePublicUrl(command.getExternalUrl(), "栏目外链地址非法"));
         entity.setSort(CmsSupport.defaultSort(command.getSort()));
         entity.setVisibleStatus(CmsSupport.defaultStatus(command.getVisibleStatus()));
-        entity.setAccessType(command.getAccessType() == null ? CmsAccessType.PUBLIC.name()
-                : CmsSupport.enumName(CmsAccessType.class, command.getAccessType(), "访问类型非法"));
+        entity.setAccessType(CmsSupport.enumNameOrDefault(
+                CmsAccessType.class, command.getAccessType(), CmsAccessType.PUBLIC.name(), "访问类型非法"));
         entity.setRoleCodes(CmsSupport.trimToNull(command.getRoleCodes()));
         entity.setSeoTitle(CmsSupport.trimToNull(command.getSeoTitle()));
         entity.setSeoKeywords(CmsSupport.trimToNull(command.getSeoKeywords()));
@@ -157,14 +157,15 @@ public class CmsSiteCategoryService implements ICmsSiteCategoryService {
         List<CmsSiteCategoryVO> roots = new ArrayList<>();
         items.forEach(item -> map.put(item.getId(), item));
         for (CmsSiteCategoryVO item : items) {
-            Long parentId = item.getParentId() == null ? CmsSupport.ROOT_PARENT_ID : item.getParentId();
+            Long parentId = CmsSupport.defaultIfNull(item.getParentId(), CmsSupport.ROOT_PARENT_ID);
             if (parentId == CmsSupport.ROOT_PARENT_ID || !map.containsKey(parentId)) {
                 roots.add(item);
             } else {
                 map.get(parentId).getChildren().add(item);
             }
         }
-        Comparator<CmsSiteCategoryVO> comparator = Comparator.comparing(vo -> vo.getSort() == null ? 0 : vo.getSort());
+        Comparator<CmsSiteCategoryVO> comparator = Comparator.comparing(
+                vo -> CmsSupport.defaultIfNull(vo.getSort(), 0));
         roots.sort(comparator);
         map.values().forEach(item -> item.getChildren().sort(comparator));
         return roots;
