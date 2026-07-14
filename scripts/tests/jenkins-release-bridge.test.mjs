@@ -182,6 +182,42 @@ printf '<feed><entry><link href="https://github.com/HardyDou/mango/releases/tag/
   assert.equal(await readFile(output, 'utf8'), 'ACTION=none\n')
 })
 
+test('poller ignores a release whose manifest has no Maven component', async () => {
+  const temp = await mkdtemp(path.join(os.tmpdir(), 'mango-release-poller-no-maven-test-'))
+  const fakeCurl = path.join(temp, 'curl')
+  const state = path.join(temp, 'state')
+  const output = path.join(temp, 'candidate.properties')
+  const tag = 'v2026.08.01-no-maven-release'
+  const sha = 'd'.repeat(40)
+  await writeFile(fakeCurl, `#!/usr/bin/env bash
+set -euo pipefail
+output=''
+url="\${!#}"
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == '-o' ]]; then output="$2"; shift 2; continue; fi
+  shift
+done
+if [[ "$url" == *.atom ]]; then
+  printf '<feed><entry><link href="https://github.com/HardyDou/mango/releases/tag/${tag}"/></entry></feed>'
+else
+  printf '%s' '{"schema":"mango.internal-release-request/v1","repository":"HardyDou/mango","releaseId":202,"tag":"${tag}","sourceSha":"${sha}","components":{"maven":null}}' > "$output"
+  printf '200'
+fi
+`)
+  await chmod(fakeCurl, 0o755)
+  const env = {
+    ...process.env,
+    PATH: `${temp}:${process.env.PATH}`,
+    MANGO_RELEASE_STATE_DIR: state,
+    MANGO_RELEASE_POLL_OUTPUT: output,
+  }
+
+  const discover = spawnSync('bash', [poller, 'discover'], { cwd: root, env, encoding: 'utf8' })
+  assert.equal(discover.status, 0, `${discover.stdout}\n${discover.stderr}`)
+  assert.equal(await readFile(output, 'utf8'), 'ACTION=none\n')
+  assert.match(await readFile(path.join(state, 'ledger.tsv'), 'utf8'), new RegExp(`ignored-no-maven\\t202\\t${tag}\\t-\\t${sha}`))
+})
+
 test('poller claims a request once and a failed immutable batch is never auto-retried', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'mango-release-poller-claim-test-'))
   const fakeCurl = path.join(temp, 'curl')
