@@ -242,6 +242,9 @@ function validatePackedPackage(value) {
       cwd: packageRoot,
       encoding: 'utf8',
     });
+    if (pnpm.error) {
+      throw new Error(`failed to execute pnpm pack: ${pnpm.error.message}`);
+    }
     if (pnpm.status !== 0) {
       throw new Error(`pnpm pack failed:\n${pnpm.stdout}\n${pnpm.stderr}`);
     }
