@@ -137,6 +137,8 @@ import '@mango/admin/style-full.css';
 
 ## 11. 变更影响记录
 
+- `@mango/admin@1.0.46` 聚合 `@mango/admin-shell@1.0.41`、`@mango/notice@1.0.23` 和 `@mango/payment@1.0.13`；默认入口、`full` 子入口、样式入口和页面注册协议不变。
+
 - `@mango/admin@1.0.45` 聚合 `@mango/admin-pages@1.0.20`、`@mango/file@1.0.21`、
   `@mango/admin-shell@1.0.40` 及本批次下游模块。相对 `1.0.44` 不回退运行源码，主要用于交付完整 README 和
   一致的精确依赖闭包。

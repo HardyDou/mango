@@ -321,6 +321,8 @@ executeMySiteMessageAction(messageId, actionCode, input)
 
 ## 8. 数据与初始化
 
+`@mango/notice@1.0.23` 对齐本批次后端 Notice 修复；渠道配置、发送记录、失败重试、站内信等公开页面 key、HTTP API 和初始化数据来源不变。
+
 本包不创建数据库表，也不初始化菜单权限。它依赖后端完成以下初始化：
 
 | 数据 | 后端来源 | 前端用途 |

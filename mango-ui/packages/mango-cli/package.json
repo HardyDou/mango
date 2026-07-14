@@ -26,6 +26,6 @@
     "test": "pnpm run check:business-module-template && pnpm run check:release-versions && node scripts/check-cli.mjs && node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@mango/pmo": "1.2.5"
+    "@mango/pmo": "1.2.6"
   }
 }

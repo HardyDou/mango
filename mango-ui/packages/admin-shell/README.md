@@ -310,6 +310,8 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 ## 11. 变更影响记录
 
+- `@mango/admin-shell@1.0.41` 对齐 `@mango/notice@1.0.23`，用于发布 Payment、CMS、Workflow、Notice 历史债务修复后的兼容批次；Shell 公共 API、菜单加载、页面注册、登录态和运行时路由语义不变。
+
 - `@mango/admin-shell@1.0.40` 向前发布当前 Shell 实现和完整 README，不回退自定义登录组件或开发中心搜索
   面板入口；运行时行为与 `1.0.39` 一致，并将内部精确依赖对齐到本发布批次。
 - v2026.07.11-npm-lock-sync-release 支持在 `MangoAdminShellOptions.login.component` 中提供业务登录组件，以替换
