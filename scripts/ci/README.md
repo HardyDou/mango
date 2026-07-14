@@ -10,6 +10,8 @@ GitHub 保留 PR、主分支和手工发布入口。公网前置 Job 校验 main
 - Jenkins Job 配置：`jenkins/mango-maven-release-job.xml`
 - Jenkins Job：`mango-maven-release`
 
+Job XML 内联的是上述 Jenkinsfile 的完全一致快照，单元测试会阻止两者漂移。这样 Jenkins 启动构建时无需先为读取 Jenkinsfile 克隆整仓，仓库只在 Pipeline 的精确 SHA 阶段检出一次。
+
 GitHub Workflow 只允许从 `main` 手工执行，默认 `dry_run=true`。正式发布要求输入版本等于 `mango-ui/packages/mango-cli/release-versions.json` 的 `maven.mangoBackend`，并要求 `CHANGELOG.md` 已记录该 Maven 版本。
 
 ## 内网 Runner 配置

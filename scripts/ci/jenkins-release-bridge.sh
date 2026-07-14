@@ -96,10 +96,25 @@ printf 'machine %s login %s password %s\n' \
 
 queue_url=""
 build_url=""
+build_display_url=""
 build_finished=false
 
 curl_jenkins() {
   curl --silent --show-error --netrc-file "${netrc_file}" "$@"
+}
+
+normalize_jenkins_url() {
+  local value="$1"
+  if [[ "${value}" == /* ]]; then
+    printf '%s%s' "${JENKINS_URL%/}" "${value}"
+    return
+  fi
+  if [[ "${value}" =~ ^https?://[^/]+(/.*)$ ]]; then
+    printf '%s%s' "${JENKINS_URL%/}" "${BASH_REMATCH[1]}"
+    return
+  fi
+  echo "Jenkins returned an unsupported URL: ${value}" >&2
+  return 1
 }
 
 cancel_jenkins_work() {
@@ -164,9 +179,7 @@ if [[ -z "${queue_url}" ]]; then
   echo "Jenkins response did not include a queue Location header." >&2
   exit 3
 fi
-if [[ "${queue_url}" == /* ]]; then
-  queue_url="${JENKINS_URL%/}${queue_url}"
-fi
+queue_url="$(normalize_jenkins_url "${queue_url}")"
 echo "Jenkins queue item: ${queue_url}"
 
 deadline=$(( $(date +%s) + TIMEOUT_SECONDS ))
@@ -185,8 +198,8 @@ while [[ -z "${build_url}" ]]; do
     echo "Jenkins cancelled the queued build." >&2
     exit 5
   fi
-  build_url="$(jq -r '.executable.url // empty' <<< "${queue_json}")"
-  if [[ -z "${build_url}" ]]; then
+  build_display_url="$(jq -r '.executable.url // empty' <<< "${queue_json}")"
+  if [[ -z "${build_display_url}" ]]; then
     now="$(date +%s)"
     if (( now - last_progress_at >= 30 )); then
       why="$(jq -r '.why // "waiting for an executor"' <<< "${queue_json}")"
@@ -194,10 +207,12 @@ while [[ -z "${build_url}" ]]; do
       last_progress_at="${now}"
     fi
     sleep "${POLL_SECONDS}"
+  else
+    build_url="$(normalize_jenkins_url "${build_display_url}")"
   fi
 done
 
-echo "Jenkins build started: ${build_url}"
+echo "Jenkins build started: ${build_display_url}"
 last_progress_at=0
 while true; do
   if (( $(date +%s) >= deadline )); then
@@ -226,13 +241,13 @@ jenkins_result="$(jq -r '.result // "UNKNOWN"' <<< "${build_json}")"
 build_number="$(jq -r '.number // empty' <<< "${build_json}")"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
-    echo "jenkins_build_url=${build_url}"
+    echo "jenkins_build_url=${build_display_url}"
     echo "jenkins_build_number=${build_number}"
     echo "jenkins_result=${jenkins_result}"
   } >> "${GITHUB_OUTPUT}"
 fi
 
-echo "Jenkins build completed with result ${jenkins_result}: ${build_url}"
+echo "Jenkins build completed with result ${jenkins_result}: ${build_display_url}"
 if [[ "${jenkins_result}" != "SUCCESS" ]]; then
   exit 6
 fi
