@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Delivery Assurance"
+  short_description: "Recommend fixed delivery measures for user confirmation"
+  default_prompt: "Use $mango-design-delivery-assurance to recommend and confirm the delivery measures for this task."
+policy:
+  allow_implicit_invocation: true

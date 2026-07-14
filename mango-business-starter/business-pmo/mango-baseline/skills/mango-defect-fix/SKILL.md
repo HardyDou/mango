@@ -11,14 +11,14 @@ Set `PMO_ROOT` to the first available source: the installed business baseline, M
 
 Run PMO preflight with role `dev`, phase `develop`, and the affected paths after the failure is understood; read every `Must read` file.
 
-For Java/backend defects, explicitly read `$PMO_ROOT/rules/backend/01-code.md`, `$PMO_ROOT/rules/backend/02-naming.md`, `$PMO_ROOT/rules/backend/03-api.md`, `$PMO_ROOT/rules/backend/07-persistence.md`, `$PMO_ROOT/rules/backend/08-test.md`, and `$PMO_ROOT/rules/backend/10-dev-flow.md`. For L2/L3 behavior changes, locate the approved BRD/SRS/TDD/Implementation Plan chain and run its dedicated checkers; a defect label does not bypass lifecycle boundaries. Reuse the current non-`main` task worktree when the user asks to solve the problem there.
+For Java/backend defects, explicitly read `$PMO_ROOT/rules/backend/01-code.md`, `$PMO_ROOT/rules/backend/02-naming.md`, `$PMO_ROOT/rules/backend/03-api.md`, `$PMO_ROOT/rules/backend/07-persistence.md`, `$PMO_ROOT/rules/backend/08-test.md`, and `$PMO_ROOT/rules/backend/10-dev-flow.md`. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and the user-confirmed assurance baseline; locate and verify only enabled documents and tests. If reproduction or root-cause analysis reveals a new trigger fact, return to Ask User before expanding measures. A defect label and L2/L3 level neither bypass nor automatically add lifecycle measures. Reuse the current non-`main` task worktree when the user asks to solve the problem there.
 
 ## Execute
 
 1. Establish a reproducible failure or return `ASK` for the missing environment, data, account, steps, expected behavior, or evidence.
 2. Compare the canonical baseline, identify attribution, and return `STOP` if the defect belongs to a different task that must be registered or routed separately.
 3. Record the root cause supported by evidence, implement the smallest complete fix, and preserve approved boundaries.
-4. Assess requirement impact and the chosen fix separately, set final L0-L3 to their maximum, then add or update the correct regression asset and run the lowest-cost sufficient `STATIC/UNIT/API/UI` set required by the canonical rules.
+4. Assess requirement impact and the chosen fix separately, set final L0-L3 to their maximum, then add or update only the regression assets and M09-M16 measures confirmed by the user. Canonical rules define execution, not selection.
 5. Return `STOP` when reproduction, root cause evidence, required gates, or regression evidence is incomplete.
 6. Return `NEXT: $mango-qa-verification` only with before-and-after evidence and no unexplained scope expansion.
 

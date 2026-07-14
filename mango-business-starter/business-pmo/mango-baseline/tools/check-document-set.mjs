@@ -170,6 +170,8 @@ export function checkDocumentSet(rootPath) {
     const index = STAGE_INDEX.get(document.type);
     if (index === 0) continue;
     const upstreamId = String(document.meta.upstreamDocumentId ?? '').trim();
+    const upstreamHash = String(document.meta.upstreamDocumentHash ?? '').trim();
+    if (upstreamId === 'NONE' || upstreamHash === 'NONE') continue;
     const upstream = byId.get(upstreamId);
     if (!upstream) {
       findings.push(finding(
@@ -188,10 +190,10 @@ export function checkDocumentSet(rootPath) {
       ));
     }
     const actualHash = sha256(upstream.source);
-    if (document.meta.upstreamDocumentHash !== actualHash) {
+    if (upstreamHash !== actualHash) {
       findings.push(finding(
         'LIFE-HASH-020',
-        `${document.type} 的上游摘要已失效：期望 ${actualHash}，实际 ${document.meta.upstreamDocumentHash || '<缺失>'}`,
+        `${document.type} 的上游摘要已失效：期望 ${actualHash}，实际 ${upstreamHash || '<缺失>'}`,
         document.file,
       ));
     }

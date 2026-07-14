@@ -1,6 +1,6 @@
 ---
 name: mango-requirements-system
-description: Create or review a Mango System Requirements Specification from an approved Business Requirements Document. Use for observable system capabilities, roles, information, states, constraints, and system acceptance behavior; do not use for business discovery, APIs, module classes, database schemas, technical design, implementation tasks, or coding.
+description: Create or review a user-enabled Mango System Requirements Specification from approved business input or a confirmed assurance baseline. Use for observable system capabilities, roles, information, states, constraints, and system acceptance behavior; do not use for selecting safeguards, business discovery, APIs, module classes, database schemas, technical design, implementation tasks, or coding.
 ---
 
 # Mango System Requirements
@@ -26,14 +26,14 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
 
 ## Execute
 
-1. Refine the L0-L3 impact assessment using observable system-entry, behavior, data and non-functional facts; do not lower the BRD level or assume implementation details. This four-document stage applies to L2/L3; for L0/L1, do not fabricate an SRS and route back to the approved lightweight lifecycle path. For L2/L3, locate the approved Business Requirements Document and verify it with its dedicated checker.
+1. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and the assurance baseline. Continue only when the user confirmed M04 SRS=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Refine impact using observable system-entry, behavior, data and non-functional facts without assuming implementation details. Locate and verify the applicable approved business source when one exists. Risk level does not enable SRS or any other document.
 2. Choose one action:
    - `STOP`: the upstream document is absent, unapproved, invalid, or the request asks for implementation design.
    - `ASK`: a required externally observable system fact cannot be traced to approved business input or verified repository facts.
    - `WRITE`: inputs satisfy the rule; fill the official template and preserve upstream trace links without inventing business scope.
 3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-system-requirements.mjs" --document <document-path>`.
 4. Fix failures without weakening the checker or adding technical implementation content.
-5. Run the lifecycle checker with BRD and SRS through `--through srs`; require a valid upstream hash, full upstream trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
-6. Return `NEXT: $mango-design-technical` only when the dedicated checker, staged lifecycle handoff, gate table and human approval all pass.
+5. Run the lifecycle checker for the user-enabled SRS and applicable upstream; require the valid hash and trace coverage that apply, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
+6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume TDD follows.
 
-With an empty context or no approved upstream document, return `STOP` and identify the missing prerequisite.
+With an empty context, return `ASK` for M04 confirmation and the observable system source. When a confirmed SRS lacks an applicable approved source, return `STOP` and identify it. Do not infer documents from L2/L3.

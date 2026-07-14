@@ -7,12 +7,13 @@
   "ruleSource": "mango-pmo/rules/product/04-implementation-plan.md",
   "template": "mango-pmo/templates/implementation-plan.md",
   "upstreamDocumentType": "technical-design",
+  "allowNoUpstream": true,
   "metadata": {
     "ruleId": "PLAN-META-001",
     "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
     "fixed": {"documentType": "implementation-plan", "pmoVersion": "1.2.5", "schemaRevision": "1"}
   },
-  "localPrefixes": ["DEL", "TASK", "MS", "VAL", "REL", "DOC", "RISK"],
+  "localPrefixes": ["DEL", "TASK", "MS", "VAL", "DATA", "DOC", "RISK"],
   "upstreamPrefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"],
   "sections": [
     {
@@ -69,20 +70,20 @@
     },
     {
       "ruleId": "PLAN-STRUCT-050",
-      "title": "数据、升级、发布与回滚步骤",
+      "title": "数据库实施步骤",
       "tables": [{
-        "headers": ["发布步骤ID", "技术设计ID", "环境", "前置检查", "动作", "顺序", "数据备份或回填", "兼容窗口", "验证", "失败停止条件", "回滚或补偿", "责任人"],
-        "minRows": 1,
-        "defines": {"发布步骤ID": "REL"},
+        "headers": ["数据步骤ID", "技术设计ID", "环境", "前置检查", "动作", "顺序", "数据备份或回填", "验证", "失败停止条件", "补偿", "责任人"],
+        "minRows": 0,
+        "defines": {"数据步骤ID": "DATA"},
         "references": [{"column": "技术设计ID", "prefixes": ["DEC", "DB", "IMP"], "required": true}]
       }]
     },
     {
       "ruleId": "PLAN-STRUCT-060",
-      "title": "文档与能力同步计划",
+      "title": "已启用说明与资产同步计划",
       "tables": [{
         "headers": ["文档项ID", "技术设计或交付物ID", "目标文档", "变化", "责任人", "完成条件", "检查命令", "不适用依据"],
-        "minRows": 1,
+        "minRows": 0,
         "defines": {"文档项ID": "DOC"},
         "references": [{"column": "技术设计或交付物ID", "prefixes": ["IMP", "DEL", "TASK"], "required": true}]
       }]
@@ -105,14 +106,14 @@
       "ruleId": "PLAN-TRACE-080",
       "title": "实施追踪矩阵",
       "tables": [{
-        "headers": ["上游设计ID", "交付物ID", "任务ID", "验证ID", "里程碑发布文档或风险项ID", "覆盖说明"],
+        "headers": ["上游设计ID", "交付物ID", "任务ID", "验证ID", "里程碑数据文档或风险项ID", "覆盖说明"],
         "minRows": 1,
         "references": [
           {"column": "上游设计ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI", "TC", "IMP"], "required": true},
           {"column": "交付物ID", "prefixes": ["DEL"], "required": true},
           {"column": "任务ID", "prefixes": ["TASK"], "required": true},
           {"column": "验证ID", "prefixes": ["VAL"], "required": true},
-          {"column": "里程碑发布文档或风险项ID", "prefixes": ["MS", "REL", "DOC", "RISK"], "required": true}
+          {"column": "里程碑数据文档或风险项ID", "prefixes": ["MS", "DATA", "DOC", "RISK"], "required": true}
         ]
       }]
     },
@@ -129,7 +130,7 @@
   "traceability": {
     "ruleId": "PLAN-TRACE-080",
     "section": "实施追踪矩阵",
-    "localCoveragePrefixes": ["DEL", "TASK", "MS", "VAL", "REL", "DOC", "RISK"]
+    "localCoveragePrefixes": ["DEL", "TASK", "MS", "VAL", "DATA", "DOC", "RISK"]
   },
   "blocking": {
     "ruleId": "PLAN-GATE-090",

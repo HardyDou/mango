@@ -169,6 +169,12 @@ function isPlaceholder(value) {
   );
 }
 
+function assuranceSelection(prBody, measureId) {
+  const value = lineValue(prBody, 'Assurance selections');
+  const match = new RegExp(`(?:^|[;；,，]\\s*)${measureId}=([A-Z_]+)(?:$|[;；,，])`, 'u').exec(value);
+  return match?.[1] ?? '';
+}
+
 function validatePrBody(prBody, failures) {
   for (const section of requiredPrSections) {
     if (!prBody.includes(section)) {
@@ -190,23 +196,29 @@ function validatePrBody(prBody, failures) {
     }
   }
 
-  const capabilityFields = ['Affected Mango capabilities', 'Module README', 'Capability map', 'Business guide', 'PMO rules', '`mango-pmo/rules/index.json`'];
-  for (const label of capabilityFields) {
-    const value = lineValue(prBody, label);
-    if (isPlaceholder(value)) {
-      failures.push(`PR body must fill "${label}" with updated/not-applicable status and details`);
+  if (assuranceSelection(prBody, 'M08') === 'ENABLE') {
+    const capabilityFields = ['Affected Mango capabilities', 'Module README', 'Capability map', 'Business guide', 'PMO rules', '`mango-pmo/rules/index.json`'];
+    for (const label of capabilityFields) {
+      const value = lineValue(prBody, label);
+      if (isPlaceholder(value)) {
+        failures.push(`M08=ENABLE requires PR body field "${label}" with concrete update details`);
+      }
     }
   }
 
-  const validationSection = sectionText(prBody, '## Validation');
-  const commandBlock = validationSection.match(/```(?:bash)?\s*([\s\S]*?)```/);
-  if (!commandBlock || !commandBlock[1].trim()) {
-    failures.push('PR body must include at least one concrete validation command');
-  }
-  for (const label of ['Result', 'Unverified items', 'Risks']) {
-    const value = lineValue(prBody, label);
-    if (!value) {
-      failures.push(`PR body must fill "${label}" with a concrete value`);
+  const hasEnabledValidation = Array.from({ length: 8 }, (_, index) => `M${String(index + 9).padStart(2, '0')}`)
+    .some((measureId) => assuranceSelection(prBody, measureId) === 'ENABLE');
+  if (hasEnabledValidation) {
+    const validationSection = sectionText(prBody, '## Validation');
+    const commandBlock = validationSection.match(/```(?:bash)?\s*([\s\S]*?)```/);
+    if (!commandBlock || !commandBlock[1].trim()) {
+      failures.push('enabled M09-M16 measures require at least one concrete validation command');
+    }
+    for (const label of ['Result', 'Unverified items', 'Risks']) {
+      const value = lineValue(prBody, label);
+      if (!value) {
+        failures.push(`enabled M09-M16 measures require PR body field "${label}"`);
+      }
     }
   }
 
@@ -250,6 +262,10 @@ node mango-pmo/tools/check-capability-docs.mjs --self-test
 - Unverified items: GitHub Actions real PR runtime not executed locally
 - Risks: low, script-only governance change
 
+## Risk / Verification
+
+- Assurance selections: M01=CREATE; M08=ENABLE; M09=ENABLE
+
 ## PMO Exceptions
 
 - None
@@ -271,6 +287,13 @@ function runSelfTest() {
     {
       name: 'filled body passes',
       body: filledPrBody(),
+      valid: true
+    },
+    {
+      name: 'no enabled validation measure does not require a command',
+      body: filledPrBody()
+        .replace('M09=ENABLE', 'M09=DISABLE')
+        .replace(/```bash[\s\S]*?```/u, 'No validation command because no M09-M16 measure is enabled.'),
       valid: true
     },
     {
@@ -386,13 +409,21 @@ function runSelfTest() {
       files: ['mango-pmo/rules/09-new-rule.md', 'mango-pmo/rules/index.json'],
       body: filledPrBody(),
       valid: true
+    },
+    {
+      name: 'M08 disabled does not make CI add capability documents',
+      files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
+      body: filledPrBody().replace('M08=ENABLE', 'M08=DISABLE'),
+      valid: true
     }
   ];
   for (const item of coverageCases) {
     const itemFailures = [];
     validatePrBody(item.body, itemFailures);
     checkRuleIndexCoverage(item.files, itemFailures);
-    checkCapabilityDocCoverage(item.files, itemFailures);
+    if (assuranceSelection(item.body, 'M08') === 'ENABLE') {
+      checkCapabilityDocCoverage(item.files, itemFailures);
+    }
     const passed = itemFailures.length === 0;
     if (passed !== item.valid) {
       failures.push(`${item.name}: expected valid=${item.valid}, got valid=${passed}${itemFailures.length ? ` (${itemFailures.join('; ')})` : ''}`);
@@ -710,7 +741,9 @@ if (shouldValidatePrBody) {
   }
 }
 
-checkCapabilityDocCoverage(files, failures);
+if (assuranceSelection(prBody, 'M08') === 'ENABLE') {
+  checkCapabilityDocCoverage(files, failures);
+}
 checkPlatformCapabilityEntrypoints(failures);
 
 const capabilityMap = fileExists('mango-docs/capabilities/README.md')

@@ -7,6 +7,7 @@
   "ruleSource": "mango-pmo/rules/product/02-system-requirements.md",
   "template": "mango-pmo/templates/system-requirements.md",
   "upstreamDocumentType": "business-requirements",
+  "allowNoUpstream": true,
   "metadata": {
     "ruleId": "SRS-META-001",
     "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
@@ -22,7 +23,7 @@
         "headers": ["上下文ID", "上游ID", "系统责任", "边界外责任", "参与方", "可观察输出"],
         "minRows": 1,
         "defines": {"上下文ID": "SC"},
-        "references": [{"column": "上游ID", "prefixes": ["BS", "BG", "BF"], "required": true}]
+        "references": [{"column": "上游ID", "prefixes": ["BS", "BG", "BF"], "required": true, "allowNone": true}]
       }]
     },
     {
@@ -32,7 +33,7 @@
         "headers": ["系统参与者ID", "上游参与者ID", "使用入口类别", "可见范围", "可执行动作", "禁止动作", "用户可见原因"],
         "minRows": 1,
         "defines": {"系统参与者ID": "SA"},
-        "references": [{"column": "上游参与者ID", "prefixes": ["BA"], "required": true}]
+        "references": [{"column": "上游参与者ID", "prefixes": ["BA"], "required": true, "allowNone": true}]
       }]
     },
     {
@@ -43,7 +44,7 @@
         "minRows": 1,
         "defines": {"功能ID": "FR"},
         "references": [
-          {"column": "上游ID", "prefixes": ["BG", "BF", "BR", "BAC"], "required": true},
+          {"column": "上游ID", "prefixes": ["BG", "BF", "BR", "BAC"], "required": true, "allowNone": true},
           {"column": "触发者ID", "prefixes": ["SA"], "required": true}
         ]
       }]
@@ -56,7 +57,7 @@
         "minRows": 1,
         "defines": {"场景ID": "UC"},
         "references": [
-          {"column": "上游流程ID", "prefixes": ["BF"], "required": true},
+          {"column": "上游流程ID", "prefixes": ["BF"], "required": true, "allowNone": true},
           {"column": "功能ID", "prefixes": ["FR"], "required": true},
           {"column": "参与者ID", "prefixes": ["SA"], "required": true}
         ]
@@ -125,7 +126,7 @@
         "headers": ["非功能ID", "上游ID", "类别", "适用场景", "度量指标", "目标值", "测量条件", "失败影响", "验收方式"],
         "minRows": 1,
         "defines": {"非功能ID": "NFR"},
-        "references": [{"column": "上游ID", "prefixes": ["BG", "BS", "BR", "BAC"], "required": true}]
+        "references": [{"column": "上游ID", "prefixes": ["BG", "BS", "BR", "BAC"], "required": true, "allowNone": true}]
       }]
     },
     {
@@ -136,7 +137,7 @@
         "minRows": 1,
         "defines": {"系统验收ID": "SAC"},
         "references": [
-          {"column": "业务验收ID", "prefixes": ["BAC"], "required": true},
+          {"column": "业务验收ID", "prefixes": ["BAC"], "required": true, "allowNone": true},
           {"column": "系统需求ID", "prefixes": ["FR", "UC", "PG", "BT", "DR", "IR", "NFR"], "required": true}
         ]
       }]
@@ -148,7 +149,7 @@
         "headers": ["上游ID", "系统需求ID", "系统验收ID", "覆盖说明"],
         "minRows": 1,
         "references": [
-          {"column": "上游ID", "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"], "required": true},
+          {"column": "上游ID", "prefixes": ["BP", "BG", "BS", "BA", "BO", "BF", "BR", "BAC"], "required": true, "allowNone": true},
           {"column": "系统需求ID", "prefixes": ["SC", "SA", "FR", "UC", "PG", "BT", "DR", "IR", "NFR", "SAC"], "required": true},
           {"column": "系统验收ID", "prefixes": ["SAC"], "required": true}
         ]

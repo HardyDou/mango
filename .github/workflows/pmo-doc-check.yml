@@ -2,7 +2,7 @@ name: PMO Documentation Checks
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, edited, synchronize, reopened]
 
 concurrency:
   group: pmo-doc-check-${{ github.event.pull_request.number }}
@@ -22,6 +22,15 @@ jobs:
       backend_mode: ${{ steps.scope.outputs.backend_mode }}
       maven_projects: ${{ steps.scope.outputs.maven_projects }}
       maven_dependency_projects: ${{ steps.scope.outputs.maven_dependency_projects }}
+      m08: ${{ steps.assurance.outputs.m08 }}
+      m09: ${{ steps.assurance.outputs.m09 }}
+      m10: ${{ steps.assurance.outputs.m10 }}
+      m11: ${{ steps.assurance.outputs.m11 }}
+      m12: ${{ steps.assurance.outputs.m12 }}
+      m13: ${{ steps.assurance.outputs.m13 }}
+      m14: ${{ steps.assurance.outputs.m14 }}
+      m15: ${{ steps.assurance.outputs.m15 }}
+      m16: ${{ steps.assurance.outputs.m16 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,8 +42,13 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Test document contracts and lifecycle routing
-        run: node --test mango-pmo/tests/document-contract/document-contract.test.mjs
+      - name: Read human-confirmed assurance selections
+        id: assurance
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s' "$PR_BODY" > .pr-body.md
+          node mango-pmo/tools/assurance-ci-scope.mjs --body .pr-body.md >> "$GITHUB_OUTPUT"
 
       - name: Classify affected governance and Maven scope
         id: scope
@@ -44,15 +58,15 @@ jobs:
             --head ${{ github.event.pull_request.head.sha }} \
             --output "$GITHUB_OUTPUT"
 
-      - name: Check PMO preflight routing
-        run: node mango-pmo/tools/check-pmo-preflight.mjs
-
   pmo:
     name: PMO gates
     needs: preflight_scope
     if: >-
-      needs.preflight_scope.outputs.pmo == 'true' ||
-      needs.preflight_scope.outputs.backend_mode == 'governance'
+      (needs.preflight_scope.outputs.pmo == 'true' ||
+      needs.preflight_scope.outputs.backend_mode == 'governance') &&
+      (needs.preflight_scope.outputs.m09 == 'true' ||
+      needs.preflight_scope.outputs.m10 == 'true' ||
+      needs.preflight_scope.outputs.m11 == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -72,7 +86,7 @@ jobs:
           node-version: '22'
 
       - name: Test document contracts, lifecycle routing, and Skills
-        if: needs.preflight_scope.outputs.pmo == 'true'
+        if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m10 == 'true'
         run: |
           node --test \
             mango-pmo/tests/architecture-debt-budget.test.mjs \
@@ -85,8 +99,15 @@ jobs:
             mango-pmo/tests/workspace-layout-check.test.mjs
           node mango-pmo/tests/skills/check-skill-evals.mjs
 
+      - name: Run selected static PMO checks
+        if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m09 == 'true'
+        run: |
+          node mango-pmo/tools/check-pmo-preflight.mjs
+          node mango-pmo/tools/check-governance-intent.mjs
+          node mango-pmo/tests/skills/check-delivery-assurance-recommendations.mjs
+
       - name: Build and verify the reproducible PMO package
-        if: needs.preflight_scope.outputs.distribution != 'true'
+        if: needs.preflight_scope.outputs.distribution != 'true' && needs.preflight_scope.outputs.m11 == 'true'
         run: |
           node mango-ui/packages/mango-pmo/scripts/build-package.mjs
           node mango-ui/packages/mango-pmo/scripts/check-package.mjs
@@ -95,8 +116,9 @@ jobs:
     name: CLI and JavaScript gates
     needs: preflight_scope
     if: >-
-      needs.preflight_scope.outputs.projection == 'true' ||
-      needs.preflight_scope.outputs.distribution == 'true'
+      (needs.preflight_scope.outputs.projection == 'true' ||
+      needs.preflight_scope.outputs.distribution == 'true') &&
+      (needs.preflight_scope.outputs.m09 == 'true' || needs.preflight_scope.outputs.m11 == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -116,19 +138,19 @@ jobs:
           node-version: '22'
 
       - name: Build and verify the reproducible PMO package for CLI tests
-        if: needs.preflight_scope.outputs.distribution == 'true'
+        if: needs.preflight_scope.outputs.distribution == 'true' && needs.preflight_scope.outputs.m11 == 'true'
         run: |
           node mango-ui/packages/mango-pmo/scripts/build-package.mjs
           node mango-ui/packages/mango-pmo/scripts/check-package.mjs
 
       - name: Check canonical business starter and CLI projection
-        if: needs.preflight_scope.outputs.projection == 'true'
+        if: needs.preflight_scope.outputs.projection == 'true' && needs.preflight_scope.outputs.m09 == 'true'
         run: |
           node mango-business-starter/scripts/check-template.mjs
           node mango-ui/packages/mango-cli/scripts/check-business-module-template.mjs
 
       - name: Test CLI PMO install, upgrade, rollback, and package contracts
-        if: needs.preflight_scope.outputs.distribution == 'true'
+        if: needs.preflight_scope.outputs.distribution == 'true' && needs.preflight_scope.outputs.m11 == 'true'
         run: |
           node mango-ui/packages/mango-cli/scripts/check-release-versions.mjs
           node mango-ui/packages/mango-cli/scripts/check-cli.mjs
@@ -138,9 +160,12 @@ jobs:
     name: Java gates
     needs: preflight_scope
     if: >-
-      needs.preflight_scope.outputs.backend == 'true' ||
+      (needs.preflight_scope.outputs.backend == 'true' ||
       needs.preflight_scope.outputs.generated_backend == 'true' ||
-      needs.preflight_scope.outputs.backend_mode == 'governance'
+      needs.preflight_scope.outputs.backend_mode == 'governance') &&
+      (needs.preflight_scope.outputs.m09 == 'true' ||
+      needs.preflight_scope.outputs.m10 == 'true' ||
+      needs.preflight_scope.outputs.m11 == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -165,8 +190,9 @@ jobs:
 
       - name: Build the local PMO bundle for generated project acceptance
         if: >-
-          needs.preflight_scope.outputs.generated_backend == 'true' ||
-          needs.preflight_scope.outputs.backend_mode == 'governance'
+          needs.preflight_scope.outputs.m11 == 'true' &&
+          (needs.preflight_scope.outputs.generated_backend == 'true' ||
+          needs.preflight_scope.outputs.backend_mode == 'governance')
         run: node mango-ui/packages/mango-pmo/scripts/build-package.mjs
 
       - name: Build the architecture gate prerequisites
@@ -180,11 +206,12 @@ jobs:
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-architecture-rules,:mango-maven-plugin \
-            -DskipTests=false \
+            -DskipTests=${{ needs.preflight_scope.outputs.m10 != 'true' }} \
             install
 
       - name: Build affected-module upstream dependencies
         if: >-
+          needs.preflight_scope.outputs.m09 == 'true' &&
           needs.preflight_scope.outputs.backend_mode == 'partial' &&
           needs.preflight_scope.outputs.maven_dependency_projects != ''
         env:
@@ -202,8 +229,9 @@ jobs:
 
       - name: Build generated four-layer backend prerequisites
         if: >-
-          needs.preflight_scope.outputs.generated_backend == 'true' ||
-          needs.preflight_scope.outputs.backend_mode == 'governance'
+          needs.preflight_scope.outputs.m11 == 'true' &&
+          (needs.preflight_scope.outputs.generated_backend == 'true' ||
+          needs.preflight_scope.outputs.backend_mode == 'governance')
         run: |
           mvn -f mango/pom.xml \
             -pl :mango,:mango-parent,:mango-common,:mango-infra,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter \
@@ -214,7 +242,7 @@ jobs:
             install
 
       - name: Enforce affected-module architecture and Java quality contracts
-        if: needs.preflight_scope.outputs.backend_mode == 'partial'
+        if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend_mode == 'partial'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           MAVEN_PROJECTS: ${{ needs.preflight_scope.outputs.maven_projects }}
@@ -232,7 +260,7 @@ jobs:
             verify
 
       - name: Enforce committed architecture debt budget policy
-        if: needs.preflight_scope.outputs.backend == 'true'
+        if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: >-
@@ -242,14 +270,15 @@ jobs:
 
       - name: Verify generated business backend gates
         if: >-
-          needs.preflight_scope.outputs.generated_backend == 'true' ||
-          needs.preflight_scope.outputs.backend_mode == 'governance'
+          needs.preflight_scope.outputs.m11 == 'true' &&
+          (needs.preflight_scope.outputs.generated_backend == 'true' ||
+          needs.preflight_scope.outputs.backend_mode == 'governance')
         env:
           MANGO_BACKEND_GATE_VERSION: 1.0.0-SNAPSHOT
         run: node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs
 
       - name: Enforce backend module metadata
-        if: needs.preflight_scope.outputs.backend == 'true'
+        if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -267,6 +296,7 @@ jobs:
   docs:
     name: Documentation gates
     needs: preflight_scope
+    if: needs.preflight_scope.outputs.m08 == 'true' || needs.preflight_scope.outputs.m09 == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -280,22 +310,23 @@ jobs:
           node-version: '22'
 
       - name: Check governance intent
-        if: needs.preflight_scope.outputs.pmo == 'true'
+        if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m09 == 'true'
         run: node mango-pmo/tools/check-governance-intent.mjs
 
       - name: Audit module README quality
-        if: needs.preflight_scope.outputs.readmes == 'true'
+        if: needs.preflight_scope.outputs.readmes == 'true' && needs.preflight_scope.outputs.m08 == 'true'
         run: node mango-pmo/tools/audit-module-readmes.mjs
 
       - name: Audit README source facts
-        if: needs.preflight_scope.outputs.readmes == 'true'
+        if: needs.preflight_scope.outputs.readmes == 'true' && needs.preflight_scope.outputs.m08 == 'true'
         run: node mango-pmo/tools/audit-readme-source-facts.mjs
 
       - name: Check business integration guides
-        if: needs.preflight_scope.outputs.readmes == 'true'
+        if: needs.preflight_scope.outputs.readmes == 'true' && needs.preflight_scope.outputs.m08 == 'true'
         run: node mango-pmo/tools/check-business-guides.mjs
 
       - name: Check capability docs governance
+        if: needs.preflight_scope.outputs.m08 == 'true'
         run: |
           node mango-pmo/tools/check-capability-docs.mjs \
             --base ${{ github.event.pull_request.base.sha }} \

@@ -1,0 +1,3865 @@
+{
+  "schemaVersion": 1,
+  "skill": "mango-design-delivery-assurance",
+  "cases": [
+    {
+      "id": "da-rec-001",
+      "kind": "single",
+      "tags": [
+        "worktree"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；在 main 工作区只修改受版本控制的内部说明文件；本题仅决定是否创建 worktree，不做文档内容或验证措施判断。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "需要改受控源码，建议创建独立 worktree；当前事实未触发数据库或产品文档。"
+    },
+    {
+      "id": "da-rec-002",
+      "kind": "single",
+      "tags": [
+        "worktree",
+        "existing-task"
+      ],
+      "prompt": "当前已经位于这个任务确认过的非 main worktree，只修改同一任务的 README。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "DO_NOT_CREATE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "受控文件会变化但已有任务 worktree，建议不要重复创建。"
+    },
+    {
+      "id": "da-rec-003",
+      "kind": "single",
+      "tags": [
+        "database"
+      ],
+      "prompt": "不改代码，本轮只决定后续空库验收是否重建临时测试库，不执行启动或集成验证。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "空库启动验收直接触发数据库重建，且没有版本控制文件改动。"
+    },
+    {
+      "id": "da-rec-004",
+      "kind": "single",
+      "tags": [
+        "database",
+        "production"
+      ],
+      "prompt": "不改文件，本轮只决定后续历史数据验收是否重建生产库；生产库不可清空，暂不执行验证。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M02",
+          "value": "DO_NOT_REBUILD"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "数据库验收触发 M02，但保留历史数据是目标，建议明确不重建。"
+    },
+    {
+      "id": "da-rec-005",
+      "kind": "single",
+      "tags": [
+        "static",
+        "read-only"
+      ],
+      "prompt": "只读审计现有 YAML 是否符合结构、格式和配置约束，不修改任何文件。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "目标完全可由静态结构检查证明，无需工作区或运行测试。"
+    },
+    {
+      "id": "da-rec-006",
+      "kind": "single",
+      "tags": [
+        "expert-review",
+        "read-only"
+      ],
+      "prompt": "对一个高影响但尚未实施的支付架构取舍做独立专家评审，不写设计文件。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "高影响专业决定需要独立视角，但当前没有文件修改或实施动作。"
+    },
+    {
+      "id": "da-rec-007",
+      "kind": "single",
+      "tags": [
+        "external-state",
+        "status"
+      ],
+      "prompt": "回读 GitHub main 分支当前保护配置，确认远端 required checks 的真实状态。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M16"
+      ],
+      "reason": "目标是读取外部平台真实状态，不需要修改仓库或治理语义。"
+    },
+    {
+      "id": "da-rec-008",
+      "kind": "single",
+      "tags": [
+        "human-acceptance",
+        "read-only"
+      ],
+      "prompt": "自动化截图无法判断品牌调性，请设计师只对现有页面做主观视觉验收。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15"
+      ],
+      "reason": "自动化不足以证明品牌调性，当前只需要责任人的人工判断。"
+    },
+    {
+      "id": "da-rec-009",
+      "kind": "single",
+      "tags": [
+        "static",
+        "read-only"
+      ],
+      "prompt": "只检查当前 JSON Schema 能否解析以及字段是否完整，不产生改动。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "结构和格式结果可由静态验证充分证明。"
+    },
+    {
+      "id": "da-rec-010",
+      "kind": "single",
+      "tags": [
+        "expert-review",
+        "security"
+      ],
+      "prompt": "请安全专家评估现有租户隔离方案的盲区，本轮只评审不实施。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "专业不确定性需要专家复核，但本轮没有代码或入口行为变更。"
+    },
+    {
+      "id": "da-rec-011",
+      "kind": "single",
+      "tags": [
+        "external-state",
+        "status"
+      ],
+      "prompt": "只从 Gitea API 回读仓库当前审批规则并生成状态结论。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M16"
+      ],
+      "reason": "结论依赖 Gitea 真实外部状态，回读是唯一触发措施。"
+    },
+    {
+      "id": "da-rec-012",
+      "kind": "single",
+      "tags": [
+        "human-acceptance",
+        "read-only"
+      ],
+      "prompt": "让业务负责人对现有审批结果是否符合现场职责划分做最终确认，不改系统。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15"
+      ],
+      "reason": "责任划分的现场结果无法由自动化独立证明，需要人工验收。"
+    },
+    {
+      "id": "da-rec-013",
+      "kind": "single",
+      "tags": [
+        "database"
+      ],
+      "prompt": "只为后续空库初始化验收决定是否删除并重建临时测试库，本轮不执行初始化或集成验证。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "任务只操作临时数据库并验证重建，不涉及受控文件。"
+    },
+    {
+      "id": "da-rec-014",
+      "kind": "single",
+      "tags": [
+        "database",
+        "production"
+      ],
+      "prompt": "只为后续线上迁移验收决定数据库是否重建：明确禁止重建生产库，本轮不修改仓库或执行验证。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M02",
+          "value": "DO_NOT_REBUILD"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "数据库验收已触发，但目标要求保留线上状态，建议不重建。"
+    },
+    {
+      "id": "da-rec-015",
+      "kind": "single",
+      "tags": [
+        "external-state",
+        "status"
+      ],
+      "prompt": "读取 GitHub webhook 实际启用状态和目标地址是否一致，不做配置修改。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M16"
+      ],
+      "reason": "需要证明 GitHub 外部配置的真实运行状态。"
+    },
+    {
+      "id": "da-rec-016",
+      "kind": "single",
+      "tags": [
+        "expert-review",
+        "governance"
+      ],
+      "prompt": "让独立 PMO 专家只审查现有保障规则是否存在自证偏差，不修改规则。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "治理系统审查自身触发独立专家复核，当前不发生治理改动。"
+    },
+    {
+      "id": "da-rec-017",
+      "kind": "single",
+      "tags": [
+        "human-acceptance",
+        "read-only"
+      ],
+      "prompt": "现有中文文案通过格式检查后，仍需编辑负责人判断语气是否自然。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15"
+      ],
+      "reason": "语气自然度属于自动化不足以证明的人工判断。"
+    },
+    {
+      "id": "da-rec-018",
+      "kind": "single",
+      "tags": [
+        "static",
+        "read-only"
+      ],
+      "prompt": "仅编译当前生成的类型声明以确认已有契约没有结构错误，不写文件。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "编译即可证明当前目标，且任务是只读验证。"
+    },
+    {
+      "id": "da-rec-019",
+      "kind": "single",
+      "tags": [
+        "expert-review",
+        "compliance"
+      ],
+      "prompt": "邀请合规专家评估现有审计保留期限是否合理，本轮不改配置或文档。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "专业合规不确定性需要专家复核，没有其它实施事实。"
+    },
+    {
+      "id": "da-rec-020",
+      "kind": "single",
+      "tags": [
+        "external-state",
+        "status"
+      ],
+      "prompt": "只确认 GitHub ruleset 是否真实绑定 main，不修改本地或远端配置。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M16"
+      ],
+      "reason": "目标完全依赖 GitHub 外部状态回读。"
+    },
+    {
+      "id": "da-rec-021",
+      "kind": "combination",
+      "tags": [
+        "business",
+        "full-feature"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；在 main 开发新的计价审批业务：新增业务规则、用户状态、API、数据库协作，并由多人分阶段实施。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M06",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M07",
+        "M08",
+        "M09",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "业务、系统、技术、协作和多层验证事实同时存在，但没有仓库治理或外部平台状态。"
+    },
+    {
+      "id": "da-rec-022",
+      "kind": "combination",
+      "tags": [
+        "business",
+        "existing-task"
+      ],
+      "prompt": "在已有任务 worktree 修改已批准折扣规则及单模块内对应服务状态和 API；不涉及数据库、框架装配或跨模块协作。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "DO_NOT_CREATE"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "业务规则、服务状态和 API 技术契约变化需要对应文档与验证，已有 worktree 不重复创建。"
+    },
+    {
+      "id": "da-rec-023",
+      "kind": "combination",
+      "tags": [
+        "ui"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；在 main 只调整按钮显示文案和点击后的提示文案，接口与独立状态规则不变。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M13",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "用户可观察行为和交互变化需要 SRS 与 UI 验证，但没有自动化不足的事实。"
+    },
+    {
+      "id": "da-rec-024",
+      "kind": "combination",
+      "tags": [
+        "api",
+        "capability"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；增加公开查询字段并改变 API 返回契约，同时更新消费者接入说明；结果依赖 Controller、Service 与数据库组件协作。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M08",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M09",
+        "M10",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "外部行为、技术契约和使用方式变化均需保障，当前没有 UI。"
+    },
+    {
+      "id": "da-rec-025",
+      "kind": "combination",
+      "tags": [
+        "database",
+        "api"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；新增内部表字段和 migration，并让服务 API 在不改变对外输入输出语义的情况下读写该字段，要求空库启动验收。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "数据库结构、服务入口和真实协作变化需要重建、设计和集成/API 验证。"
+    },
+    {
+      "id": "da-rec-026",
+      "kind": "combination",
+      "tags": [
+        "database",
+        "initialization"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修改初始化字典数据，并从空库验证数据库与框架装配后的初始化结果；不改变独立算法或状态规则。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "初始化数据和持久化协作变化触发数据库重建、技术设计及集成测试。"
+    },
+    {
+      "id": "da-rec-027",
+      "kind": "combination",
+      "tags": [
+        "capability",
+        "configuration"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；新增公开 starter 配置项并改变 Spring 装配方式，需更新使用说明，并用配置结构检查证明声明完整。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M08",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "公开配置、装配和消费方式变化需要技术、说明、静态和集成保障。"
+    },
+    {
+      "id": "da-rec-028",
+      "kind": "combination",
+      "tags": [
+        "architecture",
+        "refactor"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；重构多个内部模块的依赖方向，外部行为不变，实施顺序复杂且存在架构不确定性，并用静态依赖规则证明边界。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M06",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M07",
+        "M08",
+        "M10",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "技术边界和复杂实施需要设计、计划、验证与专家复核，不需要产品文档。"
+    },
+    {
+      "id": "da-rec-029",
+      "kind": "combination",
+      "tags": [
+        "governance",
+        "external-state"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修改 CI required check 治理语义，用静态策略检查证明本地声明，并同步 GitHub 远端 ruleset。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M07",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M16"
+      ],
+      "reason": "治理语义、自修改复核、静态契约和 GitHub 真实状态都需要保障，产品四文档无价值。"
+    },
+    {
+      "id": "da-rec-030",
+      "kind": "combination",
+      "tags": [
+        "governance",
+        "external-state"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；把仓库代码评审从多人审批调整为 single-owner，修改 CODEOWNERS 策略并做静态策略检查，同时修改远端保护；不涉及产品业务审批。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M07",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M16"
+      ],
+      "reason": "这是仓库治理与外部配置任务，不应按高风险机械生成产品文档。"
+    },
+    {
+      "id": "da-rec-031",
+      "kind": "combination",
+      "tags": [
+        "governance"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；只修改本仓 PMO 长期规则文本和机器可读索引，不改 checker 运行逻辑，也不触碰 GitHub 或 Gitea 配置。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M07",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "治理系统修改自身需要治理记录、静态检查和专家复核，但没有外部状态。"
+    },
+    {
+      "id": "da-rec-032",
+      "kind": "combination",
+      "tags": [
+        "multi-module",
+        "planning"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；实施已批准的跨四个模块技术方案，存在严格依赖顺序和框架装配协作，并要求静态依赖规则检查。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M06",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M07",
+        "M08",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "跨模块边界和实施顺序需要设计、计划及集成验证。"
+    },
+    {
+      "id": "da-rec-033",
+      "kind": "combination",
+      "tags": [
+        "unit",
+        "code"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；在 main 修改一个私有金额舍入函数及其边界逻辑。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "局部函数行为可由独立单元测试保障，不需要产品或集成套餐。"
+    },
+    {
+      "id": "da-rec-034",
+      "kind": "combination",
+      "tags": [
+        "state-machine",
+        "integration"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；通过关键技术取舍改变用户可观察的订单状态机转换与持久化协作，但不改变业务目标。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "订单状态转换同时改变业务规则和系统状态，并涉及技术实现、独立规则与数据库协作。"
+    },
+    {
+      "id": "da-rec-035",
+      "kind": "combination",
+      "tags": [
+        "api",
+        "security"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修改 API 授权边界和失败响应，结果依赖安全框架与数据库组件协作，并存在较高安全不确定性。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "可观察失败语义、安全取舍、真实协作和入口行为都需要保障。"
+    },
+    {
+      "id": "da-rec-036",
+      "kind": "combination",
+      "tags": [
+        "ui",
+        "state"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修改前端向导的本地状态转换和交互反馈，后端契约不变。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M13",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M12",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "系统交互、前端状态规则和浏览器结果需要对应保障，没有自动化不足的事实。"
+    },
+    {
+      "id": "da-rec-037",
+      "kind": "combination",
+      "tags": [
+        "api",
+        "error"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；改变服务入口的错误码和失败语义，需要数据库协作验证。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "外部可观察错误行为、服务入口契约和数据库协作需要技术设计、集成与 API 验证。"
+    },
+    {
+      "id": "da-rec-038",
+      "kind": "combination",
+      "tags": [
+        "database",
+        "startup"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修复 migration 顺序和 Spring 数据源装配，并要求全新测试库启动。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "空库、migration 和框架装配共同触发重建、技术设计和集成测试。"
+    },
+    {
+      "id": "da-rec-039",
+      "kind": "combination",
+      "tags": [
+        "database",
+        "migration",
+        "production"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；为保留生产历史数据编写兼容迁移，明确不能重建数据库且方案影响大。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M02",
+          "value": "DO_NOT_REBUILD"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "数据结构和兼容取舍需要设计、集成与专家复核，但目标要求不重建。"
+    },
+    {
+      "id": "da-rec-040",
+      "kind": "combination",
+      "tags": [
+        "capability",
+        "docs"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修改公开 CLI 参数说明和示例，行为实现已完成且本次只更新受控文档，并执行格式与链接静态检查。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M08",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "公开使用方式和文档结构需要保障，不重复产品与技术文档。"
+    },
+    {
+      "id": "da-rec-041",
+      "kind": "combination",
+      "tags": [
+        "governance",
+        "docs"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修订长期 PR 审批责任规则及其机器可读索引，不改产品。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M07",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "长期治理语义和规则索引需要治理记录、静态检查与独立复核。"
+    },
+    {
+      "id": "da-rec-042",
+      "kind": "combination",
+      "tags": [
+        "business",
+        "requirements"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；定义新的退款责任和业务验收边界，并把确认结果写入仓库。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "业务责任和验收边界需要 BRD；没有自动化不足或现场验收事实。"
+    },
+    {
+      "id": "da-rec-043",
+      "kind": "combination",
+      "tags": [
+        "system-requirements"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；已有业务目标不变，只新增用户可观察的超时状态并写入规格。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "只变化系统行为并写入 SRS，不重复 BRD 或提前设计 API，也不机械增加人工验收。"
+    },
+    {
+      "id": "da-rec-044",
+      "kind": "combination",
+      "tags": [
+        "technical-design",
+        "expert-review"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；为既定行为选择新的缓存一致性方案并形成设计，存在专业不确定性，并要求设计结构静态检查。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "关键技术取舍需要 TDD、可检查结构和独立专家视角。"
+    },
+    {
+      "id": "da-rec-045",
+      "kind": "combination",
+      "tags": [
+        "implementation-plan"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；把已批准设计拆成跨团队有依赖顺序的实施步骤并提交计划文件。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M06",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "设计已经批准，本次独有保障是受控工作区和实施协调计划。"
+    },
+    {
+      "id": "da-rec-046",
+      "kind": "combination",
+      "tags": [
+        "integration",
+        "technical"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；更换 Spring 自动配置装配顺序，公开行为不变但组件协作发生变化。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "技术装配决定和真实组件协作变化需要 TDD 与集成测试。"
+    },
+    {
+      "id": "da-rec-047",
+      "kind": "combination",
+      "tags": [
+        "api",
+        "verification",
+        "read-only"
+      ],
+      "prompt": "不改仓库，只验收已经部署的新 API 状态和失败响应，并由业务责任人确认结果。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M13",
+        "M14",
+        "M15"
+      ],
+      "reason": "当前任务是入口验证与人工责任确认，不需要 worktree。"
+    },
+    {
+      "id": "da-rec-048",
+      "kind": "combination",
+      "tags": [
+        "api",
+        "ui",
+        "full-stack"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；实现新的查询 API 和管理页面交互，数据由真实数据库组件协作。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M13",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "系统行为、技术边界、集成、API 和 UI 均变化；没有自动化不足的事实。"
+    },
+    {
+      "id": "da-rec-049",
+      "kind": "combination",
+      "tags": [
+        "business",
+        "ui"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；新增业务人员可见的拒绝规则和页面提示，但不新增 API；拒绝规则可独立单元测试。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M13",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M12",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "业务规则、系统提示和用户界面变化需要业务、系统及 UI 保障，没有单独的人工验收事实。"
+    },
+    {
+      "id": "da-rec-050",
+      "kind": "combination",
+      "tags": [
+        "sdk",
+        "capability"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；改变公开 SDK 配置对象和序列化函数，同时更新接入指南并执行结构静态检查；消费者可观察输入输出契约随之变化。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M08",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "公开技术契约、使用方式、结构和函数行为均需保障。"
+    },
+    {
+      "id": "da-rec-051",
+      "kind": "combination",
+      "tags": [
+        "framework",
+        "expert-review"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修改框架内部默认 Bean 的独立替换判定，这是一项框架装配架构取舍，不改变公开配置、接入方式或外部可观察行为，但存在较高装配不确定性。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "框架设计、局部决策、真实装配和专业复核共同保障目标。"
+    },
+    {
+      "id": "da-rec-052",
+      "kind": "combination",
+      "tags": [
+        "database",
+        "index"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；新增数据库唯一索引并要求空库 migration 和并发写入协作验证；目标不能仅由静态检查证明。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "数据库结构和持久化协作需要重建、设计及集成验证。"
+    },
+    {
+      "id": "da-rec-053",
+      "kind": "combination",
+      "tags": [
+        "database",
+        "business-default"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；改变新租户默认业务字典及初始化 seed，并从空库验收。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "默认业务规则、初始化数据和持久化协作均发生变化。"
+    },
+    {
+      "id": "da-rec-054",
+      "kind": "combination",
+      "tags": [
+        "permission",
+        "business"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；新增业务审批角色责任并改变权限矩阵、API 与数据库协作，影响高。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "业务责任、权限行为、技术边界、真实入口和高影响复核都需要保障；未说明自动化不足。"
+    },
+    {
+      "id": "da-rec-055",
+      "kind": "combination",
+      "tags": [
+        "tenant",
+        "security"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；修复高影响的跨租户查询泄漏，既有业务目标不变，但授权、数据库和 API 行为受影响。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "高影响不自动生成 BRD/Plan，应保障实际系统、安全、集成和 API 边界。"
+    },
+    {
+      "id": "da-rec-056",
+      "kind": "combination",
+      "tags": [
+        "static",
+        "format"
+      ],
+      "prompt": "当前位于 main 且没有可复用任务 worktree；修复机器可读策略 JSON 的格式和字段排序，不改语义。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "受控文件和静态结构是唯一触发事实。"
+    },
+    {
+      "id": "da-rec-057",
+      "kind": "combination",
+      "tags": [
+        "unit",
+        "private"
+      ],
+      "prompt": "当前位于 main 且没有可复用任务 worktree；修复私有日期解析函数的闰年边界，不涉及框架协作。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "局部函数边界由单元测试充分证明，不机械增加集成/API/UI。"
+    },
+    {
+      "id": "da-rec-058",
+      "kind": "combination",
+      "tags": [
+        "integration",
+        "wiring"
+      ],
+      "prompt": "当前位于 main 且没有可复用任务 worktree；修复现有 Bean 装配缺失，涉及关键框架装配取舍，规则算法和外部 API 不变。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "问题只在框架装配协作中可观察，集成测试是目标措施。"
+    },
+    {
+      "id": "da-rec-059",
+      "kind": "single",
+      "tags": [
+        "api",
+        "verification",
+        "read-only"
+      ],
+      "prompt": "不修改文件，只对已经变更的服务入口执行 API 正常流和失败流验证。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "API 正常流和失败流可由入口验证证明，无文件改动且没有人工验收事实。"
+    },
+    {
+      "id": "da-rec-060",
+      "kind": "combination",
+      "tags": [
+        "ui",
+        "verification",
+        "read-only"
+      ],
+      "prompt": "不修改代码，只验收已经部署页面的拖拽交互、视觉结果和现场可用性。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M13",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M14",
+        "M15"
+      ],
+      "reason": "当前任务只需要 UI 运行态与人工现场验收。"
+    },
+    {
+      "id": "da-rec-061",
+      "kind": "combination",
+      "tags": [
+        "governance",
+        "external-state",
+        "read-only"
+      ],
+      "prompt": "由独立治理专家审查 GitHub 当前保护规则是否符合 single-owner 治理意图，不做修改。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M16"
+      ],
+      "reason": "现状审查需要独立治理视角和远端真实状态，不产生治理文件。"
+    },
+    {
+      "id": "da-rec-062",
+      "kind": "combination",
+      "tags": [
+        "external-state",
+        "human-acceptance",
+        "read-only"
+      ],
+      "prompt": "回读远端审批配置，并让唯一 Owner 确认实际合并条件可接受。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14"
+      ],
+      "reason": "真实远端状态和 Owner 责任判断都不能由本地静态检查代替。"
+    },
+    {
+      "id": "da-rec-063",
+      "kind": "combination",
+      "tags": [
+        "database",
+        "integration",
+        "read-only"
+      ],
+      "prompt": "不改 migration，重建临时空库并运行现有 Spring 数据访问集成测试。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M02",
+          "value": "REBUILD"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "空库和真实数据库协作是本次验证目标，无版本文件变化。"
+    },
+    {
+      "id": "da-rec-064",
+      "kind": "combination",
+      "tags": [
+        "api",
+        "human-acceptance",
+        "read-only"
+      ],
+      "prompt": "验证外部合作方现有 API 回调，并由合作方负责人确认业务结果。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M13",
+        "M14",
+        "M15"
+      ],
+      "reason": "服务入口和外部责任方结果需要两种不同证据。"
+    },
+    {
+      "id": "da-rec-065",
+      "kind": "combination",
+      "tags": [
+        "ui",
+        "human-acceptance",
+        "read-only"
+      ],
+      "prompt": "对现有移动端布局执行浏览器验收，并由无障碍责任人确认可用性。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M13",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M14",
+        "M15"
+      ],
+      "reason": "浏览器行为和无障碍人工判断均需要，但不修改代码。"
+    },
+    {
+      "id": "da-rec-066",
+      "kind": "combination",
+      "tags": [
+        "static",
+        "expert-review",
+        "read-only"
+      ],
+      "prompt": "对现有模块依赖图执行静态规则检查，并由架构专家复核例外合理性。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "静态事实与架构判断互补，当前只读不写设计。"
+    },
+    {
+      "id": "da-rec-067",
+      "kind": "combination",
+      "tags": [
+        "unit",
+        "integration",
+        "test-design"
+      ],
+      "prompt": "为已完成的状态算法规划单元与真实数据库协作回归，本轮不修改仓库。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "独立规则和组件协作需要不同层次验证，当前只是验证执行。"
+    },
+    {
+      "id": "da-rec-068",
+      "kind": "combination",
+      "tags": [
+        "requirements",
+        "planning-only"
+      ],
+      "prompt": "只设计后续需求保障组合：业务规则和用户可观察状态都会变化，但本轮不创建文件。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "已知事实只触发业务和系统文档建议，当前不实施或写文件。"
+    },
+    {
+      "id": "da-rec-069",
+      "kind": "combination",
+      "tags": [
+        "technical",
+        "planning-only"
+      ],
+      "prompt": "只设计后续技术保障组合：存在跨模块关键取舍和复杂实施顺序，并需架构专家复核。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M06",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "技术、协调和专业不确定性触发，当前不创建受控材料。"
+    },
+    {
+      "id": "da-rec-070",
+      "kind": "combination",
+      "tags": [
+        "full-docs",
+        "existing-task"
+      ],
+      "prompt": "已有任务 worktree；新业务目标、系统行为、技术方案和多人实施计划都需重新确认。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "DO_NOT_CREATE"
+        },
+        {
+          "id": "M03",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M06",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "四种决定确实都有独有价值，但现有 worktree 应复用。"
+    },
+    {
+      "id": "da-rec-071",
+      "kind": "boundary",
+      "tags": [
+        "keyword-boundary",
+        "capability"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；README 出现“business”字样但只更新公开配置示例并执行格式与链接静态检查，不改变业务规则或系统行为。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M08",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "不能因 business 关键词触发 BRD；真实变化是能力说明和静态文档。"
+    },
+    {
+      "id": "da-rec-072",
+      "kind": "boundary",
+      "tags": [
+        "keyword-boundary",
+        "static"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；只修复 API 注释中的拼写并检查格式，运行行为和契约均不变。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "API 关键词不能机械触发系统、技术和入口验证。"
+    },
+    {
+      "id": "da-rec-073",
+      "kind": "boundary",
+      "tags": [
+        "ui",
+        "read-only",
+        "status"
+      ],
+      "prompt": "只查看一张现有页面截图了解现状，不修改、不验收、不形成交付结论。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "查看现状不是 UI 变化或人工验收任务，不应触发保障 Skill。"
+    },
+    {
+      "id": "da-rec-074",
+      "kind": "boundary",
+      "tags": [
+        "governance",
+        "risk-boundary"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；L3 治理任务：修改 PMO 门禁规则和 checker 的独立判定逻辑，并执行规则结构静态检查，但不改变产品业务或系统行为。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M07",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M08",
+        "M11",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "L3 只提高复核强度，不能自动生成四阶段产品文档。"
+    },
+    {
+      "id": "da-rec-075",
+      "kind": "boundary",
+      "tags": [
+        "tenant",
+        "line-count-boundary"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；高影响租户隔离任务：只改一行可独立测试的租户过滤条件，但会改变授权、数据库协作和 API 隔离结果。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "代码行数不能降低实际安全、集成和入口保障。"
+    },
+    {
+      "id": "da-rec-076",
+      "kind": "boundary",
+      "tags": [
+        "database",
+        "production",
+        "read-only"
+      ],
+      "prompt": "线上数据库验收明确禁止清库，只比较迁移前后真实数据库记录并请 DBA 复核。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M02",
+          "value": "DO_NOT_REBUILD"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M12",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "数据库触发不等于必须重建；生产历史数据场景应建议不重建并专家复核。"
+    },
+    {
+      "id": "da-rec-077",
+      "kind": "boundary",
+      "tags": [
+        "database",
+        "read-only",
+        "status"
+      ],
+      "prompt": "只查询数据库当前版本号和连接状态，不做结构、初始化、空库或验收结论。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "普通数据库状态查看不满足 M02 或集成测试触发事实。"
+    },
+    {
+      "id": "da-rec-078",
+      "kind": "boundary",
+      "tags": [
+        "worktree",
+        "existing-task"
+      ],
+      "prompt": "当前非 main worktree 已明确属于本任务，继续修改同一状态算法。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "DO_NOT_CREATE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "应复用当前任务 worktree，同时对状态规则选择单元测试。"
+    },
+    {
+      "id": "da-rec-079",
+      "kind": "boundary",
+      "tags": [
+        "user-pressure",
+        "unit"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；用户要求跳过测试，但任务只修改内部私有金额舍入函数边界，业务规则和外部可观察行为不变；先给出保障建议再由用户决定。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "AI 仍应建议能证明函数行为的措施，最终启停由用户确认。"
+    },
+    {
+      "id": "da-rec-080",
+      "kind": "boundary",
+      "tags": [
+        "over-documentation",
+        "static"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；用户口头要求写四份文档，但实际任务只是修复 README 拼写和链接。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "保障建议应基于事实，不让无价值的产品文档成为固定套餐。"
+    },
+    {
+      "id": "da-rec-081",
+      "kind": "boundary",
+      "tags": [
+        "external-state",
+        "claim-only",
+        "status"
+      ],
+      "prompt": "有人声称 GitHub 保护已经生效，但没有回读证据；本轮只核验远端。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M15",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M16"
+      ],
+      "reason": "口头声明不能替代 GitHub 真实状态回读。"
+    },
+    {
+      "id": "da-rec-082",
+      "kind": "boundary",
+      "tags": [
+        "static",
+        "automation-sufficient",
+        "read-only"
+      ],
+      "prompt": "目标仅是确认现有 JSON 格式合法，确定性 parser 已能完整证明，不需要人工判断。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M09",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "自动化已充分证明静态目标，不应机械加入人工验收。"
+    },
+    {
+      "id": "da-rec-083",
+      "kind": "boundary",
+      "tags": [
+        "ui",
+        "human-acceptance",
+        "read-only"
+      ],
+      "prompt": "验收已有品牌页面的交互和视觉调性，后端与 API 完全不涉及。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M13",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M16",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M14",
+        "M15"
+      ],
+      "reason": "只选择能证明 UI 和主观视觉结果的措施，不强制后端验证。"
+    },
+    {
+      "id": "da-rec-084",
+      "kind": "boundary",
+      "tags": [
+        "api",
+        "no-ui"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；实现高影响、无浏览器入口的后端 API 权限规则变更和数据库协作；权限规则可独立测试。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M04",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M05",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M11",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M12",
+          "value": "ENABLE"
+        },
+        {
+          "id": "M14",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M13",
+        "M15",
+        "M16"
+      ],
+      "reason": "无 UI 的后端任务不能因风险高机械要求 UI 验证。"
+    },
+    {
+      "id": "da-rec-085",
+      "kind": "boundary",
+      "tags": [
+        "simple-change",
+        "plan-boundary"
+      ],
+      "prompt": "当前位于 main 主工作区且没有可复用任务 worktree；单模块修改一个纯函数，无依赖顺序、多人协作或复杂步骤。",
+      "expectedSkill": true,
+      "requiredMeasures": [
+        {
+          "id": "M01",
+          "value": "CREATE"
+        },
+        {
+          "id": "M10",
+          "value": "ENABLE"
+        }
+      ],
+      "forbiddenMeasures": [
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "简单独立实现不触发实施计划或更高层测试。"
+    },
+    {
+      "id": "da-rec-086",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "npm"
+      ],
+      "prompt": "发布 npm 包到 registry，并验证 tarball 与 dist integrity。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "发布完全属于独立发布流程，不进入交付保障措施确认。"
+    },
+    {
+      "id": "da-rec-087",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "maven"
+      ],
+      "prompt": "执行 Maven 批次 deploy 并从 Nexus 回查目标坐标。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "Maven 发布和仓库回查只能走独立发布 Skill。"
+    },
+    {
+      "id": "da-rec-088",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "cli"
+      ],
+      "prompt": "发布新的 Mango CLI 版本并更新 release lock。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "CLI 发布明确排除在交付保障机制之外。"
+    },
+    {
+      "id": "da-rec-089",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "github"
+      ],
+      "prompt": "创建 Git tag 和 GitHub Release，并填写发布说明。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "tag 和 GitHub Release 是发布动作，不触发本 Skill。"
+    },
+    {
+      "id": "da-rec-090",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "version"
+      ],
+      "prompt": "为正式发布提升所有制品版本号并开始发布批次。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "即使版本文件会变化，整体意图仍是发布，必须由发布流程处理。"
+    },
+    {
+      "id": "da-rec-091",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "registry"
+      ],
+      "prompt": "发布后从 npm registry 和 Maven 仓库回查已发布制品。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "发布仓库回查不是 M15 外部状态回读，仍属于发布流程。"
+    },
+    {
+      "id": "da-rec-092",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "repair"
+      ],
+      "prompt": "修复失败的发布 manifest，并恢复未完成的 npm 发布状态。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "发布恢复和不可变制品修复由 release 状态机负责。"
+    },
+    {
+      "id": "da-rec-093",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "tag"
+      ],
+      "prompt": "检查目标版本 tag 是否存在并推送正式 tag。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "正式 tag 操作是发布动作，目录中的措施不得混入。"
+    },
+    {
+      "id": "da-rec-094",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "notes"
+      ],
+      "prompt": "更新 CHANGELOG 后立即发布 PMO 包和生成 GitHub Release。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "任务主目标是发布，即使包含文档修改也应完全路由到发布流程。"
+    },
+    {
+      "id": "da-rec-095",
+      "kind": "non-trigger",
+      "tags": [
+        "release",
+        "mixed-artifacts"
+      ],
+      "prompt": "按依赖顺序发布 Maven、npm、CLI、starter 和 PMO 全批次。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "多制品批次必须由独立发布规则和授权管理。"
+    },
+    {
+      "id": "da-rec-096",
+      "kind": "non-trigger",
+      "tags": [
+        "read-only",
+        "status"
+      ],
+      "prompt": "只运行 git status 查看当前工作区状态，不修改也不形成交付结论。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "本地状态查看不是受控文件修改或正式验证。"
+    },
+    {
+      "id": "da-rec-097",
+      "kind": "non-trigger",
+      "tags": [
+        "read-only",
+        "explanation"
+      ],
+      "prompt": "解释 BRD 和 SRS 的区别，不创建文档或改变任务。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "概念解释不触发交付保障措施。"
+    },
+    {
+      "id": "da-rec-098",
+      "kind": "non-trigger",
+      "tags": [
+        "read-only",
+        "logs",
+        "status"
+      ],
+      "prompt": "查看现有服务日志片段并说明错误含义，暂不修复或验收。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "日志定位不等于实施、验证或人工验收。"
+    },
+    {
+      "id": "da-rec-099",
+      "kind": "non-trigger",
+      "tags": [
+        "read-only",
+        "worktree",
+        "status"
+      ],
+      "prompt": "列出当前 git worktree 及对应分支，不创建或删除任何工作区。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "查看 worktree 列表不满足修改受版本控制文件的触发事实。"
+    },
+    {
+      "id": "da-rec-100",
+      "kind": "non-trigger",
+      "tags": [
+        "read-only",
+        "pr",
+        "status"
+      ],
+      "prompt": "只查看 PR checks 和 review 状态，不评审、不修改、不合并。",
+      "expectedSkill": false,
+      "requiredMeasures": [],
+      "forbiddenMeasures": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "reason": "只读 PR 状态查看不属于治理变化、专家复核或外部配置回读。"
+    }
+  ]
+}

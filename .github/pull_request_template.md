@@ -24,9 +24,11 @@
 - Requirement impact: L0-L3 - concrete affected users, contracts, data, security, or workflow facts
 - Solution risk: L0-L3 - concrete implementation scope, coupling, recovery, and uncertainty facts
 - Final risk: L0-L3
-- Selected verification: STATIC, UNIT, API, UI
-- Why sufficient:
-- Skipped verification: None / list each skipped type and reason
+- Assurance baseline: CONFIRMED / NOT_APPLICABLE - human confirmation evidence; NOT_APPLICABLE is only for release-only PRs
+- Assurance selections: M01=CREATE; M09=ENABLE
+- Assurance reasoning:
+- Assurance evidence: M01 - task branch/worktree evidence; M09 - command or report evidence
+- Residual risks: None / list each confirmed DISABLE, DO_NOT_CREATE or DO_NOT_REBUILD decision and its residual risk
 
 ## Validation
 

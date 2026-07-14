@@ -199,13 +199,12 @@ test('configured backend paths fail closed when their root POM is absent', t => 
   );
 });
 
-test('clean CI builds explicit architecture prerequisites without expanding the quality reactor', () => {
+test('CI reruns when human assurance selections change and keeps explicit architecture prerequisites', () => {
   const workflow = fs.readFileSync(
     new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
     'utf8',
   );
-  assert.match(workflow, /pull_request:\n\s+types: \[opened, synchronize, reopened\]/);
-  assert.doesNotMatch(workflow, /types: \[[^\]]*edited[^\]]*\]/);
+  assert.match(workflow, /pull_request:\n\s+types: \[opened, edited, synchronize, reopened\]/);
   assert.match(
     workflow,
     /concurrency:\n\s+group: pmo-doc-check-\$\{\{ github\.event\.pull_request\.number \}\}\n\s+cancel-in-progress: true/,
@@ -222,6 +221,12 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
     /Build and verify the reproducible PMO package[\s\S]*?build-package\.mjs[\s\S]*?check-package\.mjs/,
   );
   assert.match(workflow, /generated_backend: \$\{\{ steps\.scope\.outputs\.generated_backend \}\}/);
+  assert.match(workflow, /m09: \$\{\{ steps\.assurance\.outputs\.m09 \}\}/);
+  assert.match(workflow, /assurance-ci-scope\.mjs --body \.pr-body\.md >> "\$GITHUB_OUTPUT"/);
+  assert.match(workflow, /outputs\.m09 == 'true'/);
+  assert.match(workflow, /outputs\.m10 == 'true'/);
+  assert.match(workflow, /outputs\.m11 == 'true'/);
+  assert.match(workflow, /outputs\.m08 == 'true'/);
   assert.match(
     workflow,
     /Build the architecture gate prerequisites[\s\S]*?-pl :mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,

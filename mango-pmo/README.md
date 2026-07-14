@@ -14,13 +14,15 @@
 | 规则路由 | rules index JSON | 维护规则、角色、阶段和 bundle 映射 |
 | 角色定义 | `agents/**` | PM、Tech Lead、Dev、QA、PMO 的职责说明 |
 | 模板资产 | `templates/**` | PRD、详细设计、交付契约、验收证据模板 |
-| 文档生命周期 | `contracts/*.json`、`tools/check-*-requirements.mjs` | BRD、SRS、TDD、实施计划的结构、边界、追踪、审批和版本门禁 |
+| 交付保障方案 | `rules/11-delivery-assurance.md`、`contracts/delivery-assurance.json`、`skills/mango-design-delivery-assurance` | 按任务事实推荐固定 M01-M16，经原生 Ask User 逐项确认；发布独立 |
+| 文档生命周期 | `contracts/*.json`、`tools/check-*-requirements.mjs` | 只对用户启用的 BRD、SRS、TDD、实施计划执行结构、边界、追踪、审批和版本门禁 |
 | 文档集合门禁 | `tools/check-document-set.mjs` | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要；仅允许用 `.mango-pmo-legacy-documents.json` 对合同启用前的历史文档做逐文件哈希锁定 |
-| 风险与验证门禁 | `tools/risk-verification.mjs` | 校验需求影响、方案风险、二者最大值、`STATIC`、`UNIT`、`API`、`UI` 选择和跳过理由 |
-| CI 范围分类 | `tools/classify-pmo-check-scope.mjs` | 按 Git 改动选择 PMO、Java、发布投影和 README 检查；从 `mango.config.json` 的 `paths` 对象读取业务仓目录，解析直接受影响 Maven 模块，门禁治理改动进入独立验收模式 |
+| 风险与保障基线门禁 | `tools/risk-verification.mjs` | 校验需求影响、方案风险、二者最大值、人工确认的 M01-M16 精确值和已启用措施证据；不补固定套餐 |
+| CI 措施选择 | `tools/assurance-ci-scope.mjs` | 从已校验的人工确认基线读取 M01-M16；CI 只执行用户启用且适用于 CI 的措施 |
+| CI 影响范围分类 | `tools/classify-pmo-check-scope.mjs` | 按 Git 改动裁剪已启用检查的 PMO、Java、投影和 README 影响范围；只缩小范围，不替用户选择措施 |
 | 模块架构债务预算 | `tools/check-architecture-debt-budget.mjs` | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减 |
 | 专项 Agent | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md` | 一个生命周期模板对应一个撰写 Agent |
-| 可安装 Skills | `skills/**` | 生命周期协调、四类文档、工程、QA、Issue、模块、发布和 PR review |
+| 可安装 Skills | `skills/**` | 保障方案确认、生命周期协调、按需文档、工程、QA、Issue、模块、发布和 PR review |
 | 全局实体例外 | `contracts/global-entity-exceptions.json` | 按 Entity/table/owner/审批/到期日管理精确例外 |
 | Mango 主仓分支保护策略 | `.github/branch-protection-policy.json`、`tools/branch-protection-policy.mjs` | 声明并校验单 Owner 或多人维护模式，同时固定 Required Check 和历史保护项 |
 
@@ -92,7 +94,9 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 | `delivery-contract-check.mjs` | design、ledger、mode | 台账覆盖和状态检查结果 |
 | `acceptance-evidence-check.mjs` | evidence、min rows | 验收证据表检查结果 |
 | `check-document-set.mjs` | business docs root | 自动发现并检查目录内生命周期文档及其上游关系 |
-| `risk-verification.mjs` | PR Markdown body | 风险最大值、验证类型集合、充分性和跳过理由检查结果 |
+| `risk-verification.mjs` | PR Markdown body | 风险最大值、人工确认的措施值、启用证据和停用剩余风险 |
+| `assurance-ci-scope.mjs` | 已通过保障基线合同的 PR Markdown body | M01-M16 是否由人工确认启用的 CI 输出 |
+| `mango-design-delivery-assurance` | 当前目标、范围和事实 | 固定措施建议、原生 Ask User 确认与确认基线 |
 | `classify-pmo-check-scope.mjs` | Git base/head | PMO/后端/投影/README 布尔范围、Maven `none`、`partial`、`governance` 模式和 project selectors |
 | `check-architecture-debt-budget.mjs` | 完整 Reactor 报告、当前预算、可选 Git base ref 或模块选择器 | 全局或模块债务比较、递减要求和稳定身份差异 |
 | `@mango/pmo` | `dist/baseline.json`、`dist/baseline/**` | 可发布 PMO baseline 包 |
