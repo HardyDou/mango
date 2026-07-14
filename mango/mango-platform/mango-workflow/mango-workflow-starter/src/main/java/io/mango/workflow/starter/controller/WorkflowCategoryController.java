@@ -12,7 +12,6 @@ import io.mango.workflow.core.service.IWorkflowCategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,7 +42,7 @@ public class WorkflowCategoryController implements WorkflowCategoryApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:list")
     @Operation(summary = "分页查询流程分类", description = "权限接口。分页查询流程分类配置")
     @Override
-    public R<PageResult<WorkflowCategoryVO>> page(@Valid @ParameterObject WorkflowCategoryPageQuery query) {
+    public R<PageResult<WorkflowCategoryVO>> page(@ParameterObject WorkflowCategoryPageQuery query) {
         return R.ok(workflowCategoryService.page(query));
     }
 
@@ -75,7 +74,7 @@ public class WorkflowCategoryController implements WorkflowCategoryApi {
     @Override
     public R<String> create(
             @Parameter(description = "保存流程分类命令", required = true)
-            @Valid @RequestBody SaveWorkflowCategoryCommand command) {
+            @RequestBody SaveWorkflowCategoryCommand command) {
         return R.ok(workflowCategoryService.create(command));
     }
 
@@ -85,7 +84,7 @@ public class WorkflowCategoryController implements WorkflowCategoryApi {
     @Override
     public R<Boolean> update(
             @Parameter(description = "保存流程分类命令", required = true)
-            @Valid @RequestBody SaveWorkflowCategoryCommand command) {
+            @RequestBody SaveWorkflowCategoryCommand command) {
         return R.ok(workflowCategoryService.update(command));
     }
 

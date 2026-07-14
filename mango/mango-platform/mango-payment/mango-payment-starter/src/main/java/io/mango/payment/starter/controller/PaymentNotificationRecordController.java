@@ -13,7 +13,6 @@ import io.mango.payment.core.service.IPaymentNotificationRecordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -63,7 +62,7 @@ public class PaymentNotificationRecordController implements PaymentNotificationR
     @PostMapping("/retry")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:notification-record:retry")
     @Operation(summary = "人工重推通知记录", description = "登记失败通知的人工补偿重推，仅重推已有支付或退款结果，不改变资金状态")
-    public R<PaymentNotificationRecordVO> retryNotificationRecord(@Valid @RequestBody RetryPaymentNotificationRecordCommand command) {
+    public R<PaymentNotificationRecordVO> retryNotificationRecord(@RequestBody RetryPaymentNotificationRecordCommand command) {
         return R.ok(notificationRecordService.retryNotificationRecord(command));
     }
 

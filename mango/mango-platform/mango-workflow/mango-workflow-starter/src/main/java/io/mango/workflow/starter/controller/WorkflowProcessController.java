@@ -15,7 +15,6 @@ import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +42,7 @@ public class WorkflowProcessController implements WorkflowProcessApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:process:start")
     @Operation(summary = "发起流程", description = "按已发布流程定义创建流程实例")
     @Override
-    public R<WorkflowProcessInstanceVO> start(@Valid @RequestBody StartWorkflowProcessCommand command) {
+    public R<WorkflowProcessInstanceVO> start(@RequestBody StartWorkflowProcessCommand command) {
         return R.ok(workflowProcessService.start(command));
     }
 
@@ -51,7 +50,7 @@ public class WorkflowProcessController implements WorkflowProcessApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:process:start")
     @Operation(summary = "创建业务申请并发起流程", description = "一次性创建业务申请、发起流程并返回当前任务快照")
     @Override
-    public R<WorkflowStartResultVO> startBusinessWorkflow(@Valid @RequestBody StartBusinessWorkflowCommand command) {
+    public R<WorkflowStartResultVO> startBusinessWorkflow(@RequestBody StartBusinessWorkflowCommand command) {
         return R.ok(workflowProcessService.startBusinessWorkflow(command));
     }
 
@@ -60,7 +59,7 @@ public class WorkflowProcessController implements WorkflowProcessApi {
     @Operation(summary = "查询我的发起流程", description = "分页查询当前用户发起的流程实例")
     @Override
     public R<PageResult<WorkflowProcessInstanceVO>> initiated(
-            @Valid @ParameterObject WorkflowTaskPageQuery query) {
+            @ParameterObject WorkflowTaskPageQuery query) {
         return R.ok(workflowProcessService.initiated(query));
     }
 
@@ -81,7 +80,7 @@ public class WorkflowProcessController implements WorkflowProcessApi {
     public R<PageResult<WorkflowProcessInstanceVO>> history(
             @Parameter(description = "业务主键", required = true)
             @RequestParam("businessKey") String businessKey,
-            @Valid @ParameterObject WorkflowTaskPageQuery query) {
+            @ParameterObject WorkflowTaskPageQuery query) {
         return R.ok(workflowProcessService.historyByBusinessKey(businessKey, query));
     }
 }

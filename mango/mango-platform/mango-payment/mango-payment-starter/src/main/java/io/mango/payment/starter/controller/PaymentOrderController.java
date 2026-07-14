@@ -13,7 +13,6 @@ import io.mango.payment.core.service.IPaymentOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -63,7 +62,7 @@ public class PaymentOrderController implements PaymentOrderApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:payment-order:sync-status")
     @Operation(summary = "同步支付订单状态", description = "按支付订单号调用支付通道查单，并通过统一支付状态机推进后续流水、业务订单和通知流程")
     public R<PaymentOrderSyncStatusVO> syncPaymentOrderStatus(
-            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam("payOrderNo") String payOrderNo) {
+            @Parameter(description = "支付订单号", required = true) @RequestParam("payOrderNo") String payOrderNo) {
         return R.ok(paymentOrderService.syncPaymentOrderStatus(payOrderNo));
     }
 }

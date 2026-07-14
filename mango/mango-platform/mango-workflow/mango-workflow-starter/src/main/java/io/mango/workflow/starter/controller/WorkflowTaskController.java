@@ -25,7 +25,6 @@ import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,7 +52,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
     @Operation(summary = "查询我的待办", description = "分页查询当前用户待处理或待领取的审批任务")
     @Override
-    public R<PageResult<WorkflowTaskVO>> todo(@Valid @ParameterObject WorkflowTaskPageQuery query) {
+    public R<PageResult<WorkflowTaskVO>> todo(@ParameterObject WorkflowTaskPageQuery query) {
         return R.ok(workflowTaskRuntimeService.todo(query));
     }
 
@@ -77,7 +76,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
     @Operation(summary = "查询我的发起", description = "保留任务维度的我的发起兼容查询")
     @Override
-    public R<PageResult<WorkflowTaskVO>> initiated(@Valid @ParameterObject WorkflowTaskPageQuery query) {
+    public R<PageResult<WorkflowTaskVO>> initiated(@ParameterObject WorkflowTaskPageQuery query) {
         return R.ok(workflowTaskRuntimeService.initiated(query));
     }
 
@@ -85,7 +84,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
     @Operation(summary = "查询我的已办", description = "分页查询当前用户已经处理完成的审批任务")
     @Override
-    public R<PageResult<WorkflowTaskVO>> done(@Valid @ParameterObject WorkflowTaskPageQuery query) {
+    public R<PageResult<WorkflowTaskVO>> done(@ParameterObject WorkflowTaskPageQuery query) {
         return R.ok(workflowTaskRuntimeService.done(query));
     }
 
@@ -103,7 +102,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:complete")
     @Operation(summary = "审批通过", description = "完成当前审批任务并推进流程")
     @Override
-    public R<Boolean> complete(@Valid @RequestBody CompleteWorkflowTaskCommand command) {
+    public R<Boolean> complete(@RequestBody CompleteWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.complete(command));
     }
 
@@ -111,7 +110,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:complete")
     @Operation(summary = "审批通过并返回推进后结果", description = "返回流程推进完成后的业务申请状态和当前任务快照")
     @Override
-    public R<WorkflowTaskCompleteResultVO> completeWithResult(@Valid @RequestBody CompleteWorkflowTaskCommand command) {
+    public R<WorkflowTaskCompleteResultVO> completeWithResult(@RequestBody CompleteWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.completeWithResult(command));
     }
 
@@ -119,7 +118,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:reject")
     @Operation(summary = "审批驳回", description = "驳回当前任务并结束流程实例")
     @Override
-    public R<Boolean> reject(@Valid @RequestBody RejectWorkflowTaskCommand command) {
+    public R<Boolean> reject(@RequestBody RejectWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.reject(command));
     }
 
@@ -127,7 +126,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:reject")
     @Operation(summary = "审批驳回并返回结果", description = "返回驳回后的业务申请状态和当前任务快照")
     @Override
-    public R<WorkflowTaskActionResultVO> rejectWithResult(@Valid @RequestBody RejectWorkflowTaskCommand command) {
+    public R<WorkflowTaskActionResultVO> rejectWithResult(@RequestBody RejectWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.rejectWithResult(command));
     }
 
@@ -135,7 +134,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:return")
     @Operation(summary = "审批退回", description = "退回到最近一个已完成的不同用户任务节点或指定历史节点，并返回退回后的当前任务快照")
     @Override
-    public R<WorkflowTaskCompleteResultVO> returnTask(@Valid @RequestBody ReturnWorkflowTaskCommand command) {
+    public R<WorkflowTaskCompleteResultVO> returnTask(@RequestBody ReturnWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.returnTask(command));
     }
 
@@ -143,7 +142,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:save")
     @Operation(summary = "暂存审批任务", description = "保存当前表单变量但不推进流程")
     @Override
-    public R<Boolean> saveDraft(@Valid @RequestBody SaveWorkflowTaskDraftCommand command) {
+    public R<Boolean> saveDraft(@RequestBody SaveWorkflowTaskDraftCommand command) {
         return R.ok(workflowTaskRuntimeService.saveDraft(command));
     }
 
@@ -151,7 +150,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:save")
     @Operation(summary = "暂存审批任务并返回结果", description = "返回暂存后的业务申请状态和当前任务快照")
     @Override
-    public R<WorkflowTaskActionResultVO> saveDraftWithResult(@Valid @RequestBody SaveWorkflowTaskDraftCommand command) {
+    public R<WorkflowTaskActionResultVO> saveDraftWithResult(@RequestBody SaveWorkflowTaskDraftCommand command) {
         return R.ok(workflowTaskRuntimeService.saveDraftWithResult(command));
     }
 
@@ -159,7 +158,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:transfer")
     @Operation(summary = "转办审批任务", description = "将当前任务转交给指定用户处理")
     @Override
-    public R<Boolean> transfer(@Valid @RequestBody TransferWorkflowTaskCommand command) {
+    public R<Boolean> transfer(@RequestBody TransferWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.transfer(command));
     }
 
@@ -167,7 +166,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:add-sign")
     @Operation(summary = "加签审批任务", description = "为当前审批节点增加处理用户")
     @Override
-    public R<Boolean> addSign(@Valid @RequestBody AddSignWorkflowTaskCommand command) {
+    public R<Boolean> addSign(@RequestBody AddSignWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.addSign(command));
     }
 
@@ -175,7 +174,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:claim")
     @Operation(summary = "认领候选任务", description = "当前用户认领有权限处理的候选任务")
     @Override
-    public R<Boolean> claim(@Valid @RequestBody ClaimWorkflowTaskCommand command) {
+    public R<Boolean> claim(@RequestBody ClaimWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.claim(command));
     }
 
@@ -183,7 +182,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:claim")
     @Operation(summary = "认领候选任务并返回结果", description = "返回认领后的业务申请状态和当前任务快照")
     @Override
-    public R<WorkflowTaskActionResultVO> claimWithResult(@Valid @RequestBody ClaimWorkflowTaskCommand command) {
+    public R<WorkflowTaskActionResultVO> claimWithResult(@RequestBody ClaimWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.claimWithResult(command));
     }
 
@@ -191,7 +190,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:unclaim")
     @Operation(summary = "释放候选任务", description = "释放已认领任务并恢复为候选状态")
     @Override
-    public R<Boolean> unclaim(@Valid @RequestBody ClaimWorkflowTaskCommand command) {
+    public R<Boolean> unclaim(@RequestBody ClaimWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.unclaim(command));
     }
 
@@ -199,7 +198,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:unclaim")
     @Operation(summary = "释放候选任务并返回结果", description = "返回释放后的业务申请状态和当前任务快照")
     @Override
-    public R<WorkflowTaskActionResultVO> unclaimWithResult(@Valid @RequestBody ClaimWorkflowTaskCommand command) {
+    public R<WorkflowTaskActionResultVO> unclaimWithResult(@RequestBody ClaimWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.unclaimWithResult(command));
     }
 
@@ -207,7 +206,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
     @Operation(summary = "查询抄送给我", description = "分页查询抄送给当前用户的流程消息")
     @Override
-    public R<PageResult<WorkflowTaskVO>> copied(@Valid @ParameterObject WorkflowTaskPageQuery query) {
+    public R<PageResult<WorkflowTaskVO>> copied(@ParameterObject WorkflowTaskPageQuery query) {
         return R.ok(workflowTaskRuntimeService.copied(query));
     }
 
@@ -215,7 +214,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:read-copied")
     @Operation(summary = "标记抄送已阅", description = "将指定抄送记录标记为已读")
     @Override
-    public R<Boolean> readCopied(@Valid @RequestBody ReadWorkflowCopiedTaskCommand command) {
+    public R<Boolean> readCopied(@RequestBody ReadWorkflowCopiedTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.readCopied(command));
     }
 

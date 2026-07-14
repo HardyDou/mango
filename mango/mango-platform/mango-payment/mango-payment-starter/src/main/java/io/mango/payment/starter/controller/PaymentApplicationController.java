@@ -1,5 +1,6 @@
 package io.mango.payment.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -14,7 +15,6 @@ import io.mango.payment.core.service.IPaymentApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/payment/applications")
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependency is intentionally retained for constructor injection")
 @Tag(name = "支付应用管理", description = "支付接入应用后台管理接口")
 public class PaymentApplicationController implements PaymentApplicationApi {
 
@@ -56,7 +58,7 @@ public class PaymentApplicationController implements PaymentApplicationApi {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:application:add")
     @Operation(summary = "新增支付应用", description = "创建支付接入应用")
-    public R<PaymentApplicationSaveResultVO> createApplication(@Valid @RequestBody CreatePaymentApplicationCommand command) {
+    public R<PaymentApplicationSaveResultVO> createApplication(@RequestBody CreatePaymentApplicationCommand command) {
         return R.ok(applicationService.createApplication(command));
     }
 
@@ -64,7 +66,7 @@ public class PaymentApplicationController implements PaymentApplicationApi {
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:application:edit")
     @Operation(summary = "修改支付应用", description = "更新支付接入应用")
-    public R<PaymentApplicationSaveResultVO> updateApplication(@Valid @RequestBody UpdatePaymentApplicationCommand command) {
+    public R<PaymentApplicationSaveResultVO> updateApplication(@RequestBody UpdatePaymentApplicationCommand command) {
         return R.ok(applicationService.updateApplication(command));
     }
 

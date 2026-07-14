@@ -14,7 +14,6 @@ import io.mango.payment.core.service.IPaymentDifferenceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -72,7 +71,7 @@ public class PaymentDifferenceController implements PaymentDifferenceApi {
     @PostMapping("/handle")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:difference:handle")
     @Operation(summary = "处理对账差异", description = "受控处理对账差异，记录动作、原因、处理人、时间和凭据，不直接修改支付或退款成功状态")
-    public R<PaymentDifferenceVO> handleDifference(@Valid @RequestBody HandlePaymentDifferenceCommand command) {
+    public R<PaymentDifferenceVO> handleDifference(@RequestBody HandlePaymentDifferenceCommand command) {
         return R.ok(differenceService.handleDifference(command));
     }
 }

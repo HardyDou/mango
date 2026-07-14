@@ -17,7 +17,6 @@ import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +45,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:create")
     @Operation(summary = "创建业务工作流申请", description = "创建业务申请并保存流程变量与展示快照")
     @Override
-    public R<WorkflowBusinessApplyVO> create(@Valid @RequestBody CreateWorkflowBusinessApplyCommand command) {
+    public R<WorkflowBusinessApplyVO> create(@RequestBody CreateWorkflowBusinessApplyCommand command) {
         return R.ok(workflowBusinessApplyService.create(command));
     }
 
@@ -55,7 +54,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     @Operation(summary = "分页查询业务工作流申请", description = "按业务、状态和申请人条件分页查询申请记录")
     @Override
     public R<PageResult<WorkflowBusinessApplyVO>> page(
-            @Valid @RequestBody WorkflowBusinessApplyPageRequest request) {
+            @RequestBody WorkflowBusinessApplyPageRequest request) {
         return R.ok(workflowBusinessApplyService.page(request));
     }
 
@@ -82,7 +81,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     @Operation(summary = "按业务主键查询申请历史", description = "按业务类型和业务主键分页查询历次申请")
     @Override
     public R<PageResult<WorkflowBusinessApplyVO>> history(
-            @Valid @ParameterObject WorkflowBusinessApplyPageQuery query) {
+            @ParameterObject WorkflowBusinessApplyPageQuery query) {
         return R.ok(workflowBusinessApplyService.history(query));
     }
 
@@ -103,7 +102,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     @Operation(summary = "批量查询业务最新申请进度", description = "按业务主键集合批量查询每项业务的最新申请进度")
     @Override
     public R<WorkflowBusinessApplyProgressBatchVO> latestProgressBatch(
-            @Valid @RequestBody WorkflowBusinessApplyProgressBatchRequest request) {
+            @RequestBody WorkflowBusinessApplyProgressBatchRequest request) {
         return R.ok(workflowBusinessApplyService.latestProgressBatch(request));
     }
 
@@ -112,7 +111,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     @Operation(summary = "批量查询最新业务申请", description = "按业务类型和业务主键集合查询最新申请详情")
     @Override
     public R<List<WorkflowBusinessApplyVO>> latestByBusinessKeys(
-            @Valid @RequestBody WorkflowBusinessApplyProgressBatchRequest request) {
+            @RequestBody WorkflowBusinessApplyProgressBatchRequest request) {
         return R.ok(workflowBusinessApplyService
                 .latestByBusinessKeys(request.getBusinessType(), request.getBusinessKeys()));
     }

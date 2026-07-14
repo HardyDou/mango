@@ -8,7 +8,6 @@ import io.mango.payment.api.vo.PaymentChannelCallbackResultVO;
 import io.mango.payment.core.service.IPaymentChannelCallbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,7 +28,7 @@ public class PaymentChannelCallbackController implements PaymentChannelCallbackA
     @InternalApi(desc = "支付通道标准化回调")
     @PostMapping
     @Operation(summary = "处理支付通道标准化回调", description = "由具体通道适配器完成验签后调用，推进支付或退款订单状态并触发业务通知")
-    public R<PaymentChannelCallbackResultVO> handle(@Valid @RequestBody PaymentChannelCallbackCommand command) {
+    public R<PaymentChannelCallbackResultVO> handle(@RequestBody PaymentChannelCallbackCommand command) {
         return R.ok(callbackService.handle(command));
     }
 

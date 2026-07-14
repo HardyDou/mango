@@ -19,7 +19,6 @@ import io.mango.payment.core.service.IPaymentReconciliationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -77,7 +76,7 @@ public class PaymentReconciliationController implements PaymentReconciliationApi
     @PostMapping("/import")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:import")
     @Operation(summary = "导入通道账单", description = "导入通道账单形成对账批次，同一通道、日期、文件摘要只能导入一次，并执行支付成功金额核对")
-    public R<PaymentReconciliationVO> importReconciliation(@Valid @RequestBody ImportPaymentReconciliationCommand command) {
+    public R<PaymentReconciliationVO> importReconciliation(@RequestBody ImportPaymentReconciliationCommand command) {
         return R.ok(reconciliationService.importReconciliation(command));
     }
 
@@ -85,7 +84,7 @@ public class PaymentReconciliationController implements PaymentReconciliationApi
     @PostMapping("/mango-pay/virtual/generate")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:import")
     @Operation(summary = "生成芒果支付账单", description = "按账单日期从芒果支付真实支付和退款订单生成通道账单批次，并执行对账核对")
-    public R<PaymentReconciliationVO> generateMangoPayVirtualBill(@Valid @RequestBody GenerateMangoPayVirtualBillCommand command) {
+    public R<PaymentReconciliationVO> generateMangoPayVirtualBill(@RequestBody GenerateMangoPayVirtualBillCommand command) {
         return R.ok(reconciliationService.generateMangoPayVirtualBill(command));
     }
 
@@ -93,7 +92,7 @@ public class PaymentReconciliationController implements PaymentReconciliationApi
     @PostMapping("/local-order-check/generate")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:import")
     @Operation(summary = "生成本地订单核验", description = "按本地成功订单逐笔查询通道状态，形成核验明细并进入统一对账流程；该能力不等同于机构完整账单下载")
-    public R<PaymentReconciliationVO> generateLocalOrderCheck(@Valid @RequestBody GeneratePaymentLocalOrderCheckCommand command) {
+    public R<PaymentReconciliationVO> generateLocalOrderCheck(@RequestBody GeneratePaymentLocalOrderCheckCommand command) {
         return R.ok(reconciliationService.generateLocalOrderCheck(command));
     }
 
@@ -125,7 +124,7 @@ public class PaymentReconciliationController implements PaymentReconciliationApi
     @PostMapping("/bill-fetch")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:import")
     @Operation(summary = "发起通道账单获取", description = "按通道账单获取源拉取原始账单并进入统一对账导入流程")
-    public R<PaymentReconciliationVO> fetchChannelBill(@Valid @RequestBody FetchPaymentChannelBillCommand command) {
+    public R<PaymentReconciliationVO> fetchChannelBill(@RequestBody FetchPaymentChannelBillCommand command) {
         return R.ok(reconciliationService.fetchChannelBill(command));
     }
 }

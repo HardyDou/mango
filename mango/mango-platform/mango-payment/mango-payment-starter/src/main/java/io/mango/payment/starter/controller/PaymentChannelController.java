@@ -1,5 +1,6 @@
 package io.mango.payment.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -11,7 +12,6 @@ import io.mango.payment.api.vo.PaymentChannelCapabilityVO;
 import io.mango.payment.api.vo.PaymentChannelVO;
 import io.mango.payment.core.service.IPaymentChannelService;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/payment/channels")
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependency is intentionally retained for constructor injection")
 @Tag(name = "支付通道管理", description = "支付通道后台管理接口")
 public class PaymentChannelController implements PaymentChannelApi {
 
@@ -55,7 +57,7 @@ public class PaymentChannelController implements PaymentChannelApi {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:add")
     @Operation(summary = "新增支付通道", description = "创建支付通道配置")
-    public R<Long> createChannel(@Valid @RequestBody SavePaymentChannelCommand command) {
+    public R<Long> createChannel(@RequestBody SavePaymentChannelCommand command) {
         return R.ok(channelService.createChannel(command));
     }
 
@@ -63,7 +65,7 @@ public class PaymentChannelController implements PaymentChannelApi {
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:edit")
     @Operation(summary = "修改支付通道", description = "更新支付通道配置")
-    public R<Boolean> updateChannel(@Valid @RequestBody SavePaymentChannelCommand command) {
+    public R<Boolean> updateChannel(@RequestBody SavePaymentChannelCommand command) {
         return R.ok(channelService.updateChannel(command));
     }
 
