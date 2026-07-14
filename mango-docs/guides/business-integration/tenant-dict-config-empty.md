@@ -71,6 +71,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.07.14-maven-1.0.21-platform-debt-release 仅同步 Payment、CMS、Workflow、Notice 修复及配套前端版本锁，不新增或修改租户、字典、组织、用户或系统配置数据，也不改变本指南排查步骤。
+
 - PR #497 调整 Notice 内部服务、事件租户传递、固定请求路径和新库初始化边界；不改变 Identity/Org/System 字典与配置查询 API、租户隔离或基础数据来源。Notice 正式资源不再初始化个人联系方式和运行态消息；租户字典为空仍按本指南的 Resource 同步、当前 tenantId、租户绑定和数据权限链路定位。
 
 - v2026.07.11-maven-1.0.14-cli-release 仅将当前后端实现向前发布为 Maven `1.0.14` 并更新 CLI 后端版本锁；不改变租户字典/配置 API、租户隔离、初始数据、页面入口或空数据排障步骤。

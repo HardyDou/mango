@@ -167,6 +167,8 @@ await paymentOrderApi.syncStatus(payOrderNo);
 
 ## 6. 数据与初始化
 
+`@mango/payment@1.0.13` 对齐本批次后端 Payment 修复；支付配置、订单、退款、签约等公开页面 key、HTTP API 和初始化数据来源不变。
+
 `@mango/payment` 不包含数据库 migration。页面有数据的前提是后端已经完成初始化和业务运行写入。
 
 | 数据 | 来源 | 前端消费 |

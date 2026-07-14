@@ -74,6 +74,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- v2026.07.14-maven-1.0.21-platform-debt-release 仅同步 Payment、CMS、Workflow、Notice 修复及配套前端版本锁，不改变 RBAC 菜单接口、页面 component key、角色授权或本指南排查步骤。
+
 - v2026.07.11-maven-1.0.14-cli-release 仅将当前后端实现向前发布为 Maven `1.0.14` 并更新 CLI 后端版本锁；不改变 RBAC 菜单页面 key、菜单/按钮权限码、角色授权、租户边界或排障步骤。
 
 - v2026.07.11-npm-readme-forward-release 仅向前发布已更正的 package README 并传播精确 npm 依赖版本；不改变 RBAC 菜单页面 key、菜单与按钮权限码、角色授权、租户边界或本场景排障步骤。

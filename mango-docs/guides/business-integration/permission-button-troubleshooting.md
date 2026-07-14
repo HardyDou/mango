@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- v2026.07.14-maven-1.0.21-platform-debt-release 仅同步 Payment、CMS、Workflow、Notice 修复及配套前端版本锁，不改变按钮权限码、后端鉴权、角色授权或本指南排查步骤。
+
 - v2026.07.11-maven-1.0.14-cli-release 仅将当前后端实现向前发布为 Maven `1.0.14` 并更新 CLI 后端版本锁；不改变按钮 `permissionCode`、登录态权限集合、角色授权、接口鉴权、租户边界或排障步骤。
 
 - PR #425 仅调整登录流程复用和 `/login` 自定义 UI 注入；不改变按钮 `permissionCode`、登录态权限集合、角色按钮授权关系、接口鉴权、租户边界、按钮展示规则执行逻辑和本场景排障步骤。业务侧自定义登录 UI 后如遇按钮不可见或接口 403，仍按权限码一致性、角色授权和重新登录刷新权限集合排查。
