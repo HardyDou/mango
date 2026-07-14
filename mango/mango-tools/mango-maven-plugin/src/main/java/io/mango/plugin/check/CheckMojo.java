@@ -79,6 +79,8 @@ public class CheckMojo extends AbstractMojo {
     private static final String ARRAY_SUFFIX = "[]";
     private static final String DIGITS_REGEX = "\\d+";
     private static final String TARGET_DIRECTORY_NAME = "target";
+    private static final Set<String> STATIC_ANALYSIS_AGGREGATORS =
+            Set.of("architecture-verification", "mango-architecture-verification");
     private static final char PARAMETER_SEPARATOR = ',';
     private static final char OPEN_ANGLE_BRACKET = '<';
     private static final char CLOSE_ANGLE_BRACKET = '>';
@@ -910,9 +912,24 @@ public class CheckMojo extends AbstractMojo {
             throws MojoExecutionException {
         List<String> sessionProjects = resolveSessionReactorProjects(rootPath);
         if (!sessionProjects.isEmpty()) {
-            return sessionProjects;
+            return filterStaticAnalysisProjects(sessionProjects);
         }
-        return discoverReactorProjects(rootPath);
+        return filterStaticAnalysisProjects(discoverReactorProjects(rootPath));
+    }
+
+    private List<String> filterStaticAnalysisProjects(List<String> projects) {
+        List<String> filteredProjects = new ArrayList<>();
+        for (String project : projects) {
+            Path fileName = Paths.get(project).getFileName();
+            if (fileName != null && STATIC_ANALYSIS_AGGREGATORS.contains(fileName.toString())) {
+                getLog().info(
+                        "Excluded governance aggregator from delegated static analysis: "
+                                + project);
+                continue;
+            }
+            filteredProjects.add(project);
+        }
+        return filteredProjects;
     }
 
     private List<String> resolveSessionReactorProjects(Path rootPath) {
