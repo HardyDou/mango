@@ -8,7 +8,7 @@
 | 项目 | 值 |
 |------|----|
 | NPM 包 | `@mango/cli` |
-| 当前版本 | `1.0.75` |
+| 当前版本 | `1.0.76` |
 | bin 命令 | `mango`、`mango-cli` |
 | 命令入口 | `src/index.mjs` |
 | 发布 registry | [npm-hosted](http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/) |
@@ -63,8 +63,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.2.5 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm view @mango/cli@1.0.75 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-npm install -g @mango/cli@1.0.75 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/cli@1.0.76 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm install -g @mango/cli@1.0.76 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -440,15 +440,17 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ## 12. 相关文档
 
+### 1.0.76 发布影响
+
+`@mango/cli@1.0.76` 继续精确依赖 `@mango/pmo@1.2.5`，后端 Mango Maven 锁仍为 `1.0.19`。本次 `release-versions.json` 同步锁定 `@mango/link-page@1.0.5`，使新生成或升级后的业务前端消费公共链接首页时拿到已发布的样式优化版本。该锁定不改变 CLI 命令、模板结构、后端 Maven 版本、页面注册方式或运行时配置；业务项目仍按 `@mango/link-page` README 引入组件和 `@mango/link-page/style.css`。
+
+发布验证脚本同时规范 Windows release worktree 下的本地 tarball 路径写法，避免反斜杠进入临时消费者 `package.json` 后被 YAML/包管理器解析错误。该修复只影响 `package-consumer:typecheck` 使用本地 pack 产物做消费方类型检查的流程，不改变业务项目安装已发布 npm 包的方式。
+
 ### 1.0.75 发布影响
 
 `@mango/cli@1.0.75` 精确依赖 `@mango/pmo@1.2.5`，并将业务后端锁升级为 Mango Maven `1.0.19`。该批次修复 `no-new-violations` 在 Mango 聚合前被历史 PMD/Checkstyle 直接阻断的问题，并为 PMO 合同启用前的历史生命周期文档提供逐路径、逐 SHA-256 的显式存量基线；历史文档内容变化和所有新文档仍会失败。
 
 业务仓安装新 CLI 后执行 `mango pmo upgrade --project-dir . --to 1.2.5`，将后端 `<mango.version>` 升到 `1.0.19`，对既有历史文档登记哈希基线后只运行一次最终 required check。
-
-本次 `release-versions.json` 同步锁定 `@mango/link-page@1.0.5`，使新生成或升级后的业务前端消费公共链接首页时拿到已发布的样式优化版本。该锁定不改变 CLI 命令、模板结构、后端 Maven 版本、页面注册方式或运行时配置；业务项目仍按 `@mango/link-page` README 引入组件和 `@mango/link-page/style.css`。
-
-发布验证脚本同时规范 Windows release worktree 下的本地 tarball 路径写法，避免反斜杠进入临时消费者 `package.json` 后被 YAML/包管理器解析错误。该修复只影响 `package-consumer:typecheck` 使用本地 pack 产物做消费方类型检查的流程，不改变业务项目安装已发布 npm 包的方式。
 
 ### 1.0.74 发布影响
 
