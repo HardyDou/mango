@@ -24,6 +24,7 @@ jobs:
           sparse-checkout: |
             mango-pmo/tools/check-capability-docs.mjs
             mango-pmo/tools/risk-verification.mjs
+            mango-pmo/contracts/delivery-assurance.json
           sparse-checkout-cone-mode: false
 
       - name: Fetch exact PR revisions for capability scope

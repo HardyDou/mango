@@ -173,8 +173,26 @@ function applyCurrentWorkspacePolicy(policy, workspace) {
   }
   return {
     mode: 'reuse-current-worktree',
-    summary: '当前已位于非 main 任务工作区；必须在当前工作区和当前分支继续处理，禁止为本问题再创建 worktree。',
+    summary: '当前已位于非 main 任务工作区；建议复用当前工作区，不再创建第二个 worktree。',
     reason: `current=${workspace.root}; branch=${workspace.branch}; classified=${policy.mode}; ${policy.reason}`
+  };
+}
+
+function workspaceMeasureRecommendation(policy) {
+  if (policy.mode === 'needs-human-check') {
+    return {
+      measureId: 'M01',
+      recommendedValue: null,
+      requiresHumanConfirmation: true,
+      reason: '影响范围不足，先补充路径事实再推荐 CREATE 或 DO_NOT_CREATE。'
+    };
+  }
+  const recommendedValue = policy.mode === 'worktree-required' ? 'CREATE' : 'DO_NOT_CREATE';
+  return {
+    measureId: 'M01',
+    recommendedValue,
+    requiresHumanConfirmation: true,
+    reason: policy.reason
   };
 }
 
@@ -209,7 +227,7 @@ function classifyWorkspacePolicy(args) {
   ) {
     return {
       mode: 'main-direct-allowed',
-      summary: '可在主工作区直接修改并提交。',
+      summary: '从路径事实看无需新建 worktree，建议 M01=DO_NOT_CREATE；最终值由用户确认。',
       reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
     };
   }
@@ -217,7 +235,7 @@ function classifyWorkspacePolicy(args) {
   if (requiredHits.length > 0) {
     return {
       mode: 'worktree-required',
-      summary: '必须使用任务专用 Git worktree 和任务分支。',
+      summary: '从路径事实看建议创建任务专用 worktree；必须通过 Ask User 确认 M01 后执行。',
       reason: unique(requiredHits).join('; ')
     };
   }
@@ -225,7 +243,7 @@ function classifyWorkspacePolicy(args) {
   if (inputPaths.length > 0 && inputPaths.every((inputPath) => directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern)))) {
     return {
       mode: 'main-direct-allowed',
-      summary: '可在主工作区直接修改并提交。',
+      summary: '从路径事实看无需新建 worktree，建议 M01=DO_NOT_CREATE；最终值由用户确认。',
       reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
     };
   }
@@ -233,14 +251,14 @@ function classifyWorkspacePolicy(args) {
   if (directHits.length > 0 && inputPaths.length === 0) {
     return {
       mode: 'main-direct-allowed',
-      summary: '可在主工作区直接修改并提交；若实际影响服务代码、接口、数据库、测试、前端页面或构建配置，必须改用任务 worktree。',
+      summary: '当前事实建议 M01=DO_NOT_CREATE；若影响范围变化，重新推荐并只询问受影响措施。',
       reason: unique(directHits).join('; ')
     };
   }
 
   return {
     mode: 'needs-human-check',
-    summary: '影响范围不足，先确认路径；一旦涉及服务代码、接口、数据库、测试、前端页面或构建配置，必须使用任务 worktree。',
+    summary: '影响范围不足，先确认路径，再向用户提出 M01 的明确建议。',
     reason: 'no decisive path or keyword match'
   };
 }
@@ -414,6 +432,7 @@ function addRule(result, index, key, source) {
 function buildResult(index, args) {
   const currentWorkspace = inspectCurrentWorkspace();
   const classifiedWorkspacePolicy = classifyWorkspacePolicy(args);
+  const workspacePolicy = applyCurrentWorkspacePolicy(classifiedWorkspacePolicy, currentWorkspace);
   const result = {
     role: args.role || 'auto',
     phase: args.phase || 'auto',
@@ -421,7 +440,8 @@ function buildResult(index, args) {
     paths: splitPaths(args.paths),
     currentWorkspace,
     classifiedWorkspacePolicy,
-    workspacePolicy: applyCurrentWorkspacePolicy(classifiedWorkspacePolicy, currentWorkspace),
+    workspacePolicy,
+    assuranceRecommendation: workspaceMeasureRecommendation(workspacePolicy),
     mustRead: [],
     requiredChecks: collectRequiredChecks(args),
     errors: [],
@@ -478,6 +498,7 @@ function printText(result) {
   }
   console.log(`Workspace: ${result.workspacePolicy.mode} - ${result.workspacePolicy.summary}`);
   console.log(`Workspace reason: ${result.workspacePolicy.reason}`);
+  console.log(`M01 recommendation: ${result.assuranceRecommendation.recommendedValue ?? 'PENDING_FACTS'}; human confirmation required.`);
   console.log('');
   console.log('Must read:');
   result.mustRead.forEach((item, index) => {

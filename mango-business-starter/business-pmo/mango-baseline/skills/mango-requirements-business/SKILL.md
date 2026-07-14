@@ -26,14 +26,14 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
 
 ## Execute
 
-1. Read repository facts and user-provided sources before asking questions, then assess only the L0-L3 requirement impact from affected actors, business outcomes, boundaries, failure consequences and recovery facts. Do not assume a technical solution. This four-document stage applies when the governed path is L2/L3; for L0/L1, do not fabricate a BRD and route back to the approved lightweight lifecycle path.
+1. Read repository facts, user-provided sources, `$PMO_ROOT/rules/11-delivery-assurance.md`, and the assurance baseline. Continue only when the user confirmed M03 BRD=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Assess requirement impact from affected actors, business outcomes, boundaries, failure consequences and recovery facts without assuming a technical solution. Risk level does not enable BRD or any later document.
 2. Choose one action:
    - `STOP`: requested content crosses the stage boundary, authoritative assets disagree, or a required source is unavailable.
    - `ASK`: a required business fact cannot be established. Ask one focused question and do not insert placeholders or invented facts.
    - `WRITE`: inputs satisfy the rule; fill the official template with business content only and preserve required trace identifiers.
 3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-business-requirements.mjs" --document <document-path>`.
 4. Fix failures without weakening the checker or moving forbidden downstream content into the document.
-5. Run the lifecycle checker through BRD with `--through brd`; future documents are not required, but the BRD must be `APPROVED/NEXT`, name a human approver, contain verifiable approval evidence, and have no open blocker.
-6. Return `NEXT: $mango-requirements-system` only when the dedicated checker, staged lifecycle handoff, gate table and human approval all pass.
+5. Run the lifecycle checker for the user-enabled BRD; disabled future documents are not required. The BRD must be `APPROVED/NEXT`, name a human approver, contain verifiable approval evidence, and have no open blocker.
+6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume SRS follows.
 
-With an empty context, return `ASK` for the business problem, affected actors, and expected outcome. Do not generate a generic document.
+With an empty context, return `ASK` for the business problem, affected actors, expected outcome and M03 confirmation. Do not generate a generic document or infer BRD from L2/L3.

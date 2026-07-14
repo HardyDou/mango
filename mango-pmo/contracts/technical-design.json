@@ -7,6 +7,7 @@
   "ruleSource": "mango-pmo/rules/product/03-technical-design.md",
   "template": "mango-pmo/templates/technical-design.md",
   "upstreamDocumentType": "system-requirements",
+  "allowNoUpstream": true,
   "metadata": {
     "ruleId": "TDD-META-001",
     "required": ["documentId", "documentType", "pmoVersion", "schemaRevision", "riskLevel", "riskAssessmentEvidence", "status", "action", "owner", "approver", "approvalEvidence", "upstreamDocumentId", "upstreamDocumentHash"],
@@ -140,10 +141,10 @@
     },
     {
       "ruleId": "TDD-STRUCT-110",
-      "title": "兼容、发布与能力文档影响",
+      "title": "兼容与已启用能力说明影响",
       "tables": [{
-        "headers": ["影响ID", "设计项ID", "影响对象", "当前行为", "目标行为", "兼容策略", "升级或回滚", "README或能力地图", "发布批次", "验证", "责任人"],
-        "minRows": 1,
+        "headers": ["影响ID", "设计项ID", "影响对象", "当前行为", "目标行为", "兼容策略", "升级或补偿", "已启用能力说明", "验证", "责任人"],
+        "minRows": 0,
         "defines": {"影响ID": "IMP"},
         "references": [{"column": "设计项ID", "prefixes": ["DEC", "MOD", "DM", "FLOW", "API", "DB", "SEC", "ERR", "UI"], "required": true}]
       }]

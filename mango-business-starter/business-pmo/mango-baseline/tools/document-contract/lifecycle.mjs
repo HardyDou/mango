@@ -10,6 +10,8 @@ const STAGES = LIFECYCLE_CONTRACT.stages.map((stage) => ({
   type: stage.documentType,
   contractPath: stage.contract
 }));
+const STAGE_KEYS = new Set(STAGES.map((stage) => stage.key));
+const RISK_LEVELS = LIFECYCLE_CONTRACT.riskLevels;
 const RULES = Object.fromEntries(Object.entries(LIFECYCLE_CONTRACT.rules).map(([key, value]) => [key, value.ruleId]));
 
 function addFinding(findings, ruleId, message) {
@@ -21,13 +23,29 @@ export function sha256(source) {
 }
 
 export function parseLifecycleArgs(argv) {
-  const args = { brd: '', srs: '', tdd: '', plan: '', riskLevel: '', throughStage: '' };
+  const args = {
+    brd: '',
+    srs: '',
+    tdd: '',
+    plan: '',
+    riskLevel: '',
+    throughStage: '',
+    requiredStages: null,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (['--brd', '--srs', '--tdd', '--plan', '--risk', '--through'].includes(value)) {
       const key = value === '--risk' ? 'riskLevel' : value === '--through' ? 'throughStage' : value.slice(2);
       args[key] = argv[index + 1] ?? '';
       index += 1;
+    } else if (value === '--required-stages') {
+      const next = argv[index + 1];
+      if (next !== undefined && !next.startsWith('--')) {
+        args.requiredStages = next.split(',').map((item) => item.trim()).filter(Boolean);
+        index += 1;
+      } else {
+        args.requiredStages = [];
+      }
     }
   }
   return args;
@@ -53,20 +71,33 @@ export function validateLifecycle(documents, options = {}) {
   const results = {};
   const riskLevel = options.riskLevel ?? '';
   const throughStage = options.throughStage ?? '';
-  if (riskLevel && !Object.hasOwn(LIFECYCLE_CONTRACT.requiredStagesByRisk, riskLevel)) {
+  if (riskLevel && !RISK_LEVELS.includes(riskLevel)) {
     addFinding(findings, RULES.risk, `未知风险等级：${riskLevel}`);
   }
   const throughIndex = throughStage ? STAGES.findIndex((stage) => stage.key === throughStage) : -1;
   if (throughStage && throughIndex < 0) {
     addFinding(findings, RULES.order, `未知移交阶段：${throughStage}`);
   }
-  const completeStageKeys = riskLevel
-    ? (LIFECYCLE_CONTRACT.requiredStagesByRisk[riskLevel] ?? [])
-    : STAGES.map((stage) => stage.key);
+
+  const requestedStageKeys = options.requiredStages == null
+    ? STAGES.filter((stage) => documents[stage.key]).map((stage) => stage.key)
+    : Array.isArray(options.requiredStages)
+      ? options.requiredStages
+      : String(options.requiredStages).split(',').map((item) => item.trim()).filter(Boolean);
+  const seenStageKeys = new Set();
+  for (const key of requestedStageKeys) {
+    if (!STAGE_KEYS.has(key)) {
+      addFinding(findings, RULES.order, `未知必需生命周期阶段：${key}`);
+    } else if (seenStageKeys.has(key)) {
+      addFinding(findings, RULES.order, `重复必需生命周期阶段：${key}`);
+    }
+    seenStageKeys.add(key);
+  }
+  const selectedStageKeys = requestedStageKeys.filter((key) => STAGE_KEYS.has(key));
   const requiredStageKeys = new Set(
     throughIndex >= 0
-      ? completeStageKeys.filter((key) => STAGES.findIndex((stage) => stage.key === key) <= throughIndex)
-      : completeStageKeys
+      ? selectedStageKeys.filter((key) => STAGES.findIndex((stage) => stage.key === key) <= throughIndex)
+      : selectedStageKeys
   );
 
   for (const stage of STAGES) {
@@ -90,21 +121,24 @@ export function validateLifecycle(documents, options = {}) {
     }
   }
 
-  const available = STAGES.map((stage) => results[stage.key]).filter(Boolean);
   if ([...requiredStageKeys].some((key) => !results[key])) {
     const scope = throughIndex >= 0
-      ? `截至 ${STAGES[throughIndex].type} 的连续上游链路`
-      : '完整 BRD/SRS/TDD/Plan 链路';
-    addFinding(findings, RULES.risk, `${riskLevel} 任务必须保留${scope}`);
+      ? `截至 ${STAGES[throughIndex].type} 的已选阶段`
+      : '已选生命周期阶段';
+    addFinding(findings, RULES.order, `${scope}必须全部存在`);
   }
-  if (available.length > 0) {
-    for (let index = 1; index < available.length; index += 1) {
-      const upstream = available[index - 1];
-      const downstream = available[index];
+  const selectedResults = STAGES
+    .filter((stage) => requiredStageKeys.has(stage.key))
+    .map((stage) => results[stage.key])
+    .filter(Boolean);
+  if (selectedResults.length > 0) {
+    for (let index = 1; index < selectedResults.length; index += 1) {
+      const upstream = selectedResults[index - 1];
+      const downstream = selectedResults[index];
       const upstreamRisk = upstream.result.ast.frontmatter.values.riskLevel;
       const downstreamRisk = downstream.result.ast.frontmatter.values.riskLevel;
-      const upstreamIndex = Object.keys(LIFECYCLE_CONTRACT.requiredStagesByRisk).indexOf(upstreamRisk);
-      const downstreamIndex = Object.keys(LIFECYCLE_CONTRACT.requiredStagesByRisk).indexOf(downstreamRisk);
+      const upstreamIndex = RISK_LEVELS.indexOf(upstreamRisk);
+      const downstreamIndex = RISK_LEVELS.indexOf(downstreamRisk);
       if (upstreamIndex >= 0 && downstreamIndex >= 0 && downstreamIndex < upstreamIndex) {
         addFinding(
           findings,
@@ -114,9 +148,7 @@ export function validateLifecycle(documents, options = {}) {
       }
     }
 
-    const target = throughIndex >= 0
-      ? results[STAGES[throughIndex].key]
-      : available.at(-1);
+    const target = selectedResults.at(-1);
     if (riskLevel && target) {
       const targetRisk = target.result.ast.frontmatter.values.riskLevel;
       if (targetRisk !== riskLevel) {
@@ -124,7 +156,7 @@ export function validateLifecycle(documents, options = {}) {
       }
     }
 
-    if (results.tdd && results.plan) {
+    if (requiredStageKeys.has('tdd') && requiredStageKeys.has('plan') && results.tdd && results.plan) {
       const tddRisk = results.tdd.result.ast.frontmatter.values.riskLevel;
       const planRisk = results.plan.result.ast.frontmatter.values.riskLevel;
       if (tddRisk !== planRisk) {
@@ -132,20 +164,20 @@ export function validateLifecycle(documents, options = {}) {
       }
     }
 
-    const effectiveRisk = riskLevel || available.at(-1).result.ast.frontmatter.values.riskLevel;
-    if (!riskLevel && throughIndex < 0 && ['L2', 'L3'].includes(effectiveRisk) && available.length !== STAGES.length) {
-      addFinding(findings, RULES.risk, `${effectiveRisk} 复杂任务必须保留完整 BRD/SRS/TDD/Plan 链路`);
-    }
   }
 
   for (let index = 1; index < STAGES.length; index += 1) {
     const upstreamStage = STAGES[index - 1];
     const downstreamStage = STAGES[index];
+    if (!requiredStageKeys.has(downstreamStage.key)) continue;
     const upstream = results[upstreamStage.key];
     const downstream = results[downstreamStage.key];
     if (!upstream || !downstream) continue;
     const upstreamMeta = upstream.result.ast.frontmatter.values;
     const downstreamMeta = downstream.result.ast.frontmatter.values;
+    if (downstreamMeta.upstreamDocumentId === 'NONE' || downstreamMeta.upstreamDocumentHash === 'NONE') {
+      continue;
+    }
     if (downstreamMeta.upstreamDocumentId !== upstreamMeta.documentId) {
       addFinding(findings, RULES.order, `${downstreamStage.type} 的 upstreamDocumentId 未引用 ${upstreamMeta.documentId}`);
     }
@@ -174,7 +206,8 @@ export function runLifecycleCli(argv = process.argv.slice(2)) {
   const documents = loadLifecycleDocuments(args);
   const checked = validateLifecycle(documents, {
     riskLevel: args.riskLevel,
-    throughStage: args.throughStage
+    throughStage: args.throughStage,
+    requiredStages: args.requiredStages,
   });
   process.stdout.write('\n=== 产品文档生命周期检查 ===\n');
   if (checked.findings.length === 0) {

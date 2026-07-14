@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { loadContract, repositoryPath } from '../../tools/document-contract/contract-loader.mjs';
 import { checkDocumentSet } from '../../tools/check-document-set.mjs';
 import { parseMarkdown, tableKey } from '../../tools/document-contract/markdown-ast.mjs';
-import { sha256, validateLifecycle } from '../../tools/document-contract/lifecycle.mjs';
+import { parseLifecycleArgs, sha256, validateLifecycle } from '../../tools/document-contract/lifecycle.mjs';
 import { validateDocument } from '../../tools/document-contract/validator.mjs';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -125,6 +125,44 @@ test('NEXT 的本地审批证据必须存在且禁止路径穿越', () => {
     finding.ruleId === 'BRD-META-001' && finding.message.includes('路径穿越')));
 });
 
+test('SRS、TDD 和 Plan 允许显式声明无前置文档，但两个上游字段必须同时为 NONE', () => {
+  for (const stage of STAGES.slice(1)) {
+    const contract = loadContract(stage.contract);
+    const source = readFixture(`valid/${stage.valid}`);
+    const independent = source
+      .replace(/^upstreamDocumentId: .*$/mu, 'upstreamDocumentId: NONE')
+      .replace(/^upstreamDocumentHash: .*$/mu, 'upstreamDocumentHash: NONE');
+    assert.deepEqual(validateDocument(independent, contract).findings, [], stage.name);
+
+    for (const halfNone of [
+      source.replace(/^upstreamDocumentId: .*$/mu, 'upstreamDocumentId: NONE'),
+      source.replace(/^upstreamDocumentHash: .*$/mu, 'upstreamDocumentHash: NONE'),
+    ]) {
+      assert.ok(validateDocument(halfNone, contract).findings.some((finding) =>
+        finding.ruleId === contract.metadata.ruleId
+        && finding.message.includes('必须同时为 NONE')), stage.name);
+    }
+  }
+});
+
+test('只启用 SRS 时可直接追踪人工确认基线，不反向要求 BRD', () => {
+  const contract = loadContract('mango-pmo/contracts/system-requirements.json');
+  const independent = readFixture('valid/system-requirements.md')
+    .replace('riskAssessmentEvidence: BRD-ANN-001 risk assessment', 'riskAssessmentEvidence: human-confirmed assurance baseline task-123')
+    .replace(/^upstreamDocumentId: .*$/mu, 'upstreamDocumentId: NONE')
+    .replace(/^upstreamDocumentHash: .*$/mu, 'upstreamDocumentHash: NONE')
+    .replace('| SC-001 | BS-001, BG-001, BF-001 |', '| SC-001 | NONE |')
+    .replace('| SA-001 | BA-001 |', '| SA-001 | NONE |')
+    .replace('| FR-001 | BG-001, BF-001, BR-001, BAC-001 |', '| FR-001 | NONE |')
+    .replace('| UC-001 | BF-001 |', '| UC-001 | NONE |')
+    .replace('| DR-001 | BO-001, BR-001, FR-001 |', '| DR-001 | FR-001 |')
+    .replace('| IR-001 | BF-001, BR-001, FR-001 |', '| IR-001 | FR-001 |')
+    .replace('| NFR-001 | BG-001, BS-001, BR-001, BAC-001 |', '| NFR-001 | NONE |')
+    .replace('| SAC-001 | BAC-001 |', '| SAC-001 | NONE |')
+    .replace('| BP-001, BG-001, BS-001, BS-002, BA-001, BO-001, BF-001, BR-001, BAC-001 |', '| NONE |');
+  assert.deepEqual(validateDocument(independent, contract).findings, []);
+});
+
 test('每个规范章节都包含完整章节级契约', () => {
   const ruleSources = [
     ...STAGES.map((stage) => loadContract(stage.contract).ruleSource),
@@ -229,6 +267,22 @@ test('业务文档集合阻断缺少类型、未知类型和失效摘要', (t) =
   assert.ok(result.findings.some((item) => item.ruleId === 'LIFE-HASH-020'));
 });
 
+test('业务文档集合允许独立 SRS、TDD 和 Plan 跳过上游查找', (t) => {
+  const root = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'mango-pmo-independent-docs-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.cpSync(path.join(FIXTURES, 'valid/review'), path.join(root, 'review'), { recursive: true });
+  for (const stage of STAGES.slice(1)) {
+    const independent = readFixture(`valid/${stage.valid}`)
+      .replace(/^upstreamDocumentId: .*$/mu, 'upstreamDocumentId: NONE')
+      .replace(/^upstreamDocumentHash: .*$/mu, 'upstreamDocumentHash: NONE');
+    fs.writeFileSync(path.join(root, stage.valid), independent);
+  }
+
+  const result = checkDocumentSet(root);
+  assert.equal(result.documents.length, 3);
+  assert.deepEqual(result.findings, []);
+});
+
 test('业务文档集合仅允许哈希锁定的历史生命周期文档', (t) => {
   const root = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'mango-pmo-legacy-docs-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -274,13 +328,13 @@ test('L2/L3 支持按当前阶段执行连续 handoff，不要求未来文档提
   const documents = hydrateLifecycle();
   const staged = validateLifecycle(
     { brd: documents.brd, srs: documents.srs },
-    { riskLevel: 'L2', throughStage: 'srs' }
+    { riskLevel: 'L2', throughStage: 'srs', requiredStages: ['brd', 'srs'] }
   );
   assert.deepEqual(staged.findings, []);
 
   const missingUpstream = validateLifecycle(
     { srs: documents.srs },
-    { riskLevel: 'L2', throughStage: 'srs' }
+    { riskLevel: 'L2', throughStage: 'srs', requiredStages: ['brd', 'srs'] }
   );
   assert.ok(missingUpstream.findings.some((finding) => finding.ruleId === 'LIFE-ORDER-010'));
 });
@@ -292,11 +346,50 @@ test('上游内容变化会使下游摘要立即失效', () => {
   assert.ok(result.findings.some((finding) => finding.ruleId === 'LIFE-HASH-020'));
 });
 
-test('blank-context 的 L2 复杂任务不能跳过任一阶段', () => {
-  const spec = JSON.parse(readFixture('invalid/l2-blank-context.json'));
-  const result = validateLifecycle({}, { riskLevel: spec.riskLevel });
-  assert.ok(result.findings.some((finding) => finding.ruleId === spec.expectedRuleId));
-  assert.ok(result.findings.some((finding) => finding.ruleId === 'LIFE-RISK-001'));
+test('L3 未选择生命周期文档时不会按风险自动要求四阶段', () => {
+  const result = validateLifecycle({}, { riskLevel: 'L3', requiredStages: [] });
+  assert.deepEqual(result.findings, []);
+});
+
+test('L3 可以只选择并校验独立 TDD', () => {
+  const documents = hydrateLifecycle({ tdd: 'L3' });
+  documents.tdd.source = documents.tdd.source
+    .replace(/^upstreamDocumentId: .*$/mu, 'upstreamDocumentId: NONE')
+    .replace(/^upstreamDocumentHash: .*$/mu, 'upstreamDocumentHash: NONE');
+  const result = validateLifecycle(
+    { tdd: documents.tdd },
+    { riskLevel: 'L3', requiredStages: ['tdd'] },
+  );
+  assert.deepEqual(result.findings, []);
+});
+
+test('生命周期只对显式引用且实际存在的相邻上游做摘要和追踪检查', () => {
+  const documents = hydrateLifecycle();
+  documents.srs.source = documents.srs.source
+    .replace(/^upstreamDocumentId: .*$/mu, 'upstreamDocumentId: NONE')
+    .replace(/^upstreamDocumentHash: .*$/mu, 'upstreamDocumentHash: NONE');
+  const result = validateLifecycle(
+    { brd: documents.brd, srs: documents.srs },
+    { riskLevel: 'L2', requiredStages: ['brd', 'srs'] },
+  );
+  assert.deepEqual(result.findings, []);
+});
+
+test('显式选择的生命周期文档缺失时失败', () => {
+  const result = validateLifecycle({}, { riskLevel: 'L3', requiredStages: ['tdd'] });
+  assert.ok(result.findings.some((finding) =>
+    finding.ruleId === 'LIFE-ORDER-010' && finding.message.includes('technical-design')));
+});
+
+test('CLI 解析显式 required stages，并允许空集合', () => {
+  assert.deepEqual(
+    parseLifecycleArgs(['--risk', 'L3', '--required-stages', 'brd,tdd']).requiredStages,
+    ['brd', 'tdd'],
+  );
+  assert.deepEqual(
+    parseLifecycleArgs(['--risk', 'L3', '--required-stages', '']).requiredStages,
+    [],
+  );
 });
 
 test('L0 非行为任务不会被强制套用四阶段文档', () => {

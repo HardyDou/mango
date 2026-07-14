@@ -67,10 +67,20 @@ function validateMetadata(ast, contract, findings, options) {
 
   if (contract.upstreamDocumentType) {
     const prefix = UPSTREAM_DOCUMENT_PREFIX[contract.upstreamDocumentType];
-    if (!isDocumentId(values.upstreamDocumentId, prefix)) {
-      addFinding(findings, ruleId, `upstreamDocumentId 必须引用 ${prefix}-... 文档`);
+    const noUpstreamId = values.upstreamDocumentId === 'NONE';
+    const noUpstreamHash = values.upstreamDocumentHash === 'NONE';
+    if (contract.allowNoUpstream && (noUpstreamId || noUpstreamHash)) {
+      if (!noUpstreamId || !noUpstreamHash) {
+        addFinding(findings, ruleId, '未启用前置文档时 upstreamDocumentId 和 upstreamDocumentHash 必须同时为 NONE');
+      }
+    } else {
+      if (!isDocumentId(values.upstreamDocumentId, prefix)) {
+        addFinding(findings, ruleId, `upstreamDocumentId 必须引用 ${prefix}-... 文档`);
+      }
+      if (!isSha256(values.upstreamDocumentHash)) {
+        addFinding(findings, ruleId, 'upstreamDocumentHash 必须是完整 SHA-256');
+      }
     }
-    if (!isSha256(values.upstreamDocumentHash)) addFinding(findings, ruleId, 'upstreamDocumentHash 必须是完整 SHA-256');
   }
 
   if (values.action === 'NEXT') {

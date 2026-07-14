@@ -10,8 +10,8 @@ action: WRITE
 owner: {{OWNER}}
 approver: {{APPROVER}}
 approvalEvidence: {{APPROVAL_EVIDENCE}}
-upstreamDocumentId: {{SRS_DOCUMENT_ID}}
-upstreamDocumentHash: {{SRS_SHA256}}
+upstreamDocumentId: {{SRS_DOCUMENT_ID_OR_NONE}}
+upstreamDocumentHash: {{SRS_SHA256_OR_NONE}}
 ---
 
 # {{REQUIREMENT_NAME}} 技术设计文档
@@ -80,11 +80,10 @@ upstreamDocumentHash: {{SRS_SHA256}}
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | {{TC_ID}} | {{SAC_ID}} | {{DESIGN_IDS}} | {{SCENARIO}} | P1 | {{TEST_LEVEL}} | {{AUTO_MANUAL_OR_EXCEPTION}} | {{TEST_DATA}} | {{SECURITY_BOUNDARY}} | {{STABLE_CONTRACT}} | {{EXECUTION_ENTRY}} | {{EVIDENCE}} | {{FAILURE_HANDLING}} | {{TEST_RULE_IDS}} |
 
-## 11. 兼容、发布与能力文档影响
+## 11. 兼容与已启用能力说明影响
 
-| 影响ID | 设计项ID | 影响对象 | 当前行为 | 目标行为 | 兼容策略 | 升级或回滚 | README或能力地图 | 发布批次 | 验证 | 责任人 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| {{IMP_ID}} | {{DESIGN_IDS}} | {{AFFECTED_ASSET}} | {{CURRENT_BEHAVIOR}} | {{TARGET_BEHAVIOR}} | {{COMPATIBILITY}} | {{UPGRADE_OR_ROLLBACK}} | {{DOC_IMPACT}} | {{RELEASE_BATCH}} | {{VALIDATION}} | {{OWNER}} |
+| 影响ID | 设计项ID | 影响对象 | 当前行为 | 目标行为 | 兼容策略 | 升级或补偿 | 已启用能力说明 | 验证 | 责任人 |
+|---|---|---|---|---|---|---|---|---|---|
 
 ## 12. 技术追踪矩阵
 
