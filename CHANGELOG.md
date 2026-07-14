@@ -1,5 +1,41 @@
 # Mango Changelog
 
+## v2026.07.14-link-page-1.0.5-cli-1.0.76-release - 2026-07-14
+
+### Changed
+
+- Publish `@mango/link-page@1.0.5` with the merged public link page visual polish from PR #487.
+- Keep the existing component API and data contract unchanged while shipping the updated background, spacing, tag, and card styles through the package `style.css` entry.
+- Publish `@mango/cli@1.0.76` so generated and upgraded business projects lock `@mango/link-page` to `1.0.5`.
+- Add an npm release contract for `@mango/link-page` so future tarball verification checks the JavaScript entry, type entry, style entry, and link-page style marker.
+- Normalize local tarball paths in the generated package-consumer typecheck so the shared npm publish gate works on Windows release worktrees.
+
+### Upgrade Notes
+
+1. Upgrade business projects that consume the public link page package to `@mango/link-page@1.0.5`.
+2. Continue importing the package style through `@mango/link-page/style.css`; no prop, event, API, route, permission, or data migration is required.
+3. Install `@mango/cli@1.0.76` before generating or upgrading projects that should receive the `@mango/link-page@1.0.5` release lock.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm link page package | `@mango/link-page@1.0.5` -> Nexus npm hosted | `PENDING_PUBLISH` |
+| 2 | npm CLI package | `@mango/cli@1.0.76` -> Nexus npm hosted | `PENDING_PUBLISH` |
+| 3 | GitHub Release | `v2026.07.14-link-page-1.0.5-cli-1.0.76-release` | `PENDING_CREATE` |
+
+### Verification
+
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm --filter @mango/link-page build`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm release:impact --base=origin/main --head=HEAD`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ --keep-temp`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg @mango/link-page --dry-run --skip-shared-gates --publish-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/ --consume-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- `MANGO_SHARED_PUBLISH_GATES_PASSED=1 pnpm publish:pkg @mango/cli --dry-run --skip-shared-gates --publish-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/ --consume-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- After publishing: verify `@mango/link-page@1.0.5` and `@mango/cli@1.0.76` from both `npm-hosted` and `npm-group`, then run `pnpm release:verify-npm` for both packages against `npm-group`.
+
 ## v2026.07.14-maven-1.0.19-pmo-1.2.5-cli-1.0.75-gate-baseline-release - 2026-07-14
 
 ### Fixed

@@ -1,5 +1,26 @@
 # @mango/cli Changelog
 
+## 1.0.76 - 2026-07-14
+
+### Changed
+
+- Lock generated and upgraded business frontend projects to `@mango/link-page@1.0.5` so they consume the published public link page visual polish.
+
+### Fixed
+
+- Normalize Windows local tarball paths in package consumer typecheck, keeping local packed-tarball verification usable from release worktrees.
+
+### Upgrade Notes
+
+- Publish `@mango/link-page@1.0.5` before installing `@mango/cli@1.0.76`.
+- Existing business projects that use the public link page package can upgrade `@mango/link-page` directly; new generated projects receive the updated lock from this CLI version.
+
+### Verification
+
+- `pnpm --filter @mango/cli run check:release-versions`
+- `pnpm package-consumer:typecheck -- --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ --keep-temp`
+- `pnpm release:impact --base=origin/main --head=HEAD`
+
 ## 1.0.75 - 2026-07-14
 
 ### Fixed

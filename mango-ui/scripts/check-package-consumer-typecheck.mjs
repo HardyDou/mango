@@ -128,10 +128,14 @@ function mapPackedMangoTarballs(frontendRoot) {
     assertPackedPackageBoundary(tarballPath);
     const packageJson = readPackedPackageJson(tarballPath);
     if (packageJson.name?.startsWith('@mango/')) {
-      mappings.set(packageJson.name, `file:${relative(frontendRoot, tarballPath)}`);
+      mappings.set(packageJson.name, `file:${toPackageRelativePath(frontendRoot, tarballPath)}`);
     }
   }
   return mappings;
+}
+
+function toPackageRelativePath(fromRoot, targetPath) {
+  return relative(fromRoot, targetPath).split('\\').join('/');
 }
 
 function applyTarballMappings(frontendRoot, mappings) {

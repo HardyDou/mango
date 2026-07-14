@@ -27,6 +27,23 @@
         "dist/style.css"
       ]
     },
+    "@mango/link-page": {
+      "files": [
+        "dist/index.js",
+        "dist/index.d.ts",
+        "dist/style.css"
+      ],
+      "contains": [
+        {
+          "path": "dist/index.d.ts",
+          "text": "MangoLinkPage"
+        },
+        {
+          "path": "dist/style.css",
+          "text": "mango-link-page"
+        }
+      ]
+    },
     "@mango/system": {
       "files": [
         "dist/index.js",
