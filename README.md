@@ -74,4 +74,4 @@ scripts/publish-maven-batch.sh \
   --verify-base-url <maven-consume-registry>
 ```
 
-`--all-non-app` 明确包含非 app Maven Reactor 和同版本 `io.mango:mango-docs-bundle`；禁止在批次外另行手工补发文档包。跨 Maven、npm、GitHub Release 和文档站的批次仍由 `mango release publish/status/verify/repair` 记录状态。
+`--all-non-app` 明确包含非 app Maven Reactor 和同版本 `io.mango:mango-docs-bundle`，文档包不设独立发布命令。跨 Maven、npm、GitHub Release 和文档站的批次仍由 `mango release publish/status/verify/repair` 记录状态；完整约束见 [发布制品与版本同步规范](./mango-pmo/rules/10-release-artifacts.md)。

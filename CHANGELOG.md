@@ -7,6 +7,7 @@
 - Fix [Issue #470](https://github.com/HardyDou/mango/issues/470): standard `pmo-doc-check` now reads repository-relative backend, frontend, and business-document roots from `mango.config.json.paths` instead of assuming `backend/`, `frontend/`, and `business-docs/`.
 - Resolve the configured backend POM and directly changed Maven modules from the same path configuration; an invalid configured backend path now fails closed instead of producing a green check that skipped Java.
 - Publish equivalent GitHub and Gitea workflow templates with the stable `PMO Documentation Checks / pmo-doc-check` identity. Partial backend checks remain limited to directly modified modules without `-am` or `-amd` and use the no-new-violations gate against the PR base.
+- Reuse the existing explicit architecture-prerequisite build for distribution-only and governance checks so a clean GitHub runner has `mango-common` and the current gate plugin before generated-backend acceptance; no new workflow step or Reactor expansion is added.
 - Make `scripts/publish-maven-batch.sh --all-non-app` publish the committed `mango-docs/**` tree as `io.mango:mango-docs-bundle:<version>` in the same Maven batch. The release no longer depends on a separate manual `deploy:deploy-file` step.
 
 ### Upgrade Notes
