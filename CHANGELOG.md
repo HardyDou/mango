@@ -1,5 +1,36 @@
 # Mango Changelog
 
+## v2026.07.14-link-page-1.0.5-release - 2026-07-14
+
+### Changed
+
+- Publish `@mango/link-page@1.0.5` with the merged public link page visual polish from PR #487.
+- Keep the existing component API and data contract unchanged while shipping the updated background, spacing, tag, and card styles through the package `style.css` entry.
+- Add an npm release contract for `@mango/link-page` so future tarball verification checks the JavaScript entry, type entry, style entry, and link-page style marker.
+- Normalize local tarball paths in the generated package-consumer typecheck so the shared npm publish gate works on Windows release worktrees.
+
+### Upgrade Notes
+
+1. Upgrade business projects that consume the public link page package to `@mango/link-page@1.0.5`.
+2. Continue importing the package style through `@mango/link-page/style.css`; no prop, event, API, route, permission, or data migration is required.
+3. `@mango/cli` release lock now points `@mango/link-page` to `1.0.5` for generated or upgraded consumers.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm link page package | `@mango/link-page@1.0.5` -> Nexus npm hosted | `PENDING_PUBLISH` |
+| 2 | GitHub Release | `v2026.07.14-link-page-1.0.5-release` | `PENDING_CREATE` |
+
+### Verification
+
+- `pnpm admin:styles:check`
+- `pnpm admin:module-styles:check`
+- `pnpm --filter @mango/link-page build`
+- `pnpm release:impact --base=origin/main --head=HEAD`
+- `pnpm publish:pkg @mango/link-page --dry-run --publish-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/ --consume-registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`
+- After publishing: verify `@mango/link-page@1.0.5` from both `npm-hosted` and `npm-group`, then run `pnpm release:verify-npm @mango/link-page --version=1.0.5 --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+
 ## v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release - 2026-07-14
 
 ### Changed
