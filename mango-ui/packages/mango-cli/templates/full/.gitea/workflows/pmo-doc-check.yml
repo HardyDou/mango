@@ -73,6 +73,21 @@ jobs:
           -DskipTests
           help:effective-pom
 
+      - name: Build affected backend dependency prerequisites
+        if: steps.scope.outputs.backend_mode == 'partial'
+        env:
+          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
+          MAVEN_DEPENDENCY_PROJECTS: ${{ steps.scope.outputs.maven_dependency_projects }}
+        run: >-
+          mvn -B -ntp -f "$BACKEND_POM"
+          -pl "$MAVEN_DEPENDENCY_PROJECTS"
+          -am
+          -DskipTests
+          -Dcheckstyle.skip=true
+          -Dpmd.skip=true
+          -Dspotbugs.skip=true
+          install
+
       - name: Verify affected backend modules and Mango architecture
         if: steps.scope.outputs.backend_mode == 'partial'
         env:

@@ -1,5 +1,11 @@
 # Mango Changelog
 
+## Unreleased
+
+### Fixed
+
+- Fix [Issue #480](https://github.com/HardyDou/mango/issues/480): partial Maven checks now build the selected modules and their upstream reactor prerequisites in a separate `-am` install step before running the unchanged direct-module quality gate. The architecture verification aggregator is excluded from dependency expansion, and generated GitHub/Gitea workflows use the same split.
+
 ## v2026.07.14-pmo-1.2.2-cli-1.0.72-release - 2026-07-14
 
 ### Changed

@@ -440,6 +440,10 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ## 12. 相关文档
 
+### 下一版本发布影响
+
+标准 `pmo-doc-check` 会先在独立前置步骤中用 `-am` 安装直接修改模块所需的上游 Reactor 依赖，再运行不带 `-am`/`-amd` 的直接模块质量门禁。该拆分修复干净 runner 无法解析未发布 SNAPSHOT 的问题，不改变质量扫描范围；full template 的 GitHub 和 Gitea workflow 使用同一分类器输出。业务仓需要在后续 PMO/CLI 补丁发布后同步标准 workflow，Mango Java 运行时版本不受影响。
+
 ### 1.0.72 发布影响
 
 `@mango/cli@1.0.72` 精确依赖 `@mango/pmo@1.2.2`。标准 scope classifier 从 `mango.config.json` 的 `paths` 对象读取业务仓目录；例如设置 `"backend": "baohan-backend"` 后，后端改动会进入直接模块 Maven 门禁，不会因目录名不是 `backend/` 而被误判为无后端改动。full template 同时提供 GitHub 和 Gitea 的 `pmo-doc-check`，两者使用同一 classifier 输出和稳定 check 名称。
