@@ -517,3 +517,9 @@ mango-job-starter/src/main/resources/META-INF/mango/resources/job-common-definit
 - [Mango Notice](../mango-notice/README.md)
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 16. 变更影响记录
+
+- 原生任务失败告警通过 `NoticeJsonRequest` 调用 Notice JSON 发送契约，任务实例、Worker 离线和规则测试告警
+  使用同一请求适配逻辑。
+- 告警场景、模板编码、收件目标、租户上下文和失败处理语义不变；该适配不引入 Job 对 Notice Core 的依赖。
