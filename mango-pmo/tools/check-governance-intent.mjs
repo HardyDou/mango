@@ -31,6 +31,22 @@ function assertNotIncludes(file, patterns, failures) {
   }
 }
 
+function assertSectionNotIncludes(file, startMarker, endMarker, patterns, failures) {
+  const text = read(file);
+  const startIndex = text.indexOf(startMarker);
+  const endIndex = text.indexOf(endMarker, startIndex + startMarker.length);
+  if (startIndex < 0 || endIndex < 0) {
+    failures.push(`${file}: cannot resolve governed section between "${startMarker}" and "${endMarker}"`);
+    return;
+  }
+  const section = text.slice(startIndex, endIndex);
+  for (const pattern of patterns) {
+    if (section.includes(pattern)) {
+      failures.push(`${file}: governed quality section should not contain "${pattern}"`);
+    }
+  }
+}
+
 function assertNoLongTermRuleLanguage(file, failures) {
   const allowedLines = [
     '长期规范只维护在 `mango-pmo/rules/**`',
@@ -194,10 +210,13 @@ assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'github.event.pull_request.head.sha',
   'PR_BODY_FILE'
 ], failures);
-assertNotIncludes('.github/workflows/pmo-doc-check.yml', [
-  '\n            -am \\',
-  '\n            -amd \\'
-], failures);
+assertSectionNotIncludes(
+  '.github/workflows/pmo-doc-check.yml',
+  '      - name: Enforce affected-module architecture and Java quality contracts',
+  '      - name: Enforce committed architecture debt budget policy',
+  ['\n            -am \\', '\n            -amd \\'],
+  failures
+);
 
 assertIncludes('mango-pmo/rules/05-ai-delivery-quality.md', [
   '.github/branch-protection-policy.json',

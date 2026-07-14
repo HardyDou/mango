@@ -4,7 +4,11 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { classifyChangedFiles, resolveMavenScope } from '../tools/classify-pmo-check-scope.mjs';
+import {
+  classifyChangedFiles,
+  resolveMavenDependencyProjects,
+  resolveMavenScope,
+} from '../tools/classify-pmo-check-scope.mjs';
 
 test('frontend-only button layout avoids Java, PMO, CLI and starter suites', () => {
   assert.deepEqual(
@@ -119,7 +123,22 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
     workflow,
     /Build generated four-layer backend prerequisites[\s\S]*?:mango-infra-persistence-api[\s\S]*?:mango-infra-feign-starter[\s\S]*?install/,
   );
-  assert.doesNotMatch(workflow, /^\s+-am(?:d)?(?:\s|\\)/m);
+  const dependencyBuild = workflow.match(
+    /      - name: Build affected-module upstream dependencies[\s\S]*?(?=\n      - name:)/,
+  )?.[0] ?? '';
+  assert.match(
+    dependencyBuild,
+    /if: steps\.scope\.outputs\.backend_mode == 'partial' && steps\.scope\.outputs\.maven_dependency_projects != ''/,
+  );
+  assert.match(dependencyBuild, /MAVEN_DEPENDENCY_PROJECTS: \$\{\{ steps\.scope\.outputs\.maven_dependency_projects \}\}/);
+  assert.match(dependencyBuild, /-pl "\$MAVEN_DEPENDENCY_PROJECTS"[\s\S]*?\n\s+-am \\/);
+  assert.match(dependencyBuild, /-DskipTests[\s\S]*?-Dcheckstyle\.skip=true[\s\S]*?-Dpmd\.skip=true[\s\S]*?-Dspotbugs\.skip=true[\s\S]*?install/);
+
+  const qualityGate = workflow.match(
+    /      - name: Enforce affected-module architecture and Java quality contracts[\s\S]*?(?=\n      - name:)/,
+  )?.[0] ?? '';
+  assert.match(qualityGate, /-pl "\$MAVEN_PROJECTS"/);
+  assert.doesNotMatch(qualityGate, /^\s+-am(?:d)?(?:\s|\\)/m);
   assert.doesNotMatch(workflow, /Enforce full-Reactor architecture/u);
 
   const generatedBackendGate = fs.readFileSync(
@@ -139,6 +158,13 @@ test('Java source maps to one Maven module plus the governed architecture aggreg
     ':mango-architecture-verification',
     'mango-platform/mango-system/mango-system-core',
   ]);
+  assert.deepEqual(resolveMavenDependencyProjects(scope), [
+    'mango-platform/mango-system/mango-system-core',
+  ]);
+  assert.deepEqual(resolveMavenDependencyProjects({
+    mode: 'partial',
+    projects: [':mango-architecture-verification', 'mango-architecture-verification'],
+  }), []);
 });
 
 test('module POM selects its descendant Maven projects without selecting the whole reactor', () => {
