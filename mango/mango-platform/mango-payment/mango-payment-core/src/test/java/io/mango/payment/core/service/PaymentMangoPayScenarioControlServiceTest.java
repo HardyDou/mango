@@ -103,6 +103,31 @@ class PaymentMangoPayScenarioControlServiceTest {
     }
 
     @Test
+    @DisplayName("createScenarioControl should reject unsupported payment scenario")
+    void createScenarioControl_unsupportedPaymentScenario_rejects() {
+        when(channelMapper.selectOne(any())).thenReturn(mangoPayChannel());
+        CreateMangoPayScenarioControlCommand command = paymentScenario("UNRECOGNIZED");
+
+        assertThatThrownBy(() -> service.createScenarioControl(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("场景码不受支持");
+    }
+
+    @Test
+    @DisplayName("createScenarioControl should keep explicit unknown payment scenario")
+    void createScenarioControl_explicitUnknownPaymentScenario_persists() {
+        when(channelMapper.selectOne(any())).thenReturn(mangoPayChannel());
+        CreateMangoPayScenarioControlCommand command = paymentScenario("UNKNOWN");
+        ArgumentCaptor<PaymentMangoPayScenarioControlEntity> captor =
+                ArgumentCaptor.forClass(PaymentMangoPayScenarioControlEntity.class);
+
+        service.createScenarioControl(command);
+
+        verify(scenarioControlMapper).insert(captor.capture());
+        assertThat(captor.getValue().getScenarioCode()).isEqualTo("UNKNOWN");
+    }
+
+    @Test
     @DisplayName("createScenarioControl should persist callback delay scenario")
     void createScenarioControl_callbackDelay_persistsDelayMinutes() {
         when(channelMapper.selectOne(any())).thenReturn(mangoPayChannel());
@@ -156,6 +181,15 @@ class PaymentMangoPayScenarioControlServiceTest {
         assertThat(result.resultType()).isEqualTo("TIMEOUT");
         assertThat(result.status()).isEqualTo("PAYING");
         assertThat(control.getStatus()).isEqualTo("CONSUMED");
+    }
+
+    private CreateMangoPayScenarioControlCommand paymentScenario(String scenarioCode) {
+        CreateMangoPayScenarioControlCommand command = new CreateMangoPayScenarioControlCommand();
+        command.setChannelCode("MANGO_PAY");
+        command.setScenarioType("PAYMENT");
+        command.setScenarioCode(scenarioCode);
+        command.setEffectiveCount(1);
+        return command;
     }
 
     private PaymentChannelEntity mangoPayChannel() {

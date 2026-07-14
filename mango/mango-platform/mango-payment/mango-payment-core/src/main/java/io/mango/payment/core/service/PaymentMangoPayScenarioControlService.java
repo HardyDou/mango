@@ -174,10 +174,16 @@ public class PaymentMangoPayScenarioControlService implements IPaymentMangoPaySc
 
     private void validateScenarioCode(String scenarioType, String scenarioCode) {
         if ("PAYMENT".equals(scenarioType) || "PAYMENT_QUERY".equals(scenarioType)) {
-            resultMappingService.mapPayment(Map.of("mangoPayScenario", scenarioCode));
+            PaymentMangoPayResultTranslator.PaymentChannelResult result =
+                    resultMappingService.mapPayment(Map.of("mangoPayScenario", scenarioCode));
+            Require.isTrue(!"UNKNOWN".equals(result.resultType()) || "UNKNOWN".equals(result.scenario()),
+                    PaymentCode.PAYMENT_MANGO_PAY_SCENARIO_INVALID, "支付场景码不受支持");
             return;
         }
-        resultMappingService.mapRefund(Map.of("mangoPayRefundScenario", scenarioCode));
+        PaymentMangoPayResultTranslator.RefundChannelResult result =
+                resultMappingService.mapRefund(Map.of("mangoPayRefundScenario", scenarioCode));
+        Require.isTrue(!"UNKNOWN".equals(result.resultType()) || "UNKNOWN".equals(result.scenario()),
+                PaymentCode.PAYMENT_MANGO_PAY_SCENARIO_INVALID, "退款场景码不受支持");
     }
 
     private String normalize(String value) {

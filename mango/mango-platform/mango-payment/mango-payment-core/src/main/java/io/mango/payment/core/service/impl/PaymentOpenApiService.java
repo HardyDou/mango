@@ -516,11 +516,6 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
         return vo;
     }
 
-    private PaymentOpenPaymentOrderVO toOpenPaymentOrderVO(PaymentApplicationEntity application, PaymentCashierPayResultVO payResult) {
-        PaymentOrderVO paymentOrder = selectRequiredOpenPaymentOrder(application, payResult.getPayOrderNo());
-        return toOpenPaymentOrderVO(paymentOrder, payResult);
-    }
-
     private PaymentOpenPaymentOrderVO toOpenPaymentOrderVO(PaymentOrderVO paymentOrder, PaymentCashierPayResultVO payResult) {
         PaymentOpenPaymentOrderVO vo = new PaymentOpenPaymentOrderVO();
         vo.setId(paymentOrder.getId());

@@ -580,10 +580,11 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         Require.notNull(tenantId, PaymentCode.PAYMENT_METHOD_INVALID, "富友查单缺少租户 ID");
         Require.notNull(methodId, PaymentCode.PAYMENT_METHOD_INVALID, "富友查单缺少支付方式 ID");
         PaymentMethodEntity method = methodMapper.selectById(methodId);
-        Require.isTrue(method != null
-                        && tenantId.equals(method.getTenantId())
-                        && Integer.valueOf(0).equals(method.getDelFlag()),
-                PaymentCode.PAYMENT_METHOD_NOT_FOUND, "原支付方式不存在");
+        if (method == null
+                || !tenantId.equals(method.getTenantId())
+                || !Integer.valueOf(0).equals(method.getDelFlag())) {
+            return Require.fail(PaymentCode.PAYMENT_METHOD_NOT_FOUND, "原支付方式不存在");
+        }
         return method.getMethodCode();
     }
 

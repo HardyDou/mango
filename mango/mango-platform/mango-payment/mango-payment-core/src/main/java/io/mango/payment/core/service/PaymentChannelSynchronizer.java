@@ -495,11 +495,6 @@ public class PaymentChannelSynchronizer {
         return paymentOrderMapper.selectLatestFlowNo(tenantId, paymentOrderId);
     }
 
-    private PaymentSyncResult paymentResult(String payOrderNo, String status, String flowNo, boolean changed) {
-        QueryRecordSummary emptySummary = new QueryRecordSummary(0L, null);
-        return paymentResult(payOrderNo, status, flowNo, changed, emptySummary);
-    }
-
     private PaymentSyncResult paymentResult(String payOrderNo, String status, String flowNo, boolean changed, QueryRecordSummary summary) {
         return new PaymentSyncResult(payOrderNo, status, flowNo, changed, summary.queryCount(), summary.lastQueryResult());
     }
