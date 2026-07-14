@@ -387,6 +387,7 @@ mango-payment-starter/src/main/resources/META-INF/mango/demo/
 
 ## 12. 变更影响记录
 
+- Payment 参数校验约束统一由 `mango-payment-api` 的 `XxxApi` 契约声明，starter Controller 通过接口继承约束，不再重复声明 Bean Validation 注解。HTTP 路径、请求与响应结构、校验规则、错误语义和支付业务逻辑均不变，调用方无需改造。
 - `PaymentCode` 位于 `io.mango.payment.api.enums`；API 契约不再携带 Spring MVC、文件上传或 I/O 异常类型。
 - 开放接口统一为固定 `POST` 路径和 `PaymentOpenRequestCommand` 请求体，签名路径由服务端固定写入，客户端不能覆盖。
 - 公网通道回调统一为固定函数式路由，并以 `API_RESOURCE` 声明 `PUBLIC` 访问模式；原始请求体、参数和纯文本 ACK 语义保持。

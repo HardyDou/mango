@@ -531,6 +531,8 @@ mango:
 
 ## 10. API 与扩展
 
+Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声明，starter Controller 通过接口继承约束，不再重复声明 Bean Validation 注解。HTTP 路径、请求与响应结构、校验规则、错误语义和流程业务逻辑均不变，调用方无需改造。
+
 业务申请接口：
 
 | 能力 | 接口 | 权限码 |
