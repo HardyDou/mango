@@ -49,9 +49,11 @@ jobs:
         run: node business-pmo/mango-baseline/tools/risk-verification.mjs
 
       - name: Check PMO document contracts
+        env:
+          BUSINESS_DOCS_ROOT: ${{ steps.scope.outputs.business_docs_root }}
         run: >-
           node business-pmo/mango-baseline/tools/check-document-set.mjs
-          --root business-docs
+          --root "$BUSINESS_DOCS_ROOT"
 
       - name: Set up Java
         if: steps.scope.outputs.backend == 'true'
@@ -63,8 +65,10 @@ jobs:
 
       - name: Validate backend governance POMs
         if: steps.scope.outputs.backend_mode == 'governance'
+        env:
+          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
         run: >-
-          mvn -B -ntp -f backend/pom.xml
+          mvn -B -ntp -f "$BACKEND_POM"
           -pl architecture-verification
           -DskipTests
           help:effective-pom
@@ -73,16 +77,20 @@ jobs:
         if: steps.scope.outputs.backend_mode == 'partial'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
+          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
           MAVEN_PROJECTS: ${{ steps.scope.outputs.maven_projects }}
         run: >-
-          mvn -B -ntp -f backend/pom.xml
+          mvn -B -ntp -f "$BACKEND_POM"
           -pl "$MAVEN_PROJECTS"
           -Dmango.architecture.mode=changed
           -Dmango.architecture.base="$BASE_SHA"
           -Dmango.architecture.skip=false
           -Dmango.architecture.requireFullReactor=false
           -Dmango.check.rule=all
-          -Dmango.check.gate=all
+          -Dmango.check.gate=no-new-violations
+          -Dmango.check.changedOnly=true
+          -Dmango.check.baseRef="$BASE_SHA"
+          -Dmango.check.requireFullScope=false
           -Dmango.check.staticFailurePolicy=block
           -Denforcer.skip=false
           verify

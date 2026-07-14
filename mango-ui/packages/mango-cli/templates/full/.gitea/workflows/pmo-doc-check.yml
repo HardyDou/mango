@@ -1,0 +1,96 @@
+name: PMO Documentation Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pmo-doc-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Classify affected Maven scope
+        id: scope
+        env:
+          BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
+          HEAD_SHA: ${{ gitea.event.pull_request.head.sha || gitea.sha }}
+        run: |
+          node business-pmo/mango-baseline/tools/classify-pmo-check-scope.mjs \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --output "$GITHUB_OUTPUT"
+
+      - name: Write PR body
+        if: gitea.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ gitea.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > .pr-body.md
+
+      - name: Check impact-driven risk and verification contract
+        if: gitea.event_name == 'pull_request'
+        env:
+          PR_BODY_FILE: .pr-body.md
+        run: node business-pmo/mango-baseline/tools/risk-verification.mjs
+
+      - name: Check PMO document contracts
+        env:
+          BUSINESS_DOCS_ROOT: ${{ steps.scope.outputs.business_docs_root }}
+        run: >-
+          node business-pmo/mango-baseline/tools/check-document-set.mjs
+          --root "$BUSINESS_DOCS_ROOT"
+
+      - name: Set up Java
+        if: steps.scope.outputs.backend == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Validate backend governance POMs
+        if: steps.scope.outputs.backend_mode == 'governance'
+        env:
+          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
+        run: >-
+          mvn -B -ntp -f "$BACKEND_POM"
+          -pl architecture-verification
+          -DskipTests
+          help:effective-pom
+
+      - name: Verify affected backend modules and Mango architecture
+        if: steps.scope.outputs.backend_mode == 'partial'
+        env:
+          BASE_SHA: ${{ gitea.event.pull_request.base.sha || gitea.event.before || 'HEAD^' }}
+          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
+          MAVEN_PROJECTS: ${{ steps.scope.outputs.maven_projects }}
+        run: >-
+          mvn -B -ntp -f "$BACKEND_POM"
+          -pl "$MAVEN_PROJECTS"
+          -Dmango.architecture.mode=changed
+          -Dmango.architecture.base="$BASE_SHA"
+          -Dmango.architecture.skip=false
+          -Dmango.architecture.requireFullReactor=false
+          -Dmango.check.rule=all
+          -Dmango.check.gate=no-new-violations
+          -Dmango.check.changedOnly=true
+          -Dmango.check.baseRef="$BASE_SHA"
+          -Dmango.check.requireFullScope=false
+          -Dmango.check.staticFailurePolicy=block
+          -Denforcer.skip=false
+          verify

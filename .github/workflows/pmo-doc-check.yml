@@ -58,7 +58,7 @@ jobs:
           node mango-pmo/tests/skills/check-skill-evals.mjs
 
       - name: Set up pnpm for PMO tarball verification
-        if: steps.scope.outputs.pmo == 'true'
+        if: steps.scope.outputs.pmo == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         uses: pnpm/action-setup@v4
         with:
           version: 11.10.0
@@ -71,7 +71,7 @@ jobs:
           node mango-ui/packages/mango-pmo/scripts/check-package.mjs
 
       - name: Set up Java for backend architecture gates
-        if: steps.scope.outputs.backend == 'true'
+        if: steps.scope.outputs.backend == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -79,7 +79,7 @@ jobs:
           cache: maven
 
       - name: Build the architecture gate prerequisites
-        if: steps.scope.outputs.backend == 'true'
+        if: steps.scope.outputs.backend == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-parent,:mango-common,:mango-tools \
@@ -87,7 +87,7 @@ jobs:
             install
 
       - name: Test and install the current Java architecture gate
-        if: steps.scope.outputs.backend == 'true'
+        if: steps.scope.outputs.backend == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           mvn -f mango/pom.xml \
             -pl :mango-architecture-rules,:mango-maven-plugin \
@@ -98,7 +98,7 @@ jobs:
         if: steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         run: |
           mvn -f mango/pom.xml \
-            -pl :mango,:mango-infra,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter \
+            -pl :mango,:mango-parent,:mango-common,:mango-infra,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter \
             -DskipTests \
             -Dcheckstyle.skip=true \
             -Dpmd.skip=true \

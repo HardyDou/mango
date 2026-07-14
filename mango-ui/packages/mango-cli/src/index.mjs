@@ -4162,6 +4162,11 @@ function writeMangoConfig(targetDir, variables) {
       required: ['authorization', 'system'],
       optional: variables.selectedModuleCodes,
     },
+    paths: {
+      backend: 'backend',
+      frontend: 'frontend',
+      businessDocs: 'business-docs',
+    },
     mangoFrontendVersions: variables.frontendVersions,
     npmRegistry: variables.npmRegistry,
     mavenRepository: variables.mavenRepository,

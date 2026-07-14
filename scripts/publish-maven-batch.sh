@@ -6,6 +6,10 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
 MAVEN_ROOT="${REPO_ROOT}/mango"
 ARCHITECTURE_VERIFICATION_MODULE="mango-tools/mango-architecture-verification"
 ARCHITECTURE_VERIFICATION_DIR="${MAVEN_ROOT}/${ARCHITECTURE_VERIFICATION_MODULE}"
+DOCS_BUNDLE_GROUP_ID="io.mango"
+DOCS_BUNDLE_ARTIFACT_ID="mango-docs-bundle"
+DOCS_BUNDLE_SOURCE_DIR="${REPO_ROOT}/mango-docs"
+DOCS_BUNDLE_WORK_DIR="${MANGO_DOCS_BUNDLE_WORK_DIR:-${REPO_ROOT}/.runtime/maven-docs-bundle}"
 
 usage() {
   cat <<'EOF'
@@ -18,7 +22,10 @@ published artifacts.
 Options:
   --all-non-app        Publish the complete backend reactor excluding
                        mango-app/** deployment entry modules and internal
-                       *-test modules
+                       *-test modules; also publish mango-docs-bundle
+  --include-docs-bundle
+                       Include mango-docs-bundle in an explicit module batch;
+                       --all-non-app includes it automatically
   --include-apps       Allow explicit mango-app/** targets. App artifacts are
                        never included by --all-non-app
   --revision <ver>      Maven CI-friendly version; required unless
@@ -50,6 +57,7 @@ EOF
 targets=()
 all_non_app=false
 include_apps=false
+include_docs_bundle=false
 skip_tests=true
 dry_run=false
 verify_publish=true
@@ -88,6 +96,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --include-apps)
       include_apps=true
+      ;;
+    --include-docs-bundle)
+      include_docs_bundle=true
       ;;
     --run-tests)
       skip_tests=false
@@ -277,6 +288,57 @@ deploy_architecture_verification_pom() {
   mvn "${deploy_args[@]}"
 }
 
+deploy_docs_bundle() {
+  local stage_dir="${DOCS_BUNDLE_WORK_DIR}/stage"
+  local jar_file="${DOCS_BUNDLE_WORK_DIR}/${DOCS_BUNDLE_ARTIFACT_ID}-${revision}.jar"
+  local repository_id repository_url
+  local deploy_args
+
+  repository_id="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.id)"
+  repository_url="$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.url)"
+  if [[ ! -d "${DOCS_BUNDLE_SOURCE_DIR}" || -z "${repository_id}" || -z "${repository_url}" ]]; then
+    echo "Unable to resolve Mango docs bundle source or publication repository." >&2
+    exit 1
+  fi
+
+  deploy_args=(
+    org.apache.maven.plugins:maven-deploy-plugin:3.1.4:deploy-file
+    "-DgroupId=${DOCS_BUNDLE_GROUP_ID}"
+    "-DartifactId=${DOCS_BUNDLE_ARTIFACT_ID}"
+    "-Dversion=${revision}"
+    -Dpackaging=jar
+    "-Dfile=${jar_file}"
+    "-DrepositoryId=${repository_id}"
+    "-Durl=${repository_url}"
+  )
+
+  echo "Publishing version-matched Mango documentation bundle"
+  printf 'Command: git archive --format=tar --prefix=META-INF/mango-docs/ HEAD:mango-docs | tar -xf - -C %q\n' "${stage_dir}"
+  printf 'Command: jar --create --file %q -C %q .\n' "${jar_file}" "${stage_dir}"
+  printf 'Command: mvn'
+  printf ' %q' "${deploy_args[@]}"
+  printf '\n'
+  if [[ "${dry_run}" == "true" ]]; then
+    return 0
+  fi
+
+  rm -rf "${DOCS_BUNDLE_WORK_DIR}"
+  mkdir -p "${stage_dir}"
+  (
+    cd "${REPO_ROOT}"
+    git archive --format=tar --prefix=META-INF/mango-docs/ HEAD:mango-docs \
+      | tar -xf - -C "${stage_dir}"
+  )
+  for required_file in README.md capabilities/README.md versions/manifest.json; do
+    if [[ ! -f "${stage_dir}/META-INF/mango-docs/${required_file}" ]]; then
+      echo "Mango docs bundle source is missing ${required_file}." >&2
+      exit 1
+    fi
+  done
+  jar --create --file "${jar_file}" -C "${stage_dir}" .
+  mvn "${deploy_args[@]}"
+}
+
 artifact_url_base() {
   local group_id="$1"
   local artifact_id="$2"
@@ -349,6 +411,7 @@ is_app_module_dir() {
 }
 
 if [[ "${all_non_app}" == "true" ]]; then
+  include_docs_bundle=true
   discover_non_app_targets
 fi
 
@@ -408,6 +471,7 @@ echo "Reactor deploy modules: ${deploy_project_list:-none}"
 echo "Revision: ${revision}"
 echo "Allow SNAPSHOT: ${allow_snapshot}"
 echo "Include app artifacts: ${include_apps}"
+echo "Include docs bundle: ${include_docs_bundle}"
 if [[ "${verify_only}" == "true" ]]; then
   echo "Mode: verification only; deploy is skipped"
 else
@@ -430,6 +494,9 @@ if [[ "${verify_only}" == "false" ]]; then
   if [[ "${publish_architecture_verification}" == "true" ]]; then
     deploy_architecture_verification_pom
   fi
+  if [[ "${include_docs_bundle}" == "true" ]]; then
+    deploy_docs_bundle
+  fi
 fi
 
 if [[ "${verify_publish}" != "true" ]]; then
@@ -447,6 +514,11 @@ if [[ "${verify_mode}" == "http" ]]; then
     trap 'rm -f "${coordinates_file}"' EXIT
   fi
   collect_target_coordinates "${coordinates_file}"
+  if [[ "${include_docs_bundle}" == "true" ]]; then
+    printf '%s:%s:%s:jar\n' \
+      "${DOCS_BUNDLE_GROUP_ID}" "${DOCS_BUNDLE_ARTIFACT_ID}" "${revision}" \
+      >> "${coordinates_file}"
+  fi
 
   echo "Verification repository URL: ${verify_base_url}"
   while IFS=: read -r group_id artifact_id version packaging; do
@@ -528,3 +600,18 @@ for target in "${targets[@]}"; do
     fi
   fi
 done
+
+if [[ "${include_docs_bundle}" == "true" ]]; then
+  docs_coordinates="${DOCS_BUNDLE_GROUP_ID}:${DOCS_BUNDLE_ARTIFACT_ID}:${revision}"
+  echo "Verifying published Maven artifact: ${docs_coordinates}"
+  printf 'Command: mvn'
+  printf ' %q' "${verify_args[@]}"
+  printf ' %q' "-Dartifact=${docs_coordinates}"
+  printf '\n'
+  if [[ "${dry_run}" == "false" ]]; then
+    (
+      cd "${verify_work_dir}"
+      mvn "${verify_args[@]}" "-Dartifact=${docs_coordinates}"
+    )
+  fi
+fi
