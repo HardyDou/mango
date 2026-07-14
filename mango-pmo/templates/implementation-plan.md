@@ -10,8 +10,8 @@ action: WRITE
 owner: {{OWNER}}
 approver: {{APPROVER}}
 approvalEvidence: {{APPROVAL_EVIDENCE}}
-upstreamDocumentId: {{TDD_DOCUMENT_ID}}
-upstreamDocumentHash: {{TDD_SHA256}}
+upstreamDocumentId: {{TDD_DOCUMENT_ID_OR_NONE}}
+upstreamDocumentHash: {{TDD_SHA256_OR_NONE}}
 ---
 
 # {{REQUIREMENT_NAME}} 实施计划
@@ -40,17 +40,15 @@ upstreamDocumentHash: {{TDD_SHA256}}
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | {{VAL_ID}} | {{TC_OR_SAC_ID}} | {{TASK_ID}} | {{VALIDATION_LEVEL}} | {{COMMAND_OR_STEPS}} | {{ENVIRONMENT}} | {{TEST_DATA}} | {{SECURITY_BOUNDARY}} | {{EXPECTED_RESULT}} | {{EVIDENCE_PATH}} | {{OWNER}} | {{FAILURE_HANDLING}} |
 
-## 5. 数据、升级、发布与回滚步骤
+## 5. 数据库实施步骤
 
-| 发布步骤ID | 技术设计ID | 环境 | 前置检查 | 动作 | 顺序 | 数据备份或回填 | 兼容窗口 | 验证 | 失败停止条件 | 回滚或补偿 | 责任人 |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| {{REL_ID}} | {{DB_IMP_OR_DEC_ID}} | {{ENVIRONMENT}} | {{PRECHECK}} | {{ACTION}} | {{ORDER}} | {{DATA_HANDLING}} | {{COMPATIBILITY_WINDOW}} | {{VALIDATION}} | {{STOP_CONDITION}} | {{ROLLBACK_OR_COMPENSATION}} | {{OWNER}} |
+| 数据步骤ID | 技术设计ID | 环境 | 前置检查 | 动作 | 顺序 | 数据备份或回填 | 验证 | 失败停止条件 | 补偿 | 责任人 |
+|---|---|---|---|---|---|---|---|---|---|---|
 
-## 6. 文档与能力同步计划
+## 6. 已启用说明与资产同步计划
 
 | 文档项ID | 技术设计或交付物ID | 目标文档 | 变化 | 责任人 | 完成条件 | 检查命令 | 不适用依据 |
 |---|---|---|---|---|---|---|---|
-| {{DOC_ID}} | {{IMP_DEL_OR_TASK_ID}} | {{TARGET_DOCUMENT}} | {{CHANGE}} | {{OWNER}} | {{DONE_CRITERIA}} | {{CHECK_COMMAND}} | {{NOT_APPLICABLE_REASON_OR_NONE}} |
 
 ## 7. 风险、阻塞与例外
 
@@ -60,7 +58,7 @@ upstreamDocumentHash: {{TDD_SHA256}}
 
 ## 8. 实施追踪矩阵
 
-| 上游设计ID | 交付物ID | 任务ID | 验证ID | 里程碑发布文档或风险项ID | 覆盖说明 |
+| 上游设计ID | 交付物ID | 任务ID | 验证ID | 里程碑数据文档或风险项ID | 覆盖说明 |
 |---|---|---|---|---|---|
 | {{TDD_ID}} | {{DEL_ID}} | {{TASK_ID}} | {{VAL_ID}} | {{MS_REL_DOC_OR_RISK_ID}} | {{COVERAGE}} |
 

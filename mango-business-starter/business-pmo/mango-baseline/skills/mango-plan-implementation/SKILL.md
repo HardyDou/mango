@@ -1,6 +1,6 @@
 ---
 name: mango-plan-implementation
-description: Create or review a Mango Implementation Plan from an approved Technical Design Document. Use for ordered work items, dependencies, ownership, affected paths, verification commands, rollout, and completion criteria; do not use for requirements discovery, API or database design, coding, or QA execution.
+description: Create or review a user-enabled Mango Implementation Plan from approved design input or a confirmed assurance baseline. Use for ordered work items, dependencies, ownership, affected paths, verification commands, rollout, and completion criteria; do not use for selecting safeguards, requirements discovery, API or database design, coding, or QA execution.
 ---
 
 # Mango Implementation Plan
@@ -26,14 +26,14 @@ Run PMO preflight with role `tech-lead` and phase `design`, then read every `Mus
 
 ## Execute
 
-1. Inherit the TDD final L0-L3 level and its requirement/solution evidence without reassessing or lowering it. This four-document stage applies to L2/L3; for L0/L1, do not fabricate a Plan and route back to the approved lightweight lifecycle path. For L2/L3, locate and verify the approved Technical Design Document and its upstream trace chain.
+1. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and the assurance baseline. Continue only when the user confirmed M06 Implementation Plan=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Inherit the applicable approved design's final L0-L3 and evidence without reassessing or lowering it. Risk level does not enable Plan or any other document.
 2. Choose one action:
    - `STOP`: the design is absent, unapproved, invalid, or the request asks the plan to decide unresolved requirements or architecture.
    - `ASK`: ownership, dependency, sequencing, target path, verification, or rollout facts cannot be established.
    - `WRITE`: inputs satisfy the rule; fill the official template with executable, traceable work items only.
 3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-implementation-plan.mjs" --document <document-path>`.
-4. Turn the approved test mapping into executable `STATIC/UNIT/API/UI` commands only where each type proves an acceptance outcome, and record concrete reasons for omitted types. Fix failures without weakening the checker or silently redesigning the approved solution. Any new endpoint, schema, technology choice or architecture decision requires a TDD revision and renewed approval.
-5. Run the complete lifecycle checker with BRD, SRS, TDD and Plan through `--through plan`; require valid hashes and trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
-6. Return `NEXT: $mango-engineering` only when the dedicated checker, complete lifecycle handoff, dependency graph, gate table and human approval all pass.
+4. Turn only user-enabled M09-M16 measures into executable commands or steps. Do not add omitted measures or demand skip reasons for untriggered measures. Fix failures without weakening the checker or silently redesigning the approved solution. Any new endpoint, schema, technology choice or architecture decision requires a TDD revision and renewed approval when M05 is enabled; otherwise reconfirm the affected assurance measures.
+5. Run the lifecycle checker for the user-enabled Plan and applicable upstream; require valid hashes and trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
+6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, dependency graph, gate table and human approval all pass. Let the coordinator choose the next enabled measure or engineering.
 
-With an empty context or no approved design, return `STOP` and identify the missing prerequisite.
+With an empty context, return `ASK` for M06 confirmation and the implementation source. When a confirmed Plan lacks an applicable approved design, return `STOP` and identify it. Do not infer Plan from L2/L3.

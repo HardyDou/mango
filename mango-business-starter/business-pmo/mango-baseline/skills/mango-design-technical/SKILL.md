@@ -1,6 +1,6 @@
 ---
 name: mango-design-technical
-description: Create or review a Mango Technical Design Document from an approved System Requirements Specification. Use for architecture, module boundaries, API contracts, persistence, security, migration, and verification design; do not use for business discovery, system requirement authoring, implementation scheduling, coding, or acceptance execution.
+description: Create or review a user-enabled Mango Technical Design Document from approved system input or a confirmed assurance baseline. Use for architecture, module boundaries, API contracts, persistence, security, migration, and verification design; do not use for selecting safeguards, business discovery, system requirement authoring, implementation scheduling, coding, or acceptance execution.
 ---
 
 # Mango Technical Design
@@ -28,14 +28,14 @@ Run PMO preflight with role `tech-lead` and phase `design`, then read every `Mus
 
 ## Execute
 
-1. Read the approved requirement/system impact, then assess the selected solution's blast radius, coupling, failure consequences, recovery effort and uncertainty. Set final L0-L3 to the maximum and never below SRS. If a lightweight path rises to L2/L3, stop implementation and complete the four-document chain. For L2/L3, locate the approved System Requirements Specification, verify it, and inspect affected Mango source and public contracts.
+1. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and the assurance baseline. Continue only when the user confirmed M05 TDD=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Read the applicable approved requirement/system source, assess solution blast radius, coupling, failure consequences, recovery effort and uncertainty, and set final L0-L3 to the maximum without lowering the source. Risk changes do not enable TDD or complete a document chain.
 2. Choose one action:
    - `STOP`: upstream requirements are absent, unapproved, invalid, or the request asks this stage to invent business scope.
    - `ASK`: a design decision cannot be derived from approved requirements, repository facts, or loaded Mango rules.
    - `WRITE`: inputs satisfy the rule; fill the official template and trace every design decision to upstream requirements.
 3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-technical-design.mjs" --document <document-path>`.
 4. Validate every API design against the loaded backend API/module rules, including the path-variable ban, protocol-model boundary and api/core/starter/starter-remote ownership.
-5. Map every acceptance outcome to the lowest-cost sufficient `STATIC/UNIT/API/UI` type, record why the selected set is sufficient and why each omitted type is unnecessary. Then run the lifecycle checker with BRD, SRS and TDD through `--through tdd`; require valid hashes, nondecreasing risk, trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
-6. Return `NEXT: $mango-plan-implementation` only when the dedicated checker, staged lifecycle handoff, specialized design checks, gate table and human approval all pass.
+5. Map acceptance outcomes only to user-enabled verification measures, record why each selected type proves the result and preserve the residual risk of disabled triggered measures. Run the lifecycle checker for the enabled TDD and applicable upstream; require valid hashes, applicable risk relations, trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
+6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, specialized design checks, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume Plan follows.
 
-With an empty context or no approved upstream document, return `STOP` and identify the missing prerequisite.
+With an empty context, return `ASK` for M05 confirmation and the technical decision source. When a confirmed TDD lacks an applicable approved source, return `STOP` and identify it. Do not infer documents from L2/L3.

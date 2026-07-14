@@ -87,6 +87,10 @@
       "path": "rules/10-release-artifacts.md",
       "reason": "npm、Maven、同版本 Maven 文档包、CLI、starter、模板、PMO、Skill 发布批次、不可变制品恢复及版本同步规范"
     },
+    "process.deliveryAssurance": {
+      "path": "rules/11-delivery-assurance.md",
+      "reason": "基于任务事实推荐固定交付保障措施、原生 Ask User 分批确认和确认基线治理"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -204,12 +208,12 @@
     "pmo": ["agent.pmo", "product.documentLifecycle", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
-    "requirement": ["product.documentLifecycle", "process.testCaseAutomation"],
-    "design": ["agent.techLead", "product.documentLifecycle", "process.testCaseAutomation"],
-    "develop": ["agent.dev", "process.devEnvironment", "process.testCaseAutomation", "process.aiDeliveryQuality"],
-    "verify": ["agent.qa", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "requirement": ["process.deliveryAssurance", "product.documentLifecycle", "process.testCaseAutomation"],
+    "design": ["agent.techLead", "process.deliveryAssurance", "product.documentLifecycle", "process.testCaseAutomation"],
+    "develop": ["agent.dev", "process.deliveryAssurance", "process.devEnvironment", "process.testCaseAutomation", "process.aiDeliveryQuality"],
+    "verify": ["agent.qa", "process.deliveryAssurance", "process.testAssets", "process.testCaseAutomation", "process.aiDeliveryQuality"],
     "release": ["process.testCaseAutomation", "process.aiDeliveryQuality", "process.releaseArtifacts"],
-    "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
+    "governance": ["agent.pmo", "process.deliveryAssurance", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "bundles": {
     "deliveryContract": {

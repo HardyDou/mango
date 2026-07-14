@@ -193,7 +193,10 @@ assertIncludes('.github/pull_request_template.md', [
   '## Risk / Verification',
   'Requirement impact:',
   'Solution risk:',
-  'Selected verification:',
+  'Assurance baseline:',
+  'Assurance selections:',
+  'Assurance evidence:',
+  'Residual risks:',
   '## Validation',
   '## PMO Exceptions'
 ], failures);

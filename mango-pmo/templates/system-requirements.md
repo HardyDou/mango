@@ -10,8 +10,8 @@ action: WRITE
 owner: {{OWNER}}
 approver: {{APPROVER}}
 approvalEvidence: {{APPROVAL_EVIDENCE}}
-upstreamDocumentId: {{BRD_DOCUMENT_ID}}
-upstreamDocumentHash: {{BRD_SHA256}}
+upstreamDocumentId: {{BRD_DOCUMENT_ID_OR_NONE}}
+upstreamDocumentHash: {{BRD_SHA256_OR_NONE}}
 ---
 
 # {{REQUIREMENT_NAME}} 系统需求规格说明书

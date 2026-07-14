@@ -145,9 +145,16 @@ assert(
   'missing L0 lightweight lifecycle eval',
 );
 assert(
-  cases.some(item => item.id === 'lifecycle-l3-skip-stop'
-    && item.expect.action === 'STOP'),
-  'missing L3 no-skip lifecycle eval',
+  cases.some(item => item.id === 'lifecycle-cross-tenant-measures-ask'
+    && item.expect.action === 'ASK'
+    && item.expect.requiredAssertions?.some(assertion => assertion.includes('native Ask User'))),
+  'missing cross-tenant fact-triggered assurance confirmation eval',
+);
+assert(
+  cases.some(item => item.id === 'lifecycle-l3-governance-no-four-docs'
+    && item.expect.action === 'ASK'
+    && item.expect.requiredAssertions?.some(assertion => assertion.includes('does not automatically require BRD'))),
+  'missing L3 governance no-four-document-package eval',
 );
 assert(
   cases.some(item => item.id === 'technical-same-requirement-different-solution-risk'

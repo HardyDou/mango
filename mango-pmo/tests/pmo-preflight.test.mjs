@@ -40,19 +40,23 @@ function runPreflightAs(cwd, role, phase, task, paths) {
   return JSON.parse(output);
 }
 
-test('main branch requires a task worktree for code changes', () => {
+test('main branch recommends a task worktree for code changes and leaves M01 to human confirmation', () => {
   const root = createRepository();
   try {
     const result = runPreflight(root, '修复后端 API', 'mango/**');
     assert.equal(result.currentWorkspace.isMainBranch, true);
     assert.equal(result.classifiedWorkspacePolicy.mode, 'worktree-required');
     assert.equal(result.workspacePolicy.mode, 'worktree-required');
+    assert.equal(result.assuranceRecommendation.measureId, 'M01');
+    assert.equal(result.assuranceRecommendation.recommendedValue, 'CREATE');
+    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, true);
+    assert.match(result.assuranceRecommendation.reason, /path mango\/\*\*/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('non-main branch must reuse the current workspace', () => {
+test('non-main branch recommends reusing the current workspace without creating another worktree', () => {
   const root = createRepository();
   try {
     git(root, 'switch', '-c', 'fix/api-contract');
@@ -60,7 +64,9 @@ test('non-main branch must reuse the current workspace', () => {
     assert.equal(result.currentWorkspace.reusableTaskWorkspace, true);
     assert.equal(result.classifiedWorkspacePolicy.mode, 'worktree-required');
     assert.equal(result.workspacePolicy.mode, 'reuse-current-worktree');
-    assert.match(result.workspacePolicy.summary, /禁止.*创建 worktree/);
+    assert.match(result.workspacePolicy.summary, /建议复用.*不再创建/);
+    assert.equal(result.assuranceRecommendation.recommendedValue, 'DO_NOT_CREATE');
+    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, true);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -73,6 +79,8 @@ test('unclear scope still requires confirmation on a non-main branch', () => {
     const result = runPreflight(root, '帮我看看并处理', 'unknown-area');
     assert.equal(result.classifiedWorkspacePolicy.mode, 'needs-human-check');
     assert.equal(result.workspacePolicy.mode, 'needs-human-check');
+    assert.equal(result.assuranceRecommendation.recommendedValue, null);
+    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, true);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
