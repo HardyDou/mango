@@ -1,0 +1,1027 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_SITE_CATEGORY": [
+          {
+            "id": "20260714110000007",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000000101",
+            "name": "CMS 演示数据 cms_site_category 2070000000000000101",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000101"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "首页"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "home"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "PAGE"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000008",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000000102",
+            "name": "CMS 演示数据 cms_site_category 2070000000000000102",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000102"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "产品能力"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "products"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/products"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000009",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000000103",
+            "name": "CMS 演示数据 cms_site_category 2070000000000000103",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000103"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "解决方案"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "solutions"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/solutions"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000010",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000000104",
+            "name": "CMS 演示数据 cms_site_category 2070000000000000104",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000104"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "news"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/news"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000011",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000000105",
+            "name": "CMS 演示数据 cms_site_category 2070000000000000105",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000105"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "关于我们"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "about"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "PAGE"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/about"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 5
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": null
+              }
+            }
+          },
+          {
+            "id": "20260714110000012",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000001101",
+            "name": "CMS 演示数据 cms_site_category 2070000000000001101",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001101"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "快速开始"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "getting-started"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/getting-started"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "快速开始"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,快速开始"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "Mango 快速开始文档。"
+              }
+            }
+          },
+          {
+            "id": "20260714110000013",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000001102",
+            "name": "CMS 演示数据 cms_site_category 2070000000000001102",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001102"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "账号与权限"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "account-security"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/account-security"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "账号与权限"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,账号,权限,安全"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "账号、权限与安全策略说明。"
+              }
+            }
+          },
+          {
+            "id": "20260714110000014",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000001103",
+            "name": "CMS 演示数据 cms_site_category 2070000000000001103",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001103"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "内容管理"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "cms-guide"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/cms-guide"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "内容管理"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,CMS,内容管理"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "站点、栏目、导航、广告与内容发布说明。"
+              }
+            }
+          },
+          {
+            "id": "20260714110000015",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000001104",
+            "name": "CMS 演示数据 cms_site_category 2070000000000001104",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001104"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "常见问题"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "faq"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/faq"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "常见问题"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,FAQ,常见问题"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "Mango 常见问题与处理建议。"
+              }
+            }
+          },
+          {
+            "id": "20260714110000016",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000002101",
+            "name": "CMS 演示数据 cms_site_category 2070000000000002101",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002101"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "产品能力"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "products"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/products"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "产品能力"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,产品能力"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "Mango 平台产品能力介绍。"
+              }
+            }
+          },
+          {
+            "id": "20260714110000017",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000002102",
+            "name": "CMS 演示数据 cms_site_category 2070000000000002102",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002102"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "解决方案"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "solutions"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/solutions"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "解决方案"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,解决方案"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "企业数字化解决方案。"
+              }
+            }
+          },
+          {
+            "id": "20260714110000018",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000002103",
+            "name": "CMS 演示数据 cms_site_category 2070000000000002103",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002103"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "news"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "LIST"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/news"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,新闻动态"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "产品进展与企业动态。"
+              }
+            }
+          },
+          {
+            "id": "20260714110000019",
+            "version": 1,
+            "bizKey": "cms.site-category.2070000000000002104",
+            "name": "CMS 演示数据 cms_site_category 2070000000000002104",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002104"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": "0"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "关于我们"
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "about"
+              },
+              "categoryType": {
+                "type": "STRING",
+                "value": "PAGE"
+              },
+              "accessPath": {
+                "type": "STRING",
+                "value": "/about"
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "visibleStatus": {
+                "type": "STRING",
+                "value": "ENABLED"
+              },
+              "accessType": {
+                "type": "STRING",
+                "value": "PUBLIC"
+              },
+              "roleCodes": {
+                "type": "STRING",
+                "value": null
+              },
+              "seoTitle": {
+                "type": "STRING",
+                "value": "关于我们"
+              },
+              "seoKeywords": {
+                "type": "STRING",
+                "value": "Mango,关于我们"
+              },
+              "seoDescription": {
+                "type": "STRING",
+                "value": "Mango 团队与服务介绍。"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

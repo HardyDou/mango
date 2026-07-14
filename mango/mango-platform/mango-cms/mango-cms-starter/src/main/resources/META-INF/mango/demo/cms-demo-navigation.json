@@ -1,0 +1,1377 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_NAVIGATION": [
+          {
+            "id": "20260714110000042",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000201",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000201",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000201"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "首页"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000043",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000202",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000202",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000202"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "产品能力"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/products"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000044",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000203",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000203",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000203"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "解决方案"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/solutions"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000045",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000204",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000204",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000204"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/news"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000046",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000205",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000205",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000205"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "关于我们"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/about"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 5
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000047",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000301",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000301",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000301"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "产品能力"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/products"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000048",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000302",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000302",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000302"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "解决方案"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/solutions"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000049",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000303",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000303",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000303"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/news"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000050",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000000304",
+            "name": "CMS 演示数据 cms_navigation 2070000000000000304",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000304"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "关于我们"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/about"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000051",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000001201",
+            "name": "CMS 演示数据 cms_navigation 2070000000000001201",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001201"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "快速开始"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001101"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000052",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000001202",
+            "name": "CMS 演示数据 cms_navigation 2070000000000001202",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001202"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "账号与权限"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001102"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000053",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000001203",
+            "name": "CMS 演示数据 cms_navigation 2070000000000001203",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001203"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "内容管理"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001103"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000054",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000001204",
+            "name": "CMS 演示数据 cms_navigation 2070000000000001204",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000001204"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000001001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "常见问题"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000001104"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000055",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002201",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002201",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002201"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "首页"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "URL"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": null
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": "/"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000056",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002202",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002202",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002202"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "产品能力"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002101"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000057",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002203",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002203",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002203"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "解决方案"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002102"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000058",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002204",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002204",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002204"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002103"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000059",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002205",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002205",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002205"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "TOP"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "关于我们"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002104"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 5
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000060",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002301",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002301",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002301"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "产品能力"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002101"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000061",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002302",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002302",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002302"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "解决方案"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002102"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000062",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002303",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002303",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002303"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002103"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000063",
+            "version": 1,
+            "bizKey": "cms.navigation.2070000000000002304",
+            "name": "CMS 演示数据 cms_navigation 2070000000000002304",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000002304"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000002001"
+              },
+              "navType": {
+                "type": "STRING",
+                "value": "FOOTER"
+              },
+              "navName": {
+                "type": "STRING",
+                "value": "关于我们"
+              },
+              "jumpType": {
+                "type": "STRING",
+                "value": "CATEGORY"
+              },
+              "categoryId": {
+                "type": "LONG",
+                "value": "2070000000000002104"
+              },
+              "contentId": {
+                "type": "LONG",
+                "value": null
+              },
+              "externalUrl": {
+                "type": "STRING",
+                "value": null
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

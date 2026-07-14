@@ -1,0 +1,79 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_BANNER": [
+          {
+            "id": "20260714110000064",
+            "version": 1,
+            "bizKey": "cms.banner.2070000000000000401",
+            "name": "CMS 演示数据 cms_banner 2070000000000000401",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000401"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "position": {
+                "type": "STRING",
+                "value": "HOME_HERO"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "内容管理平台 · 让每一次发布可信可溯"
+              },
+              "subtitle": {
+                "type": "STRING",
+                "value": "全线上内容发布 · 多站点管理 · 数据穿透"
+              },
+              "mediaType": {
+                "type": "STRING",
+                "value": "IMAGE"
+              },
+              "mediaFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "/products"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

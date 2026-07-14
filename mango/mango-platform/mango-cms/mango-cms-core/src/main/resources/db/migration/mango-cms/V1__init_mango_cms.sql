@@ -210,7 +210,12 @@ CREATE TABLE IF NOT EXISTS cms_advertisement (
     ad_code VARCHAR(64) NOT NULL,
     ad_name VARCHAR(128) NOT NULL,
     position VARCHAR(64) NOT NULL,
-    ad_type VARCHAR(32) NOT NULL,
+    position_type VARCHAR(32) NULL,
+    supported_material_types VARCHAR(255) NULL,
+    width INT NULL,
+    height INT NULL,
+    remark VARCHAR(512) NULL,
+    ad_type VARCHAR(32) NULL,
     material_file_id VARCHAR(128) NULL,
     jump_url VARCHAR(512) NULL,
     start_time DATETIME NULL,
@@ -224,6 +229,37 @@ CREATE TABLE IF NOT EXISTS cms_advertisement (
     updated_at DATETIME NULL,
     UNIQUE KEY uk_cms_ad_code (tenant_id, site_id, ad_code, deleted),
     KEY idx_cms_ad_site (tenant_id, site_id, position, status, deleted)
+);
+
+CREATE TABLE IF NOT EXISTS cms_ad_delivery (
+    id BIGINT PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    org_id BIGINT NULL,
+    site_id BIGINT NOT NULL,
+    ad_id BIGINT NOT NULL,
+    delivery_name VARCHAR(128) NOT NULL,
+    material_type VARCHAR(32) NOT NULL,
+    title VARCHAR(255) NULL,
+    text_content VARCHAR(1024) NULL,
+    rich_content TEXT NULL,
+    html_content TEXT NULL,
+    image_file_id VARCHAR(128) NULL,
+    image_file_ids VARCHAR(1024) NULL,
+    video_file_id VARCHAR(128) NULL,
+    cover_file_id VARCHAR(128) NULL,
+    jump_url VARCHAR(512) NULL,
+    open_target VARCHAR(32) NULL,
+    start_time DATETIME NULL,
+    end_time DATETIME NULL,
+    sort INT NOT NULL DEFAULT 0,
+    status VARCHAR(32) NOT NULL,
+    deleted TINYINT NOT NULL DEFAULT 0,
+    created_by BIGINT NULL,
+    created_at DATETIME NULL,
+    updated_by BIGINT NULL,
+    updated_at DATETIME NULL,
+    KEY idx_cms_ad_delivery_site (tenant_id, site_id, ad_id, status, deleted),
+    KEY idx_cms_ad_delivery_time (tenant_id, start_time, end_time, deleted)
 );
 
 CREATE TABLE IF NOT EXISTS cms_site_setting (
