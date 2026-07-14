@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -30,6 +31,45 @@ class WorkflowMigrationContractTest {
                 .doesNotContain("common.schema.version")
                 .doesNotContain("next.dbid")
                 .doesNotContain("schema.history");
+    }
+
+    @Test
+    void v1_workflowEntityTablesContainCanonicalTenantAndAuditColumns() throws IOException {
+        String sql = resourceText(MIGRATION);
+        List<String> workflowEntityTables = List.of(
+                "workflow_category",
+                "workflow_definition",
+                "workflow_template_category",
+                "workflow_template",
+                "workflow_node_definition",
+                "workflow_definition_version",
+                "workflow_form_instance",
+                "workflow_task_record",
+                "workflow_copied_task",
+                "workflow_business_apply",
+                "workflow_business_apply_current_task",
+                "workflow_business_apply_status_log");
+
+        for (String tableName : workflowEntityTables) {
+            assertThat(tableDefinition(sql, tableName))
+                    .as("WorkflowBaseEntity columns of %s", tableName)
+                    .contains("`tenant_id` varchar(64)")
+                    .contains("`org_id` bigint")
+                    .contains("`created_by` bigint DEFAULT NULL")
+                    .contains("`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP")
+                    .contains("`updated_by` bigint DEFAULT NULL")
+                    .contains("`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        }
+    }
+
+    private String tableDefinition(String sql, String tableName) {
+        Pattern tablePattern = Pattern.compile(
+                "(?is)CREATE TABLE IF NOT EXISTS\\s+`"
+                        + Pattern.quote(tableName)
+                        + "`\\s*\\((.*?)\\)\\s*ENGINE=");
+        var matcher = tablePattern.matcher(sql);
+        assertThat(matcher.find()).as("table %s exists in %s", tableName, MIGRATION).isTrue();
+        return matcher.group(1);
     }
 
     private String resourceText(String path) throws IOException {

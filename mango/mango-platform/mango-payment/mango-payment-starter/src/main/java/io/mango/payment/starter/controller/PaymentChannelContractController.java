@@ -1,21 +1,24 @@
 package io.mango.payment.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentChannelContractApi;
 import io.mango.payment.api.command.RotatePaymentChannelContractCertificateCommand;
+import io.mango.payment.api.command.SavePaymentChannelBillSourceCommand;
 import io.mango.payment.api.command.SavePaymentChannelContractCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentChannelCertificateExpiryVO;
 import io.mango.payment.api.vo.PaymentChannelCertificateRotationRecordVO;
+import io.mango.payment.api.vo.PaymentChannelBillSourceVO;
 import io.mango.payment.api.vo.PaymentChannelContractVO;
 import io.mango.payment.core.service.IPaymentChannelContractService;
+import io.mango.payment.core.service.IPaymentReconciliationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -34,10 +37,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/payment/channel-contracts")
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependency is intentionally retained for constructor injection")
 @Tag(name = "通道签约配置", description = "企业主体与支付通道签约配置后台管理接口")
 public class PaymentChannelContractController implements PaymentChannelContractApi {
 
     private final IPaymentChannelContractService channelContractService;
+    private final IPaymentReconciliationService reconciliationService;
 
     @Override
     @GetMapping("/page")
@@ -59,7 +65,7 @@ public class PaymentChannelContractController implements PaymentChannelContractA
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel-contract:add")
     @Operation(summary = "新增通道签约配置", description = "创建企业主体在支付通道下的签约配置")
-    public R<Long> createChannelContract(@Valid @RequestBody SavePaymentChannelContractCommand command) {
+    public R<Long> createChannelContract(@RequestBody SavePaymentChannelContractCommand command) {
         return R.ok(channelContractService.createChannelContract(command));
     }
 
@@ -67,7 +73,7 @@ public class PaymentChannelContractController implements PaymentChannelContractA
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel-contract:edit")
     @Operation(summary = "修改通道签约配置", description = "更新企业主体在支付通道下的签约配置")
-    public R<Boolean> updateChannelContract(@Valid @RequestBody SavePaymentChannelContractCommand command) {
+    public R<Boolean> updateChannelContract(@RequestBody SavePaymentChannelContractCommand command) {
         return R.ok(channelContractService.updateChannelContract(command));
     }
 
@@ -77,6 +83,22 @@ public class PaymentChannelContractController implements PaymentChannelContractA
     @Operation(summary = "删除通道签约配置", description = "按 ID 删除通道签约配置")
     public R<Boolean> deleteChannelContract(@Parameter(description = "签约配置 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(channelContractService.deleteChannelContract(id));
+    }
+
+    @Override
+    @GetMapping("/bill-sources/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel-contract:list")
+    @Operation(summary = "分页查询签约通道账单获取源", description = "按当前租户和签约通道查询账单获取方式配置")
+    public R<PageResult<PaymentChannelBillSourceVO>> pageBillSources(@ParameterObject PaymentConfigPageQuery query) {
+        return R.ok(reconciliationService.pageBillSources(query));
+    }
+
+    @Override
+    @PostMapping("/bill-sources")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel-contract:edit")
+    @Operation(summary = "保存签约通道账单获取源", description = "新增或更新签约通道的手动、FTP、FTPS 或 HTTP 账单获取配置")
+    public R<PaymentChannelBillSourceVO> saveBillSource(@RequestBody SavePaymentChannelBillSourceCommand command) {
+        return R.ok(reconciliationService.saveBillSource(command));
     }
 
     @Override
@@ -93,7 +115,7 @@ public class PaymentChannelContractController implements PaymentChannelContractA
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel-contract:certificate-rotate")
     @Operation(summary = "登记通道证书轮换", description = "登记通道签约证书轮换记录，并同步证书文件 ID 和证书有效期")
     public R<PaymentChannelCertificateRotationRecordVO> rotateCertificate(
-            @Valid @RequestBody RotatePaymentChannelContractCertificateCommand command) {
+            @RequestBody RotatePaymentChannelContractCertificateCommand command) {
         return R.ok(channelContractService.rotateCertificate(command));
     }
 

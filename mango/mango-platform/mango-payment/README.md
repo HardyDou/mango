@@ -275,6 +275,9 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
   `mango-payment-starter` 自己的 `META-INF/mango/demo` 目录登记，文件名统一以
   `payment-demo-` 开头；只有
   `mango.resource.registry.demo-enabled=true` 时加载。
+- 富友演示签约使用富友官方公开测试商户资料，包括扫码商户私钥和 PC 网关商户密钥；这些值只存在于
+  demo 声明中，Resource Handler 写库前使用当前环境的 `PaymentSensitiveValueCodec` 加密，正式资源不携带
+  任何商户密钥。
 - 业务订单、支付单、退款单、交易流水、通知、异常、对账、结算、账单批次和线下退款流程等
   运行态数据不做任何初始化登记，只能由真实业务流程产生。
 - 支付编号规则依赖 `mango-numgen`，通过 `SEQUENCE_RULE` 资源注入；不要在业务代码或前端拼接订单号。
@@ -387,6 +390,7 @@ mango-payment-starter/src/main/resources/META-INF/mango/demo/
 
 ## 12. 变更影响记录
 
+- Payment 参数校验约束统一由 `mango-payment-api` 的 `XxxApi` 契约声明，starter Controller 通过接口继承约束，不再重复声明 Bean Validation 注解。HTTP 路径、请求与响应结构、校验规则、错误语义和支付业务逻辑均不变，调用方无需改造。
 - `PaymentCode` 位于 `io.mango.payment.api.enums`；API 契约不再携带 Spring MVC、文件上传或 I/O 异常类型。
 - 开放接口统一为固定 `POST` 路径和 `PaymentOpenRequestCommand` 请求体，签名路径由服务端固定写入，客户端不能覆盖。
 - 公网通道回调统一为固定函数式路由，并以 `API_RESOURCE` 声明 `PUBLIC` 访问模式；原始请求体、参数和纯文本 ACK 语义保持。

@@ -14,7 +14,6 @@ import io.mango.payment.core.service.IPaymentExceptionOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -72,7 +71,7 @@ public class PaymentExceptionOrderController implements PaymentExceptionOrderApi
     @PostMapping("/handle")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:exception-order:handle")
     @Operation(summary = "处理异常订单", description = "受控处理异常订单，仅记录异常处理闭环，不直接修改支付或退款订单成功状态")
-    public R<PaymentExceptionOrderVO> handleExceptionOrder(@Valid @RequestBody HandlePaymentExceptionOrderCommand command) {
+    public R<PaymentExceptionOrderVO> handleExceptionOrder(@RequestBody HandlePaymentExceptionOrderCommand command) {
         return R.ok(exceptionOrderService.handleExceptionOrder(command));
     }
 }

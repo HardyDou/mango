@@ -21,6 +21,16 @@ export interface PaymentPageQuery {
   channelCode?: string;
 }
 
+async function fileToBase64(file: File) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return window.btoa(binary);
+}
+
 export interface PaymentApplication {
   id?: ApiId;
   appId?: string;
@@ -1167,14 +1177,14 @@ export const paymentOfflineCollectionApi = {
   bankStatementDetail: (id: ApiId) => get<PaymentOfflineBankStatementBatch>('/payment/offline-collections/bank-statements/detail', { params: { id } }),
   bankStatementStatuses: () => get<PaymentOfflineBankStatementStatus[]>('/payment/offline-collections/bank-statements/statuses'),
   bankStatementMatchStatuses: () => get<PaymentOfflineBankStatementStatus[]>('/payment/offline-collections/bank-statements/match-statuses'),
-  importBankStatement: (file: File, statementFileId?: ApiId) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (statementFileId) {
-      formData.append('statementFileId', String(statementFileId));
-    }
-    return post<PaymentOfflineBankStatementBatch>('/payment/offline-collections/bank-statements/import', formData);
-  },
+  importBankStatement: async (file: File, statementFileId?: ApiId) => post<PaymentOfflineBankStatementBatch>(
+    '/payment/offline-collections/bank-statements/import',
+    {
+      fileContent: await fileToBase64(file),
+      originalFilename: file.name,
+      statementFileId,
+    },
+  ),
   confirmBankStatement: (data: ConfirmOfflineBankStatementMatchCommand) => post<PaymentOfflineBankStatementBatch>(
     '/payment/offline-collections/bank-statements/confirm',
     data,

@@ -13,7 +13,6 @@ import io.mango.payment.core.service.IPaymentBusinessOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -63,7 +62,7 @@ public class PaymentBusinessOrderController implements PaymentBusinessOrderApi {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:business-order:create")
     @Operation(summary = "创建业务订单", description = "后台创建待支付业务订单，初始状态为待支付，金额按分保存")
-    public R<PaymentBusinessOrderVO> createBusinessOrder(@Valid @RequestBody CreatePaymentBusinessOrderCommand command) {
+    public R<PaymentBusinessOrderVO> createBusinessOrder(@RequestBody CreatePaymentBusinessOrderCommand command) {
         return R.ok(businessOrderService.createBusinessOrder(command));
     }
 }

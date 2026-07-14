@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.LongConsumer;
 
 /**
@@ -76,7 +77,7 @@ final class PaymentTableResourceHandler<E extends PaymentBaseEntity> implements 
             update.eq("id", targetId);
             resource.getFields().forEach((fieldName, field) -> {
                 if (!"targetId".equals(fieldName)) {
-                    update.set(definition.fields().get(fieldName), databaseValue(fieldName, field));
+                    update.set(definition.fields().get(fieldName), databaseValue(resource, fieldName, field));
                 }
             });
             mapper.update(null, update);
@@ -105,7 +106,7 @@ final class PaymentTableResourceHandler<E extends PaymentBaseEntity> implements 
         values.put("id", targetId);
         resource.getFields().forEach((fieldName, field) -> {
             if (!"targetId".equals(fieldName)) {
-                values.put(fieldName, databaseValue(fieldName, field));
+                values.put(fieldName, databaseValue(resource, fieldName, field));
             }
         });
         return values;
@@ -146,7 +147,7 @@ final class PaymentTableResourceHandler<E extends PaymentBaseEntity> implements 
             }
             List<String> secretKeys = new ArrayList<>();
             collectSecretKeys(root, secretKeys);
-            if (!secretKeys.isEmpty()) {
+            if (!secretKeys.isEmpty() && definition.configValuesTransformer() == null) {
                 throw new IllegalArgumentException("Payment resource must not contain merchant secrets: " + secretKeys);
             }
         } catch (JsonProcessingException ex) {
@@ -185,12 +186,15 @@ final class PaymentTableResourceHandler<E extends PaymentBaseEntity> implements 
         throw new IllegalArgumentException("Invalid payment targetId: " + value);
     }
 
-    private Object databaseValue(String fieldName, ResourceField field) {
+    private Object databaseValue(ResourceDeclaration resource, String fieldName, ResourceField field) {
         if (field == null || field.getValue() == null) {
             return null;
         }
         if (field.getType() == null) {
             throw new IllegalArgumentException("Payment resource field type is required: " + fieldName);
+        }
+        if ("configValuesJson".equals(fieldName) && definition.configValuesTransformer() != null) {
+            return definition.configValuesTransformer().apply(resource, writeJson(fieldName, field.getValue()));
         }
         return switch (field.getType()) {
             case JSON, OBJECT, LIST -> writeJson(fieldName, field.getValue());
@@ -217,7 +221,21 @@ final class PaymentTableResourceHandler<E extends PaymentBaseEntity> implements 
             Set<String> requiredFields,
             List<String> dependencies,
             String statusColumn,
-            LongConsumer physicalDelete) {
+            LongConsumer physicalDelete,
+            BiFunction<ResourceDeclaration, String, String> configValuesTransformer) {
+
+        Definition(
+                String resourceType,
+                String table,
+                Class<E> entityType,
+                Map<String, String> fields,
+                Set<String> requiredFields,
+                List<String> dependencies,
+                String statusColumn,
+                LongConsumer physicalDelete) {
+            this(resourceType, table, entityType, fields, requiredFields, dependencies, statusColumn, physicalDelete,
+                    null);
+        }
 
         Definition {
             fields = Map.copyOf(fields);

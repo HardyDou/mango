@@ -10,7 +10,6 @@ import io.mango.payment.api.vo.MangoPayVirtualPaymentResultVO;
 import io.mango.payment.core.service.IPaymentMangoPayScenarioControlService;
 import io.mango.payment.core.service.IMangoPayVirtualPaymentService;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -33,7 +32,7 @@ public class MangoPayVirtualPaymentController implements MangoPayVirtualPaymentA
     @PostMapping("/pay")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "芒果支付内置通道收银台支付")
     @Operation(summary = "提交芒果支付", description = "通过芒果支付虚拟通道执行收银台支付")
-    public R<MangoPayVirtualPaymentResultVO> pay(@Valid @RequestBody MangoPayVirtualPaymentCommand command) {
+    public R<MangoPayVirtualPaymentResultVO> pay(@RequestBody MangoPayVirtualPaymentCommand command) {
         return R.ok(virtualPaymentService.pay(command));
     }
 
@@ -41,7 +40,7 @@ public class MangoPayVirtualPaymentController implements MangoPayVirtualPaymentA
     @PostMapping("/scenario-controls")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:mango-pay:scenario-control")
     @Operation(summary = "创建芒果支付异常场景控制", description = "控制 MANGO_PAY 通道下一笔支付、查单、退款、退款查询或账单差异场景")
-    public R<Long> createMangoPayScenarioControl(@Valid @RequestBody CreateMangoPayScenarioControlCommand command) {
+    public R<Long> createMangoPayScenarioControl(@RequestBody CreateMangoPayScenarioControlCommand command) {
         return R.ok(scenarioControlService.createScenarioControl(command));
     }
 }

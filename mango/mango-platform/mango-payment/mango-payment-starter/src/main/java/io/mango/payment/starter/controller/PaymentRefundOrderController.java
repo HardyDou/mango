@@ -13,7 +13,6 @@ import io.mango.payment.core.service.IPaymentRefundOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -63,7 +62,7 @@ public class PaymentRefundOrderController implements PaymentRefundOrderApi {
     @PostMapping("/query-channel")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:refund-order:query-channel")
     @Operation(summary = "主动查询退款订单", description = "对退款中的订单执行通道查询，并按可信查询结果推进退款订单状态")
-    public R<PaymentRefundOrderVO> queryRefundOrder(@Valid @RequestBody QueryPaymentRefundOrderCommand command) {
+    public R<PaymentRefundOrderVO> queryRefundOrder(@RequestBody QueryPaymentRefundOrderCommand command) {
         return R.ok(refundOrderService.queryRefundOrder(command));
     }
 }

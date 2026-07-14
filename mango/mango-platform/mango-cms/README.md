@@ -186,3 +186,10 @@ CMS 管理页面通过 `@mango/cms` 注册，菜单由 `cms-common-menu.json` �
 - [企业官网站点 App](../../../mango-ui/apps/mango-site-enterprise-app)
 - [帮助中心站点 App](../../../mango-ui/apps/mango-site-help-app)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 13. 变更影响记录
+
+- CMS 演示数据按站点、配置、栏目、导航、Banner、广告、投放、内容和发布关系分别登记在
+  `META-INF/mango/demo/`；仅在 `demo-enabled=true` 时按 `INIT_ONLY` 同步。
+- Flyway 继续只负责 DDL，`META-INF/mango/resources/` 只承载默认同步的菜单和未来必须初始化的数据。
+- 公开接口、后台管理接口、权限码、租户隔离和内容发布语义不变。

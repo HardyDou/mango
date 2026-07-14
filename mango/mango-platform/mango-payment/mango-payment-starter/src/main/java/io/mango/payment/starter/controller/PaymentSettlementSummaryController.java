@@ -15,7 +15,6 @@ import io.mango.payment.core.service.IPaymentSettlementSummaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -65,7 +64,7 @@ public class PaymentSettlementSummaryController implements PaymentSettlementSumm
     @PostMapping("/generate")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:settlement-summary:generate")
     @Operation(summary = "生成结算汇总", description = "按日期、应用、企业主体和通道生成财务核对汇总，不触发自动付款或会计凭证")
-    public R<PaymentSettlementSummaryVO> generateSettlementSummary(@Valid @RequestBody GeneratePaymentSettlementSummaryCommand command) {
+    public R<PaymentSettlementSummaryVO> generateSettlementSummary(@RequestBody GeneratePaymentSettlementSummaryCommand command) {
         return R.ok(settlementSummaryService.generateSettlementSummary(command));
     }
 
@@ -73,7 +72,7 @@ public class PaymentSettlementSummaryController implements PaymentSettlementSumm
     @PostMapping("/confirm")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:settlement-summary:confirm")
     @Operation(summary = "确认结算汇总", description = "确认前校验对应范围已对账且不存在未处理差异")
-    public R<PaymentSettlementSummaryVO> confirmSettlementSummary(@Valid @RequestBody ConfirmPaymentSettlementSummaryCommand command) {
+    public R<PaymentSettlementSummaryVO> confirmSettlementSummary(@RequestBody ConfirmPaymentSettlementSummaryCommand command) {
         return R.ok(settlementSummaryService.confirmSettlementSummary(command));
     }
 
@@ -81,7 +80,7 @@ public class PaymentSettlementSummaryController implements PaymentSettlementSumm
     @PostMapping("/void")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:settlement-summary:void")
     @Operation(summary = "作废结算汇总", description = "已确认汇总不可覆盖，修正需先作废再重新生成")
-    public R<PaymentSettlementSummaryVO> voidSettlementSummary(@Valid @RequestBody VoidPaymentSettlementSummaryCommand command) {
+    public R<PaymentSettlementSummaryVO> voidSettlementSummary(@RequestBody VoidPaymentSettlementSummaryCommand command) {
         return R.ok(settlementSummaryService.voidSettlementSummary(command));
     }
 }

@@ -20,7 +20,6 @@ import io.mango.payment.core.service.IPaymentOfflineChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -69,7 +68,7 @@ public class PaymentOfflineCollectionController implements PaymentOfflineCollect
     @PostMapping("/confirm")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-collection:confirm")
     @Operation(summary = "确认线下收款到账", description = "财务确认线下转账到账后推进线下收款、支付订单和业务订单状态")
-    public R<PaymentOfflineCollectionVO> confirmOfflineCollection(@Valid @RequestBody ConfirmOfflineCollectionCommand command) {
+    public R<PaymentOfflineCollectionVO> confirmOfflineCollection(@RequestBody ConfirmOfflineCollectionCommand command) {
         return R.ok(offlineChannelService.confirmCollection(command));
     }
 
@@ -110,7 +109,7 @@ public class PaymentOfflineCollectionController implements PaymentOfflineCollect
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-collection:bank-statement:import")
     @Operation(summary = "导入线下银行流水 Excel", description = "解析 Base64 文件内容，落批次和明细并生成匹配结果")
     public R<PaymentOfflineBankStatementBatchVO> importOfflineBankStatement(
-            @Valid @RequestBody ImportOfflineBankStatementCommand command) {
+            @RequestBody ImportOfflineBankStatementCommand command) {
         return R.ok(offlineChannelService.importBankStatement(command));
     }
 
@@ -118,7 +117,7 @@ public class PaymentOfflineCollectionController implements PaymentOfflineCollect
     @PostMapping("/bank-statements/confirm")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-collection:bank-statement:confirm")
     @Operation(summary = "确认线下银行流水匹配到账", description = "财务确认匹配银行流水后推进线下收款、支付订单和业务订单状态")
-    public R<PaymentOfflineBankStatementBatchVO> confirmOfflineBankStatementMatch(@Valid @RequestBody ConfirmOfflineBankStatementMatchCommand command) {
+    public R<PaymentOfflineBankStatementBatchVO> confirmOfflineBankStatementMatch(@RequestBody ConfirmOfflineBankStatementMatchCommand command) {
         return R.ok(offlineChannelService.confirmBankStatementMatches(command));
     }
 
@@ -126,7 +125,7 @@ public class PaymentOfflineCollectionController implements PaymentOfflineCollect
     @PostMapping("/refund")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:offline-collection:refund")
     @Operation(summary = "创建线下退款", description = "线下收款通道录入退款金额、退款账户和退款凭证，支持部分退款")
-    public R<PaymentOfflineRefundVO> createOfflineRefund(@Valid @RequestBody CreateOfflineRefundCommand command) {
+    public R<PaymentOfflineRefundVO> createOfflineRefund(@RequestBody CreateOfflineRefundCommand command) {
         return R.ok(offlineChannelService.createOfflineRefund(command));
     }
 }

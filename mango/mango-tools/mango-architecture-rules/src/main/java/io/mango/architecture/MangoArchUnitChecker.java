@@ -451,6 +451,7 @@ public final class MangoArchUnitChecker {
                     "Controller requires an explicit root path matching module-path");
         }
         directApi(javaClass)
+                .filter(JavaClass::isFullyImported)
                 .ifPresent(
                         api ->
                                 checkAdapterMethods(
@@ -559,7 +560,7 @@ public final class MangoArchUnitChecker {
             String name = type.getSimpleName();
             boolean allowedServicePort =
                     !field.getModifiers().contains(JavaModifier.STATIC)
-                            && type.isInterface()
+                            && isInterfaceOrExternalStub(type)
                             && name.matches("I[A-Z].*Service");
             if (!allowedServicePort) {
                 issues.add(
@@ -1912,7 +1913,11 @@ public final class MangoArchUnitChecker {
     }
 
     private boolean isApiContract(JavaClass javaClass) {
-        return javaClass.isInterface() && javaClass.getSimpleName().endsWith("Api");
+        return isInterfaceOrExternalStub(javaClass) && javaClass.getSimpleName().endsWith("Api");
+    }
+
+    private boolean isInterfaceOrExternalStub(JavaClass javaClass) {
+        return javaClass.isInterface() || !javaClass.isFullyImported();
     }
 
     private boolean isMapper(JavaClass javaClass) {

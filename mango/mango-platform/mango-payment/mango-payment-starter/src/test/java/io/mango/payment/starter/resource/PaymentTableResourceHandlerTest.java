@@ -6,6 +6,8 @@ import io.mango.payment.core.entity.PaymentChannelContractEntity;
 import io.mango.payment.core.entity.PaymentChannelContractValueEntity;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractValueMapper;
+import io.mango.payment.core.service.PaymentSensitiveValueCodec;
+import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceField;
@@ -80,6 +82,58 @@ class PaymentTableResourceHandlerTest {
     }
 
     @Test
+    void fuiouDemoContractEncryptsApprovedPublicTestCredentialsBeforeInsert() throws Exception {
+        PaymentSensitiveValueCodec sensitiveValueCodec = mock(PaymentSensitiveValueCodec.class);
+        when(sensitiveValueCodec.encrypt("public-test-private-key")).thenReturn("enc:private-ciphertext");
+        when(sensitiveValueCodec.encrypt("public-test-gateway-key")).thenReturn("enc:gateway-ciphertext");
+        ResourceHandler fuiouHandler = new PaymentResourceHandlerConfiguration()
+                .paymentChannelContractResourceHandler(mapper, new ObjectMapper(), sensitiveValueCodec);
+        when(mapper.selectById(331009L)).thenReturn(null);
+
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setResourceType("PAYMENT_CHANNEL_CONTRACT");
+        declaration.setBizKey("payment.channel-contract.FUIOU_PAY_MANGO_TECH");
+        declaration.setFields(new LinkedHashMap<>(Map.of(
+                "targetId", field(ResourceFieldType.LONG, 331009L),
+                "contractCode", field(ResourceFieldType.STRING, "FUIOU_PAY_MANGO_TECH"),
+                "contractName", field(ResourceFieldType.STRING, "富友测试签约"),
+                "subjectId", field(ResourceFieldType.LONG, 320001L),
+                "channelId", field(ResourceFieldType.LONG, 330005L),
+                "environment", field(ResourceFieldType.STRING, "TEST"),
+                "status", field(ResourceFieldType.INT, 1),
+                "tenantId", field(ResourceFieldType.STRING, "1"),
+                "configValuesJson", field(ResourceFieldType.JSON, Map.of(
+                        "privateKey", "public-test-private-key",
+                        "gatewayMerchantKey", "public-test-gateway-key")))));
+
+        fuiouHandler.upsert(declaration);
+
+        ArgumentCaptor<PaymentChannelContractEntity> entity =
+                ArgumentCaptor.forClass(PaymentChannelContractEntity.class);
+        verify(mapper).insert(entity.capture());
+        com.fasterxml.jackson.databind.JsonNode stored =
+                new ObjectMapper().readTree(entity.getValue().getConfigValuesJson());
+        assertThat(stored.path("privateKey").asText()).isEqualTo("enc:private-ciphertext");
+        assertThat(stored.path("gatewayMerchantKey").asText()).isEqualTo("enc:gateway-ciphertext");
+    }
+
+    @Test
+    void fuiouDemoContractRejectsUnapprovedOrNestedSecrets() {
+        PaymentSensitiveValueCodec sensitiveValueCodec = mock(PaymentSensitiveValueCodec.class);
+        ResourceHandler fuiouHandler = new PaymentResourceHandlerConfiguration()
+                .paymentChannelContractResourceHandler(mapper, new ObjectMapper(), sensitiveValueCodec);
+
+        assertThatThrownBy(() -> fuiouHandler.upsert(fuiouDeclaration(Map.of(
+                "appSecret", "must-not-be-declared"))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must not contain merchant secrets");
+        assertThatThrownBy(() -> fuiouHandler.upsert(fuiouDeclaration(Map.of(
+                "credentials", Map.of("privateKey", "must-be-top-level")))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be a non-blank top-level text field");
+    }
+
+    @Test
     @SuppressWarnings({"rawtypes", "unchecked"})
     void disableUsesTheConfiguredLifecycleStrategy() {
         handler.disable(declaration(Map.of(
@@ -118,6 +172,23 @@ class PaymentTableResourceHandlerTest {
         declaration.setResourceType("PAYMENT_TEST_CONFIG");
         declaration.setBizKey("payment.test.default");
         declaration.setFields(new LinkedHashMap<>(fields));
+        return declaration;
+    }
+
+    private ResourceDeclaration fuiouDeclaration(Map<String, Object> configValues) {
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setResourceType("PAYMENT_CHANNEL_CONTRACT");
+        declaration.setBizKey("payment.channel-contract.FUIOU_PAY_MANGO_TECH");
+        declaration.setFields(new LinkedHashMap<>(Map.of(
+                "targetId", field(ResourceFieldType.LONG, 331009L),
+                "contractCode", field(ResourceFieldType.STRING, "FUIOU_PAY_MANGO_TECH"),
+                "contractName", field(ResourceFieldType.STRING, "富友测试签约"),
+                "subjectId", field(ResourceFieldType.LONG, 320001L),
+                "channelId", field(ResourceFieldType.LONG, 330005L),
+                "environment", field(ResourceFieldType.STRING, "TEST"),
+                "status", field(ResourceFieldType.INT, 1),
+                "tenantId", field(ResourceFieldType.STRING, "1"),
+                "configValuesJson", field(ResourceFieldType.JSON, configValues))));
         return declaration;
     }
 

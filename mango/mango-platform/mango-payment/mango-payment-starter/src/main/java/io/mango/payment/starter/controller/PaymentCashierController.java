@@ -15,9 +15,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,7 +41,7 @@ public class PaymentCashierController implements PaymentCashierApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询付款人收银台会话")
     @Operation(summary = "查询收银台会话", description = "按收银台配置和业务订单生成付款人可见的收银台会话视图")
     public R<PaymentCashierSessionVO> detailSession(
-            @Parameter(description = "收银台配置 ID", required = true) @NotNull(message = "收银台配置 ID 不能为空") @RequestParam("cashierConfigId") Long cashierConfigId,
+            @Parameter(description = "收银台配置 ID", required = true) @RequestParam("cashierConfigId") Long cashierConfigId,
             @Parameter(description = "业务订单 ID。后台预览可为空") @RequestParam(value = "businessOrderId", required = false) Long businessOrderId) {
         return R.ok(cashierService.detailSession(cashierConfigId, businessOrderId));
     }
@@ -53,7 +50,7 @@ public class PaymentCashierController implements PaymentCashierApi {
     @PostMapping("/pay")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "付款人提交收银台支付")
     @Operation(summary = "提交收银台支付", description = "按收银台会话重新校验订单、主体、支付方式和签约能力后发起支付")
-    public R<PaymentCashierPayResultVO> pay(@Valid @RequestBody PaymentCashierPayCommand command) {
+    public R<PaymentCashierPayResultVO> pay(@RequestBody PaymentCashierPayCommand command) {
         HttpServletRequest request = currentRequest();
         command.setClientIp(resolveClientIp(request));
         return R.ok(cashierService.pay(command));
@@ -64,7 +61,7 @@ public class PaymentCashierController implements PaymentCashierApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询付款人收银台支付结果")
     @Operation(summary = "查询收银台支付结果", description = "按支付订单号查询真实支付订单状态，用于收银台等待回调或查单后刷新结果")
     public R<PaymentCashierPayResultVO> payResult(
-            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam("payOrderNo") String payOrderNo) {
+            @Parameter(description = "支付订单号", required = true) @RequestParam("payOrderNo") String payOrderNo) {
         return R.ok(cashierService.payResult(payOrderNo));
     }
 
@@ -73,7 +70,7 @@ public class PaymentCashierController implements PaymentCashierApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "付款人确认付款后同步支付结果")
     @Operation(summary = "同步收银台支付结果", description = "付款人确认已付款后调用支付通道查单，并返回最新收银台支付结果")
     public R<PaymentCashierPayResultVO> syncPayResult(
-            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam("payOrderNo") String payOrderNo) {
+            @Parameter(description = "支付订单号", required = true) @RequestParam("payOrderNo") String payOrderNo) {
         return R.ok(cashierService.syncPayResult(payOrderNo));
     }
 
@@ -82,7 +79,7 @@ public class PaymentCashierController implements PaymentCashierApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "付款人提交线下转账凭证")
     @Operation(summary = "提交线下转账凭证", description = "付款人在线下收款通道完成转账后提交实际转账金额和凭证文件 ID")
     public R<PaymentOfflineCollectionVO> submitOfflineTransferVoucher(
-            @Valid @RequestBody SubmitOfflineTransferVoucherCommand command) {
+            @RequestBody SubmitOfflineTransferVoucherCommand command) {
         return R.ok(offlineChannelService.submitTransferVoucher(command));
     }
 

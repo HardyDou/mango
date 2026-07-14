@@ -12,7 +12,6 @@ import io.mango.workflow.core.service.IWorkflowTemplateCategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,7 +43,7 @@ public class WorkflowTemplateCategoryController implements WorkflowTemplateCateg
     @Operation(summary = "分页查询流程模板分类", description = "权限接口。分页查询流程模板分类配置")
     @Override
     public R<PageResult<WorkflowTemplateCategoryVO>> page(
-            @Valid @ParameterObject WorkflowTemplateCategoryPageQuery query) {
+            @ParameterObject WorkflowTemplateCategoryPageQuery query) {
         return R.ok(workflowTemplateCategoryService.page(query));
     }
 
@@ -74,7 +73,7 @@ public class WorkflowTemplateCategoryController implements WorkflowTemplateCateg
     @Override
     public R<String> create(
             @Parameter(description = "保存流程模板分类命令", required = true)
-            @Valid @RequestBody SaveWorkflowTemplateCategoryCommand command) {
+            @RequestBody SaveWorkflowTemplateCategoryCommand command) {
         return R.ok(workflowTemplateCategoryService.create(command));
     }
 
@@ -84,7 +83,7 @@ public class WorkflowTemplateCategoryController implements WorkflowTemplateCateg
     @Override
     public R<Boolean> update(
             @Parameter(description = "保存流程模板分类命令", required = true)
-            @Valid @RequestBody SaveWorkflowTemplateCategoryCommand command) {
+            @RequestBody SaveWorkflowTemplateCategoryCommand command) {
         return R.ok(workflowTemplateCategoryService.update(command));
     }
 

@@ -10,7 +10,6 @@ import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -35,7 +34,7 @@ public class WorkflowBusinessProcessController implements WorkflowBusinessProces
     @Operation(summary = "按业务主键批量查询最新流程状态", description = "按业务主键集合查询每项业务的最新流程状态")
     @Override
     public R<List<WorkflowBusinessProcessVO>> latestByBusinessKeys(
-            @Valid @ParameterObject WorkflowBusinessKeysQuery query) {
+            @ParameterObject WorkflowBusinessKeysQuery query) {
         return R.ok(workflowProcessService.latestByBusinessKeys(query.getBusinessKeys()));
     }
 
@@ -44,7 +43,7 @@ public class WorkflowBusinessProcessController implements WorkflowBusinessProces
     @Operation(summary = "按业务类型批量查询最新流程状态", description = "按业务类型和业务主键集合查询最新流程状态")
     @Override
     public R<List<WorkflowBusinessProcessVO>> latestByBusinessTypeKeys(
-            @Valid @ParameterObject WorkflowBusinessTypeKeysQuery query) {
+            @ParameterObject WorkflowBusinessTypeKeysQuery query) {
         return R.ok(workflowProcessService.latestByBusinessKeys(
                 query.getBusinessType(), query.getBusinessKeys()));
     }

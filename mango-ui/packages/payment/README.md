@@ -224,5 +224,8 @@ await paymentOrderApi.syncStatus(payOrderNo);
 
 ## 11. 变更影响记录
 
+- 对账管理的账单源选项显示为“通道编码 / 获取方式”；账单源仍由后端签约通道配置提供。
+- 线下银行流水导入按后端 `ImportOfflineBankStatementCommand` 契约发送 JSON：`fileContent` 为 Base64 文件内容，
+  `originalFilename` 为原始文件名，`statementFileId` 可选。接口路径和返回结构不变。
 - `@mango/payment@1.0.12` 将精确依赖升级到 `@mango/admin-pages@1.0.20` 和 `@mango/file@1.0.21`；支付 API、
   页面 key、权限、租户、收银台和运行时行为相对 `1.0.11` 不变。

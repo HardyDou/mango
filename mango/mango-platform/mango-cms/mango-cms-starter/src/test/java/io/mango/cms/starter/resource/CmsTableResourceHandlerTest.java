@@ -34,7 +34,8 @@ class CmsTableResourceHandlerTest {
                     "cms_site",
                     CmsSiteEntity.class,
                     Map.of("targetId", "id", "tenantId", "tenant_id", "siteCode", "site_code",
-                            "siteName", "site_name", "status", "status"),
+                            "siteName", "site_name", "status", "status", "createdBy", "created_by",
+                            "updatedBy", "updated_by"),
                     Set.of("targetId", "tenantId", "siteCode", "siteName", "status"),
                     List.of()));
 
@@ -45,6 +46,8 @@ class CmsTableResourceHandlerTest {
         handler.upsert(declaration(Map.of(
                 "targetId", field(ResourceFieldType.LONG, "2070000000000000001"),
                 "tenantId", field(ResourceFieldType.STRING, "1"),
+                "createdBy", field(ResourceFieldType.LONG, "1"),
+                "updatedBy", field(ResourceFieldType.LONG, "1"),
                 "siteCode", field(ResourceFieldType.STRING, "demo"),
                 "siteName", field(ResourceFieldType.STRING, "演示站点"),
                 "status", field(ResourceFieldType.STRING, "ENABLED"))));
@@ -53,6 +56,8 @@ class CmsTableResourceHandlerTest {
         verify(mapper).insert(entity.capture());
         assertThat(entity.getValue().getId()).isEqualTo(2070000000000000001L);
         assertThat(entity.getValue().getTenantId()).isEqualTo("1");
+        assertThat(entity.getValue().getCreatedBy()).isEqualTo(1L);
+        assertThat(entity.getValue().getUpdatedBy()).isEqualTo(1L);
         assertThat(entity.getValue().getSiteCode()).isEqualTo("demo");
         assertThat(entity.getValue().getDeleted()).isZero();
     }
@@ -91,6 +96,8 @@ class CmsTableResourceHandlerTest {
         return Map.of(
                 "targetId", field(ResourceFieldType.LONG, "2070000000000000001"),
                 "tenantId", field(ResourceFieldType.STRING, "1"),
+                "createdBy", field(ResourceFieldType.LONG, "1"),
+                "updatedBy", field(ResourceFieldType.LONG, "1"),
                 "siteCode", field(ResourceFieldType.STRING, "demo"),
                 "siteName", field(ResourceFieldType.STRING, "演示站点"),
                 "status", field(ResourceFieldType.STRING, "ENABLED"));

@@ -13,7 +13,6 @@ import io.mango.payment.core.service.IPaymentRefundApprovalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -63,7 +62,7 @@ public class PaymentRefundApprovalController implements PaymentRefundApprovalApi
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:refund-approval:create")
     @Operation(summary = "创建退款审批", description = "后台发起退款必须先创建审批单，只校验原支付订单、可退金额和幂等号，不直接生成退款成功状态")
-    public R<PaymentRefundApprovalVO> createRefundApproval(@Valid @RequestBody CreatePaymentRefundApprovalCommand command) {
+    public R<PaymentRefundApprovalVO> createRefundApproval(@RequestBody CreatePaymentRefundApprovalCommand command) {
         return R.ok(refundApprovalService.createRefundApproval(command));
     }
 }

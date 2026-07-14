@@ -1,5 +1,6 @@
 package io.mango.payment.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -11,7 +12,6 @@ import io.mango.payment.api.vo.PaymentMethodCategoryVO;
 import io.mango.payment.api.vo.PaymentMethodVO;
 import io.mango.payment.core.service.IPaymentMethodService;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/payment/methods")
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependency is intentionally retained for constructor injection")
 @Tag(name = "支付方式管理", description = "支付方式后台管理接口")
 public class PaymentMethodController implements PaymentMethodApi {
 
@@ -63,7 +65,7 @@ public class PaymentMethodController implements PaymentMethodApi {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:add")
     @Operation(summary = "新增支付方式", description = "创建支付方式")
-    public R<Long> createMethod(@Valid @RequestBody SavePaymentMethodCommand command) {
+    public R<Long> createMethod(@RequestBody SavePaymentMethodCommand command) {
         return R.ok(methodService.createMethod(command));
     }
 
@@ -71,7 +73,7 @@ public class PaymentMethodController implements PaymentMethodApi {
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method:edit")
     @Operation(summary = "修改支付方式", description = "更新支付方式")
-    public R<Boolean> updateMethod(@Valid @RequestBody SavePaymentMethodCommand command) {
+    public R<Boolean> updateMethod(@RequestBody SavePaymentMethodCommand command) {
         return R.ok(methodService.updateMethod(command));
     }
 

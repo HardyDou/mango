@@ -17,7 +17,6 @@ import io.mango.workflow.core.service.IWorkflowTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,7 +44,7 @@ public class WorkflowTemplateController implements WorkflowTemplateApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:template:list")
     @Operation(summary = "分页查询流程模板", description = "权限接口。模板是不可直接运行的设计资产")
     @Override
-    public R<PageResult<WorkflowTemplateVO>> page(@Valid @ParameterObject WorkflowTemplatePageQuery query) {
+    public R<PageResult<WorkflowTemplateVO>> page(@ParameterObject WorkflowTemplatePageQuery query) {
         return R.ok(workflowTemplateService.page(query));
     }
 
@@ -65,7 +64,7 @@ public class WorkflowTemplateController implements WorkflowTemplateApi {
     @Override
     public R<String> create(
             @Parameter(description = "保存流程模板命令", required = true)
-            @Valid @RequestBody SaveWorkflowTemplateCommand command) {
+            @RequestBody SaveWorkflowTemplateCommand command) {
         return R.ok(workflowTemplateService.create(command));
     }
 
@@ -85,7 +84,7 @@ public class WorkflowTemplateController implements WorkflowTemplateApi {
     @Override
     public R<String> createFromDefinition(
             @Parameter(description = "从流程定义创建模板命令", required = true)
-            @Valid @RequestBody CreateWorkflowTemplateFromDefinitionCommand command) {
+            @RequestBody CreateWorkflowTemplateFromDefinitionCommand command) {
         return R.ok(workflowTemplateService.createFromDefinition(command));
     }
 
@@ -95,7 +94,7 @@ public class WorkflowTemplateController implements WorkflowTemplateApi {
     @Override
     public R<String> createDefinition(
             @Parameter(description = "从模板创建流程定义命令", required = true)
-            @Valid @RequestBody CreateWorkflowDefinitionFromTemplateCommand command) {
+            @RequestBody CreateWorkflowDefinitionFromTemplateCommand command) {
         return R.ok(workflowTemplateService.createDefinition(command));
     }
 
@@ -105,7 +104,7 @@ public class WorkflowTemplateController implements WorkflowTemplateApi {
     @Override
     public R<WorkflowTemplateImportVO> importTemplates(
             @Parameter(description = "批量导入流程模板命令", required = true)
-            @Valid @RequestBody ImportWorkflowTemplatesCommand command) {
+            @RequestBody ImportWorkflowTemplatesCommand command) {
         return R.ok(workflowTemplateService.importTemplates(command));
     }
 
@@ -115,7 +114,7 @@ public class WorkflowTemplateController implements WorkflowTemplateApi {
     @Override
     public R<WorkflowTemplateImportVO> pushTemplates(
             @Parameter(description = "推送流程模板命令", required = true)
-            @Valid @RequestBody PushWorkflowTemplatesCommand command) {
+            @RequestBody PushWorkflowTemplatesCommand command) {
         return R.ok(workflowTemplateService.pushTemplates(command));
     }
 }

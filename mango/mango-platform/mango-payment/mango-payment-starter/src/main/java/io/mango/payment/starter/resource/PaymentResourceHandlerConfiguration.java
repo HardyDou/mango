@@ -1,7 +1,10 @@
 package io.mango.payment.starter.resource;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentBaseEntity;
 import io.mango.payment.core.entity.PaymentCashierConfigEntity;
@@ -35,7 +38,9 @@ import io.mango.payment.core.mapper.PaymentMethodRouteRuleMapper;
 import io.mango.payment.core.mapper.PaymentRiskRuleMapper;
 import io.mango.payment.core.mapper.PaymentSubjectBankAccountMapper;
 import io.mango.payment.core.mapper.PaymentTenantMapper;
+import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import io.mango.resource.api.ResourceHandler;
+import io.mango.resource.api.model.ResourceDeclaration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -67,6 +72,12 @@ import static io.mango.payment.starter.resource.PaymentResourceTypes.TENANT;
  */
 @Configuration(proxyBeanMethods = false)
 public class PaymentResourceHandlerConfiguration {
+
+    private static final String FUIOU_DEMO_CONTRACT_BIZ_KEY =
+            "payment.channel-contract.FUIOU_PAY_MANGO_TECH";
+    private static final Set<String> FUIOU_DEMO_SECRET_FIELDS = Set.of("privateKey", "gatewayMerchantKey");
+    private static final Set<String> PAYMENT_SECRET_CONFIG_FIELDS = Set.of(
+            "appsecret", "apisecret", "privatekey", "merchantkey", "gatewaymerchantkey", "mchntkey");
 
     @Bean
     ResourceHandler paymentMethodCategoryResourceHandler(PaymentMethodCategoryMapper mapper, ObjectMapper objectMapper) {
@@ -186,13 +197,23 @@ public class PaymentResourceHandlerConfiguration {
 
     @Bean
     ResourceHandler paymentChannelContractResourceHandler(
-            PaymentChannelContractMapper mapper, ObjectMapper objectMapper) {
-        return handler(mapper, objectMapper, PaymentChannelContractEntity.class,
-                CHANNEL_CONTRACT, "payment_channel_contract",
-                fields("targetId", "contractCode", "contractName", "subjectId", "channelId", "environment", "merchantNo",
-                        "appId", "configValuesJson", "enabledMethodCodes", "status", "tenantId"),
-                required("targetId", "contractCode", "contractName", "subjectId", "channelId", "environment", "status",
-                        "tenantId"), List.of(ENTERPRISE_SUBJECT, CHANNEL), true);
+            PaymentChannelContractMapper mapper,
+            ObjectMapper objectMapper,
+            PaymentSensitiveValueCodec sensitiveValueCodec) {
+        return new PaymentTableResourceHandler<>(mapper, objectMapper,
+                new PaymentTableResourceHandler.Definition<>(
+                        CHANNEL_CONTRACT,
+                        "payment_channel_contract",
+                        PaymentChannelContractEntity.class,
+                        fields("targetId", "contractCode", "contractName", "subjectId", "channelId", "environment",
+                                "merchantNo", "appId", "configValuesJson", "enabledMethodCodes", "status", "tenantId"),
+                        required("targetId", "contractCode", "contractName", "subjectId", "channelId", "environment",
+                                "status", "tenantId"),
+                        List.of(ENTERPRISE_SUBJECT, CHANNEL),
+                        statusColumn(true),
+                        null,
+                        (resource, configValuesJson) -> protectDemoContractSecrets(
+                                resource, configValuesJson, objectMapper, sensitiveValueCodec)));
     }
 
     @Bean
@@ -302,5 +323,56 @@ public class PaymentResourceHandlerConfiguration {
 
     private static String snakeCase(String value) {
         return value.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private static String protectDemoContractSecrets(
+            ResourceDeclaration resource,
+            String configValuesJson,
+            ObjectMapper objectMapper,
+            PaymentSensitiveValueCodec sensitiveValueCodec) {
+        try {
+            JsonNode root = objectMapper.readTree(configValuesJson);
+            if (!(root instanceof ObjectNode values)) {
+                throw new IllegalArgumentException("Payment configValuesJson must be an object");
+            }
+            Set<String> declaredSecretFields = new java.util.LinkedHashSet<>();
+            collectDeclaredSecretFields(values, declaredSecretFields);
+            if (declaredSecretFields.isEmpty()) {
+                return configValuesJson;
+            }
+            if (!FUIOU_DEMO_CONTRACT_BIZ_KEY.equals(resource.getBizKey())
+                    || !FUIOU_DEMO_SECRET_FIELDS.containsAll(declaredSecretFields)) {
+                throw new IllegalArgumentException(
+                        "Payment resource must not contain merchant secrets: " + declaredSecretFields);
+            }
+            declaredSecretFields.forEach(field -> {
+                JsonNode secretValue = values.get(field);
+                if (secretValue == null || !secretValue.isTextual() || secretValue.asText().isBlank()) {
+                    throw new IllegalArgumentException(
+                            "Payment demo secret must be a non-blank top-level text field: " + field);
+                }
+                values.put(field, sensitiveValueCodec.encrypt(secretValue.asText()));
+            });
+            return objectMapper.writeValueAsString(values);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Invalid payment configValuesJson", ex);
+        }
+    }
+
+    private static void collectDeclaredSecretFields(JsonNode node, Set<String> secretFields) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isObject()) {
+            node.fields().forEachRemaining(entry -> {
+                if (PAYMENT_SECRET_CONFIG_FIELDS.contains(
+                        entry.getKey().toLowerCase(java.util.Locale.ROOT))) {
+                    secretFields.add(entry.getKey());
+                }
+                collectDeclaredSecretFields(entry.getValue(), secretFields);
+            });
+        } else if (node.isArray()) {
+            node.forEach(child -> collectDeclaredSecretFields(child, secretFields));
+        }
     }
 }

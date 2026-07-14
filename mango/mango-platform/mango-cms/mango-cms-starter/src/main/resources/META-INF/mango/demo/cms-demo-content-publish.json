@@ -26,6 +26,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "contentId": {
                 "type": "LONG",
                 "value": "2070000000000000501"
@@ -93,6 +101,14 @@
                 "value": "1"
               },
               "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
                 "type": "LONG",
                 "value": "1"
               },
@@ -166,6 +182,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "contentId": {
                 "type": "LONG",
                 "value": "2070000000000000503"
@@ -233,6 +257,14 @@
                 "value": "1"
               },
               "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
                 "type": "LONG",
                 "value": "1"
               },
@@ -306,6 +338,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "contentId": {
                 "type": "LONG",
                 "value": "2070000000000001502"
@@ -373,6 +413,14 @@
                 "value": "1"
               },
               "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
                 "type": "LONG",
                 "value": "1"
               },
@@ -446,6 +494,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "contentId": {
                 "type": "LONG",
                 "value": "2070000000000001504"
@@ -513,6 +569,14 @@
                 "value": "1"
               },
               "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
                 "type": "LONG",
                 "value": "1"
               },
@@ -586,6 +650,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "contentId": {
                 "type": "LONG",
                 "value": "2070000000000002502"
@@ -656,6 +728,14 @@
                 "type": "LONG",
                 "value": "1"
               },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
               "contentId": {
                 "type": "LONG",
                 "value": "2070000000000002503"
@@ -723,6 +803,14 @@
                 "value": "1"
               },
               "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
                 "type": "LONG",
                 "value": "1"
               },

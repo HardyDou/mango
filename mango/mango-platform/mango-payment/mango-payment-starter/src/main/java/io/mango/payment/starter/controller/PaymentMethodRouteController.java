@@ -1,5 +1,6 @@
 package io.mango.payment.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -14,7 +15,6 @@ import io.mango.payment.core.service.IPaymentMethodRouteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/payment/method-routes")
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependency is intentionally retained for constructor injection")
 @Tag(name = "支付方式路由策略", description = "支付方式跨通道路由策略和试算接口")
 public class PaymentMethodRouteController implements PaymentMethodRouteApi {
 
@@ -56,7 +58,7 @@ public class PaymentMethodRouteController implements PaymentMethodRouteApi {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method-route:add")
     @Operation(summary = "新增支付方式路由规则", description = "创建支付方式跨通道路由规则")
-    public R<Long> createRouteRule(@Valid @RequestBody SavePaymentMethodRouteRuleCommand command) {
+    public R<Long> createRouteRule(@RequestBody SavePaymentMethodRouteRuleCommand command) {
         return R.ok(routeService.createRouteRule(command));
     }
 
@@ -64,7 +66,7 @@ public class PaymentMethodRouteController implements PaymentMethodRouteApi {
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method-route:edit")
     @Operation(summary = "修改支付方式路由规则", description = "更新支付方式跨通道路由规则")
-    public R<Boolean> updateRouteRule(@Valid @RequestBody SavePaymentMethodRouteRuleCommand command) {
+    public R<Boolean> updateRouteRule(@RequestBody SavePaymentMethodRouteRuleCommand command) {
         return R.ok(routeService.updateRouteRule(command));
     }
 
@@ -80,7 +82,7 @@ public class PaymentMethodRouteController implements PaymentMethodRouteApi {
     @PostMapping("/trial")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:method-route:trial")
     @Operation(summary = "支付方式路由试算", description = "输入应用、主体、金额、终端、场景和支付方式后返回命中能力及过滤原因")
-    public R<PaymentMethodRouteTrialVO> trialRoute(@Valid @RequestBody PaymentMethodRouteTrialCommand command) {
+    public R<PaymentMethodRouteTrialVO> trialRoute(@RequestBody PaymentMethodRouteTrialCommand command) {
         return R.ok(routeService.trialRoute(command));
     }
 }

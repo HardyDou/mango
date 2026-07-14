@@ -19,7 +19,6 @@ import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -51,7 +50,7 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @Operation(summary = "分页查询流程定义", description = "权限接口。分页查询流程定义配置")
     @Override
     public R<PageResult<WorkflowDefinitionVO>> page(
-            @Valid @ParameterObject WorkflowDefinitionPageQuery query) {
+            @ParameterObject WorkflowDefinitionPageQuery query) {
         return R.ok(workflowDefinitionService.page(query));
     }
 
@@ -71,7 +70,7 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @Override
     public R<String> create(
             @Parameter(description = "保存流程定义命令", required = true)
-            @Valid @RequestBody SaveWorkflowDefinitionCommand command) {
+            @RequestBody SaveWorkflowDefinitionCommand command) {
         return R.ok(workflowDefinitionService.create(command));
     }
 
@@ -81,7 +80,7 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @Override
     public R<Boolean> update(
             @Parameter(description = "保存流程定义命令", required = true)
-            @Valid @RequestBody SaveWorkflowDefinitionCommand command) {
+            @RequestBody SaveWorkflowDefinitionCommand command) {
         return R.ok(workflowDefinitionService.update(command));
     }
 
@@ -101,7 +100,7 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @Override
     public R<Boolean> updateStatus(
             @Parameter(description = "修改流程定义状态命令", required = true)
-            @Valid @RequestBody UpdateWorkflowDefinitionStatusCommand command) {
+            @RequestBody UpdateWorkflowDefinitionStatusCommand command) {
         return R.ok(workflowDefinitionService.updateStatus(command));
     }
 
@@ -132,7 +131,7 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @Operation(summary = "确保流程定义已发布", description = "内部接口。用于业务域初始化或同步内置流程定义")
     public R<WorkflowDeployVO> ensurePublished(
             @Parameter(description = "确保流程定义已发布命令", required = true)
-            @Valid @RequestBody EnsureWorkflowDefinitionCommand command) {
+            @RequestBody EnsureWorkflowDefinitionCommand command) {
         return R.ok(workflowDefinitionService.ensurePublished(command));
     }
 
@@ -141,7 +140,7 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @Operation(summary = "查询流程发布版本", description = "权限接口。查询指定流程定义的历史发布版本")
     @Override
     public R<List<WorkflowDefinitionVersionVO>> versions(
-            @Valid @ParameterObject WorkflowDefinitionVersionQuery query) {
+            @ParameterObject WorkflowDefinitionVersionQuery query) {
         return R.ok(workflowDefinitionService.versions(query));
     }
 

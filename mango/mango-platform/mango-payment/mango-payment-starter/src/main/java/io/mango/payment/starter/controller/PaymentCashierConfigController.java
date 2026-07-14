@@ -1,5 +1,6 @@
 package io.mango.payment.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -12,7 +13,6 @@ import io.mango.payment.core.service.IPaymentCashierConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/payment/cashier-configs")
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependency is intentionally retained for constructor injection")
 @Tag(name = "收银台配置", description = "收银台配置后台管理接口")
 public class PaymentCashierConfigController implements PaymentCashierConfigApi {
 
@@ -54,7 +56,7 @@ public class PaymentCashierConfigController implements PaymentCashierConfigApi {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:cashier-config:add")
     @Operation(summary = "新增收银台配置", description = "创建收银台配置")
-    public R<Long> createCashierConfig(@Valid @RequestBody SavePaymentCashierConfigCommand command) {
+    public R<Long> createCashierConfig(@RequestBody SavePaymentCashierConfigCommand command) {
         return R.ok(cashierConfigService.createCashierConfig(command));
     }
 
@@ -62,7 +64,7 @@ public class PaymentCashierConfigController implements PaymentCashierConfigApi {
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:cashier-config:edit")
     @Operation(summary = "修改收银台配置", description = "更新收银台配置")
-    public R<Boolean> updateCashierConfig(@Valid @RequestBody SavePaymentCashierConfigCommand command) {
+    public R<Boolean> updateCashierConfig(@RequestBody SavePaymentCashierConfigCommand command) {
         return R.ok(cashierConfigService.updateCashierConfig(command));
     }
 

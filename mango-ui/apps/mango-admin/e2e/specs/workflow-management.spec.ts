@@ -22,17 +22,19 @@ function api(path: string) {
   return e2eApi(path);
 }
 
-async function routeMinioDirectAccess(page: Page, request: APIRequestContext) {
-  await page.route('http://file.mango.io:9000/**', async (route) => {
-    const url = new URL(route.request().url());
-    const response = await request.get(`http://127.0.0.1:9000${url.pathname}${url.search}`, {
-      headers: { Host: url.host },
-    });
-    await route.fulfill({
-      status: response.status(),
-      headers: response.headers(),
-      body: await response.body(),
-    });
+function executeWorkspaceMysql(statements: string[]) {
+  execFileSync('mysql', [
+    '--protocol=TCP',
+    '-h', process.env.MANGO_DB_HOST || '127.0.0.1',
+    '-P', process.env.MANGO_DB_PORT || '3306',
+    '-u', process.env.MANGO_DB_USERNAME || 'root',
+    process.env.MANGO_DB_NAME || 'mango',
+    '-e', statements.join('; '),
+  ], {
+    env: {
+      ...process.env,
+      MYSQL_PWD: process.env.MANGO_DB_PASSWORD || '',
+    },
   });
 }
 
@@ -56,7 +58,24 @@ async function loginTokenAs(request: APIRequestContext, tenant: LoginTenant, use
   expect(response.ok()).toBeTruthy();
   const body = await response.json();
   expect(body.success || body.code === 200).toBeTruthy();
-  return body.data.accessToken as string;
+  if (body.data.accessToken) {
+    return body.data.accessToken as string;
+  }
+  expect(body.data.passwordResetRequired, `登录未返回访问令牌: ${JSON.stringify(body)}`).toBeTruthy();
+  expect(body.data.passwordResetTicket).toBeTruthy();
+  const changedPassword = 'Changed@123456';
+  const changeResponse = await request.post(api(`/auth/password/change-required`), {
+    data: {
+      passwordResetTicket: body.data.passwordResetTicket,
+      newPassword: changedPassword,
+      confirmPassword: changedPassword,
+    },
+  });
+  expect(changeResponse.status()).toBe(200);
+  const changeBody = await changeResponse.json();
+  expectApiSuccess(changeBody, `临时用户强制改密失败: ${username}`);
+  expect(changeBody.data.accessToken).toBeTruthy();
+  return changeBody.data.accessToken as string;
 }
 
 async function loginPage(page: Page, tenant: LoginTenant) {
@@ -75,24 +94,21 @@ async function loginPage(page: Page, tenant: LoginTenant) {
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
+async function openWorkflowRoute(page: Page, route: string) {
+  await page.goto(`/#${route}`);
+  await page.waitForURL(`**/#${route}`, { timeout: 10000 });
+}
+
 async function openWorkflowManage(page: Page) {
-  await page.getByRole('button', { name: '审批中心' }).click();
-  await page.getByRole('menuitem', { name: '流程管理' }).click();
-  await page.getByRole('menuitem', { name: '流程定义' }).click();
-  await page.waitForURL('**/#/workflow/manage/definition', { timeout: 10000 });
+  await openWorkflowRoute(page, '/workflow/manage/definition');
 }
 
 async function openStartProcess(page: Page) {
-  await page.getByRole('button', { name: '审批中心' }).click();
-  await page.getByRole('menuitem', { name: '发起流程' }).click();
-  await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
+  await openWorkflowRoute(page, '/workflow/start-process');
 }
 
 async function openInitiatedTasks(page: Page) {
-  await page.getByRole('button', { name: '审批中心' }).click();
-  await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
-  await page.getByRole('menuitem', { name: '我的申请' }).click();
-  await page.waitForURL('**/#/workflow/task/initiated', { timeout: 10000 });
+  await openWorkflowRoute(page, '/workflow/task/initiated');
 }
 
 async function waitForInitiatedTasksLoad(page: Page) {
@@ -106,10 +122,7 @@ async function waitForInitiatedTasksLoad(page: Page) {
 }
 
 async function openTodoTasks(page: Page) {
-  await page.getByRole('button', { name: '审批中心' }).click();
-  await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
-  await page.getByRole('menuitem', { name: '我的待办' }).click();
-  await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
+  await openWorkflowRoute(page, '/workflow/task/todo');
 }
 
 async function selectWorkflowCategory(page: Page, categoryName: string) {
@@ -140,17 +153,11 @@ async function openClaimableTodoTab(page: Page, keyword?: string) {
 }
 
 async function openDoneTasks(page: Page) {
-  await page.getByRole('button', { name: '审批中心' }).click();
-  await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
-  await page.getByRole('menuitem', { name: '我的已办' }).click();
-  await page.waitForURL('**/#/workflow/task/done', { timeout: 10000 });
+  await openWorkflowRoute(page, '/workflow/task/done');
 }
 
 async function openCopiedTasks(page: Page) {
-  await page.getByRole('button', { name: '审批中心' }).click();
-  await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
-  await page.getByRole('menuitem', { name: '抄送给我' }).click();
-  await page.waitForURL('**/#/workflow/task/copied', { timeout: 10000 });
+  await openWorkflowRoute(page, '/workflow/task/copied');
 }
 
 async function cleanupWorkflow(request: APIRequestContext, token: string, keyword: string) {
@@ -966,7 +973,9 @@ async function expectWorkflowTaskDetailSidebar(page: Page, currentNode: string) 
   await expect(detailPage).toContainText(currentNode);
   await expect(detailPage).toContainText('发起人');
   await expect(detailPage).toContainText('admin');
-  await expect(detailPage).toContainText('当前节点待处理');
+  await expect(detailPage).toContainText('状态');
+  await expect(detailPage).toContainText('运行中');
+  await expect(detailPage).toContainText('办理人');
   await expect(detailPage.locator('.workflow-sidebar__actions .el-button').first()).toBeVisible();
 }
 
@@ -1239,24 +1248,24 @@ async function queryBusinessAppliesByCurrentNode(
 }
 
 function cleanupWorkflowBusinessApplies(businessKeyPrefix: string) {
-  execFileSync('mysql', ['-uroot', 'mango', '-e', [
+  executeWorkspaceMysql([
     `DELETE FROM workflow_business_apply_current_task WHERE business_key LIKE '${businessKeyPrefix}%'`,
     `DELETE FROM workflow_business_apply_status_log WHERE apply_id IN (SELECT id FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%')`,
     `DELETE FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%'`,
     `DELETE FROM workflow_task_record WHERE process_instance_id IN (SELECT process_instance_id FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%')`,
     `DELETE FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%'`,
-  ].join('; ')]);
+  ]);
 }
 
 function cleanupWorkflowActionData(businessKeyPrefix: string) {
-  execFileSync('mysql', ['-uroot', 'mango', '-e', [
+  executeWorkspaceMysql([
     `DELETE FROM workflow_copied_task WHERE business_key LIKE '${businessKeyPrefix}%'`,
     `DELETE FROM workflow_business_apply_current_task WHERE business_key LIKE '${businessKeyPrefix}%'`,
     `DELETE FROM workflow_business_apply_status_log WHERE apply_id IN (SELECT id FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%')`,
     `DELETE FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%'`,
     `DELETE FROM workflow_task_record WHERE process_instance_id IN (SELECT process_instance_id FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%')`,
     `DELETE FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%'`,
-  ].join('; ')]);
+  ]);
 }
 
 async function prepareLeaveWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
@@ -1419,8 +1428,9 @@ async function startLeaveProcess(request: APIRequestContext, token: string, defi
       },
     },
   });
-  expect(response.status()).toBe(200);
-  const body = await response.json();
+  const responseText = await response.text();
+  expect(response.status(), responseText).toBe(200);
+  const body = JSON.parse(responseText);
   expect(body.success || body.code === 200).toBeTruthy();
   expect(body.data.businessKey).toBe(businessKey);
   return body.data.processInstanceId as string;
@@ -1547,7 +1557,7 @@ test.describe('工作流配置真实接口闭环', () => {
     }
   });
 
-  test('流程定义图标上传使用文件组件直连地址并保存到流程', async ({ page, request }) => {
+  test('流程定义图标上传使用文件组件预览并仅保存文件引用', async ({ page, request }) => {
     test.setTimeout(90_000);
     const unique = Date.now();
     const keyword = `e2e_workflow_icon_${unique}`;
@@ -1558,18 +1568,9 @@ test.describe('工作流配置真实接口闭环', () => {
     const token = await loginToken(request, platformTenant);
     const headers = { Authorization: `Bearer ${token}` };
     const uploadedFileIds: string[] = [];
-    const protectedDownloadRequests: string[] = [];
-
-    page.on('request', (request) => {
-      const url = request.url();
-      if (url.includes('/api/file/files/download')) {
-        protectedDownloadRequests.push(url);
-      }
-    });
 
     try {
       await cleanupWorkflow(request, token, keyword);
-      await routeMinioDirectAccess(page, request);
 
       const createCategoryResponse = await request.post(api(`/workflow/categories`), {
         headers,
@@ -1610,12 +1611,12 @@ test.describe('工作流配置真实接口闭环', () => {
       expectApiSuccess(uploadBody, '上传流程图标失败');
       const fileId = String(uploadBody.data.id);
       uploadedFileIds.push(fileId);
-      const directIconUrl = String(uploadBody.data.directPreviewUrl || uploadBody.data.directDownloadUrl || uploadBody.data.url || '');
-      expect(directIconUrl).toBeTruthy();
-      expect(directIconUrl).not.toContain('/api/file/files/download');
+      expect(fileId).toMatch(/^\d+$/);
 
-      await expect(page.locator('.workflow-icon-upload-control .el-upload-list__item-thumbnail')).toBeVisible({ timeout: 10000 });
-      const thumbnailSrc = await page.locator('.workflow-icon-upload-control .el-upload-list__item-thumbnail').first().getAttribute('src');
+      const thumbnail = page.locator('.workflow-icon-upload-control .el-upload-list__item-thumbnail').first();
+      await expect(thumbnail).toBeVisible({ timeout: 10000 });
+      await expect(thumbnail).toHaveAttribute('src', /.+/, { timeout: 10000 });
+      const thumbnailSrc = await thumbnail.getAttribute('src');
       expect(thumbnailSrc || '').toBeTruthy();
       expect(thumbnailSrc || '').not.toContain('/api/file/files/download');
 
@@ -1629,12 +1630,10 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByRole('button', { name: '保存' }).click();
       const saveDraftResponse = await saveDraftResponsePromise;
       const saveDraftRequestBody = saveDraftResponse.request().postDataJSON() as { icon?: string };
-      expect(saveDraftRequestBody.icon).toBeTruthy();
-      expect(String(saveDraftRequestBody.icon)).not.toContain('/api/file/files/download');
+      expect(String(saveDraftRequestBody.icon)).toBe(`mango-file:${fileId}`);
       const saveDraftBody = await saveDraftResponse.json();
       expectApiSuccess(saveDraftBody, '保存流程图标草稿失败');
       await expect(page.getByText('保存成功')).toBeVisible({ timeout: 10000 });
-      expect(protectedDownloadRequests).toEqual([]);
       await expectNoAuthError(page);
     } finally {
       await cleanupWorkflowUploadFiles(request, token, uploadedFileIds);
@@ -2194,9 +2193,10 @@ test.describe('工作流配置真实接口闭环', () => {
       });
       expect(duplicateImportResponse.status()).toBe(200);
       const duplicateImportBody = await duplicateImportResponse.json();
-      expect(duplicateImportBody.success).toBeFalsy();
-      expect(duplicateImportBody.msg).toContain('同编码流程');
+      expectApiSuccess(duplicateImportBody, '重复模板导入预检失败');
+      expect(duplicateImportBody.data.definitionIds).toEqual([]);
       expect(duplicateImportBody.data.errors?.[0]?.templateCode).toBe(templateCode);
+      expect(duplicateImportBody.data.errors?.[0]?.reason).toContain('同编码流程');
     } finally {
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
       await cleanupWorkflowTemplates(request, token, keyword).catch(() => undefined);

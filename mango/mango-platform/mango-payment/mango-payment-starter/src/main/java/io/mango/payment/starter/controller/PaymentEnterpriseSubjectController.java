@@ -1,5 +1,6 @@
 package io.mango.payment.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -10,7 +11,6 @@ import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentEnterpriseSubjectVO;
 import io.mango.payment.core.service.IPaymentEnterpriseSubjectService;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/payment/enterprise-subjects")
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed service dependency is intentionally retained for constructor injection")
 @Tag(name = "支付企业主体管理", description = "收款主体后台管理接口")
 public class PaymentEnterpriseSubjectController implements PaymentEnterpriseSubjectApi {
 
@@ -54,7 +56,7 @@ public class PaymentEnterpriseSubjectController implements PaymentEnterpriseSubj
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:enterprise-subject:add")
     @Operation(summary = "新增收款主体", description = "创建收款主体")
-    public R<Long> createEnterpriseSubject(@Valid @RequestBody SavePaymentEnterpriseSubjectCommand command) {
+    public R<Long> createEnterpriseSubject(@RequestBody SavePaymentEnterpriseSubjectCommand command) {
         return R.ok(enterpriseSubjectService.createEnterpriseSubject(command));
     }
 
@@ -62,7 +64,7 @@ public class PaymentEnterpriseSubjectController implements PaymentEnterpriseSubj
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:enterprise-subject:edit")
     @Operation(summary = "修改收款主体", description = "更新收款主体")
-    public R<Boolean> updateEnterpriseSubject(@Valid @RequestBody SavePaymentEnterpriseSubjectCommand command) {
+    public R<Boolean> updateEnterpriseSubject(@RequestBody SavePaymentEnterpriseSubjectCommand command) {
         return R.ok(enterpriseSubjectService.updateEnterpriseSubject(command));
     }
 
