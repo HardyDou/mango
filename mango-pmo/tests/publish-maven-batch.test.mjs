@@ -63,5 +63,6 @@ test('all-non-app discovery excludes nested Maven test fixtures', () => {
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /Publish scope: all non-app Maven modules/);
+  assert.match(result.stdout, /Command: mvn .* clean deploy /);
   assert.doesNotMatch(result.stdout, /src\/test\/resources\/architecture-path-binding/);
 });

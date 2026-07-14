@@ -34,6 +34,16 @@ class WorkflowMigrationContractTest {
     }
 
     @Test
+    void obsoleteIncrementalMigrationsAreNotPackaged() {
+        assertThat(getClass().getClassLoader().getResource(
+                "db/migration/workflow/V2__workflow_domain.sql")).isNull();
+        assertThat(getClass().getClassLoader().getResource(
+                "db/migration/workflow/V3__workflow_start_entry_visibility.sql")).isNull();
+        assertThat(getClass().getClassLoader().getResource(
+                "db/migration/workflow/V4__workflow_business_progress_snapshot.sql")).isNull();
+    }
+
+    @Test
     void v1_workflowEntityTablesContainCanonicalTenantAndAuditColumns() throws IOException {
         String sql = resourceText(MIGRATION);
         List<String> workflowEntityTables = List.of(
