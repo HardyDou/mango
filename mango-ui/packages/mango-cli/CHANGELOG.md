@@ -1,5 +1,23 @@
 # @mango/cli Changelog
 
+## 1.0.78 - 2026-07-14
+
+### Fixed
+
+- Fix [Issue #507](https://github.com/HardyDou/mango/issues/507): make `mango workspace init` create `.mango/m2/repository` as a directory link to the user's `~/.m2/repository`, avoiding repeated Maven dependency downloads in fresh worktrees.
+- Keep initialization idempotent and preserve any existing real directory or link that represents an explicitly isolated Maven repository.
+
+### Upgrade Notes
+
+- Upgrade the project-local CLI to `@mango/cli@1.0.78`, then run `mango workspace init` once in each active worktree.
+- No business `mango.dev.json`, Maven coordinates, PMO bundle, database, API, menu, permission, tenant, or runtime configuration migration is required.
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
+- `pnpm --filter @mango/cli run check:release-versions`
+
 ## 1.0.77 - 2026-07-14
 
 ### Fixed

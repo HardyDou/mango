@@ -1,5 +1,32 @@
 # Mango Changelog
 
+## v2026.07.14-cli-1.0.78-workspace-maven-cache-release - 2026-07-14
+
+### Fixed
+
+- Fix [Issue #507](https://github.com/HardyDou/mango/issues/507): initialize `.mango/m2/repository` as a directory link to `~/.m2/repository` during `mango workspace init`, so fresh worktrees reuse the user's Maven dependency cache instead of downloading everything again.
+- Preserve a pre-existing real directory or link, keeping explicitly isolated Maven repositories opt-in and preventing destructive initialization.
+
+### Upgrade Notes
+
+1. Publish and verify `@mango/cli@1.0.78`.
+2. Upgrade the project-local CLI and run `mango workspace init` once in every active worktree; no business `mango.dev.json` edit or manual filesystem workaround is required.
+3. No PMO, Mango Maven, source-code, database, API, menu, permission, tenant, or runtime configuration migration is required.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm CLI | `@mango/cli@1.0.78` -> Nexus npm hosted | `PENDING` |
+| 2 | GitHub Release | `v2026.07.14-cli-1.0.78-workspace-maven-cache-release` | `PENDING` |
+
+### Verification
+
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/*.test.mjs`
+- `pnpm --filter @mango/cli run check:release-versions`
+- `node mango-pmo/tools/workspace-layout-check.mjs --root .`
+
 ## v2026.07.14-maven-1.0.20-cli-1.0.77-path-binding-release - 2026-07-14
 
 ### Fixed
