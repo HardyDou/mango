@@ -1,5 +1,34 @@
 # Mango Changelog
 
+## v2026.07.14-maven-1.0.19-pmo-1.2.5-cli-1.0.75-gate-baseline-release - 2026-07-14
+
+### Fixed
+
+- Fix [Issue #491](https://github.com/HardyDou/mango/issues/491): aggregated PMD and Checkstyle now produce complete reports before Mango applies `no-new-violations`, so historical findings remain visible without terminating the changed-file gate before classification.
+- Keep static-analysis execution errors blocking under `staticFailurePolicy=block`; the fix does not skip PMD, Checkstyle, SpotBugs, or downgrade the required gate.
+- Add `.mango-pmo-legacy-documents.json` for lifecycle documents created before PMO contracts. Every exception is pinned to a repository-relative path and SHA-256; changed, stale, duplicate, or out-of-root entries fail closed, and new lifecycle documents cannot use the baseline.
+
+### Upgrade Notes
+
+1. Publish and verify Mango Maven `1.0.19` and `@mango/pmo@1.2.5` before installing `@mango/cli@1.0.75`.
+2. Run `mango pmo upgrade --project-dir . --to 1.2.5`, upgrade the business backend's `<mango.version>` to `1.0.19`, and register only approved pre-contract documents in the hash baseline.
+3. Run one final required check for the upgraded business commit; do not retry unchanged runs based on older artifacts.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.19` -> Nexus Maven hosted | `PENDING` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.5` -> Nexus npm hosted | `PENDING` |
+| 3 | npm CLI | `@mango/cli@1.0.75` -> Nexus npm hosted | `PENDING` |
+| 4 | GitHub Release | `v2026.07.14-maven-1.0.19-pmo-1.2.5-cli-1.0.75-gate-baseline-release` | `PENDING` |
+
+### Verification
+
+- `mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -Dtest=CheckMojoTest test`
+- `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
+- PMO package build/check, business baseline projection, CLI release lock, capability documentation, README source facts, and workspace layout all passed.
+
 ## v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release - 2026-07-14
 
 ### Changed
