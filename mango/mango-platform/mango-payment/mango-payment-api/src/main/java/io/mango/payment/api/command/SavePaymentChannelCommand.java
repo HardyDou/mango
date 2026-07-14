@@ -2,8 +2,10 @@ package io.mango.payment.api.command;
 
 import io.mango.payment.api.enums.PaymentChannelCode;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -17,6 +19,7 @@ public class SavePaymentChannelCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "通道 ID。新增时为空，修改时必填")
+    @Positive(message = "通道 ID 必须大于 0")
     private Long id;
 
     @NotNull(message = "通道编码不能为空")
@@ -43,15 +46,20 @@ public class SavePaymentChannelCommand implements Serializable {
     private String gatewayBaseUrl;
 
     @Schema(description = "签约字段模板 JSON")
+    @Size(max = 65535, message = "签约字段模板不能超过 65535 个字符")
     private String fieldTemplateJson;
 
     @Schema(description = "通道能力摘要")
+    @Size(max = 2048, message = "通道能力摘要不能超过 2048 个字符")
     private String capabilitySummary;
 
     @Schema(description = "支持的账单获取方式：MANUAL、FTP、FTPS、HTTP")
+    @Size(max = 16, message = "账单获取方式不能超过 16 项")
     private List<String> billFetchModes;
 
     @Schema(description = "通道能力列表")
+    @Valid
+    @Size(max = 100, message = "通道能力不能超过 100 项")
     private List<SavePaymentChannelCapabilityCommand> capabilities;
 
     @NotNull(message = "状态不能为空")

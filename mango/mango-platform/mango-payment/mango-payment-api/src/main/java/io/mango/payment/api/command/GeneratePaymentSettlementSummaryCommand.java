@@ -34,5 +34,6 @@ public class GeneratePaymentSettlementSummaryCommand implements Serializable {
     private String channelCode;
 
     @Schema(description = "是否重新生成已作废汇总")
-    private Boolean rebuild;
+    @NotNull(message = "重新生成标记不能为空")
+    private Boolean rebuild = Boolean.FALSE;
 }

@@ -9,7 +9,7 @@ import io.mango.payment.api.command.QueryPaymentRefundOrderCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentRefundOrderStatusVO;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
-import io.mango.payment.core.service.PaymentRefundOrderService;
+import io.mango.payment.core.service.IPaymentRefundOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +33,7 @@ import java.util.List;
 @Tag(name = "退款订单", description = "退款申请、退款状态和通道退款结果接口")
 public class PaymentRefundOrderController implements PaymentRefundOrderApi {
 
-    private final PaymentRefundOrderService refundOrderService;
+    private final IPaymentRefundOrderService refundOrderService;
 
     @Override
     @GetMapping("/page")
@@ -47,7 +47,7 @@ public class PaymentRefundOrderController implements PaymentRefundOrderApi {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:refund-order:query")
     @Operation(summary = "查询退款订单详情", description = "按退款订单 ID 查询退款申请、通道结果和状态流转")
-    public R<PaymentRefundOrderVO> detailRefundOrder(@Parameter(description = "退款订单 ID", required = true) @RequestParam Long id) {
+    public R<PaymentRefundOrderVO> detailRefundOrder(@Parameter(description = "退款订单 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(refundOrderService.detailRefundOrder(id));
     }
 

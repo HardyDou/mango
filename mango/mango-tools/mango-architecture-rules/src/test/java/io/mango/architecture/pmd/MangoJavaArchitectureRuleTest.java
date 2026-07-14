@@ -155,6 +155,7 @@ class MangoJavaArchitectureRuleTest {
                     public void valid(Object value) { Require.notNull(value, PaymentCode.INVALID); }
                     public void range(long value) { Require.inRange(value, 1, 10, PaymentCode.INVALID); }
                     public Object validFail() { return Require.fail(PaymentCode.INVALID); }
+                    public Object validRethrow(RuntimeException exception) { return Require.rethrow(exception); }
                     public void invalid(Object value) { Require.notNull(value, "INVALID"); }
                 }
                 """);
@@ -942,6 +943,41 @@ class MangoJavaArchitectureRuleTest {
 
         assertThat(messages(report)).containsExactlyInAnyOrder(
                 "MANGO-ARCH-MODEL-001 API model field requires @Schema(description)",
+                "MANGO-ARCH-MODEL-002 Command/Query/Request field requires a jakarta.validation constraint");
+    }
+
+    @Test
+    void optionalNestedCommandUsesCascadeValidationWithoutBecomingRequired() {
+        Report report = analyze(
+                "example/CreateOrderCommand.java", """
+                package example;
+                import io.swagger.v3.oas.annotations.media.Schema;
+                import jakarta.validation.Valid;
+                import jakarta.validation.constraints.NotBlank;
+                final class OrderExtensionCommand {
+                    @Schema(description = "业务编码") @NotBlank private String businessCode;
+                }
+                final class CreateOrderCommand {
+                    @Schema(description = "扩展信息") @Valid
+                    private OrderExtensionCommand extension;
+                    @Schema(description = "普通编号") @Valid
+                    private Long plainId;
+                }
+                """,
+                "io/swagger/v3/oas/annotations/media/Schema.java", """
+                package io.swagger.v3.oas.annotations.media;
+                public @interface Schema { String description(); }
+                """,
+                "jakarta/validation/Valid.java", """
+                package jakarta.validation;
+                public @interface Valid {}
+                """,
+                "jakarta/validation/constraints/NotBlank.java", """
+                package jakarta.validation.constraints;
+                public @interface NotBlank {}
+                """);
+
+        assertThat(messages(report)).containsExactly(
                 "MANGO-ARCH-MODEL-002 Command/Query/Request field requires a jakarta.validation constraint");
     }
 

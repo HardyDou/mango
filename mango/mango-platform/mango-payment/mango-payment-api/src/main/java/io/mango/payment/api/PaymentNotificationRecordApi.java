@@ -8,6 +8,7 @@ import io.mango.payment.api.vo.PaymentNotificationRecordVO;
 import io.mango.payment.api.vo.PaymentNotificationStatusVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
@@ -23,5 +24,5 @@ public interface PaymentNotificationRecordApi {
 
     R<PaymentNotificationRecordVO> retryNotificationRecord(@Valid RetryPaymentNotificationRecordCommand command);
 
-    R<Integer> deliverDueNotificationRecords(long limit);
+    R<Integer> deliverDueNotificationRecords(@Positive(message = "处理数量必须大于 0") long limit);
 }

@@ -1,4 +1,0 @@
--- No-op by design.
--- FUIOU callback URLs are deployment-specific signing configuration values.
--- They must be maintained through payment channel contract configuration,
--- not overwritten by formal Flyway migration.

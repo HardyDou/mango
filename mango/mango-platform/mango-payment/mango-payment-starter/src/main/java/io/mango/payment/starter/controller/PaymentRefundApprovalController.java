@@ -9,7 +9,7 @@ import io.mango.payment.api.command.CreatePaymentRefundApprovalCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentRefundApprovalStatusVO;
 import io.mango.payment.api.vo.PaymentRefundApprovalVO;
-import io.mango.payment.core.service.PaymentRefundApprovalService;
+import io.mango.payment.core.service.IPaymentRefundApprovalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +33,7 @@ import java.util.List;
 @Tag(name = "退款审批", description = "后台退款审批单接口")
 public class PaymentRefundApprovalController implements PaymentRefundApprovalApi {
 
-    private final PaymentRefundApprovalService refundApprovalService;
+    private final IPaymentRefundApprovalService refundApprovalService;
 
     @Override
     @GetMapping("/page")
@@ -47,7 +47,7 @@ public class PaymentRefundApprovalController implements PaymentRefundApprovalApi
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:refund-approval:query")
     @Operation(summary = "查询退款审批详情", description = "按退款审批 ID 查询审批单、申请人、审核人和关联退款结果")
-    public R<PaymentRefundApprovalVO> detailRefundApproval(@Parameter(description = "退款审批 ID", required = true) @RequestParam Long id) {
+    public R<PaymentRefundApprovalVO> detailRefundApproval(@Parameter(description = "退款审批 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(refundApprovalService.detailRefundApproval(id));
     }
 

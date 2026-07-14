@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
 class PaymentOfflineCollectionChannelAdapterTest {
 
     private final PaymentOfflineCollectionMapper offlineCollectionMapper = mock(PaymentOfflineCollectionMapper.class);
-    private final PaymentSensitiveValueService sensitiveValueService = mock(PaymentSensitiveValueService.class);
-    private final PaymentNumberService numberService = mock(PaymentNumberService.class);
+    private final PaymentSensitiveValueCodec sensitiveValueService = mock(PaymentSensitiveValueCodec.class);
+    private final PaymentNumberGenerator numberService = mock(PaymentNumberGenerator.class);
     private final PaymentOfflineCollectionChannelAdapter adapter =
             new PaymentOfflineCollectionChannelAdapter(offlineCollectionMapper, sensitiveValueService, new ObjectMapper(), numberService);
 
@@ -55,10 +55,10 @@ class PaymentOfflineCollectionChannelAdapterTest {
     void afterPaymentOrderCreated_insertsOfflineCollection() {
         when(sensitiveValueService.decrypt("enc:offline-account")).thenReturn("6222000000000001");
         when(sensitiveValueService.mask(eq("6222000000000001"), eq(4), eq(4))).thenReturn("6222****0001");
-        IPaymentChannelAdapter.PaymentApplyCommand command = paymentCommand();
+        IPaymentChannelAdapter.PaymentApplyInput command = paymentCommand();
         IPaymentChannelAdapter.PaymentApplyResult result = adapter.applyPayment(command);
         PaymentOrderEntity order = paymentOrder();
-        when(numberService.next(PaymentNumberService.PAY_OFFLINE_COLLECTION_NO)).thenReturn("OC2026060600000001");
+        when(numberService.next(PaymentNumberGenerator.PAY_OFFLINE_COLLECTION_NO)).thenReturn("OC2026060600000001");
         ArgumentCaptor<PaymentOfflineCollectionEntity> captor =
                 ArgumentCaptor.forClass(PaymentOfflineCollectionEntity.class);
 
@@ -87,17 +87,17 @@ class PaymentOfflineCollectionChannelAdapterTest {
         assertThat(entity.getVoucherCount()).isZero();
         assertThat(entity.getCollectionStatus()).isEqualTo(PaymentOfflineCollectionStatusEnum.WAITING_TRANSFER.getCode());
         assertThat(entity.getExpireTime()).isEqualTo(command.expireTime());
-        assertThat(entity.getTenantId()).isEqualTo(1L);
+        assertThat(entity.getTenantId()).isEqualTo("1");
     }
 
     @Test
     @DisplayName("queryPayment should keep waiting offline collection paying")
     void queryPayment_waitingCollectionReturnsPaying() {
         PaymentOfflineCollectionEntity collection = offlineCollection(PaymentOfflineCollectionStatusEnum.WAITING_TRANSFER.getCode());
-        when(offlineCollectionMapper.selectByPayOrderNoForUpdate(1L, "PO202606060001")).thenReturn(collection);
+        when(offlineCollectionMapper.selectByPayOrderNoForUpdate("1", "PO202606060001")).thenReturn(collection);
 
         IPaymentChannelAdapter.PaymentQueryResult result = adapter.queryPayment(
-                new IPaymentChannelAdapter.PaymentQueryCommand(1L, paymentOrder()));
+                new IPaymentChannelAdapter.PaymentQueryInput("1", paymentOrder()));
 
         assertThat(result.scenario()).isEqualTo("OFFLINE_COLLECTION_WAITING");
         assertThat(result.returnCode()).isEqualTo(PaymentOfflineCollectionStatusEnum.WAITING_TRANSFER.getCode());
@@ -109,10 +109,10 @@ class PaymentOfflineCollectionChannelAdapterTest {
     @DisplayName("queryPayment should map confirmed offline collection to payment success")
     void queryPayment_confirmedCollectionReturnsSuccess() {
         PaymentOfflineCollectionEntity collection = offlineCollection(PaymentOfflineCollectionStatusEnum.CONFIRMED.getCode());
-        when(offlineCollectionMapper.selectByPayOrderNoForUpdate(1L, "PO202606060001")).thenReturn(collection);
+        when(offlineCollectionMapper.selectByPayOrderNoForUpdate("1", "PO202606060001")).thenReturn(collection);
 
         IPaymentChannelAdapter.PaymentQueryResult result = adapter.queryPayment(
-                new IPaymentChannelAdapter.PaymentQueryCommand(1L, paymentOrder()));
+                new IPaymentChannelAdapter.PaymentQueryInput("1", paymentOrder()));
 
         assertThat(result.scenario()).isEqualTo("OFFLINE_COLLECTION_CONFIRMED");
         assertThat(result.returnCode()).isEqualTo(PaymentOfflineCollectionStatusEnum.CONFIRMED.getCode());
@@ -123,8 +123,8 @@ class PaymentOfflineCollectionChannelAdapterTest {
     @Test
     @DisplayName("applyRefund should direct offline refund to offline refund order entry")
     void applyRefund_requiresOfflineRefundEntry() {
-        IPaymentChannelAdapter.RefundApplyCommand command = new IPaymentChannelAdapter.RefundApplyCommand(
-                1L,
+        IPaymentChannelAdapter.RefundApplyInput command = new IPaymentChannelAdapter.RefundApplyInput(
+                "1",
                 "OFFLINE_COLLECTION",
                 331004L,
                 "RO202606060001",
@@ -146,8 +146,8 @@ class PaymentOfflineCollectionChannelAdapterTest {
     @Test
     @DisplayName("generateBill should direct offline reconciliation to bank statement import")
     void generateBill_requiresBankStatementImport() {
-        IPaymentChannelAdapter.ChannelBillCommand command = new IPaymentChannelAdapter.ChannelBillCommand(
-                1L,
+        IPaymentChannelAdapter.ChannelBillInput command = new IPaymentChannelAdapter.ChannelBillInput(
+                "1",
                 "OFFLINE_COLLECTION",
                 331004L,
                 LocalDate.of(2026, 6, 6));
@@ -157,9 +157,9 @@ class PaymentOfflineCollectionChannelAdapterTest {
                 .hasMessageContaining("线下收款对账以银行流水 Excel 导入为准");
     }
 
-    private IPaymentChannelAdapter.PaymentApplyCommand paymentCommand() {
-        return new IPaymentChannelAdapter.PaymentApplyCommand(
-                1L,
+    private IPaymentChannelAdapter.PaymentApplyInput paymentCommand() {
+        return new IPaymentChannelAdapter.PaymentApplyInput(
+                "1",
                 "OFFLINE_COLLECTION",
                 331004L,
                 "{\"accountName\":\"芒果科技有限公司\",\"accountNo\":\"enc:offline-account\",\"bankName\":\"招商银行上海分行\"}",

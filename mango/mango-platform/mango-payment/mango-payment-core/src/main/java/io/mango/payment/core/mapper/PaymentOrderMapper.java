@@ -2,7 +2,7 @@ package io.mango.payment.core.mapper;
 
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.payment.api.vo.PaymentOrderVO;
+import io.mango.payment.core.model.projection.PaymentOrderProjection;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.model.PaymentChannelFailureMetric;
 import io.mango.payment.core.model.PaymentCashierPayResultRow;
@@ -18,14 +18,14 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     long countPaymentOrders(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode,
             @Param("channelId") Long channelId);
 
     @InterceptorIgnore(tenantLine = "true")
-    List<PaymentOrderVO> selectPaymentOrderPage(
-            @Param("tenantId") Long tenantId,
+    List<PaymentOrderProjection> selectPaymentOrderPage(
+            @Param("tenantId") String tenantId,
             @Param("keyword") String keyword,
             @Param("statusCode") String statusCode,
             @Param("channelId") Long channelId,
@@ -33,46 +33,46 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
             @Param("offset") long offset);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentOrderVO selectPaymentOrderDetail(
-            @Param("tenantId") Long tenantId,
+    PaymentOrderProjection selectPaymentOrderDetail(
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentOrderVO selectPaymentOrderById(
-            @Param("tenantId") Long tenantId,
+    PaymentOrderProjection selectPaymentOrderById(
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentOrderVO selectOpenPaymentOrder(
-            @Param("tenantId") Long tenantId,
+    PaymentOrderProjection selectOpenPaymentOrder(
+            @Param("tenantId") String tenantId,
             @Param("appId") String appId,
             @Param("payOrderNo") String payOrderNo);
 
     @InterceptorIgnore(tenantLine = "true")
-    PaymentOrderVO selectSuccessfulOpenPaymentOrder(
-            @Param("tenantId") Long tenantId,
+    PaymentOrderProjection selectSuccessfulOpenPaymentOrder(
+            @Param("tenantId") String tenantId,
             @Param("appId") String appId,
             @Param("bizOrderNo") String bizOrderNo);
 
     @InterceptorIgnore(tenantLine = "true")
     Long lockSuccessfulOpenPaymentOrder(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("paymentOrderId") Long paymentOrderId);
 
     @InterceptorIgnore(tenantLine = "true")
     String selectLatestFlowNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("paymentOrderId") Long paymentOrderId);
 
     @InterceptorIgnore(tenantLine = "true")
     PaymentOrderEntity selectByTenantAndChannelTradeNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("channelCode") String channelCode,
             @Param("channelTradeNo") String channelTradeNo);
 
     @InterceptorIgnore(tenantLine = "true")
     PaymentOrderEntity selectByTenantAndPayOrderNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("payOrderNo") String payOrderNo);
 
     @InterceptorIgnore(tenantLine = "true")
@@ -81,23 +81,23 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     PaymentOrderEntity selectEntityByTenantAndId(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     List<PaymentOrderEntity> selectExpiredOpenPaymentOrders(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("now") LocalDateTime now,
             @Param("limit") long limit);
 
     @InterceptorIgnore(tenantLine = "true")
     List<PaymentOrderEntity> selectProcessingPaymentOrders(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("limit") long limit);
 
     @InterceptorIgnore(tenantLine = "true")
     List<PaymentOrderEntity> selectSuccessfulChannelOrdersMissingInBill(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("channelCode") String channelCode,
             @Param("billDate") LocalDate billDate,
             @Param("nextBillDate") LocalDate nextBillDate,
@@ -105,7 +105,7 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     List<PaymentOrderEntity> selectSuccessfulChannelOrdersForBill(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("channelCode") String channelCode,
             @Param("contractId") Long contractId,
             @Param("billDate") LocalDate billDate,
@@ -113,7 +113,7 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     int updatePayingQueryResult(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("status") String status,
             @Param("successFlag") Integer successFlag,
@@ -121,7 +121,7 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     int updateCreatedApplyResult(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("status") String status,
             @Param("channelTradeNo") String channelTradeNo,
@@ -129,12 +129,12 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     int markCreatedApplyFailed(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     int updatePayingCallbackResult(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("status") String status,
             @Param("successFlag") Integer successFlag,
@@ -143,54 +143,54 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
 
     @InterceptorIgnore(tenantLine = "true")
     int updateOfflineCollectionSuccess(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("payTime") LocalDateTime payTime,
             @Param("channelTradeNo") String channelTradeNo);
 
     @InterceptorIgnore(tenantLine = "true")
     int markDuplicatePaymentSuccess(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id,
             @Param("payTime") LocalDateTime payTime,
             @Param("channelTradeNo") String channelTradeNo);
 
     @InterceptorIgnore(tenantLine = "true")
     int markDuplicatePaymentRefunding(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     int markDuplicatePaymentRefunded(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     int closeOpenPaymentOrder(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("id") Long id);
 
     long countSuccessfulCashierOrders(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("businessOrderId") Long businessOrderId);
 
     @InterceptorIgnore(tenantLine = "true")
     long countPaymentOrdersByStatus(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("status") String status);
 
     @InterceptorIgnore(tenantLine = "true")
-    long countProcessingPaymentBacklog(@Param("tenantId") Long tenantId);
+    long countProcessingPaymentBacklog(@Param("tenantId") String tenantId);
 
     @InterceptorIgnore(tenantLine = "true")
-    List<PaymentChannelFailureMetric> selectChannelFailureMetrics(@Param("tenantId") Long tenantId);
+    List<PaymentChannelFailureMetric> selectChannelFailureMetrics(@Param("tenantId") String tenantId);
 
     String selectProcessingPayOrderNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("businessOrderId") Long businessOrderId,
             @Param("methodId") Long methodId);
 
     PaymentCashierPayResultRow selectCashierPayResult(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("payOrderNo") String payOrderNo);
 }

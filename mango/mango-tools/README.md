@@ -124,6 +124,8 @@ mvn mango:check \
 
 `mango:architecture` 硬校验：Controller 实现 `XxxApi`、启用 `@Validated/@Valid`、只依赖 `IXxxService`、统一返回 `R<T>`；Service 使用 `Require + BizCode/ErrorCode` 校验业务前置条件且不返回或拼装 `R`；Entity、Mapper、Feign、Controller 和 Service 实现必须位于规定模块。
 
+规则判定以业务边界为准：`MANGO-ARCH-BEAN-004` 只阻断手工构造的 Spring 托管 Service 实现，不把容器中注册的通用 `Map`、`Set` 或异常类型误认成业务 Service；组合 API 输入字段可用 `@Valid` 递归校验，`Require.rethrow` 被视为保持原异常语义的显式出口。三类判断均由正反例测试锁定。
+
 检查当前变更文件内的模块菜单声明：
 
 ```bash

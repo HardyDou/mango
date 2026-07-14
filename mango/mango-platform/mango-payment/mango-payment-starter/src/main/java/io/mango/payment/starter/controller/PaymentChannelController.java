@@ -11,6 +11,7 @@ import io.mango.payment.api.vo.PaymentChannelCapabilityVO;
 import io.mango.payment.api.vo.PaymentChannelVO;
 import io.mango.payment.core.service.IPaymentChannelService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -39,45 +40,45 @@ public class PaymentChannelController implements PaymentChannelApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:list")
     @Operation(summary = "分页查询支付通道", description = "按当前租户查询支付通道")
     public R<PageResult<PaymentChannelVO>> pageChannels(@ParameterObject PaymentConfigPageQuery query) {
-        return channelService.pageChannels(query);
+        return R.ok(channelService.pageChannels(query));
     }
 
     @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:query")
     @Operation(summary = "查询支付通道详情", description = "按通道 ID 查询支付通道详情")
-    public R<PaymentChannelVO> detailChannel(@Parameter(description = "通道 ID", required = true) @RequestParam Long id) {
-        return channelService.detailChannel(id);
+    public R<PaymentChannelVO> detailChannel(@Parameter(description = "通道 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(channelService.detailChannel(id));
     }
 
     @Override
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:add")
     @Operation(summary = "新增支付通道", description = "创建支付通道配置")
-    public R<Long> createChannel(@RequestBody SavePaymentChannelCommand command) {
-        return channelService.createChannel(command);
+    public R<Long> createChannel(@Valid @RequestBody SavePaymentChannelCommand command) {
+        return R.ok(channelService.createChannel(command));
     }
 
     @Override
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:edit")
     @Operation(summary = "修改支付通道", description = "更新支付通道配置")
-    public R<Boolean> updateChannel(@RequestBody SavePaymentChannelCommand command) {
-        return channelService.updateChannel(command);
+    public R<Boolean> updateChannel(@Valid @RequestBody SavePaymentChannelCommand command) {
+        return R.ok(channelService.updateChannel(command));
     }
 
     @Override
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:delete")
     @Operation(summary = "删除支付通道", description = "按 ID 删除支付通道配置")
-    public R<Boolean> deleteChannel(@Parameter(description = "通道 ID", required = true) @RequestParam Long id) {
-        return channelService.deleteChannel(id);
+    public R<Boolean> deleteChannel(@Parameter(description = "通道 ID", required = true) @RequestParam("id") Long id) {
+        return R.ok(channelService.deleteChannel(id));
     }
 
     @Override
     @GetMapping("/capabilities/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:channel:list")
-    @Operation(summary = "分页查询通道能力")
+    @Operation(summary = "分页查询通道能力", description = "按当前租户分页查询支付通道能力配置")
     public R<PageResult<PaymentChannelCapabilityVO>> pageChannelCapabilities(@ParameterObject PaymentConfigPageQuery query) {
         return R.ok(channelService.pageChannelCapabilities(query));
     }

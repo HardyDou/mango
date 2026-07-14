@@ -1,0 +1,612 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_METHOD_ROUTE_RULE_ITEM": [
+          {
+            "id": "2026071309000000126",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334001.333023",
+            "name": "334001",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335001
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334001
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333023
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000127",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334002.333003",
+            "name": "334002",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335002
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334002
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333003
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000128",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334003.333026",
+            "name": "334003",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335003
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334003
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333026
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000129",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334004.333024",
+            "name": "334004",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335004
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334004
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333024
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000130",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334005.333012",
+            "name": "334005",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335005
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334005
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333012
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000131",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334006.333025",
+            "name": "334006",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335006
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334006
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333025
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000132",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334007.333014",
+            "name": "334007",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335007
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334007
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333014
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000133",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334008.333016",
+            "name": "334008",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335008
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334008
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333016
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000134",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334009.333017",
+            "name": "334009",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335009
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334009
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333017
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000135",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334010.333018",
+            "name": "334010",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335010
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334010
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333018
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000136",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334011.333019",
+            "name": "334011",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335011
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334011
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333019
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000137",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334012.333020",
+            "name": "334012",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335012
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334012
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333020
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000138",
+            "version": 1,
+            "bizKey": "payment.method-route-rule-item.334013.333022",
+            "name": "334013",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 335013
+              },
+              "ruleId": {
+                "type": "LONG",
+                "value": 334013
+              },
+              "contractCapabilityId": {
+                "type": "LONG",
+                "value": 333022
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "weight": {
+                "type": "INT",
+                "value": 100
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

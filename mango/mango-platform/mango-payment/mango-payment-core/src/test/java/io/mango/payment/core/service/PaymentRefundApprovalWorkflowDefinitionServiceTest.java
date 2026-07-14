@@ -3,6 +3,7 @@ package io.mango.payment.core.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
+import io.mango.payment.core.integration.PaymentRemoteOutcome;
 import io.mango.workflow.api.WorkflowDefinitionApi;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
@@ -15,12 +16,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PaymentRefundApprovalWorkflowDefinitionServiceTest {
+class PaymentRefundApprovalWorkflowPublisherTest {
 
     private final WorkflowDefinitionApi workflowDefinitionApi = mock(WorkflowDefinitionApi.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final PaymentRefundApprovalWorkflowDefinitionService service =
-            new PaymentRefundApprovalWorkflowDefinitionService(workflowDefinitionApi, objectMapper);
+    private final PaymentRefundApprovalWorkflowPublisher service =
+            new PaymentRefundApprovalWorkflowPublisher(workflowDefinitionApi, objectMapper);
 
     @Test
     void ensureRefundApprovalDefinition_shouldSubmitPaymentOwnedWorkflowDefinitionContract() throws Exception {
@@ -29,10 +30,10 @@ class PaymentRefundApprovalWorkflowDefinitionServiceTest {
         when(workflowDefinitionApi.ensurePublished(any(EnsureWorkflowDefinitionCommand.class)))
                 .thenReturn(R.ok(deployVO));
 
-        R<WorkflowDeployVO> result = service.ensureRefundApprovalDefinition();
+        PaymentRemoteOutcome<WorkflowDeployVO> result = service.ensureRefundApprovalDefinition();
 
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getData().getDeploymentId()).isEqualTo("deploy-payment-refund");
+        assertThat(result.success()).isTrue();
+        assertThat(result.data().getDeploymentId()).isEqualTo("deploy-payment-refund");
         ArgumentCaptor<EnsureWorkflowDefinitionCommand> captor =
                 ArgumentCaptor.forClass(EnsureWorkflowDefinitionCommand.class);
         verify(workflowDefinitionApi).ensurePublished(captor.capture());

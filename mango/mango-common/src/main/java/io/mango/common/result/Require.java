@@ -36,6 +36,17 @@ public final class Require {
     }
 
     /**
+     * 断言对象不为 null，并保留调用方的细化错误消息。
+     *
+     * @param obj 待校验对象。
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     */
+    public static void notNull(Object obj, BizCode bizCode, String message) {
+        failWhen(obj == null, bizCode, message);
+    }
+
+    /**
      * 断言对象不为 null。
      *
      * @param obj 待校验对象。
@@ -97,6 +108,17 @@ public final class Require {
      */
     public static void isTrue(boolean expression, BizCode bizCode) {
         isTrue(expression, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 断言表达式为 true，并保留调用方的细化错误消息。
+     *
+     * @param expression 待校验表达式。
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     */
+    public static void isTrue(boolean expression, BizCode bizCode, String message) {
+        failWhen(!expression, bizCode, message);
     }
 
     /**
@@ -164,6 +186,17 @@ public final class Require {
     }
 
     /**
+     * 断言字符串非空，并保留调用方的细化错误消息。
+     *
+     * @param str 待校验字符串。
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     */
+    public static void notEmpty(String str, BizCode bizCode, String message) {
+        failWhen(str == null || str.isEmpty(), bizCode, message);
+    }
+
+    /**
      * 断言字符串非空白。
      *
      * @param str 待校验字符串。
@@ -181,6 +214,17 @@ public final class Require {
      */
     public static void notBlank(String str, BizCode bizCode) {
         notBlank(str, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 断言字符串非空白，并保留调用方的细化错误消息。
+     *
+     * @param str 待校验字符串。
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     */
+    public static void notBlank(String str, BizCode bizCode, String message) {
+        failWhen(str == null || str.isBlank(), bizCode, message);
     }
 
     /**
@@ -214,6 +258,18 @@ public final class Require {
      */
     public static void notEmpty(java.util.Collection<?> collection, BizCode bizCode) {
         notEmpty(collection, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 断言集合非空，并保留调用方的细化错误消息。
+     *
+     * @param collection 待校验集合。
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     */
+    public static void notEmpty(
+            java.util.Collection<?> collection, BizCode bizCode, String message) {
+        failWhen(collection == null || collection.isEmpty(), bizCode, message);
     }
 
     /**
@@ -305,6 +361,27 @@ public final class Require {
     }
 
     /**
+     * 直接抛出业务异常，并保留调用方的细化错误消息。
+     *
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     */
+    public static <T> T fail(BizCode bizCode, String message) {
+        return fail(bizCode.getCode(), message);
+    }
+
+    /**
+     * 直接抛出业务异常，并保留原始异常链。
+     *
+     * @param bizCode 失败错误码。
+     * @param message 失败消息。
+     * @param cause 原始异常。
+     */
+    public static <T> T fail(BizCode bizCode, String message, Throwable cause) {
+        return fail(bizCode.getCode(), message, cause);
+    }
+
+    /**
      * 直接抛出业务异常。
      *
      * @param code 失败错误码。
@@ -312,6 +389,26 @@ public final class Require {
      */
     public static <T> T fail(int code, String message) {
         throw new BizException(code, message);
+    }
+
+    /**
+     * 直接抛出业务异常，并保留原始异常链。
+     *
+     * @param code 失败错误码。
+     * @param message 失败消息。
+     * @param cause 原始异常。
+     */
+    public static <T> T fail(int code, String message, Throwable cause) {
+        throw new BizException(code, message, cause);
+    }
+
+    /**
+     * 原样重新抛出运行时异常，供业务边界完成补偿后保持原异常语义。
+     *
+     * @param exception 原始运行时异常。
+     */
+    public static <T> T rethrow(RuntimeException exception) {
+        throw exception;
     }
 
     private static void failWhen(boolean invalid, BizCode bizCode, String message) {

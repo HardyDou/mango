@@ -23,12 +23,12 @@ class PaymentChannelBillFetchJobHandlerTest {
     @Test
     @DisplayName("handle should use parameter billDate and return success when all sources succeed or skip")
     void handle_usesParameterBillDateAndReturnsSuccess() {
-        PaymentChannelBillFetchScheduleService scheduleService = mock(PaymentChannelBillFetchScheduleService.class);
+        PaymentChannelBillFetchScheduler scheduleService = mock(PaymentChannelBillFetchScheduler.class);
         PaymentChannelBillFetchJobHandler handler =
                 new PaymentChannelBillFetchJobHandler(scheduleService, new ObjectMapper());
         LocalDate billDate = LocalDate.of(2026, 6, 10);
         when(scheduleService.fetchScheduledChannelBills(billDate)).thenReturn(
-                new PaymentChannelBillFetchScheduleService.ScheduledBillFetchResult(
+                new PaymentChannelBillFetchScheduler.ScheduledBillFetchResult(
                         billDate, 2, 1, 0, 1, List.of("已跳过：MANGO_PAY/HTTP/2026-06-10")));
         MangoJobHandleContext context = new MangoJobHandleContext();
         context.setParameter("{\"billDate\":\"2026-06-10\"}");
@@ -45,12 +45,12 @@ class PaymentChannelBillFetchJobHandlerTest {
     @Test
     @DisplayName("handle should return failed when scheduled fetch has failed sources")
     void handle_failedSources_returnsFailed() {
-        PaymentChannelBillFetchScheduleService scheduleService = mock(PaymentChannelBillFetchScheduleService.class);
+        PaymentChannelBillFetchScheduler scheduleService = mock(PaymentChannelBillFetchScheduler.class);
         PaymentChannelBillFetchJobHandler handler =
                 new PaymentChannelBillFetchJobHandler(scheduleService, new ObjectMapper());
         LocalDate billDate = LocalDate.of(2026, 6, 10);
         when(scheduleService.fetchScheduledChannelBills(any())).thenReturn(
-                new PaymentChannelBillFetchScheduleService.ScheduledBillFetchResult(
+                new PaymentChannelBillFetchScheduler.ScheduledBillFetchResult(
                         billDate, 1, 0, 1, 0, List.of("失败：TONG_LIAN/HTTP，远端不可用")));
 
         MangoJobHandleResult result = handler.handle(new MangoJobHandleContext());
@@ -65,7 +65,7 @@ class PaymentChannelBillFetchJobHandlerTest {
     @Test
     @DisplayName("handle should reject invalid billDate parameter")
     void handle_invalidBillDate_rejects() {
-        PaymentChannelBillFetchScheduleService scheduleService = mock(PaymentChannelBillFetchScheduleService.class);
+        PaymentChannelBillFetchScheduler scheduleService = mock(PaymentChannelBillFetchScheduler.class);
         PaymentChannelBillFetchJobHandler handler =
                 new PaymentChannelBillFetchJobHandler(scheduleService, new ObjectMapper());
         MangoJobHandleContext context = new MangoJobHandleContext();

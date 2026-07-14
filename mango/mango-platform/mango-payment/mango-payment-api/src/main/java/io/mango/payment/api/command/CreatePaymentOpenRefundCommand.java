@@ -12,8 +12,9 @@ import lombok.Data;
 public class CreatePaymentOpenRefundCommand {
 
     @Schema(description = "租户 ID")
-    @NotNull(message = "租户 ID 不能为空")
-    private Long tenantId;
+    @NotBlank(message = "租户 ID 不能为空")
+    @Size(max = 64, message = "租户 ID 长度不能超过 64")
+    private String tenantId;
 
     @Schema(description = "支付应用 AppId")
     @NotBlank(message = "AppId 不能为空")

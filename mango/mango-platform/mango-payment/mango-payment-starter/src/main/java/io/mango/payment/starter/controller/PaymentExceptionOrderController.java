@@ -10,7 +10,7 @@ import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentExceptionOrderActionVO;
 import io.mango.payment.api.vo.PaymentExceptionOrderStatusVO;
 import io.mango.payment.api.vo.PaymentExceptionOrderVO;
-import io.mango.payment.core.service.PaymentExceptionOrderService;
+import io.mango.payment.core.service.IPaymentExceptionOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,7 +34,7 @@ import java.util.List;
 @Tag(name = "异常订单", description = "支付异常订单查询和受控处理接口")
 public class PaymentExceptionOrderController implements PaymentExceptionOrderApi {
 
-    private final PaymentExceptionOrderService exceptionOrderService;
+    private final IPaymentExceptionOrderService exceptionOrderService;
 
     @Override
     @GetMapping("/page")
@@ -48,7 +48,7 @@ public class PaymentExceptionOrderController implements PaymentExceptionOrderApi
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:exception-order:query")
     @Operation(summary = "查询异常订单详情", description = "按异常订单 ID 查询异常原因、处理记录和凭据")
-    public R<PaymentExceptionOrderVO> detailExceptionOrder(@Parameter(description = "异常订单 ID", required = true) @RequestParam Long id) {
+    public R<PaymentExceptionOrderVO> detailExceptionOrder(@Parameter(description = "异常订单 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(exceptionOrderService.detailExceptionOrder(id));
     }
 

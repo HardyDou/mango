@@ -2,7 +2,11 @@ package io.mango.payment.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -15,6 +19,7 @@ public class SavePaymentMethodCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "支付方式 ID。新增时为空，修改时必填")
+    @Positive(message = "支付方式 ID 必须大于 0")
     private Long id;
 
     @NotBlank(message = "支付方式编码不能为空")
@@ -63,21 +68,29 @@ public class SavePaymentMethodCommand implements Serializable {
     private String cashierGroupName;
 
     @Schema(description = "收银台展示分组排序")
+    @PositiveOrZero(message = "收银台展示分组排序不能小于 0")
     private Integer cashierGroupSort;
 
     @Schema(description = "图标文件 ID")
+    @Positive(message = "图标文件 ID 必须大于 0")
     private Long iconFileId;
 
     @Schema(description = "是否需要银行列表：1-需要，0-不需要")
+    @Min(value = 0, message = "银行列表标记不能小于 0")
+    @Max(value = 1, message = "银行列表标记不能大于 1")
     private Integer requiresBankSelection;
 
     @Schema(description = "二维码是否支持刷新：1-支持，0-不支持")
+    @Min(value = 0, message = "二维码刷新标记不能小于 0")
+    @Max(value = 1, message = "二维码刷新标记不能大于 1")
     private Integer requiresQrRefresh;
 
     @Schema(description = "收银台说明")
+    @Size(max = 1024, message = "收银台说明不能超过 1024 个字符")
     private String description;
 
     @Schema(description = "排序")
+    @PositiveOrZero(message = "排序不能小于 0")
     private Integer sort;
 
     @NotNull(message = "状态不能为空")

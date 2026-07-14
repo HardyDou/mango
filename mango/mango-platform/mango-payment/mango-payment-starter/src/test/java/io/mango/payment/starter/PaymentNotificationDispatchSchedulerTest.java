@@ -2,7 +2,7 @@ package io.mango.payment.starter;
 
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.payment.core.mapper.PaymentNotificationRecordMapper;
-import io.mango.payment.core.service.PaymentNotificationService;
+import io.mango.payment.core.service.PaymentNotificationDispatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,8 +30,8 @@ class PaymentNotificationDispatchSchedulerTest {
     @Test
     @DisplayName("dispatchOnce should dispatch due notifications per tenant context")
     void dispatchOnce_dispatchesPerTenantContext() {
-        TestPaymentNotificationRecordMapper mapper = new TestPaymentNotificationRecordMapper(List.of(1L, 2L));
-        TestPaymentNotificationService notificationService = new TestPaymentNotificationService();
+        TestPaymentNotificationRecordMapper mapper = new TestPaymentNotificationRecordMapper(List.of("1", "2"));
+        TestPaymentNotificationDispatcher notificationService = new TestPaymentNotificationDispatcher();
         TestScheduledFuture future = new TestScheduledFuture();
         TaskScheduler taskScheduler = new TestTaskScheduler(future);
         PaymentNotificationDispatchScheduler scheduler = new PaymentNotificationDispatchScheduler(
@@ -55,9 +55,9 @@ class PaymentNotificationDispatchSchedulerTest {
 
     private static class TestPaymentNotificationRecordMapper {
 
-        private final List<Long> tenantIds;
+        private final List<String> tenantIds;
 
-        TestPaymentNotificationRecordMapper(List<Long> tenantIds) {
+        TestPaymentNotificationRecordMapper(List<String> tenantIds) {
             this.tenantIds = tenantIds;
         }
 
@@ -78,16 +78,16 @@ class PaymentNotificationDispatchSchedulerTest {
         }
     }
 
-    private static class TestPaymentNotificationService extends PaymentNotificationService {
+    private static class TestPaymentNotificationDispatcher extends PaymentNotificationDispatcher {
 
         private final List<String> tenantIds = new ArrayList<>();
         private final List<Long> limits = new ArrayList<>();
 
-        TestPaymentNotificationService() {
+        TestPaymentNotificationDispatcher() {
             super(null, null, null, null, null, null, null, null, null, null);
         }
 
-        PaymentNotificationService proxy() {
+        PaymentNotificationDispatcher proxy() {
             return this;
         }
 

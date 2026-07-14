@@ -4,7 +4,7 @@ import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.payment.core.mapper.PaymentNotificationRecordMapper;
-import io.mango.payment.core.service.PaymentNotificationService;
+import io.mango.payment.core.service.PaymentNotificationDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
@@ -20,14 +20,14 @@ public class PaymentNotificationDispatchScheduler implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PaymentNotificationDispatchScheduler.class);
 
     private final PaymentNotificationRecordMapper notificationRecordMapper;
-    private final PaymentNotificationService notificationService;
+    private final PaymentNotificationDispatcher notificationService;
     private final int tenantLimit;
     private final int batchSize;
     private final ScheduledFuture<?> future;
 
     public PaymentNotificationDispatchScheduler(
             PaymentNotificationRecordMapper notificationRecordMapper,
-            PaymentNotificationService notificationService,
+            PaymentNotificationDispatcher notificationService,
             TaskScheduler taskScheduler,
             long intervalMillis,
             long initialDelayMillis,
@@ -50,9 +50,9 @@ public class PaymentNotificationDispatchScheduler implements AutoCloseable {
     }
 
     public int dispatchOnce() {
-        List<Long> tenantIds = notificationRecordMapper.selectDueNotificationTenantIds(LocalDateTime.now(), tenantLimit);
+        List<String> tenantIds = notificationRecordMapper.selectDueNotificationTenantIds(LocalDateTime.now(), tenantLimit);
         int total = 0;
-        for (Long tenantId : tenantIds) {
+        for (String tenantId : tenantIds) {
             if (tenantId != null) {
                 total += dispatchTenant(tenantId);
             }
@@ -78,7 +78,7 @@ public class PaymentNotificationDispatchScheduler implements AutoCloseable {
         }
     }
 
-    private int dispatchTenant(Long tenantId) {
+    private int dispatchTenant(String tenantId) {
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(MangoContextSnapshot.empty()

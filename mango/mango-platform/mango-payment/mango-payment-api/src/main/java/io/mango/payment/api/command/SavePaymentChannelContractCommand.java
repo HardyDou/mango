@@ -1,8 +1,10 @@
 package io.mango.payment.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -16,6 +18,7 @@ public class SavePaymentChannelContractCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "签约配置 ID。新增时为空，修改时必填")
+    @Positive(message = "签约配置 ID 必须大于 0")
     private Long id;
 
     @Size(max = 64, message = "签约编码不能超过64个字符")
@@ -45,15 +48,20 @@ public class SavePaymentChannelContractCommand implements Serializable {
     private String merchantNo;
 
     @Schema(description = "通道 AppId")
+    @Size(max = 128, message = "通道 AppId 不能超过 128 个字符")
     private String appId;
 
     @Schema(description = "按通道字段模板填写的配置值 JSON")
+    @Size(max = 65535, message = "通道配置值不能超过 65535 个字符")
     private String configValuesJson;
 
     @Schema(description = "已开通标准支付方式编码，逗号分隔")
+    @Size(max = 2048, message = "标准支付方式编码不能超过 2048 个字符")
     private String enabledMethodCodes;
 
     @Schema(description = "签约能力列表")
+    @Valid
+    @Size(max = 100, message = "签约能力不能超过 100 项")
     private List<SavePaymentChannelContractCapabilityCommand> capabilities;
 
     @NotNull(message = "状态不能为空")

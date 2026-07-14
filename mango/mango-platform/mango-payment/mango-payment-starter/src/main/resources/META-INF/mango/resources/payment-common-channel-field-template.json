@@ -1,0 +1,298 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_CHANNEL_FIELD_TEMPLATE": [
+          {
+            "id": "2026071309000000042",
+            "version": 1,
+            "bizKey": "payment.channel-field-template.330001.merchantNo",
+            "name": "商户号",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 2000000001
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "fieldCode": {
+                "type": "STRING",
+                "value": "merchantNo"
+              },
+              "fieldLabel": {
+                "type": "STRING",
+                "value": "商户号"
+              },
+              "componentType": {
+                "type": "STRING",
+                "value": "input"
+              },
+              "dataType": {
+                "type": "STRING",
+                "value": "string"
+              },
+              "requiredFlag": {
+                "type": "INT",
+                "value": 1
+              },
+              "sensitiveFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "encryptedFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "maskedFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "fileReferenceFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "fieldGroup": {
+                "type": "STRING",
+                "value": "基础信息"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000043",
+            "version": 1,
+            "bizKey": "payment.channel-field-template.330001.apiSecret",
+            "name": "接口密钥",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 2000000002
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "fieldCode": {
+                "type": "STRING",
+                "value": "apiSecret"
+              },
+              "fieldLabel": {
+                "type": "STRING",
+                "value": "接口密钥"
+              },
+              "componentType": {
+                "type": "STRING",
+                "value": "password"
+              },
+              "dataType": {
+                "type": "STRING",
+                "value": "string"
+              },
+              "requiredFlag": {
+                "type": "INT",
+                "value": 1
+              },
+              "sensitiveFlag": {
+                "type": "INT",
+                "value": 1
+              },
+              "encryptedFlag": {
+                "type": "INT",
+                "value": 1
+              },
+              "maskedFlag": {
+                "type": "INT",
+                "value": 1
+              },
+              "fileReferenceFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "fieldGroup": {
+                "type": "STRING",
+                "value": "安全凭证"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000044",
+            "version": 1,
+            "bizKey": "payment.channel-field-template.330001.certificateFileId",
+            "name": "商户证书文件",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 2000000003
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "fieldCode": {
+                "type": "STRING",
+                "value": "certificateFileId"
+              },
+              "fieldLabel": {
+                "type": "STRING",
+                "value": "商户证书文件"
+              },
+              "componentType": {
+                "type": "STRING",
+                "value": "fileId"
+              },
+              "dataType": {
+                "type": "STRING",
+                "value": "fileId"
+              },
+              "requiredFlag": {
+                "type": "INT",
+                "value": 1
+              },
+              "sensitiveFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "encryptedFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "maskedFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "fileReferenceFlag": {
+                "type": "INT",
+                "value": 1
+              },
+              "fieldGroup": {
+                "type": "STRING",
+                "value": "安全凭证"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000045",
+            "version": 1,
+            "bizKey": "payment.channel-field-template.330001.mangoPayScenario",
+            "name": "芒果支付场景",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 2000000004
+              },
+              "channelId": {
+                "type": "LONG",
+                "value": 330001
+              },
+              "fieldCode": {
+                "type": "STRING",
+                "value": "mangoPayScenario"
+              },
+              "fieldLabel": {
+                "type": "STRING",
+                "value": "芒果支付场景"
+              },
+              "componentType": {
+                "type": "STRING",
+                "value": "select"
+              },
+              "dataType": {
+                "type": "STRING",
+                "value": "string"
+              },
+              "requiredFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "sensitiveFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "encryptedFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "maskedFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "fileReferenceFlag": {
+                "type": "INT",
+                "value": 0
+              },
+              "optionJson": {
+                "type": "STRING",
+                "value": "[{\"label\": \"支付成功\", \"value\": \"SUCCESS\"}, {\"label\": \"支付处理中\", \"value\": \"PROCESSING\"}, {\"label\": \"支付失败\", \"value\": \"FAIL\"}]"
+              },
+              "fieldGroup": {
+                "type": "STRING",
+                "value": "场景控制"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

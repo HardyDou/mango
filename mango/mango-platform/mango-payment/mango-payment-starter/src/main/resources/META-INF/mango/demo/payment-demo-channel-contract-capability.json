@@ -1,0 +1,1330 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_CHANNEL_CONTRACT_CAPABILITY": [
+          {
+            "id": "2026071309000000087",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_WECHAT_QR.WEB",
+            "name": "PERSONAL_WECHAT_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333001
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000088",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.CORPORATE_OFFLINE_ACCOUNT.WEB",
+            "name": "CORPORATE_OFFLINE_ACCOUNT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333002
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332002
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000089",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_ALIPAY_H5.H5",
+            "name": "PERSONAL_ALIPAY_H5",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333003
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332003
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_H5"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "H5"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 30
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000090",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.CORPORATE_EBANK_REDIRECT.WEB",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333004
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332004
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 40
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000091",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331002.PERSONAL_WECHAT_QR.WEB",
+            "name": "PERSONAL_WECHAT_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333005
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331002
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332005
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 100
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000092",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331002.PERSONAL_ALIPAY_H5.H5",
+            "name": "PERSONAL_ALIPAY_H5",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333006
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331002
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332006
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_H5"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "H5"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 100
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000093",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_UNIONPAY_QR.WEB",
+            "name": "PERSONAL_UNIONPAY_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333007
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332007
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_UNIONPAY_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 15
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000094",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_DEBIT_QUICK.WEB",
+            "name": "PERSONAL_DEBIT_QUICK",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333008
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332008
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_DEBIT_QUICK"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 16
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000095",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_CREDIT_QUICK.WEB",
+            "name": "PERSONAL_CREDIT_QUICK",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333009
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332009
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_CREDIT_QUICK"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 17
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000096",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_WALLET_QUICK.WEB",
+            "name": "PERSONAL_WALLET_QUICK",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333010
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332010
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WALLET_QUICK"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 18
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000097",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_ALIPAY_QR.WEB",
+            "name": "PERSONAL_ALIPAY_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333011
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332011
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 31
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000098",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_ALIPAY_PC.WEB",
+            "name": "PERSONAL_ALIPAY_PC",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333012
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332012
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_PC"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 32
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000099",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331001.PERSONAL_EBANK_REDIRECT.WEB",
+            "name": "PERSONAL_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333013
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331001
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332013
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 33
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000100",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331004.CORPORATE_OFFLINE_ACCOUNT.WEB",
+            "name": "CORPORATE_OFFLINE_ACCOUNT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333014
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331004
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332014
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000101",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331003.CORPORATE_EBANK_REDIRECT.WEB",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333015
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331003
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332015
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000102",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331005.PERSONAL_WECHAT_QR.WEB",
+            "name": "PERSONAL_WECHAT_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333016
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331005
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000103",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331005.PERSONAL_ALIPAY_QR.WEB",
+            "name": "PERSONAL_ALIPAY_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333017
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331005
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332011
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 11
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000104",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331005.PERSONAL_ALIPAY_PC.WEB",
+            "name": "PERSONAL_ALIPAY_PC",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333018
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331005
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332012
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_PC"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 5000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 12
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000105",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331005.PERSONAL_EBANK_REDIRECT.WEB",
+            "name": "PERSONAL_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333019
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331005
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332013
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 13
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000106",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331005.CORPORATE_EBANK_REDIRECT.WEB",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333020
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331005
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332004
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 14
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000107",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331007.CORPORATE_EBANK_REDIRECT.WEB",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333021
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331007
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332015
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000108",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331008.CORPORATE_OFFLINE_ACCOUNT.WEB",
+            "name": "CORPORATE_OFFLINE_ACCOUNT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333022
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331008
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332014
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000109",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331009.PERSONAL_WECHAT_QR.WEB",
+            "name": "PERSONAL_WECHAT_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333023
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331009
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332017
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "feeRate": {
+                "type": "DECIMAL",
+                "value": 0.002
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 1000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 30
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000110",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331009.PERSONAL_ALIPAY_QR.WEB",
+            "name": "PERSONAL_ALIPAY_QR",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333024
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331009
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332016
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_QR"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "feeRate": {
+                "type": "DECIMAL",
+                "value": 0.002
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 1000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 31
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000111",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331009.PERSONAL_EBANK_REDIRECT.WEB",
+            "name": "PERSONAL_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333025
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331009
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332018
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "feeRate": {
+                "type": "DECIMAL",
+                "value": 0.002
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 32
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000112",
+            "version": 1,
+            "bizKey": "payment.channel-contract-capability.331009.CORPORATE_EBANK_REDIRECT.WEB",
+            "name": "CORPORATE_EBANK_REDIRECT",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 333026
+              },
+              "contractId": {
+                "type": "LONG",
+                "value": 331009
+              },
+              "channelCapabilityId": {
+                "type": "LONG",
+                "value": 332019
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "terminalType": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "feeRate": {
+                "type": "DECIMAL",
+                "value": 0.002
+              },
+              "minAmount": {
+                "type": "LONG",
+                "value": 1
+              },
+              "maxAmount": {
+                "type": "LONG",
+                "value": 20000000
+              },
+              "priority": {
+                "type": "INT",
+                "value": 33
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

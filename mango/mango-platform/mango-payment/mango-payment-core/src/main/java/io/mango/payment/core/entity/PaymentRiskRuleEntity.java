@@ -3,14 +3,13 @@ package io.mango.payment.core.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.mango.infra.persistence.api.entity.AuditableEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("payment_risk_rule")
-public class PaymentRiskRuleEntity extends AuditableEntity {
+public class PaymentRiskRuleEntity extends PaymentBaseEntity {
 
     private String ruleCode;
 
@@ -39,8 +38,6 @@ public class PaymentRiskRuleEntity extends AuditableEntity {
     private Integer priority;
 
     private Integer status;
-
-    private Long tenantId;
 
     @TableLogic
     @TableField("del_flag")

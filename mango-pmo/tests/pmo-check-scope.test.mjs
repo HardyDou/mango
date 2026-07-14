@@ -61,6 +61,10 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
   );
   assert.match(
     workflow,
+    /Build and verify the reproducible PMO package\n\s+if: steps\.scope\.outputs\.pmo == 'true' \|\| steps\.scope\.outputs\.distribution == 'true' \|\| steps\.scope\.outputs\.backend_mode == 'governance'[\s\S]*?build-package\.mjs[\s\S]*?check-package\.mjs/,
+  );
+  assert.match(
+    workflow,
     /Build the architecture gate prerequisites[\s\S]*?-pl :mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,
   );
   assert.match(

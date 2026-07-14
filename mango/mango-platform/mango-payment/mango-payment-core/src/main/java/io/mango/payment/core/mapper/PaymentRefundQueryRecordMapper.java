@@ -11,11 +11,11 @@ public interface PaymentRefundQueryRecordMapper extends BaseMapper<PaymentRefund
 
     @InterceptorIgnore(tenantLine = "true")
     long countByTenantAndRefundOrderNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("refundOrderNo") String refundOrderNo);
 
     @InterceptorIgnore(tenantLine = "true")
     PaymentRefundQueryRecordEntity selectLastByTenantAndRefundOrderNo(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("refundOrderNo") String refundOrderNo);
 }

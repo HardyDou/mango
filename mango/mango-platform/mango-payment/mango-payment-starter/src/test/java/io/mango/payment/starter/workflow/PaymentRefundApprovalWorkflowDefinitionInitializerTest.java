@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.payment.api.PaymentCode;
-import io.mango.payment.core.service.PaymentRefundApprovalWorkflowDefinitionService;
+import io.mango.payment.api.enums.PaymentCode;
+import io.mango.payment.core.integration.PaymentRemoteOutcome;
+import io.mango.payment.core.service.PaymentRefundApprovalWorkflowPublisher;
 import io.mango.payment.starter.PaymentProperties;
 import io.mango.workflow.api.WorkflowDefinitionApi;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
@@ -71,7 +72,7 @@ class PaymentRefundApprovalWorkflowDefinitionInitializerTest {
         return properties;
     }
 
-    private static class TestWorkflowDefinitionService extends PaymentRefundApprovalWorkflowDefinitionService {
+    private static class TestWorkflowDefinitionService extends PaymentRefundApprovalWorkflowPublisher {
 
         private boolean called;
         private String tenantId;
@@ -84,13 +85,13 @@ class PaymentRefundApprovalWorkflowDefinitionInitializerTest {
         }
 
         @Override
-        public R<WorkflowDeployVO> ensureRefundApprovalDefinition() {
+        public PaymentRemoteOutcome<WorkflowDeployVO> ensureRefundApprovalDefinition() {
             called = true;
             tenantId = MangoContextHolder.tenantId();
             userId = MangoContextHolder.userId();
             principalName = MangoContextHolder.principalName();
             appCode = MangoContextHolder.appCode();
-            return R.ok();
+            return new PaymentRemoteOutcome<>(true, null, null);
         }
     }
 

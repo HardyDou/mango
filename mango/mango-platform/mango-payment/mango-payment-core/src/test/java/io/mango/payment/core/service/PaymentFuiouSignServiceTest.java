@@ -11,9 +11,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PaymentFuiouSignServiceTest {
+class PaymentFuiouSignerTest {
 
-    private final PaymentFuiouSignService signService = new PaymentFuiouSignService();
+    private final PaymentFuiouSigner signService = new PaymentFuiouSigner();
 
     @Test
     @DisplayName("canonicalText should sort fields and skip sign and reserved fields")

@@ -24,7 +24,7 @@
            and rri.contract_capability_id = #{contractCapabilityId}
     </select>
 
-    <select id="selectRouteCapability" resultType="io.mango.payment.core.entity.PaymentChannelContractCapability">
+    <select id="selectRouteCapability" resultType="io.mango.payment.core.entity.PaymentChannelContractCapabilityEntity">
         select ccc.id,
                ccc.contract_id as contractId,
                ccc.channel_capability_id as channelCapabilityId,
@@ -208,7 +208,7 @@
           and rr.del_flag = 0
     </select>
 
-    <select id="selectExpiringCertificates" resultType="io.mango.payment.api.vo.PaymentChannelCertificateExpiryVO">
+    <select id="selectExpiringCertificates" resultType="io.mango.payment.core.model.projection.PaymentChannelCertificateExpiryProjection">
         select cc.id as contractId,
                cc.contract_name as contractName,
                ccc.id as contractCapabilityId,

@@ -1,15 +1,16 @@
 package io.mango.payment.core.service.impl;
 
+import static io.mango.payment.core.model.PaymentProjectionConverter.toApi;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.CreatePaymentOpenOrderCommand;
 import io.mango.payment.api.command.CreatePaymentOpenPayCommand;
 import io.mango.payment.api.command.CreatePaymentOpenRefundCommand;
@@ -24,9 +25,9 @@ import io.mango.payment.api.vo.PaymentOpenReceiptVO;
 import io.mango.payment.api.vo.PaymentOpenRefundOrderVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
-import io.mango.payment.core.entity.PaymentApplication;
+import io.mango.payment.core.entity.PaymentApplicationEntity;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
-import io.mango.payment.core.entity.PaymentCashierConfig;
+import io.mango.payment.core.entity.PaymentCashierConfigEntity;
 import io.mango.payment.core.entity.PaymentOpenApiNonceEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentBusinessOrderMapper;
@@ -37,10 +38,10 @@ import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
 import io.mango.payment.core.service.IPaymentCashierService;
 import io.mango.payment.core.service.IPaymentOpenApiService;
 import io.mango.payment.core.service.PaymentContextSupport;
-import io.mango.payment.core.service.PaymentOrderStatusFlowService;
-import io.mango.payment.core.service.PaymentOrderStateService;
-import io.mango.payment.core.service.PaymentRefundApplyService;
-import io.mango.payment.core.service.PaymentSensitiveValueService;
+import io.mango.payment.core.service.PaymentOrderStatusFlowRecorder;
+import io.mango.payment.core.service.PaymentOrderStatePolicy;
+import io.mango.payment.core.service.PaymentRefundApplyCoordinator;
+import io.mango.payment.core.service.PaymentSensitiveValueCodec;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -81,18 +82,18 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
     private final PaymentOrderMapper paymentOrderMapper;
     private final PaymentRefundOrderMapper refundOrderMapper;
     private final IPaymentCashierService cashierService;
-    private final PaymentOrderStateService orderStateService;
-    private final PaymentOrderStatusFlowService statusFlowService;
-    private final PaymentRefundApplyService refundApplyService;
-    private final PaymentSensitiveValueService sensitiveValueService;
+    private final PaymentOrderStatePolicy orderStateService;
+    private final PaymentOrderStatusFlowRecorder statusFlowService;
+    private final PaymentRefundApplyCoordinator refundApplyService;
+    private final PaymentSensitiveValueCodec sensitiveValueService;
     private final ObjectMapper objectMapper;
     private final PlatformTransactionManager transactionManager;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<PaymentOpenBusinessOrderVO> createOrder(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+    public PaymentOpenBusinessOrderVO createOrder(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
                 request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), request.getBody());
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
@@ -102,9 +103,9 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             PaymentBusinessOrderEntity existing = selectBusinessOrder(application, command.getBizOrderNo());
             if (existing != null) {
                 Require.isTrue(isSameOrder(existing, command), PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT);
-                return R.ok(toBusinessOrderVO(existing));
+                return toBusinessOrderVO(existing);
             }
-            PaymentCashierConfig cashierConfig = selectDefaultCashier(application);
+            PaymentCashierConfigEntity cashierConfig = selectDefaultCashier(application);
             Long subjectId = resolveSubjectId(command, cashierConfig);
             PaymentBusinessOrderEntity entity = new PaymentBusinessOrderEntity();
             entity.setBizOrderNo(command.getBizOrderNo().trim());
@@ -124,63 +125,63 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             businessOrderMapper.insert(entity);
             statusFlowService.record(
                     application.getTenantId(),
-                    PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS,
+                    PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS,
                     entity.getId(),
                     entity.getBizOrderNo(),
                     null,
                     entity.getStatus(),
-                    PaymentOrderStatusFlowService.SOURCE_OPENAPI_CREATE,
+                    PaymentOrderStatusFlowRecorder.SOURCE_OPENAPI_CREATE,
                     entity.getBizOrderNo(),
                     LocalDateTime.now(),
                     "开放接口创建业务订单");
-            return R.ok(toBusinessOrderVO(entity));
+            return toBusinessOrderVO(entity);
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
     @Override
-    public R<PaymentOpenBusinessOrderVO> detailOrder(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
-                request.getNonce(), request.getSignature(), "GET", request.getRequestPath(), EMPTY_BODY);
+    public PaymentOpenBusinessOrderVO detailOrder(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+                request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), EMPTY_BODY);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             bindOpenApiContext(application);
             PaymentBusinessOrderEntity entity = selectRequiredBusinessOrder(application, request.getBizOrderNo());
-            return R.ok(toBusinessOrderVO(entity));
+            return toBusinessOrderVO(entity);
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
     @Override
-    public R<PaymentOpenCashierVO> cashier(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+    public PaymentOpenCashierVO cashier(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
                 request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), normalizeBody(request.getBody()));
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             bindOpenApiContext(application);
             PaymentBusinessOrderEntity order = selectRequiredBusinessOrder(application, request.getBizOrderNo());
             orderStateService.requireBusinessOrderPayable(order.getStatus(), order.getExpireTime());
-            PaymentCashierConfig cashierConfig = selectCashier(application, order);
+            PaymentCashierConfigEntity cashierConfig = selectCashier(application, order);
             PaymentOpenCashierVO vo = new PaymentOpenCashierVO();
             vo.setCashierConfigId(cashierConfig.getId());
             vo.setBusinessOrderId(order.getId());
             vo.setBizOrderNo(order.getBizOrderNo());
             vo.setCashierUrl("/payment/cashier-configs/" + cashierConfig.getId() + "/cashier?businessOrderId=" + order.getId());
             vo.setExpireTime(order.getExpireTime());
-            return R.ok(vo);
+            return vo;
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
     @Override
-    public R<PaymentOpenPaymentOrderVO> pay(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+    public PaymentOpenPaymentOrderVO pay(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
                 request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), request.getBody());
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
@@ -188,89 +189,89 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             CreatePaymentOpenPayCommand command = parsePayCommand(request.getBody());
             PaymentBusinessOrderEntity order = selectRequiredBusinessOrder(application, request.getBizOrderNo());
             orderStateService.requireBusinessOrderPayable(order.getStatus(), order.getExpireTime());
-            PaymentCashierConfig cashierConfig = selectCashier(application, order);
+            PaymentCashierConfigEntity cashierConfig = selectCashier(application, order);
             PaymentCashierPayCommand cashierCommand = new PaymentCashierPayCommand();
             cashierCommand.setCashierConfigId(cashierConfig.getId());
             cashierCommand.setBusinessOrderId(order.getId());
             cashierCommand.setMethodCode(command.getMethodCode().trim());
             cashierCommand.setClientIp(PaymentContextSupport.trimToNull(request.getClientIp()));
-            PaymentCashierPayResultVO payResult = cashierService.pay(cashierCommand).getData();
-            Require.notNull(payResult, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付结果不能为空");
+            PaymentCashierPayResultVO payResult = cashierService.pay(cashierCommand);
+            Require.notNull(payResult, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "支付结果不能为空");
             PaymentOrderVO paymentOrder = selectRequiredOpenPaymentOrder(application, payResult.getPayOrderNo());
-            return R.ok(toOpenPaymentOrderVO(paymentOrder, payResult));
+            return toOpenPaymentOrderVO(paymentOrder, payResult);
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
     @Override
-    public R<PaymentOpenPaymentOrderVO> detailPaymentOrder(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
-                request.getNonce(), request.getSignature(), "GET", request.getRequestPath(), EMPTY_BODY);
+    public PaymentOpenPaymentOrderVO detailPaymentOrder(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+                request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), EMPTY_BODY);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             bindOpenApiContext(application);
             PaymentOrderVO paymentOrder = selectRequiredOpenPaymentOrder(application, request.getPayOrderNo());
-            return R.ok(toOpenPaymentOrderVO(paymentOrder, null));
+            return toOpenPaymentOrderVO(paymentOrder, null);
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
     @Override
-    public R<PaymentOpenRefundOrderVO> refund(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+    public PaymentOpenRefundOrderVO refund(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
                 request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), request.getBody());
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             bindOpenApiContext(application);
             CreatePaymentOpenRefundCommand command = parseRefundCommand(request.getBody());
-            return R.ok(refundApplyService.applyRefund(
+            return refundApplyService.applyRefund(
                     application,
                     command,
-                    PaymentOrderStatusFlowService.SOURCE_OPENAPI_REFUND,
+                    PaymentOrderStatusFlowRecorder.SOURCE_OPENAPI_REFUND,
                     command.getBizRefundNo().trim(),
-                    true));
+                    true);
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
     @Override
-    public R<PaymentOpenRefundOrderVO> detailRefund(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
-                request.getNonce(), request.getSignature(), "GET", request.getRequestPath(), EMPTY_BODY);
+    public PaymentOpenRefundOrderVO detailRefund(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+                request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), EMPTY_BODY);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             bindOpenApiContext(application);
             PaymentRefundOrderVO refundOrder = selectRequiredOpenRefundOrder(application, request.getBizRefundNo());
             refundOrder.setFlowNo(refundOrderMapper.selectLatestFlowNo(application.getTenantId(), refundOrder.getId()));
-            return R.ok(toOpenRefundOrderVO(refundOrder));
+            return toOpenRefundOrderVO(refundOrder);
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
     @Override
-    public R<PaymentOpenReceiptVO> receipt(PaymentOpenRequestCommand request) {
-        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "开放接口请求不能为空");
-        PaymentApplication application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
-                request.getNonce(), request.getSignature(), "GET", request.getRequestPath(), EMPTY_BODY);
+    public PaymentOpenReceiptVO receipt(PaymentOpenRequestCommand request) {
+        Require.notNull(request, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "开放接口请求不能为空");
+        PaymentApplicationEntity application = authenticate(request.getAppId(), request.getTenantId(), request.getTimestamp(),
+                request.getNonce(), request.getSignature(), "POST", request.getRequestPath(), EMPTY_BODY);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             bindOpenApiContext(application);
             PaymentOrderVO paymentOrder = selectRequiredSuccessfulPaymentOrder(application, request.getBizOrderNo());
             paymentOrder.setFlowNo(paymentOrderMapper.selectLatestFlowNo(application.getTenantId(), paymentOrder.getId()));
-            return R.ok(toOpenReceiptVO(paymentOrder));
+            return toOpenReceiptVO(paymentOrder);
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
-    private PaymentApplication authenticate(
+    private PaymentApplicationEntity authenticate(
             String appId,
             String tenantId,
             String timestamp,
@@ -279,30 +280,30 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             String method,
             String requestPath,
             String body) {
-        Require.notBlank(appId, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "AppId 不能为空");
-        Require.notBlank(tenantId, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "tenantId 不能为空");
-        Require.notBlank(timestamp, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "timestamp 不能为空");
-        Require.notBlank(nonce, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "nonce 不能为空");
-        Require.notBlank(signature, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "signature 不能为空");
-        Require.notBlank(requestPath, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "请求路径不能为空");
-        Long resolvedTenantId = parseTenantId(tenantId);
+        Require.notBlank(appId, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "AppId 不能为空");
+        Require.notBlank(tenantId, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "tenantId 不能为空");
+        Require.notBlank(timestamp, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "timestamp 不能为空");
+        Require.notBlank(nonce, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "nonce 不能为空");
+        Require.notBlank(signature, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "signature 不能为空");
+        Require.notBlank(requestPath, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "请求路径不能为空");
+        String resolvedTenantId = tenantId.trim();
         long epochSeconds = parseTimestamp(timestamp);
         long nowSeconds = Instant.now().getEpochSecond();
         Require.isTrue(Math.abs(nowSeconds - epochSeconds) <= SIGNATURE_WINDOW_SECONDS,
-                PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "timestamp 已超过有效窗口");
+                PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "timestamp 已超过有效窗口");
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(previous.withTenantId(String.valueOf(resolvedTenantId)));
-            PaymentApplication application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplication>()
-                    .eq(PaymentApplication::getTenantId, resolvedTenantId)
-                    .eq(PaymentApplication::getAppId, appId.trim()));
-            Require.notNull(application, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "支付应用认证失败");
-            Require.isTrue(Integer.valueOf(1).equals(application.getStatus()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "支付应用未启用");
-            Require.isTrue(Integer.valueOf(1).equals(application.getSecretConfigured()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "支付应用密钥未配置");
-            Require.notBlank(application.getAppSecret(), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "支付应用密钥未配置");
-            Require.isTrue("HMAC_SHA256".equals(application.getSignAlgorithm()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "支付应用签名算法不支持");
+            PaymentApplicationEntity application = applicationMapper.selectOne(new LambdaQueryWrapper<PaymentApplicationEntity>()
+                    .eq(PaymentApplicationEntity::getTenantId, resolvedTenantId)
+                    .eq(PaymentApplicationEntity::getAppId, appId.trim()));
+            Require.notNull(application, PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "支付应用认证失败");
+            Require.isTrue(Integer.valueOf(1).equals(application.getStatus()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "支付应用未启用");
+            Require.isTrue(Integer.valueOf(1).equals(application.getSecretConfigured()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "支付应用密钥未配置");
+            Require.notBlank(application.getAppSecret(), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "支付应用密钥未配置");
+            Require.isTrue("HMAC_SHA256".equals(application.getSignAlgorithm()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "支付应用签名算法不支持");
             String expectedSignature = sign(sensitiveValueService.decrypt(application.getAppSecret()), canonical(method, requestPath, body, timestamp, nonce));
-            Require.isTrue(Objects.equals(expectedSignature, signature.trim()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "signature 不正确");
+            Require.isTrue(Objects.equals(expectedSignature, signature.trim()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "signature 不正确");
             recordNonce(application, nonce.trim(), epochSeconds);
             return application;
         } finally {
@@ -310,7 +311,7 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
         }
     }
 
-    private void recordNonce(PaymentApplication application, String nonce, long timestampSeconds) {
+    private void recordNonce(PaymentApplicationEntity application, String nonce, long timestampSeconds) {
         TransactionTemplate template = new TransactionTemplate(transactionManager);
         template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         template.executeWithoutResult(status -> {
@@ -327,7 +328,7 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             try {
                 nonceMapper.insert(entity);
             } catch (DuplicateKeyException ex) {
-                throw new BizException(PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getCode(), PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getMessage(), ex);
+                Require.fail(PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY, PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getMessage(), ex);
             }
         });
     }
@@ -346,7 +347,7 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             mac.init(new SecretKeySpec(appSecret.getBytes(StandardCharsets.UTF_8), SIGN_ALGORITHM));
             return Base64.getEncoder().encodeToString(mac.doFinal(canonical.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
-            throw new BizException(PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "支付开放接口签名计算失败", ex);
+            return Require.fail(PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "支付开放接口签名计算失败", ex);
         }
     }
 
@@ -359,130 +360,130 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             }
             return builder.toString();
         } catch (NoSuchAlgorithmException ex) {
-            throw new BizException(PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "支付开放接口摘要计算失败", ex);
+            return Require.fail(PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "支付开放接口摘要计算失败", ex);
         }
     }
 
     private CreatePaymentOpenOrderCommand parseCreateCommand(String body) {
-        Require.notBlank(body, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "创建业务订单请求体不能为空");
+        Require.notBlank(body, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "创建业务订单请求体不能为空");
         try {
             return objectMapper.readValue(body, CreatePaymentOpenOrderCommand.class);
         } catch (JsonProcessingException ex) {
-            throw new BizException(PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "创建业务订单请求体不是有效 JSON", ex);
+            return Require.fail(PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "创建业务订单请求体不是有效 JSON", ex);
         }
     }
 
     private CreatePaymentOpenPayCommand parsePayCommand(String body) {
-        Require.notBlank(body, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "发起支付请求体不能为空");
+        Require.notBlank(body, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "发起支付请求体不能为空");
         try {
             CreatePaymentOpenPayCommand command = objectMapper.readValue(body, CreatePaymentOpenPayCommand.class);
-            Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "发起支付请求体不能为空");
-            Require.notBlank(command.getMethodCode(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付方式编码不能为空");
+            Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "发起支付请求体不能为空");
+            Require.notBlank(command.getMethodCode(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "支付方式编码不能为空");
             return command;
         } catch (JsonProcessingException ex) {
-            throw new BizException(PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "发起支付请求体不是有效 JSON", ex);
+            return Require.fail(PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "发起支付请求体不是有效 JSON", ex);
         }
     }
 
     private CreatePaymentOpenRefundCommand parseRefundCommand(String body) {
-        Require.notBlank(body, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "发起退款请求体不能为空");
+        Require.notBlank(body, PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "发起退款请求体不能为空");
         try {
             CreatePaymentOpenRefundCommand command = objectMapper.readValue(body, CreatePaymentOpenRefundCommand.class);
-            Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "发起退款请求体不能为空");
+            Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "发起退款请求体不能为空");
             return command;
         } catch (JsonProcessingException ex) {
-            throw new BizException(PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "发起退款请求体不是有效 JSON", ex);
+            return Require.fail(PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "发起退款请求体不是有效 JSON", ex);
         }
     }
 
-    private void validateCreateCommand(CreatePaymentOpenOrderCommand command, PaymentApplication application) {
+    private void validateCreateCommand(CreatePaymentOpenOrderCommand command, PaymentApplicationEntity application) {
         Require.notNull(command, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID);
-        Require.notNull(command.getTenantId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "租户 ID 不能为空");
-        Require.isTrue(application.getTenantId().equals(command.getTenantId()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "请求租户与签名租户不一致");
-        Require.notBlank(command.getAppId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "AppId 不能为空");
-        Require.isTrue(application.getAppId().equals(command.getAppId().trim()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "请求 AppId 与签名 AppId 不一致");
-        Require.notBlank(command.getBizOrderNo(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "业务订单号不能为空");
-        Require.notBlank(command.getTitle(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "订单标题不能为空");
+        Require.notNull(command.getTenantId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "租户 ID 不能为空");
+        Require.isTrue(application.getTenantId().equals(command.getTenantId()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "请求租户与签名租户不一致");
+        Require.notBlank(command.getAppId(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "AppId 不能为空");
+        Require.isTrue(application.getAppId().equals(command.getAppId().trim()), PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "请求 AppId 与签名 AppId 不一致");
+        Require.notBlank(command.getBizOrderNo(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "业务订单号不能为空");
+        Require.notBlank(command.getTitle(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "订单标题不能为空");
         Require.notNull(command.getAmount(), PaymentCode.PAYMENT_AMOUNT_INVALID);
         Require.isTrue(command.getAmount() > 0, PaymentCode.PAYMENT_AMOUNT_INVALID);
-        Require.notBlank(command.getCurrency(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "币种不能为空");
+        Require.notBlank(command.getCurrency(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "币种不能为空");
         Require.isTrue(DEFAULT_CURRENCY.equals(command.getCurrency().trim().toUpperCase(Locale.ROOT)),
-                PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "当前仅支持 CNY 币种");
-        Require.notNull(command.getExpireMinutes(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "订单有效分钟数不能为空");
-        Require.isTrue(command.getExpireMinutes() > 0, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "订单有效分钟数必须大于 0");
-        Require.notBlank(command.getNotifyUrl(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "业务通知地址不能为空");
-        Require.notBlank(command.getReturnUrl(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "业务返回地址不能为空");
+                PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "当前仅支持 CNY 币种");
+        Require.notNull(command.getExpireMinutes(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "订单有效分钟数不能为空");
+        Require.isTrue(command.getExpireMinutes() > 0, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "订单有效分钟数必须大于 0");
+        Require.notBlank(command.getNotifyUrl(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "业务通知地址不能为空");
+        Require.notBlank(command.getReturnUrl(), PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "业务返回地址不能为空");
     }
 
-    private PaymentBusinessOrderEntity selectBusinessOrder(PaymentApplication application, String bizOrderNo) {
-        Require.notBlank(bizOrderNo, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "业务订单号不能为空");
+    private PaymentBusinessOrderEntity selectBusinessOrder(PaymentApplicationEntity application, String bizOrderNo) {
+        Require.notBlank(bizOrderNo, PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "业务订单号不能为空");
         return businessOrderMapper.selectOne(new LambdaQueryWrapper<PaymentBusinessOrderEntity>()
                 .eq(PaymentBusinessOrderEntity::getTenantId, application.getTenantId())
                 .eq(PaymentBusinessOrderEntity::getAppCode, application.getAppId())
                 .eq(PaymentBusinessOrderEntity::getBizOrderNo, bizOrderNo.trim()));
     }
 
-    private PaymentBusinessOrderEntity selectRequiredBusinessOrder(PaymentApplication application, String bizOrderNo) {
+    private PaymentBusinessOrderEntity selectRequiredBusinessOrder(PaymentApplicationEntity application, String bizOrderNo) {
         PaymentBusinessOrderEntity entity = selectBusinessOrder(application, bizOrderNo);
         Require.notNull(entity, PaymentCode.PAYMENT_BUSINESS_ORDER_NOT_FOUND);
         return entity;
     }
 
-    private PaymentCashierConfig selectDefaultCashier(PaymentApplication application) {
-        PaymentCashierConfig config = cashierConfigMapper.selectOne(new LambdaQueryWrapper<PaymentCashierConfig>()
-                .eq(PaymentCashierConfig::getTenantId, application.getTenantId())
-                .eq(PaymentCashierConfig::getApplicationId, application.getId())
-                .eq(PaymentCashierConfig::getDefaultCashier, 1)
-                .eq(PaymentCashierConfig::getStatus, 1)
-                .orderByDesc(PaymentCashierConfig::getUpdatedAt)
+    private PaymentCashierConfigEntity selectDefaultCashier(PaymentApplicationEntity application) {
+        PaymentCashierConfigEntity config = cashierConfigMapper.selectOne(new LambdaQueryWrapper<PaymentCashierConfigEntity>()
+                .eq(PaymentCashierConfigEntity::getTenantId, application.getTenantId())
+                .eq(PaymentCashierConfigEntity::getApplicationId, application.getId())
+                .eq(PaymentCashierConfigEntity::getDefaultCashier, 1)
+                .eq(PaymentCashierConfigEntity::getStatus, 1)
+                .orderByDesc(PaymentCashierConfigEntity::getUpdatedAt)
                 .last("limit 1"));
-        Require.notNull(config, PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE.getCode(), "应用没有可用默认收银台");
+        Require.notNull(config, PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE, "应用没有可用默认收银台");
         return config;
     }
 
-    private PaymentCashierConfig selectCashier(PaymentApplication application, PaymentBusinessOrderEntity order) {
-        PaymentCashierConfig config = cashierConfigMapper.selectOne(new LambdaQueryWrapper<PaymentCashierConfig>()
-                .eq(PaymentCashierConfig::getTenantId, application.getTenantId())
-                .eq(PaymentCashierConfig::getApplicationId, application.getId())
-                .eq(PaymentCashierConfig::getDefaultCashier, 1)
-                .eq(PaymentCashierConfig::getStatus, 1)
+    private PaymentCashierConfigEntity selectCashier(PaymentApplicationEntity application, PaymentBusinessOrderEntity order) {
+        PaymentCashierConfigEntity config = cashierConfigMapper.selectOne(new LambdaQueryWrapper<PaymentCashierConfigEntity>()
+                .eq(PaymentCashierConfigEntity::getTenantId, application.getTenantId())
+                .eq(PaymentCashierConfigEntity::getApplicationId, application.getId())
+                .eq(PaymentCashierConfigEntity::getDefaultCashier, 1)
+                .eq(PaymentCashierConfigEntity::getStatus, 1)
                 .apply("find_in_set({0}, enterprise_subject_ids)", String.valueOf(order.getSubjectId()))
-                .orderByDesc(PaymentCashierConfig::getUpdatedAt)
+                .orderByDesc(PaymentCashierConfigEntity::getUpdatedAt)
                 .last("limit 1"));
-        Require.notNull(config, PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE.getCode(), "业务订单没有可用收银台");
+        Require.notNull(config, PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE, "业务订单没有可用收银台");
         return config;
     }
 
-    private PaymentOrderVO selectRequiredOpenPaymentOrder(PaymentApplication application, String payOrderNo) {
-        Require.notBlank(payOrderNo, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
-        PaymentOrderVO paymentOrder = paymentOrderMapper.selectOpenPaymentOrder(
-                application.getTenantId(), application.getAppId(), payOrderNo.trim());
+    private PaymentOrderVO selectRequiredOpenPaymentOrder(PaymentApplicationEntity application, String payOrderNo) {
+        Require.notBlank(payOrderNo, PaymentCode.PAYMENT_CASHIER_PAY_INVALID, "支付订单号不能为空");
+        PaymentOrderVO paymentOrder = toApi(paymentOrderMapper.selectOpenPaymentOrder(
+                application.getTenantId(), application.getAppId(), payOrderNo.trim()), PaymentOrderVO.class);
         Require.notNull(paymentOrder, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         paymentOrder.setFlowNo(paymentOrderMapper.selectLatestFlowNo(application.getTenantId(), paymentOrder.getId()));
         return paymentOrder;
     }
 
-    private PaymentOrderVO selectRequiredSuccessfulPaymentOrder(PaymentApplication application, String bizOrderNo) {
-        Require.notBlank(bizOrderNo, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "业务订单号不能为空");
-        PaymentOrderVO paymentOrder = paymentOrderMapper.selectSuccessfulOpenPaymentOrder(
-                application.getTenantId(), application.getAppId(), bizOrderNo.trim());
-        Require.notNull(paymentOrder, PaymentCode.PAYMENT_ORDER_NOT_FOUND.getCode(), "原成功支付订单不存在");
+    private PaymentOrderVO selectRequiredSuccessfulPaymentOrder(PaymentApplicationEntity application, String bizOrderNo) {
+        Require.notBlank(bizOrderNo, PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "业务订单号不能为空");
+        PaymentOrderVO paymentOrder = toApi(paymentOrderMapper.selectSuccessfulOpenPaymentOrder(
+                application.getTenantId(), application.getAppId(), bizOrderNo.trim()), PaymentOrderVO.class);
+        Require.notNull(paymentOrder, PaymentCode.PAYMENT_ORDER_NOT_FOUND, "原成功支付订单不存在");
         return paymentOrder;
     }
 
-    private PaymentRefundOrderVO selectRequiredOpenRefundOrder(PaymentApplication application, String bizRefundNo) {
-        Require.notBlank(bizRefundNo, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "业务退款单号不能为空");
-        PaymentRefundOrderVO refundOrder = refundOrderMapper.selectOpenRefundOrder(
-                application.getTenantId(), application.getAppId(), bizRefundNo.trim());
+    private PaymentRefundOrderVO selectRequiredOpenRefundOrder(PaymentApplicationEntity application, String bizRefundNo) {
+        Require.notBlank(bizRefundNo, PaymentCode.PAYMENT_REFUND_ORDER_INVALID, "业务退款单号不能为空");
+        PaymentRefundOrderVO refundOrder = toApi(refundOrderMapper.selectOpenRefundOrder(
+                application.getTenantId(), application.getAppId(), bizRefundNo.trim()), PaymentRefundOrderVO.class);
         Require.notNull(refundOrder, PaymentCode.PAYMENT_REFUND_ORDER_NOT_FOUND);
         return refundOrder;
     }
 
-    private Long resolveSubjectId(CreatePaymentOpenOrderCommand command, PaymentCashierConfig cashierConfig) {
+    private Long resolveSubjectId(CreatePaymentOpenOrderCommand command, PaymentCashierConfigEntity cashierConfig) {
         List<Long> allowedSubjectIds = parseIds(cashierConfig.getEnterpriseSubjectIds());
-        Require.notEmpty(allowedSubjectIds, PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE.getCode(), "默认收银台缺少企业主体");
+        Require.notEmpty(allowedSubjectIds, PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE, "默认收银台缺少企业主体");
         Long subjectId = command.getSubjectId() == null ? allowedSubjectIds.get(0) : command.getSubjectId();
-        Require.isTrue(allowedSubjectIds.contains(subjectId), PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE.getCode(), "企业主体不在默认收银台允许范围内");
+        Require.isTrue(allowedSubjectIds.contains(subjectId), PaymentCode.PAYMENT_OPENAPI_CASHIER_UNAVAILABLE, "企业主体不在默认收银台允许范围内");
         return subjectId;
     }
 
@@ -513,11 +514,6 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
         vo.setCreateTime(entity.getCreatedAt());
         vo.setUpdateTime(entity.getUpdatedAt());
         return vo;
-    }
-
-    private PaymentOpenPaymentOrderVO toOpenPaymentOrderVO(PaymentApplication application, PaymentCashierPayResultVO payResult) {
-        PaymentOrderVO paymentOrder = selectRequiredOpenPaymentOrder(application, payResult.getPayOrderNo());
-        return toOpenPaymentOrderVO(paymentOrder, payResult);
     }
 
     private PaymentOpenPaymentOrderVO toOpenPaymentOrderVO(PaymentOrderVO paymentOrder, PaymentCashierPayResultVO payResult) {
@@ -606,7 +602,7 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
         try {
             return objectMapper.writeValueAsString(extendInfo);
         } catch (JsonProcessingException ex) {
-            throw new BizException(PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID.getCode(), "业务扩展信息不是有效 JSON", ex);
+            return Require.fail(PaymentCode.PAYMENT_BUSINESS_ORDER_INVALID, "业务扩展信息不是有效 JSON", ex);
         }
     }
 
@@ -622,23 +618,15 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
                 .toList();
     }
 
-    private Long parseTenantId(String tenantId) {
-        try {
-            return Long.valueOf(tenantId.trim());
-        } catch (NumberFormatException ex) {
-            throw new BizException(PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "tenantId 不是有效数字", ex);
-        }
-    }
-
     private long parseTimestamp(String timestamp) {
         try {
             return Long.parseLong(timestamp.trim());
         } catch (NumberFormatException ex) {
-            throw new BizException(PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID.getCode(), "timestamp 不是有效数字", ex);
+            return Require.fail(PaymentCode.PAYMENT_OPENAPI_AUTH_INVALID, "timestamp 不是有效数字", ex);
         }
     }
 
-    private void bindOpenApiContext(PaymentApplication application) {
+    private void bindOpenApiContext(PaymentApplicationEntity application) {
         MangoContextHolder.update(snapshot -> snapshot
                 .withTenantId(String.valueOf(application.getTenantId()))
                 .withRequest(null, null, String.valueOf(application.getTenantId()), application.getAppId(), null));

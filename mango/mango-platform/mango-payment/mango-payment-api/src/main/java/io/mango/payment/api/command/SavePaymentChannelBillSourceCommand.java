@@ -3,6 +3,7 @@ package io.mango.payment.api.command;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -15,6 +16,7 @@ public class SavePaymentChannelBillSourceCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "配置 ID，更新时必填")
+    @Positive(message = "配置 ID 必须大于 0")
     private Long id;
 
     @NotNull(message = "签约通道不能为空")

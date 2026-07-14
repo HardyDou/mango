@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.mango.payment.core.mapper.PaymentVirtualChannelPaymentMapper">
 
-    <select id="selectByTenantAndPayOrderNo" resultType="io.mango.payment.core.entity.PaymentVirtualChannelPayment">
+    <select id="selectByTenantAndPayOrderNo" resultType="io.mango.payment.core.entity.PaymentVirtualChannelPaymentEntity">
         select id,
                virtual_payment_no as virtualPaymentNo,
                pay_order_no as payOrderNo,

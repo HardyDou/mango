@@ -9,7 +9,7 @@ import io.mango.payment.api.command.CreatePaymentBusinessOrderCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentBusinessOrderStatusVO;
 import io.mango.payment.api.vo.PaymentBusinessOrderVO;
-import io.mango.payment.core.service.PaymentBusinessOrderService;
+import io.mango.payment.core.service.IPaymentBusinessOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +33,7 @@ import java.util.List;
 @Tag(name = "支付业务订单", description = "业务系统提交到支付平台的支付意图和状态接口")
 public class PaymentBusinessOrderController implements PaymentBusinessOrderApi {
 
-    private final PaymentBusinessOrderService businessOrderService;
+    private final IPaymentBusinessOrderService businessOrderService;
 
     @Override
     @GetMapping("/page")
@@ -47,7 +47,7 @@ public class PaymentBusinessOrderController implements PaymentBusinessOrderApi {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:business-order:query")
     @Operation(summary = "查询业务订单详情", description = "按业务订单 ID 查询支付意图详情")
-    public R<PaymentBusinessOrderVO> detailBusinessOrder(@Parameter(description = "业务订单 ID", required = true) @RequestParam Long id) {
+    public R<PaymentBusinessOrderVO> detailBusinessOrder(@Parameter(description = "业务订单 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(businessOrderService.detailBusinessOrder(id));
     }
 

@@ -1,21 +1,22 @@
 package io.mango.payment.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
-import java.util.Map;
 
 @Data
 @Schema(description = "支付开放接口创建业务订单命令")
 public class CreatePaymentOpenOrderCommand {
 
     @Schema(description = "租户 ID")
-    @NotNull(message = "租户 ID 不能为空")
-    private Long tenantId;
+    @NotBlank(message = "租户 ID 不能为空")
+    @Size(max = 64, message = "租户 ID 长度不能超过 64")
+    private String tenantId;
 
     @Schema(description = "支付应用 AppId")
     @NotBlank(message = "AppId 不能为空")
@@ -33,6 +34,7 @@ public class CreatePaymentOpenOrderCommand {
     private String title;
 
     @Schema(description = "企业主体 ID。未传时使用应用默认收银台允许的第一个企业主体")
+    @Positive(message = "企业主体 ID 必须大于 0")
     private Long subjectId;
 
     @Schema(description = "订单金额，单位分")
@@ -61,5 +63,6 @@ public class CreatePaymentOpenOrderCommand {
     private String returnUrl;
 
     @Schema(description = "业务扩展信息")
-    private Map<String, Object> extendInfo;
+    @Valid
+    private PaymentOpenExtendInfoCommand extendInfo;
 }

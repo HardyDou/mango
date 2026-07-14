@@ -2,6 +2,8 @@ package io.mango.payment.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -13,6 +15,7 @@ public class SavePaymentMethodRouteRuleItemCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "路由明细 ID")
+    @Positive(message = "路由明细 ID 必须大于 0")
     private Long id;
 
     @NotNull(message = "签约能力不能为空")
@@ -20,15 +23,19 @@ public class SavePaymentMethodRouteRuleItemCommand implements Serializable {
     private Long contractCapabilityId;
 
     @Schema(description = "优先级，数值越小越优先")
+    @PositiveOrZero(message = "优先级不能小于 0")
     private Integer priority;
 
     @Schema(description = "权重")
+    @PositiveOrZero(message = "权重不能小于 0")
     private Integer weight;
 
     @Schema(description = "最小金额，单位分")
+    @PositiveOrZero(message = "最小金额不能小于 0")
     private Long minAmount;
 
     @Schema(description = "最大金额，单位分")
+    @PositiveOrZero(message = "最大金额不能小于 0")
     private Long maxAmount;
 
     @NotNull(message = "路由明细状态不能为空")

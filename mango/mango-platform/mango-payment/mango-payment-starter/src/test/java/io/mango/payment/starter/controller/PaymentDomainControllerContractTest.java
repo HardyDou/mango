@@ -24,14 +24,13 @@ import io.mango.payment.api.PaymentSettlementSummaryApi;
 import io.mango.payment.api.PaymentTaskApi;
 import io.mango.payment.api.PaymentTransactionFlowApi;
 import io.mango.payment.core.service.IPaymentOpenApiService;
-import jakarta.servlet.http.HttpServletRequest;
+import io.mango.payment.starter.resource.PaymentPublicCallbackResourceProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -187,15 +186,18 @@ class PaymentDomainControllerContractTest {
 
     @Test
     @DisplayName("payment channel public callback endpoint should not require login token")
-    void paymentChannelPublicCallbackEndpoint_shouldNotRequireLoginToken() throws NoSuchMethodException {
-        Method method = PaymentChannelCallbackController.class.getDeclaredMethod("handlePublic", String.class, HttpServletRequest.class);
+    void paymentChannelPublicCallbackEndpoint_shouldNotRequireLoginToken() {
+        var resources = new PaymentPublicCallbackResourceProvider().provide();
 
-        RequestMapping mapping = method.getAnnotation(RequestMapping.class);
-
-        assertThat(mapping.value())
-                .containsExactly("/payment/channel-callbacks/{channelCode}", "/api/payment/channel-callbacks/{channelCode}");
-        assertThat(mapping.method()).containsExactly(RequestMethod.POST, RequestMethod.GET);
-        assertThat(method.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+        assertThat(resources)
+                .hasSize(2)
+                .allSatisfy(resource -> {
+                    assertThat(resource.getFields().get("pathPattern").getValue())
+                            .isEqualTo("/payment/channel-callbacks/public");
+                    assertThat(resource.getFields().get("accessMode").getValue()).isEqualTo("PUBLIC");
+                })
+                .extracting(resource -> resource.getFields().get("httpMethod").getValue())
+                .containsExactly("GET", "POST");
     }
 
     @Test

@@ -1,0 +1,1063 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_METHOD_CATEGORY": [
+          {
+            "id": "2026071309000000001",
+            "version": 1,
+            "bizKey": "payment.method-category.PERSONAL",
+            "name": "对私",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "对私"
+              },
+              "level": {
+                "type": "INT",
+                "value": 1
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 0
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000002",
+            "version": 1,
+            "bizKey": "payment.method-category.CORPORATE",
+            "name": "对公",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360002
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "CORPORATE"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "对公"
+              },
+              "level": {
+                "type": "INT",
+                "value": 1
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 0
+              },
+              "sort": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000003",
+            "version": 1,
+            "bizKey": "payment.method-category.WECHAT",
+            "name": "微信",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360101
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "WECHAT"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "微信"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000004",
+            "version": 1,
+            "bizKey": "payment.method-category.ALIPAY",
+            "name": "支付宝",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360102
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "ALIPAY"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "支付宝"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "sort": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000005",
+            "version": 1,
+            "bizKey": "payment.method-category.UNIONPAY",
+            "name": "银联",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360103
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "UNIONPAY"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "银联"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "sort": {
+                "type": "INT",
+                "value": 30
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000006",
+            "version": 1,
+            "bizKey": "payment.method-category.BANK_CARD",
+            "name": "银行卡",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360104
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "BANK_CARD"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "银行卡"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "sort": {
+                "type": "INT",
+                "value": 40
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000007",
+            "version": 1,
+            "bizKey": "payment.method-category.WALLET",
+            "name": "钱包",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360105
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "WALLET"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "钱包"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "sort": {
+                "type": "INT",
+                "value": 50
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000008",
+            "version": 1,
+            "bizKey": "payment.method-category.DEBIT_CARD",
+            "name": "储蓄卡",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360106
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "DEBIT_CARD"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "储蓄卡"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "sort": {
+                "type": "INT",
+                "value": 40
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000009",
+            "version": 1,
+            "bizKey": "payment.method-category.CREDIT_CARD",
+            "name": "信用卡",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360107
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "CREDIT_CARD"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "信用卡"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360001
+              },
+              "sort": {
+                "type": "INT",
+                "value": 45
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000010",
+            "version": 1,
+            "bizKey": "payment.method-category.EBANK",
+            "name": "网银",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360201
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "EBANK"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "网银"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360002
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000011",
+            "version": 1,
+            "bizKey": "payment.method-category.OFFLINE_TRANSFER",
+            "name": "线下转账",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360202
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "OFFLINE_TRANSFER"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "线下转账"
+              },
+              "level": {
+                "type": "INT",
+                "value": 2
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360002
+              },
+              "sort": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000012",
+            "version": 1,
+            "bizKey": "payment.method-category.QR_CODE.360301",
+            "name": "扫码",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360301
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "QR_CODE"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "扫码"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360101
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000013",
+            "version": 1,
+            "bizKey": "payment.method-category.H5_REDIRECT.360302",
+            "name": "H5 跳转",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360302
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "H5_REDIRECT"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "H5 跳转"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360101
+              },
+              "sort": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000014",
+            "version": 1,
+            "bizKey": "payment.method-category.MINIAPP.360303",
+            "name": "小程序",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360303
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "MINIAPP"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "小程序"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360101
+              },
+              "sort": {
+                "type": "INT",
+                "value": 30
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000015",
+            "version": 1,
+            "bizKey": "payment.method-category.QR_CODE.360311",
+            "name": "扫码",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360311
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "QR_CODE"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "扫码"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360102
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000016",
+            "version": 1,
+            "bizKey": "payment.method-category.H5_REDIRECT.360312",
+            "name": "H5 跳转",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360312
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "H5_REDIRECT"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "H5 跳转"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360102
+              },
+              "sort": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000017",
+            "version": 1,
+            "bizKey": "payment.method-category.MINIAPP.360313",
+            "name": "小程序",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360313
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "MINIAPP"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "小程序"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360102
+              },
+              "sort": {
+                "type": "INT",
+                "value": 30
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000018",
+            "version": 1,
+            "bizKey": "payment.method-category.QR_CODE.360321",
+            "name": "扫码",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360321
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "QR_CODE"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "扫码"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360103
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000019",
+            "version": 1,
+            "bizKey": "payment.method-category.DEBIT_QUICK",
+            "name": "储蓄卡快捷",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360331
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "DEBIT_QUICK"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "储蓄卡快捷"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360104
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000020",
+            "version": 1,
+            "bizKey": "payment.method-category.CREDIT_QUICK",
+            "name": "信用卡快捷",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360332
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "CREDIT_QUICK"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "信用卡快捷"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360104
+              },
+              "sort": {
+                "type": "INT",
+                "value": 20
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000021",
+            "version": 1,
+            "bizKey": "payment.method-category.WALLET_QUICK",
+            "name": "钱包快捷",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360341
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "WALLET_QUICK"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "钱包快捷"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360105
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000022",
+            "version": 1,
+            "bizKey": "payment.method-category.BANK_GATEWAY",
+            "name": "网银跳转",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360351
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "BANK_GATEWAY"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "网银跳转"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360201
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000023",
+            "version": 1,
+            "bizKey": "payment.method-category.ACCOUNT_TRANSFER",
+            "name": "账号转账",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360361
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "ACCOUNT_TRANSFER"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "账号转账"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360202
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000024",
+            "version": 1,
+            "bizKey": "payment.method-category.QUICK_PAY.360371",
+            "name": "快捷支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360371
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "QUICK_PAY"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "快捷支付"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360106
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000025",
+            "version": 1,
+            "bizKey": "payment.method-category.QUICK_PAY.360372",
+            "name": "快捷支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 360372
+              },
+              "categoryCode": {
+                "type": "STRING",
+                "value": "QUICK_PAY"
+              },
+              "categoryName": {
+                "type": "STRING",
+                "value": "快捷支付"
+              },
+              "level": {
+                "type": "INT",
+                "value": 3
+              },
+              "parentId": {
+                "type": "LONG",
+                "value": 360107
+              },
+              "sort": {
+                "type": "INT",
+                "value": 10
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

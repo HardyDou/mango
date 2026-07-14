@@ -14,45 +14,45 @@ import java.util.function.Function;
 
 @Component
 @RequiredArgsConstructor
-class PaymentOrderViewSupport {
+public class PaymentOrderViewSupport {
 
-    private final PaymentOrderStatusFlowService statusFlowService;
+    private final PaymentOrderStatusFlowRecorder statusFlowService;
 
-    List<PaymentOrderStatusFlowVO> listBusinessStatusFlows(Long orderId) {
-        return listStatusFlows(PaymentOrderStatusFlowService.ORDER_TYPE_BUSINESS, orderId, PaymentBusinessOrderStatusEnum::labelOf);
+    public List<PaymentOrderStatusFlowVO> listBusinessStatusFlows(Long orderId) {
+        return listStatusFlows(PaymentOrderStatusFlowRecorder.ORDER_TYPE_BUSINESS, orderId, PaymentBusinessOrderStatusEnum::labelOf);
     }
 
-    List<PaymentOrderStatusFlowVO> listPaymentStatusFlows(Long orderId) {
-        return listStatusFlows(PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT, orderId, PaymentOrderStatusEnum::labelOf);
+    public List<PaymentOrderStatusFlowVO> listPaymentStatusFlows(Long orderId) {
+        return listStatusFlows(PaymentOrderStatusFlowRecorder.ORDER_TYPE_PAYMENT, orderId, PaymentOrderStatusEnum::labelOf);
     }
 
-    List<PaymentOrderStatusFlowVO> listRefundStatusFlows(Long orderId) {
-        return listStatusFlows(PaymentOrderStatusFlowService.ORDER_TYPE_REFUND, orderId, this::refundStatusName);
+    public List<PaymentOrderStatusFlowVO> listRefundStatusFlows(Long orderId) {
+        return listStatusFlows(PaymentOrderStatusFlowRecorder.ORDER_TYPE_REFUND, orderId, this::refundStatusName);
     }
 
-    boolean isExpiredOpenBusinessOrder(String status, LocalDateTime expireTime) {
+    public boolean isExpiredOpenBusinessOrder(String status, LocalDateTime expireTime) {
         return expireTime != null
                 && !expireTime.isAfter(LocalDateTime.now())
                 && (PaymentBusinessOrderStatusEnum.TO_PAY.getCode().equals(status)
                 || PaymentBusinessOrderStatusEnum.PAYING.getCode().equals(status));
     }
 
-    boolean isExpiredOpenPaymentOrder(String status, LocalDateTime expireTime) {
+    public boolean isExpiredOpenPaymentOrder(String status, LocalDateTime expireTime) {
         return expireTime != null
                 && !expireTime.isAfter(LocalDateTime.now())
                 && (PaymentOrderStatusEnum.CREATED.getCode().equals(status)
                 || PaymentOrderStatusEnum.PAYING.getCode().equals(status));
     }
 
-    String refundStatusName(String status) {
+    public String refundStatusName(String status) {
         return PaymentRefundOrderStatusEnum.labelOf(normalizeRefundStatus(status));
     }
 
-    String normalizeRefundStatus(String status) {
+    public String normalizeRefundStatus(String status) {
         return "PROCESSING".equals(status) ? PaymentRefundOrderStatusEnum.REFUNDING.getCode() : status;
     }
 
-    String transactionFlowTypeName(String flowType) {
+    public String transactionFlowTypeName(String flowType) {
         if ("PAY_SUCCESS".equals(flowType) || "PAYMENT".equals(flowType)) {
             return "支付成功收入";
         }
@@ -89,31 +89,31 @@ class PaymentOrderViewSupport {
     }
 
     private String statusFlowSourceName(String triggerSource) {
-        if (PaymentOrderStatusFlowService.SOURCE_OPENAPI_CREATE.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_OPENAPI_CREATE.equals(triggerSource)) {
             return "开放接口创建";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_CASHIER_PAY.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_CASHIER_PAY.equals(triggerSource)) {
             return "收银台支付";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_CHANNEL_QUERY.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_QUERY.equals(triggerSource)) {
             return "主动查单";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_CHANNEL_CALLBACK.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CALLBACK.equals(triggerSource)) {
             return "通道回调";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_CHANNEL_CLOSE.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_CHANNEL_CLOSE.equals(triggerSource)) {
             return "受控关单";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_OPENAPI_REFUND.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_OPENAPI_REFUND.equals(triggerSource)) {
             return "开放接口退款";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_MANUAL_REFUND_APPROVAL.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_MANUAL_REFUND_APPROVAL.equals(triggerSource)) {
             return "后台退款审批";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_REFUND_QUERY.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_REFUND_QUERY.equals(triggerSource)) {
             return "主动查退款";
         }
-        if (PaymentOrderStatusFlowService.SOURCE_RECONCILIATION_COMPENSATE.equals(triggerSource)) {
+        if (PaymentOrderStatusFlowRecorder.SOURCE_RECONCILIATION_COMPENSATE.equals(triggerSource)) {
             return "对账补偿";
         }
         if ("HISTORY_BACKFILL".equals(triggerSource)) {

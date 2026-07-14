@@ -20,7 +20,7 @@ public class PaymentChannelBillFetchJobHandler implements MangoJobHandler {
     public static final String JOB_CODE = "payment_channel_bill_fetch_yesterday";
     public static final String HANDLER_NAME = "paymentChannelBillFetchJobHandler";
 
-    private final PaymentChannelBillFetchScheduleService scheduleService;
+    private final PaymentChannelBillFetchScheduler scheduleService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -51,7 +51,7 @@ public class PaymentChannelBillFetchJobHandler implements MangoJobHandler {
     @Override
     public MangoJobHandleResult handle(MangoJobHandleContext context) {
         LocalDate billDate = resolveBillDate(context);
-        PaymentChannelBillFetchScheduleService.ScheduledBillFetchResult result =
+        PaymentChannelBillFetchScheduler.ScheduledBillFetchResult result =
                 scheduleService.fetchScheduledChannelBills(billDate);
         String message = "通道账单定时拉取完成：账单日 " + result.billDate()
                 + "，总数 " + result.totalCount()

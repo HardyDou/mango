@@ -207,14 +207,14 @@ mango:
 | 支付结果 | `GET /payment/cashier/pay-result` |
 | 同步支付结果 | `POST /payment/cashier/pay-result/sync` |
 | 提交线下转账凭证 | `POST /payment/cashier/offline-collections/transfer-voucher` |
-| 创建开放订单 | `POST /openapi/pay/orders` |
-| 查询开放订单 | `GET /openapi/pay/orders/{bizOrderNo}` |
-| 获取开放收银台 | `POST /openapi/pay/orders/{bizOrderNo}/cashier` |
-| 开放支付 | `POST /openapi/pay/orders/{bizOrderNo}/pay` |
-| 查询支付订单 | `GET /openapi/pay/payment-orders/{payOrderNo}` |
-| 开放退款 | `POST /openapi/pay/refunds` |
-| 查询退款 | `GET /openapi/pay/refunds/{bizRefundNo}` |
-| 获取支付凭证 | `GET /openapi/pay/receipts/{bizOrderNo}` |
+| 创建开放订单 | `POST /openapi/pay/orders/create` |
+| 查询开放订单 | `POST /openapi/pay/orders/detail` |
+| 获取开放收银台 | `POST /openapi/pay/cashier/detail` |
+| 开放支付 | `POST /openapi/pay/payments/create` |
+| 查询支付订单 | `POST /openapi/pay/payments/detail` |
+| 开放退款 | `POST /openapi/pay/refunds/create` |
+| 查询退款 | `POST /openapi/pay/refunds/detail` |
+| 获取支付凭证 | `POST /openapi/pay/receipts/detail` |
 
 常用入参对象：
 
@@ -234,7 +234,8 @@ mango:
 
 1. migration 固化通道、通道能力、签约字段模板、默认签约、路由规则和必要权限。
 2. 通道适配器实现支付、查单、退款、查退款、关单、账单获取或账单解析。
-3. 回调入口接入 `PaymentChannelCallbackApi`，提交通道回调命令。
+3. 标准化内部回调接入 `PaymentChannelCallbackApi`；通道公网原始协议使用
+   `GET/POST /payment/channel-callbacks/public?channelCode=<通道编码>`，由通道处理器完成验签并返回原始纯文本 ACK。
 4. 对账接入账单获取源或文件导入。
 5. 记录请求摘要、响应摘要、通道交易号、通道退款号和错误原因，保证管理端能定位问题。
 
@@ -243,6 +244,11 @@ mango:
 ## 8. 数据与初始化
 
 Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
+
+支付模块尚未发布且只支持新数据库，Flyway 基线已归并为
+`V1__payment_platform.sql`。V1 只包含 DDL，不包含 `INSERT`、`UPDATE`、`DELETE`、演示数据、
+运行态订单或商户密钥；全部支付表的 `tenant_id` 为 `VARCHAR(64)`，并包含平台标准
+`TenantEntity` 的可空 `org_id`。不得把 V1 应用到已有 V3-V102 历史的数据库。
 
 核心表按用途分组：
 
@@ -257,9 +263,16 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 | 线下收款 | `payment_offline_collection`、`payment_offline_collection_voucher`、`payment_offline_bank_statement_batch`、`payment_offline_bank_statement_item`、`payment_offline_collection_match`、`payment_offline_refund_process` |
 | 开放接口和虚拟通道 | `payment_openapi_nonce`、`payment_virtual_channel_payment`、`payment_mango_pay_scenario_control` |
 
-初始化内容包括：
+初始化边界：
 
-- 支付基础表、通道能力、支付方式分类、收银台配置、路由规则、虚拟通道、富友通道配置和线下收款相关表。
+- 正式必需的支付方式分类、支付方式、通道、通道字段模板、通道能力和默认风控规则，由
+  `mango-payment-starter` 自己的 `META-INF/mango/resources/payment-common-*.json` 登记，默认加载。
+- 租户、应用、企业主体、银行账户、收银台、签约、签约能力和路由规则属于演示数据，由
+  `mango-payment-starter` 自己的 `META-INF/mango/demo` 目录登记，文件名统一以
+  `payment-demo-` 开头；只有
+  `mango.resource.registry.demo-enabled=true` 时加载。
+- 业务订单、支付单、退款单、交易流水、通知、异常、对账、结算、账单批次和线下退款流程等
+  运行态数据不做任何初始化登记，只能由真实业务流程产生。
 - 支付编号规则依赖 `mango-numgen`，通过 `SEQUENCE_RULE` 资源注入；不要在业务代码或前端拼接订单号。
 - 支付昨日账单拉取任务依赖 `mango-job`，通过 `JOB_DEFINITION` 资源注入。
 - 支付结果、退款、异常、对账和结算提醒依赖 `mango-notice`，通过 `MESSAGE_TEMPLATE` 资源注入。
@@ -273,7 +286,11 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-domain.yml
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-numgen.yml
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-job.yml
+mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-{method-category,method,channel,channel-field-template,channel-capability,risk-rule}.json
+mango-payment-starter/src/main/resources/META-INF/mango/demo/
 ```
+
+该目录中的演示数据文件名统一以 `payment-demo-` 开头，扩展名为 `.json`。
 
 支持类型：
 
@@ -283,6 +300,12 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 | `SEQUENCE_RULE` | `numgen` | 登记支付编号规则 |
 | `JOB_DEFINITION` | `job` | 登记支付账单拉取任务 |
 | `MESSAGE_TEMPLATE` | `notice` | 登记支付通知模板 |
+| `PAYMENT_METHOD_CATEGORY`、`PAYMENT_METHOD` | `payment` | 登记正式支付方式基础数据 |
+| `PAYMENT_CHANNEL`、`PAYMENT_CHANNEL_FIELD_TEMPLATE`、`PAYMENT_CHANNEL_CAPABILITY` | `payment` | 登记正式通道及能力基础数据，不携带商户密钥 |
+| `PAYMENT_RISK_RULE` | `payment` | 登记默认风控规则 |
+| `PAYMENT_TENANT`、`PAYMENT_APPLICATION`、`PAYMENT_ENTERPRISE_SUBJECT`、`PAYMENT_SUBJECT_BANK_ACCOUNT` | `payment` | 仅在 demo 开关开启时登记演示接入主体 |
+| `PAYMENT_CASHIER_CONFIG`、`PAYMENT_CHANNEL_CONTRACT`、`PAYMENT_CHANNEL_CONTRACT_VALUE`、`PAYMENT_CHANNEL_CONTRACT_CAPABILITY` | `payment` | 仅在 demo 开关开启时登记演示收银台和签约数据 |
+| `PAYMENT_METHOD_ROUTE_RULE`、`PAYMENT_METHOD_ROUTE_RULE_ITEM` | `payment` | 仅在 demo 开关开启时登记演示路由 |
 
 `MESSAGE_TEMPLATE` 由 `PaymentMessageTemplateResourceProvider` 通过 Java Provider 注入，包含 `payment.order.success`、`payment.order.failed`、`payment.refund.success`、`payment.refund.failed`、`payment.refund.approval.created`、`payment.exception.order.created`、`payment.reconciliation.difference`、`payment.settlement.unresolved`。字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。支付通知节点只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败不影响支付主流程。
 
@@ -360,4 +383,15 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 
 ## 12. 变更影响记录
 
-- PaymentOpenApi 契约由 `PaymentOpenApiController` 承载，`IPaymentOpenApiService` 仅保留内部服务契约。该变更不改变支付开放接口方法签名、HTTP 路径、权限码、资源声明、编号规则和通知语义。
+- `PaymentCode` 位于 `io.mango.payment.api.enums`；API 契约不再携带 Spring MVC、文件上传或 I/O 异常类型。
+- 开放接口统一为固定 `POST` 路径和 `PaymentOpenRequestCommand` 请求体，签名路径由服务端固定写入，客户端不能覆盖。
+- 公网通道回调统一为固定函数式路由，并以 `API_RESOURCE` 声明 `PUBLIC` 访问模式；原始请求体、参数和纯文本 ACK 语义保持。
+- Mapper 只返回 core projection，Service 边界显式转换 API VO；支付实体统一继承平台 `TenantEntity`。
+
+支付四模块回归入口：
+
+```bash
+mvn -f mango/pom.xml \
+  -pl mango-platform/mango-payment/mango-payment-api,mango-platform/mango-payment/mango-payment-core,mango-platform/mango-payment/mango-payment-starter,mango-platform/mango-payment/mango-payment-starter-remote \
+  test
+```

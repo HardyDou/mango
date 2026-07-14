@@ -13,7 +13,7 @@ public interface PaymentOfflineCollectionMatchMapper extends BaseMapper<PaymentO
 
     @InterceptorIgnore(tenantLine = "true")
     int markConfirmed(
-            @Param("tenantId") Long tenantId,
+            @Param("tenantId") String tenantId,
             @Param("bankStatementItemId") Long bankStatementItemId,
             @Param("confirmedTime") LocalDateTime confirmedTime,
             @Param("confirmedBy") Long confirmedBy,

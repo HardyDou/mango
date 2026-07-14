@@ -48,7 +48,7 @@
         <include refid="transactionFlowWhere"/>
     </select>
 
-    <select id="selectTransactionFlowPage" resultType="io.mango.payment.api.vo.PaymentTransactionFlowVO">
+    <select id="selectTransactionFlowPage" resultType="io.mango.payment.core.model.projection.PaymentTransactionFlowProjection">
         <include refid="transactionFlowSelect"/>
         <include refid="transactionFlowFrom"/>
         <include refid="transactionFlowWhere"/>
@@ -56,7 +56,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectTransactionFlowDetail" resultType="io.mango.payment.api.vo.PaymentTransactionFlowVO">
+    <select id="selectTransactionFlowDetail" resultType="io.mango.payment.core.model.projection.PaymentTransactionFlowProjection">
         <include refid="transactionFlowSelect"/>
         <include refid="transactionFlowFrom"/>
         where tf.tenant_id = #{tenantId}

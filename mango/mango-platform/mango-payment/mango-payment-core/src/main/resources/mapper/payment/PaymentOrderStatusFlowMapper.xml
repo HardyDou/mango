@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.mango.payment.core.mapper.PaymentOrderStatusFlowMapper">
 
-    <select id="selectStatusFlows" resultType="io.mango.payment.api.vo.PaymentOrderStatusFlowVO">
+    <select id="selectStatusFlows" resultType="io.mango.payment.core.model.projection.PaymentOrderStatusFlowProjection">
         select from_status as fromStatus,
                to_status as toStatus,
                to_status as statusCode,

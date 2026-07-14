@@ -1,8 +1,9 @@
 package io.mango.payment.starter;
 
 import io.mango.payment.core.mapper.PaymentNotificationRecordMapper;
-import io.mango.payment.core.service.PaymentNotificationService;
+import io.mango.payment.core.service.PaymentNotificationDispatcher;
 import io.mango.payment.core.service.PaymentObservabilityProperties;
+import io.mango.payment.starter.endpoint.PaymentChannelPublicCallbackEndpoint;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -13,6 +14,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.web.servlet.function.RouterFunction;
+import org.springframework.web.servlet.function.ServerResponse;
+
+import static org.springframework.web.servlet.function.RequestPredicates.GET;
+import static org.springframework.web.servlet.function.RequestPredicates.POST;
+import static org.springframework.web.servlet.function.RouterFunctions.route;
 
 @AutoConfiguration
 @AutoConfigureAfter(name = "io.mango.workflow.starter.WorkflowAutoConfiguration")
@@ -23,6 +30,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
         "io.mango.payment.core.service",
         "io.mango.payment.starter.notice",
         "io.mango.payment.starter.controller",
+        "io.mango.payment.starter.endpoint",
         "io.mango.payment.starter.resource",
         "io.mango.payment.starter.workflow"
 })
@@ -44,7 +52,7 @@ public class PaymentAutoConfiguration {
     @ConditionalOnProperty(prefix = "mango.payment.notification.dispatch", name = "enabled", havingValue = "true", matchIfMissing = true)
     public PaymentNotificationDispatchScheduler paymentNotificationDispatchScheduler(
             PaymentNotificationRecordMapper notificationRecordMapper,
-            PaymentNotificationService notificationService,
+            PaymentNotificationDispatcher notificationService,
             @Qualifier("paymentNotificationTaskScheduler") TaskScheduler taskScheduler,
             PaymentProperties properties) {
         PaymentProperties.NotificationDispatchProperties dispatch = properties.getNotification().getDispatch();
@@ -61,5 +69,12 @@ public class PaymentAutoConfiguration {
     @Bean
     public PaymentObservabilityProperties paymentObservabilityProperties(PaymentProperties properties) {
         return properties.getObservability();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> paymentChannelPublicCallbackRoutes(
+            PaymentChannelPublicCallbackEndpoint endpoint) {
+        return route(GET("/payment/channel-callbacks/public")
+                .or(POST("/payment/channel-callbacks/public")), endpoint::handle);
     }
 }

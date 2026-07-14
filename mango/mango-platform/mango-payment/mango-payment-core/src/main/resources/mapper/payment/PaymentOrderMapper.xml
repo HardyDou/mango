@@ -147,7 +147,7 @@
         group by coalesce(po.channel_code, c.channel_code, 'UNKNOWN')
     </select>
 
-    <select id="selectPaymentOrderPage" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+    <select id="selectPaymentOrderPage" resultType="io.mango.payment.core.model.projection.PaymentOrderProjection">
         <include refid="paymentOrderSelect"/>
         <include refid="paymentOrderFrom"/>
         <include refid="paymentOrderWhere"/>
@@ -155,7 +155,7 @@
         limit #{limit} offset #{offset}
     </select>
 
-    <select id="selectPaymentOrderDetail" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+    <select id="selectPaymentOrderDetail" resultType="io.mango.payment.core.model.projection.PaymentOrderProjection">
         <include refid="paymentOrderSelect"/>
         <include refid="paymentOrderFrom"/>
         where po.tenant_id = #{tenantId}
@@ -164,7 +164,7 @@
         limit 1
     </select>
 
-    <select id="selectPaymentOrderById" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+    <select id="selectPaymentOrderById" resultType="io.mango.payment.core.model.projection.PaymentOrderProjection">
         <include refid="paymentOrderSelect"/>
         <include refid="paymentOrderFrom"/>
         where po.tenant_id = #{tenantId}
@@ -173,7 +173,7 @@
         limit 1
     </select>
 
-    <select id="selectOpenPaymentOrder" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+    <select id="selectOpenPaymentOrder" resultType="io.mango.payment.core.model.projection.PaymentOrderProjection">
         <include refid="paymentOrderSelect"/>
         <include refid="paymentOrderFrom"/>
         where po.tenant_id = #{tenantId}
@@ -183,7 +183,7 @@
         limit 1
     </select>
 
-    <select id="selectSuccessfulOpenPaymentOrder" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+    <select id="selectSuccessfulOpenPaymentOrder" resultType="io.mango.payment.core.model.projection.PaymentOrderProjection">
         <include refid="paymentOrderSelect"/>
         <include refid="paymentOrderFrom"/>
         where po.tenant_id = #{tenantId}

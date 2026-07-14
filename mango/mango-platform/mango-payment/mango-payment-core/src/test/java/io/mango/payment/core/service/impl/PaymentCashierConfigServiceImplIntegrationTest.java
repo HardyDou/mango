@@ -6,14 +6,13 @@ import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.SavePaymentCashierConfigCommand;
-import io.mango.payment.core.entity.PaymentCashierConfig;
+import io.mango.payment.core.entity.PaymentCashierConfigEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentCashierConfigMapper;
 import io.mango.payment.core.mapper.PaymentEnterpriseSubjectMapper;
 import io.mango.payment.core.mapper.PaymentMethodMapper;
-import io.mango.payment.core.service.PaymentOperationAuditService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TransactionAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class,
         PersistenceMybatisPlusAutoConfiguration.class,
-        PaymentCashierConfigServiceImplIntegrationTest.TestConfig.class
+        PaymentCashierConfigServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:payment_cashier_config_service;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -52,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "mybatis-plus.mapper-locations=classpath:/mapper/payment/*.xml",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-class PaymentCashierConfigServiceImplIntegrationTest {
+class PaymentCashierConfigServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -61,7 +60,7 @@ class PaymentCashierConfigServiceImplIntegrationTest {
     private PaymentCashierConfigMapper cashierConfigMapper;
 
     @Autowired
-    private PaymentCashierConfigServiceImpl service;
+    private PaymentCashierConfigService service;
 
     @Autowired
     private TestPaymentOperationAuditService auditService;
@@ -83,10 +82,10 @@ class PaymentCashierConfigServiceImplIntegrationTest {
     void createCashierConfigValidatesRelationsAndPersistsNormalizedConfigThroughRealMappers() {
         insertValidRelations();
 
-        Long id = service.createCashierConfig(command()).getData();
+        Long id = service.createCashierConfig(command());
 
-        PaymentCashierConfig entity = cashierConfigMapper.selectById(id);
-        assertThat(entity.getTenantId()).isEqualTo(1L);
+        PaymentCashierConfigEntity entity = cashierConfigMapper.selectById(id);
+        assertThat(entity.getTenantId()).isEqualTo("1");
         assertThat(entity.getCashierName()).isEqualTo("订单中心 Web 收银台");
         assertThat(entity.getApplicationId()).isEqualTo(310001L);
         assertThat(entity.getDefaultCashier()).isEqualTo(1);
@@ -197,7 +196,8 @@ class PaymentCashierConfigServiceImplIntegrationTest {
                     notify_retry_policy varchar(512),
                     demo_app int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -218,7 +218,8 @@ class PaymentCashierConfigServiceImplIntegrationTest {
                     bank_name varchar(128),
                     license_file_id bigint,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -249,7 +250,8 @@ class PaymentCashierConfigServiceImplIntegrationTest {
                     description varchar(512),
                     sort int,
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -273,7 +275,8 @@ class PaymentCashierConfigServiceImplIntegrationTest {
                     result_return_url varchar(512),
                     display_config varchar(1024),
                     status int,
-                    tenant_id bigint,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     del_flag int default 0,
                     created_by bigint,
                     created_at timestamp default current_timestamp,
@@ -288,14 +291,16 @@ class PaymentCashierConfigServiceImplIntegrationTest {
                 create table payment_order (
                     id bigint primary key,
                     cashier_config_id bigint,
-                    tenant_id bigint
+                    tenant_id varchar(64),
+                    org_id bigint
                 )
                 """);
         jdbcTemplate.execute("""
                 create table payment_virtual_channel_payment (
                     id bigint primary key,
                     cashier_config_id bigint,
-                    tenant_id bigint
+                    tenant_id varchar(64),
+                    org_id bigint
                 )
                 """);
     }
@@ -353,8 +358,8 @@ class PaymentCashierConfigServiceImplIntegrationTest {
     }
 
     private Long activeCashierCount() {
-        return cashierConfigMapper.selectCount(new LambdaQueryWrapper<PaymentCashierConfig>()
-                .eq(PaymentCashierConfig::getDelFlag, 0));
+        return cashierConfigMapper.selectCount(new LambdaQueryWrapper<PaymentCashierConfigEntity>()
+                .eq(PaymentCashierConfigEntity::getDelFlag, 0));
     }
 
     private Long countDeletedCashierConfigs() {
@@ -365,7 +370,7 @@ class PaymentCashierConfigServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = PaymentCashierConfigMapper.class)
-    @Import(PaymentCashierConfigServiceImpl.class)
+    @Import(PaymentCashierConfigService.class)
     static class TestConfig {
 
         @Bean
@@ -383,8 +388,8 @@ class PaymentCashierConfigServiceImplIntegrationTest {
         }
 
         @Override
-        public void record(String operationAction, String resourceType, String resourceId, String operationResult) {
-            records.add(operationAction + "|" + resourceType + "|" + resourceId + "|" + operationResult);
+        public void record(PaymentOperationAuditService.AuditEntry entry) {
+            records.add(entry.operationAction() + "|" + entry.resourceType() + "|" + entry.resourceId() + "|" + entry.operationResult());
         }
 
         void clear() {

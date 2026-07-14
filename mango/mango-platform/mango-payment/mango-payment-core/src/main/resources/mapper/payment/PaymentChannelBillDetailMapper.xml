@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.mango.payment.core.mapper.PaymentChannelBillDetailMapper">
 
-    <select id="selectBillDetails" resultType="io.mango.payment.api.vo.PaymentChannelBillDetailVO">
+    <select id="selectBillDetails" resultType="io.mango.payment.core.model.projection.PaymentChannelBillDetailProjection">
         select d.id,
                d.reconciliation_id as reconciliationId,
                d.batch_no as batchNo,

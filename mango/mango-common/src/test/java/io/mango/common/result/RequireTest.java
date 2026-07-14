@@ -64,4 +64,46 @@ public class RequireTest {
                 .hasMessage(CommonCode.BAD_REQUEST.getMessage())
                 .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
     }
+
+    @Test
+    void bizCodeOverloadsKeepCodeAndAllowSpecificMessage() {
+        assertThatThrownBy(() -> Require.notNull(null, CommonCode.NOT_FOUND, "指定对象不存在"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("指定对象不存在")
+                .extracting("code").isEqualTo(CommonCode.NOT_FOUND.getCode());
+        assertThatThrownBy(() -> Require.isTrue(false, CommonCode.BAD_REQUEST, "状态不允许"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("状态不允许")
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+        assertThatThrownBy(() -> Require.notBlank(" ", CommonCode.BAD_REQUEST, "文本不能为空"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("文本不能为空")
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+        assertThatThrownBy(() -> Require.notEmpty("", CommonCode.BAD_REQUEST, "集合不能为空"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("集合不能为空")
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+        assertThatThrownBy(() -> Require.fail(CommonCode.NOT_FOUND, "资源已失效"))
+                .isInstanceOf(BizException.class)
+                .hasMessage("资源已失效")
+                .extracting("code").isEqualTo(CommonCode.NOT_FOUND.getCode());
+    }
+
+    @Test
+    void failPreservesOriginalCause() {
+        IllegalStateException cause = new IllegalStateException("root");
+
+        assertThatThrownBy(() -> Require.fail(CommonCode.BAD_REQUEST, "custom", cause))
+                .isInstanceOf(BizException.class)
+                .hasMessage("custom")
+                .hasCause(cause)
+                .extracting("code").isEqualTo(CommonCode.BAD_REQUEST.getCode());
+    }
+
+    @Test
+    void rethrowPreservesOriginalException() {
+        IllegalStateException exception = new IllegalStateException("original");
+
+        assertThatThrownBy(() -> Require.rethrow(exception)).isSameAs(exception);
+    }
 }

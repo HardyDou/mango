@@ -1,0 +1,872 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "payment",
+      "moduleName": "支付",
+      "declarations": {
+        "PAYMENT_METHOD": [
+          {
+            "id": "2026071309000000026",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_WECHAT_QR",
+            "name": "微信扫码",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340001
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WECHAT_QR"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "微信扫码"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "WECHAT"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "QR_CODE"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB,H5"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "QR"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "WECHAT_PAY"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "微信支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 10
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 0
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 1
+              },
+              "description": {
+                "type": "STRING",
+                "value": "微信客户端扫码完成支付"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000027",
+            "version": 1,
+            "bizKey": "payment.method.CORPORATE_OFFLINE_ACCOUNT",
+            "name": "线下转账",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340002
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_OFFLINE_ACCOUNT"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "线下转账"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 6
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "CORPORATE"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "OFFLINE_TRANSFER"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "ACCOUNT_TRANSFER"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB,H5"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "TRANSFER_ACCOUNT"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "OFFLINE_TRANSFER"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "线下转账"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 40
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 0
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "获取收款账户和转账备注，转账后提交凭证"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000028",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_ALIPAY_H5",
+            "name": "支付宝 H5",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340003
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_H5"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "支付宝 H5"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "ALIPAY"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "H5_REDIRECT"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "H5"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "H5_PARAM"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "ALIPAY"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "支付宝"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 20
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 0
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "移动 Web 跳转支付宝完成付款"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000029",
+            "version": 1,
+            "bizKey": "payment.method.CORPORATE_EBANK_REDIRECT",
+            "name": "企业网银",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340004
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "CORPORATE_EBANK_REDIRECT"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "企业网银"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 5
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "CORPORATE"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "EBANK"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "BANK_GATEWAY"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "HTML_FORM"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "EBANK"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "网银支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 30
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 1
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "选择银行后进入企业网银支付"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000030",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_UNIONPAY_QR",
+            "name": "云闪付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340005
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_UNIONPAY_QR"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "云闪付"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 5
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "UNIONPAY"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "QR_CODE"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB,H5"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "QR"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "UNIONPAY"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "云闪付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 90
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 0
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 1
+              },
+              "description": {
+                "type": "STRING",
+                "value": "银联云闪付二维码支付"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000031",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_DEBIT_QUICK",
+            "name": "储蓄卡快捷支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340006
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_DEBIT_QUICK"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "储蓄卡快捷支付"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 6
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "BANK_CARD"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "DEBIT_QUICK"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB,H5"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "HTML_FORM"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "BANK_CARD"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "储蓄卡快捷支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 90
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 1
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "储蓄卡快捷支付，支持短信验证或银行页确认"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000032",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_CREDIT_QUICK",
+            "name": "信用卡快捷支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340007
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_CREDIT_QUICK"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "信用卡快捷支付"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 7
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "BANK_CARD"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "CREDIT_QUICK"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB,H5"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "HTML_FORM"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "BANK_CARD"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "信用卡快捷支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 90
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 1
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "信用卡快捷支付，支持信用卡付款"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000033",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_WALLET_QUICK",
+            "name": "快捷钱包支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340008
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_WALLET_QUICK"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "快捷钱包支付"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 8
+              },
+              "status": {
+                "type": "INT",
+                "value": 0
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "WALLET"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "WALLET_QUICK"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB,H5"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "H5_PARAM"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "WALLET"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "快捷钱包支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 90
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 0
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "快捷账户钱包支付"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000034",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_ALIPAY_QR",
+            "name": "支付宝扫码",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340009
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_QR"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "支付宝扫码"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "ALIPAY"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "QR_CODE"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "QR"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "ALIPAY"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "支付宝支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 20
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 0
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 1
+              },
+              "description": {
+                "type": "STRING",
+                "value": "支付宝客户端扫码完成支付"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000035",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_ALIPAY_PC",
+            "name": "支付宝账户支付",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340010
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_ALIPAY_PC"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "支付宝账户支付"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 3
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "ALIPAY"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "PC_LOGIN"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "HTML_FORM"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "ALIPAY"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "支付宝支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 20
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 0
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "支付宝账户支付"
+              }
+            }
+          },
+          {
+            "id": "2026071309000000036",
+            "version": 1,
+            "bizKey": "payment.method.PERSONAL_EBANK_REDIRECT",
+            "name": "个人网银",
+            "targetModule": "payment",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": 340011
+              },
+              "methodCode": {
+                "type": "STRING",
+                "value": "PERSONAL_EBANK_REDIRECT"
+              },
+              "methodName": {
+                "type": "STRING",
+                "value": "个人网银"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 4
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "accountNature": {
+                "type": "STRING",
+                "value": "PERSONAL"
+              },
+              "instrumentType": {
+                "type": "STRING",
+                "value": "EBANK"
+              },
+              "interactionType": {
+                "type": "STRING",
+                "value": "BANK_GATEWAY"
+              },
+              "terminalScope": {
+                "type": "STRING",
+                "value": "WEB"
+              },
+              "paymentMaterialType": {
+                "type": "STRING",
+                "value": "HTML_FORM"
+              },
+              "cashierGroupCode": {
+                "type": "STRING",
+                "value": "EBANK"
+              },
+              "cashierGroupName": {
+                "type": "STRING",
+                "value": "网银支付"
+              },
+              "cashierGroupSort": {
+                "type": "INT",
+                "value": 30
+              },
+              "requiresBankSelection": {
+                "type": "INT",
+                "value": 1
+              },
+              "requiresQrRefresh": {
+                "type": "INT",
+                "value": 0
+              },
+              "description": {
+                "type": "STRING",
+                "value": "选择银行后进入个人网银支付"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

@@ -1,12 +1,15 @@
 package io.mango.payment.core.service;
 
+import io.mango.payment.core.service.impl.PaymentMangoPayScenarioControlService;
+import io.mango.payment.core.service.impl.PaymentOperationAuditService;
+
 import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.command.CreateMangoPayScenarioControlCommand;
-import io.mango.payment.core.entity.PaymentChannel;
-import io.mango.payment.core.entity.PaymentMangoPayScenarioControl;
+import io.mango.payment.core.entity.PaymentChannelEntity;
+import io.mango.payment.core.entity.PaymentMangoPayScenarioControlEntity;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
 import io.mango.payment.core.mapper.PaymentChannelMapper;
 import io.mango.payment.core.mapper.PaymentMangoPayScenarioControlMapper;
@@ -30,7 +33,7 @@ class PaymentMangoPayScenarioControlServiceTest {
     private PaymentChannelMapper channelMapper;
     private PaymentChannelContractMapper channelContractMapper;
     private PaymentOperationAuditService auditService;
-    private PaymentNumberService numberService;
+    private PaymentNumberGenerator numberService;
     private PaymentMangoPayScenarioControlService service;
 
     @BeforeEach
@@ -39,13 +42,13 @@ class PaymentMangoPayScenarioControlServiceTest {
         channelMapper = mock(PaymentChannelMapper.class);
         channelContractMapper = mock(PaymentChannelContractMapper.class);
         auditService = mock(PaymentOperationAuditService.class);
-        numberService = mock(PaymentNumberService.class);
-        when(numberService.next(PaymentNumberService.PAY_MANGO_SCENARIO_NO)).thenReturn("SC2026060600000001");
+        numberService = mock(PaymentNumberGenerator.class);
+        when(numberService.next(PaymentNumberGenerator.PAY_MANGO_SCENARIO_NO)).thenReturn("SC2026060600000001");
         service = new PaymentMangoPayScenarioControlService(
                 scenarioControlMapper,
                 channelMapper,
                 channelContractMapper,
-                new PaymentMangoPayResultMappingService(),
+                new PaymentMangoPayResultTranslator(),
                 auditService,
                 numberService);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
@@ -61,7 +64,7 @@ class PaymentMangoPayScenarioControlServiceTest {
     @DisplayName("createScenarioControl should persist active next payment scenario and audit")
     void createScenarioControl_paymentScenario_persistsAndAudits() {
         when(channelMapper.selectOne(any())).thenReturn(mangoPayChannel());
-        ArgumentCaptor<PaymentMangoPayScenarioControl> captor = ArgumentCaptor.forClass(PaymentMangoPayScenarioControl.class);
+        ArgumentCaptor<PaymentMangoPayScenarioControlEntity> captor = ArgumentCaptor.forClass(PaymentMangoPayScenarioControlEntity.class);
         CreateMangoPayScenarioControlCommand command = new CreateMangoPayScenarioControlCommand();
         command.setChannelCode("MANGO_PAY");
         command.setScenarioType("payment");
@@ -72,7 +75,7 @@ class PaymentMangoPayScenarioControlServiceTest {
         service.createScenarioControl(command);
 
         verify(scenarioControlMapper).insert(captor.capture());
-        PaymentMangoPayScenarioControl entity = captor.getValue();
+        PaymentMangoPayScenarioControlEntity entity = captor.getValue();
         assertThat(entity.getControlNo()).startsWith("SC");
         assertThat(entity.getChannelCode()).isEqualTo("MANGO_PAY");
         assertThat(entity.getScenarioType()).isEqualTo("PAYMENT");
@@ -80,12 +83,12 @@ class PaymentMangoPayScenarioControlServiceTest {
         assertThat(entity.getEffectiveCount()).isEqualTo(1);
         assertThat(entity.getConsumedCount()).isZero();
         assertThat(entity.getStatus()).isEqualTo("ACTIVE");
-        assertThat(entity.getTenantId()).isEqualTo(1L);
-        verify(auditService).record(
-                eq(PaymentOperationAuditService.ACTION_CREATE_MANGO_PAY_CHANNEL_SCENARIO),
-                eq(PaymentOperationAuditService.RESOURCE_PAYMENT_MANGO_PAY_CHANNEL_SCENARIO),
-                eq(entity.getControlNo()),
-                eq(PaymentOperationAuditService.RESULT_SUCCESS));
+        assertThat(entity.getTenantId()).isEqualTo("1");
+        verify(auditService).record(new PaymentOperationAuditService.AuditEntry(
+                PaymentOperationAuditService.ACTION_CREATE_MANGO_PAY_CHANNEL_SCENARIO,
+                PaymentOperationAuditService.RESOURCE_PAYMENT_MANGO_PAY_CHANNEL_SCENARIO,
+                entity.getControlNo(),
+                PaymentOperationAuditService.RESULT_SUCCESS));
     }
 
     @Test
@@ -103,10 +106,35 @@ class PaymentMangoPayScenarioControlServiceTest {
     }
 
     @Test
+    @DisplayName("createScenarioControl should reject unsupported payment scenario")
+    void createScenarioControl_unsupportedPaymentScenario_rejects() {
+        when(channelMapper.selectOne(any())).thenReturn(mangoPayChannel());
+        CreateMangoPayScenarioControlCommand command = paymentScenario("UNRECOGNIZED");
+
+        assertThatThrownBy(() -> service.createScenarioControl(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("场景码不受支持");
+    }
+
+    @Test
+    @DisplayName("createScenarioControl should keep explicit unknown payment scenario")
+    void createScenarioControl_explicitUnknownPaymentScenario_persists() {
+        when(channelMapper.selectOne(any())).thenReturn(mangoPayChannel());
+        CreateMangoPayScenarioControlCommand command = paymentScenario("UNKNOWN");
+        ArgumentCaptor<PaymentMangoPayScenarioControlEntity> captor =
+                ArgumentCaptor.forClass(PaymentMangoPayScenarioControlEntity.class);
+
+        service.createScenarioControl(command);
+
+        verify(scenarioControlMapper).insert(captor.capture());
+        assertThat(captor.getValue().getScenarioCode()).isEqualTo("UNKNOWN");
+    }
+
+    @Test
     @DisplayName("createScenarioControl should persist callback delay scenario")
     void createScenarioControl_callbackDelay_persistsDelayMinutes() {
         when(channelMapper.selectOne(any())).thenReturn(mangoPayChannel());
-        ArgumentCaptor<PaymentMangoPayScenarioControl> captor = ArgumentCaptor.forClass(PaymentMangoPayScenarioControl.class);
+        ArgumentCaptor<PaymentMangoPayScenarioControlEntity> captor = ArgumentCaptor.forClass(PaymentMangoPayScenarioControlEntity.class);
         CreateMangoPayScenarioControlCommand command = new CreateMangoPayScenarioControlCommand();
         command.setChannelCode("MANGO_PAY");
         command.setScenarioType("CALLBACK_DELAY");
@@ -116,7 +144,7 @@ class PaymentMangoPayScenarioControlServiceTest {
         service.createScenarioControl(command);
 
         verify(scenarioControlMapper).insert(captor.capture());
-        PaymentMangoPayScenarioControl entity = captor.getValue();
+        PaymentMangoPayScenarioControlEntity entity = captor.getValue();
         assertThat(entity.getScenarioType()).isEqualTo("CALLBACK_DELAY");
         assertThat(entity.getCallbackDelayMinutes()).isEqualTo(15);
         assertThat(entity.getScenarioCode()).isNull();
@@ -140,16 +168,16 @@ class PaymentMangoPayScenarioControlServiceTest {
     @Test
     @DisplayName("consumePaymentScenario should consume next active scenario once")
     void consumePaymentScenario_activeScenario_returnsMappedResult() {
-        PaymentMangoPayScenarioControl control = new PaymentMangoPayScenarioControl();
+        PaymentMangoPayScenarioControlEntity control = new PaymentMangoPayScenarioControlEntity();
         control.setId(900001L);
         control.setScenarioCode("TIMEOUT");
         control.setEffectiveCount(1);
         control.setConsumedCount(0);
         control.setStatus("ACTIVE");
-        when(scenarioControlMapper.selectNextActive(1L, "MANGO_PAY", 331001L, "PAYMENT_QUERY")).thenReturn(control);
-        when(scenarioControlMapper.consume(1L, 900001L, 1001L)).thenReturn(1);
+        when(scenarioControlMapper.selectNextActive("1", "MANGO_PAY", 331001L, "PAYMENT_QUERY")).thenReturn(control);
+        when(scenarioControlMapper.consume("1", 900001L, 1001L)).thenReturn(1);
 
-        PaymentMangoPayResultMappingService.PaymentChannelResult result =
+        PaymentMangoPayResultTranslator.PaymentChannelResult result =
                 service.consumePaymentScenario(331001L, "PAYMENT_QUERY");
 
         assertThat(result.returnCode()).isEqualTo("TIMEOUT");
@@ -158,10 +186,19 @@ class PaymentMangoPayScenarioControlServiceTest {
         assertThat(control.getStatus()).isEqualTo("CONSUMED");
     }
 
-    private PaymentChannel mangoPayChannel() {
-        PaymentChannel channel = new PaymentChannel();
+    private CreateMangoPayScenarioControlCommand paymentScenario(String scenarioCode) {
+        CreateMangoPayScenarioControlCommand command = new CreateMangoPayScenarioControlCommand();
+        command.setChannelCode("MANGO_PAY");
+        command.setScenarioType("PAYMENT");
+        command.setScenarioCode(scenarioCode);
+        command.setEffectiveCount(1);
+        return command;
+    }
+
+    private PaymentChannelEntity mangoPayChannel() {
+        PaymentChannelEntity channel = new PaymentChannelEntity();
         channel.setId(330001L);
-        channel.setTenantId(1L);
+        channel.setTenantId("1");
         channel.setChannelCode("MANGO_PAY");
         channel.setStatus(1);
         return channel;

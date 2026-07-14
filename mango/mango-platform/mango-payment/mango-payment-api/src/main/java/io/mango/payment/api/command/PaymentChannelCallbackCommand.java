@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -21,15 +23,19 @@ public class PaymentChannelCallbackCommand {
     private String channelCode;
 
     @Schema(description = "支付订单号")
+    @Size(max = 64, message = "支付订单号不能超过 64 个字符")
     private String payOrderNo;
 
     @Schema(description = "通道交易号")
+    @Size(max = 128, message = "通道交易号不能超过 128 个字符")
     private String channelTradeNo;
 
     @Schema(description = "退款订单号")
+    @Size(max = 64, message = "退款订单号不能超过 64 个字符")
     private String refundOrderNo;
 
     @Schema(description = "通道退款单号")
+    @Size(max = 128, message = "通道退款单号不能超过 128 个字符")
     private String channelRefundNo;
 
     @Schema(description = "通道商户号")
@@ -46,11 +52,14 @@ public class PaymentChannelCallbackCommand {
     private Long amount;
 
     @Schema(description = "通道事件时间")
+    @PastOrPresent(message = "通道事件时间不能晚于当前时间")
     private LocalDateTime eventTime;
 
     @Schema(description = "通道返回码")
+    @Size(max = 64, message = "通道返回码不能超过 64 个字符")
     private String channelReturnCode;
 
     @Schema(description = "通道返回信息")
+    @Size(max = 1024, message = "通道返回信息不能超过 1024 个字符")
     private String channelMessage;
 }

@@ -15,7 +15,7 @@ import io.mango.payment.api.vo.PaymentChannelBillFetchModeVO;
 import io.mango.payment.api.vo.PaymentChannelBillSourceVO;
 import io.mango.payment.api.vo.PaymentReconciliationStatusVO;
 import io.mango.payment.api.vo.PaymentReconciliationVO;
-import io.mango.payment.core.service.PaymentReconciliationService;
+import io.mango.payment.core.service.IPaymentReconciliationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,7 +39,7 @@ import java.util.List;
 @Tag(name = "支付对账", description = "通道账单、对账批次和自动账单获取接口")
 public class PaymentReconciliationController implements PaymentReconciliationApi {
 
-    private final PaymentReconciliationService reconciliationService;
+    private final IPaymentReconciliationService reconciliationService;
 
     @Override
     @GetMapping("/page")
@@ -53,7 +53,7 @@ public class PaymentReconciliationController implements PaymentReconciliationApi
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:query")
     @Operation(summary = "查询对账批次详情", description = "按对账批次 ID 查询账单导入记录和通道账单明细")
-    public R<PaymentReconciliationVO> detailReconciliation(@Parameter(description = "对账批次 ID", required = true) @RequestParam Long id) {
+    public R<PaymentReconciliationVO> detailReconciliation(@Parameter(description = "对账批次 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(reconciliationService.detailReconciliation(id));
     }
 
@@ -109,7 +109,7 @@ public class PaymentReconciliationController implements PaymentReconciliationApi
     @GetMapping("/bill-sources/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:query")
     @Operation(summary = "查询通道账单获取源详情", description = "按配置 ID 查询通道账单获取源")
-    public R<PaymentChannelBillSourceVO> detailBillSource(@Parameter(description = "账单获取源 ID", required = true) @RequestParam Long id) {
+    public R<PaymentChannelBillSourceVO> detailBillSource(@Parameter(description = "账单获取源 ID", required = true) @RequestParam("id") Long id) {
         return R.ok(reconciliationService.detailBillSource(id));
     }
 
