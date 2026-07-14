@@ -144,6 +144,14 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
   assert.doesNotMatch(qualityGate, /^\s+-am(?:d)?(?:\s|\\)/m);
   assert.doesNotMatch(workflow, /Enforce full-Reactor architecture/u);
 
+  const governanceIntent = fs.readFileSync(
+    new URL('../tools/check-governance-intent.mjs', import.meta.url),
+    'utf8',
+  );
+  assert.match(governanceIntent, /Build affected-module dependency prerequisites/);
+  assert.match(governanceIntent, /dependency prerequisite step must use -am/);
+  assert.match(governanceIntent, /partial quality step should not contain/);
+
   const generatedBackendGate = fs.readFileSync(
     new URL('../../mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs', import.meta.url),
     'utf8',

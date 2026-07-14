@@ -31,6 +31,18 @@ function assertNotIncludes(file, patterns, failures) {
   }
 }
 
+function workflowStep(file, name, failures) {
+  const text = read(file);
+  const marker = `      - name: ${name}`;
+  const start = text.indexOf(marker);
+  if (start === -1) {
+    failures.push(`${file}: missing workflow step "${name}"`);
+    return '';
+  }
+  const end = text.indexOf('\n      - name:', start + marker.length);
+  return text.slice(start, end === -1 ? text.length : end);
+}
+
 function assertNoLongTermRuleLanguage(file, failures) {
   const allowedLines = [
     '长期规范只维护在 `mango-pmo/rules/**`',
@@ -192,12 +204,28 @@ assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'node mango-pmo/tools/audit-readme-source-facts.mjs',
   'github.event.pull_request.base.sha',
   'github.event.pull_request.head.sha',
-  'PR_BODY_FILE'
+  'PR_BODY_FILE',
+  'Build affected-module dependency prerequisites',
+  'steps.scope.outputs.maven_dependency_projects'
 ], failures);
-assertNotIncludes('.github/workflows/pmo-doc-check.yml', [
-  '\n            -am \\',
-  '\n            -amd \\'
-], failures);
+const dependencyBuildStep = workflowStep(
+  '.github/workflows/pmo-doc-check.yml',
+  'Build affected-module dependency prerequisites',
+  failures
+);
+if (dependencyBuildStep && !dependencyBuildStep.includes('\n            -am \\')) {
+  failures.push('.github/workflows/pmo-doc-check.yml: dependency prerequisite step must use -am');
+}
+const partialQualityStep = workflowStep(
+  '.github/workflows/pmo-doc-check.yml',
+  'Enforce affected-module architecture and Java quality contracts',
+  failures
+);
+for (const forbidden of ['\n            -am \\', '\n            -amd \\']) {
+  if (partialQualityStep.includes(forbidden)) {
+    failures.push(`.github/workflows/pmo-doc-check.yml: partial quality step should not contain "${forbidden.trim()}"`);
+  }
+}
 
 assertIncludes('mango-pmo/rules/05-ai-delivery-quality.md', [
   '.github/branch-protection-policy.json',
