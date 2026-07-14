@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v2026.07.14-pmo-1.2.1-cli-1.0.71-release",
+  "releaseUrl": "https://github.com/HardyDou/mango/releases/tag/v2026.07.14-pmo-1.2.1-cli-1.0.71-release",
+  "pullRequest": "https://github.com/HardyDou/mango/pull/465",
+  "mergeCommit": "bd818e83d36a29dac3aa3a05f703c9d851d1f235",
+  "tagObject": "e88037bef31be46e3e7060ce1710c474d4566cf6",
+  "tagTarget": "bd818e83d36a29dac3aa3a05f703c9d851d1f235",
+  "publishedAt": "2026-07-14T00:47:26.399Z",
+  "manifestCompletedAt": "2026-07-14T00:47:54.581Z",
+  "manifestCompleted": true,
+  "manifestConfigDigest": "ca154fddc67d07be9750d52940a78789d4f0fb2ed0114488b87841a43be0061f",
+  "artifacts": [
+    {
+      "kind": "maven",
+      "coordinate": "io.mango:*:1.0.17",
+      "status": "UNCHANGED_NOT_APPLICABLE",
+      "reason": "This npm-only packaging fix does not change or republish Maven coordinates."
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/pmo@1.2.1",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-+o9W+cU2wNEdIi8aG1Dvvczugdsg8pzCw4d35oe9bthGOKbmZUQmYhAqTCj4T/vP68I2eYDGGdilNADXGN+XcA==",
+      "shasum": "18332c9c9b4c71638f001da6ff810544c584beb0",
+      "bundleSha256": "bca978404bfd14a96d5b9236a961ebb13efb2b21a14dd436c107766ee14688aa",
+      "sourceCommit": "bd818e83d36a29dac3aa3a05f703c9d851d1f235",
+      "manifestFileCount": 127,
+      "verifiedExecutableModes": {
+        "tools/audit-backend-test-mocks.mjs": "0755",
+        "tools/delivery-contract-check.mjs": "0755",
+        "tools/pmo-preflight.mjs": "0755"
+      },
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/cli@1.0.71",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-yVDJefndPHdvelCiYRjIn25TfvqfzUaKLhDwDn+zvprzV+1U4e/aZ4+QIFhtSDn5iuwQt2p4bcJjxksTCav6yA==",
+      "shasum": "aef298713e103fb60a6361a759ce043ef4c3db4c",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "Latest",
+      "consumeRepository": "https://hardydou.github.io/mango/",
+      "status": "VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "v2026.07.14-pmo-1.2.1-cli-1.0.71-release",
+      "status": "NOT_APPLICABLE",
+      "reason": "npm-only releases update and verify Latest without creating a Maven documentation snapshot."
+    }
+  ],
+  "stateSummary": {
+    "source": "passed",
+    "versions": "passed",
+    "changelog": "passed",
+    "readmes": "passed",
+    "tests": "passed",
+    "pr": "passed",
+    "tag": "passed",
+    "github-release": "passed",
+    "maven": "not_applicable",
+    "npm": "passed",
+    "cli-lock": "passed",
+    "private-registry-publish": "passed",
+    "private-registry-consume-verify": "passed",
+    "docs-latest": "passed",
+    "docs-snapshot": "not_applicable",
+    "post-verify": "passed",
+    "cleanup": "passed"
+  },
+  "releaseExecution": {
+    "freshManifest": true,
+    "repairInvoked": false,
+    "publishInvocations": 2,
+    "immutableStateAttempts": {
+      "tag": 1,
+      "github-release": 1,
+      "npm": 2
+    },
+    "prePublishRecovery": {
+      "firstNpmAdapterExitCode": 1,
+      "firstNpmAdapterFailure": "GitHub Release notes lacked the required Published Packages, Upgrade Notes, and Verification sections.",
+      "registryWriteReached": false,
+      "registryFactsBeforeResume": {
+        "@mango/pmo@1.2.1": "HTTP_404",
+        "@mango/cli@1.0.71": "HTTP_404"
+      },
+      "correctiveAction": "Updated the existing GitHub Release notes, passed both package release-note checks, then resumed the same persisted release manifest.",
+      "evidencePreserved": true
+    },
+    "result": "COMPLETE"
+  },
+  "finalVerification": {
+    "requiredCheck": "PMO Documentation Checks / pmo-doc-check",
+    "requiredCheckResult": "PASS",
+    "requiredCheckDuration": "7m08s",
+    "requiredCheckRun": "https://github.com/HardyDou/mango/actions/runs/29296302161",
+    "packageConsumerTypecheck": "PASS",
+    "npmHostedVerification": "PASS",
+    "npmConsumeVerification": "PASS",
+    "publishedPmoPackageRootVerification": "PASS",
+    "publishedPmoExecutableModeVerification": "PASS",
+    "cliReleaseLock": "PASS",
+    "githubReleaseNotes": "PASS",
+    "docsLatest": "PASS",
+    "businessConsumer": {
+      "worktree": "/Users/hardy/Work/Yunxin/baohan-system-mango-pmo-1.2.0",
+      "installedCli": "@mango/cli@1.0.71",
+      "installedPmo": "@mango/pmo@1.2.1",
+      "command": "mango pmo upgrade --project-dir . --to 1.2.1 --dry-run",
+      "result": "add: 99, update: 36, delete: 0, skip: 30, warn: 0",
+      "worktreeChanged": false
+    }
+  }
+}
