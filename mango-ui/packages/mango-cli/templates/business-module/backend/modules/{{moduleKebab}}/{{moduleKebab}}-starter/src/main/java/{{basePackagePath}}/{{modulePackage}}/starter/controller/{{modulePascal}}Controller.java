@@ -12,7 +12,6 @@ import io.mango.infra.persistence.api.query.PersistencePageResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -41,21 +40,21 @@ public class {{modulePascal}}Controller implements {{modulePascal}}Api {
     @Override
     @Operation(summary = "创建{{aggregateName}}", description = "创建一条{{aggregateName}}业务记录")
     @PostMapping("/create")
-    public R<Long> create(@RequestBody @Valid Create{{aggregatePascal}}Command command) {
+    public R<Long> create(@RequestBody Create{{aggregatePascal}}Command command) {
         return R.ok({{aggregateCamel}}Service.create(command));
     }
 
     @Override
     @Operation(summary = "修改{{aggregateName}}", description = "按业务标识修改{{aggregateName}}业务记录")
     @PostMapping("/update")
-    public R<Boolean> update(@RequestBody @Valid Update{{aggregatePascal}}Command command) {
+    public R<Boolean> update(@RequestBody Update{{aggregatePascal}}Command command) {
         return R.ok({{aggregateCamel}}Service.update(command));
     }
 
     @Override
     @Operation(summary = "删除{{aggregateName}}", description = "按业务标识删除{{aggregateName}}业务记录")
     @PostMapping("/delete")
-    public R<Boolean> delete(@RequestBody @Valid DeleteCommand command) {
+    public R<Boolean> delete(@RequestBody DeleteCommand command) {
         return R.ok({{aggregateCamel}}Service.delete(command));
     }
 
@@ -63,7 +62,7 @@ public class {{modulePascal}}Controller implements {{modulePascal}}Api {
     @Operation(summary = "分页查询{{aggregateName}}", description = "按查询条件分页获取{{aggregateName}}")
     @GetMapping("/page")
     public R<PersistencePageResult<{{aggregatePascal}}VO>> page(
-            @ParameterObject @Valid {{aggregatePascal}}PageQuery query) {
+            @ParameterObject {{aggregatePascal}}PageQuery query) {
         return R.ok({{aggregateCamel}}Service.page(query));
     }
 

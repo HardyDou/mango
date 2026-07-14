@@ -124,7 +124,7 @@ const contentChecks = [
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
-    patterns: ['implements {{modulePascal}}Api', 'I{{aggregatePascal}}Service', '@Validated', '@Tag(', '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")', '@RequestParam("id")', '@RequestBody @Valid'],
+    patterns: ['implements {{modulePascal}}Api', 'I{{aggregatePascal}}Service', '@Validated', '@Tag(', '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")', '@RequestParam("id")', '@RequestBody Create{{aggregatePascal}}Command'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml',
