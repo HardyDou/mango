@@ -9,6 +9,7 @@
 - Cancel obsolete code-SHA runs, cache pnpm and Maven inputs, and classify generated-backend behavior independently so version, changelog, README, release-lock, and PMO-contract-only changes skip generated backend acceptance.
 - Reduce generated-backend acceptance from 19 Maven invocations to 9 and remove all 13 `clean` executions while retaining positive, negative, fail-closed, static-analysis, architecture, schema, metadata, and affected-module coverage.
 - Ship the same dependency-build separation and precise partial quality scope through the generated GitHub and Gitea workflows. No full Reactor PR gate and no human approval are introduced.
+- Keep the Jenkins release workspace Git object database between builds, stop fetching unrelated tags, and bootstrap Maven from a fast mirror with the Apache official SHA-512 and official-source fallback.
 
 ### Upgrade Notes
 
