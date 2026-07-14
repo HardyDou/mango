@@ -73,9 +73,9 @@ case "${command_name}" in
         my $version = defined($maven) ? ($maven->{version} // "") : "";
         die "invalid Maven version\n" if $version ne "" && $version !~ /^\d+(?:\.\d+){2,}(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)?$/;
         my $run_tests = defined($maven) && $maven->{runTests} ? "true" : "false";
-        print join("\t", $data->{releaseId}, $data->{sourceSha}, $version, $run_tests);
+        print join("|", $data->{releaseId}, $data->{sourceSha}, $version, $run_tests);
       ' < "${manifest}")"
-      IFS=$'\t' read -r release_id source_sha maven_version run_tests <<< "${parsed}"
+      IFS='|' read -r release_id source_sha maven_version run_tests <<< "${parsed}"
 
       if [[ -z "${maven_version}" ]]; then
         record_state ignored-no-maven "${release_id}" "${tag}" - "${source_sha}"
