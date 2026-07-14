@@ -17,7 +17,7 @@
 3. Run `mango pmo upgrade --project-dir . --to 1.2.2`, then synchronize the standard `.gitea/workflows/pmo-doc-check.yml` or `.github/workflows/pmo-doc-check.yml` for the hosting platform.
 4. Configure `PMO Documentation Checks / pmo-doc-check` as a required check in the business repository. This is repository-host configuration, not part of the Mango package release.
 
-### Release Targets
+### Published Packages
 
 | Order | Target | Version | Status |
 |---|---|---|---|
