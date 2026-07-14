@@ -91,6 +91,22 @@ class MangoArchUnitCheckerTest {
     }
 
     @Test
+    void externalApiAndServiceStubsRemainValidInPartialReactor(@TempDir Path temporaryDirectory)
+            throws URISyntaxException, IOException {
+        Path testClasses = Path.of(MangoArchUnitCheckerTest.class
+                .getProtectionDomain().getCodeSource().getLocation().toURI());
+        Path isolatedClasses = temporaryDirectory.resolve("starter/target/test-classes");
+        copyClassFile(testClasses, isolatedClasses, OrderController.class);
+
+        assertThat(checker.check(Map.of(isolatedClasses, ModuleRole.STARTER)))
+                .extracting(ArchitectureIssue::ruleId)
+                .doesNotContain(
+                        "MANGO-ARCH-TYPE-002",
+                        "MANGO-ARCH-TYPE-003",
+                        "MANGO-ARCH-CTRL-005");
+    }
+
+    @Test
     void feignWithInvalidContractAndPropertiesIsRejected() {
         JavaClasses classes = importClasses(BadFeignClient.class, OrderApi.class, ExtraApi.class);
 
@@ -723,6 +739,13 @@ class MangoArchUnitCheckerTest {
                 }
             }
         }
+    }
+
+    private void copyClassFile(Path sourceRoot, Path targetRoot, Class<?> type) throws IOException {
+        Path relativeClassFile = Path.of(type.getName().replace('.', '/') + ".class");
+        Path destination = targetRoot.resolve(relativeClassFile);
+        Files.createDirectories(destination.getParent());
+        Files.copy(sourceRoot.resolve(relativeClassFile), destination, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private JavaClasses importClasses(Class<?>... classes) {
