@@ -1,0 +1,180 @@
+pipeline {
+  agent any
+
+  triggers {
+    cron('H/2 * * * *')
+  }
+
+  options {
+    skipDefaultCheckout(true)
+    disableConcurrentBuilds()
+    timestamps()
+    timeout(time: 190, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '60'))
+  }
+
+  environment {
+    LANG = 'C.UTF-8'
+    LC_ALL = 'C.UTF-8'
+    GITHUB_REPOSITORY = 'HardyDou/mango'
+    MANGO_RELEASE_FALLBACK_REPO_URL = 'https://github.com/HardyDou/mango.git'
+    MANGO_RELEASE_STATE_DIR = "${JENKINS_HOME}/release-state/mango"
+    MANGO_RELEASE_POLL_OUTPUT = "${WORKSPACE}/.runtime/internal-release-candidate.properties"
+  }
+
+  stages {
+    stage('Sync Poller Source') {
+      options {
+        timeout(time: 2, unit: 'MINUTES')
+      }
+      steps {
+        sh '''#!/usr/bin/env bash
+          set -euo pipefail
+          if [ -d .git ]; then
+            git reset --hard
+            git clean -ffdx
+            git remote set-url origin "${MANGO_RELEASE_REPO_URL}"
+          else
+            git init .
+            git remote add origin "${MANGO_RELEASE_REPO_URL}"
+          fi
+          source_ready=false
+          for attempt in $(seq 1 3); do
+            if git fetch --force --no-tags origin main &&
+              git cat-file -e "FETCH_HEAD:scripts/ci/github-release-jenkins-poller.sh"; then
+              source_ready=true
+              break
+            fi
+            echo "Watcher source is not visible from the Gitea mirror; retry ${attempt}/3."
+            sleep 5
+          done
+          if [ "${source_ready}" != "true" ]; then
+            echo "Gitea mirror is delayed; loading the watcher from public GitHub main."
+            git remote remove watcher-fallback 2>/dev/null || true
+            git remote add watcher-fallback "${MANGO_RELEASE_FALLBACK_REPO_URL}"
+            git fetch --force --no-tags watcher-fallback main
+          fi
+          git checkout --detach FETCH_HEAD
+          test -x scripts/ci/github-release-jenkins-poller.sh
+        '''
+      }
+    }
+
+    stage('Discover Published Release') {
+      options {
+        timeout(time: 2, unit: 'MINUTES')
+      }
+      steps {
+        sh 'scripts/ci/github-release-jenkins-poller.sh discover'
+        script {
+          def values = [:]
+          readFile(env.MANGO_RELEASE_POLL_OUTPUT).readLines().each { line ->
+            def separator = line.indexOf('=')
+            if (separator > 0) {
+              values[line.substring(0, separator)] = line.substring(separator + 1)
+            }
+          }
+          env.RELEASE_ACTION = values.ACTION ?: 'none'
+          if (env.RELEASE_ACTION == 'release') {
+            env.RELEASE_TAG = values.RELEASE_TAG
+            env.RELEASE_ID = values.RELEASE_ID
+            env.GIT_SHA = values.GIT_SHA
+            env.RELEASE_VERSION = values.RELEASE_VERSION
+            env.RUN_TESTS = values.RUN_TESTS
+            env.REQUEST_ID = values.REQUEST_ID
+            currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.RELEASE_VERSION}"
+            currentBuild.description = "${env.RELEASE_TAG} sha=${env.GIT_SHA.take(12)}"
+          } else {
+            currentBuild.description = 'no pending release'
+          }
+        }
+      }
+    }
+
+    stage('Validate Exact Release Source') {
+      options {
+        timeout(time: 3, unit: 'MINUTES')
+      }
+      when {
+        environment name: 'RELEASE_ACTION', value: 'release'
+      }
+      steps {
+        sh '''#!/usr/bin/env bash
+          set -euo pipefail
+          validate_source() {
+            local remote_name="$1"
+            local remote_url="$2"
+            git remote remove "${remote_name}" 2>/dev/null || true
+            git remote add "${remote_name}" "${remote_url}"
+            git fetch --force --no-tags "${remote_name}" \
+              "${GIT_SHA}" \
+              "refs/heads/main:refs/remotes/${remote_name}/main" \
+              "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+            test "$(git rev-list -n 1 "refs/tags/${RELEASE_TAG}")" = "${GIT_SHA}"
+            git merge-base --is-ancestor "${GIT_SHA}" "refs/remotes/${remote_name}/main"
+          }
+
+          source_ready=false
+          for attempt in $(seq 1 3); do
+            if validate_source release-mirror "${MANGO_RELEASE_REPO_URL}"; then
+              source_ready=true
+              break
+            fi
+            echo "Release source is not visible from the Gitea mirror; retry ${attempt}/3."
+            sleep 5
+          done
+          if [ "${source_ready}" != "true" ]; then
+            echo "Gitea mirror is delayed; validating the exact release tag from public GitHub."
+            validate_source release-fallback "${MANGO_RELEASE_FALLBACK_REPO_URL}"
+          fi
+
+          locked_version="$(git show "${GIT_SHA}:mango-ui/packages/mango-cli/release-versions.json" |
+            awk -F'"' '/"mangoBackend"/ {print $4; exit}')"
+          test "${RELEASE_VERSION}" = "${locked_version}"
+          git show "${GIT_SHA}:CHANGELOG.md" | grep -Fq "maven-${RELEASE_VERSION}"
+          echo "Release source contract passed: ${RELEASE_TAG} ${GIT_SHA} ${RELEASE_VERSION}."
+        '''
+      }
+    }
+
+    stage('Claim And Publish') {
+      options {
+        timeout(time: 180, unit: 'MINUTES')
+      }
+      when {
+        environment name: 'RELEASE_ACTION', value: 'release'
+      }
+      steps {
+        script {
+          withEnv([
+            "RELEASE_ID=${env.RELEASE_ID}",
+            "RELEASE_TAG=${env.RELEASE_TAG}",
+            "RELEASE_VERSION=${env.RELEASE_VERSION}",
+            "GIT_SHA=${env.GIT_SHA}"
+          ]) {
+            sh 'scripts/ci/github-release-jenkins-poller.sh claim'
+            try {
+              build job: 'mango-maven-release', wait: true, propagate: true, parameters: [
+                string(name: 'GIT_SHA', value: env.GIT_SHA),
+                string(name: 'RELEASE_VERSION', value: env.RELEASE_VERSION),
+                string(name: 'REQUEST_ID', value: env.REQUEST_ID),
+                booleanParam(name: 'DRY_RUN', value: false),
+                booleanParam(name: 'RUN_TESTS', value: env.RUN_TESTS == 'true')
+              ]
+              sh 'scripts/ci/github-release-jenkins-poller.sh success'
+            } catch (error) {
+              sh 'scripts/ci/github-release-jenkins-poller.sh failed'
+              throw error
+            }
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      echo "Mango GitHub Release watcher finished. action=${env.RELEASE_ACTION ?: 'unknown'}"
+    }
+  }
+}
