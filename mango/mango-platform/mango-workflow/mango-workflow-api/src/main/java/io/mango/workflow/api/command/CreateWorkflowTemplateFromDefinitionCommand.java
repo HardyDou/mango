@@ -1,5 +1,7 @@
 package io.mango.workflow.api.command;
 
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -28,6 +30,7 @@ public class CreateWorkflowTemplateFromDefinitionCommand {
     private String templateCode;
 
     @Schema(description = "历史流程模板分类ID，业务域替换后前台不再使用")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long templateCategoryId;
 
     @Schema(description = "业务域编码。为空时使用流程定义所属业务域")

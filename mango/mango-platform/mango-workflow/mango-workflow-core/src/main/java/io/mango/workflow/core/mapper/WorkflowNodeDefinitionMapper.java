@@ -1,10 +1,12 @@
 package io.mango.workflow.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.workflow.core.entity.WorkflowNodeDefinition;
+import org.apache.ibatis.annotations.Mapper;
+import io.mango.workflow.core.entity.WorkflowNodeDefinitionEntity;
 
 /**
  * 流程节点定义 Mapper。
  */
-public interface WorkflowNodeDefinitionMapper extends BaseMapper<WorkflowNodeDefinition> {
+@Mapper
+public interface WorkflowNodeDefinitionMapper extends BaseMapper<WorkflowNodeDefinitionEntity> {
 }

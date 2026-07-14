@@ -4,9 +4,13 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
+import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressBatchVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
+import io.mango.workflow.core.model.WorkflowProcessStartedContext;
+import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 
 import java.util.Collection;
 import java.util.List;
@@ -17,27 +21,27 @@ import java.util.Map;
  */
 public interface IWorkflowBusinessApplyService {
 
-    R<WorkflowBusinessApplyVO> create(CreateWorkflowBusinessApplyCommand command);
+    WorkflowBusinessApplyVO create(CreateWorkflowBusinessApplyCommand command);
 
-    R<PageResult<WorkflowBusinessApplyVO>> page(WorkflowBusinessApplyPageQuery query);
+    PageResult<WorkflowBusinessApplyVO> page(WorkflowBusinessApplyPageQuery query);
 
-    R<WorkflowBusinessApplySummaryVO> mySummary();
+    WorkflowBusinessApplySummaryVO mySummary();
 
-    R<WorkflowBusinessApplyVO> detail(Long applyId);
+    WorkflowBusinessApplyVO detail(Long applyId);
 
-    R<PageResult<WorkflowBusinessApplyVO>> history(String businessType, String businessKey,
-                                                   WorkflowBusinessApplyPageQuery query);
+    PageResult<WorkflowBusinessApplyVO> history(WorkflowBusinessApplyPageQuery query);
 
-    R<WorkflowBusinessApplyProgressVO> latestProgress(String businessType, String businessKey);
+    WorkflowBusinessApplyProgressVO latestProgress(String businessType, String businessKey);
 
     Map<String, WorkflowBusinessApplyProgressVO> latestProgress(String businessType, Collection<String> businessKeys);
 
+    WorkflowBusinessApplyProgressBatchVO latestProgressBatch(WorkflowBusinessApplyProgressBatchRequest request);
+
     List<WorkflowBusinessApplyVO> latestByBusinessKeys(String businessType, Collection<String> businessKeys);
 
-    void markProcessStarted(Long applyId, Long processDefinitionId, String processDefinitionKey,
-                            String engineProcessDefinitionId, String processName, String processInstanceId);
+    void markProcessStarted(WorkflowProcessStartedContext context);
 
-    R<WorkflowBusinessApplyVO> byProcessInstance(String processInstanceId);
+    WorkflowBusinessApplyVO byProcessInstance(String processInstanceId);
 
     WorkflowBusinessApplyVO findByProcessInstance(String processInstanceId);
 
@@ -47,7 +51,7 @@ public interface IWorkflowBusinessApplyService {
 
     void markApproved(String processInstanceId);
 
-    void markRejected(String processInstanceId, String comment, String taskId, String taskDefinitionKey);
+    void markRejected(WorkflowTaskStatusContext context);
 
-    void markTerminated(String processInstanceId, String comment, String taskId, String taskDefinitionKey);
+    void markTerminated(WorkflowTaskStatusContext context);
 }

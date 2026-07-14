@@ -16,19 +16,19 @@ import io.mango.workflow.api.vo.WorkflowTemplateVO;
  */
 public interface IWorkflowTemplateService {
 
-    R<PageResult<WorkflowTemplateVO>> page(WorkflowTemplatePageQuery query);
+    PageResult<WorkflowTemplateVO> page(WorkflowTemplatePageQuery query);
 
-    R<WorkflowTemplateVO> get(Long id);
+    WorkflowTemplateVO get(Long id);
 
-    R<String> create(SaveWorkflowTemplateCommand command);
+    String create(SaveWorkflowTemplateCommand command);
 
-    R<Boolean> delete(Long id);
+    Boolean delete(Long id);
 
-    R<String> createFromDefinition(CreateWorkflowTemplateFromDefinitionCommand command);
+    String createFromDefinition(CreateWorkflowTemplateFromDefinitionCommand command);
 
-    R<String> createDefinition(CreateWorkflowDefinitionFromTemplateCommand command);
+    String createDefinition(CreateWorkflowDefinitionFromTemplateCommand command);
 
-    R<WorkflowTemplateImportVO> importTemplates(ImportWorkflowTemplatesCommand command);
+    WorkflowTemplateImportVO importTemplates(ImportWorkflowTemplatesCommand command);
 
-    R<WorkflowTemplateImportVO> pushTemplates(PushWorkflowTemplatesCommand command);
+    WorkflowTemplateImportVO pushTemplates(PushWorkflowTemplatesCommand command);
 }

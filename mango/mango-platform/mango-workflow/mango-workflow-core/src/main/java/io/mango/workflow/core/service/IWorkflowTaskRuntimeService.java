@@ -24,47 +24,49 @@ import io.mango.workflow.api.vo.WorkflowTaskVO;
  */
 public interface IWorkflowTaskRuntimeService {
 
-    R<PageResult<WorkflowTaskVO>> todo(WorkflowTaskPageQuery query);
+    PageResult<WorkflowTaskVO> todo(WorkflowTaskPageQuery query);
 
-    R<PageResult<WorkflowTaskVO>> done(WorkflowTaskPageQuery query);
+    PageResult<WorkflowTaskVO> initiated(WorkflowTaskPageQuery query);
 
-    R<PageResult<WorkflowTaskVO>> copied(WorkflowTaskPageQuery query);
+    PageResult<WorkflowTaskVO> done(WorkflowTaskPageQuery query);
 
-    R<WorkflowTaskSummaryVO> summary();
+    PageResult<WorkflowTaskVO> copied(WorkflowTaskPageQuery query);
 
-    R<WorkflowMyTaskSummaryVO> myTaskSummary();
+    WorkflowTaskSummaryVO summary();
 
-    R<WorkflowTaskDetailVO> detail(String taskId);
+    WorkflowMyTaskSummaryVO myTaskSummary();
 
-    R<Boolean> complete(CompleteWorkflowTaskCommand command);
+    WorkflowTaskDetailVO detail(String taskId);
 
-    R<WorkflowTaskCompleteResultVO> completeWithResult(CompleteWorkflowTaskCommand command);
+    Boolean complete(CompleteWorkflowTaskCommand command);
 
-    R<Boolean> reject(RejectWorkflowTaskCommand command);
+    WorkflowTaskCompleteResultVO completeWithResult(CompleteWorkflowTaskCommand command);
 
-    R<WorkflowTaskActionResultVO> rejectWithResult(RejectWorkflowTaskCommand command);
+    Boolean reject(RejectWorkflowTaskCommand command);
 
-    R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command);
+    WorkflowTaskActionResultVO rejectWithResult(RejectWorkflowTaskCommand command);
 
-    R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command);
+    WorkflowTaskCompleteResultVO returnTask(ReturnWorkflowTaskCommand command);
 
-    R<WorkflowTaskActionResultVO> saveDraftWithResult(SaveWorkflowTaskDraftCommand command);
+    Boolean saveDraft(SaveWorkflowTaskDraftCommand command);
 
-    R<Boolean> transfer(TransferWorkflowTaskCommand command);
+    WorkflowTaskActionResultVO saveDraftWithResult(SaveWorkflowTaskDraftCommand command);
 
-    R<Boolean> addSign(AddSignWorkflowTaskCommand command);
+    Boolean transfer(TransferWorkflowTaskCommand command);
 
-    R<Boolean> claim(ClaimWorkflowTaskCommand command);
+    Boolean addSign(AddSignWorkflowTaskCommand command);
 
-    R<WorkflowTaskActionResultVO> claimWithResult(ClaimWorkflowTaskCommand command);
+    Boolean claim(ClaimWorkflowTaskCommand command);
 
-    R<Boolean> unclaim(ClaimWorkflowTaskCommand command);
+    WorkflowTaskActionResultVO claimWithResult(ClaimWorkflowTaskCommand command);
 
-    R<WorkflowTaskActionResultVO> unclaimWithResult(ClaimWorkflowTaskCommand command);
+    Boolean unclaim(ClaimWorkflowTaskCommand command);
 
-    R<Boolean> readCopied(ReadWorkflowCopiedTaskCommand command);
+    WorkflowTaskActionResultVO unclaimWithResult(ClaimWorkflowTaskCommand command);
 
-    R<WorkflowProcessDetailVO> processDetail(String processInstanceId);
+    Boolean readCopied(ReadWorkflowCopiedTaskCommand command);
+
+    WorkflowProcessDetailVO processDetail(String processInstanceId);
 
     WorkflowTaskAdvanceResult advanceRuntimeTasks(String processInstanceId);
 }

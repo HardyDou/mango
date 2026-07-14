@@ -37,21 +37,22 @@ class WorkflowApiControllerContractTest {
     private final WorkflowBusinessApplyController businessApplyController =
             new WorkflowBusinessApplyController(businessApplyService);
     private final WorkflowProcessController processController = new WorkflowProcessController(processService);
+    private final WorkflowBusinessProcessController businessProcessController =
+            new WorkflowBusinessProcessController(processService);
     private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService);
 
     @Test
     void controllers_carryWorkflowApiContracts() {
         assertThat(businessApplyController).isInstanceOf(WorkflowBusinessApplyApi.class);
-        assertThat(processController)
-                .isInstanceOf(WorkflowProcessApi.class)
-                .isInstanceOf(WorkflowBusinessProcessApi.class);
+        assertThat(processController).isInstanceOf(WorkflowProcessApi.class);
+        assertThat(businessProcessController).isInstanceOf(WorkflowBusinessProcessApi.class);
         assertThat(taskController).isInstanceOf(WorkflowTaskRuntimeApi.class);
     }
 
     @Test
     void taskQueryMethods_delegateToRuntimeService() {
         WorkflowTaskPageQuery query = new WorkflowTaskPageQuery();
-        R<PageResult<WorkflowTaskVO>> page = R.ok(PageResult.of(List.of(), 0, 1, 10));
+        PageResult<WorkflowTaskVO> page = PageResult.of(List.of(), 0, 1, 10);
         WorkflowTaskSummaryVO taskSummary = new WorkflowTaskSummaryVO();
         WorkflowMyTaskSummaryVO mySummary = new WorkflowMyTaskSummaryVO();
         WorkflowTaskDetailVO detail = new WorkflowTaskDetailVO();
@@ -59,14 +60,14 @@ class WorkflowApiControllerContractTest {
         when(runtimeService.todo(query)).thenReturn(page);
         when(runtimeService.done(query)).thenReturn(page);
         when(runtimeService.copied(query)).thenReturn(page);
-        when(runtimeService.summary()).thenReturn(R.ok(taskSummary));
-        when(runtimeService.myTaskSummary()).thenReturn(R.ok(mySummary));
-        when(runtimeService.detail("task-1")).thenReturn(R.ok(detail));
-        when(runtimeService.processDetail("process-1")).thenReturn(R.ok(processDetail));
+        when(runtimeService.summary()).thenReturn(taskSummary);
+        when(runtimeService.myTaskSummary()).thenReturn(mySummary);
+        when(runtimeService.detail("task-1")).thenReturn(detail);
+        when(runtimeService.processDetail("process-1")).thenReturn(processDetail);
 
-        assertThat(taskController.todo(query)).isSameAs(page);
-        assertThat(taskController.done(query)).isSameAs(page);
-        assertThat(taskController.copied(query)).isSameAs(page);
+        assertThat(taskController.todo(query).getData()).isSameAs(page);
+        assertThat(taskController.done(query).getData()).isSameAs(page);
+        assertThat(taskController.copied(query).getData()).isSameAs(page);
         assertThat(taskController.summary().getData()).isSameAs(taskSummary);
         assertThat(taskController.myTaskSummary().getData()).isSameAs(mySummary);
         assertThat(taskController.detail("task-1").getData()).isSameAs(detail);
@@ -87,16 +88,16 @@ class WorkflowApiControllerContractTest {
         ClaimWorkflowTaskCommand claim = new ClaimWorkflowTaskCommand();
         ReadWorkflowCopiedTaskCommand readCopied = new ReadWorkflowCopiedTaskCommand();
         WorkflowTaskCompleteResultVO completeResult = new WorkflowTaskCompleteResultVO();
-        when(runtimeService.complete(complete)).thenReturn(R.ok(Boolean.TRUE));
-        when(runtimeService.completeWithResult(complete)).thenReturn(R.ok(completeResult));
-        when(runtimeService.reject(null)).thenReturn(R.ok(Boolean.TRUE));
-        when(runtimeService.returnTask(null)).thenReturn(R.ok(completeResult));
-        when(runtimeService.saveDraft(null)).thenReturn(R.ok(Boolean.TRUE));
-        when(runtimeService.transfer(null)).thenReturn(R.ok(Boolean.TRUE));
-        when(runtimeService.addSign(null)).thenReturn(R.ok(Boolean.TRUE));
-        when(runtimeService.claim(claim)).thenReturn(R.ok(Boolean.TRUE));
-        when(runtimeService.unclaim(claim)).thenReturn(R.ok(Boolean.TRUE));
-        when(runtimeService.readCopied(readCopied)).thenReturn(R.ok(Boolean.TRUE));
+        when(runtimeService.complete(complete)).thenReturn(Boolean.TRUE);
+        when(runtimeService.completeWithResult(complete)).thenReturn(completeResult);
+        when(runtimeService.reject(null)).thenReturn(Boolean.TRUE);
+        when(runtimeService.returnTask(null)).thenReturn(completeResult);
+        when(runtimeService.saveDraft(null)).thenReturn(Boolean.TRUE);
+        when(runtimeService.transfer(null)).thenReturn(Boolean.TRUE);
+        when(runtimeService.addSign(null)).thenReturn(Boolean.TRUE);
+        when(runtimeService.claim(claim)).thenReturn(Boolean.TRUE);
+        when(runtimeService.unclaim(claim)).thenReturn(Boolean.TRUE);
+        when(runtimeService.readCopied(readCopied)).thenReturn(Boolean.TRUE);
 
         assertThat(taskController.complete(complete).getData()).isTrue();
         assertThat(taskController.completeWithResult(complete).getData()).isSameAs(completeResult);

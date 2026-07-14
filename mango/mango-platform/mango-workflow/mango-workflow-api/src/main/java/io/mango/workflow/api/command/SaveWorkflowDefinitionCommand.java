@@ -1,5 +1,9 @@
 package io.mango.workflow.api.command;
 
+import jakarta.validation.constraints.NotNull;
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
+
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -17,9 +21,11 @@ import java.util.List;
 public class SaveWorkflowDefinitionCommand {
 
     @Schema(description = "流程定义ID，新增时为空，修改时必填")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long id;
 
     @Schema(description = "流程分类ID，用于流程发起页分组和工作流模块内运营分类")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long categoryId;
 
     @Schema(description = "业务域编码")
@@ -28,12 +34,15 @@ public class SaveWorkflowDefinitionCommand {
     private String domainCode;
 
     @Schema(description = "所属组织ID")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long orgId;
 
     @Schema(description = "流程管理员用户名列表；审批人为空且策略为转交管理员时优先使用")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private List<String> adminUsers;
 
     @Schema(description = "启动入口是否可见；false 表示不出现在审批中心发起流程入口")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Boolean startEntryVisible;
 
     @Schema(description = "流程图标")
@@ -55,6 +64,7 @@ public class SaveWorkflowDefinitionCommand {
     private String designerJson;
 
     @Schema(description = "BPMN XML内容，兼容调试字段，正式发布时由后端根据设计器JSON生成")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String bpmnXml;
 
     @Schema(description = "表单编码，用于业务表单关联")
@@ -62,9 +72,11 @@ public class SaveWorkflowDefinitionCommand {
     private String formCode;
 
     @Schema(description = "动态表单JSON配置，保存流程发起或审批表单字段定义")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String formJson;
 
     @Schema(description = "流程状态：DRAFT-草稿，PUBLISHED-已发布，DISABLED-停用")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String status;
 
     @Schema(description = "备注")

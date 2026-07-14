@@ -18,15 +18,15 @@ import java.util.List;
  */
 public interface IWorkflowProcessService {
 
-    R<WorkflowProcessInstanceVO> start(StartWorkflowProcessCommand command);
+    WorkflowProcessInstanceVO start(StartWorkflowProcessCommand command);
 
-    R<WorkflowStartResultVO> startBusinessWorkflow(StartBusinessWorkflowCommand command);
+    WorkflowStartResultVO startBusinessWorkflow(StartBusinessWorkflowCommand command);
 
-    R<PageResult<WorkflowProcessInstanceVO>> initiated(WorkflowTaskPageQuery query);
+    PageResult<WorkflowProcessInstanceVO> initiated(WorkflowTaskPageQuery query);
 
-    R<WorkflowProcessDetailVO> detail(String processInstanceId);
+    WorkflowProcessDetailVO detail(String processInstanceId);
 
-    R<PageResult<WorkflowProcessInstanceVO>> historyByBusinessKey(String businessKey, WorkflowTaskPageQuery query);
+    PageResult<WorkflowProcessInstanceVO> historyByBusinessKey(String businessKey, WorkflowTaskPageQuery query);
 
     List<WorkflowBusinessProcessVO> latestByBusinessKeys(Collection<String> businessKeys);
 

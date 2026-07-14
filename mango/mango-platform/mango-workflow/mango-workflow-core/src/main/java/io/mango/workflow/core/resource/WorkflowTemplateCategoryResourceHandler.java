@@ -6,7 +6,7 @@ import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
-import io.mango.workflow.core.entity.WorkflowTemplateCategory;
+import io.mango.workflow.core.entity.WorkflowTemplateCategoryEntity;
 import io.mango.workflow.core.mapper.WorkflowTemplateCategoryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -54,9 +54,9 @@ public class WorkflowTemplateCategoryResourceHandler implements ResourceHandler 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         Payload payload = Payload.from(resource);
-        WorkflowTemplateCategory entity = find(payload.tenantId(), payload.categoryCode());
+        WorkflowTemplateCategoryEntity entity = find(payload.tenantId(), payload.categoryCode());
         if (entity == null) {
-            entity = new WorkflowTemplateCategory();
+            entity = new WorkflowTemplateCategoryEntity();
             entity.setId(payload.categoryId());
             apply(entity, payload);
             categoryMapper.insert(entity);
@@ -70,7 +70,7 @@ public class WorkflowTemplateCategoryResourceHandler implements ResourceHandler 
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        WorkflowTemplateCategory entity = resolve(resource);
+        WorkflowTemplateCategoryEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow template category not found");
         }
@@ -84,7 +84,7 @@ public class WorkflowTemplateCategoryResourceHandler implements ResourceHandler 
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        WorkflowTemplateCategory entity = resolve(resource);
+        WorkflowTemplateCategoryEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow template category not found");
         }
@@ -93,7 +93,7 @@ public class WorkflowTemplateCategoryResourceHandler implements ResourceHandler 
                 "Workflow template category deleted: " + entity.getCategoryCode());
     }
 
-    private void apply(WorkflowTemplateCategory entity, Payload payload) {
+    private void apply(WorkflowTemplateCategoryEntity entity, Payload payload) {
         LocalDateTime now = LocalDateTime.now();
         entity.setTenantId(payload.tenantId());
         entity.setParentId(payload.parentId());
@@ -113,11 +113,11 @@ public class WorkflowTemplateCategoryResourceHandler implements ResourceHandler 
         entity.setUpdatedAt(now);
     }
 
-    private WorkflowTemplateCategory resolve(ResourceDeclaration resource) {
+    private WorkflowTemplateCategoryEntity resolve(ResourceDeclaration resource) {
         Long tenantId = WorkflowResourceFields.longValue(resource, "tenantId", false, DEFAULT_TENANT_ID);
         String categoryCode = WorkflowResourceFields.text(resource, "categoryCode", false);
         if (StringUtils.hasText(categoryCode)) {
-            WorkflowTemplateCategory entity = find(tenantId, categoryCode.trim());
+            WorkflowTemplateCategoryEntity entity = find(tenantId, categoryCode.trim());
             if (entity != null) {
                 return entity;
             }
@@ -126,10 +126,10 @@ public class WorkflowTemplateCategoryResourceHandler implements ResourceHandler 
         return targetId == null ? null : categoryMapper.selectById(targetId);
     }
 
-    private WorkflowTemplateCategory find(Long tenantId, String categoryCode) {
-        return categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowTemplateCategory>()
-                .eq(WorkflowTemplateCategory::getTenantId, tenantId)
-                .eq(WorkflowTemplateCategory::getCategoryCode, categoryCode)
+    private WorkflowTemplateCategoryEntity find(Long tenantId, String categoryCode) {
+        return categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowTemplateCategoryEntity>()
+                .eq(WorkflowTemplateCategoryEntity::getTenantId, tenantId)
+                .eq(WorkflowTemplateCategoryEntity::getCategoryCode, categoryCode)
                 .last("limit 1"));
     }
 

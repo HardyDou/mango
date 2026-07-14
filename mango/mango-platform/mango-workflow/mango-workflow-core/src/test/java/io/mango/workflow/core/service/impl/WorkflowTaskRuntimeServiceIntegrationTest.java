@@ -1,5 +1,6 @@
 package io.mango.workflow.core.service.impl;
 
+import io.mango.workflow.core.model.WorkflowProcessStartedContext;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -113,7 +114,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
         command.setTaskId(managerTask.getId());
         command.setComment("同意");
-        var result = taskRuntimeService.completeWithResult(command).getData();
+        var result = taskRuntimeService.completeWithResult(command);
 
         assertThat(result.getEnded()).isFalse();
         assertThat(result.getApplyId()).isEqualTo(started.applyId());
@@ -168,7 +169,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
         returnCommand.setTaskId(financeTask.getId());
         returnCommand.setComment("退回经理补充");
-        var result = taskRuntimeService.returnTask(returnCommand).getData();
+        var result = taskRuntimeService.returnTask(returnCommand);
 
         assertThat(result.getEnded()).isFalse();
         assertThat(result.getApplyId()).isEqualTo(started.applyId());
@@ -217,7 +218,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         applyCommand.setBusinessKey(businessKey);
         applyCommand.setApplyTitle("Issue 233 集成测试");
         applyCommand.setProcessDefinitionKey("issue_233_runtime");
-        Long applyId = businessApplyService.create(applyCommand).getData().getId();
+        Long applyId = businessApplyService.create(applyCommand).getId();
 
         ProcessInstance instance = runtimeService.startProcessInstanceByKey("issue_233_runtime", businessKey, Map.of(
                 "businessType", "ISSUE_233",
@@ -225,13 +226,13 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 "applyId", String.valueOf(applyId),
                 "mangoInitiator", "admin"
         ));
-        businessApplyService.markProcessStarted(
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
                 applyId,
                 233L,
                 "issue_233_runtime",
                 processDefinition.getId(),
                 processDefinition.getName(),
-                instance.getProcessInstanceId());
+                instance.getProcessInstanceId()));
         return new StartedWorkflow(applyId, instance.getProcessInstanceId());
     }
 
@@ -255,6 +256,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 create table workflow_business_apply (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     apply_code varchar(128),
                     business_type varchar(128),
                     business_key varchar(128),
@@ -299,6 +301,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 create table workflow_business_apply_current_task (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     apply_id bigint,
                     business_type varchar(128),
                     business_key varchar(128),
@@ -308,8 +311,13 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                     task_name varchar(255),
                     assignee_id bigint,
                     assignee_name varchar(128),
+                    claim_status varchar(32) not null default 'ASSIGNED',
+                    candidate_users varchar(1000),
+                    candidate_groups varchar(1000),
                     arrived_at timestamp,
+                    created_by bigint,
                     created_at timestamp,
+                    updated_by bigint,
                     updated_at timestamp,
                     primary key (id)
                 )
@@ -318,6 +326,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 create table workflow_business_apply_status_log (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     apply_id bigint,
                     from_status varchar(64),
                     to_status varchar(64),
@@ -329,7 +338,10 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                     task_id varchar(128),
                     task_definition_key varchar(255),
                     process_instance_id varchar(128),
+                    created_by bigint,
                     created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp,
                     primary key (id)
                 )
                 """);
@@ -337,6 +349,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 create table workflow_task_record (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     process_instance_id varchar(128),
                     task_id varchar(128),
                     task_name varchar(255),
@@ -348,6 +361,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                     comment varchar(1000),
                     variables_json text,
                     created_time timestamp,
+                    created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
                     updated_at timestamp,
@@ -358,6 +372,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 create table workflow_form_instance (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     process_instance_id varchar(128),
                     business_key varchar(128),
                     definition_id bigint,
@@ -382,6 +397,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 create table workflow_copied_task (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     process_instance_id varchar(128),
                     process_definition_id varchar(128),
                     process_name varchar(255),
@@ -395,6 +411,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                     read_flag boolean,
                     read_time timestamp,
                     created_time timestamp,
+                    created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
                     updated_at timestamp,
@@ -446,8 +463,8 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             WorkflowAssigneeResolver.class,
             WorkflowCandidateGroupProvider.class,
             WorkflowEventPublisher.class,
-            WorkflowBusinessApplyServiceImpl.class,
-            WorkflowTaskRuntimeServiceImpl.class
+            WorkflowBusinessApplyService.class,
+            WorkflowTaskRuntimeService.class
     })
     @MapperScan(basePackageClasses = {
             WorkflowBusinessApplyMapper.class,

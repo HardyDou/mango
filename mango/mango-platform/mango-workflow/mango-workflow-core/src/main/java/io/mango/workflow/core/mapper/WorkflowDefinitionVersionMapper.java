@@ -1,10 +1,12 @@
 package io.mango.workflow.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.workflow.core.entity.WorkflowDefinitionVersion;
+import org.apache.ibatis.annotations.Mapper;
+import io.mango.workflow.core.entity.WorkflowDefinitionVersionEntity;
 
 /**
  * 流程定义发布版本 Mapper。
  */
-public interface WorkflowDefinitionVersionMapper extends BaseMapper<WorkflowDefinitionVersion> {
+@Mapper
+public interface WorkflowDefinitionVersionMapper extends BaseMapper<WorkflowDefinitionVersionEntity> {
 }

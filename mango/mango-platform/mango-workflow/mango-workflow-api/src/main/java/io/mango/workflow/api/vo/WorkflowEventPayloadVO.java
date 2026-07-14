@@ -38,7 +38,7 @@ public class WorkflowEventPayloadVO {
     private String applyId;
 
     @Schema(description = "流程变量快照")
-    private Map<String, Object> variables;
+    private WorkflowJsonVO variables;
 
     @Schema(description = "Flowable 流程定义ID")
     private String processDefinitionId;

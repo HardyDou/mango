@@ -1,12 +1,13 @@
 package io.mango.workflow.starter.remote;
 
+import io.mango.common.result.R;
 import io.mango.workflow.api.WorkflowBusinessProcessApi;
 import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
+import io.mango.workflow.api.query.WorkflowBusinessKeysQuery;
+import io.mango.workflow.api.query.WorkflowBusinessTypeKeysQuery;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -18,11 +19,11 @@ public interface WorkflowBusinessProcessFeignClient extends WorkflowBusinessProc
 
     @Override
     @GetMapping("/business/latest-by-keys")
-    List<WorkflowBusinessProcessVO> latestByBusinessKeys(
-            @RequestParam("businessKeys") Collection<String> businessKeys);
+    R<List<WorkflowBusinessProcessVO>> latestByBusinessKeys(
+            @SpringQueryMap WorkflowBusinessKeysQuery query);
 
     @Override
     @GetMapping("/business/latest-by-type-keys")
-    List<WorkflowBusinessProcessVO> latestByBusinessKeys(@RequestParam("businessType") String businessType,
-                                                         @RequestParam("businessKeys") Collection<String> businessKeys);
+    R<List<WorkflowBusinessProcessVO>> latestByBusinessTypeKeys(
+            @SpringQueryMap WorkflowBusinessTypeKeysQuery query);
 }

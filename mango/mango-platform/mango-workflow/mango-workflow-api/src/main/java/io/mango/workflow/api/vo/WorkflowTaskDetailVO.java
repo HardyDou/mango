@@ -26,10 +26,10 @@ public class WorkflowTaskDetailVO {
     private String formJson;
 
     @Schema(description = "当前变量")
-    private Map<String, Object> variables;
+    private WorkflowJsonVO variables;
 
     @Schema(description = "当前节点表单字段权限，key 为字段标识，value 为 HIDDEN/READONLY/EDITABLE")
-    private Map<String, String> formPermissions;
+    private WorkflowJsonVO formPermissions;
 
     @Schema(description = "申请/审批页面渲染协议")
     private WorkflowRenderConfigVO renderConfig;

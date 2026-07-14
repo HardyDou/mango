@@ -18,51 +18,55 @@ import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * 工作流任务运行时 API。
  */
 public interface WorkflowTaskRuntimeApi {
 
-    R<PageResult<WorkflowTaskVO>> todo(WorkflowTaskPageQuery query);
+    R<PageResult<WorkflowTaskVO>> todo(@Valid WorkflowTaskPageQuery query);
 
-    R<PageResult<WorkflowTaskVO>> done(WorkflowTaskPageQuery query);
+    R<PageResult<WorkflowTaskVO>> initiated(@Valid WorkflowTaskPageQuery query);
 
-    R<PageResult<WorkflowTaskVO>> copied(WorkflowTaskPageQuery query);
+    R<PageResult<WorkflowTaskVO>> done(@Valid WorkflowTaskPageQuery query);
+
+    R<PageResult<WorkflowTaskVO>> copied(@Valid WorkflowTaskPageQuery query);
 
     R<WorkflowTaskSummaryVO> summary();
 
     R<WorkflowMyTaskSummaryVO> myTaskSummary();
 
-    R<WorkflowTaskDetailVO> detail(String taskId);
+    R<WorkflowTaskDetailVO> detail(@NotBlank String taskId);
 
-    R<Boolean> complete(CompleteWorkflowTaskCommand command);
+    R<Boolean> complete(@Valid CompleteWorkflowTaskCommand command);
 
-    R<WorkflowTaskCompleteResultVO> completeWithResult(CompleteWorkflowTaskCommand command);
+    R<WorkflowTaskCompleteResultVO> completeWithResult(@Valid CompleteWorkflowTaskCommand command);
 
-    R<Boolean> reject(RejectWorkflowTaskCommand command);
+    R<Boolean> reject(@Valid RejectWorkflowTaskCommand command);
 
-    R<WorkflowTaskActionResultVO> rejectWithResult(RejectWorkflowTaskCommand command);
+    R<WorkflowTaskActionResultVO> rejectWithResult(@Valid RejectWorkflowTaskCommand command);
 
-    R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command);
+    R<WorkflowTaskCompleteResultVO> returnTask(@Valid ReturnWorkflowTaskCommand command);
 
-    R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command);
+    R<Boolean> saveDraft(@Valid SaveWorkflowTaskDraftCommand command);
 
-    R<WorkflowTaskActionResultVO> saveDraftWithResult(SaveWorkflowTaskDraftCommand command);
+    R<WorkflowTaskActionResultVO> saveDraftWithResult(@Valid SaveWorkflowTaskDraftCommand command);
 
-    R<Boolean> transfer(TransferWorkflowTaskCommand command);
+    R<Boolean> transfer(@Valid TransferWorkflowTaskCommand command);
 
-    R<Boolean> addSign(AddSignWorkflowTaskCommand command);
+    R<Boolean> addSign(@Valid AddSignWorkflowTaskCommand command);
 
-    R<Boolean> claim(ClaimWorkflowTaskCommand command);
+    R<Boolean> claim(@Valid ClaimWorkflowTaskCommand command);
 
-    R<WorkflowTaskActionResultVO> claimWithResult(ClaimWorkflowTaskCommand command);
+    R<WorkflowTaskActionResultVO> claimWithResult(@Valid ClaimWorkflowTaskCommand command);
 
-    R<Boolean> unclaim(ClaimWorkflowTaskCommand command);
+    R<Boolean> unclaim(@Valid ClaimWorkflowTaskCommand command);
 
-    R<WorkflowTaskActionResultVO> unclaimWithResult(ClaimWorkflowTaskCommand command);
+    R<WorkflowTaskActionResultVO> unclaimWithResult(@Valid ClaimWorkflowTaskCommand command);
 
-    R<Boolean> readCopied(ReadWorkflowCopiedTaskCommand command);
+    R<Boolean> readCopied(@Valid ReadWorkflowCopiedTaskCommand command);
 
-    R<WorkflowProcessDetailVO> processDetail(String processInstanceId);
+    R<WorkflowProcessDetailVO> processDetail(@NotBlank String processInstanceId);
 }

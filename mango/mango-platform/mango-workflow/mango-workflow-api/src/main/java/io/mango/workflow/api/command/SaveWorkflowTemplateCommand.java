@@ -1,5 +1,9 @@
 package io.mango.workflow.api.command;
 
+import jakarta.validation.constraints.NotNull;
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
+
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -17,6 +21,7 @@ import java.util.List;
 public class SaveWorkflowTemplateCommand {
 
     @Schema(description = "流程模板ID，仅详情回显使用；模板不可修改")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long id;
 
     @Schema(description = "模板名称")
@@ -30,6 +35,7 @@ public class SaveWorkflowTemplateCommand {
     private String templateCode;
 
     @Schema(description = "历史流程模板分类ID，业务域替换后前台不再使用")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long templateCategoryId;
 
     @Schema(description = "业务域编码")
@@ -46,6 +52,7 @@ public class SaveWorkflowTemplateCommand {
     private String icon;
 
     @Schema(description = "流程管理员用户名列表")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private List<String> adminUsers;
 
     @Schema(description = "设计器JSON内容")
@@ -57,12 +64,15 @@ public class SaveWorkflowTemplateCommand {
     private String formCode;
 
     @Schema(description = "动态表单JSON配置")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String formJson;
 
     @Schema(description = "模板状态：ENABLED-可导入，DISABLED-停用，ARCHIVED-归档")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String status;
 
     @Schema(description = "模板版本号")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Integer versionNo;
 
     @Schema(description = "备注")

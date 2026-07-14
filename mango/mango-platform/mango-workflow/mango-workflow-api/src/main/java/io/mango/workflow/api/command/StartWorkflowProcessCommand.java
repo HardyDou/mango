@@ -1,5 +1,9 @@
 package io.mango.workflow.api.command;
 
+import jakarta.validation.constraints.NotNull;
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
+
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import jakarta.validation.constraints.Size;
@@ -15,6 +19,7 @@ import java.util.Map;
 public class StartWorkflowProcessCommand {
 
     @Schema(description = "Mango流程定义ID")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long definitionId;
 
     @Schema(description = "流程定义编码，definitionId 为空时按编码发起最新已发布流程")
@@ -30,9 +35,11 @@ public class StartWorkflowProcessCommand {
     private String businessType;
 
     @Schema(description = "业务申请ID")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long applyId;
 
     @Schema(description = "申请审批渲染模式")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private WorkflowApplyRenderMode renderMode;
 
     @Schema(description = "自定义申请页Key")
@@ -48,8 +55,12 @@ public class StartWorkflowProcessCommand {
     private String snapshotRef;
 
     @Schema(description = "发起表单变量")
-    private Map<String, Object> variables;
+    @NotNull(groups = WorkflowOptionalValidation.class)
+    @jakarta.validation.Valid
+    private WorkflowJsonRequest variables;
 
     @Schema(description = "发起人自选审批人，key 为节点ID或节点定义Key，value 为用户ID/用户名数组")
-    private Map<String, Object> selectedAssignees;
+    @NotNull(groups = WorkflowOptionalValidation.class)
+    @jakarta.validation.Valid
+    private WorkflowJsonRequest selectedAssignees;
 }

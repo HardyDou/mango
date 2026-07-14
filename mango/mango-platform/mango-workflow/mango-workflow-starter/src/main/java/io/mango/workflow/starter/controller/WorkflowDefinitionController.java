@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
@@ -39,6 +40,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/workflow/definitions")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "工作流定义", description = "流程定义列表、详情、新增、修改、删除、启停与发布接口")
 public class WorkflowDefinitionController implements WorkflowDefinitionApi {
 
@@ -47,71 +49,80 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @GetMapping("/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:list")
     @Operation(summary = "分页查询流程定义", description = "权限接口。分页查询流程定义配置")
-    public R<PageResult<WorkflowDefinitionVO>> page(@ParameterObject WorkflowDefinitionPageQuery query) {
-        return workflowDefinitionService.page(query);
+    @Override
+    public R<PageResult<WorkflowDefinitionVO>> page(
+            @Valid @ParameterObject WorkflowDefinitionPageQuery query) {
+        return R.ok(workflowDefinitionService.page(query));
     }
 
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:query")
     @Operation(summary = "获取流程定义详情", description = "权限接口。按流程定义ID查询详情，包含设计器JSON和最近一次发布BPMN XML")
+    @Override
     public R<WorkflowDefinitionVO> get(
             @Parameter(description = "流程定义ID", required = true)
-            @RequestParam Long id) {
-        return workflowDefinitionService.get(id);
+            @RequestParam("id") Long id) {
+        return R.ok(workflowDefinitionService.get(id));
     }
 
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:add")
     @Operation(summary = "新增流程定义", description = "权限接口。创建流程定义草稿")
+    @Override
     public R<String> create(
             @Parameter(description = "保存流程定义命令", required = true)
             @Valid @RequestBody SaveWorkflowDefinitionCommand command) {
-        return workflowDefinitionService.create(command);
+        return R.ok(workflowDefinitionService.create(command));
     }
 
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:edit")
     @Operation(summary = "修改流程定义", description = "权限接口。更新流程定义配置和设计器JSON草稿")
+    @Override
     public R<Boolean> update(
             @Parameter(description = "保存流程定义命令", required = true)
             @Valid @RequestBody SaveWorkflowDefinitionCommand command) {
-        return workflowDefinitionService.update(command);
+        return R.ok(workflowDefinitionService.update(command));
     }
 
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:delete")
     @Operation(summary = "删除流程定义", description = "权限接口。删除未发布或已停用的流程定义配置")
+    @Override
     public R<Boolean> delete(
             @Parameter(description = "流程定义ID", required = true)
-            @RequestParam Long id) {
-        return workflowDefinitionService.delete(id);
+            @RequestParam("id") Long id) {
+        return R.ok(workflowDefinitionService.delete(id));
     }
 
     @PutMapping("/status")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:status")
     @Operation(summary = "修改流程定义状态", description = "权限接口。修改流程定义状态，支持草稿、已发布和停用")
+    @Override
     public R<Boolean> updateStatus(
             @Parameter(description = "修改流程定义状态命令", required = true)
             @Valid @RequestBody UpdateWorkflowDefinitionStatusCommand command) {
-        return workflowDefinitionService.updateStatus(command);
+        return R.ok(workflowDefinitionService.updateStatus(command));
     }
 
     @PostMapping("/discard-draft")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:edit")
     @Operation(summary = "撤回未发布修改", description = "权限接口。将当前编辑稿回滚到最近一次成功发布版本")
+    @Override
     public R<Boolean> discardDraft(
             @Parameter(description = "流程定义ID", required = true)
-            @RequestParam Long id) {
-        return workflowDefinitionService.discardDraft(id);
+            @RequestParam("id") Long id) {
+        return R.ok(workflowDefinitionService.discardDraft(id));
     }
 
     @PostMapping("/deploy")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:deploy")
     @Operation(summary = "发布流程定义", description = "权限接口。将当前设计器JSON转换为 BPMN 并部署到 Flowable 引擎，同时记录发布版本")
+    @Override
     public R<WorkflowDeployVO> deploy(
             @Parameter(description = "流程定义ID", required = true)
-            @RequestParam Long id) {
-        return workflowDefinitionService.deploy(id);
+            @RequestParam("id") Long id) {
+        return R.ok(workflowDefinitionService.deploy(id));
     }
 
     @Override
@@ -122,29 +133,33 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     public R<WorkflowDeployVO> ensurePublished(
             @Parameter(description = "确保流程定义已发布命令", required = true)
             @Valid @RequestBody EnsureWorkflowDefinitionCommand command) {
-        return workflowDefinitionService.ensurePublished(command);
+        return R.ok(workflowDefinitionService.ensurePublished(command));
     }
 
     @GetMapping("/versions")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:query")
     @Operation(summary = "查询流程发布版本", description = "权限接口。查询指定流程定义的历史发布版本")
-    public R<List<WorkflowDefinitionVersionVO>> versions(@ParameterObject WorkflowDefinitionVersionQuery query) {
-        return workflowDefinitionService.versions(query);
+    @Override
+    public R<List<WorkflowDefinitionVersionVO>> versions(
+            @Valid @ParameterObject WorkflowDefinitionVersionQuery query) {
+        return R.ok(workflowDefinitionService.versions(query));
     }
 
     @GetMapping("/version-detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:query")
     @Operation(summary = "获取流程发布版本详情", description = "权限接口。按发布版本ID查询设计器JSON和BPMN XML快照")
+    @Override
     public R<WorkflowDefinitionVersionVO> versionDetail(
             @Parameter(description = "发布版本ID", required = true)
-            @RequestParam Long id) {
-        return workflowDefinitionService.versionDetail(id);
+            @RequestParam("id") Long id) {
+        return R.ok(workflowDefinitionService.versionDetail(id));
     }
 
     @GetMapping("/node-catalog")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:query")
     @Operation(summary = "查询工作流设计器节点目录", description = "权限接口。查询通用流程节点模板")
+    @Override
     public R<List<WorkflowNodeCatalogVO>> nodeCatalog() {
-        return workflowDefinitionService.nodeCatalog();
+        return R.ok(workflowDefinitionService.nodeCatalog());
     }
 }

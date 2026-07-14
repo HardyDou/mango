@@ -52,7 +52,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private WorkflowBusinessApplyServiceImpl service;
+    private WorkflowBusinessApplyService service;
 
     @BeforeEach
     void setUp() {
@@ -78,7 +78,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         insertApply(7L, 1002L, "IN_APPROVAL");
         insertApply(8L, 1001L, "DRAFT");
 
-        var summary = service.mySummary().getData();
+        var summary = service.mySummary();
 
         assertThat(summary.getInReview()).isEqualTo(3L);
         assertThat(summary.getCompleted()).isEqualTo(1L);
@@ -90,7 +90,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     void mySummaryReturnsZeroWhenUserContextMissing() {
         insertApply(1L, 1001L, "IN_APPROVAL");
 
-        var summary = service.mySummary().getData();
+        var summary = service.mySummary();
 
         assertThat(summary.getInReview()).isZero();
         assertThat(summary.getCompleted()).isZero();
@@ -106,6 +106,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                 create table workflow_business_apply (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     apply_code varchar(128),
                     business_type varchar(128),
                     business_key varchar(128),
@@ -150,6 +151,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                 create table workflow_business_apply_current_task (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     apply_id bigint,
                     primary key (id)
                 )
@@ -158,6 +160,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                 create table workflow_business_apply_status_log (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     apply_id bigint,
                     primary key (id)
                 )
@@ -174,7 +177,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import(WorkflowBusinessApplyServiceImpl.class)
+    @Import(WorkflowBusinessApplyService.class)
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 

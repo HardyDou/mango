@@ -13,15 +13,15 @@ import java.util.List;
  */
 public interface IWorkflowTemplateCategoryService {
 
-    R<PageResult<WorkflowTemplateCategoryVO>> page(WorkflowTemplateCategoryPageQuery query);
+    PageResult<WorkflowTemplateCategoryVO> page(WorkflowTemplateCategoryPageQuery query);
 
-    R<List<WorkflowTemplateCategoryVO>> list(Integer status);
+    List<WorkflowTemplateCategoryVO> list(Integer status);
 
-    R<WorkflowTemplateCategoryVO> get(Long id);
+    WorkflowTemplateCategoryVO get(Long id);
 
-    R<String> create(SaveWorkflowTemplateCategoryCommand command);
+    String create(SaveWorkflowTemplateCategoryCommand command);
 
-    R<Boolean> update(SaveWorkflowTemplateCategoryCommand command);
+    Boolean update(SaveWorkflowTemplateCategoryCommand command);
 
-    R<Boolean> delete(Long id);
+    Boolean delete(Long id);
 }

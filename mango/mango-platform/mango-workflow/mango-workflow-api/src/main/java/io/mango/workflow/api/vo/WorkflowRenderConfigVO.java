@@ -47,14 +47,14 @@ public class WorkflowRenderConfigVO {
     private String taskDefinitionKey;
 
     @Schema(description = "当前节点扩展属性")
-    private Map<String, Object> nodeExtension;
+    private WorkflowJsonVO nodeExtension;
 
     @Schema(description = "字段权限，key 为字段标识，value 为 HIDDEN/READONLY/EDITABLE")
-    private Map<String, String> formPermissions;
+    private WorkflowJsonVO formPermissions;
 
     @Schema(description = "业务页面权限配置")
-    private Map<String, Object> businessPermissions;
+    private WorkflowJsonVO businessPermissions;
 
     @Schema(description = "当前节点审批动作配置，key 为 complete/reject/returnTask/save/transfer/addSign")
-    private Map<String, WorkflowNodeActionConfigVO> nodeActions;
+    private WorkflowJsonVO nodeActions;
 }

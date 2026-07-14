@@ -95,10 +95,10 @@ public class WorkflowBusinessApplyVO {
     private Boolean latestFlag;
 
     @Schema(description = "流程变量")
-    private Map<String, Object> variables;
+    private WorkflowJsonVO variables;
 
     @Schema(description = "扩展配置")
-    private Map<String, Object> extension;
+    private WorkflowJsonVO extension;
 
     @Schema(description = "当前任务")
     private List<WorkflowBusinessApplyCurrentTaskVO> currentTasks;
