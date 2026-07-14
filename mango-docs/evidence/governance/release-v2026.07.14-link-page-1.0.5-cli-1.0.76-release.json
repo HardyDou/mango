@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "releaseTag": "v2026.07.14-link-page-1.0.5-cli-1.0.76-release",
+  "releaseUrl": "https://github.com/HardyDou/mango/releases/tag/v2026.07.14-link-page-1.0.5-cli-1.0.76-release",
+  "implementationPullRequest": "https://github.com/HardyDou/mango/pull/494",
+  "releaseRecordPullRequest": "https://github.com/HardyDou/mango/pull/498",
+  "mergeCommit": "c33aaf776ceecab40bf17fb208fd268e961f787c",
+  "tagType": "lightweight",
+  "tagTarget": "c33aaf776ceecab40bf17fb208fd268e961f787c",
+  "publishedAt": "2026-07-14T07:53:07Z",
+  "manifestCreatedAt": "2026-07-14T08:12:28.079Z",
+  "manifestCompletedAt": "2026-07-14T08:16:10.468Z",
+  "manifestCompleted": true,
+  "manifestConfigDigest": "65d9172b0153c95504ea0156cac65ea2e9a9a12fed68d967655a0545a067a8aa",
+  "artifacts": [
+    {
+      "kind": "maven",
+      "coordinate": "io.mango:*:1.0.19",
+      "status": "UNCHANGED_NOT_APPLICABLE",
+      "reason": "This npm-only link-page and CLI release keeps Mango Maven 1.0.19 unchanged and does not republish it."
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/link-page@1.0.5",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-Qt8dhgvn7ayIYHVDUsJ5kPYFSNDMyd/i7JCbuXno3mkoxPxYD6rwuAWCUDCLWHrts8i+w9Vh9WjP4zZOo9ISLg==",
+      "shasum": "ffab75b9e858a7433878a445a504f3dfbc2dbd89",
+      "sourceCommit": "c33aaf776ceecab40bf17fb208fd268e961f787c",
+      "verifiedContractFiles": [
+        "dist/index.js",
+        "dist/index.d.ts",
+        "dist/style.css"
+      ],
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "npm",
+      "coordinate": "@mango/cli@1.0.76",
+      "publishRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/",
+      "consumeRepository": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+      "integrity": "sha512-fFq3G2QzgLMhjnBbEan8BMGZwuEPF+rrDpmx0xBJEThfCsS19bfZBtymEQeswJI1+SKUwe2xAg1RpF7NF9LMRw==",
+      "shasum": "079a3fd7b9f4c65366aab1c739eefd82e46edb5e",
+      "sourceCommit": "c33aaf776ceecab40bf17fb208fd268e961f787c",
+      "status": "PUBLISHED_AND_VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "Latest",
+      "consumeRepository": "https://hardydou.github.io/mango/",
+      "status": "VERIFIED"
+    },
+    {
+      "kind": "docs",
+      "coordinate": "v2026.07.14-link-page-1.0.5-cli-1.0.76-release",
+      "status": "NOT_APPLICABLE",
+      "reason": "npm-only releases verify Latest without creating a Maven documentation snapshot."
+    }
+  ],
+  "stateSummary": {
+    "source": "passed",
+    "versions": "passed",
+    "changelog": "passed",
+    "readmes": "passed",
+    "tests": "passed",
+    "pr": "passed",
+    "tag": "passed",
+    "github-release": "passed",
+    "maven": "not_applicable",
+    "npm": "passed",
+    "cli-lock": "passed",
+    "private-registry-publish": "passed",
+    "private-registry-consume-verify": "passed",
+    "docs-latest": "passed",
+    "docs-snapshot": "not_applicable",
+    "post-verify": "passed",
+    "cleanup": "passed"
+  },
+  "releaseExecution": {
+    "freshManifest": true,
+    "verifyInvoked": true,
+    "repairInvoked": true,
+    "publishInvocations": 1,
+    "immutableStateAttempts": {
+      "tag": 1,
+      "github-release": 1,
+      "npm": 1
+    },
+    "result": "COMPLETE"
+  },
+  "finalVerification": {
+    "branchProtectionPolicy": "PASS",
+    "requiredChecks": [
+      "pmo-doc-check",
+      "pr-contract-check"
+    ],
+    "implementationPullRequest": 494,
+    "implementationRequiredChecks": "PASS",
+    "sharedReleaseGates": "PASS",
+    "npmHostedVerification": "PASS",
+    "npmConsumeVerification": "PASS",
+    "linkPageTarballContract": "PASS",
+    "cliReleaseLock": "PASS",
+    "githubReleaseNotes": "PASS",
+    "docsLatest": "PASS",
+    "cleanConsumer": {
+      "coordinates": [
+        "@mango/link-page@1.0.5",
+        "@mango/cli@1.0.76"
+      ],
+      "installResult": "PASS",
+      "cliHelpResult": "PASS"
+    }
+  }
+}
