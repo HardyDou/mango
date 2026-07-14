@@ -47,6 +47,8 @@ node mango-business-starter/scripts/check-template.mjs
 
 当前 PMO 投影中的架构债务预算检查器支持读取超过 1 MiB 的 Git 基线，并在完整写出 JSON 结果后再按检查结论退出。该投影修复不改变业务项目的公开 API、配置、菜单、权限、租户、页面、启动、验收和运行时行为。
 
+当前 PMO 投影的 Maven scope classifier 会分别输出直接质量检查项目和依赖构建项目。标准 GitHub/Gitea workflow 先安装直接模块所需的上游 Reactor SNAPSHOT，再以原直接项目集合运行质量门禁；架构验证聚合器只参与后一阶段。这个拆分适用于干净 CI runner，不改变业务应用运行时或 Java 公共契约。
+
 ## 5. 接入方式
 业务开发者通常不直接复制本目录，而是通过 CLI 使用：
 
