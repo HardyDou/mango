@@ -140,7 +140,12 @@ test('internal watcher is scheduled, idempotent and delegates only an exact form
 
   assert.match(source, /cron\('H\/2 \* \* \* \*'\)/)
   assert.match(source, /github-release-jenkins-poller\.sh discover/)
-  assert.match(source, /git cat-file -e "FETCH_HEAD:scripts\/ci\/github-release-jenkins-poller\.sh"/)
+  assert.match(source, /raw\.githubusercontent\.com\/HardyDou\/mango\/main\/scripts\/ci\/github-release-jenkins-poller\.sh/)
+  assert.match(source, /curl -L --connect-timeout 5 --max-time 20/)
+  assert.match(source, /mkdir -p scripts\/ci \.runtime/)
+  assert.match(source, /bash -n "\$\{poller_tmp\}"/)
+  assert.doesNotMatch(source, /--filter=blob:none/)
+  assert.doesNotMatch(source, /git checkout --detach FETCH_HEAD/)
   assert.match(source, /github-release-jenkins-poller\.sh claim/)
   assert.match(source, /github-release-jenkins-poller\.sh success/)
   assert.match(source, /github-release-jenkins-poller\.sh failed/)
@@ -148,7 +153,6 @@ test('internal watcher is scheduled, idempotent and delegates only an exact form
   assert.match(source, /booleanParam\(name: 'DRY_RUN', value: false\)/)
   assert.match(source, /refs\/tags\/\$\{RELEASE_TAG\}/)
   assert.match(source, /git merge-base --is-ancestor/)
-  assert.match(source, /loading the watcher from public GitHub main/)
   assert.match(source, /timeout\(time: 180, unit: 'MINUTES'\)/)
   assert.match(job, /<spec>H\/2 \* \* \* \*<\/spec>/)
   const inlinePipeline = job.match(/<script><!\[CDATA\[\n([\s\S]*?)\n\]\]><\/script>/)?.[1]
