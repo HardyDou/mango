@@ -1,7 +1,7 @@
 ---
 documentId: TDD-WORKFLOW-DEBT
 documentType: technical-design
-pmoVersion: 1.2.2
+pmoVersion: 1.2.4
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: 一次性调整 API 校验、领域 Service 返回边界、Entity/Mapper 命名、Controller/Feign 适配、Flowable 初始化和 Demo 装载，技术风险覆盖全部核心审批路径
@@ -11,7 +11,7 @@ owner: Mango Workflow 技术负责人
 approver: HardyDou
 approvalEvidence: review/TDD-WORKFLOW-DEBT.md
 upstreamDocumentId: SRS-WORKFLOW-DEBT
-upstreamDocumentHash: 78eaec9b6b426f88fa6d84989ca586fed7205337c10e9b17ed54cf98e028c278
+upstreamDocumentHash: 569f06fd6052ed8c1463d9e4db08547493c7704ba9796bd9ec53a10dc7997cc4
 ---
 
 # Workflow 历史债务治理技术设计

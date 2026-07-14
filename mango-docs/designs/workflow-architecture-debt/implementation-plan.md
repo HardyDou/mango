@@ -1,7 +1,7 @@
 ---
 documentId: PLAN-WORKFLOW-DEBT
 documentType: implementation-plan
-pmoVersion: 1.2.2
+pmoVersion: 1.2.4
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: requirement=L3，审批状态、权限、事件和初始化属于核心链路；solution=L3，一次性调整四层契约、Flowable 持久化和资源装载；final=max(requirement,solution)
@@ -11,7 +11,7 @@ owner: Mango Workflow 实施负责人
 approver: HardyDou
 approvalEvidence: review/PLAN-WORKFLOW-DEBT.md
 upstreamDocumentId: TDD-WORKFLOW-DEBT
-upstreamDocumentHash: fe69db7417a497f48fa817d7e29fe899c38dee1384b58a59fa8b9b035207f5e3
+upstreamDocumentHash: 1647aa988aeac6afac9597861b1090bbcdd73ef9579888e2dc2a1edb9efa5c64
 ---
 
 # Workflow 历史债务治理实施计划
@@ -30,13 +30,13 @@ upstreamDocumentHash: fe69db7417a497f48fa817d7e29fe899c38dee1384b58a59fa8b9b0352
 
 | 任务ID | 技术设计ID | 交付物ID | 责任角色 | 路径或模块 | 前置任务 | 具体动作 | 完成标准 | 验证ID | 实施批次 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| TASK-001 | DEC-002, TC-001 至 TC-003 | DEL-001 | Dev、QA | Workflow tests | NONE | 修复 H2 claim_status schema 和暂存变量 fixture；补 API 指纹、关键 HTTP/Feign、事件/快照与错误边界测试；生产代码未改时运行 before | 同一测试入口全绿、测试质量检查通过、契约指纹记录 | VAL-001, VAL-002 | B1 基线 | DONE |
-| TASK-002 | DEC-003, DEC-006 | DEL-002 | Dev | workflow-api | TASK-001 | 为 API 复合入参加 `@Valid`、标量加 constraint，修正协议类型白名单并保持 JSON/Java 语义 | API 债务 0，契约测试通过 | VAL-001, VAL-003 | B2 API | DONE |
-| TASK-003 | DEC-003 至 DEC-005, DEC-009 | DEL-002 | Dev | workflow-core | TASK-002 | Service 去 R、Require 使用 WorkflowCode、实现类无 Impl；Entity/Mapper 规范命名；更新引用但保持事务/查询/事件 | Core 债务 0，真实 Flowable 集成测试通过 | VAL-001, VAL-003 | B3 Core | DONE |
-| TASK-004 | DEC-006 | DEL-002 | Dev | starter、starter-remote | TASK-003 | Controller/Feign 完整实现 API，显式 binding/OpenAPI/Validated，Controller 只 `R.ok(service)` | Starter/Remote 债务 0，路由指纹不变 | VAL-001, VAL-003 | B4 Adapter | DONE |
-| TASK-005 | DEC-007, TC-004 | DEL-003 | Dev、DBA | core migration/init | TASK-001 | 固化 V1-V4 最终 schema；生成单一最终态 V1；将 ACT_GE_PROPERTY 必需值迁入引擎前幂等初始化 | Flyway 仅 DDL，新库 schema 等价，Flowable 启动 | VAL-004 | B5 DB | DONE |
-| TASK-006 | DEC-008, TC-005 | DEL-004 | Dev、QA | starter resources | TASK-005 | 删除默认 Sample initializer/properties；把三套示例转换为模块 Demo 声明；保留正式 domain/node/menu | 默认零 Demo，显式 Demo 三套声明完整且 INIT_ONLY | VAL-004, VAL-005 | B6 Resource | DONE |
-| TASK-007 | IMP-001 至 IMP-004 | DEL-001 至 DEL-005 | Dev、QA | Workflow 全模块、docs | TASK-002 至 TASK-006 | 运行 after、定向架构与静态门禁；新库启动和 API/示例冒烟；更新报告与文档；合并最新 main 后 PR | 同组测试全绿、845→0、新增静态 0、服务可用、PR required check 通过 | VAL-001 至 VAL-005 | B7 收口 | IN_PROGRESS |
+| TASK-001 | DEC-002, TC-001 至 TC-003 | DEL-001 | Dev、QA | Workflow tests | NONE | 修复 H2 claim_status schema 和暂存变量 fixture；补 API 指纹、关键 HTTP/Feign、事件/快照与错误边界测试；生产代码未改时运行 before | 同一测试入口全绿、测试质量检查通过、契约指纹记录 | VAL-001, VAL-002 | B1 基线 | PLANNED |
+| TASK-002 | DEC-003, DEC-006 | DEL-002 | Dev | workflow-api | TASK-001 | 为 API 复合入参加 `@Valid`、标量加 constraint，修正协议类型白名单并保持 JSON/Java 语义 | API 债务 0，契约测试通过 | VAL-001, VAL-003 | B2 API | PLANNED |
+| TASK-003 | DEC-003 至 DEC-005, DEC-009 | DEL-002 | Dev | workflow-core | TASK-002 | Service 去 R、Require 使用 WorkflowCode、实现类无 Impl；Entity/Mapper 规范命名；更新引用但保持事务/查询/事件 | Core 债务 0，真实 Flowable 集成测试通过 | VAL-001, VAL-003 | B3 Core | PLANNED |
+| TASK-004 | DEC-006 | DEL-002 | Dev | starter、starter-remote | TASK-003 | Controller/Feign 完整实现 API，显式 binding/OpenAPI/Validated，Controller 只 `R.ok(service)` | Starter/Remote 债务 0，路由指纹不变 | VAL-001, VAL-003 | B4 Adapter | PLANNED |
+| TASK-005 | DEC-007, TC-004 | DEL-003 | Dev、DBA | core migration/init | TASK-001 | 固化 V1-V4 最终 schema；生成单一最终态 V1；将 ACT_GE_PROPERTY 必需值迁入引擎前幂等初始化 | Flyway 仅 DDL，新库 schema 等价，Flowable 启动 | VAL-004 | B5 DB | PLANNED |
+| TASK-006 | DEC-008, TC-005 | DEL-004 | Dev、QA | starter resources | TASK-005 | 删除默认 Sample initializer/properties；把三套示例转换为模块 Demo 声明；保留正式 domain/node/menu | 默认零 Demo，显式 Demo 三套声明完整且 INIT_ONLY | VAL-004, VAL-005 | B6 Resource | PLANNED |
+| TASK-007 | IMP-001 至 IMP-004 | DEL-001 至 DEL-005 | Dev、QA | Workflow 全模块、docs | TASK-002 至 TASK-006 | 运行 after、定向架构与静态门禁；新库启动和 API/示例冒烟；更新报告与文档；合并最新 main 后 PR | 同组测试全绿、845→0、新增静态 0、服务可用、PR required check 通过 | VAL-001 至 VAL-005 | B7 收口 | PLANNED |
 
 ## 3. 顺序、依赖与里程碑
 

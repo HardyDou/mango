@@ -1,7 +1,7 @@
 ---
 documentId: SRS-WORKFLOW-DEBT
 documentType: system-requirements
-pmoVersion: 1.2.2
+pmoVersion: 1.2.4
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: 系统改造覆盖公开调用、任务状态、领域事件、租户权限、流程引擎和新环境初始化，任一兼容差异都可能影响核心审批链路
@@ -11,7 +11,7 @@ owner: Mango Workflow 产品与技术负责人
 approver: HardyDou
 approvalEvidence: review/SRS-WORKFLOW-DEBT.md
 upstreamDocumentId: BRD-WORKFLOW-DEBT
-upstreamDocumentHash: 6c2e126b4fe527b868040d94eb14013a7396e44621fdde5bdec36e87935faf81
+upstreamDocumentHash: 43830f0bbd1c125d40fcff6f00225b9335f02915db579832bdef84074397e1d2
 ---
 
 # Workflow 历史债务治理系统需求规格说明书

@@ -1,7 +1,7 @@
 ---
 documentId: BRD-WORKFLOW-DEBT
 documentType: business-requirements
-pmoVersion: 1.2.2
+pmoVersion: 1.2.4
 schemaRevision: 1
 riskLevel: L3
 riskAssessmentEvidence: 流程发起、任务审批、退回驳回、权限租户、领域事件和新环境初始化均属于核心业务结果，失败会造成审批错乱、越权办理或环境不可用
