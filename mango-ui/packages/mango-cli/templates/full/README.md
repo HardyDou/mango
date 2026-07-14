@@ -219,7 +219,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 4. 首次启动后确认 Flyway、Resource Registry 和模块初始化日志；租户、组织、账号等生产数据通过业务开通、后台维护或导入流程补齐。
 5. 通过 `mango module add` 新增业务模块，然后补齐表结构、菜单权限、租户边界、页面交互和测试。
 6. 本地完整验收可执行 `mvn -f backend/pom.xml verify`；PR 中的稳定 `pmo-doc-check` 根据 Git 变更只选择直接修改的 Maven 模块，不使用 `-am` 或 `-amd` 扩大质量扫描范围。依赖构建和消费者兼容性作为独立验证；根 POM、架构验证模块和全局架构输入仍使用完整 Reactor，架构和质量报告写入 `backend/target`。
-7. GitHub 使用 `.github/workflows/pmo-doc-check.yml`，Gitea 使用 `.gitea/workflows/pmo-doc-check.yml`；在对应平台的 `main` 分支保护中把 `PMO Documentation Checks / pmo-doc-check` 设为 required check。历史仓目录不是默认值时，先在 `mango.config.json.paths` 声明真实目录；PR 模板同时记录需求影响、方案风险、最终等级和最低成本充分验证。
+7. GitHub 使用 `.github/workflows/pmo-doc-check.yml`，Gitea 使用 `.gitea/workflows/pmo-doc-check.yml`；在对应平台的 `main` 分支保护中把 `PMO Documentation Checks / pmo-doc-check` 设为 required check。历史仓目录不是默认值时，先在 `mango.config.json` 的 `paths` 对象声明真实目录；PR 模板同时记录需求影响、方案风险、最终等级和最低成本充分验证。
 8. 每个业务能力完成后，把模块 README、交付契约、验证证据和 E2E 更新到业务仓库。
 
 ## 11. 问题排查

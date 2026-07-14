@@ -442,7 +442,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ### 1.0.72 发布影响
 
-`@mango/cli@1.0.72` 精确依赖 `@mango/pmo@1.2.2`。标准 scope classifier 从 `mango.config.json.paths` 读取业务仓目录；例如设置 `"backend": "baohan-backend"` 后，后端改动会进入直接模块 Maven 门禁，不会因目录名不是 `backend/` 而被误判为无后端改动。full template 同时提供 GitHub 和 Gitea 的 `pmo-doc-check`，两者使用同一 classifier 输出和稳定 check 名称。
+`@mango/cli@1.0.72` 精确依赖 `@mango/pmo@1.2.2`。标准 scope classifier 从 `mango.config.json` 的 `paths` 对象读取业务仓目录；例如设置 `"backend": "baohan-backend"` 后，后端改动会进入直接模块 Maven 门禁，不会因目录名不是 `backend/` 而被误判为无后端改动。full template 同时提供 GitHub 和 Gitea 的 `pmo-doc-check`，两者使用同一 classifier 输出和稳定 check 名称。
 
 该补丁不改变 Mango Java 运行时，业务后端继续使用 Mango Maven `1.0.17`。Mango 的正式 Maven `--all-non-app` 发布步骤已明确包含同版本 `io.mango:mango-docs-bundle`，不再依赖批次外人工补发。业务仓安装 `@mango/cli@1.0.72` 后，执行 `mango pmo upgrade --project-dir . --to 1.2.2`，再同步适用平台的标准 workflow。
 
