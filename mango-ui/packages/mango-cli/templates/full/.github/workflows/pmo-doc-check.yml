@@ -8,12 +8,24 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: pmo-doc-check-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'edited' && 'contract' || 'code' }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  pmo-doc-check:
+  preflight_scope:
+    name: Preflight and scope
     runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.scope.outputs.backend }}
+      backend_mode: ${{ steps.scope.outputs.backend_mode }}
+      maven_projects: ${{ steps.scope.outputs.maven_projects }}
+      maven_dependency_projects: ${{ steps.scope.outputs.maven_dependency_projects }}
+      backend_pom: ${{ steps.scope.outputs.backend_pom }}
+      business_docs_root: ${{ steps.scope.outputs.business_docs_root }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,64 +48,105 @@ jobs:
             --head "$HEAD_SHA" \
             --output "$GITHUB_OUTPUT"
 
+  pmo:
+    name: PMO contract gates
+    needs: preflight_scope
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Write PR body
-        if: github.event_name == 'pull_request'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: printf '%s' "$PR_BODY" > .pr-body.md
 
       - name: Check impact-driven risk and verification contract
-        if: github.event_name == 'pull_request'
         env:
           PR_BODY_FILE: .pr-body.md
         run: node business-pmo/mango-baseline/tools/risk-verification.mjs
 
+  docs:
+    name: PMO document gates
+    needs: preflight_scope
+    if: github.event_name != 'pull_request' || github.event.action != 'edited'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Check PMO document contracts
         env:
-          BUSINESS_DOCS_ROOT: ${{ steps.scope.outputs.business_docs_root }}
+          BUSINESS_DOCS_ROOT: ${{ needs.preflight_scope.outputs.business_docs_root }}
         run: >-
           node business-pmo/mango-baseline/tools/check-document-set.mjs
           --root "$BUSINESS_DOCS_ROOT"
 
+  backend:
+    name: Affected backend gates
+    needs: preflight_scope
+    if: >-
+      (github.event_name != 'pull_request' || github.event.action != 'edited') &&
+      needs.preflight_scope.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up Java
-        if: steps.scope.outputs.backend == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
 
-      - name: Validate backend governance POMs
-        if: steps.scope.outputs.backend_mode == 'governance'
+      - name: Build affected-module upstream dependencies
+        if: >-
+          needs.preflight_scope.outputs.backend_mode == 'partial' &&
+          needs.preflight_scope.outputs.maven_dependency_projects != ''
         env:
-          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
+          BACKEND_POM: ${{ needs.preflight_scope.outputs.backend_pom }}
+          MAVEN_DEPENDENCY_PROJECTS: ${{ needs.preflight_scope.outputs.maven_dependency_projects }}
+        run: >-
+          mvn -B -ntp -f "$BACKEND_POM"
+          -pl "$MAVEN_DEPENDENCY_PROJECTS"
+          -am
+          -DskipTests
+          -Denforcer.skip=true
+          -Dcheckstyle.skip=true
+          -Dpmd.skip=true
+          -Dspotbugs.skip=true
+          install
+
+      - name: Validate backend governance POMs
+        if: needs.preflight_scope.outputs.backend_mode == 'governance'
+        env:
+          BACKEND_POM: ${{ needs.preflight_scope.outputs.backend_pom }}
         run: >-
           mvn -B -ntp -f "$BACKEND_POM"
           -pl architecture-verification
           -DskipTests
           help:effective-pom
 
-      - name: Build affected backend dependency prerequisites
-        if: steps.scope.outputs.backend_mode == 'partial'
-        env:
-          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
-          MAVEN_DEPENDENCY_PROJECTS: ${{ steps.scope.outputs.maven_dependency_projects }}
-        run: >-
-          mvn -B -ntp -f "$BACKEND_POM"
-          -pl "$MAVEN_DEPENDENCY_PROJECTS"
-          -am
-          -DskipTests
-          -Dcheckstyle.skip=true
-          -Dpmd.skip=true
-          -Dspotbugs.skip=true
-          install
-
       - name: Verify affected backend modules and Mango architecture
-        if: steps.scope.outputs.backend_mode == 'partial'
+        if: needs.preflight_scope.outputs.backend_mode == 'partial'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
-          BACKEND_POM: ${{ steps.scope.outputs.backend_pom }}
-          MAVEN_PROJECTS: ${{ steps.scope.outputs.maven_projects }}
+          BACKEND_POM: ${{ needs.preflight_scope.outputs.backend_pom }}
+          MAVEN_PROJECTS: ${{ needs.preflight_scope.outputs.maven_projects }}
         run: >-
           mvn -B -ntp -f "$BACKEND_POM"
           -pl "$MAVEN_PROJECTS"
@@ -109,3 +162,27 @@ jobs:
           -Dmango.check.staticFailurePolicy=block
           -Denforcer.skip=false
           verify
+
+  pmo-doc-check:
+    name: pmo-doc-check
+    needs: [preflight_scope, pmo, docs, backend]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate PMO gate results
+        env:
+          PREFLIGHT_SCOPE_RESULT: ${{ needs.preflight_scope.result }}
+          PMO_RESULT: ${{ needs.pmo.result }}
+          DOCS_RESULT: ${{ needs.docs.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+        run: |
+          for result in \
+            "$PREFLIGHT_SCOPE_RESULT" \
+            "$PMO_RESULT" \
+            "$DOCS_RESULT" \
+            "$BACKEND_RESULT"; do
+            case "$result" in
+              success|skipped) ;;
+              *) exit 1 ;;
+            esac
+          done

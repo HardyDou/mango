@@ -1,4 +1,4 @@
-const REQUIRED_CONTEXT = 'pmo-doc-check';
+const REQUIRED_CONTEXTS = ['pr-contract-check', 'pmo-doc-check'];
 const GOVERNANCE_MODES = new Set(['single-owner', 'multi-maintainer']);
 
 export function validateBranchProtectionPolicy(policy) {
@@ -16,8 +16,10 @@ export function validateBranchProtectionPolicy(policy) {
   if (policy?.requiredStatusChecks?.strict !== true) {
     failures.push('required status checks must be strict');
   }
-  if (!policy?.requiredStatusChecks?.contexts?.includes(REQUIRED_CONTEXT)) {
-    failures.push(`required status checks must include ${REQUIRED_CONTEXT}`);
+  for (const context of REQUIRED_CONTEXTS) {
+    if (!policy?.requiredStatusChecks?.contexts?.includes(context)) {
+      failures.push(`required status checks must include ${context}`);
+    }
   }
   if (policy?.requiredConversationResolution !== true) {
     failures.push('conversation resolution must remain required');
@@ -58,7 +60,7 @@ export function normalizeBranchProtectionEvidence(evidence) {
     governanceMode: evidence?.governanceMode,
     requiredStatusChecks: {
       strict: evidence?.requiredStatusChecks?.strict,
-      contexts: evidence?.requiredStatusChecks?.checks?.map(check => check.context)
+      contexts: evidence?.requiredStatusChecks?.checks?.map(check => check.context).sort()
     },
     pullRequestReviews: {
       requireCodeOwnerReviews: evidence?.pullRequestReviews?.requireCodeOwnerReviews,

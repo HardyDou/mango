@@ -1,10 +1,73 @@
 # Mango Changelog
 
-## Unreleased
+## v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release - 2026-07-14
+
+### Changed
+
+- Split the required PR gate into parallel PMO, CLI/JavaScript, Java, and documentation jobs behind the stable `pmo-doc-check` result.
+- Add a trusted, two-minute `pr-contract-check` for PR-body risk and capability contracts; editing the PR body no longer starts Maven, Java, pnpm, or the heavy code gate.
+- Cancel obsolete code-SHA runs, cache pnpm and Maven inputs, and classify generated-backend behavior independently so version, changelog, README, release-lock, and PMO-contract-only changes skip generated backend acceptance.
+- Reduce generated-backend acceptance from 19 Maven invocations to 9 and remove all 13 `clean` executions while retaining positive, negative, fail-closed, static-analysis, architecture, schema, metadata, and affected-module coverage.
+- Ship the same dependency-build separation and precise partial quality scope through the generated GitHub and Gitea workflows. No full Reactor PR gate and no human approval are introduced.
+- Keep the Jenkins release workspace Git object database between builds, stop fetching unrelated tags, and bootstrap Maven from a fast mirror with the Apache official SHA-512 and official-source fallback.
+- Force Jenkins Maven invocations to read the persisted `${JENKINS_HOME}/.m2/settings.xml`, matching the release credential contract when the container runs as root.
+
+### Upgrade Notes
+
+1. Install `@mango/cli@1.0.74` only after both it and `@mango/pmo@1.2.4` resolve from `npm-group`; Mango Maven remains `1.0.18`.
+2. Run `mango pmo upgrade --project-dir . --to 1.2.4`, then synchronize the repository-host workflow.
+3. On GitHub, require `pr-contract-check` and `pmo-doc-check`; a green result merges automatically without human Review.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm PMO bundle | `@mango/pmo@1.2.4` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm CLI | `@mango/cli@1.0.74` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 3 | GitHub Release | `v2026.07.14-pmo-1.2.4-cli-1.0.74-ci-fast-gates-release` | `PUBLISHED` |
+
+### Verification
+
+- `node --test mango-pmo/tests/pmo-check-scope.test.mjs mango-pmo/tests/branch-protection-policy.test.mjs`
+- `node --test mango-ui/packages/mango-cli/tests/generated-backend-gate-contract.test.mjs`
+- `MANGO_BACKEND_GATE_VERSION=1.0.18 node mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs`
+- `node mango-ui/packages/mango-cli/scripts/check-cli.mjs`
+- Workflow YAML parsing, PMO package build/check, baseline sync, governance intent, and live branch-protection read-back.
+- PR contract checks completed in 6-7 seconds; release-pipeline-only PR #488 completed the aggregate code gate in about 42 seconds while unrelated Java and PMO jobs were skipped.
+- `@mango/pmo@1.2.4` and `@mango/cli@1.0.74` were verified from both `npm-hosted` and `npm-group`, followed by a clean joint install from `npm-group`.
+
+## v2026.07.14-maven-1.0.18-pmo-1.2.3-cli-1.0.73-release - 2026-07-14
 
 ### Fixed
 
-- Fix [Issue #480](https://github.com/HardyDou/mango/issues/480): partial Maven checks now build the selected modules and their upstream reactor prerequisites in a separate `-am` install step before running the unchanged direct-module quality gate. The architecture verification aggregator is excluded from dependency expansion, and generated GitHub/Gitea workflows use the same split.
+- Fix [Issue #480](https://github.com/HardyDou/mango/issues/480): a clean PR runner now installs the directly changed Maven modules' upstream SNAPSHOT prerequisites before the partial quality gate. The quality gate itself remains limited to directly changed modules and does not use `-am` or `-amd`.
+- Fix [Issue #481](https://github.com/HardyDou/mango/issues/481): nested PMD, Checkstyle, and SpotBugs invocations from `mango:check` exclude the architecture-verification aggregator while the outer architecture gate remains enabled.
+- Publish the matching scope classifier, governance guard, generated GitHub/Gitea workflow baseline, PMO bundle, and CLI release lock together so business repositories do not need local workarounds.
+
+### Upgrade Notes
+
+1. Publish and verify the non-app Mango Maven `1.0.18` batch first.
+2. Install `@mango/cli@1.0.73` only after `@mango/pmo@1.2.3` and the CLI both resolve from `npm-group`.
+3. Run `mango pmo upgrade --project-dir . --to 1.2.3`, synchronize the repository-host workflow, and upgrade the business backend's `<mango.version>` to `1.0.18`.
+4. Existing PRs blocked by #480 or #481 should update to this release batch and rerun the required check once; unchanged failed runs must not be repeatedly retried.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | Maven non-app backend and docs bundle | `io.mango:*:1.0.18` -> Nexus Maven hosted | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm PMO bundle | `@mango/pmo@1.2.3` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 3 | npm CLI | `@mango/cli@1.0.73` -> Nexus npm hosted | `PUBLISHED_AND_VERIFIED` |
+| 4 | GitHub Release | `v2026.07.14-maven-1.0.18-pmo-1.2.3-cli-1.0.73-release` | `PUBLISHED` |
+
+### Verification
+
+- `node --test mango-pmo/tests/pmo-check-scope.test.mjs`
+- `mvn -q -f mango/pom.xml -pl mango-tools/mango-maven-plugin verify`
+- Clean local Maven repository: prerequisite `-am install` followed by a direct-module partial quality gate completed with `BUILD SUCCESS`.
+- GitHub implementation PR [#483](https://github.com/HardyDou/mango/pull/483) passed `PMO Documentation Checks / pmo-doc-check` before merge.
+- GitHub Maven release run `29306733668` completed through Jenkins #13 in 2m47s; `mango-parent` and the 121 MB `mango-docs-bundle` resolve from `maven-public`.
+- `@mango/pmo@1.2.3` and `@mango/cli@1.0.73` were verified from both `npm-hosted` and `npm-group`, followed by a clean joint install from `npm-group`.
 
 ## v2026.07.14-pmo-1.2.2-cli-1.0.72-release - 2026-07-14
 

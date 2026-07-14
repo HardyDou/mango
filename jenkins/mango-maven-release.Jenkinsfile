@@ -20,6 +20,7 @@ pipeline {
   environment {
     MAVEN_VERSION = '3.9.9'
     MAVEN_HOME = "${JENKINS_HOME}/.tools/apache-maven-3.9.9"
+    MAVEN_ARGS = "-s ${JENKINS_HOME}/.m2/settings.xml"
     LANG = 'C.UTF-8'
     LC_ALL = 'C.UTF-8'
   }
@@ -51,15 +52,20 @@ pipeline {
 
     stage('Checkout Exact Commit') {
       steps {
-        deleteDir()
         withEnv([
           "GIT_SHA=${params.GIT_SHA}",
           "MANGO_RELEASE_REPO_URL=${env.MANGO_RELEASE_REPO_URL}"
         ]) {
           sh '''#!/usr/bin/env bash
             set -euo pipefail
-            git init .
-            git remote add origin "${MANGO_RELEASE_REPO_URL}"
+            if [ -d .git ]; then
+              git reset --hard
+              git clean -ffdx
+              git remote set-url origin "${MANGO_RELEASE_REPO_URL}"
+            else
+              git init .
+              git remote add origin "${MANGO_RELEASE_REPO_URL}"
+            fi
             fetched=false
             for attempt in $(seq 1 12); do
               if git fetch --force --no-tags origin "${GIT_SHA}"; then
@@ -75,7 +81,7 @@ pipeline {
             fi
             git checkout --detach "${GIT_SHA}"
             test "$(git rev-parse HEAD)" = "${GIT_SHA}"
-            git fetch --force --tags origin main
+            git fetch --force --no-tags origin main
             git merge-base --is-ancestor "${GIT_SHA}" FETCH_HEAD
             git status --short --branch
           '''
@@ -90,10 +96,25 @@ pipeline {
           mkdir -p "${JENKINS_HOME}/.tools"
           if [ ! -x "${MAVEN_HOME}/bin/mvn" ]; then
             archive="${JENKINS_HOME}/.tools/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+            mirror_url="https://repo.huaweicloud.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+            official_url="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
             rm -f "${archive}"
-            curl --connect-timeout 20 --max-time 180 -fsSL \
-              "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
-              -o "${archive}"
+            downloaded=false
+            for url in "${mirror_url}" "${official_url}"; do
+              if curl --connect-timeout 20 --max-time 600 --retry 5 --retry-all-errors -fSL \
+                "${url}" -o "${archive}"; then
+                downloaded=true
+                break
+              fi
+              rm -f "${archive}"
+            done
+            if [ "${downloaded}" != "true" ]; then
+              echo "Unable to download Maven ${MAVEN_VERSION}." >&2
+              exit 1
+            fi
+            expected_sha512="$(curl --connect-timeout 20 --max-time 120 --retry 5 --retry-all-errors -fsSL "${official_url}.sha512" | tr -d '[:space:]')"
+            actual_sha512="$(sha512sum "${archive}" | cut -d ' ' -f 1)"
+            test "${actual_sha512}" = "${expected_sha512}"
             tar -xzf "${archive}" -C "${JENKINS_HOME}/.tools"
             rm -f "${archive}"
           fi

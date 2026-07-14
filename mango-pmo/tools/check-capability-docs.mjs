@@ -685,7 +685,7 @@ try {
   failures.push(error.message);
 }
 const prBody = readPrBody();
-const shouldValidatePrBody = Boolean(prBodyPath) || Boolean(process.env.GITHUB_ACTIONS);
+const shouldValidatePrBody = Boolean(prBodyPath);
 
 if (fileExists('mango-pmo/rules/index.json')) {
   const index = JSON.parse(read('mango-pmo/rules/index.json'));

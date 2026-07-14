@@ -1,0 +1,51 @@
+name: PR Contract Checks
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-contract-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-contract-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout the trusted contract checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          sparse-checkout: |
+            mango-pmo/tools/check-capability-docs.mjs
+            mango-pmo/tools/risk-verification.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Fetch exact PR revisions for capability scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"
+
+      - name: Write PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > .pr-body.md
+
+      - name: Check impact-driven risk and verification contract
+        env:
+          PR_BODY_FILE: .pr-body.md
+        run: node mango-pmo/tools/risk-verification.mjs
+
+      - name: Check capability documentation contract
+        env:
+          PR_BODY_FILE: .pr-body.md
+        run: |
+          node mango-pmo/tools/check-capability-docs.mjs \
+            --base ${{ github.event.pull_request.base.sha }} \
+            --head ${{ github.event.pull_request.head.sha }}
