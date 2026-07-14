@@ -58,7 +58,7 @@ jobs:
           node mango-pmo/tests/skills/check-skill-evals.mjs
 
       - name: Set up pnpm for PMO tarball verification
-        if: steps.scope.outputs.pmo == 'true'
+        if: steps.scope.outputs.pmo == 'true' || steps.scope.outputs.distribution == 'true' || steps.scope.outputs.backend_mode == 'governance'
         uses: pnpm/action-setup@v4
         with:
           version: 11.10.0
