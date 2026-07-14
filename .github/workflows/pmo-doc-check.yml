@@ -163,6 +163,12 @@ jobs:
             mango/pom.xml
             mango/**/pom.xml
 
+      - name: Build the local PMO bundle for generated project acceptance
+        if: >-
+          needs.preflight_scope.outputs.generated_backend == 'true' ||
+          needs.preflight_scope.outputs.backend_mode == 'governance'
+        run: node mango-ui/packages/mango-pmo/scripts/build-package.mjs
+
       - name: Build the architecture gate prerequisites
         run: |
           mvn -f mango/pom.xml \

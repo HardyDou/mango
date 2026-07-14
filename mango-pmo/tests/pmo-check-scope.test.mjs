@@ -251,6 +251,10 @@ test('clean CI builds explicit architecture prerequisites without expanding the 
     workflow,
     /Verify generated business backend gates[\s\S]*?needs\.preflight_scope\.outputs\.generated_backend == 'true'/,
   );
+  assert.match(
+    workflow,
+    /Build the local PMO bundle for generated project acceptance[\s\S]*?mango-pmo\/scripts\/build-package\.mjs[\s\S]*?Build the architecture gate prerequisites/,
+  );
 
   const generatedBackendGate = fs.readFileSync(
     new URL('../../mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs', import.meta.url),
