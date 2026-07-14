@@ -268,7 +268,8 @@ Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 - 正式必需的支付方式分类、支付方式、通道、通道字段模板、通道能力和默认风控规则，由
   `mango-payment-starter` 自己的 `META-INF/mango/resources/payment-common-*.json` 登记，默认加载。
 - 租户、应用、企业主体、银行账户、收银台、签约、签约能力和路由规则属于演示数据，由
-  `mango-payment-starter` 自己的 `META-INF/mango/demo/payment-demo-*.json` 登记；只有
+  `mango-payment-starter` 自己的 `META-INF/mango/demo` 目录登记，文件名统一以
+  `payment-demo-` 开头；只有
   `mango.resource.registry.demo-enabled=true` 时加载。
 - 业务订单、支付单、退款单、交易流水、通知、异常、对账、结算、账单批次和线下退款流程等
   运行态数据不做任何初始化登记，只能由真实业务流程产生。
@@ -286,8 +287,10 @@ mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-numgen.yml
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-job.yml
 mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-{method-category,method,channel,channel-field-template,channel-capability,risk-rule}.json
-mango-payment-starter/src/main/resources/META-INF/mango/demo/payment-demo-*.json
+mango-payment-starter/src/main/resources/META-INF/mango/demo/
 ```
+
+该目录中的演示数据文件名统一以 `payment-demo-` 开头，扩展名为 `.json`。
 
 支持类型：
 
