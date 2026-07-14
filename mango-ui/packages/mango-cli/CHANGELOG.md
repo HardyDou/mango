@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.71 - 2026-07-14
+
+### Fixed
+
+- Updated the exact PMO dependency to `@mango/pmo@1.2.1`, whose published tarball preserves all manifest-declared executable modes.
+- Added real `pnpm pack` verification before publication and downloaded-tarball mode verification after publication so a mode mismatch cannot be reported as a successful PMO release.
+
+### Upgrade Notes
+
+- Install `@mango/cli@1.0.71`, run `mango pmo upgrade --project-dir . --to 1.2.1 --dry-run`, then perform the upgrade and run `mango pmo check --project-dir . --locked`.
+- Do not use `@mango/pmo@1.2.0` / `@mango/cli@1.0.70` for business upgrades. Mango Maven remains `1.0.17`; no backend dependency change is required.
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/pmo build`
+- `pnpm -C mango-ui --filter @mango/pmo check`
+- `node --test mango-ui/packages/mango-cli/tests/pmo-bundle.test.mjs`
+- `node mango-ui/scripts/publish-package.mjs --verify-pmo-package-root=<extracted-package-root>`
+
 ## 1.0.70 - 2026-07-13
 
 ### Changed

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const distRoot = join(packageRoot, 'dist');
@@ -90,6 +91,7 @@ for (const file of manifest.files) {
 
 validateContracts(manifest, manifestFiles);
 validatePluginProjection(manifest, manifestFiles);
+validatePublishExecutableFiles(manifest);
 const expectedBundleSha = sha256(Buffer.from(JSON.stringify({
   files: manifest.files,
   contracts: manifest.contracts,
@@ -120,6 +122,8 @@ if (preflight.status !== 0) {
 if (!preflight.stdout.includes('rules/00-dev-flow.md') || !preflight.stdout.includes('rules/03-ai-coding-redlines.md')) {
   throw new Error(`packaged baseline preflight did not load baseline rules:\n${preflight.stdout}`);
 }
+
+validatePackedPackage(manifest);
 
 process.stdout.write(
   `Checked ${manifest.packageName}@${manifest.packageVersion} bundle ${manifest.bundleSha256.slice(0, 12)}.\n`,
@@ -208,6 +212,80 @@ function validatePluginProjection(value, baselineFiles) {
     if (!projected || projected.sha256 !== file.sha256 || projected.size !== file.size) {
       throw new Error(`Codex plugin skill projection differs from baseline: ${path}`);
     }
+  }
+}
+
+function validatePublishExecutableFiles(value) {
+  const expected = [
+    ...value.files
+      .filter(file => file.mode === '0755')
+      .map(file => `dist/baseline/${file.path}`),
+    ...value.plugin.files
+      .filter(file => file.mode === '0755')
+      .map(file => file.path),
+  ].sort(compareText);
+  const declared = [...(packageJson.publishConfig?.executableFiles || [])].sort(compareText);
+  if (JSON.stringify(declared) !== JSON.stringify(expected)) {
+    throw new Error(
+      `publishConfig.executableFiles differs from manifest; expected=${expected.join(',') || '-'} declared=${declared.join(',') || '-'}`,
+    );
+  }
+}
+
+function validatePackedPackage(value) {
+  if (process.platform === 'win32') {
+    return;
+  }
+  const temporaryRoot = mkdtempSync(join(tmpdir(), 'mango-pmo-pack-check-'));
+  try {
+    const pnpm = spawnSync('pnpm', ['pack', '--pack-destination', temporaryRoot], {
+      cwd: packageRoot,
+      encoding: 'utf8',
+    });
+    if (pnpm.error) {
+      throw new Error(`failed to execute pnpm pack: ${pnpm.error.message}`);
+    }
+    if (pnpm.status !== 0) {
+      throw new Error(`pnpm pack failed:\n${pnpm.stdout}\n${pnpm.stderr}`);
+    }
+    const tarballs = readdirSync(temporaryRoot).filter(file => file.endsWith('.tgz'));
+    if (tarballs.length !== 1) {
+      throw new Error(`pnpm pack must create exactly one tarball, got ${tarballs.length}`);
+    }
+    const extract = spawnSync('tar', ['-xzf', join(temporaryRoot, tarballs[0]), '-C', temporaryRoot], {
+      encoding: 'utf8',
+    });
+    if (extract.status !== 0) {
+      throw new Error(`failed to extract pnpm tarball:\n${extract.stdout}\n${extract.stderr}`);
+    }
+    const packedRoot = join(temporaryRoot, 'package');
+    const packedManifest = JSON.parse(readFileSync(join(packedRoot, 'dist/baseline.json'), 'utf8'));
+    if (packedManifest.bundleSha256 !== value.bundleSha256) {
+      throw new Error('pnpm tarball baseline manifest differs from the built manifest');
+    }
+    for (const file of value.files) {
+      validatePackedFile(join(packedRoot, 'dist/baseline', file.path), file);
+    }
+    for (const file of value.plugin.files) {
+      validatePackedFile(join(packedRoot, file.path), file);
+    }
+  } finally {
+    rmSync(temporaryRoot, { recursive: true, force: true });
+  }
+}
+
+function validatePackedFile(path, descriptor) {
+  if (!existsSync(path)) {
+    throw new Error(`pnpm tarball is missing manifest file: ${descriptor.path}`);
+  }
+  const content = readFileSync(path);
+  const actualMode = statSync(path).mode & 0o111 ? '0755' : '0644';
+  if (content.length !== descriptor.size
+    || sha256(content) !== descriptor.sha256
+    || actualMode !== descriptor.mode) {
+    throw new Error(
+      `pnpm tarball file differs from manifest: ${descriptor.path} expectedMode=${descriptor.mode} actualMode=${actualMode}`,
+    );
   }
 }
 
