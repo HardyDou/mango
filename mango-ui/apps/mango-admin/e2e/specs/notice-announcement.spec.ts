@@ -401,24 +401,11 @@ async function setupRoutes(page: Page, state: TestState) {
     state.messages.forEach(item => { item.readStatus = 'READ'; });
     return fulfillJson(route, true);
   });
-  await page.route('**/notice/site/my/messages/*/delete', route => fulfillJson(route, true));
-  await page.route('**/notice/site/my/messages/*/read', route => {
-    const id = route.request().url().match(/messages\/([^/]+)\/read/)?.[1];
-    const message = state.messages.find(item => item.id === id);
-    if (message) {
-      message.readStatus = 'READ';
-    }
-    return fulfillJson(route, true);
-  });
-  await page.route('**/notice/site/my/messages/*', route => {
-    const id = route.request().url().split('/').pop();
-    return fulfillJson(route, state.messages.find(item => item.id === id) || null);
-  });
   await page.route('**/notice/site/my/messages**', route => {
     const url = new URL(route.request().url());
     const path = url.pathname;
     if (path.endsWith('/read')) {
-      const id = path.match(/messages\/([^/]+)\/read/)?.[1];
+      const id = url.searchParams.get('id');
       const message = state.messages.find(item => item.id === id);
       if (message) {
         message.readStatus = 'READ';
@@ -428,8 +415,8 @@ async function setupRoutes(page: Page, state: TestState) {
     if (path.endsWith('/delete')) {
       return fulfillJson(route, true);
     }
-    if (/\/notice\/site\/my\/messages\/[^/]+$/.test(path)) {
-      const id = path.split('/').pop();
+    if (path.endsWith('/detail')) {
+      const id = url.searchParams.get('id');
       return fulfillJson(route, state.messages.find(item => item.id === id) || null);
     }
     if (route.request().method() !== 'GET') {

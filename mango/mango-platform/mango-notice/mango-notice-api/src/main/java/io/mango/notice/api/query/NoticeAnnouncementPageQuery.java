@@ -14,14 +14,18 @@ public class NoticeAnnouncementPageQuery implements Serializable {
     private static final long DEFAULT_PAGE_SIZE = 10L;
 
     @Schema(description = "当前页，从 1 开始")
+    @jakarta.validation.constraints.Positive
     private long pageNum = 1;
 
     @Schema(description = "每页大小")
+    @jakarta.validation.constraints.Positive
     private long pageSize = DEFAULT_PAGE_SIZE;
 
     @Schema(description = "公告状态")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticeAnnouncementStatus status;
 
     @Schema(description = "关键字，匹配标题和内容")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String keyword;
 }

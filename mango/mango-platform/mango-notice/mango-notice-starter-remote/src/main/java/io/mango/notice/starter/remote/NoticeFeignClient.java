@@ -46,7 +46,6 @@ import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -74,56 +73,55 @@ public interface NoticeFeignClient extends NoticeApi {
     R<NoticeBusinessTypeVO> createBusinessType(@RequestBody CreateNoticeBusinessTypeCommand command);
 
     @Override
-    @PutMapping("/business-types/{id}")
-    R<NoticeBusinessTypeVO> updateBusinessType(@PathVariable("id") Long id,
+    @PutMapping("/business-types")
+    R<NoticeBusinessTypeVO> updateBusinessType(@RequestParam("id") Long id,
             @RequestBody UpdateNoticeBusinessTypeCommand command);
 
     @Override
-    @DeleteMapping("/business-types/{id}")
-    R<Boolean> deleteBusinessType(@PathVariable("id") Long id);
+    @DeleteMapping("/business-types")
+    R<Boolean> deleteBusinessType(@RequestParam("id") Long id);
 
     @Override
-    @PostMapping("/business-types/{id}/enable")
-    R<Boolean> enableBusinessType(@PathVariable("id") Long id);
+    @PostMapping("/business-types/enable")
+    R<Boolean> enableBusinessType(@RequestParam("id") Long id);
 
     @Override
-    @PostMapping("/business-types/{id}/disable")
-    R<Boolean> disableBusinessType(@PathVariable("id") Long id);
+    @PostMapping("/business-types/disable")
+    R<Boolean> disableBusinessType(@RequestParam("id") Long id);
 
     @Override
-    @GetMapping("/business-types/{businessTypeId}/config-versions")
+    @GetMapping("/business-types/config-versions")
     R<List<NoticeBusinessConfigVersionVO>> listBusinessConfigVersions(
-            @PathVariable("businessTypeId") Long businessTypeId);
+            @RequestParam("businessTypeId") Long businessTypeId);
 
     @Override
-    @PutMapping("/business-types/{businessTypeId}/config-draft")
+    @PutMapping("/business-types/config-draft")
     R<NoticeBusinessConfigVersionVO> saveBusinessConfigDraft(
-            @PathVariable("businessTypeId") Long businessTypeId,
+            @RequestParam("businessTypeId") Long businessTypeId,
             @RequestBody SaveNoticeBusinessConfigCommand command);
 
     @Override
-    @PostMapping("/business-types/{businessTypeId}/config-draft/publish")
-    R<Boolean> publishBusinessConfigDraft(@PathVariable("businessTypeId") Long businessTypeId);
+    @PostMapping("/business-types/config-draft/publish")
+    R<Boolean> publishBusinessConfigDraft(@RequestParam("businessTypeId") Long businessTypeId);
 
     @Override
-    @PostMapping("/business-types/{businessTypeId}/config-versions/{version}/activate")
-    R<Boolean> activateBusinessConfigVersion(@PathVariable("businessTypeId") Long businessTypeId,
-            @PathVariable("version") Integer version);
+    @PostMapping("/business-types/config-versions/activate")
+    R<Boolean> activateBusinessConfigVersion(@RequestParam("businessTypeId") Long businessTypeId,
+            @RequestParam("version") Integer version);
 
     @Override
-    @GetMapping("/business-types/{businessTypeId}/channel-templates")
-    R<List<NoticeChannelTemplateVO>> listChannelTemplates(@PathVariable("businessTypeId") Long businessTypeId);
+    @GetMapping("/business-types/channel-templates")
+    R<List<NoticeChannelTemplateVO>> listChannelTemplates(@RequestParam("businessTypeId") Long businessTypeId);
 
     @Override
-    @PutMapping("/business-types/{businessTypeId}/channel-templates/{channelType}")
-    R<NoticeChannelTemplateVO> saveChannelTemplate(@PathVariable("businessTypeId") Long businessTypeId,
-            @PathVariable("channelType") NoticeChannelType channelType,
+    @PutMapping("/business-types/channel-templates")
+    R<NoticeChannelTemplateVO> saveChannelTemplate(@RequestParam("businessTypeId") Long businessTypeId,
             @RequestBody SaveNoticeChannelTemplateCommand command);
 
     @Override
-    @PostMapping("/business-types/{businessTypeId}/channel-templates/{channelType}/publish")
-    R<Boolean> publishChannelTemplate(@PathVariable("businessTypeId") Long businessTypeId,
-            @PathVariable("channelType") NoticeChannelType channelType);
+    @PostMapping("/business-types/channel-templates/publish")
+    R<Boolean> publishChannelTemplate(@RequestParam("businessTypeId") Long businessTypeId,
+            @RequestParam("channelType") NoticeChannelType channelType);
 
     @Override
     @GetMapping("/channels")
@@ -135,7 +133,8 @@ public interface NoticeFeignClient extends NoticeApi {
 
     @Override
     @GetMapping("/internal/wecom-login-config")
-    R<NoticeWecomLoginConfigVO> getWecomLoginConfig(@RequestParam(required = false) Long channelConfigId);
+    R<NoticeWecomLoginConfigVO> getWecomLoginConfig(
+            @RequestParam(value = "channelConfigId", required = false) Long channelConfigId);
 
     @Override
     @DeleteMapping("/channels")
@@ -150,16 +149,16 @@ public interface NoticeFeignClient extends NoticeApi {
     R<PageResult<NoticeSendRecordVO>> listSendRecords(@SpringQueryMap NoticeSendRecordPageQuery query);
 
     @Override
-    @PostMapping("/records/{id}/retry")
-    R<Boolean> retrySendRecord(@PathVariable("id") Long id);
+    @PostMapping("/records/retry")
+    R<Boolean> retrySendRecord(@RequestParam("id") Long id);
 
     @Override
     @PostMapping("/records/retry-batch")
     R<Boolean> retrySendRecords(@RequestBody RetryNoticeSendRecordsCommand command);
 
     @Override
-    @PostMapping("/records/{id}/manual-success")
-    R<Boolean> markSendRecordManualSuccess(@PathVariable("id") Long id,
+    @PostMapping("/records/manual-success")
+    R<Boolean> markSendRecordManualSuccess(@RequestParam("id") Long id,
             @RequestBody HandleNoticeSendRecordCommand command);
 
     @Override
@@ -167,8 +166,9 @@ public interface NoticeFeignClient extends NoticeApi {
     R<Boolean> markSendRecordsManualSuccess(@RequestBody HandleNoticeSendRecordsCommand command);
 
     @Override
-    @PostMapping("/records/{id}/ignore")
-    R<Boolean> ignoreSendRecord(@PathVariable("id") Long id, @RequestBody HandleNoticeSendRecordCommand command);
+    @PostMapping("/records/ignore")
+    R<Boolean> ignoreSendRecord(@RequestParam("id") Long id,
+            @RequestBody HandleNoticeSendRecordCommand command);
 
     @Override
     @PostMapping("/records/ignore-batch")
@@ -195,14 +195,14 @@ public interface NoticeFeignClient extends NoticeApi {
     R<WecomUserSyncResultVO> syncWecomUsers(@RequestBody SyncWecomUsersCommand command);
 
     @Override
-    @PostMapping("/recipient-accounts/{id}/disable")
-    R<Boolean> disableRecipientAccount(@PathVariable("id") Long id,
-            @RequestParam(required = false) Long userId);
+    @PostMapping("/recipient-accounts/disable")
+    R<Boolean> disableRecipientAccount(@RequestParam("id") Long id,
+            @RequestParam(value = "userId", required = false) Long userId);
 
     @Override
-    @PostMapping("/recipient-accounts/{id}/default")
-    R<Boolean> setDefaultRecipientAccount(@PathVariable("id") Long id,
-            @RequestParam(required = false) Long userId);
+    @PostMapping("/recipient-accounts/default")
+    R<Boolean> setDefaultRecipientAccount(@RequestParam("id") Long id,
+            @RequestParam(value = "userId", required = false) Long userId);
 
     @Override
     @GetMapping("/receive-preferences")
@@ -217,13 +217,12 @@ public interface NoticeFeignClient extends NoticeApi {
     R<PageResult<NoticeSiteMessageVO>> listSiteMessages(@SpringQueryMap NoticeSiteMessagePageQuery query);
 
     @Override
-    @GetMapping("/site/my/messages/{id}")
-    R<NoticeSiteMessageVO> getSiteMessage(@PathVariable("id") Long id);
+    @GetMapping("/site/my/messages/detail")
+    R<NoticeSiteMessageVO> getSiteMessage(@RequestParam("id") Long id);
 
     @Override
-    @PostMapping("/site/my/messages/{id}/actions/{actionCode}")
-    R<NoticeSiteMessageActionRequestVO> executeSiteMessageAction(@PathVariable("id") Long id,
-            @PathVariable("actionCode") String actionCode,
+    @PostMapping("/site/my/messages/actions")
+    R<NoticeSiteMessageActionRequestVO> executeSiteMessageAction(
             @RequestBody ExecuteNoticeSiteMessageActionCommand command);
 
     @Override
@@ -236,8 +235,8 @@ public interface NoticeFeignClient extends NoticeApi {
     R<NoticeUnreadCountVO> unreadCount();
 
     @Override
-    @PostMapping("/site/my/messages/{id}/read")
-    R<Boolean> markSiteMessageRead(@PathVariable("id") Long id);
+    @PostMapping("/site/my/messages/read")
+    R<Boolean> markSiteMessageRead(@RequestParam("id") Long id);
 
     @Override
     @PostMapping("/site/my/messages/read-batch")
@@ -248,6 +247,6 @@ public interface NoticeFeignClient extends NoticeApi {
     R<Boolean> markAllSiteMessagesRead();
 
     @Override
-    @PostMapping("/site/my/messages/{id}/delete")
-    R<Boolean> deleteSiteMessage(@PathVariable("id") Long id);
+    @PostMapping("/site/my/messages/delete")
+    R<Boolean> deleteSiteMessage(@RequestParam("id") Long id);
 }

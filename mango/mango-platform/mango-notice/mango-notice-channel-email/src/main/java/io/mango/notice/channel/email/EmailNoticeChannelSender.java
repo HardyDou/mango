@@ -2,7 +2,7 @@ package io.mango.notice.channel.email;
 
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeFailureCode;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import org.springframework.stereotype.Component;
@@ -41,7 +41,7 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
     }
 
     @Override
-    public ChannelSendResult send(ChannelSendCommand command) {
+    public ChannelSendResult send(NoticeChannelMessage command) {
         if (!StringUtils.hasText(command.getEmail())) {
             return ChannelSendResult.failed(NoticeFailureCode.RECIPIENT_INVALID.name(), "邮箱地址不能为空", false);
         }
@@ -55,7 +55,7 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
             return ChannelSendResult.failed(NoticeFailureCode.CHANNEL_CONFIG_INVALID.name(), ex.getMessage(), false);
         }
         try {
-            String messageId = smtpMailSender.send(EmailRequest.from(command, config));
+            String messageId = smtpMailSender.send(EmailMessage.from(command, config));
             return ChannelSendResult.providerSuccess(messageId, "{\"status\":\"SENT\",\"provider\":\"SMTP\"}");
         } catch (SmtpAuthException ex) {
             return ChannelSendResult.failed(NoticeFailureCode.PROVIDER_REJECTED.name(), "SMTP 认证失败", false);
@@ -66,7 +66,7 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
 
     interface SmtpMailSender {
 
-        String send(EmailRequest request) throws SmtpException;
+        String send(EmailMessage message) throws SmtpException;
     }
 
     record EmailConfig(String host, int port, String username, String password, String from, String senderName,
@@ -121,19 +121,53 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
         }
     }
 
-    record EmailRequest(Long sendRecordId, String to, String subject, String content, EmailConfig config) {
+    static final class EmailMessage {
 
-        static EmailRequest from(ChannelSendCommand command, EmailConfig config) {
-            return new EmailRequest(command.getSendRecordId(), command.getEmail(),
+        private final Long sendRecordId;
+        private final String to;
+        private final String subject;
+        private final String content;
+        private final EmailConfig config;
+
+        private EmailMessage(Long sendRecordId, String to, String subject, String content, EmailConfig config) {
+            this.sendRecordId = sendRecordId;
+            this.to = to;
+            this.subject = subject;
+            this.content = content;
+            this.config = config;
+        }
+
+        static EmailMessage from(NoticeChannelMessage command, EmailConfig config) {
+            return new EmailMessage(command.getSendRecordId(), command.getEmail(),
                     StringUtils.hasText(command.getTitle()) ? command.getTitle() : "通知消息",
                     StringUtils.hasText(command.getContent()) ? command.getContent() : "", config);
+        }
+
+        Long sendRecordId() {
+            return sendRecordId;
+        }
+
+        String to() {
+            return to;
+        }
+
+        String subject() {
+            return subject;
+        }
+
+        String content() {
+            return content;
+        }
+
+        EmailConfig config() {
+            return config;
         }
     }
 
     static class SocketSmtpMailSender implements SmtpMailSender {
 
         @Override
-        public String send(EmailRequest request) throws SmtpException {
+        public String send(EmailMessage request) throws SmtpException {
             try (Socket socket = openSocket(request.config())) {
                 socket.setSoTimeout(request.config().timeoutMillis());
                 SmtpSession session = new SmtpSession(socket);
@@ -163,7 +197,7 @@ public class EmailNoticeChannelSender implements NoticeChannelSender {
             return new Socket(config.host(), config.port());
         }
 
-        private String message(EmailRequest request, String messageId) {
+        private String message(EmailMessage request, String messageId) {
             String fromName = StringUtils.hasText(request.config().senderName())
                     ? mimeText(request.config().senderName()) + " <" + request.config().from() + ">"
                     : request.config().from();

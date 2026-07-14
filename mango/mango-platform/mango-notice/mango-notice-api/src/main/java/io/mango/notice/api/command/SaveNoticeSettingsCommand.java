@@ -13,9 +13,11 @@ public class SaveNoticeSettingsCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "是否启用提示音")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean soundEnabled;
 
     @Schema(description = "是否启用桌面通知")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean desktopEnabled;
 
     @Min(value = 0, message = "最大重试次数不能小于0")

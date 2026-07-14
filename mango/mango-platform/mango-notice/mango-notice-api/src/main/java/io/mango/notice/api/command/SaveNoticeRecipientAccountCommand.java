@@ -19,9 +19,11 @@ public class SaveNoticeRecipientAccountCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "账户 ID，更新时必填")
+    @jakarta.validation.constraints.Positive
     private Long id;
 
     @Schema(description = "用户 ID；为空时使用当前用户")
+    @jakarta.validation.constraints.Positive
     private Long userId;
 
     @NotNull(message = "账户类型不能为空")
@@ -33,11 +35,14 @@ public class SaveNoticeRecipientAccountCommand implements Serializable {
     private String accountValue;
 
     @Schema(description = "显示名称")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String displayName;
 
     @Schema(description = "验证状态")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticeRecipientAccountStatus verifiedStatus;
 
     @Schema(description = "是否默认账户")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean defaultAccount;
 }

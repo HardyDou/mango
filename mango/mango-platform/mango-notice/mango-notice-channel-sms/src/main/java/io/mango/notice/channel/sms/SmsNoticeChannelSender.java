@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeFailureCode;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import org.springframework.stereotype.Component;
@@ -50,7 +50,7 @@ public class SmsNoticeChannelSender implements NoticeChannelSender {
     }
 
     @Override
-    public ChannelSendResult send(ChannelSendCommand command) {
+    public ChannelSendResult send(NoticeChannelMessage command) {
         if (!StringUtils.hasText(command.getMobile())) {
             return ChannelSendResult.failed(NoticeFailureCode.RECIPIENT_INVALID.name(), "手机号不能为空", false);
         }
@@ -83,7 +83,7 @@ public class SmsNoticeChannelSender implements NoticeChannelSender {
             return ChannelSendResult.failed("SMS_TEMPLATE_PARAM_INVALID", ex.getMessage(), false);
         }
         try {
-            SmsGatewayResponse response = gateway(normalizedProvider).send(new SmsGatewayRequest(command.getMobile(),
+            SmsGatewayResult response = gateway(normalizedProvider).send(new SmsGatewayPayload(command.getMobile(),
                     config.signName(), config.templateCode(), templateParam, config));
             if (response.success()) {
                 return ChannelSendResult.providerSuccess(
@@ -138,7 +138,7 @@ public class SmsNoticeChannelSender implements NoticeChannelSender {
         }
     }
 
-    private String buildTemplateParam(ChannelSendCommand command) {
+    private String buildTemplateParam(NoticeChannelMessage command) {
         Map<String, Object> params = command.getParams() == null ? Map.of() : command.getParams();
         Map<String, Object> templateParams = new LinkedHashMap<>();
         if (StringUtils.hasText(command.getVariableMapping())) {

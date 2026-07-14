@@ -1,7 +1,7 @@
 package io.mango.notice.channel.wechat.official;
 
 import io.mango.notice.api.enums.NoticeChannelType;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class WechatOfficialNoticeChannelSender implements NoticeChannelSender {
     }
 
     @Override
-    public ChannelSendResult send(ChannelSendCommand command) {
+    public ChannelSendResult send(NoticeChannelMessage command) {
         if (command.getWechatOpenid() == null || command.getWechatOpenid().isBlank()) {
             return ChannelSendResult.failed("OPENID_EMPTY", "微信公众号 openid 不能为空", false);
         }

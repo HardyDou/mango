@@ -1,7 +1,7 @@
 package io.mango.notice.channel.dingtalk;
 
 import io.mango.notice.api.enums.NoticeChannelType;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ class DingtalkNoticeChannelSenderTest {
 
     @Test
     void send_missingUserAndRobot_returnsNonRetryableFailure() {
-        ChannelSendResult result = sender.send(new ChannelSendCommand());
+        ChannelSendResult result = sender.send(new NoticeChannelMessage());
 
         assertFalse(result.isSuccess());
         assertEquals("DINGTALK_USER_EMPTY", result.getFailCode());
@@ -30,7 +30,7 @@ class DingtalkNoticeChannelSenderTest {
 
     @Test
     void send_withUserId_returnsWorkNoticeSuccess() {
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(5001L);
         command.setDingtalkUserId("manager001");
 
@@ -42,7 +42,7 @@ class DingtalkNoticeChannelSenderTest {
 
     @Test
     void send_withRobotWebhook_returnsRobotMessageSuccessWithoutUserId() {
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(5002L);
         command.setChannelConfigJson("{\"webhookUrl\":\"https://oapi.dingtalk.com/robot/send?access_token=test\"}");
 

@@ -33,7 +33,7 @@ final class TencentSmsGateway implements SmsGateway {
     }
 
     @Override
-    public SmsGatewayResponse send(SmsGatewayRequest request) {
+    public SmsGatewayResult send(SmsGatewayPayload request) {
         TencentSmsConfig config = (TencentSmsConfig) request.config();
         try {
             Credential credential = new Credential(config.secretId(), config.secretKey());
@@ -58,9 +58,9 @@ final class TencentSmsGateway implements SmsGateway {
             String code = status == null ? null : status.getCode();
             String snapshot = snapshot(response, status);
             if (SUCCESS_CODE.equalsIgnoreCase(code)) {
-                return SmsGatewayResponse.success(status.getSerialNo(), snapshot);
+                return SmsGatewayResult.success(status.getSerialNo(), snapshot);
             }
-            return SmsGatewayResponse.failed("TENCENT_SMS_" + nullToUnknown(code),
+            return SmsGatewayResult.failed("TENCENT_SMS_" + nullToUnknown(code),
                     "腾讯云短信发送失败：" + nullToDefault(status == null ? null : status.getMessage(), code),
                     retryable(code), snapshot);
         } catch (SmsGatewayException ex) {

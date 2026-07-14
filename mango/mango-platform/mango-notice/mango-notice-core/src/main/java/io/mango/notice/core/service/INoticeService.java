@@ -77,8 +77,7 @@ public interface INoticeService {
 
  List<NoticeChannelTemplateVO> listChannelTemplates(Long businessTypeId);
 
- NoticeChannelTemplateVO saveChannelTemplate(Long businessTypeId, NoticeChannelType channelType,
- SaveNoticeChannelTemplateCommand command);
+ NoticeChannelTemplateVO saveChannelTemplate(Long businessTypeId, SaveNoticeChannelTemplateCommand command);
 
  boolean publishChannelTemplate(Long businessTypeId, NoticeChannelType channelType);
 
@@ -110,36 +109,35 @@ public interface INoticeService {
 
  boolean saveSettings(SaveNoticeSettingsCommand command);
 
- List<NoticeRecipientAccountVO> listRecipientAccounts(Long currentUserId, NoticeRecipientAccountQuery query);
+ List<NoticeRecipientAccountVO> listRecipientAccounts(NoticeRecipientAccountQuery query);
 
- NoticeRecipientAccountVO saveRecipientAccount(Long currentUserId, SaveNoticeRecipientAccountCommand command);
+ NoticeRecipientAccountVO saveRecipientAccount(SaveNoticeRecipientAccountCommand command);
 
  WecomUserSyncResultVO syncWecomUsers(SyncWecomUsersCommand command);
 
- boolean disableRecipientAccount(Long currentUserId, Long id, Long userId);
+ boolean disableRecipientAccount(Long id, Long userId);
 
- boolean setDefaultRecipientAccount(Long currentUserId, Long id, Long userId);
+ boolean setDefaultRecipientAccount(Long id, Long userId);
 
- List<NoticeReceivePreferenceVO> listReceivePreferences(Long currentUserId, NoticeReceivePreferenceQuery query);
+ List<NoticeReceivePreferenceVO> listReceivePreferences(NoticeReceivePreferenceQuery query);
 
- NoticeReceivePreferenceVO saveReceivePreference(Long currentUserId, SaveNoticeReceivePreferenceCommand command);
+ NoticeReceivePreferenceVO saveReceivePreference(SaveNoticeReceivePreferenceCommand command);
 
- PageResult<NoticeSiteMessageVO> listSiteMessages(Long userId, NoticeSiteMessagePageQuery query);
+ PageResult<NoticeSiteMessageVO> listSiteMessages(NoticeSiteMessagePageQuery query);
 
- NoticeSiteMessageVO getSiteMessage(Long id, Long userId);
+ NoticeSiteMessageVO getSiteMessage(Long id);
 
- NoticeSiteMessageActionRequestVO executeSiteMessageAction(Long id, String actionCode, Long userId,
- ExecuteNoticeSiteMessageActionCommand command);
+ NoticeSiteMessageActionRequestVO executeSiteMessageAction(ExecuteNoticeSiteMessageActionCommand command);
 
  NoticeSiteMessageActionRequestVO completeSiteMessageAction(CompleteNoticeSiteMessageActionCommand command);
 
- NoticeUnreadCountVO unreadCount(Long userId);
+ NoticeUnreadCountVO unreadCount();
 
- boolean markSiteMessageRead(Long id, Long userId);
+ boolean markSiteMessageRead(Long id);
 
- boolean markSiteMessagesRead(MarkNoticeReadCommand command, Long userId);
+ boolean markSiteMessagesRead(MarkNoticeReadCommand command);
 
- boolean markAllSiteMessagesRead(Long userId);
+ boolean markAllSiteMessagesRead();
 
- boolean deleteSiteMessage(Long id, Long userId);
+ boolean deleteSiteMessage(Long id);
 }

@@ -7,7 +7,6 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @Schema(description = "系统消息视图")
@@ -35,7 +34,7 @@ public class NoticeSiteMessageVO {
     private NoticeSiteMessageTargetVO target;
 
     @Schema(description = "系统消息业务数据快照")
-    private Map<String, Object> data;
+    private NoticeJsonVO data;
 
     @Schema(description = "系统消息动作")
     private List<NoticeSiteMessageActionVO> actions;

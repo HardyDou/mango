@@ -25,5 +25,6 @@ public class NoticeRecipientTargetCommand implements Serializable {
     private Long targetId;
 
     @Schema(description = "目标名称，仅用于请求快照和页面回显")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String targetName;
 }

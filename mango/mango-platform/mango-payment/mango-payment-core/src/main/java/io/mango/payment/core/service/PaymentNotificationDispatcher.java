@@ -14,7 +14,8 @@ import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeJsonRequest;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.payment.api.enums.PaymentCode;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
@@ -218,19 +219,20 @@ public class PaymentNotificationDispatcher {
         String bizType = paymentNoticeBizType(paymentOrder.getStatus());
         Map<String, Object> params = paymentNoticeParams(application, businessOrder, paymentOrder);
         NoticeSiteMessageTargetCommand target = routeTarget("payment:payment-order", params);
-        eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType(bizType)
-                .bizId(paymentOrder.getPayOrderNo())
-                .recipientRuleCode("payment.operator")
-                .priority(NoticePriority.NORMAL)
-                .idempotentKey("payment:" + paymentOrder.getPayOrderNo() + ":" + paymentOrder.getStatus())
-                .params(params)
-                .messageScene(bizType)
-                .messageSubject(subject("PAYMENT_ORDER", paymentOrder.getPayOrderNo(), businessOrder.getBizOrderNo()))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(paymentActions(paymentOrder.getStatus(), target, params))
-                .build());
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(application.getTenantId() == null ? null : String.valueOf(application.getTenantId()));
+        event.setBizType(bizType);
+        event.setBizId(paymentOrder.getPayOrderNo());
+        event.setRecipientRuleCode("payment.operator");
+        event.setPriority(NoticePriority.NORMAL);
+        event.setIdempotentKey("payment:" + paymentOrder.getPayOrderNo() + ":" + paymentOrder.getStatus());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene(bizType);
+        event.setMessageSubject(subject("PAYMENT_ORDER", paymentOrder.getPayOrderNo(), businessOrder.getBizOrderNo()));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(paymentActions(paymentOrder.getStatus(), target, params));
+        eventPublisher.publishEvent(event);
     }
 
     private void publishRefundNoticeEvent(
@@ -240,19 +242,20 @@ public class PaymentNotificationDispatcher {
         String bizType = refundNoticeBizType(refundOrder.getStatus());
         Map<String, Object> params = refundNoticeParams(application, businessOrder, refundOrder);
         NoticeSiteMessageTargetCommand target = routeTarget("payment:refund-order", params);
-        eventPublisher.publishEvent(NoticeSendEvent.builder()
-                .bizType(bizType)
-                .bizId(refundOrder.getRefundOrderNo())
-                .recipientRuleCode("payment.operator")
-                .priority(FAILED_STATUS.equals(refundOrder.getStatus()) ? NoticePriority.HIGH : NoticePriority.NORMAL)
-                .idempotentKey("payment:refund:" + refundOrder.getRefundOrderNo() + ":" + refundOrder.getStatus())
-                .params(params)
-                .messageScene(bizType)
-                .messageSubject(subject("PAYMENT_REFUND_ORDER", refundOrder.getRefundOrderNo(), businessOrder.getBizOrderNo()))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(refundActions(refundOrder.getStatus(), target, params))
-                .build());
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(application.getTenantId() == null ? null : String.valueOf(application.getTenantId()));
+        event.setBizType(bizType);
+        event.setBizId(refundOrder.getRefundOrderNo());
+        event.setRecipientRuleCode("payment.operator");
+        event.setPriority(FAILED_STATUS.equals(refundOrder.getStatus()) ? NoticePriority.HIGH : NoticePriority.NORMAL);
+        event.setIdempotentKey("payment:refund:" + refundOrder.getRefundOrderNo() + ":" + refundOrder.getStatus());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene(bizType);
+        event.setMessageSubject(subject("PAYMENT_REFUND_ORDER", refundOrder.getRefundOrderNo(), businessOrder.getBizOrderNo()));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(refundActions(refundOrder.getStatus(), target, params));
+        eventPublisher.publishEvent(event);
     }
 
     private String paymentNoticeBizType(String status) {
@@ -337,7 +340,7 @@ public class PaymentNotificationDispatcher {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         target.setTargetKey(targetKey);
-        target.setParams(params);
+        target.setParams(NoticeJsonRequest.of(params));
         return target;
     }
 
@@ -345,7 +348,7 @@ public class PaymentNotificationDispatcher {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.FLOW);
         target.setTargetKey(targetKey);
-        target.setParams(params);
+        target.setParams(NoticeJsonRequest.of(params));
         return target;
     }
 

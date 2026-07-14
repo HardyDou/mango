@@ -6,5 +6,5 @@ public interface NoticeChannelSender {
 
     NoticeChannelType channelType();
 
-    ChannelSendResult send(ChannelSendCommand command);
+    ChannelSendResult send(NoticeChannelMessage message);
 }

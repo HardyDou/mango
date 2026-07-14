@@ -1,12 +1,12 @@
 package io.mango.notice.starter.controller;
 
-import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.notice.api.NoticeAnnouncementApi;
 import io.mango.notice.api.command.PublishNoticeAnnouncementCommand;
+import io.mango.notice.api.command.NoticeAnnouncementIdCommand;
 import io.mango.notice.api.command.SaveNoticeAnnouncementCommand;
 import io.mango.notice.api.query.MyNoticeAnnouncementPageQuery;
 import io.mango.notice.api.query.NoticeAnnouncementIdQuery;
@@ -16,7 +16,6 @@ import io.mango.notice.api.vo.NoticeAnnouncementVO;
 import io.mango.notice.core.service.INoticeAnnouncementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -35,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class NoticeAnnouncementController implements NoticeAnnouncementApi {
 
     private final INoticeAnnouncementService announcementService;
-    private final ISecurityContextProvider securityContextProvider;
 
     @Override
     @GetMapping("/announcements")
@@ -49,7 +47,7 @@ public class NoticeAnnouncementController implements NoticeAnnouncementApi {
     @GetMapping("/announcements/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:announcement:view")
     @Operation(summary = "查询公告详情", description = "管理端查询公告详情、发布对象快照和统计")
-    public R<NoticeAnnouncementVO> getAnnouncement(@ParameterObject @Valid NoticeAnnouncementIdQuery query) {
+    public R<NoticeAnnouncementVO> getAnnouncement(@ParameterObject NoticeAnnouncementIdQuery query) {
         return R.ok(announcementService.getAnnouncement(query.getId()));
     }
 
@@ -57,7 +55,7 @@ public class NoticeAnnouncementController implements NoticeAnnouncementApi {
     @PostMapping("/announcements")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:announcement:create")
     @Operation(summary = "创建公告草稿", description = "创建公告草稿，可同时保存发布对象快照")
-    public R<NoticeAnnouncementVO> createAnnouncement(@RequestBody @Valid SaveNoticeAnnouncementCommand command) {
+    public R<NoticeAnnouncementVO> createAnnouncement(@RequestBody SaveNoticeAnnouncementCommand command) {
         return R.ok(announcementService.createAnnouncement(command));
     }
 
@@ -65,7 +63,7 @@ public class NoticeAnnouncementController implements NoticeAnnouncementApi {
     @PutMapping("/announcements")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:announcement:edit")
     @Operation(summary = "更新公告草稿", description = "只有草稿公告允许编辑")
-    public R<NoticeAnnouncementVO> updateAnnouncement(@RequestBody @Valid SaveNoticeAnnouncementCommand command) {
+    public R<NoticeAnnouncementVO> updateAnnouncement(@RequestBody SaveNoticeAnnouncementCommand command) {
         return R.ok(announcementService.updateAnnouncement(command.getId(), command));
     }
 
@@ -73,7 +71,7 @@ public class NoticeAnnouncementController implements NoticeAnnouncementApi {
     @PostMapping("/announcements/publish")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:announcement:publish")
     @Operation(summary = "发布公告", description = "发布公告并按发布对象解析到用户级接收记录")
-    public R<Boolean> publishAnnouncement(@RequestBody @Valid PublishNoticeAnnouncementCommand command) {
+    public R<Boolean> publishAnnouncement(@RequestBody PublishNoticeAnnouncementCommand command) {
         return R.ok(announcementService.publishAnnouncement(command.getId(), command));
     }
 
@@ -81,15 +79,15 @@ public class NoticeAnnouncementController implements NoticeAnnouncementApi {
     @PostMapping("/announcements/offline")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:announcement:offline")
     @Operation(summary = "下线公告", description = "下线已发布公告，用户端不再展示")
-    public R<Boolean> offlineAnnouncement(@RequestBody @Valid NoticeAnnouncementIdQuery query) {
-        return R.ok(announcementService.offlineAnnouncement(query.getId()));
+    public R<Boolean> offlineAnnouncement(@RequestBody NoticeAnnouncementIdCommand command) {
+        return R.ok(announcementService.offlineAnnouncement(command.getId()));
     }
 
     @Override
     @GetMapping("/announcements/stats")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:announcement:view")
     @Operation(summary = "查询公告统计", description = "查询公告接收、已读和确认统计")
-    public R<NoticeAnnouncementStatsVO> getAnnouncementStats(@ParameterObject @Valid NoticeAnnouncementIdQuery query) {
+    public R<NoticeAnnouncementStatsVO> getAnnouncementStats(@ParameterObject NoticeAnnouncementIdQuery query) {
         return R.ok(announcementService.getAnnouncementStats(query.getId()));
     }
 
@@ -98,26 +96,22 @@ public class NoticeAnnouncementController implements NoticeAnnouncementApi {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
     @Operation(summary = "分页查询我的公告", description = "分页查询当前用户可见公告")
     public R<PageResult<NoticeAnnouncementVO>> pageMyAnnouncements(@ParameterObject MyNoticeAnnouncementPageQuery query) {
-        return R.ok(announcementService.pageMyAnnouncements(currentUserId(), query));
+        return R.ok(announcementService.pageMyAnnouncements(query));
     }
 
     @Override
     @GetMapping("/site/my/announcements/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:view")
     @Operation(summary = "查询我的公告详情", description = "查询当前用户公告详情并标记已读")
-    public R<NoticeAnnouncementVO> getMyAnnouncement(@ParameterObject @Valid NoticeAnnouncementIdQuery query) {
-        return R.ok(announcementService.getMyAnnouncement(query.getId(), currentUserId()));
+    public R<NoticeAnnouncementVO> getMyAnnouncement(@ParameterObject NoticeAnnouncementIdQuery query) {
+        return R.ok(announcementService.getMyAnnouncement(query.getId()));
     }
 
     @Override
     @PostMapping("/site/my/announcements/confirm")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:site:edit")
     @Operation(summary = "确认我的公告", description = "确认当前用户待确认公告")
-    public R<Boolean> confirmMyAnnouncement(@RequestBody @Valid NoticeAnnouncementIdQuery query) {
-        return R.ok(announcementService.confirmMyAnnouncement(query.getId(), currentUserId()));
-    }
-
-    private Long currentUserId() {
-        return securityContextProvider.currentContext().userId();
+    public R<Boolean> confirmMyAnnouncement(@RequestBody NoticeAnnouncementIdCommand command) {
+        return R.ok(announcementService.confirmMyAnnouncement(command.getId()));
     }
 }

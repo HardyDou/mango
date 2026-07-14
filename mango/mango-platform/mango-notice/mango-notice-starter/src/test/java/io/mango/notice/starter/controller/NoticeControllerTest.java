@@ -1,16 +1,17 @@
 package io.mango.notice.starter.controller;
 
-import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.core.service.INoticeService;
+import jakarta.validation.Validation;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -20,9 +21,21 @@ import static org.mockito.Mockito.when;
 class NoticeControllerTest {
 
  @Test
+ void controllerMethodValidation_doesNotRedefineApiParameterConstraints() throws NoSuchMethodException {
+ INoticeService noticeService = mock(INoticeService.class);
+ NoticeController controller = new NoticeController(noticeService);
+ var method = NoticeController.class.getMethod("getSettings");
+
+ try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+ var executableValidator = validatorFactory.getValidator().forExecutables();
+ assertDoesNotThrow(() -> executableValidator.validateParameters(controller, method, new Object[0]));
+ }
+ }
+
+ @Test
  void sendSiteMessage_forcesSiteChannelAndDelegatesToUnifiedSend() {
  INoticeService noticeService = mock(INoticeService.class);
- NoticeController controller = new NoticeController(noticeService, mock(ISecurityContextProvider.class));
+ NoticeController controller = new NoticeController(noticeService);
  when(noticeService.send(any(SendNoticeCommand.class))).thenReturn(new NoticeSendResultVO(1, 0));
  SendNoticeCommand command = new SendNoticeCommand();
  command.setBizType("SYSTEM_NOTICE");

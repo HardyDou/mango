@@ -8,7 +8,8 @@ import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.event.NoticeSendEvent;
+import io.mango.notice.api.command.NoticeJsonRequest;
+import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.workflow.api.WorkflowEventTypes;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -55,23 +56,24 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         }
         Map<String, Object> params = toParams(event);
         NoticeSiteMessageTargetCommand target = target(event, params);
-        NoticeSendEvent.NoticeSendEventBuilder builder = NoticeSendEvent.builder()
-                .bizType(bizType)
-                .bizId(firstText(event.getBusinessKey(), stringValue(payload(event).get("processInstanceId"))))
-                .recipientRuleCode(RECIPIENT_RULE_CODE)
-                .priority(priority(event.getEventType()))
-                .idempotentKey("workflow:" + event.getEventId())
-                .params(params)
-                .messageScene(bizType)
-                .messageSubject(subject(event, params))
-                .messageTarget(target)
-                .messageData(params)
-                .messageActions(List.of(routeAction(actionLabel(event.getEventType()), target)));
+        NoticeSendEventCommand notice = new NoticeSendEventCommand();
+        notice.setTenantId(stringValue(payload(event).get("tenantId")));
+        notice.setBizType(bizType);
+        notice.setBizId(firstText(event.getBusinessKey(), stringValue(payload(event).get("processInstanceId"))));
+        notice.setRecipientRuleCode(RECIPIENT_RULE_CODE);
+        notice.setPriority(priority(event.getEventType()));
+        notice.setIdempotentKey("workflow:" + event.getEventId());
+        notice.setParams(NoticeJsonRequest.of(params));
+        notice.setMessageScene(bizType);
+        notice.setMessageSubject(subject(event, params));
+        notice.setMessageTarget(target);
+        notice.setMessageData(NoticeJsonRequest.of(params));
+        notice.setMessageActions(List.of(routeAction(actionLabel(event.getEventType()), target)));
         Long assigneeId = parseLong(stringValue(payload(event).get("assignee")));
         if (assigneeId != null) {
-            builder.userId(assigneeId);
+            notice.setUserId(assigneeId);
         }
-        eventPublisher.publishEvent(builder.build());
+        eventPublisher.publishEvent(notice);
     }
 
     private String toNoticeBizType(String eventType) {
@@ -115,7 +117,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         target.setTargetKey(workflowTargetKey(event.getEventType(), params));
-        target.setParams(params);
+        target.setParams(NoticeJsonRequest.of(params));
         return target;
     }
 

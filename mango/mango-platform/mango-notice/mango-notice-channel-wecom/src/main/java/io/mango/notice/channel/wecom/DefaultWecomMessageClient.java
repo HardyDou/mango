@@ -28,7 +28,7 @@ public class DefaultWecomMessageClient implements WecomMessageClient {
     }
 
     @Override
-    public WecomMessageSendResponse sendText(String accessToken, WecomTextMessageRequest request) {
+    public WecomSendResult sendText(String accessToken, WecomTextMessage request) {
         String uri = SEND_MESSAGE_URL + "?access_token=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
         HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(uri))
                 .timeout(TIMEOUT)
@@ -43,7 +43,7 @@ public class DefaultWecomMessageClient implements WecomMessageClient {
         if (errCode != 0) {
             throw new WecomApiException("WECOM_SEND_" + errCode, sanitizeError("企业微信消息发送失败", response.body()), errCode == -1);
         }
-        return new WecomMessageSendResponse(response.body(), WecomJsonSupport.readString(response.body(), "msgid"));
+        return new WecomSendResult(response.body(), WecomJsonSupport.readString(response.body(), "msgid"));
     }
 
     private HttpResponse<String> send(HttpRequest request) {
@@ -57,7 +57,7 @@ public class DefaultWecomMessageClient implements WecomMessageClient {
         }
     }
 
-    private String buildBody(WecomTextMessageRequest request) {
+    private String buildBody(WecomTextMessage request) {
         return """
                 {"touser":"%s","msgtype":"text","agentid":%d,"text":{"content":"%s"},"safe":0,"enable_duplicate_check":0}
                 """.formatted(

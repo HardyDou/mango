@@ -4,7 +4,7 @@ import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticePriority;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ class SiteNoticeChannelSenderTest {
         TestRealtimeApi realtimeApi = new TestRealtimeApi();
         SiteNoticeChannelSender sender = new SiteNoticeChannelSender(realtimeApi,
                 command -> new SiteNoticeMessageWriteResult(1001L, 3L));
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setUserId(8L);
         command.setTitle("新的审批");
         command.setBizType("WORKFLOW_APPROVED");

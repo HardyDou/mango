@@ -2,7 +2,7 @@ package io.mango.notice.channel.email;
 
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeFailureCode;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +25,7 @@ class EmailNoticeChannelSenderTest {
     void send_missingEmail_returnsNonRetryableFailure() {
         EmailNoticeChannelSender sender = new EmailNoticeChannelSender(new FakeSmtpMailSender("message-1"));
 
-        ChannelSendResult result = sender.send(new ChannelSendCommand());
+        ChannelSendResult result = sender.send(new NoticeChannelMessage());
 
         assertFalse(result.isSuccess());
         assertEquals(NoticeFailureCode.RECIPIENT_INVALID.name(), result.getFailCode());
@@ -36,7 +36,7 @@ class EmailNoticeChannelSenderTest {
     @Test
     void send_invalidConfig_returnsConfigFailure() {
         EmailNoticeChannelSender sender = new EmailNoticeChannelSender(new FakeSmtpMailSender("message-1"));
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setEmail("user@example.com");
         command.setChannelConfigJson("{\"host\":\"smtp.example.com\"}");
 
@@ -52,7 +52,7 @@ class EmailNoticeChannelSenderTest {
     void send_validEmailWithHtmlAndAttachmentFileIds_sendsBySmtp() {
         FakeSmtpMailSender mailSender = new FakeSmtpMailSender("smtp-message-2001");
         EmailNoticeChannelSender sender = new EmailNoticeChannelSender(mailSender);
-        ChannelSendCommand command = new ChannelSendCommand();
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(2001L);
         command.setEmail("user@example.com");
         command.setTitle("发货通知");
@@ -76,14 +76,14 @@ class EmailNoticeChannelSenderTest {
 
         private final String messageId;
 
-        private EmailNoticeChannelSender.EmailRequest request;
+        private EmailNoticeChannelSender.EmailMessage request;
 
         FakeSmtpMailSender(String messageId) {
             this.messageId = messageId;
         }
 
         @Override
-        public String send(EmailNoticeChannelSender.EmailRequest request) {
+        public String send(EmailNoticeChannelSender.EmailMessage request) {
             this.request = request;
             return messageId;
         }

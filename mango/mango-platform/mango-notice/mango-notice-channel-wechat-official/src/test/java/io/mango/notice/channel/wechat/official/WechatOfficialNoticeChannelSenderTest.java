@@ -1,7 +1,7 @@
 package io.mango.notice.channel.wechat.official;
 
 import io.mango.notice.api.enums.NoticeChannelType;
-import io.mango.notice.support.channel.ChannelSendCommand;
+import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.ChannelSendResult;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ class WechatOfficialNoticeChannelSenderTest {
     void send_missingOpenid_returnsNonRetryableFailure() {
         WechatOfficialNoticeChannelSender sender = new WechatOfficialNoticeChannelSender(tokenProvider());
 
-        ChannelSendResult result = sender.send(new ChannelSendCommand());
+        ChannelSendResult result = sender.send(new NoticeChannelMessage());
 
         assertFalse(result.isSuccess());
         assertEquals("OPENID_EMPTY", result.getFailCode());
@@ -44,7 +44,7 @@ class WechatOfficialNoticeChannelSenderTest {
                 },
                 Clock.fixed(Instant.parse("2026-05-26T00:00:00Z"), ZoneOffset.UTC));
         WechatOfficialNoticeChannelSender sender = new WechatOfficialNoticeChannelSender(provider);
-        ChannelSendCommand command = command();
+        NoticeChannelMessage command = command();
 
         ChannelSendResult first = sender.send(command);
         ChannelSendResult second = sender.send(command);
@@ -60,8 +60,8 @@ class WechatOfficialNoticeChannelSenderTest {
         return (appId, appSecret) -> "token-" + appId;
     }
 
-    private ChannelSendCommand command() {
-        ChannelSendCommand command = new ChannelSendCommand();
+    private NoticeChannelMessage command() {
+        NoticeChannelMessage command = new NoticeChannelMessage();
         command.setSendRecordId(3001L);
         command.setWechatOpenid("openid-1");
         command.setChannelConfigJson("{\"appId\":\"wx-app\",\"appSecret\":\"secret\"}");

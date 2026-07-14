@@ -1,23 +1,18 @@
 package io.mango.notice.core.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageActionStatus;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Data
-@TableName("notice_site_message_action")
-public class NoticeSiteMessageActionEntity {
-
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+@EqualsAndHashCode(callSuper = true)
+@TableName(value = "notice_site_message_action", excludeProperty = {"orgId", "createdBy", "updatedBy"})
+public class NoticeSiteMessageActionEntity extends NoticeBaseEntity {
 
     private Long messageId;
 
@@ -49,11 +44,4 @@ public class NoticeSiteMessageActionEntity {
 
     private LocalDateTime expireTime;
 
-    private String tenantId;
-
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
 }

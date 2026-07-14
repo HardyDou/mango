@@ -13,17 +13,22 @@ public class NoticeTaskPageQuery implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "页码")
+    @jakarta.validation.constraints.Positive
     private long pageNum = 1;
 
     @Schema(description = "每页数量")
+    @jakarta.validation.constraints.Positive
     private long pageSize = 10;
 
     @Schema(description = "业务类型")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String bizType;
 
     @Schema(description = "业务对象ID")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String bizId;
 
     @Schema(description = "任务状态")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private NoticeTaskStatus status;
 }

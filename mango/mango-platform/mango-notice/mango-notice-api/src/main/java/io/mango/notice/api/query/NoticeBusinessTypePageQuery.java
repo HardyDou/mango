@@ -12,20 +12,26 @@ public class NoticeBusinessTypePageQuery implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "页码")
+    @jakarta.validation.constraints.Positive
     private long pageNum = 1;
 
     @Schema(description = "每页数量")
+    @jakarta.validation.constraints.Positive
     private long pageSize = 10;
 
     @Schema(description = "业务类型")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String bizType;
 
     @Schema(description = "业务分组")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String bizGroup;
 
     @Schema(description = "业务域编码")
+    @jakarta.validation.constraints.Size(max = 65535)
     private String domainCode;
 
     @Schema(description = "是否启用")
+    @jakarta.validation.constraints.NotNull(groups = io.mango.notice.api.validation.NoticeOptionalValidation.class)
     private Boolean enabled;
 }

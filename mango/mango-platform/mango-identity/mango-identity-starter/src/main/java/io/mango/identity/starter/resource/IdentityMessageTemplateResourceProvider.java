@@ -1,8 +1,8 @@
 package io.mango.identity.starter.resource;
 
 import io.mango.notice.api.enums.NoticePriority;
-import io.mango.notice.api.resource.NoticeMessageTemplateResourceDeclarations;
-import io.mango.notice.api.resource.NoticeMessageTemplateResourceDeclarations.MessageTemplateSpec;
+import io.mango.notice.support.resource.NoticeMessageTemplateResourceDeclarations;
+import io.mango.notice.support.resource.NoticeMessageTemplateResourceDeclarations.MessageTemplateSpec;
 import io.mango.resource.api.ResourceProvider;
 import io.mango.resource.api.model.ResourceDeclaration;
 import org.springframework.stereotype.Component;
