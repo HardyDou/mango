@@ -1,6 +1,8 @@
 package io.mango.workflow.api.command;
 
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -41,12 +43,15 @@ public class EnsureWorkflowDefinitionCommand {
     private String categoryRemark;
 
     @Schema(description = "所属组织ID")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long orgId;
 
     @Schema(description = "流程管理员用户名列表")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private List<String> adminUsers;
 
     @Schema(description = "启动入口是否可见；false 表示不出现在审批中心发起流程入口")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Boolean startEntryVisible;
 
     @Schema(description = "流程图标")
@@ -72,6 +77,7 @@ public class EnsureWorkflowDefinitionCommand {
     private String formCode;
 
     @Schema(description = "动态表单JSON配置")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private String formJson;
 
     @Schema(description = "备注")

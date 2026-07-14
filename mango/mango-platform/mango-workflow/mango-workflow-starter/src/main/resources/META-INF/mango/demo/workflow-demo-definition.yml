@@ -1,0 +1,94 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: workflow
+    module-name: 工作流演示
+    declarations:
+      WORKFLOW_DEFINITION:
+        - id: "2026071409000000001"
+          version: 1
+          biz-key: workflow.definition.expense-reimbursement
+          name: 费用报销审批
+          target-module: workflow
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: STRING, value: "1" }
+            domainCode: { type: STRING, value: COMMON }
+            categoryCode: { type: STRING, value: COMMON }
+            categoryName: { type: STRING, value: 通用流程 }
+            categorySort: { type: INT, value: 10 }
+            categoryRemark: { type: STRING, value: 系统内置通用示例流程分类 }
+            orgId: { type: LONG, value: 1 }
+            adminUsers: { type: JSON, value: [admin] }
+            startEntryVisible: { type: BOOLEAN, value: true }
+            icon: { type: STRING, value: Money }
+            definitionKey: { type: STRING, value: expense_reimbursement }
+            definitionName: { type: STRING, value: 费用报销审批 }
+            designerJson:
+              type: FILE
+              location: classpath:META-INF/mango/demo-assets/workflow/expense-reimbursement-designer.json
+              encoding: UTF-8
+            formCode: { type: STRING, value: form_expense_reimbursement }
+            formJson:
+              type: FILE
+              location: classpath:META-INF/mango/demo-assets/workflow/expense-reimbursement-form.json
+              encoding: UTF-8
+            remark: { type: STRING, value: 费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。 }
+        - id: "2026071409000000002"
+          version: 1
+          biz-key: workflow.definition.contract-seal-approval
+          name: 合同用印审批
+          target-module: workflow
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: STRING, value: "1" }
+            domainCode: { type: STRING, value: COMMON }
+            categoryCode: { type: STRING, value: COMMON }
+            categoryName: { type: STRING, value: 通用流程 }
+            categorySort: { type: INT, value: 10 }
+            categoryRemark: { type: STRING, value: 系统内置通用示例流程分类 }
+            orgId: { type: LONG, value: 1 }
+            adminUsers: { type: JSON, value: [admin] }
+            startEntryVisible: { type: BOOLEAN, value: true }
+            icon: { type: STRING, value: Stamp }
+            definitionKey: { type: STRING, value: contract_seal_approval }
+            definitionName: { type: STRING, value: 合同用印审批 }
+            designerJson:
+              type: FILE
+              location: classpath:META-INF/mango/demo-assets/workflow/contract-seal-approval-designer.json
+              encoding: UTF-8
+            formCode: { type: STRING, value: form_contract_seal_approval }
+            formJson:
+              type: FILE
+              location: classpath:META-INF/mango/demo-assets/workflow/contract-seal-approval-form.json
+              encoding: UTF-8
+            remark: { type: STRING, value: 合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。 }
+        - id: "2026071409000000003"
+          version: 1
+          biz-key: workflow.definition.leave-application
+          name: 请假申请
+          target-module: workflow
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: STRING, value: "1" }
+            domainCode: { type: STRING, value: COMMON }
+            categoryCode: { type: STRING, value: COMMON }
+            categoryName: { type: STRING, value: 通用流程 }
+            categorySort: { type: INT, value: 10 }
+            categoryRemark: { type: STRING, value: 系统内置通用示例流程分类 }
+            orgId: { type: LONG, value: 1 }
+            adminUsers: { type: JSON, value: [admin] }
+            startEntryVisible: { type: BOOLEAN, value: true }
+            icon: { type: STRING, value: CalendarDays }
+            definitionKey: { type: STRING, value: leave_application }
+            definitionName: { type: STRING, value: 请假申请 }
+            designerJson:
+              type: FILE
+              location: classpath:META-INF/mango/demo-assets/workflow/leave-application-designer.json
+              encoding: UTF-8
+            formCode: { type: STRING, value: form_leave_application }
+            formJson:
+              type: FILE
+              location: classpath:META-INF/mango/demo-assets/workflow/leave-application-form.json
+              encoding: UTF-8
+            remark: { type: STRING, value: 通用动态表单示例，适合验证发起流程和审批任务的标准动态表单能力。 }

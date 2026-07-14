@@ -6,7 +6,7 @@ import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
-import io.mango.workflow.core.entity.WorkflowNodeDefinition;
+import io.mango.workflow.core.entity.WorkflowNodeDefinitionEntity;
 import io.mango.workflow.core.mapper.WorkflowNodeDefinitionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -66,9 +66,9 @@ public class WorkflowNodeDefinitionResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         Payload payload = Payload.from(resource);
-        WorkflowNodeDefinition entity = find(payload.tenantId(), payload.nodeDefinitionCode());
+        WorkflowNodeDefinitionEntity entity = find(payload.tenantId(), payload.nodeDefinitionCode());
         if (entity == null) {
-            entity = new WorkflowNodeDefinition();
+            entity = new WorkflowNodeDefinitionEntity();
             entity.setId(payload.nodeDefinitionId());
             apply(entity, payload);
             nodeDefinitionMapper.insert(entity);
@@ -82,7 +82,7 @@ public class WorkflowNodeDefinitionResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        WorkflowNodeDefinition entity = resolve(resource);
+        WorkflowNodeDefinitionEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow node definition not found");
         }
@@ -96,7 +96,7 @@ public class WorkflowNodeDefinitionResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        WorkflowNodeDefinition entity = resolve(resource);
+        WorkflowNodeDefinitionEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow node definition not found");
         }
@@ -105,7 +105,7 @@ public class WorkflowNodeDefinitionResourceHandler implements ResourceHandler {
                 "Workflow node definition deleted: " + entity.getNodeDefinitionCode());
     }
 
-    private void apply(WorkflowNodeDefinition entity, Payload payload) {
+    private void apply(WorkflowNodeDefinitionEntity entity, Payload payload) {
         LocalDateTime now = LocalDateTime.now();
         entity.setTenantId(payload.tenantId());
         entity.setNodeDefinitionCode(payload.nodeDefinitionCode());
@@ -132,11 +132,11 @@ public class WorkflowNodeDefinitionResourceHandler implements ResourceHandler {
         entity.setUpdatedAt(now);
     }
 
-    private WorkflowNodeDefinition resolve(ResourceDeclaration resource) {
+    private WorkflowNodeDefinitionEntity resolve(ResourceDeclaration resource) {
         Long tenantId = WorkflowResourceFields.longValue(resource, "tenantId", false, DEFAULT_TENANT_ID);
         String nodeDefinitionCode = WorkflowResourceFields.text(resource, "nodeDefinitionCode", false);
         if (StringUtils.hasText(nodeDefinitionCode)) {
-            WorkflowNodeDefinition entity = find(tenantId, nodeDefinitionCode.trim());
+            WorkflowNodeDefinitionEntity entity = find(tenantId, nodeDefinitionCode.trim());
             if (entity != null) {
                 return entity;
             }
@@ -145,10 +145,10 @@ public class WorkflowNodeDefinitionResourceHandler implements ResourceHandler {
         return targetId == null ? null : nodeDefinitionMapper.selectById(targetId);
     }
 
-    private WorkflowNodeDefinition find(Long tenantId, String nodeDefinitionCode) {
-        return nodeDefinitionMapper.selectOne(new LambdaQueryWrapper<WorkflowNodeDefinition>()
-                .eq(WorkflowNodeDefinition::getTenantId, tenantId)
-                .eq(WorkflowNodeDefinition::getNodeDefinitionCode, nodeDefinitionCode)
+    private WorkflowNodeDefinitionEntity find(Long tenantId, String nodeDefinitionCode) {
+        return nodeDefinitionMapper.selectOne(new LambdaQueryWrapper<WorkflowNodeDefinitionEntity>()
+                .eq(WorkflowNodeDefinitionEntity::getTenantId, tenantId)
+                .eq(WorkflowNodeDefinitionEntity::getNodeDefinitionCode, nodeDefinitionCode)
                 .last("limit 1"));
     }
 

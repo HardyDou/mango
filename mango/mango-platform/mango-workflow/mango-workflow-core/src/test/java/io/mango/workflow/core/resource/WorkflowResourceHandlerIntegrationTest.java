@@ -23,7 +23,7 @@ import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
-import io.mango.workflow.core.entity.WorkflowDefinition;
+import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
@@ -312,6 +312,7 @@ class WorkflowResourceHandlerIntegrationTest {
                 create table workflow_category (
                     id bigint not null,
                     tenant_id bigint not null default 1,
+                    org_id bigint,
                     category_name varchar(64) not null,
                     category_code varchar(64) not null,
                     domain_code varchar(64) not null default 'COMMON',
@@ -320,10 +321,10 @@ class WorkflowResourceHandlerIntegrationTest {
                     remark varchar(255),
                     created_by bigint,
                     created_time timestamp not null default current_timestamp,
-                    created_at timestamp not null default current_timestamp,
+                    created_at timestamp default current_timestamp,
                     updated_by bigint,
                     updated_time timestamp not null default current_timestamp,
-                    updated_at timestamp not null default current_timestamp,
+                    updated_at timestamp default current_timestamp,
                     primary key (id),
                     unique key uk_workflow_category_code (tenant_id, category_code)
                 )
@@ -332,6 +333,7 @@ class WorkflowResourceHandlerIntegrationTest {
                 create table workflow_template_category (
                     id bigint not null,
                     tenant_id bigint not null default 1,
+                    org_id bigint,
                     parent_id bigint,
                     category_name varchar(64) not null,
                     category_code varchar(64) not null,
@@ -353,6 +355,7 @@ class WorkflowResourceHandlerIntegrationTest {
                 create table workflow_node_definition (
                     id bigint not null,
                     tenant_id bigint not null default 1,
+                    org_id bigint,
                     node_definition_code varchar(64) not null,
                     node_type varchar(64) not null,
                     node_name varchar(64) not null,
@@ -405,10 +408,10 @@ class WorkflowResourceHandlerIntegrationTest {
                     remark varchar(255),
                     created_by bigint,
                     created_time timestamp not null default current_timestamp,
-                    created_at timestamp not null default current_timestamp,
+                    created_at timestamp default current_timestamp,
                     updated_by bigint,
                     updated_time timestamp not null default current_timestamp,
-                    updated_at timestamp not null default current_timestamp,
+                    updated_at timestamp default current_timestamp,
                     primary key (id),
                     unique key uk_workflow_definition_key (tenant_id, definition_key)
                 )
@@ -535,16 +538,16 @@ class WorkflowResourceHandlerIntegrationTest {
         }
 
         @Override
-        public R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command) {
+        public WorkflowDeployVO ensurePublished(EnsureWorkflowDefinitionCommand command) {
             lastCommand = command;
             tenantIdDuringCall = MangoContextHolder.tenantId();
             Long tenantId = Long.valueOf(tenantIdDuringCall);
-            WorkflowDefinition definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinition>()
-                    .eq(WorkflowDefinition::getTenantId, tenantId)
-                    .eq(WorkflowDefinition::getDefinitionKey, command.getDefinitionKey())
+            WorkflowDefinitionEntity definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
+                    .eq(WorkflowDefinitionEntity::getTenantId, tenantId)
+                    .eq(WorkflowDefinitionEntity::getDefinitionKey, command.getDefinitionKey())
                     .last("limit 1"));
             if (definition == null) {
-                definition = new WorkflowDefinition();
+                definition = new WorkflowDefinitionEntity();
                 definition.setTenantId(tenantId);
                 definition.setCategoryId(1L);
                 definition.setDefinitionKey(command.getDefinitionKey());
@@ -561,71 +564,71 @@ class WorkflowResourceHandlerIntegrationTest {
             } else {
                 definitionMapper.updateById(definition);
             }
-            return R.ok(new WorkflowDeployVO());
+            return new WorkflowDeployVO();
         }
 
         @Override
-        public R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query) {
+        public PageResult<WorkflowDefinitionVO> page(WorkflowDefinitionPageQuery query) {
             return unused();
         }
 
         @Override
-        public R<WorkflowDefinitionVO> get(Long id) {
+        public WorkflowDefinitionVO get(Long id) {
             return unused();
         }
 
         @Override
-        public R<String> create(SaveWorkflowDefinitionCommand command) {
+        public String create(SaveWorkflowDefinitionCommand command) {
             return unused();
         }
 
         @Override
-        public R<Boolean> update(SaveWorkflowDefinitionCommand command) {
+        public Boolean update(SaveWorkflowDefinitionCommand command) {
             return unused();
         }
 
         @Override
-        public R<Boolean> delete(Long id) {
+        public Boolean delete(Long id) {
             return unused();
         }
 
         @Override
-        public R<Boolean> updateStatus(UpdateWorkflowDefinitionStatusCommand command) {
+        public Boolean updateStatus(UpdateWorkflowDefinitionStatusCommand command) {
             return unused();
         }
 
         @Override
-        public R<Boolean> discardDraft(Long id) {
+        public Boolean discardDraft(Long id) {
             return unused();
         }
 
         @Override
-        public R<WorkflowDeployVO> deploy(Long id) {
+        public WorkflowDeployVO deploy(Long id) {
             return unused();
         }
 
         @Override
-        public R<WorkflowDeployVO> deployInternal(Long id) {
+        public WorkflowDeployVO deployInternal(Long id) {
             return unused();
         }
 
         @Override
-        public R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query) {
+        public List<WorkflowDefinitionVersionVO> versions(WorkflowDefinitionVersionQuery query) {
             return unused();
         }
 
         @Override
-        public R<WorkflowDefinitionVersionVO> versionDetail(Long id) {
+        public WorkflowDefinitionVersionVO versionDetail(Long id) {
             return unused();
         }
 
         @Override
-        public R<List<WorkflowNodeCatalogVO>> nodeCatalog() {
+        public List<WorkflowNodeCatalogVO> nodeCatalog() {
             return unused();
         }
 
-        private static <T> R<T> unused() {
-            return R.fail("unused test service method");
+        private static <T> T unused() {
+            return null;
         }
     }
 }

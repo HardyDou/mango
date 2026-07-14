@@ -1,5 +1,9 @@
 package io.mango.workflow.api.command;
 
+import jakarta.validation.constraints.NotNull;
+import io.mango.workflow.api.validation.WorkflowOptionalValidation;
+
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -13,6 +17,7 @@ import lombok.Data;
 public class SaveWorkflowTemplateCategoryCommand {
 
     @Schema(description = "流程模板分类ID，新增时为空，修改时必填")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long id;
 
     @Schema(description = "分类名称")
@@ -26,6 +31,7 @@ public class SaveWorkflowTemplateCategoryCommand {
     private String categoryCode;
 
     @Schema(description = "父级分类ID")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Long parentId;
 
     @Schema(description = "分类图标")
@@ -33,9 +39,11 @@ public class SaveWorkflowTemplateCategoryCommand {
     private String icon;
 
     @Schema(description = "排序号，越小越靠前")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Integer sort;
 
     @Schema(description = "状态：0-停用，1-启用")
+    @NotNull(groups = WorkflowOptionalValidation.class)
     private Integer status;
 
     @Schema(description = "备注")

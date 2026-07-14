@@ -6,8 +6,8 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
-import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowFormInstance;
+import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
 import org.flowable.task.service.impl.persistence.entity.TaskEntityImpl;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class WorkflowEventPublisherTest {
 
     @Test
     void publishProcessStarted_shouldIncludeBusinessRoutingFields() {
-        WorkflowDefinition definition = new WorkflowDefinition();
+        WorkflowDefinitionEntity definition = new WorkflowDefinitionEntity();
         definition.setId(1001L);
         definition.setDefinitionKey("expense_reimbursement");
         definition.setDefinitionName("费用报销");
@@ -55,7 +55,7 @@ class WorkflowEventPublisherTest {
     @Test
     void publishTaskCompleted_shouldPreferFormInstanceBusinessKey() {
         TaskEntityImpl task = task();
-        WorkflowFormInstance formInstance = new WorkflowFormInstance();
+        WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
         formInstance.setBusinessKey("EXP-FORM-KEY");
 
         publisher.publishTaskCompleted(task, formInstance, variables(), "同意");
@@ -76,7 +76,7 @@ class WorkflowEventPublisherTest {
     @Test
     void publishTaskAdvanced_shouldIncludeAdvancedSnapshot() {
         TaskEntityImpl task = task();
-        WorkflowFormInstance formInstance = new WorkflowFormInstance();
+        WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
         formInstance.setBusinessKey("EXP-FORM-KEY");
 
         publisher.publishTaskAdvanced(task, formInstance, variables(), "同意", false, businessApply());
@@ -120,7 +120,7 @@ class WorkflowEventPublisherTest {
 
     @Test
     void publishProcessRejected_shouldPublishRejectedAndEndedEvents() {
-        WorkflowFormInstance formInstance = new WorkflowFormInstance();
+        WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
         formInstance.setBusinessKey("EXP-FORM-KEY");
 
         publisher.publishProcessRejected("PROC-1", formInstance, variables(), "票据不完整");

@@ -18,9 +18,12 @@ import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
+import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
+import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressBatchVO;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
@@ -32,14 +35,16 @@ import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
-import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowFormInstance;
-import io.mango.workflow.core.entity.WorkflowTaskRecord;
+import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
+import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.model.WorkflowProcessStartedContext;
+import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import org.flowable.engine.HistoryService;
@@ -99,7 +104,7 @@ class WorkflowProcessServiceImplIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private WorkflowProcessServiceImpl service;
+    private WorkflowProcessService service;
     @Autowired
     private WorkflowDefinitionMapper definitionMapper;
     @Autowired
@@ -155,9 +160,9 @@ class WorkflowProcessServiceImplIntegrationTest {
         command.setBusinessType("contract_seal");
         command.setBusinessKey("BIZ-1");
         command.setSnapshotRef("snapshot-1");
-        command.setVariables(Map.of("amount", 1200));
+        command.setVariables(WorkflowJsonRequest.of(Map.of("amount", 1200)));
 
-        var started = service.start(command).getData();
+        var started = service.start(command);
 
         assertThat(started.getProcessInstanceId()).isEqualTo("proc-1");
         assertThat(started.getApplyId()).isEqualTo(2001L);
@@ -166,13 +171,13 @@ class WorkflowProcessServiceImplIntegrationTest {
         assertThat(applyCommand.getFormKey()).isEqualTo("form_contract_seal_approval");
         assertThat(applyCommand.getFormVersion()).isEqualTo(3);
         assertThat(applyCommand.getFormJsonSnapshot()).contains("\"mode\":\"CUSTOM\"");
-        assertThat(applyCommand.getVariables()).containsEntry("businessType", "contract_seal")
+        assertThat(applyCommand.getVariables().toMap()).containsEntry("businessType", "contract_seal")
                 .containsEntry("businessKey", "BIZ-1")
                 .containsEntry("applyId", "2001");
         assertThat(businessApplyService.lastStartedProcessInstanceId()).isEqualTo("proc-1");
         assertThat(taskRuntimeService.lastAdvancedProcessInstanceId()).isEqualTo("proc-1");
 
-        WorkflowFormInstance formInstance = formInstanceMapper.selectOne(new QueryWrapper<WorkflowFormInstance>()
+        WorkflowFormInstanceEntity formInstance = formInstanceMapper.selectOne(new QueryWrapper<WorkflowFormInstanceEntity>()
                 .eq("process_instance_id", "proc-1")
                 .last("limit 1"));
         assertThat(formInstance).isNotNull();
@@ -182,7 +187,7 @@ class WorkflowProcessServiceImplIntegrationTest {
                 .contains("\"applyId\":\"2001\"")
                 .contains("\"mangoInitiator\":\"admin\"");
 
-        WorkflowTaskRecord record = taskRecordMapper.selectOne(new QueryWrapper<WorkflowTaskRecord>()
+        WorkflowTaskRecordEntity record = taskRecordMapper.selectOne(new QueryWrapper<WorkflowTaskRecordEntity>()
                 .eq("process_instance_id", "proc-1")
                 .last("limit 1"));
         assertThat(record).isNotNull();
@@ -235,6 +240,7 @@ class WorkflowProcessServiceImplIntegrationTest {
                 create table workflow_form_instance (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     process_instance_id varchar(128),
                     business_key varchar(128),
                     definition_id bigint,
@@ -259,6 +265,7 @@ class WorkflowProcessServiceImplIntegrationTest {
                 create table workflow_task_record (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     process_instance_id varchar(128),
                     task_id varchar(128),
                     task_name varchar(255),
@@ -270,6 +277,7 @@ class WorkflowProcessServiceImplIntegrationTest {
                     comment text,
                     variables_json text,
                     created_time timestamp,
+                    created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
                     updated_at timestamp,
@@ -278,9 +286,9 @@ class WorkflowProcessServiceImplIntegrationTest {
                 """);
     }
 
-    private WorkflowDefinition publishedDefinition(Long id) {
+    private WorkflowDefinitionEntity publishedDefinition(Long id) {
         LocalDateTime now = LocalDateTime.parse("2026-06-27T10:00:00");
-        WorkflowDefinition definition = new WorkflowDefinition();
+        WorkflowDefinitionEntity definition = new WorkflowDefinitionEntity();
         definition.setId(id);
         definition.setTenantId(1L);
         definition.setCategoryId(10L);
@@ -307,12 +315,12 @@ class WorkflowProcessServiceImplIntegrationTest {
         return definition;
     }
 
-    private void insertDefinition(WorkflowDefinition definition) {
+    private void insertDefinition(WorkflowDefinitionEntity definition) {
         assertThat(definitionMapper.insert(definition)).isEqualTo(1);
     }
 
     @Configuration
-    @Import(WorkflowProcessServiceImpl.class)
+    @Import(WorkflowProcessService.class)
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 
@@ -376,45 +384,43 @@ class WorkflowProcessServiceImplIntegrationTest {
         }
 
         @Override
-        public R<WorkflowBusinessApplyVO> create(CreateWorkflowBusinessApplyCommand command) {
+        public WorkflowBusinessApplyVO create(CreateWorkflowBusinessApplyCommand command) {
             this.lastCreateCommand = command;
             WorkflowBusinessApplyVO apply = new WorkflowBusinessApplyVO();
             apply.setId(2001L);
             apply.setBusinessType(command.getBusinessType());
             apply.setBusinessKey(command.getBusinessKey());
-            return R.ok(apply);
+            return apply;
         }
 
         @Override
-        public void markProcessStarted(Long applyId, Long processDefinitionId, String processDefinitionKey,
-                                       String engineProcessDefinitionId, String processName, String processInstanceId) {
-            this.lastStartedProcessInstanceId = processInstanceId;
+        public void markProcessStarted(WorkflowProcessStartedContext context) {
+            this.lastStartedProcessInstanceId = context.processInstanceId();
         }
 
         @Override
-        public R<PageResult<WorkflowBusinessApplyVO>> page(WorkflowBusinessApplyPageQuery query) {
-            return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        public PageResult<WorkflowBusinessApplyVO> page(WorkflowBusinessApplyPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<WorkflowBusinessApplySummaryVO> mySummary() {
-            return R.ok(new WorkflowBusinessApplySummaryVO());
+        public WorkflowBusinessApplySummaryVO mySummary() {
+            return new WorkflowBusinessApplySummaryVO();
         }
 
         @Override
-        public R<WorkflowBusinessApplyVO> detail(Long applyId) {
-            return R.ok(null);
+        public WorkflowBusinessApplyVO detail(Long applyId) {
+            return null;
         }
 
         @Override
-        public R<PageResult<WorkflowBusinessApplyVO>> history(String businessType, String businessKey,
-                                                              WorkflowBusinessApplyPageQuery query) {
-            return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        public PageResult<WorkflowBusinessApplyVO> history(WorkflowBusinessApplyPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<WorkflowBusinessApplyProgressVO> latestProgress(String businessType, String businessKey) {
-            return R.ok(null);
+        public WorkflowBusinessApplyProgressVO latestProgress(String businessType, String businessKey) {
+            return null;
         }
 
         @Override
@@ -424,14 +430,22 @@ class WorkflowProcessServiceImplIntegrationTest {
         }
 
         @Override
+        public WorkflowBusinessApplyProgressBatchVO latestProgressBatch(
+                WorkflowBusinessApplyProgressBatchRequest request) {
+            WorkflowBusinessApplyProgressBatchVO result = new WorkflowBusinessApplyProgressBatchVO();
+            result.setRecords(List.of());
+            return result;
+        }
+
+        @Override
         public List<WorkflowBusinessApplyVO> latestByBusinessKeys(String businessType,
                                                                   Collection<String> businessKeys) {
             return List.of();
         }
 
         @Override
-        public R<WorkflowBusinessApplyVO> byProcessInstance(String processInstanceId) {
-            return R.ok(null);
+        public WorkflowBusinessApplyVO byProcessInstance(String processInstanceId) {
+            return null;
         }
 
         @Override
@@ -453,11 +467,11 @@ class WorkflowProcessServiceImplIntegrationTest {
         }
 
         @Override
-        public void markRejected(String processInstanceId, String comment, String taskId, String taskDefinitionKey) {
+        public void markRejected(WorkflowTaskStatusContext context) {
         }
 
         @Override
-        public void markTerminated(String processInstanceId, String comment, String taskId, String taskDefinitionKey) {
+        public void markTerminated(WorkflowTaskStatusContext context) {
         }
     }
 
@@ -480,108 +494,113 @@ class WorkflowProcessServiceImplIntegrationTest {
         }
 
         @Override
-        public R<PageResult<WorkflowTaskVO>> todo(WorkflowTaskPageQuery query) {
-            return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        public PageResult<WorkflowTaskVO> todo(WorkflowTaskPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<PageResult<WorkflowTaskVO>> done(WorkflowTaskPageQuery query) {
-            return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        public PageResult<WorkflowTaskVO> initiated(WorkflowTaskPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<PageResult<WorkflowTaskVO>> copied(WorkflowTaskPageQuery query) {
-            return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        public PageResult<WorkflowTaskVO> done(WorkflowTaskPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<WorkflowTaskSummaryVO> summary() {
-            return R.ok(new WorkflowTaskSummaryVO());
+        public PageResult<WorkflowTaskVO> copied(WorkflowTaskPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<WorkflowMyTaskSummaryVO> myTaskSummary() {
-            return R.ok(new WorkflowMyTaskSummaryVO());
+        public WorkflowTaskSummaryVO summary() {
+            return new WorkflowTaskSummaryVO();
         }
 
         @Override
-        public R<WorkflowTaskDetailVO> detail(String taskId) {
-            return R.ok(null);
+        public WorkflowMyTaskSummaryVO myTaskSummary() {
+            return new WorkflowMyTaskSummaryVO();
         }
 
         @Override
-        public R<Boolean> complete(CompleteWorkflowTaskCommand command) {
-            return R.ok(true);
+        public WorkflowTaskDetailVO detail(String taskId) {
+            return null;
         }
 
         @Override
-        public R<WorkflowTaskCompleteResultVO> completeWithResult(CompleteWorkflowTaskCommand command) {
-            return R.ok(null);
+        public Boolean complete(CompleteWorkflowTaskCommand command) {
+            return true;
         }
 
         @Override
-        public R<Boolean> reject(RejectWorkflowTaskCommand command) {
-            return R.ok(true);
+        public WorkflowTaskCompleteResultVO completeWithResult(CompleteWorkflowTaskCommand command) {
+            return null;
         }
 
         @Override
-        public R<WorkflowTaskActionResultVO> rejectWithResult(RejectWorkflowTaskCommand command) {
-            return R.ok(null);
+        public Boolean reject(RejectWorkflowTaskCommand command) {
+            return true;
         }
 
         @Override
-        public R<WorkflowTaskCompleteResultVO> returnTask(ReturnWorkflowTaskCommand command) {
-            return R.ok(null);
+        public WorkflowTaskActionResultVO rejectWithResult(RejectWorkflowTaskCommand command) {
+            return null;
         }
 
         @Override
-        public R<Boolean> saveDraft(SaveWorkflowTaskDraftCommand command) {
-            return R.ok(true);
+        public WorkflowTaskCompleteResultVO returnTask(ReturnWorkflowTaskCommand command) {
+            return null;
         }
 
         @Override
-        public R<WorkflowTaskActionResultVO> saveDraftWithResult(SaveWorkflowTaskDraftCommand command) {
-            return R.ok(null);
+        public Boolean saveDraft(SaveWorkflowTaskDraftCommand command) {
+            return true;
         }
 
         @Override
-        public R<Boolean> transfer(TransferWorkflowTaskCommand command) {
-            return R.ok(true);
+        public WorkflowTaskActionResultVO saveDraftWithResult(SaveWorkflowTaskDraftCommand command) {
+            return null;
         }
 
         @Override
-        public R<Boolean> addSign(AddSignWorkflowTaskCommand command) {
-            return R.ok(true);
+        public Boolean transfer(TransferWorkflowTaskCommand command) {
+            return true;
         }
 
         @Override
-        public R<Boolean> claim(ClaimWorkflowTaskCommand command) {
-            return R.ok(true);
+        public Boolean addSign(AddSignWorkflowTaskCommand command) {
+            return true;
         }
 
         @Override
-        public R<WorkflowTaskActionResultVO> claimWithResult(ClaimWorkflowTaskCommand command) {
-            return R.ok(null);
+        public Boolean claim(ClaimWorkflowTaskCommand command) {
+            return true;
         }
 
         @Override
-        public R<Boolean> unclaim(ClaimWorkflowTaskCommand command) {
-            return R.ok(true);
+        public WorkflowTaskActionResultVO claimWithResult(ClaimWorkflowTaskCommand command) {
+            return null;
         }
 
         @Override
-        public R<WorkflowTaskActionResultVO> unclaimWithResult(ClaimWorkflowTaskCommand command) {
-            return R.ok(null);
+        public Boolean unclaim(ClaimWorkflowTaskCommand command) {
+            return true;
         }
 
         @Override
-        public R<Boolean> readCopied(ReadWorkflowCopiedTaskCommand command) {
-            return R.ok(true);
+        public WorkflowTaskActionResultVO unclaimWithResult(ClaimWorkflowTaskCommand command) {
+            return null;
         }
 
         @Override
-        public R<WorkflowProcessDetailVO> processDetail(String processInstanceId) {
-            return R.ok(null);
+        public Boolean readCopied(ReadWorkflowCopiedTaskCommand command) {
+            return true;
+        }
+
+        @Override
+        public WorkflowProcessDetailVO processDetail(String processInstanceId) {
+            return null;
         }
     }
 }

@@ -19,29 +19,29 @@ import java.util.List;
  */
 public interface IWorkflowDefinitionService {
 
-    R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query);
+    PageResult<WorkflowDefinitionVO> page(WorkflowDefinitionPageQuery query);
 
-    R<WorkflowDefinitionVO> get(Long id);
+    WorkflowDefinitionVO get(Long id);
 
-    R<String> create(SaveWorkflowDefinitionCommand command);
+    String create(SaveWorkflowDefinitionCommand command);
 
-    R<Boolean> update(SaveWorkflowDefinitionCommand command);
+    Boolean update(SaveWorkflowDefinitionCommand command);
 
-    R<Boolean> delete(Long id);
+    Boolean delete(Long id);
 
-    R<Boolean> updateStatus(UpdateWorkflowDefinitionStatusCommand command);
+    Boolean updateStatus(UpdateWorkflowDefinitionStatusCommand command);
 
-    R<Boolean> discardDraft(Long id);
+    Boolean discardDraft(Long id);
 
-    R<WorkflowDeployVO> deploy(Long id);
+    WorkflowDeployVO deploy(Long id);
 
-    R<WorkflowDeployVO> deployInternal(Long id);
+    WorkflowDeployVO deployInternal(Long id);
 
-    R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command);
+    WorkflowDeployVO ensurePublished(EnsureWorkflowDefinitionCommand command);
 
-    R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query);
+    List<WorkflowDefinitionVersionVO> versions(WorkflowDefinitionVersionQuery query);
 
-    R<WorkflowDefinitionVersionVO> versionDetail(Long id);
+    WorkflowDefinitionVersionVO versionDetail(Long id);
 
-    R<List<WorkflowNodeCatalogVO>> nodeCatalog();
+    List<WorkflowNodeCatalogVO> nodeCatalog();
 }

@@ -1,7 +1,7 @@
 package io.mango.workflow.core.engine;
 
 import io.mango.common.result.Require;
-import io.mango.workflow.api.WorkflowCode;
+import io.mango.workflow.api.enums.WorkflowCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;

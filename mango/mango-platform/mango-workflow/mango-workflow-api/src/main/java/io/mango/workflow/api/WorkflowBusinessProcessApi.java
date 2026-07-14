@@ -1,8 +1,11 @@
 package io.mango.workflow.api;
 
+import io.mango.common.result.R;
 import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
+import io.mango.workflow.api.query.WorkflowBusinessKeysQuery;
+import io.mango.workflow.api.query.WorkflowBusinessTypeKeysQuery;
+import jakarta.validation.Valid;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -16,7 +19,7 @@ public interface WorkflowBusinessProcessApi {
      * @param businessKeys 业务主键集合
      * @return 最新流程状态列表
      */
-    List<WorkflowBusinessProcessVO> latestByBusinessKeys(Collection<String> businessKeys);
+    R<List<WorkflowBusinessProcessVO>> latestByBusinessKeys(@Valid WorkflowBusinessKeysQuery query);
 
     /**
      * 按业务类型和业务主键批量查询每个业务最新一次申请的流程状态。
@@ -25,5 +28,5 @@ public interface WorkflowBusinessProcessApi {
      * @param businessKeys 业务主键集合
      * @return 最新流程状态列表
      */
-    List<WorkflowBusinessProcessVO> latestByBusinessKeys(String businessType, Collection<String> businessKeys);
+    R<List<WorkflowBusinessProcessVO>> latestByBusinessTypeKeys(@Valid WorkflowBusinessTypeKeysQuery query);
 }

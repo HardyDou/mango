@@ -21,9 +21,9 @@ import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
-import io.mango.workflow.core.entity.WorkflowCategory;
-import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowDefinitionVersion;
+import io.mango.workflow.core.entity.WorkflowCategoryEntity;
+import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowDefinitionVersionEntity;
 import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
@@ -83,7 +83,7 @@ class WorkflowDefinitionServiceImplIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private WorkflowDefinitionServiceImpl service;
+    private WorkflowDefinitionService service;
     @Autowired
     private WorkflowDefinitionMapper definitionMapper;
     @Autowired
@@ -127,7 +127,7 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         query.setKeyword("合同");
         query.setDomainCode("PAYMENT");
 
-        PageResult<WorkflowDefinitionVO> page = service.page(query).getData();
+        PageResult<WorkflowDefinitionVO> page = service.page(query);
 
         assertThat(page.getList())
                 .extracting(WorkflowDefinitionVO::getId)
@@ -163,7 +163,7 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         query.setPublishedOnly(true);
         query.setStartEntryVisible(true);
 
-        PageResult<WorkflowDefinitionVO> page = service.page(query).getData();
+        PageResult<WorkflowDefinitionVO> page = service.page(query);
 
         assertThat(page.getList()).hasSize(1);
         WorkflowDefinitionVO vo = page.getList().get(0);
@@ -188,15 +188,15 @@ class WorkflowDefinitionServiceImplIntegrationTest {
                 LocalDateTime.parse("2026-06-25T12:00:00")));
         stubDeployment("PAYMENT_REFUND_APPROVAL", "退款审批", "55", "deploy-internal", "proc-internal", 1);
 
-        var result = service.deployInternal(1301L).getData();
+        var result = service.deployInternal(1301L);
 
         assertThat(result.getDeploymentId()).isEqualTo("deploy-internal");
         assertThat(result.getProcessDefinitionId()).isEqualTo("proc-internal");
-        WorkflowDefinition definition = definitionMapper.selectById(1301L);
+        WorkflowDefinitionEntity definition = definitionMapper.selectById(1301L);
         assertThat(definition.getStatus()).isEqualTo(WorkflowDefinitionStatus.PUBLISHED.name());
         assertThat(definition.getPublishedVersionNo()).isEqualTo(1);
         assertThat(definition.getDeploymentId()).isEqualTo("deploy-internal");
-        WorkflowDefinitionVersion version = versionMapper.selectOne(new QueryWrapper<WorkflowDefinitionVersion>()
+        WorkflowDefinitionVersionEntity version = versionMapper.selectOne(new QueryWrapper<WorkflowDefinitionVersionEntity>()
                 .eq("definition_id", 1301L)
                 .last("limit 1"));
         assertThat(version.getPublishStatus()).isEqualTo("SUCCESS");
@@ -211,21 +211,21 @@ class WorkflowDefinitionServiceImplIntegrationTest {
                 .withSecurity(9001L, "1", "admin", "default", "USER", "ORG", 100L, "internal-admin"));
         stubDeployment("PAYMENT_REFUND_APPROVAL", "退款审批", "1", "deploy-created", "proc-created", 1);
 
-        var result = service.ensurePublished(ensureCommand()).getData();
+        var result = service.ensurePublished(ensureCommand());
 
         assertThat(result.getDeploymentId()).isEqualTo("deploy-created");
         assertThat(result.getProcessDefinitionId()).isEqualTo("proc-created");
-        assertThat(categoryMapper.selectCount(new QueryWrapper<WorkflowCategory>()
+        assertThat(categoryMapper.selectCount(new QueryWrapper<WorkflowCategoryEntity>()
                 .eq("domain_code", "PAYMENT")
                 .eq("category_code", "PAYMENT_AUTO"))).isEqualTo(1L);
-        WorkflowDefinition definition = definitionMapper.selectOne(new QueryWrapper<WorkflowDefinition>()
+        WorkflowDefinitionEntity definition = definitionMapper.selectOne(new QueryWrapper<WorkflowDefinitionEntity>()
                 .eq("definition_key", "PAYMENT_REFUND_APPROVAL")
                 .last("limit 1"));
         assertThat(definition).isNotNull();
         assertThat(definition.getStatus()).isEqualTo(WorkflowDefinitionStatus.PUBLISHED.name());
         assertThat(definition.getDeploymentId()).isEqualTo("deploy-created");
         assertThat(definition.getOrgId()).isEqualTo(100L);
-        WorkflowDefinitionVersion version = versionMapper.selectOne(new QueryWrapper<WorkflowDefinitionVersion>()
+        WorkflowDefinitionVersionEntity version = versionMapper.selectOne(new QueryWrapper<WorkflowDefinitionVersionEntity>()
                 .eq("definition_id", definition.getId())
                 .last("limit 1"));
         assertThat(version.getVersionNo()).isEqualTo(1);
@@ -239,7 +239,7 @@ class WorkflowDefinitionServiceImplIntegrationTest {
                 .withSecurity(9001L, "1", "admin", "default", "USER", "ORG", 100L, "internal-admin"));
         stubDeployment("PAYMENT_REFUND_APPROVAL", "退款审批", "1", "deploy-created", "proc-created", 1);
         service.ensurePublished(ensureCommand());
-        WorkflowDefinition created = definitionMapper.selectOne(new QueryWrapper<WorkflowDefinition>()
+        WorkflowDefinitionEntity created = definitionMapper.selectOne(new QueryWrapper<WorkflowDefinitionEntity>()
                 .eq("definition_key", "PAYMENT_REFUND_APPROVAL")
                 .last("limit 1"));
 
@@ -251,19 +251,19 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         changed.setStartEntryVisible(false);
         changed.setFormJson("{\"mode\":\"UPDATED\"}");
 
-        var result = service.ensurePublished(changed).getData();
+        var result = service.ensurePublished(changed);
 
         assertThat(result.getDeploymentId()).isEqualTo("deploy-updated");
         assertThat(result.getProcessDefinitionId()).isEqualTo("proc-updated");
-        WorkflowDefinition updated = definitionMapper.selectById(created.getId());
+        WorkflowDefinitionEntity updated = definitionMapper.selectById(created.getId());
         assertThat(updated.getDefinitionName()).isEqualTo("退款审批-新版");
         assertThat(updated.getStartEntryVisible()).isFalse();
         assertThat(updated.getFormJson()).isEqualTo("{\"mode\":\"UPDATED\"}");
         assertThat(updated.getPublishedVersionNo()).isEqualTo(2);
         assertThat(updated.getDeploymentId()).isEqualTo("deploy-updated");
-        assertThat(versionMapper.selectCount(new QueryWrapper<WorkflowDefinitionVersion>()
+        assertThat(versionMapper.selectCount(new QueryWrapper<WorkflowDefinitionVersionEntity>()
                 .eq("definition_id", created.getId()))).isEqualTo(2L);
-        WorkflowDefinitionVersion latest = versionMapper.selectOne(new QueryWrapper<WorkflowDefinitionVersion>()
+        WorkflowDefinitionVersionEntity latest = versionMapper.selectOne(new QueryWrapper<WorkflowDefinitionVersionEntity>()
                 .eq("definition_id", created.getId())
                 .eq("version_no", 2)
                 .last("limit 1"));
@@ -336,6 +336,7 @@ class WorkflowDefinitionServiceImplIntegrationTest {
                 create table workflow_category (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     category_name varchar(128),
                     category_code varchar(64),
                     domain_code varchar(64),
@@ -429,11 +430,11 @@ class WorkflowDefinitionServiceImplIntegrationTest {
                 """);
     }
 
-    private WorkflowDefinition definition(Long id, Long tenantId, Long categoryId, String domainCode,
+    private WorkflowDefinitionEntity definition(Long id, Long tenantId, Long categoryId, String domainCode,
                                           Long orgId, Long createdBy, String name, String key,
                                           String status, Integer publishedVersionNo,
                                           String processDefinitionId, LocalDateTime updatedTime) {
-        WorkflowDefinition definition = new WorkflowDefinition();
+        WorkflowDefinitionEntity definition = new WorkflowDefinitionEntity();
         definition.setId(id);
         definition.setTenantId(tenantId);
         definition.setCategoryId(categoryId);
@@ -460,12 +461,12 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         return definition;
     }
 
-    private WorkflowDefinitionVersion version(Long id, Long tenantId, Long definitionId, Integer versionNo,
+    private WorkflowDefinitionVersionEntity version(Long id, Long tenantId, Long definitionId, Integer versionNo,
                                               Long categoryId, String domainCode, Long orgId,
                                               Boolean startEntryVisible, String name, String key,
                                               String icon, String deploymentId, String processDefinitionId,
                                               Integer processDefinitionVersion, LocalDateTime publishTime) {
-        WorkflowDefinitionVersion version = new WorkflowDefinitionVersion();
+        WorkflowDefinitionVersionEntity version = new WorkflowDefinitionVersionEntity();
         version.setId(id);
         version.setTenantId(tenantId);
         version.setDefinitionId(definitionId);
@@ -498,11 +499,11 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         return version;
     }
 
-    private void insertDefinition(WorkflowDefinition definition) {
+    private void insertDefinition(WorkflowDefinitionEntity definition) {
         assertThat(definitionMapper.insert(definition)).isEqualTo(1);
     }
 
-    private void insertVersion(WorkflowDefinitionVersion version) {
+    private void insertVersion(WorkflowDefinitionVersionEntity version) {
         assertThat(versionMapper.insert(version)).isEqualTo(1);
     }
 
@@ -534,7 +535,7 @@ class WorkflowDefinitionServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import(WorkflowDefinitionServiceImpl.class)
+    @Import(WorkflowDefinitionService.class)
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 

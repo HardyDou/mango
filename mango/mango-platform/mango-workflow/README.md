@@ -483,39 +483,34 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 `mango.workflow.enabled` 控制 workflow starter 是否启用。默认启用。
 
-`mango.workflow.samples.*` 控制启动时是否补齐内置示例流程。示例流程适合演示环境；独立部署的 workflow 能力应用默认关闭，避免服务启动依赖 domain 服务在线。生产环境不需要演示流程时应关闭。
+正式资源与演示资源分开登记。生产环境默认只扫描 `META-INF/mango/resources/`；需要在空白开发或演示环境装载三条示例流程时，显式开启 Resource Registry 的 demo 扫描。
 
 ```yaml
 mango:
   workflow:
     enabled: true
-    samples:
-      enabled: false
+  resource:
+    registry:
+      demo-enabled: false
 ```
 
-需要保留示例流程时，可以指定写入租户、业务域和分类：
+演示环境开启方式：
 
 ```yaml
 mango:
-  workflow:
-    samples:
-      enabled: true
-      tenant-id: 1
-      domain-code: COMMON
-      category-code: COMMON
-      category-name: 通用流程
+  resource:
+    registry:
+      demo-enabled: true
 ```
+
+演示声明位于 `META-INF/mango/demo/workflow-demo-definition.yml`，使用 `INIT_ONLY`，只在目标流程不存在时初始化，不覆盖用户后续维护的流程定义。
 
 ## 8. YAML 配置字段
 
 | 配置 | 默认值 | 含义 |
 |------|--------|------|
 | `mango.workflow.enabled` | `true` | 是否启用 workflow 自动配置。为 `false` 时不注册 mapper、service、controller 和初始化器。 |
-| `mango.workflow.samples.enabled` | `true` | 是否自动补齐内置示例流程；独立 workflow 能力应用覆盖为 `false`。 |
-| `mango.workflow.samples.tenant-id` | `1` | 示例流程写入的租户 ID。 |
-| `mango.workflow.samples.category-code` | `COMMON` | 示例流程分类编码。 |
-| `mango.workflow.samples.category-name` | `通用流程` | 示例流程分类名称。 |
-| `mango.workflow.samples.domain-code` | `COMMON` | 示例流程业务域编码。 |
+| `mango.resource.registry.demo-enabled` | `false` | 是否额外扫描 `META-INF/mango/demo/`。只在空白开发或演示环境开启。 |
 
 ## 9. 返回字段
 
@@ -766,7 +761,6 @@ Flyway migration 路径：
 
 ```text
 mango-workflow-core/src/main/resources/db/migration/workflow/V1__init_workflow.sql
-mango-workflow-core/src/main/resources/db/migration/workflow/V2__workflow_domain.sql
 ```
 
 核心业务表：
@@ -786,19 +780,11 @@ workflow_business_apply_current_task
 workflow_business_apply_status_log
 ```
 
-`V1__init_workflow.sql` 写入：
+`V1__init_workflow.sql` 是当前空白数据库基线，只负责 12 张 Workflow 业务表及索引的 DDL，不写业务数据，也不写 Flowable 元数据。历史 V2/V3/V4 的最终结构已经合并到 V1；本模块只支持按当前 V1 创建的新数据库。
 
-| 数据 | 表 | 幂等方式 |
-|------|----|----------|
-| 默认流程分类 `COMMON` | `workflow_category` | `ON DUPLICATE KEY UPDATE` |
-| 默认模板分类 `COMMON_TEMPLATE` | `workflow_template_category` | `ON DUPLICATE KEY UPDATE` |
-| 设计器节点目录 | `workflow_node_definition` | `ON DUPLICATE KEY UPDATE` |
+Flowable 启动所需的 `ACT_GE_PROPERTY` 元数据由 `WorkflowEngineMetadataInitializer` 在引擎初始化前按缺失项补齐。该访问明确绕过租户插件，因为 Flowable 元数据表没有 `tenant_id` 字段；随后仍由 Flowable 自己完成引擎配置项维护。
 
-流程菜单、按钮权限、菜单包关系和角色菜单关系属于 authorization 数据边界，由 authorization 模块初始化；workflow migration 不写 `authorization_*` 表。
-
-`V2__workflow_domain.sql` 补充 workflow 业务域字段和索引。
-
-启动期示例流程由 `WorkflowSampleDefinitionInitializer` 写入，配置来源是 `mango.workflow.samples.*`。starter 默认会写入租户 `1`、分类 `COMMON`、业务域 `COMMON` 下的示例流程；独立 workflow 能力应用关闭该初始化。需要启用示例流程时，必须保证 domain 服务可用，或在同一单体应用中装配 domain 本地能力。
+正式分类、业务域、节点目录和菜单等必需数据在 `META-INF/mango/resources/` 按资源类型声明，由 Resource Registry 同步；流程菜单、按钮权限等授权数据仍属于 authorization 数据边界。费用报销、合同盖章、请假三条示例流程单独位于 `META-INF/mango/demo/`，默认不加载，开启 `mango.resource.registry.demo-enabled=true` 后按 `INIT_ONLY` 初始化。
 
 ## 12. 管理入口
 
@@ -859,9 +845,9 @@ workflow:template:push
 
 不要在业务 SQL 里直接拼 workflow 表。用 `WorkflowBusinessProcessApi.latestByBusinessKeys(businessType, keys)` 或 `POST /workflow/business-applies/progress/latest-batch` 批量查询。
 
-**启动后出现演示流程**
+**空白库没有演示流程**
 
-starter 默认 `mango.workflow.samples.enabled=true`。独立 workflow 能力应用默认关闭示例流程；其它应用不需要演示流程时，在环境配置中设置为 `false`。
+这是默认行为。生产启动只同步正式资源；空白开发或演示环境需要示例流程时，设置 `mango.resource.registry.demo-enabled=true`，并确认 Resource Registry 已同步 `META-INF/mango/demo/workflow-demo-definition.yml`。
 
 **HTTP_URL 或 REMOTE_SERVICE 节点执行失败**
 

@@ -19,9 +19,12 @@ import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
+import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
+import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressBatchVO;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
@@ -35,14 +38,16 @@ import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
-import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowFormInstance;
-import io.mango.workflow.core.entity.WorkflowTaskRecord;
+import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
+import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
+import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.model.WorkflowProcessStartedContext;
+import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import org.flowable.bpmn.model.BpmnModel;
@@ -121,7 +126,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private WorkflowTaskRuntimeServiceImpl service;
+    private WorkflowTaskRuntimeService service;
     @Autowired
     private WorkflowDefinitionMapper definitionMapper;
     @Autowired
@@ -175,19 +180,19 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         SaveWorkflowTaskDraftCommand command = new SaveWorkflowTaskDraftCommand();
         command.setTaskId("task-1");
         command.setComment("先保存");
-        command.setVariables(Map.of("approvedAmount", 100));
+        command.setVariables(WorkflowJsonRequest.of(Map.of("approvedAmount", 100)));
 
         service.saveDraft(command);
 
-        WorkflowFormInstance formInstance = findFormInstance("proc-1");
+        WorkflowFormInstanceEntity formInstance = findFormInstance("proc-1");
         assertThat(formInstance.getVariablesJson())
                 .contains("\"existing\":true")
                 .contains("\"approvedAmount\":100");
         assertThat(formInstance.getStatus()).isEqualTo(WorkflowInstanceStatus.RUNNING.name());
         assertThat(records()).singleElement()
-                .returns("SAVE", WorkflowTaskRecord::getAction)
-                .returns("先保存", WorkflowTaskRecord::getComment)
-                .returns(1001L, WorkflowTaskRecord::getOperatorId);
+                .returns("SAVE", WorkflowTaskRecordEntity::getAction)
+                .returns("先保存", WorkflowTaskRecordEntity::getComment)
+                .returns(1001L, WorkflowTaskRecordEntity::getOperatorId);
         verify(runtimeService).setVariables("proc-1", Map.of("existing", true, "approvedAmount", 100));
         verify(taskService, never()).complete(eq("task-1"), any());
         assertThat(workflowBusinessApplyService.refreshedProcessInstanceIds()).containsExactly("proc-1");
@@ -222,10 +227,10 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         service.unclaim(claim);
 
         assertThat(records())
-                .extracting(WorkflowTaskRecord::getAction)
+                .extracting(WorkflowTaskRecordEntity::getAction)
                 .containsExactly("TRANSFER", "CLAIM", "UNCLAIM");
         assertThat(records())
-                .extracting(WorkflowTaskRecord::getComment)
+                .extracting(WorkflowTaskRecordEntity::getComment)
                 .containsExactly("请李四处理", "认领任务", "释放任务");
         verify(taskService).setAssignee("task-1", "lisi");
         verify(taskService).claim("task-1", "anonymous");
@@ -293,9 +298,9 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
         command.setTaskId("task-1");
         command.setComment("同意");
-        command.setVariables(Map.of("approved", true));
+        command.setVariables(WorkflowJsonRequest.of(Map.of("approved", true)));
 
-        WorkflowTaskCompleteResultVO result = service.completeWithResult(command).getData();
+        WorkflowTaskCompleteResultVO result = service.completeWithResult(command);
 
         assertThat(result.getCompletedTaskId()).isEqualTo("task-1");
         assertThat(result.getProcessInstanceId()).isEqualTo("proc-1");
@@ -309,8 +314,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                 .contains("\"existing\":true")
                 .contains("\"approved\":true");
         assertThat(records()).singleElement()
-                .returns("COMPLETE", WorkflowTaskRecord::getAction)
-                .returns("同意", WorkflowTaskRecord::getComment);
+                .returns("COMPLETE", WorkflowTaskRecordEntity::getAction)
+                .returns("同意", WorkflowTaskRecordEntity::getComment);
         assertThat(operationLog.entries()).containsSubsequence(
                 "refreshCurrentTasksAndReturn:proc-1",
                 "publishTaskAdvanced:proc-1");
@@ -334,9 +339,9 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
         command.setTaskId("task-2");
         command.setComment("退回专员补充材料");
-        command.setVariables(Map.of("returnReason", "缺少附件"));
+        command.setVariables(WorkflowJsonRequest.of(Map.of("returnReason", "缺少附件")));
 
-        WorkflowTaskCompleteResultVO result = service.returnTask(command).getData();
+        WorkflowTaskCompleteResultVO result = service.returnTask(command);
 
         verify(stateBuilder).processInstanceId("proc-1");
         verify(stateBuilder).moveActivityIdTo("supervisor_approve", "risk_specialist_review");
@@ -347,8 +352,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                 .returns("task-3", WorkflowBusinessApplyCurrentTaskVO::getTaskId)
                 .returns("risk_specialist_review", WorkflowBusinessApplyCurrentTaskVO::getTaskDefinitionKey);
         assertThat(records()).singleElement()
-                .returns("RETURN", WorkflowTaskRecord::getAction)
-                .returns("退回专员补充材料", WorkflowTaskRecord::getComment)
+                .returns("RETURN", WorkflowTaskRecordEntity::getAction)
+                .returns("退回专员补充材料", WorkflowTaskRecordEntity::getComment)
                 .satisfies(record -> assertThat(record.getVariablesJson()).contains("risk_specialist_review"));
         assertThat(operationLog.entries()).containsSubsequence(
                 "refreshCurrentTasksAndReturn:proc-1",
@@ -382,15 +387,15 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                 ]}
                 """);
 
-        WorkflowTaskDetailVO detail = service.detail("task-1").getData();
+        WorkflowTaskDetailVO detail = service.detail("task-1");
 
         assertThat(detail.getFormCode()).isEqualTo("claim_form");
         assertThat(detail.getFormJson()).contains("请假原因");
-        assertThat(detail.getVariables()).containsEntry("reason", "请假");
-        assertThat(detail.getFormPermissions())
+        assertThat(detail.getVariables().toMap()).containsEntry("reason", "请假");
+        assertThat(detail.getFormPermissions().toMap())
                 .containsEntry("title", "READONLY")
                 .containsEntry("reason", "READONLY");
-        assertThat(detail.getRenderConfig().getFormPermissions())
+        assertThat(detail.getRenderConfig().getFormPermissions().toMap())
                 .containsEntry("title", "READONLY")
                 .containsEntry("reason", "READONLY");
     }
@@ -409,7 +414,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         when(completedQuery.finished()).thenReturn(completedQuery);
         when(completedQuery.count()).thenReturn(7L);
 
-        WorkflowMyTaskSummaryVO summary = service.myTaskSummary().getData();
+        WorkflowMyTaskSummaryVO summary = service.myTaskSummary();
 
         assertThat(summary.getPending()).isEqualTo(3L);
         assertThat(summary.getProcessing()).isEqualTo(5L);
@@ -463,6 +468,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                 create table workflow_form_instance (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     process_instance_id varchar(128),
                     business_key varchar(128),
                     definition_id bigint,
@@ -487,6 +493,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                 create table workflow_task_record (
                     id bigint not null,
                     tenant_id bigint,
+                    org_id bigint,
                     process_instance_id varchar(128),
                     task_id varchar(128),
                     task_name varchar(255),
@@ -498,6 +505,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                     comment text,
                     variables_json text,
                     created_time timestamp,
+                    created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
                     updated_at timestamp,
@@ -527,7 +535,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     private void insertFormInstance(String processInstanceId, String variablesJson, String status) {
-        WorkflowFormInstance formInstance = new WorkflowFormInstance();
+        WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
         formInstance.setId(2001L);
         formInstance.setTenantId(1L);
         formInstance.setProcessInstanceId(processInstanceId);
@@ -551,20 +559,20 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(formInstanceMapper.insert(formInstance)).isEqualTo(1);
     }
 
-    private WorkflowFormInstance findFormInstance(String processInstanceId) {
-        return formInstanceMapper.selectOne(new QueryWrapper<WorkflowFormInstance>()
+    private WorkflowFormInstanceEntity findFormInstance(String processInstanceId) {
+        return formInstanceMapper.selectOne(new QueryWrapper<WorkflowFormInstanceEntity>()
                 .eq("process_instance_id", processInstanceId)
                 .last("limit 1"));
     }
 
-    private List<WorkflowTaskRecord> records() {
-        return taskRecordMapper.selectList(new QueryWrapper<WorkflowTaskRecord>()
+    private List<WorkflowTaskRecordEntity> records() {
+        return taskRecordMapper.selectList(new QueryWrapper<WorkflowTaskRecordEntity>()
                 .orderByAsc("created_time")
                 .orderByAsc("id"));
     }
 
     private void insertDefinition(Long id, String processDefinitionId, String formCode, String formJson) {
-        WorkflowDefinition definition = new WorkflowDefinition();
+        WorkflowDefinitionEntity definition = new WorkflowDefinitionEntity();
         definition.setId(id);
         definition.setTenantId(1L);
         definition.setDefinitionName("测试流程");
@@ -660,7 +668,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import(WorkflowTaskRuntimeServiceImpl.class)
+    @Import(WorkflowTaskRuntimeService.class)
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 
@@ -749,7 +757,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         @Override
-        public void publishTaskAdvanced(Task completedTask, WorkflowFormInstance formInstance, Map<String, Object> variables,
+        public void publishTaskAdvanced(Task completedTask, WorkflowFormInstanceEntity formInstance, Map<String, Object> variables,
                                         String comment, boolean ended, WorkflowBusinessApplyVO businessApply) {
             operationLog.add("publishTaskAdvanced:" + completedTask.getProcessInstanceId());
         }
@@ -783,39 +791,37 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         @Override
-        public R<WorkflowBusinessApplyVO> create(CreateWorkflowBusinessApplyCommand command) {
-            return R.ok(null);
+        public WorkflowBusinessApplyVO create(CreateWorkflowBusinessApplyCommand command) {
+            return null;
         }
 
         @Override
-        public void markProcessStarted(Long applyId, Long processDefinitionId, String processDefinitionKey,
-                                       String engineProcessDefinitionId, String processName, String processInstanceId) {
+        public void markProcessStarted(WorkflowProcessStartedContext context) {
         }
 
         @Override
-        public R<PageResult<WorkflowBusinessApplyVO>> page(WorkflowBusinessApplyPageQuery query) {
-            return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        public PageResult<WorkflowBusinessApplyVO> page(WorkflowBusinessApplyPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<WorkflowBusinessApplySummaryVO> mySummary() {
-            return R.ok(new WorkflowBusinessApplySummaryVO());
+        public WorkflowBusinessApplySummaryVO mySummary() {
+            return new WorkflowBusinessApplySummaryVO();
         }
 
         @Override
-        public R<WorkflowBusinessApplyVO> detail(Long applyId) {
-            return R.ok(null);
+        public WorkflowBusinessApplyVO detail(Long applyId) {
+            return null;
         }
 
         @Override
-        public R<PageResult<WorkflowBusinessApplyVO>> history(String businessType, String businessKey,
-                                                              WorkflowBusinessApplyPageQuery query) {
-            return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        public PageResult<WorkflowBusinessApplyVO> history(WorkflowBusinessApplyPageQuery query) {
+            return PageResult.of(List.of(), 0, 1, 10);
         }
 
         @Override
-        public R<WorkflowBusinessApplyProgressVO> latestProgress(String businessType, String businessKey) {
-            return R.ok(null);
+        public WorkflowBusinessApplyProgressVO latestProgress(String businessType, String businessKey) {
+            return null;
         }
 
         @Override
@@ -825,14 +831,22 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         @Override
+        public WorkflowBusinessApplyProgressBatchVO latestProgressBatch(
+                WorkflowBusinessApplyProgressBatchRequest request) {
+            WorkflowBusinessApplyProgressBatchVO result = new WorkflowBusinessApplyProgressBatchVO();
+            result.setRecords(List.of());
+            return result;
+        }
+
+        @Override
         public List<WorkflowBusinessApplyVO> latestByBusinessKeys(String businessType,
                                                                   Collection<String> businessKeys) {
             return List.of();
         }
 
         @Override
-        public R<WorkflowBusinessApplyVO> byProcessInstance(String processInstanceId) {
-            return R.ok(findByProcessInstance(processInstanceId));
+        public WorkflowBusinessApplyVO byProcessInstance(String processInstanceId) {
+            return findByProcessInstance(processInstanceId);
         }
 
         @Override
@@ -847,6 +861,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
         @Override
         public WorkflowBusinessApplyVO refreshCurrentTasksAndReturn(String processInstanceId) {
+            refreshedProcessInstanceIds.add(processInstanceId);
             operationLog.add("refreshCurrentTasksAndReturn:" + processInstanceId);
             return advancedApply();
         }
@@ -856,11 +871,11 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         @Override
-        public void markRejected(String processInstanceId, String comment, String taskId, String taskDefinitionKey) {
+        public void markRejected(WorkflowTaskStatusContext context) {
         }
 
         @Override
-        public void markTerminated(String processInstanceId, String comment, String taskId, String taskDefinitionKey) {
+        public void markTerminated(WorkflowTaskStatusContext context) {
         }
 
         private WorkflowBusinessApplyVO advancedApply() {

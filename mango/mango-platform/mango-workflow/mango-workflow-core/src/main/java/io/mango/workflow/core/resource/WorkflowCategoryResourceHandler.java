@@ -6,7 +6,7 @@ import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
-import io.mango.workflow.core.entity.WorkflowCategory;
+import io.mango.workflow.core.entity.WorkflowCategoryEntity;
 import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -53,9 +53,9 @@ public class WorkflowCategoryResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         Payload payload = Payload.from(resource);
-        WorkflowCategory entity = find(payload.tenantId(), payload.categoryCode());
+        WorkflowCategoryEntity entity = find(payload.tenantId(), payload.categoryCode());
         if (entity == null) {
-            entity = new WorkflowCategory();
+            entity = new WorkflowCategoryEntity();
             entity.setId(payload.categoryId());
             apply(entity, payload);
             categoryMapper.insert(entity);
@@ -69,7 +69,7 @@ public class WorkflowCategoryResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        WorkflowCategory entity = resolve(resource);
+        WorkflowCategoryEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow category not found");
         }
@@ -83,7 +83,7 @@ public class WorkflowCategoryResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        WorkflowCategory entity = resolve(resource);
+        WorkflowCategoryEntity entity = resolve(resource);
         if (entity == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Workflow category not found");
         }
@@ -92,7 +92,7 @@ public class WorkflowCategoryResourceHandler implements ResourceHandler {
                 "Workflow category deleted: " + entity.getCategoryCode());
     }
 
-    private void apply(WorkflowCategory entity, Payload payload) {
+    private void apply(WorkflowCategoryEntity entity, Payload payload) {
         LocalDateTime now = LocalDateTime.now();
         entity.setTenantId(payload.tenantId());
         entity.setCategoryCode(payload.categoryCode());
@@ -111,11 +111,11 @@ public class WorkflowCategoryResourceHandler implements ResourceHandler {
         entity.setUpdatedAt(now);
     }
 
-    private WorkflowCategory resolve(ResourceDeclaration resource) {
+    private WorkflowCategoryEntity resolve(ResourceDeclaration resource) {
         Long tenantId = WorkflowResourceFields.longValue(resource, "tenantId", false, DEFAULT_TENANT_ID);
         String categoryCode = WorkflowResourceFields.text(resource, "categoryCode", false);
         if (StringUtils.hasText(categoryCode)) {
-            WorkflowCategory entity = find(tenantId, categoryCode.trim());
+            WorkflowCategoryEntity entity = find(tenantId, categoryCode.trim());
             if (entity != null) {
                 return entity;
             }
@@ -124,10 +124,10 @@ public class WorkflowCategoryResourceHandler implements ResourceHandler {
         return targetId == null ? null : categoryMapper.selectById(targetId);
     }
 
-    private WorkflowCategory find(Long tenantId, String categoryCode) {
-        return categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowCategory>()
-                .eq(WorkflowCategory::getTenantId, tenantId)
-                .eq(WorkflowCategory::getCategoryCode, categoryCode)
+    private WorkflowCategoryEntity find(Long tenantId, String categoryCode) {
+        return categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowCategoryEntity>()
+                .eq(WorkflowCategoryEntity::getTenantId, tenantId)
+                .eq(WorkflowCategoryEntity::getCategoryCode, categoryCode)
                 .last("limit 1"));
     }
 
