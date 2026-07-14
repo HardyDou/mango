@@ -20,9 +20,9 @@
 
 | Order | Target | Version / destination | Status |
 |---|---|---|---|
-| 1 | npm PMO bundle | `@mango/pmo@1.2.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
-| 2 | npm CLI | `@mango/cli@1.0.71` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PENDING` |
-| 3 | GitHub Release | `v2026.07.14-pmo-1.2.1-cli-1.0.71-release` | `PENDING` |
+| 1 | npm PMO bundle | `@mango/pmo@1.2.1` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 2 | npm CLI | `@mango/cli@1.0.71` -> `http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/` | `PUBLISHED_AND_VERIFIED` |
+| 3 | GitHub Release | `v2026.07.14-pmo-1.2.1-cli-1.0.71-release` | `PUBLISHED` |
 
 ### Verification
 
@@ -31,6 +31,9 @@
 - `node --test mango-ui/packages/mango-cli/tests/pmo-bundle.test.mjs`
 - `node mango-ui/scripts/publish-package.mjs --verify-pmo-package-root=<extracted-package-root>` rejects the historical `@mango/pmo@1.2.0` tarball because its executable mode differs from the manifest.
 - Business consumer dry-run against `/Users/hardy/Work/Yunxin/baohan-system-mango-pmo-1.2.0`: local `@mango/cli@1.0.71` / `@mango/pmo@1.2.1` tarballs produced `add: 99, update: 36, delete: 0, skip: 30, warn: 0`; the business worktree remained unchanged.
+- Required PR check `pmo-doc-check` passed in 7m08s; the release state manifest completed all 17 fixed states at `2026-07-14T00:47:54.581Z`.
+- A fresh `npm-group` download preserved `0755` for all three governed tools and passed package-root verification; a clean registry install repeated the business dry-run with `warn: 0` and no worktree changes.
+- Immutable coordinates, checksums, recovery facts, and consumer evidence are recorded in `mango-docs/evidence/governance/release-v2026.07.14-pmo-1.2.1-cli-1.0.71-release.json`.
 
 ## v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release - 2026-07-13
 
