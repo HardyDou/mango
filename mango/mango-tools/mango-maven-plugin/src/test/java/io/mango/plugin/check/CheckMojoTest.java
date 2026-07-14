@@ -1244,7 +1244,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void resolveStaticAnalysisProjects_withSessionReactor_usesCurrentProjectsInsteadOfFullTree() throws Exception {
+    void resolveStaticAnalysisProjects_withSessionReactor_excludesGovernanceAggregators() throws Exception {
         // given
         Path rootPom = tempDir.resolve("pom.xml");
         Files.writeString(rootPom, """
@@ -1258,12 +1258,18 @@ class CheckMojoTest {
         Path jobRoot = tempDir.resolve("mango-platform/mango-job");
         Path jobSupport = jobRoot.resolve("mango-job-support");
         Path jobCore = jobRoot.resolve("mango-job-core");
+        Path architectureVerification = tempDir.resolve("architecture-verification");
+        Path mangoArchitectureVerification = tempDir.resolve("mango-architecture-verification");
         Path infraKv = tempDir.resolve("mango-infra/mango-infra-kv");
         Files.createDirectories(jobSupport);
         Files.createDirectories(jobCore);
+        Files.createDirectories(architectureVerification);
+        Files.createDirectories(mangoArchitectureVerification);
         Files.createDirectories(infraKv);
         Files.writeString(jobSupport.resolve("pom.xml"), "<project/>");
         Files.writeString(jobCore.resolve("pom.xml"), "<project/>");
+        Files.writeString(architectureVerification.resolve("pom.xml"), "<project/>");
+        Files.writeString(mangoArchitectureVerification.resolve("pom.xml"), "<project/>");
         Files.writeString(infraKv.resolve("pom.xml"), "<project/>");
 
         MavenSession session = mock(MavenSession.class);
@@ -1273,7 +1279,17 @@ class CheckMojoTest {
         supportProject.setFile(jobSupport.resolve("pom.xml").toFile());
         MavenProject coreProject = new MavenProject();
         coreProject.setFile(jobCore.resolve("pom.xml").toFile());
-        when(session.getProjects()).thenReturn(List.of(rootProject, supportProject, coreProject));
+        MavenProject architectureProject = new MavenProject();
+        architectureProject.setFile(architectureVerification.resolve("pom.xml").toFile());
+        MavenProject mangoArchitectureProject = new MavenProject();
+        mangoArchitectureProject.setFile(mangoArchitectureVerification.resolve("pom.xml").toFile());
+        when(session.getProjects()).thenReturn(
+                List.of(
+                        rootProject,
+                        supportProject,
+                        coreProject,
+                        architectureProject,
+                        mangoArchitectureProject));
 
         CheckMojo mojo = new CheckMojo();
         setField(mojo, "baseDir", tempDir.toString());

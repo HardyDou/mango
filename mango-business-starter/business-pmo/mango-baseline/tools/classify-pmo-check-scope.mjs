@@ -226,6 +226,15 @@ export function resolveMavenScope(files, repositoryRoot = root) {
   return { mode: 'partial', projects: [...projects].sort() };
 }
 
+export function resolveMavenDependencyProjects(mavenScope) {
+  if (mavenScope.mode !== 'partial') return [];
+  return mavenScope.projects.filter(project => ![
+    ':mango-architecture-verification',
+    'architecture-verification',
+    'mango-architecture-verification',
+  ].includes(project));
+}
+
 function parseArgs(argv) {
   const result = { base: '', head: '', output: process.env.GITHUB_OUTPUT || '' };
   for (let index = 0; index < argv.length; index += 1) {
@@ -255,12 +264,14 @@ export function runScopeClassifierCli(argv = process.argv.slice(2)) {
     }
     const scope = classifyChangedFiles(files);
     const maven = resolveMavenScope(files);
+    const mavenDependencyProjects = resolveMavenDependencyProjects(maven);
     const projectPaths = resolveProjectPaths(root);
     if (args.output) {
       const lines = [
         ...Object.entries(scope).map(([key, value]) => `${key}=${value}`),
         `backend_mode=${maven.mode}`,
         `maven_projects=${maven.projects.join(',')}`,
+        `maven_dependency_projects=${mavenDependencyProjects.join(',')}`,
         `backend_root=${projectPaths.backend}`,
         `backend_pom=${projectPaths.backend}/pom.xml`,
         `frontend_root=${projectPaths.frontend}`,
