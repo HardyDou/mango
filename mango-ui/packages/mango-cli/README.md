@@ -187,7 +187,7 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository htt
 
 CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实来自 `.mango/workspace.json`，本地私有运行配置来自 `.mango/dev-workspace.env`，局部覆盖来自 `.mango/dev-workspace.local.json`。本机全局注册表为 `~/.mango/workspaces.json`。
 
-`mango workspace init` 还会在路径不存在时创建 `.mango/m2/repository`，并把它链接到用户公共仓库 `~/.m2/repository`。因此业务 `mango.dev.json` 可以继续使用 `-Dmaven.repo.local=.mango/m2/repository`，不同 worktree 的端口、数据库和进程仍隔离，但不会重复下载 Maven 依赖。若该路径已经是一个真实目录或指向其它位置的链接，CLI 只提示并保留现状，供明确需要独立 Maven 缓存的工作区继续使用。
+`mango workspace init` 还会在路径不存在时创建 .mango/m2/repository，并把它链接到用户公共仓库 ~/.m2/repository。因此业务 `mango.dev.json` 可以继续使用 -Dmaven.repo.local=.mango/m2/repository，不同 worktree 的端口、数据库和进程仍隔离，但不会重复下载 Maven 依赖。若该路径已经是一个真实目录或指向其它位置的链接，CLI 只提示并保留现状，供明确需要独立 Maven 缓存的工作区继续使用。
 
 新项目模板会生成固定的 `backend`、`frontend` 开发清单。历史业务项目执行 `mango pmo sync --sync-shell` 或缺少清单时执行 `mango workspace init`，CLI 会先扫描项目结构再生成 `mango.dev.json`：
 
@@ -211,7 +211,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango/workspace.json` | `frontendPort` | `30NNN` | 前端主端口 | 写入 `MANGO_FRONTEND_PORT` | `workspacePorts` |
 | `.mango/workspace.json` | `frontendApps` | `31NNN`、`32NNN`、`33NNN`... | 前端子应用端口 | 写入 `MANGO_ADMIN_*_PORT` | `buildFrontendAppPorts` |
 | `.mango/workspace.json` | `dbName` | `mango_dev_<projectSlug>_<NNN>` | 本地数据库名 | 写入 `MANGO_DB_NAME` | `buildWorkspaceConfig` |
-| `.mango/m2/repository` | 目录链接 | `~/.m2/repository` | worktree Maven 本地仓库入口 | 默认复用用户公共 Maven 缓存；已有路径不覆盖 | `ensureWorkspaceMavenRepository` |
+| .mango/m2/repository | 目录链接 | ~/.m2/repository | worktree Maven 本地仓库入口 | 默认复用用户公共 Maven 缓存；已有路径不覆盖 | `ensureWorkspaceMavenRepository` |
 | `.mango/dev-workspace.env` | `MANGO_CRYPTO_SM4_SECRET_KEY` | 随机 16 字节 hex | Mango 加密密钥 | 注入后端环境变量；缺失时自动补写 | `defaultDevWorkspaceEnv`、`ensureDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_WORKSPACE_ID` | 来自 `.mango/workspace.json` | 当前本地 worktree 标识 | 用于区分同机多业务工作区 | `ensureDevWorkspaceEnv` |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 后端端口 | 后端 `server.port` 和前端代理目标；同机 registry 分配避免冲突 | `ensureDevWorkspaceEnv` |
@@ -314,7 +314,7 @@ mango release repair --version 1.0.16 --project-dir . --authorize
 | `mango release verify` | 通过只读 adapter 重新验证状态 | `--version`、registry/mode 参数 | release manifest；不发布制品 |
 | `mango release repair` | 从失败/待执行状态恢复，跳过已成功不可变制品 | `--version`、`--authorize` | release manifest、缺失的发布动作 |
 | `mango release registry doctor` | 校验 artifact mode、四类 registry 角色和认证引用 | registry/mode 参数、`--json` | 不改文件 |
-| `mango workspace init` | 初始化本地开发工作区 | 无 | `.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/m2/repository`，缺失时创建 `mango.dev.json` |
+| `mango workspace init` | 初始化本地开发工作区 | 无 | `.mango/workspace.json`、`.mango/dev-workspace.env`、.mango/m2/repository，缺失时创建 `mango.dev.json` |
 | `mango workspace status` | 打印 workspace 应用和端口 | 无 | 不改文件 |
 | `mango workspace list` | 查看本机 workspace registry | 无 | 不改文件 |
 | `mango workspace release` | 释放 workspace registry 并默认删除该 workspace 本地开发库 | `--workspace <path>`、`--keep-db` | `~/.mango/workspaces.json`、本机 MySQL |
@@ -445,7 +445,7 @@ CLI 不在运行时管理菜单、权限和租户，但会生成让业务模块�
 
 ### 1.0.78 发布影响
 
-`@mango/cli@1.0.78` 修复 [Issue #507](https://github.com/HardyDou/mango/issues/507)：`mango workspace init` 会把缺失的 `.mango/m2/repository` 初始化为指向 `~/.m2/repository` 的目录链接，使业务清单在保留 worktree 本地路径写法的同时复用公共 Maven 缓存。已有真实目录或其它链接不会被覆盖；端口、数据库、进程和显式独立 Maven 仓库的隔离行为不变。该版本继续精确依赖 `@mango/pmo@1.2.5`，Mango Maven 仍为 `1.0.20`。
+`@mango/cli@1.0.78` 修复 [Issue #507](https://github.com/HardyDou/mango/issues/507)：`mango workspace init` 会把缺失的 .mango/m2/repository 初始化为指向 ~/.m2/repository 的目录链接，使业务清单在保留 worktree 本地路径写法的同时复用公共 Maven 缓存。已有真实目录或其它链接不会被覆盖；端口、数据库、进程和显式独立 Maven 仓库的隔离行为不变。该版本继续精确依赖 `@mango/pmo@1.2.5`，Mango Maven 仍为 `1.0.20`。
 
 ### 1.0.77 发布影响
 
