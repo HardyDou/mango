@@ -74,6 +74,14 @@ jobs:
             echo "request_id=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           } >> "${GITHUB_OUTPUT}"
 
+      - name: Package the approved Jenkins bridge
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-release-bridge-${{ steps.contract.outputs.request_id }}
+          path: scripts/ci/jenkins-release-bridge.sh
+          if-no-files-found: error
+          retention-days: 1
+
   internal-jenkins-release:
     name: Internal Jenkins release
     needs: release-preflight
@@ -81,11 +89,11 @@ jobs:
     runs-on: [self-hosted, linux, x64, mango-release]
     timeout-minutes: 190
     steps:
-      - name: Checkout the exact approved commit
-        uses: actions/checkout@v4
+      - name: Download the approved Jenkins bridge
+        uses: actions/download-artifact@v4
         with:
-          ref: ${{ needs.release-preflight.outputs.git_sha }}
-          fetch-depth: 1
+          name: jenkins-release-bridge-${{ needs.release-preflight.outputs.request_id }}
+          path: .release-bridge
 
       - name: Trigger and wait for internal Jenkins
         id: jenkins
@@ -95,7 +103,9 @@ jobs:
           REQUEST_ID: ${{ needs.release-preflight.outputs.request_id }}
           DRY_RUN: ${{ inputs.dry_run }}
           RUN_TESTS: ${{ inputs.run_tests }}
-        run: scripts/ci/jenkins-release-bridge.sh
+        run: |
+          chmod 700 .release-bridge/jenkins-release-bridge.sh
+          .release-bridge/jenkins-release-bridge.sh
 
       - name: Write release summary
         if: always()
