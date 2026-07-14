@@ -98,6 +98,11 @@ test('tracked Jenkins pipeline publishes only the governed non-app batch at the 
     'every multi-line Jenkins shell stage must opt into Bash',
   )
   assert.doesNotMatch(source, /mvn[^\n]*\sdeploy/)
+  assert.match(
+    source,
+    /grep -Eq '\^\[0-9\]\+\(\[\.\]\[0-9\]\+\)\{2,\}/,
+    'the release version regex must avoid Groovy-invalid backslash escapes',
+  )
 
   const job = await readFile(jenkinsJob, 'utf8')
   assert.match(job, /<name>GIT_SHA<\/name>/)
