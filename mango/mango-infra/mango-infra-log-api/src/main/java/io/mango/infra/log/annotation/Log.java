@@ -1,5 +1,7 @@
 package io.mango.infra.log.annotation;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -12,6 +14,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
+@LocalCapabilityContract
 public @interface Log {
 
     /**

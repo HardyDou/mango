@@ -8,24 +8,25 @@
 
     <!-- ==================== mango.log 配置域 ==================== -->
     <!-- 日志级别 -->
-    <property name="LOG_LEVEL_ROOT" value="${mango.log.level.root:-INFO}"/>
-    <property name="LOG_LEVEL_MANGO" value="${mango.log.level.mango:-DEBUG}"/>
-    <property name="LOG_LEVEL_SPRING" value="${mango.log.level.spring:-WARN}"/>
-    <property name="LOG_LEVEL_MYBATIS" value="${mango.log.level.mybatis:-WARN}"/>
-    <property name="LOG_LEVEL_HTTP" value="${mango.log.level.http:-INFO}"/>
+    <springProperty scope="context" name="LOG_LEVEL_ROOT" source="mango.log.level.root" defaultValue="INFO"/>
+    <springProperty scope="context" name="LOG_LEVEL_MANGO" source="mango.log.level.mango" defaultValue="DEBUG"/>
+    <springProperty scope="context" name="LOG_LEVEL_SPRING" source="mango.log.level.spring" defaultValue="WARN"/>
+    <springProperty scope="context" name="LOG_LEVEL_MYBATIS" source="mango.log.level.mybatis" defaultValue="WARN"/>
+    <springProperty scope="context" name="LOG_LEVEL_HTTP" source="mango.log.level.http" defaultValue="INFO"/>
 
     <!-- 文件滚动 -->
-    <property name="MAX_FILE_SIZE" value="${mango.log.file.maxSize:-100MB}"/>
-    <property name="MAX_HISTORY" value="${mango.log.file.maxHistory:-30}"/>
-    <property name="TOTAL_SIZE_CAP" value="${mango.log.file.totalSizeCap:-3GB}"/>
+    <springProperty scope="context" name="MAX_FILE_SIZE" source="mango.log.file.max-size" defaultValue="100MB"/>
+    <springProperty scope="context" name="MAX_HISTORY" source="mango.log.file.max-history" defaultValue="30"/>
+    <springProperty scope="context" name="TOTAL_SIZE_CAP" source="mango.log.file.total-size-cap" defaultValue="3GB"/>
 
     <!-- 审计日志 -->
-    <property name="OPERATION_LOG_ENABLED" value="${mango.log.operation.enabled:-true}"/>
-    <property name="OPERATION_LOG_MAX_HISTORY" value="${mango.log.operation.maxHistory:-90}"/>
-    <property name="OPERATION_LOG_TOTAL_SIZE_CAP" value="${mango.log.operation.totalSizeCap:-10GB}"/>
+    <springProperty scope="context" name="OPERATION_LOG_ENABLED" source="mango.log.operation.enabled" defaultValue="true"/>
+    <springProperty scope="context" name="OPERATION_LOG_MAX_HISTORY" source="mango.log.operation.max-history" defaultValue="90"/>
+    <springProperty scope="context" name="OPERATION_LOG_TOTAL_SIZE_CAP" source="mango.log.operation.total-size-cap" defaultValue="10GB"/>
 
     <!-- JSON 输出 -->
-    <property name="JSON_OUTPUT_ENABLED" value="${mango.log.json.enabled:-false}"/>
+    <springProperty scope="context" name="JSON_OUTPUT_ENABLED" source="mango.log.json.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="ACTIVE_PROFILES" source="spring.profiles.active" defaultValue="default"/>
 
     <!-- ==================== 控制台 Appender ==================== -->
     <!-- 标准格式 -->
@@ -124,7 +125,7 @@
             <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
         </rollingPolicy>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"app":"${APP_NAME}","env":"${SPRING_PROFILES_ACTIVE:-default}"}</customFields>
+            <customFields>{"app":"${APP_NAME}","env":"${ACTIVE_PROFILES}"}</customFields>
             <includeMdcKeyName>requestId</includeMdcKeyName>
             <includeMdcKeyName>traceId</includeMdcKeyName>
             <includeMdcKeyName>clientIp</includeMdcKeyName>
@@ -133,16 +134,34 @@
 
     <!-- ==================== Profile: default ==================== -->
     <springProfile name="default">
-        <root level="${LOG_LEVEL_ROOT}">
-            <appender-ref ref="CONSOLE"/>
-        </root>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>JSON_OUTPUT_ENABLED</key>
+            <value>true</value>
+        </condition>
+        <if>
+            <then>
+                <root level="${LOG_LEVEL_ROOT}">
+                    <appender-ref ref="CONSOLE"/>
+                    <appender-ref ref="FILE_JSON"/>
+                </root>
+            </then>
+            <else>
+                <root level="${LOG_LEVEL_ROOT}">
+                    <appender-ref ref="CONSOLE"/>
+                </root>
+            </else>
+        </if>
         <logger name="org.springframework" level="${LOG_LEVEL_SPRING}"/>
         <logger name="org.springframework.web" level="${LOG_LEVEL_SPRING}"/>
         <logger name="org.springframework.web.servlet" level="${LOG_LEVEL_HTTP}"/>
         <logger name="org.apache.http" level="${LOG_LEVEL_HTTP}"/>
         <logger name="com.baomidou" level="${LOG_LEVEL_MYBATIS}"/>
         <logger name="io.mango" level="${LOG_LEVEL_MANGO}"/>
-        <if condition='property("OPERATION_LOG_ENABLED").equals("true")'>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>OPERATION_LOG_ENABLED</key>
+            <value>true</value>
+        </condition>
+        <if>
             <then>
                 <logger name="io.mango.infra.log.annotation.Log" level="INFO" additivity="false">
                     <appender-ref ref="OPERATION_LOG_PLAIN"/>
@@ -153,16 +172,34 @@
 
     <!-- ==================== Profile: dev / local ==================== -->
     <springProfile name="dev,local">
-        <root level="${LOG_LEVEL_ROOT}">
-            <appender-ref ref="COLOR_CONSOLE"/>
-        </root>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>JSON_OUTPUT_ENABLED</key>
+            <value>true</value>
+        </condition>
+        <if>
+            <then>
+                <root level="${LOG_LEVEL_ROOT}">
+                    <appender-ref ref="COLOR_CONSOLE"/>
+                    <appender-ref ref="FILE_JSON"/>
+                </root>
+            </then>
+            <else>
+                <root level="${LOG_LEVEL_ROOT}">
+                    <appender-ref ref="COLOR_CONSOLE"/>
+                </root>
+            </else>
+        </if>
         <logger name="org.springframework" level="${LOG_LEVEL_SPRING}"/>
         <logger name="org.springframework.web" level="${LOG_LEVEL_SPRING}"/>
         <logger name="org.springframework.web.servlet" level="${LOG_LEVEL_HTTP}"/>
         <logger name="org.apache.http" level="${LOG_LEVEL_HTTP}"/>
         <logger name="com.baomidou" level="${LOG_LEVEL_MYBATIS}"/>
         <logger name="io.mango" level="${LOG_LEVEL_MANGO}"/>
-        <if condition='property("OPERATION_LOG_ENABLED").equals("true")'>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>OPERATION_LOG_ENABLED</key>
+            <value>true</value>
+        </condition>
+        <if>
             <then>
                 <logger name="io.mango.infra.log.annotation.Log" level="INFO" additivity="false">
                     <appender-ref ref="OPERATION_LOG_PLAIN"/>
@@ -181,7 +218,11 @@
         <logger name="org.springframework" level="${LOG_LEVEL_SPRING}"/>
         <logger name="com.baomidou" level="${LOG_LEVEL_MYBATIS}"/>
         <logger name="io.mango" level="${LOG_LEVEL_MANGO}"/>
-        <if condition='property("OPERATION_LOG_ENABLED").equals("true")'>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>OPERATION_LOG_ENABLED</key>
+            <value>true</value>
+        </condition>
+        <if>
             <then>
                 <logger name="io.mango.infra.log.annotation.Log" level="INFO" additivity="false">
                     <appender-ref ref="OPERATION_LOG"/>
@@ -203,7 +244,11 @@
         <logger name="org.apache.http" level="${LOG_LEVEL_HTTP}"/>
         <logger name="com.baomidou" level="${LOG_LEVEL_MYBATIS}"/>
         <logger name="io.mango" level="${LOG_LEVEL_MANGO}"/>
-        <if condition='property("OPERATION_LOG_ENABLED").equals("true")'>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>OPERATION_LOG_ENABLED</key>
+            <value>true</value>
+        </condition>
+        <if>
             <then>
                 <logger name="io.mango.infra.log.annotation.Log" level="INFO" additivity="false">
                     <appender-ref ref="OPERATION_LOG"/>

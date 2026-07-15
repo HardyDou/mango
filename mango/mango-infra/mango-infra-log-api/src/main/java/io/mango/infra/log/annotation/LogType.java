@@ -1,8 +1,11 @@
 package io.mango.infra.log.annotation;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * 日志类型。
  */
+@LocalCapabilityContract
 public enum LogType {
     /**
      * 登录。
