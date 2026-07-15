@@ -93,9 +93,9 @@ Redis 配置优先级在代码中按 `mango.dal.provider.redis.*`、`mango.redis
 | `mango.redis.database` | `0` | Redis database。 |
 | `mango.redis.timeout` | `3000` | 连接超时毫秒。 |
 | `mango.redis.pool.max-active` | `8` | 连接池最大活跃数。 |
-| `mango.redis.pool.max-idle` | `8` | 最大空闲连接。 |
+| `mango.redis.pool.max-idle` | `8` | 兼容 Spring Redis 配置绑定；Redisson 单节点池不提供等价的最大空闲连接项。 |
 | `mango.redis.pool.min-idle` | `0` | 最小空闲连接。 |
-| `mango.redis.pool.max-wait` | `-1` | 连接池最大等待毫秒。 |
+| `mango.redis.pool.max-wait` | `-1` | 兼容 Spring Redis 配置绑定；Redisson 单节点池不提供等价的借用等待项。 |
 
 ### Key Namespace
 
@@ -154,7 +154,8 @@ mango:
 ```
 
 ## 7. API 与扩展
-- Store：`IKvStore`、`IKvSortedSet`。
+- Store：`IKvStore`、`IKvSortedSet`。`increment` / `incrementBy` 使用固定窗口：仅首次创建计数器时设置 TTL，后续增量不续期。
+- Owner 安全释放：`IKvStore.deleteIfValue(key, expectedValue)` 仅在当前值仍属于调用方时删除，并统一拒绝空 `expectedValue`。Memory、Redis、JDBC 内置 Store 均原子实现；自定义 Store 若用于分布式锁或 Outbox claim，必须原子覆写该方法，接口默认实现只用于源码兼容，不构成分布式安全保证。
 - Capability：`ICache`、`ILocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator`。
 - 支撑：`ISerializer`、`IConverter`、`KvContext`、`KvContextContributor`。
 - Outbox：`IOutboxPublisher`、`IOutboxStore`、`IOutboxDispatcher`、`OutboxMessage`、`OutboxStatus`、`OutboxTopics`。

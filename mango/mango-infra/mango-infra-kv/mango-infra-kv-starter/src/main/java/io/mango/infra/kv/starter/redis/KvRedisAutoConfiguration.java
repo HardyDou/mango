@@ -30,6 +30,10 @@ public class KvRedisAutoConfiguration {
 
     @Bean
     public RedissonClient redissonClient(KvRedisProperties mango, Environment env) {
+        return Redisson.create(redissonConfig(mango, env));
+    }
+
+    Config redissonConfig(KvRedisProperties mango, Environment env) {
         Config config = new Config();
 
         String host = resolveHost(mango, env);
@@ -39,8 +43,6 @@ public class KvRedisAutoConfiguration {
         int timeout = resolveTimeout(mango, env);
         int maxActive = resolvePoolMaxActive(mango, env);
         int minIdle = resolvePoolMinIdle(mango, env);
-        int maxIdle = resolvePoolMaxIdle(mango, env);
-        int maxWait = resolvePoolMaxWait(mango, env);
 
         String address = String.format("redis://%s:%d", host, port);
 
@@ -48,13 +50,12 @@ public class KvRedisAutoConfiguration {
                 .setAddress(address)
                 .setDatabase(database)
                 .setConnectTimeout(timeout)
-                .setPassword(StringUtils.hasText(password) ? password : null)
+                .setPassword(normalizePassword(password))
                 .setConnectionPoolSize(maxActive)
                 .setConnectionMinimumIdleSize(minIdle)
-                .setIdleConnectionTimeout(maxIdle)
                 .setTimeout(timeout);
 
-        return Redisson.create(config);
+        return config;
     }
 
     // ==================== 配置解析（优先级：mango.dal.provider.redis.* > mango.redis.* > spring.redis.* > 默认值） ====================
@@ -78,10 +79,10 @@ public class KvRedisAutoConfiguration {
         if (dalPort != null) {
             return Integer.parseInt(dalPort);
         }
-        if (mango.getPort() != 6379) {
+        if (mango.getPort() != KvRedisProperties.DEFAULT_PORT) {
             return mango.getPort();
         }
-        return getIntProperty(env, "spring.redis.port", 6379);
+        return getIntProperty(env, "spring.redis.port", KvRedisProperties.DEFAULT_PORT);
     }
 
     private String resolvePassword(KvRedisProperties mango, @NonNull Environment env) {
@@ -111,10 +112,10 @@ public class KvRedisAutoConfiguration {
         if (dalTimeout != null) {
             return Integer.parseInt(dalTimeout);
         }
-        if (mango.getTimeout() != 3000) {
+        if (mango.getTimeout() != KvRedisProperties.DEFAULT_TIMEOUT_MILLIS) {
             return mango.getTimeout();
         }
-        return getIntProperty(env, "spring.redis.timeout", 3000);
+        return getIntProperty(env, "spring.redis.timeout", KvRedisProperties.DEFAULT_TIMEOUT_MILLIS);
     }
 
     private int resolvePoolMaxActive(KvRedisProperties mango, @NonNull Environment env) {
@@ -122,11 +123,11 @@ public class KvRedisAutoConfiguration {
         if (dalMaxActive != null) {
             return Integer.parseInt(dalMaxActive);
         }
-        if (mango.getPool().getMaxActive() != 8) {
+        if (mango.getPool().getMaxActive() != KvRedisProperties.DEFAULT_MAX_ACTIVE) {
             return mango.getPool().getMaxActive();
         }
         return getIntProperty(env, "spring.redis.jedis.pool.max-active",
-               getIntProperty(env, "spring.redis.lettuce.pool.max-active", 8));
+               getIntProperty(env, "spring.redis.lettuce.pool.max-active", KvRedisProperties.DEFAULT_MAX_ACTIVE));
     }
 
     private int resolvePoolMinIdle(KvRedisProperties mango, @NonNull Environment env) {
@@ -141,32 +142,18 @@ public class KvRedisAutoConfiguration {
                getIntProperty(env, "spring.redis.lettuce.pool.min-idle", 0));
     }
 
-    private int resolvePoolMaxIdle(KvRedisProperties mango, @NonNull Environment env) {
-        String dalMaxIdle = env.getProperty("mango.dal.provider.redis.pool.maxIdle");
-        if (dalMaxIdle != null) {
-            return Integer.parseInt(dalMaxIdle);
-        }
-        if (mango.getPool().getMaxIdle() != 8) {
-            return mango.getPool().getMaxIdle();
-        }
-        return getIntProperty(env, "spring.redis.jedis.pool.max-idle",
-               getIntProperty(env, "spring.redis.lettuce.pool.max-idle", 8));
-    }
-
-    private int resolvePoolMaxWait(KvRedisProperties mango, @NonNull Environment env) {
-        String dalMaxWait = env.getProperty("mango.dal.provider.redis.pool.maxWait");
-        if (dalMaxWait != null) {
-            return Integer.parseInt(dalMaxWait);
-        }
-        if (mango.getPool().getMaxWait() != -1) {
-            return mango.getPool().getMaxWait();
-        }
-        return getIntProperty(env, "spring.redis.jedis.pool.max-wait",
-               getIntProperty(env, "spring.redis.lettuce.pool.max-wait", -1));
-    }
-
     private int getIntProperty(Environment env, String key, int defaultValue) {
         String value = env.getProperty(key);
-        return value != null ? Integer.parseInt(value) : defaultValue;
+        if (value != null) {
+            return Integer.parseInt(value);
+        }
+        return defaultValue;
+    }
+
+    private String normalizePassword(String password) {
+        if (StringUtils.hasText(password)) {
+            return password;
+        }
+        return null;
     }
 }

@@ -1,11 +1,13 @@
 package io.mango.infra.kv.core.capability;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.ILocker;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The constructor intentionally retains the shared IKvStore capability dependency"))
 public class KvStoreLocker implements ILocker {
 
     private final IKvStore kvStore;

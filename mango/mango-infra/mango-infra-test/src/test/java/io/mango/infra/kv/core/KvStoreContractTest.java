@@ -64,6 +64,46 @@ class KvStoreContractTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("io.mango.infra.kv.core.KvStoreTestFixtures#kvStores")
+    void increment_existingCounter_doesNotExtendFixedWindow(String name,
+                                                             KvStoreTestFixtures.StoreFixture fixture) throws Exception {
+        try (fixture) {
+            IKvStore store = fixture.namespacedStore();
+
+            store.incrementBy("counter:fixed-window", 2, 2);
+            Thread.sleep(1200);
+            assertThat(store.incrementBy("counter:fixed-window", -1, 2)).isEqualTo(1);
+            Thread.sleep(1100);
+
+            assertThat(store.get("counter:fixed-window")).isNull();
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("io.mango.infra.kv.core.KvStoreTestFixtures#kvStores")
+    void deleteIfValue_onlyDeletesCurrentOwner(String name, KvStoreTestFixtures.StoreFixture fixture) throws Exception {
+        try (fixture) {
+            IKvStore store = fixture.namespacedStore();
+            store.set("lock:owner", "owner-a", 60);
+
+            assertThat(store.deleteIfValue("lock:owner", "owner-b")).isFalse();
+            assertThat(store.get("lock:owner")).isEqualTo("owner-a");
+            assertThat(store.deleteIfValue("lock:owner", "owner-a")).isTrue();
+            assertThat(store.get("lock:owner")).isNull();
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("io.mango.infra.kv.core.KvStoreTestFixtures#kvStores")
+    void deleteIfValue_rejectsNullExpectedValue(String name, KvStoreTestFixtures.StoreFixture fixture) throws Exception {
+        try (fixture) {
+            IKvStore store = fixture.namespacedStore();
+
+            assertThrows(NullPointerException.class, () -> store.deleteIfValue("lock:owner", null));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("io.mango.infra.kv.core.KvStoreTestFixtures#kvStores")
     void invalidKey_throwsBizException(String name, KvStoreTestFixtures.StoreFixture fixture) throws Exception {
         try (fixture) {
             IKvStore store = fixture.rawStore();

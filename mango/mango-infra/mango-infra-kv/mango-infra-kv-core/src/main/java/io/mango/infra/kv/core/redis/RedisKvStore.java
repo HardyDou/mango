@@ -5,7 +5,6 @@ import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBucket;
 import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
@@ -14,11 +13,12 @@ import org.redisson.client.codec.StringCodec;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * RedisKvStore implementation using Redisson.
  *
- * Uses RAtomicLong for increment operations (atomic counter).
+ * Uses a Lua script for atomic fixed-window increment operations.
  * Uses RBucket for string storage (put/get).
  *
  * Note: Due to Redis type system, a key can only be one type.
@@ -39,6 +39,20 @@ public class RedisKvStore implements IKvStore, IKvSortedSet {
               return redis.call('zrangebyscore', KEYS[1], ARGV[1], ARGV[2])
             end
             return redis.call('zrangebyscore', KEYS[1], ARGV[1], ARGV[2], 'LIMIT', 0, ARGV[3])
+            """;
+    private static final String INCREMENT_SCRIPT = """
+            local existed = redis.call('exists', KEYS[1])
+            local value = redis.call('incrby', KEYS[1], ARGV[1])
+            if existed == 0 then
+              redis.call('expire', KEYS[1], ARGV[2])
+            end
+            return value
+            """;
+    private static final String COMPARE_DELETE_SCRIPT = """
+            if redis.call('get', KEYS[1]) == ARGV[1] then
+              return redis.call('del', KEYS[1])
+            end
+            return 0
             """;
 
     private final RedissonClient redissonClient;
@@ -80,14 +94,14 @@ public class RedisKvStore implements IKvStore, IKvSortedSet {
     public long incrementBy(String key, long delta, long windowSeconds) {
         validateKey(key);
         Require.positive(windowSeconds, "windowSeconds must be positive, was: " + windowSeconds);
-        RAtomicLong atomic = redissonClient.getAtomicLong(key);
-        long count = atomic.addAndGet(delta);
-        // Set TTL on first increment of a new key.
-        // Use expireAsync to avoid blocking
-        if (count == delta) {
-            atomic.expire(Duration.ofSeconds(windowSeconds));
-        }
-        return count;
+        Number result = script().eval(
+                RScript.Mode.READ_WRITE,
+                INCREMENT_SCRIPT,
+                RScript.ReturnType.INTEGER,
+                List.of(key),
+                String.valueOf(delta),
+                String.valueOf(windowSeconds));
+        return result.longValue();
     }
 
     @Override
@@ -99,6 +113,19 @@ public class RedisKvStore implements IKvStore, IKvSortedSet {
     public void delete(String key) {
         validateKey(key);
         redissonClient.getKeys().delete(key);
+    }
+
+    @Override
+    public boolean deleteIfValue(String key, String expectedValue) {
+        validateKey(key);
+        Objects.requireNonNull(expectedValue, "expectedValue cannot be null");
+        Number result = script().eval(
+                RScript.Mode.READ_WRITE,
+                COMPARE_DELETE_SCRIPT,
+                RScript.ReturnType.INTEGER,
+                List.of(key),
+                expectedValue);
+        return result.longValue() > 0;
     }
 
     @Override

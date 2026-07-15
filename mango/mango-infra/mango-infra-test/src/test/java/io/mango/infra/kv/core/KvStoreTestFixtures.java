@@ -123,6 +123,11 @@ public final class KvStoreTestFixtures {
                 }
 
                 @Override
+                public boolean deleteIfValue(String key, String expectedValue) {
+                    return store.deleteIfValue(StoreFixture.this.key(key), expectedValue);
+                }
+
+                @Override
                 public boolean exists(String key) {
                     return store.exists(StoreFixture.this.key(key));
                 }

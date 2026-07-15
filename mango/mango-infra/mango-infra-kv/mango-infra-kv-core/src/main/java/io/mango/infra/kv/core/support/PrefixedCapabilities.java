@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.support;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.kv.api.ICache;
 import io.mango.infra.kv.api.ICounter;
 import io.mango.infra.kv.api.IIdempotent;
@@ -16,7 +17,8 @@ public final class PrefixedCapabilities {
     private PrefixedCapabilities() {
     }
 
-    @RequiredArgsConstructor
+    @RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The decorator intentionally retains its shared cache delegate"))
     public static class Cache implements ICache {
         private final ICache delegate;
         private final KvKeyNormalizer keyNormalizer;
@@ -106,7 +108,8 @@ public final class PrefixedCapabilities {
         }
     }
 
-    @RequiredArgsConstructor
+    @RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "The decorator intentionally retains its shared token-store delegate"))
     public static class TokenStore implements ITokenStore {
         private final ITokenStore delegate;
         private final KvKeyNormalizer keyNormalizer;

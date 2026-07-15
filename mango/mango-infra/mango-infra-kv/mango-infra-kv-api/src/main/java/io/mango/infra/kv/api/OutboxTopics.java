@@ -1,8 +1,11 @@
 package io.mango.infra.kv.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * Well-known outbox ownership topics.
  */
+@LocalCapabilityContract
 public final class OutboxTopics {
 
     public static final String DOMAIN_EVENT = "domain-event";
