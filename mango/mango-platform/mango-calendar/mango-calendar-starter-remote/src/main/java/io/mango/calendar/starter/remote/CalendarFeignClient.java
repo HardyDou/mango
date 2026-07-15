@@ -2,14 +2,19 @@ package io.mango.calendar.starter.remote;
 
 import io.mango.calendar.api.CalendarApi;
 import io.mango.calendar.api.query.AddWorkdaysQuery;
-import io.mango.calendar.api.query.BatchCheckWorkdayQuery;
+import io.mango.calendar.api.query.BatchCheckWorkdayRequest;
 import io.mango.calendar.api.query.CalendarDateQuery;
 import io.mango.calendar.api.query.CountWorkdaysQuery;
 import io.mango.calendar.api.query.DateRangeQuery;
+import io.mango.calendar.api.query.LunarDateQuery;
 import io.mango.calendar.api.query.MonthQuery;
 import io.mango.calendar.api.query.NthWorkdayOfMonthQuery;
+import io.mango.calendar.api.query.SolarDateQuery;
+import io.mango.calendar.api.query.SolarTermYearQuery;
 import io.mango.calendar.api.vo.CalendarDayVO;
+import io.mango.calendar.api.vo.LunarDayInfoVO;
 import io.mango.calendar.api.vo.MonthWorkdaySummaryVO;
+import io.mango.calendar.api.vo.SolarTermVO;
 import io.mango.common.result.R;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
@@ -53,7 +58,7 @@ public interface CalendarFeignClient extends CalendarApi {
 
     @Override
     @PostMapping("/workdays/batch-check")
-    R<List<CalendarDayVO>> batchCheck(@RequestBody BatchCheckWorkdayQuery query);
+    R<List<CalendarDayVO>> batchCheck(@RequestBody BatchCheckWorkdayRequest query);
 
     @Override
     @GetMapping("/workdays/month/summary")
@@ -70,4 +75,16 @@ public interface CalendarFeignClient extends CalendarApi {
     @Override
     @GetMapping("/workdays/month/nth")
     R<LocalDate> nthWorkdayOfMonth(@SpringQueryMap NthWorkdayOfMonthQuery query);
+
+    @Override
+    @GetMapping("/lunar/day")
+    R<LunarDayInfoVO> lunarDay(@SpringQueryMap SolarDateQuery query);
+
+    @Override
+    @GetMapping("/lunar/to-solar")
+    R<LocalDate> lunarToSolar(@SpringQueryMap LunarDateQuery query);
+
+    @Override
+    @GetMapping("/lunar/solar-terms")
+    R<List<SolarTermVO>> solarTerms(@SpringQueryMap SolarTermYearQuery query);
 }

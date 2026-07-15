@@ -1,0 +1,120 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "calendar",
+      "moduleName": "工作日历模块",
+      "declarations": {
+        "CALENDAR_YEAR": [
+          {
+            "id": "2026071509000000182",
+            "version": 1,
+            "bizKey": "calendar.year.tenant-1.CN_STANDARD.2025",
+            "name": "中国标准工作日历 2025",
+            "targetModule": "calendar",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "tenantId": { "type": "STRING", "value": "1" },
+              "calendarCode": { "type": "STRING", "value": "CN_STANDARD" },
+              "year": { "type": "INT", "value": 2025 },
+              "items": {
+                "type": "LIST",
+                "value": [
+                  { "date": "2025-01-01", "dayType": "LEGAL_HOLIDAY", "dayName": "元旦", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-01-28", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-01-29", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-01-30", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-01-31", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-02-01", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-02-02", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-02-03", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-02-04", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-01-26", "dayType": "ADJUSTED_WORKDAY", "dayName": "春节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-02-08", "dayType": "ADJUSTED_WORKDAY", "dayName": "春节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-04-04", "dayType": "LEGAL_HOLIDAY", "dayName": "清明节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-04-05", "dayType": "LEGAL_HOLIDAY", "dayName": "清明节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-04-06", "dayType": "LEGAL_HOLIDAY", "dayName": "清明节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-05-01", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-05-02", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-05-03", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-05-04", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-05-05", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-04-27", "dayType": "ADJUSTED_WORKDAY", "dayName": "劳动节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-05-31", "dayType": "LEGAL_HOLIDAY", "dayName": "端午节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-06-01", "dayType": "LEGAL_HOLIDAY", "dayName": "端午节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-06-02", "dayType": "LEGAL_HOLIDAY", "dayName": "端午节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-01", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-02", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-03", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-04", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-05", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-06", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-07", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-08", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节、中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-09-28", "dayType": "ADJUSTED_WORKDAY", "dayName": "国庆节、中秋节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" },
+                  { "date": "2025-10-11", "dayType": "ADJUSTED_WORKDAY", "dayName": "国庆节、中秋节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2025年部分节假日安排的通知" }
+                ]
+              }
+            }
+          },
+          {
+            "id": "2026071509000000183",
+            "version": 1,
+            "bizKey": "calendar.year.tenant-1.CN_STANDARD.2026",
+            "name": "中国标准工作日历 2026",
+            "targetModule": "calendar",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "tenantId": { "type": "STRING", "value": "1" },
+              "calendarCode": { "type": "STRING", "value": "CN_STANDARD" },
+              "year": { "type": "INT", "value": 2026 },
+              "items": {
+                "type": "LIST",
+                "value": [
+                  { "date": "2026-01-01", "dayType": "LEGAL_HOLIDAY", "dayName": "元旦", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-01-02", "dayType": "LEGAL_HOLIDAY", "dayName": "元旦", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-01-03", "dayType": "LEGAL_HOLIDAY", "dayName": "元旦", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-15", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-16", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-17", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-18", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-19", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-20", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-21", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-22", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-23", "dayType": "LEGAL_HOLIDAY", "dayName": "春节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-14", "dayType": "ADJUSTED_WORKDAY", "dayName": "春节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-02-28", "dayType": "ADJUSTED_WORKDAY", "dayName": "春节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-04-04", "dayType": "LEGAL_HOLIDAY", "dayName": "清明节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-04-05", "dayType": "LEGAL_HOLIDAY", "dayName": "清明节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-04-06", "dayType": "LEGAL_HOLIDAY", "dayName": "清明节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-05-01", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-05-02", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-05-03", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-05-04", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-05-05", "dayType": "LEGAL_HOLIDAY", "dayName": "劳动节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-05-09", "dayType": "ADJUSTED_WORKDAY", "dayName": "劳动节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-06-19", "dayType": "LEGAL_HOLIDAY", "dayName": "端午节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-06-20", "dayType": "LEGAL_HOLIDAY", "dayName": "端午节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-06-21", "dayType": "LEGAL_HOLIDAY", "dayName": "端午节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-09-25", "dayType": "LEGAL_HOLIDAY", "dayName": "中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-09-26", "dayType": "LEGAL_HOLIDAY", "dayName": "中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-09-27", "dayType": "LEGAL_HOLIDAY", "dayName": "中秋节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-01", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-02", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-03", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-04", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-05", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-06", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-07", "dayType": "LEGAL_HOLIDAY", "dayName": "国庆节", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-09-20", "dayType": "ADJUSTED_WORKDAY", "dayName": "国庆节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" },
+                  { "date": "2026-10-10", "dayType": "ADJUSTED_WORKDAY", "dayName": "国庆节调休上班", "source": "国务院办公厅", "remark": "国务院办公厅关于2026年部分节假日安排的通知" }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

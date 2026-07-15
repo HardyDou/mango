@@ -25,14 +25,13 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 
 /**
  * 日历后台管理 API 契约。
  */
-@Validated
 public interface CalendarAdminApi {
 
     R<PageResult<CalendarVO>> pageCalendars(@Valid CalendarPageQuery query);
@@ -45,7 +44,9 @@ public interface CalendarAdminApi {
 
     R<Boolean> updateCalendarStatus(@Valid UpdateCalendarStatusCommand command);
 
-    R<Boolean> deleteCalendar(@NotNull(message = "日历 ID 不能为空") Long id);
+    R<Boolean> deleteCalendar(
+            @NotNull(message = "日历 ID 不能为空")
+            @Positive(message = "日历 ID 必须大于0") Long id);
 
     R<PageResult<CalendarYearSummaryVO>> pageCalendarYears(@Valid CalendarYearPageQuery query);
 
@@ -68,7 +69,9 @@ public interface CalendarAdminApi {
 
     R<Boolean> updateCalendarDay(@Valid UpdateCalendarDayCommand command);
 
-    R<Boolean> deleteCalendarDay(@NotNull(message = "日期 ID 不能为空") Long id);
+    R<Boolean> deleteCalendarDay(
+            @NotNull(message = "日期 ID 不能为空")
+            @Positive(message = "日期 ID 必须大于0") Long id);
 
     R<Boolean> batchUpdateCalendarDays(@Valid BatchUpdateCalendarDaysCommand command);
 

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -18,7 +19,8 @@ public class BatchUpdateCalendarDaysCommand implements Serializable {
 
     @NotEmpty(message = "日期 ID 不能为空")
     @Schema(description = "日期 ID 列表", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<Long> ids;
+    @Size(max = 366, message = "一次最多更新366个日期")
+    private List<@Positive(message = "日期 ID 必须大于0") Long> ids;
 
     @NotNull(message = "日期类型不能为空")
     @Schema(description = "日期类型", requiredMode = Schema.RequiredMode.REQUIRED)

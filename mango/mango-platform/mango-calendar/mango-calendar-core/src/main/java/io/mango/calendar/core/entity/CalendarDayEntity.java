@@ -1,21 +1,16 @@
 package io.mango.calendar.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.mango.infra.persistence.api.entity.TenantEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("calendar_day")
-public class CalendarDay {
-
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private Long tenantId;
+public class CalendarDayEntity extends TenantEntity {
 
     private Long calendarId;
 
@@ -53,7 +48,4 @@ public class CalendarDay {
 
     private Integer enabled;
 
-    private LocalDateTime createTime;
-
-    private LocalDateTime updateTime;
 }

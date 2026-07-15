@@ -1,7 +1,7 @@
 package io.mango.calendar.core.service;
 
 import io.mango.calendar.api.query.AddWorkdaysQuery;
-import io.mango.calendar.api.query.BatchCheckWorkdayQuery;
+import io.mango.calendar.api.query.BatchCheckWorkdayRequest;
 import io.mango.calendar.api.query.CalendarDateQuery;
 import io.mango.calendar.api.query.CountWorkdaysQuery;
 import io.mango.calendar.api.query.DateRangeQuery;
@@ -34,7 +34,7 @@ public interface ICalendarService {
 
     List<CalendarDayVO> listDays(DateRangeQuery query);
 
-    List<CalendarDayVO> batchCheck(BatchCheckWorkdayQuery query);
+    List<CalendarDayVO> batchCheck(BatchCheckWorkdayRequest query);
 
     MonthWorkdaySummaryVO monthSummary(MonthQuery query);
 

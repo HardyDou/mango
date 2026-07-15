@@ -27,5 +27,6 @@ public class AddWorkdaysQuery implements Serializable {
     private Integer amount;
 
     @Schema(description = "起始日期是工作日时是否计入")
-    private Boolean includeSource;
+    @NotNull(message = "是否计入起始日期不能为空")
+    private Boolean includeSource = false;
 }
