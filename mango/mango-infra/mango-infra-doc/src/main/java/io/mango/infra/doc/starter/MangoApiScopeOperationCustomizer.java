@@ -36,7 +36,10 @@ public class MangoApiScopeOperationCustomizer implements OperationCustomizer {
         ApiAccess apiAccess = findApiAccess(handlerMethod);
         boolean internal = apiAccess != null && apiAccess.mode() == ApiResourceAccessMode.INTERNAL;
         if (includeScopeTags) {
-            String scope = internal ? INTERNAL_SCOPE : EXTERNAL_SCOPE;
+            String scope = EXTERNAL_SCOPE;
+            if (internal) {
+                scope = INTERNAL_SCOPE;
+            }
             operation.addExtension(SCOPE_EXTENSION, scope);
             if (internal) {
                 operation.addTagsItem(INTERNAL_TAG);
@@ -71,11 +74,17 @@ public class MangoApiScopeOperationCustomizer implements OperationCustomizer {
     }
 
     private ApiAccess findApiAccess(Class<?> type) {
-        return type == null ? null : AnnotatedElementUtils.findMergedAnnotation(type, ApiAccess.class);
+        if (type == null) {
+            return null;
+        }
+        return AnnotatedElementUtils.findMergedAnnotation(type, ApiAccess.class);
     }
 
     private ApiAccess findApiAccess(Method method) {
-        return method == null ? null : AnnotatedElementUtils.findMergedAnnotation(method, ApiAccess.class);
+        if (method == null) {
+            return null;
+        }
+        return AnnotatedElementUtils.findMergedAnnotation(method, ApiAccess.class);
     }
 
     private ApiAccess findApiAccessOnInterface(Class<?> handlerType, Method handlerMethod) {
