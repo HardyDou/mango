@@ -19,6 +19,7 @@ public class WecomLoginCommand implements Serializable {
     private String code;
 
     @Schema(description = "企业微信通知渠道配置ID；为空时使用当前机构启用的第一个企微扫码配置")
+    @jakarta.validation.constraints.Positive(message = "企业微信通知渠道配置ID必须大于0")
     private Long channelConfigId;
 
     @Size(max = 64, message = "机构ID最多64个字符")

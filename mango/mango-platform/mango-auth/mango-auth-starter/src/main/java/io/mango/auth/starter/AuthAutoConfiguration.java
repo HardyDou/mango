@@ -1,15 +1,15 @@
 package io.mango.auth.starter;
 
 import io.mango.auth.core.anti.AppSecretProvider;
+import io.mango.auth.api.spi.CaptchaConfigService;
+import io.mango.auth.core.config.DefaultCaptchaConfigService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.auth.starter.config.AuthSecurityProperties;
 import io.mango.auth.starter.config.AuthSecurityConfig;
-import io.mango.auth.starter.web.anti.AntiReplayInterceptor;
 import io.mango.auth.starter.web.anti.AntiReplayProperties;
 import io.mango.auth.starter.web.anti.ConfiguredAppSecretProvider;
 import io.mango.auth.starter.web.interceptor.CaptchaInterceptor;
 import io.mango.auth.starter.web.interceptor.WebMvcConfig;
-import io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.system.api.SysConfigApi;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -31,12 +31,13 @@ import java.util.concurrent.Executors;
  * @author hardy
  */
 @AutoConfiguration
-@AutoConfigureBefore(SecurityAutoConfiguration.class)
+@AutoConfigureBefore(name = "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration")
 @EnableConfigurationProperties({AntiReplayProperties.class, AuthSecurityProperties.class})
 @ComponentScan({
         "io.mango.auth.core.service",
         "io.mango.auth.core.service.impl",
         "io.mango.auth.core.config",
+        "io.mango.auth.core.store",
         "io.mango.auth.core.anti",
         "io.mango.auth.core.init",
         "io.mango.auth.starter.controller",
@@ -51,6 +52,12 @@ public class AuthAutoConfiguration {
     @ConditionalOnMissingBean(PasswordEncoder.class)
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(CaptchaConfigService.class)
+    public DefaultCaptchaConfigService captchaConfigService() {
+        return new DefaultCaptchaConfigService();
     }
 
     @Bean
@@ -86,8 +93,7 @@ public class AuthAutoConfiguration {
     }
 
     @Bean
-    public WebMvcConfig webMvcConfig(CaptchaInterceptor captchaInterceptor,
-                                      AntiReplayInterceptor antiReplayInterceptor) {
-        return new WebMvcConfig(captchaInterceptor, antiReplayInterceptor);
+    public WebMvcConfig webMvcConfig(CaptchaInterceptor captchaInterceptor) {
+        return new WebMvcConfig(captchaInterceptor);
     }
 }

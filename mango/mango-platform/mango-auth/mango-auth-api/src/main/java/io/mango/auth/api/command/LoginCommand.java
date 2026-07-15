@@ -43,6 +43,7 @@ public class LoginCommand {
     private String partyType;
 
     @Schema(description = "归属主体ID")
+    @jakarta.validation.constraints.Positive(message = "归属主体ID必须大于0")
     private Long partyId;
 
     @Schema(description = "应用编码")
@@ -56,4 +57,12 @@ public class LoginCommand {
     @Schema(description = "验证码键")
     @Size(max = 128, message = "验证码键最多128个字符")
     private String captchaKey;
+
+    @Schema(description = "客户端IP，由认证入口根据实际请求覆盖")
+    @Size(max = 64, message = "客户端IP最多64个字符")
+    private String clientIp;
+
+    @Schema(description = "客户端 User-Agent，由认证入口根据实际请求覆盖")
+    @Size(max = 512, message = "User-Agent最多512个字符")
+    private String userAgent;
 }

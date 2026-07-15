@@ -1,18 +1,18 @@
-package io.mango.auth.starter.e2e;
+package io.mango.auth.starter.flow;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.auth.api.AuthCode;
+import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.api.spi.LoginTenantProvider;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
-import io.mango.auth.core.service.impl.AuthServiceImpl;
-import io.mango.auth.core.service.TokenRevocationService;
+import io.mango.auth.core.service.impl.AuthService;
+import io.mango.auth.core.store.TokenRevocationStore;
 import io.mango.auth.core.service.WecomLoginClient;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
-import io.mango.auth.core.service.impl.PasswordResetTicketService;
+import io.mango.auth.core.store.PasswordResetTicketStore;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.controller.AuthController;
 import io.mango.captcha.api.CaptchaApi;
@@ -41,6 +41,7 @@ import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.SpringBootConfiguration;
@@ -77,7 +78,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(
-        classes = AuthSecurityE2ETest.TestApp.class,
+        classes = AuthSecurityFlowTest.TestApp.class,
         properties = {
                 "mango.access.auth-enabled=true",
                 "mango.security.jwt.secret=mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits",
@@ -94,8 +95,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         })
 @AutoConfigureMockMvc
 @RecordApplicationEvents
-@DisplayName("Auth security E2E tests")
-class AuthSecurityE2ETest {
+@Tag("flow")
+@Tag("auth")
+@DisplayName("Auth security component flow tests")
+class AuthSecurityFlowTest {
 
     @Resource
     private MockMvc mockMvc;
@@ -470,9 +473,9 @@ class AuthSecurityE2ETest {
             AuthSecurityConfig.class,
             SecurityAutoConfiguration.class,
             AuthController.class,
-            AuthServiceImpl.class,
-            PasswordResetTicketService.class,
-            TokenRevocationService.class,
+            AuthService.class,
+            PasswordResetTicketStore.class,
+            TokenRevocationStore.class,
             SecuredController.class
     })
     static class TestApp {

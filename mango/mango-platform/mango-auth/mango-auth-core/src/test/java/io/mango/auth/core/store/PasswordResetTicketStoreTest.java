@@ -1,4 +1,4 @@
-package io.mango.auth.core.service.impl;
+package io.mango.auth.core.store;
 
 import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.IKvStore;
@@ -10,22 +10,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class PasswordResetTicketServiceTest {
+class PasswordResetTicketStoreTest {
 
     @Test
     void consumeReturnsPayloadAndDeletesTicketFromKv() {
         InMemoryKvStore kvStore = new InMemoryKvStore();
-        PasswordResetTicketService service = new PasswordResetTicketService(kvStore);
-        PasswordResetTicketService.TicketPayload payload = new PasswordResetTicketService.TicketPayload(
+        PasswordResetTicketStore store = new PasswordResetTicketStore(kvStore);
+        PasswordResetTicketStore.TicketPayload payload = new PasswordResetTicketStore.TicketPayload(
                 1001L, "1", "default", "internal-admin",
                 "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 2001L);
 
-        String ticket = service.issue(payload);
-        PasswordResetTicketService.TicketPayload consumed = service.consume(ticket);
+        String ticket = store.issue(payload);
+        PasswordResetTicketStore.TicketPayload consumed = store.consume(ticket);
 
         assertThat(consumed).isEqualTo(payload);
         assertThat(kvStore.exists("auth:password-reset-ticket:" + ticket)).isFalse();
-        assertThatThrownBy(() -> service.consume(ticket))
+        assertThatThrownBy(() -> store.consume(ticket))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("强制改密凭据无效或已过期");
     }
@@ -33,18 +33,18 @@ class PasswordResetTicketServiceTest {
     @Test
     void peekReturnsPayloadWithoutDeletingTicketFromKv() {
         InMemoryKvStore kvStore = new InMemoryKvStore();
-        PasswordResetTicketService service = new PasswordResetTicketService(kvStore);
-        PasswordResetTicketService.TicketPayload payload = new PasswordResetTicketService.TicketPayload(
+        PasswordResetTicketStore store = new PasswordResetTicketStore(kvStore);
+        PasswordResetTicketStore.TicketPayload payload = new PasswordResetTicketStore.TicketPayload(
                 1001L, "1", "default", "internal-admin",
                 "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 2001L);
 
-        String ticket = service.issue(payload);
-        PasswordResetTicketService.TicketPayload peeked = service.peek(ticket);
+        String ticket = store.issue(payload);
+        PasswordResetTicketStore.TicketPayload peeked = store.peek(ticket);
 
         assertThat(peeked).isEqualTo(payload);
         assertThat(kvStore.exists("auth:password-reset-ticket:" + ticket)).isTrue();
 
-        service.revoke(ticket);
+        store.revoke(ticket);
         assertThat(kvStore.exists("auth:password-reset-ticket:" + ticket)).isFalse();
     }
 

@@ -16,6 +16,7 @@
 | 退出登录 | 注销当前 token，清理 `MANGO_TOKEN` Cookie |
 | token 校验 | 校验 access token 是否有效、未撤销 |
 | 当前用户信息 | 返回用户、机构、角色和权限列表 |
+| 强制首次改密 | 使用一次性密码重置票据完成首次登录改密并签发正式 token |
 | 企业微信登录 | 用企业微信 code 换取外部用户，按已绑定 Mango 用户签发 token |
 | 验证码入口 | 通过 `CaptchaApi` 发送短信或邮件验证码，登录请求可按路径要求验证码头 |
 | 防重放能力 | 支持时间戳、nonce、幂等键和可选签名校验 |
@@ -87,7 +88,7 @@ import '@mango/auth/style.css';
 | `tenantCode` | 登录页会优先选中匹配机构，常见默认值是 `default` |
 | `redirectPath` | 登录成功后跳转路径，未配置时跳转 `/home` |
 
-登录成功后，前端应使用 `Authorization: Bearer <accessToken>` 调用后端接口。后端登录接口也会写入 `MANGO_TOKEN` HttpOnly Cookie，供同域场景使用。
+登录成功后，前端应使用 `Authorization: Bearer <accessToken>` 调用后端接口。后端登录接口也会写入 `MANGO_TOKEN` HttpOnly Cookie，供同域场景使用。Admin Shell 的“退出登录”会先调用 `POST /auth/logout` 完成服务端 token 撤销和 Cookie 清理，再离开当前页面并清理前端会话；不能只清浏览器存储。
 
 ## 5. 快速开始
 
@@ -165,6 +166,7 @@ HTTP 接口前缀是 `/auth`。
 | POST | `/auth/login-institutions` | PUBLIC | 查询账号可登录机构 |
 | POST | `/auth/wecom/login` | PUBLIC | 企业微信 code 登录 |
 | GET | `/auth/wecom/login-config?tenantId=...` | PUBLIC | 查询企业微信扫码登录公开配置 |
+| POST | `/auth/password/change-required` | PUBLIC | 使用登录返回的一次性票据完成强制改密 |
 | POST | `/auth/refresh` | PUBLIC | 使用 refresh token 换发 token |
 | POST | `/auth/logout` | LOGIN | 注销 token，清理 Cookie |
 | POST | `/auth/validate` | LOGIN | 校验 access token 是否有效 |
@@ -205,6 +207,8 @@ HTTP 接口前缀是 `/auth`。
 | `X-Sign-Algorithm` | 和 `X-App-Key`、`X-Sign` 同时存在时触发签名校验 |
 | `X-App-Key` | 签名应用标识 |
 | `X-Sign` | 请求签名 |
+
+防重放由 Servlet Filter 在进入 Controller 前处理，并使用可重复读取的请求包装器，因此签名校验读取 JSON 后不会破坏 Controller 的请求体。携带 `X-Idempotency-Key` 时，首次成功的 2xx 响应会被缓存，重复成功请求返回同一响应；正在处理的重复请求返回 409；失败请求会释放处理中标记，允许调用方修正后重试。
 
 Java API 使用 `AuthApi`，本地 starter 由 `AuthController` 实现，remote starter 会注册 Feign Client：
 
@@ -309,6 +313,7 @@ token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyI
 | 企微配置为空 | 检查 notice 中当前机构是否有启用的企业微信登录渠道配置 |
 | 登录被验证码拦截返回 428 | 按 `X-Captcha-Key`、`X-Captcha-Code`、`X-Captcha-Type` 补齐请求头，或检查 `mango.captcha.required-paths` |
 | 防重放返回 401/409 | 检查客户端时间、nonce 是否重复、幂等键是否复用、签名密钥和算法是否匹配 |
+| 页面退出后 Cookie 仍存在 | 确认使用 Admin Shell 当前退出入口并实际调用了 `POST /auth/logout`；JavaScript 无法删除 HttpOnly Cookie |
 
 ## 13. 相关文档
 
@@ -321,4 +326,5 @@ token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyI
 
 ## 14. 变更影响记录
 
+- Auth 历史债务治理将 `AuthApi`、Controller 和 Feign 收敛为同一 10 方法契约，Controller 只负责 HTTP 绑定和请求上下文补充，认证、审计、通知、验证码和企微逻辑归入 Auth Service；生产依赖不再隐式携带 Access Core 或 Authorization Starter。防重放从会破坏请求体的 Interceptor 改为可重复读取的 Filter，并补齐成功缓存、处理中冲突和失败可重试语义。HTTP 路径、合法请求返回结构、token claim、Cookie 名称和既有认证特性保持不变；已证明的签名 JSON 失败、页面假退出和审计成功文案漂移已修复。
 - 本次为登录链路新增首次改密票据、密码复杂度校验和失败次数锁定增强。`POST /auth/login` 现在可能返回 `passwordResetRequired=true`、`loginAction=CHANGE_PASSWORD` 和 `passwordResetTicket`，前端据此切换到强制改密弹窗；`POST /auth/password/change-required` 只有在密码校验成功后才会消费 ticket。该变更不改变登录、登出、刷新、企微登录和验证码接口路径。

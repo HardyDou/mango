@@ -1,13 +1,23 @@
 package io.mango.auth.api;
 
+import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.LoginCommand;
+import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.command.LogoutCommand;
 import io.mango.auth.api.command.RefreshTokenCommand;
+import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
+import io.mango.auth.api.command.WecomLoginCommand;
+import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
+import io.mango.auth.api.vo.WecomLoginConfigVO;
 import io.mango.common.result.R;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 /**
  * 认证 API 契约。
@@ -25,6 +35,14 @@ public interface AuthApi {
      * @return 登录结果，包含访问令牌
      */
     R<LoginVO> login(@Valid LoginCommand loginCommand);
+
+    R<List<LoginTenantVO>> loginInstitutions(@Valid LoginTenantOptionsCommand command);
+
+    R<LoginVO> wecomLogin(@Valid WecomLoginCommand command);
+
+    R<WecomLoginConfigVO> wecomLoginConfig(@NotBlank @Size(max = 64) String tenantId);
+
+    R<LoginVO> changeRequiredPassword(@Valid ChangeRequiredPasswordCommand command);
 
     /**
      * 刷新令牌。
@@ -48,4 +66,8 @@ public interface AuthApi {
      * @return 令牌是否有效
      */
     R<Boolean> validateToken(@Valid ValidateTokenCommand command);
+
+    R<LoginVO> info(@Size(max = 4096) String authorization);
+
+    R<String> sendCaptcha(@Valid SendAuthCaptchaCommand command);
 }

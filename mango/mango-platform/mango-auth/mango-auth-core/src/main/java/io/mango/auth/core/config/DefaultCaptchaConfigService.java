@@ -3,7 +3,6 @@ package io.mango.auth.core.config;
 import io.mango.auth.api.spi.CaptchaConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
@@ -12,7 +11,6 @@ import java.util.Set;
  * fail-open 策略：路径未配置时不要求验证码。
  */
 @Slf4j
-@Component
 public class DefaultCaptchaConfigService implements CaptchaConfigService {
 
     @Value("${mango.captcha.required-paths:/login,/register}")

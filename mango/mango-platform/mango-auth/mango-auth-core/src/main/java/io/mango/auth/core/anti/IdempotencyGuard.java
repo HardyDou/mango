@@ -61,4 +61,16 @@ public class IdempotencyGuard {
         }
         return kvStore.get(KEY_PREFIX + key);
     }
+
+    /**
+     * 仅在当前请求仍持有处理中占位时释放幂等键，允许失败请求安全重试。
+     *
+     * @param key 幂等键
+     */
+    public void releaseProcessing(String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        kvStore.deleteIfValue(KEY_PREFIX + key, PROCESSING);
+    }
 }

@@ -1,7 +1,8 @@
 package io.mango.auth.core.service.impl;
 
-import io.mango.auth.api.AuthCode;
+import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
+import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
@@ -12,11 +13,11 @@ import io.mango.auth.api.vo.ButtonDisplayRuleVO;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
-import io.mango.common.exception.BizException;
-import io.mango.common.result.R;
+import io.mango.common.result.CommonCode;
 import io.mango.common.result.Require;
 import io.mango.auth.core.service.IAuthService;
-import io.mango.auth.core.service.TokenRevocationService;
+import io.mango.auth.core.store.TokenRevocationStore;
+import io.mango.auth.core.store.PasswordResetTicketStore;
 import io.mango.auth.core.service.WecomLoginClient;
 import io.mango.identity.api.AuthIdentitySecurityProvider;
 import io.mango.identity.api.AuthUserProvider;
@@ -29,15 +30,35 @@ import io.mango.authorization.api.vo.TokenPairVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.notice.api.NoticeApi;
+import io.mango.notice.api.command.NoticeJsonRequest;
+import io.mango.notice.api.command.NoticeSendEventCommand;
+import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
+import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
+import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
+import io.mango.notice.api.enums.NoticePriority;
+import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
+import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
+import io.mango.auth.core.support.AuthApiResponseAdapter;
+import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.infra.iplocation.api.IpLocation;
+import io.mango.infra.iplocation.api.IpLocationResolver;
+import io.mango.system.api.SysLoginLogApi;
+import io.mango.system.api.po.SysLoginLogPo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.Nullable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +72,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements IAuthService {
+public class AuthService implements IAuthService {
 
     private static final String DEFAULT_APP_CODE = "internal-admin";
 
@@ -60,13 +81,17 @@ public class AuthServiceImpl implements IAuthService {
     private final ITokenProvider tokenService;
     private final PasswordEncoder passwordEncoder;
     private final AuthIdentitySecurityProvider authIdentitySecurityProvider;
-    private final PasswordResetTicketService passwordResetTicketService;
+    private final PasswordResetTicketStore passwordResetTicketStore;
     private final LoginAttemptTracker loginAttemptTracker;
     private final ObjectProvider<LoginTenantProvider> loginTenantProvider;
-    private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
+    private final ObjectProvider<TokenRevocationStore> tokenRevocationStoreProvider;
     private final IdentityUserApi identityUserApi;
     private final WecomLoginClient wecomLoginClient;
     private final NoticeApi noticeApi;
+    private final ObjectProvider<CaptchaApi> captchaApiProvider;
+    private final ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider;
+    private final ObjectProvider<IpLocationResolver> ipLocationResolverProvider;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${mango.security.jwt.access-token-validity:7200}")
     private long accessTokenValiditySeconds;
@@ -76,6 +101,24 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public LoginVO login(LoginCommand command) {
+        Require.notNull(command, AuthCode.AUTH_REQUEST_INVALID);
+        try {
+            LoginVO response = doLogin(command);
+            if (!Boolean.TRUE.equals(response.getPasswordResetRequired())) {
+                publishLoginSuccessNotice(command, response);
+            }
+            recordLoginLog(command, response, true, null);
+            return response;
+        } catch (io.mango.common.exception.BizException exception) {
+            if (exception.getCode() == AuthCode.LOGIN_ATTEMPT_LOCKED.getCode()) {
+                publishLoginLockedNotice(command);
+            }
+            recordLoginLog(command, null, false, exception.getMessage());
+            return AuthApiResponseAdapter.rethrow(exception);
+        }
+    }
+
+    private LoginVO doLogin(LoginCommand command) {
         String username = command.getUsername();
         String loginAttemptKey = loginAttemptKey(command.getRealm(), username);
         Require.isFalse(loginAttemptTracker.isLockedOut(loginAttemptKey), AuthCode.LOGIN_ATTEMPT_LOCKED);
@@ -122,41 +165,43 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public LoginVO changeRequiredPassword(ChangeRequiredPasswordCommand command) {
-        PasswordResetTicketService.TicketPayload ticket = passwordResetTicketService.peek(command.getPasswordResetTicket());
-        AuthUserInfo user = authUserProvider.getByIdForAuth(ticket.userId());
-        Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
-        io.mango.identity.api.command.ChangeRequiredPasswordCommand identityCommand =
-                new io.mango.identity.api.command.ChangeRequiredPasswordCommand();
-        identityCommand.setUserId(ticket.userId());
-        identityCommand.setNewPassword(command.getNewPassword());
-        identityCommand.setConfirmPassword(command.getConfirmPassword());
-        authIdentitySecurityProvider.changeRequiredPassword(identityCommand);
-        passwordResetTicketService.revoke(command.getPasswordResetTicket());
-        AuthUserInfo updatedUser = authUserProvider.getByIdForAuth(ticket.userId());
-        LoginCommand loginContext = new LoginCommand();
-        loginContext.setTenantId(ticket.tenantId());
-        loginContext.setTenantCode(ticket.tenantCode());
-        loginContext.setAppCode(ticket.appCode());
-        loginContext.setRealm(firstText(ticket.realm(), updatedUser.getRealm()));
-        loginContext.setActorType(firstText(ticket.actorType(), updatedUser.getActorType()));
-        loginContext.setPartyType(firstText(ticket.partyType(), updatedUser.getPartyType()));
-        loginContext.setPartyId(ticket.partyId() == null ? updatedUser.getPartyId() : ticket.partyId());
-        IdentityContext identityContext = resolveIdentityContext(updatedUser, loginContext);
-        Map<String, Object> claims = identityContext.toClaims(updatedUser.getUsername());
-        String accessToken = tokenService.generateAccessToken(updatedUser.getUserId(), updatedUser.getUsername(), claims);
-        String refreshToken = tokenService.generateRefreshToken(updatedUser.getUserId(), updatedUser.getUsername(), claims);
-        authIdentitySecurityProvider.recordLoginSuccess(updatedUser.getUserId());
-        LoginVO response = buildLoginVO(updatedUser, identityContext, accessToken, refreshToken);
-        loadUserRolesAndPermissions(updatedUser.getUserId(), identityContext, response);
-        return response;
+        try {
+            PasswordResetTicketStore.TicketPayload ticket = passwordResetTicketStore.peek(command.getPasswordResetTicket());
+            AuthUserInfo user = authUserProvider.getByIdForAuth(ticket.userId());
+            Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
+            io.mango.identity.api.command.ChangeRequiredPasswordCommand identityCommand =
+                    new io.mango.identity.api.command.ChangeRequiredPasswordCommand();
+            identityCommand.setUserId(ticket.userId());
+            identityCommand.setNewPassword(command.getNewPassword());
+            identityCommand.setConfirmPassword(command.getConfirmPassword());
+            authIdentitySecurityProvider.changeRequiredPassword(identityCommand);
+            passwordResetTicketStore.revoke(command.getPasswordResetTicket());
+            AuthUserInfo updatedUser = authUserProvider.getByIdForAuth(ticket.userId());
+            LoginCommand loginContext = new LoginCommand();
+            loginContext.setTenantId(ticket.tenantId());
+            loginContext.setTenantCode(ticket.tenantCode());
+            loginContext.setAppCode(ticket.appCode());
+            loginContext.setRealm(firstText(ticket.realm(), updatedUser.getRealm()));
+            loginContext.setActorType(firstText(ticket.actorType(), updatedUser.getActorType()));
+            loginContext.setPartyType(firstText(ticket.partyType(), updatedUser.getPartyType()));
+            loginContext.setPartyId(ticket.partyId() == null ? updatedUser.getPartyId() : ticket.partyId());
+            IdentityContext identityContext = resolveIdentityContext(updatedUser, loginContext);
+            Map<String, Object> claims = identityContext.toClaims(updatedUser.getUsername());
+            String accessToken = tokenService.generateAccessToken(updatedUser.getUserId(), updatedUser.getUsername(), claims);
+            String refreshToken = tokenService.generateRefreshToken(updatedUser.getUserId(), updatedUser.getUsername(), claims);
+            authIdentitySecurityProvider.recordLoginSuccess(updatedUser.getUserId());
+            LoginVO response = buildLoginVO(updatedUser, identityContext, accessToken, refreshToken);
+            loadUserRolesAndPermissions(updatedUser.getUserId(), identityContext, response);
+            return response;
+        } catch (IllegalArgumentException exception) {
+            return Require.fail(AuthCode.AUTH_REQUEST_INVALID, exception.getMessage());
+        }
     }
 
     @Override
     public LoginVO loginByWecom(WecomLoginCommand command) {
         String tenantId = normalize(command.getTenantId());
-        if (tenantId == null) {
-            throw new BizException(AuthCode.INSTITUTION_REQUIRED.getCode(), "企业微信登录前请先选择机构");
-        }
+        Require.notBlank(tenantId, AuthCode.INSTITUTION_REQUIRED, "企业微信登录前请先选择机构");
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.update(current -> current.withTenantId(tenantId));
@@ -166,12 +211,10 @@ public class AuthServiceImpl implements IAuthService {
             query.setProvider("WECOM");
             query.setCorpId(loginConfig.getCorpId());
             query.setExternalUserId(wecomUserId);
-            var bindingResponse = identityUserApi.findExternalIdentity(query);
-            ExternalIdentityBindingVO binding = bindingResponse == null || !bindingResponse.isSuccess()
-                    ? null : bindingResponse.getData();
-            if (binding == null || binding.getUserId() == null) {
-                throw new BizException(1404, "当前企业微信账号尚未绑定 Mango 用户，请联系管理员绑定后再登录");
-            }
+            ExternalIdentityBindingVO binding = AuthApiResponseAdapter.nullableData(
+                    identityUserApi.findExternalIdentity(query));
+            Require.notNull(binding, AuthCode.WECOM_ACCOUNT_UNBOUND);
+            Require.notNull(binding.getUserId(), AuthCode.WECOM_ACCOUNT_UNBOUND);
             AuthUserInfo user = authUserProvider.getByIdForAuth(binding.getUserId());
             Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
             authIdentitySecurityProvider.assertLoginAllowed(user);
@@ -203,9 +246,7 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public WecomLoginConfigVO getWecomLoginConfig(String tenantId) {
         String normalizedTenantId = normalize(tenantId);
-        if (normalizedTenantId == null) {
-            throw new BizException(AuthCode.INSTITUTION_REQUIRED.getCode(), "请先选择机构");
-        }
+        Require.notBlank(normalizedTenantId, AuthCode.INSTITUTION_REQUIRED, "请先选择机构");
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.update(current -> current.withTenantId(normalizedTenantId));
@@ -236,13 +277,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     private NoticeWecomLoginConfigVO resolveWecomLoginConfig(Long channelConfigId) {
-        R<NoticeWecomLoginConfigVO> response = noticeApi.getWecomLoginConfig(channelConfigId);
-        NoticeWecomLoginConfigVO config = response == null || !response.isSuccess() ? null : response.getData();
-        if (config == null) {
-            String message = response == null ? null : response.getMsg();
-            throw new BizException(1501, firstText(message, "企业微信扫码登录配置不存在或未启用"));
-        }
-        return config;
+        return AuthApiResponseAdapter.requireWecomConfig(noticeApi.getWecomLoginConfig(channelConfigId));
     }
 
     @Override
@@ -302,6 +337,53 @@ public class AuthServiceImpl implements IAuthService {
         return tokenService.validateToken(token) && !isRevoked(token);
     }
 
+    @Override
+    public LoginVO info(String authorization) {
+        String token = stripBearer(authorization);
+        Long userId = tokenService.getUserId(token);
+        Require.notNull(userId, AuthCode.ACCESS_TOKEN_INVALID);
+        IdentityUserInfo userInfo = AuthApiResponseAdapter.requireIdentityData(
+                identityUserApi.getUserInfoById(userId));
+        LoginVO response = new LoginVO();
+        response.setUserId(userInfo.getUserId());
+        response.setMemberId(resolveLong(tokenService.getClaim(token, "memberId"), null));
+        response.setUsername(userInfo.getUsername());
+        response.setNickname(userInfo.getNickname());
+        response.setRealm(userInfo.getRealm());
+        response.setActorType(userInfo.getActorType());
+        response.setPartyType(userInfo.getPartyType());
+        response.setPartyId(userInfo.getPartyId());
+        String appCode = tokenService.getClaim(token, "appCode");
+        String tenantId = tokenService.getClaim(token, "tenantId");
+        response.setTenantId(tenantId);
+        response.setTenantCode(tokenService.getClaim(token, "tenantCode"));
+        response.setTenantName(tokenService.getClaim(token, "tenantName"));
+        response.setAppCode(appCode);
+        Require.notNull(response.getMemberId(), AuthCode.INSTITUTION_MEMBER_REQUIRED);
+        var snapshot = authorizationProvider.load(AuthorizationQuery.member(response.getMemberId())
+                .withTenantId(tenantId)
+                .withSystemCode(appCode)
+                .withRealm(response.getRealm())
+                .withActorType(response.getActorType())
+                .withParty(response.getPartyType(), response.getPartyId()));
+        response.setRoles(snapshot.roleCodes().stream().toList());
+        response.setPermissions(snapshot.permissionCodes().stream().toList());
+        response.setButtonRules(snapshot.buttonRules().stream().map(this::toLoginButtonRule).toList());
+        return response;
+    }
+
+    @Override
+    public String sendCaptcha(SendAuthCaptchaCommand command) {
+        CaptchaApi captchaApi = captchaApiProvider.getIfAvailable();
+        Require.notNull(captchaApi, AuthCode.CAPTCHA_SERVICE_UNAVAILABLE);
+        CaptchaSendRequest request = new CaptchaSendRequest();
+        request.setType(CaptchaType.valueOf(command.getType().name()));
+        request.setTarget(command.getTarget());
+        request.setBusinessType(command.getBusinessType());
+        request.setExpireSeconds(command.getExpireSeconds());
+        return AuthApiResponseAdapter.requireCaptchaData(captchaApi.send(request));
+    }
+
     public Long getUserIdFromToken(String token) {
         if (token == null || token.isEmpty()) {
             return null;
@@ -314,6 +396,10 @@ public class AuthServiceImpl implements IAuthService {
             return null;
         }
         return tokenService.getUserId(token);
+    }
+
+    private String stripBearer(String token) {
+        return token != null && token.startsWith("Bearer ") ? token.substring(7) : token;
     }
 
     /**
@@ -358,6 +444,114 @@ public class AuthServiceImpl implements IAuthService {
         return target;
     }
 
+    private void publishLoginSuccessNotice(LoginCommand command, LoginVO response) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("username", response.getUsername());
+        params.put("clientIp", command.getClientIp());
+        params.put("loginTime", LocalDateTime.now().toString());
+        params.put("appCode", firstText(response.getAppCode(), command.getAppCode()));
+        NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(response.getTenantId());
+        event.setBizType("auth.login.success");
+        event.setBizId(String.valueOf(response.getUserId()));
+        event.setUserId(response.getUserId());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene("auth.login.success");
+        event.setMessageSubject(subject("AUTH_LOGIN", String.valueOf(response.getUserId()), response.getUsername()));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)));
+        event.setPriority(NoticePriority.LOW);
+        event.setIdempotentKey("auth.login.success:" + response.getUserId() + ":" + System.currentTimeMillis());
+        eventPublisher.publishEvent(event);
+    }
+
+    private void publishLoginLockedNotice(LoginCommand command) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("username", command.getUsername());
+        params.put("clientIp", command.getClientIp());
+        params.put("loginTime", LocalDateTime.now().toString());
+        NoticeSiteMessageTargetCommand target = routeTarget("system:user", params);
+        NoticeSendEventCommand event = new NoticeSendEventCommand();
+        event.setTenantId(firstText(command.getTenantId(), MangoContextHolder.tenantId()));
+        event.setBizType("auth.login.locked");
+        event.setBizId(command.getUsername());
+        event.setParams(NoticeJsonRequest.of(params));
+        event.setMessageScene("auth.login.locked");
+        event.setMessageSubject(subject("AUTH_LOGIN_LOCK", command.getUsername(), command.getUsername()));
+        event.setMessageTarget(target);
+        event.setMessageData(NoticeJsonRequest.of(params));
+        event.setMessageActions(List.of(routeAction("VIEW_USER", "查看账号", target)));
+        event.setPriority(NoticePriority.HIGH);
+        event.setIdempotentKey("auth.login.locked:" + command.getUsername() + ":" + command.getClientIp());
+        eventPublisher.publishEvent(event);
+    }
+
+    private NoticeSiteMessageSubjectCommand subject(String type, String id, String name) {
+        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
+        subject.setSubjectType(type);
+        subject.setSubjectId(id);
+        subject.setSubjectName(name);
+        return subject;
+    }
+
+    private NoticeSiteMessageTargetCommand routeTarget(String key, Map<String, Object> params) {
+        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
+        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
+        target.setTargetKey(key);
+        target.setParams(NoticeJsonRequest.of(params));
+        return target;
+    }
+
+    private NoticeSiteMessageActionCommand routeAction(
+            String code, String label, NoticeSiteMessageTargetCommand target) {
+        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
+        action.setActionCode(code);
+        action.setActionLabel(label);
+        action.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
+        action.setTarget(target);
+        return action;
+    }
+
+    private void recordLoginLog(
+            LoginCommand command, LoginVO response, boolean success, String failureMessage) {
+        SysLoginLogApi logApi = sysLoginLogApiProvider.getIfAvailable();
+        if (logApi == null) {
+            return;
+        }
+        try {
+            SysLoginLogPo loginLog = new SysLoginLogPo();
+            loginLog.setTenantId(resolveLong(response == null ? command.getTenantId() : response.getTenantId(), null));
+            loginLog.setUserId(response == null ? null : response.getUserId());
+            loginLog.setUsername(command.getUsername());
+            loginLog.setLoginType(firstText(command.getRealm(), response == null ? "PASSWORD" : response.getRealm()));
+            loginLog.setIp(command.getClientIp());
+            loginLog.setLocation(resolveLocation(command.getClientIp()));
+            loginLog.setBrowser(truncate(firstText(command.getUserAgent(), "未知"), 100));
+            loginLog.setOs("未知");
+            loginLog.setStatus(success ? 1 : 0);
+            loginLog.setMsg(success ? CommonCode.SUCCESS.getMessage() : failureMessage);
+            loginLog.setLoginTime(LocalDateTime.now());
+            logApi.record(loginLog);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to record login log for {}", command.getUsername(), exception);
+        }
+    }
+
+    private String resolveLocation(String clientIp) {
+        IpLocationResolver resolver = ipLocationResolverProvider.getIfAvailable();
+        if (resolver == null) {
+            return "未知";
+        }
+        IpLocation location = resolver.resolve(clientIp);
+        return location == null ? "未知" : location.displayText();
+    }
+
+    private String truncate(String value, int maxLength) {
+        return value == null || value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
     private LoginVO buildLoginVO(AuthUserInfo user, IdentityContext identityContext,
                                  String accessToken, String refreshToken) {
         LoginVO response = new LoginVO();
@@ -398,7 +592,7 @@ public class AuthServiceImpl implements IAuthService {
         response.setTenantId(tenant.getTenantId());
         response.setTenantCode(tenant.getTenantCode());
         response.setTenantName(tenant.getTenantName());
-        response.setPasswordResetTicket(passwordResetTicketService.issue(new PasswordResetTicketService.TicketPayload(
+        response.setPasswordResetTicket(passwordResetTicketStore.issue(new PasswordResetTicketStore.TicketPayload(
                 user.getUserId(),
                 tenant.getTenantId(),
                 tenant.getTenantCode(),
@@ -529,14 +723,14 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     private boolean isRevoked(String token) {
-        TokenRevocationService service = tokenRevocationServiceProvider.getIfAvailable();
-        return service != null && service.isRevoked(token);
+        TokenRevocationStore store = tokenRevocationStoreProvider.getIfAvailable();
+        return store != null && store.isRevoked(token);
     }
 
     private void revoke(String token, long ttlSeconds) {
-        TokenRevocationService service = tokenRevocationServiceProvider.getIfAvailable();
-        if (service != null) {
-            service.revoke(token, ttlSeconds);
+        TokenRevocationStore store = tokenRevocationStoreProvider.getIfAvailable();
+        if (store != null) {
+            store.revoke(token, ttlSeconds);
         }
     }
 }

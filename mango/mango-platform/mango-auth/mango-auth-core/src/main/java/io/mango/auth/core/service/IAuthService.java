@@ -3,6 +3,7 @@ package io.mango.auth.core.service;
 import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.LoginCommand;
 import io.mango.auth.api.command.LoginTenantOptionsCommand;
+import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
@@ -26,4 +27,8 @@ public interface IAuthService {
     LoginVO refreshToken(String refreshToken);
 
     boolean validateToken(String token);
+
+    LoginVO info(String authorization);
+
+    String sendCaptcha(SendAuthCaptchaCommand command);
 }

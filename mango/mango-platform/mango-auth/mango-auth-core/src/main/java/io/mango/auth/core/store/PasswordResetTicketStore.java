@@ -1,10 +1,11 @@
-package io.mango.auth.core.service.impl;
+package io.mango.auth.core.store;
 
-import io.mango.common.exception.BizException;
+import io.mango.auth.api.enums.AuthCode;
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -12,9 +13,9 @@ import java.util.Base64;
 /**
  * 强制改密一次性凭据服务。
  */
-@Service
+@Component
 @RequiredArgsConstructor
-public class PasswordResetTicketService {
+public class PasswordResetTicketStore {
 
     private static final String KEY_PREFIX = "auth:password-reset-ticket:";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -40,7 +41,7 @@ public class PasswordResetTicketService {
 
     public TicketPayload peek(String ticket) {
         if (ticket == null || ticket.isBlank()) {
-            throw new BizException(1417, "强制改密凭据无效或已过期");
+            Require.fail(AuthCode.PASSWORD_RESET_TICKET_INVALID);
         }
         return TicketPayload.deserialize(kvStore.get(key(ticket)));
     }
@@ -53,12 +54,12 @@ public class PasswordResetTicketService {
 
     private static Long parseLong(String value) {
         if (value == null || value.isBlank()) {
-            throw new BizException(1417, "强制改密凭据无效或已过期");
+            Require.fail(AuthCode.PASSWORD_RESET_TICKET_INVALID);
         }
         try {
             return Long.valueOf(value);
         } catch (NumberFormatException e) {
-            throw new BizException(1417, "强制改密凭据无效或已过期", e);
+            return Require.fail(AuthCode.PASSWORD_RESET_TICKET_INVALID, AuthCode.PASSWORD_RESET_TICKET_INVALID.getMessage(), e);
         }
     }
 
@@ -96,11 +97,11 @@ public class PasswordResetTicketService {
 
         static TicketPayload deserialize(String value) {
             if (value == null || value.isBlank()) {
-                throw new BizException(1417, "强制改密凭据无效或已过期");
+                return Require.fail(AuthCode.PASSWORD_RESET_TICKET_INVALID);
             }
             String[] parts = value.split("\\|", -1);
             if (parts.length != 8) {
-                throw new BizException(1417, "强制改密凭据无效或已过期");
+                return Require.fail(AuthCode.PASSWORD_RESET_TICKET_INVALID);
             }
             return new TicketPayload(parseLong(parts[0]), emptyToNull(parts[1]), emptyToNull(parts[2]),
                     emptyToNull(parts[3]), emptyToNull(parts[4]), emptyToNull(parts[5]), emptyToNull(parts[6]),
