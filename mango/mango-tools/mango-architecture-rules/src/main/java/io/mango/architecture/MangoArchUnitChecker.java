@@ -1881,15 +1881,17 @@ public final class MangoArchUnitChecker {
         if (javaClass.isInterface() || javaClass.isAnnotation()) {
             return false;
         }
-        if (javaClass.getSimpleName().endsWith(CONTROLLER_KIND)) {
-            return true;
-        }
         if (javaClass.isAnnotatedWith(REST_CONTROLLER) || javaClass.isAnnotatedWith(CONTROLLER)) {
             return true;
         }
-        return javaClass.getAnnotations().stream()
+        boolean hasControllerStereotype = javaClass.getAnnotations().stream()
                 .map(JavaAnnotation::getRawType)
                 .anyMatch(this::isControllerStereotype);
+        if (hasControllerStereotype) {
+            return true;
+        }
+        return !javaClass.getModifiers().contains(JavaModifier.ABSTRACT)
+                && javaClass.getSimpleName().endsWith(CONTROLLER_KIND);
     }
 
     private boolean isControllerStereotype(JavaClass annotationType) {

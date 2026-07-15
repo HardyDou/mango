@@ -82,20 +82,18 @@ async function expectNoAuthError(page: Page) {
   ).toHaveCount(0);
 }
 
-function currentTabRows(page: Page, text: string) {
-  return page.locator('.el-tab-pane:not([aria-hidden="true"]) .el-table__row', { hasText: text });
+function configRow(page: Page, text: string) {
+  return page.getByRole('row').filter({ hasText: text });
 }
 
-test.describe('T12 系统配置页面真实接口闭环', () => {
-  test('平台管理员可新增、编辑、删除系统参数和系统配置', async ({ page, request }) => {
+test.describe('T12 参数配置页面真实接口闭环', () => {
+  test('@p0 @infra-persistence 平台管理员可新增、编辑、删除系统参数', async ({ page, request }) => {
     const unique = Date.now();
     const paramKey = `e2e.param.${unique}`;
-    const configKey = `e2e.config.${unique}`;
     const platformToken = await loginToken(request, platformTenant);
 
     try {
       await cleanupConfig(request, platformToken, paramKey);
-      await cleanupConfig(request, platformToken, configKey);
       await loginPage(page, platformTenant);
 
       const listResponsePromise = page.waitForResponse((response) =>
@@ -104,107 +102,66 @@ test.describe('T12 系统配置页面真实接口闭环', () => {
       );
       await page.goto('/#/system/config');
       await listResponsePromise;
-      await expect(page.getByText('系统配置').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('link', { name: '参数配置' })).toBeVisible({ timeout: 10000 });
 
       await page.getByRole('button', { name: '新增参数' }).click();
       const createParamDialog = page.getByRole('dialog', { name: '新增参数' });
       await expect(createParamDialog).toBeVisible();
       await createParamDialog.getByLabel('参数键').fill(paramKey);
-      await createParamDialog.getByLabel('参数值').fill('value-1');
-      await createParamDialog.getByLabel('描述').fill(`E2E参数${unique}`);
+      await createParamDialog.getByLabel('参数名称').fill(`E2E参数${unique}`);
+      await createParamDialog.getByLabel('当前值').fill('value-1');
+      await createParamDialog.getByLabel('参数介绍').fill(`持久化端到端验证${unique}`);
 
       const createParamResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/system/config') &&
         response.request().method() === 'POST'
       );
-      await createParamDialog.getByRole('button', { name: '确定' }).click();
+      await createParamDialog.getByRole('button', { name: '保存' }).click();
       const createParamResponse = await createParamResponsePromise;
       const createParamBody = await createParamResponse.json();
       expect(createParamResponse.status()).toBe(200);
       expect(createParamBody.success || createParamBody.code === 200).toBeTruthy();
       await expectLatestMessage(page, '新增成功');
-      await expect(currentTabRows(page, paramKey)).toBeVisible({ timeout: 10000 });
+      await expect(configRow(page, paramKey)).toBeVisible({ timeout: 10000 });
 
-      const paramRow = currentTabRows(page, paramKey).first();
+      const paramRow = configRow(page, paramKey);
       await paramRow.getByRole('button', { name: '编辑' }).click();
       const editParamDialog = page.getByRole('dialog', { name: '编辑参数' });
-      await editParamDialog.getByLabel('参数值').fill('value-2');
+      await editParamDialog.getByLabel('当前值').fill('value-2');
       const updateParamResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/system/config') &&
         response.request().method() === 'PUT'
       );
-      await editParamDialog.getByRole('button', { name: '确定' }).click();
+      await editParamDialog.getByRole('button', { name: '保存' }).click();
       const updateParamResponse = await updateParamResponsePromise;
       const updateParamBody = await updateParamResponse.json();
       expect(updateParamResponse.status()).toBe(200);
       expect(updateParamBody.success || updateParamBody.code === 200).toBeTruthy();
       await expectLatestMessage(page, '修改成功');
-      await expect(currentTabRows(page, paramKey).getByText('value-2')).toBeVisible({ timeout: 10000 });
+      await expect(configRow(page, paramKey).getByText('value-2')).toBeVisible({ timeout: 10000 });
 
-      await page.getByRole('tab', { name: '系统配置' }).click();
-      await page.getByRole('button', { name: '新增配置' }).click();
-      const createConfigDialog = page.getByRole('dialog', { name: '新增配置' });
-      await expect(createConfigDialog).toBeVisible();
-      await createConfigDialog.getByLabel('配置键').fill(configKey);
-      await createConfigDialog.getByLabel('配置值').fill('enabled');
-      await createConfigDialog.getByLabel('描述').fill(`E2E配置${unique}`);
-
-      const createConfigResponsePromise = page.waitForResponse((response) =>
+      await configRow(page, paramKey).getByRole('button', { name: '删除' }).click();
+      const deleteDialog = page.getByRole('dialog', { name: '删除确认' });
+      await expect(deleteDialog).toContainText(`确认删除参数“E2E参数${unique}”？`);
+      const deleteResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/system/config') &&
-        response.request().method() === 'POST'
+        response.request().method() === 'DELETE'
       );
-      await createConfigDialog.getByRole('button', { name: '确定' }).click();
-      const createConfigResponse = await createConfigResponsePromise;
-      const createConfigBody = await createConfigResponse.json();
-      expect(createConfigResponse.status()).toBe(200);
-      expect(createConfigBody.success || createConfigBody.code === 200).toBeTruthy();
-      await expectLatestMessage(page, '新增成功');
-      await expect(currentTabRows(page, configKey)).toBeVisible({ timeout: 10000 });
-
-      const configRow = currentTabRows(page, configKey).first();
-      await configRow.getByRole('button', { name: '编辑' }).click();
-      const editConfigDialog = page.getByRole('dialog', { name: '编辑配置' });
-      await editConfigDialog.getByLabel('配置值').fill('disabled');
-      const updateConfigResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/config') &&
-        response.request().method() === 'PUT'
-      );
-      await editConfigDialog.getByRole('button', { name: '确定' }).click();
-      const updateConfigResponse = await updateConfigResponsePromise;
-      const updateConfigBody = await updateConfigResponse.json();
-      expect(updateConfigResponse.status()).toBe(200);
-      expect(updateConfigBody.success || updateConfigBody.code === 200).toBeTruthy();
-      await expectLatestMessage(page, '修改成功');
-      await expect(currentTabRows(page, configKey).getByText('disabled')).toBeVisible({ timeout: 10000 });
-
-      for (const key of [configKey, paramKey]) {
-        if (key === paramKey) {
-          await page.getByRole('tab', { name: '系统参数' }).click();
-        }
-        const row = currentTabRows(page, key).first();
-        await row.getByRole('button', { name: '删除' }).click();
-        await expect(page.getByText('确认删除该')).toBeVisible();
-        const deleteResponsePromise = page.waitForResponse((response) =>
-          response.url().includes('/api/system/config') &&
-          response.request().method() === 'DELETE'
-        );
-        await page.getByRole('button', { name: '确定' }).last().click();
-        const deleteResponse = await deleteResponsePromise;
-        const deleteBody = await deleteResponse.json();
-        expect(deleteResponse.status()).toBe(200);
-        expect(deleteBody.success || deleteBody.code === 200).toBeTruthy();
-        await expectLatestMessage(page, '删除成功');
-        await expect(currentTabRows(page, key)).toHaveCount(0);
-      }
+      await deleteDialog.getByRole('button', { name: '确认删除' }).click();
+      const deleteResponse = await deleteResponsePromise;
+      const deleteBody = await deleteResponse.json();
+      expect(deleteResponse.status()).toBe(200);
+      expect(deleteBody.success || deleteBody.code === 200).toBeTruthy();
+      await expectLatestMessage(page, '删除成功');
+      await expect(configRow(page, paramKey)).toHaveCount(0);
 
       await expectNoAuthError(page);
     } finally {
       await cleanupConfig(request, platformToken, paramKey).catch(() => undefined);
-      await cleanupConfig(request, platformToken, configKey).catch(() => undefined);
     }
   });
 
-  test('A 公司不可见参数配置入口，维护接口返回 403', async ({ page, request }) => {
+  test('@p0 @infra-persistence A 公司不可见参数配置入口，维护接口返回 403', async ({ page, request }) => {
     const companyToken = await loginToken(request, companyATenant);
 
     const listResponse = await request.get(e2eApi('/system/config/list'), {

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.mango.common.po.PageQuery;
 import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -85,7 +86,14 @@ public class QueryWrapperBuilder {
             return;
         }
         if (value.getClass().isArray()) {
-            wrapper.in(column, List.of((Object[]) value));
+            int length = Array.getLength(value);
+            if (length > 0) {
+                Object[] values = new Object[length];
+                for (int index = 0; index < length; index++) {
+                    values[index] = Array.get(value, index);
+                }
+                wrapper.in(column, List.of(values));
+            }
             return;
         }
         wrapper.eq(column, value);
