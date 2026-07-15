@@ -24,6 +24,18 @@ public class MemoryModuleInfoRegistry implements ModuleInfoRegistry {
         modulePaths.put(moduleInfo.moduleName() + "\n" + moduleInfo.modulePath(), moduleInfo);
     }
 
+    /**
+     * Replaces every path registered for a module while retaining the first replacement as its primary lookup value.
+     *
+     * @param moduleName module to replace
+     * @param replacements replacement deployment entries, in primary-path order
+     */
+    public synchronized void replace(String moduleName, Collection<ModuleInfo> replacements) {
+        modules.remove(moduleName);
+        modulePaths.keySet().removeIf(key -> key.startsWith(moduleName + "\n"));
+        replacements.forEach(this::register);
+    }
+
     @Override
     public Optional<ModuleInfo> resolve(String moduleName) {
         if (moduleName == null || moduleName.isBlank()) {

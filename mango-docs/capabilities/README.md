@@ -35,6 +35,7 @@
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-15 | Module 部署元数据基线：显式配置完整覆盖同名 classpath 服务与路径，统一根路径和尾斜杠匹配，空线程 ClassLoader 安全回退；真实 Feign HTTP 验证路由结果 | [Module README](../../mango/mango-infra/mango-infra-module/README.md) | [Module 历史债务验收证据](../evidence/baselines/infra-module/latest/acceptance.md)；单元/装配测试、随机端口入口流程、Feign/Authorization 当前源码消费者、架构与静态门禁 |
 | 2026-07-15 | Context 进程内契约与异步传播基线：公开类型保持原签名并标记本地能力；真实 Web Filter、`@TtlAsync` 和复用线程池验证 HTTP 上下文传播与请求隔离 | [Context README](../../mango/mango-infra/mango-infra-context/README.md) | [Context 历史债务验收证据](../evidence/baselines/infra-context/latest/acceptance.md)；模块测试、随机端口 E2E、架构与静态门禁 |
 | 2026-07-15 | Feign 出站调用基线：补齐 member 上下文、总开关与 token 隔离；验证模块目标、HMAC 和真实 HTTP 消费链 | [Feign README](../../mango/mango-infra/mango-infra-feign/README.md) | [Feign 历史债务验收证据](../evidence/baselines/infra-feign/latest/acceptance.md)；单元/装配测试、随机端口入口流程、Resource/Captcha 消费者同 reactor、架构与静态门禁 |
 | 2026-07-15 | Web HTTP 边界与内部调用安全基线：统一 Feign/Web 多值查询签名，原子 nonce 防重放，路径加载 fail-closed；真实 Tomcat 验证异常、Jackson、内部访问与重放拒绝 | [Web README](../../mango/mango-infra/mango-infra-web/README.md) | [Web 历史债务验收证据](../evidence/baselines/infra-web/latest/acceptance.md)；模块/消费测试、随机端口入口流程、架构与静态门禁 |

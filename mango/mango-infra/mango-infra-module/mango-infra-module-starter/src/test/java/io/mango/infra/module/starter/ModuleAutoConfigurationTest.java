@@ -33,6 +33,32 @@ class ModuleAutoConfigurationTest {
     }
 
     @Test
+    void moduleInfoRegistry_configMappingOverridesClasspathDeployment() {
+        contextRunner
+                .withPropertyValues(
+                        "spring.application.name=mango-platform-app",
+                        "server.servlet.context-path=/platform",
+                        "mango.module.module-service.modules.mango-system.service-name=mango-system-app",
+                        "mango.module.module-service.modules.mango-system.context-path=/system-app",
+                        "mango.module.module-service.modules.mango-system.module-path=/system")
+                .withBean(ModuleMetadataLoader.class, () -> new TestModuleMetadataLoader(
+                        new ModuleMetadataLoader.ModuleMetadata(
+                                "mango-system",
+                                "/legacy-system",
+                                "classpath")))
+                .run(context -> {
+                    ModuleInfoRegistry registry = context.getBean(ModuleInfoRegistry.class);
+
+                    assertThat(registry.resolve("mango-system"))
+                            .isPresent()
+                            .get()
+                            .extracting("serviceName", "contextPath", "modulePath", "source")
+                            .containsExactly("mango-system-app", "/system-app", "/system", "config");
+                    assertThat(registry.list()).hasSize(1);
+                });
+    }
+
+    @Test
     void moduleInfoRegistry_withClasspathMetadataWithoutModulePath_derivesModulePath() {
         contextRunner
                 .withPropertyValues(

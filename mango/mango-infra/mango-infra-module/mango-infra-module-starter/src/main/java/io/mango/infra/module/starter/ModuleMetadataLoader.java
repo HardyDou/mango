@@ -20,6 +20,9 @@ public class ModuleMetadataLoader {
     public List<ModuleMetadata> load() {
         List<ModuleMetadata> modules = new ArrayList<>();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = ModuleMetadataLoader.class.getClassLoader();
+        }
         try {
             Enumeration<URL> resources = classLoader.getResources(MODULE_PROPERTIES_LOCATION);
             while (resources.hasMoreElements()) {
@@ -28,9 +31,13 @@ public class ModuleMetadataLoader {
                 String moduleName = properties.getProperty("module-name");
                 String modulePath = properties.getProperty("module-path");
                 if (moduleName != null && !moduleName.isBlank()) {
+                    String normalizedModulePath = "";
+                    if (modulePath != null) {
+                        normalizedModulePath = modulePath.trim();
+                    }
                     modules.add(new ModuleMetadata(
                             moduleName.trim(),
-                            modulePath == null ? "" : modulePath.trim(),
+                            normalizedModulePath,
                             resource.toString()));
                 }
             }

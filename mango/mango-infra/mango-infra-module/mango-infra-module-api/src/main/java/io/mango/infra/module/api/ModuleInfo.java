@@ -1,8 +1,11 @@
 package io.mango.infra.module.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * 当前服务中已部署 Mango 模块的运行时信息。
  */
+@LocalCapabilityContract
 public record ModuleInfo(
         String moduleName,
         String serviceName,
@@ -15,7 +18,11 @@ public record ModuleInfo(
         serviceName = requireText(serviceName, "serviceName");
         contextPath = normalizeContextPath(contextPath);
         modulePath = normalizeModulePath(modulePath);
-        source = source == null || source.isBlank() ? "unknown" : source.trim();
+        if (source == null || source.isBlank()) {
+            source = "unknown";
+        } else {
+            source = source.trim();
+        }
     }
 
     /**
@@ -24,6 +31,9 @@ public record ModuleInfo(
     public String runtimeBasePath() {
         if (contextPath.isEmpty()) {
             return modulePath;
+        }
+        if ("/".equals(modulePath)) {
+            return contextPath;
         }
         return contextPath + modulePath;
     }
@@ -37,6 +47,9 @@ public record ModuleInfo(
     }
 
     private static boolean matchesPath(String path, String basePath) {
+        if ("/".equals(basePath)) {
+            return path.startsWith("/");
+        }
         return path.equals(basePath) || path.startsWith(basePath + "/");
     }
 
@@ -51,35 +64,31 @@ public record ModuleInfo(
         if (value == null || value.isBlank()) {
             return "/";
         }
-        String trimmed = value.trim();
-        if (!trimmed.startsWith("/")) {
-            trimmed = "/" + trimmed;
-        }
-        if (trimmed.length() > 1 && trimmed.endsWith("/")) {
-            trimmed = trimmed.substring(0, trimmed.length() - 1);
-        }
-        return trimmed;
+        return normalizeAbsolutePath(value);
     }
 
     private static String normalizeContextPath(String value) {
         if (value == null || value.isBlank() || "/".equals(value.trim())) {
             return "";
         }
-        String trimmed = value.trim();
-        return trimmed.startsWith("/") ? trimmed : "/" + trimmed;
+        return normalizeAbsolutePath(value);
     }
 
     private static String normalizeModulePath(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("modulePath must not be blank");
         }
-        String trimmed = value.trim();
-        if (!trimmed.startsWith("/")) {
-            trimmed = "/" + trimmed;
+        return normalizeAbsolutePath(value);
+    }
+
+    private static String normalizeAbsolutePath(String value) {
+        String normalized = value.trim();
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
         }
-        if (trimmed.length() > 1 && trimmed.endsWith("/")) {
-            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        while (normalized.length() > 1 && normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
         }
-        return trimmed;
+        return normalized;
     }
 }

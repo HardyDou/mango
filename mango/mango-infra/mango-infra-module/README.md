@@ -75,7 +75,7 @@ mango:
 ```
 
 ## 7. API 与扩展
-- `ModuleInfo`：字段为 module name、service name、context path、module path、source；`runtimeBasePath()` 返回 context path + module path。
+- `ModuleInfo`：字段为 module name、service name、context path、module path、source；路径会统一补前导斜杠并移除尾斜杠，`runtimeBasePath()` 返回稳定的 context path + module path。
 - `ModuleInfoRegistry`：注册、按 module name 解析、列出全部模块；支持按 module path 或 request path 匹配。
 - `ModuleInfoResolver`：轻量解析接口。
 - `ModuleMetadataLoader`：扫描 classpath 下 `META-INF/mango/module.properties`。
@@ -86,7 +86,9 @@ mango:
 - `source=classpath`：来自模块 jar 的 `META-INF/mango/module.properties`。
 - `source=config`：来自 `mango.module.module-service.modules` 配置。
 
-配置来源会覆盖同名模块的注册结果，适合微服务部署时把某个模块映射到实际服务。
+配置来源会完整替换同名模块的 classpath 路径集合，适合微服务部署时把某个模块映射到实际服务，避免旧服务名或旧路径继续参与解析。
+
+三个 API 类型均为 `@LocalCapabilityContract` 进程内契约，不承载 HTTP 或 Feign 协议；Feign 只消费解析结果完成目标改写。
 
 ## 8. 数据与初始化
 无数据库 migration、无 Runner、无 Initializer。模块信息在应用启动时由自动配置扫描 classpath 和配置项后写入内存 registry。
@@ -105,10 +107,22 @@ mango:
 - 路径匹配不准：检查 `context-path` 和 `module-path` 是否重复拼接。
 - 微服务目标错误：用配置覆盖 module service 映射，不要在业务调用处硬编码。
 
-## 12. 相关文档
+## 12. 验证入口
+
+```bash
+mvn -f mango/pom.xml \
+  -pl :mango-infra-module-api,:mango-infra-module-core,:mango-infra-feign-starter,:mango-infra-module-starter \
+  test -DskipTests=false \
+  -Dtest='ModuleInfoTest,MemoryModuleInfoRegistryTest,ModuleAutoConfigurationTest,ModuleMetadataLoaderTest,ModulePropertiesTest,ModuleRoutingFlowTest' \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+`ModuleRoutingFlowTest` 使用随机环回端口和真实 Feign 请求，验证显式部署配置覆盖 classpath 元数据后，请求到达正确服务与 context path。消费者兼容验证把当前 Module API 与 Feign、Authorization 消费者放入同一 reactor，避免旧本地 JAR 造成假结果。
+
+## 13. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
-## 13. 补充资料
+## 14. 补充资料
 - [能力地图](../../../mango-docs/capabilities/README.md)

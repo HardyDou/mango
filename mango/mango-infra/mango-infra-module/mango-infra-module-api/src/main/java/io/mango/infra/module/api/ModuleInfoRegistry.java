@@ -1,5 +1,7 @@
 package io.mango.infra.module.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Optional;
@@ -7,6 +9,7 @@ import java.util.Optional;
 /**
  * 模块部署信息注册表。
  */
+@LocalCapabilityContract
 public interface ModuleInfoRegistry {
 
     void register(ModuleInfo moduleInfo);

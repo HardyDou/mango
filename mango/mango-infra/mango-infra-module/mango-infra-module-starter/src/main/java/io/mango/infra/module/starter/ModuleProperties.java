@@ -1,5 +1,6 @@
 package io.mango.infra.module.starter;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -24,11 +25,15 @@ public class ModuleProperties {
     }
 
     public Map<String, ModuleServiceProperties> getModules() {
-        return modules;
+        return Collections.unmodifiableMap(modules);
     }
 
     public void setModules(Map<String, ModuleServiceProperties> modules) {
-        this.modules = modules == null ? new LinkedHashMap<>() : modules;
+        if (modules == null) {
+            this.modules = new LinkedHashMap<>();
+        } else {
+            this.modules = new LinkedHashMap<>(modules);
+        }
     }
 
     public static class ModuleServiceProperties {

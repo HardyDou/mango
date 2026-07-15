@@ -47,15 +47,19 @@ public class ModuleAutoConfiguration {
                         modulePath,
                         metadata.source()))));
 
-        properties.getModules().forEach((moduleName, moduleService) -> resolveModulePaths(
-                moduleService.getModulePath(),
-                deriveModulePath(moduleName))
-                .forEach(modulePath -> registry.register(new ModuleInfo(
-                        moduleName,
-                        defaultIfBlank(moduleService.getServiceName(), defaultServiceName),
-                        defaultIfBlank(moduleService.getContextPath(), defaultContextPath),
-                        modulePath,
-                        "config"))));
+        properties.getModules().forEach((moduleName, moduleService) -> {
+            List<ModuleInfo> configuredModules = resolveModulePaths(
+                    moduleService.getModulePath(),
+                    deriveModulePath(moduleName)).stream()
+                    .map(modulePath -> new ModuleInfo(
+                            moduleName,
+                            defaultIfBlank(moduleService.getServiceName(), defaultServiceName),
+                            defaultIfBlank(moduleService.getContextPath(), defaultContextPath),
+                            modulePath,
+                            "config"))
+                    .toList();
+            registry.replace(moduleName, configuredModules);
+        });
 
         return registry;
     }
@@ -75,7 +79,10 @@ public class ModuleAutoConfiguration {
     }
 
     private String defaultIfBlank(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value;
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value;
     }
 
     private List<String> resolveModulePaths(String value, String defaultValue) {
@@ -87,7 +94,10 @@ public class ModuleAutoConfiguration {
     }
 
     private String deriveModulePath(String moduleName) {
-        String normalized = moduleName == null ? "" : moduleName.trim();
+        String normalized = "";
+        if (moduleName != null) {
+            normalized = moduleName.trim();
+        }
         if (normalized.startsWith("mango-infra-")) {
             normalized = normalized.substring("mango-infra-".length());
         } else if (normalized.startsWith("mango-")) {
