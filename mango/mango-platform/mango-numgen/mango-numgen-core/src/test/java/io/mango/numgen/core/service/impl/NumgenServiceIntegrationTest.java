@@ -8,6 +8,7 @@ import io.mango.infra.kv.starter.KvStoreAutoConfiguration;
 import io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.infra.persistence.starter.PersistenceAuditAutoConfiguration;
 import io.mango.numgen.api.command.NumgenNextCommand;
 import io.mango.numgen.api.command.NumgenPublishCommand;
 import io.mango.numgen.api.command.SaveNumgenGeneratorCommand;
@@ -31,6 +32,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.test.context.TestPropertySource;
@@ -59,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration.class,
+        PersistenceAuditAutoConfiguration.class,
         KvRedisAutoConfiguration.class,
         KvStoreAutoConfiguration.class,
         KvCapabilityAutoConfiguration.class,
@@ -124,7 +127,7 @@ class NumgenServiceIntegrationTest {
 
         NumgenPublishCommand command = new NumgenPublishCommand();
         command.setGenKey("ORDER_NO");
-        assertThat(ruleService.publishRule(command).getData()).isTrue();
+        assertThat(ruleService.publishRule(command)).isTrue();
 
         assertThat(intValue("numgen_generator", "current_rule_version", "gen_key = 'ORDER_NO'")).isEqualTo(2);
         assertThat(intValue("numgen_generator", "current_publish_status", "gen_key = 'ORDER_NO'")).isEqualTo(1);
@@ -154,7 +157,7 @@ class NumgenServiceIntegrationTest {
         command.setDomainCode("NUMGEN");
         command.setStatus(1);
 
-        assertThat(generatorService.updateGenerator(command).getData()).isTrue();
+        assertThat(generatorService.updateGenerator(command)).isTrue();
 
         assertThat(stringValue("numgen_generator", "gen_name", "id = 1")).isEqualTo("订单号规则新版");
         assertThat(intValue("numgen_generator", "current_rule_version", "id = 1")).isEqualTo(1);
@@ -227,11 +230,11 @@ class NumgenServiceIntegrationTest {
 
         NumgenPublishCommand publishDraft = new NumgenPublishCommand();
         publishDraft.setGenKey("ORDER_NO");
-        assertThat(ruleService.publishRule(publishDraft).getData()).isTrue();
+        assertThat(ruleService.publishRule(publishDraft)).isTrue();
 
         NumgenPublishCommand rollback = new NumgenPublishCommand();
         rollback.setRuleId(101L);
-        assertThat(ruleService.publishRule(rollback).getData()).isTrue();
+        assertThat(ruleService.publishRule(rollback)).isTrue();
 
         assertThat(intValue("numgen_generator", "current_rule_version", "gen_key = 'ORDER_NO'")).isEqualTo(3);
         assertThat(intValue("numgen_rule", "publish_status", "gen_key = 'ORDER_NO' AND version = 1")).isEqualTo(0);
@@ -252,8 +255,8 @@ class NumgenServiceIntegrationTest {
 
     @Test
     void sequenceAllocator_usesRealSequenceTable() {
-        NumgenSequenceAllocator.Segment first = sequenceAllocator.allocate("ORDER_NO", 2, "GLOBAL", 1L, 3);
-        NumgenSequenceAllocator.Segment second = sequenceAllocator.allocate("ORDER_NO", 2, "GLOBAL", 1L, 2);
+        NumgenSequenceAllocator.Segment first = sequenceAllocator.allocate("ORDER_NO", 2, "GLOBAL", "1", 3);
+        NumgenSequenceAllocator.Segment second = sequenceAllocator.allocate("ORDER_NO", 2, "GLOBAL", "1", 2);
 
         assertThat(first.start()).isEqualTo(1L);
         assertThat(first.end()).isEqualTo(3L);
@@ -429,7 +432,7 @@ class NumgenServiceIntegrationTest {
     }
 
     private NumgenGeneratorVO firstGenerator() {
-        return generatorService.pageGenerators(new NumgenGeneratorPageQuery()).getData().getList().get(0);
+        return generatorService.pageGenerators(new NumgenGeneratorPageQuery()).getList().get(0);
     }
 
     private void seedPublishedAndDraftRules() {
@@ -482,6 +485,7 @@ class NumgenServiceIntegrationTest {
     }
 
     private void rebuildTables() {
+        jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_history");
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_sequence");
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_rule_segment");
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_rule");
@@ -494,7 +498,7 @@ class NumgenServiceIntegrationTest {
                         kv_key VARCHAR(200) NOT NULL,
                         kv_value TEXT,
                         expire_time DATETIME NOT NULL,
-                        create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         PRIMARY KEY (id),
                         UNIQUE KEY uk_kv_key (kv_key),
                         KEY idx_kv_record_expire_time (expire_time)
@@ -511,10 +515,11 @@ class NumgenServiceIntegrationTest {
                     current_rule_version INT,
                     current_publish_status TINYINT NOT NULL DEFAULT 0,
                     tenant_id BIGINT NOT NULL DEFAULT 0,
-                    create_by VARCHAR(64),
-                    update_by VARCHAR(64),
-                    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    org_id BIGINT,
+                    created_by BIGINT,
+                    updated_by BIGINT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     del_flag TINYINT NOT NULL DEFAULT 0,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_numgen_generator_tenant_key (tenant_id, gen_key, del_flag)
@@ -530,10 +535,11 @@ class NumgenServiceIntegrationTest {
                     publish_status TINYINT NOT NULL DEFAULT 0,
                     version_state VARCHAR(16) NOT NULL DEFAULT 'DRAFT',
                     tenant_id BIGINT NOT NULL DEFAULT 0,
-                    create_by VARCHAR(64),
-                    update_by VARCHAR(64),
-                    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    org_id BIGINT,
+                    created_by BIGINT,
+                    updated_by BIGINT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     del_flag TINYINT NOT NULL DEFAULT 0,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_numgen_rule_tenant_key_version (tenant_id, gen_key, version, del_flag)
@@ -553,10 +559,11 @@ class NumgenServiceIntegrationTest {
                     pad_char VARCHAR(1) DEFAULT '0',
                     sequence_scope TINYINT NOT NULL DEFAULT 0,
                     tenant_id BIGINT NOT NULL DEFAULT 0,
-                    create_by VARCHAR(64),
-                    update_by VARCHAR(64),
-                    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    org_id BIGINT,
+                    created_by BIGINT,
+                    updated_by BIGINT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id)
                 )
                 """);
@@ -569,12 +576,34 @@ class NumgenServiceIntegrationTest {
                     current_value BIGINT NOT NULL DEFAULT 0,
                     version INT NOT NULL DEFAULT 0,
                     tenant_id BIGINT NOT NULL DEFAULT 0,
-                    create_by VARCHAR(64),
-                    update_by VARCHAR(64),
-                    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    org_id BIGINT,
+                    created_by BIGINT,
+                    updated_by BIGINT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_numgen_sequence_tenant_scope (tenant_id, gen_key, scope_key)
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE numgen_history (
+                    id BIGINT NOT NULL,
+                    gen_key VARCHAR(128) NOT NULL,
+                    rule_id BIGINT,
+                    result_no VARCHAR(256) NOT NULL,
+                    rule_version INT NOT NULL,
+                    biz_key VARCHAR(128),
+                    input_digest VARCHAR(256),
+                    cost_millis BIGINT,
+                    status TINYINT NOT NULL DEFAULT 1,
+                    error_message VARCHAR(512),
+                    tenant_id BIGINT NOT NULL,
+                    org_id BIGINT,
+                    created_by BIGINT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_by BIGINT,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id)
                 )
                 """);
     }
@@ -595,6 +624,7 @@ class NumgenServiceIntegrationTest {
     @EnableTransactionManagement
     @MapperScan(basePackages = "io.mango.numgen.core.mapper")
     @ComponentScan(basePackages = "io.mango.numgen.core.service.impl")
+    @Import(io.mango.numgen.core.service.support.NumgenDomainSupport.class)
     static class TestConfig {
 
         @Bean

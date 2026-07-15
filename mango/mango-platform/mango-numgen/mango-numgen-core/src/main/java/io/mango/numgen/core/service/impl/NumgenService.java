@@ -5,11 +5,12 @@ import io.mango.infra.kv.api.ICache;
 import io.mango.numgen.api.command.NumgenBatchCommand;
 import io.mango.numgen.api.command.NumgenNextCommand;
 import io.mango.numgen.api.command.NumgenValidateRuleCommand;
+import io.mango.numgen.api.enums.NumgenCode;
 import io.mango.numgen.api.vo.NumgenRuleValidationVO;
 import io.mango.numgen.core.config.NumgenKvProperties;
-import io.mango.numgen.core.entity.NumgenHistory;
-import io.mango.numgen.core.entity.NumgenRule;
-import io.mango.numgen.core.entity.NumgenRuleSegment;
+import io.mango.numgen.core.entity.NumgenHistoryEntity;
+import io.mango.numgen.core.entity.NumgenRuleEntity;
+import io.mango.numgen.core.entity.NumgenRuleSegmentEntity;
 import io.mango.numgen.core.mapper.NumgenHistoryMapper;
 import io.mango.numgen.core.mapper.NumgenRuleMapper;
 import io.mango.numgen.core.mapper.NumgenRuleSegmentMapper;
@@ -23,11 +24,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Service
 @RequiredArgsConstructor
 @EnableConfigurationProperties(NumgenKvProperties.class)
-public class NumgenServiceImpl implements INumgenService {
+public class NumgenService implements INumgenService {
+
+    private static final int ERROR_MESSAGE_MAX_LENGTH = 512;
+
+    private static final Logger LOGGER = Logger.getLogger(NumgenService.class.getName());
 
     private final NumgenRuleMapper ruleMapper;
     private final NumgenRuleSegmentMapper segmentMapper;
@@ -40,6 +47,7 @@ public class NumgenServiceImpl implements INumgenService {
     @Override
     @Transactional
     public String nextValue(NumgenNextCommand command) {
+        Require.notNull(command, NumgenCode.NUMGEN_INVALID, "生成编号命令不能为空");
         NumgenBatchCommand batchCommand = new NumgenBatchCommand();
         batchCommand.setGenKey(command.getGenKey());
         batchCommand.setCount(1);
@@ -50,15 +58,17 @@ public class NumgenServiceImpl implements INumgenService {
     @Override
     @Transactional
     public List<String> batchValue(NumgenBatchCommand command) {
-        Require.notNull(command, "生成编号命令不能为空");
-        Require.notBlank(command.getGenKey(), "编号规则键不能为空");
-        Require.isTrue(command.getCount() > 0, "生成数量必须大于0");
+        Require.notNull(command, NumgenCode.NUMGEN_INVALID, "生成编号命令不能为空");
+        Require.notBlank(command.getGenKey(), NumgenCode.NUMGEN_INVALID, "编号规则键不能为空");
+        Require.notNull(command.getCount(), NumgenCode.NUMGEN_INVALID, "生成数量不能为空");
+        Require.isTrue(command.getCount() > 0, NumgenCode.NUMGEN_INVALID, "生成数量必须大于0");
         long startMillis = System.currentTimeMillis();
-        Long tenantId = NumgenContextSupport.currentTenantId();
-        NumgenRule rule = activeRule(command.getGenKey(), tenantId);
-        List<NumgenRuleSegment> segments = segmentMapper.selectByRuleId(rule.getId(), tenantId);
+        String tenantId = NumgenContextSupport.currentTenantId();
+        NumgenRuleEntity rule = activeRule(command.getGenKey(), tenantId);
+        List<NumgenRuleSegmentEntity> segments = segmentMapper.selectByRuleId(rule.getId(), tenantId);
         NumgenRuleValidationVO validation = ruleRenderer.validate(rule, segments);
-        Require.isTrue(validation.isValid(), String.join("；", validation.getErrors()));
+        Require.isTrue(validation.isValid(), NumgenCode.NUMGEN_SEGMENT_INVALID,
+                String.join("；", validation.getErrors()));
         Map<String, Object> params = command.getParams();
         String scopeKey = ruleRenderer.sequenceScopeKey(segments, params);
         NumgenSequenceAllocator.Segment sequenceSegment = sequenceAllocator.allocate(
@@ -83,12 +93,13 @@ public class NumgenServiceImpl implements INumgenService {
 
     @Override
     public NumgenRuleValidationVO validateRule(NumgenValidateRuleCommand command) {
-        Require.notNull(command, "规则校验命令不能为空");
-        NumgenRule rule = new NumgenRule();
+        Require.notNull(command, NumgenCode.NUMGEN_INVALID, "规则校验命令不能为空");
+        Require.notNull(command.getSegments(), NumgenCode.NUMGEN_INVALID, "规则片段不能为空");
+        NumgenRuleEntity rule = new NumgenRuleEntity();
         rule.setGenKey(command.getGenKey());
         rule.setRuleName(command.getRuleName());
-        List<NumgenRuleSegment> segments = command.getSegments().stream().map(segmentCommand -> {
-            NumgenRuleSegment segment = new NumgenRuleSegment();
+        List<NumgenRuleSegmentEntity> segments = command.getSegments().stream().map(segmentCommand -> {
+            NumgenRuleSegmentEntity segment = new NumgenRuleSegmentEntity();
             segment.setId(segmentCommand.getId());
             segment.setRuleId(segmentCommand.getRuleId());
             segment.setSortOrder(segmentCommand.getSortOrder());
@@ -105,28 +116,29 @@ public class NumgenServiceImpl implements INumgenService {
         return ruleRenderer.validate(rule, segments);
     }
 
-    private NumgenRule activeRule(String genKey, Long tenantId) {
+    private NumgenRuleEntity activeRule(String genKey, String tenantId) {
         String cacheKey = "numgen:rule:" + tenantId + ":" + genKey;
         ICache cache = cacheProvider.getIfAvailable();
         if (cache != null) {
             String cached = cache.get(cacheKey);
             if (cached != null && !cached.isBlank()) {
-                NumgenRule cachedRule = ruleMapper.selectById(Long.valueOf(cached));
+                NumgenRuleEntity cachedRule = ruleMapper.selectById(Long.valueOf(cached));
                 if (cachedRule != null) {
                     return cachedRule;
                 }
             }
         }
-        NumgenRule rule = ruleMapper.selectActiveByGenKey(genKey, tenantId);
-        Require.notNull(rule, "编号规则不存在或未发布：" + genKey);
+        NumgenRuleEntity rule = ruleMapper.selectActiveByGenKey(genKey, tenantId);
+        Require.notNull(rule, NumgenCode.NUMGEN_ACTIVE_RULE_NOT_FOUND, "编号规则不存在或未发布：" + genKey);
         if (cache != null) {
             cache.set(cacheKey, String.valueOf(rule.getId()), kvProperties.getRuleCacheTtlSeconds());
         }
         return rule;
     }
 
-    private void insertHistory(NumgenRule rule, String result, Map<String, Object> params, long costMillis, int status, String errorMessage) {
-        NumgenHistory history = new NumgenHistory();
+    private void insertHistory(NumgenRuleEntity rule, String result, Map<String, Object> params, long costMillis,
+                               int status, String errorMessage) {
+        NumgenHistoryEntity history = new NumgenHistoryEntity();
         history.setGenKey(rule.getGenKey());
         history.setRuleId(rule.getId());
         history.setResultNo(result);
@@ -135,14 +147,14 @@ public class NumgenServiceImpl implements INumgenService {
         history.setInputDigest(params == null ? null : Integer.toHexString(params.hashCode()));
         history.setCostMillis(costMillis);
         history.setStatus(status);
-        history.setErrorMessage(errorMessage);
+        history.setErrorMessage(limitErrorMessage(errorMessage));
         history.setTenantId(rule.getTenantId());
         historyMapper.insert(history);
     }
 
-    private void insertHistoryFailure(NumgenRule rule, String result, Map<String, Object> params, Exception ex) {
+    private void insertHistoryFailure(NumgenRuleEntity rule, String result, Map<String, Object> params, Exception ex) {
         try {
-            NumgenHistory history = new NumgenHistory();
+            NumgenHistoryEntity history = new NumgenHistoryEntity();
             history.setGenKey(rule.getGenKey());
             history.setRuleId(rule.getId());
             history.setResultNo(result);
@@ -150,11 +162,20 @@ public class NumgenServiceImpl implements INumgenService {
             history.setBizKey(params == null ? null : String.valueOf(params.getOrDefault("bizKey", "")));
             history.setInputDigest(params == null ? null : Integer.toHexString(params.hashCode()));
             history.setStatus(0);
-            history.setErrorMessage(ex.getMessage());
+            history.setErrorMessage(limitErrorMessage(ex.getMessage()));
             history.setTenantId(rule.getTenantId());
             historyMapper.insert(history);
-        } catch (Exception ignore) {
-            // 历史不应阻塞主链路
+        } catch (Exception historyEx) {
+            LOGGER.log(Level.WARNING,
+                    "编号生成成功但失败历史写入失败，genKey=" + rule.getGenKey() + ", ruleId=" + rule.getId(),
+                    historyEx);
         }
+    }
+
+    private String limitErrorMessage(String errorMessage) {
+        if (errorMessage == null || errorMessage.length() <= ERROR_MESSAGE_MAX_LENGTH) {
+            return errorMessage;
+        }
+        return errorMessage.substring(0, ERROR_MESSAGE_MAX_LENGTH);
     }
 }

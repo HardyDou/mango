@@ -4,6 +4,14 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.mango.numgen.core.mapper.NumgenRuleSegmentMapper">
 
+    <select id="selectByRuleId" resultType="io.mango.numgen.core.entity.NumgenRuleSegmentEntity">
+        select *
+        from numgen_rule_segment
+        where rule_id = #{ruleId}
+          and tenant_id = #{tenantId}
+        order by sort_order asc, id asc
+    </select>
+
     <delete id="physicalDeleteByRuleId">
         delete from numgen_rule_segment
         where rule_id = #{ruleId}

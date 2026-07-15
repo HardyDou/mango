@@ -28,7 +28,7 @@ public interface NumgenRuleFeignClient extends NumgenRuleApi {
 
     @Override
     @GetMapping("/detail")
-    R<NumgenRuleVO> detailRule(@RequestParam Long id);
+    R<NumgenRuleVO> detailRule(@RequestParam(name = "id") Long id);
 
     @Override
     @PostMapping
@@ -44,7 +44,7 @@ public interface NumgenRuleFeignClient extends NumgenRuleApi {
 
     @Override
     @DeleteMapping
-    R<Boolean> deleteRule(@RequestParam Long id);
+    R<Boolean> deleteRule(@RequestParam(name = "id") Long id);
 
     @Override
     @PostMapping("/publish")

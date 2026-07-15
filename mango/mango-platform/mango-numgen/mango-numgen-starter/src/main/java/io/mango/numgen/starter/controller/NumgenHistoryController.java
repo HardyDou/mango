@@ -31,6 +31,6 @@ public class NumgenHistoryController implements NumgenHistoryApi {
     @GetMapping("/page")
     @Operation(summary = "分页查询发号历史", description = "分页查询发号历史数据")
     public R<PageResult<NumgenHistoryVO>> pageHistories(@ParameterObject NumgenHistoryPageQuery query) {
-        return numgenHistoryService.pageHistories(query);
+        return R.ok(numgenHistoryService.pageHistories(query));
     }
 }

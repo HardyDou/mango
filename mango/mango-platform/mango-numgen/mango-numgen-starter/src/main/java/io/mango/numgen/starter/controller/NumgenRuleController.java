@@ -14,8 +14,6 @@ import io.mango.numgen.core.service.INumgenRuleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -44,7 +42,7 @@ public class NumgenRuleController implements NumgenRuleApi {
     @GetMapping("/page")
     @Operation(summary = "分页查询编号规则", description = "分页查询编号规则数据")
     public R<PageResult<NumgenRuleVO>> pageRules(@ParameterObject NumgenRulePageQuery query) {
-        return numgenRuleService.pageRules(query);
+        return R.ok(numgenRuleService.pageRules(query));
     }
 
     @Override
@@ -52,30 +50,29 @@ public class NumgenRuleController implements NumgenRuleApi {
     @Operation(summary = "查询编号规则详情", description = "按编号规则 ID 查询详情")
     public R<NumgenRuleVO> detailRule(
             @Parameter(description = "编号规则 ID", required = true)
-            @NotNull(message = "编号规则 ID 不能为空")
-            @RequestParam Long id) {
-        return numgenRuleService.detailRule(id);
+            @RequestParam(name = "id") Long id) {
+        return R.ok(numgenRuleService.detailRule(id));
     }
 
     @Override
     @PostMapping
     @Operation(summary = "新增编号规则", description = "创建编号规则")
-    public R<Long> createRule(@Valid @RequestBody SaveNumgenRuleCommand command) {
-        return numgenRuleService.createRule(command);
+    public R<Long> createRule(@RequestBody SaveNumgenRuleCommand command) {
+        return R.ok(numgenRuleService.createRule(command));
     }
 
     @Override
     @PutMapping
     @Operation(summary = "修改编号规则", description = "更新编号规则")
-    public R<Boolean> updateRule(@Valid @RequestBody SaveNumgenRuleCommand command) {
-        return numgenRuleService.updateRule(command);
+    public R<Boolean> updateRule(@RequestBody SaveNumgenRuleCommand command) {
+        return R.ok(numgenRuleService.updateRule(command));
     }
 
     @Override
     @PutMapping("/status")
     @Operation(summary = "更新编号规则状态", description = "启用或停用编号规则")
-    public R<Boolean> updateRuleStatus(@Valid @RequestBody UpdateNumgenRuleStatusCommand command) {
-        return numgenRuleService.updateRuleStatus(command);
+    public R<Boolean> updateRuleStatus(@RequestBody UpdateNumgenRuleStatusCommand command) {
+        return R.ok(numgenRuleService.updateRuleStatus(command));
     }
 
     @Override
@@ -83,22 +80,21 @@ public class NumgenRuleController implements NumgenRuleApi {
     @Operation(summary = "删除编号规则", description = "按 ID 删除编号规则")
     public R<Boolean> deleteRule(
             @Parameter(description = "编号规则 ID", required = true)
-            @NotNull(message = "编号规则 ID 不能为空")
-            @RequestParam Long id) {
-        return numgenRuleService.deleteRule(id);
+            @RequestParam(name = "id") Long id) {
+        return R.ok(numgenRuleService.deleteRule(id));
     }
 
     @Override
     @PostMapping("/publish")
     @Operation(summary = "发布编号规则", description = "发布后成为当前生效规则")
-    public R<Boolean> publishRule(@Valid @RequestBody NumgenPublishCommand command) {
-        return numgenRuleService.publishRule(command);
+    public R<Boolean> publishRule(@RequestBody NumgenPublishCommand command) {
+        return R.ok(numgenRuleService.publishRule(command));
     }
 
     @Override
     @PostMapping("/preview")
     @Operation(summary = "预览编号规则", description = "预览当前已发布规则，不消耗真实流水")
-    public R<NumgenPreviewVO> previewRule(@Valid @RequestBody NumgenPreviewCommand command) {
-        return numgenRuleService.previewRule(command);
+    public R<NumgenPreviewVO> previewRule(@RequestBody NumgenPreviewCommand command) {
+        return R.ok(numgenRuleService.previewRule(command));
     }
 }

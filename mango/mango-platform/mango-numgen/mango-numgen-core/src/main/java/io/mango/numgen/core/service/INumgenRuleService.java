@@ -1,6 +1,5 @@
 package io.mango.numgen.core.service;
 
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.numgen.api.command.NumgenPreviewCommand;
 import io.mango.numgen.api.command.NumgenPublishCommand;
@@ -15,19 +14,19 @@ import io.mango.numgen.api.vo.NumgenRuleVO;
  */
 public interface INumgenRuleService {
 
-    R<PageResult<NumgenRuleVO>> pageRules(NumgenRulePageQuery query);
+    PageResult<NumgenRuleVO> pageRules(NumgenRulePageQuery query);
 
-    R<NumgenRuleVO> detailRule(Long id);
+    NumgenRuleVO detailRule(Long id);
 
-    R<Long> createRule(SaveNumgenRuleCommand command);
+    Long createRule(SaveNumgenRuleCommand command);
 
-    R<Boolean> updateRule(SaveNumgenRuleCommand command);
+    Boolean updateRule(SaveNumgenRuleCommand command);
 
-    R<Boolean> updateRuleStatus(UpdateNumgenRuleStatusCommand command);
+    Boolean updateRuleStatus(UpdateNumgenRuleStatusCommand command);
 
-    R<Boolean> deleteRule(Long id);
+    Boolean deleteRule(Long id);
 
-    R<Boolean> publishRule(NumgenPublishCommand command);
+    Boolean publishRule(NumgenPublishCommand command);
 
-    R<NumgenPreviewVO> previewRule(NumgenPreviewCommand command);
+    NumgenPreviewVO previewRule(NumgenPreviewCommand command);
 }

@@ -3,11 +3,10 @@ package io.mango.numgen.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.numgen.api.query.NumgenHistoryPageQuery;
 import io.mango.numgen.api.vo.NumgenHistoryVO;
-import io.mango.numgen.core.entity.NumgenHistory;
+import io.mango.numgen.core.entity.NumgenHistoryEntity;
 import io.mango.numgen.core.mapper.NumgenHistoryMapper;
 import io.mango.numgen.core.service.INumgenHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -22,30 +21,30 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class NumgenHistoryServiceImpl implements INumgenHistoryService {
+public class NumgenHistoryService implements INumgenHistoryService {
 
     private final NumgenHistoryMapper historyMapper;
 
     @Override
-    public R<PageResult<NumgenHistoryVO>> pageHistories(NumgenHistoryPageQuery query) {
+    public PageResult<NumgenHistoryVO> pageHistories(NumgenHistoryPageQuery query) {
         NumgenHistoryPageQuery resolved = query == null ? new NumgenHistoryPageQuery() : query;
-        IPage<NumgenHistory> page = historyMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()), historyWrapper(resolved));
+        IPage<NumgenHistoryEntity> page = historyMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()), historyWrapper(resolved));
         List<NumgenHistoryVO> records = page.getRecords().stream().map(this::toHistoryVO).collect(Collectors.toList());
-        return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
+        return PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
-    private LambdaQueryWrapper<NumgenHistory> historyWrapper(NumgenHistoryPageQuery query) {
-        return new LambdaQueryWrapper<NumgenHistory>()
-                .eq(StringUtils.hasText(query.getGenKey()), NumgenHistory::getGenKey, query.getGenKey())
-                .like(StringUtils.hasText(query.getResultNo()), NumgenHistory::getResultNo, query.getResultNo())
-                .eq(query.getStatus() != null, NumgenHistory::getStatus, query.getStatus())
-                .eq(query.getRuleVersion() != null, NumgenHistory::getRuleVersion, query.getRuleVersion())
-                .eq(StringUtils.hasText(query.getBizKey()), NumgenHistory::getBizKey, query.getBizKey())
-                .eq(NumgenHistory::getTenantId, currentTenantId())
-                .orderByDesc(NumgenHistory::getCreateTime);
+    private LambdaQueryWrapper<NumgenHistoryEntity> historyWrapper(NumgenHistoryPageQuery query) {
+        return new LambdaQueryWrapper<NumgenHistoryEntity>()
+                .eq(StringUtils.hasText(query.getGenKey()), NumgenHistoryEntity::getGenKey, query.getGenKey())
+                .like(StringUtils.hasText(query.getResultNo()), NumgenHistoryEntity::getResultNo, query.getResultNo())
+                .eq(query.getStatus() != null, NumgenHistoryEntity::getStatus, query.getStatus())
+                .eq(query.getRuleVersion() != null, NumgenHistoryEntity::getRuleVersion, query.getRuleVersion())
+                .eq(StringUtils.hasText(query.getBizKey()), NumgenHistoryEntity::getBizKey, query.getBizKey())
+                .eq(NumgenHistoryEntity::getTenantId, currentTenantId())
+                .orderByDesc(NumgenHistoryEntity::getCreatedAt);
     }
 
-    private NumgenHistoryVO toHistoryVO(NumgenHistory entity) {
+    private NumgenHistoryVO toHistoryVO(NumgenHistoryEntity entity) {
         NumgenHistoryVO vo = new NumgenHistoryVO();
         vo.setId(entity.getId());
         vo.setGenKey(entity.getGenKey());
@@ -57,11 +56,11 @@ public class NumgenHistoryServiceImpl implements INumgenHistoryService {
         vo.setCostMillis(entity.getCostMillis());
         vo.setStatus(entity.getStatus());
         vo.setErrorMessage(entity.getErrorMessage());
-        vo.setCreateTime(entity.getCreateTime());
+        vo.setCreateTime(entity.getCreatedAt());
         return vo;
     }
 
-    private Long currentTenantId() {
+    private String currentTenantId() {
         return NumgenContextSupport.currentTenantId();
     }
 }

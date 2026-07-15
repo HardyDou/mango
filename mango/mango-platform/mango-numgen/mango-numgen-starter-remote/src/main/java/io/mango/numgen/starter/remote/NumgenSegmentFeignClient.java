@@ -24,7 +24,7 @@ public interface NumgenSegmentFeignClient extends NumgenSegmentApi {
 
     @Override
     @GetMapping("/detail")
-    R<NumgenRuleSegmentVO> detailSegment(@RequestParam Long id);
+    R<NumgenRuleSegmentVO> detailSegment(@RequestParam(name = "id") Long id);
 
     @Override
     @PostMapping
@@ -36,5 +36,5 @@ public interface NumgenSegmentFeignClient extends NumgenSegmentApi {
 
     @Override
     @DeleteMapping
-    R<Boolean> deleteSegment(@RequestParam Long id);
+    R<Boolean> deleteSegment(@RequestParam(name = "id") Long id);
 }

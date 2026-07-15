@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -18,10 +19,12 @@ public class SaveNumgenRuleSegmentCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Positive(message = "片段 ID 必须大于0")
     @Schema(description = "片段 ID。新增时为空，修改时必填")
     private Long id;
 
     @NotNull(message = "规则 ID 不能为空")
+    @Positive(message = "规则 ID 必须大于0")
     @Schema(description = "规则 ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long ruleId;
 
@@ -61,6 +64,8 @@ public class SaveNumgenRuleSegmentCommand implements Serializable {
     @Schema(description = "补齐字符")
     private String padChar;
 
+    @Min(value = 0, message = "流水分组标记只能为0或1")
+    @Max(value = 1, message = "流水分组标记只能为0或1")
     @Schema(description = "是否参与流水分组：0-否，1-是")
     private Integer sequenceScope;
 }

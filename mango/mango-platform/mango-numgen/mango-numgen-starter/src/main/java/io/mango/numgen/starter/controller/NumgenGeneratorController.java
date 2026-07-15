@@ -11,8 +11,6 @@ import io.mango.numgen.core.service.INumgenGeneratorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -36,49 +34,47 @@ public class NumgenGeneratorController implements NumgenGeneratorApi {
 
     @Override
     @GetMapping("/page")
-    @Operation(summary = "分页查询编号生成器")
+    @Operation(summary = "分页查询编号生成器", description = "分页查询编号生成器台账")
     public R<PageResult<NumgenGeneratorVO>> pageGenerators(@ParameterObject NumgenGeneratorPageQuery query) {
-        return generatorService.pageGenerators(query);
+        return R.ok(generatorService.pageGenerators(query));
     }
 
     @Override
     @GetMapping("/detail")
-    @Operation(summary = "查询编号生成器详情")
+    @Operation(summary = "查询编号生成器详情", description = "按编号生成器 ID 查询详情")
     public R<NumgenGeneratorVO> detailGenerator(
             @Parameter(description = "编号生成器 ID", required = true)
-            @NotNull(message = "编号生成器 ID 不能为空")
-            @RequestParam Long id) {
-        return generatorService.detailGenerator(id);
+            @RequestParam(name = "id") Long id) {
+        return R.ok(generatorService.detailGenerator(id));
     }
 
     @Override
     @PostMapping
-    @Operation(summary = "新增编号生成器")
-    public R<Long> createGenerator(@Valid @RequestBody SaveNumgenGeneratorCommand command) {
-        return generatorService.createGenerator(command);
+    @Operation(summary = "新增编号生成器", description = "创建编号生成器台账")
+    public R<Long> createGenerator(@RequestBody SaveNumgenGeneratorCommand command) {
+        return R.ok(generatorService.createGenerator(command));
     }
 
     @Override
     @PutMapping
-    @Operation(summary = "修改编号生成器")
-    public R<Boolean> updateGenerator(@Valid @RequestBody SaveNumgenGeneratorCommand command) {
-        return generatorService.updateGenerator(command);
+    @Operation(summary = "修改编号生成器", description = "更新编号生成器名称及业务域")
+    public R<Boolean> updateGenerator(@RequestBody SaveNumgenGeneratorCommand command) {
+        return R.ok(generatorService.updateGenerator(command));
     }
 
     @Override
     @PutMapping("/status")
-    @Operation(summary = "更新编号生成器状态")
-    public R<Boolean> updateGeneratorStatus(@Valid @RequestBody UpdateNumgenGeneratorStatusCommand command) {
-        return generatorService.updateGeneratorStatus(command);
+    @Operation(summary = "更新编号生成器状态", description = "启用或停用编号生成器")
+    public R<Boolean> updateGeneratorStatus(@RequestBody UpdateNumgenGeneratorStatusCommand command) {
+        return R.ok(generatorService.updateGeneratorStatus(command));
     }
 
     @Override
     @DeleteMapping
-    @Operation(summary = "删除编号生成器")
+    @Operation(summary = "删除编号生成器", description = "按 ID 删除编号生成器")
     public R<Boolean> deleteGenerator(
             @Parameter(description = "编号生成器 ID", required = true)
-            @NotNull(message = "编号生成器 ID 不能为空")
-            @RequestParam Long id) {
-        return generatorService.deleteGenerator(id);
+            @RequestParam(name = "id") Long id) {
+        return R.ok(generatorService.deleteGenerator(id));
     }
 }
