@@ -6,7 +6,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -55,8 +54,38 @@ public class SystemEventVO implements Serializable {
     private String errorMessage;
 
     @Schema(description = "事件载荷")
-    private Map<String, Object> payload = new HashMap<>();
+    private SystemEventJsonVO payload = new SystemEventJsonVO();
 
     @Schema(description = "事件头")
-    private Map<String, String> headers = new HashMap<>();
+    private SystemEventJsonVO headers = new SystemEventJsonVO();
+
+    public Map<String, Object> getPayload() {
+        if (payload == null) {
+            return null;
+        }
+        return payload.toMap();
+    }
+
+    public void setPayload(Map<String, Object> payload) {
+        if (payload == null) {
+            this.payload = null;
+        } else {
+            this.payload = SystemEventJsonVO.of(payload);
+        }
+    }
+
+    public Map<String, String> getHeaders() {
+        if (headers == null) {
+            return null;
+        }
+        return headers.toMap(String.class);
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        if (headers == null) {
+            this.headers = null;
+        } else {
+            this.headers = SystemEventJsonVO.of(headers);
+        }
+    }
 }

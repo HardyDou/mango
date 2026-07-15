@@ -1,11 +1,14 @@
 package io.mango.infra.event.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,6 +18,7 @@ import java.util.UUID;
 @Value
 @Builder(toBuilder = true)
 @Schema(description = "通用领域事件")
+@LocalCapabilityContract
 public class DomainEvent {
 
     @Builder.Default
@@ -44,4 +48,34 @@ public class DomainEvent {
     @Singular("header")
     @Schema(description = "事件头")
     Map<String, String> headers;
+
+    /**
+     * 返回事件载荷的只读副本，避免发布后被消费者改写。
+     *
+     * @return 事件载荷只读副本
+     */
+    public Map<String, Object> getPayload() {
+        return immutableCopy(payload);
+    }
+
+    /**
+     * 返回事件头的只读副本，避免发布后被消费者改写。
+     *
+     * @return 事件头只读副本
+     */
+    public Map<String, String> getHeaders() {
+        return immutableCopy(headers);
+    }
+
+    private static <K, V> Map<K, V> immutableCopy(Map<K, V> source) {
+        if (source == null || source.isEmpty()) {
+            return Map.of();
+        }
+        return Collections.unmodifiableMap(new LinkedHashMap<>(source));
+    }
+
+    /** Builder 属于进程内事件契约的一部分。 */
+    @LocalCapabilityContract
+    public static class DomainEventBuilder {
+    }
 }

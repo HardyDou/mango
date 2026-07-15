@@ -7,6 +7,7 @@ import io.mango.infra.event.core.memory.InMemoryDomainEventBus;
 import io.mango.infra.event.core.outbox.OutboxDomainEventDispatcher;
 import io.mango.infra.event.core.outbox.OutboxDomainEventPublisher;
 import io.mango.infra.event.core.redis.RedisStreamDomainEventTransport;
+import io.mango.infra.event.core.system.ISystemEventService;
 import io.mango.infra.event.core.system.SystemEventService;
 import io.mango.infra.event.core.transport.DomainEventTransport;
 import io.mango.infra.event.core.transport.TransportDomainEventDispatcher;
@@ -40,6 +41,8 @@ import java.util.List;
 @EnableConfigurationProperties(DomainEventProperties.class)
 @ConditionalOnClass(IDomainEventBus.class)
 public class DomainEventAutoConfiguration {
+
+    private static final int AWAIT_TERMINATION_SECONDS = 10;
 
     @Bean
     @ConditionalOnMissingBean(IDomainEventBus.class)
@@ -125,15 +128,15 @@ public class DomainEventAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "mango.event.outbox", name = "enabled", havingValue = "true")
-    @ConditionalOnMissingBean
-    public SystemEventService systemEventService(IOutboxStore outboxStore) {
+    @ConditionalOnMissingBean(ISystemEventService.class)
+    public ISystemEventService systemEventService(IOutboxStore outboxStore) {
         return new SystemEventService(outboxStore, Clock.systemUTC());
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "mango.event.outbox", name = "enabled", havingValue = "true")
     @ConditionalOnMissingBean
-    public SystemEventController systemEventController(SystemEventService systemEventService) {
+    public SystemEventController systemEventController(ISystemEventService systemEventService) {
         return new SystemEventController(systemEventService);
     }
 
@@ -145,7 +148,7 @@ public class DomainEventAutoConfiguration {
         scheduler.setPoolSize(1);
         scheduler.setThreadNamePrefix("mango-event-outbox-");
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
-        scheduler.setAwaitTerminationSeconds(10);
+        scheduler.setAwaitTerminationSeconds(AWAIT_TERMINATION_SECONDS);
         scheduler.initialize();
         return scheduler;
     }
@@ -173,7 +176,7 @@ public class DomainEventAutoConfiguration {
         scheduler.setPoolSize(1);
         scheduler.setThreadNamePrefix("mango-event-transport-");
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
-        scheduler.setAwaitTerminationSeconds(10);
+        scheduler.setAwaitTerminationSeconds(AWAIT_TERMINATION_SECONDS);
         scheduler.initialize();
         return scheduler;
     }
