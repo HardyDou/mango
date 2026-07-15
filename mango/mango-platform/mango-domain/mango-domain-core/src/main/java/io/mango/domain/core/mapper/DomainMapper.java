@@ -2,11 +2,13 @@ package io.mango.domain.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.mango.domain.core.entity.DomainEntity;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
  * 业务域 Mapper。
  */
+@Mapper
 public interface DomainMapper extends BaseMapper<DomainEntity> {
 
     /**
