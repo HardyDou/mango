@@ -28,6 +28,18 @@
         </dependency>
         <dependency>
             <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-resource-sync-starter</artifactId>
         </dependency>
         <dependency>

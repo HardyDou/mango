@@ -1,9 +1,9 @@
 package io.mango.access.starter.gateway.filter;
 
 import io.mango.access.core.AccessConstants;
-import io.mango.access.api.auth.AccessPrincipal;
-import io.mango.access.api.auth.AccessResult;
-import io.mango.access.core.auth.AccessService;
+import io.mango.access.api.vo.AccessPrincipalVO;
+import io.mango.access.api.vo.AccessResultVO;
+import io.mango.access.core.auth.AccessEvaluator;
 import io.mango.infra.context.api.MangoContextHeaders;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -30,31 +31,63 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
-    private final Supplier<AccessService> accessServiceSupplier;
+    private final Supplier<AccessEvaluator> accessEvaluatorSupplier;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
-        AccessResult result = accessServiceSupplier.get().check(
-                request.getMethod().name(),
-                path,
-                resolveTokenCredential(request),
-                resolveRemoteAddress(request));
+        ServerHttpRequest sanitizedRequest = clearSecurityHeaders(request);
+        ServerWebExchange sanitizedExchange = exchange.mutate().request(sanitizedRequest).build();
+        if (isRealtimeTicketPath(path) && hasText(request.getQueryParams().getFirst("rtTicket"))) {
+            return chain.filter(sanitizedExchange);
+        }
+        return Mono.fromCallable(() -> accessEvaluatorSupplier.get().check(
+                        request.getMethod().name(), path, resolveTokenCredential(request),
+                        resolveRemoteAddress(request)))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(result -> forward(sanitizedExchange, chain, result));
+    }
 
-        if (result.status() == AccessResult.Status.FORBIDDEN) {
+    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain, AccessResultVO result) {
+        if (result.status() == AccessResultVO.Status.FORBIDDEN) {
             return forbidden(exchange, result.message());
         }
-        if (result.status() == AccessResult.Status.UNAUTHORIZED) {
+        if (result.status() == AccessResultVO.Status.UNAUTHORIZED) {
             return unauthorized(exchange, result.message());
+        }
+        if (result.status() == AccessResultVO.Status.SERVICE_UNAVAILABLE) {
+            return error(exchange, HttpStatus.SERVICE_UNAVAILABLE, 503, result.message());
         }
         if (result.principal() == null) {
             return chain.filter(exchange);
         }
 
-        ServerHttpRequest mutatedRequest = writePrincipalHeaders(request, result.principal());
+        ServerHttpRequest mutatedRequest = writePrincipalHeaders(exchange.getRequest(), result.principal());
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
+    }
+
+    private ServerHttpRequest clearSecurityHeaders(ServerHttpRequest request) {
+        return request.mutate().headers(headers -> {
+            headers.remove(MangoContextHeaders.TENANT_ID);
+            headers.remove(MangoContextHeaders.USER_ID);
+            headers.remove(MangoContextHeaders.MEMBER_ID);
+            headers.remove(MangoContextHeaders.PRINCIPAL_NAME);
+            headers.remove(MangoContextHeaders.REALM);
+            headers.remove(MangoContextHeaders.ACTOR_TYPE);
+            headers.remove(MangoContextHeaders.PARTY_TYPE);
+            headers.remove(MangoContextHeaders.PARTY_ID);
+            headers.remove(MangoContextHeaders.APP_CODE);
+        }).build();
+    }
+
+    private boolean isRealtimeTicketPath(String path) {
+        return path != null && path.startsWith("/realtime/transports/probe/");
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private String resolveTokenCredential(ServerHttpRequest request) {
@@ -82,7 +115,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         return -100; // 优先级最高
     }
 
-    private ServerHttpRequest writePrincipalHeaders(ServerHttpRequest request, AccessPrincipal principal) {
+    private ServerHttpRequest writePrincipalHeaders(ServerHttpRequest request, AccessPrincipalVO principal) {
         ServerHttpRequest.Builder builder = request.mutate();
         put(builder, MangoContextHeaders.USER_ID, principal.userId());
         put(builder, MangoContextHeaders.MEMBER_ID, principal.memberId());
@@ -113,21 +146,26 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
      * 返回未授权响应
      */
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        exchange.getResponse().getHeaders().add("Content-Type", "application/json");
-        String body = "{\"code\":401,\"message\":\"" + message + "\"}";
-        return exchange.getResponse().writeWith(
-                Mono.just(exchange.getResponse().bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8)))
-        );
+        return error(exchange, HttpStatus.UNAUTHORIZED, 401, message);
     }
 
     /**
      * 返回禁止访问响应（内部API不允许外部访问）
      */
     private Mono<Void> forbidden(ServerWebExchange exchange, String message) {
-        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+        return error(exchange, HttpStatus.FORBIDDEN, 403, message);
+    }
+
+    private Mono<Void> error(ServerWebExchange exchange, HttpStatus status, int code, String message) {
+        exchange.getResponse().setStatusCode(status);
         exchange.getResponse().getHeaders().add("Content-Type", "application/json");
-        String body = "{\"code\":403,\"message\":\"" + message + "\"}";
+        String safe = message == null ? "" : message
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+        String body = "{\"code\":" + code + ",\"message\":\"" + safe + "\"}";
         return exchange.getResponse().writeWith(
                 Mono.just(exchange.getResponse().bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8)))
         );

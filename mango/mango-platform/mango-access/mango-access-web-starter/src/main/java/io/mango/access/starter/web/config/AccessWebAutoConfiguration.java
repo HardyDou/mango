@@ -3,7 +3,7 @@ package io.mango.access.starter.web.config;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.access.api.auth.AccessContextValidator;
-import io.mango.access.core.auth.AccessService;
+import io.mango.access.core.auth.AccessEvaluator;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.access.starter.web.filter.AuthFilter;
 import io.mango.authorization.api.ITokenProvider;
@@ -29,20 +29,20 @@ public class AccessWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AccessService accessService(
+    public AccessEvaluator accessEvaluator(
             ITokenProvider tokenService,
             ApiResourceApi apiResourceApi,
             IAuthorizationProvider authorizationProvider,
             ObjectProvider<AccessContextValidator> contextValidators) {
-        return new AccessService(properties, tokenService, apiResourceApi, authorizationProvider,
+        return new AccessEvaluator(properties, tokenService, apiResourceApi, authorizationProvider,
                 contextValidators.orderedStream().toList());
     }
 
     @Bean
     @ConditionalOnMissingBean
     public FilterRegistrationBean<AuthFilter> authFilterRegistration(
-            AccessService accessService) {
-        AuthFilter authFilter = new AuthFilter(accessService);
+            AccessEvaluator accessEvaluator) {
+        AuthFilter authFilter = new AuthFilter(accessEvaluator);
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(authFilter);
         registration.addUrlPatterns("/*");

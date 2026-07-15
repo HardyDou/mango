@@ -34,7 +34,7 @@
         <!-- Mango 运行时上下文能力 -->
         <dependency>
             <groupId>io.mango.infra.context</groupId>
-            <artifactId>mango-infra-context-starter</artifactId>
+            <artifactId>mango-infra-context-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -44,29 +44,16 @@
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
-        <!-- Spring Cloud Nacos 服务发现 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- Spring Cloud Nacos 配置中心 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
-        <!-- Mango 远程授权与安全能力，提供 Token 与权限适配 -->
-        <dependency>
-            <groupId>io.mango.platform.authorization</groupId>
-            <artifactId>mango-authorization-starter-remote</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

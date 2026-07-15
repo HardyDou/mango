@@ -2,7 +2,7 @@
 
 ## 1. 概览
 
-`mango-access` 是 Mango 的边界入口访问控制模块。它放在 HTTP 请求进入应用的最前面，负责读取 access token、查询 `mango-authorization` 中登记的 API 资源访问策略，并决定本次请求匿名放行、登录放行、权限放行、返回 401 或返回 403。
+`mango-access` 是 Mango 的边界入口访问控制模块。它放在 HTTP 请求进入应用的最前面，负责读取 access token、查询 `mango-authorization` 中登记的 API 资源访问策略，并决定本次请求匿名放行、登录放行、权限放行、返回 401、403 或依赖不可用时返回 503。
 
 这个模块不负责登录发 token，也不维护菜单、角色和权限数据。登录由 `mango-auth` 提供，资源、菜单、角色和权限由 `mango-authorization` 提供。
 
@@ -16,6 +16,8 @@
 | token 校验 | 通过 `ITokenProvider` 校验 Bearer access token，并读取 userId、memberId、tenantId、realm、actorType、partyType、partyId、appCode |
 | 权限码校验 | PERMISSION 资源会调用 `IAuthorizationProvider.load`，判断成员授权快照是否包含资源权限码 |
 | 上下文透传 | 单体写入 `MangoContextHolder`，网关写入 Mango 上下文请求头 |
+| 入口身份清理 | PUBLIC、关闭认证和 realtime probe 等放行路径也会清除外部注入的 tenant/user/member/realm/party/app 身份，只信任校验后的 token claim |
+| 依赖失败关闭 | API 资源策略或权限快照服务失败时返回 503，不降级成较弱的访问模式 |
 | IP 白名单 | 可按路径、HTTP 方法和 IP/CIDR 配置匿名放行 |
 | 登录上下文扩展校验 | 可提供 `AccessContextValidator` Bean，对成员状态、租户状态或应用上下文做额外校验 |
 
@@ -40,6 +42,8 @@ Spring Cloud Gateway 接入：
     <artifactId>mango-access-gateway-starter</artifactId>
 </dependency>
 ```
+
+Gateway Starter 不再隐式装配 Nacos 或远程授权实现。部署应用需要按实际拓扑显式接入服务发现、配置中心和 `mango-authorization-starter-remote`（或提供等价的三个 Access 协作 Bean），避免基础 Starter 固定运行环境。
 
 接入应用必须能装配这些 Bean：
 
@@ -96,7 +100,7 @@ mango:
 
 | 配置项 | 默认值 | 含义 |
 |--------|--------|------|
-| `mango.access.auth-enabled` | `true` | 是否启用入口鉴权。设为 `false` 时 `AccessService` 直接放行 |
+| `mango.access.auth-enabled` | `true` | 是否启用入口鉴权。设为 `false` 时访问决策器直接放行 |
 | `mango.access.require-permission-code` | `false` | PERMISSION 接口是否必须登记权限码。设为 `true` 后，资源没有 `permissionCode` 会返回 403 |
 | `mango.access.external-api-prefixes` | `["/api"]` | 外部代理或网关暴露的 API 前缀。资源匹配失败时会剥离这些前缀后重试 |
 | `mango.access.ip-whitelist.enabled` | `false` | 是否启用 IP 白名单 |
@@ -112,6 +116,7 @@ mango:
 |------|-----------|----------|
 | 缺少 token、token 无效、token 不是 access token、上下文校验失败 | 401 | `{"code":401,"message":"Token 无效或已过期"}` |
 | INTERNAL 接口从外部入口访问、权限不足、资源缺少权限码 | 403 | `{"code":403,"message":"权限不足"}` |
+| API 资源策略、token 或权限服务暂不可用 | 503 | `{"code":503,"message":"访问策略服务暂不可用"}` |
 
 放行后不会改写业务接口返回值。
 
@@ -172,6 +177,7 @@ mango:
 | 网关后面的服务拿不到租户 | 查 Gateway 是否接入 `mango-access-gateway-starter`，下游是否读取 Mango 上下文请求头 |
 | 单体服务拿不到上下文 | 查应用是否接入 `mango-access-web-starter`，请求是否已经通过 `AuthFilter` |
 | 白名单没有生效 | 查 `path-pattern`、HTTP method、客户端 IP 和 CIDR 是否匹配 |
+| 接口返回 503 | 查 `ApiResourceApi`、`ITokenProvider`、`IAuthorizationProvider` 的当前实现和远程依赖；Access 会按失败关闭处理，不会降级放行 |
 
 ## 13. 相关文档
 

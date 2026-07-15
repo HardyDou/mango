@@ -41,7 +41,7 @@
         <!-- Mango 运行时上下文 -->
         <dependency>
             <groupId>io.mango.infra.context</groupId>
-            <artifactId>mango-infra-context-starter</artifactId>
+            <artifactId>mango-infra-context-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 

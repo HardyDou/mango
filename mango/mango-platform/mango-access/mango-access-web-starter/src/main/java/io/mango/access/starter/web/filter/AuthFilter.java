@@ -1,10 +1,11 @@
 package io.mango.access.starter.web.filter;
 
 import io.mango.access.core.AccessConstants;
-import io.mango.access.api.auth.AccessPrincipal;
-import io.mango.access.api.auth.AccessResult;
-import io.mango.access.core.auth.AccessService;
+import io.mango.access.api.vo.AccessPrincipalVO;
+import io.mango.access.api.vo.AccessResultVO;
+import io.mango.access.core.auth.AccessEvaluator;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class AuthFilter implements Filter {
 
-    private final AccessService accessService;
+    private final AccessEvaluator accessEvaluator;
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain)
@@ -42,22 +43,27 @@ public class AuthFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         String path = request.getRequestURI();
+        clearUntrustedSecurityContext();
         if (isRealtimeTicketPath(path) && hasText(request.getParameter("rtTicket"))) {
             chain.doFilter(request, response);
             return;
         }
-        AccessResult result = accessService.check(
+        AccessResultVO result = accessEvaluator.check(
                 request.getMethod(),
                 path,
                 resolveTokenCredential(request),
                 request.getRemoteAddr());
 
-        if (result.status() == AccessResult.Status.FORBIDDEN) {
+        if (result.status() == AccessResultVO.Status.FORBIDDEN) {
             forbidden(response, result.message());
             return;
         }
-        if (result.status() == AccessResult.Status.UNAUTHORIZED) {
+        if (result.status() == AccessResultVO.Status.UNAUTHORIZED) {
             unauthorized(response, result.message());
+            return;
+        }
+        if (result.status() == AccessResultVO.Status.SERVICE_UNAVAILABLE) {
+            serviceUnavailable(response, result.message());
             return;
         }
         if (result.principal() != null) {
@@ -101,21 +107,29 @@ public class AuthFilter implements Filter {
         return value != null && !value.isBlank();
     }
 
-    private void writePrincipal(HttpServletRequest request, AccessPrincipal principal) {
+    private void writePrincipal(HttpServletRequest request, AccessPrincipalVO principal) {
         request.setAttribute("userId", principal.userId());
         request.setAttribute("memberId", principal.memberId());
         request.setAttribute("username", principal.username());
         request.setAttribute("tenantId", principal.tenantId());
-        MangoContextHolder.update(current -> current.withSecurity(
+        MangoContextSnapshot current = MangoContextHolder.get();
+        MangoContextHolder.set(new MangoContextSnapshot(
+                current.requestId(), current.traceId(), principal.tenantId(),
                 principal.userId(),
                 principal.memberId(),
-                principal.tenantId(),
                 principal.username(),
                 principal.realm(),
                 principal.actorType(),
                 principal.partyType(),
                 principal.partyId(),
-                principal.appCode()));
+                principal.appCode(), current.clientIp()));
+    }
+
+    private void clearUntrustedSecurityContext() {
+        MangoContextSnapshot current = MangoContextHolder.get();
+        MangoContextHolder.set(new MangoContextSnapshot(
+                current.requestId(), current.traceId(), null, null, null, null,
+                null, null, null, null, null, current.clientIp()));
     }
 
     /**
@@ -125,13 +139,30 @@ public class AuthFilter implements Filter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":401,\"message\":\"" + message + "\"}");
+        response.getWriter().write(errorBody(401, message));
     }
 
     private void forbidden(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":403,\"message\":\"" + message + "\"}");
+        response.getWriter().write(errorBody(403, message));
+    }
+
+    private void serviceUnavailable(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(errorBody(503, message));
+    }
+
+    private String errorBody(int code, String message) {
+        String safe = message == null ? "" : message
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+        return "{\"code\":" + code + ",\"message\":\"" + safe + "\"}";
     }
 }

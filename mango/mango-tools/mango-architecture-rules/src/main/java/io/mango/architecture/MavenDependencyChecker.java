@@ -24,6 +24,8 @@ public final class MavenDependencyChecker {
                     ModuleRole.STARTER_REMOTE);
     private static final Set<ModuleRole> APP_ALLOWED_ROLES =
             Set.of(ModuleRole.STARTER, ModuleRole.STARTER_REMOTE);
+    private static final Set<String> STARTER_ADAPTER_SUFFIXES =
+            Set.of("-web", "-gateway");
     private static final Set<String> SECURITY_REMOTE_AGGREGATES =
             Set.of(
                     "mango-infra-security-starter",
@@ -147,7 +149,7 @@ public final class MavenDependencyChecker {
 
     private void checkStarterDependency(DependencyContext context, List<ArchitectureIssue> issues) {
         if (context.sourceRole() != ModuleRole.STARTER
-                || context.sourceDomain().equals(context.targetDomain())) {
+                || belongsToSameDomain(context)) {
             return;
         }
         if (!isForbiddenStarterTarget(context)) {
@@ -160,6 +162,18 @@ public final class MavenDependencyChecker {
                         context.targetArtifactId(),
                         "starter may only depend on its domain api/core and explicit infra"
                                 + " starters"));
+    }
+
+    private boolean belongsToSameDomain(DependencyContext context) {
+        if (context.sourceDomain().equals(context.targetDomain())) {
+            return true;
+        }
+        if (!Set.of(ModuleRole.API, ModuleRole.CORE, ModuleRole.SUPPORT)
+                .contains(context.targetRole())) {
+            return false;
+        }
+        return STARTER_ADAPTER_SUFFIXES.stream()
+                .anyMatch(suffix -> context.sourceDomain().equals(context.targetDomain() + suffix));
     }
 
     private boolean isForbiddenStarterTarget(DependencyContext context) {

@@ -70,6 +70,28 @@ class MavenDependencyCheckerTest {
     }
 
     @Test
+    void adapterSpecificStartersMayUseTheirDomainCore() {
+        assertThat(checker.check("mango-access-web-starter", List.of(
+                dependency("mango-access-api"), dependency("mango-access-core"))))
+                .isEmpty();
+        assertThat(checker.check("mango-access-gateway-starter", List.of(
+                dependency("mango-access-core"))))
+                .isEmpty();
+    }
+
+    @Test
+    void adapterSpecificStarterMayNotUseAnotherDomainCore() {
+        assertThat(checker.check("mango-access-web-starter", List.of(
+                dependency("mango-access-control-core"))))
+                .extracting(ArchitectureIssue::ruleId)
+                .containsExactly("MANGO-ARCH-DEP-007");
+        assertThat(checker.check("mango-order-admin-starter", List.of(
+                dependency("mango-order-core"))))
+                .extracting(ArchitectureIssue::ruleId)
+                .containsExactly("MANGO-ARCH-DEP-007");
+    }
+
+    @Test
     void starterMayUseExplicitInfrastructureStarter() {
         Dependency dependency = dependency("mango-infra-web-starter");
         dependency.setGroupId("io.mango.infra.web");
