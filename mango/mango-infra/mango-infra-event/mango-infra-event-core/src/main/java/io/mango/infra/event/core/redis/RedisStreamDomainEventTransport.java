@@ -2,6 +2,7 @@ package io.mango.infra.event.core.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventBus;
@@ -39,6 +40,8 @@ public class RedisStreamDomainEventTransport implements DomainEventTransport {
     private final Duration readTimeout;
     private final Duration pendingIdleTimeout;
 
+    @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW",
+            justification = "Delegating constructor preserves fail-fast validation of invalid transport configuration")
     public RedisStreamDomainEventTransport(
             RedissonClient redissonClient,
             IDomainEventBus eventBus,
@@ -60,6 +63,8 @@ public class RedisStreamDomainEventTransport implements DomainEventTransport {
                 Duration.ofMinutes(1));
     }
 
+    @SuppressFBWarnings(value = {"CT_CONSTRUCTOR_THROW", "EI_EXPOSE_REP2"},
+            justification = "Fail-fast Redis initialization and the configured thread-safe ObjectMapper are intentional")
     public RedisStreamDomainEventTransport(
             RedissonClient redissonClient,
             IDomainEventBus eventBus,

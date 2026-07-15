@@ -1,5 +1,5 @@
 <template>
-  <div class="system-event-page">
+  <div class="system-event-page" data-page="system.event">
     <el-card class="system-event-search">
       <el-form
         :model="query"
@@ -102,11 +102,12 @@
             <el-form-item>
               <el-button
                 type="primary"
+                data-action="system.event.search"
                 @click="handleSearch"
               >
                 查询
               </el-button>
-              <el-button @click="handleReset">
+              <el-button data-action="system.event.reset" @click="handleReset">
                 重置
               </el-button>
             </el-form-item>
@@ -118,6 +119,7 @@
     <div class="system-event-toolbar">
       <el-button
         plain
+        data-action="system.event.refresh"
         :loading="loading"
         @click="loadData"
       >
@@ -128,6 +130,7 @@
     <el-card class="system-event-table">
       <el-alert
         v-if="errorMessage"
+        data-surface="system.event.error"
         :title="errorMessage"
         type="error"
         show-icon
@@ -145,6 +148,7 @@
       </el-alert>
       <el-table
         v-loading="loading"
+        data-surface="system.event.table"
         :data="tableData"
         stripe
         empty-text="暂无系统事件"
@@ -235,6 +239,8 @@
             <el-button
               link
               type="primary"
+              data-action="system.event.detail"
+              :data-record-key="`system-event:${row.messageId}`"
               @click="handleDetail(row)"
             >
               详情
@@ -242,6 +248,8 @@
             <el-button
               link
               type="primary"
+              data-action="system.event.reconsume"
+              :data-record-key="`system-event:${row.messageId}`"
               :disabled="row.status === 'SUCCESS'"
               @click="handleReconsume(row)"
             >
@@ -260,6 +268,7 @@
 
     <el-dialog
       v-model="detailVisible"
+      data-surface="system.event.detail"
       title="系统事件详情"
       width="820px"
       destroy-on-close
@@ -340,6 +349,7 @@
         </el-button>
         <el-button
           type="primary"
+          data-action="system.event.detail.reconsume"
           :disabled="currentEvent?.status === 'SUCCESS'"
           :loading="reconsumeLoading"
           @click="currentEvent && handleReconsume(currentEvent)"

@@ -21,6 +21,6 @@ public class OutboxDomainEventPublisher implements IDomainEventPublisher {
     public void publish(DomainEvent event) {
         Require.notNull(event, "事件不能为空");
         Require.notBlank(event.getEventType(), "事件类型不能为空");
-        outboxPublisher.publish(OutboxDomainEventMapper.toOutboxMessage(event));
+        outboxPublisher.publish(OutboxDomainEventConverter.toOutboxMessage(event));
     }
 }
