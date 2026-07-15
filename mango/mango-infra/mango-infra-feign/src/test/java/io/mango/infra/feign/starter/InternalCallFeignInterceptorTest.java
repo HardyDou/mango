@@ -52,6 +52,17 @@ class InternalCallFeignInterceptorTest {
         assertThat(signature).isEqualTo(hmacSha256(payload, "test-secret"));
     }
 
+    @Test
+    void apply_whenSecretIsBlank_skipsInternalCallHeaders() {
+        InternalCallFeignInterceptor interceptor = new InternalCallFeignInterceptor();
+        ReflectionTestUtils.setField(interceptor, "sharedSecret", "   ");
+        RequestTemplate template = new RequestTemplate().method("GET").uri("/probe");
+
+        interceptor.apply(template);
+
+        assertThat(template.headers()).isEmpty();
+    }
+
     private String firstHeader(RequestTemplate template, String name) {
         return template.headers().get(name).iterator().next();
     }

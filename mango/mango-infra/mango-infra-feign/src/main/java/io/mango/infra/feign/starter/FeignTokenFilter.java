@@ -18,10 +18,12 @@ import java.io.IOException;
  *
  * @author Mango
  */
-@Order(Ordered.HIGHEST_PRECEDENCE + 4)
+@Order(FeignTokenFilter.ORDER)
 public class FeignTokenFilter implements Filter {
 
-    private static final Logger log = LoggerFactory.getLogger(FeignTokenFilter.class);
+    static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 4;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FeignTokenFilter.class);
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
@@ -29,11 +31,12 @@ public class FeignTokenFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain)
             throws IOException, ServletException {
         try {
+            MangoContextHolder.clearToken();
             if (servletRequest instanceof HttpServletRequest httpRequest) {
                 String authHeader = httpRequest.getHeader(AUTHORIZATION_HEADER);
                 if (authHeader != null && !authHeader.isEmpty()) {
                     MangoContextHolder.setToken(authHeader);
-                    log.debug("Captured JWT token from request");
+                    LOGGER.debug("Captured JWT token from request");
                 }
             }
             chain.doFilter(servletRequest, servletResponse);

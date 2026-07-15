@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
-import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,7 +29,6 @@ import java.util.UUID;
  *
  * @author Mango
  */
-@Component
 public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered {
 
     public static final int ORDER = ModuleTargetFeignInterceptor.ORDER + 100;
@@ -57,7 +56,7 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
     @Override
     public void apply(RequestTemplate template) {
         // Skip if no secret configured (dev mode)
-        if (sharedSecret == null || sharedSecret.isEmpty()) {
+        if (!StringUtils.hasText(sharedSecret)) {
             LOGGER.debug("No internal call secret configured, skipping internal call headers");
             return;
         }
@@ -81,8 +80,7 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
         template.header(SECRET_VERSION_HEADER, String.valueOf(secretVersion));
         template.header(SIGNATURE_HEADER, signature);
 
-        LOGGER.debug("Added internal call headers: timestamp={}, nonce={}, signature={}",
-                timestamp, nonce, signature);
+        LOGGER.debug("Added internal call signature headers: method={}, path={}", method, path);
     }
 
     @Override
