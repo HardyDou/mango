@@ -10,6 +10,7 @@
 
 - 直接模块：`mango-access-api`、`mango-access-core`、`mango-access-web-starter`、`mango-access-gateway-starter`。
 - 必要消费者：System 的 `AccessContextValidator`、Auth Starter、Admin Starter、Gateway App。
+- 必要门禁修复：架构依赖检查器对 `-web-starter`、`-gateway-starter` 同域适配器的识别。
 - 产品边界：Servlet Filter、Spring Cloud Gateway GlobalFilter、token credential、API resource policy、permission snapshot、Mango 上下文与下游身份头。
 - 不处理：Authorization 内部业务、登录签发逻辑、菜单/角色管理、前端页面和其它模块历史债务。
 - 数据边界：Access 没有数据库、Flyway、初始化数据、演示数据或菜单资源，不执行数据库重建。
@@ -29,14 +30,14 @@
 - 保持 credential 优先级：Authorization Header、query `token`、Cookie `MANGO_TOKEN`。
 - 保持外部 `/api` 前缀重试、IP 白名单、合法 access token、上下文校验和权限码匹配。
 - 保持 realtime probe 由 realtime 自身验证已签发 ticket；Access 只允许该明确入口到达下游，不把任意 ticket 当作认证主体。
-- API 既有 `AccessPrincipal`、`AccessResult`、`AccessContextValidationResult` 名称和 accessor/static factory 源码用法通过接口桥接保留；实现收敛为架构允许的 VO。
+- 保留三类结果的字段、accessor、factory 和状态语义；历史 record 名称迁移到规范的 `AccessPrincipalVO`、`AccessResultVO`、`AccessContextValidationResultVO`。仓内唯一扩展消费者 System 同步迁移并与生产者同 Reactor 编译。
 - 授权策略或权限提供方不可用属于已证明的安全缺陷，改为 503 fail-closed，不再降级放行或暴露未处理异常。
 
 ## 5. 方案
 
 ### 5.1 契约与核心决策
 
-- 将三个 API record 收敛为同名只读接口，并由 `*VO` 不可变实现承载，保留调用方 accessor 与 factory 语义。
+- 将三个 API record 收敛为规范的不可变 `*VO`，保留字段、accessor 与 factory 语义；不保留违反输出模型规则的继承兼容桥。
 - 将承担纯决策职责的 `AccessService` 改为 `AccessEvaluator`，避免把跨模块 `R<T>` 适配伪装成业务 Service。
 - 明确区分“资源未登记”和“资源策略服务失败”：前者保留 LOGIN 默认值，后者返回 unavailable。
 - 权限快照为空、异常或不可读取时拒绝请求并返回 unavailable；正常的权限不足仍返回 403。
@@ -52,6 +53,7 @@
 - Web 与 Gateway 复用相同的 credential、realtime probe 与结果状态语义。
 - Gateway 的同步授权决策切到 bounded elastic worker，避免阻塞 Netty event loop。
 - Web/Gateway Starter 只依赖本域实现和必要 infra API/starter；Nacos 与 Authorization Remote 由 Gateway App 显式装配。
+- 架构检查器明确识别 `-web`、`-gateway` 两类同域 Starter 适配器，只允许其使用同域 API/Core/Support；其它限定词和外域 Core 仍被阻断。
 - 当前 System/Auth/Admin/Gateway App 消费者随契约同步并在同一 Maven reactor 编译，不读取本地旧 JAR。
 
 ## 6. 测试设计

@@ -1,6 +1,7 @@
 package io.mango.access.starter.web.filter;
 
-import io.mango.access.core.auth.AccessService;
+import io.mango.access.api.vo.AccessContextValidationResultVO;
+import io.mango.access.core.auth.AccessEvaluator;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.AuthorizationQuery;
@@ -14,6 +15,7 @@ import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.vo.TokenPairVO;
 import jakarta.servlet.http.Cookie;
@@ -57,6 +59,37 @@ class AuthFilterTest {
     }
 
     @Test
+    @DisplayName("PUBLIC 资源不得保留外部请求注入的安全上下文")
+    void doFilter_shouldClearUntrustedSecurityContextWhenPublic() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.PUBLIC;
+        MangoContextHolder.set(MangoContextSnapshot.request(
+                "request-1", "trace-1", "spoofed-tenant", "spoofed-app", "127.0.0.1"));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/public/context");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        newFilter().doFilter(request, response, new MockFilterChain());
+
+        assertEquals(200, response.getStatus());
+        assertEquals("request-1", MangoContextHolder.requestId());
+        assertNull(MangoContextHolder.tenantId());
+        assertNull(MangoContextHolder.appCode());
+    }
+
+    @Test
+    @DisplayName("资源策略服务失败时应返回 503 而不是降级为 LOGIN")
+    void doFilter_shouldFailClosedWhenResourcePolicyUnavailable() throws Exception {
+        apiResourceApi.forcedResponse = R.fail("resource policy unavailable");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/permission/resource");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        newFilter().doFilter(request, response, new MockFilterChain());
+
+        assertEquals(503, response.getStatus());
+        assertEquals("{\"code\":503,\"message\":\"访问策略服务暂不可用\"}",
+                response.getContentAsString());
+    }
+
+    @Test
     @DisplayName("带外部 /api 前缀的 PUBLIC 资源应按应用内路径匹配后匿名放行")
     void doFilter_shouldStripExternalApiPrefixWhenResolvingPublicResource() throws Exception {
         apiResourceApi.decisions = Map.of(
@@ -87,6 +120,24 @@ class AuthFilterTest {
     }
 
     @Test
+    @DisplayName("错误消息应转义为合法 JSON")
+    void doFilter_shouldEscapeErrorMessageAsJson() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
+        AccessEvaluator evaluator = new AccessEvaluator(
+                new AccessProperties(), tokenProvider, apiResourceApi, authorizationProvider,
+                List.of(principal -> AccessContextValidationResultVO.deny("invalid \"tenant\"\ncontext")));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/profile");
+        request.addHeader("Authorization", "Bearer valid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new AuthFilter(evaluator).doFilter(request, response, new MockFilterChain());
+
+        assertEquals(401, response.getStatus());
+        assertEquals("{\"code\":401,\"message\":\"invalid \\\"tenant\\\"\\ncontext\"}",
+                response.getContentAsString());
+    }
+
+    @Test
     @DisplayName("IP 白名单资源命中来源地址时应匿名放行")
     void doFilter_shouldPassAnonymousWhenIpWhitelistMatched() throws Exception {
         apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
@@ -97,12 +148,12 @@ class AuthFilterTest {
         rule.setMethods(List.of("GET"));
         rule.setCidrs(List.of("127.0.0.1/32"));
         properties.getIpWhitelist().setRules(List.of(rule));
-        AccessService accessService = new AccessService(properties, tokenProvider, apiResourceApi, authorizationProvider);
+        AccessEvaluator accessEvaluator = new AccessEvaluator(properties, tokenProvider, apiResourceApi, authorizationProvider);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/actuator/health");
         request.setRemoteAddr("127.0.0.1");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new AuthFilter(accessService).doFilter(request, response, new MockFilterChain());
+        new AuthFilter(accessEvaluator).doFilter(request, response, new MockFilterChain());
 
         assertEquals(200, response.getStatus());
         assertEquals(0, apiResourceApi.resolveCount);
@@ -181,8 +232,8 @@ class AuthFilterTest {
 
     private AuthFilter newFilter() {
         AccessProperties properties = new AccessProperties();
-        AccessService accessService = new AccessService(properties, tokenProvider, apiResourceApi, authorizationProvider);
-        return new AuthFilter(accessService);
+        AccessEvaluator accessEvaluator = new AccessEvaluator(properties, tokenProvider, apiResourceApi, authorizationProvider);
+        return new AuthFilter(accessEvaluator);
     }
 
     private static class TestApiResourceApi implements ApiResourceApi {
@@ -191,6 +242,7 @@ class AuthFilterTest {
         private String permissionCode;
         private int resolveCount;
         private Map<String, ApiResourceAccessDecisionVO> decisions = Map.of();
+        private R<ApiResourceAccessDecisionVO> forcedResponse;
 
         @Override
         public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
@@ -200,6 +252,9 @@ class AuthFilterTest {
         @Override
         public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
             resolveCount++;
+            if (forcedResponse != null) {
+                return forcedResponse;
+            }
             ApiResourceAccessDecisionVO configuredDecision = decisions.get(query.getHttpMethod() + " " + query.getPath());
             if (configuredDecision != null) {
                 return R.ok(configuredDecision);

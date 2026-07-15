@@ -35,6 +35,7 @@
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-15 | Access 边界安全基线：所有放行路径清理外部身份，策略/认证/权限依赖异常 fail-closed；Servlet 与 Gateway 对齐 realtime probe、可信上下文和错误协议，Gateway 同步调用移出 event loop，Starter 不再隐式携带部署环境依赖 | [Access README](../../mango/mango-platform/mango-access/README.md) | [Access 历史债务验证基线](../evidence/baselines/access/latest/report.md)；31 条定向测试、真实 Tomcat/Gateway→下游入口流程、当前源码消费者同 Reactor、架构债务 12→0 |
 | 2026-07-15 | Excel 读写基线：导入字段映射碰撞 fail-fast，失败工作簿不覆盖原始扩展列；导出支持字段筛选、多级表头、原生数字/布尔/日期类型和 15 位精度保护，并用真实 HTTP 上传下载回读验证 | [Infra Excel README](../../mango/mango-infra/mango-infra-excel-starter/README.md) | [Infra Excel 历史债务验收证据](../evidence/baselines/infra-excel/latest/acceptance.md)；20 条定向测试、随机端口导入/导出流程、架构与静态门禁 |
 | 2026-07-15 | OpenAPI 文档分组基线：Doc 复用 Module 运行时 registry，配置路径完整覆盖 classpath 旧路径，统一尾斜杠、根路径和多路径分组；配置对象防御性复制并以真实 HTTP 文档入口验证 scope/security | [Infra Doc README](../../mango/mango-infra/mango-infra-doc/README.md) | [Infra Doc 历史债务验收证据](../evidence/baselines/infra-doc/latest/acceptance.md)；9 条定向测试、随机端口 OpenAPI 流程、两个当前源码 app 消费者、架构与静态门禁 |
 | 2026-07-15 | Module 部署元数据基线：显式配置完整覆盖同名 classpath 服务与路径，统一根路径和尾斜杠匹配，空线程 ClassLoader 安全回退；真实 Feign HTTP 验证路由结果 | [Module README](../../mango/mango-infra/mango-infra-module/README.md) | [Module 历史债务验收证据](../evidence/baselines/infra-module/latest/acceptance.md)；单元/装配测试、随机端口入口流程、Feign/Authorization 当前源码消费者、架构与静态门禁 |

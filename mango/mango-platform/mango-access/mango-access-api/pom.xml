@@ -16,4 +16,11 @@
 
     <name>Mango Access API</name>
     <description>Mango Access API - boundary access contracts</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+    </dependencies>
 </project>
