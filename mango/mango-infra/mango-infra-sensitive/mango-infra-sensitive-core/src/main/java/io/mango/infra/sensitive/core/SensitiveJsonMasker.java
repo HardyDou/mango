@@ -18,7 +18,7 @@ public final class SensitiveJsonMasker {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String[] DEFAULT_KEYS = {
-            "password", "secret", "token", "appSecret", "accessKey", "secretKey", "privateKey", "credential"
+        "password", "secret", "token", "appSecret", "accessKey", "secretKey", "privateKey", "credential"
     };
 
     private SensitiveJsonMasker() {
@@ -60,8 +60,11 @@ public final class SensitiveJsonMasker {
             for (Map.Entry<String, JsonNode> field : objectNode.properties()) {
                 if (matches(field.getKey(), fuzzy, keys)) {
                     String maskedValue = maskJsonValue(field.getValue());
-                    objectNode.set(field.getKey(),
-                            maskedValue == null ? NullNode.getInstance() : TextNode.valueOf(maskedValue));
+                    if (maskedValue == null) {
+                        objectNode.set(field.getKey(), NullNode.getInstance());
+                    } else {
+                        objectNode.set(field.getKey(), TextNode.valueOf(maskedValue));
+                    }
                 } else {
                     maskNode(field.getValue(), fuzzy, keys);
                 }

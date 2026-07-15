@@ -1,5 +1,8 @@
 package io.mango.infra.sensitive.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -9,6 +12,7 @@ import java.util.function.Supplier;
  * emit raw values. The scope is limited to the current thread and should be
  * used with try-with-resources.</p>
  */
+@LocalCapabilityContract
 public final class SensitiveMaskingContext {
 
     private static final ThreadLocal<Integer> DISABLE_DEPTH = ThreadLocal.withInitial(() -> 0);
@@ -23,7 +27,7 @@ public final class SensitiveMaskingContext {
      */
     public static Scope disable() {
         DISABLE_DEPTH.set(DISABLE_DEPTH.get() + 1);
-        return SensitiveMaskingContext::enableOneLevel;
+        return new MaskingScope();
     }
 
     /**
@@ -34,6 +38,7 @@ public final class SensitiveMaskingContext {
      * @return supplier result
      */
     public static <T> T getWithoutMasking(Supplier<T> supplier) {
+        Objects.requireNonNull(supplier, "supplier must not be null");
         try (Scope ignored = disable()) {
             return supplier.get();
         }
@@ -45,6 +50,7 @@ public final class SensitiveMaskingContext {
      * @param action action to execute
      */
     public static void runWithoutMasking(Runnable action) {
+        Objects.requireNonNull(action, "action must not be null");
         try (Scope ignored = disable()) {
             action.run();
         }
@@ -66,6 +72,26 @@ public final class SensitiveMaskingContext {
             return;
         }
         DISABLE_DEPTH.set(depth);
+    }
+
+    @LocalCapabilityContract
+    private static final class MaskingScope implements Scope {
+
+        private final Thread owner = Thread.currentThread();
+
+        private boolean closed;
+
+        @Override
+        public void close() {
+            if (Thread.currentThread() != owner) {
+                throw new IllegalStateException("masking scope must be closed by its owning thread");
+            }
+            if (closed) {
+                return;
+            }
+            closed = true;
+            enableOneLevel();
+        }
     }
 
     /**

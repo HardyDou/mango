@@ -1,10 +1,13 @@
 package io.mango.infra.sensitive.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.List;
 
 /**
  * Provides sensitive word allow and deny lists for the houbb sensitive-word engine.
  */
+@LocalCapabilityContract
 public interface ISensitiveWordProvider {
 
     /**

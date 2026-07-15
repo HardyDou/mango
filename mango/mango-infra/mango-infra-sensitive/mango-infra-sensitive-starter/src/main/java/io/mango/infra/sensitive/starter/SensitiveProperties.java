@@ -1,5 +1,6 @@
 package io.mango.infra.sensitive.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -10,14 +11,20 @@ public class SensitiveProperties {
 
     public static final String PREFIX = "mango.sensitive";
 
+    private static final int DEFAULT_NUM_CHECK_LENGTH = 8;
+
     private final Masking masking = new Masking();
 
     private final Word word = new Word();
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean")
     public Masking getMasking() {
         return masking;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean")
     public Word getWord() {
         return word;
     }
@@ -66,7 +73,7 @@ public class SensitiveProperties {
 
         private boolean enableUrlCheck = true;
 
-        private int numCheckLen = 8;
+        private int numCheckLen = DEFAULT_NUM_CHECK_LENGTH;
 
         private String errorMsg = "您的输入包含敏感词，请重新输入";
 

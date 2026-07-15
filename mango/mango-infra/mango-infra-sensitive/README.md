@@ -22,7 +22,7 @@
 ## 4. 模块入口
 - `mango-infra-sensitive-api`：`@Sensitive`、`SensitiveType`、masking SPI、敏感词 provider SPI、临时关闭脱敏上下文。
 - `mango-infra-sensitive-core`：脱敏算法、JSON key 脱敏、Jackson serializer、敏感词 customizer。
-- `mango-infra-sensitive-starter`：注册 Jackson module、masking service、runtime initializer、敏感词引擎。
+- `mango-infra-sensitive-starter`：注册 Jackson module、masking service 和敏感词引擎。
 
 ## 5. 接入方式
 ```xml
@@ -107,7 +107,9 @@ public class PermissionRawAccessProvider implements ISensitiveRawAccessProvider 
 ```
 
 ## 8. 数据与初始化
-无数据库 migration、无 Runner、无业务初始化数据。`SensitiveAutoConfiguration` 会在启动时通过 `InitializingBean` 把 `ISensitiveMaskingService` 写入 `SensitiveMaskingRuntime`，该初始化必须保持幂等。
+无数据库 migration、无 Runner、无业务初始化数据。`SensitiveAutoConfiguration` 将
+`ISensitiveMaskingService` 直接注入 `SensitiveJacksonModule`，不同 Spring 上下文和
+`ObjectMapper` 之间不会共享可变的全局脱敏策略。
 
 ## 9. 管理入口
 本模块不创建菜单和权限。`masking.raw-authority` 只是权限标识字符串，是否拥有该权限由业务提供的 `ISensitiveRawAccessProvider` 判断。租户隔离仍由业务查询和授权模块负责。

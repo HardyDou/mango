@@ -7,10 +7,8 @@ import io.mango.infra.sensitive.api.ISensitiveMaskingService;
 import io.mango.infra.sensitive.api.ISensitiveRawAccessProvider;
 import io.mango.infra.sensitive.api.ISensitiveWordProvider;
 import io.mango.infra.sensitive.api.SensitiveMaskingContext;
-import io.mango.infra.sensitive.core.SensitiveMaskingRuntime;
 import io.mango.infra.sensitive.core.jackson.SensitiveJacksonModule;
 import io.mango.infra.sensitive.core.word.SensitiveWordCustomizer;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -28,8 +26,8 @@ import org.springframework.context.annotation.Lazy;
 public class SensitiveAutoConfiguration {
 
     @Bean
-    public Module sensitiveJacksonModule() {
-        return new SensitiveJacksonModule();
+    public Module sensitiveJacksonModule(ISensitiveMaskingService maskingService) {
+        return new SensitiveJacksonModule(maskingService);
     }
 
     @Bean
@@ -40,11 +38,6 @@ public class SensitiveAutoConfiguration {
         return sensitive -> !SensitiveMaskingContext.isMaskingDisabled()
                 && rawAccessProviders.orderedStream()
                 .noneMatch(provider -> provider.canViewRaw(properties.getMasking().getRawAuthority()));
-    }
-
-    @Bean
-    public InitializingBean sensitiveMaskingRuntimeInitializer(ISensitiveMaskingService maskingService) {
-        return () -> SensitiveMaskingRuntime.setMaskingService(maskingService);
     }
 
     @Bean

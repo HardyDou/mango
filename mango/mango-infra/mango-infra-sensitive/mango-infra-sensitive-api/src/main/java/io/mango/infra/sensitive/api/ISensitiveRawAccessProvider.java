@@ -1,8 +1,11 @@
 package io.mango.infra.sensitive.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * Checks whether the current caller can view unmasked sensitive output.
  */
+@LocalCapabilityContract
 public interface ISensitiveRawAccessProvider {
 
     /**
