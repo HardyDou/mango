@@ -67,6 +67,22 @@ class MangoArchUnitCheckerTest {
     }
 
     @Test
+    void unannotatedAbstractControllerSuffixIsNotTreatedAsConcreteController() {
+        JavaClasses classes = importClasses(LegacyBaseController.class);
+
+        assertThat(checker.check(classes, ignored -> ModuleRole.STARTER)).isEmpty();
+    }
+
+    @Test
+    void abstractControllerStereotypeRemainsSubjectToControllerRules() {
+        JavaClasses classes = importClasses(AbstractHttpAdapter.class);
+
+        assertThat(checker.check(classes, ignored -> ModuleRole.STARTER))
+                .extracting(ArchitectureIssue::ruleId)
+                .containsExactly("MANGO-ARCH-TYPE-002");
+    }
+
+    @Test
     void controllerWithoutApiInCoreAndWithMapperIsRejected() {
         JavaClasses classes = importClasses(BadController.class, OrderMapper.class);
 
@@ -925,6 +941,13 @@ class MangoArchUnitCheckerTest {
     }
 
     abstract static class OrderEngine {
+    }
+
+    abstract static class LegacyBaseController {
+    }
+
+    @RestController
+    abstract static class AbstractHttpAdapter {
     }
 
     @Service

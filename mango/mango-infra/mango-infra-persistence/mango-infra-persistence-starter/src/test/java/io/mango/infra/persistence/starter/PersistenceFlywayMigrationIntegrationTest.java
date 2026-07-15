@@ -30,6 +30,7 @@ class PersistenceFlywayMigrationIntegrationTest {
             "another-test",
             "business-upgrade",
             "comparison-data",
+            "link",
             "payment",
             "persistence-test"
     );
