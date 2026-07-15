@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
 
 import java.io.File;
+import java.io.InputStream;
 
 @AutoConfiguration
 @EnableConfigurationProperties(IpLocationProperties.class)
@@ -50,11 +51,13 @@ public class IpLocationAutoConfiguration {
         if (resource == null || !resource.exists()) {
             throw new IllegalStateException("ip2region xdb file does not exist");
         }
+        if (properties.isContentCacheEnabled() || !resource.isFile()) {
+            try (InputStream input = resource.getInputStream()) {
+                return Searcher.newWithBuffer(input.readAllBytes());
+            }
+        }
         File file = resource.getFile();
         String path = file.getAbsolutePath();
-        if (properties.isContentCacheEnabled()) {
-            return Searcher.newWithBuffer(Searcher.loadContentFromFile(path));
-        }
         if (properties.isVectorIndexEnabled()) {
             return Searcher.newWithVectorIndex(path, Searcher.loadVectorIndexFromFile(path));
         }

@@ -1,10 +1,13 @@
 package io.mango.infra.iplocation.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.StringJoiner;
 
 /**
  * IP 归属地解析结果。
  */
+@LocalCapabilityContract
 public class IpLocation {
 
     private String ip;
@@ -24,6 +27,29 @@ public class IpLocation {
         return location;
     }
 
+    /**
+     * 创建结果快照，避免缓存值被调用方通过 setter 反向修改。
+     *
+     * @param source 原始结果
+     * @return 独立结果；原始结果为空时返回 null
+     */
+    public static IpLocation copyOf(IpLocation source) {
+        if (source == null) {
+            return null;
+        }
+        IpLocation copy = new IpLocation();
+        copy.setIp(source.getIp());
+        copy.setCountry(source.getCountry());
+        copy.setRegion(source.getRegion());
+        copy.setProvince(source.getProvince());
+        copy.setCity(source.getCity());
+        copy.setIsp(source.getIsp());
+        copy.setSource(source.getSource());
+        copy.setPrivateAddress(source.isPrivateAddress());
+        copy.setResolved(source.isResolved());
+        return copy;
+    }
+
     public String displayText() {
         StringJoiner joiner = new StringJoiner(" ");
         addIfPresent(joiner, country);
@@ -31,7 +57,10 @@ public class IpLocation {
         addIfPresent(joiner, city);
         addIfPresent(joiner, isp);
         String text = joiner.toString();
-        return text.isBlank() ? "未知" : text;
+        if (text.isBlank()) {
+            return "未知";
+        }
+        return text;
     }
 
     private void addIfPresent(StringJoiner joiner, String value) {

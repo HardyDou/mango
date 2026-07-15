@@ -74,10 +74,10 @@ mango:
 
 ## 7. API 与扩展
 - `IpLocationResolver.resolve(String ip)`：解析 IP。
-- `IpLocation`：解析结果，`displayText()` 会拼接国家、省份、城市、运营商，空结果显示 `未知`。
+- `IpLocation`：解析结果，`displayText()` 会拼接国家、省份、城市、运营商，空结果显示 `未知`；`copyOf()` 可创建独立快照。
 - `NoopIpLocationResolver`：未启用、provider 非 ip2region、xdb 不可用且未 fail-fast 时返回 unresolved 结果。
-- `Ip2RegionXdbLocationResolver`：基于 ip2region xdb 解析。
-- `CachingIpLocationResolver`：按配置缓存解析结果。
+- `Ip2RegionXdbLocationResolver`：基于 ip2region xdb 解析；共享 Bean 会串行保护非线程安全的 Searcher，空查询结果不会标记为 resolved。
+- `CachingIpLocationResolver`：按标准化 IP 缓存解析结果，以独立快照隔离调用方修改；provider 异常或返回 null 时按接口约定降级为 unresolved。
 
 替换解析来源时，业务应用可声明自己的 `IpLocationResolver` Bean，自动配置会让位。
 
@@ -95,6 +95,8 @@ mango:
 
 ## 11. 问题排查
 - 一直返回 `未知`：检查 xdb 文件是否存在、路径是否带 `file:` 或 `classpath:`、应用进程是否可读。
+- `classpath:` 资源位于可执行 JAR 内时会自动按内容缓冲加载，不依赖 `Resource#getFile()`；普通文件仍按 `content-cache-enabled` 和 `vector-index-enabled` 选择加载方式。
+- 只接受 IPv4/IPv6 字面量；主机名（如 `localhost`）不会触发 DNS 查询，会直接返回 unresolved。
 - 启动没有失败但解析为空：默认 `fail-fast=false` 会降级到 noop。
 - 数据不准确：替换 xdb 文件并重启应用；本模块不会自动下载数据。
 
