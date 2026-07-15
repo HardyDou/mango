@@ -11,6 +11,9 @@ public final class IpLocationFormatter {
     }
 
     public static String displayText(IpLocation location) {
-        return location == null ? "未知" : location.displayText();
+        if (location == null) {
+            return "未知";
+        }
+        return location.displayText();
     }
 }

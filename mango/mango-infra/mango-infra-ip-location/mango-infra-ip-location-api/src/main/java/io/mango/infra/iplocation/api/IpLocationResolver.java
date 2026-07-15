@@ -1,8 +1,11 @@
 package io.mango.infra.iplocation.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * IP 归属地解析器。
  */
+@LocalCapabilityContract
 public interface IpLocationResolver {
 
     /**

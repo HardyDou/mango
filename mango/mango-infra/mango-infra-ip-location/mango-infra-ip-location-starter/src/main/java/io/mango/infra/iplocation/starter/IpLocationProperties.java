@@ -1,5 +1,6 @@
 package io.mango.infra.iplocation.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
 
@@ -7,6 +8,9 @@ import java.time.Duration;
 
 @ConfigurationProperties(prefix = "mango.ip-location")
 public class IpLocationProperties {
+
+    private static final int DEFAULT_CACHE_MAXIMUM_SIZE = 10_000;
+    private static final Duration DEFAULT_CACHE_TTL = Duration.ofHours(24);
 
     /**
      * 是否启用 IP 归属地解析。
@@ -51,18 +55,22 @@ public class IpLocationProperties {
         this.failFast = failFast;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean")
     public Cache getCache() {
         return cache;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean")
     public Ip2Region getIp2region() {
         return ip2region;
     }
 
     public static class Cache {
         private boolean enabled = true;
-        private int maximumSize = 10000;
-        private Duration ttl = Duration.ofHours(24);
+        private int maximumSize = DEFAULT_CACHE_MAXIMUM_SIZE;
+        private Duration ttl = DEFAULT_CACHE_TTL;
 
         public boolean isEnabled() {
             return enabled;

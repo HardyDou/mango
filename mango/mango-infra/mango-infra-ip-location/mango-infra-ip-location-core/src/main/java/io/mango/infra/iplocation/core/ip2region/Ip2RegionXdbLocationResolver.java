@@ -10,6 +10,10 @@ import org.lionsoul.ip2region.xdb.Searcher;
  */
 public class Ip2RegionXdbLocationResolver implements IpLocationResolver, AutoCloseable {
 
+    private static final int PROVINCE_INDEX = 2;
+    private static final int CITY_INDEX = 3;
+    private static final int ISP_INDEX = 4;
+
     private final Searcher searcher;
 
     public Ip2RegionXdbLocationResolver(Searcher searcher) {
@@ -28,13 +32,17 @@ public class Ip2RegionXdbLocationResolver implements IpLocationResolver, AutoClo
             return location;
         }
         try {
-            String region = searcher.search(ip.trim());
+            String region = search(ip.trim());
             fill(location, region);
-            location.setResolved(true);
+            location.setResolved(region != null && !region.isBlank());
             return location;
         } catch (Exception e) {
             return location;
         }
+    }
+
+    private synchronized String search(String ip) throws Exception {
+        return searcher.search(ip);
     }
 
     private void fill(IpLocation location, String region) {
@@ -44,9 +52,9 @@ public class Ip2RegionXdbLocationResolver implements IpLocationResolver, AutoClo
         }
         String[] parts = region.split("\\|", -1);
         location.setCountry(part(parts, 0));
-        location.setProvince(part(parts, 2));
-        location.setCity(part(parts, 3));
-        location.setIsp(part(parts, 4));
+        location.setProvince(part(parts, PROVINCE_INDEX));
+        location.setCity(part(parts, CITY_INDEX));
+        location.setIsp(part(parts, ISP_INDEX));
     }
 
     private String part(String[] parts, int index) {
@@ -54,7 +62,10 @@ public class Ip2RegionXdbLocationResolver implements IpLocationResolver, AutoClo
             return null;
         }
         String value = parts[index];
-        return value == null || value.isBlank() || "0".equals(value) ? null : value;
+        if (value == null || value.isBlank() || "0".equals(value)) {
+            return null;
+        }
+        return value;
     }
 
     @Override
