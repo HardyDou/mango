@@ -1,6 +1,7 @@
 package io.mango.infra.doc.starter;
 
-import org.springdoc.core.models.GroupedOpenApi;
+import io.mango.infra.module.starter.ModuleMetadataLoader;
+import io.mango.infra.module.starter.ModuleProperties;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -10,25 +11,21 @@ import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashSet;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * 根据 Mango 模块元数据动态注册 OpenAPI 分组。
  */
 public class ModuleGroupedOpenApiRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
 
-    private static final String MODULE_PROPERTIES_LOCATION = "META-INF/mango/module.properties";
     private static final String BEAN_NAME_PREFIX = "mangoDocGroupedOpenApi_";
+    private final ModuleMetadataLoader metadataLoader = new ModuleMetadataLoader();
     private Environment environment;
 
     @Override
@@ -39,47 +36,59 @@ public class ModuleGroupedOpenApiRegistrar implements ImportBeanDefinitionRegist
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry)
             throws BeansException {
-        DocProperties properties = bindProperties();
-        if (!properties.isEnabled() || !properties.getModuleGrouping().isEnabled()) {
+        DocProperties docProperties = bindDocProperties();
+        if (!docProperties.isEnabled() || !docProperties.getModuleGrouping().isEnabled()) {
             return;
         }
 
-        Set<String> registeredGroups = new HashSet<>();
-        for (ModuleMetadata module : loadModules()) {
-            if (!hasText(module.modulePath())) {
-                continue;
+        modulePathsByName().forEach((moduleName, fallbackPaths) -> {
+            String beanName = groupedOpenApiBeanName(moduleName);
+            if (!registry.containsBeanDefinition(beanName)) {
+                registry.registerBeanDefinition(
+                        beanName,
+                        groupedOpenApiBeanDefinition(moduleName, fallbackPaths));
             }
-            String group = module.moduleName();
-            if (!registeredGroups.add(group)) {
-                continue;
-            }
-            String beanName = BEAN_NAME_PREFIX + sanitize(group);
-            if (registry.containsBeanDefinition(beanName)) {
-                continue;
-            }
-            BeanDefinition beanDefinition = groupedOpenApiBeanDefinition(properties, module);
-            registry.registerBeanDefinition(beanName, beanDefinition);
-        }
+        });
     }
 
-    private BeanDefinition groupedOpenApiBeanDefinition(DocProperties properties, ModuleMetadata module) {
-        RootBeanDefinition beanDefinition = new RootBeanDefinition(GroupedOpenApi.class);
-        beanDefinition.setInstanceSupplier(() -> buildGroupedOpenApi(properties, module));
+    private BeanDefinition groupedOpenApiBeanDefinition(String moduleName, List<String> fallbackPaths) {
+        RootBeanDefinition beanDefinition = new RootBeanDefinition(ModuleGroupedOpenApiFactoryBean.class);
+        beanDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, moduleName);
+        beanDefinition.getConstructorArgumentValues().addIndexedArgumentValue(1, fallbackPaths);
         return beanDefinition;
     }
 
-    private GroupedOpenApi buildGroupedOpenApi(DocProperties properties, ModuleMetadata module) {
-        String[] paths = normalizePaths(module.modulePath());
-        GroupedOpenApi.Builder builder = GroupedOpenApi.builder()
-                .group(module.moduleName())
-                .displayName(module.moduleName() + " (" + String.join(", ", paths) + ")")
-                .pathsToMatch(pathsToMatch(paths))
-                .addOperationCustomizer(new MangoApiScopeOperationCustomizer(
-                        properties.getModuleGrouping().isIncludeScopeTags()));
-        return builder.build();
+    private Map<String, List<String>> modulePathsByName() {
+        Map<String, List<String>> modulePaths = new LinkedHashMap<>();
+        metadataLoader.load().forEach(metadata -> {
+            List<String> paths = splitPaths(metadata.modulePath());
+            if (!paths.isEmpty()) {
+                modulePaths.putIfAbsent(metadata.moduleName(), paths);
+            }
+        });
+
+        ModuleProperties moduleProperties = bindModuleProperties();
+        if (moduleProperties.isEnabled()) {
+            moduleProperties.getModules().keySet()
+                    .forEach(moduleName -> modulePaths.putIfAbsent(moduleName, List.of()));
+        }
+        return modulePaths;
     }
 
-    private DocProperties bindProperties() {
+    private List<String> splitPaths(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        List<String> paths = new ArrayList<>();
+        for (String path : value.split(",")) {
+            if (!path.isBlank()) {
+                paths.add(path.trim());
+            }
+        }
+        return List.copyOf(paths);
+    }
+
+    private DocProperties bindDocProperties() {
         if (environment == null) {
             return new DocProperties();
         }
@@ -88,66 +97,19 @@ public class ModuleGroupedOpenApiRegistrar implements ImportBeanDefinitionRegist
                 .orElseGet(DocProperties::new);
     }
 
-    private List<ModuleMetadata> loadModules() {
-        List<ModuleMetadata> modules = new ArrayList<>();
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            Enumeration<URL> resources = classLoader.getResources(MODULE_PROPERTIES_LOCATION);
-            while (resources.hasMoreElements()) {
-                URL resource = resources.nextElement();
-                Properties properties = loadProperties(resource);
-                String moduleName = trim(properties.getProperty("module-name"));
-                String modulePath = trim(properties.getProperty("module-path"));
-                if (hasText(moduleName)) {
-                    modules.add(new ModuleMetadata(moduleName, modulePath));
-                }
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("加载 Mango 模块元数据失败", e);
+    private ModuleProperties bindModuleProperties() {
+        if (environment == null) {
+            return new ModuleProperties();
         }
-        return modules;
+        return Binder.get(environment)
+                .bind("mango.module.module-service", ModuleProperties.class)
+                .orElseGet(ModuleProperties::new);
     }
 
-    private Properties loadProperties(URL resource) throws IOException {
-        try (InputStream inputStream = resource.openStream()) {
-            return PropertiesLoaderUtils.loadProperties(new org.springframework.core.io.InputStreamResource(inputStream));
-        }
-    }
-
-    private String[] normalizePaths(String path) {
-        String value = trim(path);
-        if (!hasText(value)) {
-            return new String[0];
-        }
-        return List.of(value.split(",")).stream()
-                .map(String::trim)
-                .filter(this::hasText)
-                .map(item -> item.startsWith("/") ? item : "/" + item)
-                .distinct()
-                .toArray(String[]::new);
-    }
-
-    private String[] pathsToMatch(String[] modulePaths) {
-        List<String> paths = new ArrayList<>();
-        for (String modulePath : modulePaths) {
-            paths.add(modulePath);
-            paths.add(modulePath + "/**");
-        }
-        return paths.toArray(String[]::new);
-    }
-
-    private String sanitize(String value) {
-        return value.replaceAll("[^A-Za-z0-9_]", "_");
-    }
-
-    private String trim(String value) {
-        return value == null ? "" : value.trim();
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
-
-    private record ModuleMetadata(String moduleName, String modulePath) {
+    private String groupedOpenApiBeanName(String moduleName) {
+        String encodedModuleName = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(moduleName.getBytes(StandardCharsets.UTF_8));
+        return BEAN_NAME_PREFIX + encodedModuleName;
     }
 }

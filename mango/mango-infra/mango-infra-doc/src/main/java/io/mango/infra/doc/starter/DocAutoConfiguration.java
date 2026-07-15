@@ -1,5 +1,6 @@
 package io.mango.infra.doc.starter;
 
+import io.mango.infra.module.starter.ModuleAutoConfiguration;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,6 +25,7 @@ import org.springframework.context.annotation.Import;
  * @author Mango
  */
 @AutoConfiguration
+@AutoConfigureAfter(ModuleAutoConfiguration.class)
 @AutoConfigureBefore(name = "org.springdoc.webmvc.core.configuration.MultipleOpenApiSupportConfiguration")
 @ConditionalOnProperty(prefix = "mango.doc", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(DocProperties.class)

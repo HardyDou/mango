@@ -43,12 +43,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Mango Common -->
-        <dependency>
-            <groupId>io.mango.common</groupId>
-            <artifactId>mango-common</artifactId>
-        </dependency>
-
         <!-- @ApiAccess marker for API access classification -->
         <dependency>
             <groupId>io.mango.platform.authorization</groupId>
@@ -56,10 +50,16 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- Canonical runtime module metadata and configured path overrides -->
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
+            <groupId>io.mango.infra.module</groupId>
+            <artifactId>mango-infra-module-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.module</groupId>
+            <artifactId>mango-infra-module-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Tests -->

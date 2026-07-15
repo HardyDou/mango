@@ -55,9 +55,39 @@ class MangoApiScopeOperationCustomizerTest {
                 .anyMatch(requirement -> requirement.containsKey(MangoApiScopeOperationCustomizer.AUTHORIZATION_HEADER_SCHEME)));
     }
 
+    @Test
+    void interfaceMethodScopeShouldOverrideControllerClassScope() throws NoSuchMethodException {
+        Operation operation = customizer.customize(
+                new Operation(),
+                handlerMethod(new PublicControllerWithInternalApi(), "internalFromApi"));
+
+        assertEquals(
+                MangoApiScopeOperationCustomizer.INTERNAL_SCOPE,
+                operation.getExtensions().get(MangoApiScopeOperationCustomizer.SCOPE_EXTENSION));
+        assertTrue(operation.getSecurity().stream()
+                .anyMatch(requirement -> requirement.containsKey(
+                        MangoApiScopeOperationCustomizer.AUTHORIZATION_HEADER_SCHEME)));
+    }
+
+    @Test
+    void interfaceMethodScopeShouldOverrideInterfaceClassScope() throws NoSuchMethodException {
+        Operation operation = customizer.customize(
+                new Operation(),
+                handlerMethod(new InternalApiWithPublicMethodController(), "publicFromApi"));
+
+        assertEquals(
+                MangoApiScopeOperationCustomizer.EXTERNAL_SCOPE,
+                operation.getExtensions().get(MangoApiScopeOperationCustomizer.SCOPE_EXTENSION));
+        assertTrue(operation.getSecurity().isEmpty());
+    }
+
     private HandlerMethod handlerMethod(String methodName) throws NoSuchMethodException {
-        Method method = TestController.class.getDeclaredMethod(methodName);
-        return new HandlerMethod(new TestController(), method);
+        return handlerMethod(new TestController(), methodName);
+    }
+
+    private HandlerMethod handlerMethod(Object controller, String methodName) throws NoSuchMethodException {
+        Method method = controller.getClass().getDeclaredMethod(methodName);
+        return new HandlerMethod(controller, method);
     }
 
     static class TestController {
@@ -75,6 +105,34 @@ class MangoApiScopeOperationCustomizerTest {
         }
 
         void login() {
+        }
+    }
+
+    interface InternalMethodApi {
+
+        @InternalAccess
+        void internalFromApi();
+    }
+
+    @PublicAccess
+    static class PublicControllerWithInternalApi implements InternalMethodApi {
+
+        @Override
+        public void internalFromApi() {
+        }
+    }
+
+    @InternalAccess
+    interface InternalApiWithPublicMethod {
+
+        @PublicAccess
+        void publicFromApi();
+    }
+
+    static class InternalApiWithPublicMethodController implements InternalApiWithPublicMethod {
+
+        @Override
+        public void publicFromApi() {
         }
     }
 }

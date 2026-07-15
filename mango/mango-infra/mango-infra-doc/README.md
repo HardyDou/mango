@@ -28,7 +28,8 @@
 </dependency>
 ```
 
-自动配置入口为 `DocAutoConfiguration`。模块分组依赖各模块 jar 内的 `META-INF/mango/module.properties`：
+自动配置入口为 `DocAutoConfiguration`。模块分组复用 `mango-infra-module-starter` 的运行时
+`ModuleInfoRegistry`；各模块 jar 仍通过 `META-INF/mango/module.properties` 提供 classpath 默认值：
 
 ```properties
 module-name=mango-payment
@@ -53,6 +54,10 @@ module-path=/payment
 | `contact.email` | `mango@example.com` | 文档联系人邮箱。 |
 | `license` | `Apache 2.0` | OpenAPI license 名称。 |
 
+模块部署路径由 `mango.module.module-service.modules.<module-name>.module-path` 覆盖时，文档分组读取
+registry 中的最终路径，不继续使用同名 classpath 旧路径。该行为与 Feign 路由、authorization 资源同步
+共享同一运行时模块事实。
+
 示例：
 
 ```yaml
@@ -72,12 +77,14 @@ mango:
 
 ## 7. API 与扩展
 - `DocAutoConfiguration`：注册 `OpenAPI` 和默认 `GroupedOpenApi`。
-- `ModuleGroupedOpenApiRegistrar`：扫描 classpath 中的 `META-INF/mango/module.properties`，按 `module-name` 和 `module-path` 注册分组。
+- `ModuleGroupedOpenApiRegistrar`：扫描 classpath 元数据和显式模块配置，按 `module-name` 注册分组 Bean。
+- `ModuleGroupedOpenApiFactoryBean`：分组实例化时读取 `ModuleInfoRegistry` 的最终模块路径；registry 不可用时回退到 classpath 路径。
 - `MangoApiScopeOperationCustomizer`：为 OpenAPI operation 添加接口范围信息，并注册 Authorization 调试头。
 
 模块分组规则：
 
-- `module-path=/payment` 会匹配 `/payment` 和 `/payment/**`。
+- `module-path=/payment` 与 `module-path=/payment/` 都会归一为 `/payment`，匹配 `/payment` 和 `/payment/**`。
+- `module-path=/` 会归一为根分组模式 `/**`，不会生成双斜杠路径。
 - 多个路径可在 `module-path` 中用逗号分隔。
 - `module-name` 重复时只注册第一个分组。
 
@@ -89,19 +96,36 @@ mango:
 
 ## 10. 快速开始
 1. 应用接入 `mango-infra-doc-starter`。
-2. 每个业务能力模块提供 `META-INF/mango/module.properties`，登记模块名和模块路径。
-3. 开发、联调环境开启 `mango.doc.enabled`，生产环境按安全策略关闭或限制访问。
-4. 联调前确认模块分组能展示该模块 Controller，接口权限仍通过 authorization/access 验证。
+2. 每个业务能力模块提供 `META-INF/mango/module.properties`，登记模块名和默认模块路径。
+3. 部署路径与默认值不同时，通过 `mango.module.module-service` 配置实际路径；Doc、Feign 和 authorization 会读取同一 registry 结果。
+4. 开发、联调环境开启 `mango.doc.enabled`，生产环境按安全策略关闭或限制访问。
+5. 联调前确认模块分组能展示该模块 Controller，接口权限仍通过 authorization/access 验证。
 
 ## 11. 问题排查
 - 看不到模块分组：检查 jar 内是否存在 `META-INF/mango/module.properties`，以及 `module-path` 是否为空。
+- 分组仍显示旧路径：检查 `mango-infra-module-starter` 是否启用，以及 `mango.module.module-service.modules.<module-name>.module-path` 是否绑定到目标模块名。
 - 只有默认分组：检查 `mango.doc.module-grouping.enabled` 是否关闭。
 - 文档能调通不代表生产有权限：OpenAPI 只是调试入口，权限以运行时鉴权结果为准。
 
-## 12. 相关文档
+## 12. 验证入口
+
+```bash
+mvn -f mango/pom.xml \
+  -pl :mango-infra-doc-starter \
+  -am test -DskipTests=false \
+  -Dtest='MangoApiScopeOperationCustomizerTest,DocPropertiesTest,ModuleGroupedOpenApiRegistrarTest,DocOpenApiFlowTest' \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+`DocOpenApiFlowTest` 使用随机 Tomcat 端口和真实 `/v3/api-docs/{group}` HTTP 请求，验证当前 Module
+registry 配置覆盖、尾斜杠与多路径归一、OpenAPI 信息、公开/内部 scope、tag 和 Authorization 安全要求。
+消费者兼容验证把当前 Doc、Module 与 `mango-file-preview-app`、`mango-business-app` 分别放入同一 reactor，
+避免旧本地 JAR 造成假结果。
+
+## 13. 相关文档
 - [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 13. 补充资料
+## 14. 补充资料
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)
