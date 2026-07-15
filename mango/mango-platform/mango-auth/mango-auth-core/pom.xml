@@ -42,6 +42,24 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.mango.platform.captcha</groupId>
+            <artifactId>mango-captcha-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.mango.platform.system</groupId>
+            <artifactId>mango-system-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.mango.infra.ip.location</groupId>
+            <artifactId>mango-infra-ip-location-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango.common</groupId>
@@ -93,6 +111,12 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.9.3</version>
             <scope>provided</scope>
         </dependency>
 

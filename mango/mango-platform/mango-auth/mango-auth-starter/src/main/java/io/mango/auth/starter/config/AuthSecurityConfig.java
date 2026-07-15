@@ -1,9 +1,8 @@
 package io.mango.auth.starter.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.core.constant.AuthConstant;
-import io.mango.auth.core.service.TokenRevocationService;
-import io.mango.access.core.auth.IpWhitelistMatcher;
-import io.mango.access.core.config.AccessProperties;
+import io.mango.auth.core.store.TokenRevocationStore;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.vo.SecurityPrincipalVO;
@@ -48,14 +47,16 @@ import java.io.IOException;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties({AuthSecurityProperties.class, AccessProperties.class})
+@EnableConfigurationProperties({AuthSecurityProperties.class, AuthAccessProperties.class})
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Security configuration retains intentionally shared Spring configuration collaborators")
 public class AuthSecurityConfig {
 
     private final ITokenProvider tokenService;
-    private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
+    private final ObjectProvider<TokenRevocationStore> tokenRevocationStoreProvider;
     private final AuthSecurityProperties properties;
-    private final AccessProperties accessProperties;
-    private final IpWhitelistMatcher ipWhitelistMatcher = new IpWhitelistMatcher();
+    private final AuthAccessProperties accessProperties;
+    private final AuthIpWhitelistMatcher ipWhitelistMatcher = new AuthIpWhitelistMatcher();
 
     @Bean
     @ConditionalOnProperty(name = "mango.access.auth-enabled", havingValue = "true", matchIfMissing = true)
@@ -93,7 +94,7 @@ public class AuthSecurityConfig {
                 })
                 .addFilterBefore(new AuthTokenAuthenticationFilter(
                         tokenService,
-                        tokenRevocationServiceProvider), UsernamePasswordAuthenticationFilter.class);
+                        tokenRevocationStoreProvider), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -120,12 +121,12 @@ public class AuthSecurityConfig {
     static class AuthTokenAuthenticationFilter extends OncePerRequestFilter {
 
         private final ITokenProvider tokenService;
-        private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
+        private final ObjectProvider<TokenRevocationStore> tokenRevocationStoreProvider;
 
         AuthTokenAuthenticationFilter(ITokenProvider tokenService,
-                                      ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider) {
+                                      ObjectProvider<TokenRevocationStore> tokenRevocationStoreProvider) {
             this.tokenService = tokenService;
-            this.tokenRevocationServiceProvider = tokenRevocationServiceProvider;
+            this.tokenRevocationStoreProvider = tokenRevocationStoreProvider;
         }
 
         @Override
@@ -229,8 +230,8 @@ public class AuthSecurityConfig {
         }
 
         private boolean isRevoked(String token) {
-            TokenRevocationService tokenRevocationService = tokenRevocationServiceProvider.getIfAvailable();
-            return tokenRevocationService != null && tokenRevocationService.isRevoked(token);
+            TokenRevocationStore tokenRevocationStore = tokenRevocationStoreProvider.getIfAvailable();
+            return tokenRevocationStore != null && tokenRevocationStore.isRevoked(token);
         }
 
         private String firstText(String first, String second) {

@@ -1,27 +1,52 @@
 package io.mango.auth.starter.remote;
 
 import io.mango.auth.api.AuthApi;
+import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.LoginCommand;
+import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.command.LogoutCommand;
 import io.mango.auth.api.command.RefreshTokenCommand;
+import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
+import io.mango.auth.api.command.WecomLoginCommand;
+import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
+import io.mango.auth.api.vo.WecomLoginConfigVO;
 import io.mango.common.result.R;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 /**
- * Auth Feign client - implements AuthApi for remote calls
- *
- * @author Mango
+ * 认证远程 HTTP 适配器。
  */
 @FeignClient(name = "mango-auth", contextId = "authFeignClient", path = "/auth")
 public interface AuthFeignClient extends AuthApi {
 
     @Override
     @PostMapping("/login")
-    R<LoginVO> login(@RequestBody LoginCommand loginCommand);
+    R<LoginVO> login(@RequestBody LoginCommand command);
+
+    @Override
+    @PostMapping("/login-institutions")
+    R<List<LoginTenantVO>> loginInstitutions(@RequestBody LoginTenantOptionsCommand command);
+
+    @Override
+    @PostMapping("/wecom/login")
+    R<LoginVO> wecomLogin(@RequestBody WecomLoginCommand command);
+
+    @Override
+    @GetMapping("/wecom/login-config")
+    R<WecomLoginConfigVO> wecomLoginConfig(@RequestParam("tenantId") String tenantId);
+
+    @Override
+    @PostMapping("/password/change-required")
+    R<LoginVO> changeRequiredPassword(@RequestBody ChangeRequiredPasswordCommand command);
 
     @Override
     @PostMapping("/refresh")
@@ -34,4 +59,12 @@ public interface AuthFeignClient extends AuthApi {
     @Override
     @PostMapping("/validate")
     R<Boolean> validateToken(@RequestBody ValidateTokenCommand command);
+
+    @Override
+    @GetMapping("/info")
+    R<LoginVO> info(@RequestHeader(value = "Authorization", required = false) String authorization);
+
+    @Override
+    @PostMapping("/captcha/send")
+    R<String> sendCaptcha(@RequestBody SendAuthCaptchaCommand command);
 }

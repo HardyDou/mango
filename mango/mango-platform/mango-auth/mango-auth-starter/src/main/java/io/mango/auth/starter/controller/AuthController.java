@@ -1,56 +1,28 @@
 package io.mango.auth.starter.controller;
 
+import io.mango.auth.api.AuthApi;
 import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.LoginCommand;
 import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.command.LogoutCommand;
 import io.mango.auth.api.command.RefreshTokenCommand;
+import io.mango.auth.api.command.SendAuthCaptchaCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.command.WecomLoginCommand;
-import io.mango.auth.api.vo.ButtonDisplayRuleVO;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
-import io.mango.auth.api.AuthApi;
-import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.service.IAuthService;
-import io.mango.auth.starter.web.CaptchaResponseAdapter;
-import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.IAuthorizationProvider;
-import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
-import io.mango.captcha.api.CaptchaApi;
-import io.mango.captcha.api.dto.CaptchaSendRequest;
-import io.mango.common.exception.BizException;
-import io.mango.common.result.Require;
 import io.mango.common.result.R;
-import io.mango.identity.api.IdentityUserApi;
-import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.infra.iplocation.api.IpLocationResolver;
-import io.mango.infra.iplocation.api.IpLocation;
-import io.mango.notice.api.command.NoticeSiteMessageActionCommand;
-import io.mango.notice.api.command.NoticeSiteMessageSubjectCommand;
-import io.mango.notice.api.command.NoticeSiteMessageTargetCommand;
-import io.mango.notice.api.enums.NoticePriority;
-import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
-import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
-import io.mango.notice.api.command.NoticeJsonRequest;
-import io.mango.notice.api.command.NoticeSendEventCommand;
-import io.mango.system.api.SysLoginLogApi;
-import io.mango.system.api.po.SysLoginLogPo;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.context.ApplicationEventPublisher;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,408 +30,155 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * 认证控制器，提供认证 HTTP 端点。
- * 具体认证逻辑委托给 {@link IAuthService}。
- *
- * @author Mango
+ * 认证 HTTP 协议适配器。
  */
-@Slf4j
+@Validated
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 @Tag(name = "认证授权", description = "认证登录、令牌刷新、退出登录接口")
 public class AuthController implements AuthApi {
 
     private final IAuthService authService;
-    private final ITokenProvider tokenProvider;
-    private final IdentityUserApi identityUserApi;
-    private final IAuthorizationProvider authorizationProvider;
-    private final ObjectProvider<CaptchaApi> captchaApiProvider;
-    private final ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider;
-    private final ObjectProvider<IpLocationResolver> ipLocationResolverProvider;
-    private final ApplicationEventPublisher eventPublisher;
 
-    @Autowired
-    public AuthController(IAuthService authService,
-                          ITokenProvider tokenProvider,
-                          IdentityUserApi identityUserApi,
-                          IAuthorizationProvider authorizationProvider,
-                          ObjectProvider<CaptchaApi> captchaApiProvider,
-                          ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider,
-                          ObjectProvider<IpLocationResolver> ipLocationResolverProvider,
-                          ApplicationEventPublisher eventPublisher) {
-        this.authService = authService;
-        this.tokenProvider = tokenProvider;
-        this.identityUserApi = identityUserApi;
-        this.authorizationProvider = authorizationProvider;
-        this.captchaApiProvider = captchaApiProvider;
-        this.sysLoginLogApiProvider = sysLoginLogApiProvider;
-        this.ipLocationResolverProvider = ipLocationResolverProvider;
-        this.eventPublisher = eventPublisher;
-    }
-
+    @Override
     @PostMapping("/login")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "用户登录")
-    @Operation(summary = "用户登录", description = "公开接口。使用用户名、密码、登录域和验证码信息登录，成功后返回访问令牌、刷新令牌和用户授权信息")
-    public R<LoginVO> loginEndpoint(
-            @Valid @RequestBody LoginCommand loginCommand,
-            HttpServletRequest request,
-            HttpServletResponse response) {
-        String clientIp = resolveClientIp(request);
-        R<LoginVO> result = doLogin(loginCommand, clientIp);
-        if (result.isSuccess() && result.getData() != null && result.getData().getAccessToken() != null) {
-            Cookie cookie = new Cookie("MANGO_TOKEN", result.getData().getAccessToken());
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setAttribute("SameSite", "Lax");
-            response.addCookie(cookie);
-        }
-        recordLoginLog(loginCommand, request, result, clientIp);
-        return result;
+    @Operation(summary = "用户登录", description = "使用用户名、密码、机构和验证码登录")
+    public R<LoginVO> login(@RequestBody LoginCommand command) {
+        enrichClientContext(command);
+        return R.ok(authService.login(command));
     }
 
     @Override
-    public R<LoginVO> login(LoginCommand loginCommand) {
-        LoginVO response = authService.login(loginCommand);
-        Require.notNull(response, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
-        return R.ok(response);
-    }
-
     @PostMapping("/login-institutions")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询账号可登录机构")
-    @Operation(summary = "查询账号可登录机构", description = "公开接口。校验用户名和登录域后，返回当前账号可进入的启用机构列表，用于登录页机构选择")
-    public R<List<LoginTenantVO>> loginInstitutions(@Valid @RequestBody LoginTenantOptionsCommand command) {
+    @Operation(summary = "查询账号可登录机构", description = "校验用户名和登录域后返回当前账号可进入的启用机构")
+    public R<List<LoginTenantVO>> loginInstitutions(@RequestBody LoginTenantOptionsCommand command) {
         return R.ok(authService.listLoginTenants(command));
     }
 
+    @Override
     @PostMapping("/wecom/login")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "企业微信扫码登录")
-    @Operation(summary = "企业微信扫码登录", description = "公开接口。使用企业微信授权 code 换取企业微信 userid，并按已绑定的 Mango 用户签发登录令牌")
-    public R<LoginVO> wecomLoginEndpoint(@Valid @RequestBody WecomLoginCommand command,
-                                         HttpServletResponse response) {
-        try {
-            LoginVO loginResponse = authService.loginByWecom(command);
-            Cookie cookie = new Cookie("MANGO_TOKEN", loginResponse.getAccessToken());
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setAttribute("SameSite", "Lax");
-            response.addCookie(cookie);
-            return R.ok(loginResponse);
-        } catch (BizException e) {
-            return R.fail(e.getCode(), e.getMessage());
-        }
+    @Operation(summary = "企业微信扫码登录", description = "使用企业微信授权码换取已绑定用户的登录令牌")
+    public R<LoginVO> wecomLogin(@RequestBody WecomLoginCommand command) {
+        return R.ok(authService.loginByWecom(command));
     }
 
+    @Override
     @GetMapping("/wecom/login-config")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询企业微信扫码登录配置")
-    @Operation(summary = "查询企业微信扫码登录配置", description = "公开接口。根据所选机构读取通知中心企业微信渠道配置，返回二维码所需公开字段")
-    public R<WecomLoginConfigVO> wecomLoginConfig(@RequestParam String tenantId) {
-        try {
-            return R.ok(authService.getWecomLoginConfig(tenantId));
-        } catch (BizException e) {
-            return R.fail(e.getCode(), e.getMessage());
-        }
+    @Operation(summary = "查询企业微信扫码登录配置", description = "按机构读取启用的企业微信扫码登录公开配置")
+    public R<WecomLoginConfigVO> wecomLoginConfig(
+            @Parameter(description = "机构ID", required = true)
+            @RequestParam("tenantId") String tenantId) {
+        return R.ok(authService.getWecomLoginConfig(tenantId));
     }
 
-    private R<LoginVO> doLogin(LoginCommand loginCommand, String clientIp) {
-        try {
-            LoginVO loginResponse = authService.login(loginCommand);
-            if (!Boolean.TRUE.equals(loginResponse.getPasswordResetRequired())) {
-                publishLoginSuccessNotice(loginCommand, loginResponse, clientIp);
-            }
-            return R.ok(loginResponse);
-        } catch (BizException e) {
-            if (e.getCode() == AuthCode.LOGIN_ATTEMPT_LOCKED.getCode()) {
-                publishLoginLockedNotice(loginCommand, clientIp);
-            }
-            return R.fail(e.getCode(), e.getMessage());
-        }
-    }
-
-    private void publishLoginSuccessNotice(LoginCommand command, LoginVO response, String clientIp) {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("username", response.getUsername());
-        params.put("clientIp", clientIp);
-        params.put("loginTime", LocalDateTime.now().toString());
-        params.put("appCode", firstText(response.getAppCode(), command.getAppCode()));
-        NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
-        NoticeSendEventCommand event = new NoticeSendEventCommand();
-        event.setTenantId(response.getTenantId());
-        event.setBizType("auth.login.success");
-        event.setBizId(String.valueOf(response.getUserId()));
-        event.setUserId(response.getUserId());
-        event.setParams(NoticeJsonRequest.of(params));
-        event.setMessageScene("auth.login.success");
-        event.setMessageSubject(subject("AUTH_LOGIN", String.valueOf(response.getUserId()), response.getUsername()));
-        event.setMessageTarget(target);
-        event.setMessageData(NoticeJsonRequest.of(params));
-        event.setMessageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)));
-        event.setPriority(NoticePriority.LOW);
-        event.setIdempotentKey("auth.login.success:" + response.getUserId() + ":" + System.currentTimeMillis());
-        eventPublisher.publishEvent(event);
-    }
-
-    private void publishLoginLockedNotice(LoginCommand command, String clientIp) {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("username", command.getUsername());
-        params.put("clientIp", clientIp);
-        params.put("loginTime", LocalDateTime.now().toString());
-        NoticeSiteMessageTargetCommand target = routeTarget("system:user", params);
-        NoticeSendEventCommand event = new NoticeSendEventCommand();
-        event.setTenantId(firstText(command.getTenantId(), MangoContextHolder.tenantId()));
-        event.setBizType("auth.login.locked");
-        event.setBizId(command.getUsername());
-        event.setParams(NoticeJsonRequest.of(params));
-        event.setMessageScene("auth.login.locked");
-        event.setMessageSubject(subject("AUTH_LOGIN_LOCK", command.getUsername(), command.getUsername()));
-        event.setMessageTarget(target);
-        event.setMessageData(NoticeJsonRequest.of(params));
-        event.setMessageActions(List.of(routeAction("VIEW_USER", "查看账号", target)));
-        event.setPriority(NoticePriority.HIGH);
-        event.setIdempotentKey("auth.login.locked:" + command.getUsername() + ":" + clientIp);
-        eventPublisher.publishEvent(event);
-    }
-
-    private NoticeSiteMessageSubjectCommand subject(String subjectType, String subjectId, String subjectName) {
-        NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
-        subject.setSubjectType(subjectType);
-        subject.setSubjectId(subjectId);
-        subject.setSubjectName(subjectName);
-        return subject;
-    }
-
-    private NoticeSiteMessageTargetCommand routeTarget(String targetKey, Map<String, Object> params) {
-        NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
-        target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
-        target.setTargetKey(targetKey);
-        target.setParams(NoticeJsonRequest.of(params));
-        return target;
-    }
-
-    private NoticeSiteMessageActionCommand routeAction(String actionCode, String actionLabel, NoticeSiteMessageTargetCommand target) {
-        NoticeSiteMessageActionCommand action = new NoticeSiteMessageActionCommand();
-        action.setActionCode(actionCode);
-        action.setActionLabel(actionLabel);
-        action.setInteractionType(NoticeSiteMessageActionInteractionType.ROUTE);
-        action.setTarget(target);
-        return action;
-    }
-
+    @Override
     @PostMapping("/password/change-required")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "强制修改初始密码")
-    @Operation(summary = "强制修改初始密码", description = "公开接口。使用登录返回的一次性强制改密凭据修改密码，成功后返回正式登录令牌")
-    public R<LoginVO> changeRequiredPassword(@Valid @RequestBody ChangeRequiredPasswordCommand command,
-                                             HttpServletResponse response) {
-        try {
-            LoginVO loginResponse = authService.changeRequiredPassword(command);
-            Cookie cookie = new Cookie("MANGO_TOKEN", loginResponse.getAccessToken());
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setAttribute("SameSite", "Lax");
-            response.addCookie(cookie);
-            return R.ok(loginResponse);
-        } catch (BizException e) {
-            return R.fail(e.getCode(), e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return R.fail(400, e.getMessage());
-        }
+    @Operation(summary = "强制修改初始密码", description = "使用一次性强制改密凭据修改密码并签发正式令牌")
+    public R<LoginVO> changeRequiredPassword(@RequestBody ChangeRequiredPasswordCommand command) {
+        return R.ok(authService.changeRequiredPassword(command));
     }
 
     @Override
-    public R<LoginVO> refreshToken(RefreshTokenCommand command) {
-        LoginVO response = authService.refreshToken(command.getRefreshToken());
-        Require.notNull(response, AuthCode.REFRESH_TOKEN_INVALID);
-        return R.ok(response);
-    }
-
     @PostMapping("/refresh")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "刷新访问令牌")
-    @Operation(summary = "刷新访问令牌", description = "公开接口。使用刷新令牌换取新的访问令牌")
-    public R<LoginVO> refreshEndpoint(@Valid @RequestBody RefreshTokenCommand command) {
-        return refreshToken(command);
-    }
-
-    @PostMapping("/logout")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "用户退出登录")
-    @Operation(summary = "用户退出登录", description = "登录接口。退出当前登录状态并清理浏览器令牌 Cookie；令牌可通过请求体或 Authorization 请求头传入")
-    public R<Void> logoutEndpoint(@Valid @RequestBody(required = false) LogoutCommand command,
-                                  @Parameter(description = "访问令牌，格式为 Bearer <accessToken>")
-                                  @RequestHeader(value = "Authorization", required = false) String token,
-                                  HttpServletResponse response) {
-        String resolvedToken = command != null && command.getToken() != null ? command.getToken() : token;
-        authService.logout(resolvedToken);
-        Cookie cookie = new Cookie("MANGO_TOKEN", "");
-        cookie.setMaxAge(0);
-        cookie.setPath("/");
-        response.addCookie(cookie);
-        return R.ok();
+    @Operation(summary = "刷新访问令牌", description = "使用刷新令牌换取新的访问令牌并撤销旧刷新令牌")
+    public R<LoginVO> refreshToken(@RequestBody RefreshTokenCommand command) {
+        return R.ok(authService.refreshToken(command.getRefreshToken()));
     }
 
     @Override
-    public R<Void> logout(LogoutCommand command) {
+    @PostMapping("/logout")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "用户退出登录")
+    @Operation(summary = "用户退出登录", description = "退出登录并清理浏览器令牌 Cookie；兼容 Authorization 请求头")
+    public R<Void> logout(@RequestBody LogoutCommand command) {
         authService.logout(command.getToken());
         return R.ok();
     }
 
     @Override
-    public R<Boolean> validateToken(ValidateTokenCommand command) {
+    @PostMapping("/validate")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "校验令牌")
+    @Operation(summary = "校验访问令牌", description = "校验访问令牌签名、有效期和撤销状态")
+    public R<Boolean> validateToken(@RequestBody ValidateTokenCommand command) {
         return R.ok(authService.validateToken(command.getToken()));
     }
 
-    @PostMapping("/validate")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "校验令牌")
-    @Operation(summary = "校验访问令牌", description = "登录接口。校验访问令牌是否仍然有效")
-    public R<Boolean> validateEndpoint(@Valid @RequestBody ValidateTokenCommand command) {
-        return validateToken(command);
-    }
-
+    @Override
     @GetMapping("/info")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取当前登录用户信息")
-    @Operation(summary = "获取当前用户信息", description = "登录接口。根据 Authorization 请求头中的访问令牌返回当前用户资料、角色和权限")
+    @Operation(summary = "获取当前用户信息", description = "根据访问令牌返回当前用户资料、角色、权限和按钮规则")
     public R<LoginVO> info(
             @Parameter(description = "访问令牌，格式为 Bearer <accessToken>")
-            @RequestHeader(value = "Authorization", required = false) String token) {
-        String resolvedToken = stripBearer(token);
-        Long userId = tokenProvider.getUserId(resolvedToken);
-        Require.notNull(userId, AuthCode.ACCESS_TOKEN_INVALID);
-        IdentityUserInfo userInfo = identityUserApi.getUserInfoById(userId).getData();
-        Require.notNull(userInfo, AuthCode.CURRENT_USER_NOT_FOUND);
-        LoginVO vo = new LoginVO();
-        vo.setUserId(userInfo.getUserId());
-        vo.setMemberId(parseLong(tokenProvider.getClaim(resolvedToken, "memberId")));
-        vo.setUsername(userInfo.getUsername());
-        vo.setNickname(userInfo.getNickname());
-        vo.setRealm(userInfo.getRealm());
-        vo.setActorType(userInfo.getActorType());
-        vo.setPartyType(userInfo.getPartyType());
-        vo.setPartyId(userInfo.getPartyId());
-        String appCode = tokenProvider.getClaim(resolvedToken, "appCode");
-        String tenantId = tokenProvider.getClaim(resolvedToken, "tenantId");
-        String tenantCode = tokenProvider.getClaim(resolvedToken, "tenantCode");
-        vo.setTenantId(tenantId);
-        vo.setTenantCode(tenantCode);
-        vo.setTenantName(tokenProvider.getClaim(resolvedToken, "tenantName"));
-        vo.setAppCode(appCode);
-        Long memberId = vo.getMemberId();
-        Require.notNull(memberId, AuthCode.INSTITUTION_MEMBER_REQUIRED);
-        var snapshot = authorizationProvider.load(AuthorizationQuery.member(memberId)
-                .withTenantId(tenantId)
-                .withSystemCode(appCode)
-                .withRealm(vo.getRealm())
-                .withActorType(vo.getActorType())
-                .withParty(vo.getPartyType(), vo.getPartyId()));
-        vo.setRoles(snapshot.roleCodes().stream().toList());
-        vo.setPermissions(snapshot.permissionCodes().stream().toList());
-        vo.setButtonRules(snapshot.buttonRules().stream()
-                .map(this::toLoginButtonRule)
-                .toList());
-        return R.ok(vo);
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        return R.ok(authService.info(authorization));
     }
 
-    private ButtonDisplayRuleVO toLoginButtonRule(io.mango.authorization.api.vo.ButtonDisplayRuleVO source) {
-        ButtonDisplayRuleVO target = new ButtonDisplayRuleVO();
-        target.setCode(source.getCode());
-        target.setButtonType(source.getButtonType());
-        target.setDisplayRule(source.getDisplayRule());
-        return target;
-    }
-
+    @Override
     @PostMapping("/captcha/send")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "发送短信或邮件验证码")
-    @Operation(summary = "发送登录验证码", description = "公开接口。发送短信或邮件验证码，用于登录、注册、找回密码等业务场景")
-    public R<String> sendCaptcha(@Valid @RequestBody CaptchaSendRequest request) {
-        CaptchaApi captchaApi = captchaApiProvider.getIfAvailable();
-        Require.notNull(captchaApi, AuthCode.CAPTCHA_SERVICE_UNAVAILABLE);
-        return R.ok(CaptchaResponseAdapter.requireData(captchaApi.send(request)));
+    @Operation(summary = "发送登录验证码", description = "通过验证码服务发送短信或邮件验证码并返回验证码键")
+    public R<String> sendCaptcha(@RequestBody SendAuthCaptchaCommand command) {
+        return R.ok(authService.sendCaptcha(command));
+    }
+
+    private void enrichClientContext(LoginCommand command) {
+        HttpServletRequest request = currentRequest();
+        command.setClientIp(resolveClientIp(request));
+        command.setUserAgent(truncate(request.getHeader("User-Agent"), ClientContextLimits.USER_AGENT_LENGTH));
+    }
+
+    private HttpServletRequest currentRequest() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return attributes.getRequest();
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        String clientIp = MangoContextHolder.clientIp();
-        if (clientIp != null) {
-            return clientIp;
+        String contextIp = MangoContextHolder.clientIp();
+        if (contextIp != null && !contextIp.isBlank()) {
+            return contextIp;
         }
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.contains(",") ? forwardedFor.substring(0, forwardedFor.indexOf(',')).trim() : forwardedFor.trim();
+        String forwarded = firstHeaderValue(request.getHeader("X-Forwarded-For"));
+        if (forwarded != null) {
+            return forwarded;
         }
-        String realIp = request.getHeader("X-Real-IP");
-        return realIp != null && !realIp.isBlank() ? realIp.trim() : request.getRemoteAddr();
+        String realIp = trimToNull(request.getHeader("X-Real-IP"));
+        return realIp == null ? request.getRemoteAddr() : realIp;
     }
 
-    private void recordLoginLog(LoginCommand command, HttpServletRequest request, R<LoginVO> result, String clientIp) {
-        SysLoginLogApi logApi = sysLoginLogApiProvider.getIfAvailable();
-        if (logApi == null) {
-            return;
-        }
-        try {
-            LoginVO login = result.getData();
-            SysLoginLogPo log = new SysLoginLogPo();
-            log.setTenantId(parseLong(login != null ? login.getTenantId() : command.getTenantId()));
-            log.setUserId(login != null ? login.getUserId() : null);
-            log.setUsername(command.getUsername());
-            log.setLoginType(firstText(command.getRealm(), login != null ? login.getRealm() : null, "PASSWORD"));
-            log.setIp(clientIp);
-            log.setLocation(resolveLocation(clientIp));
-            log.setBrowser(truncate(firstText(request.getHeader("User-Agent"), "未知"), 100));
-            log.setOs("未知");
-            log.setStatus(result.isSuccess() ? 1 : 0);
-            log.setMsg(result.getMsg());
-            log.setLoginTime(LocalDateTime.now());
-            logApi.record(log);
-        } catch (Exception e) {
-            log.warn("Failed to record login log for {}", command.getUsername(), e);
-        }
-    }
-
-    private String resolveLocation(String clientIp) {
-        IpLocationResolver resolver = ipLocationResolverProvider.getIfAvailable();
-        if (resolver == null) {
-            return "未知";
-        }
-        IpLocation location = resolver.resolve(clientIp);
-        return location == null ? "未知" : location.displayText();
-    }
-
-    private String stripBearer(String token) {
-        if (token == null) {
+    private String firstHeaderValue(String value) {
+        String normalized = trimToNull(value);
+        if (normalized == null) {
             return null;
         }
-        return token.startsWith("Bearer ") ? token.substring(7) : token;
+        int separator = normalized.indexOf(',');
+        return separator < 0 ? normalized : normalized.substring(0, separator).trim();
     }
 
-    private Long parseLong(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Long.valueOf(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private String firstText(String... values) {
-        if (values == null) {
-            return null;
-        }
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value.trim();
-            }
-        }
-        return null;
+    private String trimToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String truncate(String value, int maxLength) {
-        if (value == null || value.length() <= maxLength) {
-            return value;
+        return value == null || value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
+    private static final class ClientContextLimits {
+        private static final int USER_AGENT_LENGTH = 512;
+
+        private ClientContextLimits() {
         }
-        return value.substring(0, maxLength);
     }
 }

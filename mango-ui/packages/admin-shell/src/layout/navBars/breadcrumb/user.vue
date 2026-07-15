@@ -41,6 +41,7 @@
         <el-dropdown-item
           divided
           command="logout"
+          data-action="auth.logout"
         >
           <el-icon><SwitchButton /></el-icon>
           退出登录
@@ -52,11 +53,14 @@
 
 <script setup lang="ts" name="breadcrumbUser">
 import { User, Lock, SwitchButton, ArrowDown } from '@element-plus/icons-vue';
+import { logout } from '@mango/auth';
+import { Session } from '@mango/common/utils/storage';
 import { computed } from 'vue';
-import { ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { useUserInfo } from '../../../stores/userInfo';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
+import { completeLogout } from '../../../runtime/logoutFlow';
 
 const router = useRouter();
 const storesUserInfo = useUserInfo();
@@ -68,6 +72,31 @@ const institutionLabel = computed(() => {
   return info.tenantName || info.tenantCode || (info.tenantId ? `机构 ${info.tenantId}` : '');
 });
 
+async function confirmLogout() {
+  try {
+    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+  } catch {
+    return;
+  }
+
+  try {
+    await completeLogout({
+      revokeSession: logout,
+      clearSession: () => Session.clearSession(),
+      clearNavigation: () => storesTagsViewRoutes.clearTagsView(),
+      clearUserInfo: () => storesUserInfo.clearUserInfo(),
+      redirectToLogin: () => router.push('/login'),
+    });
+  } catch (error) {
+    console.error('退出登录失败', error);
+    ElMessage.error('退出登录失败，请重试');
+  }
+}
+
 const handleCommand = (command: string) => {
   switch (command) {
     case 'profile':
@@ -77,17 +106,7 @@ const handleCommand = (command: string) => {
       router.push('/password');
       break;
     case 'logout':
-      ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }).then(() => {
-        storesTagsViewRoutes.clearTagsView();
-        storesUserInfo.clearUserInfo();
-        router.push('/login');
-      }).catch(() => {
-        // User canceled, do nothing
-      });
+      void confirmLogout();
       break;
   }
 };

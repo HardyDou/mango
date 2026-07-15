@@ -1,5 +1,6 @@
 package io.mango.auth.core.anti;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The KV store is an intentionally shared Spring infrastructure collaborator")
 public class IdempotencyGuard {
 
     private static final long IDEM_TTL_SECONDS = 86400; // 24 小时
@@ -60,5 +63,17 @@ public class IdempotencyGuard {
             return null;
         }
         return kvStore.get(KEY_PREFIX + key);
+    }
+
+    /**
+     * 仅在当前请求仍持有处理中占位时释放幂等键，允许失败请求安全重试。
+     *
+     * @param key 幂等键
+     */
+    public void releaseProcessing(String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        kvStore.deleteIfValue(KEY_PREFIX + key, PROCESSING);
     }
 }

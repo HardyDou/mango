@@ -1,7 +1,7 @@
 package io.mango.auth.starter.web.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.auth.api.AuthCode;
+import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.api.spi.CaptchaConfigService;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;

@@ -1,9 +1,9 @@
-package io.mango.auth.core.service;
+package io.mango.auth.core.store;
 
 import io.mango.infra.kv.api.IKvStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -14,14 +14,14 @@ import java.util.Base64;
  * 已撤销令牌追踪服务。
  */
 @Slf4j
-@Service
-public class TokenRevocationService {
+@Component
+public class TokenRevocationStore {
 
     private static final String KEY_PREFIX = "auth:token:revoked:";
 
     private final ObjectProvider<IKvStore> kvStoreProvider;
 
-    public TokenRevocationService(ObjectProvider<IKvStore> kvStoreProvider) {
+    public TokenRevocationStore(ObjectProvider<IKvStore> kvStoreProvider) {
         this.kvStoreProvider = kvStoreProvider;
     }
 

@@ -1,7 +1,10 @@
 package io.mango.auth.api.vo;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -70,11 +73,23 @@ public class LoginVO {
     private String appCode;
 
     @Schema(description = "角色编码列表")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+        justification = "Feign and Jackson require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Feign and Jackson require this mutable collection setter"))
     private List<String> roles;
 
     @Schema(description = "权限编码列表")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+        justification = "Feign and Jackson require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Feign and Jackson require this mutable collection setter"))
     private List<String> permissions;
 
     @Schema(description = "当前用户已授权按钮的展示规则")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+        justification = "Feign and Jackson require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Feign and Jackson require this mutable collection setter"))
     private List<ButtonDisplayRuleVO> buttonRules;
 }
