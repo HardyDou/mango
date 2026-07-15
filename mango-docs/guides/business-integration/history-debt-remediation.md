@@ -54,7 +54,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
 
 ### 4.2 锁定不变性契约
 
-改代码前，先列出业务方可观察且不允许变化的内容：
+改代码前，先按 [AI 交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md) 和 [测试用例与自动化流程](../../../mango-pmo/rules/09-test-case-automation-flow.md) 形成业务方可观察行为的基线。本次历史债务记录通常包含：
 
 - 公开 Java API、HTTP method/path、参数绑定和 JSON 结构。
 - 成功、失败、不存在、无权限和非法参数的状态码与错误语义。
@@ -62,7 +62,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
 - 关键表的写入、更新、删除、状态变化和幂等性。
 - 前端菜单位置、路由、页面主操作和典型角色可见范围。
 
-如果发现旧行为本身就是缺陷，将“修复缺陷”与“结构治理”分开记录，并用回归用例固定新的正确语义，不要把故障当成必须保留的“特性”。
+如果发现旧行为本身就是缺陷，可在任务范围中分别记录“缺陷修复”和“结构治理”，并由回归用例承载修复后的目标语义；问题归属和范围调整参见 [任务中发现新问题](../../../mango-pmo/rules/00-dev-flow.md#341-任务中发现新问题)。
 
 ### 4.3 建立改前基线
 
@@ -113,7 +113,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
 - 用稳定的业务条件和错误码表达失败，不要在各 Service 临时抛不同通用异常。
 - 持久化类使用 `XxxEntity`，继承 Mango canonical `TenantEntity`；不在子类重复声明 ID、tenantId 和审计字段。
 - Mapper 只访问本域表，直接继承 `BaseMapper<XxxEntity>`，Mapper/Entity 聚合名一致。
-- Entity 重构后立即对照 migration；继承来的 `tenant_id`/`org_id`/`created_by`/`created_at`/`updated_by`/`updated_at` 也必须真实存在于 schema。
+- Entity 重构后的 migration 对照范围包括继承的 `tenant_id`/`org_id`/`created_by`/`created_at`/`updated_by`/`updated_at`；字段与 schema 的正式约束参见 [持久化与 CRUD 规范](../../../mango-pmo/rules/backend/07-persistence.md)。
 
 #### Flyway 与资源数据
 
@@ -124,12 +124,12 @@ node mango-pmo/tools/pmo-preflight.mjs \
 | 表、列、索引等 DDL | 模块 `db/migration/**` | 由 Flyway 管理 |
 | 菜单、权限、字典、正式小资源 | `META-INF/mango/resources/` | 默认扫描，由对应 ResourceHandler 落库 |
 | 演示账号、演示配置、示例业务数据 | `META-INF/mango/demo/` | 只在 `mango.resource.registry.demo-enabled=true` 时扫描 |
-| 运行时可修改且升级不应覆盖的数据 | Resource `INIT_ONLY` 或业务开通/导入流程 | 保留用户运营结果 |
+| 运行时可修改、升级时需保留的数据 | Resource `INIT_ONLY` 或业务开通/导入流程 | 初始化模式和数据归属参见 [数据库规范](../../../mango-pmo/rules/backend/04-db.md) |
 | 大 SQL、停机修复、外部升级包 | 模块化外部 Flyway location | 不进入默认 classpath 启动链 |
 
 对仅面向全新数据库、尚未发布的模块，可以将当前最终 schema 重整为一份纯 DDL `V1`。已对外发布并可能有存量数据库的模块，不能擅自改已执行 migration，需要追加新版本并设计升级路径。
 
-模块 A 的 migration 不应写模块 B 的菜单和业务数据。这些资源由所属模块在自己的 `META-INF/mango/resources/` 下登记。
+模块间 migration、表和资源的数据所有权以 [数据库规范](../../../mango-pmo/rules/backend/04-db.md) 与 [持久化与 CRUD 规范](../../../mango-pmo/rules/backend/07-persistence.md) 为准；本指南示例按资源所属模块在各自的 `META-INF/mango/resources/` 下登记。
 
 ### 4.6 使用同一组验证回放
 
@@ -246,7 +246,7 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
    └─ 结论仅限于被测局部规则，补真实集成/API/E2E
 ```
 
-先确定缺陷层级，再决定修改什么。发布物问题不应通过改业务源码规避，源码问题也不应通过手改本地 JAR、缓存或 Flyway history 伪装通过。
+失败归因和问题归属参见 [AI 交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)。排查时可先区分发布物与源码证据：前者核对制品清单、仓库版本和摘要，后者回到源码、迁移和回归测试定位。
 
 ## 9. 常见假通过
 
@@ -332,4 +332,3 @@ JAR/包检查：
 - [API 规范](../../../mango-pmo/rules/backend/03-api.md)
 - [数据库规范](../../../mango-pmo/rules/backend/04-db.md)
 - [Resource Registry 使用说明](../../../mango/mango-platform/mango-resource/README.md)
-

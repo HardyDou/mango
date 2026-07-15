@@ -101,7 +101,7 @@
     },
     "backend.api": {
       "path": "rules/backend/03-api.md",
-      "reason": "后端 API、Controller、Service、Mapper、Entity、Feign、参数校验继承与 Java 架构机器门禁规范"
+      "reason": "后端 API、Controller、Service、Mapper、Entity、Feign、参数校验继承、LocalCapabilityContract 本地 JVM 能力契约与 Java 架构机器门禁规范"
     },
     "backend.db": {
       "path": "rules/backend/04-db.md",
