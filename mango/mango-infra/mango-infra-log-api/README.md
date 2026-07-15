@@ -20,8 +20,9 @@
 ## 4. 模块入口
 本模块只暴露日志契约类型：
 
-- `io.mango.infra.log.api.annotation.Log`
-- `io.mango.infra.log.api.enums.LogType`
+- `io.mango.infra.log.annotation.Log`
+- `io.mango.infra.log.annotation.LogType`
+- `io.mango.infra.log.Loggers`
 
 运行时装配由 `mango-infra-log-starter` 提供。
 
@@ -46,6 +47,7 @@
 |------|------|
 | `@Log` | 方法级操作日志标记，包含操作描述和 `LogType`。 |
 | `LogType` | 操作类型枚举，覆盖登录、登出、注册、密码、安全、审计和普通操作。 |
+| `Loggers.OPERATION` | 独立操作日志 appender 的稳定 SLF4J logger 名称。 |
 
 扩展新的日志采集方式时，应读取这些契约类型，不应要求业务模块依赖具体实现。
 

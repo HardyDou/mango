@@ -25,24 +25,24 @@ mango:
     # ---------- 文件滚动策略 ----------
     file:
       # 单文件最大大小
-      maxSize: 100MB
+      max-size: 100MB
       # 保留天数
-      maxHistory: 30
+      max-history: 30
       # 总大小上限
-      totalSizeCap: 3GB
+      total-size-cap: 3GB
 
     # ---------- 审计日志 ----------
     operation:
       # 是否开启审计日志（默认 true）
       enabled: true
       # 保留天数（默认 90）
-      maxHistory: 90
+      max-history: 90
       # 总大小上限（默认 10GB）
-      totalSizeCap: 10GB
+      total-size-cap: 10GB
 
     # ---------- JSON 输出 ----------
     json:
-      # 是否启用 JSON 格式（生产默认 true，dev 默认 false）
+      # default/dev/local 开启后追加 JSON 文件；test/prod 始终按 profile 输出 JSON 文件
       enabled: false
 
 # ==================== 兼容标准 logging 配置 ====================
@@ -86,12 +86,12 @@ logging:
 #       spring: ERROR
 #       http: ERROR
 #     file:
-#       maxSize: 200MB
-#       maxHistory: 60
-#       totalSizeCap: 5GB
+#       max-size: 200MB
+#       max-history: 60
+#       total-size-cap: 5GB
 #     operation:
-#       maxHistory: 30
-#       totalSizeCap: 5GB
+#       max-history: 30
+#       total-size-cap: 5GB
 
 # ---------- 场景4: 单独调试某模块 ----------
 # mango:
@@ -123,5 +123,5 @@ logging:
 #       mybatis: WARN
 #     operation:
 #       enabled: true
-#       maxHistory: 30
-#       totalSizeCap: 3GB
+#       max-history: 30
+#       total-size-cap: 3GB

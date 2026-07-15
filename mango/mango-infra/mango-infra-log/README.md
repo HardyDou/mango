@@ -19,7 +19,7 @@
 - 不负责敏感字段脱敏，日志内容必须由调用方避免输出密码、token、密钥和完整证件号。
 
 ## 4. 模块入口
-本模块是单 starter 模块，包含 `LogAutoConfiguration`、`LogProperties`、`@Log`、`LogType` 和 `logback-spring.xml`。Web 请求 MDC 写入由 `mango-infra-web` 的 `WebMdcFilter` 完成。
+日志能力分为两个模块：`mango-infra-log-api` 提供 `@Log`、`LogType` 和 `Loggers` 本地契约；`mango-infra-log-starter` 提供 `LogAutoConfiguration`、`LogProperties` 和 `logback-spring.xml`。Web 请求 MDC 写入由 `mango-infra-web` 的 `WebMdcFilter` 完成。
 
 ## 5. 接入方式
 ```xml
@@ -54,7 +54,7 @@ public LoginResult login(LoginCommand command) {
 | `operation.enabled` | `true` | 是否启用操作日志 logger 输出。 |
 | `operation.max-history` | `90` | 操作日志保留天数。 |
 | `operation.total-size-cap` | `10GB` | 操作日志总容量上限。 |
-| `json.enabled` | `false` | JSON 输出开关；当前 logback 主要通过 profile 选择 JSON appender。 |
+| `json.enabled` | `false` | 在 `default`、`dev`、`local` profile 追加 JSON 文件；`test`、`prod` 按既有 profile 策略始终输出 JSON 文件。 |
 
 示例：
 
@@ -80,14 +80,19 @@ mango:
 ## 7. API 与扩展
 - `@Log`：方法级操作标记，字段包括 `value` 和 `type`。
 - `LogType`：支持 `LOGIN`、`LOGOUT`、`REGISTER`、`PASSWORD`、`OPERATION`、`SECURITY`、`AUDIT`。
+- `Loggers.OPERATION`：稳定的操作日志 logger 名称；需要直接写独立操作日志文件时使用 `LoggerFactory.getLogger(Loggers.OPERATION)`。
 - `LogProperties`：绑定日志配置。
 - `logback-spring.xml`：定义 console、file、error、operation、json appender。
+
+`@Log` 只提供语义标记，实际 AOP 与落库由 System 等消费者实现；它不会自动向操作日志文件写一条文本。操作日志文件只接收显式写入 `Loggers.OPERATION` 的 SLF4J 事件。
 
 profile 行为：
 
 - `default`、`dev`、`local`：控制台输出，操作日志写 plain 文件。
 - `test`：控制台、普通文件、错误文件，操作日志写 JSON 文件。
 - `prod`：控制台、JSON 文件、错误文件，操作日志写 JSON 文件。
+
+配置值由 `logback-spring.xml` 的 `springProperty` 在日志系统初始化阶段直接从 Spring Environment 读取，命令行、环境变量和 `application.yml` 均在真实 Logback 配置中生效，而不只是在 `LogProperties` Bean 中生效。
 
 ## 8. 数据与初始化
 无数据库 migration、无 Runner、无 Initializer、无初始化数据。日志文件默认写到 `${LOG_PATH:-./logs}`。
@@ -106,6 +111,7 @@ profile 行为：
 - 日志没有 trace id：检查请求是否经过 `WebMdcFilter`。
 - `@Log` 没有落库：本模块不提供落库 AOP，落库需要业务审计模块实现。
 - prod 日志不是 JSON：检查 active profile 是否为 `prod`，以及应用是否使用该 `logback-spring.xml`。
+- `mango.log.*` 已绑定但 logger 级别没变化：确认没有由宿主应用的 `logging.config` 或自带 `logback-spring.xml` 覆盖 Starter 配置。
 
 ## 12. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
