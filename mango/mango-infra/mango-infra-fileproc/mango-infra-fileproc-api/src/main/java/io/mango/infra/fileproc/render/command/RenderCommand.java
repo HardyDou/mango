@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.render.enums.RenderFormat;
 
@@ -18,6 +19,7 @@ import java.util.Map;
  * <p>
  * 命令只描述渲染输入，不包含文件中心标识、存储位置、权限或租户信息。
  */
+@LocalCapabilityContract
 public final class RenderCommand {
 
     private final RenderFormat sourceFormat;
@@ -116,6 +118,7 @@ public final class RenderCommand {
         return new Builder();
     }
 
+    @LocalCapabilityContract
     public static final class Builder {
 
         private RenderFormat sourceFormat;

@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.convert;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.fileproc.convert.command.ConvertCommand;
 import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 import io.mango.infra.fileproc.convert.vo.ConvertFormatPairVO;
@@ -12,6 +13,7 @@ import java.util.Set;
  * <p>
  * 本接口只表达格式转换能力，不承载文件存储、缓存、权限、租户或 fileId 语义。
  */
+@LocalCapabilityContract
 public interface ConvertApi {
 
     /**

@@ -37,6 +37,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     private static final String RESULT_R = "io.mango.common.result.R";
     private static final String REQUIRE = "io.mango.common.result.Require";
     private static final String BIZ_CODE = "io.mango.common.result.BizCode";
+    private static final String LOCAL_CAPABILITY_CONTRACT =
+            "io.mango.common.contract.LocalCapabilityContract";
+    private static final String MANGO_INFRA_PACKAGE_PREFIX = "io.mango.infra.";
     private static final String MANGO_CRUD_SERVICE =
             "io.mango.infra.persistence.api.crud.MangoCrudService";
     private static final String MANGO_TYPED_CRUD_SERVICE =
@@ -214,7 +217,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
             if (hasAnnotation(type, REST_CONTROLLER)) {
                 inspectController(type, context);
             }
-            if (type.isInterface() && type.getSimpleName().endsWith("Api")) {
+            if (type.isInterface()
+                    && type.getSimpleName().endsWith("Api")
+                    && !isLocalCapabilityContract(type)) {
                 inspectApiContract(type, context);
             }
             if (isService(type)) {
@@ -933,6 +938,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectProtocolModel(ASTTypeDeclaration type, RuleContext context) {
+        if (isLocalCapabilityContract(type)) {
+            return;
+        }
         String name = type.getSimpleName();
         boolean input = isInputModelName(name);
         if (!input && !isOutputModelName(name)) {
@@ -1374,6 +1382,11 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     private boolean hasAnnotation(Annotatable owner, String canonicalName) {
         return owner.getDeclaredAnnotations()
                 .any(annotation -> canonicalName.equals(canonicalName(annotation.getTypeMirror())));
+    }
+
+    private boolean isLocalCapabilityContract(ASTTypeDeclaration type) {
+        return canonicalName(type.getTypeMirror()).startsWith(MANGO_INFRA_PACKAGE_PREFIX)
+                && hasAnnotation(type, LOCAL_CAPABILITY_CONTRACT);
     }
 
     private boolean hasChineseAttribute(

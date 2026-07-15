@@ -17,9 +17,9 @@ import java.util.Set;
 import java.util.List;
 
 /**
- * 默认渲染处理实现，用于未接入具体 PDF 引擎时明确失败。
+ * 未接入具体 PDF 引擎时使用的失败策略。
  */
-public class UnsupportedRenderService implements RenderApi {
+public class UnsupportedRenderOperations implements RenderApi {
 
     @Override
     public boolean canRender(RenderFormat sourceFormat, RenderFormat targetFormat) {

@@ -30,7 +30,7 @@ public class DefaultRenderApi implements RenderApi {
 
     public DefaultRenderApi(RenderRegistry registry, RenderApi pdfRenderApi) {
         this.registry = registry;
-        this.pdfRenderApi = pdfRenderApi == null ? new UnsupportedRenderService() : pdfRenderApi;
+        this.pdfRenderApi = pdfRenderApi == null ? new UnsupportedRenderOperations() : pdfRenderApi;
     }
 
     @Override

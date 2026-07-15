@@ -1,5 +1,7 @@
 package io.mango.infra.fileproc.render.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +12,7 @@ import java.util.List;
  * @param type 变量类型。
  * @param children 子变量定义。
  */
+@LocalCapabilityContract
 public record RenderVariableDefinition(String name, String type, List<RenderVariableDefinition> children) {
 
     public RenderVariableDefinition {
@@ -28,6 +31,7 @@ public record RenderVariableDefinition(String name, String type, List<RenderVari
         return new Builder();
     }
 
+    @LocalCapabilityContract
     public static final class Builder {
 
         private String name;

@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.vo;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.nio.file.Path;
  * @param inputStream PDF 输入流。
  * @param sourcePath PDF 源文件路径。
  */
+@LocalCapabilityContract
 public record PdfSourceVO(String name, InputStream inputStream, Path sourcePath) {
 
     public PdfSourceVO {

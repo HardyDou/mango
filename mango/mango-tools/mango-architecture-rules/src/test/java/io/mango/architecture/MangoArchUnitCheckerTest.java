@@ -40,6 +40,11 @@ import io.mango.infra.persistence.api.crud.MangoTypedCrudService;
 import io.mango.infra.persistence.api.entity.BaseEntity;
 import io.mango.infra.persistence.api.entity.TenantEntity;
 import io.mango.common.result.R;
+import io.mango.common.contract.LocalCapabilityContract;
+import io.mango.infra.fileproc.fixture.LocalFileProcessCommand;
+import io.mango.infra.fileproc.fixture.LocalFileProcessorApi;
+import io.mango.infra.fileproc.fixture.LocalFileProcessorController;
+import io.mango.infra.fileproc.fixture.LocalFileProcessorFeignClient;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import evil.SpoofedOrderService;
 
@@ -420,6 +425,41 @@ class MangoArchUnitCheckerTest {
         assertThat(checker.check(classes, ignored -> ModuleRole.API))
                 .extracting(ArchitectureIssue::ruleId)
                 .containsExactly("MANGO-ARCH-TYPE-010");
+    }
+
+    @Test
+    void markedInfraLocalCapabilityTypesAreAllowedInApiModule() {
+        JavaClasses classes = importClasses(LocalFileProcessorApi.class, LocalFileProcessCommand.class);
+
+        assertThat(checker.check(classes, ignored -> ModuleRole.API)).isEmpty();
+    }
+
+    @Test
+    void localCapabilityMarkerOutsideInfraDoesNotBypassApiModuleRules() {
+        JavaClasses classes = importClasses(MarkedOrderManager.class);
+
+        assertThat(checker.check(classes, ignored -> ModuleRole.API))
+                .extracting(ArchitectureIssue::ruleId)
+                .containsExactly("MANGO-ARCH-TYPE-010");
+    }
+
+    @Test
+    void markedLocalCapabilityCannotBeExposedByControllerOrFeign() {
+        JavaClasses classes = importClasses(
+                LocalFileProcessorApi.class,
+                LocalFileProcessorController.class,
+                LocalFileProcessorFeignClient.class);
+
+        assertThat(checker.check(classes, javaClass -> {
+            if (javaClass.getName().endsWith("Controller")) {
+                return ModuleRole.STARTER;
+            }
+            if (javaClass.getName().endsWith("FeignClient")) {
+                return ModuleRole.STARTER_REMOTE;
+            }
+            return ModuleRole.API;
+        })).extracting(ArchitectureIssue::ruleId)
+                .containsExactly("MANGO-ARCH-FEIGN-002", "MANGO-ARCH-TYPE-002");
     }
 
     @Test
@@ -872,6 +912,10 @@ class MangoArchUnitCheckerTest {
     }
 
     static final class OrderManager {
+    }
+
+    @LocalCapabilityContract
+    static final class MarkedOrderManager {
     }
 
     static final class OrderHelper {

@@ -1,5 +1,7 @@
 package io.mango.infra.fileproc.render.vo;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.nio.file.Path;
 import java.util.Arrays;
 
@@ -10,6 +12,7 @@ import java.util.Arrays;
  * @param content 输出内容。
  * @param outputPath 输出文件路径。
  */
+@LocalCapabilityContract
 public record PdfOperationResultVO(String fileName, byte[] content, Path outputPath) {
 
     public PdfOperationResultVO {

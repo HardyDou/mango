@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
  * @param targetPath PDF 输出文件路径。
  * @param watermarkText 水印文本。
  */
+@LocalCapabilityContract
 public record AddPdfWatermarkCommand(
         String fileName,
         InputStream inputStream,

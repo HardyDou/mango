@@ -15,7 +15,7 @@ import io.mango.infra.fileproc.render.enums.PdfCompressionImageVersion;
 import io.mango.infra.fileproc.render.enums.PdfCompressionPreset;
 import io.mango.infra.fileproc.render.service.AsposePdfRenderApi;
 import io.mango.infra.fileproc.render.service.RenderToolException;
-import io.mango.infra.fileproc.render.service.UnsupportedRenderService;
+import io.mango.infra.fileproc.render.service.UnsupportedRenderOperations;
 import io.mango.infra.fileproc.render.vo.PdfCompressionResultVO;
 import io.mango.infra.fileproc.render.vo.PdfOperationResultVO;
 import io.mango.infra.fileproc.render.vo.PdfSourceVO;
@@ -72,7 +72,7 @@ class PdfRenderContractTest {
 
     @Test
     void unsupportedServiceThrowsExplicitRenderException() {
-        UnsupportedRenderService service = new UnsupportedRenderService();
+        UnsupportedRenderOperations service = new UnsupportedRenderOperations();
 
         assertThatThrownBy(() -> service.mergePdf(new MergePdfCommand(
                 "merged.pdf",

@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.compress;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.fileproc.compress.command.CompressFileCommand;
 import io.mango.infra.fileproc.compress.vo.CompressFileResultVO;
 
@@ -8,6 +9,7 @@ import io.mango.infra.fileproc.compress.vo.CompressFileResultVO;
  * <p>
  * 本接口只处理文件内容压缩，不处理文件中心 ID、租户、权限或存储生命周期。
  */
+@LocalCapabilityContract
 public interface FileCompressApi {
 
     /**

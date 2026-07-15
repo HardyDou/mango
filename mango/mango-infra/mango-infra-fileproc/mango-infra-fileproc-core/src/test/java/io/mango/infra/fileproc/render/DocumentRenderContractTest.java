@@ -8,7 +8,7 @@ import io.mango.infra.fileproc.render.service.HtmlToTextRenderProvider;
 import io.mango.infra.fileproc.render.service.RenderRegistry;
 import io.mango.infra.fileproc.render.service.RenderToolException;
 import io.mango.infra.fileproc.render.service.SameFormatRenderProvider;
-import io.mango.infra.fileproc.render.service.UnsupportedRenderService;
+import io.mango.infra.fileproc.render.service.UnsupportedRenderOperations;
 import io.mango.infra.fileproc.render.vo.RenderResultVO;
 import org.junit.jupiter.api.Test;
 
@@ -141,7 +141,7 @@ class DocumentRenderContractTest {
     @Test
     void unsupportedRenderThrowsExplicitException() {
         DefaultRenderApi renderApi = new DefaultRenderApi(new RenderRegistry(List.of()),
-                new UnsupportedRenderService());
+                new UnsupportedRenderOperations());
 
         assertThatThrownBy(() -> renderApi.render(RenderCommand.builder()
                 .sourceFormat(RenderFormat.PDF)
@@ -155,6 +155,6 @@ class DocumentRenderContractTest {
     private DefaultRenderApi newRenderApi() {
         return new DefaultRenderApi(new RenderRegistry(List.of(
                 new SameFormatRenderProvider(),
-                new HtmlToTextRenderProvider())), new UnsupportedRenderService());
+                new HtmlToTextRenderProvider())), new UnsupportedRenderOperations());
     }
 }

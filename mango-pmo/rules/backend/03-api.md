@@ -74,6 +74,13 @@
 ## 4. 分层规则
 
 - `api` 只放 `XxxApi`、`command`、`query`、`vo`、`enums`。
+- `io.mango.infra.*` 中只在进程内使用、不承载 HTTP/Feign 语义的 Java 能力契约，必须使用
+  `@LocalCapabilityContract` 显式标识；该标记可用于契约接口及其本地输入/输出类型。
+- `@LocalCapabilityContract` 禁止用于 `platform`、`business` 或其它非 `io.mango.infra.*` 包，禁止由
+  Controller、FeignClient 或其它 HTTP adapter 实现，也不能用来规避 HTTP `XxxApi` 的 `R<T>`、
+  Bean Validation、协议模型和适配器一致性规则。
+- 本地 JVM 能力契约与 HTTP `XxxApi` 是两类边界：前者保留适合进程内处理的流、路径、字节内容等
+  Java 类型，后者必须保持传输无关并遵守本文件全部 HTTP 协议规则。
 - `api` 如需声明内部访问边界，允许依赖 `mango-infra-web-api` 并在 `XxxApi` 类或方法上使用 `@Inner`。
 - `api` 禁止依赖 `mango-infra-web-starter`。
 - Controller 只做协议适配。

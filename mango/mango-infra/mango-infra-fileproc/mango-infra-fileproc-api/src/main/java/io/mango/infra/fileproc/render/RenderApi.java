@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.fileproc.render.command.AddPdfWatermarkCommand;
 import io.mango.infra.fileproc.render.command.CompressPdfCommand;
 import io.mango.infra.fileproc.render.command.CompressPdfToTargetCommand;
@@ -19,6 +20,7 @@ import java.util.Set;
  * <p>
  * 本接口只提供本地文档渲染处理能力，不处理文件存储、权限、租户或 fileId 语义。
  */
+@LocalCapabilityContract
 public interface RenderApi {
 
     /**
