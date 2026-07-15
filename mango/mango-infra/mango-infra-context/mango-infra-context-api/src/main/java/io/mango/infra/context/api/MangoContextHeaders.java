@@ -1,5 +1,7 @@
 package io.mango.infra.context.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.List;
 
 /**
@@ -7,6 +9,7 @@ import java.util.List;
  *
  * @author Mango
  */
+@LocalCapabilityContract
 public final class MangoContextHeaders {
 
     public static final String REQUEST_ID = "X-Mango-Request-Id";
