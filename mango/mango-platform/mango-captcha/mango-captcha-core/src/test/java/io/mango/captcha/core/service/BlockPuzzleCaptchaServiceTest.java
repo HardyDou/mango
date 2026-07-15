@@ -2,7 +2,8 @@ package io.mango.captcha.core.service;
 
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaResponse;
-import io.mango.captcha.core.service.impl.BlockPuzzleCaptchaServiceImpl;
+import io.mango.captcha.core.generator.DefaultBlockPuzzleCaptchaGenerator;
+import io.mango.captcha.core.generator.BlockPuzzleCaptchaGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -23,11 +24,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class BlockPuzzleCaptchaServiceTest {
 
-    private BlockPuzzleCaptchaService blockPuzzleCaptchaService;
+    private BlockPuzzleCaptchaGenerator blockPuzzleCaptchaService;
 
     @BeforeEach
     void setUp() {
-        blockPuzzleCaptchaService = new BlockPuzzleCaptchaServiceImpl();
+        blockPuzzleCaptchaService = new DefaultBlockPuzzleCaptchaGenerator();
         // 通过反射设置默认值（因为没有 Spring 上下文）
         ReflectionTestUtils.setField(blockPuzzleCaptchaService, "width", 280);
         ReflectionTestUtils.setField(blockPuzzleCaptchaService, "height", 160);
@@ -94,7 +95,7 @@ class BlockPuzzleCaptchaServiceTest {
         }
         ImageIO.write(image, "png", galleryImage);
 
-        BlockPuzzleCaptchaServiceImpl service = new BlockPuzzleCaptchaServiceImpl(
+        DefaultBlockPuzzleCaptchaGenerator service = new DefaultBlockPuzzleCaptchaGenerator(
                 List.of(galleryImage.toURI().toString())
         );
         ReflectionTestUtils.setField(service, "width", 280);

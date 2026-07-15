@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { resolve } from 'node:path';
 import { api as e2eApi } from '../support/api';
+
+const captchaEvidencePath = resolve(
+  __dirname,
+  '../../../../../mango-docs/evidence/baselines/captcha/latest/captcha-ui-success.png',
+);
 
 async function loginByUi(page: import('@playwright/test').Page) {
   await page.goto('/#/login');
@@ -11,6 +17,28 @@ async function loginByUi(page: import('@playwright/test').Page) {
 
 test.describe('验证码组件 E2E', () => {
   test('验证码接口和页面组件使用真实后端生成验证码', async ({ page, request }) => {
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    const failedRequests: string[] = [];
+    const unexpectedHttpErrors: string[] = [];
+
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
+    });
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('requestfailed', (failedRequest) => {
+      failedRequests.push(
+        `${failedRequest.method()} ${failedRequest.url()} ${failedRequest.failure()?.errorText ?? ''}`.trim(),
+      );
+    });
+    page.on('response', (response) => {
+      if (response.status() >= 400) {
+        unexpectedHttpErrors.push(`${response.status()} ${response.request().method()} ${response.url()}`);
+      }
+    });
+
     const loginResponse = await request.post(e2eApi('/auth/login'), {
       data: {
         username: 'admin',
@@ -76,5 +104,11 @@ test.describe('验证码组件 E2E', () => {
     });
     expect(blockPuzzleBody.data.key).toBeTruthy();
     await expect(blockPuzzlePanel.getByText('拖动滑块完成拼图')).toBeVisible();
+
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+    expect(unexpectedHttpErrors).toEqual([]);
+    await page.screenshot({ path: captchaEvidencePath, fullPage: true });
   });
 });

@@ -4,12 +4,13 @@ import io.mango.auth.api.AuthCode;
 import io.mango.auth.api.spi.CaptchaConfigService;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
+import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class CaptchaInterceptor implements HandlerInterceptor {
 
     private static final String HEADER_CAPTCHA_KEY = "X-Captcha-Key";
@@ -43,10 +43,18 @@ public class CaptchaInterceptor implements HandlerInterceptor {
 
     private final CaptchaConfigService captchaConfigService;
     private final ObjectProvider<CaptchaApi> captchaApi;
-    private final ObjectMapper objectMapper;
+    private final ObjectWriter responseWriter;
 
     // 按 IP 追踪验证码失败次数，用于限流。
     private final Map<String, AtomicInteger> failedAttempts = new ConcurrentHashMap<>();
+
+    public CaptchaInterceptor(CaptchaConfigService captchaConfigService,
+            ObjectProvider<CaptchaApi> captchaApi,
+            ObjectMapper objectMapper) {
+        this.captchaConfigService = captchaConfigService;
+        this.captchaApi = captchaApi;
+        this.responseWriter = objectMapper.writer();
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -84,7 +92,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         verifyRequest.setType(io.mango.captcha.api.constant.CaptchaType.valueOf(
             captchaType != null ? captchaType : "ARITHMETIC"));
 
-        boolean verified = captchaApi.getObject().verify(verifyRequest);
+        boolean verified = verifyCaptcha(verifyRequest);
         if (!verified) {
             incrementFailedAttempts(ip);
             log.warn("Captcha verification failed: ip={}, path={}", ip, path);
@@ -95,6 +103,15 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         // 校验成功后清理失败次数。
         failedAttempts.remove(ip);
         return true;
+    }
+
+    private boolean verifyCaptcha(CaptchaVerifyRequest request) {
+        try {
+            R<Boolean> result = captchaApi.getObject().verify(request);
+            return result != null && result.isSuccess() && Boolean.TRUE.equals(result.getData());
+        } catch (BizException exception) {
+            return false;
+        }
     }
 
     private boolean isLockedOut(String ip) {
@@ -112,7 +129,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         response.setStatus(status);
         response.setContentType("application/json");
         R<?> r = R.fail(code, message);
-        response.getWriter().write(objectMapper.writeValueAsString(r));
+        response.getWriter().write(responseWriter.writeValueAsString(r));
     }
 
     private String resolveClientIp(HttpServletRequest request) {

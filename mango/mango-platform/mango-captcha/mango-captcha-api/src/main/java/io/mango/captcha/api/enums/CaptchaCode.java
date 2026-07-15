@@ -1,4 +1,4 @@
-package io.mango.captcha.api;
+package io.mango.captcha.api.enums;
 
 import io.mango.common.result.BizCode;
 import lombok.AllArgsConstructor;

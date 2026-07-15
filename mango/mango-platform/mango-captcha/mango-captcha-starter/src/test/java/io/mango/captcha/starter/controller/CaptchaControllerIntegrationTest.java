@@ -2,7 +2,7 @@ package io.mango.captcha.starter.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.captcha.api.CaptchaApi;
-import io.mango.captcha.api.CaptchaCode;
+import io.mango.captcha.api.enums.CaptchaCode;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.core.service.ICaptchaService;

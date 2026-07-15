@@ -116,8 +116,6 @@ mango:
           enabled: true
         org:
           enabled: true
-        captcha:
-          enabled: true
         file:
           enabled: true
         resource:

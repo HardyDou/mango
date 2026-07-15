@@ -4,6 +4,7 @@ import io.mango.captcha.api.constant.CaptchaType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -19,6 +20,7 @@ import java.io.Serializable;
 public class CaptchaSendRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final long DEFAULT_EXPIRE_SECONDS = 300L;
 
     /**
      * 验证码类型（SMS或EMAIL）
@@ -45,5 +47,6 @@ public class CaptchaSendRequest implements Serializable {
      * 有效期（秒），默认300秒
      */
     @Schema(description = "有效期，单位秒，默认 300")
-    private Long expireSeconds = 300L;
+    @Positive(message = "有效期必须大于0")
+    private Long expireSeconds = DEFAULT_EXPIRE_SECONDS;
 }

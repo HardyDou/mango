@@ -10,7 +10,7 @@ import java.io.Serializable;
  */
 @Data
 @Schema(description = "无感行为验证评分结果")
-public class BehaviorCaptchaVerifyResult implements Serializable {
+public class BehaviorCaptchaVerifyResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

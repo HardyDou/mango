@@ -1,84 +1,80 @@
 package io.mango.captcha.api;
 
-import io.mango.captcha.api.constant.CaptchaType;
-import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.captcha.api.dto.CaptchaTypesResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
-
-import java.util.List;
+import io.mango.common.result.R;
+import io.mango.infra.web.api.Inner;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * 验证码服务接口
  *
  * @author Mango
  */
+@Validated
 public interface CaptchaApi {
 
     /**
-     * 生成验证码
+     * 查询当前服务支持的验证码类型以及实际启用的存储实现。
      *
-     * @param type   验证码类型
-     * @param target 目标（手机号/邮箱），可为null
-     * @return 验证码响应
+     * @return 统一响应，包含验证码类型列表和存储实现名称
      */
-    CaptchaResponse generate(CaptchaType type, String target);
+    R<CaptchaTypesResponse> getTypes();
 
     /**
-     * 校验验证码
+     * 生成供用户计算并填写答案的算术验证码。
      *
-     * @param request 校验请求
-     * @return true-校验通过
+     * @return 统一响应，包含验证码键、图片和有效期
      */
-    boolean verify(CaptchaVerifyRequest request);
+    R<CaptchaResponse> generateArithmetic();
 
     /**
-     * 校验无感行为验证并返回评分详情。
+     * 生成供用户拖动并完成拼图的滑块验证码。
      *
-     * @param request 校验请求
-     * @return 行为评分结果
+     * @return 统一响应，包含验证码键、背景图、滑块图和有效期
      */
-    BehaviorCaptchaVerifyResult verifyBehavior(CaptchaVerifyRequest request);
+    R<CaptchaResponse> generateBlockPuzzle();
 
     /**
-     * 发送短信验证码
+     * 生成要求用户按顺序点选指定文字的验证码。
      *
-     * @param mobile   手机号
-     * @param bizCode  业务标识（如 LOGIN, REGISTER, CHANGE_MOBILE）
-     * @param expire   有效期（秒）
-     * @return 验证码key
+     * @return 统一响应，包含验证码键、图片、目标文字和有效期
      */
-    String sendSms(String mobile, String bizCode, long expire);
+    R<CaptchaResponse> generateClickWord();
 
     /**
-     * 发送邮件验证码
+     * 生成用于采集和校验客户端操作轨迹的行为验证码。
      *
-     * @param email   邮箱
-     * @param bizCode 业务标识（如 LOGIN, REGISTER, CHANGE_EMAIL）
-     * @param expire  有效期（秒）
-     * @return 验证码key
+     * @return 统一响应，包含验证码键、行为挑战参数和有效期
      */
-    String sendEmail(String email, String bizCode, long expire);
+    R<CaptchaResponse> generateBehavior();
 
     /**
-     * 发送验证码（统一接口，支持SMS和EMAIL）
+     * 根据客户端提交的行为轨迹校验挑战并计算风险评分。
      *
-     * @param request 发送请求
-     * @return 验证码key
+     * @param request 行为验证码校验请求
+     * @return 统一响应，包含行为评分、风险等级和处置建议
      */
-    String send(CaptchaSendRequest request);
+    R<BehaviorCaptchaVerifyResponse> verifyBehavior(@Valid CaptchaVerifyRequest request);
 
     /**
-     * 获取支持的验证码类型
+     * 校验算术、滑块、点选文字或者消息验证码的一次性答案。
      *
-     * @return 类型列表
+     * @param request 验证码校验请求
+     * @return 统一响应，数据为是否校验通过
      */
-    List<CaptchaType> getSupportedTypes();
+    R<Boolean> verify(@Valid CaptchaVerifyRequest request);
 
     /**
-     * 获取当前存储策略
+     * 通过内部短信或邮件提供者发送业务验证码并保存校验答案。
      *
-     * @return 存储策略名称
+     * @param request 验证码发送请求
+     * @return 统一响应，数据为后续校验使用的验证码键
      */
-    String getCurrentStorage();
+    @Inner
+    R<String> send(@Valid CaptchaSendRequest request);
 }

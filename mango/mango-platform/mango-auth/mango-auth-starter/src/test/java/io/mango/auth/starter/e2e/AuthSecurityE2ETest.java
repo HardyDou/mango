@@ -15,6 +15,12 @@ import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.auth.core.service.impl.PasswordResetTicketService;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.controller.AuthController;
+import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
+import io.mango.captcha.api.dto.CaptchaResponse;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.captcha.api.dto.CaptchaTypesResponse;
+import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.common.result.R;
 import io.mango.infra.context.support.TtlExecutorDecorator;
 import io.mango.infra.kv.api.IKvStore;
@@ -101,11 +107,15 @@ class AuthSecurityE2ETest {
     private TestUserStore testUserStore;
 
     @Resource
+    private TestCaptchaApi testCaptchaApi;
+
+    @Resource
     private ApplicationEvents applicationEvents;
 
     @BeforeEach
     void setUp() {
         testUserStore.reset();
+        testCaptchaApi.reset();
     }
 
     @Test
@@ -144,6 +154,43 @@ class AuthSecurityE2ETest {
                     assertThat(event.getMessageActions()).singleElement()
                             .satisfies(action -> assertThat(action.getActionCode()).isEqualTo("VIEW_PROFILE"));
                 });
+    }
+
+    @Test
+    @DisplayName("public captcha send should preserve the captcha unified response")
+    void publicCaptchaSendShouldPreserveCaptchaUnifiedResponse() throws Exception {
+        mockMvc.perform(post("/auth/captcha/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "SMS",
+                                  "target": "13800138000",
+                                  "businessType": "LOGIN"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("captcha:LOGIN:13800138000"));
+    }
+
+    @Test
+    @DisplayName("public captcha send should preserve a downstream business failure")
+    void publicCaptchaSendShouldPreserveDownstreamBusinessFailure() throws Exception {
+        testCaptchaApi.respondWith(R.fail(AuthCode.CAPTCHA_INVALID));
+
+        mockMvc.perform(post("/auth/captcha/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "SMS",
+                                  "target": "13800138000",
+                                  "businessType": "LOGIN"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(AuthCode.CAPTCHA_INVALID.getCode()))
+                .andExpect(jsonPath("$.msg").value(AuthCode.CAPTCHA_INVALID.getMessage()));
     }
 
     @Test
@@ -586,6 +633,11 @@ class AuthSecurityE2ETest {
         }
 
         @Bean
+        TestCaptchaApi captchaApi() {
+            return new TestCaptchaApi();
+        }
+
+        @Bean
         NoticeApi noticeApi() {
             NoticeApi api = org.mockito.Mockito.mock(NoticeApi.class);
             NoticeWecomLoginConfigVO config = new NoticeWecomLoginConfigVO();
@@ -639,6 +691,7 @@ class AuthSecurityE2ETest {
             return (authenticationSupplier, context) -> {
                 String requestUri = context.getRequest().getRequestURI();
                 if ("/auth/login".equals(requestUri)
+                        || "/auth/captcha/send".equals(requestUri)
                         || "/auth/login-institutions".equals(requestUri)
                         || "/auth/refresh".equals(requestUri)
                         || "/auth/password/change-required".equals(requestUri)
@@ -659,6 +712,61 @@ class AuthSecurityE2ETest {
             };
         }
 
+    }
+
+    static class TestCaptchaApi implements CaptchaApi {
+
+        private R<String> sendResult;
+
+        void reset() {
+            sendResult = null;
+        }
+
+        void respondWith(R<String> result) {
+            sendResult = result;
+        }
+
+        @Override
+        public R<CaptchaTypesResponse> getTypes() {
+            return R.ok(new CaptchaTypesResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateArithmetic() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateBlockPuzzle() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateClickWord() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateBehavior() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<BehaviorCaptchaVerifyResponse> verifyBehavior(CaptchaVerifyRequest request) {
+            return R.ok(new BehaviorCaptchaVerifyResponse());
+        }
+
+        @Override
+        public R<Boolean> verify(CaptchaVerifyRequest request) {
+            return R.ok(Boolean.TRUE);
+        }
+
+        @Override
+        public R<String> send(CaptchaSendRequest request) {
+            return sendResult == null
+                    ? R.ok("captcha:" + request.getBusinessType() + ":" + request.getTarget())
+                    : sendResult;
+        }
     }
 
     static final class TestUserStore implements AuthIdentitySecurityProvider {
