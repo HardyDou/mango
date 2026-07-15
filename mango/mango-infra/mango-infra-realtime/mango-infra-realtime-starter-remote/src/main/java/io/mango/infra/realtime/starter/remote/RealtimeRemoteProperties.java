@@ -1,15 +1,23 @@
 package io.mango.infra.realtime.starter.remote;
 
-import lombok.Data;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Data
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "mango.infra.realtime")
 public class RealtimeRemoteProperties {
 
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Inbound inbound = new Inbound();
 
-    @Data
+    @Getter
+    @Setter
     public static class Inbound {
 
         private boolean enabled;
@@ -18,6 +26,10 @@ public class RealtimeRemoteProperties {
 
         private String unknownTypePolicy = "ignore";
 
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding requires a mutable nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding requires a mutable nested property bean"))
         private Remote remote = new Remote();
 
         public String getUnknownTypePolicy() {
@@ -28,7 +40,8 @@ public class RealtimeRemoteProperties {
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Remote {
 
         private boolean endpointEnabled = true;

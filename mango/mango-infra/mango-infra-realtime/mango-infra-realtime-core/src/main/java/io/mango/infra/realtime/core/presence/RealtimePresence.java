@@ -18,10 +18,10 @@ public record RealtimePresence(
         Instant lastSeenAt) {
 
     public RealtimePresence {
-        tenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        tenantId = defaultTenantId(tenantId);
         contextPath = normalizeContextPath(contextPath);
         outboundEndpoint = normalizeEndpoint(outboundEndpoint);
-        lastSeenAt = lastSeenAt == null ? Instant.now() : lastSeenAt;
+        lastSeenAt = defaultLastSeenAt(lastSeenAt);
     }
 
     public static RealtimePresence of(String sessionId,
@@ -51,13 +51,34 @@ public record RealtimePresence(
         if (value == null || value.isBlank() || "/".equals(value)) {
             return "";
         }
-        return value.startsWith("/") ? value : "/" + value;
+        return ensureLeadingSlash(value);
     }
 
     private static String normalizeEndpoint(String value) {
         if (value == null || value.isBlank()) {
             return "/_realtime/messages/outbound";
         }
-        return value.startsWith("/") ? value : "/" + value;
+        return ensureLeadingSlash(value);
+    }
+
+    private static String defaultTenantId(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return "default";
+        }
+        return tenantId;
+    }
+
+    private static Instant defaultLastSeenAt(Instant candidate) {
+        if (candidate == null) {
+            return Instant.now();
+        }
+        return candidate;
+    }
+
+    private static String ensureLeadingSlash(String value) {
+        if (value.startsWith("/")) {
+            return value;
+        }
+        return "/" + value;
     }
 }

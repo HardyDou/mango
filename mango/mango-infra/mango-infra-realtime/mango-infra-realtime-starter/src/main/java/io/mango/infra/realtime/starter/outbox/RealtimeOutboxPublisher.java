@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter.outbox;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.kv.api.IOutboxPublisher;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.infra.kv.api.OutboxTopics;
@@ -12,7 +13,8 @@ import lombok.RequiredArgsConstructor;
 import java.time.Instant;
 import java.util.Map;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Outbox publisher and ObjectMapper are injected singleton collaborators"))
 public class RealtimeOutboxPublisher implements IRealtimeReliablePublishService {
 
     public static final String EVENT_TYPE = "realtime.message.dispatch";

@@ -22,6 +22,7 @@ public final class RealtimeTestApps {
                 .properties(
                         "spring.profiles.active=realtime-local-test",
                         "server.port=" + localPort,
+                        "server.shutdown=immediate",
                         "spring.cloud.discovery.enabled=false")
                 .run();
 
@@ -30,6 +31,7 @@ public final class RealtimeTestApps {
                 .properties(
                         "spring.profiles.active=realtime-remote-test",
                         "server.port=" + remotePort,
+                        "server.shutdown=immediate",
                         "mango.infra.realtime.inbound.remote.service-name=localhost:" + remotePort,
                         "spring.cloud.discovery.client.simple.instances.mango-infra-realtime[0].uri=http://localhost:" + localPort)
                 .run();
@@ -55,6 +57,7 @@ public final class RealtimeTestApps {
                         "spring.profiles.active=realtime-local-test",
                         "server.port=" + port,
                         "spring.application.name=" + nodeId,
+                        "server.shutdown=immediate",
                         "mango.infra.realtime.node.instance-id=" + nodeId,
                         "mango.infra.realtime.node.service-name=localhost:" + port,
                         "spring.cloud.discovery.enabled=false")

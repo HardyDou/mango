@@ -17,7 +17,7 @@ Flyway、初始化数据、演示数据、菜单或页面。
    target 仍可能投递。
 4. 默认租户会话写入 `default` 索引后，查询又和原始空 tenant 比较，导致不可见；同 ID
    会话替换时旧 group 索引和 presence group 会残留。
-5. Realtime 自有模块只有 3 条轻量测试；28 条真实协议、并发、Redis、多实例和远程 E2E
+5. Realtime 自有模块只有 3 条轻量测试；28 条真实协议、并发、Redis、多实例和入口流程
    集中在 `mango-infra-test`，且执行完成后测试 JVM 需 Surefire 等待 30 秒强制结束。
 
 ## 方案
@@ -32,7 +32,7 @@ Flyway、初始化数据、演示数据、菜单或页面。
   主动发布。
 - 会话替换先完整下线旧 presence 和 group，再上线新会话；所有 tenant key 使用统一 trim
   与 default 归一化。Polling 注册保存每个 subscriber 的身份并在重复注册时移除旧索引。
-- 价值测试回归各 owning module；保留真实跨模块 E2E，并显式停止 WebSocket client、关闭
+- 价值测试回归各 owning module；保留真实跨模块集成/入口流程，并显式停止 WebSocket client、关闭
   Spring context 和 Redis client，测试进程必须自然退出。
 
 ## 验收

@@ -1,6 +1,7 @@
 package io.mango.infra.realtime.core.websocket;
 
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
+import io.mango.infra.realtime.core.web.RealtimeRequestIdentityResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -27,20 +28,19 @@ public class RealtimeWebSocketHandshakeInterceptor implements HandshakeIntercept
             return false;
         }
 
-        String tenantId = firstText(
+        String tenantId = RealtimeRequestIdentityResolver.resolveTenantId(
+                servletRequest.getServletRequest(),
                 servletRequest.getServletRequest().getHeader(RealtimeHeaders.TENANT_ID),
-                attributeText(servletRequest, "tenantId"),
-                servletRequest.getServletRequest().getParameter("tenantId"),
-                "default");
-        Long userId = firstLong(
+                servletRequest.getServletRequest().getParameter("tenantId"));
+        Long userId = RealtimeRequestIdentityResolver.resolveUserId(
+                servletRequest.getServletRequest(),
                 servletRequest.getServletRequest().getHeader(RealtimeHeaders.USER_ID),
-                attributeText(servletRequest, "userId"),
                 servletRequest.getServletRequest().getParameter("userId"));
         String clientId = firstText(
                 servletRequest.getServletRequest().getHeader(RealtimeHeaders.CLIENT_ID),
                 servletRequest.getServletRequest().getParameter("clientId"));
 
-        attributes.put(TENANT_ID_ATTR, tenantId == null || tenantId.isBlank() ? "default" : tenantId);
+        attributes.put(TENANT_ID_ATTR, defaultTenantId(tenantId));
         attributes.put(AUTHORIZED_ATTR, true);
         attributes.put(PROFILE_ATTR, Map.of());
         if (userId != null) {
@@ -61,37 +61,11 @@ public class RealtimeWebSocketHandshakeInterceptor implements HandshakeIntercept
         return null;
     }
 
-    private String attributeText(ServletServerHttpRequest request, String name) {
-        Object value = request.getServletRequest().getAttribute(name);
-        return value == null ? null : String.valueOf(value);
-    }
-
-    private Long firstLong(Object... values) {
-        for (Object value : values) {
-            Long parsed = parseLong(value);
-            if (parsed != null) {
-                return parsed;
-            }
+    private String defaultTenantId(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return "default";
         }
-        return null;
-    }
-
-    private Long parseLong(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Number number) {
-            return number.longValue();
-        }
-        String text = String.valueOf(value);
-        if (text.isBlank()) {
-            return null;
-        }
-        try {
-            return Long.parseLong(text);
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
+        return tenantId;
     }
 
     @Override

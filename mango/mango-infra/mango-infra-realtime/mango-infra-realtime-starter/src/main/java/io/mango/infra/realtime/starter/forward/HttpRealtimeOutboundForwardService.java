@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.starter.forward;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.core.outbound.IRealtimeOutboundForwardService;
 import io.mango.infra.realtime.core.presence.RealtimePresence;
@@ -13,7 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "RestOperations is an injected Spring singleton collaborator"))
 public class HttpRealtimeOutboundForwardService implements IRealtimeOutboundForwardService {
 
     private final RestOperations restOperations;

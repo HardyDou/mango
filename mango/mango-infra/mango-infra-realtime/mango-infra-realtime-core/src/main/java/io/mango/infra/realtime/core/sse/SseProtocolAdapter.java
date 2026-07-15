@@ -24,13 +24,13 @@ public class SseProtocolAdapter implements RealtimeProtocolSender {
 
     public SseProtocolAdapter(RealtimeSubscriptionManager subscriptionManager, long timeoutMillis) {
         this.subscriptionManager = subscriptionManager;
-        this.timeoutMillis = timeoutMillis <= 0 ? DEFAULT_TIMEOUT_MILLIS : timeoutMillis;
+        this.timeoutMillis = defaultTimeoutMillis(timeoutMillis);
     }
 
     public SseRealtimeSession createSession(String tenantId, Long userId, String clientId) {
         SseEmitter emitter = createSseEmitter();
         String sessionId = UUID.randomUUID().toString();
-        String resolvedTenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        String resolvedTenantId = defaultTenantId(tenantId);
         AtomicBoolean closed = new AtomicBoolean(false);
 
         Runnable closeCallback = () -> {
@@ -55,6 +55,20 @@ public class SseProtocolAdapter implements RealtimeProtocolSender {
 
     protected SseEmitter createSseEmitter() {
         return new SseEmitter(timeoutMillis);
+    }
+
+    private long defaultTimeoutMillis(long candidate) {
+        if (candidate <= 0) {
+            return DEFAULT_TIMEOUT_MILLIS;
+        }
+        return candidate;
+    }
+
+    private String defaultTenantId(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return "default";
+        }
+        return tenantId;
     }
 
     @Override

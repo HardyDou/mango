@@ -10,8 +10,8 @@ public record RealtimeEvent(
         String name) {
 
     public RealtimeEvent {
-        domain = domain == null || domain.isBlank() ? "default" : domain;
-        name = name == null || name.isBlank() ? "message" : name;
+        domain = defaultIfBlank(domain, "default");
+        name = defaultIfBlank(name, "message");
     }
 
     public static RealtimeEvent of(String domain, String name) {
@@ -22,25 +22,28 @@ public record RealtimeEvent(
         if (type == null || type.isBlank()) {
             return of("default", "message");
         }
-        if ("connected".equals(type)) {
-            return of("system", "connection.connected");
-        }
-        if ("pong".equals(type)) {
-            return of("system", "heartbeat.pong");
-        }
-        if ("ping".equals(type)) {
-            return of("system", "heartbeat.ping");
-        }
-        if ("error".equals(type)) {
-            return of("system", "message.error");
-        }
-        if ("accepted".equals(type) || "ack".equals(type)) {
-            return of("system", "message.accepted");
-        }
+        return switch (type) {
+            case "connected" -> of("system", "connection.connected");
+            case "pong" -> of("system", "heartbeat.pong");
+            case "ping" -> of("system", "heartbeat.ping");
+            case "error" -> of("system", "message.error");
+            case "accepted", "ack" -> of("system", "message.accepted");
+            default -> fromQualifiedType(type);
+        };
+    }
+
+    private static RealtimeEvent fromQualifiedType(String type) {
         int separator = type.indexOf('.');
         if (separator > 0 && separator < type.length() - 1) {
             return of(type.substring(0, separator), type.substring(separator + 1));
         }
         return of("default", type);
+    }
+
+    private static String defaultIfBlank(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value;
     }
 }

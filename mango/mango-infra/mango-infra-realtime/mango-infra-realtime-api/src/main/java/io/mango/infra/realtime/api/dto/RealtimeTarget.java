@@ -10,12 +10,14 @@ public record RealtimeTarget(
         String id) {
 
     public RealtimeTarget {
-        type = type == null ? RealtimeTargetType.BROADCAST : type;
-        id = id == null ? "" : id.trim();
+        if (type == null) {
+            type = RealtimeTargetType.BROADCAST;
+        }
+        id = normalizedId(id);
     }
 
     public static RealtimeTarget user(Long userId) {
-        return new RealtimeTarget(RealtimeTargetType.USER, userId == null ? "" : String.valueOf(userId));
+        return new RealtimeTarget(RealtimeTargetType.USER, stringValue(userId));
     }
 
     public static RealtimeTarget client(String clientId) {
@@ -36,5 +38,19 @@ public record RealtimeTarget(
 
     public static RealtimeTarget broadcast() {
         return new RealtimeTarget(RealtimeTargetType.BROADCAST, "");
+    }
+
+    private static String normalizedId(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim();
+    }
+
+    private static String stringValue(Long value) {
+        if (value == null) {
+            return "";
+        }
+        return String.valueOf(value);
     }
 }

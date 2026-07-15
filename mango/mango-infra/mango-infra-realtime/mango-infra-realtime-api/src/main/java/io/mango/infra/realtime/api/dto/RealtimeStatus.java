@@ -9,11 +9,14 @@ public record RealtimeStatus(
         @Schema(description = "状态：SUCCESS/ERROR/PENDING")
         String state) {
 
+    private static final int SUCCESS_CODE = 200;
+    private static final int ERROR_CODE = 500;
+
     public static RealtimeStatus success() {
-        return new RealtimeStatus(200, "SUCCESS");
+        return new RealtimeStatus(SUCCESS_CODE, "SUCCESS");
     }
 
     public static RealtimeStatus error() {
-        return new RealtimeStatus(500, "ERROR");
+        return new RealtimeStatus(ERROR_CODE, "ERROR");
     }
 }

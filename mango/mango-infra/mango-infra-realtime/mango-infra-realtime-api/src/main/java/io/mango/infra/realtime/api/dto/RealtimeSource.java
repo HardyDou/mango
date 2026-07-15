@@ -12,7 +12,9 @@ public record RealtimeSource(
         String sessionId) {
 
     public RealtimeSource {
-        platform = platform == null || platform.isBlank() ? "server" : platform;
+        if (platform == null || platform.isBlank()) {
+            platform = "server";
+        }
     }
 
     public static RealtimeSource server() {

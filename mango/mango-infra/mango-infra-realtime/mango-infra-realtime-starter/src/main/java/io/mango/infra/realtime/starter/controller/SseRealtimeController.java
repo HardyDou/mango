@@ -16,6 +16,7 @@ import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicket;
 import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicketService;
 import io.mango.infra.realtime.core.sse.SseProtocolAdapter;
 import io.mango.infra.realtime.core.sse.SseRealtimeSession;
+import io.mango.infra.realtime.core.web.RealtimeRequestIdentityResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import java.util.Map;
 
 @Slf4j
@@ -60,8 +62,8 @@ public class SseRealtimeController {
             @RequestParam(value = "userId", required = false) Long userId,
             HttpServletRequest request) {
 
-        String tenantId = firstText(tenantIdHeader, attributeText(request, "tenantId"), tenantIdParam, "default");
-        Long resolvedUserId = firstLong(userIdHeader, attributeText(request, "userId"), userId);
+        String tenantId = RealtimeRequestIdentityResolver.resolveTenantId(request, tenantIdHeader, tenantIdParam);
+        Long resolvedUserId = RealtimeRequestIdentityResolver.resolveUserId(request, userIdHeader, userId);
         String clientId = firstText(clientIdHeader, request.getParameter("clientId"));
         SseRealtimeSession session = sseProtocolAdapter.createSession(tenantId, resolvedUserId, clientId);
         SseEmitter emitter = session.emitter();
@@ -77,7 +79,7 @@ public class SseRealtimeController {
                             null,
                             Map.of(
                                     "connectionId", session.id(),
-                                    "clientId", clientId == null ? "" : clientId),
+                                    "clientId", emptyIfNull(clientId)),
                             RealtimePayload.message("SSE connected"),
                             null,
                             null,
@@ -121,11 +123,13 @@ public class SseRealtimeController {
             @RequestParam(value = "userId", required = false) Long userIdParam,
             @RequestParam(value = "clientId", required = false) String clientIdParam,
             @RequestParam(value = "sessionId", required = false) String sessionIdParam,
-            @RequestBody RealtimeInboundMessage message) {
+            @Valid @RequestBody RealtimeInboundMessage message) {
         RealtimeInboundMessage enrichedMessage = enrichInboundMessage(
                 message,
-                firstText(tenantIdHeader, legacyTenantIdHeader, tenantIdParam),
-                firstLong(userIdHeader, userIdParam),
+                RealtimeRequestIdentityResolver.resolveTenantId(
+                        tenantIdHeader, legacyTenantIdHeader, tenantIdParam, message.context().tenantId()),
+                RealtimeRequestIdentityResolver.resolveUserId(
+                        userIdHeader, userIdParam, message.context().userId()),
                 firstText(clientIdHeader, clientIdParam),
                 sessionIdParam);
         RealtimeOutboundMessage controlAck = RealtimeControlMessageHandler.handle(subscriptionManager, enrichedMessage.sessionId(), enrichedMessage);
@@ -140,7 +144,7 @@ public class SseRealtimeController {
             String sessionId) {
         RealtimeContext context = new RealtimeContext(
                 firstText(tenantId, message.context().tenantId()),
-                userId == null ? message.context().userId() : userId,
+                resolvedUserId(userId, message.context().userId()),
                 message.context().traceId(),
                 message.context().requestId());
         RealtimeSource source = new RealtimeSource(
@@ -171,37 +175,18 @@ public class SseRealtimeController {
         return null;
     }
 
-    private String attributeText(HttpServletRequest request, String name) {
-        Object value = request.getAttribute(name);
-        return value == null ? null : String.valueOf(value);
-    }
-
-    private Long firstLong(Object... values) {
-        for (Object value : values) {
-            Long parsed = parseLong(value);
-            if (parsed != null) {
-                return parsed;
-            }
-        }
-        return null;
-    }
-
-    private Long parseLong(Object value) {
+    private String emptyIfNull(String value) {
         if (value == null) {
-            return null;
+            return "";
         }
-        if (value instanceof Number number) {
-            return number.longValue();
+        return value;
+    }
+
+    private Long resolvedUserId(Long preferred, Long fallback) {
+        if (preferred == null) {
+            return fallback;
         }
-        String text = String.valueOf(value);
-        if (text.isBlank()) {
-            return null;
-        }
-        try {
-            return Long.parseLong(text);
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
+        return preferred;
     }
 
 }

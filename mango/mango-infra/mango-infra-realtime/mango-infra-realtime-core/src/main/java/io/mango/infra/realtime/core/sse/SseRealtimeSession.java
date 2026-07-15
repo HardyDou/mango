@@ -29,7 +29,7 @@ public final class SseRealtimeSession implements RealtimeSession {
         this.userId = userId;
         this.clientId = clientId;
         this.emitter = emitter;
-        this.closeCallback = closeCallback == null ? () -> { } : closeCallback;
+        this.closeCallback = defaultCloseCallback(closeCallback);
         registerLifecycleCallbacks();
     }
 
@@ -89,6 +89,13 @@ public final class SseRealtimeSession implements RealtimeSession {
         emitter.onCompletion(this::close);
         emitter.onTimeout(this::close);
         emitter.onError(error -> close());
+    }
+
+    private Runnable defaultCloseCallback(Runnable candidate) {
+        if (candidate == null) {
+            return () -> { };
+        }
+        return candidate;
     }
 
     private void close() {

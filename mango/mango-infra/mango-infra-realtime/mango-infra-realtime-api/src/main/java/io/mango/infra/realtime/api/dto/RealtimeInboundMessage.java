@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.api.dto;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -10,6 +11,8 @@ import java.util.UUID;
  * Unified Realtime Envelope Protocol v1.
  */
 @Schema(description = "实时上行消息 Envelope")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP",
+        justification = "Metadata is defensively copied to an immutable map by the compact constructor")
 public record RealtimeInboundMessage(
         @Schema(description = "消息ID")
         String id,
@@ -37,14 +40,19 @@ public record RealtimeInboundMessage(
         RealtimeStream stream) {
 
     public RealtimeInboundMessage {
-        id = id == null || id.isBlank() ? UUID.randomUUID().toString() : id;
-        version = version == null || version.isBlank() ? "1.0" : version;
-        event = event == null ? RealtimeEvent.of("default", "message") : event;
-        source = source == null ? RealtimeSource.server() : source;
-        context = context == null ? RealtimeContext.of("default", null) : context;
-        metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
-        payload = payload == null ? RealtimePayload.text("") : payload;
-        timestamp = timestamp == null ? Instant.now() : timestamp;
+        id = defaultId(id);
+        version = defaultVersion(version);
+        event = defaultEvent(event);
+        source = defaultSource(source);
+        context = defaultContext(context);
+        metadata = immutableMetadata(metadata);
+        payload = copyPayload(payload);
+        timestamp = defaultTimestamp(timestamp);
+    }
+
+    @Override
+    public RealtimePayload payload() {
+        return new RealtimePayload(payload);
     }
 
     public String type() {
@@ -86,5 +94,61 @@ public record RealtimeInboundMessage(
 
     public Map<String, Object> headers() {
         return metadata;
+    }
+
+    private static String defaultId(String value) {
+        if (value == null || value.isBlank()) {
+            return UUID.randomUUID().toString();
+        }
+        return value;
+    }
+
+    private static String defaultVersion(String value) {
+        if (value == null || value.isBlank()) {
+            return "1.0";
+        }
+        return value;
+    }
+
+    private static RealtimeEvent defaultEvent(RealtimeEvent value) {
+        if (value == null) {
+            return RealtimeEvent.of("default", "message");
+        }
+        return value;
+    }
+
+    private static RealtimeSource defaultSource(RealtimeSource value) {
+        if (value == null) {
+            return RealtimeSource.server();
+        }
+        return value;
+    }
+
+    private static RealtimeContext defaultContext(RealtimeContext value) {
+        if (value == null) {
+            return RealtimeContext.of("default", null);
+        }
+        return value;
+    }
+
+    private static Map<String, Object> immutableMetadata(Map<String, Object> value) {
+        if (value == null) {
+            return Map.of();
+        }
+        return Map.copyOf(value);
+    }
+
+    private static RealtimePayload copyPayload(RealtimePayload value) {
+        if (value == null) {
+            return RealtimePayload.text("");
+        }
+        return new RealtimePayload(value);
+    }
+
+    private static Instant defaultTimestamp(Instant value) {
+        if (value == null) {
+            return Instant.now();
+        }
+        return value;
     }
 }

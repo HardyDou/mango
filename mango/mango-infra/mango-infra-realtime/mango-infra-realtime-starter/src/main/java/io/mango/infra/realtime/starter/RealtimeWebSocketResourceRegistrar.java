@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.command.ApiResourceRegisterRequest;
@@ -13,7 +14,8 @@ import java.util.List;
 /**
  * 注册非 Spring MVC 扫描链路中的 WebSocket 实时传输资源。
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "API registry and configuration are injected Spring singleton collaborators"))
 public class RealtimeWebSocketResourceRegistrar implements ApplicationRunner {
 
     static final String MODULE_NAME = "mango-infra-realtime";

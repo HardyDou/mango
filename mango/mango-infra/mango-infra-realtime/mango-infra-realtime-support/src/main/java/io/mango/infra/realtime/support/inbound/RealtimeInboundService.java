@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.support.inbound;
 
+import io.mango.common.result.Require;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import org.springframework.beans.factory.ListableBeanFactory;
 
@@ -11,7 +12,7 @@ import java.util.logging.Logger;
 
 public class RealtimeInboundService implements IRealtimeInboundService {
 
-    private static final Logger log = Logger.getLogger(RealtimeInboundService.class.getName());
+    private static final Logger LOG = Logger.getLogger(RealtimeInboundService.class.getName());
 
     private final ListableBeanFactory beanFactory;
     private final boolean failFast;
@@ -24,9 +25,7 @@ public class RealtimeInboundService implements IRealtimeInboundService {
                                   RealtimeInboundUnknownTypePolicy unknownTypePolicy) {
         this.beanFactory = beanFactory;
         this.failFast = failFast;
-        this.unknownTypePolicy = unknownTypePolicy == null
-                ? RealtimeInboundUnknownTypePolicy.IGNORE
-                : unknownTypePolicy;
+        this.unknownTypePolicy = defaultUnknownTypePolicy(unknownTypePolicy);
         this.listenerScanner = new RealtimeInboundListenerScanner();
     }
 
@@ -47,15 +46,13 @@ public class RealtimeInboundService implements IRealtimeInboundService {
         for (RealtimeInboundListenerInvoker listener : listeners) {
             try {
                 listener.invoke(message);
-            } catch (Exception e) {
-                log.log(Level.WARNING,
+            } catch (RuntimeException e) {
+                LOG.log(Level.WARNING,
                         "Failed to dispatch realtime inbound message " + message.id()
                                 + " to listener " + listener.description(),
                         e);
                 if (failFast) {
-                    throw e instanceof RuntimeException runtimeException
-                            ? runtimeException
-                            : new IllegalStateException("Failed to dispatch realtime inbound message", e);
+                    Require.rethrow(e);
                 }
             }
         }
@@ -86,10 +83,18 @@ public class RealtimeInboundService implements IRealtimeInboundService {
 
     private void handleUnknownType(RealtimeInboundMessage message) {
         if (unknownTypePolicy == RealtimeInboundUnknownTypePolicy.WARN) {
-            log.warning("No realtime listener found for inbound type " + message.type());
+            LOG.warning("No realtime listener found for inbound type " + message.type());
         }
         if (unknownTypePolicy == RealtimeInboundUnknownTypePolicy.ERROR) {
             throw new IllegalStateException("No realtime listener found for inbound type " + message.type());
         }
+    }
+
+    private RealtimeInboundUnknownTypePolicy defaultUnknownTypePolicy(
+            RealtimeInboundUnknownTypePolicy policy) {
+        if (policy == null) {
+            return RealtimeInboundUnknownTypePolicy.IGNORE;
+        }
+        return policy;
     }
 }

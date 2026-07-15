@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
@@ -11,6 +12,8 @@ import io.mango.infra.realtime.api.dto.RealtimeSource;
 import io.mango.infra.realtime.api.dto.RealtimeTargetType;
 import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
 import io.mango.infra.realtime.core.polling.InMemoryRealtimePollingService;
+import io.mango.infra.realtime.core.negotiate.IRealtimeConnectionTicketResolverService;
+import io.mango.infra.realtime.core.web.RealtimeRequestIdentityResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,9 +31,12 @@ import org.springframework.web.context.request.async.DeferredResult;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.validation.Valid;
+
 @Slf4j
 @RestController
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Realtime services are injected Spring singleton collaborators"))
 @Tag(name = "实时轮询", description = "实时消息轮询传输接口")
 public class PollingRealtimeController {
 
@@ -40,6 +46,7 @@ public class PollingRealtimeController {
     private final long defaultTimeoutMillis;
     private final long maxTimeoutMillis;
     private final ProtocolRealtimeInboundForwarder inboundForwarder;
+    private final IRealtimeConnectionTicketResolverService ticketService;
 
     @GetMapping("${mango.infra.realtime.polling.endpoint:/realtime/transports/polling}")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "轮询实时消息")
@@ -54,11 +61,9 @@ public class PollingRealtimeController {
             @Parameter(description = "租户ID")
             @RequestParam(value = "tenantId", required = false) String tenantIdParam,
             @ParameterObject RealtimePollingQuery query) {
-        Long userId = userIdHeader != null ? userIdHeader : query.getUserId();
-        String subscriberId = clientIdHeader == null || clientIdHeader.isBlank()
-                ? InMemoryRealtimePollingService.userSubscriberId(userId)
-                : InMemoryRealtimePollingService.clientSubscriberId(clientIdHeader);
-        String tenantId = normalizeTenantId(firstText(tenantIdHeader, tenantIdParam));
+        Long userId = RealtimeRequestIdentityResolver.resolveUserId(userIdHeader, query.getUserId());
+        String tenantId = RealtimeRequestIdentityResolver.resolveTenantId(tenantIdHeader, tenantIdParam);
+        String subscriberId = resolvePollingSubscriber(tenantId, userId, clientIdHeader);
         int effectiveMaxSize = normalizeMaxSize(query.getMaxSize());
         long effectiveTimeoutMillis = normalizeTimeoutMillis(query.getTimeoutMillis());
         pollingService.register(subscriberId, tenantId, userId, clientIdHeader);
@@ -70,19 +75,20 @@ public class PollingRealtimeController {
     }
 
     private int normalizeMaxSize(Integer requestedMaxSize) {
-        int value = requestedMaxSize == null || requestedMaxSize <= 0 ? defaultMaxSize : requestedMaxSize;
+        int value = defaultIfNonPositive(requestedMaxSize, defaultMaxSize);
         return Math.min(value, maxSize);
     }
 
     private long normalizeTimeoutMillis(Long requestedTimeoutMillis) {
-        long value = requestedTimeoutMillis == null || requestedTimeoutMillis < 0
-                ? defaultTimeoutMillis
-                : requestedTimeoutMillis;
+        long value = defaultIfNegative(requestedTimeoutMillis, defaultTimeoutMillis);
         return Math.min(value, maxTimeoutMillis);
     }
 
     private String normalizeTenantId(String tenantId) {
-        return tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        if (tenantId == null || tenantId.isBlank()) {
+            return "default";
+        }
+        return tenantId;
     }
 
     private String firstText(String... values) {
@@ -108,23 +114,29 @@ public class PollingRealtimeController {
             @RequestParam(value = "userId", required = false) Long userIdParam,
             @RequestParam(value = "clientId", required = false) String clientIdParam,
             @RequestParam(value = "sessionId", required = false) String sessionIdParam,
-            @RequestBody RealtimeInboundMessage message) {
+            @Valid @RequestBody RealtimeInboundMessage message) {
+        String tenantId = RealtimeRequestIdentityResolver.resolveTenantId(
+                tenantIdHeader, legacyTenantIdHeader, tenantIdParam, message.context().tenantId());
+        Long userId = RealtimeRequestIdentityResolver.resolveUserId(
+                userIdHeader, userIdParam, message.context().userId());
+        String clientId = firstText(clientIdHeader, clientIdParam, message.source().clientId());
+        String subscriberId = resolvePollingSubscriber(tenantId, userId, clientId);
         RealtimeInboundMessage enrichedMessage = enrichInboundMessage(
                 message,
-                firstText(tenantIdHeader, legacyTenantIdHeader, tenantIdParam),
-                userIdHeader == null ? userIdParam : userIdHeader,
-                firstText(clientIdHeader, clientIdParam),
-                sessionIdParam);
+                tenantId,
+                userId,
+                clientId,
+                firstText(sessionIdParam, subscriberId));
         if ("system".equals(enrichedMessage.event().domain())
                 && "subscription.subscribe".equals(enrichedMessage.event().name())
                 && enrichedMessage.resolvedTarget().type() == RealtimeTargetType.GROUP) {
-            pollingService.subscribeGroup(resolvePollingSubscriber(enrichedMessage, clientIdHeader), enrichedMessage.context().tenantId(), enrichedMessage.resolvedTarget().id());
+            pollingService.subscribeGroup(subscriberId, enrichedMessage.context().tenantId(), enrichedMessage.resolvedTarget().id());
             return RealtimeOutboundMessage.accepted(enrichedMessage, "已订阅群组“" + enrichedMessage.resolvedTarget().id() + "”");
         }
         if ("system".equals(enrichedMessage.event().domain())
                 && "subscription.unsubscribe".equals(enrichedMessage.event().name())
                 && enrichedMessage.resolvedTarget().type() == RealtimeTargetType.GROUP) {
-            pollingService.unsubscribeGroup(resolvePollingSubscriber(enrichedMessage, clientIdHeader), enrichedMessage.context().tenantId(), enrichedMessage.resolvedTarget().id());
+            pollingService.unsubscribeGroup(subscriberId, enrichedMessage.context().tenantId(), enrichedMessage.resolvedTarget().id());
             return RealtimeOutboundMessage.accepted(enrichedMessage, "已取消订阅群组“" + enrichedMessage.resolvedTarget().id() + "”");
         }
         return inboundForwarder.forward(enrichedMessage);
@@ -138,7 +150,7 @@ public class PollingRealtimeController {
             String sessionId) {
         RealtimeContext context = new RealtimeContext(
                 firstText(tenantId, message.context().tenantId()),
-                userId == null ? message.context().userId() : userId,
+                resolvedUserId(userId, message.context().userId()),
                 message.context().traceId(),
                 message.context().requestId());
         RealtimeSource source = new RealtimeSource(
@@ -160,20 +172,43 @@ public class PollingRealtimeController {
                 message.stream());
     }
 
-    private String resolvePollingSubscriber(RealtimeInboundMessage message, String clientId) {
+    private String resolvePollingSubscriber(String tenantId, Long userId, String clientId) {
         if (clientId != null && !clientId.isBlank()) {
-            return InMemoryRealtimePollingService.clientSubscriberId(clientId);
+            return InMemoryRealtimePollingService.clientSubscriberId(tenantId, clientId);
         }
-        if (message.source().clientId() != null && !message.source().clientId().isBlank()) {
-            return InMemoryRealtimePollingService.clientSubscriberId(message.source().clientId());
+        return InMemoryRealtimePollingService.userSubscriberId(tenantId, userId);
+    }
+
+    private int defaultIfNonPositive(Integer candidate, int defaultValue) {
+        if (candidate == null || candidate <= 0) {
+            return defaultValue;
         }
-        return InMemoryRealtimePollingService.userSubscriberId(message.context().userId());
+        return candidate;
+    }
+
+    private long defaultIfNegative(Long candidate, long defaultValue) {
+        if (candidate == null || candidate < 0) {
+            return defaultValue;
+        }
+        return candidate;
+    }
+
+    private Long resolvedUserId(Long preferred, Long fallback) {
+        if (preferred == null) {
+            return fallback;
+        }
+        return preferred;
     }
 
     @GetMapping("/realtime/transports/probe/polling")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "探测轮询链路")
     @Operation(summary = "探测轮询链路", description = "检查 HTTP 轮询链路，不注册业务订阅")
     public Map<String, String> probe() {
+        String rtTicket = RealtimeRequestIdentityResolver.currentRequestParameter("rtTicket");
+        if (rtTicket != null && !rtTicket.isBlank()) {
+            ticketService.resolve(rtTicket)
+                    .orElseThrow(() -> new IllegalArgumentException("Missing or expired realtime ticket"));
+        }
         return Map.of("type", "probe.ok", "protocol", "polling");
     }
 }

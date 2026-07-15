@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.core.polling;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeProtocols;
 import io.mango.infra.realtime.core.outbound.RealtimeProtocolSender;
@@ -8,7 +9,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Protocol adapter that stores messages for HTTP polling clients.
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Polling service is an injected singleton collaborator"))
 public class PollingProtocolAdapter implements RealtimeProtocolSender {
 
     private final InMemoryRealtimePollingService pollingService;

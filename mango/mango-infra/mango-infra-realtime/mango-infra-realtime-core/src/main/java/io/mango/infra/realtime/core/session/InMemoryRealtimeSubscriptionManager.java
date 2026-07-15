@@ -36,6 +36,10 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
         RealtimeSession previous = sessions.put(session.id(), session);
         removeTenantIndex(previous);
         removeClientIndex(previous);
+        if (previous != null) {
+            removeGroupIndexes(previous.id());
+            presenceService.offline(previous.id());
+        }
         tenantSessionIds.computeIfAbsent(normalizeTenantId(session.tenantId()), key -> ConcurrentHashMap.newKeySet())
                 .add(session.id());
         if (session.clientId() != null && !session.clientId().isBlank()) {
@@ -82,14 +86,14 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
             return;
         }
         RealtimeSession session = sessions.get(sessionId);
-        String key = groupKey(session == null ? null : session.tenantId(), normalizedGroupId);
+        String key = groupKey(tenantId(session), normalizedGroupId);
         removeFromGroup(sessionId, key);
-        presenceService.leaveGroup(sessionId, normalizeTenantId(session == null ? null : session.tenantId()), normalizedGroupId);
+        presenceService.leaveGroup(sessionId, normalizeTenantId(tenantId(session)), normalizedGroupId);
     }
 
     @Override
     public Collection<RealtimeSession> findByTenant(String tenantId) {
-        String resolvedTenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        String resolvedTenantId = normalizeTenantId(tenantId);
         Set<String> sessionIds = tenantSessionIds.get(resolvedTenantId);
         if (sessionIds == null || sessionIds.isEmpty()) {
             return List.of();
@@ -98,7 +102,7 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
                 .map(sessions::get)
                 .filter(session -> session != null)
                 .filter(RealtimeSession::isOpen)
-                .filter(session -> resolvedTenantId.equals(session.tenantId()))
+                .filter(session -> resolvedTenantId.equals(normalizeTenantId(session.tenantId())))
                 .toList();
     }
 
@@ -128,7 +132,10 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
 
     @Override
     public Collection<RealtimeSession> findByConnection(String connectionId) {
-        RealtimeSession session = connectionId == null ? null : sessions.get(connectionId);
+        if (connectionId == null) {
+            return List.of();
+        }
+        RealtimeSession session = sessions.get(connectionId);
         if (session == null || !session.isOpen()) {
             return List.of();
         }
@@ -166,7 +173,7 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
                 .map(sessions::get)
                 .filter(session -> session != null)
                 .filter(RealtimeSession::isOpen)
-                .filter(session -> resolvedTenantId.equals(session.tenantId()))
+                .filter(session -> resolvedTenantId.equals(normalizeTenantId(session.tenantId())))
                 .count();
     }
 
@@ -234,11 +241,24 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
     }
 
     private String normalizeTenantId(String tenantId) {
-        return tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        if (tenantId == null || tenantId.isBlank()) {
+            return "default";
+        }
+        return tenantId.trim();
     }
 
     private String normalizeGroupId(String groupId) {
-        return groupId == null || groupId.isBlank() ? null : groupId.trim();
+        if (groupId == null || groupId.isBlank()) {
+            return null;
+        }
+        return groupId.trim();
+    }
+
+    private String tenantId(RealtimeSession session) {
+        if (session == null) {
+            return null;
+        }
+        return session.tenantId();
     }
 
     private String clientKey(String tenantId, String clientId) {

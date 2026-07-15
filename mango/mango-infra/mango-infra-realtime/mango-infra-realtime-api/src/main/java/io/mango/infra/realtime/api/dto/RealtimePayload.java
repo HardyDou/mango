@@ -20,13 +20,13 @@ public final class RealtimePayload extends LinkedHashMap<String, Object> {
     public static RealtimePayload text(String text) {
         RealtimePayload payload = new RealtimePayload();
         payload.put("type", "text");
-        payload.put("text", text == null ? "" : text);
+        payload.put("text", emptyIfNull(text));
         return payload;
     }
 
     public static RealtimePayload message(String message) {
         RealtimePayload payload = new RealtimePayload();
-        payload.put("message", message == null ? "" : message);
+        payload.put("message", emptyIfNull(message));
         return payload;
     }
 
@@ -40,6 +40,16 @@ public final class RealtimePayload extends LinkedHashMap<String, Object> {
             return String.valueOf(content);
         }
         Object message = get("message");
-        return message == null ? "" : String.valueOf(message);
+        if (message == null) {
+            return "";
+        }
+        return String.valueOf(message);
+    }
+
+    private static String emptyIfNull(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value;
     }
 }
