@@ -3,6 +3,8 @@ package io.mango.infra.excel.starter;
 import io.mango.infra.persistence.web.starter.excel.ExcelColumn;
 import io.mango.infra.persistence.web.starter.excel.ExcelColumnConverter;
 import io.mango.infra.persistence.web.starter.excel.ExcelDictionaryProvider;
+import io.mango.infra.persistence.web.starter.excel.ExcelExportContext;
+import io.mango.infra.persistence.web.starter.excel.ExcelHeadGenerator;
 import io.mango.infra.persistence.web.starter.excel.ExcelImportContext;
 import io.mango.infra.persistence.web.starter.excel.ExcelImportMode;
 import io.mango.infra.persistence.web.starter.excel.ExcelLine;
@@ -187,6 +189,115 @@ class PoiExcelAdapterTest {
     }
 
     @Test
+    void failureWorkbookAppendsReasonAfterEveryExistingDataColumn() throws IOException {
+        PoiExcelAdapter adapter = adapter(null);
+        MockMultipartFile file = workbook("台账", List.of("协议号"), List.of(),
+                List.of(List.of("001", "原始扩展值", "原始备注")));
+
+        byte[] content = adapter.createFailureWorkbook(file, context(1),
+                List.of(ImportError.cell(2, "agreementNo", "协议号", "001", "INVALID", "协议号无效")));
+
+        try (Workbook failed = new XSSFWorkbook(new ByteArrayInputStream(content))) {
+            Row row = failed.getSheet("台账").getRow(1);
+            assertThat(row.getCell(1).getStringCellValue()).isEqualTo("原始扩展值");
+            assertThat(row.getCell(2).getStringCellValue()).isEqualTo("原始备注");
+            assertThat(row.getCell(3).getStringCellValue()).isEqualTo("协议号无效");
+        }
+    }
+
+    @Test
+    void exportHonorsFieldSelectionNativeTypesAndCustomHead() throws IOException {
+        PoiExcelAdapter adapter = adapter(null);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ExcelExportContext exportContext = new ExcelExportContext("ledger.xlsx", "", "", "台账",
+                List.of("amount", "enabled"), List.of("enabled"), TwoLevelHeadGenerator.class);
+
+        adapter.write(response, exportContext, ExportRow.class,
+                List.of(new ExportRow("启用", new BigDecimal("123.45"), true)));
+
+        try (Workbook exported = new XSSFWorkbook(new ByteArrayInputStream(response.getContentAsByteArray()))) {
+            Sheet sheet = exported.getSheet("台账");
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("财务");
+            assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("金额");
+            assertThat(sheet.getRow(2).getCell(0).getCellType()).isEqualTo(org.apache.poi.ss.usermodel.CellType.NUMERIC);
+            assertThat(sheet.getRow(2).getCell(0).getNumericCellValue()).isEqualTo(123.45D);
+            assertThat(sheet.getRow(0).getLastCellNum()).isEqualTo((short) 1);
+        }
+    }
+
+    @Test
+    void duplicateConfiguredColumnShouldFailFast() throws IOException {
+        PoiExcelAdapter adapter = adapter(null);
+        MockMultipartFile file = workbook("台账", List.of("任意列"), List.of(), List.of(List.of("A")));
+
+        assertThatThrownBy(() -> adapter.readResult(file, context(1), DuplicateIndexRow.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("重复映射 Excel 列");
+    }
+
+    @Test
+    void titleAndFixedIndexCannotResolveToSameWorkbookColumn() throws IOException {
+        PoiExcelAdapter adapter = adapter(null);
+        MockMultipartFile file = workbook("台账", List.of("状态"), List.of(), List.of(List.of("启用")));
+
+        ExcelReadResult<ResolvedCollisionRow> result = adapter.readResult(file, context(1),
+                ResolvedCollisionRow.class);
+
+        assertThat(result.rows()).isEmpty();
+        assertThat(result.errors()).extracting(ImportError::code).contains("DUPLICATE_COLUMN_MAPPING");
+    }
+
+    @Test
+    void exportRejectsUnknownSelectionAndUnsupportedTemplateInsteadOfIgnoringConfiguration() {
+        PoiExcelAdapter adapter = adapter(null);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ExcelExportContext unknownField = new ExcelExportContext("ledger.xlsx", "", "", "台账",
+                List.of("missing"), List.of(), ExcelHeadGenerator.class);
+        ExcelExportContext unsupportedTemplate = new ExcelExportContext("ledger.xlsx", "template-key", "", "台账",
+                List.of(), List.of(), ExcelHeadGenerator.class);
+
+        assertThatThrownBy(() -> adapter.write(response, unknownField, ExportRow.class, List.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("include 包含未知字段");
+        assertThatThrownBy(() -> adapter.write(response, unsupportedTemplate, ExportRow.class, List.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("不能静默忽略");
+    }
+
+    @Test
+    void exportPreservesFixedColumnAndWritesUnsafeIntegerAsText() throws IOException {
+        PoiExcelAdapter adapter = adapter(null);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ExcelExportContext exportContext = new ExcelExportContext("fixed.xlsx", "", "", "固定列",
+                List.of(), List.of(), ExcelHeadGenerator.class);
+
+        adapter.write(response, exportContext, FixedExportRow.class,
+                List.of(new FixedExportRow(123456789012345678L)));
+
+        try (Workbook exported = new XSSFWorkbook(new ByteArrayInputStream(response.getContentAsByteArray()))) {
+            Sheet sheet = exported.getSheet("固定列");
+            assertThat(sheet.getRow(0).getCell(2).getStringCellValue()).isEqualTo("businessId");
+            assertThat(sheet.getRow(1).getCell(2).getCellType()).isEqualTo(org.apache.poi.ss.usermodel.CellType.STRING);
+            assertThat(sheet.getRow(1).getCell(2).getStringCellValue()).isEqualTo("123456789012345678");
+        }
+    }
+
+    @Test
+    void exportKeepsLegacyDefaultsForBlankDirectContext() throws IOException {
+        PoiExcelAdapter adapter = adapter(null);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ExcelExportContext blank = new ExcelExportContext(" ", "", "", " ", null, null, null);
+
+        adapter.write(response, blank, ExportRow.class,
+                List.of(new ExportRow("启用", new BigDecimal("1"), true)));
+
+        assertThat(response.getHeader("Content-Disposition")).contains("export.xlsx");
+        try (Workbook exported = new XSSFWorkbook(new ByteArrayInputStream(response.getContentAsByteArray()))) {
+            assertThat(exported.getSheet("sheet1")).isNotNull();
+        }
+    }
+
+    @Test
     void classpathTemplateIsDownloadedByteForByte() throws IOException, URISyntaxException {
         PoiExcelAdapter adapter = adapter(null);
         byte[] original = richTemplate();
@@ -337,6 +448,60 @@ class PoiExcelAdapterTest {
 
         @ExcelColumn(title = "状态", idx = 0)
         private String status;
+    }
+
+    static class DuplicateIndexRow {
+
+        @ExcelColumn(idx = 0)
+        private String first;
+
+        @ExcelColumn(idx = 0)
+        private String second;
+    }
+
+    static class ResolvedCollisionRow {
+
+        @ExcelColumn(idx = 0)
+        private String fixed;
+
+        @ExcelColumn(title = "状态")
+        private String status;
+    }
+
+    static class ExportRow {
+
+        @ExcelColumn(title = "状态")
+        private String status;
+
+        @ExcelColumn(title = "金额")
+        private BigDecimal amount;
+
+        @ExcelColumn(title = "启用")
+        private boolean enabled;
+
+        ExportRow(String status, BigDecimal amount, boolean enabled) {
+            this.status = status;
+            this.amount = amount;
+            this.enabled = enabled;
+        }
+    }
+
+    static class FixedExportRow {
+
+        @ExcelColumn(idx = 2)
+        private long businessId;
+
+        FixedExportRow(long businessId) {
+            this.businessId = businessId;
+        }
+    }
+
+    static class TwoLevelHeadGenerator implements ExcelHeadGenerator {
+
+        @Override
+        public List<List<String>> head(Class<?> rowType) {
+            return List.of(List.of("财务", "金额"));
+        }
     }
 
     static class UpperConverter implements ExcelColumnConverter<String> {

@@ -80,11 +80,13 @@ public class PoiExcelAdapter implements ExcelAdapter {
 
     private final ApplicationContext applicationContext;
     private final ObjectProvider<ExcelDictionaryProvider> dictionaryProvider;
+    private final PoiExcelExporter exporter;
 
     public PoiExcelAdapter(ApplicationContext applicationContext,
                            ObjectProvider<ExcelDictionaryProvider> dictionaryProvider) {
         this.applicationContext = applicationContext;
         this.dictionaryProvider = dictionaryProvider;
+        this.exporter = new PoiExcelExporter(applicationContext);
     }
 
     @Override
@@ -104,7 +106,7 @@ public class PoiExcelAdapter implements ExcelAdapter {
             Sheet sheet = selectSheet(workbook, context);
             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
             DataFormatter formatter = new DataFormatter(Locale.getDefault());
-            List<ColumnBinding> bindings = bindings(rowType);
+            List<ExcelColumnBinding> bindings = bindings(rowType);
             List<ImportError> errors = new ArrayList<>();
             resolveColumns(sheet, context, bindings, evaluator, formatter, errors);
             if (hasBatchErrors(errors)) {
@@ -120,32 +122,7 @@ public class PoiExcelAdapter implements ExcelAdapter {
     @Override
     public <ROW> void write(HttpServletResponse response, ExcelExportContext context, Class<ROW> rowType,
                             List<ROW> rows) {
-        try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet(resolveExportSheetName(context));
-            List<ColumnBinding> bindings = bindings(rowType);
-            Row header = sheet.createRow(0);
-            for (int i = 0; i < bindings.size(); i++) {
-                ColumnBinding binding = bindings.get(i);
-                int column = columnFor(binding, i);
-                header.createCell(column).setCellValue(binding.displayTitle());
-            }
-            List<ROW> safeRows = rows;
-            if (safeRows == null) {
-                safeRows = List.of();
-            }
-            for (int rowIndex = 0; rowIndex < safeRows.size(); rowIndex++) {
-                Row row = sheet.createRow(rowIndex + 1);
-                for (int i = 0; i < bindings.size(); i++) {
-                    ColumnBinding binding = bindings.get(i);
-                    int column = columnFor(binding, i);
-                    Object value = readField(binding.field(), safeRows.get(rowIndex));
-                    row.createCell(column).setCellValue(textValue(value));
-                }
-            }
-            writeResponse(response, resolveExportFileName(context), workbook);
-        } catch (IOException ex) {
-            throw new ExcelImportException("无法写出 xlsx 工作簿", ex);
-        }
+        exporter.write(response, context, rowType, bindings(rowType), rows);
     }
 
     @Override
@@ -158,9 +135,9 @@ public class PoiExcelAdapter implements ExcelAdapter {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet(importSheetName(context));
             Row header = sheet.createRow(0);
-            List<ColumnBinding> bindings = bindings(rowType);
+            List<ExcelColumnBinding> bindings = bindings(rowType);
             for (int i = 0; i < bindings.size(); i++) {
-                ColumnBinding binding = bindings.get(i);
+                ExcelColumnBinding binding = bindings.get(i);
                 int column = columnFor(binding, i);
                 header.createCell(column).setCellValue(binding.displayTitle());
             }
@@ -180,7 +157,7 @@ public class PoiExcelAdapter implements ExcelAdapter {
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             Sheet sheet = selectSheet(workbook, context);
             Map<Integer, String> reasons = errorsByLine(errors);
-            int reasonColumn = lastUsedColumn(sheet, context) + 1;
+            int reasonColumn = lastUsedColumn(sheet) + 1;
             Row titleRow = sheet.getRow(0);
             if (titleRow == null) {
                 titleRow = sheet.createRow(0);
@@ -207,7 +184,7 @@ public class PoiExcelAdapter implements ExcelAdapter {
     }
 
     private <ROW> List<ROW> readRows(Sheet sheet, ExcelImportContext context, Class<ROW> rowType,
-                                      List<ColumnBinding> bindings, FormulaEvaluator evaluator,
+                                      List<ExcelColumnBinding> bindings, FormulaEvaluator evaluator,
                                       DataFormatter formatter, List<ImportError> errors) {
         List<ROW> rows = new ArrayList<>();
         for (int rowIndex = context.headRowNumber(); rowIndex <= sheet.getLastRowNum(); rowIndex++) {
@@ -219,7 +196,7 @@ public class PoiExcelAdapter implements ExcelAdapter {
             }
             ROW target = instantiate(rowType);
             fillLine(target, rowIndex + 1);
-            for (ColumnBinding binding : bindings) {
+            for (ExcelColumnBinding binding : bindings) {
                 Cell cell = effectiveCell(sheet, source, binding.columnIndex());
                 ExcelCellValue value = new ExcelCellValue("", null, null, CellType.BLANK.name(),
                         rowIndex + 1, binding.columnIndex());
@@ -237,14 +214,19 @@ public class PoiExcelAdapter implements ExcelAdapter {
         return rows;
     }
 
-    private void resolveColumns(Sheet sheet, ExcelImportContext context, List<ColumnBinding> bindings,
+    private void resolveColumns(Sheet sheet, ExcelImportContext context, List<ExcelColumnBinding> bindings,
                                 FormulaEvaluator evaluator, DataFormatter formatter, List<ImportError> errors) {
         Map<String, Integer> titleIndexes = new LinkedHashMap<>();
         readTitleIndexes(sheet, evaluator, formatter, titleIndexes, errors);
         Set<String> declaredTitles = new HashSet<>();
         Set<Integer> declaredIndexes = new HashSet<>();
-        for (ColumnBinding binding : bindings) {
+        Set<Integer> resolvedIndexes = new HashSet<>();
+        for (ExcelColumnBinding binding : bindings) {
             resolveBinding(binding, titleIndexes, declaredTitles, declaredIndexes, errors);
+            if (binding.columnIndex() >= 0 && !resolvedIndexes.add(binding.columnIndex())) {
+                errors.add(batchError("DUPLICATE_COLUMN_MAPPING",
+                        "多个字段映射到同一 Excel 列: " + binding.columnIndex()));
+            }
         }
         if (UnknownColumnPolicy.ERROR.equals(context.unknownColumnPolicy())) {
             titleIndexes.forEach((title, index) -> {
@@ -278,7 +260,7 @@ public class PoiExcelAdapter implements ExcelAdapter {
         }
     }
 
-    private void resolveBinding(ColumnBinding binding, Map<String, Integer> titleIndexes,
+    private void resolveBinding(ExcelColumnBinding binding, Map<String, Integer> titleIndexes,
                                 Set<String> declaredTitles, Set<Integer> declaredIndexes,
                                 List<ImportError> errors) {
         if (binding.configuredIndex() >= 0) {
@@ -298,7 +280,7 @@ public class PoiExcelAdapter implements ExcelAdapter {
         }
     }
 
-    private Object convert(ExcelCellValue value, ColumnBinding binding, ExcelImportContext context) {
+    private Object convert(ExcelCellValue value, ExcelColumnBinding binding, ExcelImportContext context) {
         ExcelColumn annotation = binding.annotation();
         ExcelColumnMetadata metadata = binding.metadata();
         if (!ExcelColumnConverter.None.class.equals(annotation.converter())) {
@@ -532,8 +514,11 @@ public class PoiExcelAdapter implements ExcelAdapter {
         return BigDecimal.valueOf(number);
     }
 
-    private List<ColumnBinding> bindings(Class<?> rowType) {
-        List<ColumnBinding> result = new ArrayList<>();
+    private List<ExcelColumnBinding> bindings(Class<?> rowType) {
+        List<ExcelColumnBinding> result = new ArrayList<>();
+        Set<Integer> configuredIndexes = new LinkedHashSet<>();
+        Set<String> configuredTitles = new LinkedHashSet<>();
+        Set<String> fieldNames = new LinkedHashSet<>();
         for (Field field : fields(rowType)) {
             ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
             if (annotation == null) {
@@ -544,13 +529,38 @@ public class PoiExcelAdapter implements ExcelAdapter {
             if (hasTitle == hasIndex) {
                 throw new IllegalArgumentException("字段 " + field.getName() + " 的 ExcelColumn 必须且只能配置 title 或 idx");
             }
+            if (!fieldNames.add(field.getName())) {
+                throw new IllegalArgumentException("Excel 行类型存在重复字段名: " + field.getName());
+            }
+            if (hasIndex && !configuredIndexes.add(annotation.idx())) {
+                throw new IllegalArgumentException("字段 " + field.getName() + " 重复映射 Excel 列 idx=" + annotation.idx());
+            }
+            if (hasTitle) {
+                validateUniqueTitles(field, annotation, configuredTitles);
+            }
             field.setAccessible(true);
-            result.add(new ColumnBinding(field, annotation));
+            result.add(new ExcelColumnBinding(field, annotation));
         }
         if (result.isEmpty()) {
             throw new IllegalArgumentException("Excel 行类型没有声明 @ExcelColumn: " + rowType.getName());
         }
         return result;
+    }
+
+    private void validateUniqueTitles(Field field, ExcelColumn annotation, Set<String> configuredTitles) {
+        List<String> titles = new ArrayList<>();
+        titles.add(annotation.title());
+        titles.addAll(Arrays.asList(annotation.aliases()));
+        Set<String> localTitles = new LinkedHashSet<>();
+        for (String title : titles) {
+            String normalized = normalizeTitle(title);
+            if (normalized.isEmpty() || !localTitles.add(normalized)) {
+                continue;
+            }
+            if (!configuredTitles.add(normalized)) {
+                throw new IllegalArgumentException("字段 " + field.getName() + " 重复映射 Excel 标题: " + title);
+            }
+        }
     }
 
     private List<Field> fields(Class<?> rowType) {
@@ -593,12 +603,12 @@ public class PoiExcelAdapter implements ExcelAdapter {
         return row.getCell(column);
     }
 
-    private boolean isEmptyRow(Sheet sheet, Row row, List<ColumnBinding> bindings,
+    private boolean isEmptyRow(Sheet sheet, Row row, List<ExcelColumnBinding> bindings,
                                FormulaEvaluator evaluator, DataFormatter formatter) {
         if (row == null) {
             return true;
         }
-        for (ColumnBinding binding : bindings) {
+        for (ExcelColumnBinding binding : bindings) {
             Cell cell = effectiveCell(sheet, row, binding.columnIndex());
             if (cell != null && StringUtils.hasText(formatter.formatCellValue(cell, evaluator))) {
                 return false;
@@ -643,26 +653,11 @@ public class PoiExcelAdapter implements ExcelAdapter {
         }
     }
 
-    private Object readField(Field field, Object target) {
-        try {
-            return field.get(target);
-        } catch (IllegalAccessException ex) {
-            throw new IllegalStateException("无法读取 Excel 字段: " + field.getName(), ex);
-        }
-    }
-
-    private int columnFor(ColumnBinding binding, int fallback) {
+    private int columnFor(ExcelColumnBinding binding, int fallback) {
         if (binding.configuredIndex() >= 0) {
             return binding.configuredIndex();
         }
         return fallback;
-    }
-
-    private String textValue(Object value) {
-        if (value == null) {
-            return "";
-        }
-        return String.valueOf(value);
     }
 
     private String importSheetName(ExcelImportContext context) {
@@ -726,17 +721,17 @@ public class PoiExcelAdapter implements ExcelAdapter {
         if (errors == null) {
             return Map.of();
         }
-        return errors.stream().filter(error -> error.line() > 0).
-                collect(Collectors.groupingBy(ImportError::line, LinkedHashMap::new,
+        return errors.stream().filter(error -> error.line() > 0)
+                .collect(Collectors.groupingBy(ImportError::line, LinkedHashMap::new,
                         Collectors.mapping(ImportError::message, Collectors.joining("；"))));
     }
 
-    private int lastUsedColumn(Sheet sheet, ExcelImportContext context) {
-        int result = 0;
-        for (int rowIndex = 0; rowIndex < context.headRowNumber() && rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+    private int lastUsedColumn(Sheet sheet) {
+        int result = -1;
+        for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
             Row row = sheet.getRow(rowIndex);
             if (row != null) {
-                result = Math.max(result, Math.max(row.getLastCellNum() - 1, 0));
+                result = Math.max(result, row.getLastCellNum() - 1);
             }
         }
         return result;
@@ -827,61 +822,4 @@ public class PoiExcelAdapter implements ExcelAdapter {
         return "attachment; filename*=UTF-8''" + encoded;
     }
 
-    private String resolveExportFileName(ExcelExportContext context) {
-        if (context == null || !StringUtils.hasText(context.fileName())) {
-            return "export.xlsx";
-        }
-        return context.fileName();
-    }
-
-    private String resolveExportSheetName(ExcelExportContext context) {
-        if (context == null || !StringUtils.hasText(context.sheetName())) {
-            return "sheet1";
-        }
-        return context.sheetName();
-    }
-
-    private static final class ColumnBinding {
-
-        private final Field field;
-        private final ExcelColumn annotation;
-        private int columnIndex = -1;
-
-        private ColumnBinding(Field field, ExcelColumn annotation) {
-            this.field = field;
-            this.annotation = annotation;
-        }
-
-        private Field field() {
-            return field;
-        }
-
-        private ExcelColumn annotation() {
-            return annotation;
-        }
-
-        private int configuredIndex() {
-            return annotation.idx();
-        }
-
-        private int columnIndex() {
-            return columnIndex;
-        }
-
-        private void columnIndex(int columnIndex) {
-            this.columnIndex = columnIndex;
-        }
-
-        private String displayTitle() {
-            if (StringUtils.hasText(annotation.title())) {
-                return annotation.title().trim();
-            }
-            return field.getName();
-        }
-
-        private ExcelColumnMetadata metadata() {
-            return new ExcelColumnMetadata(field.getName(), annotation.title(), List.of(annotation.aliases()),
-                    annotation.dictType(), field.getType(), columnIndex);
-        }
-    }
 }
