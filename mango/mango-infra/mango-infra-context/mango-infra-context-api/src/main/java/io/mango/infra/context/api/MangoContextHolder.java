@@ -1,6 +1,7 @@
 package io.mango.infra.context.api;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
+import io.mango.common.contract.LocalCapabilityContract;
 
 import java.util.function.UnaryOperator;
 
@@ -11,6 +12,7 @@ import java.util.function.UnaryOperator;
  *
  * @author Mango
  */
+@LocalCapabilityContract
 public final class MangoContextHolder {
 
     private static final TransmittableThreadLocal<MangoContextSnapshot> CONTEXT = new TransmittableThreadLocal<>();
@@ -21,7 +23,10 @@ public final class MangoContextHolder {
 
     public static MangoContextSnapshot get() {
         MangoContextSnapshot snapshot = CONTEXT.get();
-        return snapshot == null ? MangoContextSnapshot.empty() : snapshot;
+        if (snapshot == null) {
+            return MangoContextSnapshot.empty();
+        }
+        return snapshot;
     }
 
     public static void set(MangoContextSnapshot snapshot) {

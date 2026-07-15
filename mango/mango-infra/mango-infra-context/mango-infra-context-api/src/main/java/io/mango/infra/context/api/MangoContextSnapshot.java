@@ -1,5 +1,10 @@
 package io.mango.infra.context.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
+import java.util.Objects;
+import java.util.stream.Stream;
+
 /**
  * Mango 运行时上下文快照。
  * <p>
@@ -7,6 +12,7 @@ package io.mango.infra.context.api;
  *
  * @author Mango
  */
+@LocalCapabilityContract
 public record MangoContextSnapshot(
         String requestId,
         String traceId,
@@ -22,18 +28,6 @@ public record MangoContextSnapshot(
         String clientIp
 ) {
 
-    public static MangoContextSnapshot empty() {
-        return new MangoContextSnapshot(null, null, null, null, null, null, null, null, null, null, null, null);
-    }
-
-    public static MangoContextSnapshot request(String requestId,
-                                               String traceId,
-                                               String tenantId,
-                                               String appCode,
-                                               String clientIp) {
-        return empty().withRequest(requestId, traceId, tenantId, appCode, clientIp);
-    }
-
     public MangoContextSnapshot {
         requestId = normalize(requestId);
         traceId = normalize(traceId);
@@ -46,19 +40,22 @@ public record MangoContextSnapshot(
         clientIp = normalize(clientIp);
     }
 
+    public static MangoContextSnapshot empty() {
+        return new MangoContextSnapshot(null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    public static MangoContextSnapshot request(String requestId,
+                                               String traceId,
+                                               String tenantId,
+                                               String appCode,
+                                               String clientIp) {
+        return empty().withRequest(requestId, traceId, tenantId, appCode, clientIp);
+    }
+
     public boolean isEmpty() {
-        return requestId == null
-                && traceId == null
-                && tenantId == null
-                && userId == null
-                && memberId == null
-                && principalName == null
-                && realm == null
-                && actorType == null
-                && partyType == null
-                && partyId == null
-                && appCode == null
-                && clientIp == null;
+        return Stream.of(requestId, traceId, tenantId, userId, memberId, principalName,
+                        realm, actorType, partyType, partyId, appCode, clientIp)
+                .allMatch(Objects::isNull);
     }
 
     public MangoContextSnapshot withRequest(String requestId,
@@ -95,13 +92,13 @@ public record MangoContextSnapshot(
                 requestId,
                 traceId,
                 firstText(tenantId, this.tenantId),
-                userId != null ? userId : this.userId,
-                memberId != null ? memberId : this.memberId,
+                firstValue(userId, this.userId),
+                firstValue(memberId, this.memberId),
                 firstText(principalName, this.principalName),
                 firstText(realm, this.realm),
                 firstText(actorType, this.actorType),
                 firstText(partyType, this.partyType),
-                partyId != null ? partyId : this.partyId,
+                firstValue(partyId, this.partyId),
                 firstText(appCode, this.appCode),
                 clientIp
         );
@@ -137,7 +134,17 @@ public record MangoContextSnapshot(
 
     private static String firstText(String first, String second) {
         String normalized = normalize(first);
-        return normalized != null ? normalized : normalize(second);
+        if (normalized != null) {
+            return normalized;
+        }
+        return normalize(second);
+    }
+
+    private static <T> T firstValue(T first, T second) {
+        if (first != null) {
+            return first;
+        }
+        return second;
     }
 
     private static String normalize(String value) {

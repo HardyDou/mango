@@ -106,9 +106,29 @@ mango:
 - `MangoContextHeaders`：统一请求头常量，包含 `X-Mango-Request-Id`、`X-Mango-Trace-Id`、`X-Mango-Tenant-Id`、`X-Mango-User-Id`、`X-Mango-Member-Id` 等。
 - `MangoContextTaskDecorator`：包装异步任务，提交时捕获上下文，执行后恢复原上下文。
 - `TtlExecutorDecorator`、`MangoContextExecutors`：用于包装自定义 `Executor`，让非默认线程池也能传播上下文。
+- 上述 API 类型是 JVM 进程内能力，使用 `LocalCapabilityContract` 标识；它们不是 HTTP Controller 或 Feign 协议。
 
 ## 8. 数据与初始化
 无数据库 migration、无 Runner、无 Initializer、无初始化数据。
+
+## 8.1 验证基线
+
+- API 单元测试覆盖快照规范化、不可变合并、请求头契约，以及上下文与 token 的设置和清理语义。
+- Support 测试使用真实单线程和定时线程池，覆盖 Runnable、Callable、提交时捕获、工作线程恢复和线程复用不串数据。
+- Starter 测试覆盖默认装配、总开关、线程池开关、自定义 Bean 回退、全部配置绑定和真实命名执行器。
+- Web 消费链测试启动随机端口 Tomcat，经真实 `MangoContextWebFilter` 和 `@TtlAsync` 验证 HTTP 到异步线程的传播与隔离。
+
+定向回归命令：
+
+```bash
+mvn -f mango/pom.xml \
+  -pl :mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter test
+
+mvn -f mango/pom.xml \
+  -pl :mango-infra-web-starter -am \
+  -Dtest=MangoContextPropagationE2ETest \
+  -Dsurefire.failIfNoSpecifiedTests=false test
+```
 
 ## 9. 管理入口
 本模块不创建菜单和权限。tenant id 只是运行时上下文字段，不等同于租户隔离策略；业务模块、授权模块和持久化模块必须分别做权限判断和租户过滤。
