@@ -1,7 +1,7 @@
 package io.mango.authorization.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.authorization.core.entity.Role;
+import io.mango.authorization.core.entity.RoleEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -10,5 +10,5 @@ import org.apache.ibatis.annotations.Mapper;
  * @author Mango
  */
 @Mapper
-public interface RoleMapper extends BaseMapper<Role> {
+public interface RoleMapper extends BaseMapper<RoleEntity> {
 }

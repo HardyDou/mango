@@ -1,6 +1,7 @@
 package io.mango.authorization.support.token;
 
 import io.mango.authorization.api.ITokenProvider;
+import io.mango.authorization.api.vo.TokenPairVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -9,16 +10,16 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link JjwtTokenServiceImpl}.
+ * Tests for {@link JjwtTokenProvider}.
  */
-class JjwtTokenServiceImplTest {
+class JjwtTokenProviderImplTest {
 
     private ITokenProvider tokenService;
 
     @BeforeEach
     void setUp() {
         // Pass null for IKvStore (no blacklist in unit tests)
-        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
+        JjwtTokenProvider impl = new JjwtTokenProvider(null);
         // Inject test values via reflection (simulates @Value injection)
         setField(impl, "newSecret", "mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits");
         setField(impl, "legacySecret", "");
@@ -60,7 +61,7 @@ class JjwtTokenServiceImplTest {
 
     @Test
     void init_withoutSecret_throwsException() {
-        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
+        JjwtTokenProvider impl = new JjwtTokenProvider(null);
         setField(impl, "newSecret", "");
         setField(impl, "legacySecret", "");
 
@@ -69,7 +70,7 @@ class JjwtTokenServiceImplTest {
 
     @Test
     void init_withShortSecret_throwsException() {
-        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
+        JjwtTokenProvider impl = new JjwtTokenProvider(null);
         setField(impl, "newSecret", "short-secret");
         setField(impl, "legacySecret", "");
 
@@ -103,7 +104,7 @@ class JjwtTokenServiceImplTest {
     @Test
     void refresh_validRefreshToken_returnsNewTokenPair() {
         String refreshToken = tokenService.generateRefreshToken(99L, "refreshuser");
-        ITokenProvider.TokenPair pair = tokenService.refresh(refreshToken);
+        TokenPairVO pair = tokenService.refresh(refreshToken);
 
         assertNotNull(pair);
         assertNotNull(pair.accessToken());

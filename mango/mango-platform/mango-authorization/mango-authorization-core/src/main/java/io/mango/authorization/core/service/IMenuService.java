@@ -1,7 +1,9 @@
 package io.mango.authorization.core.service;
 
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.api.command.MenuCommand;
+import io.mango.authorization.api.query.MenuTreeQuery;
+import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.api.vo.MenuVO;
 
 import java.util.List;
@@ -15,27 +17,35 @@ public interface IMenuService {
     /**
      * 查询菜单资源列表或树。
      */
-    List<MenuVO> listMenus(String appCode, String moduleCode, Integer type, Long parentId, String menuName, Integer status, boolean tree);
+    List<MenuVO> listMenus(MenuTreeQuery query);
 
     /**
      * 查询当前用户菜单列表或树。
      */
-    List<MenuVO> listUserMenus(String appCode, Integer type, Long parentId, AuthorizationQuery query, boolean tree);
+    List<MenuVO> listUserMenus(MenuTreeQuery query, AuthorizationQuery authorizationQuery);
+
+    MenuVO getMenu(Long menuId);
+
+    Void createMenu(MenuCommand command);
+
+    Void updateMenu(MenuCommand command);
+
+    Void removeMenu(Long menuId);
 
     /**
      * 按 ID 查询菜单。
      */
-    Menu getById(Long menuId);
+    MenuEntity getById(Long menuId);
 
     /**
      * 按父菜单 ID 查询子菜单。
      */
-    List<Menu> listByParentId(Long parentId);
+    List<MenuEntity> listByParentId(Long parentId);
 
     /**
      * 将菜单列表组装为树。
      */
-    List<MenuVO> buildMenuTree(List<Menu> menus);
+    List<MenuVO> buildMenuTree(List<MenuEntity> menus);
 
     /**
      * 查询所有启用菜单/按钮声明的权限码。
@@ -45,12 +55,12 @@ public interface IMenuService {
     /**
      * 新增菜单。
      */
-    boolean addMenu(Menu menu);
+    boolean addMenu(MenuEntity menu);
 
     /**
      * 更新菜单。
      */
-    boolean updateMenu(Long menuId, Menu menu);
+    boolean updateMenu(Long menuId, MenuEntity menu);
 
     /**
      * 删除菜单。

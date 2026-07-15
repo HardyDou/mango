@@ -6,8 +6,8 @@ import io.mango.authorization.api.command.AssignSubjectRolesCommand;
 import io.mango.authorization.api.command.RoleCommand;
 import io.mango.authorization.api.vo.ButtonDisplayRuleVO;
 import io.mango.authorization.api.vo.MenuVO;
-import io.mango.authorization.core.entity.Menu;
-import io.mango.authorization.core.entity.Role;
+import io.mango.authorization.core.entity.MenuEntity;
+import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.service.IMenuService;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
@@ -51,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-@DisplayName("RoleServiceImpl 集成测试")
+@DisplayName("RoleService 集成测试")
 class RoleServiceImplIntegrationTest {
 
     @Autowired
@@ -61,7 +61,7 @@ class RoleServiceImplIntegrationTest {
     private RoleMapper roleMapper;
 
     @Autowired
-    private RoleServiceImpl service;
+    private RoleService service;
 
     @BeforeEach
     void setUp() {
@@ -86,8 +86,8 @@ class RoleServiceImplIntegrationTest {
     @Test
     @DisplayName("create should persist role without manually setting tenant id")
     void createPersistsRoleWithoutManuallySettingTenantId() {
-        Long roleId = service.create(roleCommand(null, "ROLE_TEST", "Test Role", 1));
-        Role created = roleMapper.selectById(roleId);
+        Long roleId = service.create(roleCommand(null, "ROLE_TEST", "Test RoleEntity", 1));
+        RoleEntity created = roleMapper.selectById(roleId);
 
         assertThat(roleId).isNotNull();
         assertThat(created.getRoleCode()).isEqualTo("ROLE_TEST");
@@ -99,13 +99,13 @@ class RoleServiceImplIntegrationTest {
     void updatePersistsCurrentTenantRoleThroughRealMapper() {
         seedRole(10L, 1L, "ROLE_TEST");
 
-        RoleCommand update = roleCommand(10L, "ROLE_TEST_UPDATED", "Updated Role", 0);
+        RoleCommand update = roleCommand(10L, "ROLE_TEST_UPDATED", "Updated RoleEntity", 0);
         Boolean updated = service.update(update);
-        Role persisted = roleMapper.selectById(10L);
+        RoleEntity persisted = roleMapper.selectById(10L);
 
         assertThat(updated).isTrue();
         assertThat(persisted.getRoleCode()).isEqualTo("ROLE_TEST_UPDATED");
-        assertThat(persisted.getRoleName()).isEqualTo("Updated Role");
+        assertThat(persisted.getRoleName()).isEqualTo("Updated RoleEntity");
         assertThat(persisted.getStatus()).isZero();
     }
 
@@ -242,6 +242,7 @@ class RoleServiceImplIntegrationTest {
                     del_flag tinyint not null default 0
                 )
                 """);
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
     private RoleCommand roleCommand(Long roleId, String roleCode, String roleName, Integer status) {
@@ -327,7 +328,7 @@ class RoleServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = RoleMapper.class)
-    @Import(RoleServiceImpl.class)
+    @Import(RoleService.class)
     static class TestConfig {
 
         @Bean
@@ -344,37 +345,48 @@ class RoleServiceImplIntegrationTest {
     static class TreeOnlyMenuService implements IMenuService {
 
         @Override
-        public List<MenuVO> listMenus(String appCode,
-                                      String moduleCode,
-                                      Integer type,
-                                      Long parentId,
-                                      String menuName,
-                                      Integer status,
-                                      boolean tree) {
+        public List<MenuVO> listMenus(io.mango.authorization.api.query.MenuTreeQuery query) {
             return List.of();
         }
 
         @Override
-        public List<MenuVO> listUserMenus(String appCode,
-                                          Integer type,
-                                          Long parentId,
-                                          AuthorizationQuery query,
-                                          boolean tree) {
+        public List<MenuVO> listUserMenus(io.mango.authorization.api.query.MenuTreeQuery menuQuery,
+                                          AuthorizationQuery query) {
             return List.of();
         }
 
         @Override
-        public Menu getById(Long menuId) {
+        public MenuVO getMenu(Long menuId) {
             return null;
         }
 
         @Override
-        public List<Menu> listByParentId(Long parentId) {
+        public Void createMenu(io.mango.authorization.api.command.MenuCommand command) {
+            return null;
+        }
+
+        @Override
+        public Void updateMenu(io.mango.authorization.api.command.MenuCommand command) {
+            return null;
+        }
+
+        @Override
+        public Void removeMenu(Long menuId) {
+            return null;
+        }
+
+        @Override
+        public MenuEntity getById(Long menuId) {
+            return null;
+        }
+
+        @Override
+        public List<MenuEntity> listByParentId(Long parentId) {
             return List.of();
         }
 
         @Override
-        public List<MenuVO> buildMenuTree(List<Menu> menus) {
+        public List<MenuVO> buildMenuTree(List<MenuEntity> menus) {
             return List.of();
         }
 
@@ -384,12 +396,12 @@ class RoleServiceImplIntegrationTest {
         }
 
         @Override
-        public boolean addMenu(Menu menu) {
+        public boolean addMenu(MenuEntity menu) {
             return false;
         }
 
         @Override
-        public boolean updateMenu(Long menuId, Menu menu) {
+        public boolean updateMenu(Long menuId, MenuEntity menu) {
             return false;
         }
 
@@ -402,8 +414,28 @@ class RoleServiceImplIntegrationTest {
     static class AllPermissionSubjectAuthorityService implements ISubjectAuthorityService {
 
         @Override
+        public List<String> listSubjectRoles(Long subjectId) {
+            return List.of();
+        }
+
+        @Override
+        public List<String> listSubjectRoles(Long subjectId, String appCode) {
+            return List.of();
+        }
+
+        @Override
         public List<String> listSubjectRoles(AuthorizationQuery query) {
             return List.of();
+        }
+
+        @Override
+        public List<String> listSubjectPermissions(Long subjectId) {
+            return List.of("*:*");
+        }
+
+        @Override
+        public List<String> listSubjectPermissions(Long subjectId, String appCode) {
+            return List.of("*:*");
         }
 
         @Override

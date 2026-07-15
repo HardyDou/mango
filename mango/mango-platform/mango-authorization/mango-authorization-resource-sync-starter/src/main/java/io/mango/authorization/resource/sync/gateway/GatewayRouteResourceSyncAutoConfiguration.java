@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnProperty(name = "mango.authorization.resource-sync.enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(name = "mango.authorization.resource-sync.gateway.enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnClass(name = "org.springframework.cloud.gateway.route.RouteDefinitionLocator")
+@ConditionalOnBean(RouteDefinitionLocator.class)
 public class GatewayRouteResourceSyncAutoConfiguration {
 
     @Bean

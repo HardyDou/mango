@@ -2,6 +2,7 @@ package io.mango.authorization.resource.sync;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import io.mango.infra.module.api.ModuleInfoRegistry;
@@ -59,7 +60,8 @@ public class ApiResourceSyncRunner implements ApplicationRunner {
             log.info("API resource sync read-only: discovered {} resources", resources.size());
             return;
         }
-        R<ApiResourceRegisterResultVO> response = apiResourceApi.registerApiResources(resources);
+        R<ApiResourceRegisterResultVO> response = apiResourceApi.registerApiResources(
+                new ApiResourceRegisterRequest(resources));
         ApiResourceRegisterResultVO result = response != null && response.isSuccess() && response.getData() != null
                 ? response.getData()
                 : ApiResourceRegisterResultVO.empty();

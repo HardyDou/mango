@@ -1,11 +1,12 @@
 package io.mango.authorization.starter.remote;
 
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.query.LoadUserAuthorizationQuery;
-import io.mango.authorization.support.token.JjwtTokenServiceImpl;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
+import io.mango.authorization.support.token.JjwtTokenProvider;
 import io.mango.common.result.R;
 import io.mango.infra.kv.api.IKvStore;
 import org.springframework.beans.factory.ObjectProvider;
@@ -26,7 +27,7 @@ public class AuthorizationRemoteAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ITokenProvider.class)
     public ITokenProvider tokenProvider(ObjectProvider<IKvStore> kvStoreProvider) {
-        return new JjwtTokenServiceImpl(kvStoreProvider.getIfAvailable());
+        return new JjwtTokenProvider(kvStoreProvider.getIfAvailable());
     }
 
     @Bean
@@ -35,7 +36,7 @@ public class AuthorizationRemoteAutoConfiguration {
             ObjectProvider<AuthorizationFeignClient> authorizationFeignClient) {
         return query -> {
             if (!AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER.equals(query.subjectType())) {
-                return AuthorizationSnapshot.empty();
+                return AuthorizationSnapshotVO.empty();
             }
             LoadUserAuthorizationQuery remoteQuery = new LoadUserAuthorizationQuery();
             remoteQuery.setSubjectId(query.subjectId());
@@ -45,10 +46,9 @@ public class AuthorizationRemoteAutoConfiguration {
             remoteQuery.setActorType(query.actorType());
             remoteQuery.setPartyType(query.partyType());
             remoteQuery.setPartyId(query.partyId());
-            R<AuthorizationSnapshot> response = authorizationFeignClient.getObject().loadUserAuthorization(remoteQuery);
+            R<AuthorizationSnapshotVO> response = authorizationFeignClient.getObject().loadUserAuthorization(remoteQuery);
             return response != null && response.isSuccess() && response.getData() != null
-                    ? response.getData()
-                    : AuthorizationSnapshot.empty();
+                    ? response.getData() : AuthorizationSnapshotVO.empty();
         };
     }
 

@@ -6,6 +6,10 @@ import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.vo.AppModuleVO;
 import io.mango.authorization.api.vo.FrontendModuleRuntimeStrategyVO;
 import io.mango.common.result.R;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
 
@@ -14,17 +18,19 @@ import java.util.List;
  */
 public interface AppModuleApi {
 
-    R<List<AppModuleVO>> list(String appCode, Integer status);
+    R<List<AppModuleVO>> list(@NotBlank String appCode, @Min(0) @Max(1) Integer status);
 
-    R<Long> save(AppModuleCommand command);
+    R<Long> save(@Valid AppModuleCommand command);
 
-    R<Boolean> disable(String appCode, String moduleCode);
+    R<Boolean> disable(@NotBlank String appCode, @NotBlank String moduleCode);
 
-    R<Integer> syncMenus(String appCode, String moduleCode);
+    R<Integer> syncMenus(@NotBlank String appCode, @NotBlank String moduleCode);
 
-    R<Integer> registerResourceManifest(AppModuleResourceManifestCommand command);
+    R<Integer> registerResourceManifest(@Valid AppModuleResourceManifestCommand command);
 
-    R<List<FrontendModuleRuntimeStrategyVO>> listRuntimeStrategies(String appCode, String deployProfile);
+    R<List<FrontendModuleRuntimeStrategyVO>> listRuntimeStrategies(
+            @NotBlank String appCode,
+            @NotBlank String deployProfile);
 
-    R<Long> saveRuntimeStrategy(FrontendModuleRuntimeStrategyCommand command);
+    R<Long> saveRuntimeStrategy(@Valid FrontendModuleRuntimeStrategyCommand command);
 }

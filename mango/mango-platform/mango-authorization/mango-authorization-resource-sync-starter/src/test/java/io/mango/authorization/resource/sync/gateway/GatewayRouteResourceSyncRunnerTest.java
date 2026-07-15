@@ -3,6 +3,7 @@ package io.mango.authorization.resource.sync.gateway;
 import io.mango.authorization.resource.sync.ApiResourceDeclarationConverter;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
@@ -31,6 +32,18 @@ class GatewayRouteResourceSyncRunnerTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(GatewayRouteResourceSyncAutoConfiguration.class))
             .withBean(org.springframework.cloud.gateway.route.RouteDefinitionLocator.class, () -> () -> Flux.empty());
+
+    @Test
+    @DisplayName("auto configuration should stay inactive when gateway classes exist without a route locator bean")
+    void autoConfiguration_shouldStayInactiveWithoutRouteDefinitionLocator() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(GatewayRouteResourceSyncAutoConfiguration.class))
+                .run(context -> {
+                    assertThat(context).doesNotHaveBean(GatewayRouteResourceDiscoverer.class);
+                    assertThat(context).doesNotHaveBean(GatewayRouteResourceProvider.class);
+                    assertThat(context).doesNotHaveBean(GatewayRouteResourceSyncRunner.class);
+                });
+    }
 
     @Test
     @DisplayName("scanRoutes should register every gateway path predicate as login exposure by default")
@@ -156,8 +169,9 @@ class GatewayRouteResourceSyncRunnerTest {
     private static class TestApi implements ApiResourceApi {
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
-            return R.ok(new ApiResourceRegisterResultVO(resources.size(), resources.size(), 0));
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
+            return R.ok(new ApiResourceRegisterResultVO(
+                    request.getResources().size(), request.getResources().size(), 0));
         }
 
         @Override

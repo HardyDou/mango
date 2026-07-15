@@ -10,6 +10,8 @@ public final class ResourceTypes {
     public static final String I18N_MESSAGE = "I18N_MESSAGE";
     public static final String BUSINESS_DOMAIN = "BUSINESS_DOMAIN";
     public static final String AUTH_MENU = "AUTH_MENU";
+    public static final String AUTH_APP = "AUTH_APP";
+    public static final String AUTH_MENU_PACKAGE = "AUTH_MENU_PACKAGE";
     public static final String AUTH_ROLE = "AUTH_ROLE";
     public static final String AUTH_ROLE_DATA_SCOPE = "AUTH_ROLE_DATA_SCOPE";
     public static final String AUTH_SUBJECT_ROLE = "AUTH_SUBJECT_ROLE";

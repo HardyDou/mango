@@ -8,7 +8,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008001",
-            "version": 2,
+            "version": 3,
             "bizKey": "system.menu.internal-admin",
             "name": "系统基础菜单",
             "targetModule": "authorization",
@@ -299,9 +299,6 @@
                     "packageCodes": [
                       "platform_admin",
                       "institution_collaboration"
-                    ],
-                    "apiCodes": [
-                      "*:*"
                     ]
                   },
                   {
@@ -324,7 +321,7 @@
           },
           {
             "id": "2951300000000008002",
-            "version": 1,
+            "version": 2,
             "bizKey": "system.menu.account.internal-admin",
             "name": "系统账号组织菜单",
             "targetModule": "authorization",
@@ -444,6 +441,20 @@
                       "system:user:status",
                       "system:user:reset-password",
                       "system:user:unlock"
+                    ]
+                  },
+                  {
+                    "menuType": 3,
+                    "menuName": "全部权限",
+                    "menuCode": "system:all-permissions",
+                    "parentCode": "system",
+                    "sort": 999,
+                    "packageCodes": [
+                      "platform_admin"
+                    ],
+                    "remark": "仅平台管理套餐拥有的全局接口权限",
+                    "apiCodes": [
+                      "*:*"
                     ]
                   }
                 ]

@@ -1,7 +1,7 @@
 package io.mango.authorization.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.MenuEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -10,5 +10,5 @@ import org.apache.ibatis.annotations.Mapper;
  * @author Mango
  */
 @Mapper
-public interface MenuMapper extends BaseMapper<Menu> {
+public interface MenuMapper extends BaseMapper<MenuEntity> {
 }

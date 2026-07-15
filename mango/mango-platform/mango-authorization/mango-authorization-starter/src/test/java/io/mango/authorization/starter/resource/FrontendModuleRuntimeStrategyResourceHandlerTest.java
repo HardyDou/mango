@@ -1,7 +1,8 @@
 package io.mango.authorization.starter.resource;
 
-import io.mango.authorization.api.AuthorizationResourceTypes;
+import io.mango.resource.api.ResourceTypes;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
+import io.mango.authorization.api.query.FrontendModuleRuntimeStrategyQuery;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 class FrontendModuleRuntimeStrategyResourceHandlerTest {
 
@@ -34,7 +36,7 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
         ResourceSyncResult result = handler.upsert(resource);
 
         assertThat(handler.resourceType()).isEqualTo(ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY);
-        assertThat(handler.resourceType()).isEqualTo(AuthorizationResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY);
+        assertThat(handler.resourceType()).isEqualTo(ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY);
         assertThat(result.getTargetId()).isEqualTo(8001L);
         assertThat(result.getTargetTable()).isEqualTo("authorization_frontend_module_runtime_strategy");
         ArgumentCaptor<FrontendModuleRuntimeStrategyCommand> captor =
@@ -77,11 +79,11 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void disableDelegatesToRuntimeStrategyService() {
         ResourceDeclaration resource = resource();
-        when(runtimeStrategyService.disable("internal-admin", "guarantee", "hybrid")).thenReturn(true);
+        when(runtimeStrategyService.disable(any(FrontendModuleRuntimeStrategyQuery.class))).thenReturn(true);
 
         ResourceSyncResult result = handler.disable(resource);
 
-        verify(runtimeStrategyService).disable("internal-admin", "guarantee", "hybrid");
+        assertStrategyQueryCapturedForDisable();
         assertThat(result.getMessage()).contains("changed=true");
     }
 
@@ -90,11 +92,11 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
         ResourceDeclaration resource = resource();
         resource.getFields().remove("pageType");
         resource.getFields().remove("runtimeCode");
-        when(runtimeStrategyService.disable("internal-admin", "guarantee", "hybrid")).thenReturn(true);
+        when(runtimeStrategyService.disable(any(FrontendModuleRuntimeStrategyQuery.class))).thenReturn(true);
 
         ResourceSyncResult result = handler.disable(resource);
 
-        verify(runtimeStrategyService).disable("internal-admin", "guarantee", "hybrid");
+        assertStrategyQueryCapturedForDisable();
         assertThat(result.getMessage()).contains("changed=true");
     }
 
@@ -115,11 +117,11 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void deleteDelegatesToRuntimeStrategyService() {
         ResourceDeclaration resource = resource();
-        when(runtimeStrategyService.delete("internal-admin", "guarantee", "hybrid")).thenReturn(true);
+        when(runtimeStrategyService.delete(any(FrontendModuleRuntimeStrategyQuery.class))).thenReturn(true);
 
         ResourceSyncResult result = handler.delete(resource);
 
-        verify(runtimeStrategyService).delete("internal-admin", "guarantee", "hybrid");
+        assertStrategyQueryCapturedForDelete();
         assertThat(result.getMessage()).contains("deleted");
         assertThat(result.getMessage()).contains("changed=true");
     }
@@ -143,20 +145,40 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
         ResourceDeclaration resource = resource();
         resource.getFields().remove("pageType");
         resource.getFields().remove("runtimeCode");
-        when(runtimeStrategyService.delete("internal-admin", "guarantee", "hybrid")).thenReturn(true);
+        when(runtimeStrategyService.delete(any(FrontendModuleRuntimeStrategyQuery.class))).thenReturn(true);
 
         ResourceSyncResult result = handler.delete(resource);
 
-        verify(runtimeStrategyService).delete("internal-admin", "guarantee", "hybrid");
+        assertStrategyQueryCapturedForDelete();
         assertThat(result.getMessage()).contains("deleted");
         assertThat(result.getMessage()).contains("changed=true");
+    }
+
+    private void assertStrategyQueryCapturedForDisable() {
+        ArgumentCaptor<FrontendModuleRuntimeStrategyQuery> captor =
+                ArgumentCaptor.forClass(FrontendModuleRuntimeStrategyQuery.class);
+        verify(runtimeStrategyService).disable(captor.capture());
+        assertStrategyQuery(captor.getValue());
+    }
+
+    private void assertStrategyQueryCapturedForDelete() {
+        ArgumentCaptor<FrontendModuleRuntimeStrategyQuery> captor =
+                ArgumentCaptor.forClass(FrontendModuleRuntimeStrategyQuery.class);
+        verify(runtimeStrategyService).delete(captor.capture());
+        assertStrategyQuery(captor.getValue());
+    }
+
+    private void assertStrategyQuery(FrontendModuleRuntimeStrategyQuery query) {
+        assertThat(query.getAppCode()).isEqualTo("internal-admin");
+        assertThat(query.getModuleCode()).isEqualTo("guarantee");
+        assertThat(query.getDeployProfile()).isEqualTo("hybrid");
     }
 
     private ResourceDeclaration resource() {
         ResourceDeclaration resource = new ResourceDeclaration();
         resource.setId("2951300000000010002");
         resource.setVersion(1);
-        resource.setResourceType(AuthorizationResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY);
+        resource.setResourceType(ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY);
         resource.setModuleCode("guarantee");
         resource.setModuleName("保函业务");
         resource.setBizKey("guarantee.frontend.strategy.internal-admin.hybrid");

@@ -1,7 +1,7 @@
 package io.mango.authorization.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.authorization.core.entity.ApiResource;
+import io.mango.authorization.core.entity.ApiResourceEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -10,5 +10,5 @@ import org.apache.ibatis.annotations.Mapper;
  * @author hardy
  */
 @Mapper
-public interface ApiResourceMapper extends BaseMapper<ApiResource> {
+public interface ApiResourceMapper extends BaseMapper<ApiResourceEntity> {
 }

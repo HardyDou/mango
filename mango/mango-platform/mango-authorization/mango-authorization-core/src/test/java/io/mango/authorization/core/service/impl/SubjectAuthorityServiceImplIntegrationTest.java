@@ -38,14 +38,14 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-@DisplayName("SubjectAuthorityServiceImpl 集成测试")
+@DisplayName("SubjectAuthorityService 集成测试")
 class SubjectAuthorityServiceImplIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private SubjectAuthorityServiceImpl service;
+    private SubjectAuthorityService service;
 
     @BeforeEach
     void setUp() {
@@ -107,7 +107,7 @@ class SubjectAuthorityServiceImplIntegrationTest {
     @Test
     @DisplayName("listSubjectPermissions should include anonymous default role api codes")
     void listSubjectPermissionsIncludesAnonymousDefaultRoleApiCodes() {
-        seedRole(30L, 1L, SubjectAuthorityServiceImpl.ROLE_ANONYMOUS);
+        seedRole(30L, 1L, SubjectAuthorityService.ROLE_ANONYMOUS);
         seedRoleMenu(1L, 1L, 30L, 100L);
         seedMenu(100L, 1L, "file:basic-anonymous", "file:files:query,file:files:upload,file:files:download", 2, 1);
 
@@ -204,6 +204,7 @@ class SubjectAuthorityServiceImplIntegrationTest {
                     remark varchar(500)
                 )
                 """);
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
     private AuthorizationQuery query(String tenantId) {
@@ -257,7 +258,7 @@ class SubjectAuthorityServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = SubjectRoleBindingMapper.class)
-    @Import(SubjectAuthorityServiceImpl.class)
+    @Import(SubjectAuthorityService.class)
     static class TestConfig {
     }
 }

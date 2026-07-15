@@ -339,7 +339,7 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 新增前端模块运行策略 | 声明 `FRONTEND_MODULE_RUNTIME_STRATEGY`，由授权模块写入 `authorization_frontend_module_runtime_strategy`。 |
 | 历史 manifest | 只用于迁移，不作为新增入口。 |
 
-菜单、接口权限、菜单运行时配置、菜单套餐明细和默认角色菜单授权不再通过 Flyway DML 维护。Flyway 只保留表结构、应用入口、登录上下文、套餐主档、基础角色和成员角色绑定等基础数据。
+Flyway 只维护授权模块的表、列、索引等 DDL，不再承载任何初始化 DML。应用入口、登录上下文、套餐主档等必需资源放在本模块 `META-INF/mango/resources/`；演示角色和成员角色绑定放在 `META-INF/mango/demo/`，仅在显式开启 demo 时同步。
 业务模块不得直接写授权表或调用 `authorization-core` Service 来补菜单授权；角色、菜单和默认角色授权统一通过 Resource Registry 的 `AUTH_ROLE`、`AUTH_MENU` 声明同步。
 
 示例：
@@ -686,7 +686,16 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 | `authorization_frontend_module_runtime_strategy` | 前端模块运行策略 |
 | `frontend_tenant_app_binding` | 租户应用绑定 |
 
-`V1__init_authorization.sql` 初始化授权表结构、`internal-admin` 应用、`INTERNAL / INTERNAL_USER` 登录上下文、菜单套餐主档、多个租户下的 `ROLE_ADMIN` 和 admin 成员角色绑定。功能模块菜单、按钮权限、菜单运行配置和套餐明细由各模块 starter 提供 `AUTH_MENU` 资源声明注入。
+`V1__init_authorization.sql` 只初始化授权模块最终态表结构，不包含 `INSERT`、`UPDATE`、`DELETE` 等数据操作。
+
+初始化资源分层：
+
+| 目录 | 内容 | 加载条件 |
+|------|------|----------|
+| `META-INF/mango/resources/` | `internal-admin` 应用、登录上下文、菜单套餐主档、正式字典和菜单声明 | 默认加载 |
+| `META-INF/mango/demo/` | 演示租户的 `ROLE_ADMIN` 和 admin 成员角色绑定 | `mango.resource.registry.demo-enabled=true` |
+
+功能模块菜单、按钮权限、菜单运行配置和套餐明细由各所属模块 starter 提供 `AUTH_MENU` 资源声明注入，授权模块的 Flyway 不跨模块写入这些数据。
 
 Resource Registry 还支持授权基线声明：
 

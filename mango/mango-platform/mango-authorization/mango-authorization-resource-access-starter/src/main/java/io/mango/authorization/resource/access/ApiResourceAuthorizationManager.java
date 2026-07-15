@@ -1,6 +1,5 @@
 package io.mango.authorization.resource.access;
 
-import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
@@ -8,7 +7,7 @@ import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
-import io.mango.authorization.api.SecurityPrincipal;
+import io.mango.authorization.api.vo.SecurityPrincipalVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -28,18 +27,18 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
 
     private final ApiResourceApi apiResourceApi;
     private final IAuthorizationProvider authorizationProvider;
-    private final AccessProperties accessProperties;
+    private final ApiResourceAccessProperties accessProperties;
 
     public ApiResourceAuthorizationManager(ApiResourceApi apiResourceApi, IAuthorizationProvider authorizationProvider) {
-        this(apiResourceApi, authorizationProvider, new AccessProperties());
+        this(apiResourceApi, authorizationProvider, new ApiResourceAccessProperties());
     }
 
     public ApiResourceAuthorizationManager(ApiResourceApi apiResourceApi,
                                            IAuthorizationProvider authorizationProvider,
-                                           AccessProperties accessProperties) {
+                                           ApiResourceAccessProperties accessProperties) {
         this.apiResourceApi = apiResourceApi;
         this.authorizationProvider = authorizationProvider;
-        this.accessProperties = accessProperties == null ? new AccessProperties() : accessProperties;
+        this.accessProperties = accessProperties == null ? new ApiResourceAccessProperties() : accessProperties;
     }
 
     @Override
@@ -152,7 +151,7 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
             return authorizationProvider.load(AuthorizationQuery.anonymous()).permissionCodes().stream()
                     .anyMatch(permission -> permissionMatches(permission, permissionCode));
         }
-        SecurityPrincipal principal = resolvePrincipal(authentication);
+        SecurityPrincipalVO principal = resolvePrincipal(authentication);
         if (principal == null || principal.memberId() == null) {
             return false;
         }
@@ -166,13 +165,13 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
                 .anyMatch(permission -> permissionMatches(permission, permissionCode));
     }
 
-    private SecurityPrincipal resolvePrincipal(Authentication authentication) {
+    private SecurityPrincipalVO resolvePrincipal(Authentication authentication) {
         Object principal = authentication.getPrincipal();
-        if (principal instanceof SecurityPrincipal securityPrincipal) {
+        if (principal instanceof SecurityPrincipalVO securityPrincipal) {
             return securityPrincipal;
         }
         if (principal instanceof Number number) {
-            return new SecurityPrincipal(number.longValue(), null, null);
+            return new SecurityPrincipalVO(number.longValue(), null, null);
         }
         return null;
     }

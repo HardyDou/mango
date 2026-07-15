@@ -11,10 +11,11 @@ type SysMenuVO = {
   menuId: string | number;
   menuName: string;
   permissions?: string;
+  apiCodes?: string;
   children?: SysMenuVO[];
 };
 
-const DATA_SCOPE_RESOURCE_CODE = 'authorization:role:list';
+const DATA_SCOPE_RESOURCE_CODE = 'system:role:list';
 const DATA_SCOPE_RESOURCE_NAME = '角色列表';
 
 async function loginTokenAsCompanyA(request: APIRequestContext) {
@@ -118,7 +119,7 @@ async function grantRoleResource(request: APIRequestContext, token: string, role
 function findMenuPathByPermission(menus: SysMenuVO[], resourceCode: string, ancestors: string[] = []): string[] | undefined {
   for (const menu of menus) {
     const currentPath = [...ancestors, String(menu.menuId)];
-    const permissions = (menu.permissions || '')
+    const permissions = (menu.apiCodes || menu.permissions || '')
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean);

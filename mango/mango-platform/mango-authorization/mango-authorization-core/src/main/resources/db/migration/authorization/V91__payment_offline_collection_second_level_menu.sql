@@ -1,2 +1,0 @@
--- V91__payment_offline_collection_second_level_menu.sql
--- Payment menus, button permissions, runtime config, package bindings and default role bindings are registered by mango-payment-starter AUTH_MENU resource payment-common-menu.json.

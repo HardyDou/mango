@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,6 +21,7 @@ public class AppLoginContextCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "上下文ID，创建时为空，修改时可为空")
+    @Positive(message = "上下文ID必须为正数")
     private Long contextId;
 
     @Schema(description = "登录域")

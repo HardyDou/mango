@@ -1,20 +1,18 @@
 package io.mango.authorization.starter.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.authorization.core.entity.Role;
-import io.mango.authorization.core.entity.SubjectRoleBinding;
+import io.mango.authorization.api.AuthorizationSubjectReferenceProvider;
+import io.mango.authorization.core.entity.RoleEntity;
+import io.mango.authorization.core.entity.SubjectRoleBindingEntity;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
-import io.mango.identity.core.entity.IdentityUser;
-import io.mango.identity.core.entity.TenantMember;
-import io.mango.identity.core.mapper.IdentityUserMapper;
-import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -35,8 +33,7 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
 
     private final RoleMapper roleMapper;
     private final SubjectRoleBindingMapper bindingMapper;
-    private final TenantMemberMapper memberMapper;
-    private final IdentityUserMapper userMapper;
+    private final ObjectProvider<AuthorizationSubjectReferenceProvider> subjectReferenceProvider;
     private final ResourceFieldReader fields = new ResourceFieldReader(ResourceTypes.AUTH_SUBJECT_ROLE);
 
     @Override
@@ -67,6 +64,10 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         Long tenantId = fields.requiredLong(resource, "tenantId");
+        return ResourceTenantScope.call(tenantId, () -> upsertInTenant(resource, tenantId));
+    }
+
+    private ResourceSyncResult upsertInTenant(ResourceDeclaration resource, Long tenantId) {
         Long subjectId = requiredSubjectId(resource, tenantId);
         String subjectType = fields.stringField(resource, "subjectType", DEFAULT_SUBJECT_TYPE);
         List<String> roleCodes = fields.stringListField(resource, "roleCodes");
@@ -75,8 +76,8 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
         }
         Long firstBindingId = null;
         for (String roleCode : roleCodes) {
-            Role role = requiredRole(resource, tenantId, roleCode);
-            SubjectRoleBinding binding = ensureBinding(resource, tenantId, subjectId, subjectType, role.getRoleId());
+            RoleEntity role = requiredRole(resource, tenantId, roleCode);
+            SubjectRoleBindingEntity binding = ensureBinding(resource, tenantId, subjectId, subjectType, role.getRoleId());
             if (firstBindingId == null) {
                 firstBindingId = binding.getId();
             }
@@ -88,12 +89,16 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         Long tenantId = fields.requiredLong(resource, "tenantId");
+        return ResourceTenantScope.call(tenantId, () -> disableInTenant(resource, tenantId));
+    }
+
+    private ResourceSyncResult disableInTenant(ResourceDeclaration resource, Long tenantId) {
         Long subjectId = requiredSubjectId(resource, tenantId);
         String subjectType = fields.stringField(resource, "subjectType", DEFAULT_SUBJECT_TYPE);
         List<String> roleCodes = fields.stringListField(resource, "roleCodes");
         int changed = 0;
         for (String roleCode : roleCodes) {
-            Role role = requiredRole(resource, tenantId, roleCode);
+            RoleEntity role = requiredRole(resource, tenantId, roleCode);
             changed += bindingMapper.delete(bindingWrapper(resource, tenantId, subjectId, subjectType, role.getRoleId()));
         }
         return ResourceSyncResult.of(null, TARGET_TABLE,
@@ -105,54 +110,29 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
         if (subjectId != null) {
             return subjectId;
         }
-        TenantMember member = memberByNo(tenantId, firstText(
-                fields.stringField(resource, "subjectCode"),
-                fields.stringField(resource, "memberNo")));
-        if (member != null) {
-            return member.getMemberId();
-        }
+        AuthorizationSubjectReferenceProvider provider = subjectReferenceProvider.getIfAvailable();
+        String memberNo = firstText(fields.stringField(resource, "subjectCode"),
+                fields.stringField(resource, "memberNo"));
         String username = fields.stringField(resource, "username");
-        if (StringUtils.hasText(username)) {
-            IdentityUser user = userMapper.selectOne(new LambdaQueryWrapper<IdentityUser>()
-                    .eq(IdentityUser::getUsername, username.trim())
-                    .last("LIMIT 1"));
-            if (user != null) {
-                member = memberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                        .eq(TenantMember::getTenantId, tenantId)
-                        .eq(TenantMember::getUserId, user.getUserId())
-                        .isNull(TenantMember::getLeftAt)
-                        .last("LIMIT 1"));
-                if (member != null) {
-                    return member.getMemberId();
-                }
-            }
+        Long resolved = provider == null ? null : provider.resolveMemberId(tenantId, memberNo, username);
+        if (resolved != null) {
+            return resolved;
         }
         throw new IllegalStateException("AUTH_SUBJECT_ROLE referenced subject does not exist");
-    }
-
-    private TenantMember memberByNo(Long tenantId, String memberNo) {
-        if (!StringUtils.hasText(memberNo)) {
-            return null;
-        }
-        return memberMapper.selectOne(new LambdaQueryWrapper<TenantMember>()
-                .eq(TenantMember::getTenantId, tenantId)
-                .eq(TenantMember::getMemberNo, memberNo.trim())
-                .isNull(TenantMember::getLeftAt)
-                .last("LIMIT 1"));
     }
 
     private String firstText(String first, String second) {
         return StringUtils.hasText(first) ? first : second;
     }
 
-    private SubjectRoleBinding ensureBinding(ResourceDeclaration resource, Long tenantId, Long subjectId,
+    private SubjectRoleBindingEntity ensureBinding(ResourceDeclaration resource, Long tenantId, Long subjectId,
                                              String subjectType, Long roleId) {
-        SubjectRoleBinding existing = bindingMapper.selectOne(
+        SubjectRoleBindingEntity existing = bindingMapper.selectOne(
                 bindingWrapper(resource, tenantId, subjectId, subjectType, roleId).last("LIMIT 1"));
         if (existing != null) {
             return existing;
         }
-        SubjectRoleBinding binding = new SubjectRoleBinding();
+        SubjectRoleBindingEntity binding = new SubjectRoleBindingEntity();
         binding.setTenantId(tenantId);
         binding.setSubjectId(subjectId);
         binding.setSubjectType(subjectType);
@@ -166,27 +146,27 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
         return binding;
     }
 
-    private LambdaQueryWrapper<SubjectRoleBinding> bindingWrapper(ResourceDeclaration resource, Long tenantId,
+    private LambdaQueryWrapper<SubjectRoleBindingEntity> bindingWrapper(ResourceDeclaration resource, Long tenantId,
                                                                   Long subjectId, String subjectType, Long roleId) {
-        return new LambdaQueryWrapper<SubjectRoleBinding>()
-                .eq(SubjectRoleBinding::getTenantId, tenantId)
-                .eq(SubjectRoleBinding::getSubjectId, subjectId)
-                .eq(SubjectRoleBinding::getSubjectType, subjectType)
-                .eq(SubjectRoleBinding::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
-                .eq(SubjectRoleBinding::getRealm, fields.stringField(resource, "realm", DEFAULT_REALM))
-                .eq(SubjectRoleBinding::getActorType, fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE))
+        return new LambdaQueryWrapper<SubjectRoleBindingEntity>()
+                .eq(SubjectRoleBindingEntity::getTenantId, tenantId)
+                .eq(SubjectRoleBindingEntity::getSubjectId, subjectId)
+                .eq(SubjectRoleBindingEntity::getSubjectType, subjectType)
+                .eq(SubjectRoleBindingEntity::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
+                .eq(SubjectRoleBindingEntity::getRealm, fields.stringField(resource, "realm", DEFAULT_REALM))
+                .eq(SubjectRoleBindingEntity::getActorType, fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE))
                 .eq(fields.stringField(resource, "partyType") != null,
-                        SubjectRoleBinding::getPartyType, fields.stringField(resource, "partyType"))
+                        SubjectRoleBindingEntity::getPartyType, fields.stringField(resource, "partyType"))
                 .eq(fields.longField(resource, "partyId") != null,
-                        SubjectRoleBinding::getPartyId, fields.longField(resource, "partyId"))
-                .eq(SubjectRoleBinding::getRoleId, roleId);
+                        SubjectRoleBindingEntity::getPartyId, fields.longField(resource, "partyId"))
+                .eq(SubjectRoleBindingEntity::getRoleId, roleId);
     }
 
-    private Role requiredRole(ResourceDeclaration resource, Long tenantId, String roleCode) {
-        Role role = roleMapper.selectOne(new LambdaQueryWrapper<Role>()
-                .eq(Role::getTenantId, tenantId)
-                .eq(Role::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
-                .eq(Role::getRoleCode, roleCode)
+    private RoleEntity requiredRole(ResourceDeclaration resource, Long tenantId, String roleCode) {
+        RoleEntity role = roleMapper.selectOne(new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, tenantId)
+                .eq(RoleEntity::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
+                .eq(RoleEntity::getRoleCode, roleCode)
                 .last("LIMIT 1"));
         if (role == null) {
             throw new IllegalStateException("AUTH_SUBJECT_ROLE referenced role does not exist: " + roleCode);

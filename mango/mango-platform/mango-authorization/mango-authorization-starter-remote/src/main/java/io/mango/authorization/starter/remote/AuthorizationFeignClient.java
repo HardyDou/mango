@@ -1,8 +1,8 @@
 package io.mango.authorization.starter.remote;
 
 import io.mango.authorization.api.AuthorizationApi;
-import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.query.LoadUserAuthorizationQuery;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.common.result.R;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
@@ -16,5 +16,5 @@ public interface AuthorizationFeignClient extends AuthorizationApi {
 
     @Override
     @GetMapping("/subjects/user")
-    R<AuthorizationSnapshot> loadUserAuthorization(@SpringQueryMap LoadUserAuthorizationQuery query);
+    R<AuthorizationSnapshotVO> loadUserAuthorization(@SpringQueryMap LoadUserAuthorizationQuery query);
 }

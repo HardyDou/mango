@@ -1,0 +1,144 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: authorization
+    module-name: 授权
+    declarations:
+      AUTH_ROLE:
+        - id: "2026071509000000101"
+          version: 1
+          biz-key: authorization.role.tenant-1.admin
+          name: 芒果集团管理员
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 1 }
+            tenantId: { type: LONG, value: 1 }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            roleCode: { type: STRING, value: ROLE_ADMIN }
+            roleName: { type: STRING, value: 超级管理员 }
+            roleType: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 1 }
+            remark: { type: STRING, value: 芒果集团管理员 }
+        - id: "2026071509000000102"
+          version: 1
+          biz-key: authorization.role.tenant-2.admin
+          name: A公司管理员
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 2 }
+            tenantId: { type: LONG, value: 2 }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            roleCode: { type: STRING, value: ROLE_ADMIN }
+            roleName: { type: STRING, value: 超级管理员 }
+            roleType: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 1 }
+            remark: { type: STRING, value: A公司管理员 }
+        - id: "2026071509000000103"
+          version: 1
+          biz-key: authorization.role.tenant-3.admin
+          name: B公司管理员
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 3 }
+            tenantId: { type: LONG, value: 3 }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            roleCode: { type: STRING, value: ROLE_ADMIN }
+            roleName: { type: STRING, value: 超级管理员 }
+            roleType: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 1 }
+            remark: { type: STRING, value: B公司管理员 }
+        - id: "2026071509000000104"
+          version: 1
+          biz-key: authorization.role.tenant-4.admin
+          name: C公司管理员
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            targetId: { type: LONG, value: 4 }
+            tenantId: { type: LONG, value: 4 }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            roleCode: { type: STRING, value: ROLE_ADMIN }
+            roleName: { type: STRING, value: 超级管理员 }
+            roleType: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 1 }
+            remark: { type: STRING, value: C公司管理员 }
+      AUTH_SUBJECT_ROLE:
+        - id: "2026071509000000201"
+          version: 1
+          biz-key: authorization.subject-role.tenant-1.admin
+          name: 芒果集团管理员角色绑定
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 1 }
+            subjectId: { type: LONG, value: 1001 }
+            subjectType: { type: STRING, value: TENANT_MEMBER }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            partyType: { type: STRING, value: INTERNAL_ORG }
+            partyId: { type: LONG, value: 1 }
+            roleCodes: { type: LIST, value: [ROLE_ADMIN] }
+        - id: "2026071509000000202"
+          version: 1
+          biz-key: authorization.subject-role.tenant-2.admin
+          name: A公司管理员角色绑定
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 2 }
+            subjectId: { type: LONG, value: 1002 }
+            subjectType: { type: STRING, value: TENANT_MEMBER }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            partyType: { type: STRING, value: INTERNAL_ORG }
+            partyId: { type: LONG, value: 2 }
+            roleCodes: { type: LIST, value: [ROLE_ADMIN] }
+        - id: "2026071509000000203"
+          version: 1
+          biz-key: authorization.subject-role.tenant-3.admin
+          name: B公司管理员角色绑定
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 3 }
+            subjectId: { type: LONG, value: 1003 }
+            subjectType: { type: STRING, value: TENANT_MEMBER }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            partyType: { type: STRING, value: INTERNAL_ORG }
+            partyId: { type: LONG, value: 3 }
+            roleCodes: { type: LIST, value: [ROLE_ADMIN] }
+        - id: "2026071509000000204"
+          version: 1
+          biz-key: authorization.subject-role.tenant-4.admin
+          name: C公司管理员角色绑定
+          target-module: authorization
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 4 }
+            subjectId: { type: LONG, value: 1004 }
+            subjectType: { type: STRING, value: TENANT_MEMBER }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            partyType: { type: STRING, value: INTERNAL_ORG }
+            partyId: { type: LONG, value: 4 }
+            roleCodes: { type: LIST, value: [ROLE_ADMIN] }

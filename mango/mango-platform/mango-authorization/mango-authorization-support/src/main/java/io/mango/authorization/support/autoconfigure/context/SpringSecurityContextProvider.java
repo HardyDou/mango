@@ -1,8 +1,8 @@
 package io.mango.authorization.support.autoconfigure.context;
 
 import io.mango.authorization.api.ISecurityContextProvider;
-import io.mango.authorization.api.SecurityContext;
-import io.mango.authorization.api.SecurityPrincipal;
+import io.mango.authorization.api.vo.SecurityContextVO;
+import io.mango.authorization.api.vo.SecurityPrincipalVO;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,17 +13,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class SpringSecurityContextProvider implements ISecurityContextProvider {
 
     @Override
-    public SecurityContext currentContext() {
+    public SecurityContextVO currentContext() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
                 || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
-            return SecurityContext.anonymous();
+            return SecurityContextVO.anonymous();
         }
 
         Object principal = authentication.getPrincipal();
-        if (principal instanceof SecurityPrincipal securityPrincipal) {
-            return new SecurityContext(
+        if (principal instanceof SecurityPrincipalVO securityPrincipal) {
+            return new SecurityContextVO(
                     securityPrincipal.userId(),
                     securityPrincipal.memberId(),
                     securityPrincipal.tenantId(),
@@ -38,6 +38,6 @@ public class SpringSecurityContextProvider implements ISecurityContextProvider {
 
         String principalName = authentication.getName();
         Long userId = principal instanceof Number number ? number.longValue() : null;
-        return new SecurityContext(userId, null, true, principalName);
+        return new SecurityContextVO(userId, null, true, principalName);
     }
 }

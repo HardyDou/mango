@@ -6,7 +6,7 @@ import io.mango.auth.api.AuthCode;
 import io.mango.auth.api.spi.LoginTenantProvider;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.core.service.impl.AuthServiceImpl;
 import io.mango.auth.core.service.TokenRevocationService;
@@ -20,8 +20,8 @@ import io.mango.infra.context.support.TtlExecutorDecorator;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.ITokenProvider;
-import io.mango.authorization.api.SecurityPrincipal;
-import io.mango.authorization.support.token.JjwtTokenServiceImpl;
+import io.mango.authorization.api.vo.SecurityPrincipalVO;
+import io.mango.authorization.support.token.JjwtTokenProvider;
 import io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration;
 import io.mango.common.exception.BizException;
 import io.mango.identity.api.AuthIdentitySecurityProvider;
@@ -452,7 +452,7 @@ class AuthSecurityE2ETest {
 
         @Bean
         ITokenProvider tokenService(IKvStore kvStore) {
-            return new JjwtTokenServiceImpl(kvStore);
+            return new JjwtTokenProvider(kvStore);
         }
 
         @Bean
@@ -478,8 +478,8 @@ class AuthSecurityE2ETest {
         @Bean
         IAuthorizationProvider authorizationProvider() {
             return query -> query.subjectId() != null
-                    ? AuthorizationSnapshot.of(List.of("ROLE_ADMIN"), List.of("e2e:read"), List.of("ROLE_ADMIN", "e2e:read"))
-                    : AuthorizationSnapshot.empty();
+                    ? AuthorizationSnapshotVO.of(List.of("ROLE_ADMIN"), List.of("e2e:read"), List.of("ROLE_ADMIN", "e2e:read"))
+                    : AuthorizationSnapshotVO.empty();
         }
 
         @Bean
@@ -653,7 +653,7 @@ class AuthSecurityE2ETest {
                 if (!authenticated) {
                     return new AuthorizationDecision(false);
                 }
-                Long userId = ((SecurityPrincipal) authentication.getPrincipal()).userId();
+                Long userId = ((SecurityPrincipalVO) authentication.getPrincipal()).userId();
                 return new AuthorizationDecision(
                         authorizationProvider.load(AuthorizationQuery.user(userId)).permissionCodes().contains("e2e:read"));
             };

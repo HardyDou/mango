@@ -92,7 +92,8 @@ interface AuthorizationAppPayload {
 export const appApi = {
   list: () => get<AuthorizationApp[]>('/authorization/apps'),
   runtime: () => get<AuthorizationApp[]>('/authorization/apps/runtime'),
-  runtimeDetail: (appCode: string) => get<AuthorizationApp>(`/authorization/apps/runtime/detail/${appCode}`),
+  runtimeDetail: (appCode: string) =>
+    get<AuthorizationApp>('/authorization/apps/runtime/detail', { params: { appCode } }),
   detail: (appId: ApiId) => get<AuthorizationApp>('/authorization/apps/detail', { params: { appId } }),
   create: (data: AuthorizationApp) => post<ApiId>('/authorization/apps', toBackend(data)),
   update: (data: AuthorizationApp) => put<boolean>('/authorization/apps', toBackend(data)),

@@ -1,6 +1,6 @@
 package io.mango.payment.starter.controller;
 
-import io.mango.authorization.api.annotation.InternalApi;
+import io.mango.authorization.api.annotation.InternalAccess;
 import io.mango.common.result.R;
 import io.mango.payment.api.PaymentChannelCallbackApi;
 import io.mango.payment.api.command.PaymentChannelCallbackCommand;
@@ -25,7 +25,7 @@ public class PaymentChannelCallbackController implements PaymentChannelCallbackA
     private final IPaymentChannelCallbackService callbackService;
 
     @Override
-    @InternalApi(desc = "支付通道标准化回调")
+    @InternalAccess(desc = "支付通道标准化回调")
     @PostMapping
     @Operation(summary = "处理支付通道标准化回调", description = "由具体通道适配器完成验签后调用，推进支付或退款订单状态并触发业务通知")
     public R<PaymentChannelCallbackResultVO> handle(@RequestBody PaymentChannelCallbackCommand command) {

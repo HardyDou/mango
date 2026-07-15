@@ -10,31 +10,15 @@ import java.util.List;
  */
 public interface ISubjectAuthorityService {
 
-    default List<String> listSubjectRoles(Long subjectId) {
-        return listSubjectRoles(subjectId, null);
-    }
+    List<String> listSubjectRoles(Long subjectId);
 
-    default List<String> listSubjectRoles(Long subjectId, String appCode) {
-        return listSubjectRoles(new AuthorizationQuery(
-                subjectId,
-                AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER,
-                null,
-                appCode));
-    }
+    List<String> listSubjectRoles(Long subjectId, String appCode);
 
     List<String> listSubjectRoles(AuthorizationQuery query);
 
-    default List<String> listSubjectPermissions(Long subjectId) {
-        return listSubjectPermissions(subjectId, null);
-    }
+    List<String> listSubjectPermissions(Long subjectId);
 
-    default List<String> listSubjectPermissions(Long subjectId, String appCode) {
-        return listSubjectPermissions(new AuthorizationQuery(
-                subjectId,
-                AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER,
-                null,
-                appCode));
-    }
+    List<String> listSubjectPermissions(Long subjectId, String appCode);
 
     List<String> listSubjectPermissions(AuthorizationQuery query);
 

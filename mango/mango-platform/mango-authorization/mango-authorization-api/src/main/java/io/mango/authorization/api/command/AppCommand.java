@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -23,6 +24,7 @@ public class AppCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Schema(description = "应用ID，创建时为空，修改时必填")
+    @Positive(message = "应用ID必须为正数")
     private Long appId;
 
     @Schema(description = "应用编码")
@@ -68,7 +70,8 @@ public class AppCommand implements Serializable {
     private String healthCheckUrl;
 
     @Schema(description = "前端运行配置是否启用沙箱")
-    private Boolean sandboxEnabled;
+    @NotNull(message = "是否启用沙箱不能为空")
+    private Boolean sandboxEnabled = Boolean.FALSE;
 
     @Schema(description = "前端运行配置的样式隔离：NONE/SCOPED/SHADOW_DOM/IFRAME")
     @Size(max = 32, message = "样式隔离最多32个字符")

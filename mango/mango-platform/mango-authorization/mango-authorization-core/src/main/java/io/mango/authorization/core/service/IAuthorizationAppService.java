@@ -4,16 +4,14 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.vo.AppRuntimeDescriptorVO;
 import io.mango.authorization.api.vo.AppVO;
-import io.mango.authorization.core.entity.AuthorizationApp;
-import io.mango.authorization.core.entity.FrontendAppRegistry;
-import io.mango.infra.persistence.api.crud.MangoCrudService;
+import io.mango.authorization.core.entity.FrontendAppRegistryEntity;
 
 import java.util.List;
 
 /**
  * 授权应用入口服务。
  */
-public interface IAuthorizationAppService extends MangoCrudService<AuthorizationApp> {
+public interface IAuthorizationAppService {
 
     List<AppVO> listByQuery(Object query);
 
@@ -25,13 +23,20 @@ public interface IAuthorizationAppService extends MangoCrudService<Authorization
 
     AppVO getByAppCode(String appCode);
 
+    AppVO getRuntimeApp(AuthorizationQuery query, String appCode);
+
+    /**
+     * Creates or updates the logical application and its login contexts without creating a frontend runtime unit.
+     */
+    Long upsertBaseline(AppCommand command);
+
     Long create(AppCommand command);
 
     Boolean update(AppCommand command);
 
     Boolean delete(Long appId);
 
-    Long saveFrontendAppRegistry(FrontendAppRegistry registry);
+    Long saveFrontendAppRegistry(FrontendAppRegistryEntity registry);
 
     Boolean deleteFrontendAppRegistry(Long registryId);
 

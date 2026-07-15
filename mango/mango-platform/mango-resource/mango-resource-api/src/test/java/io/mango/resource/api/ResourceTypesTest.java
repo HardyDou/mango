@@ -11,6 +11,8 @@ class ResourceTypesTest {
         assertThat(ResourceTypes.FRONTEND_APP_REGISTRY).isEqualTo("FRONTEND_APP_REGISTRY");
         assertThat(ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY)
                 .isEqualTo("FRONTEND_MODULE_RUNTIME_STRATEGY");
+        assertThat(ResourceTypes.AUTH_APP).isEqualTo("AUTH_APP");
+        assertThat(ResourceTypes.AUTH_MENU_PACKAGE).isEqualTo("AUTH_MENU_PACKAGE");
         assertThat(ResourceTypes.AUTH_ROLE).isEqualTo("AUTH_ROLE");
         assertThat(ResourceTypes.AUTH_ROLE_DATA_SCOPE).isEqualTo("AUTH_ROLE_DATA_SCOPE");
         assertThat(ResourceTypes.AUTH_SUBJECT_ROLE).isEqualTo("AUTH_SUBJECT_ROLE");

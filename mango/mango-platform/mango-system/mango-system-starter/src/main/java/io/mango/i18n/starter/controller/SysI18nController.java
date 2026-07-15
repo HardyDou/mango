@@ -1,7 +1,7 @@
 package io.mango.i18n.starter.controller;
 
 import io.mango.common.result.R;
-import io.mango.authorization.api.annotation.PublicApi;
+import io.mango.authorization.api.annotation.PublicAccess;
 import io.mango.i18n.api.SysI18nApi;
 import io.mango.i18n.api.entity.SysI18n;
 import io.mango.i18n.core.service.ISysI18nService;
@@ -55,7 +55,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/public")
-    @PublicApi(desc = "获取公开国际化语言包")
+    @PublicAccess(desc = "获取公开国际化语言包")
     @Operation(summary = "获取公开国际化语言包", description = "公开接口。获取所有语言的公开国际化语言包")
     public R<Map<String, List<Map<String, String>>>> publicInfo() {
         return R.ok(listMap());
@@ -66,7 +66,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/public/lang")
-    @PublicApi(desc = "按语言获取公开国际化语言包")
+    @PublicAccess(desc = "按语言获取公开国际化语言包")
     @Operation(summary = "按语言获取公开国际化语言包", description = "公开接口。按语言编码获取公开国际化语言包")
     public R<List<Map<String, String>>> publicInfoByLang(
             @Parameter(description = "语言编码，例如 zh_CN、en")
@@ -79,7 +79,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/languages")
-    @PublicApi(desc = "获取公开支持语言列表")
+    @PublicAccess(desc = "获取公开支持语言列表")
     @Operation(summary = "获取支持语言列表", description = "公开接口。获取当前支持的语言编码列表")
     public R<List<String>> languages() {
         return R.ok(getSupportedLanguages());
@@ -90,7 +90,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/public/name")
-    @PublicApi(desc = "按键名获取公开国际化条目")
+    @PublicAccess(desc = "按键名获取公开国际化条目")
     @Operation(summary = "按键名获取国际化条目", description = "公开接口。按国际化键名查询国际化条目")
     public R<SysI18n> getByNameEndpoint(
             @Parameter(description = "国际化键名")
@@ -108,7 +108,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping
-    @PublicApi(desc = "按语言获取前端国际化语言包")
+    @PublicAccess(desc = "按语言获取前端国际化语言包")
     @Operation(summary = "获取前端国际化语言包", description = "公开接口。按语言编码获取前端兼容格式的国际化语言包")
     public R<Map<String, List<Map<String, String>>>> i18n(
             @Parameter(description = "语言编码，例如 zh_CN、en")

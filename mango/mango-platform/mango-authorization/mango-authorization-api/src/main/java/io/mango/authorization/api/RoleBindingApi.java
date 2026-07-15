@@ -5,6 +5,7 @@ import io.mango.authorization.api.command.SubjectRoleBindingCommand;
 import io.mango.authorization.api.query.RoleLookupQuery;
 import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.common.result.R;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public interface RoleBindingApi {
      * @param query 查询条件
      * @return 角色 ID
      */
-    R<Long> findRoleId(RoleLookupQuery query);
+    R<Long> findRoleId(@Valid RoleLookupQuery query);
 
     /**
      * 确保主体角色绑定存在。
@@ -27,7 +28,7 @@ public interface RoleBindingApi {
      * @param command 绑定命令
      * @return 是否成功
      */
-    R<Boolean> ensureSubjectRoleBinding(SubjectRoleBindingCommand command);
+    R<Boolean> ensureSubjectRoleBinding(@Valid SubjectRoleBindingCommand command);
 
     /**
      * 删除主体角色绑定。
@@ -35,7 +36,7 @@ public interface RoleBindingApi {
      * @param command 删除命令
      * @return 删除数量
      */
-    R<Integer> deleteSubjectRoleBindings(DeleteSubjectRoleBindingsCommand command);
+    R<Integer> deleteSubjectRoleBindings(@Valid DeleteSubjectRoleBindingsCommand command);
 
     /**
      * 按角色查询主体 ID。
@@ -43,5 +44,5 @@ public interface RoleBindingApi {
      * @param query 查询条件
      * @return 主体 ID 列表
      */
-    R<List<Long>> listSubjectIdsByRole(SubjectRoleBindingQuery query);
+    R<List<Long>> listSubjectIdsByRole(@Valid SubjectRoleBindingQuery query);
 }

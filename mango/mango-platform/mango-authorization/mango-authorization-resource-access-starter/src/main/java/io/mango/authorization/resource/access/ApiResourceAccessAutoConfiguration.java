@@ -1,6 +1,5 @@
 package io.mango.authorization.resource.access;
 
-import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.IAuthorizationProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -23,7 +22,7 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
         "io.mango.authorization.starter.AuthorizationAutoConfiguration",
         "io.mango.authorization.starter.remote.AuthorizationRemoteAutoConfiguration"
 })
-@EnableConfigurationProperties(AccessProperties.class)
+@EnableConfigurationProperties(ApiResourceAccessProperties.class)
 public class ApiResourceAccessAutoConfiguration {
 
     @Bean("apiResourceAuthorizationManager")
@@ -33,7 +32,7 @@ public class ApiResourceAccessAutoConfiguration {
     public AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
             ApiResourceApi apiResourceApi,
             IAuthorizationProvider authorizationProvider,
-            AccessProperties accessProperties) {
+            ApiResourceAccessProperties accessProperties) {
         return new ApiResourceAuthorizationManager(apiResourceApi, authorizationProvider, accessProperties);
     }
 }

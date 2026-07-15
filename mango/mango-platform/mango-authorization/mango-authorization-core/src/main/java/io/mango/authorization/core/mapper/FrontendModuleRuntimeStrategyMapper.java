@@ -1,12 +1,12 @@
 package io.mango.authorization.core.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.mango.authorization.core.entity.FrontendModuleRuntimeStrategy;
+import io.mango.authorization.core.entity.FrontendModuleRuntimeStrategyEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
  * 前端模块运行策略 Mapper。
  */
 @Mapper
-public interface FrontendModuleRuntimeStrategyMapper extends BaseMapper<FrontendModuleRuntimeStrategy> {
+public interface FrontendModuleRuntimeStrategyMapper extends BaseMapper<FrontendModuleRuntimeStrategyEntity> {
 }

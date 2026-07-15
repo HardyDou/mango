@@ -2,15 +2,16 @@ package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
-import io.mango.authorization.api.SecurityPrincipal;
+import io.mango.authorization.api.vo.SecurityPrincipalVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -94,7 +95,7 @@ class ApiResourceAuthorizationManagerTest {
     void resourceDecisionShouldUseApplicationPathWithoutContextPath() {
         CapturingApi api = new CapturingApi(ApiResourceAccessMode.PUBLIC);
         IAuthorizationProvider authorizationProvider =
-                query -> AuthorizationSnapshot.of(List.of(), List.of(), List.of());
+                query -> AuthorizationSnapshotVO.of(List.of(), List.of(), List.of());
         ApiResourceAuthorizationManager manager = new ApiResourceAuthorizationManager(api, authorizationProvider);
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/openapi/pay/orders");
         request.setContextPath("/api");
@@ -112,7 +113,7 @@ class ApiResourceAuthorizationManagerTest {
                 "POST /payment/channel-callbacks/fuiou", new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.PUBLIC, null)
         ));
         IAuthorizationProvider authorizationProvider =
-                query -> AuthorizationSnapshot.of(List.of(), List.of(), List.of());
+                query -> AuthorizationSnapshotVO.of(List.of(), List.of(), List.of());
         ApiResourceAuthorizationManager manager = new ApiResourceAuthorizationManager(api, authorizationProvider);
 
         assertTrue(manager.check(() -> null, context("POST", "/api/payment/channel-callbacks/fuiou")).isGranted());
@@ -125,7 +126,7 @@ class ApiResourceAuthorizationManagerTest {
             List<String> permissions) {
         ApiResourceApi api = new TestApi(accessMode, permissionCode);
         IAuthorizationProvider authorizationProvider =
-                query -> AuthorizationSnapshot.of(List.of(), permissions, permissions);
+                query -> AuthorizationSnapshotVO.of(List.of(), permissions, permissions);
         return new ApiResourceAuthorizationManager(api, authorizationProvider);
     }
 
@@ -136,7 +137,7 @@ class ApiResourceAuthorizationManagerTest {
 
     private UsernamePasswordAuthenticationToken authentication() {
         return UsernamePasswordAuthenticationToken.authenticated(
-                new SecurityPrincipal(1L, 1001L, null, "tester", null, null, null, null, null),
+                new SecurityPrincipalVO(1L, 1001L, null, "tester", null, null, null, null, null),
                 "token",
                 AuthorityUtils.NO_AUTHORITIES);
     }
@@ -144,7 +145,7 @@ class ApiResourceAuthorizationManagerTest {
     private record TestApi(ApiResourceAccessMode accessMode, String permissionCode) implements ApiResourceApi {
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
             return R.ok(ApiResourceRegisterResultVO.empty());
         }
 
@@ -169,7 +170,7 @@ class ApiResourceAuthorizationManagerTest {
         }
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
             return R.ok(ApiResourceRegisterResultVO.empty());
         }
 
@@ -195,7 +196,7 @@ class ApiResourceAuthorizationManagerTest {
         }
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
             return R.ok(ApiResourceRegisterResultVO.empty());
         }
 
@@ -223,9 +224,9 @@ class ApiResourceAuthorizationManagerTest {
         }
 
         @Override
-        public AuthorizationSnapshot load(AuthorizationQuery query) {
+        public AuthorizationSnapshotVO load(AuthorizationQuery query) {
             this.query = query;
-            return AuthorizationSnapshot.of(List.of(), permissions, permissions);
+            return AuthorizationSnapshotVO.of(List.of(), permissions, permissions);
         }
     }
 }

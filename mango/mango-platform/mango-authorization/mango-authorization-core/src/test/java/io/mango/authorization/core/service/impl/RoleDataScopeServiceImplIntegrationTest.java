@@ -6,7 +6,7 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.SaveRoleDataScopeCommand;
 import io.mango.authorization.api.enums.DataScopeMode;
 import io.mango.authorization.api.vo.EffectiveDataScopeVO;
-import io.mango.authorization.core.entity.RoleDataScope;
+import io.mango.authorization.core.entity.RoleDataScopeEntity;
 import io.mango.authorization.core.mapper.RoleDataScopeMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -47,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-@DisplayName("RoleDataScopeServiceImpl 集成测试")
+@DisplayName("RoleDataScopeService 集成测试")
 class RoleDataScopeServiceImplIntegrationTest {
 
     @Autowired
@@ -57,7 +57,7 @@ class RoleDataScopeServiceImplIntegrationTest {
     private RoleDataScopeMapper roleDataScopeMapper;
 
     @Autowired
-    private RoleDataScopeServiceImpl service;
+    private RoleDataScopeService service;
 
     @BeforeEach
     void setUp() {
@@ -101,8 +101,8 @@ class RoleDataScopeServiceImplIntegrationTest {
         assertThat(saved).isTrue();
         assertThat(rejected).isFalse();
         assertThat(countRoleDataScopes()).isEqualTo(1L);
-        RoleDataScope persisted = selectOnlyRoleDataScope();
-        assertThat(persisted.getTenantId()).isEqualTo(2L);
+        RoleDataScopeEntity persisted = selectOnlyRoleDataScope();
+        assertThat(persisted.getTenantId()).isEqualTo("2");
         assertThat(persisted.getAppCode()).isEqualTo("internal-admin");
         assertThat(persisted.getRoleId()).isEqualTo(2L);
         assertThat(persisted.getResourceCode()).isEqualTo("authorization:role:list");
@@ -136,6 +136,7 @@ class RoleDataScopeServiceImplIntegrationTest {
         createRoleMenuTable();
         createSubjectRoleTable();
         createRoleDataScopeTable();
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
     private void createRoleTable() {
@@ -270,7 +271,7 @@ class RoleDataScopeServiceImplIntegrationTest {
         jdbcTemplate.update("""
                         insert into authorization_menu
                         (id, tenant_id, app_code, menu_name, menu_code, api_codes, status)
-                        values (?, ?, 'internal-admin', 'Role List', 'authorization:role', ?, 1)
+                        values (?, ?, 'internal-admin', 'RoleEntity List', 'authorization:role', ?, 1)
                         """,
                 menuId, tenantId, apiCodes);
     }
@@ -312,15 +313,15 @@ class RoleDataScopeServiceImplIntegrationTest {
         return jdbcTemplate.queryForObject("select count(*) from authorization_role_data_scope", Long.class);
     }
 
-    private RoleDataScope selectOnlyRoleDataScope() {
-        List<RoleDataScope> scopes = roleDataScopeMapper.selectList(null);
+    private RoleDataScopeEntity selectOnlyRoleDataScope() {
+        List<RoleDataScopeEntity> scopes = roleDataScopeMapper.selectList(null);
         assertThat(scopes).hasSize(1);
         return scopes.get(0);
     }
 
     @Configuration
     @MapperScan(basePackageClasses = RoleDataScopeMapper.class)
-    @Import(RoleDataScopeServiceImpl.class)
+    @Import(RoleDataScopeService.class)
     static class TestConfig {
 
         @Bean

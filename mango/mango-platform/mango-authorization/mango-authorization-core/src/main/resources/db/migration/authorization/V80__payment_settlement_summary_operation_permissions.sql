@@ -1,2 +1,0 @@
--- V80__payment_settlement_summary_operation_permissions.sql
--- Payment menus, button permissions, runtime config, package bindings and default role bindings are registered by mango-payment-starter AUTH_MENU resource payment-common-menu.json.

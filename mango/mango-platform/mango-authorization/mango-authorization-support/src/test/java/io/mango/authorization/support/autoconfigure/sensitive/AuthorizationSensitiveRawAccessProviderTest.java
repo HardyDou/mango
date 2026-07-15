@@ -1,10 +1,10 @@
 package io.mango.authorization.support.autoconfigure.sensitive;
 
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.ISecurityContextProvider;
-import io.mango.authorization.api.SecurityContext;
+import io.mango.authorization.api.vo.SecurityContextVO;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -20,7 +20,7 @@ class AuthorizationSensitiveRawAccessProviderTest {
         AtomicReference<AuthorizationQuery> capturedQuery = new AtomicReference<>();
         IAuthorizationProvider authorizationProvider = query -> {
             capturedQuery.set(query);
-            return AuthorizationSnapshot.of(List.of(), List.of(), List.of("no_mask"));
+            return AuthorizationSnapshotVO.of(List.of(), List.of(), List.of("no_mask"));
         };
         AuthorizationSensitiveRawAccessProvider provider = new AuthorizationSensitiveRawAccessProvider(
                 () -> authenticatedMemberContext(),
@@ -41,10 +41,10 @@ class AuthorizationSensitiveRawAccessProviderTest {
         AtomicReference<AuthorizationQuery> capturedQuery = new AtomicReference<>();
         IAuthorizationProvider authorizationProvider = query -> {
             capturedQuery.set(query);
-            return AuthorizationSnapshot.of(List.of(), List.of(), List.of("no_mask"));
+            return AuthorizationSnapshotVO.of(List.of(), List.of(), List.of("no_mask"));
         };
         AuthorizationSensitiveRawAccessProvider provider = new AuthorizationSensitiveRawAccessProvider(
-                () -> new SecurityContext(1L, null, "1", true, "admin", null, null, null, null, "internal-admin"),
+                () -> new SecurityContextVO(1L, null, "1", true, "admin", null, null, null, null, "internal-admin"),
                 () -> authorizationProvider);
 
         assertThat(provider.canViewRaw("no_mask")).isTrue();
@@ -59,10 +59,10 @@ class AuthorizationSensitiveRawAccessProviderTest {
         AtomicInteger loadCount = new AtomicInteger();
         IAuthorizationProvider authorizationProvider = query -> {
             loadCount.incrementAndGet();
-            return AuthorizationSnapshot.of(List.of(), List.of(), List.of("no_mask"));
+            return AuthorizationSnapshotVO.of(List.of(), List.of(), List.of("no_mask"));
         };
         AuthorizationSensitiveRawAccessProvider provider = new AuthorizationSensitiveRawAccessProvider(
-                SecurityContext::anonymous,
+                SecurityContextVO::anonymous,
                 () -> authorizationProvider);
 
         assertThat(provider.canViewRaw("no_mask")).isFalse();
@@ -74,7 +74,7 @@ class AuthorizationSensitiveRawAccessProviderTest {
         AtomicInteger loadCount = new AtomicInteger();
         IAuthorizationProvider authorizationProvider = query -> {
             loadCount.incrementAndGet();
-            return AuthorizationSnapshot.of(List.of(), List.of(), List.of("no_mask"));
+            return AuthorizationSnapshotVO.of(List.of(), List.of(), List.of("no_mask"));
         };
         AuthorizationSensitiveRawAccessProvider provider = new AuthorizationSensitiveRawAccessProvider(
                 () -> authenticatedMemberContext(),
@@ -103,8 +103,8 @@ class AuthorizationSensitiveRawAccessProviderTest {
         assertThat(provider.canViewRaw("no_mask")).isFalse();
     }
 
-    private SecurityContext authenticatedMemberContext() {
-        return new SecurityContext(
+    private SecurityContextVO authenticatedMemberContext() {
+        return new SecurityContextVO(
                 1L,
                 1001L,
                 "1",

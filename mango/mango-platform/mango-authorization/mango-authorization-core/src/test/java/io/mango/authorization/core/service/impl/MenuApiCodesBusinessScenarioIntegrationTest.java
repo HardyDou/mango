@@ -2,6 +2,8 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.query.MenuTreeQuery;
+import io.mango.authorization.api.command.AppModuleMenuRequest;
 import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
@@ -50,21 +52,21 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private AppModuleServiceImpl appModuleService;
+    private AppModuleService appModuleService;
 
     @Autowired
-    private MenuServiceImpl menuService;
+    private MenuService menuService;
 
     @Autowired
-    private SubjectAuthorityServiceImpl subjectAuthorityService;
+    private SubjectAuthorityService subjectAuthorityService;
 
     @BeforeEach
     void setUp() {
         resetSchema();
         seedRole(10L, "ROLE_SALE");
         seedRole(11L, "ROLE_RISK");
-        seedRole(20L, SubjectAuthorityServiceImpl.ROLE_LOGIN);
-        seedRole(21L, SubjectAuthorityServiceImpl.ROLE_ANONYMOUS);
+        seedRole(20L, SubjectAuthorityService.ROLE_LOGIN);
+        seedRole(21L, SubjectAuthorityService.ROLE_ANONYMOUS);
     }
 
     @Test
@@ -76,7 +78,7 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
 
         AuthorizationQuery query = memberQuery(1001L);
         List<String> permissions = subjectAuthorityService.listSubjectPermissions(query);
-        List<String> menuCodes = flattenMenuCodes(menuService.listUserMenus("internal-admin", null, null, query, true));
+        List<String> menuCodes = flattenMenuCodes(menuService.listUserMenus(menuTreeQuery(), query));
 
         assertThat(permissions)
                 .contains("discount:approval:view",
@@ -99,7 +101,7 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
                 .withTenantId("1")
                 .withSystemCode("internal-admin");
         List<String> permissions = subjectAuthorityService.listSubjectPermissions(query);
-        List<String> menuCodes = flattenMenuCodes(menuService.listUserMenus("internal-admin", null, null, query, true));
+        List<String> menuCodes = flattenMenuCodes(menuService.listUserMenus(menuTreeQuery(), query));
 
         assertThat(permissions)
                 .containsExactly("file:files:query", "file:files:upload", "file:files:download", "file:settings:query");
@@ -108,8 +110,8 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
 
     private AppModuleResourceManifestCommand riskWorkflowManifest() {
         AppModuleResourceManifestCommand manifest = manifest("workflow", "审批中心", List.of("ROLE_RISK"));
-        AppModuleResourceManifestCommand.Menu root = menu(1, "审批中心", "workflow", "/workflow", null);
-        AppModuleResourceManifestCommand.Menu riskApproval = menu(2, "风控审批", "workflow:risk-approval",
+        AppModuleMenuRequest root = menu(1, "审批中心", "workflow", "/workflow", null);
+        AppModuleMenuRequest riskApproval = menu(2, "风控审批", "workflow:risk-approval",
                 "/workflow/risk-approval", "workflow/risk-approval/index");
         riskApproval.setApiCodes(List.of("workflow:risk:view", "workflow:risk:approve"));
         root.setChildren(List.of(riskApproval));
@@ -117,17 +119,25 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
         return manifest;
     }
 
+    private MenuTreeQuery menuTreeQuery() {
+        MenuTreeQuery query = new MenuTreeQuery();
+        query.setAppCode("internal-admin");
+        query.setStatus(1);
+        query.setFmt("tree");
+        return query;
+    }
+
     private AppModuleResourceManifestCommand discountApprovalManifest() {
         AppModuleResourceManifestCommand manifest = manifest("discount", "优惠审批", List.of("ROLE_SALE"));
-        AppModuleResourceManifestCommand.Menu root = menu(1, "优惠管理", "discount", "/discount", null);
-        AppModuleResourceManifestCommand.Menu approval = menu(2, "优惠审批", "discount:approval",
+        AppModuleMenuRequest root = menu(1, "优惠管理", "discount", "/discount", null);
+        AppModuleMenuRequest approval = menu(2, "优惠审批", "discount:approval",
                 "/discount/approval", "discount/approval/index");
         approval.setApiCodes(List.of("discount:approval:view", "workflow:definition:list", "workflow:process:start"));
 
-        AppModuleResourceManifestCommand.Menu loginBasic = menu(2, "优惠审批登录基础权限",
+        AppModuleMenuRequest loginBasic = menu(2, "优惠审批登录基础权限",
                 "discount:basic-login", "/discount/basic-login", null);
         loginBasic.setVisible(0);
-        loginBasic.setRoleCodes(List.of(SubjectAuthorityServiceImpl.ROLE_LOGIN));
+        loginBasic.setRoleCodes(List.of(SubjectAuthorityService.ROLE_LOGIN));
         loginBasic.setPackageCodes(List.of());
         loginBasic.setApiCodes(List.of("notice:site:view", "notice:receive-setting:view"));
 
@@ -138,11 +148,11 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
 
     private AppModuleResourceManifestCommand fileBasicManifest() {
         AppModuleResourceManifestCommand manifest = manifest("file", "文件中心", List.of());
-        AppModuleResourceManifestCommand.Menu root = menu(1, "文件中心", "file", "/file", null);
-        AppModuleResourceManifestCommand.Menu anonymousBasic = menu(2, "文件匿名基础权限",
+        AppModuleMenuRequest root = menu(1, "文件中心", "file", "/file", null);
+        AppModuleMenuRequest anonymousBasic = menu(2, "文件匿名基础权限",
                 "file:basic-anonymous", "/file/basic-anonymous", null);
         anonymousBasic.setVisible(0);
-        anonymousBasic.setRoleCodes(List.of(SubjectAuthorityServiceImpl.ROLE_ANONYMOUS));
+        anonymousBasic.setRoleCodes(List.of(SubjectAuthorityService.ROLE_ANONYMOUS));
         anonymousBasic.setPackageCodes(List.of());
         anonymousBasic.setApiCodes(List.of("file:files:query",
                 "file:files:upload",
@@ -163,12 +173,12 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
         return manifest;
     }
 
-    private AppModuleResourceManifestCommand.Menu menu(Integer menuType,
+    private AppModuleMenuRequest menu(Integer menuType,
                                                        String menuName,
                                                        String menuCode,
                                                        String path,
                                                        String component) {
-        AppModuleResourceManifestCommand.Menu menu = new AppModuleResourceManifestCommand.Menu();
+        AppModuleMenuRequest menu = new AppModuleMenuRequest();
         menu.setMenuType(menuType);
         menu.setMenuName(menuName);
         menu.setMenuCode(menuCode);
@@ -345,11 +355,12 @@ class MenuApiCodesBusinessScenarioIntegrationTest {
                     role_id bigint not null
                 )
                 """);
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
     @Configuration
     @MapperScan(basePackageClasses = AuthorizationAppModuleMapper.class)
-    @Import({AppModuleServiceImpl.class, MenuServiceImpl.class, SubjectAuthorityServiceImpl.class})
+    @Import({AppModuleService.class, MenuService.class, SubjectAuthorityService.class})
     static class TestConfig {
 
         @Bean

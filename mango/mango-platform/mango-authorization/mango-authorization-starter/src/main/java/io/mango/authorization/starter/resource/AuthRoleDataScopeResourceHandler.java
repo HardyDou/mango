@@ -3,13 +3,12 @@ package io.mango.authorization.starter.resource;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.authorization.api.AuthorizationOrgReferenceProvider;
 import io.mango.authorization.api.enums.DataScopeMode;
-import io.mango.authorization.core.entity.Role;
-import io.mango.authorization.core.entity.RoleDataScope;
+import io.mango.authorization.core.entity.RoleEntity;
+import io.mango.authorization.core.entity.RoleDataScopeEntity;
 import io.mango.authorization.core.mapper.RoleDataScopeMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
-import io.mango.org.api.entity.SysOrg;
-import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -17,6 +16,7 @@ import io.mango.resource.api.model.ResourceDeclaration;
 import io.mango.resource.api.model.ResourceHandlerSpec;
 import io.mango.resource.api.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -34,7 +34,7 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
 
     private final RoleMapper roleMapper;
     private final RoleDataScopeMapper roleDataScopeMapper;
-    private final SysOrgMapper orgMapper;
+    private final ObjectProvider<AuthorizationOrgReferenceProvider> orgReferenceProvider;
     private final ObjectMapper objectMapper;
     private final ResourceFieldReader fields = new ResourceFieldReader(ResourceTypes.AUTH_ROLE_DATA_SCOPE);
 
@@ -67,12 +67,17 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
-        Role role = requiredRole(resource);
+        Long tenantId = fields.requiredLong(resource, "tenantId");
+        return ResourceTenantScope.call(tenantId, () -> upsertInTenant(resource));
+    }
+
+    private ResourceSyncResult upsertInTenant(ResourceDeclaration resource) {
+        RoleEntity role = requiredRole(resource);
         String resourceCode = fields.requiredString(resource, "resourceCode");
-        RoleDataScope entity = findScope(role, resourceCode);
+        RoleDataScopeEntity entity = findScope(role, resourceCode);
         LocalDateTime now = LocalDateTime.now();
         if (entity == null) {
-            entity = new RoleDataScope();
+            entity = new RoleDataScopeEntity();
             entity.setTenantId(role.getTenantId());
             entity.setAppCode(role.getAppCode());
             entity.setRoleId(role.getRoleId());
@@ -95,8 +100,13 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        Role role = requiredRole(resource);
-        RoleDataScope entity = findScope(role, fields.requiredString(resource, "resourceCode"));
+        Long tenantId = fields.requiredLong(resource, "tenantId");
+        return ResourceTenantScope.call(tenantId, () -> disableInTenant(resource));
+    }
+
+    private ResourceSyncResult disableInTenant(ResourceDeclaration resource) {
+        RoleEntity role = requiredRole(resource);
+        RoleDataScopeEntity entity = findScope(role, fields.requiredString(resource, "resourceCode"));
         boolean changed = false;
         if (entity != null && !Integer.valueOf(0).equals(entity.getStatus())) {
             entity.setStatus(0);
@@ -107,13 +117,13 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
                 "Auth role data scope disabled: changed=" + changed);
     }
 
-    private Role requiredRole(ResourceDeclaration resource) {
-        LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<Role>()
-                .eq(Role::getTenantId, fields.requiredLong(resource, "tenantId"))
-                .eq(Role::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
-                .eq(Role::getRoleCode, fields.requiredString(resource, "roleCode"))
+    private RoleEntity requiredRole(ResourceDeclaration resource) {
+        LambdaQueryWrapper<RoleEntity> wrapper = new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, fields.requiredLong(resource, "tenantId"))
+                .eq(RoleEntity::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
+                .eq(RoleEntity::getRoleCode, fields.requiredString(resource, "roleCode"))
                 .last("LIMIT 1");
-        Role role = roleMapper.selectOne(wrapper);
+        RoleEntity role = roleMapper.selectOne(wrapper);
         if (role == null) {
             throw new IllegalStateException("AUTH_ROLE_DATA_SCOPE referenced role does not exist: "
                     + fields.requiredString(resource, "roleCode"));
@@ -121,12 +131,12 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
         return role;
     }
 
-    private RoleDataScope findScope(Role role, String resourceCode) {
-        return roleDataScopeMapper.selectOne(new LambdaQueryWrapper<RoleDataScope>()
-                .eq(RoleDataScope::getTenantId, role.getTenantId())
-                .eq(RoleDataScope::getAppCode, role.getAppCode())
-                .eq(RoleDataScope::getRoleId, role.getRoleId())
-                .eq(RoleDataScope::getResourceCode, resourceCode)
+    private RoleDataScopeEntity findScope(RoleEntity role, String resourceCode) {
+        return roleDataScopeMapper.selectOne(new LambdaQueryWrapper<RoleDataScopeEntity>()
+                .eq(RoleDataScopeEntity::getTenantId, role.getTenantId())
+                .eq(RoleDataScopeEntity::getAppCode, role.getAppCode())
+                .eq(RoleDataScopeEntity::getRoleId, role.getRoleId())
+                .eq(RoleDataScopeEntity::getResourceCode, resourceCode)
                 .last("LIMIT 1"));
     }
 
@@ -138,11 +148,11 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
         }
     }
 
-    private List<String> scopeValues(ResourceDeclaration resource, Role role) {
+    private List<String> scopeValues(ResourceDeclaration resource, RoleEntity role) {
         List<String> orgCodes = fields.stringListField(resource, "orgCodes");
         if (!orgCodes.isEmpty()) {
             return orgCodes.stream()
-                    .map(orgCode -> requiredOrgId(role.getTenantId(), orgCode))
+                    .map(orgCode -> requiredOrgId(role.getTenantIdAsLong(), orgCode))
                     .map(String::valueOf)
                     .toList();
         }
@@ -150,14 +160,12 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
     }
 
     private Long requiredOrgId(Long tenantId, String orgCode) {
-        SysOrg org = orgMapper.selectOne(new LambdaQueryWrapper<SysOrg>()
-                .eq(SysOrg::getTenantId, tenantId)
-                .eq(SysOrg::getOrgCode, orgCode)
-                .last("LIMIT 1"));
-        if (org == null) {
+        AuthorizationOrgReferenceProvider provider = orgReferenceProvider.getIfAvailable();
+        Long orgId = provider == null ? null : provider.resolveOrgId(tenantId, orgCode);
+        if (orgId == null) {
             throw new IllegalStateException("AUTH_ROLE_DATA_SCOPE referenced org does not exist: " + orgCode);
         }
-        return org.getId();
+        return orgId;
     }
 
     private Integer statusValue(ResourceDeclaration resource) {

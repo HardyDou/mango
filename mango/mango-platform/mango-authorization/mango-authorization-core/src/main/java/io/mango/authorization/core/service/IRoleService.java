@@ -69,6 +69,9 @@ public interface IRoleService {
      */
     Boolean assignRoles(AssignSubjectRolesCommand command);
 
+    /** 执行成员角色分配，并将拒绝结果转换为 HTTP 业务异常。 */
+    Boolean assignRolesRequired(AssignSubjectRolesCommand command);
+
     /**
      * 按业务条件查询角色 ID。
      *
@@ -127,4 +130,7 @@ public interface IRoleService {
      * @return 是否成功
      */
     Boolean assignMenus(Long roleId, List<Long> menuIds);
+
+    /** 执行角色菜单分配，并将拒绝结果转换为 HTTP 业务异常。 */
+    Boolean assignMenusRequired(Long roleId, List<Long> menuIds);
 }

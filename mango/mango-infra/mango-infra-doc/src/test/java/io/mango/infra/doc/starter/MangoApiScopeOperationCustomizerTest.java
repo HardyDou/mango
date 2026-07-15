@@ -1,8 +1,8 @@
 package io.mango.infra.doc.starter;
 
-import io.mango.authorization.api.annotation.InternalApi;
+import io.mango.authorization.api.annotation.InternalAccess;
 import io.mango.authorization.api.annotation.PermissionAccess;
-import io.mango.authorization.api.annotation.PublicApi;
+import io.mango.authorization.api.annotation.PublicAccess;
 import io.swagger.v3.oas.models.Operation;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.method.HandlerMethod;
@@ -62,11 +62,11 @@ class MangoApiScopeOperationCustomizerTest {
 
     static class TestController {
 
-        @InternalApi
+        @InternalAccess
         void internal() {
         }
 
-        @PublicApi
+        @PublicAccess
         void publicApi() {
         }
 

@@ -4,9 +4,10 @@ import io.mango.access.core.auth.AccessService;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
@@ -14,6 +15,7 @@ import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.authorization.api.ITokenProvider;
+import io.mango.authorization.api.vo.TokenPairVO;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -191,7 +193,7 @@ class AuthFilterTest {
         private Map<String, ApiResourceAccessDecisionVO> decisions = Map.of();
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
             return R.ok(ApiResourceRegisterResultVO.empty());
         }
 
@@ -258,8 +260,8 @@ class AuthFilterTest {
         }
 
         @Override
-        public TokenPair refresh(String refreshToken) {
-            return new TokenPair("valid-token", "refresh-token");
+        public TokenPairVO refresh(String refreshToken) {
+            return new TokenPairVO("valid-token", "refresh-token");
         }
     }
 
@@ -268,8 +270,8 @@ class AuthFilterTest {
         private List<String> permissions = List.of("*:*");
 
         @Override
-        public AuthorizationSnapshot load(AuthorizationQuery query) {
-            return AuthorizationSnapshot.of(List.of(), permissions, permissions);
+        public AuthorizationSnapshotVO load(AuthorizationQuery query) {
+            return AuthorizationSnapshotVO.of(List.of(), permissions, permissions);
         }
     }
 }

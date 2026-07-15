@@ -5,7 +5,6 @@ import feign.RequestTemplate;
 import io.mango.infra.context.api.MangoContextHeaders;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
-import io.mango.authorization.api.TokenContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +22,7 @@ public class FeignRequestInterceptor implements RequestInterceptor {
     @Override
     public void apply(RequestTemplate template) {
         // 透传当前登录令牌。
-        String token = TokenContextHolder.getToken();
+        String token = MangoContextHolder.token();
         if (token != null && !token.isEmpty()) {
             template.header(AUTHORIZATION_HEADER, token);
             log.debug("透传 JWT token");

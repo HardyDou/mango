@@ -40,15 +40,10 @@ async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
 
 async function loginPage(page: Page, tenant: LoginTenant) {
   await page.goto('/#/login');
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
-  await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
+  await page.fill('input[placeholder="用户名"]', 'admin');
+  await page.fill('input[placeholder="密码"]', 'admin123');
   await page.locator('.login-btn').click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }

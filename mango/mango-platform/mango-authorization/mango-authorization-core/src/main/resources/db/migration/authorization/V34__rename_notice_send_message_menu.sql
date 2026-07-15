@@ -1,2 +1,0 @@
--- Notice menus, button permissions, menu runtime config, package bindings and
--- default role bindings are registered by mango-notice-starter AUTH_MENU resource.

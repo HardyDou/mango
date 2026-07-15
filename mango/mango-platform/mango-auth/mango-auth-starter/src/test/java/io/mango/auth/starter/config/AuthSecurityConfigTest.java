@@ -2,7 +2,7 @@ package io.mango.auth.starter.config;
 
 import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.ITokenProvider;
-import io.mango.authorization.api.TokenContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.Cookie;
@@ -127,7 +127,7 @@ class AuthSecurityConfigTest {
 
         @GetMapping("/secure/token")
         String token() {
-            return TokenContextHolder.getToken();
+            return MangoContextHolder.token();
         }
 
         @GetMapping("/auth/login")

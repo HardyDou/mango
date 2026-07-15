@@ -44,15 +44,10 @@ async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
 
 async function loginPage(page: Page, tenant: LoginTenant) {
   await page.goto('/#/login');
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
-  await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
+  await page.fill('input[placeholder="用户名"]', 'admin');
+  await page.fill('input[placeholder="密码"]', 'admin123');
   await page.locator('.login-btn').click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
@@ -118,7 +113,7 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
       const createDialog = page.getByRole('dialog', { name: '新增菜单' });
       await expect(createDialog).toBeVisible();
       await createDialog.getByLabel('菜单名称').fill(menuName);
-      await createDialog.getByLabel('菜单编码').fill(menuCode);
+      await createDialog.getByLabel('权限标识').fill(menuCode);
       await createDialog.getByLabel('路由路径').fill(menuPath);
       await createDialog.getByLabel('组件路径').fill('views/error/404');
       await createDialog.getByLabel('图标').fill('Menu');

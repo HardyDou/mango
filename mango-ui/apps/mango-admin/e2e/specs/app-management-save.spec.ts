@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/#/login');
+  await page.locator('.tenant-select').click();
+  await page.getByRole('option', { name: /芒果集团/ }).click();
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
   await page.click('button:has-text("登 录")');

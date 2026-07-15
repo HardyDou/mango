@@ -2,6 +2,9 @@ package io.mango.authorization.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,6 +19,7 @@ public class FrontendModuleRuntimeStrategyCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "策略ID，创建时为空")
+    @Positive
     private Long strategyId;
 
     @NotBlank
@@ -39,8 +43,11 @@ public class FrontendModuleRuntimeStrategyCommand implements Serializable {
     private String runtimeCode;
 
     @Schema(description = "状态：0-停用，1-启用")
+    @Min(0)
+    @Max(1)
     private Integer status;
 
     @Schema(description = "排序号")
+    @Min(0)
     private Integer sort;
 }

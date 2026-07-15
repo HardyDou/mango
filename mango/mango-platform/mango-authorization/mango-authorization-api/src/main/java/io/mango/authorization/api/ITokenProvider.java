@@ -1,12 +1,14 @@
 package io.mango.authorization.api;
 
+import io.mango.authorization.api.vo.TokenPairVO;
+
 import java.util.Map;
 
 /**
  * Token 技术能力接口。
  * <p>
  * 提供 JWT token 生成、校验和刷新能力。
- * 默认实现：{@code JjwtTokenServiceImpl}，底层使用 JJWT。
+ * 默认实现：{@code JjwtTokenProvider}，底层使用 JJWT。
  *
  * @author Mango
  */
@@ -101,10 +103,5 @@ public interface ITokenProvider {
      * @param refreshToken 有效的 refresh token
      * @return 新 token 对；refresh token 无效时返回 null
      */
-    TokenPair refresh(String refreshToken);
-
-    /**
-     * 刷新响应使用的 token 对。
-     */
-    record TokenPair(String accessToken, String refreshToken) {}
+    TokenPairVO refresh(String refreshToken);
 }

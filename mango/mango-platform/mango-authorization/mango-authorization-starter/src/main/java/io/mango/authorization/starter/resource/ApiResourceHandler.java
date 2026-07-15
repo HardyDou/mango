@@ -3,7 +3,7 @@ package io.mango.authorization.starter.resource;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
-import io.mango.authorization.core.entity.ApiResource;
+import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
 import io.mango.authorization.core.service.IApiResourceService;
 import io.mango.resource.api.ResourceHandler;
@@ -47,7 +47,7 @@ public class ApiResourceHandler implements ResourceHandler {
 
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
-        Map<String, ApiResource> protectedResources = protectedResources(resources);
+        Map<String, ApiResourceEntity> protectedResources = protectedResources(resources);
         List<ApiResourceRegisterCommand> commands = resources.stream()
                 .map(this::toCommand)
                 .toList();
@@ -55,7 +55,7 @@ public class ApiResourceHandler implements ResourceHandler {
         restoreProtectedResources(protectedResources);
         Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
         for (ResourceDeclaration resource : resources) {
-            ApiResource entity = find(toCommand(resource));
+            ApiResourceEntity entity = find(toCommand(resource));
             Long targetId = entity == null ? null : entity.getId();
             results.put(resource.getId(),
                     ResourceSyncResult.of(targetId, "authorization_api_resource", "api resource synced"));
@@ -63,13 +63,13 @@ public class ApiResourceHandler implements ResourceHandler {
         return results;
     }
 
-    private Map<String, ApiResource> protectedResources(List<ResourceDeclaration> resources) {
-        Map<String, ApiResource> protectedResources = new LinkedHashMap<>();
+    private Map<String, ApiResourceEntity> protectedResources(List<ResourceDeclaration> resources) {
+        Map<String, ApiResourceEntity> protectedResources = new LinkedHashMap<>();
         for (ResourceDeclaration resource : resources) {
             if (resource.getSyncMode() == ResourceSyncMode.AUTO) {
                 continue;
             }
-            ApiResource entity = find(toCommand(resource));
+            ApiResourceEntity entity = find(toCommand(resource));
             if (entity != null) {
                 protectedResources.put(resource.getId(), entity);
             }
@@ -77,8 +77,8 @@ public class ApiResourceHandler implements ResourceHandler {
         return protectedResources;
     }
 
-    private void restoreProtectedResources(Map<String, ApiResource> protectedResources) {
-        for (ApiResource entity : protectedResources.values()) {
+    private void restoreProtectedResources(Map<String, ApiResourceEntity> protectedResources) {
+        for (ApiResourceEntity entity : protectedResources.values()) {
             apiResourceMapper.updateById(entity);
         }
     }
@@ -86,7 +86,7 @@ public class ApiResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         Long targetId = longField(resource, "targetId");
-        ApiResource entity = targetId == null ? find(toCommand(resource)) : apiResourceMapper.selectById(targetId);
+        ApiResourceEntity entity = targetId == null ? find(toCommand(resource)) : apiResourceMapper.selectById(targetId);
         if (entity != null) {
             entity.setStatus(0);
             apiResourceMapper.updateById(entity);
@@ -112,11 +112,11 @@ public class ApiResourceHandler implements ResourceHandler {
         return command;
     }
 
-    private ApiResource find(ApiResourceRegisterCommand command) {
-        return apiResourceMapper.selectOne(new LambdaQueryWrapper<ApiResource>()
-                .eq(ApiResource::getModuleName, command.getModuleName())
-                .eq(ApiResource::getHttpMethod, command.getHttpMethod())
-                .eq(ApiResource::getPathPattern, command.getPathPattern())
+    private ApiResourceEntity find(ApiResourceRegisterCommand command) {
+        return apiResourceMapper.selectOne(new LambdaQueryWrapper<ApiResourceEntity>()
+                .eq(ApiResourceEntity::getModuleName, command.getModuleName())
+                .eq(ApiResourceEntity::getHttpMethod, command.getHttpMethod())
+                .eq(ApiResourceEntity::getPathPattern, command.getPathPattern())
                 .last("limit 1"));
     }
 

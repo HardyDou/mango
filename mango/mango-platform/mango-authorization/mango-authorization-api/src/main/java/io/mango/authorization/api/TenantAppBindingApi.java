@@ -1,8 +1,12 @@
 package io.mango.authorization.api;
 
 import io.mango.authorization.api.command.TenantAppBindingCommand;
+import io.mango.authorization.api.query.TenantAppBindingQuery;
 import io.mango.authorization.api.vo.TenantAppBindingVO;
 import io.mango.common.result.R;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 
@@ -11,9 +15,9 @@ import java.util.List;
  */
 public interface TenantAppBindingApi {
 
-    R<List<TenantAppBindingVO>> list(Long tenantId, String appCode, Integer status);
+    R<List<TenantAppBindingVO>> list(@Valid TenantAppBindingQuery query);
 
-    R<Long> enable(TenantAppBindingCommand command);
+    R<Long> enable(@Valid TenantAppBindingCommand command);
 
-    R<Boolean> disable(Long tenantId, String appCode);
+    R<Boolean> disable(@Positive Long tenantId, @NotBlank String appCode);
 }
