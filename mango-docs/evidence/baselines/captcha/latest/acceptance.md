@@ -91,9 +91,10 @@ pnpm -F mango-admin exec playwright test \
   --project=chromium --reporter=line
 ```
 
-结果为 1/1 通过，耗时 3.3 秒。用例使用真实 `admin/admin123` demo 账号登录，进入
+结果为 1/1 通过，耗时 2.4 秒。用例使用真实 `admin/admin123` demo 账号登录，进入
 `/#/components/captcha`，验证类型 API、算术验证码首次加载和刷新、PNG 图片渲染、滑块生成响应和页面提示；
-没有路由或业务响应 mock。成功截图：[captcha-ui-success.png](./captcha-ui-success.png)。
+没有路由或业务响应 mock。用例注册并最终断言 console error、pageerror、requestfailed 和非预期 HTTP >= 400
+全部为空；成功截图由同一 spec 自动写入：[captcha-ui-success.png](./captcha-ui-success.png)，不依赖手工截图。
 
 首轮 E2E 的 API 登录和 Captcha 类型请求已成功，但默认正式启动没有 demo 管理员角色，菜单返回空数组，
 路由守卫按预期退回登录页。修复方式是按现行规范显式打开 demo Resource 开关并重新从空库启动，
