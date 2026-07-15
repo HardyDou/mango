@@ -35,6 +35,7 @@
 
 | 日期 | 能力 | 入口 | 设计与交付 |
 |------|------|------|------------|
+| 2026-07-15 | Excel 读写基线：导入字段映射碰撞 fail-fast，失败工作簿不覆盖原始扩展列；导出支持字段筛选、多级表头、原生数字/布尔/日期类型和 15 位精度保护，并用真实 HTTP 上传下载回读验证 | [Infra Excel README](../../mango/mango-infra/mango-infra-excel-starter/README.md) | [Infra Excel 历史债务验收证据](../evidence/baselines/infra-excel/latest/acceptance.md)；20 条定向测试、随机端口导入/导出流程、架构与静态门禁 |
 | 2026-07-15 | OpenAPI 文档分组基线：Doc 复用 Module 运行时 registry，配置路径完整覆盖 classpath 旧路径，统一尾斜杠、根路径和多路径分组；配置对象防御性复制并以真实 HTTP 文档入口验证 scope/security | [Infra Doc README](../../mango/mango-infra/mango-infra-doc/README.md) | [Infra Doc 历史债务验收证据](../evidence/baselines/infra-doc/latest/acceptance.md)；9 条定向测试、随机端口 OpenAPI 流程、两个当前源码 app 消费者、架构与静态门禁 |
 | 2026-07-15 | Module 部署元数据基线：显式配置完整覆盖同名 classpath 服务与路径，统一根路径和尾斜杠匹配，空线程 ClassLoader 安全回退；真实 Feign HTTP 验证路由结果 | [Module README](../../mango/mango-infra/mango-infra-module/README.md) | [Module 历史债务验收证据](../evidence/baselines/infra-module/latest/acceptance.md)；单元/装配测试、随机端口入口流程、Feign/Authorization 当前源码消费者、架构与静态门禁 |
 | 2026-07-15 | Context 进程内契约与异步传播基线：公开类型保持原签名并标记本地能力；真实 Web Filter、`@TtlAsync` 和复用线程池验证 HTTP 上下文传播与请求隔离 | [Context README](../../mango/mango-infra/mango-infra-context/README.md) | [Context 历史债务验收证据](../evidence/baselines/infra-context/latest/acceptance.md)；模块测试、随机端口 E2E、架构与静态门禁 |
@@ -95,6 +96,7 @@
 | 上下文 Context | `mango/mango-infra/mango-infra-context` | [README](../../mango/mango-infra/mango-infra-context/README.md) | [README](../../mango/mango-infra/mango-infra-context/README.md) |
 | 加密 Crypto | `mango/mango-infra/mango-infra-crypto` | [README](../../mango/mango-infra/mango-infra-crypto/README.md) | [README](../../mango/mango-infra/mango-infra-crypto/README.md) |
 | 文档 Doc | `mango/mango-infra/mango-infra-doc` | [README](../../mango/mango-infra/mango-infra-doc/README.md) | [README](../../mango/mango-infra/mango-infra-doc/README.md) |
+| Excel 读写 | `mango/mango-infra/mango-infra-excel-starter` | [README](../../mango/mango-infra/mango-infra-excel-starter/README.md) | [README](../../mango/mango-infra/mango-infra-excel-starter/README.md) |
 | 事件 Event | `mango/mango-infra/mango-infra-event` | [README](../../mango/mango-infra/mango-infra-event/README.md) | [README](../../mango/mango-infra/mango-infra-event/README.md) |
 | Feign | `mango/mango-infra/mango-infra-feign` | [README](../../mango/mango-infra/mango-infra-feign/README.md) | [README](../../mango/mango-infra/mango-infra-feign/README.md) |
 | 文件处理 Fileproc | `mango/mango-infra/mango-infra-fileproc` | [README](../../mango/mango-infra/mango-infra-fileproc/README.md) | [README](../../mango/mango-infra/mango-infra-fileproc/README.md) |
