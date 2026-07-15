@@ -68,6 +68,8 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #541 的 Auth 历史债务修复保持登录响应中的角色、权限和 `buttonRules` 契约不变，也不改变按钮权限码、展示规则或授权数据来源。Admin Shell 退出登录新增服务端令牌撤销和 Cookie 清理；重新登录后按钮缺失仍按本指南核对权限快照、按钮规则和前端指令。
+
 - PR #540 加固 Access 入口身份边界并统一 Servlet/Gateway 失败语义：按钮 `permissionCode`、角色授权、登录态权限集合和前端判断方式不变；请求携带的外部租户、用户或主体身份不再被信任，后端只使用合法 token 重建的上下文。接口返回 503 时应排查策略、认证或授权依赖是否可用，401 仍表示缺少或无效凭证，403 仍表示权限不足。
 
 - v2026.07.14-maven-1.0.21-platform-debt-release 仅同步 Payment、CMS、Workflow、Notice 修复及配套前端版本锁，不改变按钮权限码、后端鉴权、角色授权或本指南排查步骤。
