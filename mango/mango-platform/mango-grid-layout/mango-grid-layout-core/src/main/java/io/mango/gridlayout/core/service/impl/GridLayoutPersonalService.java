@@ -1,6 +1,7 @@
 package io.mango.gridlayout.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
@@ -15,8 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static io.mango.gridlayout.api.enums.GridLayoutCode.GRID_LAYOUT_INVALID;
+
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class GridLayoutPersonalService implements IGridLayoutPersonalService {
 
     private static final int SCHEMA_VERSION = 1;
@@ -30,18 +34,21 @@ public class GridLayoutPersonalService implements IGridLayoutPersonalService {
 
     @Override
     public GridLayoutPersonalVO getPersonal(GridLayoutPersonalQuery query) {
-        Require.notNull(query, "查询条件不能为空");
-        Require.notBlank(query.getPageCode(), "pageCode不能为空");
+        Require.notNull(query, GRID_LAYOUT_INVALID, "查询条件不能为空");
+        Require.notBlank(query.getPageCode(), GRID_LAYOUT_INVALID, "pageCode不能为空");
         MangoUserGridLayoutEntity entity = gridLayoutMapper.selectOne(exactWrapper(query.getPageCode()));
-        return entity == null ? null : toVO(entity);
+        if (entity == null) {
+            return null;
+        }
+        return toVO(entity);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public GridLayoutPersonalVO savePersonal(SaveGridLayoutPersonalCommand command) {
-        Require.notNull(command, "保存命令不能为空");
-        Require.notBlank(command.getPageCode(), "pageCode不能为空");
-        Require.notBlank(command.getLayoutJson(), "layoutJson不能为空");
+        Require.notNull(command, GRID_LAYOUT_INVALID, "保存命令不能为空");
+        Require.notBlank(command.getPageCode(), GRID_LAYOUT_INVALID, "pageCode不能为空");
+        Require.notBlank(command.getLayoutJson(), GRID_LAYOUT_INVALID, "layoutJson不能为空");
         validateLayoutJson(command.getPageCode(), command.getLayoutJson());
 
         MangoUserGridLayoutEntity entity = gridLayoutMapper.selectOne(exactWrapper(command.getPageCode()));
@@ -62,43 +69,44 @@ public class GridLayoutPersonalService implements IGridLayoutPersonalService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deletePersonal(GridLayoutPersonalQuery query) {
-        Require.notNull(query, "删除条件不能为空");
-        Require.notBlank(query.getPageCode(), "pageCode不能为空");
+        Require.notNull(query, GRID_LAYOUT_INVALID, "删除条件不能为空");
+        Require.notBlank(query.getPageCode(), GRID_LAYOUT_INVALID, "pageCode不能为空");
         return gridLayoutMapper.delete(exactWrapper(query.getPageCode())) > 0;
     }
 
     private void validateLayoutJson(String pageCode, String layoutJson) {
         try {
             JsonNode root = objectMapper.readTree(layoutJson);
-            Require.isTrue(root.path("schemaVersion").asInt() == SCHEMA_VERSION, "布局结构版本不支持");
-            Require.isTrue(pageCode.equals(root.path("pageCode").asText()), "布局页面编码不一致");
+            Require.isTrue(root.path("schemaVersion").asInt() == SCHEMA_VERSION,
+                    GRID_LAYOUT_INVALID, "布局结构版本不支持");
+            Require.isTrue(pageCode.equals(root.path("pageCode").asText()),
+                    GRID_LAYOUT_INVALID, "布局页面编码不一致");
             JsonNode items = root.path("items");
-            Require.isTrue(items.isArray(), "布局 items 必须是数组");
-            Require.isTrue(items.size() <= MAX_ITEMS, "布局组件数量不能超过100个");
+            Require.isTrue(items.isArray(), GRID_LAYOUT_INVALID, "布局 items 必须是数组");
+            Require.isTrue(items.size() <= MAX_ITEMS, GRID_LAYOUT_INVALID, "布局组件数量不能超过100个");
             for (JsonNode item : items) {
                 validateItem(item);
             }
-        } catch (RuntimeException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            Require.fail(400, "布局 JSON 格式不正确");
+        } catch (JsonProcessingException ex) {
+            Require.fail(GRID_LAYOUT_INVALID, "布局 JSON 格式不正确", ex);
         }
     }
 
     private void validateItem(JsonNode item) {
-        Require.notBlank(item.path("id").asText(null), "布局项 id 不能为空");
-        Require.notBlank(item.path("widgetType").asText(null), "布局项 widgetType 不能为空");
+        Require.notBlank(item.path("id").asText(null), GRID_LAYOUT_INVALID, "布局项 id 不能为空");
+        Require.notBlank(item.path("widgetType").asText(null),
+                GRID_LAYOUT_INVALID, "布局项 widgetType 不能为空");
         JsonNode layout = item.path("layout");
-        Require.isTrue(layout.isObject(), "布局项 layout 不能为空");
+        Require.isTrue(layout.isObject(), GRID_LAYOUT_INVALID, "布局项 layout 不能为空");
         int x = layout.path("x").asInt(-1);
         int y = layout.path("y").asInt(-1);
         int w = layout.path("w").asInt(-1);
         int h = layout.path("h").asInt(-1);
-        Require.inRange(x, 0, MAX_COORDINATE, "布局项 x 超出范围");
-        Require.inRange(y, 0, MAX_COORDINATE, "布局项 y 超出范围");
-        Require.inRange(w, 1, MAX_COLUMNS, "布局项 w 超出范围");
-        Require.inRange(h, 1, MAX_ROWS, "布局项 h 超出范围");
-        Require.isTrue(x + w <= MAX_COLUMNS, "布局项宽度超出12栅格");
+        Require.isTrue(x >= 0 && x <= MAX_COORDINATE, GRID_LAYOUT_INVALID, "布局项 x 超出范围");
+        Require.isTrue(y >= 0 && y <= MAX_COORDINATE, GRID_LAYOUT_INVALID, "布局项 y 超出范围");
+        Require.isTrue(w >= 1 && w <= MAX_COLUMNS, GRID_LAYOUT_INVALID, "布局项 w 超出范围");
+        Require.isTrue(h >= 1 && h <= MAX_ROWS, GRID_LAYOUT_INVALID, "布局项 h 超出范围");
+        Require.isTrue(x + w <= MAX_COLUMNS, GRID_LAYOUT_INVALID, "布局项宽度超出12栅格");
         validateOptionalSize(layout, "minW", MAX_COLUMNS);
         validateOptionalSize(layout, "minH", MAX_ROWS);
         validateOptionalSize(layout, "maxW", MAX_COLUMNS);
@@ -108,7 +116,9 @@ public class GridLayoutPersonalService implements IGridLayoutPersonalService {
     private void validateOptionalSize(JsonNode layout, String fieldName, int maxValue) {
         JsonNode node = layout.get(fieldName);
         if (node != null && !node.isNull()) {
-            Require.inRange(node.asInt(-1), 1, maxValue, "布局项 " + fieldName + " 超出范围");
+            int value = node.asInt(-1);
+            Require.isTrue(value >= 1 && value <= maxValue,
+                    GRID_LAYOUT_INVALID, "布局项 " + fieldName + " 超出范围");
         }
     }
 
@@ -120,9 +130,9 @@ public class GridLayoutPersonalService implements IGridLayoutPersonalService {
 
     private LambdaQueryWrapper<MangoUserGridLayoutEntity> exactWrapper(String pageCode) {
         return new LambdaQueryWrapper<MangoUserGridLayoutEntity>()
-                .eq(MangoUserGridLayoutEntity::getTenantId, GridLayoutContextSupport.currentTenantId())
-                .eq(MangoUserGridLayoutEntity::getUserId, GridLayoutContextSupport.currentUserId())
-                .eq(MangoUserGridLayoutEntity::getPageCode, pageCode);
+            .eq(MangoUserGridLayoutEntity::getTenantId, GridLayoutContextSupport.currentTenantId())
+            .eq(MangoUserGridLayoutEntity::getUserId, GridLayoutContextSupport.currentUserId())
+            .eq(MangoUserGridLayoutEntity::getPageCode, pageCode);
     }
 
     private GridLayoutPersonalVO toVO(MangoUserGridLayoutEntity entity) {

@@ -11,7 +11,6 @@ import io.mango.gridlayout.core.service.IGridLayoutPersonalService;
 import io.mango.infra.log.annotation.Log;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
@@ -35,7 +34,7 @@ public class GridLayoutPersonalController implements GridLayoutPersonalApi {
     @GetMapping
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询个人栅格布局")
     @Operation(summary = "查询个人栅格布局", description = "登录接口。查询当前用户指定页面的自定义栅格布局")
-    public R<GridLayoutPersonalVO> getPersonal(@Valid @ParameterObject GridLayoutPersonalQuery query) {
+    public R<GridLayoutPersonalVO> getPersonal(@ParameterObject GridLayoutPersonalQuery query) {
         return R.ok(gridLayoutPersonalService.getPersonal(query));
     }
 
@@ -44,7 +43,7 @@ public class GridLayoutPersonalController implements GridLayoutPersonalApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "保存个人栅格布局")
     @Operation(summary = "保存个人栅格布局", description = "登录接口。按当前租户和当前用户保存指定页面的自定义栅格布局")
     @Log("保存个人栅格布局")
-    public R<GridLayoutPersonalVO> savePersonal(@RequestBody @Valid SaveGridLayoutPersonalCommand command) {
+    public R<GridLayoutPersonalVO> savePersonal(@RequestBody SaveGridLayoutPersonalCommand command) {
         return R.ok(gridLayoutPersonalService.savePersonal(command));
     }
 
@@ -53,7 +52,7 @@ public class GridLayoutPersonalController implements GridLayoutPersonalApi {
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "删除个人栅格布局")
     @Operation(summary = "删除个人栅格布局", description = "登录接口。删除当前用户指定页面的自定义栅格布局")
     @Log("删除个人栅格布局")
-    public R<Boolean> deletePersonal(@Valid @ParameterObject GridLayoutPersonalQuery query) {
+    public R<Boolean> deletePersonal(@ParameterObject GridLayoutPersonalQuery query) {
         return R.ok(gridLayoutPersonalService.deletePersonal(query));
     }
 }
