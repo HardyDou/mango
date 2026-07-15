@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.render.enums.PdfCompressionImageEncoding;
 import io.mango.infra.fileproc.render.enums.PdfCompressionImageVersion;
@@ -28,6 +29,7 @@ import java.nio.file.Path;
  * @param maxIterations 最大尝试次数。
  * @param strictTarget 是否必须达到目标大小。
  */
+@LocalCapabilityContract
 public record CompressPdfToTargetCommand(
         String fileName,
         InputStream inputStream,

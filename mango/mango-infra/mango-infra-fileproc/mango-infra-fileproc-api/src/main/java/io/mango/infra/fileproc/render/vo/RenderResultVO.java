@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.vo;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.render.enums.RenderFormat;
 
@@ -9,6 +10,7 @@ import java.util.Arrays;
 /**
  * 文档渲染结果。
  */
+@LocalCapabilityContract
 public final class RenderResultVO {
 
     private final RenderFormat format;
@@ -58,6 +60,7 @@ public final class RenderResultVO {
         return new Builder();
     }
 
+    @LocalCapabilityContract
     public static final class Builder {
 
         private RenderFormat format;

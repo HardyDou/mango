@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.convert.vo;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 
@@ -9,6 +10,7 @@ import java.util.Arrays;
 /**
  * 格式转换结果。
  */
+@LocalCapabilityContract
 public final class ConvertResultVO {
 
     private final ConvertFormat format;
@@ -58,6 +60,7 @@ public final class ConvertResultVO {
         return new Builder();
     }
 
+    @LocalCapabilityContract
     public static final class Builder {
 
         private ConvertFormat format;

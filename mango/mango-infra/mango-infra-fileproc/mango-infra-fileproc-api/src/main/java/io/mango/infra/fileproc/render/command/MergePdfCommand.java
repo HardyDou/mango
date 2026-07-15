@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.fileproc.render.vo.PdfSourceVO;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
  * @param rebuildBookmark 是否重建书签。
  * @param addPageNumber 是否添加页码。
  */
+@LocalCapabilityContract
 public record MergePdfCommand(
         String fileName,
         java.nio.file.Path targetPath,

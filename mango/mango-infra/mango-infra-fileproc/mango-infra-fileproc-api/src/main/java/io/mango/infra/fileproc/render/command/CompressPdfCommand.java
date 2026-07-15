@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.render.enums.PdfCompressionImageEncoding;
 import io.mango.infra.fileproc.render.enums.PdfCompressionImageVersion;
@@ -33,6 +34,7 @@ import java.nio.file.Path;
  * @param subsetFonts 是否子集化字体。
  * @param removePrivateInfo 是否移除私有信息。
  */
+@LocalCapabilityContract
 public record CompressPdfCommand(
         String fileName,
         InputStream inputStream,

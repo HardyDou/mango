@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.convert.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 
@@ -16,6 +17,7 @@ import java.util.Map;
  * <p>
  * 命令只描述转换输入，不包含文件中心标识、存储位置、权限或租户信息。
  */
+@LocalCapabilityContract
 public final class ConvertCommand {
 
     private final ConvertFormat sourceFormat;
@@ -100,6 +102,7 @@ public final class ConvertCommand {
         return new Builder();
     }
 
+    @LocalCapabilityContract
     public static final class Builder {
 
         private ConvertFormat sourceFormat;

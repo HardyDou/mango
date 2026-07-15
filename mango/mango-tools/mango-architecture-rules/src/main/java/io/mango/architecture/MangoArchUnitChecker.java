@@ -49,6 +49,9 @@ public final class MangoArchUnitChecker {
     private static final String MAPPER = "org.apache.ibatis.annotations.Mapper";
     private static final String TABLE_NAME = "com.baomidou.mybatisplus.annotation.TableName";
     private static final String FEIGN_CLIENT = "org.springframework.cloud.openfeign.FeignClient";
+    private static final String LOCAL_CAPABILITY_CONTRACT =
+            "io.mango.common.contract.LocalCapabilityContract";
+    private static final String MANGO_INFRA_PACKAGE_PREFIX = "io.mango.infra.";
     private static final String REQUEST_MAPPING =
             "org.springframework.web.bind.annotation.RequestMapping";
     private static final String REQUEST_BODY =
@@ -610,7 +613,7 @@ public final class MangoArchUnitChecker {
         }
         long apiCount =
                 javaClass.getRawInterfaces().stream()
-                        .filter(type -> type.getSimpleName().endsWith("Api"))
+                        .filter(this::isApiContract)
                         .count();
         if (apiCount != 1 || javaClass.getRawInterfaces().size() != 1) {
             add(
@@ -1540,7 +1543,7 @@ public final class MangoArchUnitChecker {
 
     private void checkServiceApiBoundary(JavaClass javaClass, List<ArchitectureIssue> issues) {
         if (javaClass.getAllRawInterfaces().stream()
-                .anyMatch(type -> type.getSimpleName().endsWith("Api"))) {
+                .anyMatch(this::isApiContract)) {
             add(
                     issues,
                     "MANGO-ARCH-TYPE-008",
@@ -1772,6 +1775,9 @@ public final class MangoArchUnitChecker {
         if (javaClass.getName().startsWith(PERSISTENCE_API_PACKAGE)) {
             return true;
         }
+        if (isLocalCapabilityContract(javaClass)) {
+            return true;
+        }
         if (javaClass.isInterface() || javaClass.isEnum() || javaClass.isAnnotation()) {
             return true;
         }
@@ -1913,7 +1919,14 @@ public final class MangoArchUnitChecker {
     }
 
     private boolean isApiContract(JavaClass javaClass) {
-        return isInterfaceOrExternalStub(javaClass) && javaClass.getSimpleName().endsWith("Api");
+        return isInterfaceOrExternalStub(javaClass)
+                && javaClass.getSimpleName().endsWith("Api")
+                && !isLocalCapabilityContract(javaClass);
+    }
+
+    private boolean isLocalCapabilityContract(JavaClass javaClass) {
+        return javaClass.getName().startsWith(MANGO_INFRA_PACKAGE_PREFIX)
+                && javaClass.isAnnotatedWith(LOCAL_CAPABILITY_CONTRACT);
     }
 
     private boolean isInterfaceOrExternalStub(JavaClass javaClass) {

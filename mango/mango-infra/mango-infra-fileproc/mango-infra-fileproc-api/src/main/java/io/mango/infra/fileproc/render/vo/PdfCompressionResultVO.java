@@ -1,5 +1,7 @@
 package io.mango.infra.fileproc.render.vo;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.nio.file.Path;
 import java.util.Arrays;
 
@@ -17,6 +19,7 @@ import java.util.Arrays;
  * @param iterations 实际压缩次数。
  * @param outputPath 输出文件路径。
  */
+@LocalCapabilityContract
 public record PdfCompressionResultVO(
         String fileName,
         byte[] content,

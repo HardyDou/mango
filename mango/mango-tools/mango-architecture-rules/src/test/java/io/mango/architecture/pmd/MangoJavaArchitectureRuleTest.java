@@ -888,6 +888,90 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void markedInfraLocalCapabilitySkipsHttpProtocolRules() {
+        Report report = analyze(
+                "io/mango/infra/fileproc/LocalConvertApi.java", """
+                package io.mango.infra.fileproc;
+                import io.mango.common.contract.LocalCapabilityContract;
+                import java.io.InputStream;
+                @LocalCapabilityContract
+                public interface LocalConvertApi {
+                    byte[] convert(InputStream input);
+                }
+                """,
+                "io/mango/infra/fileproc/LocalConvertCommand.java", """
+                package io.mango.infra.fileproc;
+                import io.mango.common.contract.LocalCapabilityContract;
+                import java.io.InputStream;
+                @LocalCapabilityContract
+                public record LocalConvertCommand(InputStream input) {}
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void localCapabilityMarkerOutsideInfraDoesNotBypassHttpProtocolRules() {
+        Report report = analyze(
+                "example/LocalConvertApi.java", """
+                package example;
+                import io.mango.common.contract.LocalCapabilityContract;
+                import java.io.InputStream;
+                @LocalCapabilityContract
+                public interface LocalConvertApi {
+                    byte[] convert(InputStream input);
+                }
+                """,
+                "example/LocalConvertCommand.java", """
+                package example;
+                import io.mango.common.contract.LocalCapabilityContract;
+                import java.io.InputStream;
+                @LocalCapabilityContract
+                public record LocalConvertCommand(InputStream input) {}
+                """);
+
+        assertThat(messages(report)).contains(
+                "MANGO-ARCH-HTTP-001 HTTP method must return R<T>",
+                "MANGO-ARCH-API-006 API input must be a scalar, enum, Command, Query or Request",
+                "MANGO-ARCH-MODEL-003 protocol records are forbidden; use an explicit class");
+    }
+
+    @Test
+    void markedLocalCapabilityExposedByHttpControllerStillRequiresHttpContract() {
+        Report report = analyze(
+                "io/mango/infra/fileproc/LocalConvertApi.java", """
+                package io.mango.infra.fileproc;
+                import io.mango.common.contract.LocalCapabilityContract;
+                @LocalCapabilityContract
+                public interface LocalConvertApi {
+                    byte[] convert(byte[] input);
+                }
+                """,
+                "io/mango/infra/fileproc/LocalConvertController.java", """
+                package io.mango.infra.fileproc;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RestController;
+                @RestController
+                public final class LocalConvertController implements LocalConvertApi {
+                    @GetMapping
+                    public byte[] convert(byte[] input) { return input; }
+                }
+                """,
+                "org/springframework/web/bind/annotation/RestController.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface RestController {}
+                """,
+                "org/springframework/web/bind/annotation/GetMapping.java", """
+                package org.springframework.web.bind.annotation;
+                public @interface GetMapping {}
+                """);
+
+        assertThat(messages(report)).contains(
+                "MANGO-ARCH-HTTP-001 HTTP method must return R<T>",
+                "MANGO-ARCH-CTRL-004 HTTP Controller must directly return canonical R.ok(...)");
+    }
+
+    @Test
     void controllerConcreteServiceAndApiFieldsAreRejected() {
         Report report = analyze(
                 "example/OrderController.java", """

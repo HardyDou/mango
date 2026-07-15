@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.compress.command;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.compress.enums.FileCompression;
 
@@ -16,6 +17,7 @@ import java.util.Locale;
  * @param compression 压缩档位。
  * @param targetSizeBytes 单文件目标大小，单位字节。
  */
+@LocalCapabilityContract
 public record CompressFileCommand(
         String fileName,
         String contentType,

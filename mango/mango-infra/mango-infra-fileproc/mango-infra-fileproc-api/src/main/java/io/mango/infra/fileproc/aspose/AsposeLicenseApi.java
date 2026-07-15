@@ -1,10 +1,12 @@
 package io.mango.infra.fileproc.aspose;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.fileproc.aspose.enums.AsposeProduct;
 
 /**
  * Aspose License 内容提供接口。
  */
+@LocalCapabilityContract
 public interface AsposeLicenseApi {
 
     /**

@@ -1,5 +1,7 @@
 package io.mango.infra.fileproc.compress.vo;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.util.Arrays;
 
 /**
@@ -13,6 +15,7 @@ import java.util.Arrays;
  * @param targetSize 目标大小。
  * @param targetReached 是否达到目标大小。
  */
+@LocalCapabilityContract
 public record CompressFileResultVO(
         String fileName,
         String contentType,

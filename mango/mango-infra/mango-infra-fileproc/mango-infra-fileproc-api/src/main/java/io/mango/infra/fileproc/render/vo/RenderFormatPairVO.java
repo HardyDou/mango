@@ -1,5 +1,6 @@
 package io.mango.infra.fileproc.render.vo;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.fileproc.render.enums.RenderFormat;
 
 /**
@@ -8,5 +9,6 @@ import io.mango.infra.fileproc.render.enums.RenderFormat;
  * @param sourceFormat 源格式。
  * @param targetFormat 目标格式。
  */
+@LocalCapabilityContract
 public record RenderFormatPairVO(RenderFormat sourceFormat, RenderFormat targetFormat) {
 }

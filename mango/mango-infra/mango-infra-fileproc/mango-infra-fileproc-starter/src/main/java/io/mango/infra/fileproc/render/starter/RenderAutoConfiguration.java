@@ -14,7 +14,7 @@ import io.mango.infra.fileproc.render.service.PlaceholderRenderEngine;
 import io.mango.infra.fileproc.render.service.RenderRegistry;
 import io.mango.infra.fileproc.render.service.SameFormatRenderProvider;
 import io.mango.infra.fileproc.render.service.TextRenderProvider;
-import io.mango.infra.fileproc.render.service.UnsupportedRenderService;
+import io.mango.infra.fileproc.render.service.UnsupportedRenderOperations;
 import io.mango.infra.fileproc.render.enums.RenderFormat;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -96,7 +96,7 @@ public class RenderAutoConfiguration {
 
     private RenderApi pdfRenderApi(AsposeLicenseApi licenseApi, boolean pdfOperationsEnabled) {
         if (!pdfOperationsEnabled || licenseApi == null) {
-            return new UnsupportedRenderService();
+            return new UnsupportedRenderOperations();
         }
         return new AsposePdfRenderApi(licenseApi);
     }
