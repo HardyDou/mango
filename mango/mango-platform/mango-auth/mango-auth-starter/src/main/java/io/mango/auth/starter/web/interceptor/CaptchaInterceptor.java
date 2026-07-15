@@ -4,6 +4,7 @@ import io.mango.auth.api.AuthCode;
 import io.mango.auth.api.spi.CaptchaConfigService;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
+import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.infra.context.api.MangoContextHolder;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -84,7 +85,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         verifyRequest.setType(io.mango.captcha.api.constant.CaptchaType.valueOf(
             captchaType != null ? captchaType : "ARITHMETIC"));
 
-        boolean verified = captchaApi.getObject().verify(verifyRequest);
+        boolean verified = verifyCaptcha(verifyRequest);
         if (!verified) {
             incrementFailedAttempts(ip);
             log.warn("Captcha verification failed: ip={}, path={}", ip, path);
@@ -95,6 +96,15 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         // 校验成功后清理失败次数。
         failedAttempts.remove(ip);
         return true;
+    }
+
+    private boolean verifyCaptcha(CaptchaVerifyRequest request) {
+        try {
+            R<Boolean> result = captchaApi.getObject().verify(request);
+            return result != null && result.isSuccess() && Boolean.TRUE.equals(result.getData());
+        } catch (BizException exception) {
+            return false;
+        }
     }
 
     private boolean isLockedOut(String ip) {

@@ -1,4 +1,4 @@
-package io.mango.captcha.core.service;
+package io.mango.captcha.core.generator;
 
 import io.mango.captcha.api.dto.CaptchaResponse;
 
@@ -7,7 +7,7 @@ import io.mango.captcha.api.dto.CaptchaResponse;
  *
  * @author Mango
  */
-public interface ClickWordCaptchaService {
+public interface ClickWordCaptchaGenerator {
 
     /**
      * 生成点选文字验证码

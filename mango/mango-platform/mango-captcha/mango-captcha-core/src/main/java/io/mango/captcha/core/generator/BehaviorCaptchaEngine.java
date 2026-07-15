@@ -1,12 +1,12 @@
-package io.mango.captcha.core.service;
+package io.mango.captcha.core.generator;
 
-import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 
 /**
  * 无感行为验证服务。
  */
-public interface BehaviorCaptchaService {
+public interface BehaviorCaptchaEngine {
 
     /**
      * 创建无感行为验证 challenge。
@@ -30,5 +30,5 @@ public interface BehaviorCaptchaService {
      * @param payloadJson 前端提交的行为数据
      * @return 评分结果
      */
-    BehaviorCaptchaVerifyResult verify(String challengeJson, String payloadJson);
+    BehaviorCaptchaVerifyResponse verify(String challengeJson, String payloadJson);
 }

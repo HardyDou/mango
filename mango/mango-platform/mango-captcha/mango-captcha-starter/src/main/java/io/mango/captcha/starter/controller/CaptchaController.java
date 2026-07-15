@@ -3,162 +3,92 @@ package io.mango.captcha.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.captcha.api.CaptchaApi;
-import io.mango.captcha.api.CaptchaCode;
-import io.mango.captcha.api.constant.CaptchaType;
-import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.captcha.api.dto.CaptchaTypesResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.common.result.R;
-import io.mango.common.result.Require;
+import io.mango.infra.web.api.Inner;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 验证码公共接口（无需认证）
- * 公共接口保持 /captcha/*，需要认证的接口使用 /auth/captcha/*。
- *
- * @author Mango
+ * 验证码 HTTP 适配器。
  */
-@Slf4j
+@Validated
 @RestController
 @RequestMapping("/captcha")
 @RequiredArgsConstructor
-@Tag(name = "验证码-公共", description = "验证码生成、校验公共接口（无需认证）")
+@Tag(name = "验证码-公共", description = "验证码生成、校验公共接口")
 @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "验证码公共接口")
 public class CaptchaController implements CaptchaApi {
 
     private final ICaptchaService captchaService;
 
     @Override
-    public CaptchaResponse generate(CaptchaType type, String target) {
-        return captchaService.generate(type, target);
-    }
-
-    @Override
-    public boolean verify(CaptchaVerifyRequest request) {
-        return captchaService.verify(request);
-    }
-
-    @Override
-    public BehaviorCaptchaVerifyResult verifyBehavior(CaptchaVerifyRequest request) {
-        return captchaService.verifyBehavior(request);
-    }
-
-    @Override
-    public String sendSms(String mobile, String bizCode, long expire) {
-        return captchaService.sendSms(mobile, bizCode, expire);
-    }
-
-    @Override
-    public String sendEmail(String email, String bizCode, long expire) {
-        return captchaService.sendEmail(email, bizCode, expire);
-    }
-
-    @Override
-    public String send(CaptchaSendRequest request) {
-        return captchaService.send(request);
-    }
-
-    @Override
-    public List<CaptchaType> getSupportedTypes() {
-        return captchaService.getSupportedTypes();
-    }
-
-    @Override
-    public String getCurrentStorage() {
-        return captchaService.getCurrentStorage();
-    }
-
-    /**
-     * 获取支持的验证码类型
-     */
     @GetMapping("/types")
     @Operation(summary = "获取验证码类型", description = "获取当前支持的验证码类型列表和存储策略")
-    public R<Map<String, Object>> getTypes() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("types", getSupportedTypes());
-        result.put("currentStorage", getCurrentStorage());
-        return R.ok(result);
+    public R<CaptchaTypesResponse> getTypes() {
+        return R.ok(captchaService.getTypes());
     }
 
-    /**
-     * 生成算术验证码
-     */
+    @Override
     @GetMapping("/arithmetic")
-    @Operation(summary = "生成算术验证码", description = "生成算术表达式验证码，答案在extra字段返回")
+    @Operation(summary = "生成算术验证码", description = "生成算术表达式验证码")
     public R<CaptchaResponse> generateArithmetic() {
-        CaptchaResponse response = generate(CaptchaType.ARITHMETIC, null);
-        return R.ok(response);
+        return R.ok(captchaService.generateArithmetic());
     }
 
-    /**
-     * 生成滑块验证码
-     */
+    @Override
     @GetMapping("/block-puzzle")
     @Operation(summary = "生成滑块验证码", description = "生成滑块拼图验证码")
     public R<CaptchaResponse> generateBlockPuzzle() {
-        CaptchaResponse response = generate(CaptchaType.BLOCK_PUZZLE, null);
-        return R.ok(response);
+        return R.ok(captchaService.generateBlockPuzzle());
     }
 
-    /**
-     * 生成点选文字验证码
-     */
+    @Override
     @GetMapping("/click-word")
     @Operation(summary = "生成点选文字验证码", description = "生成按提示依次点击图片文字的验证码")
     public R<CaptchaResponse> generateClickWord() {
-        CaptchaResponse response = generate(CaptchaType.CLICK_WORD, null);
-        return R.ok(response);
+        return R.ok(captchaService.generateClickWord());
     }
 
-    /**
-     * 生成无感行为验证 challenge。
-     */
+    @Override
     @GetMapping("/behavior")
-    @Operation(summary = "生成无感行为验证", description = "生成无感行为验证 challenge，前端静默采集行为后提交 verify")
+    @Operation(summary = "生成无感行为验证", description = "生成无感行为验证 challenge")
     public R<CaptchaResponse> generateBehavior() {
-        CaptchaResponse response = generate(CaptchaType.BEHAVIOR, null);
-        return R.ok(response);
+        return R.ok(captchaService.generateBehavior());
     }
 
-    /**
-     * 校验无感行为验证。
-     */
+    @Override
     @PostMapping("/behavior/verify")
-    @Operation(summary = "校验无感行为验证", description = "校验前端行为数据并返回 score、riskLevel 和 suggestAction")
-    public R<BehaviorCaptchaVerifyResult> verifyBehaviorEndpoint(@Valid @RequestBody CaptchaVerifyRequest request) {
-        request.setType(CaptchaType.BEHAVIOR);
-        BehaviorCaptchaVerifyResult result = verifyBehavior(request);
-        return R.ok(result);
+    @Operation(summary = "校验无感行为验证", description = "校验前端行为数据并返回评分结果")
+    public R<BehaviorCaptchaVerifyResponse> verifyBehavior(@RequestBody CaptchaVerifyRequest request) {
+        return R.ok(captchaService.verifyBehavior(request));
     }
 
-    /**
-     * 校验验证码
-     */
+    @Override
     @PostMapping("/verify")
-    @Operation(summary = "校验验证码", description = "校验验证码是否正确")
-    public R<Boolean> verifyEndpoint(@Valid @RequestBody CaptchaVerifyRequest request) {
-        boolean result = verify(request);
-        Require.isTrue(result, CaptchaCode.CAPTCHA_INVALID);
-        return R.ok(true);
+    @Operation(summary = "校验验证码", description = "校验验证码并在成功后使其失效")
+    public R<Boolean> verify(@RequestBody CaptchaVerifyRequest request) {
+        return R.ok(captchaService.verify(request));
     }
 
-    /**
-     * 发送短信或邮件验证码。
-     */
+    @Override
+    @Inner
+    @ApiAccess(mode = ApiResourceAccessMode.INTERNAL, desc = "内部发送短信或邮件验证码")
     @PostMapping("/send")
-    @Operation(summary = "发送验证码", description = "发送短信或邮件验证码")
-    public R<String> sendEndpoint(@Valid @RequestBody CaptchaSendRequest request) {
-        return R.ok(send(request));
+    @Operation(summary = "发送验证码", description = "仅内部调用，发送短信或邮件验证码")
+    public R<String> send(@RequestBody CaptchaSendRequest request) {
+        return R.ok(captchaService.send(request));
     }
 }

@@ -2,7 +2,8 @@ package io.mango.captcha.core.service;
 
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaResponse;
-import io.mango.captcha.core.service.impl.ArithmeticCaptchaServiceImpl;
+import io.mango.captcha.core.generator.DefaultArithmeticCaptchaGenerator;
+import io.mango.captcha.core.generator.ArithmeticCaptchaGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -14,11 +15,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ArithmeticCaptchaServiceTest {
 
-    private ArithmeticCaptchaService arithmeticCaptchaService;
+    private ArithmeticCaptchaGenerator arithmeticCaptchaService;
 
     @BeforeEach
     void setUp() {
-        arithmeticCaptchaService = new ArithmeticCaptchaServiceImpl();
+        arithmeticCaptchaService = new DefaultArithmeticCaptchaGenerator();
         // 通过反射设置默认值（因为没有 Spring 上下文）
         ReflectionTestUtils.setField(arithmeticCaptchaService, "defaultTtl", 300L);
         ReflectionTestUtils.setField(arithmeticCaptchaService, "width", 120);

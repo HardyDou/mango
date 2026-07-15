@@ -1,4 +1,4 @@
-package io.mango.captcha.core.service;
+package io.mango.captcha.core.generator;
 
 import io.mango.captcha.api.dto.CaptchaResponse;
 
@@ -7,7 +7,7 @@ import io.mango.captcha.api.dto.CaptchaResponse;
  *
  * @author Mango
  */
-public interface BlockPuzzleCaptchaService {
+public interface BlockPuzzleCaptchaGenerator {
 
     /**
      * 生成滑块验证码

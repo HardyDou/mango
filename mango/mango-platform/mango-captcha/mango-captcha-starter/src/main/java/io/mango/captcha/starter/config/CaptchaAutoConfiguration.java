@@ -3,17 +3,15 @@ package io.mango.captcha.starter.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
-import io.mango.captcha.core.service.ArithmeticCaptchaService;
-import io.mango.captcha.core.service.BehaviorCaptchaService;
-import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
-import io.mango.captcha.core.service.ClickWordCaptchaService;
-import io.mango.captcha.core.service.ICaptchaService;
-import io.mango.captcha.core.service.impl.ArithmeticCaptchaServiceImpl;
-import io.mango.captcha.core.service.impl.BehaviorCaptchaServiceImpl;
-import io.mango.captcha.core.service.impl.BlockPuzzleCaptchaServiceImpl;
-import io.mango.captcha.core.service.impl.CaptchaServiceImpl;
-import io.mango.captcha.core.service.impl.ClickWordCaptchaServiceImpl;
-import io.mango.infra.kv.api.IKvStore;
+import io.mango.captcha.core.generator.ArithmeticCaptchaGenerator;
+import io.mango.captcha.core.generator.BehaviorCaptchaEngine;
+import io.mango.captcha.core.generator.BlockPuzzleCaptchaGenerator;
+import io.mango.captcha.core.generator.ClickWordCaptchaGenerator;
+import io.mango.captcha.core.generator.DefaultArithmeticCaptchaGenerator;
+import io.mango.captcha.core.generator.DefaultBehaviorCaptchaEngine;
+import io.mango.captcha.core.generator.DefaultBlockPuzzleCaptchaGenerator;
+import io.mango.captcha.core.generator.DefaultClickWordCaptchaGenerator;
+import io.mango.captcha.core.service.impl.CaptchaService;
 import io.mango.captcha.starter.controller.CaptchaController;
 import io.mango.captcha.starter.properties.CaptchaProperties;
 import io.mango.captcha.starter.provider.DefaultEmailProvider;
@@ -26,7 +24,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
-import java.util.List;
 
 /**
  * 验证码自动配置
@@ -37,55 +34,33 @@ import java.util.List;
 @AutoConfiguration
 @EnableConfigurationProperties(CaptchaProperties.class)
 @RequiredArgsConstructor
-@Import({CaptchaController.class})
+@Import({CaptchaController.class, CaptchaService.class})
 public class CaptchaAutoConfiguration {
 
     private final CaptchaProperties properties;
 
     @Bean
-    @ConditionalOnMissingBean(ArithmeticCaptchaService.class)
-    public ArithmeticCaptchaService arithmeticCaptchaService() {
-        return new ArithmeticCaptchaServiceImpl();
+    @ConditionalOnMissingBean(ArithmeticCaptchaGenerator.class)
+    public ArithmeticCaptchaGenerator arithmeticCaptchaService() {
+        return new DefaultArithmeticCaptchaGenerator();
     }
 
     @Bean
-    @ConditionalOnMissingBean(BlockPuzzleCaptchaService.class)
-    public BlockPuzzleCaptchaService blockPuzzleCaptchaService() {
-        return new BlockPuzzleCaptchaServiceImpl(properties.getBlockPuzzle().getImageLocations());
+    @ConditionalOnMissingBean(BlockPuzzleCaptchaGenerator.class)
+    public BlockPuzzleCaptchaGenerator blockPuzzleCaptchaService() {
+        return new DefaultBlockPuzzleCaptchaGenerator(properties.getBlockPuzzle().getImageLocations());
     }
 
     @Bean
-    @ConditionalOnMissingBean(ClickWordCaptchaService.class)
-    public ClickWordCaptchaService clickWordCaptchaService() {
-        return new ClickWordCaptchaServiceImpl();
+    @ConditionalOnMissingBean(ClickWordCaptchaGenerator.class)
+    public ClickWordCaptchaGenerator clickWordCaptchaService() {
+        return new DefaultClickWordCaptchaGenerator();
     }
 
     @Bean
-    @ConditionalOnMissingBean(BehaviorCaptchaService.class)
-    public BehaviorCaptchaService behaviorCaptchaService(ObjectMapper objectMapper) {
-        return new BehaviorCaptchaServiceImpl(objectMapper);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(ICaptchaService.class)
-    public ICaptchaService captchaService(IKvStore kvStore,
-                                          ArithmeticCaptchaService arithmeticCaptchaService,
-                                          BlockPuzzleCaptchaService blockPuzzleCaptchaService,
-                                          ClickWordCaptchaService clickWordCaptchaService,
-                                          BehaviorCaptchaService behaviorCaptchaService,
-                                          List<SmsProvider> smsProviders,
-                                          List<EmailProvider> emailProviders,
-                                          ObjectMapper objectMapper) {
-        return new CaptchaServiceImpl(
-                kvStore,
-                arithmeticCaptchaService,
-                blockPuzzleCaptchaService,
-                clickWordCaptchaService,
-                behaviorCaptchaService,
-                smsProviders,
-                emailProviders,
-                objectMapper
-        );
+    @ConditionalOnMissingBean(BehaviorCaptchaEngine.class)
+    public BehaviorCaptchaEngine behaviorCaptchaService(ObjectMapper objectMapper) {
+        return new DefaultBehaviorCaptchaEngine(objectMapper);
     }
 
     @Bean

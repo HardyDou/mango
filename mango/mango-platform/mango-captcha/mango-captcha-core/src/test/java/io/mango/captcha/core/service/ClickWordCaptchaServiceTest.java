@@ -2,7 +2,8 @@ package io.mango.captcha.core.service;
 
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaResponse;
-import io.mango.captcha.core.service.impl.ClickWordCaptchaServiceImpl;
+import io.mango.captcha.core.generator.DefaultClickWordCaptchaGenerator;
+import io.mango.captcha.core.generator.ClickWordCaptchaGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -14,11 +15,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ClickWordCaptchaServiceTest {
 
-    private ClickWordCaptchaService clickWordCaptchaService;
+    private ClickWordCaptchaGenerator clickWordCaptchaService;
 
     @BeforeEach
     void setUp() {
-        clickWordCaptchaService = new ClickWordCaptchaServiceImpl();
+        clickWordCaptchaService = new DefaultClickWordCaptchaGenerator();
         ReflectionTestUtils.setField(clickWordCaptchaService, "width", 320);
         ReflectionTestUtils.setField(clickWordCaptchaService, "height", 180);
         ReflectionTestUtils.setField(clickWordCaptchaService, "wordCount", 4);

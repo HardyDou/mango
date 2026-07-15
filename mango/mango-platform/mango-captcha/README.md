@@ -6,12 +6,13 @@
 
 ## 1. 概览
 
-`mango-captcha` 对外提供两类入口：
+`mango-captcha` 对外提供三类入口：
 
-- 公共 HTTP 接口：`/captcha/**`，用于前端获取图形验证码、滑块验证码、点选文字验证码、无感行为验证码并提交校验。
-- Java API：`CaptchaApi`，用于业务后端生成、校验、发送短信验证码和邮件验证码。
+- 公共 HTTP 接口：`/captcha/types`、各类生成接口和校验接口。
+- 内部 HTTP 接口：`POST /captcha/send`，只允许 Mango 内部调用发送短信或邮件验证码。
+- Java API：`CaptchaApi`，所有方法统一返回 `R<T>`，用于业务后端生成、校验和发送验证码。
 
-短信和邮件发送没有直接暴露在 `CaptchaController` 的 `/captcha/**` 下。当前登录场景的发送入口在 `mango-auth`：`POST /auth/captcha/send`，它内部调用 `CaptchaApi.send()`。
+当前登录场景的公开发送入口在 `mango-auth`：`POST /auth/captcha/send`，它内部调用 `CaptchaApi.send()`；客户端不能直接访问内部的 `POST /captcha/send`。
 
 ## 2. 功能清单
 
@@ -22,8 +23,8 @@
 | 滑块验证码 | 拖动滑块拼图校验 | `GET /captcha/block-puzzle`、`POST /captcha/verify` |
 | 点选文字验证码 | 按提示点击图片文字 | `GET /captcha/click-word`、`POST /captcha/verify` |
 | 无感行为验证 | 前端采集行为数据，后端给出风险评分 | `GET /captcha/behavior`、`POST /captcha/behavior/verify` |
-| 短信验证码 | 登录、注册、找回密码、换绑手机号 | `CaptchaApi.sendSms()`、`CaptchaApi.send()` |
-| 邮件验证码 | 邮箱登录、换绑邮箱、邮件确认 | `CaptchaApi.sendEmail()`、`CaptchaApi.send()` |
+| 短信验证码 | 登录、注册、找回密码、换绑手机号 | `CaptchaApi.send()`、`POST /auth/captcha/send` |
+| 邮件验证码 | 邮箱登录、换绑邮箱、邮件确认 | `CaptchaApi.send()`、`POST /auth/captcha/send` |
 | 验证码拦截 | 认证模块按路径要求请求头验证码 | `X-Captcha-Key`、`X-Captcha-Code`、`X-Captcha-Type` |
 
 ## 3. 后端接入
@@ -43,14 +44,14 @@
 
 | API | 用途 |
 |-----|------|
-| `CaptchaApi.generate(CaptchaType, String)` | 生成指定类型验证码。 |
-| `CaptchaApi.verify(CaptchaVerifyRequest)` | 校验验证码。校验成功后删除验证码。 |
-| `CaptchaApi.verifyBehavior(CaptchaVerifyRequest)` | 校验无感行为验证码并返回评分详情。 |
-| `CaptchaApi.sendSms(String, String, long)` | 发送短信验证码。 |
-| `CaptchaApi.sendEmail(String, String, long)` | 发送邮件验证码。 |
-| `CaptchaApi.send(CaptchaSendRequest)` | 统一发送短信或邮件验证码。 |
-| `CaptchaApi.getSupportedTypes()` | 查询支持的验证码类型。 |
-| `CaptchaApi.getCurrentStorage()` | 查询当前验证码存储实现。 |
+| `CaptchaApi.getTypes()` | 查询支持的验证码类型和实际存储实现。 |
+| `CaptchaApi.generateArithmetic()` | 生成算术验证码。 |
+| `CaptchaApi.generateBlockPuzzle()` | 生成滑块验证码。 |
+| `CaptchaApi.generateClickWord()` | 生成点选文字验证码。 |
+| `CaptchaApi.generateBehavior()` | 生成行为验证码挑战。 |
+| `CaptchaApi.verify(CaptchaVerifyRequest)` | 校验验证码；成功后删除一次性答案。 |
+| `CaptchaApi.verifyBehavior(CaptchaVerifyRequest)` | 校验行为验证码并返回评分详情。 |
+| `CaptchaApi.send(CaptchaSendRequest)` | 内部发送短信或邮件验证码。 |
 
 业务接口校验短信验证码：
 
@@ -60,8 +61,9 @@ request.setKey(captchaKey);
 request.setType(CaptchaType.SMS);
 request.setCode(userInputCode);
 
-boolean passed = captchaApi.verify(request);
-Require.isTrue(passed, CaptchaCode.CAPTCHA_INVALID);
+R<Boolean> verification = captchaApi.verify(request);
+Require.isTrue(verification.isSuccess() && Boolean.TRUE.equals(verification.getData()),
+        CaptchaCode.CAPTCHA_INVALID);
 ```
 
 发送短信验证码：
@@ -73,7 +75,8 @@ request.setTarget(mobile);
 request.setBusinessType("LOGIN");
 request.setExpireSeconds(300L);
 
-String captchaKey = captchaApi.send(request);
+R<String> result = captchaApi.send(request);
+String captchaKey = result.getData();
 ```
 
 ### 3.2 部署依赖
@@ -208,21 +211,16 @@ mango:
       enabled: true
       length: 6
       provider: default
-  persistence:
-    flyway:
-      modules:
-        captcha:
-          enabled: true
 ```
 
-`enabled`、`provider`、`storage` 字段当前主要作为配置表达和扩展预留；实际 Bean 是否注册以 starter 自动配置和业务自定义 Bean 为准。
+`enabled`、`provider`、`storage` 字段为兼容保留配置。实际验证码存储始终由应用注入的 `IKvStore` 决定，`storage` 字段不会另建数据库存储。
 
 ## 7. YAML 配置字段
 
 | 配置 | 默认值 | 说明 |
 |------|--------|------|
 | `mango.captcha.ttl` | `300` | 默认有效期，单位秒。算术、滑块和通用发送接口默认使用它。 |
-| `mango.captcha.storage` | `auto` | 存储策略配置字段。当前默认实现实际通过 `IKvStore` 写入验证码值。 |
+| `mango.captcha.storage` | `auto` | 兼容保留字段；实际存储实现由注入的 `IKvStore` 决定。 |
 | `mango.captcha.arithmetic.enabled` | `true` | 算术验证码启用标识。 |
 | `mango.captcha.arithmetic.width` | `120` | 算术验证码图片宽度。 |
 | `mango.captcha.arithmetic.height` | `40` | 算术验证码图片高度。 |
@@ -244,7 +242,6 @@ mango:
 | `mango.captcha.email.enabled` | `true` | 邮件验证码启用标识。 |
 | `mango.captcha.email.length` | `6` | 邮件验证码数字长度。 |
 | `mango.captcha.email.provider` | `default` | 邮件供应商配置字段。生产环境应提供 `EmailProvider` Bean。 |
-| `mango.persistence.flyway.modules.captcha.enabled` | 无全局默认 | 是否执行 captcha 模块迁移。 |
 
 ## 8. 运行时配置字段
 
@@ -286,7 +283,7 @@ mango:
 | `target` | 点选文字提示或短信/邮件目标。 |
 | `extra` | 额外数据。算术验证码当前会返回答案，生产登录链路不要依赖前端自行判定，应以服务端校验为准。 |
 
-`BehaviorCaptchaVerifyResult`：
+`BehaviorCaptchaVerifyResponse`：
 
 | 字段 | 说明 |
 |------|------|
@@ -303,23 +300,23 @@ mango:
 
 | 入口 | 说明 |
 |------|------|
-| `/captcha/**` | 公共验证码生成和校验接口。 |
+| `/captcha/types`、生成和校验路径 | 公共验证码生成和校验接口。 |
+| `/captcha/send` | 仅内部调用的短信/邮件发送接口。 |
 | `/auth/captcha/send` | auth 模块提供的短信/邮件验证码发送入口。 |
 | `CaptchaApi` | 后端业务代码生成、发送和校验验证码。 |
 | `@mango/common/api/captcha` | 前端验证码 API 封装。 |
 | `@mango/common` 验证码组件 | 前端验证码组件。 |
 
-`/captcha/**` 标记为公共 API，不需要登录态。
+验证码查询、生成和校验接口为公共 API，不需要登录态；`POST /captcha/send` 为内部 API，必须通过内部调用认证。
 
 ## 11. 数据与初始化
 
 | 数据 | 来源 | 说明 |
 |------|------|------|
-| `captcha_code` | `db/migration/captcha/V1__init_captcha.sql` | 验证码表。当前默认实现主要通过 `IKvStore` 存储验证码值；启用 DB 存储时使用该表。 |
 | 内置滑块图库 | `mango-captcha-core/src/main/resources/captcha/block-puzzle` | 滑块验证码默认背景图。 |
 | 模块声明 | `META-INF/mango/module.properties` | `module-name=mango-captcha`、`module-path=/captcha`。 |
 
-captcha 模块不初始化菜单和权限。登录页、认证拦截和验证码发送入口由 auth 模块提供。
+captcha 模块没有 DDL、演示数据、菜单或权限初始化。验证码和挑战数据全部通过 `IKvStore` 保存；登录页、认证拦截和公开发送入口由 auth 模块提供。
 
 ## 12. 问题排查
 

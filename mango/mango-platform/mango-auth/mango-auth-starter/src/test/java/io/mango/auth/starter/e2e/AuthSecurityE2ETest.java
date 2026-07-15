@@ -15,6 +15,12 @@ import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.auth.core.service.impl.PasswordResetTicketService;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.controller.AuthController;
+import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
+import io.mango.captcha.api.dto.CaptchaResponse;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.captcha.api.dto.CaptchaTypesResponse;
+import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.common.result.R;
 import io.mango.infra.context.support.TtlExecutorDecorator;
 import io.mango.infra.kv.api.IKvStore;
@@ -144,6 +150,23 @@ class AuthSecurityE2ETest {
                     assertThat(event.getMessageActions()).singleElement()
                             .satisfies(action -> assertThat(action.getActionCode()).isEqualTo("VIEW_PROFILE"));
                 });
+    }
+
+    @Test
+    @DisplayName("public captcha send should preserve the captcha unified response")
+    void publicCaptchaSendShouldPreserveCaptchaUnifiedResponse() throws Exception {
+        mockMvc.perform(post("/auth/captcha/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "SMS",
+                                  "target": "13800138000",
+                                  "businessType": "LOGIN"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("captcha:LOGIN:13800138000"));
     }
 
     @Test
@@ -586,6 +609,11 @@ class AuthSecurityE2ETest {
         }
 
         @Bean
+        CaptchaApi captchaApi() {
+            return new TestCaptchaApi();
+        }
+
+        @Bean
         NoticeApi noticeApi() {
             NoticeApi api = org.mockito.Mockito.mock(NoticeApi.class);
             NoticeWecomLoginConfigVO config = new NoticeWecomLoginConfigVO();
@@ -639,6 +667,7 @@ class AuthSecurityE2ETest {
             return (authenticationSupplier, context) -> {
                 String requestUri = context.getRequest().getRequestURI();
                 if ("/auth/login".equals(requestUri)
+                        || "/auth/captcha/send".equals(requestUri)
                         || "/auth/login-institutions".equals(requestUri)
                         || "/auth/refresh".equals(requestUri)
                         || "/auth/password/change-required".equals(requestUri)
@@ -659,6 +688,49 @@ class AuthSecurityE2ETest {
             };
         }
 
+    }
+
+    static class TestCaptchaApi implements CaptchaApi {
+
+        @Override
+        public R<CaptchaTypesResponse> getTypes() {
+            return R.ok(new CaptchaTypesResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateArithmetic() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateBlockPuzzle() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateClickWord() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateBehavior() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<BehaviorCaptchaVerifyResponse> verifyBehavior(CaptchaVerifyRequest request) {
+            return R.ok(new BehaviorCaptchaVerifyResponse());
+        }
+
+        @Override
+        public R<Boolean> verify(CaptchaVerifyRequest request) {
+            return R.ok(Boolean.TRUE);
+        }
+
+        @Override
+        public R<String> send(CaptchaSendRequest request) {
+            return R.ok("captcha:" + request.getBusinessType() + ":" + request.getTarget());
+        }
     }
 
     static final class TestUserStore implements AuthIdentitySecurityProvider {

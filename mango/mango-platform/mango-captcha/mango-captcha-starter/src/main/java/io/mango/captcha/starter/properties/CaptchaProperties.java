@@ -15,16 +15,29 @@ import java.util.List;
 @ConfigurationProperties(prefix = "mango.captcha")
 public class CaptchaProperties {
 
+    private static final long DEFAULT_TTL_SECONDS = 300L;
+    private static final int DEFAULT_ARITHMETIC_WIDTH = 120;
+    private static final int DEFAULT_ARITHMETIC_HEIGHT = 40;
+    private static final int DEFAULT_PUZZLE_WIDTH = 280;
+    private static final int DEFAULT_PUZZLE_HEIGHT = 160;
+    private static final int DEFAULT_SLIDER_SIZE = 50;
+    private static final int DEFAULT_CLICK_WIDTH = 320;
+    private static final int DEFAULT_CLICK_HEIGHT = 180;
+    private static final int DEFAULT_WORD_COUNT = 4;
+    private static final int DEFAULT_TARGET_COUNT = 3;
+    private static final int DEFAULT_TOLERANCE = 24;
+    private static final int DEFAULT_CODE_LENGTH = 6;
+    private static final int DEFAULT_SMS_PERIOD_SECONDS = 60;
+
     /**
-     * 存储策略: redis, db, memory
-     * 默认自动检测: 有redis用redis，否则用memory
+     * 兼容保留的存储策略配置；实际存储实现由应用注入的 IKvStore 决定。
      */
     private String storage = "auto";
 
     /**
      * 验证码有效期（秒）
      */
-    private long ttl = 300;
+    private long ttl = DEFAULT_TTL_SECONDS;
 
     /**
      * 算术验证码配置
@@ -54,16 +67,16 @@ public class CaptchaProperties {
     @Data
     public static class Arithmetic {
         private boolean enabled = true;
-        private int width = 120;
-        private int height = 40;
+        private int width = DEFAULT_ARITHMETIC_WIDTH;
+        private int height = DEFAULT_ARITHMETIC_HEIGHT;
     }
 
     @Data
     public static class BlockPuzzle {
         private boolean enabled = true;
-        private int width = 280;
-        private int height = 160;
-        private int sliderSize = 50;
+        private int width = DEFAULT_PUZZLE_WIDTH;
+        private int height = DEFAULT_PUZZLE_HEIGHT;
+        private int sliderSize = DEFAULT_SLIDER_SIZE;
         /**
          * 滑块验证码图库。支持 classpath:/file:/http(s) 路径。
          * 为空时使用组件内置图库。
@@ -74,25 +87,25 @@ public class CaptchaProperties {
     @Data
     public static class ClickWord {
         private boolean enabled = true;
-        private int width = 320;
-        private int height = 180;
-        private int wordCount = 4;
-        private int targetCount = 3;
-        private int tolerance = 24;
+        private int width = DEFAULT_CLICK_WIDTH;
+        private int height = DEFAULT_CLICK_HEIGHT;
+        private int wordCount = DEFAULT_WORD_COUNT;
+        private int targetCount = DEFAULT_TARGET_COUNT;
+        private int tolerance = DEFAULT_TOLERANCE;
     }
 
     @Data
     public static class Sms {
         private boolean enabled = true;
-        private int length = 6;
-        private int period = 60;
+        private int length = DEFAULT_CODE_LENGTH;
+        private int period = DEFAULT_SMS_PERIOD_SECONDS;
         private String provider = "default";
     }
 
     @Data
     public static class Email {
         private boolean enabled = true;
-        private int length = 6;
+        private int length = DEFAULT_CODE_LENGTH;
         private String provider = "default";
     }
 }

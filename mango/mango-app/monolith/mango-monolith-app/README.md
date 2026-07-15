@@ -78,7 +78,6 @@ mvn -f mango/pom.xml -pl :mango-monolith-app -am spring-boot:run \
 - `authorization`
 - `identity`
 - `org`
-- `captcha`
 - `file`
 - `resource`
 - `template`

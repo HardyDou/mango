@@ -2,9 +2,10 @@ package io.mango.captcha.core.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.captcha.api.constant.CaptchaType;
-import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
-import io.mango.captcha.core.service.impl.BehaviorCaptchaServiceImpl;
+import io.mango.captcha.core.generator.DefaultBehaviorCaptchaEngine;
+import io.mango.captcha.core.generator.BehaviorCaptchaEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,11 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BehaviorCaptchaServiceTest {
 
-    private BehaviorCaptchaService behaviorCaptchaService;
+    private BehaviorCaptchaEngine behaviorCaptchaService;
 
     @BeforeEach
     void setUp() {
-        behaviorCaptchaService = new BehaviorCaptchaServiceImpl(new ObjectMapper());
+        behaviorCaptchaService = new DefaultBehaviorCaptchaEngine(new ObjectMapper());
     }
 
     @Test
@@ -60,7 +61,7 @@ class BehaviorCaptchaServiceTest {
                 }
                 """;
 
-        BehaviorCaptchaVerifyResult result = behaviorCaptchaService.verify(challenge, payload);
+        BehaviorCaptchaVerifyResponse result = behaviorCaptchaService.verify(challenge, payload);
 
         assertTrue(result.isPassed());
         assertEquals("LOW", result.getRiskLevel());
@@ -82,7 +83,7 @@ class BehaviorCaptchaServiceTest {
                 }
                 """;
 
-        BehaviorCaptchaVerifyResult result = behaviorCaptchaService.verify(challenge, payload);
+        BehaviorCaptchaVerifyResponse result = behaviorCaptchaService.verify(challenge, payload);
 
         assertFalse(result.isPassed());
         assertEquals(0.1D, result.getScore());

@@ -1,14 +1,12 @@
-package io.mango.captcha.core.service.impl;
+package io.mango.captcha.core.generator;
 
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.constant.CaptchaType;
-import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.AlphaComposite;
@@ -32,8 +30,33 @@ import java.util.Random;
  * @author Mango
  */
 @Slf4j
-@Service
-public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService {
+public class DefaultBlockPuzzleCaptchaGenerator implements BlockPuzzleCaptchaGenerator {
+
+    private static final int DEFAULT_WIDTH = 280;
+    private static final int DEFAULT_HEIGHT = 160;
+    private static final int DEFAULT_SLIDER_SIZE = 50;
+    private static final int X_RANDOM_MARGIN = 30;
+    private static final int X_OFFSET = 24;
+    private static final int Y_RANDOM_MARGIN = 24;
+    private static final int Y_OFFSET = 12;
+    private static final int KNOB_DIVISOR = 5;
+    private static final int MIN_KNOB_SIZE = 8;
+    private static final int RADIUS_DIVISOR = 8;
+    private static final int MIN_RADIUS = 5;
+    private static final int SHAPE_BORDER = 4;
+    private static final float HOLE_ALPHA = 0.58F;
+    private static final int SLIDER_SHADOW_ALPHA = 55;
+    private static final int SLIDER_BORDER_ALPHA = 190;
+    private static final int BORDER_ALPHA = 150;
+    private static final int FALLBACK_DECORATION_ALPHA = 90;
+    private static final int FALLBACK_LEFT = 28;
+    private static final int FALLBACK_TOP = 30;
+    private static final int FALLBACK_HORIZONTAL_MARGIN = 56;
+    private static final int FALLBACK_VERTICAL_MARGIN = 60;
+    private static final int FALLBACK_ARC = 18;
+    private static final int FALLBACK_LINE_STEP = 28;
+    private static final Color FALLBACK_BACKGROUND = Color.decode("#ebf1f7");
+    private static final Color FALLBACK_PRIMARY = Color.decode("#409eff");
 
     private static final String[] BACKGROUND_IMAGES = {
         "classpath:captcha/block-puzzle/workspace.jpg",
@@ -46,32 +69,33 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
     };
 
     private static final String IMAGE_PREFIX = "data:image/png;base64,";
+    private static final String URI_SCHEME_SEPARATOR = ":";
 
     private final Random random = new Random();
     private final ResourceLoader resourceLoader;
     private final List<String> imageLocations;
 
-    public BlockPuzzleCaptchaServiceImpl() {
+    @Value("${mango.captcha.block-puzzle.width:280}")
+    private int width = DEFAULT_WIDTH;
+
+    @Value("${mango.captcha.block-puzzle.height:160}")
+    private int height = DEFAULT_HEIGHT;
+
+    @Value("${mango.captcha.block-puzzle.slider-size:50}")
+    private int sliderSize = DEFAULT_SLIDER_SIZE;
+
+    public DefaultBlockPuzzleCaptchaGenerator() {
         this(Collections.emptyList());
     }
 
-    public BlockPuzzleCaptchaServiceImpl(List<String> imageLocations) {
+    public DefaultBlockPuzzleCaptchaGenerator(List<String> imageLocations) {
         this(new DefaultResourceLoader(), imageLocations);
     }
 
-    BlockPuzzleCaptchaServiceImpl(ResourceLoader resourceLoader, List<String> imageLocations) {
+    DefaultBlockPuzzleCaptchaGenerator(ResourceLoader resourceLoader, List<String> imageLocations) {
         this.resourceLoader = resourceLoader;
         this.imageLocations = normalizeImageLocations(imageLocations);
     }
-
-    @Value("${mango.captcha.block-puzzle.width:280}")
-    private int width = 280;
-
-    @Value("${mango.captcha.block-puzzle.height:160}")
-    private int height = 160;
-
-    @Value("${mango.captcha.block-puzzle.slider-size:50}")
-    private int sliderSize = 50;
 
     @Override
     public CaptchaResponse generate() {
@@ -82,8 +106,8 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
         try {
             BufferedImage source = loadRandomBackground();
             BufferedImage background = resize(source, width, height);
-            int slipX = random.nextInt(width - sliderSize - 30) + 24;
-            int slipY = random.nextInt(height - sliderSize - 24) + 12;
+            int slipX = random.nextInt(width - sliderSize - X_RANDOM_MARGIN) + X_OFFSET;
+            int slipY = random.nextInt(height - sliderSize - Y_RANDOM_MARGIN) + Y_OFFSET;
             Area puzzleShape = createPuzzleShape(0, 0);
 
             BufferedImage slider = cutSliderImage(background, puzzleShape, slipX, slipY);
@@ -124,7 +148,10 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
     }
 
     private BufferedImage loadRandomBackground() throws IOException {
-        List<String> locations = imageLocations.isEmpty() ? defaultImageLocations() : imageLocations;
+        List<String> locations = imageLocations;
+        if (locations.isEmpty()) {
+            locations = defaultImageLocations();
+        }
         List<String> candidates = new ArrayList<>(locations);
         Collections.shuffle(candidates, random);
         IOException lastException = null;
@@ -160,12 +187,12 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
         return locations.stream()
                 .filter(location -> location != null && !location.isBlank())
                 .map(String::trim)
-                .map(BlockPuzzleCaptchaServiceImpl::normalizeImageLocation)
+                .map(DefaultBlockPuzzleCaptchaGenerator::normalizeImageLocation)
                 .toList();
     }
 
     private static String normalizeImageLocation(String location) {
-        if (location.contains(":")) {
+        if (location.contains(URI_SCHEME_SEPARATOR)) {
             return location;
         }
         return "classpath:" + location;
@@ -185,9 +212,10 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
     }
 
     private Area createPuzzleShape(int x, int y) {
-        int knob = Math.max(sliderSize / 5, 8);
-        int radius = Math.max(sliderSize / 8, 5);
-        Area area = new Area(new RoundRectangle2D.Double(x + 2, y + 2, sliderSize - 4, sliderSize - 4, radius, radius));
+        int knob = Math.max(sliderSize / KNOB_DIVISOR, MIN_KNOB_SIZE);
+        int radius = Math.max(sliderSize / RADIUS_DIVISOR, MIN_RADIUS);
+        Area area = new Area(new RoundRectangle2D.Double(x + 2, y + 2,
+                sliderSize - SHAPE_BORDER, sliderSize - SHAPE_BORDER, radius, radius));
         area.add(new Area(new Ellipse2D.Double(x + sliderSize / 2.0 - knob / 2.0, y - knob / 2.0, knob, knob)));
         area.subtract(new Area(new Ellipse2D.Double(x - knob / 2.0, y + sliderSize / 2.0 - knob / 2.0, knob, knob)));
         return area;
@@ -201,9 +229,10 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
             graphics.setClip(puzzleShape);
             graphics.drawImage(background, -x, -y, null);
             graphics.setClip(null);
-            graphics.setColor(new Color(255, 255, 255, 190));
+            graphics.setColor(new Color(Color.WHITE.getRed(), Color.WHITE.getGreen(), Color.WHITE.getBlue(),
+                    SLIDER_BORDER_ALPHA));
             graphics.draw(puzzleShape);
-            graphics.setColor(new Color(0, 0, 0, 55));
+            graphics.setColor(new Color(Color.BLACK.getRed(), Color.BLACK.getGreen(), Color.BLACK.getBlue(), SLIDER_SHADOW_ALPHA));
             graphics.draw(createPuzzleShape(1, 1));
         } finally {
             graphics.dispose();
@@ -216,11 +245,11 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
         try {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             graphics.translate(x, y);
-            graphics.setComposite(AlphaComposite.SrcOver.derive(0.58f));
+            graphics.setComposite(AlphaComposite.SrcOver.derive(HOLE_ALPHA));
             graphics.setColor(Color.BLACK);
             graphics.fill(puzzleShape);
             graphics.setComposite(AlphaComposite.SrcOver);
-            graphics.setColor(new Color(255, 255, 255, 150));
+            graphics.setColor(new Color(Color.WHITE.getRed(), Color.WHITE.getGreen(), Color.WHITE.getBlue(), BORDER_ALPHA));
             graphics.draw(puzzleShape);
         } finally {
             graphics.dispose();
@@ -231,12 +260,14 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
         try {
-            graphics.setColor(new Color(235, 241, 247));
+            graphics.setColor(FALLBACK_BACKGROUND);
             graphics.fillRect(0, 0, width, height);
-            graphics.setColor(new Color(64, 158, 255));
-            graphics.fillRoundRect(28, 30, width - 56, height - 60, 18, 18);
-            graphics.setColor(new Color(255, 255, 255, 90));
-            for (int i = 0; i < width; i += 28) {
+            graphics.setColor(FALLBACK_PRIMARY);
+            graphics.fillRoundRect(FALLBACK_LEFT, FALLBACK_TOP, width - FALLBACK_HORIZONTAL_MARGIN,
+                    height - FALLBACK_VERTICAL_MARGIN, FALLBACK_ARC, FALLBACK_ARC);
+            graphics.setColor(new Color(Color.WHITE.getRed(), Color.WHITE.getGreen(), Color.WHITE.getBlue(),
+                    FALLBACK_DECORATION_ALPHA));
+            for (int i = 0; i < width; i += FALLBACK_LINE_STEP) {
                 graphics.drawLine(i, 0, i + height, height);
             }
         } finally {

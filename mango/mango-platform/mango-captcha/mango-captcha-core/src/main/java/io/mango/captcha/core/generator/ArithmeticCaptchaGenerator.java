@@ -1,4 +1,4 @@
-package io.mango.captcha.core.service;
+package io.mango.captcha.core.generator;
 
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.constant.CaptchaType;
@@ -8,7 +8,7 @@ import io.mango.captcha.api.constant.CaptchaType;
  *
  * @author Mango
  */
-public interface ArithmeticCaptchaService {
+public interface ArithmeticCaptchaGenerator {
 
     /**
      * 生成算术验证码

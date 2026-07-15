@@ -375,7 +375,7 @@ public class AuthController implements AuthApi {
     public R<String> sendCaptcha(@Valid @RequestBody CaptchaSendRequest request) {
         CaptchaApi captchaApi = captchaApiProvider.getIfAvailable();
         Require.notNull(captchaApi, AuthCode.CAPTCHA_SERVICE_UNAVAILABLE);
-        return R.ok(captchaApi.send(request));
+        return captchaApi.send(request);
     }
 
     private String resolveClientIp(HttpServletRequest request) {
