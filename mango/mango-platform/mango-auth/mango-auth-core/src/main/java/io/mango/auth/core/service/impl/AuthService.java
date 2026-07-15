@@ -1,5 +1,6 @@
 package io.mango.auth.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.api.command.ChangeRequiredPasswordCommand;
 import io.mango.auth.api.command.SendAuthCaptchaCommand;
@@ -72,9 +73,13 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP2", "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"},
+        justification = "Dependencies are shared Spring beans and Require.notNull throws before dereference")
 public class AuthService implements IAuthService {
 
     private static final String DEFAULT_APP_CODE = "internal-admin";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final int LOGIN_LOG_TEXT_LIMIT = 100;
 
     private final AuthUserProvider authUserProvider;
     private final IAuthorizationProvider authorizationProvider;
@@ -184,7 +189,7 @@ public class AuthService implements IAuthService {
             loginContext.setRealm(firstText(ticket.realm(), updatedUser.getRealm()));
             loginContext.setActorType(firstText(ticket.actorType(), updatedUser.getActorType()));
             loginContext.setPartyType(firstText(ticket.partyType(), updatedUser.getPartyType()));
-            loginContext.setPartyId(ticket.partyId() == null ? updatedUser.getPartyId() : ticket.partyId());
+            loginContext.setPartyId(firstNonNull(ticket.partyId(), updatedUser.getPartyId()));
             IdentityContext identityContext = resolveIdentityContext(updatedUser, loginContext);
             Map<String, Object> claims = identityContext.toClaims(updatedUser.getUsername());
             String accessToken = tokenService.generateAccessToken(updatedUser.getUserId(), updatedUser.getUsername(), claims);
@@ -283,8 +288,8 @@ public class AuthService implements IAuthService {
     @Override
     public LoginVO refreshToken(String refreshToken) {
         String oldRefreshToken = refreshToken;
-        if (oldRefreshToken != null && oldRefreshToken.startsWith("Bearer ")) {
-            oldRefreshToken = oldRefreshToken.substring(7);
+        if (oldRefreshToken != null && oldRefreshToken.startsWith(BEARER_PREFIX)) {
+            oldRefreshToken = oldRefreshToken.substring(BEARER_PREFIX.length());
         }
         if (isRevoked(oldRefreshToken)) {
             log.warn("Refresh token has been revoked");
@@ -318,8 +323,8 @@ public class AuthService implements IAuthService {
 
     @Override
     public void logout(String token) {
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        if (token != null && token.startsWith(BEARER_PREFIX)) {
+            token = token.substring(BEARER_PREFIX.length());
         }
         Long userId = tokenService.getUserId(token);
         revoke(token, Math.max(accessTokenValiditySeconds, refreshTokenValiditySeconds));
@@ -331,8 +336,8 @@ public class AuthService implements IAuthService {
         if (token == null || token.isEmpty()) {
             return false;
         }
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        if (token.startsWith(BEARER_PREFIX)) {
+            token = token.substring(BEARER_PREFIX.length());
         }
         return tokenService.validateToken(token) && !isRevoked(token);
     }
@@ -388,8 +393,8 @@ public class AuthService implements IAuthService {
         if (token == null || token.isEmpty()) {
             return null;
         }
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        if (token.startsWith(BEARER_PREFIX)) {
+            token = token.substring(BEARER_PREFIX.length());
         }
         // 提取用户 ID 前先校验令牌，避免篡改或过期令牌被利用。
         if (!tokenService.validateToken(token) || isRevoked(token)) {
@@ -399,7 +404,10 @@ public class AuthService implements IAuthService {
     }
 
     private String stripBearer(String token) {
-        return token != null && token.startsWith("Bearer ") ? token.substring(7) : token;
+        if (token != null && token.startsWith(BEARER_PREFIX)) {
+            return token.substring(BEARER_PREFIX.length());
+        }
+        return token;
     }
 
     /**
@@ -522,21 +530,38 @@ public class AuthService implements IAuthService {
         }
         try {
             SysLoginLogPo loginLog = new SysLoginLogPo();
-            loginLog.setTenantId(resolveLong(response == null ? command.getTenantId() : response.getTenantId(), null));
-            loginLog.setUserId(response == null ? null : response.getUserId());
+            String tenantId = command.getTenantId();
+            Long userId = null;
+            String loginType = "PASSWORD";
+            if (response != null) {
+                tenantId = response.getTenantId();
+                userId = response.getUserId();
+                loginType = response.getRealm();
+            }
+            loginLog.setTenantId(resolveLong(tenantId, null));
+            loginLog.setUserId(userId);
             loginLog.setUsername(command.getUsername());
-            loginLog.setLoginType(firstText(command.getRealm(), response == null ? "PASSWORD" : response.getRealm()));
+            loginLog.setLoginType(firstText(command.getRealm(), loginType));
             loginLog.setIp(command.getClientIp());
             loginLog.setLocation(resolveLocation(command.getClientIp()));
-            loginLog.setBrowser(truncate(firstText(command.getUserAgent(), "未知"), 100));
+            loginLog.setBrowser(truncate(firstText(command.getUserAgent(), "未知"), LOGIN_LOG_TEXT_LIMIT));
             loginLog.setOs("未知");
-            loginLog.setStatus(success ? 1 : 0);
-            loginLog.setMsg(success ? CommonCode.SUCCESS.getMessage() : failureMessage);
+            populateLoginResult(loginLog, success, failureMessage);
             loginLog.setLoginTime(LocalDateTime.now());
             logApi.record(loginLog);
         } catch (RuntimeException exception) {
             log.warn("Failed to record login log for {}", command.getUsername(), exception);
         }
+    }
+
+    private void populateLoginResult(SysLoginLogPo loginLog, boolean success, String failureMessage) {
+        if (success) {
+            loginLog.setStatus(1);
+            loginLog.setMsg(CommonCode.SUCCESS.getMessage());
+            return;
+        }
+        loginLog.setStatus(0);
+        loginLog.setMsg(failureMessage);
     }
 
     private String resolveLocation(String clientIp) {
@@ -545,11 +570,17 @@ public class AuthService implements IAuthService {
             return "未知";
         }
         IpLocation location = resolver.resolve(clientIp);
-        return location == null ? "未知" : location.displayText();
+        if (location == null) {
+            return "未知";
+        }
+        return location.displayText();
     }
 
     private String truncate(String value, int maxLength) {
-        return value == null || value.length() <= maxLength ? value : value.substring(0, maxLength);
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 
     private LoginVO buildLoginVO(AuthUserInfo user, IdentityContext identityContext,
@@ -583,7 +614,7 @@ public class AuthService implements IAuthService {
         response.setRealm(firstText(command.getRealm(), user.getRealm()));
         response.setActorType(firstText(command.getActorType(), user.getActorType()));
         response.setPartyType(firstText(command.getPartyType(), user.getPartyType()));
-        response.setPartyId(command.getPartyId() == null ? user.getPartyId() : command.getPartyId());
+        response.setPartyId(firstNonNull(command.getPartyId(), user.getPartyId()));
         response.setAppCode(firstText(command.getAppCode(), DEFAULT_APP_CODE));
         response.setPasswordResetRequired(Boolean.TRUE);
         response.setLoginAction("CHANGE_PASSWORD");
@@ -646,9 +677,12 @@ public class AuthService implements IAuthService {
         Require.isFalse(resolvedTenantId == null && resolvedTenantCode == null, AuthCode.INSTITUTION_REQUIRED);
         LoginTenantProvider provider = loginTenantProvider.getIfAvailable();
         Require.notNull(provider, AuthCode.INSTITUTION_PROVIDER_UNAVAILABLE);
-        LoginTenantVO tenant = resolvedTenantId != null
-                ? provider.getEnabledByUserAndTenantId(userId, resolvedTenantId)
-                : provider.getEnabledByUserAndTenantCode(userId, resolvedTenantCode);
+        LoginTenantVO tenant;
+        if (resolvedTenantId != null) {
+            tenant = provider.getEnabledByUserAndTenantId(userId, resolvedTenantId);
+        } else {
+            tenant = provider.getEnabledByUserAndTenantCode(userId, resolvedTenantCode);
+        }
         Require.notNull(tenant, AuthCode.INSTITUTION_ACCESS_DENIED);
         Require.notNull(tenant.getMemberId(), AuthCode.INSTITUTION_MEMBER_REQUIRED);
         return tenant;
@@ -669,7 +703,10 @@ public class AuthService implements IAuthService {
 
     private String firstText(String preferred, String fallback) {
         String value = normalize(preferred);
-        return value != null ? value : normalize(fallback);
+        if (value != null) {
+            return value;
+        }
+        return normalize(fallback);
     }
 
     private String loginAttemptKey(String realm, String username) {
@@ -677,7 +714,17 @@ public class AuthService implements IAuthService {
     }
 
     private String normalize(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private <T> T firstNonNull(T preferred, T fallback) {
+        if (preferred != null) {
+            return preferred;
+        }
+        return fallback;
     }
 
     private Long resolveLong(String value, Long fallback) {

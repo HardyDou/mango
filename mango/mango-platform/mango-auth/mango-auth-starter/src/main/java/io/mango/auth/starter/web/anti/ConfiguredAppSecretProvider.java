@@ -1,5 +1,6 @@
 package io.mango.auth.starter.web.anti;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.core.anti.AppSecretProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,8 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The configuration object is an intentionally shared Spring Boot binding target")
 public class ConfiguredAppSecretProvider implements AppSecretProvider {
 
     private final AntiReplayProperties properties;

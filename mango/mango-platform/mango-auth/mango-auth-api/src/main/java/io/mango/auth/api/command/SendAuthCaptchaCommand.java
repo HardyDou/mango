@@ -14,6 +14,8 @@ import lombok.Data;
 @Schema(description = "认证验证码发送命令")
 public class SendAuthCaptchaCommand {
 
+    private static final long DEFAULT_EXPIRE_SECONDS = 300L;
+
     @Schema(description = "验证码类型，例如 SMS、EMAIL", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "验证码类型不能为空")
     private AuthCaptchaType type;
@@ -30,7 +32,7 @@ public class SendAuthCaptchaCommand {
 
     @Schema(description = "有效期，单位秒，默认300")
     @Positive(message = "有效期必须大于0")
-    private Long expireSeconds = 300L;
+    private Long expireSeconds = DEFAULT_EXPIRE_SECONDS;
 
     public enum AuthCaptchaType {
         SMS,

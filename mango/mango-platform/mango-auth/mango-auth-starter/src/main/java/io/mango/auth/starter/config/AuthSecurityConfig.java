@@ -1,5 +1,6 @@
 package io.mango.auth.starter.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.core.constant.AuthConstant;
 import io.mango.auth.core.store.TokenRevocationStore;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -47,6 +48,8 @@ import java.io.IOException;
 @Configuration
 @RequiredArgsConstructor
 @EnableConfigurationProperties({AuthSecurityProperties.class, AuthAccessProperties.class})
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Security configuration retains intentionally shared Spring configuration collaborators")
 public class AuthSecurityConfig {
 
     private final ITokenProvider tokenService;

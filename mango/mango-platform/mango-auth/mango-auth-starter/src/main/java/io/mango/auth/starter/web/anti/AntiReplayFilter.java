@@ -1,6 +1,7 @@
 package io.mango.auth.starter.web.anti;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.core.anti.AppSecretProvider;
 import io.mango.auth.core.anti.IdempotencyGuard;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
@@ -41,6 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The ObjectMapper is an intentionally shared, thread-safe Spring collaborator")
 public class AntiReplayFilter extends OncePerRequestFilter {
 
     private static final long MAX_TIMESTAMP_DIFF_MS = 5 * 60 * 1000;
@@ -71,43 +75,79 @@ public class AntiReplayFilter extends OncePerRequestFilter {
             return;
         }
 
-        HttpServletRequest requestToUse = request;
-        String signAlgo = request.getHeader(HEADER_SIGN_ALGO);
-        String appKey = request.getHeader(HEADER_APP_KEY);
-        String sign = request.getHeader(HEADER_SIGN);
-        if (signAlgo != null && appKey != null && sign != null) {
-            CachedBodyRequestWrapper cachedRequest = new CachedBodyRequestWrapper(request);
-            String secret = secretCache.computeIfAbsent(appKey, appSecretProvider::findSecret);
-            if (!signatureValidator.validate(signAlgo, appKey, secret,
-                    timestamp == null ? "" : timestamp, cachedRequest.bodyText(), sign)) {
-                log.warn("Signature validation failed: appKey={}", appKey);
-                writeError(response, HttpStatus.UNAUTHORIZED.value(), AuthCode.REQUEST_SIGNATURE_INVALID);
-                return;
-            }
-            requestToUse = cachedRequest;
+        HttpServletRequest requestToUse = validateSignature(request, response, timestamp);
+        if (requestToUse == null) {
+            return;
         }
 
-        String idempotencyKey = writeMethod(request.getMethod()) ? request.getHeader(HEADER_IDEM_KEY) : null;
+        String idempotencyKey = resolveIdempotencyKey(request);
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             filterChain.doFilter(requestToUse, response);
             return;
         }
         if (!idempotencyGuard.tryAcquire(idempotencyKey)) {
-            String cached = idempotencyGuard.getResponse(idempotencyKey);
-            if (cached != null && !IDEMPOTENCY_PROCESSING.equals(cached)) {
-                response.setStatus(HttpStatus.OK.value());
-                response.setContentType("application/json");
-                response.getWriter().write(cached);
-            } else {
-                writeError(response, HttpStatus.CONFLICT.value(), AuthCode.DUPLICATE_REQUEST);
-            }
+            writeDuplicateResponse(response, idempotencyKey);
             return;
         }
 
+        filterIdempotentRequest(requestToUse, response, filterChain, idempotencyKey);
+    }
+
+    private HttpServletRequest validateSignature(HttpServletRequest request,
+                                                 HttpServletResponse response,
+                                                 String timestamp) throws IOException {
+        String signAlgo = request.getHeader(HEADER_SIGN_ALGO);
+        String appKey = request.getHeader(HEADER_APP_KEY);
+        String sign = request.getHeader(HEADER_SIGN);
+        if (!hasSignatureHeaders(signAlgo, appKey, sign)) {
+            return request;
+        }
+
+        CachedBodyRequestWrapper cachedRequest = new CachedBodyRequestWrapper(request);
+        String secret = secretCache.computeIfAbsent(appKey, appSecretProvider::findSecret);
+        String signatureTimestamp = timestamp;
+        if (signatureTimestamp == null) {
+            signatureTimestamp = "";
+        }
+        if (signatureValidator.validate(signAlgo, appKey, secret,
+                signatureTimestamp, cachedRequest.bodyText(), sign)) {
+            return cachedRequest;
+        }
+        log.warn("Signature validation failed: appKey={}", appKey);
+        writeError(response, HttpStatus.UNAUTHORIZED.value(), AuthCode.REQUEST_SIGNATURE_INVALID);
+        return null;
+    }
+
+    private boolean hasSignatureHeaders(String algorithm, String appKey, String signature) {
+        return algorithm != null && appKey != null && signature != null;
+    }
+
+    private String resolveIdempotencyKey(HttpServletRequest request) {
+        if (!writeMethod(request.getMethod())) {
+            return null;
+        }
+        return request.getHeader(HEADER_IDEM_KEY);
+    }
+
+    private void writeDuplicateResponse(HttpServletResponse response, String idempotencyKey) throws IOException {
+        String cached = idempotencyGuard.getResponse(idempotencyKey);
+        if (cached != null && !IDEMPOTENCY_PROCESSING.equals(cached)) {
+            response.setStatus(HttpStatus.OK.value());
+            response.setContentType("application/json");
+            response.getWriter().write(cached);
+            return;
+        }
+        writeError(response, HttpStatus.CONFLICT.value(), AuthCode.DUPLICATE_REQUEST);
+    }
+
+    private void filterIdempotentRequest(HttpServletRequest request,
+                                         HttpServletResponse response,
+                                         FilterChain filterChain,
+                                         String idempotencyKey) throws ServletException, IOException {
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
         try {
-            filterChain.doFilter(requestToUse, responseWrapper);
-            if (responseWrapper.getStatus() >= 200 && responseWrapper.getStatus() < 300) {
+            filterChain.doFilter(request, responseWrapper);
+            if (HttpStatusCode.valueOf(responseWrapper.getStatus()).is2xxSuccessful()) {
                 idempotencyGuard.saveResponse(idempotencyKey,
                         new String(responseWrapper.getContentAsByteArray(), responseCharset(responseWrapper)));
             } else {
@@ -153,7 +193,10 @@ public class AntiReplayFilter extends OncePerRequestFilter {
 
     private Charset responseCharset(ContentCachingResponseWrapper response) {
         String encoding = response.getCharacterEncoding();
-        return encoding == null ? StandardCharsets.UTF_8 : Charset.forName(encoding);
+        if (encoding == null) {
+            return StandardCharsets.UTF_8;
+        }
+        return Charset.forName(encoding);
     }
 
     private void writeError(HttpServletResponse response, int status, AuthCode code) throws IOException {
@@ -207,7 +250,10 @@ public class AntiReplayFilter extends OncePerRequestFilter {
 
         private Charset requestCharset() {
             String encoding = getCharacterEncoding();
-            return encoding == null ? StandardCharsets.UTF_8 : Charset.forName(encoding);
+            if (encoding == null) {
+                return StandardCharsets.UTF_8;
+            }
+            return Charset.forName(encoding);
         }
     }
 }

@@ -20,7 +20,10 @@ public final class AuthApiResponseAdapter {
     }
 
     public static <T> T nullableData(R<T> response) {
-        return response != null && response.isSuccess() ? response.getData() : null;
+        if (response == null || !response.isSuccess()) {
+            return null;
+        }
+        return response.getData();
     }
 
     public static <T> T requireWecomConfig(R<T> response) {

@@ -136,7 +136,7 @@ public class AuthController implements AuthApi {
     private void enrichClientContext(LoginCommand command) {
         HttpServletRequest request = currentRequest();
         command.setClientIp(resolveClientIp(request));
-        command.setUserAgent(truncate(request.getHeader("User-Agent"), 512));
+        command.setUserAgent(truncate(request.getHeader("User-Agent"), ClientContextLimits.USER_AGENT_LENGTH));
     }
 
     private HttpServletRequest currentRequest() {
@@ -173,5 +173,12 @@ public class AuthController implements AuthApi {
 
     private String truncate(String value, int maxLength) {
         return value == null || value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
+    private static final class ClientContextLimits {
+        private static final int USER_AGENT_LENGTH = 512;
+
+        private ClientContextLimits() {
+        }
     }
 }

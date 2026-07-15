@@ -1,5 +1,6 @@
 package io.mango.auth.core.store;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.api.enums.AuthCode;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvStore;
@@ -15,10 +16,22 @@ import java.util.Base64;
  */
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The KV store is an intentionally shared Spring infrastructure collaborator")
 public class PasswordResetTicketStore {
 
     private static final String KEY_PREFIX = "auth:password-reset-ticket:";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int TICKET_RANDOM_BYTES = 32;
+    private static final int PAYLOAD_PART_COUNT = 8;
+    private static final int USER_ID_INDEX = 0;
+    private static final int TENANT_ID_INDEX = 1;
+    private static final int TENANT_CODE_INDEX = 2;
+    private static final int APP_CODE_INDEX = 3;
+    private static final int REALM_INDEX = 4;
+    private static final int ACTOR_TYPE_INDEX = 5;
+    private static final int PARTY_TYPE_INDEX = 6;
+    private static final int PARTY_ID_INDEX = 7;
 
     private final IKvStore kvStore;
 
@@ -26,7 +39,7 @@ public class PasswordResetTicketStore {
     private long ticketTtlSeconds;
 
     public String issue(TicketPayload payload) {
-        byte[] bytes = new byte[32];
+        byte[] bytes = new byte[TICKET_RANDOM_BYTES];
         SECURE_RANDOM.nextBytes(bytes);
         String ticket = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         kvStore.set(key(ticket), payload.serialize(), ticketTtlSeconds);
@@ -64,11 +77,17 @@ public class PasswordResetTicketStore {
     }
 
     private static Long parseNullableLong(String value) {
-        return value == null || value.isBlank() ? null : parseLong(value);
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return parseLong(value);
     }
 
     private static String emptyToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 
     private String key(String ticket) {
@@ -100,16 +119,25 @@ public class PasswordResetTicketStore {
                 return Require.fail(AuthCode.PASSWORD_RESET_TICKET_INVALID);
             }
             String[] parts = value.split("\\|", -1);
-            if (parts.length != 8) {
+            if (parts.length != PAYLOAD_PART_COUNT) {
                 return Require.fail(AuthCode.PASSWORD_RESET_TICKET_INVALID);
             }
-            return new TicketPayload(parseLong(parts[0]), emptyToNull(parts[1]), emptyToNull(parts[2]),
-                    emptyToNull(parts[3]), emptyToNull(parts[4]), emptyToNull(parts[5]), emptyToNull(parts[6]),
-                    parseNullableLong(parts[7]));
+            return new TicketPayload(
+                    parseLong(parts[USER_ID_INDEX]),
+                    emptyToNull(parts[TENANT_ID_INDEX]),
+                    emptyToNull(parts[TENANT_CODE_INDEX]),
+                    emptyToNull(parts[APP_CODE_INDEX]),
+                    emptyToNull(parts[REALM_INDEX]),
+                    emptyToNull(parts[ACTOR_TYPE_INDEX]),
+                    emptyToNull(parts[PARTY_TYPE_INDEX]),
+                    parseNullableLong(parts[PARTY_ID_INDEX]));
         }
 
         private static String value(Object value) {
-            return value == null ? "" : String.valueOf(value);
+            if (value == null) {
+                return "";
+            }
+            return String.valueOf(value);
         }
     }
 }

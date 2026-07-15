@@ -1,6 +1,7 @@
 package io.mango.auth.starter.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
@@ -28,6 +29,8 @@ import java.util.Map;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The ObjectMapper is an intentionally shared, thread-safe Spring collaborator")
 public class LogoutHeaderCompatibilityFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
@@ -45,11 +48,14 @@ public class LogoutHeaderCompatibilityFilter extends OncePerRequestFilter {
     }
 
     private boolean requiresCompatibilityBody(HttpServletRequest request) {
-        return "POST".equalsIgnoreCase(request.getMethod())
-                && "/auth/logout".equals(request.getRequestURI())
-                && request.getContentLengthLong() <= 0
-                && request.getHeader("Authorization") != null
-                && !request.getHeader("Authorization").isBlank();
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        if (!"/auth/logout".equals(request.getRequestURI()) || request.getContentLengthLong() > 0) {
+            return false;
+        }
+        String authorization = request.getHeader("Authorization");
+        return authorization != null && !authorization.isBlank();
     }
 
     private static final class JsonBodyRequestWrapper extends HttpServletRequestWrapper {

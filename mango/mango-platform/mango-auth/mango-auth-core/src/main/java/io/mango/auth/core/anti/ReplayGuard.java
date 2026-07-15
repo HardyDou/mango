@@ -1,5 +1,6 @@
 package io.mango.auth.core.anti;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The KV store is an intentionally shared Spring infrastructure collaborator")
 public class ReplayGuard {
 
     private static final long NONCE_TTL_SECONDS = 600; // 10 分钟

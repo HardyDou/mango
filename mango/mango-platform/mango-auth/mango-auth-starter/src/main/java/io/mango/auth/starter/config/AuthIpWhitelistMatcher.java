@@ -15,7 +15,10 @@ final class AuthIpWhitelistMatcher {
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     boolean matches(AuthAccessProperties.IpWhitelist whitelist, String method, String path, String clientIp) {
-        if (whitelist == null || !whitelist.isEnabled() || blank(clientIp)) {
+        if (whitelist == null || !whitelist.isEnabled()) {
+            return false;
+        }
+        if (blank(clientIp)) {
             return false;
         }
         List<AuthAccessProperties.Rule> rules = whitelist.getRules();
@@ -23,17 +26,22 @@ final class AuthIpWhitelistMatcher {
     }
 
     private boolean matchesRule(AuthAccessProperties.Rule rule, String method, String path, String clientIp) {
-        return rule != null
-                && !blank(rule.getPathPattern())
-                && matchesMethod(rule.getMethods(), method)
-                && pathMatcher.match(rule.getPathPattern(), path)
-                && rule.getCidrs() != null
-                && rule.getCidrs().stream().anyMatch(cidr -> matchesCidr(cidr, clientIp));
+        if (rule == null || blank(rule.getPathPattern())) {
+            return false;
+        }
+        if (!matchesMethod(rule.getMethods(), method)
+                || !pathMatcher.match(rule.getPathPattern(), path)) {
+            return false;
+        }
+        List<String> cidrs = rule.getCidrs();
+        return cidrs != null && cidrs.stream().anyMatch(cidr -> matchesCidr(cidr, clientIp));
     }
 
     private boolean matchesMethod(List<String> methods, String method) {
-        return methods == null || methods.isEmpty()
-                || methods.stream().anyMatch(value -> "ALL".equalsIgnoreCase(value)
+        if (methods == null || methods.isEmpty()) {
+            return true;
+        }
+        return methods.stream().anyMatch(value -> "ALL".equalsIgnoreCase(value)
                 || value.equalsIgnoreCase(method));
     }
 
@@ -42,7 +50,7 @@ final class AuthIpWhitelistMatcher {
             return false;
         }
         try {
-            String normalizedIp = "0:0:0:0:0:0:0:1".equals(clientIp.trim()) ? "::1" : clientIp.trim();
+            String normalizedIp = normalizeLoopback(clientIp);
             String normalizedCidr = cidr.trim();
             if (!normalizedCidr.contains("/")) {
                 return InetAddress.getByName(normalizedCidr).equals(InetAddress.getByName(normalizedIp));
@@ -55,13 +63,27 @@ final class AuthIpWhitelistMatcher {
             if (networkBytes.length != clientBytes.length || prefix < 0 || prefix > bits) {
                 return false;
             }
-            BigInteger mask = prefix == 0 ? BigInteger.ZERO
-                    : BigInteger.ONE.shiftLeft(bits).subtract(BigInteger.ONE)
-                    .shiftRight(bits - prefix).shiftLeft(bits - prefix);
+            BigInteger mask = subnetMask(prefix, bits);
             return new BigInteger(1, networkBytes).and(mask).equals(new BigInteger(1, clientBytes).and(mask));
         } catch (UnknownHostException | NumberFormatException exception) {
             return false;
         }
+    }
+
+    private String normalizeLoopback(String clientIp) {
+        String normalizedIp = clientIp.trim();
+        if ("0:0:0:0:0:0:0:1".equals(normalizedIp)) {
+            return "::1";
+        }
+        return normalizedIp;
+    }
+
+    private BigInteger subnetMask(int prefix, int bits) {
+        if (prefix == 0) {
+            return BigInteger.ZERO;
+        }
+        return BigInteger.ONE.shiftLeft(bits).subtract(BigInteger.ONE)
+                .shiftRight(bits - prefix).shiftLeft(bits - prefix);
     }
 
     private boolean blank(String value) {

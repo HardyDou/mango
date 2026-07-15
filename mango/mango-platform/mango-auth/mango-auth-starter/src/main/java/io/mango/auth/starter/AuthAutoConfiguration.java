@@ -34,16 +34,16 @@ import java.util.concurrent.Executors;
 @AutoConfigureBefore(name = "io.mango.authorization.starter.autoconfigure.SecurityAutoConfiguration")
 @EnableConfigurationProperties({AntiReplayProperties.class, AuthSecurityProperties.class})
 @ComponentScan({
-        "io.mango.auth.core.service",
-        "io.mango.auth.core.service.impl",
-        "io.mango.auth.core.config",
-        "io.mango.auth.core.store",
-        "io.mango.auth.core.anti",
-        "io.mango.auth.core.init",
-        "io.mango.auth.starter.controller",
-        "io.mango.auth.starter.notice",
-        "io.mango.auth.starter.resource",
-        "io.mango.auth.starter.web"
+    "io.mango.auth.core.service",
+    "io.mango.auth.core.service.impl",
+    "io.mango.auth.core.config",
+    "io.mango.auth.core.store",
+    "io.mango.auth.core.anti",
+    "io.mango.auth.core.init",
+    "io.mango.auth.starter.controller",
+    "io.mango.auth.starter.notice",
+    "io.mango.auth.starter.resource",
+    "io.mango.auth.starter.web"
 })
 @Import(AuthSecurityConfig.class)
 public class AuthAutoConfiguration {
