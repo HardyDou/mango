@@ -5,7 +5,7 @@ import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
-import io.mango.authorization.core.entity.ApiResource;
+import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-@DisplayName("ApiResourceServiceImpl 集成测试")
+@DisplayName("ApiResourceService 集成测试")
 class ApiResourceServiceImplIntegrationTest {
 
     @Autowired
@@ -54,7 +54,7 @@ class ApiResourceServiceImplIntegrationTest {
     private ApiResourceMapper apiResourceMapper;
 
     @Autowired
-    private ApiResourceServiceImpl service;
+    private ApiResourceService service;
 
     @BeforeEach
     void setUp() {
@@ -72,11 +72,13 @@ class ApiResourceServiceImplIntegrationTest {
                     handler_method varchar(128),
                     description varchar(255),
                     status tinyint not null default 1,
+                    tenant_id varchar(64) not null default 'default',
                     create_time timestamp default current_timestamp,
                     update_time timestamp default current_timestamp,
                     deleted tinyint not null default 0
                 )
                 """);
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
         service.refreshRuntimeCache();
     }
 
@@ -131,6 +133,11 @@ class ApiResourceServiceImplIntegrationTest {
         assertThat(result.created()).isEqualTo(1);
         assertThat(result.updated()).isEqualTo(1);
         assertThat(apiResourceMapper.selectById(20L).getStatus()).isZero();
+        assertThat(apiResourceMapper.selectList(null))
+                .filteredOn(resource -> "mango-notice".equals(resource.getModuleName()))
+                .singleElement()
+                .extracting(ApiResourceEntity::getTenantId)
+                .isEqualTo("default");
         assertThat(decision.matched()).isTrue();
         assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.LOGIN);
         assertThat(decision.permissionCode()).isNull();
@@ -231,7 +238,7 @@ class ApiResourceServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = ApiResourceMapper.class)
-    @Import(ApiResourceServiceImpl.class)
+    @Import(ApiResourceService.class)
     static class TestConfig {
     }
 }

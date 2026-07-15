@@ -1,2 +1,0 @@
--- V73__payment_order_query_permission.sql
--- Payment menus, button permissions, runtime config, package bindings and default role bindings are registered by mango-payment-starter AUTH_MENU resource payment-common-menu.json.

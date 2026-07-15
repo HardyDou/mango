@@ -2,6 +2,7 @@ package io.mango.file.preview.starter;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
@@ -22,7 +23,7 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        apiResourceApi.registerApiResources(List.of(
+        apiResourceApi.registerApiResources(new ApiResourceRegisterRequest(List.of(
                 publicGet("/onlinePreview", "在线预览页面"),
                 publicGet("/picturesPreview", "图片预览页面"),
                 publicGet("/getCorsFile", "读取跨域预览文件"),
@@ -38,7 +39,7 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner {
                 publicGet("/xlsx/**", "Excel 预览静态资源"),
                 publicGet("/static/**", "预览扩展静态资源"),
                 publicGet("/favicon.ico", "预览站点图标")
-        ));
+        )));
     }
 
     private static ApiResourceRegisterCommand publicGet(String pathPattern, String description) {

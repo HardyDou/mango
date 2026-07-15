@@ -17,6 +17,8 @@ public interface IAppModuleService {
 
     Boolean disable(String appCode, String moduleCode);
 
+    Boolean disableRequired(String appCode, String moduleCode);
+
     Boolean disableByBindingId(Long bindingId);
 
     Long findBindingId(String appCode, String moduleCode);

@@ -2,6 +2,10 @@ package io.mango.authorization.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,22 +20,29 @@ public class AppModuleCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "绑定ID，创建时为空")
+    @Positive
     private Long bindingId;
 
     @NotBlank
+    @Size(max = 64)
     @Schema(description = "逻辑应用编码")
     private String appCode;
 
     @NotBlank
+    @Size(max = 100)
     @Schema(description = "能力模块编码，来自 module.properties 的 module-name")
     private String moduleCode;
 
     @Schema(description = "能力模块名称")
+    @Size(max = 100)
     private String moduleName;
 
     @Schema(description = "状态：0-停用，1-启用")
+    @Min(0)
+    @Max(1)
     private Integer status;
 
     @Schema(description = "排序号")
+    @Min(0)
     private Integer sort;
 }

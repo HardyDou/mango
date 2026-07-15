@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
@@ -42,8 +43,8 @@ class RealtimeWebSocketResourceRegistrarTest {
         private final List<ApiResourceRegisterCommand> resources = new ArrayList<>();
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
-            this.resources.addAll(resources);
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
+            this.resources.addAll(request.getResources());
             return R.ok(ApiResourceRegisterResultVO.empty());
         }
 

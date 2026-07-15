@@ -4,6 +4,9 @@ import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.vo.AppRuntimeDescriptorVO;
 import io.mango.authorization.api.vo.AppVO;
 import io.mango.common.result.R;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 
@@ -16,17 +19,17 @@ public interface AppApi {
 
     R<List<AppVO>> list();
 
-    R<AppVO> get(Long appId);
+    R<AppVO> get(@Positive Long appId);
 
     R<List<AppVO>> runtime();
 
-    R<AppRuntimeDescriptorVO> runtimeDescriptor(String appCode);
+    R<AppRuntimeDescriptorVO> runtimeDescriptor(@NotBlank String appCode);
 
-    R<AppVO> runtimeDetail(String appCode);
+    R<AppVO> runtimeDetail(@NotBlank String appCode);
 
-    R<Long> create(AppCommand command);
+    R<Long> create(@Valid AppCommand command);
 
-    R<Boolean> update(AppCommand command);
+    R<Boolean> update(@Valid AppCommand command);
 
-    R<Boolean> delete(Long appId);
+    R<Boolean> delete(@Positive Long appId);
 }

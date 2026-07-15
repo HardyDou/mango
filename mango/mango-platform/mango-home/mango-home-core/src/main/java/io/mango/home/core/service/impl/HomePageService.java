@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
@@ -403,7 +403,7 @@ public class HomePageService implements IHomePageService {
                 .withRealm(MangoContextHolder.get().realm())
                 .withActorType(MangoContextHolder.get().actorType())
                 .withParty(MangoContextHolder.get().partyType(), MangoContextHolder.get().partyId());
-        AuthorizationSnapshot snapshot = provider.load(query);
+        AuthorizationSnapshotVO snapshot = provider.load(query);
         return snapshot == null ? Set.of() : snapshot.roleCodes();
     }
 

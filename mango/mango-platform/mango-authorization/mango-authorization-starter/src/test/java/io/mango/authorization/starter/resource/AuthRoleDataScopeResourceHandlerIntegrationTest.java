@@ -2,11 +2,11 @@ package io.mango.authorization.starter.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.authorization.core.entity.RoleDataScope;
+import io.mango.authorization.api.AuthorizationOrgReferenceProvider;
+import io.mango.authorization.core.entity.RoleDataScopeEntity;
 import io.mango.authorization.core.mapper.RoleDataScopeMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -47,7 +47,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false"
+        "mango.persistence.mybatis-plus.tenant.enabled=true",
+        "mango.persistence.mybatis-plus.tenant.default-tenant-id=1"
 })
 class AuthRoleDataScopeResourceHandlerIntegrationTest {
 
@@ -63,6 +64,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
     @BeforeEach
     void setUp() {
         resetSchema();
+        AuthorizationStarterTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
     @Test
@@ -75,9 +77,9 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
         assertThat(result.getTargetTable()).isEqualTo("authorization_role_data_scope");
         assertThat(result.getTargetId()).isNotNull();
 
-        RoleDataScope scope = scopeMapper.selectById(result.getTargetId());
+        RoleDataScopeEntity scope = scopeMapper.selectById(result.getTargetId());
         assertThat(scope).isNotNull();
-        assertThat(scope.getTenantId()).isEqualTo(1L);
+        assertThat(scope.getTenantId()).isEqualTo("1");
         assertThat(scope.getAppCode()).isEqualTo("internal-admin");
         assertThat(scope.getRoleId()).isEqualTo(1001L);
         assertThat(scope.getResourceCode()).isEqualTo("order");
@@ -100,7 +102,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
         ResourceSyncResult updated = handler.upsert(update);
 
         assertThat(updated.getTargetId()).isEqualTo(created.getTargetId());
-        RoleDataScope scope = scopeMapper.selectById(created.getTargetId());
+        RoleDataScopeEntity scope = scopeMapper.selectById(created.getTargetId());
         assertThat(scope.getScopeValues()).isEqualTo("[\"30\"]");
         assertThat(scope.getIncludeChildren()).isFalse();
         assertThat(scope.getStatus()).isZero();
@@ -125,7 +127,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
 
         ResourceSyncResult result = handler.upsert(resource);
 
-        RoleDataScope scope = scopeMapper.selectById(result.getTargetId());
+        RoleDataScopeEntity scope = scopeMapper.selectById(result.getTargetId());
         assertThat(scope.getScopeValues()).isEqualTo("[\"10\",\"20\"]");
     }
 
@@ -149,7 +151,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
         ResourceSyncResult disabled = handler.disable(resource());
 
         assertThat(disabled.getTargetId()).isEqualTo(created.getTargetId());
-        RoleDataScope scope = scopeMapper.selectById(created.getTargetId());
+        RoleDataScopeEntity scope = scopeMapper.selectById(created.getTargetId());
         assertThat(scope.getStatus()).isZero();
         assertThat(countScopes()).isEqualTo(1L);
     }
@@ -162,7 +164,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
 
         ResourceSyncResult result = handler.upsert(resource);
 
-        RoleDataScope scope = scopeMapper.selectById(result.getTargetId());
+        RoleDataScopeEntity scope = scopeMapper.selectById(result.getTargetId());
         assertThat(scope.getStatus()).isZero();
     }
 
@@ -264,13 +266,22 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
     }
 
     @Configuration
-    @MapperScan(basePackageClasses = {RoleMapper.class, SysOrgMapper.class})
+    @MapperScan(basePackageClasses = RoleMapper.class)
     @Import(AuthRoleDataScopeResourceHandler.class)
     static class TestConfig {
 
         @Bean
         ObjectMapper objectMapper() {
             return new ObjectMapper();
+        }
+
+        @Bean
+        AuthorizationOrgReferenceProvider orgReferenceProvider(JdbcTemplate jdbcTemplate) {
+            return (tenantId, orgCode) -> jdbcTemplate.query("""
+                            select id from sys_org where tenant_id = ? and org_code = ? limit 1
+                            """,
+                    (rs, rowNum) -> rs.getLong(1), tenantId, orgCode)
+                    .stream().findFirst().orElse(null);
         }
     }
 }

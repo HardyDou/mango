@@ -12,13 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("JWT token performance baseline tests")
-class JjwtTokenServicePerformanceBaselineTest {
+class JjwtTokenProviderPerformanceBaselineTest {
 
     private ITokenProvider tokenService;
 
     @BeforeEach
     void setUp() {
-        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
+        JjwtTokenProvider impl = new JjwtTokenProvider(null);
         setField(impl, "newSecret", "mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits");
         setField(impl, "legacySecret", "");
         setField(impl, "accessTokenValiditySeconds", 7200L);

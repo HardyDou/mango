@@ -2,11 +2,12 @@ package io.mango.authorization.resource.sync;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.annotation.ApiAccess;
-import io.mango.authorization.api.annotation.InternalApi;
-import io.mango.authorization.api.annotation.LoginApi;
+import io.mango.authorization.api.annotation.InternalAccess;
+import io.mango.authorization.api.annotation.LoginAccess;
 import io.mango.authorization.api.annotation.PermissionAccess;
-import io.mango.authorization.api.annotation.PublicApi;
+import io.mango.authorization.api.annotation.PublicAccess;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
@@ -146,9 +147,10 @@ class ApiResourceSyncRunnerTest {
         static final List<ApiResourceRegisterCommand> RESOURCES = new ArrayList<>();
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
-            RESOURCES.addAll(resources);
-            return R.ok(new ApiResourceRegisterResultVO(resources.size(), resources.size(), 0));
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
+            RESOURCES.addAll(request.getResources());
+            return R.ok(new ApiResourceRegisterResultVO(
+                    request.getResources().size(), request.getResources().size(), 0));
         }
 
         @Override
@@ -170,7 +172,7 @@ class ApiResourceSyncRunnerTest {
             return "ok";
         }
 
-        @LoginApi(desc = "Login resource")
+        @LoginAccess(desc = "Login resource")
         @GetMapping("/resource-sync/login")
         String login() {
             return "ok";
@@ -191,7 +193,7 @@ class ApiResourceSyncRunnerTest {
             return "ok";
         }
 
-        @PublicApi
+        @PublicAccess
         @GetMapping("/resource-sync/public")
         String publicResource() {
             return "ok";
@@ -202,14 +204,14 @@ class ApiResourceSyncRunnerTest {
             return "ok";
         }
 
-        @InternalApi
+        @InternalAccess
         @GetMapping("/resource-sync/internal")
         String internal() {
             return "ok";
         }
     }
 
-    @PublicApi
+    @PublicAccess
     @RestController
     static class TypeLevelPublicController {
 

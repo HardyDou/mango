@@ -59,8 +59,11 @@ class AuthMenuResourceHandlerTest {
     }
 
     @Test
-    void authMenuDependsOnAuthRoleForDefaultRoleBindings() {
-        assertThat(handler.dependsOnResourceTypes()).containsExactly(ResourceTypes.AUTH_ROLE);
+    void authMenuDependsOnRequiredAuthorizationMasterData() {
+        assertThat(handler.dependsOnResourceTypes()).containsExactly(
+                ResourceTypes.AUTH_APP,
+                ResourceTypes.AUTH_MENU_PACKAGE,
+                ResourceTypes.AUTH_ROLE);
     }
 
     @Test

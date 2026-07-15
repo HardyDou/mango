@@ -1,9 +1,9 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.authorization.core.entity.Menu;
-import io.mango.authorization.core.entity.Role;
-import io.mango.authorization.core.entity.RoleMenu;
+import io.mango.authorization.core.entity.MenuEntity;
+import io.mango.authorization.core.entity.RoleEntity;
+import io.mango.authorization.core.entity.RoleMenuEntity;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
@@ -48,35 +48,35 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
     @Override
     public void provision(TenantProvisionContext context) {
         tenantAppBindingService.ensureEnabled(context.tenantId(), DEFAULT_APP_CODE);
-        Role role = ensureAdminRole(context);
+        RoleEntity role = ensureAdminRole(context);
         grantTenantAdminDefaultMenus(context.tenantId(), role.getRoleId());
     }
 
     @Override
     public Optional<String> check(Long tenantId) {
-        Long roleCount = roleMapper.selectCount(new LambdaQueryWrapper<Role>()
-                .eq(Role::getTenantId, tenantId));
+        Long roleCount = roleMapper.selectCount(new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, tenantId));
         if (roleCount != null && roleCount > 0) {
             return Optional.of("机构已有关联角色/权限数据，不能直接删除");
         }
-        Long roleMenuCount = roleMenuMapper.selectCount(new LambdaQueryWrapper<RoleMenu>()
-                .eq(RoleMenu::getTenantId, tenantId));
+        Long roleMenuCount = roleMenuMapper.selectCount(new LambdaQueryWrapper<RoleMenuEntity>()
+                .eq(RoleMenuEntity::getTenantId, tenantId));
         if (roleMenuCount != null && roleMenuCount > 0) {
             return Optional.of("机构已有关联角色菜单数据，不能直接删除");
         }
         return Optional.empty();
     }
 
-    private Role ensureAdminRole(TenantProvisionContext context) {
-        Role role = roleMapper.selectOne(new LambdaQueryWrapper<Role>()
-                .eq(Role::getTenantId, context.tenantId())
-                .eq(Role::getAppCode, DEFAULT_APP_CODE)
-                .eq(Role::getRoleCode, TENANT_ADMIN_ROLE)
+    private RoleEntity ensureAdminRole(TenantProvisionContext context) {
+        RoleEntity role = roleMapper.selectOne(new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, context.tenantId())
+                .eq(RoleEntity::getAppCode, DEFAULT_APP_CODE)
+                .eq(RoleEntity::getRoleCode, TENANT_ADMIN_ROLE)
                 .last("LIMIT 1"));
         if (role != null) {
             return role;
         }
-        role = new Role();
+        role = new RoleEntity();
         role.setTenantId(context.tenantId());
         role.setAppCode(DEFAULT_APP_CODE);
         role.setRealm(DEFAULT_REALM);
@@ -94,23 +94,23 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
     }
 
     private void grantTenantAdminDefaultMenus(Long tenantId, Long roleId) {
-        menuMapper.selectList(new LambdaQueryWrapper<Menu>()
-                        .eq(Menu::getAppCode, DEFAULT_APP_CODE)
-                        .eq(Menu::getStatus, 1)
-                        .eq(Menu::getDelFlag, 0)
-                        .in(Menu::getMenuId, TENANT_ADMIN_DEFAULT_MENU_IDS))
+        menuMapper.selectList(new LambdaQueryWrapper<MenuEntity>()
+                        .eq(MenuEntity::getAppCode, DEFAULT_APP_CODE)
+                        .eq(MenuEntity::getStatus, 1)
+                        .eq(MenuEntity::getDelFlag, 0)
+                        .in(MenuEntity::getId, TENANT_ADMIN_DEFAULT_MENU_IDS))
                 .forEach(menu -> ensureRoleMenu(tenantId, roleId, menu.getMenuId()));
     }
 
     private void ensureRoleMenu(Long tenantId, Long roleId, Long menuId) {
-        Long count = roleMenuMapper.selectCount(new LambdaQueryWrapper<RoleMenu>()
-                .eq(RoleMenu::getTenantId, tenantId)
-                .eq(RoleMenu::getRoleId, roleId)
-                .eq(RoleMenu::getMenuId, menuId));
+        Long count = roleMenuMapper.selectCount(new LambdaQueryWrapper<RoleMenuEntity>()
+                .eq(RoleMenuEntity::getTenantId, tenantId)
+                .eq(RoleMenuEntity::getRoleId, roleId)
+                .eq(RoleMenuEntity::getMenuId, menuId));
         if (count != null && count > 0) {
             return;
         }
-        RoleMenu roleMenu = new RoleMenu();
+        RoleMenuEntity roleMenu = new RoleMenuEntity();
         roleMenu.setTenantId(tenantId);
         roleMenu.setRoleId(roleId);
         roleMenu.setMenuId(menuId);

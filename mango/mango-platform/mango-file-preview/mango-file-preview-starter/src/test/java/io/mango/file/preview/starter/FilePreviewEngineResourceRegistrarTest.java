@@ -2,6 +2,7 @@ package io.mango.file.preview.starter;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
@@ -42,9 +43,10 @@ class FilePreviewEngineResourceRegistrarTest {
         private final List<ApiResourceRegisterCommand> resources = new ArrayList<>();
 
         @Override
-        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
-            this.resources.addAll(resources);
-            return R.ok(new ApiResourceRegisterResultVO(resources.size(), resources.size(), 0));
+        public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
+            this.resources.addAll(request.getResources());
+            return R.ok(new ApiResourceRegisterResultVO(
+                    request.getResources().size(), request.getResources().size(), 0));
         }
 
         @Override

@@ -1,6 +1,7 @@
 package io.mango.authorization.starter.resource;
 
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
+import io.mango.authorization.api.query.FrontendModuleRuntimeStrategyQuery;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
@@ -60,7 +61,7 @@ public class FrontendModuleRuntimeStrategyResourceHandler implements ResourceHan
         Long targetId = longField(resource, "targetId");
         StrategyKey key = targetId == null ? toKey(resource) : null;
         Boolean changed = targetId == null
-                ? runtimeStrategyService.disable(key.appCode(), key.moduleCode(), key.deployProfile())
+                ? runtimeStrategyService.disable(toQuery(key))
                 : runtimeStrategyService.disable(targetId);
         return ResourceSyncResult.of(null, TARGET_TABLE,
                 "Frontend module runtime strategy disabled: "
@@ -73,7 +74,7 @@ public class FrontendModuleRuntimeStrategyResourceHandler implements ResourceHan
         Long targetId = longField(resource, "targetId");
         StrategyKey key = targetId == null ? toKey(resource) : null;
         Boolean changed = targetId == null
-                ? runtimeStrategyService.delete(key.appCode(), key.moduleCode(), key.deployProfile())
+                ? runtimeStrategyService.delete(toQuery(key))
                 : runtimeStrategyService.delete(targetId);
         return ResourceSyncResult.of(null, TARGET_TABLE,
                 "Frontend module runtime strategy deleted: "
@@ -99,6 +100,14 @@ public class FrontendModuleRuntimeStrategyResourceHandler implements ResourceHan
                 defaultString(stringField(resource, "moduleCode"), resource.getModuleCode()),
                 requiredString(resource, "deployProfile")
         );
+    }
+
+    private FrontendModuleRuntimeStrategyQuery toQuery(StrategyKey key) {
+        FrontendModuleRuntimeStrategyQuery query = new FrontendModuleRuntimeStrategyQuery();
+        query.setAppCode(key.appCode());
+        query.setModuleCode(key.moduleCode());
+        query.setDeployProfile(key.deployProfile());
+        return query;
     }
 
     private record StrategyKey(String appCode, String moduleCode, String deployProfile) {

@@ -1,7 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
-import io.mango.authorization.core.entity.RoleMenu;
+import io.mango.authorization.core.entity.RoleMenuEntity;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
@@ -79,10 +79,10 @@ class TenantMenuPackageBindingHandlerIntegrationTest {
         handler.bindPackage(2L, 10L);
 
         assertThat(MangoContextHolder.tenantId()).isEqualTo("1");
-        List<RoleMenu> roleMenus = roleMenuMapper.selectList(null);
-        assertThat(roleMenus).extracting(RoleMenu::getTenantId).containsOnly(2L);
-        assertThat(roleMenus).extracting(RoleMenu::getRoleId).containsOnly(20L);
-        assertThat(roleMenus).extracting(RoleMenu::getMenuId).containsExactlyInAnyOrder(100L, 200L);
+        List<RoleMenuEntity> roleMenus = roleMenuMapper.selectList(null);
+        assertThat(roleMenus).extracting(RoleMenuEntity::getTenantId).containsOnly("2");
+        assertThat(roleMenus).extracting(RoleMenuEntity::getRoleId).containsOnly(20L);
+        assertThat(roleMenus).extracting(RoleMenuEntity::getMenuId).containsExactlyInAnyOrder(100L, 200L);
     }
 
     private void resetSchema() {
@@ -145,6 +145,7 @@ class TenantMenuPackageBindingHandlerIntegrationTest {
                     menu_id bigint not null
                 )
                 """);
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
     private void seedRole(Long roleId, Long tenantId, String roleCode) {
@@ -187,9 +188,8 @@ class TenantMenuPackageBindingHandlerIntegrationTest {
     static class TestMenuPackageService implements IMenuPackageService {
 
         @Override
-        public List<io.mango.authorization.api.vo.MenuPackageVO> listPackages(String appCode,
-                                                                              String keyword,
-                                                                              Integer status) {
+        public List<io.mango.authorization.api.vo.MenuPackageVO> listPackages(
+                io.mango.authorization.api.query.MenuPackageQuery query) {
             return List.of();
         }
 

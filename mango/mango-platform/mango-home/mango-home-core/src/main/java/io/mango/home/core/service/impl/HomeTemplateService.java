@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
@@ -406,7 +406,7 @@ public class HomeTemplateService implements IHomeTemplateService {
                 .withRealm(MangoContextHolder.get().realm())
                 .withActorType(MangoContextHolder.get().actorType())
                 .withParty(MangoContextHolder.get().partyType(), query.getOrgId());
-        AuthorizationSnapshot snapshot = provider.load(authorizationQuery);
+        AuthorizationSnapshotVO snapshot = provider.load(authorizationQuery);
         return snapshot == null ? Set.of() : snapshot.roleCodes();
     }
 

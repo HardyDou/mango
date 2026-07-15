@@ -1,1 +1,0 @@
--- Route management menu retirement is handled by Resource Registry AUTH_MENU declarations.

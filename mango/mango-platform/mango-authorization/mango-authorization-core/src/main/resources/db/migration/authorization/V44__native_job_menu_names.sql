@@ -1,1 +1,0 @@
--- Job menus are registered by mango-job-starter AUTH_MENU resource.

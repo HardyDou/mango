@@ -2,6 +2,7 @@ package io.mango.authorization.core.service;
 
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.SaveRoleDataScopeCommand;
+import io.mango.authorization.api.query.EffectiveDataScopeQuery;
 import io.mango.authorization.api.vo.EffectiveDataScopeVO;
 import io.mango.authorization.api.vo.RoleDataScopeVO;
 
@@ -17,6 +18,8 @@ public interface IRoleDataScopeService {
     Boolean save(SaveRoleDataScopeCommand command);
 
     Boolean delete(Long roleId, String resourceCode);
+
+    EffectiveDataScopeVO resolveCurrent(EffectiveDataScopeQuery query);
 
     EffectiveDataScopeVO resolve(AuthorizationQuery query, String resourceCode);
 }

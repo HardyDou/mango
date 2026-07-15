@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Menu Baseline")
+@DisplayName("MenuEntity Baseline")
 class MenuBaselineTest {
 
     private static final String BASELINE_DIR = "menu-baseline/current/";

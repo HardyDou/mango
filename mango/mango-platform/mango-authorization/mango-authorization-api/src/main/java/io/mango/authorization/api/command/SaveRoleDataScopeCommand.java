@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -24,6 +25,7 @@ public class SaveRoleDataScopeCommand implements Serializable {
 
     @Schema(description = "角色 ID")
     @NotNull(message = "角色ID不能为空")
+    @Positive(message = "角色ID必须为正数")
     private Long roleId;
 
     @Schema(description = "资源编码")
@@ -36,10 +38,12 @@ public class SaveRoleDataScopeCommand implements Serializable {
     private DataScopeMode scopeMode;
 
     @Schema(description = "范围值，ORG 模式下为组织 ID 列表")
+    @Size(max = 1000, message = "数据范围值不能超过1000项")
     private List<String> scopeValues = new ArrayList<>();
 
     @Schema(description = "是否包含下级组织，ORG 模式作用于所选组织，SELF_ORG_AND_CHILDREN 模式固定包含当前主体主组织下级")
-    private Boolean includeChildren;
+    @NotNull(message = "是否包含下级组织不能为空")
+    private Boolean includeChildren = Boolean.FALSE;
 
     @Schema(description = "状态：0-禁用，1-启用")
     @Min(value = 0, message = "状态最小值为0")

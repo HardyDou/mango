@@ -14,6 +14,7 @@ import java.util.function.UnaryOperator;
 public final class MangoContextHolder {
 
     private static final TransmittableThreadLocal<MangoContextSnapshot> CONTEXT = new TransmittableThreadLocal<>();
+    private static final TransmittableThreadLocal<String> TOKEN = new TransmittableThreadLocal<>();
 
     private MangoContextHolder() {
     }
@@ -40,6 +41,26 @@ public final class MangoContextHolder {
 
     public static void clear() {
         CONTEXT.remove();
+        TOKEN.remove();
+    }
+
+    /** 返回当前执行链路需要向下游透传的认证令牌。 */
+    public static String token() {
+        return TOKEN.get();
+    }
+
+    /** 设置当前执行链路需要向下游透传的认证令牌。 */
+    public static void setToken(String token) {
+        if (token == null || token.isBlank()) {
+            clearToken();
+            return;
+        }
+        TOKEN.set(token);
+    }
+
+    /** 仅清理认证令牌，不影响其他运行时上下文。 */
+    public static void clearToken() {
+        TOKEN.remove();
     }
 
     public static String requestId() {

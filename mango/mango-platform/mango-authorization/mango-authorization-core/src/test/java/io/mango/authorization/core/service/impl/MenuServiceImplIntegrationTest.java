@@ -2,9 +2,10 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.query.MenuTreeQuery;
 import io.mango.authorization.api.vo.ButtonDisplayRuleVO;
 import io.mango.authorization.api.vo.MenuVO;
-import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
@@ -43,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-@DisplayName("MenuServiceImpl 集成测试")
+@DisplayName("MenuService 集成测试")
 class MenuServiceImplIntegrationTest {
 
     @Autowired
@@ -53,7 +54,7 @@ class MenuServiceImplIntegrationTest {
     private MenuMapper menuMapper;
 
     @Autowired
-    private MenuServiceImpl service;
+    private MenuService service;
 
     @BeforeEach
     void setUp() {
@@ -63,16 +64,16 @@ class MenuServiceImplIntegrationTest {
     @Test
     @DisplayName("addMenu and getById should persist and read runtime config through real mappers")
     void addMenuAndGetByIdPersistsRuntimeConfigThroughRealMappers() {
-        Menu menu = menu(1L, 0L, "Frame Menu", "frame:menu", 2, 1);
+        MenuEntity menu = menu(1L, 0L, "Frame MenuEntity", "frame:menu", 2, 1);
         menu.setPageType("IFRAME");
         menu.setExternalUrl("https://example.com/frame");
 
         boolean saved = service.addMenu(menu);
-        Menu persisted = service.getById(1L);
+        MenuEntity persisted = service.getById(1L);
 
         assertThat(saved).isTrue();
         assertThat(persisted).isNotNull();
-        assertThat(persisted.getMenuName()).isEqualTo("Frame Menu");
+        assertThat(persisted.getMenuName()).isEqualTo("Frame MenuEntity");
         assertThat(persisted.getPageType()).isEqualTo("IFRAME");
         assertThat(persisted.getExternalUrl()).isEqualTo("https://example.com/frame");
         assertThat(countRuntimeConfigs()).isEqualTo(1L);
@@ -84,16 +85,13 @@ class MenuServiceImplIntegrationTest {
         seedEnabledModule("mango-notice");
         seedMenu(menu(10L, 0L, "Root", "root", 1, 1, "mango-notice"));
         seedMenu(menu(11L, 10L, "Visible", "visible", 2, 1, "mango-notice"));
-        Menu hiddenMenu = menu(12L, 10L, "Hidden", "hidden", 2, 1, "mango-notice");
+        MenuEntity hiddenMenu = menu(12L, 10L, "Hidden", "hidden", 2, 1, "mango-notice");
         hiddenMenu.setVisible(0);
         seedMenu(hiddenMenu);
 
         List<MenuVO> result = service.listUserMenus(
-                "internal-admin",
-                null,
-                null,
-                AuthorizationQuery.user(1L),
-                true);
+                menuQuery("internal-admin", null, null, null, null, 1, "tree"),
+                AuthorizationQuery.user(1L));
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getChildren()).hasSize(2);
@@ -106,21 +104,18 @@ class MenuServiceImplIntegrationTest {
     @DisplayName("listUserMenus should apply login default role and skip directly hidden menus")
     void listUserMenusAppliesLoginDefaultRoleAndSkipsDirectlyHiddenMenus() {
         seedEnabledModule("mango-file");
-        seedRole(20L, 1L, SubjectAuthorityServiceImpl.ROLE_LOGIN);
+        seedRole(20L, 1L, SubjectAuthorityService.ROLE_LOGIN);
         seedMenu(menu(10L, 0L, "File", "file", 1, 1, "mango-file"));
         seedMenu(menu(11L, 10L, "File List", "file:list", 2, 1, "mango-file"));
-        Menu hiddenMenu = menu(12L, 10L, "File Basic", "file:basic-login", 2, 2, "mango-file");
+        MenuEntity hiddenMenu = menu(12L, 10L, "File Basic", "file:basic-login", 2, 2, "mango-file");
         hiddenMenu.setVisible(0);
         seedMenu(hiddenMenu);
         seedRoleMenu(1L, 1L, 20L, 11L);
         seedRoleMenu(2L, 1L, 20L, 12L);
 
         List<MenuVO> result = service.listUserMenus(
-                "internal-admin",
-                null,
-                null,
-                AuthorizationQuery.member(2002L).withTenantId("1").withSystemCode("internal-admin"),
-                true);
+                menuQuery("internal-admin", null, null, null, null, 1, "tree"),
+                AuthorizationQuery.member(2002L).withTenantId("1").withSystemCode("internal-admin"));
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getMenuId()).isEqualTo(10L);
@@ -138,7 +133,8 @@ class MenuServiceImplIntegrationTest {
         seedMenu(menu(260401L, 2604L, "流程模板", "workflow:template", 2, 1, "mango-workflow"));
         seedMenu(menu(260402L, 2604L, "流程定义", "workflow:definition", 2, 2, "mango-workflow"));
 
-        List<MenuVO> result = service.listMenus("internal-admin", "mango-workflow", null, null, null, 1, true);
+        List<MenuVO> result = service.listMenus(
+                menuQuery("internal-admin", "mango-workflow", null, null, null, 1, "tree"));
 
         assertThat(result).hasSize(1);
         MenuVO workflowNode = result.get(0);
@@ -271,20 +267,39 @@ class MenuServiceImplIntegrationTest {
                     menu_id bigint not null
                 )
                 """);
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
-    private Menu menu(Long menuId, Long parentId, String menuName, String menuCode, Integer menuType, Integer sort) {
+    private MenuTreeQuery menuQuery(String appCode,
+                                    String moduleCode,
+                                    Integer type,
+                                    Long parentId,
+                                    String menuName,
+                                    Integer status,
+                                    String format) {
+        MenuTreeQuery query = new MenuTreeQuery();
+        query.setAppCode(appCode);
+        query.setModuleCode(moduleCode);
+        query.setType(type);
+        query.setParentId(parentId);
+        query.setMenuName(menuName);
+        query.setStatus(status);
+        query.setFmt(format);
+        return query;
+    }
+
+    private MenuEntity menu(Long menuId, Long parentId, String menuName, String menuCode, Integer menuType, Integer sort) {
         return menu(menuId, parentId, menuName, menuCode, menuType, sort, "mango-system");
     }
 
-    private Menu menu(Long menuId,
+    private MenuEntity menu(Long menuId,
                       Long parentId,
                       String menuName,
                       String menuCode,
                       Integer menuType,
                       Integer sort,
                       String moduleCode) {
-        Menu menu = new Menu();
+        MenuEntity menu = new MenuEntity();
         menu.setMenuId(menuId);
         menu.setTenantId(1L);
         menu.setAppCode("internal-admin");
@@ -302,7 +317,7 @@ class MenuServiceImplIntegrationTest {
         return menu;
     }
 
-    private void seedMenu(Menu menu) {
+    private void seedMenu(MenuEntity menu) {
         menuMapper.insert(menu);
     }
 
@@ -347,7 +362,7 @@ class MenuServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = MenuMapper.class)
-    @Import(MenuServiceImpl.class)
+    @Import(MenuService.class)
     static class TestConfig {
 
         @Bean
@@ -359,8 +374,29 @@ class MenuServiceImplIntegrationTest {
     static class AllPermissionSubjectAuthorityService implements ISubjectAuthorityService {
 
         @Override
+        public List<String> listSubjectRoles(Long subjectId) {
+            return List.of();
+        }
+
+        @Override
+        public List<String> listSubjectRoles(Long subjectId, String appCode) {
+            return List.of();
+        }
+
+        @Override
         public List<String> listSubjectRoles(AuthorizationQuery query) {
             return List.of();
+        }
+
+        @Override
+        public List<String> listSubjectPermissions(Long subjectId) {
+            return listSubjectPermissions(subjectId, null);
+        }
+
+        @Override
+        public List<String> listSubjectPermissions(Long subjectId, String appCode) {
+            return listSubjectPermissions(new AuthorizationQuery(
+                    subjectId, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER, null, appCode));
         }
 
         @Override

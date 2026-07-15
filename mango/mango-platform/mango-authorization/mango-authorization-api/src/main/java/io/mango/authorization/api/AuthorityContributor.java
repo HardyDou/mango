@@ -1,5 +1,7 @@
 package io.mango.authorization.api;
 
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
+
 /**
  * 根据授权查询贡献权限快照。
  */
@@ -9,5 +11,5 @@ public interface AuthorityContributor {
         return true;
     }
 
-    AuthorizationSnapshot contribute(AuthorizationQuery query);
+    AuthorizationSnapshotVO contribute(AuthorizationQuery query);
 }

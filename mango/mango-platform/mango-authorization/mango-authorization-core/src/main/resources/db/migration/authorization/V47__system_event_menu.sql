@@ -1,1 +1,0 @@
--- System event menu data is provided by Resource Registry AUTH_MENU.

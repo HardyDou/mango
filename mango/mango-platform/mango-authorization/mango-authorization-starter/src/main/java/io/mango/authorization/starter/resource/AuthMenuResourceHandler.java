@@ -1,6 +1,7 @@
 package io.mango.authorization.starter.resource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.authorization.api.command.AppModuleMenuRequest;
 import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.core.service.IAppModuleService;
 import io.mango.resource.api.ResourceHandler;
@@ -41,7 +42,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
 
     @Override
     public List<String> dependsOnResourceTypes() {
-        return List.of(ResourceTypes.AUTH_ROLE);
+        return List.of(ResourceTypes.AUTH_APP, ResourceTypes.AUTH_MENU_PACKAGE, ResourceTypes.AUTH_ROLE);
     }
 
     @Override
@@ -61,7 +62,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
                 .fieldDescription("sort", "能力模块排序号。")
                 .fieldDescription("packageCodes", "菜单同步到的既有套餐编码列表。")
                 .fieldDescription("roleCodes", "菜单默认授权到的既有角色编码列表。")
-                .fieldDescription("menus", "菜单树，结构与 AppModuleResourceManifestCommand.Menu 一致。")
+                .fieldDescription("menus", "菜单树，结构与 AppModuleMenuRequest 一致。")
                 .fieldDescription("menus.packageCodes", "当前菜单同步到的既有套餐编码列表；未配置时继承父菜单或清单级 packageCodes。")
                 .fieldDescription("menus.roleCodes", "当前菜单默认授权到的既有角色编码列表；未配置时继承父菜单或清单级 roleCodes。")
                 .fieldDescription("menus.apiCodes", "当前菜单携带的接口/动作权限码；角色获得该菜单后自动获得这些权限码。")
@@ -149,14 +150,14 @@ public class AuthMenuResourceHandler implements ResourceHandler {
         return command;
     }
 
-    private List<AppModuleResourceManifestCommand.Menu> menuListField(ResourceDeclaration resource) {
+    private List<AppModuleMenuRequest> menuListField(ResourceDeclaration resource) {
         Object value = fieldValue(resource, "menus");
         if (value == null) {
             throw new IllegalStateException("AUTH_MENU field is required: menus");
         }
         return objectMapper.convertValue(value,
                 objectMapper.getTypeFactory().constructCollectionType(
-                        List.class, AppModuleResourceManifestCommand.Menu.class));
+                        List.class, AppModuleMenuRequest.class));
     }
 
     private Set<String> collectDeclaredMenuCodes(List<ResourceDeclaration> resources) {
@@ -168,12 +169,12 @@ public class AuthMenuResourceHandler implements ResourceHandler {
     }
 
     private void collectMenuCodes(ResourceDeclaration resource, Set<String> menuCodes) {
-        for (AppModuleResourceManifestCommand.Menu menu : menuListField(resource)) {
+        for (AppModuleMenuRequest menu : menuListField(resource)) {
             collectMenuCodes(menu, menuCodes);
         }
     }
 
-    private void collectMenuCodes(AppModuleResourceManifestCommand.Menu menu, Set<String> menuCodes) {
+    private void collectMenuCodes(AppModuleMenuRequest menu, Set<String> menuCodes) {
         if (menu == null) {
             return;
         }
@@ -181,7 +182,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
             menuCodes.add(menu.getMenuCode().trim());
         }
         if (menu.getChildren() != null) {
-            for (AppModuleResourceManifestCommand.Menu child : menu.getChildren()) {
+            for (AppModuleMenuRequest child : menu.getChildren()) {
                 collectMenuCodes(child, menuCodes);
             }
         }
@@ -193,7 +194,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
             Set<String> syncedMenuCodes) {
         Set<String> resourceMenuCodes = new HashSet<>();
         collectMenuCodes(resource, resourceMenuCodes);
-        for (AppModuleResourceManifestCommand.Menu menu : menuListField(resource)) {
+        for (AppModuleMenuRequest menu : menuListField(resource)) {
             if (dependsOnPendingParent(menu, declaredMenuCodes, syncedMenuCodes, resourceMenuCodes)) {
                 return true;
             }
@@ -202,7 +203,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
     }
 
     private boolean dependsOnPendingParent(
-            AppModuleResourceManifestCommand.Menu menu,
+            AppModuleMenuRequest menu,
             Set<String> declaredMenuCodes,
             Set<String> syncedMenuCodes,
             Set<String> resourceMenuCodes) {
@@ -218,7 +219,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
             }
         }
         if (menu.getChildren() != null) {
-            for (AppModuleResourceManifestCommand.Menu child : menu.getChildren()) {
+            for (AppModuleMenuRequest child : menu.getChildren()) {
                 if (dependsOnPendingParent(child, declaredMenuCodes, syncedMenuCodes, resourceMenuCodes)) {
                     return true;
                 }

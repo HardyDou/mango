@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
@@ -24,10 +25,10 @@ public class RealtimeWebSocketResourceRegistrar implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        apiResourceApi.registerApiResources(List.of(
+        apiResourceApi.registerApiResources(new ApiResourceRegisterRequest(List.of(
                 loginGet(properties.getWebsocket().getEndpoint(), "建立 WebSocket 实时连接"),
                 loginGet(WEBSOCKET_PROBE_ENDPOINT, "探测 WebSocket 链路")
-        ));
+        )));
     }
 
     private static ApiResourceRegisterCommand loginGet(String pathPattern, String description) {

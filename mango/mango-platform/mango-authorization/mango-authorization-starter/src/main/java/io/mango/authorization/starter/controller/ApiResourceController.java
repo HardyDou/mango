@@ -3,7 +3,7 @@ package io.mango.authorization.starter.controller;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
-import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.core.service.IApiResourceService;
 import io.mango.common.result.R;
@@ -11,13 +11,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * API 资源远程端点。
@@ -27,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/authorization")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "接口资源", description = "接口资源注册与访问决策接口")
 public class ApiResourceController implements ApiResourceApi {
 
@@ -37,8 +37,8 @@ public class ApiResourceController implements ApiResourceApi {
     @Override
     public R<ApiResourceRegisterResultVO> registerApiResources(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "API 资源注册命令列表")
-            @RequestBody List<ApiResourceRegisterCommand> resources) {
-        return R.ok(apiResourceService.registerApiResources(resources));
+            @RequestBody ApiResourceRegisterRequest request) {
+        return R.ok(apiResourceService.registerApiResources(request.getResources()));
     }
 
     @GetMapping("/api-resources/access-decision")

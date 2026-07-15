@@ -1,7 +1,7 @@
 package io.mango.authorization.starter.resource;
 
-import io.mango.authorization.api.AuthorizationResourceTypes;
-import io.mango.authorization.core.entity.FrontendAppRegistry;
+import io.mango.resource.api.ResourceTypes;
+import io.mango.authorization.core.entity.FrontendAppRegistryEntity;
 import io.mango.authorization.core.service.IAuthorizationAppService;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
@@ -32,12 +32,12 @@ class FrontendAppRegistryResourceHandlerTest {
         ResourceSyncResult result = handler.upsert(resource);
 
         assertThat(handler.resourceType()).isEqualTo(ResourceTypes.FRONTEND_APP_REGISTRY);
-        assertThat(handler.resourceType()).isEqualTo(AuthorizationResourceTypes.FRONTEND_APP_REGISTRY);
+        assertThat(handler.resourceType()).isEqualTo(ResourceTypes.FRONTEND_APP_REGISTRY);
         assertThat(result.getTargetId()).isEqualTo(7001L);
         assertThat(result.getTargetTable()).isEqualTo("authorization_frontend_app_registry");
-        ArgumentCaptor<FrontendAppRegistry> captor = ArgumentCaptor.forClass(FrontendAppRegistry.class);
+        ArgumentCaptor<FrontendAppRegistryEntity> captor = ArgumentCaptor.forClass(FrontendAppRegistryEntity.class);
         verify(appService).saveFrontendAppRegistry(captor.capture());
-        FrontendAppRegistry registry = captor.getValue();
+        FrontendAppRegistryEntity registry = captor.getValue();
         assertThat(registry.getAppCode()).isEqualTo("guarantee-local");
         assertThat(registry.getAppType()).isEqualTo("MICRO_APP");
         assertThat(registry.getDeployMode()).isEqualTo("REMOTE");
@@ -116,7 +116,7 @@ class FrontendAppRegistryResourceHandlerTest {
         ResourceDeclaration resource = new ResourceDeclaration();
         resource.setId("2951300000000010001");
         resource.setVersion(1);
-        resource.setResourceType(AuthorizationResourceTypes.FRONTEND_APP_REGISTRY);
+        resource.setResourceType(ResourceTypes.FRONTEND_APP_REGISTRY);
         resource.setModuleCode("guarantee");
         resource.setModuleName("保函业务");
         resource.setBizKey("guarantee.frontend.app.guarantee-local");

@@ -1,7 +1,7 @@
 package io.mango.authorization.starter;
 
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.AuthorityContributor;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +25,14 @@ public class RolePermissionAuthorityContributor implements AuthorityContributor 
     }
 
     @Override
-    public AuthorizationSnapshot contribute(AuthorizationQuery query) {
+    public AuthorizationSnapshotVO contribute(AuthorizationQuery query) {
         LinkedHashSet<String> roleCodes = new LinkedHashSet<>(
                 subjectAuthorityService.listSubjectRoles(query));
         LinkedHashSet<String> permissionCodes = new LinkedHashSet<>(
                 subjectAuthorityService.listSubjectPermissions(query));
         LinkedHashSet<String> authorities = new LinkedHashSet<>(roleCodes);
         authorities.addAll(permissionCodes);
-        return AuthorizationSnapshot.of(
+        return AuthorizationSnapshotVO.of(
                 roleCodes,
                 permissionCodes,
                 authorities,

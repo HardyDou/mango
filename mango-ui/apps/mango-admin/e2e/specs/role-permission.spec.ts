@@ -29,6 +29,32 @@ async function loginTokenAsCompanyA(request: APIRequestContext) {
   return body.data.accessToken as string;
 }
 
+async function platformMenuId(request: APIRequestContext, menuCode: string) {
+  const loginResponse = await request.post(e2eApi('/auth/login'), {
+    data: {
+      username: 'admin',
+      password: 'admin123',
+      tenantId: '1',
+      tenantCode: 'default',
+      realm: 'INTERNAL',
+      actorType: 'INTERNAL_USER',
+      partyType: 'INTERNAL_ORG',
+      appCode: 'internal-admin',
+    },
+  });
+  expect(loginResponse.ok()).toBeTruthy();
+  const loginBody = await loginResponse.json();
+  const response = await request.get(e2eApi('/authorization/menus'), {
+    headers: { Authorization: `Bearer ${loginBody.data.accessToken}` },
+    params: { appCode: 'internal-admin', fmt: 'list' },
+  });
+  expect(response.ok()).toBeTruthy();
+  const body = await response.json();
+  const menu = (body.data || []).find((item: any) => item.menuCode === menuCode);
+  expect(menu, `未找到平台菜单 ${menuCode}`).toBeTruthy();
+  return menu.menuId as string;
+}
+
 async function cleanupRole(request: APIRequestContext, token: string, roleCode: string) {
   const rolesResponse = await request.get(e2eApi('/authorization/roles'), {
     headers: { Authorization: `Bearer ${token}` },
@@ -55,6 +81,7 @@ test.describe('T2 角色授权闭环', () => {
     const roleName = `E2E角色${unique}`;
     const editedRoleName = `${roleName}-编辑`;
     const token = await loginTokenAsCompanyA(request);
+    const tenantManagementMenuId = await platformMenuId(request, 'system:tenant');
 
     await cleanupRole(request, token, roleCode);
 
@@ -136,7 +163,7 @@ test.describe('T2 角色授权闭环', () => {
 
     const invalidAssignResponse = await request.post(e2eApi('/authorization/roles/menus'), {
       headers: { Authorization: `Bearer ${token}` },
-      data: { roleId: createdRole.roleId, menuIds: [14] },
+      data: { roleId: createdRole.roleId, menuIds: [tenantManagementMenuId] },
     });
     const invalidAssignBody = await invalidAssignResponse.json();
     expect(invalidAssignBody.success).toBeFalsy();

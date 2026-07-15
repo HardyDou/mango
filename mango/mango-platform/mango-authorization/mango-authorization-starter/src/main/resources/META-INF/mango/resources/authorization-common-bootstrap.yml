@@ -1,0 +1,54 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: authorization
+    module-name: 授权
+    declarations:
+      AUTH_APP:
+        - id: "2026071509000000001"
+          version: 1
+          biz-key: authorization.app.internal-admin
+          name: 内部管理后台
+          target-module: authorization
+          fields:
+            appCode: { type: STRING, value: internal-admin }
+            appName: { type: STRING, value: 内部管理后台 }
+            icon: { type: STRING, value: Setting }
+            sort: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            remark: { type: STRING, value: Mango 内部管理应用 }
+            loginContexts:
+              type: LIST
+              value:
+                - realm: INTERNAL
+                  actorType: INTERNAL_USER
+                  defaultFlag: 1
+                  status: 1
+                  sort: 0
+      AUTH_MENU_PACKAGE:
+        - id: "2026071509000000011"
+          version: 1
+          biz-key: authorization.menu-package.platform-admin
+          name: 平台管理套餐
+          target-module: authorization
+          fields:
+            targetId: { type: LONG, value: 1 }
+            appCode: { type: STRING, value: internal-admin }
+            packageCode: { type: STRING, value: platform_admin }
+            packageName: { type: STRING, value: 平台管理套餐 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 1 }
+            remark: { type: STRING, value: 平台管理员默认菜单授权套餐 }
+        - id: "2026071509000000012"
+          version: 1
+          biz-key: authorization.menu-package.institution-collaboration
+          name: 机构协同套餐
+          target-module: authorization
+          fields:
+            targetId: { type: LONG, value: 2 }
+            appCode: { type: STRING, value: internal-admin }
+            packageCode: { type: STRING, value: institution_collaboration }
+            packageName: { type: STRING, value: 机构协同套餐 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 2 }
+            remark: { type: STRING, value: 普通机构后台默认菜单授权套餐 }

@@ -1,8 +1,10 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import io.mango.authorization.api.command.AppModuleMenuRequest;
+import io.mango.authorization.api.command.AppModulePermissionRequest;
 import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
-import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.common.exception.BizException;
@@ -45,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
-@DisplayName("AppModuleServiceImpl 集成测试")
+@DisplayName("AppModuleService 集成测试")
 class AppModuleServiceImplIntegrationTest {
 
     @Autowired
@@ -55,7 +57,7 @@ class AppModuleServiceImplIntegrationTest {
     private MenuMapper menuMapper;
 
     @Autowired
-    private AppModuleServiceImpl service;
+    private AppModuleService service;
 
     @Autowired
     private TestTenantMenuPackageBindingHandler bindingHandler;
@@ -73,13 +75,18 @@ class AppModuleServiceImplIntegrationTest {
 
         assertThat(registered).isEqualTo(2);
         assertThat(menuCodes()).containsExactly("contract", "contract:archive:list");
-        Menu directory = selectMenu("contract");
-        Menu page = selectMenu("contract:archive:list");
+        MenuEntity directory = selectMenu("contract");
+        MenuEntity page = selectMenu("contract:archive:list");
         assertThat(directory.getMenuType()).isEqualTo(1);
         assertThat(page.getParentId()).isEqualTo(directory.getMenuId());
         assertThat(page.getMenuType()).isEqualTo(2);
         assertThat(page.getApiCodes()).isEqualTo("contract:archive:list,contract:archive:create,contract:archive:delete");
+        assertThat(directory.getTenantIdAsLong()).isEqualTo(1L);
+        assertThat(page.getTenantIdAsLong()).isEqualTo(1L);
         assertThat(runtimeConfigTypes()).containsExactlyInAnyOrder("LOCAL_ROUTE", "LOCAL_ROUTE");
+        assertThat(jdbcTemplate.queryForList(
+                "select tenant_id from frontend_menu_runtime_config order by menu_id", String.class))
+                .containsOnly("default");
     }
 
     @Test
@@ -109,8 +116,8 @@ class AppModuleServiceImplIntegrationTest {
         int registered = service.registerResourceManifest(manifest);
 
         assertThat(registered).isEqualTo(2);
-        Menu directory = selectMenu("contract");
-        Menu page = selectMenu("contract:archive:list");
+        MenuEntity directory = selectMenu("contract");
+        MenuEntity page = selectMenu("contract:archive:list");
         assertThat(directory.getParentId()).isEqualTo(2700L);
         assertThat(page.getParentId()).isEqualTo(directory.getMenuId());
     }
@@ -131,7 +138,7 @@ class AppModuleServiceImplIntegrationTest {
     @DisplayName("registerResourceManifest should reject legacy permissionItems field")
     void registerResourceManifestRejectsLegacyPermissionItemsField() {
         AppModuleResourceManifestCommand manifest = createManifest();
-        AppModuleResourceManifestCommand.Permission permission = new AppModuleResourceManifestCommand.Permission();
+        AppModulePermissionRequest permission = new AppModulePermissionRequest();
         permission.setMenuCode("contract:archive:create-button");
         permission.setPermissionCode("contract:archive:create");
         permission.setPermissionName("新增合同");
@@ -179,6 +186,7 @@ class AppModuleServiceImplIntegrationTest {
                     module_name varchar(100) not null,
                     sort int not null default 0,
                     status tinyint not null default 1,
+                    tenant_id varchar(64) not null default 'default',
                     create_time timestamp default current_timestamp,
                     update_time timestamp default current_timestamp
                 )
@@ -221,6 +229,7 @@ class AppModuleServiceImplIntegrationTest {
                     menu_id bigint not null,
                     page_type varchar(32) not null default 'LOCAL_ROUTE',
                     external_url varchar(512),
+                    tenant_id varchar(64) not null default 'default',
                     create_time timestamp default current_timestamp,
                     update_time timestamp default current_timestamp
                 )
@@ -239,6 +248,7 @@ class AppModuleServiceImplIntegrationTest {
                     create_time timestamp default current_timestamp,
                     update_time timestamp default current_timestamp,
                     del_flag tinyint not null default 0
+                    ,tenant_id bigint not null default 1
                 )
                 """);
         jdbcTemplate.execute("""
@@ -246,7 +256,8 @@ class AppModuleServiceImplIntegrationTest {
                     id bigint primary key,
                     package_id bigint not null,
                     menu_id bigint not null,
-                    sort int not null default 0
+                    sort int not null default 0,
+                    tenant_id bigint not null
                 )
                 """);
         jdbcTemplate.execute("""
@@ -274,6 +285,7 @@ class AppModuleServiceImplIntegrationTest {
                     menu_id bigint not null
                 )
                 """);
+        AuthorizationTestSchema.ensureCanonicalColumns(jdbcTemplate);
     }
 
     private AppModuleResourceManifestCommand createManifest() {
@@ -282,14 +294,14 @@ class AppModuleServiceImplIntegrationTest {
         manifest.setModuleCode("contract");
         manifest.setModuleName("合同模块");
 
-        AppModuleResourceManifestCommand.Menu directory = new AppModuleResourceManifestCommand.Menu();
+        AppModuleMenuRequest directory = new AppModuleMenuRequest();
         directory.setMenuType(1);
         directory.setMenuName("合同管理");
         directory.setMenuCode("contract");
         directory.setPath("/contract");
         directory.setSort(10);
 
-        AppModuleResourceManifestCommand.Menu page = new AppModuleResourceManifestCommand.Menu();
+        AppModuleMenuRequest page = new AppModuleMenuRequest();
         page.setMenuType(2);
         page.setMenuName("合同列表");
         page.setMenuCode("contract:archive:list");
@@ -328,7 +340,7 @@ class AppModuleServiceImplIntegrationTest {
                 menuId, menuCode, menuCode);
     }
 
-    private Menu selectMenu(String menuCode) {
+    private MenuEntity selectMenu(String menuCode) {
         return menuMapper.selectList(null)
                 .stream()
                 .filter(menu -> menuCode.equals(menu.getMenuCode()))
@@ -384,7 +396,7 @@ class AppModuleServiceImplIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = AuthorizationAppModuleMapper.class)
-    @Import(AppModuleServiceImpl.class)
+    @Import(AppModuleService.class)
     static class TestConfig {
 
         @Bean

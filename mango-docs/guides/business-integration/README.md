@@ -22,6 +22,7 @@
 | [菜单页面打不开排障](./rbac-menu-page-troubleshooting.md) | 登录后菜单空白、404、页面组件找不到 | Authorization、RBAC、Admin Shell |
 | [按钮权限不显示排障](./permission-button-troubleshooting.md) | 菜单可见但新增、编辑、删除按钮不显示 | Authorization、Access、RBAC Frontend |
 | [租户字典配置为空排障](./tenant-dict-config-empty.md) | 业务下拉、字典、配置或基础数据为空 | Identity、Org、System、Resource、Persistence |
+| [业务模块历史债务修复](./history-debt-remediation.md) | 在保持业务、接口、权限和租户语义不变的前提下治理存量代码 | PMO、Architecture、Persistence、Resource、API、UI/E2E |
 
 ## 4. 新场景登记门禁
 

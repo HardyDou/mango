@@ -25,6 +25,7 @@ import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.AuthUserInfo;
 import io.mango.authorization.api.ITokenProvider;
+import io.mango.authorization.api.vo.TokenPairVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.notice.api.NoticeApi;
@@ -256,7 +257,7 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         // 1. 校验并刷新令牌。
-        ITokenProvider.TokenPair tokenPair = tokenService.refresh(oldRefreshToken);
+        TokenPairVO tokenPair = tokenService.refresh(oldRefreshToken);
         Require.notNull(tokenPair, AuthCode.REFRESH_TOKEN_INVALID);
 
         // 2. 从旧刷新令牌中读取用户 ID，此时旧令牌仍处于有效状态。

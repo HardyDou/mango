@@ -2,6 +2,7 @@ package io.mango.authorization.resource.sync.gateway;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +41,8 @@ public class GatewayRouteResourceSyncRunner implements ApplicationRunner {
             log.info("Gateway route resource sync read-only: discovered {} resources", resources.size());
             return;
         }
-        R<ApiResourceRegisterResultVO> response = apiResourceApi.registerApiResources(resources);
+        R<ApiResourceRegisterResultVO> response = apiResourceApi.registerApiResources(
+                new ApiResourceRegisterRequest(resources));
         ApiResourceRegisterResultVO result = response != null && response.isSuccess() && response.getData() != null
                 ? response.getData()
                 : ApiResourceRegisterResultVO.empty();

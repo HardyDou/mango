@@ -1,9 +1,9 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.authorization.core.entity.Menu;
-import io.mango.authorization.core.entity.Role;
-import io.mango.authorization.core.entity.RoleMenu;
+import io.mango.authorization.core.entity.MenuEntity;
+import io.mango.authorization.core.entity.RoleEntity;
+import io.mango.authorization.core.entity.RoleMenuEntity;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
@@ -49,21 +49,21 @@ public class TenantMenuPackageBindingHandler implements TenantPackageBindingHand
     }
 
     private void bindPackageInTenantContext(Long tenantId, Long packageId) {
-        Role role = roleMapper.selectOne(new LambdaQueryWrapper<Role>()
-                .eq(Role::getTenantId, tenantId)
-                .eq(Role::getAppCode, AuthorizationTenantProvisioner.DEFAULT_APP_CODE)
-                .eq(Role::getRoleCode, AuthorizationTenantProvisioner.TENANT_ADMIN_ROLE)
+        RoleEntity role = roleMapper.selectOne(new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, tenantId)
+                .eq(RoleEntity::getAppCode, AuthorizationTenantProvisioner.DEFAULT_APP_CODE)
+                .eq(RoleEntity::getRoleCode, AuthorizationTenantProvisioner.TENANT_ADMIN_ROLE)
                 .last("LIMIT 1"));
         if (role == null) {
             return;
         }
 
         Set<Long> menuIds = expandMenuIds(menuPackageService.listMenuIds(packageId));
-        roleMenuMapper.delete(new LambdaQueryWrapper<RoleMenu>()
-                .eq(RoleMenu::getTenantId, tenantId)
-                .eq(RoleMenu::getRoleId, role.getRoleId()));
+        roleMenuMapper.delete(new LambdaQueryWrapper<RoleMenuEntity>()
+                .eq(RoleMenuEntity::getTenantId, tenantId)
+                .eq(RoleMenuEntity::getRoleId, role.getRoleId()));
         menuIds.forEach(menuId -> {
-            RoleMenu roleMenu = new RoleMenu();
+            RoleMenuEntity roleMenu = new RoleMenuEntity();
             roleMenu.setTenantId(tenantId);
             roleMenu.setRoleId(role.getRoleId());
             roleMenu.setMenuId(menuId);
@@ -75,16 +75,16 @@ public class TenantMenuPackageBindingHandler implements TenantPackageBindingHand
         if (selectedMenuIds == null || selectedMenuIds.isEmpty()) {
             return Set.of();
         }
-        List<Menu> menus = menuMapper.selectList(new LambdaQueryWrapper<Menu>()
-                .eq(Menu::getAppCode, AuthorizationTenantProvisioner.DEFAULT_APP_CODE)
-                .eq(Menu::getStatus, 1)
-                .eq(Menu::getDelFlag, 0));
-        Map<Long, Menu> menuById = menus.stream().collect(Collectors.toMap(Menu::getMenuId, menu -> menu));
+        List<MenuEntity> menus = menuMapper.selectList(new LambdaQueryWrapper<MenuEntity>()
+                .eq(MenuEntity::getAppCode, AuthorizationTenantProvisioner.DEFAULT_APP_CODE)
+                .eq(MenuEntity::getStatus, 1)
+                .eq(MenuEntity::getDelFlag, 0));
+        Map<Long, MenuEntity> menuById = menus.stream().collect(Collectors.toMap(MenuEntity::getMenuId, menu -> menu));
         Set<Long> expanded = new LinkedHashSet<>();
         for (Long menuId : selectedMenuIds) {
             Long currentId = menuId;
             while (currentId != null && currentId > 0 && expanded.add(currentId)) {
-                Menu menu = menuById.get(currentId);
+                MenuEntity menu = menuById.get(currentId);
                 if (menu == null) {
                     break;
                 }

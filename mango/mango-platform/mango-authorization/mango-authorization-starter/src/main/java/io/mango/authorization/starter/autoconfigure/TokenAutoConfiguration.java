@@ -1,7 +1,7 @@
 package io.mango.authorization.starter.autoconfigure;
 
 import io.mango.authorization.api.ITokenProvider;
-import io.mango.authorization.support.token.JjwtTokenServiceImpl;
+import io.mango.authorization.support.token.JjwtTokenProvider;
 import io.mango.infra.kv.api.IKvStore;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.ObjectProvider;
@@ -27,6 +27,6 @@ public class TokenAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ITokenProvider.class)
     public ITokenProvider tokenProvider(ObjectProvider<IKvStore> kvStoreProvider) {
-        return new JjwtTokenServiceImpl(kvStoreProvider.getIfAvailable());
+        return new JjwtTokenProvider(kvStoreProvider.getIfAvailable());
     }
 }

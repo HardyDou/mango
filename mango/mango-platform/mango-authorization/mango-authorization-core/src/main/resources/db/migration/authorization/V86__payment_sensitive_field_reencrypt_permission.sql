@@ -1,2 +1,0 @@
--- V86__payment_sensitive_field_reencrypt_permission.sql
--- Payment menus, button permissions, runtime config, package bindings and default role bindings are registered by mango-payment-starter AUTH_MENU resource payment-common-menu.json.

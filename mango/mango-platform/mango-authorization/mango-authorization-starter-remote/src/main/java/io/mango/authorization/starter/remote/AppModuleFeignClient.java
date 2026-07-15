@@ -25,8 +25,8 @@ public interface AppModuleFeignClient extends AppModuleApi {
     @Override
     @GetMapping("/app-modules")
     R<List<AppModuleVO>> list(
-            @RequestParam(required = false) String appCode,
-            @RequestParam(required = false) Integer status);
+            @RequestParam(name = "appCode", required = false) String appCode,
+            @RequestParam(name = "status", required = false) Integer status);
 
     @Override
     @PostMapping("/app-modules")
@@ -35,14 +35,14 @@ public interface AppModuleFeignClient extends AppModuleApi {
     @Override
     @DeleteMapping("/app-modules")
     R<Boolean> disable(
-            @RequestParam String appCode,
-            @RequestParam String moduleCode);
+            @RequestParam(name = "appCode") String appCode,
+            @RequestParam(name = "moduleCode") String moduleCode);
 
     @Override
     @PostMapping("/app-modules/sync-menus")
     R<Integer> syncMenus(
-            @RequestParam String appCode,
-            @RequestParam String moduleCode);
+            @RequestParam(name = "appCode") String appCode,
+            @RequestParam(name = "moduleCode") String moduleCode);
 
     @Override
     @PostMapping("/app-modules/resource-manifests/register")
@@ -51,8 +51,8 @@ public interface AppModuleFeignClient extends AppModuleApi {
     @Override
     @GetMapping("/app-modules/runtime-strategies")
     R<List<FrontendModuleRuntimeStrategyVO>> listRuntimeStrategies(
-            @RequestParam(required = false) String appCode,
-            @RequestParam(required = false) String deployProfile);
+            @RequestParam(name = "appCode", required = false) String appCode,
+            @RequestParam(name = "deployProfile", required = false) String deployProfile);
 
     @Override
     @PostMapping("/app-modules/runtime-strategies")

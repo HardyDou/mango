@@ -1,7 +1,7 @@
 package io.mango.authorization.starter.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.authorization.core.entity.Role;
+import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Resource handler for authorization role baseline declarations.
@@ -35,6 +36,11 @@ public class AuthRoleResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public List<String> dependsOnResourceTypes() {
+        return List.of(ResourceTypes.AUTH_APP);
+    }
+
+    @Override
     public ResourceHandlerSpec spec() {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())
@@ -54,11 +60,16 @@ public class AuthRoleResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
-        Role role = findRole(resource);
+        Long tenantId = fields.requiredLong(resource, "tenantId");
+        return ResourceTenantScope.call(tenantId, () -> upsertInTenant(resource, tenantId));
+    }
+
+    private ResourceSyncResult upsertInTenant(ResourceDeclaration resource, Long tenantId) {
+        RoleEntity role = findRole(resource);
         LocalDateTime now = LocalDateTime.now();
         if (role == null) {
-            role = new Role();
-            role.setTenantId(fields.requiredLong(resource, "tenantId"));
+            role = new RoleEntity();
+            role.setTenantId(tenantId);
             role.setAppCode(fields.stringField(resource, "appCode", DEFAULT_APP_CODE));
             role.setRealm(fields.stringField(resource, "realm", DEFAULT_REALM));
             role.setActorType(fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE));
@@ -82,7 +93,12 @@ public class AuthRoleResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        Role role = findByTargetOrBusinessKey(resource);
+        Long tenantId = fields.requiredLong(resource, "tenantId");
+        return ResourceTenantScope.call(tenantId, () -> disableInTenant(resource));
+    }
+
+    private ResourceSyncResult disableInTenant(ResourceDeclaration resource) {
+        RoleEntity role = findByTargetOrBusinessKey(resource);
         boolean changed = false;
         if (role != null && !Integer.valueOf(0).equals(role.getStatus())) {
             role.setStatus(0);
@@ -93,10 +109,10 @@ public class AuthRoleResourceHandler implements ResourceHandler {
                 "Auth role disabled: changed=" + changed);
     }
 
-    private Role findRole(ResourceDeclaration resource) {
+    private RoleEntity findRole(ResourceDeclaration resource) {
         Long targetId = fields.longField(resource, "targetId");
         if (targetId != null) {
-            Role role = roleMapper.selectById(targetId);
+            RoleEntity role = roleMapper.selectById(targetId);
             if (role != null) {
                 return role;
             }
@@ -104,10 +120,10 @@ public class AuthRoleResourceHandler implements ResourceHandler {
         return findByBusinessKey(resource);
     }
 
-    private Role findByTargetOrBusinessKey(ResourceDeclaration resource) {
+    private RoleEntity findByTargetOrBusinessKey(ResourceDeclaration resource) {
         Long targetId = fields.longField(resource, "targetId");
         if (targetId != null) {
-            Role role = roleMapper.selectById(targetId);
+            RoleEntity role = roleMapper.selectById(targetId);
             if (role != null) {
                 return role;
             }
@@ -115,13 +131,13 @@ public class AuthRoleResourceHandler implements ResourceHandler {
         return findByBusinessKey(resource);
     }
 
-    private Role findByBusinessKey(ResourceDeclaration resource) {
-        LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<Role>()
-                .eq(Role::getTenantId, fields.requiredLong(resource, "tenantId"))
-                .eq(Role::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
-                .eq(Role::getRealm, fields.stringField(resource, "realm", DEFAULT_REALM))
-                .eq(Role::getActorType, fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE))
-                .eq(Role::getRoleCode, fields.requiredString(resource, "roleCode"))
+    private RoleEntity findByBusinessKey(ResourceDeclaration resource) {
+        LambdaQueryWrapper<RoleEntity> wrapper = new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, fields.requiredLong(resource, "tenantId"))
+                .eq(RoleEntity::getAppCode, fields.stringField(resource, "appCode", DEFAULT_APP_CODE))
+                .eq(RoleEntity::getRealm, fields.stringField(resource, "realm", DEFAULT_REALM))
+                .eq(RoleEntity::getActorType, fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE))
+                .eq(RoleEntity::getRoleCode, fields.requiredString(resource, "roleCode"))
                 .last("LIMIT 1");
         return roleMapper.selectOne(wrapper);
     }

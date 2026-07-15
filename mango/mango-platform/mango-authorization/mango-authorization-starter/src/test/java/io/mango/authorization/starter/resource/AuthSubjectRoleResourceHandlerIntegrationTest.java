@@ -1,11 +1,10 @@
 package io.mango.authorization.starter.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
-import io.mango.authorization.core.entity.SubjectRoleBinding;
+import io.mango.authorization.api.AuthorizationSubjectReferenceProvider;
+import io.mango.authorization.core.entity.SubjectRoleBindingEntity;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
-import io.mango.identity.core.mapper.IdentityUserMapper;
-import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
@@ -22,6 +21,7 @@ import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
@@ -46,7 +46,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false"
+        "mango.persistence.mybatis-plus.tenant.enabled=true",
+        "mango.persistence.mybatis-plus.tenant.default-tenant-id=1"
 })
 class AuthSubjectRoleResourceHandlerIntegrationTest {
 
@@ -139,13 +140,14 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
                     remark varchar(500)
                 )
                 """);
+        AuthorizationStarterTestSchema.ensureCanonicalColumns(jdbcTemplate);
         jdbcTemplate.update("""
                 insert into authorization_role(id, tenant_id, app_code, realm, actor_type, role_code, role_name, role_type, status, sort)
-                values (101, 1, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'ROLE_DEMO', 'Demo Role', 2, 1, 10)
+                values (101, 1, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'ROLE_DEMO', 'Demo RoleEntity', 2, 1, 10)
                 """);
         jdbcTemplate.update("""
                 insert into authorization_role(id, tenant_id, app_code, realm, actor_type, role_code, role_name, role_type, status, sort)
-                values (102, 1, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'ROLE_AUDIT', 'Audit Role', 2, 1, 20)
+                values (102, 1, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'ROLE_AUDIT', 'Audit RoleEntity', 2, 1, 20)
                 """);
         jdbcTemplate.update("""
                 insert into identity_user(id, username, realm, actor_type, status, tenant_id)
@@ -179,8 +181,8 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
     void upsertKeepsSubjectIdCompatibilityThroughRealMapper() {
         ResourceSyncResult result = handler.upsert(resource("subjectId", 301L));
 
-        SubjectRoleBinding binding = bindingMapper.selectById(result.getTargetId());
-        assertThat(binding.getTenantId()).isEqualTo(1L);
+        SubjectRoleBindingEntity binding = bindingMapper.selectById(result.getTargetId());
+        assertThat(binding.getTenantId()).isEqualTo("1");
         assertThat(binding.getSubjectId()).isEqualTo(301L);
         assertThat(binding.getSubjectType()).isEqualTo("TENANT_MEMBER");
         assertThat(binding.getRoleId()).isEqualTo(101L);
@@ -190,7 +192,7 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
     void upsertResolvesSubjectCodeFromTenantMemberNoThroughRealMapper() {
         ResourceSyncResult result = handler.upsert(resource("subjectCode", "MB-DEMO"));
 
-        SubjectRoleBinding binding = bindingMapper.selectById(result.getTargetId());
+        SubjectRoleBindingEntity binding = bindingMapper.selectById(result.getTargetId());
         assertThat(binding.getSubjectId()).isEqualTo(301L);
         assertThat(binding.getRoleId()).isEqualTo(101L);
     }
@@ -199,7 +201,7 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
     void upsertResolvesMemberNoThroughRealMapper() {
         ResourceSyncResult result = handler.upsert(resource("memberNo", "MB-DEMO"));
 
-        SubjectRoleBinding binding = bindingMapper.selectById(result.getTargetId());
+        SubjectRoleBindingEntity binding = bindingMapper.selectById(result.getTargetId());
         assertThat(binding.getSubjectId()).isEqualTo(301L);
     }
 
@@ -207,7 +209,7 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
     void upsertResolvesUsernameThroughIdentityUserAndTenantMember() {
         ResourceSyncResult result = handler.upsert(resource("username", "demo-user"));
 
-        SubjectRoleBinding binding = bindingMapper.selectById(result.getTargetId());
+        SubjectRoleBindingEntity binding = bindingMapper.selectById(result.getTargetId());
         assertThat(binding.getSubjectId()).isEqualTo(301L);
     }
 
@@ -233,6 +235,23 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
         assertThatThrownBy(() -> handler.upsert(resource("memberNo", "MB-LEFT")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("AUTH_SUBJECT_ROLE referenced subject does not exist");
+    }
+
+    @Test
+    void upsertResolvesRoleInsideDeclarationTenantInsteadOfAmbientDefaultTenant() {
+        jdbcTemplate.update("""
+                insert into authorization_role(id, tenant_id, app_code, realm, actor_type, role_code, role_name, role_type, status, sort)
+                values (201, 2, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'ROLE_DEMO', 'Tenant 2 Demo Role', 2, 1, 10)
+                """);
+        ResourceDeclaration resource = resource("subjectId", 401L);
+        put(resource, "tenantId", ResourceFieldType.LONG, 2L);
+
+        handler.upsert(resource);
+
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from authorization_subject_role
+                where tenant_id = 2 and subject_id = 401 and role_id = 201
+                """, Long.class)).isEqualTo(1L);
     }
 
     private ResourceDeclaration resource(String subjectField, Object subjectValue) {
@@ -267,11 +286,35 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
     @Configuration
     @MapperScan(basePackageClasses = {
             RoleMapper.class,
-            SubjectRoleBindingMapper.class,
-            TenantMemberMapper.class,
-            IdentityUserMapper.class
+            SubjectRoleBindingMapper.class
     })
     @Import(AuthSubjectRoleResourceHandler.class)
     static class TestConfig {
+
+        @Bean
+        AuthorizationSubjectReferenceProvider subjectReferenceProvider(JdbcTemplate jdbcTemplate) {
+            return (tenantId, memberNo, username) -> {
+                if (memberNo != null && !memberNo.isBlank()) {
+                    return jdbcTemplate.query("""
+                                    select id from tenant_member
+                                    where tenant_id = ? and member_no = ? and left_at is null
+                                    limit 1
+                                    """,
+                            (rs, rowNum) -> rs.getLong(1), tenantId, memberNo.trim())
+                            .stream().findFirst().orElse(null);
+                }
+                if (username == null || username.isBlank()) {
+                    return null;
+                }
+                return jdbcTemplate.query("""
+                                select tm.id from tenant_member tm
+                                join identity_user iu on iu.id = tm.user_id
+                                where tm.tenant_id = ? and iu.username = ? and tm.left_at is null
+                                limit 1
+                                """,
+                        (rs, rowNum) -> rs.getLong(1), tenantId, username.trim())
+                        .stream().findFirst().orElse(null);
+            };
+        }
     }
 }

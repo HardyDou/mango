@@ -6,8 +6,7 @@ import io.mango.access.core.auth.IpWhitelistMatcher;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.authorization.api.ITokenProvider;
-import io.mango.authorization.api.SecurityPrincipal;
-import io.mango.authorization.api.TokenContextHolder;
+import io.mango.authorization.api.vo.SecurityPrincipalVO;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -146,7 +145,7 @@ public class AuthSecurityConfig {
                     Long memberId = resolveLongClaim(token, "memberId");
                     String appCode = tokenService.getClaim(token, "appCode");
                     String tenantId = firstText(tokenService.getClaim(token, "tenantId"), MangoContextHolder.tenantId());
-                    SecurityPrincipal principal = new SecurityPrincipal(
+                    SecurityPrincipalVO principal = new SecurityPrincipalVO(
                             userId,
                             memberId,
                             tenantId,
@@ -174,7 +173,7 @@ public class AuthSecurityConfig {
                             partyType,
                             partyId,
                             appCode));
-                    TokenContextHolder.setToken(ITokenProvider.BEARER_PREFIX + token);
+                    MangoContextHolder.setToken(ITokenProvider.BEARER_PREFIX + token);
                 }
             }
 
@@ -182,7 +181,7 @@ public class AuthSecurityConfig {
                 filterChain.doFilter(request, response);
             } finally {
                 SecurityContextHolder.clearContext();
-                TokenContextHolder.clear();
+                MangoContextHolder.clearToken();
             }
         }
 

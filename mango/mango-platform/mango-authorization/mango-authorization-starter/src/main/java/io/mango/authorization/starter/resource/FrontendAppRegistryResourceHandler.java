@@ -1,6 +1,6 @@
 package io.mango.authorization.starter.resource;
 
-import io.mango.authorization.core.entity.FrontendAppRegistry;
+import io.mango.authorization.core.entity.FrontendAppRegistryEntity;
 import io.mango.authorization.core.service.IAuthorizationAppService;
 import io.mango.resource.api.ResourceHandler;
 import io.mango.resource.api.ResourceTypes;
@@ -49,7 +49,7 @@ public class FrontendAppRegistryResourceHandler implements ResourceHandler {
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
-        FrontendAppRegistry registry = new FrontendAppRegistry();
+        FrontendAppRegistryEntity registry = new FrontendAppRegistryEntity();
         registry.setAppCode(requiredString(resource, "appCode"));
         registry.setAppType(stringField(resource, "appType"));
         registry.setDeployMode(stringField(resource, "deployMode"));

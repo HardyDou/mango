@@ -3,18 +3,19 @@ package io.mango.authorization.resource.sync;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.annotation.ApiAccess;
-import io.mango.authorization.api.annotation.InternalApi;
-import io.mango.authorization.api.annotation.LoginApi;
+import io.mango.authorization.api.annotation.InternalAccess;
+import io.mango.authorization.api.annotation.LoginAccess;
 import io.mango.authorization.api.annotation.PermissionAccess;
-import io.mango.authorization.api.annotation.PublicApi;
+import io.mango.authorization.api.annotation.PublicAccess;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
 import io.mango.authorization.core.service.IApiResourceService;
-import io.mango.authorization.core.service.impl.ApiResourceServiceImpl;
+import io.mango.authorization.core.service.impl.ApiResourceService;
 import io.mango.authorization.starter.resource.ApiResourceHandler;
 import io.mango.common.result.R;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
@@ -229,6 +230,12 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
                     create_time timestamp,
                     update_time timestamp,
                     deleted tinyint not null default 0,
+                    tenant_id varchar(64) not null default 'default',
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp not null default current_timestamp,
+                    updated_by bigint,
+                    updated_at timestamp not null default current_timestamp,
                     unique key uk_authorization_api_resource_method_path (module_name, http_method, path_pattern)
                 )
                 """);
@@ -267,7 +274,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
             TransactionAutoConfiguration.class,
             MybatisPlusAutoConfiguration.class,
             PersistenceMybatisPlusAutoConfiguration.class,
-            ApiResourceServiceImpl.class,
+            ApiResourceService.class,
             ApiResourceHandler.class
     })
     static class TestApp {
@@ -276,8 +283,8 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
         ApiResourceApi apiResourceApi(IApiResourceService apiResourceService) {
             return new ApiResourceApi() {
                 @Override
-                public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
-                    return R.ok(apiResourceService.registerApiResources(resources));
+                public R<ApiResourceRegisterResultVO> registerApiResources(ApiResourceRegisterRequest request) {
+                    return R.ok(apiResourceService.registerApiResources(request.getResources()));
                 }
 
                 @Override
@@ -325,7 +332,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
             return "ok";
         }
 
-        @LoginApi(desc = "Login resource")
+        @LoginAccess(desc = "Login resource")
         @GetMapping("/resource-sync/login")
         String login() {
             return "ok";
@@ -346,7 +353,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
             return "ok";
         }
 
-        @PublicApi
+        @PublicAccess
         @GetMapping("/resource-sync/public")
         String publicResource() {
             return "ok";
@@ -357,14 +364,14 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
             return "ok";
         }
 
-        @InternalApi
+        @InternalAccess
         @GetMapping("/resource-sync/internal")
         String internal() {
             return "ok";
         }
     }
 
-    @PublicApi
+    @PublicAccess
     @RestController
     static class TypeLevelPublicController {
 

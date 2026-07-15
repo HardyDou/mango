@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -19,6 +20,7 @@ public class RoleCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Schema(description = "角色ID，创建时为空，修改时必填")
+    @Positive(message = "角色ID必须为正数")
     private Long roleId;
 
     @Schema(description = "应用编码")

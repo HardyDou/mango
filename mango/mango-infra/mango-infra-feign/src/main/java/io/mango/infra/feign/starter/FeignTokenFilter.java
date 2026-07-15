@@ -1,6 +1,6 @@
 package io.mango.infra.feign.starter;
 
-import io.mango.authorization.api.TokenContextHolder;
+import io.mango.infra.context.api.MangoContextHolder;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -11,7 +11,7 @@ import org.springframework.core.annotation.Order;
 import java.io.IOException;
 
 /**
- * Servlet filter to extract JWT token from incoming requests and store in TokenContextHolder.
+ * Servlet filter to extract JWT token from incoming requests and store in MangoContextHolder.
  * <p>
  * This filter runs early in the filter chain to capture the Authorization header
  * before any Feign calls are made.
@@ -32,13 +32,13 @@ public class FeignTokenFilter implements Filter {
             if (servletRequest instanceof HttpServletRequest httpRequest) {
                 String authHeader = httpRequest.getHeader(AUTHORIZATION_HEADER);
                 if (authHeader != null && !authHeader.isEmpty()) {
-                    TokenContextHolder.setToken(authHeader);
+                    MangoContextHolder.setToken(authHeader);
                     log.debug("Captured JWT token from request");
                 }
             }
             chain.doFilter(servletRequest, servletResponse);
         } finally {
-            TokenContextHolder.clear();
+            MangoContextHolder.clearToken();
         }
     }
 }

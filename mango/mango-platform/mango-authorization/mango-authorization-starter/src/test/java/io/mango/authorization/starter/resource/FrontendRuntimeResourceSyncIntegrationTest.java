@@ -3,8 +3,11 @@ package io.mango.authorization.starter.resource;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.authorization.api.AuthorizationResourceTypes;
+import io.mango.resource.api.ResourceTypes;
+import io.mango.authorization.api.command.AppCommand;
+import io.mango.authorization.api.command.AppLoginContextCommand;
 import io.mango.authorization.api.command.TenantAppBindingCommand;
+import io.mango.authorization.api.query.TenantAppBindingQuery;
 import io.mango.authorization.api.vo.AppRuntimeDescriptorVO;
 import io.mango.authorization.api.vo.ButtonDisplayRuleVO;
 import io.mango.authorization.api.vo.TenantAppBindingVO;
@@ -15,8 +18,8 @@ import io.mango.authorization.core.mapper.FrontendAppRegistryMapper;
 import io.mango.authorization.core.mapper.FrontendModuleRuntimeStrategyMapper;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.authorization.core.service.ITenantAppBindingService;
-import io.mango.authorization.core.service.impl.AuthorizationAppServiceImpl;
-import io.mango.authorization.core.service.impl.FrontendRuntimeStrategyServiceImpl;
+import io.mango.authorization.core.service.impl.AuthorizationAppService;
+import io.mango.authorization.core.service.impl.FrontendRuntimeStrategyService;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceHandler;
@@ -84,11 +87,12 @@ class FrontendRuntimeResourceSyncIntegrationTest {
     private ResourceRegistrySyncService syncService;
 
     @Autowired
-    private AuthorizationAppServiceImpl appService;
+    private AuthorizationAppService appService;
 
     @BeforeEach
     void setUp() {
         rebuildTables();
+        AuthorizationStarterTestSchema.ensureCanonicalColumns(jdbcTemplate);
         jdbcTemplate.update("""
                 insert into authorization_app (
                     id, app_code, app_name, icon, sort, status, remark, create_time, update_time
@@ -107,8 +111,11 @@ class FrontendRuntimeResourceSyncIntegrationTest {
 
         assertThat(stringValue("authorization_frontend_app_registry", "app_code")).isEqualTo("guarantee-remote");
         assertThat(stringValue("authorization_frontend_app_registry", "app_type")).isEqualTo("MICRO_APP");
+        assertThat(stringValue("authorization_frontend_app_registry", "tenant_id")).isEqualTo("default");
         assertThat(stringValue("authorization_frontend_module_runtime_strategy", "runtime_code"))
                 .isEqualTo("guarantee-remote");
+        assertThat(stringValue("authorization_frontend_module_runtime_strategy", "tenant_id"))
+                .isEqualTo("default");
         assertThat(count("resource_registry")).isEqualTo(2);
         assertThat(jdbcTemplate.queryForObject("""
                 select target_table from resource_registry
@@ -143,10 +150,34 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                 });
     }
 
+    @Test
+    void baselineAppWritesPlatformTenantToAppAndLoginContext() {
+        AppLoginContextCommand context = new AppLoginContextCommand();
+        context.setRealm("internal");
+        context.setActorType("TENANT_MEMBER");
+        context.setDefaultFlag(1);
+        context.setStatus(1);
+
+        AppCommand command = new AppCommand();
+        command.setAppCode("resource-baseline-app");
+        command.setAppName("Resource Baseline App");
+        command.setStatus(1);
+        command.setLoginContexts(List.of(context));
+
+        appService.upsertBaseline(command);
+
+        assertThat(jdbcTemplate.queryForObject("""
+                select tenant_id from authorization_app where app_code = 'resource-baseline-app'
+                """, String.class)).isEqualTo("default");
+        assertThat(jdbcTemplate.queryForObject("""
+                select tenant_id from authorization_app_login_context where app_code = 'resource-baseline-app'
+                """, String.class)).isEqualTo("default");
+    }
+
     private ResourceDeclaration frontendAppDeclaration() {
         ResourceDeclaration declaration = baseDeclaration(
                 "2000000000000000001",
-                AuthorizationResourceTypes.FRONTEND_APP_REGISTRY,
+                ResourceTypes.FRONTEND_APP_REGISTRY,
                 "frontend.guarantee.remote",
                 "Guarantee remote runtime");
         declaration.setTargetModule("authorization");
@@ -166,7 +197,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
     private ResourceDeclaration runtimeStrategyDeclaration() {
         ResourceDeclaration declaration = baseDeclaration(
                 "2000000000000000002",
-                AuthorizationResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY,
+                ResourceTypes.FRONTEND_MODULE_RUNTIME_STRATEGY,
                 "frontend.guarantee.strategy",
                 "Guarantee runtime strategy");
         declaration.setTargetModule("authorization");
@@ -216,6 +247,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     sort int not null,
                     status tinyint not null,
                     remark varchar(255),
+                    tenant_id varchar(64) not null default 'default',
                     create_time timestamp,
                     update_time timestamp
                 )
@@ -231,6 +263,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     default_flag tinyint not null,
                     status tinyint not null,
                     sort int not null,
+                    tenant_id varchar(64) not null default 'default',
                     create_time timestamp,
                     update_time timestamp
                 )
@@ -249,6 +282,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     health_check_url varchar(512),
                     sandbox_enabled boolean not null,
                     style_isolation varchar(32) not null,
+                    tenant_id varchar(64) not null default 'default',
                     create_time timestamp,
                     update_time timestamp
                 )
@@ -263,6 +297,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     runtime_code varchar(64) not null,
                     status tinyint not null,
                     sort int not null,
+                    tenant_id varchar(64) not null default 'default',
                     create_time timestamp,
                     update_time timestamp
                 )
@@ -335,8 +370,8 @@ class FrontendRuntimeResourceSyncIntegrationTest {
             ResourceChangeLogMapper.class
     })
     @Import({
-            AuthorizationAppServiceImpl.class,
-            FrontendRuntimeStrategyServiceImpl.class,
+            AuthorizationAppService.class,
+            FrontendRuntimeStrategyService.class,
             FrontendAppRegistryResourceHandler.class,
             FrontendModuleRuntimeStrategyResourceHandler.class,
             ResourceRegistryRepository.class,
@@ -446,7 +481,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
     static class AlwaysEnabledTenantAppBindingService implements ITenantAppBindingService {
 
         @Override
-        public List<TenantAppBindingVO> list(Long tenantId, String appCode, Integer status) {
+        public List<TenantAppBindingVO> list(TenantAppBindingQuery query) {
             return List.of();
         }
 
@@ -457,6 +492,11 @@ class FrontendRuntimeResourceSyncIntegrationTest {
 
         @Override
         public Boolean disable(Long tenantId, String appCode) {
+            return true;
+        }
+
+        @Override
+        public Boolean disableRequired(Long tenantId, String appCode) {
             return true;
         }
 
@@ -473,8 +513,28 @@ class FrontendRuntimeResourceSyncIntegrationTest {
     static class AlwaysAuthorizedSubjectAuthorityService implements ISubjectAuthorityService {
 
         @Override
+        public List<String> listSubjectRoles(Long subjectId) {
+            return List.of("admin");
+        }
+
+        @Override
+        public List<String> listSubjectRoles(Long subjectId, String appCode) {
+            return List.of("admin");
+        }
+
+        @Override
         public List<String> listSubjectRoles(AuthorizationQuery query) {
             return List.of("admin");
+        }
+
+        @Override
+        public List<String> listSubjectPermissions(Long subjectId) {
+            return List.of();
+        }
+
+        @Override
+        public List<String> listSubjectPermissions(Long subjectId, String appCode) {
+            return List.of();
         }
 
         @Override
