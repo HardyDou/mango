@@ -38,14 +38,15 @@ class InternalCallFeignInterceptorTest {
                 .target("http://mango-resource-capability-app")
                 .uri("/resource/declarations/register");
         template.query("b", "2");
-        template.query("a", "1");
+        template.query("a", "2", "1");
 
         interceptor.apply(template);
 
         String timestamp = firstHeader(template, "X-Internal-Timestamp");
         String nonce = firstHeader(template, "X-Internal-Nonce");
         String signature = firstHeader(template, "X-Internal-Signature");
-        String payload = timestamp + ":" + nonce + ":POST:/resource/declarations/register:a=1&b=2";
+        String payload = timestamp + ":" + nonce
+                + ":POST:/resource/declarations/register:a=1&a=2&b=2";
 
         assertThat(firstHeader(template, "X-Internal-Call")).isEqualTo("true");
         assertThat(signature).isEqualTo(hmacSha256(payload, "test-secret"));

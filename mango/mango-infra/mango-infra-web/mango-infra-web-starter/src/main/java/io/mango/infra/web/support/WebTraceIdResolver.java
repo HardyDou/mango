@@ -4,6 +4,8 @@ import io.mango.infra.context.api.MangoContextHeaders;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.MDC;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * 从 APM 上下文和 HTTP Header 中解析 traceId。
  */
@@ -13,6 +15,7 @@ public class WebTraceIdResolver {
     private static final String HEADER_TRACE_ID = MangoContextHeaders.TRACE_ID;
     private static final String HEADER_REQUEST_ID = MangoContextHeaders.REQUEST_ID;
     private static final String HEADER_TRACEPARENT = "traceparent";
+    private static final int TRACE_ID_LENGTH = 32;
 
     public String resolveTraceId(HttpServletRequest request) {
         String traceId = firstText(MDC.get(TRACE_ID_KEY), skyWalkingTraceId());
@@ -34,7 +37,7 @@ public class WebTraceIdResolver {
             return null;
         }
         String[] parts = traceparent.split("-");
-        if (parts.length >= 2 && parts[1].length() == 32) {
+        if (parts.length >= 2 && parts[1].length() == TRACE_ID_LENGTH) {
             return parts[1];
         }
         return null;
@@ -44,8 +47,12 @@ public class WebTraceIdResolver {
         try {
             Class<?> traceContextClass = Class.forName("org.apache.skywalking.apm.toolkit.trace.TraceContext");
             Object result = traceContextClass.getMethod("getTraceId").invoke(null);
-            return result == null ? null : result.toString();
-        } catch (Exception ignored) {
+            if (result == null) {
+                return null;
+            }
+            return result.toString();
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+                 | InvocationTargetException ignored) {
             return null;
         }
     }

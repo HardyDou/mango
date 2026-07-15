@@ -15,4 +15,21 @@
 
     <name>Mango Infra Web API</name>
     <description>Mango Infra Web API - HTTP 边界注解与请求上下文契约</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.mango.common</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

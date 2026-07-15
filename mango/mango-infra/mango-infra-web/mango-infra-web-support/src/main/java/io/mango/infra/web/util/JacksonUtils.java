@@ -50,8 +50,11 @@ public class JacksonUtils {
     }
 
     public static <T> T convertValue(Object value, Class<T> targetType) {
-        if (value == null || targetType == null || targetType.isInstance(value)) {
-            return targetType == null ? null : targetType.cast(value);
+        if (value == null || targetType == null) {
+            return null;
+        }
+        if (targetType.isInstance(value)) {
+            return targetType.cast(value);
         }
         return MAPPER.convertValue(value, targetType);
     }

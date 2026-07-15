@@ -2,6 +2,7 @@ package io.mango.infra.feign.starter;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
+import io.mango.infra.web.util.InternalCallSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,11 +11,9 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Feign interceptor for internal call authentication.
@@ -35,7 +34,7 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
 
     public static final int ORDER = ModuleTargetFeignInterceptor.ORDER + 100;
 
-    private static final Logger log = LoggerFactory.getLogger(InternalCallFeignInterceptor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InternalCallFeignInterceptor.class);
 
     private static final String INTERNAL_CALL_HEADER = "X-Internal-Call";
     private static final String TIMESTAMP_HEADER = "X-Internal-Timestamp";
@@ -59,7 +58,7 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
     public void apply(RequestTemplate template) {
         // Skip if no secret configured (dev mode)
         if (sharedSecret == null || sharedSecret.isEmpty()) {
-            log.debug("No internal call secret configured, skipping internal call headers");
+            LOGGER.debug("No internal call secret configured, skipping internal call headers");
             return;
         }
 
@@ -72,10 +71,8 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
         String path = canonicalPath(template.url());
 
         // Build signature payload: timestamp:nonce:method:path:query
-        String payload = timestamp + ":" + nonce + ":" + method + ":" + path + ":" + queryString;
-
-        // Calculate HMAC-SHA256 signature
-        String signature = hmacSha256(payload, sharedSecret);
+        String signature = InternalCallSignature.sign(
+                String.valueOf(timestamp), nonce, method, path, queryString, sharedSecret);
 
         // Add all required headers
         template.header(INTERNAL_CALL_HEADER, "true");
@@ -84,7 +81,7 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
         template.header(SECRET_VERSION_HEADER, String.valueOf(secretVersion));
         template.header(SIGNATURE_HEADER, signature);
 
-        log.debug("Added internal call headers: timestamp={}, nonce={}, signature={}",
+        LOGGER.debug("Added internal call headers: timestamp={}, nonce={}, signature={}",
                 timestamp, nonce, signature);
     }
 
@@ -98,14 +95,7 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
      * Results are sorted alphabetically for consistent signature calculation.
      */
     private String buildQueryString(Map<String, Collection<String>> queries) {
-        if (queries == null || queries.isEmpty()) {
-            return "";
-        }
-        return queries.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .flatMap(e -> e.getValue().stream()
-                        .map(v -> e.getKey() + "=" + v))
-                .collect(Collectors.joining("&"));
+        return InternalCallSignature.canonicalizeQueries(queries);
     }
 
     /**
@@ -126,26 +116,14 @@ public class InternalCallFeignInterceptor implements RequestInterceptor, Ordered
             // Fallback below keeps invalid but usable path strings deterministic.
         }
         int queryIndex = url.indexOf('?');
-        String path = queryIndex >= 0 ? url.substring(0, queryIndex) : url;
-        return path.isEmpty() ? "/" : path;
+        String path = url;
+        if (queryIndex >= 0) {
+            path = url.substring(0, queryIndex);
+        }
+        if (path.isEmpty()) {
+            return "/";
+        }
+        return path;
     }
 
-    /**
-     * Calculate HMAC-SHA256 signature.
-     */
-    private String hmacSha256(String data, String secret) {
-        try {
-            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
-            mac.init(new javax.crypto.spec.SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] hmacBytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hmacBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            log.error("Failed to calculate HMAC-SHA256", e);
-            throw new RuntimeException("Failed to calculate HMAC-SHA256", e);
-        }
-    }
 }

@@ -22,6 +22,7 @@
 
 ## 4. 模块入口
 - `mango-infra-web-api`：提供 `@Inner`、`IRequestContextProvider`、`IInternalPathProvider`、`RequestContextSnapshot` 等轻量契约。
+- `mango-infra-web-support`：提供统一 Jackson 配置与内部调用签名契约。
 - `mango-infra-web-starter`：提供 Web 自动配置、过滤器、内部路径扫描、异常处理、Jackson 定制和 request context provider。
 
 认证由 auth 相关模块负责，授权由 authorization/access 负责，服务间签名头由 feign 模块生成。
@@ -58,7 +59,7 @@ public R<Boolean> rebuild(@RequestBody RebuildCommand command) {
 读取请求上下文：
 
 ```java
-RequestContextSnapshot snapshot = requestContextProvider.current();
+RequestContextSnapshot snapshot = requestContextProvider.currentContext();
 String traceId = snapshot.traceId();
 ```
 
@@ -124,12 +125,31 @@ mango:
 - `X-Internal-Signature`
 
 签名 payload 为 `timestamp:nonce:method:path:query`，算法为 HMAC-SHA256。调用方通常由 `mango-infra-feign` 自动生成这些请求头。
+查询参数按完整的 `key=value` 项排序，重复参数也参与签名。服务端先验证签名，再通过 `IKvStore#setIfAbsent`
+原子占用 nonce；占用失败或 KV 异常都会拒绝请求。内部路径尚未成功加载时过滤器按 fail-closed 策略拒绝请求，
+避免启动或刷新窗口误放行内部接口。
 
 ## 8. 数据与初始化
 本模块没有 SQL migration、Runner 或 Initializer。`InternalCallFilter` 需要 `IKvStore` 记录 nonce 防重放；如果宿主应用没有 KV store，则不会注册内部调用过滤器，内部接口保护链路不完整。
 
 ## 9. 管理入口
 本模块不创建菜单和权限。`@Inner` 只限制调用来源，不授予业务权限。请求上下文可以包含 tenant id 和 user id，但权限判断、租户过滤和资源授权必须由上层模块执行。
+
+## 9.1 验证基线
+
+- API 测试覆盖请求上下文空值处理、Map 防御性复制和不可变语义。
+- Support 测试覆盖 Jackson Long/Java Time 契约，以及原始查询与 Feign 多值查询的统一签名规范。
+- Starter 测试覆盖内部路径发现、签名校验、并发重放、路径加载失败关闭、请求上下文与自动配置。
+- 随机端口 Tomcat E2E 覆盖异常响应、Long/时间序列化、`@Inner` 路径扫描、合法内部调用及重放拒绝。
+- Feign 消费测试使用同一 Maven reactor 构建当前 Web Support，并验证多值查询签名。
+
+定向回归命令：
+
+```bash
+mvn -f mango/pom.xml \
+  -pl :mango-infra-web-api,:mango-infra-web-support,\
+:mango-infra-web-starter,:mango-infra-feign-starter test
+```
 
 ## 10. 快速开始
 1. Web 应用接入 `mango-infra-web-starter`。
