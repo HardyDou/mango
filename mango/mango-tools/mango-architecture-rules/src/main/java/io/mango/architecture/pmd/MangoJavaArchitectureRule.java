@@ -1253,7 +1253,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private boolean isService(ASTTypeDeclaration type) {
-        if (type.hasModifiers(JModifier.ABSTRACT)) {
+        if (type.hasModifiers(JModifier.ABSTRACT) || isLocalCapabilityContract(type)) {
             return false;
         }
         if (hasAnnotation(type, SPRING_SERVICE)
@@ -1264,7 +1264,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private boolean isServiceContract(ASTTypeDeclaration type) {
-        return type.isInterface() && type.getSimpleName().matches("I[A-Z].*Service");
+        return type.isInterface()
+                && type.getSimpleName().matches("I[A-Z].*Service")
+                && !isLocalCapabilityContract(type);
     }
 
     private boolean isMapper(ASTTypeDeclaration type) {

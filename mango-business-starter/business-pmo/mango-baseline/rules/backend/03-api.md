@@ -75,7 +75,8 @@
 
 - `api` 只放 `XxxApi`、`command`、`query`、`vo`、`enums`。
 - `io.mango.infra.*` 中只在进程内使用、不承载 HTTP/Feign 语义的 Java 能力契约，必须使用
-  `@LocalCapabilityContract` 显式标识；该标记可用于契约接口及其本地输入/输出类型。
+  `@LocalCapabilityContract` 显式标识；该标记默认用于契约接口及其本地输入/输出类型。只有为了
+  保持已发布的公开类名和构造方式兼容时，本地能力入口的具体实现类才可同时标记。
 - `@LocalCapabilityContract` 禁止用于 `platform`、`business` 或其它非 `io.mango.infra.*` 包，禁止由
   Controller、FeignClient 或其它 HTTP adapter 实现，也不能用来规避 HTTP `XxxApi` 的 `R<T>`、
   Bean Validation、协议模型和适配器一致性规则。

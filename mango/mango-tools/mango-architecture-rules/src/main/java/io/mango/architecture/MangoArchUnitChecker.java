@@ -1900,7 +1900,8 @@ public final class MangoArchUnitChecker {
     }
 
     private boolean isServiceImplementation(JavaClass javaClass) {
-        if (javaClass.getModifiers().contains(JavaModifier.ABSTRACT)) {
+        if (javaClass.getModifiers().contains(JavaModifier.ABSTRACT)
+                || isLocalCapabilityContract(javaClass)) {
             return false;
         }
         if (javaClass.isAnnotatedWith(SERVICE)
@@ -1917,7 +1918,9 @@ public final class MangoArchUnitChecker {
     }
 
     private boolean isServiceContract(JavaClass javaClass) {
-        return javaClass.isInterface() && javaClass.getSimpleName().matches("I[A-Z].*Service");
+        return javaClass.isInterface()
+                && javaClass.getSimpleName().matches("I[A-Z].*Service")
+                && !isLocalCapabilityContract(javaClass);
     }
 
     private boolean isApiContract(JavaClass javaClass) {

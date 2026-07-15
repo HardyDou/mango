@@ -7,11 +7,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks an in-process JVM capability contract that is not an HTTP API protocol.
+ * Marks an in-process JVM capability boundary that is not an HTTP API protocol.
  *
- * <p>The marker is restricted by Mango architecture checks to contracts under
- * {@code io.mango.infra.*}. A marked contract must not be implemented by an HTTP Controller or
- * Feign adapter.
+ * <p>The marker is restricted by Mango architecture checks to types under
+ * {@code io.mango.infra.*}. It normally marks contracts and local input/output types. A concrete
+ * capability entry may use it only when its public legacy type name must remain compatible. A
+ * marked boundary must not be implemented or exposed by an HTTP Controller or Feign adapter.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)

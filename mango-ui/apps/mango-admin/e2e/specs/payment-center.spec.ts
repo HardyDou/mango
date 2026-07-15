@@ -2449,6 +2449,11 @@ function collectRuntimeErrors(page: Page, apiPathPrefix = '/api/payment') {
       runtimeErrors.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || 'failed'}`);
     }
   });
+  page.on('response', response => {
+    if (response.url().includes(apiPathPrefix) && response.status() >= 500) {
+      runtimeErrors.push(`${response.request().method()} ${response.url()} HTTP ${response.status()}`);
+    }
+  });
   return runtimeErrors;
 }
 
@@ -6918,6 +6923,7 @@ test.describe('支付中心 E2E', () => {
   });
 
   test('签约通道按字段模板和签约能力真实保存、回显和删除审计可用', async ({ page }) => {
+    const runtimeErrors = collectRuntimeErrors(page);
     await login(page);
     const headers = await apiHeaders(page);
     const suffix = `${Date.now()}`;
@@ -6960,7 +6966,18 @@ test.describe('支付中心 E2E', () => {
     });
     const createBody = await expectBusinessOk<string | number>(createResponse);
     const contractId = String(createBody.data || '');
-    expect(contractId).toBeTruthy();
+    expect(contractId).toMatch(/^\d+$/);
+
+    const storedConfigRows = mysqlQueryRows(`
+      SELECT config_values_json
+      FROM payment_channel_contract
+      WHERE tenant_id = '1'
+        AND id = ${contractId}
+        AND del_flag = 0
+    `);
+    expect(storedConfigRows).toHaveLength(1);
+    expect(storedConfigRows[0]).toContain('"apiSecret":"enc:');
+    expect(storedConfigRows[0]).not.toContain(rawSecret);
 
     const createdDetailResponse = await page.request.get('/api/payment/channel-contracts/detail', {
       headers,
@@ -7023,6 +7040,24 @@ test.describe('支付中心 E2E', () => {
     expect(updatedDetailBody.data?.appId).toBe(`e2e-app-edited-${suffix}`);
     expect(updatedDetailBody.data?.configValuesJson).toContain('"apiSecret":"******"');
 
+    const updatedStoredConfigRows = mysqlQueryRows(`
+      SELECT config_values_json
+      FROM payment_channel_contract
+      WHERE tenant_id = '1'
+        AND id = ${contractId}
+        AND del_flag = 0
+    `);
+    expect(updatedStoredConfigRows).toHaveLength(1);
+    expect(updatedStoredConfigRows[0]).toContain('"apiSecret":"enc:');
+    expect(updatedStoredConfigRows[0]).not.toContain(rawSecret);
+
+    if (process.env.MANGO_E2E_PAYMENT_CONTRACT_SCREENSHOT) {
+      await page.screenshot({
+        path: process.env.MANGO_E2E_PAYMENT_CONTRACT_SCREENSHOT,
+        fullPage: true,
+      });
+    }
+
     const [deleteResponse] = await Promise.all([
       page.waitForResponse(response => response.url().includes('/api/payment/channel-contracts') && response.request().method() === 'DELETE'),
       (async () => {
@@ -7048,6 +7083,12 @@ test.describe('支付中心 E2E', () => {
       resourceId: contractId,
       operationResult: 'SUCCESS',
     });
+    const deleteCertificateResponse = await page.request.delete('/api/file/files', {
+      headers,
+      params: { id: certificateFileId, reason: 'payment-channel-contract-e2e-cleanup' },
+    });
+    await expectBusinessOk<boolean>(deleteCertificateResponse);
+    expect(runtimeErrors).toEqual([]);
   });
 
   test('支付通道真实维护字段模板、通道能力和删除审计', async ({ page }) => {

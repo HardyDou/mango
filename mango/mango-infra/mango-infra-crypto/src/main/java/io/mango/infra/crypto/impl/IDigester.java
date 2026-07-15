@@ -1,10 +1,13 @@
 package io.mango.infra.crypto.impl;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * 无密钥摘要接口。
  * <p>
  * 只适用于 SHA-256、SM3 这类普通哈希算法；HMAC 应使用 {@link IKeyedDigester}。
  */
+@LocalCapabilityContract
 public interface IDigester {
 
     /**

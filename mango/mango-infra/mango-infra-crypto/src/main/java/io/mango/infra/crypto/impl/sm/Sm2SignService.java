@@ -1,7 +1,9 @@
 package io.mango.infra.crypto.impl.sm;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.crypto.impl.ISignService;
 import io.mango.infra.crypto.starter.CryptoProperties;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -24,10 +26,11 @@ import java.security.spec.X509EncodedKeySpec;
  * <p>
  * 使用 SM2 算法和用户 ID 参与签名。
  */
+@LocalCapabilityContract
 public class Sm2SignService implements ISignService {
 
-    private final CryptoProperties.Sm2Config config;
     private static final ECDomainParameters DOMAIN_PARAMS;
+    private final CryptoProperties.Sm2Config config;
 
     static {
         BouncyCastleLoader.ensure();
@@ -40,6 +43,8 @@ public class Sm2SignService implements ISignService {
         );
     }
 
+    @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW",
+            justification = "Fail-fast validation prevents constructing a signer with unusable key configuration")
     public Sm2SignService(CryptoProperties properties) {
         this.config = properties.getSm2();
         if (config.getUserId() == null || config.getUserId().isEmpty()) {
@@ -122,12 +127,11 @@ public class Sm2SignService implements ISignService {
         try {
             return Base64.decode(key);
         } catch (Exception e) {
-                try {
+            try {
                 return Hex.decode(key);
             } catch (Exception hexEx) {
                 throw new IllegalArgumentException(
-                        "key 既不是有效 Base64，也不是有效十六进制：" +
-                        (key.length() <= 64 ? key : key.substring(0, 64) + "..."), hexEx);
+                        "key 既不是有效 Base64，也不是有效十六进制", hexEx);
             }
         }
     }

@@ -45,6 +45,8 @@ import io.mango.infra.fileproc.fixture.LocalFileProcessCommand;
 import io.mango.infra.fileproc.fixture.LocalFileProcessorApi;
 import io.mango.infra.fileproc.fixture.LocalFileProcessorController;
 import io.mango.infra.fileproc.fixture.LocalFileProcessorFeignClient;
+import io.mango.infra.crypto.fixture.LocalCryptoService;
+import io.mango.infra.crypto.fixture.Sm4CryptoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import evil.SpoofedOrderService;
 
@@ -448,6 +450,14 @@ class MangoArchUnitCheckerTest {
         JavaClasses classes = importClasses(LocalFileProcessorApi.class, LocalFileProcessCommand.class);
 
         assertThat(checker.check(classes, ignored -> ModuleRole.API)).isEmpty();
+    }
+
+    @Test
+    void markedInfraLocalCapabilityServiceIsNotTreatedAsBusinessService() {
+        JavaClasses classes = importClasses(LocalCryptoService.class, Sm4CryptoService.class);
+
+        assertThat(checker.check(classes, javaClass ->
+                javaClass.isInterface() ? ModuleRole.API : ModuleRole.CORE)).isEmpty();
     }
 
     @Test

@@ -1,6 +1,8 @@
 package io.mango.infra.crypto.impl.sm;
 
 import io.mango.infra.crypto.starter.CryptoProperties;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,6 +67,15 @@ class Sm4CryptoServiceTest {
     }
 
     @Test
+    void encrypt_cbc_preservesEmbeddedIvCiphertextContract() {
+        String ciphertext = cbcService.encrypt("format contract", TEST_IV);
+        byte[] decoded = Base64.decode(ciphertext);
+
+        assertArrayEquals(Hex.decode(TEST_IV), java.util.Arrays.copyOf(decoded, 16));
+        assertEquals(0, (decoded.length - 16) % 16);
+    }
+
+    @Test
     void encrypt_decrypt_empty_string() {
         String plaintext = "";
         String ciphertext = cbcService.encrypt(plaintext);
@@ -113,6 +124,22 @@ class Sm4CryptoServiceTest {
         String ciphertext2 = ecbService.encrypt(plaintext);
         // ECB is deterministic for same key
         assertEquals(ciphertext1, ciphertext2);
+    }
+
+    @Test
+    void encrypt_ecbNoPadding_matchesOfficialSm4Vector() throws Exception {
+        CryptoProperties props = new CryptoProperties();
+        CryptoProperties.Sm4Config sm4 = new CryptoProperties.Sm4Config();
+        sm4.setSecretKey("0123456789abcdeffedcba9876543210");
+        sm4.setMode("ECB");
+        sm4.setPadding("NoPadding");
+        props.setSm4(sm4);
+        Sm4CryptoService service = new Sm4CryptoService(props);
+
+        byte[] ciphertext = service.encryptBytes(
+                Hex.decode("0123456789abcdeffedcba9876543210"), null);
+
+        assertEquals("681edf34d206965e86b3e94f536e4246", Hex.toHexString(ciphertext));
     }
 
     // --- Null/input validation tests ---
@@ -200,6 +227,31 @@ class Sm4CryptoServiceTest {
         sm4.setPadding("PKCS5Padding");
         props.setSm4(sm4);
         assertThrows(IllegalStateException.class, () -> new Sm4CryptoService(props));
+    }
+
+    @Test
+    void constructor_invalid_key_doesNotExposeSecretMaterial() {
+        String secretFragment = "not-a-key!private-material";
+        CryptoProperties props = new CryptoProperties();
+        CryptoProperties.Sm4Config sm4 = new CryptoProperties.Sm4Config();
+        sm4.setSecretKey(secretFragment);
+        sm4.setMode("CBC");
+        sm4.setPadding("PKCS5Padding");
+        props.setSm4(sm4);
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class, () -> new Sm4CryptoService(props));
+
+        assertFalse(exceptionChain(exception).contains(secretFragment));
+        assertFalse(exceptionChain(exception).contains("private-material"));
+    }
+
+    private String exceptionChain(Throwable throwable) {
+        StringBuilder messages = new StringBuilder();
+        for (Throwable current = throwable; current != null; current = current.getCause()) {
+            messages.append(current.getMessage()).append('\n');
+        }
+        return messages.toString();
     }
 
     // --- ECB mode tests (no IV) ---

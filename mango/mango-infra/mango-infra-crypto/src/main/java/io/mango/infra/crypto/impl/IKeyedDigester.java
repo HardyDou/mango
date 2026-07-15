@@ -1,10 +1,13 @@
 package io.mango.infra.crypto.impl;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * 带密钥的摘要接口。
  * <p>
  * HMAC 这类算法必须显式传入密钥，不应实现无密钥摘要接口。
  */
+@LocalCapabilityContract
 public interface IKeyedDigester {
 
     /**
