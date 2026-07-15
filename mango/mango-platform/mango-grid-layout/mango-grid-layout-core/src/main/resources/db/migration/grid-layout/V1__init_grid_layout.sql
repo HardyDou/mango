@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS `mango_user_grid_layout` (
   `id` bigint NOT NULL COMMENT '主键',
   `tenant_id` varchar(64) NOT NULL COMMENT '租户ID',
+  `org_id` bigint DEFAULT NULL COMMENT '组织 ID',
   `user_id` bigint NOT NULL COMMENT '用户ID',
   `page_code` varchar(100) NOT NULL COMMENT '页面编码',
   `schema_version` int NOT NULL DEFAULT '1' COMMENT '布局结构版本',

@@ -31,10 +31,10 @@ import static org.mockito.Mockito.when;
 @DisplayName("GridLayoutPersonalService Tests")
 class GridLayoutPersonalServiceTest {
 
+    private GridLayoutPersonalService gridLayoutPersonalService;
+
     @Mock
     private MangoUserGridLayoutMapper gridLayoutMapper;
-
-    private GridLayoutPersonalService gridLayoutPersonalService;
 
     @BeforeEach
     void setUp() {
@@ -93,7 +93,10 @@ class GridLayoutPersonalServiceTest {
                 {"schemaVersion":1,"pageCode":"admin-home-workbench","items":[{"id":"a","widgetType":"todo","layout":{"x":10,"y":0,"w":3,"h":3}}]}
                 """);
 
-        assertThrows(BizException.class, () -> gridLayoutPersonalService.savePersonal(command));
+        BizException exception = assertThrows(
+                BizException.class, () -> gridLayoutPersonalService.savePersonal(command));
+        assertEquals(400, exception.getCode());
+        assertEquals("布局项宽度超出12栅格", exception.getMessage());
     }
 
     @Test
@@ -119,7 +122,36 @@ class GridLayoutPersonalServiceTest {
                 {"schemaVersion":1,"pageCode":"other-page","items":[]}
                 """);
 
-        assertThrows(BizException.class, () -> gridLayoutPersonalService.savePersonal(command));
+        BizException exception = assertThrows(
+                BizException.class, () -> gridLayoutPersonalService.savePersonal(command));
+        assertEquals(400, exception.getCode());
+        assertEquals("布局页面编码不一致", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("savePersonal should reject malformed JSON with stable business error")
+    void savePersonal_malformedJson_throwsStableBizException() {
+        SaveGridLayoutPersonalCommand command = createCommand();
+        command.setLayoutJson("{invalid-json");
+
+        BizException exception = assertThrows(
+                BizException.class, () -> gridLayoutPersonalService.savePersonal(command));
+
+        assertEquals(400, exception.getCode());
+        assertEquals("布局 JSON 格式不正确", exception.getMessage());
+        assertTrue(exception.getCause() instanceof com.fasterxml.jackson.core.JsonProcessingException);
+    }
+
+    @Test
+    @DisplayName("savePersonal should reject missing tenant context")
+    void savePersonal_missingTenantContext_throwsStableBizException() {
+        MangoContextHolder.clear();
+
+        BizException exception = assertThrows(
+                BizException.class, () -> gridLayoutPersonalService.savePersonal(createCommand()));
+
+        assertEquals(400, exception.getCode());
+        assertEquals("缺少当前租户上下文", exception.getMessage());
     }
 
     @Test
