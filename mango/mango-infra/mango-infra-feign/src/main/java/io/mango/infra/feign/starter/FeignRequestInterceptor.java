@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class FeignRequestInterceptor implements RequestInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(FeignRequestInterceptor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FeignRequestInterceptor.class);
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
@@ -25,7 +25,7 @@ public class FeignRequestInterceptor implements RequestInterceptor {
         String token = MangoContextHolder.token();
         if (token != null && !token.isEmpty()) {
             template.header(AUTHORIZATION_HEADER, token);
-            log.debug("透传 JWT token");
+            LOGGER.debug("透传 JWT token");
         }
 
         MangoContextSnapshot context = MangoContextHolder.get();
@@ -33,6 +33,7 @@ public class FeignRequestInterceptor implements RequestInterceptor {
         put(template, MangoContextHeaders.TRACE_ID, context.traceId());
         put(template, MangoContextHeaders.TENANT_ID, context.tenantId());
         put(template, MangoContextHeaders.USER_ID, context.userId());
+        put(template, MangoContextHeaders.MEMBER_ID, context.memberId());
         put(template, MangoContextHeaders.PRINCIPAL_NAME, context.principalName());
         put(template, MangoContextHeaders.REALM, context.realm());
         put(template, MangoContextHeaders.ACTOR_TYPE, context.actorType());
@@ -45,7 +46,7 @@ public class FeignRequestInterceptor implements RequestInterceptor {
     private void put(RequestTemplate template, String name, Object value) {
         if (value != null && !value.toString().isBlank()) {
             template.header(name, value.toString());
-            log.debug("透传 Mango 上下文请求头: {}", name);
+            LOGGER.debug("透传 Mango 上下文请求头: {}", name);
         }
     }
 }

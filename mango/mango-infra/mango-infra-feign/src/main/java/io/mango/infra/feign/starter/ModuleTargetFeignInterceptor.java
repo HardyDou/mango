@@ -77,7 +77,10 @@ public class ModuleTargetFeignInterceptor implements RequestInterceptor, Ordered
         String normalizedContextPath = normalize(contextPath);
         String normalizedPath = normalize(path);
         if (normalizedContextPath.isEmpty()) {
-            return normalizedPath.isEmpty() ? "/" : normalizedPath;
+            if (normalizedPath.isEmpty()) {
+                return "/";
+            }
+            return normalizedPath;
         }
         if (normalizedPath.isEmpty() || "/".equals(normalizedPath)) {
             return normalizedContextPath;
@@ -90,8 +93,14 @@ public class ModuleTargetFeignInterceptor implements RequestInterceptor, Ordered
             return "";
         }
         String trimmed = value.trim();
-        String withLeadingSlash = trimmed.startsWith("/") ? trimmed : "/" + trimmed;
-        return withLeadingSlash.endsWith("/") ? withLeadingSlash.substring(0, withLeadingSlash.length() - 1) : withLeadingSlash;
+        String withLeadingSlash = trimmed;
+        if (!trimmed.startsWith("/")) {
+            withLeadingSlash = "/" + trimmed;
+        }
+        if (withLeadingSlash.endsWith("/")) {
+            return withLeadingSlash.substring(0, withLeadingSlash.length() - 1);
+        }
+        return withLeadingSlash;
     }
 
     private static class StaticModuleInfoResolverProvider implements ObjectProvider<ModuleInfoResolver> {

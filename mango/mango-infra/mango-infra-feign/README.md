@@ -44,7 +44,7 @@ public interface PaymentRemoteClient extends PaymentApi {
 
 | 配置 | 默认值 | 含义 |
 |------|--------|------|
-| `enabled` | `true` | 是否启用 Feign 自动配置。 |
+| `enabled` | `true` | Feign 总开关；关闭后核心拦截器、重试器和 Servlet token filter 均不注册。 |
 | `connect-timeout` | `5000` | 传入 Feign `Retryer.Default` 的 period 参数，单位毫秒；不是全局请求连接超时。 |
 | `read-timeout` | `10000` | 传入 Feign `Retryer.Default` 的 maxPeriod 参数，单位毫秒；不是全局请求读取超时。 |
 | `retry` | `3` | Feign retryer 最大尝试次数。 |
@@ -115,10 +115,29 @@ mango:
 - 动态目标请求 404：检查目标模块是否注册了正确 `serviceName` 和 `contextPath`，以及 Feign client 是否使用动态 `URI` 方法。
 - 重试导致重复写：写接口必须有幂等约束，或在业务 Feign 配置中调整重试策略。
 
-## 12. 相关文档
+## 12. 验证入口
+
+```bash
+mvn -f mango/pom.xml -pl :mango-infra-feign-starter clean test -DskipTests=false
+mvn -f mango/pom.xml \
+  -pl :mango-infra-feign-starter,:mango-architecture-verification \
+  -DskipTests \
+  -Dmango.architecture.skip=false \
+  -Dmango.architecture.mode=changed \
+  -Dmango.architecture.requireFullReactor=false \
+  -Dmango.architecture.base=origin/main \
+  -Dmango.check.changedOnly=true \
+  -Dmango.check.gate=no-new-violations \
+  -Dmango.check.baseRef=origin/main verify
+```
+
+`FeignOutboundFlowTest` 使用随机环回端口和真实 Feign/JDK HTTP 请求验证模块目标、上下文头与 HMAC
+签名。消费者兼容验证必须把消费者依赖的当前 API/Core/Starter 一同放入 reactor，禁止用旧本地 JAR 代替。
+
+## 13. 相关文档
 - [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 13. 补充资料
+## 14. 补充资料
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)

@@ -13,20 +13,24 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "mango.feign")
 public class FeignProperties {
 
-    /**
-     * Connection timeout in milliseconds
-     */
-    private int connectTimeout = 5000;
+    private static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 5_000;
+    private static final int DEFAULT_READ_TIMEOUT_MILLIS = 10_000;
+    private static final int DEFAULT_RETRY_ATTEMPTS = 3;
 
     /**
-     * Read timeout in milliseconds
+     * Initial retry period in milliseconds. The property name is retained for compatibility.
      */
-    private int readTimeout = 10000;
+    private int connectTimeout = DEFAULT_CONNECT_TIMEOUT_MILLIS;
 
     /**
-     * Number of retries
+     * Maximum retry period in milliseconds. The property name is retained for compatibility.
      */
-    private int retry = 3;
+    private int readTimeout = DEFAULT_READ_TIMEOUT_MILLIS;
+
+    /**
+     * Maximum retry attempts.
+     */
+    private int retry = DEFAULT_RETRY_ATTEMPTS;
 
     /**
      * Logger level for Feign clients

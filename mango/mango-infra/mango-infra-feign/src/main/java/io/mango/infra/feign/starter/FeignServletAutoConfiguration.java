@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.Ordered;
 
 /**
  * Servlet-only Feign support.
@@ -16,6 +15,7 @@ import org.springframework.core.Ordered;
 @AutoConfiguration(after = FeignAutoConfiguration.class)
 @ConditionalOnClass({Filter.class, FilterRegistrationBean.class})
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@ConditionalOnProperty(prefix = "mango.feign", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FeignServletAutoConfiguration {
 
     /**
@@ -29,7 +29,7 @@ public class FeignServletAutoConfiguration {
         registration.setFilter(new FeignTokenFilter());
         registration.addUrlPatterns("/*");
         registration.setName("feignTokenFilter");
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 4);
+        registration.setOrder(FeignTokenFilter.ORDER);
         return registration;
     }
 }
