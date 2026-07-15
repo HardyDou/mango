@@ -16,6 +16,7 @@ class PrefixedKvStoreTest {
         store.put("user:1", "value", 60);
         store.get("user:1");
         store.exists("user:1");
+        store.deleteIfValue("user:1", "value");
         store.delete("user:1");
 
         assertThat(delegate.lastKey).isEqualTo("mango:kv:test:cache:user:1");

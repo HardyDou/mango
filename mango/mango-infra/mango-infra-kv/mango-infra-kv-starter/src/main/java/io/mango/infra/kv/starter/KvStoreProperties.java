@@ -1,6 +1,9 @@
 package io.mango.infra.kv.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -45,21 +48,37 @@ public class KvStoreProperties {
     /**
      * Store selection configuration.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this nested property bean"))
     private Store store = new Store();
 
     /**
      * Provider-specific configurations
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this nested property bean"))
     private Provider provider = new Provider();
 
     /**
      * Capability bean default assembly configuration.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this nested property bean"))
     private Capability capability = new Capability();
 
     /**
      * KV key namespace configuration.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this nested property bean"))
     private Key key = new Key();
 
     @Data
@@ -73,10 +92,22 @@ public class KvStoreProperties {
     @Data
     public static class Provider {
 
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private Redis redis = new Redis();
 
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private Jdbc jdbc = new Jdbc();
 
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private Memory memory = new Memory();
     }
 
@@ -90,6 +121,10 @@ public class KvStoreProperties {
         private String password;
         private int database = 0;
         private int timeout = DEFAULT_REDIS_TIMEOUT_MILLIS;
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private Pool pool = new Pool();
 
         @Data
@@ -130,9 +165,17 @@ public class KvStoreProperties {
         private String driver;
 
         /** Druid 连接池配置，fallback 到 spring.datasource.druid.* */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private Druid druid = new Druid();
 
         /** HikariCP 连接池配置，fallback 到 spring.datasource.hikari.* */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this nested property bean"))
         private Hikari hikari = new Hikari();
 
         @Data

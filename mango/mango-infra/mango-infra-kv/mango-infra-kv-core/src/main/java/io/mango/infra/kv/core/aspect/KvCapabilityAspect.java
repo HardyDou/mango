@@ -73,7 +73,7 @@ public class KvCapabilityAspect {
         this.idempotentProvider = idempotentProvider;
         this.serializerProvider = serializerProvider;
         this.beanFactory = beanFactory;
-        this.kvContextContributors = kvContextContributors;
+        this.kvContextContributors = List.copyOf(kvContextContributors);
     }
 
     // ==================== @Cacheable ====================

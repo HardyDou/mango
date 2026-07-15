@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.support;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IConverter;
 
@@ -17,6 +18,8 @@ public class JsonConverter implements IConverter {
         this.objectMapper = new ObjectMapper();
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "ObjectMapper is an intentionally shared thread-safe application dependency")
     public JsonConverter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }

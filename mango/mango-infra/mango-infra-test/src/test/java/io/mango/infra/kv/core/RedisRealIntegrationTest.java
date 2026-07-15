@@ -2,8 +2,12 @@ package io.mango.infra.kv.core;
 
 import io.mango.infra.kv.api.ICounter;
 import io.mango.infra.kv.api.IKvSortedSet;
+import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.kv.core.capability.KvStoreCounter;
+import io.mango.infra.kv.core.outbox.KvOutboxStore;
 import io.mango.infra.kv.core.redis.RedisKvStore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -116,5 +120,62 @@ class RedisRealIntegrationTest {
 
         assertThat(successCount.get()).isEqualTo(threadCount * incrementsPerThread);
         assertThat(counter.get(key)).isEqualTo(threadCount * incrementsPerThread);
+    }
+
+    @Test
+    void incrementBy_doesNotRefreshFixedWindowWhenCounterReturnsToZero() throws InterruptedException {
+        String key = KEY_PREFIX + "counter:fixed-window";
+
+        assertThat(kvStore.incrementBy(key, 1, 4)).isEqualTo(1);
+        Thread.sleep(1100);
+        assertThat(kvStore.incrementBy(key, -1, 4)).isZero();
+        long ttlBeforeIncrement = redisson.getKeys().remainTimeToLive(key);
+
+        assertThat(kvStore.incrementBy(key, 1, 4)).isEqualTo(1);
+        long ttlAfterIncrement = redisson.getKeys().remainTimeToLive(key);
+
+        assertThat(ttlAfterIncrement).isLessThanOrEqualTo(ttlBeforeIncrement + 200);
+    }
+
+    @Test
+    void outbox_concurrentClaim_assignsMessageToOnlyOneWorker() throws InterruptedException {
+        KvOutboxStore outboxStore = new KvOutboxStore(
+                kvStore,
+                new ObjectMapper().findAndRegisterModules());
+        OutboxMessage message = OutboxMessage.builder()
+                .topic(OutboxTopics.DOMAIN_EVENT)
+                .eventType("kv.concurrent.claim")
+                .occurredAt(java.time.Instant.now())
+                .build();
+        outboxStore.enqueue(message);
+        int workerCount = 24;
+        ExecutorService executor = Executors.newFixedThreadPool(workerCount);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(workerCount);
+        AtomicInteger claimedCount = new AtomicInteger();
+
+        for (int i = 0; i < workerCount; i++) {
+            String workerId = "worker-" + i;
+            executor.submit(() -> {
+                try {
+                    start.await();
+                    claimedCount.addAndGet(outboxStore.claimByTopic(
+                            workerId,
+                            OutboxTopics.DOMAIN_EVENT,
+                            1,
+                            java.time.Instant.now()).size());
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        start.countDown();
+        assertThat(done.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+        executor.shutdownNow();
+
+        assertThat(claimedCount.get()).isEqualTo(1);
     }
 }

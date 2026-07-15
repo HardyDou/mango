@@ -1,5 +1,6 @@
 package io.mango.infra.kv.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -10,7 +11,10 @@ import lombok.Data;
  */
 @Data
 @Schema(description = "Outbox 消息查询条件")
+@LocalCapabilityContract
 public class OutboxMessageQuery {
+
+    private static final long DEFAULT_PAGE_SIZE = 20L;
 
     @Min(value = 1, message = "页码不能小于 1")
     @Schema(description = "页码，从 1 开始")
@@ -19,7 +23,7 @@ public class OutboxMessageQuery {
     @Min(value = 1, message = "每页大小不能小于 1")
     @Max(value = 200, message = "每页大小不能超过 200")
     @Schema(description = "每页大小")
-    private long pageSize = 20L;
+    private long pageSize = DEFAULT_PAGE_SIZE;
 
     @Schema(description = "状态")
     private OutboxStatus status;

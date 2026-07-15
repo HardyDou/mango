@@ -2,6 +2,7 @@ package io.mango.infra.kv.core.jdbc;
 
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.IdUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
@@ -37,6 +38,8 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         this(jdbcTemplate, DEFAULT_TABLE_NAME);
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "JdbcTemplate is a shared thread-safe Spring infrastructure dependency")
     public JdbcKvStore(JdbcTemplate jdbcTemplate, String tableName) {
         this.jdbcTemplate = jdbcTemplate;
         this.tableName = normalizeTableName(tableName);
@@ -54,7 +57,7 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         long candidateId = nextId();
         jdbcTemplate.update(sqlUpsertIfExpired(), candidateId, key, value, expireTime,
                 currentTime, currentTime, currentTime);
-        return findIdByKey(key) == candidateId;
+        return findIdByKey(key).filter(id -> id == candidateId).isPresent();
     }
 
     @Override
@@ -101,6 +104,19 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     public void delete(String key) {
         validateKey(key);
         deleteByKey(key);
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteIfValue(String key, String expectedValue) {
+        validateKey(key);
+        Objects.requireNonNull(expectedValue, "expectedValue cannot be null");
+        return jdbcTemplate.update(
+                sqlDeleteIfValue(),
+                key,
+                expectedValue,
+                expectedValue,
+                now()) > 0;
     }
 
     @Override
@@ -182,10 +198,13 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
             .findFirst();
     }
 
-    private long findIdByKey(String key) {
-        return Objects.requireNonNull(
-                jdbcTemplate.queryForObject(sqlSelectIdByKey(), Long.class, key),
-                "JDBC KV entry id must not be null: " + key);
+    private java.util.Optional<Long> findIdByKey(String key) {
+        return jdbcTemplate.query(
+                sqlSelectIdByKey(),
+                (rs, rowNum) -> rs.getLong("id"),
+                key)
+            .stream()
+            .findFirst();
     }
 
     private void upsertValue(String key, String value, LocalDateTime expireTime) {
@@ -198,7 +217,7 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
 
     private void upsertIncrement(String key, long delta, LocalDateTime expireTime, LocalDateTime currentTime) {
         jdbcTemplate.update(sqlUpsertIncrement(), nextId(), key, delta, expireTime,
-                currentTime, delta, delta, expireTime);
+                currentTime, delta, delta, currentTime);
     }
 
     private void deleteByKey(String key) {
@@ -206,11 +225,21 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     }
 
     private long countActiveByKey(String key, LocalDateTime currentTime) {
-        return jdbcTemplate.queryForObject(sqlCountActiveByKey(), Long.class, key, currentTime);
+        Long count = jdbcTemplate.queryForObject(sqlCountActiveByKey(), Long.class, key, currentTime);
+        return nullToZero(count);
     }
 
     private long countActiveByPrefix(String keyPrefix, LocalDateTime currentTime) {
-        return jdbcTemplate.queryForObject(sqlCountActiveByPrefix(), Long.class, likePrefix(keyPrefix), currentTime);
+        Long count = jdbcTemplate.queryForObject(
+                sqlCountActiveByPrefix(), Long.class, likePrefix(keyPrefix), currentTime);
+        return nullToZero(count);
+    }
+
+    private long nullToZero(Long value) {
+        if (value == null) {
+            return 0L;
+        }
+        return value;
     }
 
     private Collection<String> findSortedSetMembersByScore(String keyPrefix,
@@ -259,16 +288,21 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         return sqlSelectActiveValue() + " ORDER BY create_time DESC LIMIT 1";
     }
 
-    private String sqlSelectIdByKey() {
-        return "SELECT id FROM " + tableName + " WHERE kv_key = ? FOR UPDATE";
-    }
-
     private String sqlInsertValue() {
         return "INSERT INTO " + tableName + " (id, kv_key, kv_value, expire_time) VALUES (?, ?, ?, ?)";
     }
 
     private String sqlDeleteByKey() {
         return "DELETE FROM " + tableName + " WHERE kv_key = ?";
+    }
+
+    private String sqlDeleteIfValue() {
+        return "DELETE FROM " + tableName
+                + " WHERE kv_key = ? AND (kv_value = ? OR (kv_value IS NULL AND ? IS NULL)) AND expire_time > ?";
+    }
+
+    private String sqlSelectIdByKey() {
+        return "SELECT id FROM " + tableName + " WHERE kv_key = ? FOR UPDATE";
     }
 
     private String sqlUpsertValue() {
@@ -287,7 +321,8 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     private String sqlUpsertIncrement() {
         return sqlInsertValue()
             + " ON DUPLICATE KEY UPDATE kv_value = CASE WHEN expire_time > ? THEN "
-            + SQL_SIGNED_VALUE + " + ? ELSE ? END, expire_time = ?";
+            + SQL_SIGNED_VALUE + " + ? ELSE ? END,"
+            + " expire_time = CASE WHEN expire_time > ? THEN expire_time ELSE VALUES(expire_time) END";
     }
 
     private String sqlCountActiveByKey() {
@@ -299,7 +334,10 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     }
 
     private String sqlSelectSortedSetMembersByScore(String scoreWhereSql, int limit) {
-        String limitSql = limit > 0 ? " LIMIT " + limit : "";
+        String limitSql = "";
+        if (limit > 0) {
+            limitSql = " LIMIT " + limit;
+        }
         return "SELECT kv_key FROM " + tableName
             + SQL_ACTIVE_PREFIX_WHERE
             + scoreWhereSql

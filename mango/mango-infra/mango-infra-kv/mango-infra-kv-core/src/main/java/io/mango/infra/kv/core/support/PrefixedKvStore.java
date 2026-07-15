@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.support;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +10,8 @@ import java.util.Collection;
 /**
  * IKvStore decorator that applies one KV capability namespace.
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The decorator intentionally retains its shared KV delegate"))
 public class PrefixedKvStore implements IKvStore, IKvSortedSet {
 
     private final IKvStore delegate;
@@ -49,6 +51,11 @@ public class PrefixedKvStore implements IKvStore, IKvSortedSet {
     @Override
     public void delete(String key) {
         delegate.delete(normalize(key));
+    }
+
+    @Override
+    public boolean deleteIfValue(String key, String expectedValue) {
+        return delegate.deleteIfValue(normalize(key), expectedValue);
     }
 
     @Override
