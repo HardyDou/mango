@@ -1,9 +1,9 @@
 package io.mango.numgen.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.numgen.core.entity.NumgenGenerator;
-import io.mango.numgen.core.entity.NumgenRule;
-import io.mango.numgen.core.entity.NumgenRuleSegment;
+import io.mango.numgen.core.entity.NumgenGeneratorEntity;
+import io.mango.numgen.core.entity.NumgenRuleEntity;
+import io.mango.numgen.core.entity.NumgenRuleSegmentEntity;
 import io.mango.numgen.core.mapper.NumgenGeneratorMapper;
 import io.mango.numgen.core.mapper.NumgenRuleMapper;
 import io.mango.numgen.core.mapper.NumgenRuleSegmentMapper;
@@ -31,7 +31,7 @@ import java.util.Map;
 public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "numgen_generator";
-    private static final long DEFAULT_TENANT_ID = 1L;
+    private static final String DEFAULT_TENANT_ID = "1";
     private static final int ENABLED = 1;
     private static final int DISABLED = 0;
     private static final int PUBLISHED = 1;
@@ -79,8 +79,8 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
     @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         SequenceRulePayload payload = SequenceRulePayload.from(resource);
-        NumgenGenerator generator = upsertGenerator(payload);
-        NumgenRule rule = upsertRule(payload);
+        NumgenGeneratorEntity generator = upsertGenerator(payload);
+        NumgenRuleEntity rule = upsertRule(payload);
         replaceSegments(payload, rule);
         if (payload.isActive()) {
             activateVersion(payload, rule, generator);
@@ -96,20 +96,20 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult disable(ResourceDeclaration resource) {
-        NumgenGenerator generator = resolveGenerator(resource);
+        NumgenGeneratorEntity generator = resolveGenerator(resource);
         if (generator == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Sequence rule not found");
         }
         generator.setStatus(DISABLED);
-        generator.setUpdateTime(LocalDateTime.now());
+        generator.setUpdatedAt(LocalDateTime.now());
         generatorMapper.updateById(generator);
 
-        NumgenRule rule = resolveRule(resource, generator);
+        NumgenRuleEntity rule = resolveRule(resource, generator);
         if (rule != null) {
             rule.setStatus(DISABLED);
             rule.setPublishStatus(UNPUBLISHED);
             rule.setVersionState(VERSION_STATE_HISTORY);
-            rule.setUpdateTime(LocalDateTime.now());
+            rule.setUpdatedAt(LocalDateTime.now());
             ruleMapper.updateById(rule);
         }
         return ResourceSyncResult.of(generator.getId(), TARGET_TABLE,
@@ -119,12 +119,12 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult delete(ResourceDeclaration resource) {
-        NumgenGenerator generator = resolveGenerator(resource);
+        NumgenGeneratorEntity generator = resolveGenerator(resource);
         if (generator == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "Sequence rule not found");
         }
-        List<NumgenRule> rules = ruleMapper.selectVersionsByGenKey(generator.getGenKey(), generator.getTenantId());
-        for (NumgenRule rule : rules) {
+        List<NumgenRuleEntity> rules = ruleMapper.selectVersionsByGenKey(generator.getGenKey(), generator.getTenantId());
+        for (NumgenRuleEntity rule : rules) {
             segmentMapper.physicalDeleteByRuleId(rule.getId());
             ruleMapper.physicalDeleteById(rule.getId());
         }
@@ -133,17 +133,17 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
                 "Sequence rule deleted: " + generator.getGenKey());
     }
 
-    private NumgenGenerator upsertGenerator(SequenceRulePayload payload) {
-        NumgenGenerator generator = generatorMapper.selectByTenantAndGenKeyIncludingDeleted(
+    private NumgenGeneratorEntity upsertGenerator(SequenceRulePayload payload) {
+        NumgenGeneratorEntity generator = generatorMapper.selectByTenantAndGenKeyIncludingDeleted(
                 payload.tenantId(), payload.genKey());
         boolean exists = generator != null;
         if (generator == null) {
-            generator = new NumgenGenerator();
+            generator = new NumgenGeneratorEntity();
             generator.setId(payload.generatorId());
             generator.setGenKey(payload.genKey());
             generator.setTenantId(payload.tenantId());
             generator.setCurrentPublishStatus(UNPUBLISHED);
-            generator.setCreateTime(LocalDateTime.now());
+            generator.setCreatedAt(LocalDateTime.now());
         } else if (Integer.valueOf(DELETED).equals(generator.getDelFlag())) {
             generatorMapper.physicalDeleteById(generator.getId());
             generator.setId(payload.generatorId());
@@ -153,7 +153,7 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
         generator.setDomainCode(payload.domainCode());
         generator.setStatus(payload.status());
         generator.setDelFlag(NOT_DELETED);
-        generator.setUpdateTime(LocalDateTime.now());
+        generator.setUpdatedAt(LocalDateTime.now());
         if (!exists) {
             generatorMapper.insert(generator);
         } else {
@@ -162,17 +162,17 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
         return generator;
     }
 
-    private NumgenRule upsertRule(SequenceRulePayload payload) {
-        NumgenRule rule = ruleMapper.selectVersionIncludingDeleted(
+    private NumgenRuleEntity upsertRule(SequenceRulePayload payload) {
+        NumgenRuleEntity rule = ruleMapper.selectVersionIncludingDeleted(
                 payload.tenantId(), payload.genKey(), payload.ruleVersion());
         boolean exists = rule != null;
         if (rule == null) {
-            rule = new NumgenRule();
+            rule = new NumgenRuleEntity();
             rule.setId(payload.ruleId());
             rule.setGenKey(payload.genKey());
             rule.setVersion(payload.ruleVersion());
             rule.setTenantId(payload.tenantId());
-            rule.setCreateTime(LocalDateTime.now());
+            rule.setCreatedAt(LocalDateTime.now());
         } else if (Integer.valueOf(DELETED).equals(rule.getDelFlag())) {
             segmentMapper.physicalDeleteByRuleId(rule.getId());
             ruleMapper.physicalDeleteById(rule.getId());
@@ -184,7 +184,7 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
         rule.setPublishStatus(payload.publishStatus());
         rule.setVersionState(payload.versionState());
         rule.setDelFlag(NOT_DELETED);
-        rule.setUpdateTime(LocalDateTime.now());
+        rule.setUpdatedAt(LocalDateTime.now());
         if (!exists) {
             ruleMapper.insert(rule);
         } else {
@@ -193,10 +193,10 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
         return rule;
     }
 
-    private void replaceSegments(SequenceRulePayload payload, NumgenRule rule) {
+    private void replaceSegments(SequenceRulePayload payload, NumgenRuleEntity rule) {
         segmentMapper.physicalDeleteByRuleId(rule.getId());
         for (SegmentPayload segment : payload.segments()) {
-            NumgenRuleSegment entity = new NumgenRuleSegment();
+            NumgenRuleSegmentEntity entity = new NumgenRuleSegmentEntity();
             entity.setId(segment.id());
             entity.setRuleId(rule.getId());
             entity.setSortOrder(segment.sortOrder());
@@ -209,38 +209,38 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
             entity.setPadChar(segment.padChar());
             entity.setSequenceScope(segment.sequenceScope());
             entity.setTenantId(payload.tenantId());
-            entity.setCreateTime(LocalDateTime.now());
-            entity.setUpdateTime(LocalDateTime.now());
+            entity.setCreatedAt(LocalDateTime.now());
+            entity.setUpdatedAt(LocalDateTime.now());
             segmentMapper.insert(entity);
         }
     }
 
-    private void activateVersion(SequenceRulePayload payload, NumgenRule activeRule, NumgenGenerator generator) {
-        List<NumgenRule> versions = ruleMapper.selectVersionsByGenKey(payload.genKey(), payload.tenantId());
-        for (NumgenRule version : versions) {
+    private void activateVersion(SequenceRulePayload payload, NumgenRuleEntity activeRule, NumgenGeneratorEntity generator) {
+        List<NumgenRuleEntity> versions = ruleMapper.selectVersionsByGenKey(payload.genKey(), payload.tenantId());
+        for (NumgenRuleEntity version : versions) {
             if (!version.getId().equals(activeRule.getId())) {
                 version.setPublishStatus(UNPUBLISHED);
                 version.setVersionState(VERSION_STATE_HISTORY);
-                version.setUpdateTime(LocalDateTime.now());
+                version.setUpdatedAt(LocalDateTime.now());
                 ruleMapper.updateById(version);
             }
         }
         activeRule.setPublishStatus(PUBLISHED);
         activeRule.setVersionState(VERSION_STATE_ACTIVE);
-        activeRule.setUpdateTime(LocalDateTime.now());
+        activeRule.setUpdatedAt(LocalDateTime.now());
         ruleMapper.updateById(activeRule);
 
         generator.setCurrentRuleVersion(activeRule.getVersion());
         generator.setCurrentPublishStatus(PUBLISHED);
-        generator.setUpdateTime(LocalDateTime.now());
+        generator.setUpdatedAt(LocalDateTime.now());
         generatorMapper.updateById(generator);
     }
 
-    private NumgenGenerator resolveGenerator(ResourceDeclaration resource) {
-        Long tenantId = fieldLong(resource, "tenantId", false, DEFAULT_TENANT_ID);
+    private NumgenGeneratorEntity resolveGenerator(ResourceDeclaration resource) {
+        String tenantId = String.valueOf(fieldLong(resource, "tenantId", false, Long.valueOf(DEFAULT_TENANT_ID)));
         String genKey = fieldText(resource, "genKey", false);
         if (StringUtils.hasText(genKey)) {
-            NumgenGenerator generator = generatorMapper.selectByTenantAndGenKeyIncludingDeleted(tenantId, genKey.trim());
+            NumgenGeneratorEntity generator = generatorMapper.selectByTenantAndGenKeyIncludingDeleted(tenantId, genKey.trim());
             if (generator != null) {
                 return generator;
             }
@@ -249,7 +249,7 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
         return targetId == null ? null : generatorMapper.selectByIdIncludingDeleted(targetId);
     }
 
-    private NumgenRule resolveRule(ResourceDeclaration resource, NumgenGenerator generator) {
+    private NumgenRuleEntity resolveRule(ResourceDeclaration resource, NumgenGeneratorEntity generator) {
         Integer ruleVersion = fieldInt(resource, "ruleVersion", false, resource.getVersion());
         if (ruleVersion == null) {
             return null;
@@ -257,7 +257,7 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
         return ruleMapper.selectVersionIncludingDeleted(generator.getTenantId(), generator.getGenKey(), ruleVersion);
     }
 
-    private record SequenceRulePayload(Long tenantId, Long generatorId, Long ruleId, String genKey, String genName,
+    private record SequenceRulePayload(String tenantId, Long generatorId, Long ruleId, String genKey, String genName,
                                        String domainCode, String ruleName, Integer ruleVersion, Integer status,
                                        Integer publishStatus, String versionState, List<SegmentPayload> segments) {
 
@@ -268,7 +268,7 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
             Integer publishStatus = fieldInt(resource, "publishStatus", false,
                     VERSION_STATE_ACTIVE.equals(versionState) ? PUBLISHED : UNPUBLISHED);
             return new SequenceRulePayload(
-                    fieldLong(resource, "tenantId", false, DEFAULT_TENANT_ID),
+                    String.valueOf(fieldLong(resource, "tenantId", false, Long.valueOf(DEFAULT_TENANT_ID))),
                     generatorId,
                     fieldLong(resource, "ruleId", false, generatorId + 10000L),
                     requiredText(resource, "genKey").trim(),

@@ -4,8 +4,8 @@ import io.mango.common.result.Require;
 import io.mango.numgen.api.vo.NumgenPreviewSegmentVO;
 import io.mango.numgen.api.vo.NumgenPreviewVO;
 import io.mango.numgen.api.vo.NumgenRuleValidationVO;
-import io.mango.numgen.core.entity.NumgenRule;
-import io.mango.numgen.core.entity.NumgenRuleSegment;
+import io.mango.numgen.core.entity.NumgenRuleEntity;
+import io.mango.numgen.core.entity.NumgenRuleSegmentEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -24,7 +24,7 @@ public class NumgenRuleRenderer {
 
     private static final Pattern TEXT_PARAM_PATTERN = Pattern.compile("\\$\\{([^}]+)}");
 
-    public NumgenRuleValidationVO validate(NumgenRule rule, List<NumgenRuleSegment> segments) {
+    public NumgenRuleValidationVO validate(NumgenRuleEntity rule, List<NumgenRuleSegmentEntity> segments) {
         NumgenRuleValidationVO vo = new NumgenRuleValidationVO();
         List<String> errors = new ArrayList<>();
         if (rule == null) {
@@ -33,7 +33,7 @@ public class NumgenRuleRenderer {
         if (segments == null || segments.isEmpty()) {
             errors.add("编号规则至少需要一个片段");
         } else {
-            for (NumgenRuleSegment segment : segments) {
+            for (NumgenRuleSegmentEntity segment : segments) {
                 validateSegment(segment, errors);
             }
         }
@@ -42,16 +42,16 @@ public class NumgenRuleRenderer {
         return vo;
     }
 
-    public NumgenPreviewVO preview(NumgenRule rule, List<NumgenRuleSegment> segments, Map<String, Object> params, int count) {
+    public NumgenPreviewVO preview(NumgenRuleEntity rule, List<NumgenRuleSegmentEntity> segments, Map<String, ?> params, int count) {
         Require.notNull(rule, "编号规则不能为空");
         NumgenRuleValidationVO validation = validate(rule, segments);
         Require.isTrue(validation.isValid(), String.join("；", validation.getErrors()));
         int resolvedCount = Math.max(count, 1);
-        List<NumgenRuleSegment> sortedSegments = sorted(segments);
+        List<NumgenRuleSegmentEntity> sortedSegments = sorted(segments);
         NumgenPreviewVO vo = new NumgenPreviewVO();
         vo.setGenKey(rule.getGenKey());
         vo.setRuleVersion(rule.getVersion());
-        for (NumgenRuleSegment segment : sortedSegments) {
+        for (NumgenRuleSegmentEntity segment : sortedSegments) {
             NumgenPreviewSegmentVO segmentVO = new NumgenPreviewSegmentVO();
             segmentVO.setSortOrder(segment.getSortOrder());
             segmentVO.setSegmentType(segment.getSegmentType());
@@ -65,16 +65,16 @@ public class NumgenRuleRenderer {
         return vo;
     }
 
-    public String render(List<NumgenRuleSegment> segments, Map<String, Object> params, long sequenceValue) {
+    public String render(List<NumgenRuleSegmentEntity> segments, Map<String, ?> params, long sequenceValue) {
         StringBuilder builder = new StringBuilder();
-        for (NumgenRuleSegment segment : sorted(segments)) {
+        for (NumgenRuleSegmentEntity segment : sorted(segments)) {
             builder.append(renderSegment(segment, params, sequenceValue));
         }
         return builder.toString();
     }
 
-    public String sequenceScopeKey(List<NumgenRuleSegment> segments, Map<String, Object> params) {
-        List<NumgenRuleSegment> scopeSegments = sorted(segments).stream()
+    public String sequenceScopeKey(List<NumgenRuleSegmentEntity> segments, Map<String, ?> params) {
+        List<NumgenRuleSegmentEntity> scopeSegments = sorted(segments).stream()
                 .filter(segment -> Integer.valueOf(1).equals(segment.getSequenceScope()))
                 .filter(segment -> !"SEQ".equals(segment.getSegmentType()))
                 .collect(Collectors.toList());
@@ -86,7 +86,7 @@ public class NumgenRuleRenderer {
                 .collect(Collectors.joining("|"));
     }
 
-    private void validateSegment(NumgenRuleSegment segment, List<String> errors) {
+    private void validateSegment(NumgenRuleSegmentEntity segment, List<String> errors) {
         if (segment == null) {
             errors.add("编号片段不能为空");
             return;
@@ -128,7 +128,7 @@ public class NumgenRuleRenderer {
         }
     }
 
-    private String renderSegment(NumgenRuleSegment segment, Map<String, Object> params, long sequenceValue) {
+    private String renderSegment(NumgenRuleSegmentEntity segment, Map<String, ?> params, long sequenceValue) {
         return switch (segment.getSegmentType()) {
             case "TEXT", "EXPR" -> renderText(segment.getLiteralValue(), params);
             case "DATE" -> LocalDateTime.now().format(DateTimeFormatter.ofPattern(segment.getDateFormat()));
@@ -138,7 +138,7 @@ public class NumgenRuleRenderer {
         };
     }
 
-    private String renderText(String text, Map<String, Object> params) {
+    private String renderText(String text, Map<String, ?> params) {
         Matcher matcher = TEXT_PARAM_PATTERN.matcher(text);
         StringBuilder builder = new StringBuilder();
         while (matcher.find()) {
@@ -150,17 +150,17 @@ public class NumgenRuleRenderer {
         return builder.toString();
     }
 
-    private String resolveParam(NumgenRuleSegment segment, Map<String, Object> params) {
+    private String resolveParam(NumgenRuleSegmentEntity segment, Map<String, ?> params) {
         Object value = resolveParamValue(segment.getVariableKey(), params);
         Require.notNull(value, "缺少编号变量参数：" + segment.getVariableKey());
         return String.valueOf(value);
     }
 
-    private Object resolveParamValue(String key, Map<String, Object> params) {
+    private Object resolveParamValue(String key, Map<String, ?> params) {
         return params == null || !StringUtils.hasText(key) ? null : params.get(key);
     }
 
-    private String padSequence(long sequenceValue, NumgenRuleSegment segment) {
+    private String padSequence(long sequenceValue, NumgenRuleSegmentEntity segment) {
         String value = String.valueOf(sequenceValue);
         int width = segment.getSeqWidth() == null ? 1 : segment.getSeqWidth();
         String pad = StringUtils.hasText(segment.getPadChar()) ? segment.getPadChar() : "0";
@@ -170,13 +170,13 @@ public class NumgenRuleRenderer {
         return pad.repeat(width - value.length()) + value;
     }
 
-    private List<NumgenRuleSegment> sorted(List<NumgenRuleSegment> segments) {
+    private List<NumgenRuleSegmentEntity> sorted(List<NumgenRuleSegmentEntity> segments) {
         return segments.stream()
-                .sorted(Comparator.comparing(NumgenRuleSegment::getSortOrder).thenComparing(NumgenRuleSegment::getId))
+                .sorted(Comparator.comparing(NumgenRuleSegmentEntity::getSortOrder).thenComparing(NumgenRuleSegmentEntity::getId))
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    private String segmentName(NumgenRuleSegment segment) {
+    private String segmentName(NumgenRuleSegmentEntity segment) {
         return StringUtils.hasText(segment.getSegmentName()) ? segment.getSegmentName() : "片段" + segment.getSortOrder();
     }
 }

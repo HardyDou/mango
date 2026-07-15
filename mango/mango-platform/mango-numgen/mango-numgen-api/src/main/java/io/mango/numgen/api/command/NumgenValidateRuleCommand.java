@@ -1,7 +1,9 @@
 package io.mango.numgen.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -22,6 +24,8 @@ public class NumgenValidateRuleCommand implements Serializable {
     @Schema(description = "规则名称")
     private String ruleName;
 
+    @Valid
+    @NotEmpty(message = "片段列表不能为空")
     @Schema(description = "片段列表")
     private List<SaveNumgenRuleSegmentCommand> segments = new ArrayList<>();
 }

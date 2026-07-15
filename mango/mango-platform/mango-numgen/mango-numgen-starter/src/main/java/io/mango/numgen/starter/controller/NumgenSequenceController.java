@@ -31,6 +31,6 @@ public class NumgenSequenceController implements NumgenSequenceApi {
     @GetMapping("/page")
     @Operation(summary = "分页查询编号序列", description = "分页查询编号序列数据")
     public R<PageResult<NumgenSequenceVO>> pageSequences(@ParameterObject NumgenSequencePageQuery query) {
-        return numgenSequenceService.pageSequences(query);
+        return R.ok(numgenSequenceService.pageSequences(query));
     }
 }

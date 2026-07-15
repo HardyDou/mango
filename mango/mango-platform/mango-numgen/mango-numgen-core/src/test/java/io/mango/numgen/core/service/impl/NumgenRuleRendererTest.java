@@ -1,7 +1,7 @@
 package io.mango.numgen.core.service.impl;
 
-import io.mango.numgen.core.entity.NumgenRule;
-import io.mango.numgen.core.entity.NumgenRuleSegment;
+import io.mango.numgen.core.entity.NumgenRuleEntity;
+import io.mango.numgen.core.entity.NumgenRuleSegmentEntity;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,9 +14,9 @@ class NumgenRuleRendererTest {
 
     @Test
     void validate_supportsFixedDateParamSeqRule() {
-        NumgenRule rule = rule();
+        NumgenRuleEntity rule = rule();
 
-        List<NumgenRuleSegment> segments = List.of(
+        List<NumgenRuleSegmentEntity> segments = List.of(
                 segment(1, "TEXT", "SO", null, null, null, null),
                 segment(2, "DATE", null, null, "yyyyMMdd", null, null),
                 segment(3, "PARAM", null, "orgCode", null, null, null),
@@ -28,16 +28,16 @@ class NumgenRuleRendererTest {
 
     @Test
     void validate_allowsRuleWithoutSequence() {
-        NumgenRule rule = rule();
+        NumgenRuleEntity rule = rule();
 
-        List<NumgenRuleSegment> segments = List.of(segment(1, "TEXT", "SO", null, null, null, null));
+        List<NumgenRuleSegmentEntity> segments = List.of(segment(1, "TEXT", "SO", null, null, null, null));
 
         assertThat(renderer.validate(rule, segments).isValid()).isTrue();
     }
 
     @Test
     void render_allowsMultipleSequenceSegments() {
-        List<NumgenRuleSegment> segments = List.of(
+        List<NumgenRuleSegmentEntity> segments = List.of(
                 segment(1, "SEQ", null, null, null, 2, "0"),
                 segment(2, "TEXT", "-", null, null, null, null),
                 segment(3, "SEQ", null, null, null, 4, "0")
@@ -50,7 +50,7 @@ class NumgenRuleRendererTest {
 
     @Test
     void render_buildsNumberFromOrderedSegments() {
-        List<NumgenRuleSegment> segments = List.of(
+        List<NumgenRuleSegmentEntity> segments = List.of(
                 segment(2, "PARAM", null, "orgCode", null, null, null),
                 segment(1, "TEXT", "SO", null, null, null, null),
                 segment(3, "SEQ", null, null, null, 4, "0")
@@ -63,7 +63,7 @@ class NumgenRuleRendererTest {
 
     @Test
     void render_supportsPlaceholdersInTextSegment() {
-        List<NumgenRuleSegment> segments = List.of(
+        List<NumgenRuleSegmentEntity> segments = List.of(
                 segment(1, "TEXT", "SO", null, null, null, null),
                 segment(2, "TEXT", "${orgCode}-${bizType}", null, null, null, null)
         );
@@ -75,7 +75,7 @@ class NumgenRuleRendererTest {
 
     @Test
     void render_supportsExpressionSegment() {
-        List<NumgenRuleSegment> segments = List.of(
+        List<NumgenRuleSegmentEntity> segments = List.of(
                 segment(1, "TEXT", "SO", null, null, null, null),
                 segment(2, "EXPR", "${orgCode}-${bizType}", null, null, null, null)
         );
@@ -87,7 +87,7 @@ class NumgenRuleRendererTest {
 
     @Test
     void sequenceScopeKey_usesMarkedNonSequenceSegments() {
-        List<NumgenRuleSegment> segments = List.of(
+        List<NumgenRuleSegmentEntity> segments = List.of(
                 scopedSegment(1, "DATE", null, null, "yyyyMMdd", null, null, 1),
                 scopedSegment(2, "PARAM", null, "orgCode", null, null, null, 1),
                 scopedSegment(3, "SEQ", null, null, null, 4, "0", 1)
@@ -101,7 +101,7 @@ class NumgenRuleRendererTest {
 
     @Test
     void sequenceScopeKey_defaultsToGlobalWhenNoSegmentIsMarked() {
-        List<NumgenRuleSegment> segments = List.of(
+        List<NumgenRuleSegmentEntity> segments = List.of(
                 segment(1, "TEXT", "SO", null, null, null, null),
                 segment(2, "SEQ", null, null, null, 4, "0")
         );
@@ -109,20 +109,20 @@ class NumgenRuleRendererTest {
         assertThat(renderer.sequenceScopeKey(segments, Map.of())).isEqualTo("GLOBAL");
     }
 
-    private NumgenRule rule() {
-        NumgenRule rule = new NumgenRule();
+    private NumgenRuleEntity rule() {
+        NumgenRuleEntity rule = new NumgenRuleEntity();
         rule.setGenKey("ORDER_NO");
         rule.setRuleName("订单号");
         rule.setVersion(1);
         return rule;
     }
 
-    private NumgenRuleSegment segment(int sortOrder, String type, String literalValue, String variableKey, String dateFormat, Integer seqWidth, String padChar) {
+    private NumgenRuleSegmentEntity segment(int sortOrder, String type, String literalValue, String variableKey, String dateFormat, Integer seqWidth, String padChar) {
         return scopedSegment(sortOrder, type, literalValue, variableKey, dateFormat, seqWidth, padChar, 0);
     }
 
-    private NumgenRuleSegment scopedSegment(int sortOrder, String type, String literalValue, String variableKey, String dateFormat, Integer seqWidth, String padChar, Integer sequenceScope) {
-        NumgenRuleSegment segment = new NumgenRuleSegment();
+    private NumgenRuleSegmentEntity scopedSegment(int sortOrder, String type, String literalValue, String variableKey, String dateFormat, Integer seqWidth, String padChar, Integer sequenceScope) {
+        NumgenRuleSegmentEntity segment = new NumgenRuleSegmentEntity();
         segment.setSortOrder(sortOrder);
         segment.setSegmentType(type);
         segment.setSegmentName(type + "-" + sortOrder);

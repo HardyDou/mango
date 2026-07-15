@@ -25,7 +25,7 @@ public interface NumgenGeneratorFeignClient extends NumgenGeneratorApi {
 
     @Override
     @GetMapping("/detail")
-    R<NumgenGeneratorVO> detailGenerator(@RequestParam Long id);
+    R<NumgenGeneratorVO> detailGenerator(@RequestParam(name = "id") Long id);
 
     @Override
     @PostMapping
@@ -41,5 +41,5 @@ public interface NumgenGeneratorFeignClient extends NumgenGeneratorApi {
 
     @Override
     @DeleteMapping
-    R<Boolean> deleteGenerator(@RequestParam Long id);
+    R<Boolean> deleteGenerator(@RequestParam(name = "id") Long id);
 }

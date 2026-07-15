@@ -2,18 +2,37 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 
 test.setTimeout(90 * 1000);
 
+const requiredPassword = 'MangoE2e2026!';
+let loginPassword = 'admin123';
+
 async function login(page: Page) {
   await page.goto('/#/login');
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
-  await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
+  await page.getByPlaceholder('用户名').fill('admin');
+  await page.getByPlaceholder('密码').fill(loginPassword);
+  await expect(page.locator('.tenant-select')).toContainText('芒果集团', { timeout: 10000 });
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
+
+  const loginResponsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/auth/login') && response.request().method() === 'POST'
+  );
   await page.locator('.login-btn').click();
+  const loginResponse = await loginResponsePromise;
+  const loginBody = await expectBusinessOk(loginResponse);
+
+  if (loginBody.data?.passwordResetRequired || loginBody.data?.loginAction === 'CHANGE_PASSWORD') {
+    const resetDialog = page.getByRole('dialog', { name: '修改登录密码' });
+    await expect(resetDialog).toBeVisible({ timeout: 10000 });
+    await resetDialog.getByLabel('新密码', { exact: true }).fill(requiredPassword);
+    await resetDialog.getByLabel('确认密码', { exact: true }).fill(requiredPassword);
+    const passwordChangeResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/auth/password/change-required') && response.request().method() === 'POST'
+    );
+    await resetDialog.getByRole('button', { name: '确定' }).click();
+    await expectBusinessOk(await passwordChangeResponsePromise);
+    loginPassword = requiredPassword;
+  }
+
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
@@ -108,8 +127,8 @@ async function versions(page: Page, headers: Record<string, string>, genKey: str
   return body.data?.list || [];
 }
 
-test.describe('编号规则管理 E2E', () => {
-  test('新增规则时可在片段上配置流水分组', async ({ page }) => {
+test.describe('@numgen 编号规则管理 E2E', () => {
+  test('@p1 新增规则时可在片段上配置流水分组', async ({ page }) => {
     await login(page);
     const stamp = Date.now();
     const genKey = `E2E_SCOPE_${stamp}`;
@@ -163,7 +182,7 @@ test.describe('编号规则管理 E2E', () => {
     ]));
   });
 
-  test('历史版本列表可查看并切换为新的生效版本', async ({ page }) => {
+  test('@p1 历史版本列表可查看并切换为新的生效版本', async ({ page }) => {
     await login(page);
     const headers = await apiHeaders(page);
     const stamp = Date.now();
@@ -200,7 +219,7 @@ test.describe('编号规则管理 E2E', () => {
       response.status() === 200
     );
     await v1Row.getByRole('button', { name: '切换版本' }).click();
-    await page.locator('.el-message-box', { hasText: '切换历史版本' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
+    await page.getByRole('dialog', { name: '切换历史版本' }).getByRole('button', { name: '确定' }).click();
     await switchResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: '历史版本已切换' }).last()).toBeVisible({ timeout: 10000 });
 

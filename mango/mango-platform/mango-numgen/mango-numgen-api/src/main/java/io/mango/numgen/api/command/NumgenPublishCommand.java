@@ -1,6 +1,7 @@
 package io.mango.numgen.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -12,6 +13,7 @@ public class NumgenPublishCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Positive(message = "规则 ID 必须大于0")
     @Schema(description = "规则 ID。按指定规则发布时传入")
     private Long ruleId;
 
