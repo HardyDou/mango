@@ -14,7 +14,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,6 +71,43 @@ class InternalCallFilterTest {
     }
 
     @Test
+    void doFilter_pathDiscoveryFailure_rejectsEveryRequest() throws Exception {
+        IInternalPathProvider failingProvider = () -> {
+            throw new IllegalStateException("path registry unavailable");
+        };
+        InternalCallFilter filter = new InternalCallFilter(
+                failingProvider, new InMemoryKvStore(), new MangoWebProperties());
+        filter.onApplicationReady();
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/public/health");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        filter.doFilter(request, response, chain(invoked));
+
+        assertFalse(invoked.get());
+        assertEquals(403, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Internal paths not loaded"));
+    }
+
+    @Test
+    void doFilter_springPathPatterns_respectBoundariesAndVariables() throws Exception {
+        InternalCallFilter wildcardFilter = newFilter(List.of("/private/**"));
+        AtomicBoolean similarPrefixInvoked = new AtomicBoolean(false);
+        wildcardFilter.doFilter(new MockHttpServletRequest("GET", "/privateer/config"),
+                new MockHttpServletResponse(), chain(similarPrefixInvoked));
+
+        InternalCallFilter variableFilter = newFilter(List.of("/orders/{id}"));
+        AtomicBoolean variablePathInvoked = new AtomicBoolean(false);
+        MockHttpServletResponse variableResponse = new MockHttpServletResponse();
+        variableFilter.doFilter(new MockHttpServletRequest("GET", "/orders/42"),
+                variableResponse, chain(variablePathInvoked));
+
+        assertTrue(similarPrefixInvoked.get());
+        assertFalse(variablePathInvoked.get());
+        assertEquals(403, variableResponse.getStatus());
+    }
+
+    @Test
     @DisplayName("configured mango web inner secret should require timestamp nonce and signature")
     void configuredSecretShouldRequireSignedHeaders() throws Exception {
         MangoWebProperties properties = new MangoWebProperties();
@@ -105,6 +147,51 @@ class InternalCallFilterTest {
         assertEquals(403, replayResponse.getStatus());
     }
 
+    @Test
+    void doFilter_atomicNonceClaimFailure_rejectsRequest() throws Exception {
+        MangoWebProperties properties = new MangoWebProperties();
+        properties.getInner().setSecret("test-secret");
+        IKvStore rejectingStore = new InMemoryKvStore() {
+            @Override
+            public boolean put(String key, String value, long expireSeconds) {
+                return false;
+            }
+        };
+        InternalCallFilter filter = newFilter(List.of("/private/**"), properties, rejectingStore);
+        long timestamp = System.currentTimeMillis();
+        String signature = hmacSha256(timestamp + ":nonce-rejected:POST:/private/config:a=1&b=2", "test-secret");
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(signedRequest(timestamp, "nonce-rejected", signature), response, chain(invoked));
+
+        assertFalse(invoked.get());
+        assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    void doFilter_concurrentReplay_allowsExactlyOneRequest() throws Exception {
+        CoordinatedKvStore kvStore = new CoordinatedKvStore();
+        MangoWebProperties properties = new MangoWebProperties();
+        properties.getInner().setSecret("test-secret");
+        InternalCallFilter filter = newFilter(List.of("/private/**"), properties, kvStore);
+        long timestamp = System.currentTimeMillis();
+        String nonce = "nonce-concurrent";
+        String signature = hmacSha256(timestamp + ":" + nonce + ":POST:/private/config:a=1&b=2", "test-secret");
+        AtomicInteger invoked = new AtomicInteger();
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> first = executor.submit(() -> invoke(filter, timestamp, nonce, signature, invoked));
+            Future<?> second = executor.submit(() -> invoke(filter, timestamp, nonce, signature, invoked));
+            first.get();
+            second.get();
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertEquals(1, invoked.get());
+    }
+
     private InternalCallFilter newFilter(List<String> internalPaths) {
         return newFilter(internalPaths, new MangoWebProperties(), new InMemoryKvStore());
     }
@@ -141,7 +228,17 @@ class InternalCallFilterTest {
         return sb.toString();
     }
 
-    private static final class InMemoryKvStore implements IKvStore {
+    private void invoke(InternalCallFilter filter, long timestamp, String nonce, String signature,
+                        AtomicInteger invoked) {
+        try {
+            filter.doFilter(signedRequest(timestamp, nonce, signature), new MockHttpServletResponse(),
+                    (request, response) -> invoked.incrementAndGet());
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static class InMemoryKvStore implements IKvStore {
 
         private final Map<String, String> store = new ConcurrentHashMap<>();
 
@@ -168,6 +265,21 @@ class InternalCallFilterTest {
         @Override
         public boolean exists(String key) {
             return store.containsKey(key);
+        }
+    }
+
+    private static final class CoordinatedKvStore extends InMemoryKvStore {
+
+        private final CyclicBarrier existsBarrier = new CyclicBarrier(2);
+
+        @Override
+        public boolean exists(String key) {
+            try {
+                existsBarrier.await();
+            } catch (Exception exception) {
+                throw new IllegalStateException(exception);
+            }
+            return super.exists(key);
         }
     }
 }

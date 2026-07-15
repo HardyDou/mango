@@ -31,6 +31,12 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final int BAD_REQUEST_CODE = HttpStatus.BAD_REQUEST.value();
+    private static final int NOT_FOUND_CODE = HttpStatus.NOT_FOUND.value();
+    private static final int METHOD_NOT_ALLOWED_CODE = HttpStatus.METHOD_NOT_ALLOWED.value();
+    private static final int INTERNAL_SERVER_ERROR_CODE = HttpStatus.INTERNAL_SERVER_ERROR.value();
+    private static final int FILE_TOO_LARGE_CODE = 3406;
+
     // ==================== 业务异常 ====================
 
     @ExceptionHandler(BizException.class)
@@ -47,7 +53,7 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        return R.fail(400, message);
+        return R.fail(BAD_REQUEST_CODE, message);
     }
 
     @ExceptionHandler(BindException.class)
@@ -56,19 +62,19 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        return R.fail(400, message);
+        return R.fail(BAD_REQUEST_CODE, message);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public R<Void> handleMissingParamException(MissingServletRequestParameterException e) {
-        return R.fail(400, "缺少参数: " + e.getParameterName());
+        return R.fail(BAD_REQUEST_CODE, "缺少参数: " + e.getParameterName());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public R<Void> handleTypeMismatchException(MethodArgumentTypeMismatchException e) {
-        return R.fail(400, "参数类型错误: " + e.getName());
+        return R.fail(BAD_REQUEST_CODE, "参数类型错误: " + e.getName());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -76,7 +82,7 @@ public class GlobalExceptionHandler {
     public R<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e, HttpServletRequest request) {
         log.warn("请求体解析失败, method={}, uri={}, query={}, exception={}",
                 request.getMethod(), request.getRequestURI(), request.getQueryString(), e.getClass().getName(), e);
-        return R.fail(400, "请求体格式错误，请检查 JSON 字段类型和日期时间格式");
+        return R.fail(BAD_REQUEST_CODE, "请求体格式错误，请检查 JSON 字段类型和日期时间格式");
     }
 
     // ==================== 404 ====================
@@ -84,19 +90,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public R<Void> handleNoResourceFoundException(NoResourceFoundException e) {
-        return R.fail(404, "资源不存在");
+        return R.fail(NOT_FOUND_CODE, "资源不存在");
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     public R<Void> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
-        return R.fail(405, "不支持的请求方法: " + e.getMethod());
+        return R.fail(METHOD_NOT_ALLOWED_CODE, "不支持的请求方法: " + e.getMethod());
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     @ResponseStatus(HttpStatus.OK)
     public R<Void> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
-        return R.fail(3406, "文件大小超过限制");
+        return R.fail(FILE_TOO_LARGE_CODE, "文件大小超过限制");
     }
 
     // ==================== 数据库异常 ====================
@@ -106,7 +112,7 @@ public class GlobalExceptionHandler {
     public R<Void> handleSqlException(SQLException e, HttpServletRequest request) {
         log.warn("数据库异常, method={}, uri={}, query={}, exception={}",
                 request.getMethod(), request.getRequestURI(), request.getQueryString(), e.getClass().getName(), e);
-        return R.fail(500, "数据库操作异常");
+        return R.fail(INTERNAL_SERVER_ERROR_CODE, "数据库操作异常");
     }
 
     // ==================== 其它异常 ====================
@@ -116,6 +122,6 @@ public class GlobalExceptionHandler {
     public R<Void> handleException(Exception e, HttpServletRequest request) {
         log.warn("系统异常, method={}, uri={}, query={}, exception={}",
                 request.getMethod(), request.getRequestURI(), request.getQueryString(), e.getClass().getName(), e);
-        return R.fail(500, "系统异常");
+        return R.fail(INTERNAL_SERVER_ERROR_CODE, "系统异常");
     }
 }

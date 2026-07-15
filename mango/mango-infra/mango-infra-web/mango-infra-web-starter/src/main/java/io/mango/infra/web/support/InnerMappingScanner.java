@@ -1,5 +1,6 @@
 package io.mango.infra.web.support;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.web.api.Inner;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -23,6 +24,7 @@ public class InnerMappingScanner {
     private final RequestMappingHandlerMapping handlerMapping;
     private final InnerMappingInternalPathProvider provider;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring MVC singleton collaborators are injected")
     public InnerMappingScanner(RequestMappingHandlerMapping handlerMapping,
                                InnerMappingInternalPathProvider provider) {
         this.handlerMapping = handlerMapping;
@@ -79,11 +81,13 @@ public class InnerMappingScanner {
 
     private Set<String> extractPaths(RequestMappingInfo mappingInfo) {
         Set<String> paths = new LinkedHashSet<>();
-        if (mappingInfo.getPathPatternsCondition() != null) {
-            mappingInfo.getPathPatternsCondition().getPatternValues().forEach(paths::add);
+        var pathPatternsCondition = mappingInfo.getPathPatternsCondition();
+        if (pathPatternsCondition != null) {
+            pathPatternsCondition.getPatternValues().forEach(paths::add);
         }
-        if (mappingInfo.getPatternsCondition() != null) {
-            paths.addAll(mappingInfo.getPatternsCondition().getPatterns());
+        var patternsCondition = mappingInfo.getPatternsCondition();
+        if (patternsCondition != null) {
+            paths.addAll(patternsCondition.getPatterns());
         }
         return paths;
     }

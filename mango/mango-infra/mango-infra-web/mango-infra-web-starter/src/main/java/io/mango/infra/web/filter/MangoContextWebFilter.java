@@ -87,7 +87,10 @@ public class MangoContextWebFilter implements Filter {
     }
 
     private String firstPresent(String first, String second) {
-        return hasText(first) ? first : second;
+        if (hasText(first)) {
+            return first;
+        }
+        return second;
     }
 
     private boolean hasText(String value) {

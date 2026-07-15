@@ -56,6 +56,8 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     private static final String DATE_PATTERN = JacksonUtils.DATE_PATTERN;
     private static final String TIME_PATTERN = JacksonUtils.TIME_PATTERN;
     private static final String ASIA_SHANGHAI = JacksonUtils.ASIA_SHANGHAI;
+    private static final int CONTEXT_FILTER_ORDER_OFFSET = 5;
+    private static final int MDC_FILTER_ORDER_OFFSET = 10;
 
     private final MangoWebProperties properties;
 
@@ -91,7 +93,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
 
     @Bean
     @ConditionalOnMissingBean(name = "mangoLongToStringObjectMapperPostProcessor")
-    public BeanPostProcessor mangoLongToStringObjectMapperPostProcessor() {
+    public static BeanPostProcessor mangoLongToStringObjectMapperPostProcessor() {
         return new BeanPostProcessor() {
             @Override
             public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
@@ -140,6 +142,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
 
     @Bean
     @ConditionalOnBean(IKvStore.class)
+    @ConditionalOnMissingBean(InternalCallFilter.class)
     public InternalCallFilter internalCallFilter(
             @Qualifier("aggregatingInternalPathProvider") IInternalPathProvider internalPathProvider,
             IKvStore kvStore,
@@ -155,7 +158,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
         registration.setFilter(new MangoContextWebFilter(requestContextProvider));
         registration.addUrlPatterns("/*");
         registration.setName("mangoContextWebFilter");
-        registration.setOrder(Integer.MIN_VALUE + 5);
+        registration.setOrder(Integer.MIN_VALUE + CONTEXT_FILTER_ORDER_OFFSET);
         return registration;
     }
 
@@ -167,7 +170,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
         registration.setFilter(new WebMdcFilter());
         registration.addUrlPatterns("/*");
         registration.setName("mangoWebMdcFilter");
-        registration.setOrder(Integer.MIN_VALUE + 10);
+        registration.setOrder(Integer.MIN_VALUE + MDC_FILTER_ORDER_OFFSET);
         return registration;
     }
 
