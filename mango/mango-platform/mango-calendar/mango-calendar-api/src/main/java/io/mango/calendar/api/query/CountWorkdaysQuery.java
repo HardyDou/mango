@@ -27,8 +27,10 @@ public class CountWorkdaysQuery implements Serializable {
     private LocalDate endDate;
 
     @Schema(description = "是否包含开始日期")
+    @NotNull(message = "是否包含开始日期不能为空")
     private Boolean includeStart = true;
 
     @Schema(description = "是否包含结束日期")
+    @NotNull(message = "是否包含结束日期不能为空")
     private Boolean includeEnd = true;
 }

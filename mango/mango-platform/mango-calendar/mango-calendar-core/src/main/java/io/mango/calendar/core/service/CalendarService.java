@@ -1,7 +1,7 @@
-package io.mango.calendar.core.service.impl;
+package io.mango.calendar.core.service;
 
 import io.mango.calendar.api.query.AddWorkdaysQuery;
-import io.mango.calendar.api.query.BatchCheckWorkdayQuery;
+import io.mango.calendar.api.query.BatchCheckWorkdayRequest;
 import io.mango.calendar.api.query.CalendarDateQuery;
 import io.mango.calendar.api.query.CountWorkdaysQuery;
 import io.mango.calendar.api.query.DateRangeQuery;
@@ -15,8 +15,8 @@ import io.mango.calendar.api.vo.LunarDayInfoVO;
 import io.mango.calendar.api.vo.MonthWorkdaySummaryVO;
 import io.mango.calendar.api.vo.SolarTermVO;
 import io.mango.calendar.core.config.CalendarKvProperties;
-import io.mango.calendar.core.entity.Calendar;
-import io.mango.calendar.core.entity.CalendarDay;
+import io.mango.calendar.core.entity.CalendarEntity;
+import io.mango.calendar.core.entity.CalendarDayEntity;
 import io.mango.calendar.core.mapper.CalendarDayMapper;
 import io.mango.calendar.core.mapper.CalendarMapper;
 import io.mango.calendar.core.service.ICalendarLunarService;
@@ -34,10 +34,12 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
+import static io.mango.calendar.api.enums.CalendarCode.CALENDAR_BUSINESS_ERROR;
+
 @Service
 @RequiredArgsConstructor
 @EnableConfigurationProperties(CalendarKvProperties.class)
-public class CalendarServiceImpl implements ICalendarService {
+public class CalendarService implements ICalendarService {
 
     private final CalendarMapper calendarMapper;
     private final CalendarDayMapper dayMapper;
@@ -47,10 +49,10 @@ public class CalendarServiceImpl implements ICalendarService {
 
     @Override
     public CalendarDayVO getDay(CalendarDateQuery query) {
-        Long tenantId = CalendarSupport.currentTenantId();
+        String tenantId = CalendarSupport.currentTenantId();
         String calendarCode = CalendarSupport.trimRequired(query.getCalendarCode(), "日历编码不能为空");
-        Calendar calendar = ensureCalendarActive(tenantId, calendarCode);
-        CalendarDay day = selectEnabledDayRequired(tenantId, calendar, query.getDate());
+        CalendarEntity calendar = ensureCalendarActive(tenantId, calendarCode);
+        CalendarDayEntity day = selectEnabledDayRequired(tenantId, calendar, query.getDate());
         return toDayVO(day, calendar);
     }
 
@@ -71,9 +73,9 @@ public class CalendarServiceImpl implements ICalendarService {
 
     @Override
     public LocalDate addWorkdays(AddWorkdaysQuery query) {
-        Long tenantId = CalendarSupport.currentTenantId();
+        String tenantId = CalendarSupport.currentTenantId();
         String calendarCode = CalendarSupport.trimRequired(query.getCalendarCode(), "日历编码不能为空");
-        Calendar calendar = ensureCalendarActive(tenantId, calendarCode);
+        CalendarEntity calendar = ensureCalendarActive(tenantId, calendarCode);
         int amount = query.getAmount();
         if (amount == 0) {
             selectEnabledDayRequired(tenantId, calendar, query.getSourceDate());
@@ -84,7 +86,7 @@ public class CalendarServiceImpl implements ICalendarService {
         boolean includeSource = Boolean.TRUE.equals(query.getIncludeSource());
         LocalDate date = includeSource ? query.getSourceDate() : query.getSourceDate().plusDays(step);
         while (remaining > 0) {
-            CalendarDay day = selectEnabledDayRequired(tenantId, calendar, date);
+            CalendarDayEntity day = selectEnabledDayRequired(tenantId, calendar, date);
             if (day.getWorkday() == 1) {
                 remaining--;
                 if (remaining == 0) {
@@ -98,35 +100,38 @@ public class CalendarServiceImpl implements ICalendarService {
 
     @Override
     public int countWorkdays(CountWorkdaysQuery query) {
-        Long tenantId = CalendarSupport.currentTenantId();
+        String tenantId = CalendarSupport.currentTenantId();
         String calendarCode = CalendarSupport.trimRequired(query.getCalendarCode(), "日历编码不能为空");
-        Calendar calendar = ensureCalendarActive(tenantId, calendarCode);
-        Require.isFalse(query.getStartDate().isAfter(query.getEndDate()), "开始日期不能晚于结束日期");
+        CalendarEntity calendar = ensureCalendarActive(tenantId, calendarCode);
+        Require.isTrue(!query.getStartDate().isAfter(query.getEndDate()), CALENDAR_BUSINESS_ERROR,
+                "开始日期不能晚于结束日期");
         LocalDate startDate = Boolean.FALSE.equals(query.getIncludeStart()) ? query.getStartDate().plusDays(1) : query.getStartDate();
         LocalDate endDate = Boolean.FALSE.equals(query.getIncludeEnd()) ? query.getEndDate().minusDays(1) : query.getEndDate();
         if (startDate.isAfter(endDate)) {
             return 0;
         }
-        List<CalendarDay> days = selectRangeRequired(tenantId, calendar, startDate, endDate);
+        List<CalendarDayEntity> days = selectRangeRequired(tenantId, calendar, startDate, endDate);
         return (int) days.stream().filter(day -> day.getEnabled() == 1 && day.getWorkday() == 1).count();
     }
 
     @Override
     public List<CalendarDayVO> listDays(DateRangeQuery query) {
-        Long tenantId = CalendarSupport.currentTenantId();
+        String tenantId = CalendarSupport.currentTenantId();
         String calendarCode = CalendarSupport.trimRequired(query.getCalendarCode(), "日历编码不能为空");
-        Calendar calendar = ensureCalendarActive(tenantId, calendarCode);
-        Require.isFalse(query.getStartDate().isAfter(query.getEndDate()), "开始日期不能晚于结束日期");
+        CalendarEntity calendar = ensureCalendarActive(tenantId, calendarCode);
+        Require.isTrue(!query.getStartDate().isAfter(query.getEndDate()), CALENDAR_BUSINESS_ERROR,
+                "开始日期不能晚于结束日期");
         return selectRangeRequired(tenantId, calendar, query.getStartDate(), query.getEndDate()).stream()
                 .map(day -> toDayVO(day, calendar))
                 .toList();
     }
 
     @Override
-    public List<CalendarDayVO> batchCheck(BatchCheckWorkdayQuery query) {
-        Long tenantId = CalendarSupport.currentTenantId();
+    public List<CalendarDayVO> batchCheck(BatchCheckWorkdayRequest query) {
+        Require.notNull(query, CALENDAR_BUSINESS_ERROR, "批量校验请求不能为空");
+        String tenantId = CalendarSupport.currentTenantId();
         String calendarCode = CalendarSupport.trimRequired(query.getCalendarCode(), "日历编码不能为空");
-        Calendar calendar = ensureCalendarActive(tenantId, calendarCode);
+        CalendarEntity calendar = ensureCalendarActive(tenantId, calendarCode);
         return query.getDates().stream()
                 .map(date -> toDayVO(selectEnabledDayRequired(tenantId, calendar, date), calendar))
                 .toList();
@@ -134,7 +139,7 @@ public class CalendarServiceImpl implements ICalendarService {
 
     @Override
     public MonthWorkdaySummaryVO monthSummary(MonthQuery query) {
-        List<CalendarDay> days = monthDays(query);
+        List<CalendarDayEntity> days = monthDays(query);
         MonthWorkdaySummaryVO vo = new MonthWorkdaySummaryVO();
         vo.setCalendarCode(query.getCalendarCode());
         vo.setYear(query.getYear());
@@ -143,9 +148,9 @@ public class CalendarServiceImpl implements ICalendarService {
         vo.setWorkdays((int) days.stream().filter(day -> day.getEnabled() == 1 && day.getWorkday() == 1).count());
         vo.setRestdays(vo.getTotalDays() - vo.getWorkdays());
         vo.setFirstWorkday(days.stream().filter(day -> day.getEnabled() == 1 && day.getWorkday() == 1)
-                .map(CalendarDay::getCalendarDate).findFirst().orElse(null));
+                .map(CalendarDayEntity::getCalendarDate).findFirst().orElse(null));
         vo.setLastWorkday(days.stream().filter(day -> day.getEnabled() == 1 && day.getWorkday() == 1)
-                .map(CalendarDay::getCalendarDate).reduce((first, second) -> second).orElse(null));
+                .map(CalendarDayEntity::getCalendarDate).reduce((first, second) -> second).orElse(null));
         return vo;
     }
 
@@ -153,7 +158,7 @@ public class CalendarServiceImpl implements ICalendarService {
     public LocalDate firstWorkdayOfMonth(MonthQuery query) {
         return monthDays(query).stream()
                 .filter(day -> day.getEnabled() == 1 && day.getWorkday() == 1)
-                .map(CalendarDay::getCalendarDate)
+                .map(CalendarDayEntity::getCalendarDate)
                 .findFirst()
                 .orElse(null);
     }
@@ -162,7 +167,7 @@ public class CalendarServiceImpl implements ICalendarService {
     public LocalDate lastWorkdayOfMonth(MonthQuery query) {
         return monthDays(query).stream()
                 .filter(day -> day.getEnabled() == 1 && day.getWorkday() == 1)
-                .map(CalendarDay::getCalendarDate)
+                .map(CalendarDayEntity::getCalendarDate)
                 .reduce((first, second) -> second)
                 .orElse(null);
     }
@@ -171,9 +176,9 @@ public class CalendarServiceImpl implements ICalendarService {
     public LocalDate nthWorkdayOfMonth(NthWorkdayOfMonthQuery query) {
         List<LocalDate> workdays = monthDays(query).stream()
                 .filter(day -> day.getEnabled() == 1 && day.getWorkday() == 1)
-                .map(CalendarDay::getCalendarDate)
+                .map(CalendarDayEntity::getCalendarDate)
                 .toList();
-        Require.isTrue(workdays.size() >= query.getNth(), "月份工作日数量不足");
+        Require.isTrue(workdays.size() >= query.getNth(), CALENDAR_BUSINESS_ERROR, "月份工作日数量不足");
         return workdays.get(query.getNth() - 1);
     }
 
@@ -193,12 +198,12 @@ public class CalendarServiceImpl implements ICalendarService {
     }
 
     private LocalDate moveWorkday(String calendarCode, LocalDate sourceDate, int step) {
-        Long tenantId = CalendarSupport.currentTenantId();
+        String tenantId = CalendarSupport.currentTenantId();
         String code = CalendarSupport.trimRequired(calendarCode, "日历编码不能为空");
-        Calendar calendar = ensureCalendarActive(tenantId, code);
+        CalendarEntity calendar = ensureCalendarActive(tenantId, code);
         LocalDate date = sourceDate.plusDays(step);
         while (true) {
-            CalendarDay day = selectEnabledDayRequired(tenantId, calendar, date);
+            CalendarDayEntity day = selectEnabledDayRequired(tenantId, calendar, date);
             if (day.getWorkday() == 1) {
                 return date;
             }
@@ -206,41 +211,44 @@ public class CalendarServiceImpl implements ICalendarService {
         }
     }
 
-    private List<CalendarDay> monthDays(MonthQuery query) {
-        Long tenantId = CalendarSupport.currentTenantId();
+    private List<CalendarDayEntity> monthDays(MonthQuery query) {
+        String tenantId = CalendarSupport.currentTenantId();
         String calendarCode = CalendarSupport.trimRequired(query.getCalendarCode(), "日历编码不能为空");
-        Calendar calendar = ensureCalendarActive(tenantId, calendarCode);
+        CalendarEntity calendar = ensureCalendarActive(tenantId, calendarCode);
         YearMonth month = YearMonth.of(query.getYear(), query.getMonth());
         return selectRangeRequired(tenantId, calendar, month.atDay(1), month.atEndOfMonth());
     }
 
-    private Calendar ensureCalendarActive(Long tenantId, String calendarCode) {
-        Calendar calendar = calendarMapper.selectActiveByCode(tenantId, calendarCode);
-        Require.notNull(calendar, "日历不存在或未启用：" + calendarCode);
+    private CalendarEntity ensureCalendarActive(String tenantId, String calendarCode) {
+        CalendarEntity calendar = calendarMapper.selectActiveByCode(tenantId, calendarCode);
+        Require.notNull(calendar, CALENDAR_BUSINESS_ERROR, "日历不存在或未启用：" + calendarCode);
         return calendar;
     }
 
-    private CalendarDay selectEnabledDayRequired(Long tenantId, Calendar calendar, LocalDate date) {
+    private CalendarDayEntity selectEnabledDayRequired(String tenantId, CalendarEntity calendar, LocalDate date) {
         String cacheKey = dayCacheKey(tenantId, calendar.getId(), date);
-        CalendarDay cached = readDayCache(cacheKey);
+        CalendarDayEntity cached = readDayCache(cacheKey);
         if (cached != null) {
             return cached;
         }
-        CalendarDay day = dayMapper.selectByDate(tenantId, calendar.getId(), date);
-        Require.notNull(day, "年度日历未初始化：" + calendar.getCalendarCode() + " " + date.getYear());
-        Require.isTrue(day.getEnabled() == 1, "年度日历未启用：" + calendar.getCalendarCode() + " " + date.getYear());
+        CalendarDayEntity day = dayMapper.selectByDate(tenantId, calendar.getId(), date);
+        Require.notNull(day, CALENDAR_BUSINESS_ERROR,
+                "年度日历未初始化：" + calendar.getCalendarCode() + " " + date.getYear());
+        Require.isTrue(day.getEnabled() == 1, CALENDAR_BUSINESS_ERROR,
+                "年度日历未启用：" + calendar.getCalendarCode() + " " + date.getYear());
         writeDayCache(cacheKey, day);
         return day;
     }
 
-    private List<CalendarDay> selectRangeRequired(Long tenantId, Calendar calendar, LocalDate startDate, LocalDate endDate) {
-        List<CalendarDay> days = dayMapper.selectBetween(tenantId, calendar.getId(), startDate, endDate);
+    private List<CalendarDayEntity> selectRangeRequired(String tenantId, CalendarEntity calendar, LocalDate startDate, LocalDate endDate) {
+        List<CalendarDayEntity> days = dayMapper.selectBetween(tenantId, calendar.getId(), startDate, endDate);
         long expected = endDate.toEpochDay() - startDate.toEpochDay() + 1;
-        Require.isTrue(days.size() == expected, "年度日历未初始化：" + calendar.getCalendarCode() + " " + startDate.getYear());
+        Require.isTrue(days.size() == expected, CALENDAR_BUSINESS_ERROR,
+                "年度日历未初始化：" + calendar.getCalendarCode() + " " + startDate.getYear());
         return days;
     }
 
-    private CalendarDay readDayCache(String cacheKey) {
+    private CalendarDayEntity readDayCache(String cacheKey) {
         ICache cache = cacheProvider.getIfAvailable();
         if (cache == null) {
             return null;
@@ -253,8 +261,8 @@ public class CalendarServiceImpl implements ICalendarService {
         if (parts.length < 15) {
             return null;
         }
-        CalendarDay day = new CalendarDay();
-        day.setTenantId(Long.valueOf(parts[0]));
+        CalendarDayEntity day = new CalendarDayEntity();
+        day.setTenantId(parts[0]);
         day.setCalendarId(Long.valueOf(parts[1]));
         day.setCalendarYear(Integer.valueOf(parts[2]));
         day.setCalendarDate(LocalDate.parse(parts[3]));
@@ -274,7 +282,7 @@ public class CalendarServiceImpl implements ICalendarService {
         return day;
     }
 
-    private void writeDayCache(String cacheKey, CalendarDay day) {
+    private void writeDayCache(String cacheKey, CalendarDayEntity day) {
         ICache cache = cacheProvider.getIfAvailable();
         if (cache == null) {
             return;
@@ -289,11 +297,11 @@ public class CalendarServiceImpl implements ICalendarService {
         cache.set(cacheKey, value, kvProperties.getDayCacheTtlSeconds());
     }
 
-    private String dayCacheKey(Long tenantId, Long calendarId, LocalDate date) {
+    private String dayCacheKey(String tenantId, Long calendarId, LocalDate date) {
         return "calendar:day:" + tenantId + ":" + calendarId + ":" + date;
     }
 
-    private CalendarDayVO toDayVO(CalendarDay entity, Calendar calendar) {
+    private CalendarDayVO toDayVO(CalendarDayEntity entity, CalendarEntity calendar) {
         CalendarDayVO vo = new CalendarDayVO();
         vo.setId(entity.getId());
         if (calendar != null) {
@@ -317,7 +325,7 @@ public class CalendarServiceImpl implements ICalendarService {
         vo.setSource(entity.getSource());
         vo.setRemark(entity.getRemark());
         vo.setEnabled(entity.getEnabled());
-        vo.setUpdateTime(entity.getUpdateTime());
+        vo.setUpdateTime(entity.getUpdatedAt());
         return vo;
     }
 

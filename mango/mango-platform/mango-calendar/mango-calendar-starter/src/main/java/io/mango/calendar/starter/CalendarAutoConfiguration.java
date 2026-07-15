@@ -10,7 +10,8 @@ import org.springframework.context.annotation.Configuration;
 @MapperScan("io.mango.calendar.core.mapper")
 @ComponentScan({
         "io.mango.calendar.core.service",
-        "io.mango.calendar.starter.controller"
+        "io.mango.calendar.starter.controller",
+        "io.mango.calendar.starter.resource"
 })
 public class CalendarAutoConfiguration {
 }

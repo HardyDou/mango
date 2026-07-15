@@ -4,17 +4,48 @@ test.setTimeout(60 * 1000);
 
 async function login(page: Page) {
   await page.goto('/#/login');
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
-  );
-  await page.locator('input[placeholder="密码"]').blur();
-  await accountTenantsResponsePromise;
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: /芒果集团/ }).click();
-  await page.locator('.login-btn').click();
-  await page.waitForURL('**/#/home', { timeout: 10000 });
+  const loginData = await page.evaluate(async () => {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'admin',
+        password: 'admin123',
+        tenantId: '1',
+        tenantCode: 'default',
+        realm: 'INTERNAL',
+        actorType: 'INTERNAL_USER',
+        partyType: 'INTERNAL_ORG',
+        appCode: 'internal-admin',
+      }),
+    });
+    const body = await response.json();
+    if (!response.ok || !(body.success || body.code === 200) || !body.data?.accessToken) {
+      throw new Error(`登录失败：${JSON.stringify(body)}`);
+    }
+    return body.data;
+  });
+  await page.evaluate((data) => {
+    const userInfo = {
+      ...data,
+      tenantId: data.tenantId || '1',
+      tenantCode: data.tenantCode || 'default',
+      tenantName: data.tenantName || '芒果集团',
+      realm: data.realm || 'INTERNAL',
+      actorType: data.actorType || 'INTERNAL_USER',
+      partyType: data.partyType || 'INTERNAL_ORG',
+      partyId: data.partyId || '1',
+      appCode: data.appCode || 'internal-admin',
+    };
+    sessionStorage.setItem('MANGO_TOKEN', data.accessToken);
+    sessionStorage.setItem('MANGO_REFRESH_TOKEN', data.refreshToken || '');
+    sessionStorage.setItem('MANGO_TOKEN_EXPIRES_AT', String(Date.now() + Number(data.expiresIn || 7200) * 1000));
+    sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
+    sessionStorage.setItem('tenantId', String(userInfo.tenantId));
+    document.cookie = `MANGO_TOKEN=${encodeURIComponent(data.accessToken)}; path=/; SameSite=Lax`;
+  }, loginData);
+  await page.goto('/#/home');
+  await expect(page).toHaveURL(/#\/home$/, { timeout: 15000 });
 }
 
 async function apiHeaders(page: Page) {
@@ -211,19 +242,19 @@ test.describe('日历管理 E2E', () => {
     await expect(page.getByRole('textbox', { name: '日历' })).toHaveValue('中国标准工作日历（CN_STANDARD）');
     await page.locator('.el-dialog').getByRole('button', { name: '确认' }).click();
     await expect(page.locator('.tool-result')).toContainText('工作日数量');
-    await page.locator('.el-dialog').getByRole('button', { name: '关闭' }).click();
+    await page.locator('.el-dialog').getByRole('button', { name: '关闭', exact: true }).click();
 
     await page.getByRole('button', { name: '农历查询' }).click();
     await expect(page.locator('.el-dialog__header', { hasText: '农历查询' })).toBeVisible();
     await page.locator('.el-dialog').getByRole('button', { name: '确认' }).click();
     await expect(page.locator('.tool-result')).toContainText('农历');
-    await page.locator('.el-dialog').getByRole('button', { name: '关闭' }).click();
+    await page.locator('.el-dialog').getByRole('button', { name: '关闭', exact: true }).click();
 
     await page.getByRole('button', { name: '农历转公历' }).click();
     await expect(page.locator('.el-dialog__header', { hasText: '农历转公历' })).toBeVisible();
     await page.locator('.el-dialog').getByRole('button', { name: '确认' }).click();
     await expect(page.locator('.tool-result')).toContainText('公历日期');
-    await page.locator('.el-dialog').getByRole('button', { name: '关闭' }).click();
+    await page.locator('.el-dialog').getByRole('button', { name: '关闭', exact: true }).click();
 
     await page.getByRole('button', { name: '节气查询' }).click();
     await expect(page.locator('.el-dialog__header', { hasText: '节气查询' })).toBeVisible();

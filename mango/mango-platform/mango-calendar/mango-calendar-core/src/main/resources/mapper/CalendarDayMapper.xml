@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.calendar.core.mapper.CalendarDayMapper">
+
+    <select id="selectByDate" resultType="io.mango.calendar.core.entity.CalendarDayEntity">
+        SELECT *
+        FROM calendar_day
+        WHERE tenant_id = #{tenantId}
+          AND calendar_id = #{calendarId}
+          AND calendar_date = #{date}
+        LIMIT 1
+    </select>
+
+    <select id="selectBetween" resultType="io.mango.calendar.core.entity.CalendarDayEntity">
+        SELECT *
+        FROM calendar_day
+        WHERE tenant_id = #{tenantId}
+          AND calendar_id = #{calendarId}
+          AND calendar_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY calendar_date
+    </select>
+
+    <select id="selectByYear" resultType="io.mango.calendar.core.entity.CalendarDayEntity">
+        SELECT *
+        FROM calendar_day
+        WHERE tenant_id = #{tenantId}
+          AND calendar_id = #{calendarId}
+          AND calendar_year = #{year}
+        ORDER BY calendar_date
+    </select>
+
+    <select id="countByYear" resultType="long">
+        SELECT COUNT(1)
+        FROM calendar_day
+        WHERE tenant_id = #{tenantId}
+          AND calendar_id = #{calendarId}
+          AND calendar_year = #{year}
+    </select>
+
+    <select id="countEnabledByYear" resultType="long">
+        SELECT COUNT(1)
+        FROM calendar_day
+        WHERE tenant_id = #{tenantId}
+          AND calendar_id = #{calendarId}
+          AND calendar_year = #{year}
+          AND enabled = 1
+    </select>
+
+</mapper>

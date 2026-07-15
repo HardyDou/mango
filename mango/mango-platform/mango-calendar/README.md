@@ -12,7 +12,7 @@
 - 工作日计算：判断某天是否工作日、计算前后工作日、统计区间工作日、查询月份工作日汇总。
 - 农历与节气：按公历查农历、农历转公历、查询年度二十四节气。
 
-默认日历编码是 `CN_STANDARD`，迁移脚本会初始化 2025-2026 年中国标准工作日历。其他年度需要在管理端初始化，或调用管理接口初始化。
+默认日历编码是 `CN_STANDARD`。该日历定义由必需资源声明初始化；开启 demo 资源时会额外初始化 2025-2026 年完整日期、法定节假日和调休数据。其他年度需要在管理端初始化，或调用管理接口初始化。
 
 ## 2. 功能清单
 
@@ -151,7 +151,7 @@ const nextDate = await calendarApi.addWorkdays({
 ### 5.1 用默认中国标准工作日历
 
 1. 服务端启用 `mango-calendar-starter`。
-2. Flyway 启用 `calendar` 模块迁移。
+2. Flyway 启用 `calendar` 模块迁移，并启用 Resource Registry 同步。
 3. 前端管理端注册 `registerMangoCalendarAdminPages()`。
 4. 给角色授权 `calendar:admin:list`、`calendar:year:list`、`calendar:day:list` 等权限。
 5. 业务后端或前端按 `calendarCode=CN_STANDARD` 调用工作日接口。
@@ -315,22 +315,20 @@ mango:
 
 ## 11. 数据与初始化
 
-`mango-calendar` 自己初始化业务表和默认日历数据：
+`mango-calendar` 按“Flyway 只负责 DDL，必需数据和演示数据分别登记”的规则初始化：
 
 | 数据 | 来源 | 说明 |
 |------|------|------|
 | `calendar` | `db/migration/calendar/V1__init_calendar.sql` | 日历定义表。 |
 | `calendar_day` | `db/migration/calendar/V1__init_calendar.sql` | 年度日期明细表。 |
-| `CN_STANDARD` | `db/migration/calendar/V1__init_calendar.sql` | 默认中国标准工作日历。 |
-| 2025-2026 年日期 | `db/migration/calendar/V1__init_calendar.sql` | 默认年度日期、法定节假日和调休数据。 |
+| `CN_STANDARD` | `META-INF/mango/resources/calendar-common-definition.json` | 必需资源；默认中国标准工作日历定义，`INIT_ONLY`，不会覆盖用户后续修改。 |
+| 2025-2026 年日期 | `META-INF/mango/demo/calendar-demo-cn-standard-years.json` | 演示资源；仅 demo 开启时生成完整年度日期并应用 71 条法定节假日和调休数据。 |
+| 菜单 | `META-INF/mango/resources/calendar-common-menu.json` | Calendar 自己登记管理菜单和权限映射，目标模块为 authorization。 |
+| 领域 | `META-INF/mango/resources/calendar-common-domain.yml` | Calendar 自己登记领域资源。 |
 
-菜单、应用模块和权限不在 calendar 模块内初始化，而是在 authorization 基线迁移中登记：
+关闭 demo 资源时，新库只会得到两张业务表、`CN_STANDARD` 定义及正式菜单/领域资源，不会预置年度日期。生产环境应通过管理接口初始化目标年度，再导入权威节假日数据。
 
-```text
-mango/mango-platform/mango-authorization/mango-authorization-core/src/main/resources/db/migration/authorization/V1__init_authorization.sql
-```
-
-如果页面看不到日历菜单，先确认 authorization 迁移已执行，再确认角色已授权对应权限码。
+如果页面看不到日历菜单，先确认 Resource Registry 已扫描 calendar 正式资源，再确认角色已授权对应权限码。
 
 ## 12. 问题排查
 
@@ -339,7 +337,7 @@ mango/mango-platform/mango-authorization/mango-authorization-core/src/main/resou
 | 工作日接口提示日历不存在 | `calendarCode` 不存在或日历已停用 | 在日历管理中创建并启用日历。 |
 | 提示年度日历未初始化 | 传入日期所在年度没有日期明细 | 初始化对应年度。 |
 | 工作日结果不符合节假日安排 | 年度只按周末规则生成，未导入调休和法定假日 | 导入日期或手工批量设置。 |
-| 管理页没有菜单 | authorization 菜单权限未初始化或角色未授权 | 检查 authorization 迁移和角色权限。 |
+| 管理页没有菜单 | Calendar 正式资源未同步或角色未授权 | 检查 Resource Registry 同步记录和角色权限。 |
 | 页面日历下拉为空 | 当前租户没有启用日历 | 创建日历或启用已有日历。 |
 | 远程调用失败 | 没有启用 `mango-calendar-starter-remote` 或服务名不可达 | 检查远程 starter、服务发现和 `mango.calendar.remote.enabled`。 |
 

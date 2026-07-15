@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -15,6 +16,7 @@ public class UpdateCalendarCommand implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @NotNull(message = "日历 ID 不能为空")
+    @Positive(message = "日历 ID 必须大于0")
     @Schema(description = "日历 ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long id;
 

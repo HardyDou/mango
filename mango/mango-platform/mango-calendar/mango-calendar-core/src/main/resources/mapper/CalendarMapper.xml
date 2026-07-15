@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.calendar.core.mapper.CalendarMapper">
+
+    <select id="selectByCode" resultType="io.mango.calendar.core.entity.CalendarEntity">
+        SELECT *
+        FROM calendar
+        WHERE tenant_id = #{tenantId}
+          AND calendar_code = #{calendarCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectActiveByCode" resultType="io.mango.calendar.core.entity.CalendarEntity">
+        SELECT *
+        FROM calendar
+        WHERE tenant_id = #{tenantId}
+          AND calendar_code = #{calendarCode}
+          AND status = 1
+        LIMIT 1
+    </select>
+
+</mapper>

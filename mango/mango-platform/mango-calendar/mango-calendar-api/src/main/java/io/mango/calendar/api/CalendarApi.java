@@ -1,7 +1,7 @@
 package io.mango.calendar.api;
 
 import io.mango.calendar.api.query.AddWorkdaysQuery;
-import io.mango.calendar.api.query.BatchCheckWorkdayQuery;
+import io.mango.calendar.api.query.BatchCheckWorkdayRequest;
 import io.mango.calendar.api.query.CalendarDateQuery;
 import io.mango.calendar.api.query.CountWorkdaysQuery;
 import io.mango.calendar.api.query.DateRangeQuery;
@@ -16,12 +16,10 @@ import io.mango.calendar.api.vo.MonthWorkdaySummaryVO;
 import io.mango.calendar.api.vo.SolarTermVO;
 import io.mango.common.result.R;
 import jakarta.validation.Valid;
-import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Validated
 public interface CalendarApi {
 
     R<CalendarDayVO> getDay(@Valid CalendarDateQuery query);
@@ -38,7 +36,7 @@ public interface CalendarApi {
 
     R<List<CalendarDayVO>> listDays(@Valid DateRangeQuery query);
 
-    R<List<CalendarDayVO>> batchCheck(@Valid BatchCheckWorkdayQuery query);
+    R<List<CalendarDayVO>> batchCheck(@Valid BatchCheckWorkdayRequest query);
 
     R<MonthWorkdaySummaryVO> monthSummary(@Valid MonthQuery query);
 

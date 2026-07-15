@@ -26,7 +26,8 @@ public class InitCalendarYearCommand implements Serializable {
     private Integer year;
 
     @Schema(description = "是否覆盖已存在年度数据")
-    private Boolean overwrite;
+    @NotNull(message = "是否覆盖不能为空")
+    private Boolean overwrite = false;
 
     @Min(value = 1900, message = "复制来源年度不能早于1900")
     @Max(value = 2100, message = "复制来源年度不能晚于2100")

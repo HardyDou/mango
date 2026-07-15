@@ -33,5 +33,6 @@ public class LunarDateQuery implements Serializable {
     private Integer lunarDay;
 
     @Schema(description = "是否闰月")
-    private Boolean leapMonth;
+    @NotNull(message = "是否闰月不能为空")
+    private Boolean leapMonth = false;
 }

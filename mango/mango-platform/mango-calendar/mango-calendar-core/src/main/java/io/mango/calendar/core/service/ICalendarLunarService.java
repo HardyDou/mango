@@ -5,7 +5,7 @@ import io.mango.calendar.api.query.SolarDateQuery;
 import io.mango.calendar.api.query.SolarTermYearQuery;
 import io.mango.calendar.api.vo.LunarDayInfoVO;
 import io.mango.calendar.api.vo.SolarTermVO;
-import io.mango.calendar.core.entity.CalendarDay;
+import io.mango.calendar.core.entity.CalendarDayEntity;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,5 +18,5 @@ public interface ICalendarLunarService {
 
     List<SolarTermVO> listSolarTerms(SolarTermYearQuery query);
 
-    void applyLunarInfo(CalendarDay day);
+    void applyLunarInfo(CalendarDayEntity day);
 }

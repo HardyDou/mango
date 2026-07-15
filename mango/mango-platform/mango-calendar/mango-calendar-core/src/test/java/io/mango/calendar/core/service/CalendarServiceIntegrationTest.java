@@ -1,12 +1,17 @@
-package io.mango.calendar.core.service.impl;
+package io.mango.calendar.core.service;
 
+import io.mango.calendar.api.command.CreateCalendarCommand;
+import io.mango.calendar.api.command.ImportCalendarDayCommand;
+import io.mango.calendar.api.command.ImportCalendarDaysCommand;
+import io.mango.calendar.api.command.InitCalendarYearCommand;
 import io.mango.calendar.api.enums.CalendarDayType;
 import io.mango.calendar.api.query.AddWorkdaysQuery;
-import io.mango.calendar.api.query.BatchCheckWorkdayQuery;
+import io.mango.calendar.api.query.BatchCheckWorkdayRequest;
 import io.mango.calendar.api.query.CalendarDateQuery;
 import io.mango.calendar.api.query.CountWorkdaysQuery;
-import io.mango.calendar.core.entity.Calendar;
-import io.mango.calendar.core.entity.CalendarDay;
+import io.mango.calendar.api.query.CalendarYearSummaryQuery;
+import io.mango.calendar.core.entity.CalendarEntity;
+import io.mango.calendar.core.entity.CalendarDayEntity;
 import io.mango.calendar.core.mapper.CalendarMapper;
 import io.mango.calendar.core.service.ICalendarService;
 import io.mango.calendar.core.support.CalendarDayTypes;
@@ -46,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         JdbcTemplateAutoConfiguration.class,
         TransactionAutoConfiguration.class,
         com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration.class,
-        CalendarServiceImplIntegrationTest.TestConfig.class
+        CalendarServiceIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:calendar;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
@@ -55,7 +60,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false"
 })
-class CalendarServiceImplIntegrationTest {
+class CalendarServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -65,6 +70,9 @@ class CalendarServiceImplIntegrationTest {
 
     @Autowired
     private ICalendarService calendarService;
+
+    @Autowired
+    private ICalendarAdminService calendarAdminService;
 
     @Autowired
     private RecordingCache recordingCache;
@@ -78,12 +86,15 @@ class CalendarServiceImplIntegrationTest {
         jdbcTemplate.execute("""
                 CREATE TABLE calendar (
                     id BIGINT NOT NULL,
-                    tenant_id BIGINT NOT NULL DEFAULT 0,
+                    tenant_id VARCHAR(64) NOT NULL,
+                    org_id BIGINT,
                     calendar_code VARCHAR(64) NOT NULL,
                     calendar_name VARCHAR(128) NOT NULL,
                     status TINYINT NOT NULL DEFAULT 1,
-                    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    created_by BIGINT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_by BIGINT,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_calendar_tenant_code (tenant_id, calendar_code)
                 )
@@ -91,7 +102,8 @@ class CalendarServiceImplIntegrationTest {
         jdbcTemplate.execute("""
                 CREATE TABLE calendar_day (
                     id BIGINT NOT NULL,
-                    tenant_id BIGINT NOT NULL DEFAULT 0,
+                    tenant_id VARCHAR(64) NOT NULL,
+                    org_id BIGINT,
                     calendar_id BIGINT NOT NULL,
                     calendar_year INT NOT NULL,
                     calendar_date DATE NOT NULL,
@@ -110,8 +122,10 @@ class CalendarServiceImplIntegrationTest {
                     source VARCHAR(64),
                     remark VARCHAR(256),
                     enabled TINYINT NOT NULL DEFAULT 1,
-                    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    created_by BIGINT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_by BIGINT,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_calendar_day_date (tenant_id, calendar_id, calendar_date)
                 )
@@ -206,7 +220,7 @@ class CalendarServiceImplIntegrationTest {
 
     @Test
     void batchCheck_returnsDayTypes() {
-        BatchCheckWorkdayQuery query = new BatchCheckWorkdayQuery();
+        BatchCheckWorkdayRequest query = new BatchCheckWorkdayRequest();
         query.setCalendarCode("CN_STANDARD");
         query.setDates(List.of(
                 LocalDate.of(2026, 2, 15),
@@ -242,10 +256,68 @@ class CalendarServiceImplIntegrationTest {
         assertThat(recordingCache.setCount()).isEqualTo(1);
     }
 
+    @Test
+    void calendarAdmin_createDuplicateAndDelete_preservesBusinessRules() {
+        CreateCalendarCommand create = new CreateCalendarCommand();
+        create.setCalendarCode("CUSTOM");
+        create.setCalendarName("自定义日历");
+
+        Long id = calendarAdminService.createCalendar(create);
+
+        assertThat(calendarMapper.selectByCode("1", "CUSTOM")).isNotNull();
+        assertThatThrownBy(() -> calendarAdminService.createCalendar(create))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("日历编码已存在");
+        assertThat(calendarAdminService.deleteCalendar(id)).isTrue();
+        assertThat(calendarMapper.selectByCode("1", "CUSTOM")).isNull();
+    }
+
+    @Test
+    void calendarAdmin_initImportAndDeleteYear_persistsCompleteYear() {
+        InitCalendarYearCommand init = new InitCalendarYearCommand();
+        init.setCalendarCode("CN_STANDARD");
+        init.setYear(2028);
+        init.setOverwrite(false);
+
+        assertThat(calendarAdminService.initCalendarYear(init)).isTrue();
+
+        CalendarYearSummaryQuery summaryQuery = new CalendarYearSummaryQuery();
+        summaryQuery.setCalendarCode("CN_STANDARD");
+        summaryQuery.setYear(2028);
+        assertThat(calendarAdminService.yearSummary(summaryQuery).getTotalDays()).isEqualTo(366);
+
+        ImportCalendarDayCommand item = new ImportCalendarDayCommand();
+        item.setDate(LocalDate.of(2028, 1, 3));
+        item.setDayType(CalendarDayType.LEGAL_HOLIDAY);
+        item.setDayName("测试法定假日");
+        item.setSource("集成测试");
+        ImportCalendarDaysCommand importCommand = new ImportCalendarDaysCommand();
+        importCommand.setCalendarCode("CN_STANDARD");
+        importCommand.setYear(2028);
+        importCommand.setItems(List.of(item));
+
+        assertThat(calendarAdminService.importCalendarDays(importCommand)).isTrue();
+        assertThat(calendarService.isWorkday(dateQuery(LocalDate.of(2028, 1, 3)))).isFalse();
+        assertThat(calendarAdminService.yearSummary(summaryQuery).getLegalHolidays()).isEqualTo(1);
+        assertThat(calendarAdminService.deleteCalendarYear("CN_STANDARD", 2028)).isTrue();
+        assertThatThrownBy(() -> calendarAdminService.yearSummary(summaryQuery))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("年度日历未初始化");
+    }
+
+    @Test
+    void calendarQuery_nonNumericTenant_isIsolatedWithoutParsingFailure() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("tenant-alpha"));
+
+        assertThatThrownBy(() -> calendarService.isWorkday(dateQuery(LocalDate.of(2026, 2, 16))))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("日历不存在或未启用");
+    }
+
     private void seedCalendar() {
-        Calendar calendar = new Calendar();
+        CalendarEntity calendar = new CalendarEntity();
         calendar.setId(1L);
-        calendar.setTenantId(1L);
+        calendar.setTenantId("1");
         calendar.setCalendarCode("CN_STANDARD");
         calendar.setCalendarName("中国标准工作日历");
         calendar.setStatus(1);
@@ -301,7 +373,7 @@ class CalendarServiceImplIntegrationTest {
     @Configuration(proxyBeanMethods = false)
     @EnableTransactionManagement
     @MapperScan(basePackageClasses = CalendarMapper.class)
-    @ComponentScan(basePackageClasses = CalendarServiceImpl.class)
+    @ComponentScan(basePackageClasses = CalendarService.class)
     static class TestConfig {
 
         @Bean

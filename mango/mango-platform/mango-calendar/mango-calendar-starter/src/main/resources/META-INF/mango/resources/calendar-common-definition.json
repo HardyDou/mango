@@ -1,0 +1,27 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "calendar",
+      "moduleName": "工作日历模块",
+      "declarations": {
+        "CALENDAR_DEFINITION": [
+          {
+            "id": "2026071509000000181",
+            "version": 1,
+            "bizKey": "calendar.definition.tenant-1.CN_STANDARD",
+            "name": "中国标准工作日历",
+            "targetModule": "calendar",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "tenantId": { "type": "STRING", "value": "1" },
+              "calendarCode": { "type": "STRING", "value": "CN_STANDARD" },
+              "calendarName": { "type": "STRING", "value": "中国标准工作日历" },
+              "status": { "type": "INT", "value": 1 }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

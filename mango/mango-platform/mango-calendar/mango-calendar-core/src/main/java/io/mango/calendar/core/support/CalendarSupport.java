@@ -4,23 +4,21 @@ import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import org.springframework.util.StringUtils;
 
+import static io.mango.calendar.api.enums.CalendarCode.CALENDAR_BUSINESS_ERROR;
+
 public final class CalendarSupport {
 
     private CalendarSupport() {
     }
 
-    public static Long currentTenantId() {
+    public static String currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
-        Require.notBlank(tenantId, "缺少当前机构上下文");
-        try {
-            return Long.valueOf(tenantId);
-        } catch (NumberFormatException e) {
-            return Require.fail(400, "当前机构上下文不是有效数字: " + tenantId);
-        }
+        Require.notBlank(tenantId, CALENDAR_BUSINESS_ERROR, "缺少当前机构上下文");
+        return tenantId;
     }
 
     public static String trimRequired(String value, String message) {
-        Require.notBlank(value, message);
+        Require.notBlank(value, CALENDAR_BUSINESS_ERROR, message);
         return value.trim();
     }
 

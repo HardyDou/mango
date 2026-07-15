@@ -1,4 +1,4 @@
-package io.mango.calendar.core.service.impl;
+package io.mango.calendar.core.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.calendar.api.command.BatchUpdateCalendarDaysCommand;
 import io.mango.calendar.api.command.CreateCalendarCommand;
 import io.mango.calendar.api.command.ImportCalendarDaysCommand;
+import io.mango.calendar.api.command.ImportCalendarDayCommand;
 import io.mango.calendar.api.command.InitCalendarYearCommand;
 import io.mango.calendar.api.command.RefreshCalendarYearLunarCommand;
 import io.mango.calendar.api.command.UpdateCalendarCommand;
@@ -23,8 +24,8 @@ import io.mango.calendar.api.vo.CalendarOptionVO;
 import io.mango.calendar.api.vo.CalendarVO;
 import io.mango.calendar.api.vo.CalendarYearSummaryVO;
 import io.mango.calendar.core.config.CalendarKvProperties;
-import io.mango.calendar.core.entity.Calendar;
-import io.mango.calendar.core.entity.CalendarDay;
+import io.mango.calendar.core.entity.CalendarEntity;
+import io.mango.calendar.core.entity.CalendarDayEntity;
 import io.mango.calendar.core.mapper.CalendarDayMapper;
 import io.mango.calendar.core.mapper.CalendarMapper;
 import io.mango.calendar.core.service.ICalendarAdminService;
@@ -46,10 +47,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.mango.calendar.api.enums.CalendarCode.CALENDAR_BUSINESS_ERROR;
+
 @Service
 @RequiredArgsConstructor
 @EnableConfigurationProperties(CalendarKvProperties.class)
-public class CalendarAdminServiceImpl implements ICalendarAdminService {
+public class CalendarAdminService implements ICalendarAdminService {
 
     private static final String SOURCE_DEFAULT = "系统默认";
     private static final String SOURCE_COPY = "年度复制";
@@ -62,7 +65,7 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     public PageResult<CalendarVO> pageCalendars(CalendarPageQuery query) {
         CalendarPageQuery resolved = query == null ? new CalendarPageQuery() : query;
-        IPage<Calendar> page = calendarMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()), calendarWrapper(resolved));
+        IPage<CalendarEntity> page = calendarMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()), calendarWrapper(resolved));
         return PageResult.of(page.getRecords().stream().map(this::toCalendarVO).toList(),
                 page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -70,27 +73,28 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     public List<CalendarOptionVO> listCalendarOptions(CalendarOptionQuery query) {
         CalendarOptionQuery resolved = query == null ? new CalendarOptionQuery() : query;
-        LambdaQueryWrapper<Calendar> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Calendar::getTenantId, CalendarSupport.currentTenantId());
+        LambdaQueryWrapper<CalendarEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CalendarEntity::getTenantId, CalendarSupport.currentTenantId());
         if (!Boolean.TRUE.equals(resolved.getIncludeDisabled())) {
-            wrapper.eq(Calendar::getStatus, 1);
+            wrapper.eq(CalendarEntity::getStatus, 1);
         }
         String keyword = CalendarSupport.trimToNull(resolved.getKeyword());
         wrapper.and(StringUtils.hasText(keyword), nested -> nested
-                .like(Calendar::getCalendarCode, keyword)
+                .like(CalendarEntity::getCalendarCode, keyword)
                 .or()
-                .like(Calendar::getCalendarName, keyword));
-        wrapper.orderByAsc(Calendar::getCalendarCode);
+                .like(CalendarEntity::getCalendarName, keyword));
+        wrapper.orderByAsc(CalendarEntity::getCalendarCode);
         return calendarMapper.selectList(wrapper).stream().map(this::toOptionVO).toList();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createCalendar(CreateCalendarCommand command) {
-        Long tenantId = CalendarSupport.currentTenantId();
+        String tenantId = CalendarSupport.currentTenantId();
         String calendarCode = CalendarSupport.trimRequired(command.getCalendarCode(), "日历编码不能为空");
-        Require.isNull(calendarMapper.selectByCode(tenantId, calendarCode), "日历编码已存在");
-        Calendar entity = new Calendar();
+        Require.isTrue(calendarMapper.selectByCode(tenantId, calendarCode) == null,
+                CALENDAR_BUSINESS_ERROR, "日历编码已存在");
+        CalendarEntity entity = new CalendarEntity();
         entity.setTenantId(tenantId);
         entity.setCalendarCode(calendarCode);
         entity.setCalendarName(CalendarSupport.trimRequired(command.getCalendarName(), "日历名称不能为空"));
@@ -102,10 +106,11 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCalendar(UpdateCalendarCommand command) {
-        Calendar entity = selectCalendarRequired(command.getId());
+        CalendarEntity entity = selectCalendarRequired(command.getId());
         String calendarCode = CalendarSupport.trimRequired(command.getCalendarCode(), "日历编码不能为空");
-        Calendar exists = calendarMapper.selectByCode(entity.getTenantId(), calendarCode);
-        Require.isTrue(exists == null || exists.getId().equals(entity.getId()), "日历编码已存在");
+        CalendarEntity exists = calendarMapper.selectByCode(entity.getTenantId(), calendarCode);
+        Require.isTrue(exists == null || exists.getId().equals(entity.getId()),
+                CALENDAR_BUSINESS_ERROR, "日历编码已存在");
         entity.setCalendarCode(calendarCode);
         entity.setCalendarName(CalendarSupport.trimRequired(command.getCalendarName(), "日历名称不能为空"));
         return calendarMapper.updateById(entity) > 0;
@@ -114,7 +119,8 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCalendarStatus(UpdateCalendarStatusCommand command) {
-        Calendar entity = selectCalendarRequired(command.getId());
+        Require.notNull(command, CALENDAR_BUSINESS_ERROR, "更新日历状态命令不能为空");
+        CalendarEntity entity = selectCalendarRequired(command.getId());
         entity.setStatus(command.getStatus());
         return calendarMapper.updateById(entity) > 0;
     }
@@ -122,25 +128,26 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteCalendar(Long id) {
-        Calendar calendar = selectCalendarRequired(id);
-        Long tenantId = CalendarSupport.currentTenantId();
-        List<CalendarDay> days = dayMapper.selectList(new LambdaQueryWrapper<CalendarDay>()
-                .eq(CalendarDay::getTenantId, tenantId)
-                .eq(CalendarDay::getCalendarId, calendar.getId()));
+        Require.notNull(id, CALENDAR_BUSINESS_ERROR, "日历 ID 不能为空");
+        CalendarEntity calendar = selectCalendarRequired(id);
+        String tenantId = CalendarSupport.currentTenantId();
+        List<CalendarDayEntity> days = dayMapper.selectList(new LambdaQueryWrapper<CalendarDayEntity>()
+                .eq(CalendarDayEntity::getTenantId, tenantId)
+                .eq(CalendarDayEntity::getCalendarId, calendar.getId()));
         days.forEach(this::evictDay);
-        dayMapper.delete(new LambdaQueryWrapper<CalendarDay>()
-                .eq(CalendarDay::getTenantId, tenantId)
-                .eq(CalendarDay::getCalendarId, calendar.getId()));
+        dayMapper.delete(new LambdaQueryWrapper<CalendarDayEntity>()
+                .eq(CalendarDayEntity::getTenantId, tenantId)
+                .eq(CalendarDayEntity::getCalendarId, calendar.getId()));
         return calendarMapper.deleteById(calendar.getId()) > 0;
     }
 
     @Override
     public PageResult<CalendarYearSummaryVO> pageCalendarYears(CalendarYearPageQuery query) {
         CalendarYearPageQuery resolved = query == null ? new CalendarYearPageQuery() : query;
-        Long tenantId = CalendarSupport.currentTenantId();
-        LambdaQueryWrapper<CalendarDay> wrapper = yearWrapper(tenantId, resolved);
-        IPage<CalendarDay> page = dayMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()), wrapper);
-        Map<Long, Calendar> calendars = calendarsById(tenantId);
+        String tenantId = CalendarSupport.currentTenantId();
+        LambdaQueryWrapper<CalendarDayEntity> wrapper = yearWrapper(tenantId, resolved);
+        IPage<CalendarDayEntity> page = dayMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()), wrapper);
+        Map<Long, CalendarEntity> calendars = calendarsById(tenantId);
         List<CalendarYearSummaryVO> records = page.getRecords().stream()
                 .map(row -> yearSummary(tenantId, calendars.get(row.getCalendarId()), row.getCalendarYear()))
                 .toList();
@@ -150,20 +157,20 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean initCalendarYear(InitCalendarYearCommand command) {
-        Long tenantId = CalendarSupport.currentTenantId();
-        Calendar calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
+        String tenantId = CalendarSupport.currentTenantId();
+        CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
         long exists = dayMapper.countByYear(tenantId, calendar.getId(), command.getYear());
         boolean overwrite = Boolean.TRUE.equals(command.getOverwrite());
-        Require.isTrue(overwrite || exists == 0, "年度日历已存在");
+        Require.isTrue(overwrite || exists == 0, CALENDAR_BUSINESS_ERROR, "年度日历已存在");
         if (overwrite && exists > 0) {
             dayMapper.delete(yearDeleteWrapper(tenantId, calendar.getId(), command.getYear()));
         }
-        Map<String, CalendarDay> sourceByMonthDay = sourceDaysByMonthDay(tenantId, calendar, command.getSourceYear());
+        Map<String, CalendarDayEntity> sourceByMonthDay = sourceDaysByMonthDay(tenantId, calendar, command.getSourceYear());
         LocalDate date = LocalDate.of(command.getYear(), 1, 1);
         LocalDate endDate = LocalDate.of(command.getYear(), 12, 31);
         while (!date.isAfter(endDate)) {
-            CalendarDay entity = defaultDay(tenantId, calendar.getId(), date);
-            CalendarDay source = sourceByMonthDay.get(monthDayKey(date));
+            CalendarDayEntity entity = defaultDay(tenantId, calendar.getId(), date);
+            CalendarDayEntity source = sourceByMonthDay.get(monthDayKey(date));
             if (source != null && !CalendarDayTypes.isDefaultType(CalendarDayTypes.normalize(source.getDayType()))) {
                 copySourceDay(source, entity);
             }
@@ -177,11 +184,11 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean refreshCalendarYearLunar(RefreshCalendarYearLunarCommand command) {
-        Long tenantId = CalendarSupport.currentTenantId();
-        Calendar calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
-        List<CalendarDay> days = dayMapper.selectByYear(tenantId, calendar.getId(), command.getYear());
-        Require.isTrue(!days.isEmpty(), "年度日历未初始化");
-        for (CalendarDay day : days) {
+        String tenantId = CalendarSupport.currentTenantId();
+        CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
+        List<CalendarDayEntity> days = dayMapper.selectByYear(tenantId, calendar.getId(), command.getYear());
+        Require.isTrue(!days.isEmpty(), CALENDAR_BUSINESS_ERROR, "年度日历未初始化");
+        for (CalendarDayEntity day : days) {
             lunarService.applyLunarInfo(day);
             dayMapper.updateById(day);
             evictDay(day);
@@ -192,11 +199,11 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCalendarYearEnabled(UpdateCalendarYearEnabledCommand command) {
-        Long tenantId = CalendarSupport.currentTenantId();
-        Calendar calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
+        String tenantId = CalendarSupport.currentTenantId();
+        CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
         Require.isTrue(dayMapper.countByYear(tenantId, calendar.getId(), command.getYear()) > 0,
-                "年度日历未初始化");
-        CalendarDay entity = new CalendarDay();
+                CALENDAR_BUSINESS_ERROR, "年度日历未初始化");
+        CalendarDayEntity entity = new CalendarDayEntity();
         entity.setEnabled(command.getEnabled());
         int updated = dayMapper.update(entity, yearDeleteWrapper(tenantId, calendar.getId(), command.getYear()));
         return updated > 0;
@@ -205,31 +212,31 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteCalendarYear(String calendarCode, Integer year) {
-        Long tenantId = CalendarSupport.currentTenantId();
-        Calendar calendar = selectCalendarByCodeRequired(tenantId, calendarCode);
-        List<CalendarDay> days = dayMapper.selectByYear(tenantId, calendar.getId(), year);
-        Require.isTrue(!days.isEmpty(), "年度日历未初始化");
+        String tenantId = CalendarSupport.currentTenantId();
+        CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, calendarCode);
+        List<CalendarDayEntity> days = dayMapper.selectByYear(tenantId, calendar.getId(), year);
+        Require.isTrue(!days.isEmpty(), CALENDAR_BUSINESS_ERROR, "年度日历未初始化");
         days.forEach(this::evictDay);
         return dayMapper.delete(yearDeleteWrapper(tenantId, calendar.getId(), year)) > 0;
     }
 
     @Override
     public CalendarYearSummaryVO yearSummary(CalendarYearSummaryQuery query) {
-        Long tenantId = CalendarSupport.currentTenantId();
-        Calendar calendar = selectCalendarByCodeRequired(tenantId, query.getCalendarCode());
+        String tenantId = CalendarSupport.currentTenantId();
+        CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, query.getCalendarCode());
         return yearSummary(tenantId, calendar, query.getYear());
     }
 
     @Override
     public PageResult<CalendarDayVO> pageCalendarDays(CalendarDayPageQuery query) {
         CalendarDayPageQuery resolved = query == null ? new CalendarDayPageQuery() : query;
-        Long tenantId = CalendarSupport.currentTenantId();
-        Calendar calendar = StringUtils.hasText(resolved.getCalendarCode())
+        String tenantId = CalendarSupport.currentTenantId();
+        CalendarEntity calendar = StringUtils.hasText(resolved.getCalendarCode())
                 ? selectCalendarByCodeRequired(tenantId, resolved.getCalendarCode())
                 : null;
-        IPage<CalendarDay> page = dayMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
+        IPage<CalendarDayEntity> page = dayMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()),
                 dayWrapper(tenantId, calendar, resolved));
-        Map<Long, Calendar> calendars = calendarsById(tenantId);
+        Map<Long, CalendarEntity> calendars = calendarsById(tenantId);
         return PageResult.of(page.getRecords().stream()
                 .map(day -> toDayVO(day, calendars.get(day.getCalendarId())))
                 .toList(), page.getTotal(), page.getCurrent(), page.getSize());
@@ -238,7 +245,8 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCalendarDay(UpdateCalendarDayCommand command) {
-        CalendarDay entity = selectDayRequired(command.getId());
+        Require.notNull(command, CALENDAR_BUSINESS_ERROR, "更新日历日期命令不能为空");
+        CalendarDayEntity entity = selectDayRequired(command.getId());
         applyDayUpdate(entity, command.getDayType(), command.getDayName(), command.getSource(), command.getRemark());
         evictDay(entity);
         return dayMapper.updateById(entity) > 0;
@@ -247,7 +255,8 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteCalendarDay(Long id) {
-        CalendarDay entity = selectDayRequired(id);
+        Require.notNull(id, CALENDAR_BUSINESS_ERROR, "日期 ID 不能为空");
+        CalendarDayEntity entity = selectDayRequired(id);
         evictDay(entity);
         return dayMapper.deleteById(entity.getId()) > 0;
     }
@@ -255,8 +264,9 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean batchUpdateCalendarDays(BatchUpdateCalendarDaysCommand command) {
+        Require.notNull(command, CALENDAR_BUSINESS_ERROR, "批量更新日历日期命令不能为空");
         for (Long id : command.getIds()) {
-            CalendarDay entity = selectDayRequired(id);
+            CalendarDayEntity entity = selectDayRequired(id);
             applyDayUpdate(entity, command.getDayType(), command.getDayName(), command.getSource(), command.getRemark());
             dayMapper.updateById(entity);
             evictDay(entity);
@@ -267,13 +277,16 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean importCalendarDays(ImportCalendarDaysCommand command) {
-        Long tenantId = CalendarSupport.currentTenantId();
-        Calendar calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
-        Require.isTrue(dayMapper.countByYear(tenantId, calendar.getId(), command.getYear()) > 0, "年度日历未初始化");
-        for (ImportCalendarDaysCommand.Item item : command.getItems()) {
-            Require.isTrue(item.getDate().getYear() == command.getYear(), "导入日期必须属于指定年度");
-            CalendarDay entity = dayMapper.selectByDate(tenantId, calendar.getId(), item.getDate());
-            Require.notNull(entity, "年度日历未初始化：" + command.getCalendarCode() + " " + command.getYear());
+        String tenantId = CalendarSupport.currentTenantId();
+        CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
+        Require.isTrue(dayMapper.countByYear(tenantId, calendar.getId(), command.getYear()) > 0,
+                CALENDAR_BUSINESS_ERROR, "年度日历未初始化");
+        for (ImportCalendarDayCommand item : command.getItems()) {
+            Require.isTrue(item.getDate().getYear() == command.getYear(), CALENDAR_BUSINESS_ERROR,
+                    "导入日期必须属于指定年度");
+            CalendarDayEntity entity = dayMapper.selectByDate(tenantId, calendar.getId(), item.getDate());
+            Require.notNull(entity, CALENDAR_BUSINESS_ERROR,
+                    "年度日历未初始化：" + command.getCalendarCode() + " " + command.getYear());
             applyDayUpdate(entity, item.getDayType(), item.getDayName(), item.getSource(), item.getRemark());
             dayMapper.updateById(entity);
             evictDay(entity);
@@ -281,90 +294,105 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         return true;
     }
 
-    private LambdaQueryWrapper<Calendar> calendarWrapper(CalendarPageQuery query) {
-        LambdaQueryWrapper<Calendar> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Calendar::getTenantId, CalendarSupport.currentTenantId());
+    private LambdaQueryWrapper<CalendarEntity> calendarWrapper(CalendarPageQuery query) {
+        LambdaQueryWrapper<CalendarEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CalendarEntity::getTenantId, CalendarSupport.currentTenantId());
         String keyword = CalendarSupport.trimToNull(query.getKeyword());
         wrapper.and(StringUtils.hasText(keyword), nested -> nested
-                .like(Calendar::getCalendarCode, keyword)
+                .like(CalendarEntity::getCalendarCode, keyword)
                 .or()
-                .like(Calendar::getCalendarName, keyword));
-        wrapper.eq(query.getStatus() != null, Calendar::getStatus, query.getStatus());
-        wrapper.orderByDesc(Calendar::getUpdateTime);
+                .like(CalendarEntity::getCalendarName, keyword));
+        wrapper.eq(query.getStatus() != null, CalendarEntity::getStatus, query.getStatus());
+        wrapper.orderByDesc(CalendarEntity::getUpdatedAt);
         return wrapper;
     }
 
-    private LambdaQueryWrapper<CalendarDay> yearWrapper(Long tenantId, CalendarYearPageQuery query) {
-        LambdaQueryWrapper<CalendarDay> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(CalendarDay::getCalendarId, CalendarDay::getCalendarYear);
-        wrapper.eq(CalendarDay::getTenantId, tenantId);
+    private LambdaQueryWrapper<CalendarDayEntity> yearWrapper(String tenantId, CalendarYearPageQuery query) {
+        LambdaQueryWrapper<CalendarDayEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(CalendarDayEntity::getCalendarId, CalendarDayEntity::getCalendarYear);
+        wrapper.eq(CalendarDayEntity::getTenantId, tenantId);
         if (StringUtils.hasText(query.getCalendarCode())) {
-            wrapper.eq(CalendarDay::getCalendarId, selectCalendarByCodeRequired(tenantId, query.getCalendarCode()).getId());
+            wrapper.eq(CalendarDayEntity::getCalendarId, selectCalendarByCodeRequired(tenantId, query.getCalendarCode()).getId());
         }
-        wrapper.eq(query.getYear() != null, CalendarDay::getCalendarYear, query.getYear());
-        wrapper.eq(query.getEnabled() != null, CalendarDay::getEnabled, query.getEnabled());
-        wrapper.groupBy(CalendarDay::getCalendarId, CalendarDay::getCalendarYear);
-        wrapper.orderByDesc(CalendarDay::getCalendarYear);
+        wrapper.eq(query.getYear() != null, CalendarDayEntity::getCalendarYear, query.getYear());
+        wrapper.eq(query.getEnabled() != null, CalendarDayEntity::getEnabled, query.getEnabled());
+        wrapper.groupBy(CalendarDayEntity::getCalendarId, CalendarDayEntity::getCalendarYear);
+        wrapper.orderByDesc(CalendarDayEntity::getCalendarYear);
         return wrapper;
     }
 
-    private LambdaQueryWrapper<CalendarDay> dayWrapper(Long tenantId, Calendar calendar, CalendarDayPageQuery query) {
-        LambdaQueryWrapper<CalendarDay> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CalendarDay::getTenantId, tenantId);
-        wrapper.eq(calendar != null, CalendarDay::getCalendarId, calendar == null ? null : calendar.getId());
-        wrapper.eq(query.getYear() != null, CalendarDay::getCalendarYear, query.getYear());
-        wrapper.ge(query.getStartDate() != null, CalendarDay::getCalendarDate, query.getStartDate());
-        wrapper.le(query.getEndDate() != null, CalendarDay::getCalendarDate, query.getEndDate());
-        wrapper.eq(query.getDayType() != null, CalendarDay::getDayType,
-                query.getDayType() == null ? null : CalendarDayTypes.normalize(query.getDayType()).name());
-        wrapper.eq(query.getWorkday() != null, CalendarDay::getWorkday, Boolean.TRUE.equals(query.getWorkday()) ? 1 : 0);
-        wrapper.eq(query.getEnabled() != null, CalendarDay::getEnabled, query.getEnabled());
+    private LambdaQueryWrapper<CalendarDayEntity> dayWrapper(String tenantId, CalendarEntity calendar, CalendarDayPageQuery query) {
+        LambdaQueryWrapper<CalendarDayEntity> wrapper = new LambdaQueryWrapper<>();
+        LocalDate startDate = optionalDate(query.getStartDate());
+        LocalDate endDate = optionalDate(query.getEndDate());
+        CalendarDayType dayType = CalendarDayTypes.normalize(query.getDayType());
+        Boolean workday = optionalBoolean(query.getWorkday());
+        wrapper.eq(CalendarDayEntity::getTenantId, tenantId);
+        wrapper.eq(calendar != null, CalendarDayEntity::getCalendarId, calendar == null ? null : calendar.getId());
+        wrapper.eq(query.getYear() != null, CalendarDayEntity::getCalendarYear, query.getYear());
+        wrapper.ge(startDate != null, CalendarDayEntity::getCalendarDate, startDate);
+        wrapper.le(endDate != null, CalendarDayEntity::getCalendarDate, endDate);
+        wrapper.eq(dayType != null, CalendarDayEntity::getDayType, dayType == null ? null : dayType.name());
+        wrapper.eq(workday != null, CalendarDayEntity::getWorkday, Boolean.TRUE.equals(workday) ? 1 : 0);
+        wrapper.eq(query.getEnabled() != null, CalendarDayEntity::getEnabled, query.getEnabled());
         String keyword = CalendarSupport.trimToNull(query.getKeyword());
         wrapper.and(StringUtils.hasText(keyword), nested -> nested
-                .like(CalendarDay::getDayName, keyword)
+                .like(CalendarDayEntity::getDayName, keyword)
                 .or()
-                .like(CalendarDay::getSource, keyword)
+                .like(CalendarDayEntity::getSource, keyword)
                 .or()
-                .like(CalendarDay::getRemark, keyword));
-        wrapper.orderByAsc(CalendarDay::getCalendarDate);
+                .like(CalendarDayEntity::getRemark, keyword));
+        wrapper.orderByAsc(CalendarDayEntity::getCalendarDate);
         return wrapper;
     }
 
-    private LambdaQueryWrapper<CalendarDay> yearDeleteWrapper(Long tenantId, Long calendarId, Integer year) {
-        LambdaQueryWrapper<CalendarDay> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CalendarDay::getTenantId, tenantId);
-        wrapper.eq(CalendarDay::getCalendarId, calendarId);
-        wrapper.eq(CalendarDay::getCalendarYear, year);
+    private LocalDate optionalDate(String value) {
+        String normalized = CalendarSupport.trimToNull(value);
+        return normalized == null ? null : LocalDate.parse(normalized);
+    }
+
+    private Boolean optionalBoolean(String value) {
+        String normalized = CalendarSupport.trimToNull(value);
+        return normalized == null ? null : Boolean.valueOf(normalized);
+    }
+
+    private LambdaQueryWrapper<CalendarDayEntity> yearDeleteWrapper(String tenantId, Long calendarId, Integer year) {
+        LambdaQueryWrapper<CalendarDayEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CalendarDayEntity::getTenantId, tenantId);
+        wrapper.eq(CalendarDayEntity::getCalendarId, calendarId);
+        wrapper.eq(CalendarDayEntity::getCalendarYear, year);
         return wrapper;
     }
 
-    private Calendar selectCalendarRequired(Long id) {
-        Require.notNull(id, "日历 ID 不能为空");
-        Calendar entity = calendarMapper.selectById(id);
-        Require.notNull(entity, "日历不存在");
-        Require.isTrue(CalendarSupport.currentTenantId().equals(entity.getTenantId()), "日历不存在");
+    private CalendarEntity selectCalendarRequired(Long id) {
+        Require.notNull(id, CALENDAR_BUSINESS_ERROR, "日历 ID 不能为空");
+        CalendarEntity entity = calendarMapper.selectById(id);
+        Require.notNull(entity, CALENDAR_BUSINESS_ERROR, "日历不存在");
+        Require.isTrue(CalendarSupport.currentTenantId().equals(entity.getTenantId()),
+                CALENDAR_BUSINESS_ERROR, "日历不存在");
         return entity;
     }
 
-    private Calendar selectCalendarByCodeRequired(Long tenantId, String calendarCode) {
+    private CalendarEntity selectCalendarByCodeRequired(String tenantId, String calendarCode) {
         String code = CalendarSupport.trimRequired(calendarCode, "日历编码不能为空");
-        Calendar calendar = calendarMapper.selectByCode(tenantId, code);
-        Require.notNull(calendar, "日历不存在：" + code);
+        CalendarEntity calendar = calendarMapper.selectByCode(tenantId, code);
+        Require.notNull(calendar, CALENDAR_BUSINESS_ERROR, "日历不存在：" + code);
         return calendar;
     }
 
-    private CalendarDay selectDayRequired(Long id) {
-        Require.notNull(id, "日期 ID 不能为空");
-        CalendarDay entity = dayMapper.selectById(id);
-        Require.notNull(entity, "日历日期不存在");
-        Require.isTrue(CalendarSupport.currentTenantId().equals(entity.getTenantId()), "日历日期不存在");
+    private CalendarDayEntity selectDayRequired(Long id) {
+        Require.notNull(id, CALENDAR_BUSINESS_ERROR, "日期 ID 不能为空");
+        CalendarDayEntity entity = dayMapper.selectById(id);
+        Require.notNull(entity, CALENDAR_BUSINESS_ERROR, "日历日期不存在");
+        Require.isTrue(CalendarSupport.currentTenantId().equals(entity.getTenantId()),
+                CALENDAR_BUSINESS_ERROR, "日历日期不存在");
         return entity;
     }
 
-    private CalendarYearSummaryVO yearSummary(Long tenantId, Calendar calendar, Integer year) {
-        Require.notNull(calendar, "日历不存在");
-        List<CalendarDay> days = dayMapper.selectByYear(tenantId, calendar.getId(), year);
-        Require.isTrue(!days.isEmpty(), "年度日历未初始化");
+    private CalendarYearSummaryVO yearSummary(String tenantId, CalendarEntity calendar, Integer year) {
+        Require.notNull(calendar, CALENDAR_BUSINESS_ERROR, "日历不存在");
+        List<CalendarDayEntity> days = dayMapper.selectByYear(tenantId, calendar.getId(), year);
+        Require.isTrue(!days.isEmpty(), CALENDAR_BUSINESS_ERROR, "年度日历未初始化");
         CalendarYearSummaryVO vo = new CalendarYearSummaryVO();
         vo.setCalendarCode(calendar.getCalendarCode());
         vo.setCalendarName(calendar.getCalendarName());
@@ -380,30 +408,30 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         return vo;
     }
 
-    private int countType(List<CalendarDay> days, CalendarDayType dayType) {
+    private int countType(List<CalendarDayEntity> days, CalendarDayType dayType) {
         return (int) days.stream()
                 .filter(day -> CalendarDayTypes.normalize(day.getDayType()) == dayType)
                 .count();
     }
 
-    private Map<Long, Calendar> calendarsById(Long tenantId) {
-        LambdaQueryWrapper<Calendar> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Calendar::getTenantId, tenantId);
-        Map<Long, Calendar> result = new HashMap<>();
-        for (Calendar calendar : calendarMapper.selectList(wrapper)) {
+    private Map<Long, CalendarEntity> calendarsById(String tenantId) {
+        LambdaQueryWrapper<CalendarEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CalendarEntity::getTenantId, tenantId);
+        Map<Long, CalendarEntity> result = new HashMap<>();
+        for (CalendarEntity calendar : calendarMapper.selectList(wrapper)) {
             result.put(calendar.getId(), calendar);
         }
         return result;
     }
 
-    private Map<String, CalendarDay> sourceDaysByMonthDay(Long tenantId, Calendar calendar, Integer sourceYear) {
+    private Map<String, CalendarDayEntity> sourceDaysByMonthDay(String tenantId, CalendarEntity calendar, Integer sourceYear) {
         if (sourceYear == null) {
             return Map.of();
         }
-        List<CalendarDay> sourceDays = dayMapper.selectByYear(tenantId, calendar.getId(), sourceYear);
-        Require.isTrue(!sourceDays.isEmpty(), "复制来源年度未初始化");
-        Map<String, CalendarDay> result = new HashMap<>();
-        for (CalendarDay day : sourceDays) {
+        List<CalendarDayEntity> sourceDays = dayMapper.selectByYear(tenantId, calendar.getId(), sourceYear);
+        Require.isTrue(!sourceDays.isEmpty(), CALENDAR_BUSINESS_ERROR, "复制来源年度未初始化");
+        Map<String, CalendarDayEntity> result = new HashMap<>();
+        for (CalendarDayEntity day : sourceDays) {
             result.put(monthDayKey(day.getCalendarDate()), day);
         }
         return result;
@@ -413,8 +441,8 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         return date.getMonthValue() + "-" + date.getDayOfMonth();
     }
 
-    private CalendarDay defaultDay(Long tenantId, Long calendarId, LocalDate date) {
-        CalendarDay entity = new CalendarDay();
+    private CalendarDayEntity defaultDay(String tenantId, Long calendarId, LocalDate date) {
+        CalendarDayEntity entity = new CalendarDayEntity();
         entity.setTenantId(tenantId);
         entity.setCalendarId(calendarId);
         entity.setCalendarYear(date.getYear());
@@ -428,7 +456,7 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         return entity;
     }
 
-    private void copySourceDay(CalendarDay source, CalendarDay target) {
+    private void copySourceDay(CalendarDayEntity source, CalendarDayEntity target) {
         CalendarDayType dayType = CalendarDayTypes.normalize(source.getDayType());
         target.setDayType(dayType.name());
         target.setWorkday(CalendarDayTypes.isWorkday(dayType) ? 1 : 0);
@@ -438,7 +466,7 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         target.setEnabled(source.getEnabled());
     }
 
-    private void applyDayUpdate(CalendarDay entity, CalendarDayType dayType, String dayName, String source, String remark) {
+    private void applyDayUpdate(CalendarDayEntity entity, CalendarDayType dayType, String dayName, String source, String remark) {
         CalendarDayType normalized = CalendarDayTypes.normalize(dayType);
         entity.setDayType(normalized.name());
         entity.setWorkday(CalendarDayTypes.isWorkday(normalized) ? 1 : 0);
@@ -447,7 +475,7 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         entity.setRemark(CalendarSupport.trimToNull(remark));
     }
 
-    private void evictDay(CalendarDay day) {
+    private void evictDay(CalendarDayEntity day) {
         ICache cache = cacheProvider.getIfAvailable();
         if (cache == null) {
             return;
@@ -455,18 +483,18 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         cache.delete("calendar:day:" + day.getTenantId() + ":" + day.getCalendarId() + ":" + day.getCalendarDate());
     }
 
-    private CalendarVO toCalendarVO(Calendar entity) {
+    private CalendarVO toCalendarVO(CalendarEntity entity) {
         CalendarVO vo = new CalendarVO();
         vo.setId(entity.getId());
         vo.setCalendarCode(entity.getCalendarCode());
         vo.setCalendarName(entity.getCalendarName());
         vo.setStatus(entity.getStatus());
-        vo.setCreateTime(entity.getCreateTime());
-        vo.setUpdateTime(entity.getUpdateTime());
+        vo.setCreateTime(entity.getCreatedAt());
+        vo.setUpdateTime(entity.getUpdatedAt());
         return vo;
     }
 
-    private CalendarOptionVO toOptionVO(Calendar entity) {
+    private CalendarOptionVO toOptionVO(CalendarEntity entity) {
         CalendarOptionVO vo = new CalendarOptionVO();
         vo.setCalendarCode(entity.getCalendarCode());
         vo.setCalendarName(entity.getCalendarName());
@@ -474,7 +502,7 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         return vo;
     }
 
-    private CalendarDayVO toDayVO(CalendarDay entity, Calendar calendar) {
+    private CalendarDayVO toDayVO(CalendarDayEntity entity, CalendarEntity calendar) {
         CalendarDayVO vo = new CalendarDayVO();
         vo.setId(entity.getId());
         if (calendar != null) {
@@ -498,7 +526,7 @@ public class CalendarAdminServiceImpl implements ICalendarAdminService {
         vo.setSource(entity.getSource());
         vo.setRemark(entity.getRemark());
         vo.setEnabled(entity.getEnabled());
-        vo.setUpdateTime(entity.getUpdateTime());
+        vo.setUpdateTime(entity.getUpdatedAt());
         return vo;
     }
 }

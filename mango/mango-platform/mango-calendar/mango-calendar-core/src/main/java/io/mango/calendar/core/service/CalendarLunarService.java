@@ -1,4 +1,4 @@
-package io.mango.calendar.core.service.impl;
+package io.mango.calendar.core.service;
 
 import com.nlf.calendar.Lunar;
 import com.nlf.calendar.Solar;
@@ -7,7 +7,7 @@ import io.mango.calendar.api.query.SolarDateQuery;
 import io.mango.calendar.api.query.SolarTermYearQuery;
 import io.mango.calendar.api.vo.LunarDayInfoVO;
 import io.mango.calendar.api.vo.SolarTermVO;
-import io.mango.calendar.core.entity.CalendarDay;
+import io.mango.calendar.core.entity.CalendarDayEntity;
 import io.mango.calendar.core.service.ICalendarLunarService;
 import io.mango.common.result.Require;
 import org.springframework.stereotype.Service;
@@ -18,18 +18,20 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import static io.mango.calendar.api.enums.CalendarCode.CALENDAR_BUSINESS_ERROR;
+
 @Service
-public class CalendarLunarServiceImpl implements ICalendarLunarService {
+public class CalendarLunarService implements ICalendarLunarService {
 
     @Override
     public LunarDayInfoVO getLunarDay(SolarDateQuery query) {
-        Require.notNull(query, "日期不能为空");
+        Require.notNull(query, CALENDAR_BUSINESS_ERROR, "日期不能为空");
         return lunarDay(query.getDate());
     }
 
     @Override
     public LocalDate lunarToSolar(LunarDateQuery query) {
-        Require.notNull(query, "农历日期不能为空");
+        Require.notNull(query, CALENDAR_BUSINESS_ERROR, "农历日期不能为空");
         int month = Boolean.TRUE.equals(query.getLeapMonth()) ? -query.getLunarMonth() : query.getLunarMonth();
         Solar solar = Lunar.fromYmd(query.getLunarYear(), month, query.getLunarDay()).getSolar();
         return LocalDate.of(solar.getYear(), solar.getMonth(), solar.getDay());
@@ -37,7 +39,7 @@ public class CalendarLunarServiceImpl implements ICalendarLunarService {
 
     @Override
     public List<SolarTermVO> listSolarTerms(SolarTermYearQuery query) {
-        Require.notNull(query, "年度不能为空");
+        Require.notNull(query, CALENDAR_BUSINESS_ERROR, "年度不能为空");
         LocalDate yearStart = LocalDate.of(query.getYear(), 1, 1);
         LocalDate nextYearStart = yearStart.plusYears(1);
         Map<String, Solar> table = Solar.fromYmd(query.getYear(), 7, 1).getLunar().getJieQiTable();
@@ -50,8 +52,8 @@ public class CalendarLunarServiceImpl implements ICalendarLunarService {
     }
 
     @Override
-    public void applyLunarInfo(CalendarDay day) {
-        Require.notNull(day, "日历日期不能为空");
+    public void applyLunarInfo(CalendarDayEntity day) {
+        Require.notNull(day, CALENDAR_BUSINESS_ERROR, "日历日期不能为空");
         LunarDayInfoVO info = lunarDay(day.getCalendarDate());
         day.setLunarYear(info.getLunarYear());
         day.setLunarMonth(info.getLunarMonth());
@@ -64,7 +66,7 @@ public class CalendarLunarServiceImpl implements ICalendarLunarService {
     }
 
     private LunarDayInfoVO lunarDay(LocalDate date) {
-        Require.notNull(date, "日期不能为空");
+        Require.notNull(date, CALENDAR_BUSINESS_ERROR, "日期不能为空");
         Solar solar = Solar.fromYmd(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
         Lunar lunar = solar.getLunar();
         LunarDayInfoVO vo = new LunarDayInfoVO();
