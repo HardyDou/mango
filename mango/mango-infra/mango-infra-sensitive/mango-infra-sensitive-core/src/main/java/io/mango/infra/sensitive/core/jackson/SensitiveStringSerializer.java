@@ -3,12 +3,14 @@ package io.mango.infra.sensitive.core.jackson;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import io.mango.infra.sensitive.api.ISensitiveMaskingService;
 import io.mango.infra.sensitive.api.SensitiveMaskingContext;
 import io.mango.infra.sensitive.api.annotation.Sensitive;
+import io.mango.infra.sensitive.core.DefaultSensitiveMaskingService;
 import io.mango.infra.sensitive.core.SensitiveMasker;
-import io.mango.infra.sensitive.core.SensitiveMaskingRuntime;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Serializes annotated strings with output masking.
@@ -17,8 +19,15 @@ public class SensitiveStringSerializer extends JsonSerializer<Object> {
 
     private final Sensitive sensitive;
 
+    private final ISensitiveMaskingService maskingService;
+
     public SensitiveStringSerializer(Sensitive sensitive) {
-        this.sensitive = sensitive;
+        this(sensitive, new DefaultSensitiveMaskingService());
+    }
+
+    public SensitiveStringSerializer(Sensitive sensitive, ISensitiveMaskingService maskingService) {
+        this.sensitive = Objects.requireNonNull(sensitive, "sensitive must not be null");
+        this.maskingService = Objects.requireNonNull(maskingService, "maskingService must not be null");
     }
 
     @Override
@@ -29,7 +38,7 @@ public class SensitiveStringSerializer extends JsonSerializer<Object> {
             return;
         }
         if (SensitiveMaskingContext.isMaskingDisabled()
-                || !SensitiveMaskingRuntime.getMaskingService().shouldMask(sensitive)) {
+                || !maskingService.shouldMask(sensitive)) {
             gen.writeString(origin);
             return;
         }

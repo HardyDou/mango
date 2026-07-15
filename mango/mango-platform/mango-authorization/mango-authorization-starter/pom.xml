@@ -124,6 +124,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.mango.infra.sensitive</groupId>
+            <artifactId>mango-infra-sensitive-starter</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>

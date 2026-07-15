@@ -1,9 +1,13 @@
 package io.mango.infra.sensitive.starter;
 
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.sensitive.api.ISensitiveMaskingService;
 import io.mango.infra.sensitive.api.ISensitiveRawAccessProvider;
 import io.mango.infra.sensitive.api.ISensitiveWordProvider;
+import io.mango.infra.sensitive.api.annotation.Sensitive;
+import io.mango.infra.sensitive.api.enums.SensitiveType;
+import io.mango.infra.sensitive.core.jackson.SensitiveJacksonModule;
 import io.mango.infra.sensitive.core.word.SensitiveWordCustomizer;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -48,6 +52,44 @@ class SensitiveAutoConfigurationTest {
                 });
     }
 
+    @Test
+    void sensitiveJacksonModule_usesSpringPolicyWithoutLeakingAcrossContexts() {
+        String rawValue = "17612345678";
+        contextRunner.withUserConfiguration(RawAccessProviderConfiguration.class)
+                .run(context -> {
+                    ObjectMapper contextMapper = new ObjectMapper()
+                            .registerModule(context.getBean(Module.class));
+                    assertThat(write(contextMapper, new SensitiveView(rawValue)))
+                            .contains(rawValue);
+                });
+
+        ObjectMapper independentMapper = new ObjectMapper()
+                .registerModule(new SensitiveJacksonModule());
+        assertThat(write(independentMapper, new SensitiveView(rawValue)))
+                .contains("176****5678")
+                .doesNotContain(rawValue);
+    }
+
+    @Test
+    void sensitiveJacksonModule_withUserPolicy_usesTheOverrideBean() {
+        contextRunner.withUserConfiguration(MaskingPolicyConfiguration.class)
+                .run(context -> {
+                    ObjectMapper objectMapper = new ObjectMapper()
+                            .registerModule(context.getBean(Module.class));
+
+                    assertThat(write(objectMapper, new SensitiveView("17612345678")))
+                            .contains("17612345678");
+                });
+    }
+
+    private String write(ObjectMapper objectMapper, Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception exception) {
+            throw new IllegalStateException("serialization failed", exception);
+        }
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class RawAccessProviderConfiguration {
 
@@ -74,5 +116,17 @@ class SensitiveAutoConfigurationTest {
                 }
             };
         }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class MaskingPolicyConfiguration {
+
+        @Bean
+        ISensitiveMaskingService sensitiveMaskingService() {
+            return sensitive -> false;
+        }
+    }
+
+    record SensitiveView(@Sensitive(type = SensitiveType.MOBILE_PHONE) String mobile) {
     }
 }
