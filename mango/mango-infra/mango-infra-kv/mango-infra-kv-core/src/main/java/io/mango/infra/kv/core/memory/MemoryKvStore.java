@@ -9,10 +9,13 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * MemoryKvStore implementation using segmented ConcurrentHashMap with background cleanup.
@@ -30,10 +33,10 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
     private final ConcurrentHashMap<String, SortedSetEntry> sortedSets = new ConcurrentHashMap<>();
     @SuppressWarnings({"checkstyle:abbreviationaswordinname", "PMD.ThreadPoolCreationRule"})
     private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "kv-memory-cleaner");
-            t.setDaemon(true);
-            return t;
-        });
+        Thread t = new Thread(r, "kv-memory-cleaner");
+        t.setDaemon(true);
+        return t;
+    });
 
     /**
      * 使用默认清理间隔（1分钟）和 32 个分桶
@@ -131,24 +134,24 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
         Require.positive(windowSeconds, "windowSeconds must be positive, was: " + windowSeconds);
         ConcurrentHashMap<String, KvEntry> b = bucket(key);
         Instant expiry = Instant.now().plusSeconds(windowSeconds);
-        // Per-bucket lock replaces global lock — less contention under high concurrency
-        synchronized (b) {
-            KvEntry existing = b.get(key);
+        AtomicLong result = new AtomicLong();
+        b.compute(key, (ignored, existing) -> {
             if (existing == null || existing.expired()) {
-                b.put(key, new KvEntry(String.valueOf(delta), expiry));
-                return delta;
+                result.set(delta);
+                return new KvEntry(String.valueOf(delta), expiry);
             }
             long newCount;
             try {
                 newCount = Long.parseLong(existing.value()) + delta;
             } catch (NumberFormatException e) {
-                // Corrupted value — treat as expired, re-insert as new counter
-                b.put(key, new KvEntry(String.valueOf(delta), expiry));
-                return delta;
+                // Replace a corrupted value without extending the existing fixed window.
+                result.set(delta);
+                return new KvEntry(String.valueOf(delta), existing.expireTime());
             }
-            b.put(key, new KvEntry(String.valueOf(newCount), expiry));
-            return newCount;
-        }
+            result.set(newCount);
+            return new KvEntry(String.valueOf(newCount), existing.expireTime());
+        });
+        return result.get();
     }
 
     @Override
@@ -160,6 +163,21 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
     public void delete(String key) {
         validateKey(key);
         bucket(key).remove(key);
+    }
+
+    @Override
+    public boolean deleteIfValue(String key, String expectedValue) {
+        validateKey(key);
+        Objects.requireNonNull(expectedValue, "expectedValue cannot be null");
+        AtomicBoolean deleted = new AtomicBoolean();
+        bucket(key).compute(key, (ignored, existing) -> {
+            if (existing != null && !existing.expired() && Objects.equals(existing.value(), expectedValue)) {
+                deleted.set(true);
+                return null;
+            }
+            return existing;
+        });
+        return deleted.get();
     }
 
     @Override
@@ -179,7 +197,10 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
         }
         Instant expireTime = Instant.now().plusSeconds(ttlSeconds);
         sortedSets.compute(key, (k, existing) -> {
-            SortedSetEntry entry = existing == null || existing.expired() ? new SortedSetEntry(expireTime) : existing;
+            SortedSetEntry entry = existing;
+            if (entry == null || entry.expired()) {
+                entry = new SortedSetEntry(expireTime);
+            }
             entry.expireTime(expireTime);
             entry.members().put(member, score);
             return entry;
@@ -276,6 +297,10 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
 
         String value() {
             return value;
+        }
+
+        Instant expireTime() {
+            return expireTime;
         }
 
         boolean expired() {

@@ -1,5 +1,7 @@
 package io.mango.infra.kv.api;
 
+import java.util.Objects;
+
 /**
  * Unified KV storage abstraction for replay protection, idempotency, and rate limiting.
  */
@@ -26,7 +28,9 @@ public interface IKvStore {
      */
     default void set(String key, String value, long expireSeconds) {
         delete(key);
-        setIfAbsent(key, value, expireSeconds);
+        if (!setIfAbsent(key, value, expireSeconds)) {
+            throw new IllegalStateException("KV value could not be stored after deleting key: " + key);
+        }
     }
 
     /**
@@ -60,9 +64,10 @@ public interface IKvStore {
     String get(String key);
 
     /**
-     * Increment counter, automatically sets expiration to windowSeconds.
+     * Increment a fixed-window counter. The first creation sets the TTL to
+     * {@code windowSeconds}; later increments must not extend that window.
      * @param key key (must not be null or blank after trim)
-     * @param windowSeconds rolling window in seconds
+     * @param windowSeconds fixed window in seconds
      * @return incremented value
      */
     default long increment(String key, long windowSeconds) {
@@ -70,11 +75,12 @@ public interface IKvStore {
     }
 
     /**
-     * Increment counter by delta, automatically sets expiration to windowSeconds.
-     * Implementations must keep this operation atomic for a single key.
+     * Increment a fixed-window counter by delta. Implementations must keep this
+     * operation atomic for a single key, set the TTL on first creation, and not
+     * extend the existing window on later increments.
      * @param key key (must not be null or blank after trim)
      * @param delta increment value, may be positive or negative
-     * @param windowSeconds rolling window in seconds
+     * @param windowSeconds fixed window in seconds
      * @return incremented value
      */
     default long incrementBy(String key, long delta, long windowSeconds) {
@@ -93,6 +99,25 @@ public interface IKvStore {
      * @param key key (must not be null or blank after trim)
      */
     void delete(String key);
+
+    /**
+     * Delete a key only when its current live value equals the expected value.
+     * Built-in stores implement this as one atomic storage operation. The default
+     * implementation is retained only for source compatibility with custom stores
+     * and does not provide a distributed compare-and-delete guarantee.
+     *
+     * @param key key (must not be null or blank after trim)
+     * @param expectedValue non-null value that must still own the key
+     * @return true when the matching key was deleted
+     */
+    default boolean deleteIfValue(String key, String expectedValue) {
+        Objects.requireNonNull(expectedValue, "expectedValue cannot be null");
+        if (!Objects.equals(get(key), expectedValue)) {
+            return false;
+        }
+        delete(key);
+        return true;
+    }
 
     /**
      * Check if a key exists (without considering expiration).

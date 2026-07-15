@@ -2,6 +2,7 @@ package io.mango.infra.kv.core.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
@@ -20,11 +21,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Outbox store backed by IKvStore.
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The constructor intentionally retains shared KV and ObjectMapper dependencies"))
 public class KvOutboxStore implements IOutboxStore {
 
     public static final long DEFAULT_PENDING_TTL_SECONDS = 7L * 24 * 60 * 60;
@@ -73,8 +76,7 @@ public class KvOutboxStore implements IOutboxStore {
         List<OutboxMessage> claimed = new ArrayList<>();
         if (kvStore instanceof IKvSortedSet sortedSet) {
             for (String messageId : sortedSet.rangeByScore(pendingIndexKey(topic), Double.NEGATIVE_INFINITY, now.toEpochMilli(), batchSize)) {
-                OutboxMessage message = read(messageId);
-                claimMessage(workerId, topic, eventType, now, claimed, messageId, message);
+                claimMessage(workerId, topic, eventType, now, claimed, messageId);
             }
         }
         claimed.sort(Comparator.comparing(OutboxMessage::getOccurredAt));
@@ -94,8 +96,7 @@ public class KvOutboxStore implements IOutboxStore {
                 }
                 int remaining = batchSize - claimed.size();
                 for (String messageId : sortedSet.rangeByScore(indexKey, Double.NEGATIVE_INFINITY, now.toEpochMilli(), remaining)) {
-                    OutboxMessage message = read(messageId);
-                    claimMessage(workerId, topic, null, now, claimed, messageId, message);
+                    claimMessage(workerId, topic, null, now, claimed, messageId);
                     if (claimed.size() >= batchSize) {
                         break;
                     }
@@ -111,25 +112,37 @@ public class KvOutboxStore implements IOutboxStore {
                               String eventType,
                               Instant now,
                               List<OutboxMessage> claimed,
-                              String messageId,
-                              OutboxMessage message) {
-        if (message == null) {
+                              String messageId) {
+        String claimKey = claimKey(messageId);
+        String claimToken = workerId + ":" + UUID.randomUUID();
+        if (!kvStore.setIfAbsent(claimKey, claimToken, lockTtlSeconds)) {
             return;
         }
-        if (message.getStatus() == OutboxStatus.SUCCESS) {
+        try {
+            claimMessageWhileLocked(workerId, topic, eventType, now, claimed, messageId);
+        } finally {
+            releaseClaim(claimKey, claimToken);
+        }
+    }
+
+    private void releaseClaim(String claimKey, String claimToken) {
+        kvStore.deleteIfValue(claimKey, claimToken);
+    }
+
+    private void claimMessageWhileLocked(String workerId,
+                                         String topic,
+                                         String eventType,
+                                         Instant now,
+                                         List<OutboxMessage> claimed,
+                                         String messageId) {
+        OutboxMessage message = read(messageId);
+        if (!isReadyToClaim(message, now) || !matchesClaimScope(message, topic, eventType)) {
             return;
         }
-        if (message.getNextAttemptAt() != null && message.getNextAttemptAt().isAfter(now)) {
-            return;
+        String lockedTopic = normalizeTopic(message.getTopic());
+        if (topic != null) {
+            lockedTopic = effectiveTopic(message);
         }
-        String effectiveTopic = effectiveTopic(message);
-        if (topic != null && !topic.equals(effectiveTopic)) {
-            return;
-        }
-        if (eventType != null && !eventType.equals(message.getEventType())) {
-            return;
-        }
-        String lockedTopic = topic == null ? normalizeTopic(message.getTopic()) : effectiveTopic;
         OutboxMessage locked = message.toBuilder()
                 .topic(lockedTopic)
                 .status(OutboxStatus.PROCESSING)
@@ -146,6 +159,30 @@ public class KvOutboxStore implements IOutboxStore {
             sortedSet.add(pendingIndexKey(locked), messageId, locked.getNextAttemptAt().toEpochMilli(), pendingTtlSeconds);
         }
         claimed.add(locked);
+    }
+
+    private boolean isReadyToClaim(OutboxMessage message, Instant now) {
+        if (message == null) {
+            return false;
+        }
+        if (message.getStatus() == OutboxStatus.PENDING) {
+            return isLeaseReady(message.getNextAttemptAt(), now);
+        }
+        if (message.getStatus() == OutboxStatus.PROCESSING) {
+            return message.getNextAttemptAt() != null && isLeaseReady(message.getNextAttemptAt(), now);
+        }
+        return false;
+    }
+
+    private boolean isLeaseReady(Instant nextAttemptAt, Instant now) {
+        return nextAttemptAt == null || !nextAttemptAt.isAfter(now);
+    }
+
+    private boolean matchesClaimScope(OutboxMessage message, String topic, String eventType) {
+        if (topic != null && !topic.equals(effectiveTopic(message))) {
+            return false;
+        }
+        return eventType == null || eventType.equals(message.getEventType());
     }
 
     @Override
@@ -179,12 +216,16 @@ public class KvOutboxStore implements IOutboxStore {
         if (!workerId.equals(message.getLockedBy())) {
             return;
         }
+        Instant readyAt = nextAttemptAt;
+        if (readyAt == null) {
+            readyAt = now.plusSeconds(lockTtlSeconds);
+        }
         OutboxMessage failed = message.toBuilder()
                 .status(OutboxStatus.PENDING)
                 .lockedBy(workerId)
                 .lockedAt(now)
                 .errorMessage(errorMessage)
-                .nextAttemptAt(nextAttemptAt == null ? now.plusSeconds(lockTtlSeconds) : nextAttemptAt)
+                .nextAttemptAt(readyAt)
                 .build();
         kvStore.set(messageKey(messageId), write(failed), pendingTtlSeconds);
         if (kvStore instanceof IKvSortedSet sortedSet) {
@@ -221,7 +262,10 @@ public class KvOutboxStore implements IOutboxStore {
         if (message == null) {
             return;
         }
-        Instant readyAt = nextAttemptAt == null ? now : nextAttemptAt;
+        Instant readyAt = nextAttemptAt;
+        if (readyAt == null) {
+            readyAt = now;
+        }
         OutboxMessage requeued = message.toBuilder()
                 .status(OutboxStatus.PENDING)
                 .lockedBy(null)
@@ -244,7 +288,7 @@ public class KvOutboxStore implements IOutboxStore {
 
     @Override
     public List<OutboxMessage> query(OutboxMessageQuery query) {
-        OutboxMessageQuery normalized = query == null ? new OutboxMessageQuery() : query;
+        OutboxMessageQuery normalized = normalizeQuery(query);
         List<OutboxMessage> messages = loadAllMessages().stream()
                 .filter(message -> matches(message, normalized))
                 .sorted(Comparator.comparing(OutboxMessage::getOccurredAt, Comparator.nullsLast(Comparator.naturalOrder()))
@@ -258,8 +302,15 @@ public class KvOutboxStore implements IOutboxStore {
 
     @Override
     public long count(OutboxMessageQuery query) {
-        OutboxMessageQuery normalized = query == null ? new OutboxMessageQuery() : query;
+        OutboxMessageQuery normalized = normalizeQuery(query);
         return loadAllMessages().stream().filter(message -> matches(message, normalized)).count();
+    }
+
+    private OutboxMessageQuery normalizeQuery(OutboxMessageQuery query) {
+        if (query == null) {
+            return new OutboxMessageQuery();
+        }
+        return query;
     }
 
     private void removeFromIndex(String messageId, OutboxMessage message) {
@@ -271,7 +322,10 @@ public class KvOutboxStore implements IOutboxStore {
 
     private void addToAllIndex(String messageId, OutboxMessage message) {
         if (kvStore instanceof IKvSortedSet sortedSet) {
-            Instant occurredAt = message.getOccurredAt() == null ? Instant.EPOCH : message.getOccurredAt();
+            Instant occurredAt = message.getOccurredAt();
+            if (occurredAt == null) {
+                occurredAt = Instant.EPOCH;
+            }
             sortedSet.add(allIndexKey(), messageId, occurredAt.toEpochMilli(), pendingTtlSeconds);
         }
     }
@@ -325,10 +379,17 @@ public class KvOutboxStore implements IOutboxStore {
         if (keyword == null || keyword.isBlank()) {
             return true;
         }
+        return matchesIdentityKeyword(message, keyword) || matchesBusinessKeyword(message, keyword);
+    }
+
+    private boolean matchesIdentityKeyword(OutboxMessage message, String keyword) {
         return matchesText(message.getMessageId(), keyword, true)
                 || matchesText(message.getTopic(), keyword, true)
-                || matchesText(message.getEventType(), keyword, true)
-                || matchesText(message.getBusinessType(), keyword, true)
+                || matchesText(message.getEventType(), keyword, true);
+    }
+
+    private boolean matchesBusinessKeyword(OutboxMessage message, String keyword) {
+        return matchesText(message.getBusinessType(), keyword, true)
                 || matchesText(message.getBusinessKey(), keyword, true)
                 || matchesText(message.getAggregateId(), keyword, true);
     }
@@ -342,7 +403,10 @@ public class KvOutboxStore implements IOutboxStore {
         }
         String normalizedActual = actual.toLowerCase(Locale.ROOT);
         String normalizedExpected = expected.trim().toLowerCase(Locale.ROOT);
-        return contains ? normalizedActual.contains(normalizedExpected) : Objects.equals(normalizedActual, normalizedExpected);
+        if (contains) {
+            return normalizedActual.contains(normalizedExpected);
+        }
+        return Objects.equals(normalizedActual, normalizedExpected);
     }
 
     private OutboxMessage read(String messageId) {
@@ -367,6 +431,10 @@ public class KvOutboxStore implements IOutboxStore {
 
     private String messageKey(String messageId) {
         return OutboxKeys.MESSAGE + ":" + messageId;
+    }
+
+    private String claimKey(String messageId) {
+        return OutboxKeys.CLAIM + ":" + messageId;
     }
 
     private String pendingIndexKey() {

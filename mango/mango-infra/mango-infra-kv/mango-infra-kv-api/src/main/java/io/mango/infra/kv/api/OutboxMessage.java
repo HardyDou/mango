@@ -1,5 +1,7 @@
 package io.mango.infra.kv.api;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +10,7 @@ import java.util.UUID;
 /**
  * Outbox message persisted for reliable delivery.
  */
+@LocalCapabilityContract
 public class OutboxMessage {
 
     private String messageId = UUID.randomUUID().toString();
@@ -27,6 +30,24 @@ public class OutboxMessage {
     private Map<String, String> headers = new HashMap<>();
 
     public OutboxMessage() {
+    }
+
+    private OutboxMessage(OutboxMessage source) {
+        this.messageId = source.messageId;
+        this.topic = source.topic;
+        this.eventType = source.eventType;
+        this.businessType = source.businessType;
+        this.businessKey = source.businessKey;
+        this.aggregateId = source.aggregateId;
+        this.occurredAt = source.occurredAt;
+        this.status = source.status;
+        this.attemptCount = source.attemptCount;
+        this.nextAttemptAt = source.nextAttemptAt;
+        this.lockedAt = source.lockedAt;
+        this.lockedBy = source.lockedBy;
+        this.errorMessage = source.errorMessage;
+        this.payload = new HashMap<>(source.payload);
+        this.headers = new HashMap<>(source.headers);
     }
 
     public static Builder builder() {
@@ -157,21 +178,30 @@ public class OutboxMessage {
     }
 
     public Map<String, Object> getPayload() {
-        return payload;
+        return new HashMap<>(payload);
     }
 
     public void setPayload(Map<String, Object> payload) {
-        this.payload = payload == null ? new HashMap<>() : new HashMap<>(payload);
+        if (payload == null) {
+            this.payload = new HashMap<>();
+            return;
+        }
+        this.payload = new HashMap<>(payload);
     }
 
     public Map<String, String> getHeaders() {
-        return headers;
+        return new HashMap<>(headers);
     }
 
     public void setHeaders(Map<String, String> headers) {
-        this.headers = headers == null ? new HashMap<>() : new HashMap<>(headers);
+        if (headers == null) {
+            this.headers = new HashMap<>();
+            return;
+        }
+        this.headers = new HashMap<>(headers);
     }
 
+    @LocalCapabilityContract
     public static final class Builder {
         private final OutboxMessage message = new OutboxMessage();
 
@@ -254,7 +284,7 @@ public class OutboxMessage {
         }
 
         public OutboxMessage build() {
-            return message;
+            return new OutboxMessage(message);
         }
     }
 }

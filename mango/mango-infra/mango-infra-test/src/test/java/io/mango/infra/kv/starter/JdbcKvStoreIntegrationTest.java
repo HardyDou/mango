@@ -7,6 +7,7 @@ import io.mango.infra.kv.api.OutboxTopics;
 import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.kv.core.outbox.KvOutboxStore;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
@@ -136,10 +137,17 @@ class JdbcKvStoreIntegrationTest {
         void put_expiredKey_canOverwrite() throws InterruptedException {
                 kvStore.put("expire_key", "val", 1);
                 assertTrue(kvStore.exists("expire_key"));
-                Thread.sleep(1100);
+                awaitExpiration("expire_key", 3, TimeUnit.SECONDS);
                 assertFalse(kvStore.exists("expire_key"));
                 assertTrue(kvStore.put("expire_key", "replaced", 3600));
                 assertEquals("replaced", kvStore.get("expire_key"));
+        }
+
+        private void awaitExpiration(String key, long timeout, TimeUnit unit) throws InterruptedException {
+                long deadline = System.nanoTime() + unit.toNanos(timeout);
+                while (kvStore.exists(key) && System.nanoTime() < deadline) {
+                        Thread.sleep(50);
+                }
         }
 
         @Test
@@ -250,6 +258,51 @@ class JdbcKvStoreIntegrationTest {
                         OutboxTopics.DOMAIN_EVENT,
                         messageCount,
                         Instant.parse("2026-07-13T05:01:00Z")).size());
+        }
+
+        @RepeatedTest(5)
+        void outbox_concurrentClaim_assignsMessageToOnlyOneWorker() throws Exception {
+                KvOutboxStore outboxStore = new KvOutboxStore(
+                        kvStore,
+                        new ObjectMapper().findAndRegisterModules());
+                Instant readyAt = Instant.parse("2026-07-13T06:00:00Z");
+                OutboxMessage message = OutboxMessage.builder()
+                        .topic(OutboxTopics.DOMAIN_EVENT)
+                        .eventType("kv.mysql.concurrent.claim")
+                        .occurredAt(readyAt)
+                        .build();
+                outboxStore.enqueue(message);
+                int workerCount = 24;
+                ExecutorService pool = Executors.newFixedThreadPool(workerCount);
+                CountDownLatch startLatch = new CountDownLatch(1);
+                CountDownLatch doneLatch = new CountDownLatch(workerCount);
+                AtomicInteger claimedCount = new AtomicInteger();
+                AtomicReference<Throwable> error = new AtomicReference<>();
+
+                for (int i = 0; i < workerCount; i++) {
+                        String workerId = "mysql-worker-" + i;
+                        pool.execute(() -> {
+                                try {
+                                        startLatch.await();
+                                        claimedCount.addAndGet(outboxStore.claimByTopic(
+                                                workerId,
+                                                OutboxTopics.DOMAIN_EVENT,
+                                                1,
+                                                readyAt.plusSeconds(1)).size());
+                                } catch (Throwable throwable) {
+                                        error.compareAndSet(null, throwable);
+                                } finally {
+                                        doneLatch.countDown();
+                                }
+                        });
+                }
+
+                startLatch.countDown();
+                assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "concurrent claim timeout");
+                pool.shutdownNow();
+
+                assertNull(error.get(), () -> "unexpected concurrent claim exception: " + error.get());
+                assertEquals(1, claimedCount.get());
         }
 
         @Configuration(proxyBeanMethods = false)
