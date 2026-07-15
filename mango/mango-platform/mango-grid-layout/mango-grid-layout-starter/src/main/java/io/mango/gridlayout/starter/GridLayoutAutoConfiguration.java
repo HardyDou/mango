@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "mango.grid-layout", name = "enabled", havingValue = "true", matchIfMissing = true)
 @MapperScan("io.mango.gridlayout.core.mapper")
 @ComponentScan({
-        "io.mango.gridlayout.core.service",
-        "io.mango.gridlayout.starter.controller"
+    "io.mango.gridlayout.core.service",
+    "io.mango.gridlayout.starter.controller"
 })
 public class GridLayoutAutoConfiguration {
 }
