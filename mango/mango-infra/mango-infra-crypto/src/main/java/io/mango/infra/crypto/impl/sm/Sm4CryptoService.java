@@ -1,7 +1,9 @@
 package io.mango.infra.crypto.impl.sm;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import io.mango.infra.crypto.impl.ICryptoService;
 import io.mango.infra.crypto.starter.CryptoProperties;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
@@ -19,11 +21,13 @@ import java.security.SecureRandom;
  * <p>
  * 支持 ECB 和 CBC 模式。CBC 模式会把 16 字节 IV 前置到密文中，便于自包含解密。
  */
+@LocalCapabilityContract
 public class Sm4CryptoService implements ICryptoService {
 
-    private static final Logger log = LoggerFactory.getLogger(Sm4CryptoService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Sm4CryptoService.class);
     private static final String ALGORITHM = "SM4";
     private static final int IV_SIZE = 16;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final CryptoProperties.Sm4Config config;
 
@@ -31,6 +35,8 @@ public class Sm4CryptoService implements ICryptoService {
         BouncyCastleLoader.ensure();
     }
 
+    @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW",
+            justification = "Fail-fast validation prevents constructing a cipher with unsafe configuration")
     public Sm4CryptoService(CryptoProperties properties) {
         this.config = properties.getSm4();
         validateConfig();
@@ -60,10 +66,10 @@ public class Sm4CryptoService implements ICryptoService {
 
     private void validateSecretKey() {
         byte[] keyBytes = decodeKey(config.getSecretKey());
-        if (keyBytes == null || keyBytes.length != 16) {
+        if (keyBytes == null || keyBytes.length != IV_SIZE) {
             throw new IllegalStateException(
-                    "SM4 secretKey 必须是 16 字节（128 位），当前长度：" +
-                    (keyBytes == null ? "null" : keyBytes.length + " 字节"));
+                    "SM4 secretKey 必须是 16 字节（128 位），当前长度："
+                            + describeLength(keyBytes));
         }
     }
 
@@ -83,7 +89,7 @@ public class Sm4CryptoService implements ICryptoService {
             byte[] ivBytes;
 
             if (isEcb) {
-                log.warn("SM4 ECB 模式不安全，只应在测试或非敏感数据场景使用");
+                LOGGER.warn("SM4 ECB 模式不安全，只应在测试或非敏感数据场景使用");
                 ivBytes = null;
             } else if (isCbc) {
                 if (iv != null) {
@@ -96,30 +102,32 @@ public class Sm4CryptoService implements ICryptoService {
                 ivBytes = null;
             }
 
-            SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
-            String transformation = buildTransformation();
-
-            Cipher cipher = Cipher.getInstance(transformation, BouncyCastleLoader.PROVIDER_NAME);
-            if (isCbc) {
-                IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
-                cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-            } else {
-                cipher.init(Cipher.ENCRYPT_MODE, keySpec);
-            }
-
-            byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-
-            if (isCbc) {
-                ByteBuffer buffer = ByteBuffer.allocate(IV_SIZE + encrypted.length);
-                buffer.put(ivBytes);
-                buffer.put(encrypted);
-                return Base64.toBase64String(buffer.array());
-            } else {
-                return Base64.toBase64String(encrypted);
-            }
+            return Base64.toBase64String(
+                    encryptBytes(plaintext.getBytes(StandardCharsets.UTF_8), ivBytes));
         } catch (Exception e) {
             throw new RuntimeException("SM4 加密失败", e);
         }
+    }
+
+    /** Package-private byte path used by algorithm-vector tests; public ciphertext format is unchanged. */
+    byte[] encryptBytes(byte[] plaintext, byte[] ivBytes) throws Exception {
+        boolean isCbc = "CBC".equalsIgnoreCase(config.getMode());
+        SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
+        Cipher cipher = Cipher.getInstance(buildTransformation(), BouncyCastleLoader.PROVIDER_NAME);
+        if (isCbc) {
+            validateIvLength(ivBytes);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(ivBytes));
+        } else {
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+        }
+        byte[] encrypted = cipher.doFinal(plaintext);
+        if (!isCbc) {
+            return encrypted;
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(IV_SIZE + encrypted.length);
+        buffer.put(ivBytes);
+        buffer.put(encrypted);
+        return buffer.array();
     }
 
     @Override
@@ -173,7 +181,7 @@ public class Sm4CryptoService implements ICryptoService {
 
     private byte[] generateIv() {
         byte[] iv = new byte[IV_SIZE];
-        new SecureRandom().nextBytes(iv);
+        SECURE_RANDOM.nextBytes(iv);
         return iv;
     }
 
@@ -185,36 +193,52 @@ public class Sm4CryptoService implements ICryptoService {
             try {
                 return Hex.decode(key);
             } catch (Exception e) {
-                throw new IllegalArgumentException(
-                        "key 不是有效十六进制：" +
-                        (key.length() <= 64 ? key : key.substring(0, 64) + "..."), e);
+                throw new IllegalArgumentException("key 不是有效十六进制", e);
             }
         }
         try {
             return Base64.decode(key);
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                    "key 既不是有效 Base64，也不是有效十六进制：" +
-                    (key.length() <= 64 ? key : key.substring(0, 64) + "..."), e);
+                    "key 既不是有效 Base64，也不是有效十六进制", e);
         }
     }
 
     private static boolean isHexString(String s) {
-        if (s.length() % 2 != 0) return false;
+        if (s.length() % 2 != 0) {
+            return false;
+        }
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+            if (!isHexCharacter(c)) {
                 return false;
             }
         }
         return true;
     }
 
+    private static boolean isHexCharacter(char value) {
+        return isBetween(value, '0', '9')
+                || isBetween(value, 'a', 'f')
+                || isBetween(value, 'A', 'F');
+    }
+
+    private static boolean isBetween(char value, char lower, char upper) {
+        return value >= lower && value <= upper;
+    }
+
+    private static String describeLength(byte[] value) {
+        if (value == null) {
+            return "null";
+        }
+        return value.length + " 字节";
+    }
+
     private void validateIvLength(byte[] iv) {
         if (iv == null || iv.length != IV_SIZE) {
             throw new IllegalArgumentException(
-                    "SM4/CBC 的 IV 必须是 " + IV_SIZE + " 字节，当前长度：" +
-                    (iv == null ? "null" : iv.length + " 字节"));
+                    "SM4/CBC 的 IV 必须是 " + IV_SIZE + " 字节，当前长度："
+                            + describeLength(iv));
         }
     }
 }

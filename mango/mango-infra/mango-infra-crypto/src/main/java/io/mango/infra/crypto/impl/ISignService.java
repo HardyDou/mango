@@ -1,8 +1,11 @@
 package io.mango.infra.crypto.impl;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * 签名验签服务接口。
  */
+@LocalCapabilityContract
 public interface ISignService {
 
     /**

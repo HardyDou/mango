@@ -7,6 +7,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
@@ -19,6 +20,7 @@ public class AesCipher implements ICryptoService {
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int GCM_TAG_LENGTH = 128;
     private static final int IV_LENGTH = 12;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Value("${mango.crypto.aes-key:}")
     private String keyBase64;
@@ -27,11 +29,18 @@ public class AesCipher implements ICryptoService {
     private String ivBase64;
 
     private byte[] getKey() {
-        return keyBase64 == null || keyBase64.isEmpty() ? null : Base64.getDecoder().decode(keyBase64);
+        return decodeConfiguredValue(keyBase64);
     }
 
     private byte[] getIv() {
-        return ivBase64 == null || ivBase64.isEmpty() ? null : Base64.getDecoder().decode(ivBase64);
+        return decodeConfiguredValue(ivBase64);
+    }
+
+    private byte[] decodeConfiguredValue(String configuredValue) {
+        if (configuredValue == null || configuredValue.isEmpty()) {
+            return null;
+        }
+        return Base64.getDecoder().decode(configuredValue);
     }
 
     private String encodeToString(byte[] bytes) {
@@ -44,7 +53,12 @@ public class AesCipher implements ICryptoService {
 
     @Override
     public String encrypt(String plaintext) {
-        return encrypt(plaintext, getIv() != null ? encodeToString(getIv()) : null);
+        byte[] configuredIv = getIv();
+        String encodedIv = null;
+        if (configuredIv != null) {
+            encodedIv = encodeToString(configuredIv);
+        }
+        return encrypt(plaintext, encodedIv);
     }
 
     @Override
@@ -58,8 +72,7 @@ public class AesCipher implements ICryptoService {
                 ivBytes = decode(iv);
             } else {
                 ivBytes = new byte[IV_LENGTH];
-                java.security.SecureRandom random = new java.security.SecureRandom();
-                random.nextBytes(ivBytes);
+                SECURE_RANDOM.nextBytes(ivBytes);
             }
 
             SecretKeySpec keySpec = new SecretKeySpec(getKey(), "AES");

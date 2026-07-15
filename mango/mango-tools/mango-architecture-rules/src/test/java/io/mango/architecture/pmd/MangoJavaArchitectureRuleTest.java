@@ -911,6 +911,51 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void markedInfraLocalCapabilityServiceSkipsBusinessServiceRules() {
+        Report report = analyze(
+                "io/mango/infra/crypto/ICryptoService.java", """
+                package io.mango.infra.crypto;
+                import io.mango.common.contract.LocalCapabilityContract;
+                @LocalCapabilityContract
+                public interface ICryptoService {
+                    String encrypt(String plaintext);
+                }
+                """,
+                "io/mango/infra/crypto/Sm4CryptoService.java", """
+                package io.mango.infra.crypto;
+                import io.mango.common.contract.LocalCapabilityContract;
+                @LocalCapabilityContract
+                public final class Sm4CryptoService implements ICryptoService {
+                    public String encrypt(String plaintext) {
+                        if (plaintext == null) throw new IllegalArgumentException("required");
+                        return plaintext;
+                    }
+                }
+                """);
+
+        assertThat(messages(report)).isEmpty();
+    }
+
+    @Test
+    void markerOutsideInfraDoesNotBypassBusinessServiceRules() {
+        Report report = analyze(
+                "example/MarkedOrderService.java", """
+                package example;
+                import io.mango.common.contract.LocalCapabilityContract;
+                @LocalCapabilityContract
+                public final class MarkedOrderService {
+                    public void create(Object command) {
+                        if (command == null) throw new IllegalArgumentException("required");
+                    }
+                }
+                """);
+
+        assertThat(messages(report)).contains(
+                "MANGO-ARCH-SVC-004 business action requires a Require precondition",
+                "MANGO-ARCH-SVC-006 Service business failures must use Require, not throw directly");
+    }
+
+    @Test
     void localCapabilityMarkerOutsideInfraDoesNotBypassHttpProtocolRules() {
         Report report = analyze(
                 "example/LocalConvertApi.java", """

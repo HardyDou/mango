@@ -1,5 +1,6 @@
 package io.mango.infra.crypto.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -46,18 +47,26 @@ public class CryptoProperties {
         this.enabled = enabled;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean")
     public Sm4Config getSm4() {
         return sm4;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this nested property bean")
     public void setSm4(Sm4Config sm4) {
         this.sm4 = sm4;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean")
     public Sm2Config getSm2() {
         return sm2;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding intentionally stores this nested property bean")
     public void setSm2(Sm2Config sm2) {
         this.sm2 = sm2;
     }

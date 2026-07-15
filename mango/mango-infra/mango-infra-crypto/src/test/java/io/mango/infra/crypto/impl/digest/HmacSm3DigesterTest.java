@@ -1,6 +1,7 @@
 package io.mango.infra.crypto.impl.digest;
 
 import io.mango.infra.crypto.impl.IKeyedDigester;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -28,5 +29,15 @@ class HmacSm3DigesterTest {
     void digest_shouldRejectEmptyKey() {
         assertThrows(IllegalArgumentException.class,
                 () -> digester.digest("hello", new byte[0]));
+    }
+
+    @Test
+    void digest_shouldMatchBouncyCastleKnownVector() {
+        byte[] key = Hex.decode("0b".repeat(20));
+        byte[] message = Hex.decode("4869205468657265");
+
+        assertEquals(
+                "51b00d1fb49832bfb01c3ce27848e59f871d9ba938dc563b338ca964755cce70",
+                Hex.toHexString(digester.digest(message, key)));
     }
 }

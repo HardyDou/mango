@@ -1,8 +1,11 @@
 package io.mango.infra.crypto.impl;
 
+import io.mango.common.contract.LocalCapabilityContract;
+
 /**
  * 对称加解密服务接口。
  */
+@LocalCapabilityContract
 public interface ICryptoService {
 
     /**

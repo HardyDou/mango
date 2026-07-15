@@ -1,5 +1,6 @@
 package io.mango.infra.crypto.impl.sm;
 
+import io.mango.common.contract.LocalCapabilityContract;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -10,6 +11,7 @@ import java.nio.charset.StandardCharsets;
  * <p>
  * 输出 256 位，也就是 32 字节摘要。
  */
+@LocalCapabilityContract
 public class Sm3CryptoService {
 
     /**
