@@ -142,7 +142,7 @@ mango:
 
 业务模块需要内置编号规则时，优先通过 `mango-resource` 声明 `SEQUENCE_RULE` 资源，不直接在 Flyway 里写入 `numgen_generator`、`numgen_rule`、`numgen_rule_segment`。
 
-`mango-numgen-core` 的 `V1__init_numgen.sql` 只维护全新数据库所需的最终态 DDL，不包含初始化数据、演示数据或历史升级用的 `ALTER/UPDATE/DELETE`。模块自身必须存在的业务域与菜单声明放在 `mango-numgen-starter/src/main/resources/META-INF/mango/resources/`；当前模块没有自带演示数据。后续如果增加演示规则，必须单独放在 `META-INF/mango/demo/`，不能写入 Flyway。
+`mango-numgen-core` 的 `V1__init_numgen.sql` 只维护全新数据库所需的最终态 DDL，不包含初始化数据、演示数据或历史数据变更语句。模块自身必须存在的业务域与菜单声明放在 `mango-numgen-starter/src/main/resources/META-INF/mango/resources/`；当前模块没有自带演示数据。后续如果增加演示规则，必须单独放在 `META-INF/mango/demo/`，不能写入 Flyway。
 
 资源文件放在业务模块 starter：
 

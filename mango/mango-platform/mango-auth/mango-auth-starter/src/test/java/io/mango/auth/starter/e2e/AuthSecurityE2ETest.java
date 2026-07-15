@@ -107,11 +107,15 @@ class AuthSecurityE2ETest {
     private TestUserStore testUserStore;
 
     @Resource
+    private TestCaptchaApi testCaptchaApi;
+
+    @Resource
     private ApplicationEvents applicationEvents;
 
     @BeforeEach
     void setUp() {
         testUserStore.reset();
+        testCaptchaApi.reset();
     }
 
     @Test
@@ -167,6 +171,26 @@ class AuthSecurityE2ETest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("captcha:LOGIN:13800138000"));
+    }
+
+    @Test
+    @DisplayName("public captcha send should preserve a downstream business failure")
+    void publicCaptchaSendShouldPreserveDownstreamBusinessFailure() throws Exception {
+        testCaptchaApi.respondWith(R.fail(AuthCode.CAPTCHA_INVALID));
+
+        mockMvc.perform(post("/auth/captcha/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "SMS",
+                                  "target": "13800138000",
+                                  "businessType": "LOGIN"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(AuthCode.CAPTCHA_INVALID.getCode()))
+                .andExpect(jsonPath("$.msg").value(AuthCode.CAPTCHA_INVALID.getMessage()));
     }
 
     @Test
@@ -609,7 +633,7 @@ class AuthSecurityE2ETest {
         }
 
         @Bean
-        CaptchaApi captchaApi() {
+        TestCaptchaApi captchaApi() {
             return new TestCaptchaApi();
         }
 
@@ -692,6 +716,16 @@ class AuthSecurityE2ETest {
 
     static class TestCaptchaApi implements CaptchaApi {
 
+        private R<String> sendResult;
+
+        void reset() {
+            sendResult = null;
+        }
+
+        void respondWith(R<String> result) {
+            sendResult = result;
+        }
+
         @Override
         public R<CaptchaTypesResponse> getTypes() {
             return R.ok(new CaptchaTypesResponse());
@@ -729,7 +763,9 @@ class AuthSecurityE2ETest {
 
         @Override
         public R<String> send(CaptchaSendRequest request) {
-            return R.ok("captcha:" + request.getBusinessType() + ":" + request.getTarget());
+            return sendResult == null
+                    ? R.ok("captcha:" + request.getBusinessType() + ":" + request.getTarget())
+                    : sendResult;
         }
     }
 

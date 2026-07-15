@@ -14,6 +14,7 @@ import io.mango.auth.api.vo.WecomLoginConfigVO;
 import io.mango.auth.api.AuthApi;
 import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.service.IAuthService;
+import io.mango.auth.starter.web.CaptchaResponseAdapter;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.ITokenProvider;
@@ -375,7 +376,7 @@ public class AuthController implements AuthApi {
     public R<String> sendCaptcha(@Valid @RequestBody CaptchaSendRequest request) {
         CaptchaApi captchaApi = captchaApiProvider.getIfAvailable();
         Require.notNull(captchaApi, AuthCode.CAPTCHA_SERVICE_UNAVAILABLE);
-        return captchaApi.send(request);
+        return R.ok(CaptchaResponseAdapter.requireData(captchaApi.send(request)));
     }
 
     private String resolveClientIp(HttpServletRequest request) {
