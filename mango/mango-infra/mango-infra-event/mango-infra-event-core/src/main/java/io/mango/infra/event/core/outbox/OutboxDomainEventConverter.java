@@ -10,13 +10,21 @@ import java.util.HashMap;
 /**
  * Maps domain events to KV outbox messages.
  */
-final class OutboxDomainEventMapper {
+final class OutboxDomainEventConverter {
 
-    private OutboxDomainEventMapper() {
+    private OutboxDomainEventConverter() {
     }
 
     static OutboxMessage toOutboxMessage(DomainEvent event) {
         Require.notNull(event, "事件不能为空");
+        var payload = event.getPayload();
+        if (payload == null) {
+            payload = new HashMap<>();
+        }
+        var headers = event.getHeaders();
+        if (headers == null) {
+            headers = new HashMap<>();
+        }
         return OutboxMessage.builder()
                 .messageId(event.getEventId())
                 .topic(OutboxTopics.DOMAIN_EVENT)
@@ -25,8 +33,8 @@ final class OutboxDomainEventMapper {
                 .businessKey(event.getBusinessKey())
                 .aggregateId(event.getAggregateId())
                 .occurredAt(event.getOccurredAt())
-                .payload(event.getPayload() == null ? new HashMap<>() : event.getPayload())
-                .headers(event.getHeaders() == null ? new HashMap<>() : event.getHeaders())
+                .payload(payload)
+                .headers(headers)
                 .build();
     }
 

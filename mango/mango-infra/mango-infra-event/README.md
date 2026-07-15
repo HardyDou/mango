@@ -127,6 +127,8 @@ mango:
 
 领域事件 outbox 写入 `topic=domain-event`，dispatcher 只通过 `claimByTopic(..., OutboxTopics.DOMAIN_EVENT, ...)` 获取领域事件消息。通知、实时消息等其他 outbox topic 不会被 `domain-event-dispatcher` 消费或 ack。
 
+Redis Stream 使用 consumer group 和 pending reclaim 提供至少一次投递。消息在 `pending-idle-timeout-millis` 到期后可以被其他 consumer 重新 claim，因此业务订阅者必须以 event id 或业务幂等键去重；该能力不承诺 exactly-once。
+
 ## 7. API 与扩展
 - `DomainEvent`：通用事件对象，字段包括 event id、event type、business type、business key、aggregate id、occurred at、payload、headers。
 - `IDomainEventPublisher`：事件发布入口。
@@ -141,9 +143,9 @@ mango:
 
 | 方法 | 路径 | 权限码 | 用途 |
 |------|------|--------|------|
-| `GET` | `/system/events` | `system:event:list` | 分页查询失败、重试中或处理中事件。 |
-| `GET` | `/system/events/detail` | `system:event:detail` | 按 message id 查询投递详情和错误信息。 |
-| `POST` | `/system/events/reconsume` | `system:event:reconsume` | 把失败或等待重试事件重新放回待投递队列。 |
+| `GET` | `/system/events` | `system:event:list` | 分页查询 `domain-event` topic；可按异常状态、类型和业务键筛选。 |
+| `GET` | `/system/events/detail` | `system:event:detail` | 按 message id 查询 `domain-event` 投递详情和错误信息。 |
+| `POST` | `/system/events/reconsume` | `system:event:reconsume` | 把非成功的 `domain-event` 重新放回待投递队列。成功事件、其他 topic 和不存在的消息会被拒绝。 |
 
 ## 8. 数据与初始化
 本模块没有独立 SQL migration、Runner 或 Initializer。可靠投递写入 `mango-infra-kv` 提供的 Outbox store；接入 outbox 前必须确认宿主应用已接入 KV/Outbox 所需存储。
@@ -170,10 +172,18 @@ mango:
 - reconsume 不能修复业务数据：它只重新投递事件，业务 handler 仍要处理数据状态和幂等。
 - 多服务重复消费：订阅者必须按 event id 或业务键幂等。
 
-## 12. 相关文档
+## 12. 验证基线
+
+- 内存事件契约：发布/订阅、防御性复制、通配订阅、取消订阅和失败聚合。
+- Outbox 自动配置：内存 KV 的成功、重试、最终失败和系统事件运维链路。
+- Redis Stream：连接真实 Redis，验证消费组、并发消费、pending 恢复与重启续投。
+- 系统事件服务：真实 `KvOutboxStore`，验证 topic 隔离、重投约束、API 参数校验和 JSON 协议兼容。
+- 新库端到端：宿主应用连接全新 MySQL，通过真实登录、HTTP API 和系统事件页面完成查询、详情及重投。
+
+## 13. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [持久化规范](../../../mango-pmo/rules/backend/07-persistence.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 13. 补充资料
+## 14. 补充资料
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)

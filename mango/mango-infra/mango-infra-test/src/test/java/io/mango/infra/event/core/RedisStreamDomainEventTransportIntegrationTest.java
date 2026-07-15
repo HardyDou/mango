@@ -14,6 +14,8 @@ import io.mango.infra.kv.api.OutboxStatus;
 import io.mango.infra.kv.core.outbox.KvOutboxPublisher;
 import io.mango.infra.kv.core.outbox.KvOutboxStore;
 import io.mango.infra.kv.core.redis.RedisKvStore;
+import io.mango.infra.kv.core.support.KvKeyNormalizer;
+import io.mango.infra.kv.core.support.PrefixedKvStore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,6 +48,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class RedisStreamDomainEventTransportIntegrationTest {
 
     private static final String KEY_PREFIX = "mango:test:domain-event:" + System.currentTimeMillis();
+    private static final String KV_ENV = "event-" + System.currentTimeMillis();
+    private static final String KV_KEY_PATTERN = "mango:" + KV_ENV + ":*";
     private static final String STREAM_NAME = KEY_PREFIX + ":stream";
     private static final String GROUP = KEY_PREFIX + ":group";
     private static final String CONSUMER = KEY_PREFIX + ":consumer";
@@ -68,6 +79,7 @@ class RedisStreamDomainEventTransportIntegrationTest {
     static void afterAll() {
         if (redisson != null) {
             redisson.getKeys().deleteByPattern(KEY_PREFIX + "*");
+            redisson.getKeys().deleteByPattern(KV_KEY_PATTERN);
             redisson.shutdown();
         }
     }
@@ -75,6 +87,7 @@ class RedisStreamDomainEventTransportIntegrationTest {
     @BeforeEach
     void setUp() {
         redisson.getKeys().deleteByPattern(KEY_PREFIX + "*");
+        redisson.getKeys().deleteByPattern(KV_KEY_PATTERN);
     }
 
     @Test
@@ -121,7 +134,7 @@ class RedisStreamDomainEventTransportIntegrationTest {
 
     @Test
     void outboxRelay_shouldPublishToRealRedisStreamAndBroadcastToServiceGroups() {
-        IOutboxStore outboxStore = new KvOutboxStore(new RedisKvStore(redisson), objectMapper);
+        IOutboxStore outboxStore = redisOutboxStore();
         IDomainEventPublisher publisher = new OutboxDomainEventPublisher(new KvOutboxPublisher(outboxStore));
 
         InMemoryDomainEventBus paymentBus = new InMemoryDomainEventBus();
@@ -331,6 +344,61 @@ class RedisStreamDomainEventTransportIntegrationTest {
         }
     }
 
+    @Test
+    void concurrentConsumersBeforePendingTimeout_shouldCompeteWithoutConcurrentDuplicate() throws Exception {
+        int consumerCount = 2;
+        AtomicInteger handled = new AtomicInteger();
+        List<RedisStreamDomainEventTransport> consumers = IntStream.range(0, consumerCount)
+                .mapToObj(index -> {
+                    InMemoryDomainEventBus eventBus = new InMemoryDomainEventBus();
+                    eventBus.subscribe("event.concurrent.once", ignored -> handled.incrementAndGet());
+                    return transport(
+                            redisson,
+                            eventBus,
+                            "concurrent-service",
+                            "instance-" + index,
+                            Duration.ofMinutes(1));
+                })
+                .toList();
+
+        DomainEvent event = DomainEvent.builder()
+                .eventType("event.concurrent.once")
+                .businessType("EVENT_TEST")
+                .businessKey("EVENT-CONCURRENT-ONCE")
+                .aggregateId("concurrent-1")
+                .build();
+        transport(new InMemoryDomainEventBus(), "relay", "concurrent-publisher").publish(event);
+
+        ExecutorService executor = Executors.newFixedThreadPool(consumerCount);
+        CountDownLatch ready = new CountDownLatch(consumerCount);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            List<Future<Integer>> results = consumers.stream()
+                    .map(consumer -> executor.submit(() -> {
+                        ready.countDown();
+                        start.await();
+                        return consumer.consumeOnce();
+                    }))
+                    .toList();
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+
+            int consumed = 0;
+            for (Future<Integer> result : results) {
+                consumed += result.get(5, TimeUnit.SECONDS);
+            }
+
+            assertThat(consumed).isEqualTo(1);
+            assertThat(handled.get()).isEqualTo(1);
+            assertThat(redisson.getStream(STREAM_NAME)
+                    .listPending(groupName("concurrent-service"), StreamMessageId.MIN, StreamMessageId.MAX, 10))
+                    .isEmpty();
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+        }
+    }
+
     private RedisStreamDomainEventTransport transport(InMemoryDomainEventBus eventBus, String group, String consumer) {
         return transport(redisson, eventBus, group, consumer);
     }
@@ -340,6 +408,15 @@ class RedisStreamDomainEventTransportIntegrationTest {
             InMemoryDomainEventBus eventBus,
             String group,
             String consumer) {
+        return transport(client, eventBus, group, consumer, PENDING_IDLE_TIMEOUT);
+    }
+
+    private RedisStreamDomainEventTransport transport(
+            RedissonClient client,
+            InMemoryDomainEventBus eventBus,
+            String group,
+            String consumer,
+            Duration pendingIdleTimeout) {
         return new RedisStreamDomainEventTransport(
                 client,
                 eventBus,
@@ -349,7 +426,7 @@ class RedisStreamDomainEventTransportIntegrationTest {
                 KEY_PREFIX + ":" + consumer,
                 10,
                 READ_TIMEOUT,
-                PENDING_IDLE_TIMEOUT);
+                pendingIdleTimeout);
     }
 
     private static RedissonClient newRedisClient() {
@@ -362,6 +439,13 @@ class RedisStreamDomainEventTransportIntegrationTest {
                 .setConnectionMinimumIdleSize(1)
                 .setConnectionPoolSize(4);
         return Redisson.create(config);
+    }
+
+    private IOutboxStore redisOutboxStore() {
+        RedisKvStore redisKvStore = new RedisKvStore(redisson);
+        KvKeyNormalizer normalizer = new KvKeyNormalizer(true, "mango", KV_ENV, false, null);
+        PrefixedKvStore outboxStore = new PrefixedKvStore(redisKvStore, normalizer, KvKeyNormalizer.OUTBOX);
+        return new KvOutboxStore(outboxStore, objectMapper);
     }
 
     private String groupName(String group) {

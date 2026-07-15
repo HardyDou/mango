@@ -1,5 +1,6 @@
 package io.mango.infra.event.core.outbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventBus;
@@ -17,6 +18,8 @@ import java.util.List;
  */
 public class OutboxDomainEventDispatcher implements IOutboxDispatcher {
 
+    private static final int DEFAULT_MAX_ATTEMPTS = 5;
+
     private final IOutboxStore outboxStore;
     private final IDomainEventBus eventBus;
     private final Clock clock;
@@ -32,9 +35,11 @@ public class OutboxDomainEventDispatcher implements IOutboxDispatcher {
             String workerId,
             int batchSize,
             long retryDelaySeconds) {
-        this(outboxStore, eventBus, clock, workerId, batchSize, retryDelaySeconds, 5);
+        this(outboxStore, eventBus, clock, workerId, batchSize, retryDelaySeconds, DEFAULT_MAX_ATTEMPTS);
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Thread-safe outbox SPI is intentionally retained as a shared dispatcher dependency")
     public OutboxDomainEventDispatcher(
             IOutboxStore outboxStore,
             IDomainEventBus eventBus,
@@ -68,7 +73,7 @@ public class OutboxDomainEventDispatcher implements IOutboxDispatcher {
         int handled = 0;
         for (OutboxMessage message : messages) {
             try {
-                DomainEvent event = OutboxDomainEventMapper.toDomainEvent(message);
+                DomainEvent event = OutboxDomainEventConverter.toDomainEvent(message);
                 eventBus.publish(event);
                 outboxStore.ack(message.getMessageId(), workerId, clock.instant());
                 handled++;

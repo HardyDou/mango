@@ -1,5 +1,6 @@
 package io.mango.infra.event.core.transport;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.kv.api.IOutboxDispatcher;
@@ -24,6 +25,8 @@ public class TransportDomainEventDispatcher implements IOutboxDispatcher {
     private final long retryDelaySeconds;
     private final int maxAttempts;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Thread-safe outbox SPI is intentionally retained as a shared dispatcher dependency")
     public TransportDomainEventDispatcher(
             IOutboxStore outboxStore,
             DomainEventTransport transport,

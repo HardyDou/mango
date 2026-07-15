@@ -49,7 +49,7 @@ type SystemEventRecord = {
   eventType?: string;
 };
 
-const evidenceDir = resolve(__dirname, '../../../../../mango-docs/evidence/2026-06-12-issue-137-domain-event-reliable');
+const evidenceDir = resolve(__dirname, '../../../../../mango-docs/evidence/baselines/infra-event/latest');
 const workspaceEnvPath = resolve(__dirname, '../../../../../.mango/dev-workspace.env');
 const outboxPrefix = 'mango:kv:default:outbox';
 const fixtureMessageId = 'e2e-system-event-issue-137';
@@ -114,9 +114,8 @@ async function installSession(page: Page, loginData: LoginData) {
   }, loginData);
 }
 
-async function expectNoAuthOrNetworkError(page: Page) {
-  await expect(page.locator('.el-message--error')).toHaveCount(0);
-  await expect(page.locator('.el-alert--error, .el-result, .error-page, .app-error')).toHaveCount(0);
+async function expectNoPageError(page: Page) {
+  await expect(page.locator('[data-surface="system.event.error"]')).toHaveCount(0);
 }
 
 function recordsOf<T>(pageResult: PageResult<T> | undefined): T[] {
@@ -171,6 +170,7 @@ function cleanupSystemEventFixture() {
       `${outboxPrefix}:message:${fixtureMessageId}`,
       `${outboxPrefix}:all:member:${fixtureMessageId}`,
       `${outboxPrefix}:pending:member:${fixtureMessageId}`,
+      `${outboxPrefix}:pending:domain-event:member:${fixtureMessageId}`,
     ].map((key) => `'${key}'`).join(',')})`,
   ].join(' '));
 }
@@ -181,6 +181,7 @@ function prepareSystemEventFixture() {
   const expireTimeSql = 'DATE_ADD(NOW(), INTERVAL 7 DAY)';
   const message = JSON.stringify({
     messageId: fixtureMessageId,
+    topic: 'domain-event',
     eventType: fixtureEventType,
     businessType: 'E2E_SYSTEM_EVENT',
     businessKey: fixtureBusinessKey,
@@ -218,6 +219,23 @@ test.afterAll(() => {
 
 test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留验收截图', async ({ page, request }) => {
   await mkdir(evidenceDir, { recursive: true });
+  const browserErrors: string[] = [];
+  const failedRequests: string[] = [];
+  const failedApiResponses: string[] = [];
+  page.on('pageerror', error => browserErrors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error') {
+      browserErrors.push(message.text());
+    }
+  });
+  page.on('requestfailed', request => {
+    failedRequests.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`.trim());
+  });
+  page.on('response', response => {
+    if (response.url().includes('/api/') && response.status() >= 400) {
+      failedApiResponses.push(`${response.status()} ${response.url()}`);
+    }
+  });
   const loginData = await login(request);
 
   const apiResponse = await request.get(e2eApi('/system/events?pageNum=1&pageSize=20&abnormalOnly=false'), {
@@ -259,15 +277,16 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
   const eventsBody = await eventsResponse.json() as ApiResponse<PageResult<SystemEventRecord>>;
   expect(eventsBody.success || eventsBody.code === 200).toBeTruthy();
 
+  await expect(page.locator('[data-page="system.event"]')).toBeVisible();
   await expect(page.getByText('关键词')).toBeVisible();
   await expect(page.getByText('异常范围')).toBeVisible();
-  await expect(page.getByRole('button', { name: '查询' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '重置' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '刷新' })).toBeVisible();
-  await expect(page.locator('.el-table')).toBeVisible();
+  await expect(page.locator('[data-action="system.event.search"]')).toBeVisible();
+  await expect(page.locator('[data-action="system.event.reset"]')).toBeVisible();
+  await expect(page.locator('[data-action="system.event.refresh"]')).toBeVisible();
+  await expect(page.locator('[data-surface="system.event.table"]')).toBeVisible();
   await expect(page.getByText(fixtureBusinessKey)).toBeVisible();
   await expect(page.getByText(fixtureEventType)).toBeVisible();
-  await expectNoAuthOrNetworkError(page);
+  await expectNoPageError(page);
 
   await page.screenshot({
     path: resolve(evidenceDir, 'system-event-list.png'),
@@ -282,8 +301,9 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
   expect(detailBody.success || detailBody.code === 200).toBeTruthy();
   expect(detailBody.data?.messageId).toBe(fixtureMessageId);
 
-  const fixtureRow = page.locator('.el-table__row', { hasText: fixtureBusinessKey });
-  await fixtureRow.getByRole('button', { name: '详情' }).click();
+  await page.locator(
+    `[data-action="system.event.detail"][data-record-key="system-event:${fixtureMessageId}"]`,
+  ).click();
   await expect(page.getByRole('dialog', { name: '系统事件详情' })).toBeVisible();
   const detailDialog = page.getByRole('dialog', { name: '系统事件详情' });
   await expect(detailDialog.getByText('事件头')).toBeVisible();
@@ -307,4 +327,8 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
   const reconsumeBody = await reconsumeResponse.json() as ApiResponse<boolean>;
   expect(reconsumeBody.success || reconsumeBody.code === 200).toBeTruthy();
   await expect(page.getByText('已放回待投递队列')).toBeVisible();
+  await expectNoPageError(page);
+  expect(browserErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+  expect(failedApiResponses).toEqual([]);
 });
