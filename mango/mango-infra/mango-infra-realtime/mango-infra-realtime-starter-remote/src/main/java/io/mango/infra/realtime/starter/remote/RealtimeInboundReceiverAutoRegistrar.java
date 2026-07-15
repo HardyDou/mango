@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.starter.remote;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.realtime.api.dto.RealtimeInboundReceiverRegistration;
 import io.mango.infra.realtime.support.inbound.IRealtimeInboundService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 
 @Slf4j
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Feign client, listener service, properties and environment are injected singleton collaborators"))
 public class RealtimeInboundReceiverAutoRegistrar {
 
     private final RealtimeInboundReceiverFeignClient realtimeInboundReceiverApi;
@@ -33,7 +35,13 @@ public class RealtimeInboundReceiverAutoRegistrar {
         if (!shouldRegister()) {
             return;
         }
-        realtimeInboundReceiverApi.unregister(registration());
+        RealtimeInboundReceiverRegistration registration = registration();
+        try {
+            realtimeInboundReceiverApi.unregister(registration);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to unregister realtime inbound receiver service: {}",
+                    registration.serviceName(), exception);
+        }
     }
 
     private boolean shouldRegister() {

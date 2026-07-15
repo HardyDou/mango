@@ -15,7 +15,14 @@ public record RealtimeInboundReceiverRegistration(
         String endpoint) {
 
     public RealtimeInboundReceiverRegistration {
-        contextPath = contextPath == null || contextPath.isBlank() ? "/" : contextPath;
-        endpoint = endpoint == null || endpoint.isBlank() ? "/_realtime/messages/inbound" : endpoint;
+        contextPath = defaultIfBlank(contextPath, "/");
+        endpoint = defaultIfBlank(endpoint, "/_realtime/messages/inbound");
+    }
+
+    private static String defaultIfBlank(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value;
     }
 }

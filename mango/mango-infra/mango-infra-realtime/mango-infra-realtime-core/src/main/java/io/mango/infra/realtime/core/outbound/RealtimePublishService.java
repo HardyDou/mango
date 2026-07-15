@@ -6,7 +6,6 @@ import io.mango.infra.realtime.api.dto.RealtimeTargetType;
 import io.mango.infra.realtime.core.presence.IRealtimePresenceService;
 import io.mango.infra.realtime.core.presence.RealtimeNode;
 import io.mango.infra.realtime.core.presence.RealtimePresence;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
@@ -16,7 +15,6 @@ import java.util.List;
  * Publishes one logical message through every enabled protocol adapter.
  */
 @Slf4j
-@RequiredArgsConstructor
 public class RealtimePublishService implements IRealtimePublishService {
 
     private final List<RealtimeProtocolSender> senders;
@@ -27,6 +25,16 @@ public class RealtimePublishService implements IRealtimePublishService {
     public RealtimePublishService(List<RealtimeProtocolSender> senders) {
         this(senders, null, new NoopRealtimeOutboundForwardService(),
                 new RealtimeNode("local", "application", "/", "/_realtime/messages/outbound"));
+    }
+
+    public RealtimePublishService(List<RealtimeProtocolSender> senders,
+                                  IRealtimePresenceService presenceService,
+                                  IRealtimeOutboundForwardService outboundForwardService,
+                                  RealtimeNode localNode) {
+        this.senders = immutableSenders(senders);
+        this.presenceService = presenceService;
+        this.outboundForwardService = outboundForwardService;
+        this.localNode = localNode;
     }
 
     @Override
@@ -91,7 +99,7 @@ public class RealtimePublishService implements IRealtimePublishService {
             return;
         }
         if (target.type() == RealtimeTargetType.TENANT) {
-            sender.sendToTenant(target.id().isBlank() ? message.tenantId() : target.id(), message);
+            sender.sendToTenant(targetTenantId(message, target), message);
             return;
         }
         sender.broadcast(message);
@@ -104,7 +112,7 @@ public class RealtimePublishService implements IRealtimePublishService {
             case CLIENT -> presenceService.findByClient(message.tenantId(), target.id());
             case CONNECTION -> presenceService.findByConnection(target.id());
             case GROUP -> presenceService.findByGroup(message.tenantId(), target.id());
-            case TENANT -> presenceService.findByTenant(target.id().isBlank() ? message.tenantId() : target.id());
+            case TENANT -> presenceService.findByTenant(targetTenantId(message, target));
             case BROADCAST -> presenceService.findAll();
         };
         return presences.stream()
@@ -119,7 +127,7 @@ public class RealtimePublishService implements IRealtimePublishService {
             case CLIENT -> presenceService.findByClient(message.tenantId(), target.id());
             case CONNECTION -> presenceService.findByConnection(target.id());
             case GROUP -> presenceService.findByGroup(message.tenantId(), target.id());
-            case TENANT -> presenceService.findByTenant(target.id().isBlank() ? message.tenantId() : target.id());
+            case TENANT -> presenceService.findByTenant(targetTenantId(message, target));
             case BROADCAST -> presenceService.findAll();
         };
         return presences.stream().anyMatch(localNode::isLocal);
@@ -134,5 +142,19 @@ public class RealtimePublishService implements IRealtimePublishService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private String targetTenantId(RealtimeOutboundMessage message, RealtimeTarget target) {
+        if (target.id().isBlank()) {
+            return message.tenantId();
+        }
+        return target.id();
+    }
+
+    private static List<RealtimeProtocolSender> immutableSenders(List<RealtimeProtocolSender> source) {
+        if (source == null) {
+            return List.of();
+        }
+        return List.copyOf(source);
     }
 }

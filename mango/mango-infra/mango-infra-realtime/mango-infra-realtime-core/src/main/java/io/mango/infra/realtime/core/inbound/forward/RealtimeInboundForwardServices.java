@@ -23,11 +23,7 @@ public final class RealtimeInboundForwardServices {
     }
 
     public static IRealtimeInboundForwardService composite(List<IRealtimeInboundForwardService> forwardServices) {
-        List<IRealtimeInboundForwardService> delegates = forwardServices == null
-                ? List.of()
-                : forwardServices.stream()
-                        .filter(RealtimeInboundForwardServices::isActiveForwardService)
-                        .toList();
+        List<IRealtimeInboundForwardService> delegates = activeForwardServices(forwardServices);
         if (delegates.isEmpty()) {
             return noop();
         }
@@ -39,6 +35,16 @@ public final class RealtimeInboundForwardServices {
 
     private static boolean isActiveForwardService(IRealtimeInboundForwardService forwardService) {
         return forwardService != null && forwardService != NOOP;
+    }
+
+    private static List<IRealtimeInboundForwardService> activeForwardServices(
+            List<IRealtimeInboundForwardService> forwardServices) {
+        if (forwardServices == null) {
+            return List.of();
+        }
+        return forwardServices.stream()
+                .filter(RealtimeInboundForwardServices::isActiveForwardService)
+                .toList();
     }
 
     private static void forwardAll(List<IRealtimeInboundForwardService> forwardServices, RealtimeInboundMessage message) {

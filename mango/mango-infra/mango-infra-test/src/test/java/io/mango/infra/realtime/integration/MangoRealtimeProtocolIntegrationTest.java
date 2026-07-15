@@ -10,6 +10,7 @@ import io.mango.infra.realtime.api.dto.RealtimePayload;
 import io.mango.infra.realtime.api.dto.RealtimeSource;
 import io.mango.infra.realtime.core.polling.RealtimePollingService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.boot.SpringBootConfiguration;
@@ -30,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -46,9 +48,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
                         + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration",
                 "mango.kv.store.type=memory",
                 "mango.infra.realtime.outbox.enabled=false",
-                "mango.infra.realtime.inbound.enabled=true"
+                "mango.infra.realtime.inbound.enabled=true",
+                "server.shutdown=immediate"
         })
 class MangoRealtimeProtocolIntegrationTest {
+
+    private final List<StandardWebSocketClient> webSocketClients = new CopyOnWriteArrayList<>();
 
     @LocalServerPort
     private int port;
@@ -241,12 +246,29 @@ class MangoRealtimeProtocolIntegrationTest {
     private WebSocketSession connectWebSocketClient(BlockingQueue<String> receivedMessages) throws Exception {
         String url = "ws://localhost:" + port + "/realtime/transports/websocket?token=test-token&tenantId=tenant-a&userId=1001";
         StandardWebSocketClient client = new StandardWebSocketClient();
+        webSocketClients.add(client);
         return client.execute(new TextWebSocketHandler() {
             @Override
             protected void handleTextMessage(WebSocketSession session, TextMessage message) {
                 receivedMessages.offer(message.getPayload());
             }
         }, url).get(5, TimeUnit.SECONDS);
+    }
+
+    @AfterEach
+    void stopWebSocketClients() {
+        webSocketClients.forEach(this::closeWebSocketClient);
+        webSocketClients.clear();
+    }
+
+    private void closeWebSocketClient(StandardWebSocketClient client) {
+        if (client.getTaskExecutor() instanceof AutoCloseable closeable) {
+            try {
+                closeable.close();
+            } catch (Exception exception) {
+                throw new IllegalStateException("Failed to close websocket client executor", exception);
+            }
+        }
     }
 
     @SpringBootConfiguration

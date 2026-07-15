@@ -20,6 +20,10 @@ public class RealtimeInboundListenerScanner {
     public Map<String, List<RealtimeInboundListenerInvoker>> scan(ListableBeanFactory beanFactory) {
         Map<String, List<RealtimeInboundListenerInvoker>> listeners = new LinkedHashMap<>();
         for (String beanName : beanFactory.getBeanDefinitionNames()) {
+            Class<?> beanType = beanFactory.getType(beanName, false);
+            if (beanType == null || !hasListenerMethods(beanType)) {
+                continue;
+            }
             Object bean = beanFactory.getBean(beanName);
             Class<?> targetClass = AopUtils.getTargetClass(bean);
             List<RealtimeInboundListenerInvoker> methodInvokers = methodInvokers(bean, targetClass);
@@ -33,10 +37,12 @@ public class RealtimeInboundListenerScanner {
         return listeners;
     }
 
+    private boolean hasListenerMethods(Class<?> beanType) {
+        return !listenerMethods(beanType).isEmpty();
+    }
+
     private List<RealtimeInboundListenerInvoker> methodInvokers(Object bean, Class<?> targetClass) {
-        Map<Method, RealtimeInboundMessageListener> methods = MethodIntrospector.selectMethods(targetClass,
-                (MethodIntrospector.MetadataLookup<RealtimeInboundMessageListener>) method ->
-                        AnnotationUtils.findAnnotation(method, RealtimeInboundMessageListener.class));
+        Map<Method, RealtimeInboundMessageListener> methods = listenerMethods(targetClass);
         List<RealtimeInboundListenerInvoker> invokers = new ArrayList<>();
         for (Map.Entry<Method, RealtimeInboundMessageListener> entry : methods.entrySet()) {
             Method method = AopUtils.selectInvocableMethod(entry.getKey(), bean.getClass());
@@ -45,6 +51,12 @@ public class RealtimeInboundListenerScanner {
             invokers.add(new MethodRealtimeListenerInvoker(bean, method, entry.getValue()));
         }
         return invokers;
+    }
+
+    private Map<Method, RealtimeInboundMessageListener> listenerMethods(Class<?> beanType) {
+        return MethodIntrospector.selectMethods(beanType,
+                (MethodIntrospector.MetadataLookup<RealtimeInboundMessageListener>) method ->
+                        AnnotationUtils.findAnnotation(method, RealtimeInboundMessageListener.class));
     }
 
     private void validateListenerMethod(Method method) {

@@ -21,20 +21,30 @@ public record RealtimeNode(
     }
 
     private static String blankToDefault(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value.trim();
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value.trim();
     }
 
     private static String normalizeContextPath(String value) {
         if (value == null || value.isBlank() || "/".equals(value)) {
             return "";
         }
-        return value.startsWith("/") ? value : "/" + value;
+        return ensureLeadingSlash(value);
     }
 
     private static String normalizeEndpoint(String value) {
         if (value == null || value.isBlank()) {
             return "/_realtime/messages/outbound";
         }
-        return value.startsWith("/") ? value : "/" + value;
+        return ensureLeadingSlash(value);
+    }
+
+    private static String ensureLeadingSlash(String value) {
+        if (value.startsWith("/")) {
+            return value;
+        }
+        return "/" + value;
     }
 }

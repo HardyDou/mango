@@ -14,7 +14,9 @@ public record RealtimeContext(
         String requestId) {
 
     public RealtimeContext {
-        tenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = "default";
+        }
     }
 
     public static RealtimeContext of(String tenantId, Long userId) {

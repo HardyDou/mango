@@ -25,7 +25,8 @@
 - JDBC KV `setIfAbsent`、计数器、事务回滚和 Workflow Outbox 并发入队回归。
 - KV Outbox 自动配置、message claim、ack、fail、requeue。
 - Domain event outbox 和 Redis Stream transport。
-- Realtime 多实例下行、上行、presence、receiver register。
+- Realtime 多实例下行、上行、presence、receiver register；跨实例/跨服务入口用例使用
+  `flow`、`realtime` 标签，可独立执行。
 - Log properties 绑定。
 
 ## 5. 接入方式
@@ -40,6 +41,9 @@ mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test
 ```bash
 mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test -Dtest='*Kv*'
 mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test -Dtest='*Realtime*'
+mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test \
+  -Dtest=MangoRealtimeInboundMultiServiceFlowTest \
+  -Dgroups=flow,realtime -Dsurefire.failIfNoSpecifiedTests=false
 mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am test -Dtest='*Outbox*'
 mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am \
   -Dtest=io.mango.infra.kv.starter.JdbcKvStoreIntegrationTest \
@@ -65,7 +69,7 @@ mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am \
 本模块不导出生产 API。可复用测试 fixture 包括：
 
 - `KvStoreTestFixtures`：H2、Redis、Memory store 测试支撑。
-- realtime e2e test apps：模拟 local/remote realtime 应用。
+- realtime integration/flow test apps：模拟 local/remote realtime 应用。
 - shared presence 和 receiver listener 测试支撑。
 
 ## 8. 数据与初始化
@@ -79,12 +83,12 @@ mvn -f mango/pom.xml -pl mango-infra/mango-infra-test -am \
 
 1. 在能力模块写单元测试。
 2. 如果能力跨 KV、event、realtime、web、feign 等多个模块，在 `mango-infra-test` 增加集成测试。
-3. 测试名称表达能力和场景，例如 `OutboxAutoConfigurationTest`、`MangoRealtimeInboundMultiServiceE2ETest`。
+3. 测试名称表达能力和场景，例如 `OutboxAutoConfigurationTest`、`MangoRealtimeInboundMultiServiceFlowTest`。
 4. 在 README 或能力文档的相关文档、排障入口或交付记录中引用对应测试命令。
 
 ## 11. 问题排查
 - Redis 测试失败：确认 `localhost:6379` 可连接，密码为空，或者跳过真实 Redis 范围。
-- Realtime e2e 失败：检查端口占用、WebSocket 支持和测试应用上下文启动日志。
+- Realtime integration/flow 失败：检查端口占用、WebSocket 支持和测试应用上下文启动日志。
 - H2 表结构失败：先看 `KvStoreTestFixtures` 是否和 KV migration 保持一致。
 
 ## 12. 相关文档

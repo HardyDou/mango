@@ -14,6 +14,7 @@ import io.mango.infra.realtime.support.inbound.IRealtimeInboundService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -26,17 +27,22 @@ import java.time.Duration;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class MangoRealtimeInboundMultiServiceE2ETest {
+@Tag("flow")
+@Tag("realtime")
+class MangoRealtimeInboundMultiServiceFlowTest {
 
     private static ConfigurableApplicationContext localContext;
     private static ConfigurableApplicationContext remoteContext;
     private static int localPort;
     private static int remotePort;
+    private static final List<StandardWebSocketClient> WEB_SOCKET_CLIENTS = new CopyOnWriteArrayList<>();
 
     @BeforeAll
     static void setUpContexts() {
@@ -49,11 +55,23 @@ class MangoRealtimeInboundMultiServiceE2ETest {
 
     @AfterAll
     static void tearDownContexts() {
+        WEB_SOCKET_CLIENTS.forEach(MangoRealtimeInboundMultiServiceFlowTest::closeWebSocketClient);
+        WEB_SOCKET_CLIENTS.clear();
         if (remoteContext != null) {
             remoteContext.close();
         }
         if (localContext != null) {
             localContext.close();
+        }
+    }
+
+    private static void closeWebSocketClient(StandardWebSocketClient client) {
+        if (client.getTaskExecutor() instanceof AutoCloseable closeable) {
+            try {
+                closeable.close();
+            } catch (Exception exception) {
+                throw new IllegalStateException("Failed to close websocket client executor", exception);
+            }
         }
     }
 
@@ -120,6 +138,7 @@ class MangoRealtimeInboundMultiServiceE2ETest {
     private WebSocketSession connectWebSocketClient(BlockingQueue<String> receivedMessages) throws Exception {
         String url = "ws://localhost:" + localPort + "/realtime/transports/websocket?token=test-token&tenantId=tenant-a&userId=1001";
         StandardWebSocketClient client = new StandardWebSocketClient();
+        WEB_SOCKET_CLIENTS.add(client);
         return client.execute(new TextWebSocketHandler() {
             @Override
             protected void handleTextMessage(WebSocketSession session, TextMessage message) {

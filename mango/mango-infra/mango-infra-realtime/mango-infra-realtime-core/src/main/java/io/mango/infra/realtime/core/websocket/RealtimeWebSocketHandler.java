@@ -2,6 +2,7 @@ package io.mango.infra.realtime.core.websocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.realtime.api.dto.RealtimeContext;
 import io.mango.infra.realtime.api.dto.RealtimeEvent;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
@@ -24,7 +25,11 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.util.Map;
 
 @Slf4j
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "ObjectMapper and realtime services are injected singleton collaborators")
 public class RealtimeWebSocketHandler extends TextWebSocketHandler implements RealtimeProtocolSender {
+
+    private static final int DEFAULT_MAX_PAYLOAD_BYTES = 64 * 1024;
 
     private final RealtimeSubscriptionManager subscriptionManager;
     private final ObjectMapper objectMapper;
@@ -33,7 +38,7 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Re
     private final int maxPayloadBytes;
 
     public RealtimeWebSocketHandler(RealtimeSubscriptionManager subscriptionManager, ObjectMapper objectMapper) {
-        this(subscriptionManager, objectMapper, RealtimeInboundForwardServices.noop(), 64 * 1024);
+        this(subscriptionManager, objectMapper, RealtimeInboundForwardServices.noop(), DEFAULT_MAX_PAYLOAD_BYTES);
     }
 
     public RealtimeWebSocketHandler(RealtimeSubscriptionManager subscriptionManager,
@@ -54,13 +59,9 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Re
                                     int maxPayloadBytes) {
         this.subscriptionManager = subscriptionManager;
         this.objectMapper = objectMapper;
-        this.inboundForwardService = inboundForwardService == null
-                ? RealtimeInboundForwardServices.noop()
-                : inboundForwardService;
-        this.inboundForwarder = inboundForwarder == null
-                ? new ProtocolRealtimeInboundForwarder(this.inboundForwardService)
-                : inboundForwarder;
-        this.maxPayloadBytes = maxPayloadBytes <= 0 ? 64 * 1024 : maxPayloadBytes;
+        this.inboundForwardService = defaultForwardService(inboundForwardService);
+        this.inboundForwarder = defaultForwarder(inboundForwarder, this.inboundForwardService);
+        this.maxPayloadBytes = defaultMaxPayloadBytes(maxPayloadBytes);
     }
 
     @Override
@@ -79,7 +80,7 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Re
                 Map.of(
                         "profile", messageSession.profile(),
                         "connectionId", messageSession.id(),
-                        "clientId", messageSession.clientId() == null ? "" : messageSession.clientId()),
+                        "clientId", emptyIfNull(messageSession.clientId())),
                 RealtimePayload.message("WebSocket connected"),
                 null,
                 null,
@@ -114,7 +115,10 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Re
 
     private RealtimeOutboundMessage forwardOrHandleControl(WebSocketRealtimeSession session, RealtimeInboundMessage data) {
         RealtimeOutboundMessage controlAck = RealtimeControlMessageHandler.handle(subscriptionManager, session.id(), data);
-        return controlAck == null ? inboundForwarder.forward(data) : controlAck;
+        if (controlAck != null) {
+            return controlAck;
+        }
+        return inboundForwarder.forward(data);
     }
 
     private RealtimeInboundMessage enrichInboundMessage(WebSocketRealtimeSession session, RealtimeInboundMessage message) {
@@ -150,6 +154,35 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Re
             return fallback;
         }
         return null;
+    }
+
+    private IRealtimeInboundForwardService defaultForwardService(IRealtimeInboundForwardService service) {
+        if (service == null) {
+            return RealtimeInboundForwardServices.noop();
+        }
+        return service;
+    }
+
+    private ProtocolRealtimeInboundForwarder defaultForwarder(ProtocolRealtimeInboundForwarder forwarder,
+                                                               IRealtimeInboundForwardService service) {
+        if (forwarder == null) {
+            return new ProtocolRealtimeInboundForwarder(service);
+        }
+        return forwarder;
+    }
+
+    private int defaultMaxPayloadBytes(int candidate) {
+        if (candidate <= 0) {
+            return DEFAULT_MAX_PAYLOAD_BYTES;
+        }
+        return candidate;
+    }
+
+    private String emptyIfNull(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value;
     }
 
     private boolean isPingFrame(String payload) {

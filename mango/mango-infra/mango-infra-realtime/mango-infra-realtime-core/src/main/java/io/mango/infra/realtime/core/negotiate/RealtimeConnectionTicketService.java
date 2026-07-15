@@ -7,9 +7,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RealtimeConnectionTicketService {
+public class RealtimeConnectionTicketService implements IRealtimeConnectionTicketResolverService {
 
     private static final long DEFAULT_TTL_MILLIS = 60_000L;
+    private static final int TICKET_RANDOM_BYTES = 32;
 
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<String, RealtimeConnectionTicket> tickets = new ConcurrentHashMap<>();
@@ -22,7 +23,7 @@ public class RealtimeConnectionTicketService {
 
     public RealtimeConnectionTicketService(Clock clock, long ttlMillis) {
         this.clock = clock;
-        this.ttlMillis = ttlMillis <= 0 ? DEFAULT_TTL_MILLIS : ttlMillis;
+        this.ttlMillis = defaultTtlMillis(ttlMillis);
     }
 
     public RealtimeConnectionTicket issue(String tenantId, Long userId, String clientId, Map<String, Object> profile) {
@@ -31,15 +32,16 @@ public class RealtimeConnectionTicketService {
         long expiresAt = clock.millis() + ttlMillis;
         RealtimeConnectionTicket ticket = new RealtimeConnectionTicket(
                 value,
-                tenantId == null || tenantId.isBlank() ? "default" : tenantId,
+                defaultTenantId(tenantId),
                 userId,
                 clientId,
-                profile == null ? Map.of() : Map.copyOf(profile),
+                copyProfile(profile),
                 expiresAt);
         tickets.put(value, ticket);
         return ticket;
     }
 
+    @Override
     public Optional<RealtimeConnectionTicket> resolve(String value) {
         if (value == null || value.isBlank()) {
             return Optional.empty();
@@ -56,7 +58,7 @@ public class RealtimeConnectionTicketService {
     }
 
     private String newTicketValue() {
-        byte[] bytes = new byte[32];
+        byte[] bytes = new byte[TICKET_RANDOM_BYTES];
         secureRandom.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
@@ -64,5 +66,26 @@ public class RealtimeConnectionTicketService {
     private void cleanupExpired() {
         long now = clock.millis();
         tickets.entrySet().removeIf(entry -> entry.getValue().expired(now));
+    }
+
+    private long defaultTtlMillis(long candidate) {
+        if (candidate <= 0) {
+            return DEFAULT_TTL_MILLIS;
+        }
+        return candidate;
+    }
+
+    private String defaultTenantId(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return "default";
+        }
+        return tenantId;
+    }
+
+    private Map<String, Object> copyProfile(Map<String, Object> profile) {
+        if (profile == null) {
+            return Map.of();
+        }
+        return Map.copyOf(profile);
     }
 }

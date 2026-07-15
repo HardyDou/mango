@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter.presence;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.realtime.core.presence.IRealtimePresenceService;
@@ -25,6 +26,9 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
 
     private static final String DEFAULT_PREFIX = "mango:infra:realtime:presence";
     private static final long DEFAULT_TTL_SECONDS = 120L;
+    private static final long MIN_REFRESH_INTERVAL_SECONDS = 5L;
+    private static final long MAX_REFRESH_INTERVAL_SECONDS = 60L;
+    private static final long REFRESH_INTERVAL_DIVISOR = 3L;
 
     private final IKvStore kvStore;
     private final IKvSortedSet sortedSet;
@@ -35,6 +39,8 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
     private final ConcurrentHashMap<String, Map<String, String>> localGroups = new ConcurrentHashMap<>();
     private final ScheduledExecutorService refresher;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "KV stores and ObjectMapper are injected singleton collaborators")
     public KvRealtimePresenceService(IKvStore kvStore,
                                      IKvSortedSet sortedSet,
                                      ObjectMapper objectMapper,
@@ -44,13 +50,15 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
         this.sortedSet = sortedSet;
         this.objectMapper = objectMapper;
         this.prefix = normalizePrefix(prefix);
-        this.ttlSeconds = ttlSeconds <= 0 ? DEFAULT_TTL_SECONDS : ttlSeconds;
+        this.ttlSeconds = defaultTtlSeconds(ttlSeconds);
         this.refresher = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "realtime-kv-presence-refresh");
             thread.setDaemon(true);
             return thread;
         });
-        long refreshInterval = Math.max(5, Math.min(60, this.ttlSeconds / 3));
+        long refreshInterval = Math.max(
+                MIN_REFRESH_INTERVAL_SECONDS,
+                Math.min(MAX_REFRESH_INTERVAL_SECONDS, this.ttlSeconds / REFRESH_INTERVAL_DIVISOR));
         this.refresher.scheduleAtFixedRate(this::refreshLocalPresences, refreshInterval, refreshInterval, TimeUnit.SECONDS);
     }
 
@@ -100,8 +108,14 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
 
     @Override
     public Collection<RealtimePresence> findByConnection(String connectionId) {
-        RealtimePresence presence = connectionId == null ? null : read(sessionKey(connectionId));
-        return presence == null ? List.of() : List.of(presence);
+        if (connectionId == null) {
+            return List.of();
+        }
+        RealtimePresence presence = read(sessionKey(connectionId));
+        if (presence == null) {
+            return List.of();
+        }
+        return List.of(presence);
     }
 
     @Override
@@ -258,14 +272,31 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
     }
 
     private String normalizeTenantId(String tenantId) {
-        return tenantId == null || tenantId.isBlank() ? "default" : tenantId.trim();
+        if (tenantId == null || tenantId.isBlank()) {
+            return "default";
+        }
+        return tenantId.trim();
     }
 
     private String normalizePrefix(String value) {
-        String normalized = value == null || value.isBlank() ? DEFAULT_PREFIX : value.trim();
+        String normalized = defaultPrefix(value);
         while (normalized.endsWith(":")) {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
         return normalized;
+    }
+
+    private long defaultTtlSeconds(long candidate) {
+        if (candidate <= 0) {
+            return DEFAULT_TTL_SECONDS;
+        }
+        return candidate;
+    }
+
+    private String defaultPrefix(String candidate) {
+        if (candidate == null || candidate.isBlank()) {
+            return DEFAULT_PREFIX;
+        }
+        return candidate.trim();
     }
 }

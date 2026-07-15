@@ -1,5 +1,6 @@
 package io.mango.infra.realtime.starter.forward;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeInboundReceiverRegistration;
 import io.mango.infra.realtime.core.inbound.receiver.IRealtimeInboundReceiverService;
@@ -10,7 +11,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestOperations;
 
 @Slf4j
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Inbound registry and RestOperations are injected Spring singleton collaborators"))
 public class RemoteRealtimeInboundForwardService implements IRealtimeInboundForwardService {
 
     private final IRealtimeInboundReceiverService realtimeInboundReceiverService;
@@ -38,6 +40,9 @@ public class RemoteRealtimeInboundForwardService implements IRealtimeInboundForw
         if (contextPath == null || contextPath.isBlank() || "/".equals(contextPath)) {
             return "";
         }
-        return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
+        if (contextPath.startsWith("/")) {
+            return contextPath;
+        }
+        return "/" + contextPath;
     }
 }

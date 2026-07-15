@@ -152,6 +152,9 @@ final class RealtimeConditions {
     }
 
     private static ConditionOutcome outcome(boolean match, String message) {
-        return match ? ConditionOutcome.match(message) : ConditionOutcome.noMatch(message);
+        if (match) {
+            return ConditionOutcome.match(message);
+        }
+        return ConditionOutcome.noMatch(message);
     }
 }

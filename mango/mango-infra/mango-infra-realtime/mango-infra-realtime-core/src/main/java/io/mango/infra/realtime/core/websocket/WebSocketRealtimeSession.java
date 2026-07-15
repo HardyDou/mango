@@ -1,6 +1,7 @@
 package io.mango.infra.realtime.core.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeProtocols;
 import io.mango.infra.realtime.core.session.RealtimeSession;
@@ -11,7 +12,8 @@ import org.springframework.web.socket.WebSocketSession;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "WebSocketSession and ObjectMapper are injected runtime collaborators"))
 public class WebSocketRealtimeSession implements RealtimeSession {
 
     private final WebSocketSession session;
@@ -30,7 +32,10 @@ public class WebSocketRealtimeSession implements RealtimeSession {
     @Override
     public String tenantId() {
         Object tenantId = session.getAttributes().get(RealtimeWebSocketHandshakeInterceptor.TENANT_ID_ATTR);
-        return tenantId == null ? "default" : tenantId.toString();
+        if (tenantId == null) {
+            return "default";
+        }
+        return tenantId.toString();
     }
 
     @Override
@@ -52,7 +57,10 @@ public class WebSocketRealtimeSession implements RealtimeSession {
     @Override
     public String clientId() {
         Object clientId = session.getAttributes().get(RealtimeWebSocketHandshakeInterceptor.CLIENT_ID_ATTR);
-        return clientId == null ? null : clientId.toString();
+        if (clientId == null) {
+            return null;
+        }
+        return clientId.toString();
     }
 
     public Map<String, Object> profile() {

@@ -67,7 +67,7 @@ realtimeApi.publish(RealtimeOutboundMessage.builder()
 处理客户端上行消息：
 
 ```java
-@RealtimeInboundMessageListener("chat.message")
+@RealtimeInboundMessageListener(types = "chat.message")
 public void onMessage(RealtimeInboundMessage message) {
     // validate tenant/user permission before business action
 }

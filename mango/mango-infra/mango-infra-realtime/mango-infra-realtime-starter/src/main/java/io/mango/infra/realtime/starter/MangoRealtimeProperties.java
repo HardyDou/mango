@@ -1,13 +1,28 @@
 package io.mango.infra.realtime.starter;
 
-import lombok.Data;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "mango.infra.realtime")
 public class MangoRealtimeProperties {
+
+    private static final long DEFAULT_SSE_TIMEOUT_MILLIS = 300_000L;
+    private static final int DEFAULT_POLLING_MAX_SIZE = 20;
+    private static final int MAX_POLLING_MAX_SIZE = 100;
+    private static final long MAX_POLLING_TIMEOUT_MILLIS = 25_000L;
+    private static final long DEFAULT_PRESENCE_TTL_SECONDS = 120L;
+    private static final int DEFAULT_OUTBOX_BATCH_SIZE = 50;
+    private static final long DEFAULT_OUTBOX_INITIAL_DELAY_MILLIS = 1_000L;
+    private static final long DEFAULT_OUTBOX_FIXED_DELAY_MILLIS = 500L;
+    private static final int DEFAULT_OUTBOX_MAX_ATTEMPTS = 5;
+    private static final long DEFAULT_OUTBOX_RETRY_BACKOFF_MILLIS = 1_000L;
+    private static final int DEFAULT_INBOUND_MAX_PAYLOAD_BYTES = 65_536;
 
     /**
      * Master switch for the realtime infrastructure.
@@ -22,51 +37,91 @@ public class MangoRealtimeProperties {
     /**
      * SSE protocol settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Sse sse = new Sse();
 
     /**
      * WebSocket protocol settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private WebSocket websocket = new WebSocket();
 
     /**
      * HTTP polling protocol settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Polling polling = new Polling();
 
     /**
      * Transport negotiation endpoint settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Negotiate negotiate = new Negotiate();
 
     /**
      * Internal remote publishing settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Remote remote = new Remote();
 
     /**
      * Current realtime node route identity.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Node node = new Node();
 
     /**
      * Cross-node outbound message forwarding settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Outbound outbound = new Outbound();
 
     /**
      * Online presence route settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Presence presence = new Presence();
 
     /**
      * Reliable realtime dispatch settings backed by infra-kv outbox.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Outbox outbox = new Outbox();
 
     /**
      * Client-to-server inbound message settings.
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration binding requires a mutable nested property bean"))
     private Inbound inbound = new Inbound();
 
     public boolean isSseEffectiveEnabled() {
@@ -98,7 +153,8 @@ public class MangoRealtimeProperties {
         return isPublishEffectiveEnabled() && remote.isEndpointEnabled();
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Sse {
 
         /**
@@ -114,7 +170,7 @@ public class MangoRealtimeProperties {
         /**
          * SSE connection timeout in milliseconds.
          */
-        private long timeoutMillis = 5 * 60 * 1000L;
+        private long timeoutMillis = DEFAULT_SSE_TIMEOUT_MILLIS;
 
         /**
          * HTTP inbound endpoint used by SSE clients to send messages upstream.
@@ -136,7 +192,8 @@ public class MangoRealtimeProperties {
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class WebSocket {
 
         /**
@@ -177,7 +234,8 @@ public class MangoRealtimeProperties {
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Polling {
 
         /**
@@ -193,12 +251,12 @@ public class MangoRealtimeProperties {
         /**
          * Default max messages returned when caller passes maxSize <= 0.
          */
-        private int defaultMaxSize = 20;
+        private int defaultMaxSize = DEFAULT_POLLING_MAX_SIZE;
 
         /**
          * Maximum messages returned by one polling request.
          */
-        private int maxSize = 100;
+        private int maxSize = MAX_POLLING_MAX_SIZE;
 
         /**
          * Default hold timeout in milliseconds. Zero means short polling.
@@ -208,7 +266,7 @@ public class MangoRealtimeProperties {
         /**
          * Maximum hold timeout in milliseconds for long polling.
          */
-        private long maxTimeoutMillis = 25 * 1000L;
+        private long maxTimeoutMillis = MAX_POLLING_TIMEOUT_MILLIS;
 
         /**
          * HTTP inbound endpoint used by polling clients to send messages upstream.
@@ -224,13 +282,16 @@ public class MangoRealtimeProperties {
 
         public int getDefaultMaxSize() {
             if (defaultMaxSize <= 0) {
-                return 20;
+                return DEFAULT_POLLING_MAX_SIZE;
             }
             return Math.min(defaultMaxSize, getMaxSize());
         }
 
         public int getMaxSize() {
-            return maxSize <= 0 ? 100 : maxSize;
+            if (maxSize <= 0) {
+                return MAX_POLLING_MAX_SIZE;
+            }
+            return maxSize;
         }
 
         public long getDefaultTimeoutMillis() {
@@ -241,7 +302,10 @@ public class MangoRealtimeProperties {
         }
 
         public long getMaxTimeoutMillis() {
-            return maxTimeoutMillis < 0 ? 0L : maxTimeoutMillis;
+            if (maxTimeoutMillis < 0) {
+                return 0L;
+            }
+            return maxTimeoutMillis;
         }
 
         public String getInboundEndpoint() {
@@ -252,7 +316,8 @@ public class MangoRealtimeProperties {
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Negotiate {
 
         /**
@@ -273,7 +338,8 @@ public class MangoRealtimeProperties {
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Remote {
 
         /**
@@ -282,7 +348,8 @@ public class MangoRealtimeProperties {
         private boolean endpointEnabled = true;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Node {
 
         /**
@@ -301,7 +368,8 @@ public class MangoRealtimeProperties {
         private String contextPath;
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Outbound {
 
         /**
@@ -322,7 +390,8 @@ public class MangoRealtimeProperties {
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Presence {
 
         /**
@@ -333,7 +402,7 @@ public class MangoRealtimeProperties {
         /**
          * Presence TTL in seconds. Nodes refresh local sessions periodically before expiry.
          */
-        private long ttlSeconds = 120L;
+        private long ttlSeconds = DEFAULT_PRESENCE_TTL_SECONDS;
 
         public String getPrefix() {
             if (prefix == null || prefix.isBlank()) {
@@ -343,11 +412,15 @@ public class MangoRealtimeProperties {
         }
 
         public long getTtlSeconds() {
-            return ttlSeconds <= 0 ? 120L : ttlSeconds;
+            if (ttlSeconds <= 0) {
+                return DEFAULT_PRESENCE_TTL_SECONDS;
+            }
+            return ttlSeconds;
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Outbox {
 
         /**
@@ -363,30 +436,33 @@ public class MangoRealtimeProperties {
         /**
          * Claim batch size.
          */
-        private int batchSize = 50;
+        private int batchSize = DEFAULT_OUTBOX_BATCH_SIZE;
 
         /**
          * Initial dispatcher delay in milliseconds.
          */
-        private long initialDelayMillis = 1000L;
+        private long initialDelayMillis = DEFAULT_OUTBOX_INITIAL_DELAY_MILLIS;
 
         /**
          * Fixed dispatcher delay in milliseconds.
          */
-        private long fixedDelayMillis = 500L;
+        private long fixedDelayMillis = DEFAULT_OUTBOX_FIXED_DELAY_MILLIS;
 
         /**
          * Maximum dispatch attempts before continuing delayed retries.
          */
-        private int maxAttempts = 5;
+        private int maxAttempts = DEFAULT_OUTBOX_MAX_ATTEMPTS;
 
         /**
          * Base retry backoff in milliseconds.
          */
-        private long retryBackoffMillis = 1000L;
+        private long retryBackoffMillis = DEFAULT_OUTBOX_RETRY_BACKOFF_MILLIS;
 
         public int getBatchSize() {
-            return batchSize <= 0 ? 50 : batchSize;
+            if (batchSize <= 0) {
+                return DEFAULT_OUTBOX_BATCH_SIZE;
+            }
+            return batchSize;
         }
 
         public long getInitialDelayMillis() {
@@ -394,19 +470,29 @@ public class MangoRealtimeProperties {
         }
 
         public long getFixedDelayMillis() {
-            return fixedDelayMillis <= 0 ? 500L : fixedDelayMillis;
+            if (fixedDelayMillis <= 0) {
+                return DEFAULT_OUTBOX_FIXED_DELAY_MILLIS;
+            }
+            return fixedDelayMillis;
         }
 
         public int getMaxAttempts() {
-            return maxAttempts <= 0 ? 5 : maxAttempts;
+            if (maxAttempts <= 0) {
+                return DEFAULT_OUTBOX_MAX_ATTEMPTS;
+            }
+            return maxAttempts;
         }
 
         public long getRetryBackoffMillis() {
-            return retryBackoffMillis <= 0 ? 1000L : retryBackoffMillis;
+            if (retryBackoffMillis <= 0) {
+                return DEFAULT_OUTBOX_RETRY_BACKOFF_MILLIS;
+            }
+            return retryBackoffMillis;
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class Inbound {
 
         /**
@@ -422,7 +508,7 @@ public class MangoRealtimeProperties {
         /**
          * Maximum accepted WebSocket text payload size in bytes.
          */
-        private int maxPayloadBytes = 64 * 1024;
+        private int maxPayloadBytes = DEFAULT_INBOUND_MAX_PAYLOAD_BYTES;
 
         /**
          * Whether one listener failure should stop subsequent listeners.
@@ -437,10 +523,17 @@ public class MangoRealtimeProperties {
         /**
          * Remote inbound receiver settings.
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding requires a mutable nested property bean"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding requires a mutable nested property bean"))
         private InboundRemote remote = new InboundRemote();
 
         public int getMaxPayloadBytes() {
-            return maxPayloadBytes <= 0 ? 64 * 1024 : maxPayloadBytes;
+            if (maxPayloadBytes <= 0) {
+                return DEFAULT_INBOUND_MAX_PAYLOAD_BYTES;
+            }
+            return maxPayloadBytes;
         }
 
         public String getUnknownTypePolicy() {
@@ -451,7 +544,8 @@ public class MangoRealtimeProperties {
         }
     }
 
-    @Data
+    @Getter
+    @Setter
     public static class InboundRemote {
 
         /**

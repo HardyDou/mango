@@ -10,6 +10,7 @@ import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.core.inbound.forward.IRealtimeInboundForwardService;
 import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
+import io.mango.infra.realtime.core.inbound.forward.DefaultRealtimeInboundTargetAuthorizer;
 import io.mango.infra.realtime.core.inbound.forward.RealtimeInboundForwardServices;
 import io.mango.infra.realtime.core.inbound.receiver.IRealtimeInboundReceiverService;
 import io.mango.infra.realtime.core.inbound.receiver.InMemoryRealtimeInboundReceiverService;
@@ -42,6 +43,7 @@ import io.mango.infra.realtime.starter.presence.KvRealtimePresenceService;
 import io.mango.infra.realtime.core.websocket.RealtimeWebSocketConfiguration;
 import io.mango.infra.realtime.core.websocket.RealtimeWebSocketHandler;
 import io.mango.infra.realtime.core.websocket.RealtimeWebSocketHandshakeInterceptor;
+import io.mango.infra.realtime.core.websocket.RealtimeProbeWebSocketHandshakeInterceptor;
 import io.mango.infra.realtime.support.inbound.IRealtimeInboundService;
 import io.mango.infra.realtime.support.inbound.RealtimeInboundService;
 import io.mango.infra.realtime.support.inbound.RealtimeInboundUnknownTypePolicy;
@@ -71,8 +73,8 @@ import java.util.List;
 @EnableConfigurationProperties(MangoRealtimeProperties.class)
 @Conditional(RealtimeConditions.Enabled.class)
 @AutoConfigureAfter(name = {
-        "io.mango.infra.kv.starter.KvStoreAutoConfiguration",
-        "io.mango.infra.kv.starter.OutboxAutoConfiguration"
+    "io.mango.infra.kv.starter.KvStoreAutoConfiguration",
+    "io.mango.infra.kv.starter.OutboxAutoConfiguration"
 })
 public class MangoRealtimeAutoConfiguration {
 
@@ -262,10 +264,15 @@ public class MangoRealtimeAutoConfiguration {
     @ConditionalOnMissingBean
     public ProtocolRealtimeInboundForwarder protocolRealtimeInboundForwarder(
             IRealtimeInboundForwardService inboundForwardService,
-            ObjectProvider<IRealtimePublishService> realtimePublishServiceProvider) {
+            ObjectProvider<IRealtimePublishService> realtimePublishServiceProvider,
+            ObjectProvider<RealtimeSubscriptionManager> subscriptionManagerProvider,
+            ObjectProvider<InMemoryRealtimePollingService> pollingServiceProvider) {
         return new ProtocolRealtimeInboundForwarder(
                 inboundForwardService,
-                realtimePublishServiceProvider::getIfAvailable);
+                realtimePublishServiceProvider::getIfAvailable,
+                new DefaultRealtimeInboundTargetAuthorizer(
+                        subscriptionManagerProvider.getIfAvailable(),
+                        pollingServiceProvider.getIfAvailable()));
     }
 
     @Bean
@@ -291,7 +298,8 @@ public class MangoRealtimeAutoConfiguration {
     @ConditionalOnBean(InMemoryRealtimePollingService.class)
     public PollingRealtimeController pollingRealtimeController(InMemoryRealtimePollingService pollingService,
                                                                MangoRealtimeProperties properties,
-                                                               ProtocolRealtimeInboundForwarder inboundForwarder) {
+                                                               ProtocolRealtimeInboundForwarder inboundForwarder,
+                                                               RealtimeConnectionTicketService ticketService) {
         MangoRealtimeProperties.Polling polling = properties.getPolling();
         return new PollingRealtimeController(
                 pollingService,
@@ -299,7 +307,8 @@ public class MangoRealtimeAutoConfiguration {
                 polling.getMaxSize(),
                 polling.getDefaultTimeoutMillis(),
                 polling.getMaxTimeoutMillis(),
-                inboundForwarder);
+                inboundForwarder,
+                ticketService);
     }
 
     @Bean
@@ -328,6 +337,13 @@ public class MangoRealtimeAutoConfiguration {
 
     @Bean
     @ConditionalOnBean(RealtimeWebSocketHandshakeInterceptor.class)
+    public RealtimeProbeWebSocketHandshakeInterceptor realtimeProbeWebSocketHandshakeInterceptor(
+            RealtimeConnectionTicketService ticketService) {
+        return new RealtimeProbeWebSocketHandshakeInterceptor(ticketService);
+    }
+
+    @Bean
+    @ConditionalOnBean(RealtimeWebSocketHandshakeInterceptor.class)
     public ProbeWebSocketHandler probeWebSocketHandler() {
         return new ProbeWebSocketHandler();
     }
@@ -348,16 +364,19 @@ public class MangoRealtimeAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean({RealtimeWebSocketHandler.class, RealtimeWebSocketHandshakeInterceptor.class})
+    @ConditionalOnBean({RealtimeWebSocketHandler.class, RealtimeWebSocketHandshakeInterceptor.class,
+        RealtimeProbeWebSocketHandshakeInterceptor.class})
     public RealtimeWebSocketConfiguration realtimeWebSocketConfiguration(
             RealtimeWebSocketHandler webSocketHandler,
             ProbeWebSocketHandler probeWebSocketHandler,
             RealtimeWebSocketHandshakeInterceptor handshakeInterceptor,
+            RealtimeProbeWebSocketHandshakeInterceptor probeHandshakeInterceptor,
             MangoRealtimeProperties properties) {
         return new RealtimeWebSocketConfiguration(
                 webSocketHandler,
                 probeWebSocketHandler,
                 handshakeInterceptor,
+                probeHandshakeInterceptor,
                 properties.getWebsocket().getEndpoint(),
                 "/realtime/transports/probe/websocket",
                 properties.getWebsocket().getAllowedOrigins());

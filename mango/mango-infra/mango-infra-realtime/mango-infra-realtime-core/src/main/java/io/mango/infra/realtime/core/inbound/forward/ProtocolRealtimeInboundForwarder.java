@@ -10,17 +10,23 @@ public class ProtocolRealtimeInboundForwarder {
 
     private final IRealtimeInboundForwardService inboundForwardService;
     private final Supplier<IRealtimePublishService> publishServiceSupplier;
+    private final RealtimeInboundTargetAuthorizer targetAuthorizer;
 
     public ProtocolRealtimeInboundForwarder(IRealtimeInboundForwardService inboundForwardService) {
-        this(inboundForwardService, () -> null);
+        this(inboundForwardService, () -> null, message -> false);
     }
 
     public ProtocolRealtimeInboundForwarder(IRealtimeInboundForwardService inboundForwardService,
                                             Supplier<IRealtimePublishService> publishServiceSupplier) {
-        this.inboundForwardService = inboundForwardService == null
-                ? RealtimeInboundForwardServices.noop()
-                : inboundForwardService;
-        this.publishServiceSupplier = publishServiceSupplier == null ? () -> null : publishServiceSupplier;
+        this(inboundForwardService, publishServiceSupplier, message -> false);
+    }
+
+    public ProtocolRealtimeInboundForwarder(IRealtimeInboundForwardService inboundForwardService,
+                                            Supplier<IRealtimePublishService> publishServiceSupplier,
+                                            RealtimeInboundTargetAuthorizer targetAuthorizer) {
+        this.inboundForwardService = defaultForwardService(inboundForwardService);
+        this.publishServiceSupplier = defaultPublishServiceSupplier(publishServiceSupplier);
+        this.targetAuthorizer = defaultTargetAuthorizer(targetAuthorizer);
     }
 
     public RealtimeOutboundMessage forward(RealtimeInboundMessage envelope) {
@@ -47,7 +53,7 @@ public class ProtocolRealtimeInboundForwarder {
     }
 
     private void publishTargetMessage(RealtimeInboundMessage envelope) {
-        if (envelope.target() == null || isInternalControlMessage(envelope)) {
+        if (envelope.target() == null || isInternalControlMessage(envelope) || !targetAuthorizer.canPublish(envelope)) {
             return;
         }
         IRealtimePublishService publishService = publishServiceSupplier.get();
@@ -78,5 +84,27 @@ public class ProtocolRealtimeInboundForwarder {
         return name != null && (name.startsWith("subscription.")
                 || name.startsWith("heartbeat.")
                 || name.startsWith("connection."));
+    }
+
+    private IRealtimeInboundForwardService defaultForwardService(IRealtimeInboundForwardService service) {
+        if (service == null) {
+            return RealtimeInboundForwardServices.noop();
+        }
+        return service;
+    }
+
+    private Supplier<IRealtimePublishService> defaultPublishServiceSupplier(
+            Supplier<IRealtimePublishService> supplier) {
+        if (supplier == null) {
+            return () -> null;
+        }
+        return supplier;
+    }
+
+    private RealtimeInboundTargetAuthorizer defaultTargetAuthorizer(RealtimeInboundTargetAuthorizer authorizer) {
+        if (authorizer == null) {
+            return message -> false;
+        }
+        return authorizer;
     }
 }
