@@ -1,5 +1,65 @@
 # Mango Changelog
 
+## v2026.07.16-theme-search-file-npm-release - 2026-07-16
+
+### Fixed
+
+- Publish the merged admin theme color token fixes so the top-bar text color, shell layout surfaces and micro-frontend runtime theme propagation use the configured theme variables consistently.
+- Publish the `MangoSearchPanel` bottom expand-row fix so panels that do not need expansion keep the fixed bottom row height while hiding only the expand/collapse button.
+- Publish the file preview dialog fix so PDF preview fills the available dialog height and the new-window preview action is always rendered, disabled only when no preview URL is available.
+
+### Upgrade Notes
+
+1. Upgrade generated or existing business frontends to `@mango/cli@1.0.79` so the project release lock points at this npm batch.
+2. Consumers using the Mango admin aggregate should upgrade to `@mango/admin@1.0.48`; independent consumers should upgrade the directly used packages listed below.
+3. Continue importing package styles through the public `style.css` entries, for example `@mango/common/style.css`, `@mango/file/style.css` and `@mango/admin/style.css`.
+4. No backend Maven, database, API, route, permission, tenant or storage migration is required for this frontend-only release batch.
+
+### Published Packages
+
+| Order | Target | Version / destination | Pre-release status |
+|---|---|---|---|
+| 1 | npm common | `@mango/common@1.0.17` -> Nexus npm hosted | `PENDING` |
+| 2 | npm app runtime | `@mango/app-runtime@1.0.4` -> Nexus npm hosted | `PENDING` |
+| 3 | npm admin pages | `@mango/admin-pages@1.0.21` -> Nexus npm hosted | `PENDING` |
+| 4 | npm auth | `@mango/auth@1.0.16` -> Nexus npm hosted | `PENDING` |
+| 5 | npm grid layout | `@mango/grid-layout@1.0.8` -> Nexus npm hosted | `PENDING` |
+| 6 | npm grid widgets | `@mango/grid-widgets@1.0.14` -> Nexus npm hosted | `PENDING` |
+| 7 | npm home | `@mango/home@1.0.6` -> Nexus npm hosted | `PENDING` |
+| 8 | npm rbac | `@mango/rbac@1.0.14` -> Nexus npm hosted | `PENDING` |
+| 9 | npm system | `@mango/system@1.0.20` -> Nexus npm hosted | `PENDING` |
+| 10 | npm file | `@mango/file@1.0.22` -> Nexus npm hosted | `PENDING` |
+| 11 | npm job | `@mango/job@1.0.14` -> Nexus npm hosted | `PENDING` |
+| 12 | npm link | `@mango/link@1.0.8` -> Nexus npm hosted | `PENDING` |
+| 13 | npm cms | `@mango/cms@1.0.11` -> Nexus npm hosted | `PENDING` |
+| 14 | npm calendar | `@mango/calendar@1.0.22` -> Nexus npm hosted | `PENDING` |
+| 15 | npm notice | `@mango/notice@1.0.24` -> Nexus npm hosted | `PENDING` |
+| 16 | npm numgen | `@mango/numgen@1.0.22` -> Nexus npm hosted | `PENDING` |
+| 17 | npm payment | `@mango/payment@1.0.14` -> Nexus npm hosted | `PENDING` |
+| 18 | npm template | `@mango/template@1.0.22` -> Nexus npm hosted | `PENDING` |
+| 19 | npm workflow | `@mango/workflow@1.0.28` -> Nexus npm hosted | `PENDING` |
+| 20 | npm workflow example | `@mango/workflow-business-example@1.0.27` -> Nexus npm hosted | `PENDING` |
+| 21 | npm site shell | `@mango/site-shell@1.0.4` -> Nexus npm hosted | `PENDING` |
+| 22 | npm admin shell | `@mango/admin-shell@1.0.43` -> Nexus npm hosted | `PENDING` |
+| 23 | npm admin aggregate | `@mango/admin@1.0.48` -> Nexus npm hosted | `PENDING` |
+| 24 | npm CLI | `@mango/cli@1.0.79` -> Nexus npm hosted | `PENDING` |
+| 25 | GitHub Release | `v2026.07.16-theme-search-file-npm-release` | `PENDING` |
+
+### Verification
+
+- `pnpm -C mango-ui --filter @mango/common exec vitest run components/MangoListPage/__tests__/MangoPageLayout.spec.ts`
+- `pnpm -C mango-ui --filter @mango/file test`
+- `pnpm -C mango-ui --filter @mango/common build`
+- `pnpm -C mango-ui --filter @mango/file build`
+- `pnpm -C mango-ui admin:styles:check`
+- `pnpm -C mango-ui admin:module-styles:check`
+- `pnpm -C mango-ui release:impact --base=936c4b846 --head=HEAD`
+- `pnpm -C mango-ui -r --filter ./packages/* --filter !@mango/cli --if-present run build`
+- `pnpm -C mango-ui package-exports:check`
+- Manual split of `package-consumer:typecheck` using packed tarballs under `.runtime/pct/mrndqy35`: generated consumer `pnpm install --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/` and `pnpm run typecheck` both passed. The wrapper command itself timed out on Windows after reaching the generated consumer install step and is recorded as a local script execution issue, not a consumer type failure.
+- `pnpm -C mango-ui --filter @mango/cli run check:release-versions`
+- After publishing: verify every package from `npm-hosted` and `npm-group`, then run `pnpm -C mango-ui release:verify-npm <package> --version=<version> --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
+
 ## v2026.07.14-maven-1.0.21-platform-debt-release - 2026-07-14
 
 ### Fixed

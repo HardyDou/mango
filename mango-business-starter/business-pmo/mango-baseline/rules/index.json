@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "always": [
     {
       "path": "rules/00-dev-flow.md",

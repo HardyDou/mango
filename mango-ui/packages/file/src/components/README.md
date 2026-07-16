@@ -236,6 +236,8 @@ const fileIds = ref<string[]>([]);
 
 ## 10. 变更影响记录
 
+- `@mango/file@1.0.22` 让弹框场景下的 `FilePreviewPanel` 高度跟随外层内容区，PDF 内容由预览自身滚动；
+  新窗口预览操作不再由 `v-if` 移除，缺少预览地址时保持禁用态，便于消费项目获得稳定操作区布局。
 - `@mango/file@1.0.21` 保持 `1.0.20` 的公共组件实现并向前发布完整迁移说明；不会重新引入
   `downloadPermission`。业务页面继续按本节说明移除该 prop，并依赖后端文件访问校验。
 - v2026.07.11-npm-lock-sync-release 删除 `FilePreviewPanel.downloadPermission` prop。已有业务页面应移除该 prop；

@@ -211,3 +211,8 @@ Vue 子应用需要调用 `bindMangoRuntimeTheme(runtime)`，并确认 Shell 传
 
 - [Admin Shell README](../admin-shell/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 11. 变更影响记录
+
+- `@mango/app-runtime@1.0.4` 发布运行时主题变量同步修复，微前端子应用继续通过 `mangoRuntime.theme`
+  和 `theme-change` 事件接收 Shell 主题；runtime config、页面加载协议、菜单、权限和登录态传递不变。

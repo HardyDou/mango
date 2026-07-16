@@ -270,6 +270,9 @@ import { FilePreviewPanel } from '@mango/file';
 
 ## 12. 变更影响记录
 
+- `@mango/file@1.0.22` 发布文件预览弹框体验修复：文件管理页预览弹框中的 `FilePreviewPanel`
+  会按弹框内容区高度铺满，PDF 由自身滚动承载内容；新窗口预览按钮始终渲染，缺少可用预览地址时仅禁用。
+  文件 ID 持久化、上传、下载、预览 API、页面 key、权限和后端启动方式不变。
 - `@mango/file@1.0.21` 向前发布当前文件访问实现和完整 README，不恢复已移除的
   `FilePreviewPanel.downloadPermission`，也不回退登录级上传、预览和下载访问基线；运行时行为与 `1.0.20`
   一致，并将 `@mango/admin-pages` 精确依赖对齐到本发布批次。
