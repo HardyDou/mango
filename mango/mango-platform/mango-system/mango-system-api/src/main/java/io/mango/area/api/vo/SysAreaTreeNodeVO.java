@@ -27,4 +27,16 @@ public class SysAreaTreeNodeVO {
     private List<SysAreaTreeNodeVO> children = new ArrayList<>();
     @Schema(description = "是否叶子节点")
     private boolean leaf;
+
+    public List<SysAreaTreeNodeVO> getChildren() {
+        return List.copyOf(children);
+    }
+
+    public void setChildren(List<SysAreaTreeNodeVO> children) {
+        if (children == null) {
+            this.children = new ArrayList<>();
+            return;
+        }
+        this.children = new ArrayList<>(children);
+    }
 }

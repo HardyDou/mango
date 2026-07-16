@@ -112,16 +112,20 @@ public class AdminBrandingService implements IAdminBrandingService {
     }
 
     private String normalizeValue(String value) {
-        return value == null ? "" : value.trim();
+        if (value == null) {
+            return "";
+        }
+        return value.trim();
     }
 
     private String normalizeFieldValue(Field field, String value) {
         String normalized = normalizeValue(value);
         if (field.fileField && StringUtils.hasText(normalized)) {
             // 兼容历史 mango-file:{id} token，新的保存值统一落库为文件中心 ID。
-            String fileId = normalized.startsWith(FILE_TOKEN_PREFIX)
-                    ? normalized.substring(FILE_TOKEN_PREFIX.length()).trim()
-                    : normalized;
+            String fileId = normalized;
+            if (normalized.startsWith(FILE_TOKEN_PREFIX)) {
+                fileId = normalized.substring(FILE_TOKEN_PREFIX.length()).trim();
+            }
             Require.isTrue(fileId.matches("[1-9]\\d*"), SystemCode.SYSTEM_INVALID,
                     field.label + "只能保存文件中心 ID");
             return fileId;

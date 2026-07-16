@@ -50,6 +50,9 @@ public class InstitutionAccessContextValidator implements AccessContextValidator
     }
 
     private String statusLabel(InstitutionStatus status) {
-        return status == null ? "不可用" : status.label();
+        if (status == null) {
+            return "不可用";
+        }
+        return status.label();
     }
 }

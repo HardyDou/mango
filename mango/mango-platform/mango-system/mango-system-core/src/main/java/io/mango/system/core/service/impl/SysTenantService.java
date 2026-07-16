@@ -21,6 +21,7 @@ import io.mango.system.api.vo.SysTenantVO;
 import io.mango.system.core.entity.SysTenantEntity;
 import io.mango.system.core.mapper.SysTenantMapper;
 import io.mango.system.core.service.ISysTenantService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -34,10 +35,15 @@ import java.util.stream.Collectors;
 public class SysTenantService implements ISysTenantService, LoginTenantProvider, TenantPackageBindingProvider {
 
     private final SysTenantMapper sysTenantMapper;
-    private final TenantMemberProvider tenantMemberProvider;
+    private final ObjectProvider<TenantMemberProvider> tenantMemberProviders;
     private final ObjectProvider<TenantProvisioner> tenantProvisioners;
     private final ObjectProvider<TenantDependencyChecker> tenantDependencyCheckers;
     private final ObjectProvider<TenantPackageBindingHandler> tenantPackageBindingHandlers;
+
+    @PostConstruct
+    void validateRequiredDependencies() {
+        tenantMemberProvider();
+    }
 
     @Override
     public List<SysTenantVO> list() {
@@ -112,7 +118,10 @@ public class SysTenantService implements ISysTenantService, LoginTenantProvider,
             return null;
         }
         SysTenantEntity tenant = sysTenantMapper.selectById(tenantId);
-        return tenant == null ? null : tenant.getPackageId();
+        if (tenant == null) {
+            return null;
+        }
+        return tenant.getPackageId();
     }
 
     @Override
@@ -137,7 +146,10 @@ public class SysTenantService implements ISysTenantService, LoginTenantProvider,
                 .eq(SysTenantEntity::getId, id)
                 .eq(SysTenantEntity::getStatus, InstitutionStatus.ENABLED.value())
                 .last("LIMIT 1"));
-        return tenant == null ? null : toLoginTenantVO(tenant);
+        if (tenant == null) {
+            return null;
+        }
+        return toLoginTenantVO(tenant);
     }
 
     @Override
@@ -152,7 +164,7 @@ public class SysTenantService implements ISysTenantService, LoginTenantProvider,
 
     @Override
     public List<LoginTenantVO> listEnabledByUser(Long userId) {
-        return tenantMemberProvider.listEnabledMembers(userId).stream()
+        return tenantMemberProvider().listEnabledMembers(userId).stream()
                 .map(this::fromMember)
                 .filter(java.util.Objects::nonNull)
                 .toList();
@@ -167,7 +179,10 @@ public class SysTenantService implements ISysTenantService, LoginTenantProvider,
                 .eq(SysTenantEntity::getTenantCode, tenantCode.trim())
                 .eq(SysTenantEntity::getStatus, InstitutionStatus.ENABLED.value())
                 .last("LIMIT 1"));
-        return tenant == null ? null : toLoginTenantVO(tenant);
+        if (tenant == null) {
+            return null;
+        }
+        return toLoginTenantVO(tenant);
     }
 
     private List<SysTenantEntity> enabledTenants() {
@@ -238,7 +253,7 @@ public class SysTenantService implements ISysTenantService, LoginTenantProvider,
         if (tenant == null) {
             return null;
         }
-        TenantMemberVO member = tenantMemberProvider.getEnabledMember(userId, parseTenantId(tenant.getTenantId()));
+        TenantMemberVO member = tenantMemberProvider().getEnabledMember(userId, parseTenantId(tenant.getTenantId()));
         if (member == null) {
             return null;
         }
@@ -246,6 +261,10 @@ public class SysTenantService implements ISysTenantService, LoginTenantProvider,
         tenant.setMemberName(member.getDisplayName());
         tenant.setMemberType(member.getMemberType());
         return tenant;
+    }
+
+    private TenantMemberProvider tenantMemberProvider() {
+        return tenantMemberProviders.getObject();
     }
 
     private LoginTenantVO fromMember(TenantMemberVO member) {
@@ -275,7 +294,10 @@ public class SysTenantService implements ISysTenantService, LoginTenantProvider,
     }
 
     private String firstText(String value, String fallback) {
-        return value == null || value.isBlank() ? fallback : value.trim();
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value.trim();
     }
 
     private String normalizeCodes(String value) {

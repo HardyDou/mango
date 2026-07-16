@@ -35,6 +35,7 @@
 | 测试假绿 | `mvn test` 显示 SUCCESS 但执行 0 条；Mock Mapper 却声称 SQL 正确 | 只看退出码或测试数量 | Surefire 分模块计数、被测链路审计、真实 DB/API/E2E |
 | 发布物污染 | 源码正确，JAR 里却带旧 `target/classes`、重复 migration | 未 clean 构建，只检查工作区 | clean package/deploy，仓库重新下载，`jar tf`、SHA-256 |
 | UI/菜单债务 | 接口 200，但菜单不可见、按钮越权、路由 404 | 只验证后端单层 | 真实角色浏览器 E2E、console/network、不同租户对比 |
+| 验证物料债务 | 增量构建复用旧静态报告；端口就绪但资源同步尚未完成 | 把退出码或首个 HTTP 响应当成最终状态 | 报告时间/class 签名/模块报告交叉核验；等待健康与资源派生关系稳定 |
 
 ## 4. 标准修复流程
 
@@ -183,6 +184,7 @@ Mock 只用于隔离被测目标之外的协作者，不能替换本次要证明
 4. Resource Registry 已发现当前模块声明，sync log 为 SUCCESS，目标表有对应结果。
 5. demo 关闭时没有演示数据，demo 开启时才导入且可重复执行。
 6. 至少一条关键新增、查询、修改链路真实读写成功。
+7. 健康探测和端口可访问只证明进程入口可响应；必须等待正式资源、demo 资源和角色菜单等派生关系达到预期稳定值后再执行 API/UI 验收。
 
 ### 6.2 最终 JAR
 
@@ -260,6 +262,8 @@ E2E 优先使用 `data-page`、`data-surface`、`data-action`、`data-field`、`
 - 只检查 `src/main/resources`，没有检查真正发布的 JAR。
 - 发布成功后没有从目标 Maven/npm 仓库重新拉取验证。
 - 为了让旧 E2E 变绿，放宽权限断言或回退已经确认的新菜单结构。
+- 聚合静态报告的生成时间早于当前 class，却仍将其中旧行号和旧构造器当成当前提交问题。
+- CLI 返回端口 ready 后立即读取初始化表，没有等待 Resource Registry 完成就宣布缺数据或通过。
 
 ## 10. 交付前检查表
 

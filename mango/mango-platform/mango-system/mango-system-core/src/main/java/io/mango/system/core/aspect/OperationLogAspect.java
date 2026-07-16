@@ -87,9 +87,15 @@ public class OperationLogAspect {
             opLog.setHandlerMethod(signature.getDeclaringTypeName() + "." + signature.getName());
             opLog.setUrl(request.getRequestURI());
             opLog.setParams(truncate(resolveParams(request, point)));
-            opLog.setResult(error == null ? truncate(resolveResult(result)) : null);
-            opLog.setStatus(error == null ? 1 : 0);
-            opLog.setErrorMsg(error == null ? null : truncate(error.getMessage()));
+            if (error == null) {
+                opLog.setResult(truncate(resolveResult(result)));
+                opLog.setStatus(1);
+                opLog.setErrorMsg(null);
+            } else {
+                opLog.setResult(null);
+                opLog.setStatus(0);
+                opLog.setErrorMsg(truncate(error.getMessage()));
+            }
             opLog.setDuration(duration);
             String clientIp = getClientIp(request);
             opLog.setIp(clientIp);
@@ -117,7 +123,10 @@ public class OperationLogAspect {
             return "未知";
         }
         IpLocation location = ipLocationResolver.resolve(clientIp);
-        return location == null ? "未知" : location.displayText();
+        if (location == null) {
+            return "未知";
+        }
+        return location.displayText();
     }
 
     private String resolveParams(HttpServletRequest request, ProceedingJoinPoint point) {
@@ -216,6 +225,9 @@ public class OperationLogAspect {
         if (first != null && !first.isBlank()) {
             return first.trim();
         }
-        return second != null && !second.isBlank() ? second.trim() : null;
+        if (second != null && !second.isBlank()) {
+            return second.trim();
+        }
+        return null;
     }
 }

@@ -133,11 +133,17 @@ public class SystemAreaResourceHandler implements ResourceHandler {
 
     private static String text(ResourceDeclaration resource, String name, boolean required) {
         Object value = value(resource, name, required);
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private static String defaultText(String value, String defaultValue) {
-        return StringUtils.hasText(value) ? value : defaultValue;
+        if (StringUtils.hasText(value)) {
+            return value;
+        }
+        return defaultValue;
     }
 
     private static Long number(ResourceDeclaration resource, String name, boolean required, Long defaultValue) {
@@ -145,7 +151,10 @@ public class SystemAreaResourceHandler implements ResourceHandler {
         if (value == null || !StringUtils.hasText(String.valueOf(value))) {
             return defaultValue;
         }
-        return value instanceof Number number ? number.longValue() : Long.valueOf(String.valueOf(value));
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.valueOf(String.valueOf(value));
     }
 
     private static Integer integer(ResourceDeclaration resource, String name, Integer defaultValue) {
@@ -153,12 +162,18 @@ public class SystemAreaResourceHandler implements ResourceHandler {
         if (value == null || !StringUtils.hasText(String.valueOf(value))) {
             return defaultValue;
         }
-        return value instanceof Number number ? number.intValue() : Integer.valueOf(String.valueOf(value));
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.valueOf(String.valueOf(value));
     }
 
     private static Object value(ResourceDeclaration resource, String name, boolean required) {
         ResourceField field = resource.getFields().get(name);
-        Object value = field == null ? null : field.getValue();
+        Object value = null;
+        if (field != null) {
+            value = field.getValue();
+        }
         if (required && value == null) {
             throw new IllegalStateException("SYSTEM_AREA field is required: " + name);
         }

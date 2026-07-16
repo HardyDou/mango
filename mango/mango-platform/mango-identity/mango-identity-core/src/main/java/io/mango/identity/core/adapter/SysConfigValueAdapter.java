@@ -19,7 +19,10 @@ public class SysConfigValueAdapter {
         }
         try {
             Boolean result = config.getBooleanValue(key, defaultValue);
-            return result == null ? defaultValue : result;
+            if (result == null) {
+                return defaultValue;
+            }
+            return result;
         } catch (RuntimeException ex) {
             return defaultValue;
         }
@@ -32,7 +35,10 @@ public class SysConfigValueAdapter {
         }
         try {
             Integer result = config.getIntegerValue(key, defaultValue);
-            return result == null ? defaultValue : result;
+            if (result == null) {
+                return defaultValue;
+            }
+            return result;
         } catch (RuntimeException ex) {
             return defaultValue;
         }
@@ -45,7 +51,10 @@ public class SysConfigValueAdapter {
         }
         try {
             String result = config.getValue(key);
-            return result == null ? defaultValue : result;
+            if (result == null) {
+                return defaultValue;
+            }
+            return result;
         } catch (RuntimeException ex) {
             return defaultValue;
         }

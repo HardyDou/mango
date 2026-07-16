@@ -48,6 +48,10 @@ import java.util.concurrent.Executors;
 @Import(AuthSecurityConfig.class)
 public class AuthAutoConfiguration {
 
+    private static final int DEFAULT_MAX_LOGIN_ATTEMPTS = 5;
+    private static final int DEFAULT_FAILURE_WINDOW_MINUTES = 60;
+    private static final int DEFAULT_LOCK_DURATION_MINUTES = 15;
+
     @Bean
     @ConditionalOnMissingBean(PasswordEncoder.class)
     public PasswordEncoder passwordEncoder() {
@@ -70,9 +74,11 @@ public class AuthAutoConfiguration {
     @ConditionalOnMissingBean
     public LoginAttemptTracker loginAttemptTracker(IKvStore kvStore, ObjectProvider<SystemConfigProvider> configProvider) {
         SystemConfigProvider config = configProvider.getIfAvailable();
-        int maxAttempts = integerConfig(config, "sys.login.lockCount", 5);
-        long failureWindowMinutes = integerConfig(config, "identity.security.login.failure-window-minutes", 60);
-        long lockDurationMinutes = integerConfig(config, "identity.security.login.lock-duration-minutes", 15);
+        int maxAttempts = integerConfig(config, "sys.login.lockCount", DEFAULT_MAX_LOGIN_ATTEMPTS);
+        long failureWindowMinutes = integerConfig(config, "identity.security.login.failure-window-minutes",
+                DEFAULT_FAILURE_WINDOW_MINUTES);
+        long lockDurationMinutes = integerConfig(config, "identity.security.login.lock-duration-minutes",
+                DEFAULT_LOCK_DURATION_MINUTES);
         return new LoginAttemptTracker(kvStore, Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "auth-login-attempt-cleanup");
             thread.setDaemon(true);
@@ -86,7 +92,10 @@ public class AuthAutoConfiguration {
         }
         try {
             Integer result = config.getIntegerValue(key, defaultValue);
-            return result == null ? defaultValue : result;
+            if (result == null) {
+                return defaultValue;
+            }
+            return result;
         } catch (RuntimeException ex) {
             return defaultValue;
         }

@@ -48,7 +48,10 @@ public class PersonalConfigService implements IPersonalConfigService {
         Require.notBlank(query.getConfigKey(), SystemCode.SYSTEM_INVALID, "configKey不能为空");
         SysPersonalConfigEntity entity = personalConfigMapper.selectOne(configWrapper(
                 currentTenantId(), currentUserId(), query.getGroupCode(), query.getBizType(), query.getConfigKey()));
-        return entity == null ? null : toVO(entity);
+        if (entity == null) {
+            return null;
+        }
+        return toVO(entity);
     }
 
     @Override
@@ -92,7 +95,11 @@ public class PersonalConfigService implements IPersonalConfigService {
 
     private void fillMutableFields(SysPersonalConfigEntity entity, SavePersonalConfigCommand command) {
         entity.setConfigValue(command.getConfigValue());
-        entity.setValueType(hasText(command.getValueType()) ? command.getValueType() : DEFAULT_VALUE_TYPE);
+        String valueType = DEFAULT_VALUE_TYPE;
+        if (hasText(command.getValueType())) {
+            valueType = command.getValueType();
+        }
+        entity.setValueType(valueType);
         entity.setConfigName(command.getConfigName());
         entity.setRemark(command.getRemark());
         entity.setUpdatedBy(MangoContextHolder.userId());

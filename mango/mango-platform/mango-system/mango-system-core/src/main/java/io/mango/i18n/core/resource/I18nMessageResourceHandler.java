@@ -108,7 +108,10 @@ public class I18nMessageResourceHandler implements ResourceHandler {
             return sysI18nMapper.selectById(targetId);
         }
         Long i18nId = fieldLong(resource, "i18nId", false, null);
-        return i18nId == null ? null : sysI18nMapper.selectById(i18nId);
+        if (i18nId == null) {
+            return null;
+        }
+        return sysI18nMapper.selectById(i18nId);
     }
 
     private SysI18nEntity findByName(String name) {
@@ -140,7 +143,10 @@ public class I18nMessageResourceHandler implements ResourceHandler {
 
     private static Object fieldValue(ResourceDeclaration resource, String name, boolean required) {
         ResourceField field = resource.getFields().get(name);
-        Object value = field == null ? null : field.getValue();
+        Object value = null;
+        if (field != null) {
+            value = field.getValue();
+        }
         if (required && value == null) {
             throw new IllegalStateException("I18N_MESSAGE field is required: " + name);
         }
@@ -156,7 +162,10 @@ public class I18nMessageResourceHandler implements ResourceHandler {
     }
 
     private static String toText(Object value) {
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private static Long toLong(Object value, boolean required, Long defaultValue) {

@@ -100,7 +100,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         String dictType = fieldText(resource, "dictType", false);
-        DictTypeEntity type = StringUtils.hasText(dictType) ? findType(dictType) : findTypeByTargetId(resource);
+        DictTypeEntity type = resolveType(resource, dictType);
         if (type == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "System dict not found: " + dictType);
         }
@@ -118,7 +118,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult delete(ResourceDeclaration resource) {
         String dictType = fieldText(resource, "dictType", false);
-        DictTypeEntity type = StringUtils.hasText(dictType) ? findType(dictType) : findTypeByTargetId(resource);
+        DictTypeEntity type = resolveType(resource, dictType);
         if (type == null) {
             return ResourceSyncResult.of(null, TARGET_TABLE, "System dict not found: " + dictType);
         }
@@ -180,7 +180,17 @@ public class SystemDictResourceHandler implements ResourceHandler {
 
     private DictTypeEntity findTypeByTargetId(ResourceDeclaration resource) {
         Long targetId = fieldLong(resource, "targetId", false, null);
-        return targetId == null ? null : dictTypeMapper.selectById(targetId);
+        if (targetId == null) {
+            return null;
+        }
+        return dictTypeMapper.selectById(targetId);
+    }
+
+    private DictTypeEntity resolveType(ResourceDeclaration resource, String dictType) {
+        if (StringUtils.hasText(dictType)) {
+            return findType(dictType);
+        }
+        return findTypeByTargetId(resource);
     }
 
     private DictDataEntity findData(String dictType, DictItemPayload item) {
@@ -254,7 +264,10 @@ public class SystemDictResourceHandler implements ResourceHandler {
 
     private static Object fieldValue(ResourceDeclaration resource, String name, boolean required) {
         ResourceField field = resource.getFields().get(name);
-        Object value = field == null ? null : field.getValue();
+        Object value = null;
+        if (field != null) {
+            value = field.getValue();
+        }
         if (required && value == null) {
             throw new IllegalStateException("SYSTEM_DICT field is required: " + name);
         }
@@ -262,7 +275,10 @@ public class SystemDictResourceHandler implements ResourceHandler {
     }
 
     private static String defaultText(String value, String defaultValue) {
-        return StringUtils.hasText(value) ? value : defaultValue;
+        if (StringUtils.hasText(value)) {
+            return value;
+        }
+        return defaultValue;
     }
 
     private static String requiredText(Object value, String message) {
@@ -274,7 +290,10 @@ public class SystemDictResourceHandler implements ResourceHandler {
     }
 
     private static String toText(Object value) {
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private static Long toLong(Object value, boolean required, Long defaultValue) {

@@ -111,6 +111,9 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
     }
 
     private String firstText(String preferred, String fallback) {
-        return preferred != null && !preferred.isBlank() ? preferred.trim() : fallback;
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred.trim();
+        }
+        return fallback;
     }
 }

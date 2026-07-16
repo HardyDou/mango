@@ -31,6 +31,7 @@ public class SysI18nService implements ISysI18nService {
     private static final String ZH_CN = "zh-cn";
     private static final String EN = "en";
     private static final long CACHE_TTL_MS = 5 * 60 * 1000L;
+    private static final long CACHE_REFRESH_INTERVAL_MINUTES = 5L;
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 
     private final SysI18nMapper sysI18nMapper;
@@ -48,7 +49,8 @@ public class SysI18nService implements ISysI18nService {
             thread.setDaemon(true);
             return thread;
         }));
-        cacheRefreshExecutor.scheduleAtFixedRate(this::refreshCache, 5, 5, TimeUnit.MINUTES);
+        cacheRefreshExecutor.scheduleAtFixedRate(this::refreshCache, CACHE_REFRESH_INTERVAL_MINUTES,
+                CACHE_REFRESH_INTERVAL_MINUTES, TimeUnit.MINUTES);
     }
 
     @PreDestroy
@@ -76,8 +78,7 @@ public class SysI18nService implements ISysI18nService {
     public List<I18nEntryVO> listByLang(String lang) {
         boolean chinese = ZH_CN.equalsIgnoreCase(lang) || "zh_CN".equalsIgnoreCase(lang);
         return getCachedList().stream()
-                .map(item -> new I18nEntryVO(
-                        item.getName(), fallback(chinese ? item.getZhCn() : item.getEn(), item.getName())))
+                .map(item -> new I18nEntryVO(item.getName(), fallback(localizedValue(item, chinese), item.getName())))
                 .toList();
     }
 
@@ -116,7 +117,10 @@ public class SysI18nService implements ISysI18nService {
             refreshCache();
             list = cachedList;
         }
-        return list == null ? Collections.emptyList() : list;
+        if (list == null) {
+            return Collections.emptyList();
+        }
+        return list;
     }
 
     private SysI18nMessageVO toVO(SysI18nEntity entity) {
@@ -130,6 +134,16 @@ public class SysI18nService implements ISysI18nService {
     }
 
     private String fallback(String value, String fallback) {
-        return value == null ? fallback : value;
+        if (value == null) {
+            return fallback;
+        }
+        return value;
+    }
+
+    private String localizedValue(SysI18nEntity item, boolean chinese) {
+        if (chinese) {
+            return item.getZhCn();
+        }
+        return item.getEn();
     }
 }

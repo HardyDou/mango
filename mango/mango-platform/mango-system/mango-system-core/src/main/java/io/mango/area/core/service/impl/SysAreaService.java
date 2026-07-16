@@ -24,6 +24,7 @@ public class SysAreaService implements ISysAreaService {
 
     private static final int DEFAULT_TREE_LEVEL = 1;
     private static final int MAX_TREE_LEVEL = 4;
+    private static final int CUSTOM_AREA_LEVEL = 5;
 
     private final SysAreaMapper areaMapper;
 
@@ -38,7 +39,7 @@ public class SysAreaService implements ISysAreaService {
         Map<Long, List<SysAreaEntity>> childrenByParentId = areas.stream()
                 .sorted(Comparator.comparing(SysAreaEntity::getAreaSort, Comparator.nullsLast(Integer::compareTo))
                         .thenComparing(SysAreaEntity::getId, Comparator.nullsLast(Long::compareTo)))
-                .collect(Collectors.groupingBy(area -> area.getPid() == null ? 0L : area.getPid()));
+                .collect(Collectors.groupingBy(area -> parentId(area.getPid())));
         return childrenByParentId.getOrDefault(0L, List.of()).stream()
                 .map(area -> toTreeNode(area, childrenByParentId)).toList();
     }
@@ -80,7 +81,7 @@ public class SysAreaService implements ISysAreaService {
         Require.notNull(command, AreaCode.AREA_INVALID);
         Require.notNull(command.getId(), AreaCode.AREA_INVALID, "行政区划 ID 不能为空");
         SysAreaEntity existing = requireArea(command.getId());
-        if (parseAreaType(existing.getAreaType()) < 5) {
+        if (parseAreaType(existing.getAreaType()) < CUSTOM_AREA_LEVEL) {
             Require.isTrue(Objects.equals(existing.getAdcode(), command.getAdcode()),
                     AreaCode.AREA_PROTECTED, "Standard administrative area adcode cannot be modified");
         }
@@ -94,7 +95,7 @@ public class SysAreaService implements ISysAreaService {
     @Override
     public Void delete(Long id) {
         SysAreaEntity existing = requireArea(id);
-        Require.isTrue(parseAreaType(existing.getAreaType()) >= 5,
+        Require.isTrue(parseAreaType(existing.getAreaType()) >= CUSTOM_AREA_LEVEL,
                 AreaCode.AREA_PROTECTED, "Standard administrative area cannot be deleted");
         Require.isTrue(areaMapper.deleteById(id) > 0, AreaCode.AREA_INVALID, "Failed to delete area");
         return null;
@@ -154,14 +155,29 @@ public class SysAreaService implements ISysAreaService {
         entity.setLetter(command.getLetter());
         entity.setAdcode(command.getAdcode());
         entity.setLocation(command.getLocation());
-        entity.setAreaSort(command.getAreaSort() == null ? 0 : command.getAreaSort());
+        Integer areaSort = command.getAreaSort();
+        if (areaSort == null) {
+            areaSort = 0;
+        }
+        entity.setAreaSort(areaSort);
         entity.setAreaStatus(command.getAreaStatus());
         entity.setAreaType(command.getAreaType());
-        entity.setHot(command.getHot() == null ? "0" : command.getHot());
+        String hot = command.getHot();
+        if (hot == null) {
+            hot = "0";
+        }
+        entity.setHot(hot);
         entity.setCityCode(command.getCityCode());
         if (command.getTenantId() != null) {
             entity.setTenantId(String.valueOf(command.getTenantId()));
         }
+    }
+
+    private static Long parentId(Long parentId) {
+        if (parentId == null) {
+            return 0L;
+        }
+        return parentId;
     }
 
     private SysAreaVO toVO(SysAreaEntity entity) {

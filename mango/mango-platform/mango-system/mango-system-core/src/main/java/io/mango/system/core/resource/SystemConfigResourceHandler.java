@@ -146,7 +146,10 @@ public class SystemConfigResourceHandler implements ResourceHandler {
             return sysConfigMapper.selectById(targetId);
         }
         Long configId = fieldLong(resource, "configId", false, null);
-        return configId == null ? null : sysConfigMapper.selectById(configId);
+        if (configId == null) {
+            return null;
+        }
+        return sysConfigMapper.selectById(configId);
     }
 
     private SysConfigEntity findByConfigKey(String configKey) {
@@ -234,7 +237,10 @@ public class SystemConfigResourceHandler implements ResourceHandler {
 
     private static Object fieldValue(ResourceDeclaration resource, String name, boolean required) {
         ResourceField field = resource.getFields().get(name);
-        Object value = field == null ? null : field.getValue();
+        Object value = null;
+        if (field != null) {
+            value = field.getValue();
+        }
         if (required && value == null) {
             throw new IllegalStateException("SYSTEM_CONFIG field is required: " + name);
         }
@@ -250,11 +256,17 @@ public class SystemConfigResourceHandler implements ResourceHandler {
     }
 
     private static String defaultText(String value, String defaultValue) {
-        return StringUtils.hasText(value) ? value.trim() : defaultValue;
+        if (StringUtils.hasText(value)) {
+            return value.trim();
+        }
+        return defaultValue;
     }
 
     private static String toText(Object value) {
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private static Long toLong(Object value, boolean required, Long defaultValue) {

@@ -43,7 +43,7 @@ public class DictService implements IDictService {
         Require.notNull(command, SystemCode.SYSTEM_INVALID);
         DictTypeEntity entity = new DictTypeEntity();
         copy(command, entity);
-        entity.setStatus(command.getStatus() == null ? 1 : command.getStatus());
+        entity.setStatus(defaultInteger(command.getStatus(), 1));
         dictTypeMapper.insert(entity);
         return entity.getId();
     }
@@ -88,8 +88,8 @@ public class DictService implements IDictService {
         Require.notNull(command, SystemCode.SYSTEM_INVALID);
         DictDataEntity entity = new DictDataEntity();
         copy(command, entity);
-        entity.setSort(command.getSort() == null ? 0 : command.getSort());
-        entity.setStatus(command.getStatus() == null ? 1 : command.getStatus());
+        entity.setSort(defaultInteger(command.getSort(), 0));
+        entity.setStatus(defaultInteger(command.getStatus(), 1));
         dictDataMapper.insert(entity);
         return entity.getId();
     }
@@ -136,7 +136,11 @@ public class DictService implements IDictService {
     private void copy(SaveDictTypeCommand command, DictTypeEntity entity) {
         entity.setDictType(command.getDictType());
         entity.setDictName(command.getDictName());
-        entity.setDomainCode(StringUtils.hasText(command.getDomainCode()) ? command.getDomainCode().trim() : "COMMON");
+        String domainCode = "COMMON";
+        if (StringUtils.hasText(command.getDomainCode())) {
+            domainCode = command.getDomainCode().trim();
+        }
+        entity.setDomainCode(domainCode);
         entity.setStatus(command.getStatus());
         entity.setRemark(command.getRemark());
     }
@@ -180,6 +184,16 @@ public class DictService implements IDictService {
     }
 
     private String trim(String value) {
-        return value == null ? null : value.trim();
+        if (value == null) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private Integer defaultInteger(Integer value, int defaultValue) {
+        if (value == null) {
+            return Integer.valueOf(defaultValue);
+        }
+        return value;
     }
 }

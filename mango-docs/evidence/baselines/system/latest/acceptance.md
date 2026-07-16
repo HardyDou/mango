@@ -36,7 +36,7 @@
 
 | 模块 | 页面 | 功能点 1 | 功能点 2 | UI 细节 | 截图/trace | 结论 |
 |---|---|---|---|---|---|---|
-| mango-system | 四个系统管理页面 | 平台 CRUD | 机构越权隔离 | 真实登录、真实菜单、真实接口 | 10 条 Playwright 用例，48.3 秒 | PASS |
+| mango-system | 四个系统管理页面 | 平台 CRUD | 机构越权隔离 | 真实登录、真实菜单、真实接口 | 10 条 Playwright 用例，47.3 秒 | PASS |
 | mango-system | 新库启动 | Flyway 仅 V1 | 资源与权限派生关系 | 健康检查 UP | 数据库查询记录 | PASS |
 
 ## 5. 自动化与数据库证据
@@ -44,10 +44,10 @@
 - 改前基线：System 60 条单元/接口测试，0 失败。
 - 改后同层测试：System 62 条（core 57、starter 5），0 failures、0 errors、0 skipped；resource-api 2 条同样通过。
 - 跨模块回归：`AuthRoleResourceHandlerIntegrationTest` 通过；Identity 用户、密码策略、安全策略三组定向测试通过。
-- 定向架构门禁：使用 PMO 规定的 partial Reactor 模式扫描 `mango-system-api/core/starter`，0 条违规；未执行全仓扫描。
+- 定向架构门禁：使用 PMO 规定的 partial Reactor 模式扫描 `mango-system-api/core/starter`，0 条违规；三个模块 SpotBugs 的 `EI_EXPOSE_REP*` 为 0；未执行全仓扫描。
 - 测试质量门禁：扫描 18 个变更测试文件，无恒真/同值断言，未 mock/spy 被测对象。
 - E2E 命令：`pnpm exec playwright test area-management.spec.ts config-management.spec.ts dict-management.spec.ts tenant-management.spec.ts --project=chromium --reporter=list --workers=1`。
-- E2E 结果：10 passed，48.3s。
+- E2E 结果：10 passed，47.3s。
 - 新库 System Flyway：成功版本仅 `1`；System 表数量 9。
 - 初始化数据：`sys_tenant=4`、`sys_area=524`、`sys_i18n=20`。
 - 管理员菜单：tenant 1 为 110 条；tenant 2/3/4 各 61 条。

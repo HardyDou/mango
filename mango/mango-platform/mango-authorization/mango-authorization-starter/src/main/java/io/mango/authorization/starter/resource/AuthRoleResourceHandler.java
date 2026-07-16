@@ -127,7 +127,11 @@ public class AuthRoleResourceHandler implements ResourceHandler {
             role.setUpdateTime(LocalDateTime.now());
             changed = roleMapper.updateById(role) > 0;
         }
-        return ResourceSyncResult.of(role == null ? null : role.getRoleId(), TARGET_TABLE,
+        Long roleId = null;
+        if (role != null) {
+            roleId = role.getRoleId();
+        }
+        return ResourceSyncResult.of(roleId, TARGET_TABLE,
                 "Auth role disabled: changed=" + changed);
     }
 
@@ -169,6 +173,9 @@ public class AuthRoleResourceHandler implements ResourceHandler {
         if (status != null) {
             return status;
         }
-        return resource.getStatus() == ResourceStatus.DISABLED ? 0 : 1;
+        if (resource.getStatus() == ResourceStatus.DISABLED) {
+            return 0;
+        }
+        return 1;
     }
 }

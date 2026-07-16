@@ -32,12 +32,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SysLogService implements ISysLogService, LoginLogRecorder {
 
+    private static final long WEEK_START_OFFSET_DAYS = 6L;
+    private static final long MONTH_START_OFFSET_DAYS = 29L;
+
     private final SysLoginLogMapper sysLoginLogMapper;
     private final SysOperationLogMapper sysOperationLogMapper;
 
     @Override
     public PageResult<SysLoginLogVO> pageLoginLogs(LoginLogPageQuery query) {
-        LoginLogPageQuery resolved = query == null ? new LoginLogPageQuery() : query;
+        LoginLogPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new LoginLogPageQuery();
+        }
         IPage<SysLoginLogEntity> page = sysLoginLogMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()), loginLogWrapper(resolved));
         List<SysLoginLogVO> records = page.getRecords().stream().map(this::toLoginVO).toList();
@@ -67,15 +73,20 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
         entity.setOs(command.getOs());
         entity.setStatus(command.getStatus());
         entity.setMsg(command.getMsg());
-        entity.setLoginTime(command.getLoginTime() == null ? LocalDateTime.now() : command.getLoginTime());
+        LocalDateTime loginTime = command.getLoginTime();
+        if (loginTime == null) {
+            loginTime = LocalDateTime.now();
+        }
+        entity.setLoginTime(loginTime);
         return sysLoginLogMapper.insert(entity) > 0;
     }
 
     @Override
     public Boolean cleanLoginLogs(Integer retentionDays) {
         LambdaQueryWrapper<SysLoginLogEntity> wrapper = tenantScopedLoginWrapper();
-        wrapper.lt(retentionDays != null && retentionDays > 0, SysLoginLogEntity::getLoginTime,
-                retentionDays == null ? null : LocalDateTime.now().minusDays(retentionDays));
+        if (retentionDays != null && retentionDays > 0) {
+            wrapper.lt(SysLoginLogEntity::getLoginTime, LocalDateTime.now().minusDays(retentionDays));
+        }
         sysLoginLogMapper.delete(wrapper);
         return true;
     }
@@ -85,8 +96,8 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         LoginStatisticsVO statistics = new LoginStatisticsVO();
         statistics.setTodayCount(countLoginLogs(todayStart, null));
-        statistics.setWeekCount(countLoginLogs(todayStart.minusDays(6), null));
-        statistics.setMonthCount(countLoginLogs(todayStart.minusDays(29), null));
+        statistics.setWeekCount(countLoginLogs(todayStart.minusDays(WEEK_START_OFFSET_DAYS), null));
+        statistics.setMonthCount(countLoginLogs(todayStart.minusDays(MONTH_START_OFFSET_DAYS), null));
         statistics.setTotalCount(countLoginLogs(null, null));
         statistics.setSuccessCount(countLoginLogs(null, 1));
         statistics.setFailCount(countLoginLogs(null, 0));
@@ -95,7 +106,10 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
 
     @Override
     public PageResult<SysOperationLogVO> pageOperationLogs(OperationLogPageQuery query) {
-        OperationLogPageQuery resolved = query == null ? new OperationLogPageQuery() : query;
+        OperationLogPageQuery resolved = query;
+        if (resolved == null) {
+            resolved = new OperationLogPageQuery();
+        }
         IPage<SysOperationLogEntity> page = sysOperationLogMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()), operationLogWrapper(resolved));
         List<SysOperationLogVO> records = page.getRecords().stream().map(this::toOperationVO).toList();
@@ -130,15 +144,20 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
         entity.setDuration(command.getDuration());
         entity.setIp(command.getIp());
         entity.setLocation(command.getLocation());
-        entity.setOperateTime(command.getOperateTime() == null ? LocalDateTime.now() : command.getOperateTime());
+        LocalDateTime operateTime = command.getOperateTime();
+        if (operateTime == null) {
+            operateTime = LocalDateTime.now();
+        }
+        entity.setOperateTime(operateTime);
         return sysOperationLogMapper.insert(entity) > 0;
     }
 
     @Override
     public Boolean cleanOperationLogs(Integer retentionDays) {
         LambdaQueryWrapper<SysOperationLogEntity> wrapper = tenantScopedOperationWrapper();
-        wrapper.lt(retentionDays != null && retentionDays > 0, SysOperationLogEntity::getOperateTime,
-                retentionDays == null ? null : LocalDateTime.now().minusDays(retentionDays));
+        if (retentionDays != null && retentionDays > 0) {
+            wrapper.lt(SysOperationLogEntity::getOperateTime, LocalDateTime.now().minusDays(retentionDays));
+        }
         sysOperationLogMapper.delete(wrapper);
         return true;
     }
@@ -230,6 +249,9 @@ public class SysLogService implements ISysLogService, LoginLogRecorder {
     }
 
     private String trim(String value) {
-        return StringUtils.hasText(value) ? value.trim() : null;
+        if (StringUtils.hasText(value)) {
+            return value.trim();
+        }
+        return null;
     }
 }

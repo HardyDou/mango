@@ -31,10 +31,10 @@ public class I18nLanguagePackVO {
 
     private I18nLanguagePackVO(List<I18nEntryVO> zhCn, List<I18nEntryVO> en,
                                String language, List<I18nEntryVO> entries) {
-        this.zhCn = zhCn;
-        this.en = en;
+        this.zhCn = immutableCopy(zhCn);
+        this.en = immutableCopy(en);
         this.language = language;
-        this.entries = entries;
+        this.entries = immutableCopy(entries);
     }
 
     public static I18nLanguagePackVO all(List<I18nEntryVO> zhCn, List<I18nEntryVO> en) {
@@ -43,6 +43,18 @@ public class I18nLanguagePackVO {
 
     public static I18nLanguagePackVO single(String language, List<I18nEntryVO> entries) {
         return new I18nLanguagePackVO(null, null, language, entries);
+    }
+
+    public List<I18nEntryVO> getZhCn() {
+        return immutableCopy(zhCn);
+    }
+
+    public List<I18nEntryVO> getEn() {
+        return immutableCopy(en);
+    }
+
+    public List<I18nEntryVO> getEntries() {
+        return immutableCopy(entries);
     }
 
     @JsonAnyGetter
@@ -54,5 +66,12 @@ public class I18nLanguagePackVO {
         languages.put("zh-cn", zhCn);
         languages.put("en", en);
         return languages;
+    }
+
+    private static List<I18nEntryVO> immutableCopy(List<I18nEntryVO> values) {
+        if (values == null) {
+            return null;
+        }
+        return List.copyOf(values);
     }
 }

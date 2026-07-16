@@ -91,8 +91,11 @@ public class SysConfigService implements ISysConfigService, SystemConfigProvider
     public Boolean updateValue(Long id, String value) {
         SysConfigEntity existing = requireConfig(id);
         Require.isTrue(!Integer.valueOf(DISABLED).equals(existing.getStatus()), SystemCode.CONFIG_NOT_EDITABLE, "配置已禁用");
-        Require.isTrue(!Boolean.FALSE.equals(existing.getEditable()), SystemCode.CONFIG_NOT_EDITABLE,
-                StringUtils.hasText(existing.getEditableReason()) ? existing.getEditableReason() : "此配置不可编辑");
+        String editableReason = "此配置不可编辑";
+        if (StringUtils.hasText(existing.getEditableReason())) {
+            editableReason = existing.getEditableReason();
+        }
+        Require.isTrue(!Boolean.FALSE.equals(existing.getEditable()), SystemCode.CONFIG_NOT_EDITABLE, editableReason);
         SysConfigEntity entity = new SysConfigEntity();
         entity.setId(id);
         entity.setConfigValue(value);
@@ -103,13 +106,19 @@ public class SysConfigService implements ISysConfigService, SystemConfigProvider
     public String getValue(String configKey) {
         SysConfigEntity entity = sysConfigMapper.selectOne(new LambdaQueryWrapper<SysConfigEntity>()
                 .eq(SysConfigEntity::getConfigKey, configKey));
-        return entity == null ? null : entity.getConfigValue();
+        if (entity == null) {
+            return null;
+        }
+        return entity.getConfigValue();
     }
 
     @Override
     public Boolean getBooleanValue(String configKey, Boolean defaultValue) {
         String value = getValue(configKey);
-        return StringUtils.hasText(value) ? Boolean.valueOf(value) : defaultValue;
+        if (StringUtils.hasText(value)) {
+            return Boolean.valueOf(value);
+        }
+        return defaultValue;
     }
 
     @Override
@@ -146,18 +155,22 @@ public class SysConfigService implements ISysConfigService, SystemConfigProvider
         entity.setConfigValue(command.getConfigValue());
         entity.setConfigName(command.getConfigName());
         entity.setType(command.getType());
-        entity.setDomainCode(StringUtils.hasText(command.getDomainCode()) ? command.getDomainCode().trim() : "COMMON");
-        entity.setValueType(command.getValueType() == null ? ConfigValueTypeEnum.STRING : command.getValueType());
+        String domainCode = "COMMON";
+        if (StringUtils.hasText(command.getDomainCode())) {
+            domainCode = command.getDomainCode().trim();
+        }
+        entity.setDomainCode(domainCode);
+        entity.setValueType(defaultValueType(command.getValueType()));
         entity.setGroupCode(command.getGroupCode());
         entity.setGroupName(command.getGroupName());
         entity.setDefaultValue(command.getDefaultValue());
         entity.setOptions(command.getOptions());
-        entity.setOptionSource(command.getOptionSource() == null ? ConfigOptionSourceEnum.CUSTOM : command.getOptionSource());
+        entity.setOptionSource(defaultOptionSource(command.getOptionSource()));
         entity.setDictType(command.getDictType());
-        entity.setEditable(command.getEditable() == null || command.getEditable());
+        entity.setEditable(defaultEditable(command.getEditable()));
         entity.setEditableReason(command.getEditableReason());
-        entity.setSort(command.getSort() == null ? 0 : command.getSort());
-        entity.setStatus(command.getStatus() == null ? 1 : command.getStatus());
+        entity.setSort(defaultInteger(command.getSort(), 0));
+        entity.setStatus(defaultInteger(command.getStatus(), 1));
         entity.setRemark(command.getRemark());
     }
 
@@ -169,14 +182,14 @@ public class SysConfigService implements ISysConfigService, SystemConfigProvider
         vo.setConfigName(entity.getConfigName());
         vo.setType(entity.getType());
         vo.setDomainCode(entity.getDomainCode());
-        vo.setValueType(entity.getValueType() == null ? ConfigValueTypeEnum.STRING : entity.getValueType());
+        vo.setValueType(defaultValueType(entity.getValueType()));
         vo.setGroupCode(entity.getGroupCode());
         vo.setGroupName(entity.getGroupName());
         vo.setDefaultValue(entity.getDefaultValue());
         vo.setOptions(entity.getOptions());
-        vo.setOptionSource(entity.getOptionSource() == null ? ConfigOptionSourceEnum.CUSTOM : entity.getOptionSource());
+        vo.setOptionSource(defaultOptionSource(entity.getOptionSource()));
         vo.setDictType(entity.getDictType());
-        vo.setEditable(entity.getEditable() == null || entity.getEditable());
+        vo.setEditable(defaultEditable(entity.getEditable()));
         vo.setEditableReason(entity.getEditableReason());
         vo.setSort(entity.getSort());
         vo.setStatus(entity.getStatus());
@@ -184,6 +197,37 @@ public class SysConfigService implements ISysConfigService, SystemConfigProvider
     }
 
     private String trim(String value) {
-        return value == null ? null : value.trim();
+        if (value == null) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private ConfigValueTypeEnum defaultValueType(ConfigValueTypeEnum valueType) {
+        if (valueType == null) {
+            return ConfigValueTypeEnum.STRING;
+        }
+        return valueType;
+    }
+
+    private ConfigOptionSourceEnum defaultOptionSource(ConfigOptionSourceEnum optionSource) {
+        if (optionSource == null) {
+            return ConfigOptionSourceEnum.CUSTOM;
+        }
+        return optionSource;
+    }
+
+    private Integer defaultInteger(Integer value, int defaultValue) {
+        if (value == null) {
+            return Integer.valueOf(defaultValue);
+        }
+        return value;
+    }
+
+    private Boolean defaultEditable(Boolean editable) {
+        if (editable == null) {
+            return Boolean.TRUE;
+        }
+        return editable;
     }
 }
