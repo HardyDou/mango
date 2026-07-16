@@ -1,5 +1,6 @@
 package io.mango.identity.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -75,6 +76,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Injected domain collaborators are intentionally shared Spring beans")
 public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper, IdentityUserEntity>
         implements IIdentityUserService {
 
@@ -115,7 +118,10 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     @Override
     public IdentityUserVO detail(Long userId) {
         IdentityUserEntity user = getManageableUser(userId);
-        return user == null ? null : toVO(user, null);
+        if (user == null) {
+            return null;
+        }
+        return toVO(user, null);
     }
 
     @Override
@@ -141,7 +147,11 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         user.setEmail(command.getEmail());
         user.setPhone(command.getPhone());
         user.setAvatar(command.getAvatar());
-        user.setStatus(command.getStatus() == null ? 1 : command.getStatus());
+        if (command.getStatus() == null) {
+            user.setStatus(1);
+        } else {
+            user.setStatus(command.getStatus());
+        }
         user.setTenantId(currentTenantId());
         user.setRemark(command.getRemark());
         user.setFailedLoginCount(0);
@@ -173,7 +183,9 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         TenantMemberEntity member = currentTenantMember(command.getUserId());
         if (member != null) {
             member.setDisplayName(firstText(command.getNickname(), user.getUsername()));
-            member.setStatus(command.getStatus() == null ? member.getStatus() : command.getStatus());
+            if (command.getStatus() != null) {
+                member.setStatus(command.getStatus());
+            }
             member.setRemark(command.getRemark());
             tenantMemberMapper.updateById(member);
         }
@@ -320,8 +332,12 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
             return List.of();
         }
         Set<Long> userIds = switch (query.getTargetType()) {
-            case USER -> currentTenantSubjectIds(query.getStatus()).contains(query.getTargetId())
-                    ? Set.of(query.getTargetId()) : Set.of();
+            case USER -> {
+                if (currentTenantSubjectIds(query.getStatus()).contains(query.getTargetId())) {
+                    yield Set.of(query.getTargetId());
+                }
+                yield Set.of();
+            }
             case ORG -> currentTenantOrgUserIds(query.getTargetId(), query.getStatus());
             case POST -> currentTenantPostUserIds(query.getTargetId(), query.getStatus());
             case ROLE -> currentTenantRoleUserIds(query.getTargetId(), query.getStatus());
@@ -358,7 +374,10 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
                 command.getExternalUserId(), tenantId);
         Require.isTrue(existing == null || Objects.equals(existing.getUserId(), command.getUserId()),
                 IdentityCode.CONFLICT, "该企业微信用户已绑定其他成员");
-        ExternalIdentityBindingEntity entity = existing == null ? new ExternalIdentityBindingEntity() : existing;
+        ExternalIdentityBindingEntity entity = existing;
+        if (entity == null) {
+            entity = new ExternalIdentityBindingEntity();
+        }
         entity.setTenantId(String.valueOf(tenantId));
         entity.setUserId(command.getUserId());
         entity.setProvider(normalizeProvider(command.getProvider()));
@@ -439,8 +458,10 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
 
     @Override
     protected QueryWrapper<IdentityUserEntity> buildQueryWrapper(Object queryObject) {
-        IdentityUserPageQuery query = queryObject instanceof IdentityUserPageQuery pageQuery
-                ? pageQuery : new IdentityUserPageQuery();
+        IdentityUserPageQuery query = new IdentityUserPageQuery();
+        if (queryObject instanceof IdentityUserPageQuery pageQuery) {
+            query = pageQuery;
+        }
         QueryWrapper<IdentityUserEntity> wrapper = new QueryWrapper<>();
         LambdaQueryWrapper<IdentityUserEntity> lambda = wrapper.lambda();
         Long tenantId = currentTenantIdLong();
@@ -490,7 +511,11 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
 
     private void publishUserCreatedNotice(IdentityUserEntity user) {
         Map<String, Object> params = baseUserParams(user);
-        params.put("createdAt", user.getCreateTime() == null ? null : user.getCreateTime().toString());
+        String createdAt = null;
+        if (user.getCreateTime() != null) {
+            createdAt = user.getCreateTime().toString();
+        }
+        params.put("createdAt", createdAt);
         NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
         NoticeSendEventCommand event = new NoticeSendEventCommand();
         event.setTenantId(user.getTenantId());
@@ -757,7 +782,11 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     private DeleteSubjectRoleBindingsCommand currentTenantSubjectRoleDeleteCommand(Collection<Long> subjectIds) {
         DeleteSubjectRoleBindingsCommand command = new DeleteSubjectRoleBindingsCommand();
         command.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
-        command.setSubjectIds(subjectIds == null ? List.of() : List.copyOf(subjectIds));
+        if (subjectIds == null) {
+            command.setSubjectIds(List.of());
+        } else {
+            command.setSubjectIds(List.copyOf(subjectIds));
+        }
         command.setTenantId(currentTenantIdLong());
         return command;
     }
@@ -783,12 +812,20 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         vo.setEmail(user.getEmail());
         vo.setPhone(user.getPhone());
         vo.setAvatar(user.getAvatar());
-        vo.setStatus(member != null ? member.getStatus() : user.getStatus());
+        if (member == null) {
+            vo.setStatus(user.getStatus());
+        } else {
+            vo.setStatus(member.getStatus());
+        }
         vo.setTenantId(user.getTenantId());
         vo.setLastLoginTime(user.getLastLoginTime());
         vo.setPasswordResetRequired(Boolean.TRUE.equals(user.getPasswordResetRequired()));
         vo.setPasswordUpdatedAt(user.getPasswordUpdatedAt());
-        vo.setFailedLoginCount(user.getFailedLoginCount() == null ? 0 : user.getFailedLoginCount());
+        if (user.getFailedLoginCount() == null) {
+            vo.setFailedLoginCount(0);
+        } else {
+            vo.setFailedLoginCount(user.getFailedLoginCount());
+        }
         vo.setLastFailedLoginAt(user.getLastFailedLoginAt());
         vo.setLockedUntil(user.getLockedUntil());
         vo.setLockedReason(user.getLockedReason());
@@ -881,15 +918,24 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     }
 
     private String firstText(String preferred, String fallback) {
-        return StringUtils.hasText(preferred) ? preferred.trim() : fallback;
+        if (StringUtils.hasText(preferred)) {
+            return preferred.trim();
+        }
+        return fallback;
     }
 
     private String normalizeRealm(String realm) {
-        return realm == null || realm.isBlank() ? DEFAULT_REALM : realm.trim();
+        if (realm == null || realm.isBlank()) {
+            return DEFAULT_REALM;
+        }
+        return realm.trim();
     }
 
     private String normalizeProvider(String provider) {
-        return provider == null ? null : provider.trim().toUpperCase();
+        if (provider == null) {
+            return null;
+        }
+        return provider.trim().toUpperCase();
     }
 
     private String currentTenantId() {

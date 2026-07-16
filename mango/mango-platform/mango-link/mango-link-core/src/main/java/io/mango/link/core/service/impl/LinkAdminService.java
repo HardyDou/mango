@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class LinkAdminService extends LinkBaseService implements ILinkAdminService {
+public class LinkAdminService extends BaseLinkService implements ILinkAdminService {
 
     public LinkAdminService(LinkCategoryMapper categoryMapper,
                             LinkItemMapper itemMapper,

@@ -1,5 +1,6 @@
 package io.mango.identity.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.SubjectRoleBindingCommand;
@@ -26,6 +27,8 @@ import java.util.Optional;
 @Component
 @Order(300)
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Injected mappers and adapters are intentionally shared Spring collaborators")
 public class IdentityTenantProvisioner implements TenantProvisioner, TenantDependencyChecker {
 
     private static final String DEFAULT_APP_CODE = "internal-admin";

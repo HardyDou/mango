@@ -38,7 +38,10 @@ public class IdentityAuthorizationSubjectReferenceProvider implements Authorizat
                 .eq(TenantMemberEntity::getUserId, user.getUserId())
                 .isNull(TenantMemberEntity::getLeftAt)
                 .last("LIMIT 1"));
-        return member == null ? null : member.getMemberId();
+        if (member == null) {
+            return null;
+        }
+        return member.getMemberId();
     }
 
     private TenantMemberEntity memberByNo(Long tenantId, String memberNo) {

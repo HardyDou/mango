@@ -1,5 +1,6 @@
 package io.mango.identity.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -38,6 +39,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "身份成员-内部", description = "机构成员事实内部接口")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The service is an intentionally shared Spring collaborator")
 public class TenantMemberController implements TenantMemberApi {
 
     private final ITenantMemberService tenantMemberService;

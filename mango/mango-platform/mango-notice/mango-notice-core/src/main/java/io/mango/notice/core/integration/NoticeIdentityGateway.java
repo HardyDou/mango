@@ -1,5 +1,6 @@
 package io.mango.notice.core.integration;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Component;
 /** Isolates the Notice domain from the remote {@code R<T>} transport envelope. */
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The API client is an intentionally shared Spring collaborator")
 public class NoticeIdentityGateway {
 
     private final IdentityUserApi identityUserApi;
@@ -47,6 +50,18 @@ public class NoticeIdentityGateway {
     }
 
     private static IdentityUserInfo asLegacyUserInfo(IdentityUserInfoVO userInfo) {
-        return userInfo;
+        IdentityUserInfo legacy = new IdentityUserInfo();
+        legacy.setUserId(userInfo.getUserId());
+        legacy.setUsername(userInfo.getUsername());
+        legacy.setNickname(userInfo.getNickname());
+        legacy.setRealm(userInfo.getRealm());
+        legacy.setActorType(userInfo.getActorType());
+        legacy.setPartyType(userInfo.getPartyType());
+        legacy.setPartyId(userInfo.getPartyId());
+        legacy.setEmail(userInfo.getEmail());
+        legacy.setPhone(userInfo.getPhone());
+        legacy.setAvatar(userInfo.getAvatar());
+        legacy.setStatus(userInfo.getStatus());
+        return legacy;
     }
 }

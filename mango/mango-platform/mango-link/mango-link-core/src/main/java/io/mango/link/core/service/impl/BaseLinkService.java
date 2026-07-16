@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RequiredArgsConstructor
-abstract class LinkBaseService {
+abstract class BaseLinkService {
 
     protected final LinkCategoryMapper categoryMapper;
     protected final LinkItemMapper itemMapper;
@@ -78,7 +78,7 @@ abstract class LinkBaseService {
         List<LinkCategoryEntity> categories = categoryMapper.selectList(new LambdaQueryWrapper<LinkCategoryEntity>()
                 .eq(LinkCategoryEntity::getTenantId, tenantId)
                 .in(LinkCategoryEntity::getId, resolvedIds));
-        Map<Long, LinkCategoryEntity> result = new HashMap<>();
+        Map<Long, LinkCategoryEntity> result = new HashMap<>(categories.size());
         for (LinkCategoryEntity category : categories) {
             result.put(category.getId(), category);
         }
@@ -119,6 +119,14 @@ abstract class LinkBaseService {
             return false;
         }
         LinkVisibilityScope scope = LinkSupport.toScope(item.getVisibilityScope());
+        return visibleForScope(tenantId, userId, item, targets, scope);
+    }
+
+    private boolean visibleForScope(Long tenantId,
+                                    Long userId,
+                                    LinkItemEntity item,
+                                    List<LinkVisibilityTargetEntity> targets,
+                                    LinkVisibilityScope scope) {
         if (scope == LinkVisibilityScope.PUBLIC) {
             return true;
         }
@@ -128,6 +136,13 @@ abstract class LinkBaseService {
         if (scope == LinkVisibilityScope.PERSONAL) {
             return userId.equals(item.getOwnerUserId());
         }
+        return visibleForMemberScope(tenantId, userId, targets, scope);
+    }
+
+    private boolean visibleForMemberScope(Long tenantId,
+                                          Long userId,
+                                          List<LinkVisibilityTargetEntity> targets,
+                                          LinkVisibilityScope scope) {
         TenantMemberProvider provider = tenantMemberProvider.getIfAvailable();
         if (provider == null) {
             return false;
@@ -139,17 +154,11 @@ abstract class LinkBaseService {
         if (scope == LinkVisibilityScope.COMPANY) {
             return true;
         }
-        if (scope == LinkVisibilityScope.USER) {
-            return targets != null && targets.stream()
-                    .anyMatch(target -> LinkVisibilityTargetType.USER.name().equals(target.getTargetType())
-                            && userId.equals(target.getTargetId()));
-        }
-        if (scope == LinkVisibilityScope.DEPARTMENT) {
-            return targets != null && targets.stream()
-                    .anyMatch(target -> LinkVisibilityTargetType.DEPARTMENT.name().equals(target.getTargetType())
-                            && provider.existsOrgRelation(tenantId, member.getMemberId(), target.getTargetId()));
-        }
-        return false;
+        return switch (scope) {
+            case USER -> visibleToUserTarget(userId, targets);
+            case DEPARTMENT -> visibleToDepartmentTarget(tenantId, member.getMemberId(), targets, provider);
+            default -> false;
+        };
     }
 
     protected boolean keywordMatched(LinkItemEntity item, String keyword) {
@@ -191,7 +200,7 @@ abstract class LinkBaseService {
         vo.setVisibilityScope(LinkSupport.toScope(item.getVisibilityScope()));
         vo.setOwnerUserId(item.getOwnerUserId());
         vo.setOwnerDisplayName(ownerDisplayName(item.getTenantId(), item.getOwnerUserId()));
-        vo.setVisibilityTargets(toTargetVOs(targets));
+        vo.setVisibilityTargets(toTargetVos(targets));
         vo.setStatus(LinkSupport.toStatus(item.getStatus()));
         vo.setRemark(item.getRemark());
         vo.setCreateTime(item.getCreatedAt());
@@ -225,7 +234,7 @@ abstract class LinkBaseService {
         LinkPersonalItemVO vo = new LinkPersonalItemVO();
         vo.setId(item.getId());
         vo.setCategoryId(item.getCategoryId());
-        vo.setCategoryName(category == null ? null : category.getName());
+        vo.setCategoryName(categoryName(category));
         vo.setName(item.getName());
         vo.setUrl(item.getUrl());
         vo.setSummary(item.getSummary());
@@ -243,7 +252,7 @@ abstract class LinkBaseService {
         LinkPublicItemVO vo = new LinkPublicItemVO();
         vo.setId(item.getId());
         vo.setCategoryId(item.getCategoryId());
-        vo.setCategoryName(category == null ? null : category.getName());
+        vo.setCategoryName(categoryName(category));
         vo.setName(item.getName());
         vo.setUrl(item.getUrl());
         vo.setSummary(item.getSummary());
@@ -257,7 +266,7 @@ abstract class LinkBaseService {
         return vo;
     }
 
-    protected List<LinkVisibilityTargetVO> toTargetVOs(List<LinkVisibilityTargetEntity> targets) {
+    protected List<LinkVisibilityTargetVO> toTargetVos(List<LinkVisibilityTargetEntity> targets) {
         if (targets == null || targets.isEmpty()) {
             return List.of();
         }
@@ -285,7 +294,7 @@ abstract class LinkBaseService {
     protected void fillNavigationFields(LinkNavigationItemVO vo, LinkItemEntity item, LinkCategoryEntity category) {
         vo.setId(item.getId());
         vo.setCategoryId(item.getCategoryId());
-        vo.setCategoryName(category == null ? null : category.getName());
+        vo.setCategoryName(categoryName(category));
         vo.setName(item.getName());
         vo.setUrl(item.getUrl());
         vo.setSummary(item.getSummary());
@@ -305,9 +314,32 @@ abstract class LinkBaseService {
             return String.valueOf(ownerUserId);
         }
         TenantMemberVO member = provider.getEnabledMember(ownerUserId, tenantId);
-        return member == null || !StringUtils.hasText(member.getDisplayName())
-                ? String.valueOf(ownerUserId)
-                : member.getDisplayName();
+        if (member == null || !StringUtils.hasText(member.getDisplayName())) {
+            return String.valueOf(ownerUserId);
+        }
+        return member.getDisplayName();
+    }
+
+    private boolean visibleToUserTarget(Long userId, List<LinkVisibilityTargetEntity> targets) {
+        return targets != null && targets.stream()
+                .anyMatch(target -> LinkVisibilityTargetType.USER.name().equals(target.getTargetType())
+                        && userId.equals(target.getTargetId()));
+    }
+
+    private boolean visibleToDepartmentTarget(Long tenantId,
+                                              Long memberId,
+                                              List<LinkVisibilityTargetEntity> targets,
+                                              TenantMemberProvider provider) {
+        return targets != null && targets.stream()
+                .anyMatch(target -> LinkVisibilityTargetType.DEPARTMENT.name().equals(target.getTargetType())
+                        && provider.existsOrgRelation(tenantId, memberId, target.getTargetId()));
+    }
+
+    private String categoryName(LinkCategoryEntity category) {
+        if (category == null) {
+            return null;
+        }
+        return category.getName();
     }
 
     private boolean contains(String value, String keyword) {

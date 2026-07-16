@@ -1,5 +1,6 @@
 package io.mango.org.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
 import io.mango.identity.api.TenantMemberProvider;
@@ -42,6 +43,8 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Injected mappers and providers are intentionally shared Spring collaborators")
 public class SysOrgServiceImpl implements ISysOrgService {
 
     private static final String DEPT_MANAGER_POST_CODE = "DEPT_MANAGER";
@@ -234,7 +237,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
             return List.of();
         }
         List<Long> memberIds = relations.stream()
-                .filter(relation -> Integer.valueOf(1).equals(relation.getLeaderFlag())
+                .filter(relation -> Boolean.TRUE.equals(relation.getLeaderFlag())
                         || (relation.getPostId() != null && leaderPostIds.contains(relation.getPostId())))
                 .map(TenantMemberOrgRelationVO::getMemberId)
                 .distinct()

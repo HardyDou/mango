@@ -1,5 +1,6 @@
 package io.mango.identity.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.vo.PageResult;
@@ -46,6 +47,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "成员管理", description = "机构成员账号、状态、角色维护接口")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The service is an intentionally shared Spring collaborator")
 public class IdentityUserController implements IdentityUserApi {
 
     private final IIdentityUserService identityUserService;

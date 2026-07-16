@@ -20,7 +20,10 @@ public class SysConfigValueAdapter {
         }
         try {
             R<Boolean> result = api.getBooleanValue(key, defaultValue);
-            return result != null && result.isSuccess() && result.getData() != null ? result.getData() : defaultValue;
+            if (result != null && result.isSuccess() && result.getData() != null) {
+                return result.getData();
+            }
+            return defaultValue;
         } catch (RuntimeException ex) {
             return defaultValue;
         }
@@ -33,7 +36,10 @@ public class SysConfigValueAdapter {
         }
         try {
             R<Integer> result = api.getIntegerValue(key, defaultValue);
-            return result != null && result.isSuccess() && result.getData() != null ? result.getData() : defaultValue;
+            if (result != null && result.isSuccess() && result.getData() != null) {
+                return result.getData();
+            }
+            return defaultValue;
         } catch (RuntimeException ex) {
             return defaultValue;
         }
@@ -46,7 +52,10 @@ public class SysConfigValueAdapter {
         }
         try {
             R<String> result = api.getValue(key);
-            return result != null && result.isSuccess() && result.getData() != null ? result.getData() : defaultValue;
+            if (result != null && result.isSuccess() && result.getData() != null) {
+                return result.getData();
+            }
+            return defaultValue;
         } catch (RuntimeException ex) {
             return defaultValue;
         }

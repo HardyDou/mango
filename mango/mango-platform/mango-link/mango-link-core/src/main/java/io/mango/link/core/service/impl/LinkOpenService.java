@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-public class LinkOpenService extends LinkBaseService implements ILinkOpenService {
+public class LinkOpenService extends BaseLinkService implements ILinkOpenService {
 
     private static final String JUMP_ENABLED_CONFIG_KEY = "mango.link.open.jump.enabled";
     private static final String LEGACY_JUMP_ENABLED_CONFIG_KEY = "link.open.jump.enabled";

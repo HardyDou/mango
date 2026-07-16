@@ -1,5 +1,6 @@
 package io.mango.identity.core.adapter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.RoleBindingApi;
 import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
 import io.mango.authorization.api.command.SubjectRoleBindingCommand;
@@ -14,6 +15,8 @@ import java.util.List;
 /** 隔离授权域远程协议，为身份域提供角色绑定协作能力。 */
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "The API client is an intentionally shared Spring collaborator")
 public class AuthorizationRoleBindingAdapter {
 
     private final RoleBindingApi roleBindingApi;
@@ -24,7 +27,10 @@ public class AuthorizationRoleBindingAdapter {
 
     public Long findRoleId(RoleLookupQuery query) {
         R<Long> result = roleBindingApi.findRoleId(query);
-        return result != null && result.isSuccess() ? result.getData() : null;
+        if (result == null || !result.isSuccess()) {
+            return null;
+        }
+        return result.getData();
     }
 
     public void ensureSubjectRoleBinding(SubjectRoleBindingCommand command) {
@@ -33,6 +39,9 @@ public class AuthorizationRoleBindingAdapter {
 
     public List<Long> listSubjectIdsByRole(SubjectRoleBindingQuery query) {
         R<List<Long>> result = roleBindingApi.listSubjectIdsByRole(query);
-        return result != null && result.isSuccess() && result.getData() != null ? result.getData() : List.of();
+        if (result == null || !result.isSuccess() || result.getData() == null) {
+            return List.of();
+        }
+        return result.getData();
     }
 }

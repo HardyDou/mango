@@ -19,4 +19,19 @@ public class BatchDeleteIdentityUserCommand {
     @NotEmpty(message = "用户ID不能为空")
     @Schema(description = "用户ID列表")
     private List<@NotNull(message = "用户ID不能为空") Long> userIds;
+
+    public List<Long> getUserIds() {
+        if (userIds == null) {
+            return null;
+        }
+        return List.copyOf(userIds);
+    }
+
+    public void setUserIds(List<Long> userIds) {
+        if (userIds == null) {
+            this.userIds = null;
+            return;
+        }
+        this.userIds = List.copyOf(userIds);
+    }
 }

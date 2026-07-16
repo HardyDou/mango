@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-public class LinkUserService extends LinkBaseService implements ILinkUserService {
+public class LinkUserService extends BaseLinkService implements ILinkUserService {
 
     public LinkUserService(LinkCategoryMapper categoryMapper,
                            LinkItemMapper itemMapper,

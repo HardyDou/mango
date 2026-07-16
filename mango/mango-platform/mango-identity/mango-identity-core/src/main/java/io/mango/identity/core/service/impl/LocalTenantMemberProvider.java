@@ -122,9 +122,9 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
         relation.setMemberId(command.getMemberId());
         relation.setOrgId(command.getOrgId());
         relation.setPostId(command.getPostId());
-        relation.setPrimaryFlag(primary ? 1 : 0);
+        relation.setPrimaryFlag(booleanFlag(primary));
         if (command.getLeaderFlag() != null) {
-            relation.setLeaderFlag(Boolean.TRUE.equals(command.getLeaderFlag()) ? 1 : 0);
+            relation.setLeaderFlag(booleanFlag(Boolean.TRUE.equals(command.getLeaderFlag())));
         }
         relation.setCreatedBy(command.getOperatorUserId());
         relation.setUpdatedBy(command.getOperatorUserId());
@@ -153,8 +153,8 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
             tenantMemberMapper.updateById(member);
         }
         relation.setPostId(command.getPostId());
-        relation.setPrimaryFlag(primary ? 1 : 0);
-        relation.setLeaderFlag(Boolean.TRUE.equals(command.getLeaderFlag()) ? 1 : 0);
+        relation.setPrimaryFlag(booleanFlag(primary));
+        relation.setLeaderFlag(booleanFlag(Boolean.TRUE.equals(command.getLeaderFlag())));
         relation.setUpdatedBy(command.getOperatorUserId());
         tenantMemberOrgMapper.updateById(relation);
     }
@@ -178,8 +178,13 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
                         .orderByDesc(TenantMemberOrgEntity::getPrimaryFlag)
                         .orderByAsc(TenantMemberOrgEntity::getId)
                         .last("LIMIT 1"));
-        member.setPrimaryOrgId(next == null ? null : next.getOrgId());
-        member.setPrimaryPostId(next == null ? null : next.getPostId());
+        if (next == null) {
+            member.setPrimaryOrgId(null);
+            member.setPrimaryPostId(null);
+        } else {
+            member.setPrimaryOrgId(next.getOrgId());
+            member.setPrimaryPostId(next.getPostId());
+        }
         tenantMemberMapper.updateById(member);
         if (next != null && !Integer.valueOf(1).equals(next.getPrimaryFlag())) {
             next.setPrimaryFlag(1);
@@ -196,7 +201,10 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
                 .eq(TenantMemberOrgEntity::getTenantId, tenantId)
                 .eq(TenantMemberOrgEntity::getMemberId, memberId)
                 .ne(excludedRelationId != null, TenantMemberOrgEntity::getId, excludedRelationId));
-        return count == null ? 0 : count;
+        if (count == null) {
+            return 0;
+        }
+        return count;
     }
 
     @Override
@@ -208,6 +216,13 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
                 .stream()
                 .map(this::toInfo)
                 .toList();
+    }
+
+    private int booleanFlag(boolean value) {
+        if (value) {
+            return 1;
+        }
+        return 0;
     }
 
     private TenantMemberVO toInfo(TenantMemberEntity member) {

@@ -1,5 +1,6 @@
 package io.mango.authorization.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.enums.DataScopeMode;
 import io.mango.authorization.api.vo.EffectiveDataScopeVO;
@@ -25,6 +26,8 @@ import java.util.Optional;
  * 基于授权中心角色配置的数据权限提供者。
  */
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Injected services are intentionally shared Spring collaborators")
 public class AuthorizationDataScopeProvider implements DataScopeProvider {
 
     private final IRoleDataScopeService roleDataScopeService;

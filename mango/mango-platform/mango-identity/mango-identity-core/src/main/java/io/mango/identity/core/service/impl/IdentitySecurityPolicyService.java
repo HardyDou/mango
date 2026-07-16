@@ -1,5 +1,6 @@
 package io.mango.identity.core.service.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.identity.core.adapter.SysConfigValueAdapter;
 import io.mango.identity.core.service.IIdentitySecurityPolicyService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Injected configuration collaborators are intentionally shared Spring beans")
 public class IdentitySecurityPolicyService implements IIdentitySecurityPolicyService {
 
     private static final String PASSWORD_COMPLEXITY_ENABLED = "identity.security.password-complexity.enabled";
