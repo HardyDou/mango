@@ -8,6 +8,7 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
+import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.api.vo.OrgMemberVO;
@@ -64,10 +65,10 @@ public class SysOrgController implements SysOrgApi {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:query")
     @Operation(summary = "获取组织详情", description = "按组织ID查询组织详情")
-    public R<SysOrgVO> getById(
+    public R<SysOrg> getById(
             @Parameter(description = "组织ID", required = true)
             @RequestParam("id") Long id) {
-        return R.ok(orgService.detail(id));
+        return R.ok(SysOrg.from(orgService.detail(id)));
     }
 
     @Override

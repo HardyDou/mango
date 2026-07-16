@@ -5,6 +5,7 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
+import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.api.vo.OrgMemberVO;
@@ -36,7 +37,7 @@ public interface OrgFeignClient extends SysOrgApi {
 
     @Override
     @GetMapping("/detail")
-    R<SysOrgVO> getById(@RequestParam("id") Long id);
+    R<SysOrg> getById(@RequestParam("id") Long id);
 
     @Override
     @PostMapping

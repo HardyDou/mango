@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
+import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.home.api.command.BatchDeleteHomePagesCommand;
@@ -26,7 +27,6 @@ import io.mango.home.core.entity.HomeTemplateEntity;
 import io.mango.home.core.entity.HomeTemplateVersionEntity;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
-import io.mango.home.core.integration.HomeOrgGateway;
 import io.mango.home.core.mapper.HomeTemplateAuthorizationMapper;
 import io.mango.home.core.mapper.HomeTemplateMapper;
 import io.mango.home.core.mapper.HomeTemplateVersionMapper;
@@ -34,7 +34,8 @@ import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
 import io.mango.home.core.service.IHomePageService;
 import io.mango.infra.context.api.MangoContextHolder;
-import io.mango.org.api.vo.SysOrgVO;
+import io.mango.org.api.SysOrgApi;
+import io.mango.org.api.entity.SysOrg;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -64,7 +65,7 @@ public class HomePageService implements IHomePageService {
     private final HomeTemplateAuthorizationMapper templateAuthorizationMapper;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<IAuthorizationProvider> authorizationProvider;
-    private final HomeOrgGateway homeOrgGateway;
+    private final ObjectProvider<SysOrgApi> sysOrgApiProvider;
 
     @Override
     public List<HomePageVO> listMyPages() {
@@ -374,9 +375,14 @@ public class HomePageService implements IHomePageService {
             return orgIds;
         }
         orgIds.add(currentOrgId);
+        SysOrgApi sysOrgApi = sysOrgApiProvider.getIfAvailable();
+        if (sysOrgApi == null) {
+            return orgIds;
+        }
         Long cursor = currentOrgId;
         while (cursor != null && cursor > 0) {
-            SysOrgVO org = homeOrgGateway.findById(cursor);
+            R<SysOrg> response = sysOrgApi.getById(cursor);
+            SysOrg org = response == null ? null : response.getData();
             if (org == null || org.getPid() == null || org.getPid() <= 0 || orgIds.contains(org.getPid())) {
                 break;
             }

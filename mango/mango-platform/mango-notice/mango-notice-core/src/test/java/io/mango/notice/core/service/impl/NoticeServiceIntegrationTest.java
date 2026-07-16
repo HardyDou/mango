@@ -85,6 +85,7 @@ import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
+import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.vo.OrgMemberVO;
 import io.mango.org.api.vo.SysOrgVO;
 import io.mango.org.api.query.SysOrgTreeQuery;
@@ -1186,7 +1187,7 @@ class NoticeServiceIntegrationTest {
         }
 
         @Override
-        public R<SysOrgVO> getById(Long id) {
+        public R<SysOrg> getById(Long id) {
             return R.ok(null);
         }
 

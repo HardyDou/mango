@@ -14,11 +14,11 @@ import io.mango.home.core.mapper.HomeTemplateMapper;
 import io.mango.home.core.mapper.HomeTemplateVersionMapper;
 import io.mango.home.core.entity.UserHomePageEntity;
 import io.mango.home.core.entity.UserHomePreferenceEntity;
-import io.mango.home.core.integration.HomeOrgGateway;
 import io.mango.home.core.mapper.UserHomePageMapper;
 import io.mango.home.core.mapper.UserHomePreferenceMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.org.api.SysOrgApi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,14 +65,15 @@ class HomePageServiceTest {
     @Mock
     private ObjectProvider<IAuthorizationProvider> authorizationProvider;
 
-    private final HomeOrgGateway homeOrgGateway = mock(HomeOrgGateway.class);
+    @Mock
+    private ObjectProvider<SysOrgApi> sysOrgApiProvider;
 
     private HomePageService homePageService;
 
     @BeforeEach
     void setUp() {
         homePageService = new HomePageService(homePageMapper, preferenceMapper, templateMapper, templateVersionMapper,
-                templateAuthorizationMapper, new ObjectMapper(), authorizationProvider, homeOrgGateway);
+                templateAuthorizationMapper, new ObjectMapper(), authorizationProvider, sysOrgApiProvider);
         lenient().when(templateAuthorizationMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
