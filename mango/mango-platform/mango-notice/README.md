@@ -149,6 +149,8 @@ registerMangoNoticeAdminShell();
 
 `LOGIN` 只表示当前登录人可以操作自己的通知数据，不表示可以查看全租户通知任务或替其他用户管理配置。后台发送系统消息、维护渠道密钥、查看发送记录仍必须配置 `notice:*` 权限码。
 
+个人消息接口仍使用 `notice:site:view/edit` 和 `notice:receive-setting:view/edit` 做资源校验；接收设置为展示业务类型还需要只读的 `notice:business:view`。Notice 的菜单资源会把这些最小权限以及“我的消息”“公告”菜单绑定到内置 `ROLE_LOGIN`。授权中心会为每个已登录主体自动叠加该角色，业务项目不需要逐个角色重复授权。`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
+
 ## 5. 快速开始
 
 1. 部署通知中心应用，启用 `mango-notice-starter`、`mango-infra-kv` outbox 和需要的渠道模块。
@@ -614,7 +616,7 @@ notice:announcement:offline
 
 | 菜单 | 路径 | component key | 默认展示 |
 |------|------|---------------|----------|
-| 我的消息 | `/notice/site-message` | `notice/site-message/index` | 是 |
+| 我的消息 | `/message-center/site-message` | `notice/site-message/index` | 是 |
 | 公告管理 | `/notice/announcement` | `notice/announcement/index` | 是 |
 | 公告 | `/message-center/announcement` | `notice/announcement-user/index` | 是 |
 | 消息配置 | `/notice/message-definition` | `notice/message-definition/index` | 是 |

@@ -162,6 +162,26 @@ class IdentityUserServiceIntegrationTest {
     }
 
     @Test
+    @DisplayName("启动对账时为已有机构管理员恢复管理员角色")
+    void tenantProvisionBindsExistingInstitutionAdminWithoutSecurityContext() {
+        seedUser(1L, "admin", "Administrator", "1", 1);
+        jdbcTemplate.update("""
+                        insert into tenant_member
+                        (id, tenant_id, user_id, member_no, display_name, member_type, status, joined_at)
+                        values (1001, 1, 1, 'ADMIN-default', 'Administrator', 'INSTITUTION_ADMIN', 1, current_timestamp)
+                        """);
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        tenantProvisioner.provision(new TenantProvisionCommand(1L, "default", "芒果集团"));
+
+        assertThat(roleBindingApi.lastLookupQuery).isNotNull();
+        assertThat(roleBindingApi.lastLookupQuery.getRoleCode()).isEqualTo("ROLE_ADMIN");
+        assertThat(roleBindingApi.lastBindingCommand).isNotNull();
+        assertThat(roleBindingApi.lastBindingCommand.getSubjectId()).isEqualTo(1001L);
+        assertThat(roleBindingApi.lastBindingCommand.getRoleId()).isEqualTo(88L);
+    }
+
+    @Test
     @DisplayName("按部门目标解析当前租户启用用户")
     void listUserInfosByTargetOrgReturnsEnabledUsersThroughRealMappers() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));

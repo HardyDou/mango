@@ -35,6 +35,13 @@ type FilePreview = {
   directDownloadExpireSeconds?: number;
 };
 
+type FilePreviewLink = {
+  fileId: string | number;
+  previewUrl: string;
+  previewToken: string;
+  expireSeconds: number;
+};
+
 type FileSettings = {
   accessMode?: string;
   accessTokenEnabled?: boolean;
@@ -138,6 +145,37 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
       expectRuntimeUrl(preview.downloadUrl, '预览响应 downloadUrl');
       expectRuntimeUrl(preview.directPreviewUrl, '预览响应 directPreviewUrl');
       expectRuntimeUrl(preview.directDownloadUrl, '预览响应 directDownloadUrl');
+
+      const previewContentResponse = await request.get(
+        api(`/file/files/preview-content?id=${encodeURIComponent(String(uploaded.id))}`),
+        { headers: authHeaders(ordinaryToken) },
+      );
+      expect(previewContentResponse.status()).toBe(200);
+      expect(await previewContentResponse.text()).toBe(`file access baseline ${unique}`);
+
+      const previewLink = await expectBusinessOk<FilePreviewLink>(
+        await request.get(api(`/file-preview/files/preview-link?fileId=${encodeURIComponent(String(uploaded.id))}`), {
+          headers: authHeaders(ordinaryToken),
+        }),
+        '普通登录用户创建统一文件预览链接失败',
+      );
+      expect(String(previewLink.fileId)).toBe(String(uploaded.id));
+      expect(previewLink.previewUrl).toContain('/file-preview/files/preview-entry?token=');
+      expect(previewLink.previewToken).toBeTruthy();
+      expect(Number(previewLink.expireSeconds)).toBeGreaterThan(0);
+
+      const previewPageResponse = await request.get(
+        new URL(previewLink.previewUrl, 'http://127.0.0.1:30003').toString(),
+      );
+      expect(previewPageResponse.status()).toBe(200);
+      expect(previewPageResponse.headers()['content-type']).toContain('text/html');
+
+      const anonymousPreviewRequest = await playwright.request.newContext();
+      await expectDenied(
+        anonymousPreviewRequest.get(api(`/file-preview/files/preview-link?fileId=${encodeURIComponent(String(uploaded.id))}`)),
+        '匿名用户不能创建统一文件预览链接',
+      );
+      await anonymousPreviewRequest.dispose();
 
       const downloadResponse = await request.get(api(`/file/files/download?id=${encodeURIComponent(String(uploaded.id))}`), {
         headers: authHeaders(ordinaryToken),

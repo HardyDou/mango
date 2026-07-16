@@ -221,3 +221,5 @@ pnpm -F @mango/admin-shell build
 - Resource 历史债务治理仅迁移进程内资源 SPI 的包和依赖边界，不改变 `permissionCode`、API 资源扫描、角色按钮授权、接口鉴权、租户隔离、按钮展示逻辑和本场景排障步骤。
 
 - File Preview 历史债务治理在文件菜单资源中登记既有 `file:files:download` 权限码，并保持文件管理页既定的登录态与后端访问校验策略；不改变角色按钮授权关系、权限聚合、接口鉴权、租户隔离、按钮展示逻辑和本场景排障步骤。
+
+- Issue #553 只把个人消息、接收设置及其业务类型只读权限绑定到内置 `ROLE_LOGIN`，并保持 Realtime 客户端入口为 `LOGIN`；不改变按钮 `permissionCode`、按钮展示规则或通知管理写权限。按钮显示异常仍按本指南检查显式业务角色和登录态权限集合。

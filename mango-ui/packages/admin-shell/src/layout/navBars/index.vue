@@ -92,6 +92,7 @@ import { useRoutesList } from '../../stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, Close } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 import { Session } from '@mango/common/utils/storage';
 import { hasPermission } from '@mango/common/utils/authFunction';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
@@ -99,7 +100,7 @@ import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
 import { getMangoNoticeBellProvider } from '@mango/admin-pages/notice';
 import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
 import { getMangoAdminShellOptions } from '../../config';
-import { resolveAccessibleMenuPath, type ShellRouteMenu } from '../../runtime/menuHost';
+import { resolveAccessibleMenuPath, resolveMenuPathByCode, type ShellRouteMenu } from '../../runtime/menuHost';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -167,11 +168,24 @@ const onTopMenuClick = (item: ShellRouteMenu) => {
 };
 
 const goNoticeMessages = () => {
-  router.push({ name: 'notice:site-message' });
+  navigateToNoticeMenu('notice:site-message', '当前账号无权访问我的消息，或消息菜单尚未配置');
 };
 
 const goNoticeReceiveSetting = () => {
-  router.push({ name: 'notice:receive-setting' });
+  if (!hasPermission('notice:receive-setting:view')) {
+    ElMessage.warning('当前账号无权访问接收设置');
+    return;
+  }
+  navigateToNoticeMenu('notice:receive-setting', '当前账号无权访问接收设置，或接收设置页面尚未配置');
+};
+
+const navigateToNoticeMenu = (menuCode: string, unavailableMessage: string) => {
+  const targetPath = resolveMenuPathByCode(routesList.value as ShellRouteMenu[], menuCode);
+  if (!targetPath) {
+    ElMessage.warning(unavailableMessage);
+    return;
+  }
+  void router.push(targetPath);
 };
 
 async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {

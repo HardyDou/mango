@@ -24,6 +24,7 @@
 | 操作日志 | 查询、清理操作日志 | `SysOperationLogApi`、`/system/log/operation/*`、`operationLogApi` |
 | 个人参数配置 | 按当前租户、当前用户保存页面偏好、筛选条件、提醒配置等个人配置 | `PersonalConfigApi`、`/system/personal-configs` |
 | 机构初始化扩展 | 新建机构后触发各模块写入默认数据，删除机构前汇总依赖阻断原因 | `TenantProvisioner`、`TenantDependencyChecker`、`TenantPackageBindingHandler` |
+| 机构基线对账 | Resource Registry 启动同步完成后，对所有启用机构重放幂等初始化和套餐绑定，补齐资源创建机构的默认角色与模块基线 | `TenantProvisioningReconciliationRunner` |
 
 ## 3. 后端接入
 
@@ -109,6 +110,7 @@ import '@mango/system/style.css';
 5. 管理后台接入 `@mango/system` 页面或 API 封装，并在菜单资源中绑定对应页面和权限码。
 6. 新建机构时必须选择 `packageId`，系统会触发机构初始化扩展点，并把机构绑定到套餐。
 7. 平台默认菜单和按钮权限来自 `system-common-menu.json` 的 `AUTH_MENU` 声明，不再通过 Flyway 菜单 DML 初始化。
+8. 应用启动时会在 Resource Registry 同步后对启用机构执行一次幂等基线对账；扩展点实现必须可安全重复执行。
 
 ## 6. 配置说明
 
@@ -373,6 +375,8 @@ module-path=/system
 ```
 
 机构初始化发生在新增机构接口成功写入 `sys_tenant` 后。系统模块会设置当前机构上下文，然后调用所有已注册的 `TenantProvisioner`；删除机构前会调用所有 `TenantDependencyChecker`，任一模块返回阻断原因都会禁止删除。
+
+应用启动且 Resource Registry 完成正式资源同步后，`TenantProvisioningReconciliationRunner` 会遍历启用机构，幂等重放 `TenantProvisioner` 和 `TenantPackageBindingHandler`，用于补齐资源创建机构或存量机构缺少的模块基线；扩展实现不得依赖仅执行一次。
 
 ## 10. 管理入口
 

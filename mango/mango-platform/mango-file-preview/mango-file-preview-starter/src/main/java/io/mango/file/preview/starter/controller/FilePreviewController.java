@@ -30,8 +30,8 @@ public class FilePreviewController implements FilePreviewApi {
 
     @Override
     @GetMapping("/files/preview-link")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
-    @Operation(summary = "创建文件预览链接", description = "权限接口。按文件ID创建当前租户可见文件的在线预览页面地址")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
+    @Operation(summary = "创建文件预览链接", description = "登录接口。按文件ID创建当前租户可见文件的在线预览页面地址")
     public R<FilePreviewLinkVO> preview(
             @Parameter(description = "文件ID", required = true)
             @RequestParam("fileId") Long fileId) {

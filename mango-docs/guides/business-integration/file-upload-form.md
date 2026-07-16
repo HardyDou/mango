@@ -192,6 +192,8 @@ pnpm -F @mango/file test
 
 ## 12. 变更影响记录
 
+- Issue #553 将 `/file-preview/files/preview-link` 和 `/file-preview/files/preview` 与现有文件上传、详情、预览内容和下载基线对齐为登录可用，业务表单无需再为统一预览链接配置 `file:files:download` 角色权限。链接生成仍先按当前租户查找文件，匿名请求不能生成预览 token；文件列表、归档、删除、目录和管理配置权限不变。前端 `/api` 仍只是代理路径标识，后端实际路径不带 `/api`。
+
 - PR #454 将后端错误码类型的 Java 导入路径从 `io.mango.file.api.FileCode` 调整为
   `io.mango.file.api.enums.FileCode`；业务后端如直接引用错误码需更新 import。错误码数值和消息、文件上传与去重
   行为、HTTP/API 契约、fileId/fileIds 持久化、权限、租户、页面入口、启动方式及本场景验收步骤不变，不提供旧包

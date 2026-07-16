@@ -1,14 +1,20 @@
 package io.mango.notice.starter;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class NoticeResourceDeclarationContractTest {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void formalDeclarationsBelongToNoticeAndContainOnlyFormalResources() throws IOException {
@@ -35,6 +41,57 @@ class NoticeResourceDeclarationContractTest {
                 .doesNotContain("notice_send_record")
                 .doesNotContain("notice_site_message")
                 .doesNotContain("notice_announcement_recipient");
+    }
+
+    @Test
+    void loginRoleReceivesPersonalNoticeMenusAndPermissions() throws IOException {
+        JsonNode declaration = objectMapper.readTree(
+                resourceText("META-INF/mango/resources/notice-common-menu.json"));
+
+        JsonNode loginBasic = findMenu(declaration, "notice:basic-login");
+        assertThat(loginBasic).isNotNull();
+        assertThat(stringValues(loginBasic.get("roleCodes"))).containsExactly("ROLE_LOGIN");
+        assertThat(stringValues(loginBasic.get("apiCodes"))).containsExactlyInAnyOrder(
+                "notice:site:view",
+                "notice:site:edit",
+                "notice:business:view",
+                "notice:receive-setting:view",
+                "notice:receive-setting:edit");
+
+        JsonNode siteMessages = findMenu(declaration, "notice:site-message");
+        assertThat(siteMessages).isNotNull();
+        assertThat(stringValues(siteMessages.get("roleCodes"))).containsExactly("ROLE_LOGIN");
+        assertThat(stringValues(siteMessages.get("apiCodes"))).containsExactlyInAnyOrder(
+                "notice:site:view", "notice:site:edit");
+
+        JsonNode announcements = findMenu(declaration, "notice:announcement-user");
+        assertThat(announcements).isNotNull();
+        assertThat(stringValues(announcements.get("roleCodes"))).containsExactly("ROLE_LOGIN");
+        assertThat(stringValues(announcements.get("apiCodes"))).containsExactlyInAnyOrder(
+                "notice:site:view", "notice:site:edit");
+        assertThat(declaration.toString()).doesNotContain("ROLE_ANONYMOUS");
+    }
+
+    private JsonNode findMenu(JsonNode node, String menuCode) {
+        if (node.isObject() && menuCode.equals(node.path("menuCode").asText())) {
+            return node;
+        }
+        for (JsonNode child : node) {
+            JsonNode match = findMenu(child, menuCode);
+            if (match != null) {
+                return match;
+            }
+        }
+        return null;
+    }
+
+    private List<String> stringValues(JsonNode node) {
+        if (node == null || !node.isArray()) {
+            return List.of();
+        }
+        return StreamSupport.stream(node.spliterator(), false)
+                .map(JsonNode::asText)
+                .toList();
     }
 
     private String resourceText(String path) throws IOException {

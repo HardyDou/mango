@@ -8,6 +8,8 @@ import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.ITenantAppBindingService;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
@@ -16,6 +18,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,6 +35,11 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
     public static final String DEFAULT_REALM = "INTERNAL";
     public static final String DEFAULT_ACTOR_TYPE = "INTERNAL_USER";
     public static final String TENANT_ADMIN_ROLE = "ROLE_ADMIN";
+    public static final String LOGIN_ROLE = "ROLE_LOGIN";
+    public static final String ANONYMOUS_ROLE = "ROLE_ANONYMOUS";
+    private static final Long PLATFORM_TENANT_ID = 1L;
+    private static final int LOGIN_ROLE_SORT = 2;
+    private static final int ANONYMOUS_ROLE_SORT = 3;
     private static final Set<Long> TENANT_ADMIN_DEFAULT_MENU_IDS = Set.of(
             1L, 2L, 3L, 8L, 9L, 10L, 15L, 17L, 18L, 20L,
             1500L, 1501L, 1502L, 1503L, 1504L,
@@ -48,8 +57,14 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
     @Override
     public void provision(TenantProvisionCommand context) {
         tenantAppBindingService.ensureEnabled(context.getTenantId(), DEFAULT_APP_CODE);
-        RoleEntity role = ensureAdminRole(context);
-        grantTenantAdminDefaultMenus(context.getTenantId(), role.getRoleId());
+        RoleEntity adminRole = ensureAdminRole(context);
+        RoleEntity loginRole = ensureBuiltInRole(context, LOGIN_ROLE, "登录用户", LOGIN_ROLE_SORT,
+                "所有已登录用户自动获得的内置默认角色");
+        RoleEntity anonymousRole = ensureBuiltInRole(context, ANONYMOUS_ROLE, "匿名用户", ANONYMOUS_ROLE_SORT,
+                "未登录访问主体自动获得的内置默认角色");
+        grantTenantAdminDefaultMenus(context.getTenantId(), adminRole.getRoleId());
+        grantTemplateRoleMenus(context.getTenantId(), loginRole);
+        grantTemplateRoleMenus(context.getTenantId(), anonymousRole);
     }
 
     @Override
@@ -91,6 +106,64 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
         role.setUpdateTime(LocalDateTime.now());
         roleMapper.insert(role);
         return role;
+    }
+
+    private RoleEntity ensureBuiltInRole(TenantProvisionCommand context, String roleCode,
+                                         String roleName, int sort, String remark) {
+        RoleEntity role = roleMapper.selectOne(new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, context.getTenantId())
+                .eq(RoleEntity::getAppCode, DEFAULT_APP_CODE)
+                .eq(RoleEntity::getRoleCode, roleCode)
+                .last("LIMIT 1"));
+        if (role != null) {
+            return role;
+        }
+        role = new RoleEntity();
+        role.setTenantId(context.getTenantId());
+        role.setAppCode(DEFAULT_APP_CODE);
+        role.setRealm(DEFAULT_REALM);
+        role.setActorType(DEFAULT_ACTOR_TYPE);
+        role.setRoleCode(roleCode);
+        role.setRoleName(roleName);
+        role.setRoleType(1);
+        role.setStatus(1);
+        role.setSort(sort);
+        role.setRemark(context.getTenantName() + " " + remark);
+        role.setCreateTime(LocalDateTime.now());
+        role.setUpdateTime(LocalDateTime.now());
+        roleMapper.insert(role);
+        return role;
+    }
+
+    private void grantTemplateRoleMenus(Long tenantId, RoleEntity role) {
+        if (PLATFORM_TENANT_ID.equals(tenantId)) {
+            return;
+        }
+        templateRoleMenuIds(role.getRoleCode())
+                .forEach(menuId -> ensureRoleMenu(tenantId, role.getRoleId(), menuId));
+    }
+
+    private Set<Long> templateRoleMenuIds(String roleCode) {
+        MangoContextSnapshot original = MangoContextHolder.get();
+        MangoContextHolder.set(original.withTenantId(String.valueOf(PLATFORM_TENANT_ID)));
+        try {
+            RoleEntity templateRole = roleMapper.selectOne(new LambdaQueryWrapper<RoleEntity>()
+                    .eq(RoleEntity::getTenantId, PLATFORM_TENANT_ID)
+                    .eq(RoleEntity::getAppCode, DEFAULT_APP_CODE)
+                    .eq(RoleEntity::getRoleCode, roleCode)
+                    .last("LIMIT 1"));
+            if (templateRole == null) {
+                return Set.of();
+            }
+            List<RoleMenuEntity> bindings = roleMenuMapper.selectList(new LambdaQueryWrapper<RoleMenuEntity>()
+                    .eq(RoleMenuEntity::getTenantId, PLATFORM_TENANT_ID)
+                    .eq(RoleMenuEntity::getRoleId, templateRole.getRoleId()));
+            return bindings.stream()
+                    .map(RoleMenuEntity::getMenuId)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        } finally {
+            MangoContextHolder.set(original);
+        }
     }
 
     private void grantTenantAdminDefaultMenus(Long tenantId, Long roleId) {

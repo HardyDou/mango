@@ -506,6 +506,46 @@ export function resolveAccessibleMenuPath(menu?: ShellRouteMenu): string {
   return target?.path || '';
 }
 
+export function resolveMenuPathByCode(menus: ShellRouteMenu[], menuCode: string): string {
+  const normalizedCode = menuCode.trim();
+  if (!normalizedCode) {
+    return '';
+  }
+  const target = findMenuByCode(menus, normalizedCode);
+  if (!target) {
+    return getRegisteredPageRoutes()
+      .find(route => route.menuCode === normalizedCode)?.path || '';
+  }
+  if (target.sourceMenu && isExplicitlyNavigableMenu(target)) {
+    return target.path;
+  }
+  return resolveAccessibleMenuPath(target);
+}
+
+function findMenuByCode(menus: ShellRouteMenu[], menuCode: string): ShellRouteMenu | undefined {
+  for (const menu of menus) {
+    if (menu.sourceMenu?.menuCode === menuCode || (typeof menu.name === 'string' && menu.name === menuCode)) {
+      return menu;
+    }
+    const child = findMenuByCode((menu.children || []) as ShellRouteMenu[], menuCode);
+    if (child) {
+      return child;
+    }
+  }
+  return undefined;
+}
+
+function isExplicitlyNavigableMenu(menu: ShellRouteMenu): boolean {
+  const source = menu.sourceMenu;
+  if (source.menuType !== MenuTypeEnum.MENU || !menu.path) {
+    return false;
+  }
+  if (source.pageType === 'IFRAME' || source.pageType === 'EXTERNAL_LINK') {
+    return Boolean(source.externalUrl);
+  }
+  return Boolean(source.component);
+}
+
 function resolveAccessibleMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefined {
   if (!menu) {
     return undefined;

@@ -25,6 +25,15 @@ export function registerMangoNoticeAdminPages() {
       'notice/receive-setting/index': () => import('./admin').then(m => m.NoticeReceiveSettingView),
       'notice/retry/index': () => import('./admin').then(m => m.NoticeRetryView),
     },
+    routes: [
+      {
+        path: '/notice/receive-setting',
+        component: 'notice/receive-setting/index',
+        menuName: '接收设置',
+        menuCode: 'notice:receive-setting',
+        visible: 0,
+      },
+    ],
   });
 
   return {

@@ -181,6 +181,8 @@ token 行为：
 
 `file:files:download` 只允许进入签发流程，不表示可以预览任意文件。签发 token 前会调用 `FileApi.get(fileId)`，源文件读取时会恢复签发时的 `MangoContextSnapshot` 并通过文件中心服务契约读取文件流。文件是否属于当前租户、是否归档或删除，仍由 `mango-file` 判定。
 
+`/file-preview/files/preview-link` 和 `/file-preview/files/preview` 的 Controller 与契约测试固定使用 `LOGIN`，不得退回 `file:files:download` 管理权限；匿名主体仍不能用任意 `fileId` 签发预览入口。
+
 ## 11. 数据与初始化
 
 本模块没有独立业务表和 Flyway migration。

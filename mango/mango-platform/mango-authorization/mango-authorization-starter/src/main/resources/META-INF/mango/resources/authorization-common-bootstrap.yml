@@ -25,6 +25,39 @@ mango:
                   defaultFlag: 1
                   status: 1
                   sort: 0
+      AUTH_ROLE:
+        - id: "2026071609000000021"
+          version: 1
+          biz-key: authorization.role.default.login
+          name: 登录用户内置角色
+          target-module: authorization
+          fields:
+            tenantId: { type: LONG, value: 1 }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            roleCode: { type: STRING, value: ROLE_LOGIN }
+            roleName: { type: STRING, value: 登录用户 }
+            roleType: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 2 }
+            remark: { type: STRING, value: 所有已登录用户自动获得的内置默认角色 }
+        - id: "2026071609000000022"
+          version: 1
+          biz-key: authorization.role.default.anonymous
+          name: 匿名用户内置角色
+          target-module: authorization
+          fields:
+            tenantId: { type: LONG, value: 1 }
+            appCode: { type: STRING, value: internal-admin }
+            realm: { type: STRING, value: INTERNAL }
+            actorType: { type: STRING, value: INTERNAL_USER }
+            roleCode: { type: STRING, value: ROLE_ANONYMOUS }
+            roleName: { type: STRING, value: 匿名用户 }
+            roleType: { type: INT, value: 1 }
+            status: { type: INT, value: 1 }
+            sort: { type: INT, value: 3 }
+            remark: { type: STRING, value: 未登录访问主体自动获得的内置默认角色 }
       AUTH_MENU_PACKAGE:
         - id: "2026071509000000011"
           version: 1

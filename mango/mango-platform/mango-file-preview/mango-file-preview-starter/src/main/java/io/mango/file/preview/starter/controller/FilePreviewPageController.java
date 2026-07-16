@@ -30,8 +30,8 @@ public class FilePreviewPageController {
     private final IFilePreviewService filePreviewService;
 
     @GetMapping("/files/preview")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
-    @Operation(summary = "跳转文件预览页", description = "权限接口。按文件ID跳转到当前租户可见文件的在线预览页面")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
+    @Operation(summary = "跳转文件预览页", description = "登录接口。按文件ID跳转到当前租户可见文件的在线预览页面")
     public ModelAndView redirectPreview(
             @Parameter(description = "文件ID", required = true)
             @RequestParam("fileId") @NotNull(message = "文件ID不能为空") Long fileId) {
