@@ -22,6 +22,7 @@
   --mango-text-color-disabled: #c0c4cc;
   --mango-color-top-bar: #ffffff;
   --mango-color-menu-bar: #505968;
+  --mango-color-columns-menu-bar: #e6e6e6;
   --mango-color-menu-active-bg: rgba(46, 92, 246, 0.1);
   --mango-color-menu-hover: rgba(0, 0, 0, 0.06);
   --mango-layout-bg: #f5f5f5;
@@ -78,6 +79,7 @@
   --mango-bg-columns-menu-bar: #2f3845;
   --mango-bg-menuBar-light-1: #243038;
   --mango-color-menu-bar: #e6e6e6;
+  --mango-color-columns-menu-bar: #e6e6e6;
   --mango-color-menu-active-bg: rgba(59, 110, 246, 0.15);
   --mango-color-menu-hover: rgba(255, 255, 255, 0.06);
   --mango-bg-top-bar: #1e2732;

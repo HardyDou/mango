@@ -15,6 +15,17 @@ export interface ThemeState {
   isColumnsMenuBarColorGradual: boolean;
 }
 
+const themeColorVars: Array<[string, keyof ThemeState]> = [
+  ['--mango-color-primary', 'primary'],
+  ['--mango-bg-top-bar', 'topBar'],
+  ['--mango-color-top-bar', 'topBarColor'],
+  ['--mango-bg-menu-bar', 'menuBar'],
+  ['--mango-color-menu-bar', 'menuBarColor'],
+  ['--mango-color-menu-active-bg', 'menuBarActiveColor'],
+  ['--mango-bg-columns-menu-bar', 'columnsMenuBar'],
+  ['--mango-color-columns-menu-bar', 'columnsMenuBarColor'],
+];
+
 /**
  * 同步主题状态到 CSS 变量
  * 当状态变化时，确保 DOM 与状态同步
@@ -22,16 +33,14 @@ export interface ThemeState {
 function syncThemeToDOM(state: ThemeState) {
   if (state.isDark) {
     document.documentElement.setAttribute('data-theme', 'dark');
-    document.documentElement.style.removeProperty('--mango-color-primary');
-    document.documentElement.style.removeProperty('--mango-bg-top-bar');
-    document.documentElement.style.removeProperty('--mango-bg-menu-bar');
-    document.documentElement.style.removeProperty('--mango-bg-columns-menu-bar');
+    themeColorVars.forEach(([name]) => {
+      document.documentElement.style.removeProperty(name);
+    });
   } else {
     document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.style.setProperty('--mango-color-primary', state.primary);
-    document.documentElement.style.setProperty('--mango-bg-top-bar', state.topBar);
-    document.documentElement.style.setProperty('--mango-bg-menu-bar', state.menuBar);
-    document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', state.columnsMenuBar);
+    themeColorVars.forEach(([name, key]) => {
+      document.documentElement.style.setProperty(name, String(state[key]));
+    });
   }
 }
 
@@ -63,13 +72,29 @@ export const useThemeStore = defineStore('theme', {
       this.topBar = color;
       document.documentElement.style.setProperty('--mango-bg-top-bar', color);
     },
+    setTopBarColor(color: string) {
+      this.topBarColor = color;
+      document.documentElement.style.setProperty('--mango-color-top-bar', color);
+    },
     setMenuBar(color: string) {
       this.menuBar = color;
       document.documentElement.style.setProperty('--mango-bg-menu-bar', color);
     },
+    setMenuBarColor(color: string) {
+      this.menuBarColor = color;
+      document.documentElement.style.setProperty('--mango-color-menu-bar', color);
+    },
+    setMenuBarActiveColor(color: string) {
+      this.menuBarActiveColor = color;
+      document.documentElement.style.setProperty('--mango-color-menu-active-bg', color);
+    },
     setColumnsMenuBar(color: string) {
       this.columnsMenuBar = color;
       document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', color);
+    },
+    setColumnsMenuBarColor(color: string) {
+      this.columnsMenuBarColor = color;
+      document.documentElement.style.setProperty('--mango-color-columns-menu-bar', color);
     },
   },
   persist: false,
