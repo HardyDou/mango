@@ -7,15 +7,15 @@
             <Class name="io.mango.resource.core.service.impl.ResourceAdminService"/>
             <Class name="io.mango.resource.core.service.impl.ResourceRegistryService"/>
             <Class name="io.mango.resource.core.sync.ResourceContentHasher"/>
-            <Class name="io.mango.resource.core.target.service.impl.ResourceTargetService"/>
             <Class name="io.mango.resource.starter.controller.ResourceAdminController"/>
-            <Class name="io.mango.resource.starter.controller.ResourceRegistryController"/>
+            <Class name="io.mango.resource.starter.controller.ResourceDeclarationController"/>
             <Class name="io.mango.resource.starter.remote.RemoteResourceTargetDispatcher"/>
             <Class name="io.mango.resource.starter.remote.ResourceTargetHttpClient"/>
             <Class name="io.mango.resource.support.declaration.FileResourceProvider"/>
             <Class name="io.mango.resource.support.declaration.ResourceDeclarationLoader"/>
+            <Class name="io.mango.resource.support.execution.DefaultResourceTargetExecutor"/>
             <Class name="io.mango.resource.sync.starter.ResourceSyncRunner"/>
-            <Class name="io.mango.resource.target.starter.controller.ResourceTargetController"/>
+            <Class name="io.mango.resource.sync.starter.controller.ResourceTargetController"/>
         </Or>
     </Match>
     <!-- ConfigurationProperties 的嵌套配置对象由 Spring Binder 原位绑定。 -->

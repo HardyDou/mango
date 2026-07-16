@@ -1,5 +1,6 @@
 package io.mango.authorization.starter.autoconfigure;
 
+import io.mango.infra.web.api.InternalCallAttributes;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,23 @@ class SecurityAutoConfigurationTest {
     @DisplayName("unconfigured path should require authentication")
     void unconfiguredPathShouldRequireAuthentication() throws Exception {
         mockMvc.perform(get("/authorization/roles"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("verified internal request should be permitted")
+    void verifiedInternalRequestShouldBePermitted() throws Exception {
+        mockMvc.perform(get("/authorization/roles")
+                        .requestAttr(InternalCallAttributes.VERIFIED, Boolean.TRUE))
+                .andExpect(status().isOk())
+                .andExpect(content().string("roles"));
+    }
+
+    @Test
+    @DisplayName("unverified internal header should not bypass authentication")
+    void unverifiedInternalHeaderShouldNotBypassAuthentication() throws Exception {
+        mockMvc.perform(get("/authorization/roles")
+                        .header("X-Internal-Call", "true"))
                 .andExpect(status().isUnauthorized());
     }
 

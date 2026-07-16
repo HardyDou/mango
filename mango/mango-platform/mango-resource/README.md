@@ -27,13 +27,11 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | 模块 | 职责 |
 |------|------|
 | `mango-resource-api` | 严格 HTTP 契约，包含注册、管理、目标执行 API 及 Command/Query/VO/错误码；不承载本地动态 SPI。 |
-| `mango-resource-support` | 本地 Java SPI 和声明模型，包含 `ResourceProvider`、`ResourceHandler`、声明文件加载、采集和配置绑定。 |
+| `mango-resource-support` | Resource 专属 common，包含 `ResourceProvider`、`ResourceHandler`、声明文件加载、采集、配置绑定和纯 Java 目标执行器；不访问数据库、不暴露 HTTP。 |
 | `mango-resource-core` | 本地注册中心核心逻辑，负责同步编排、hash 比对、锁、注册表、同步日志和变更日志。 |
 | `mango-resource-starter` | 本地资源注册中心 starter，装配 core、Mapper 和 `/resource/**` 管理接口。 |
-| `mango-resource-target-core` | 目标资源本地执行核心，按资源类型调度本应用的 `ResourceHandler`。 |
-| `mango-resource-target-starter` | 目标端 HTTP 入口，提供 `/resource/targets/**` 内部接口。 |
-| `mango-resource-sync-starter` | 资源声明扫描和上报 runner，汇总文件声明和 Java Provider 后调用 `ResourceRegistryApi`。 |
-| `mango-resource-starter-remote` | 微服务远程客户端适配，提供注册上报 Feign 实现和动态目标地址客户端；不承载服务端 Controller。 |
+| `mango-resource-sync-starter` | 资源声明扫描和上报 runner，并提供 `/resource/targets/**` 目标执行入口；汇总文件声明和 Java Provider 后调用 `ResourceDeclarationApi`。 |
+| `mango-resource-starter-remote` | 微服务远程客户端适配，提供注册上报 Feign 实现和动态目标地址客户端。 |
 
 ## 3. 功能清单
 
@@ -84,13 +82,9 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
     <groupId>io.mango.platform.resource</groupId>
     <artifactId>mango-resource-sync-starter</artifactId>
 </dependency>
-<dependency>
-    <groupId>io.mango.platform.resource</groupId>
-    <artifactId>mango-resource-target-starter</artifactId>
-</dependency>
 ```
 
-普通业务模块和公共能力模块不得依赖 `mango-resource-core`、`mango-resource-target-core` 或部署 starter；它们通过 `mango-resource-support` 声明 Provider/Handler，最终应用按拓扑选择 starter。
+普通业务模块和公共能力模块不得依赖 `mango-resource-core` 或部署 starter；它们通过 `mango-resource-support` 声明 Provider/Handler，最终应用按拓扑选择 starter。
 
 ### 4.1 业务部署拓扑
 
@@ -99,8 +93,8 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | 官方单体 | `mango-admin-starter` | 已包含本地 Resource Registry runtime 和声明同步入口。 |
 | 自定义单体 | `mango-resource-starter` + `mango-resource-sync-starter` | 同一 JVM 内采集声明、写 registry、调用本地 handler。 |
 | Resource 能力服务 | `mango-resource-starter` + `mango-resource-starter-remote` | 作为远程注册中心，并通过动态目标客户端向其它能力服务分发。 |
-| 普通微服务或能力 app | `mango-resource-starter-remote` + `mango-resource-sync-starter` + `mango-resource-target-starter` | 采集本服务声明并远程上报，同时为本服务 Handler 提供目标执行入口。 |
-| 仅目标资源服务 | 本模块业务 starter + `mango-resource-target-starter` | 消费跨服务分发的目标资源批次，不承担注册上报。 |
+| 普通微服务或能力 app | `mango-resource-starter-remote` + `mango-resource-sync-starter` | 采集本服务声明并远程上报，同时为本服务 Handler 提供目标执行入口。 |
+| 仅目标资源服务 | 本模块业务 starter + `mango-resource-sync-starter` | 消费跨服务分发的目标资源批次；可通过配置关闭声明上报。 |
 
 业务 `core`、`support`、普通 starter 模块只声明资源或实现 handler，不直接选择部署拓扑。是否本地同步或远程上报由最终 app 决定。
 
@@ -120,8 +114,11 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 | `remote.enabled` | `true` | `mango-resource-sync-starter` 是否向注册中心上报声明。 |
 | `remote.app-code` | 空 | 远程上报应用编码，空时取 `spring.application.name`。 |
 | `remote.service-code` | 空 | 远程上报服务编码，空时取 `spring.application.name`。 |
+| `remote.retry-interval` | `10s` | 远程上报失败或注册中心返回“未完成”时的重试间隔；首次完整成功后停止重试。 |
 
 本地注册中心应用必须提供 `mango-infra-kv` 的 `ILocker` 实现。Mango 单体和平台服务默认通过 `mango-infra-kv-starter` 提供 JDBC 或内存 KV 能力。
+
+微服务允许来源服务、Resource 注册中心和被依赖资源所属服务乱序启动。远程失败、父资源尚未注册或注册中心锁竞争时，本次同步返回未完成并由来源服务重试；注册中心不得在未取得锁、实际未处理声明时返回成功。该机制只保证启动阶段最终收敛，不吞掉声明校验或 Handler 业务错误。
 
 ## 6. API 与扩展
 
@@ -131,7 +128,8 @@ Resource 不执行 SQL 文件，不做 Data Package/task 编排，不负责在�
 |------|------|
 | `ResourceProvider` | Java 代码提供资源声明。 |
 | `ResourceHandler` | 目标模块消费资源声明并落库。 |
-| `ResourceRegistryApi` | 本地或远程注册资源声明。 |
+| `ResourceTargetExecutor` | 在当前 JVM 中按资源类型调度 `ResourceHandler`；自身不访问数据库。 |
+| `ResourceDeclarationApi` | 本地或远程注册资源声明。 |
 | `ResourceHandlerSpec` | 暴露资源处理器字段契约，供后台和文档查看。 |
 
 `ResourceHandler` 可以通过 `dependsOnResourceTypes()` 声明当前资源类型在同一同步批次内依赖的其它资源类型。

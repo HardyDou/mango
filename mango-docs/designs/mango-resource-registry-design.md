@@ -53,12 +53,12 @@ mango-resource
 
 | 子模块 | 职责 |
 |---|---|
-| `mango-resource-api` | 定义 `ResourceProvider`、`ResourceHandler`、`ResourceDeclaration`、`ResourceType`、`ResourceSpec`、`ResourceRegistryApi` 等契约。 |
+| `mango-resource-api` | 定义资源声明 HTTP 契约、协议模型和错误码；动态 Provider/Handler SPI 位于 support。 |
 | `mango-resource-support` | 提供声明文件加载、声明采集、配置绑定等本域共享实现，供 `core` 和同步 starter 复用。 |
 | `mango-resource-core` | 负责资源比对、覆盖控制、同步编排、锁、日志、变更记录和持久化。 |
 | `mango-resource-starter` | 平台本地实现 starter，负责本地自动装配、Mapper 扫描，并提供资源管理后台接口、同步记录、变更记录、资源类型和同步配置入口。 |
-| `mango-resource-sync-starter` | 资源声明同步 runner，负责汇总声明文件 Provider、Java Provider、自定义 Provider，并调用 `ResourceRegistryApi` 注册。 |
-| `mango-resource-starter-remote` | 微服务远程适配 starter，只提供 `ResourceRegistryApi` 的 Feign 实现，不扫描、不落库、不声明 `module.properties`。 |
+| `mango-resource-sync-starter` | 资源声明同步 runner，负责汇总声明文件 Provider、Java Provider、自定义 Provider，并调用 `ResourceDeclarationApi` 注册。 |
+| `mango-resource-starter-remote` | 微服务远程适配 starter，只提供 `ResourceDeclarationApi` 的 Feign 实现，不扫描、不落库、不声明 `module.properties`。 |
 
 依赖方向：
 

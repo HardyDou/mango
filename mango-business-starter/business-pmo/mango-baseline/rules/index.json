@@ -1,5 +1,5 @@
 {
-  "version": 8,
+  "version": 9,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -101,7 +101,7 @@
     },
     "backend.api": {
       "path": "rules/backend/03-api.md",
-      "reason": "后端 API、Controller、Service、Mapper、Entity、Feign、参数校验继承、LocalCapabilityContract 本地 JVM 能力边界与 Java 架构机器门禁规范"
+      "reason": "后端 API、Controller、Service、Mapper、Entity、Feign、参数校验继承、纯 support Executor 服务端口、LocalCapabilityContract 本地 JVM 能力边界与 Java 架构机器门禁规范"
     },
     "backend.db": {
       "path": "rules/backend/04-db.md",
@@ -109,7 +109,7 @@
     },
     "backend.module": {
       "path": "rules/backend/05-module.md",
-      "reason": "后端模块分层规范"
+      "reason": "后端模块分层、Resource API 与纯 Java support SPI 依赖边界规范"
     },
     "backend.security": {
       "path": "rules/backend/06-security.md",

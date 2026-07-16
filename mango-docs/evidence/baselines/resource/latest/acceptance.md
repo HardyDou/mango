@@ -2,83 +2,82 @@
 
 ## 1. 结论
 
-- 验收日期：2026-07-16
-- 工作区：`/Users/hardy/Work/mango-resource-debt`
-- 分支：`refactor/resource-debt`
-- 结论：Resource 八子模块的单元/集成、API、全新 MySQL、真实浏览器 E2E、直接消费者编译和定向质量检查均满足交付要求。
-- 范围：不执行全仓检查；覆盖 Resource 八子模块、19 个直接 Java 消费者、真实单体组装入口和本次 E2E 暴露的 Notice 渠道幂等修复。
+- 验收日期：2026-07-17
+- 工作区：`/Users/hardy/Work/mango-resource-target-removal`
+- 分支：`refactor/resource-target-removal`
+- 结论：Resource 已从八个发布物收敛为 `api/support/core/starter/sync-starter/starter-remote` 六个子模块。两个没有有效实现的 target 模块已删除，HTTP 路径、JSON 契约、权限、租户和目标 Handler 副作用保持不变。
+- 范围：按要求不执行全仓检查；验证 Resource 六模块、必要基础设施和真实单体/微服务组装入口。
 
-## 2. 改前与改后基线
+## 2. 自动化基线与结果
 
-| 层级 | 改前 | 改后 |
+| 层级 | 改前基线 | 最终结果 |
 |---|---:|---:|
-| Resource 单元/H2 集成 | 48/48 PASS | 50/50 PASS |
-| Resource 远程适配（包含在聚合统计） | 9/9 PASS | 6/6 PASS；原服务端测试迁入 target-core 后 3/3 PASS |
-| Notice 渠道真实租户拦截器集成 | 未覆盖跨租户重复重放 | 6/6 PASS |
-| 架构问题 | 149 | 0 |
-| 静态问题 | 58 | 0 |
-| 浏览器 E2E | 无可用基线 | 1/1 PASS |
+| Resource 单元/H2 集成 | 48/48 PASS | 60/60 PASS |
+| Resource support | 原有 SPI 测试 | 8/8 PASS，包含纯 Java 目标执行器 |
+| Resource core | 原有注册/同步测试 | 40/40 PASS，包含真实 JDBC 锁竞争 |
+| Resource sync starter | 无启动重试基线 | 4/4 PASS，覆盖失败、未完成、完成三态 |
+| Resource remote starter | 旧远程适配测试 | 8/8 PASS，覆盖服务发现、base path、HMAC |
+| 架构规则 | 存在模块边界债务 | 154/154 PASS |
+| Internal HMAC/Security | 原始 Header 存在信任边界风险 | Authorization 4/4、Auth 5/5 PASS |
 
-Resource 新增的两条测试固定以下风险：V1 必须直接包含三张表的租户/审计最终结构；源码和 clean 后的构件中都不得残留 V2 审计补丁。
-
-## 3. 自动化验证
-
-### 3.1 Resource 聚合测试
+最终定向命令：
 
 ```bash
-mvn -q -f mango/mango-platform/mango-resource/pom.xml clean test -DskipTests=false
+mvn -pl :mango-resource-api,:mango-resource-support,:mango-resource-core,\
+:mango-resource-starter,:mango-resource-sync-starter,:mango-resource-starter-remote \
+  -am clean verify
 ```
 
-结果：`tests=50, failures=0, errors=0, skipped=0`。clean 后 `target/classes/db/migration/resource` 仅有 `V1__init_resource_registry.sql`。
+结果：32 个 Reactor 模块 BUILD SUCCESS，Resource 60 条测试全部通过；Checkstyle、PMD、SpotBugs 和架构门禁通过。未运行全仓检查。
 
-### 3.2 直接消费者兼容
+## 3. 单体端到端
 
-对 Auth、Authorization、Calendar、CMS、Domain、File、Identity、Job、Notice、Numgen、Org、Payment、System、Template、Workflow 的 19 个直接消费者执行同一 Reactor 编译，结果 PASS。Authorization 的 `FrontendRuntimeResourceSyncIntegrationTest` 2/2 PASS，证明消费者通过公开 `IResourceRegistryService` 注册声明，且测试 schema 已跟随租户/审计契约。
+### 3.1 单节点
 
-### 3.3 Notice 强制重放回归
+- 使用全新 MySQL 数据库 `mango_resource_six_baseline` 启动真实单体应用。
+- demo 显式开启后注册 729 条资源，其中 20 条 `API_RESOURCE`；20 条同步日志均为 `SUCCESS`。
+- 发现 57 个 Handler Spec。
+- 缺少 `resourceId` 的删除请求返回 HTTP 400；`POST /resource/sync/force` 返回 `data=true`。
+- 使用真实 Internal HMAC 调用实际 `SEQUENCE_RULE/Numgen` 目标 Handler 返回 200；空声明请求返回 400，证明 API 接口上的 Bean Validation 被 Controller 正确继承。
 
-```bash
-mvn -q -f mango/mango-platform/mango-notice/mango-notice-core/pom.xml \
-  -Dtest=NoticeChannelResourceHandlerIntegrationTest -DskipTests=false test
-```
+### 3.2 多节点
 
-结果：6/6 PASS。测试启用真实 MyBatis 租户拦截器，以 `caller-tenant` 调用上下文连续同步 `default`、`1` 两个声明租户；目标表始终只有两行，且调用后恢复原租户上下文。生产代码未使用忽略租户检查的注解。
+- 两个单体实例共享全新数据库 `mango_resource_multi_baseline` 和真实 KV 锁。
+- 并发启动时只有一个实例执行同步，另一个明确跳过；最终 registry 为 1778 条，业务键和资源 ID 重复数均为 0。
+- 两个实例随后分别执行强制同步均返回 `true`，数据仍无重复。
+- 启动依赖顺序必须以应用健康和资源派生完成为准；端口可访问不代表同步完成。
 
-### 3.4 定向质量检查
+## 4. 微服务端到端
 
-八模块 partial Reactor 报告：`dependency=0`、`archunit=0`、`pmd=0`、`blocking=0`；聚合静态检查 `totalIssueCount=0`、`toolFailureCount=0`，BUILD SUCCESS。检查范围包含新增 `target-core/target-starter`，不包含全仓。
+使用 Nacos、全新 MySQL `mango_resource_micro_final`、真实 JDBC KV/锁和真实 Flyway，依次验证 Resource、Authorization、System 三个应用。
 
-## 4. 全新 MySQL 验收
+### 4.1 单节点与乱序启动
 
-数据库：`mango_dev_mango_resource_debt_001`，验收前执行 drop/create 后由应用启动。
+- Resource 先启动，Authorization 后启动，System 最后启动。
+- Authorization 的菜单声明引用 System 所属父资源 `system:permission`。父资源尚未出现时，Authorization 保持健康并周期重试；System 完成声明后，Authorization 自动收敛成功。
+- 最终 registry 610 条：System 603、Authorization 7；同步日志 `CREATE/SUCCESS` 610 条。
+- Authorization 菜单 27 条：System 22、Authorization 5；跨服务父子关系正确。
+- 资源 ID 和 `resourceType + bizKey` 重复数均为 0。
 
-- `flyway_schema_history_resource`：baseline + `V1 init resource registry`，均 `success=1`，无 V2。
-- `resource_registry`、`resource_sync_log`、`resource_change_log` 均含 `tenant_id/org_id/created_by/created_at/updated_by/updated_at`。
-- 显式启用 demo 后完成 1782 条 active 声明注册；管理员角色 4 条、角色菜单关系 293 条。
-- Notice 渠道保持两条：`270501/default/SITE/INTERNAL`、`270502/1/SITE/INTERNAL`。
-- 真实 token 调用 `DELETE /resource/registries?physical=false`（缺少 `resourceId`）返回 HTTP 400、业务 code 400，不再因 API/Controller 参数校验冲突产生 500。
-- 真实 token 调用 `POST /resource/sync/force` 返回 HTTP 200、`data=true`；修复前该调用因错误租户上下文重复插入 Notice 固定主键而返回 500。
+### 4.2 多节点与故障切换
 
-## 5. 浏览器端到端验收
+- Resource、Authorization、System 各启动两个健康实例，Nacos 均显示 2 个健康节点。
+- 第二批来源节点重放后 registry 仍为 610 条，产生 610 条 `SKIP/SKIPPED`，证明幂等。
+- 停止一个 Resource 实例后，再启动第三个 Authorization 实例；请求经服务发现路由到剩余 Resource，新增 7 条 `SKIPPED`，最终 registry 和重复数不变。
+- 验证了服务名解析、目标 base path 保留、Internal HMAC、注册中心负载均衡和单节点失效后的继续同步。
 
-```bash
-PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm --dir mango-ui --filter mango-admin exec \
-  playwright test e2e/specs/infra-kv-resource-registry.spec.ts \
-  --project=chromium --workers=1 --reporter=line
-```
+## 5. 本次暴露并固定的缺陷
 
-结果：1/1 PASS，48.8 秒。覆盖：
+1. target Java 包路径被 `.gitignore` 的 `target/` 规则吞掉，两个 Maven 模块成为空壳。最终删除空模块，并用 `git ls-files` 与自动配置类加载测试确认交付物真实存在。
+2. Feign 动态改写目标地址时丢失服务 base path。拦截器现保留原 path。
+3. 直接 HTTP 客户端没有参与服务发现且没有 Internal HMAC。现通过 LoadBalancer 解析服务名并添加签名；显式 `host:port` 仍直连。
+4. 安全链曾直接信任客户端 Header。现只信任 HMAC Filter 写入的服务端 request attribute，伪造 Header 不能绕过鉴权。
+5. 来源服务乱序启动时，一次同步失败会终止启动。现对远程失败和“尚未完成”进行有界周期重试，成功后停止。
+6. 注册中心锁竞争曾返回成功，导致来源服务误以为声明已登记。现锁未取得返回 `data=false`，来源服务继续重试，不再静默丢声明。
 
-- 真实 `admin/admin123` 登录与首页跳转；
-- 菜单管理页面可见且菜单接口 200；
-- Resource Registry 类型过滤、同步日志、Handler Spec 接口；
-- 缺参删除稳定返回 400；
-- 强制同步稳定返回 200/true；
-- console error、Vue warning、page error、非预期页面 4xx/5xx、request failure 均为 0。
+## 6. UI 与验收边界
 
-## 6. 验收边界
-
-- Flyway 只负责 Resource DDL；正式资源和 demo 资源仍由 Resource Registry 分目录、分开关登记。
-- HTTP API 与本地动态 SPI 已分离；跨模块本地 Provider/Handler 不再污染公开 API。
-- CLI 端口就绪不等于资源派生完成；本次等待 `ResourceRegistryService` 输出 1782 条声明同步完成后才执行 API/E2E。
-- `mango.dev.json` 的定向安装改动已恢复；demo 启动参数仅存在于忽略的工作区环境文件，交付前恢复默认关闭。
+- Resource 是后端平台能力，当前没有独立 Resource 产品菜单或页面，因此 Resource 专属浏览器 UI 验收为不适用，不能虚构“Resource 页面通过”。
+- 既有 Chromium shell/API 用例 1/1 PASS，只证明真实登录、通用管理界面和 Resource API 调用链可用，不替代上述后端拓扑 E2E。
+- `resource-support` 等价于 Resource 域内 common/SPI 包，不包含 Controller、Feign、数据库、Mapper、Repository、Flyway 或自动配置。
+- Flyway 只负责 DDL；正式资源与 demo 资源继续由不同目录和开关登记。

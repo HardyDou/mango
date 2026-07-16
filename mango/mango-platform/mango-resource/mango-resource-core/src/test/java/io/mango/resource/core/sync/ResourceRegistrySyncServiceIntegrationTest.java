@@ -81,6 +81,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
     private ResourceRegistryMapper registryMapper;
 
     @Autowired
+    private ILocker locker;
+
+    @Autowired
     private MutableResourceProvider provider;
 
     @Autowired
@@ -365,6 +368,19 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(registryB.getStatus()).isEqualTo("ACTIVE");
         assertThat(registryB.getAppCode()).isEqualTo("platform-admin");
         assertThat(registryB.getServiceCode()).isEqualTo("service-b");
+    }
+
+    @Test
+    void remoteSyncReportsIncompleteWhenDistributedLockIsHeld() {
+        assertThat(locker.tryLock(ResourceRegistryLock.LOCK_NAME, 30)).isTrue();
+        try {
+            assertThat(syncService.syncRemote(
+                    "platform-admin", "service-a", List.of(activeDeclaration(1, "服务A"))))
+                    .isFalse();
+            assertThat(count("resource_registry")).isZero();
+        } finally {
+            locker.unlock(ResourceRegistryLock.LOCK_NAME);
+        }
     }
 
     @Test

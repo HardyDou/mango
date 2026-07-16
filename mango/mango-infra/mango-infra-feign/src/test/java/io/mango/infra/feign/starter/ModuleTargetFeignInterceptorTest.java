@@ -26,6 +26,22 @@ class ModuleTargetFeignInterceptorTest {
     }
 
     @Test
+    void apply_whenFeignTargetHasBasePath_preservesBaseAndMethodPaths() {
+        ModuleTargetFeignInterceptor interceptor = new ModuleTargetFeignInterceptor(moduleName ->
+                Optional.of(new ModuleInfo(
+                        moduleName, "mango-resource-capability-app", "", "/resource", "test")));
+        RequestTemplate template = new RequestTemplate()
+                .feignTarget(new Target.HardCodedTarget<>(
+                        Object.class, "mango-resource", "http://mango-resource/resource"))
+                .uri("/declarations/register");
+
+        interceptor.apply(template);
+
+        assertThat(template.url())
+                .isEqualTo("http://mango-resource-capability-app/resource/declarations/register");
+    }
+
+    @Test
     void apply_whenTemplateUrlIsAbsolute_keepsExplicitDynamicTarget() {
         ModuleTargetFeignInterceptor interceptor = new ModuleTargetFeignInterceptor(moduleName ->
                 Optional.of(new ModuleInfo(moduleName, "mango-resource-capability-app", "", "/resource", "test")));

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.infra.feign.starter.FeignAutoConfiguration;
 import io.mango.infra.module.api.ModuleInfo;
-import io.mango.resource.api.ResourceRegistryApi;
+import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.ExecuteResourceTargetCommand;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.vo.ResourceBatchResultVO;
@@ -29,7 +29,7 @@ class ResourceRemoteAutoConfigurationTest {
                     org.springframework.cloud.openfeign.FeignAutoConfiguration.class,
                     FeignAutoConfiguration.class,
                     ResourceRemoteAutoConfiguration.class,
-                    ResourceRegistryClientAutoConfiguration.class))
+                    ResourceDeclarationClientAutoConfiguration.class))
             .withBean(ResourceTargetClient.class, RecordingTargetClient::new)
             .withBean(ObjectMapper.class, ObjectMapper::new)
             .withBean(io.mango.infra.module.api.ModuleInfoResolver.class, () -> moduleName ->
@@ -39,31 +39,31 @@ class ResourceRemoteAutoConfigurationTest {
     void remoteClientConfiguration_exposesDispatcherAndRegistryFeignOnly() {
         contextRunner.run(context -> {
             assertThat(context).hasSingleBean(ResourceTargetDispatcher.class);
-            assertThat(context).hasSingleBean(ResourceRegistryFeignClient.class);
+            assertThat(context).hasSingleBean(ResourceDeclarationFeignClient.class);
             assertThat(context).doesNotHaveBean("resourceTargetController");
         });
     }
 
     @Test
     void localRegistryApi_disablesRegistryFeignButKeepsTargetDispatcher() {
-        contextRunner.withBean(ResourceRegistryApi.class, LocalResourceRegistryApi::new)
+        contextRunner.withBean(ResourceDeclarationApi.class, LocalResourceDeclarationApi::new)
                 .run(context -> {
                     assertThat(context).hasSingleBean(ResourceTargetDispatcher.class);
-                    assertThat(context).doesNotHaveBean(ResourceRegistryFeignClient.class);
+                    assertThat(context).doesNotHaveBean(ResourceDeclarationFeignClient.class);
                 });
     }
 
     @Test
     void registryFeignClient_usesModulePathAndRelativeEndpoint() throws Exception {
-        assertThat(ResourceRegistryFeignClient.class.getAnnotation(FeignClient.class).path())
+        assertThat(ResourceDeclarationFeignClient.class.getAnnotation(FeignClient.class).path())
                 .isEqualTo("/resource");
-        Method method = ResourceRegistryFeignClient.class.getMethod(
+        Method method = ResourceDeclarationFeignClient.class.getMethod(
                 "registerDeclarations", RegisterResourceDeclarationsCommand.class);
         assertThat(method.getAnnotation(PostMapping.class).value())
                 .containsExactly("/declarations/register");
     }
 
-    private static class LocalResourceRegistryApi implements ResourceRegistryApi {
+    private static class LocalResourceDeclarationApi implements ResourceDeclarationApi {
         @Override
         public R<Boolean> registerDeclarations(RegisterResourceDeclarationsCommand command) {
             return R.ok(Boolean.TRUE);

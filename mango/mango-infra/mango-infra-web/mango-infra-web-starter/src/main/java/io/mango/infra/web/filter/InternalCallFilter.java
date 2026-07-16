@@ -2,6 +2,7 @@ package io.mango.infra.web.filter;
 
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.IInternalPathProvider;
+import io.mango.infra.web.api.InternalCallAttributes;
 import io.mango.infra.web.starter.MangoWebProperties;
 import io.mango.infra.web.util.InternalCallSignature;
 import jakarta.servlet.*;
@@ -9,8 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
 import org.springframework.http.server.PathContainer;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
@@ -40,7 +42,7 @@ import java.util.List;
  * @author Mango
  */
 @Slf4j
-public class InternalCallFilter implements Filter {
+public class InternalCallFilter implements Filter, Ordered {
 
     private static final String INTERNAL_CALL_HEADER = "X-Internal-Call";
     private static final String TIMESTAMP_HEADER = "X-Internal-Timestamp";
@@ -75,8 +77,8 @@ public class InternalCallFilter implements Filter {
     /**
      * 应用就绪后加载内部路径，启动加载失败时进入安全拒绝模式。
      */
-    @EventListener(ApplicationReadyEvent.class)
-    public void onApplicationReady() {
+    @EventListener(ApplicationStartedEvent.class)
+    public void onApplicationStarted() {
         try {
             loadInternalPaths();
             this.pathsLoaded = true;
@@ -154,7 +156,13 @@ public class InternalCallFilter implements Filter {
             return;
         }
 
+        request.setAttribute(InternalCallAttributes.VERIFIED, Boolean.TRUE);
         chain.doFilter(request, response);
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE + 20;
     }
 
     private String requestRejection(HttpServletRequest request) {

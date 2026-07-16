@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
-import io.mango.resource.api.ResourceRegistryApi;
+import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.enums.ResourceCode;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -15,9 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.Ordered;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 扫描当前应用资源声明并调用资源注册中心 API。
@@ -30,12 +32,44 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
 
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
-    private final ResourceRegistryApi resourceRegistryApi;
+    private final ResourceDeclarationApi resourceDeclarationApi;
     private final ObjectMapper objectMapper;
     private final String applicationName;
+    private final AtomicBoolean syncCompleted = new AtomicBoolean();
+    private final AtomicBoolean syncInProgress = new AtomicBoolean();
 
     @Override
     public void run(ApplicationArguments args) {
+        trySync();
+    }
+
+    /**
+     * 远程目标或其前置资源尚未就绪时持续重试，避免微服务启动顺序决定资源是否最终收敛。
+     */
+    @Scheduled(
+            fixedDelayString = "${mango.resource.registry.remote.retry-interval:10s}",
+            initialDelayString = "${mango.resource.registry.remote.retry-interval:10s}")
+    public void retryUntilSynchronized() {
+        if (!syncCompleted.get()) {
+            trySync();
+        }
+    }
+
+    private void trySync() {
+        if (!syncInProgress.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            synchronizeDeclarations();
+            syncCompleted.set(true);
+        } catch (RuntimeException exception) {
+            log.warn("Mango resource declaration sync deferred and will retry: {}", exception.getMessage());
+        } finally {
+            syncInProgress.set(false);
+        }
+    }
+
+    private void synchronizeDeclarations() {
         if (!properties.isEnabled() || !properties.getRemote().isEnabled()) {
             log.info("Mango resource declaration sync disabled");
             return;
@@ -51,9 +85,11 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
         command.setServiceCode(resolveServiceCode());
         command.setModuleCodes(moduleCodes);
         command.setDeclarations(serializeDeclarations(declarations));
-        R<Boolean> response = resourceRegistryApi.registerDeclarations(command);
+        R<Boolean> response = resourceDeclarationApi.registerDeclarations(command);
         Require.notNull(response, ResourceCode.RESOURCE_SYNC_FAILED, "资源注册中心无响应");
-        Require.isTrue(response.isSuccess(), ResourceCode.RESOURCE_SYNC_FAILED, response.getMsg());
+        Require.isTrue(response.isSuccess() && Boolean.TRUE.equals(response.getData()),
+                ResourceCode.RESOURCE_SYNC_FAILED,
+                response.isSuccess() ? "资源注册中心同步尚未完成" : response.getMsg());
         log.info("Mango resource declaration sync complete: appCode={}, serviceCode={}, declarations={}",
                 command.getAppCode(), command.getServiceCode(), declarations.size());
     }

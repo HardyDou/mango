@@ -4,6 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.auth.core.constant.AuthConstant;
 import io.mango.auth.core.store.TokenRevocationStore;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.web.api.InternalCallAttributes;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.vo.SecurityPrincipalVO;
 import jakarta.servlet.DispatcherType;
@@ -85,6 +86,7 @@ public class AuthSecurityConfig {
                     if (permitPathMatchers.length > 0) {
                         authorize.requestMatchers(permitPathMatchers).permitAll();
                     }
+                    authorize.requestMatchers(this::isVerifiedInternalCall).permitAll();
                     authorize.requestMatchers(this::matchesIpWhitelist).permitAll();
                     if (apiResourceAuthorizationManager == null) {
                         authorize.anyRequest().authenticated();
@@ -115,6 +117,10 @@ public class AuthSecurityConfig {
                 request.getMethod(),
                 request.getRequestURI(),
                 request.getRemoteAddr());
+    }
+
+    private boolean isVerifiedInternalCall(HttpServletRequest request) {
+        return Boolean.TRUE.equals(request.getAttribute(InternalCallAttributes.VERIFIED));
     }
 
     @Slf4j

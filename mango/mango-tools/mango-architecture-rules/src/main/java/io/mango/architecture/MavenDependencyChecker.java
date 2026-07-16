@@ -36,7 +36,6 @@ public final class MavenDependencyChecker {
     private static final Set<String> RESOURCE_RUNTIME =
             Set.of(
                     "mango-resource-core",
-                    "mango-resource-support",
                     "mango-resource-starter",
                     "mango-resource-sync-starter",
                     "mango-resource-starter-remote");

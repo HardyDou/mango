@@ -84,29 +84,30 @@ public class ResourceRegistryService implements IResourceRegistryService {
         }
     }
 
-    void syncRemote(List<ResourceDeclaration> declarations) {
-        syncRemote(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations);
+    boolean syncRemote(List<ResourceDeclaration> declarations) {
+        return syncRemote(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations);
     }
 
-    void syncRemote(String appCode, String serviceCode, List<ResourceDeclaration> declarations) {
-        syncRemote(appCode, serviceCode, List.of(), declarations);
+    boolean syncRemote(String appCode, String serviceCode, List<ResourceDeclaration> declarations) {
+        return syncRemote(appCode, serviceCode, List.of(), declarations);
     }
 
-    void syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
-                    List<ResourceDeclaration> declarations) {
+    boolean syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
+                       List<ResourceDeclaration> declarations) {
         requireText(appCode, "Resource remote appCode is required");
         requireText(serviceCode, "Resource remote serviceCode is required");
         if (!properties.isEnabled()) {
             log.info("Mango resource registry remote sync disabled");
-            return;
+            return true;
         }
         String owner = resolveOwner();
         if (!lock.tryLock(owner, properties.getLockTtlSeconds())) {
-            log.info("Mango resource registry remote sync skipped: lock is held by another instance");
-            return;
+            log.info("Mango resource registry remote sync deferred: lock is held by another instance");
+            return false;
         }
         try {
             doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false);
+            return true;
         } finally {
             lock.unlock(owner);
         }
@@ -120,7 +121,11 @@ public class ResourceRegistryService implements IResourceRegistryService {
         List<ResourceDeclaration> declarations = parseDeclarations(command.getDeclarations());
         Require.isTrue(!declarations.isEmpty() || !command.getModuleCodes().isEmpty(),
                 ResourceCode.RESOURCE_INVALID, "资源声明和管理模块不能同时为空");
-        syncRemote(command.getAppCode(), command.getServiceCode(), command.getModuleCodes(), declarations);
+        boolean synchronizedNow = syncRemote(
+                command.getAppCode(), command.getServiceCode(), command.getModuleCodes(), declarations);
+        if (!synchronizedNow) {
+            return Boolean.FALSE;
+        }
         log.info("Mango resource remote declarations registered: appCode={}, serviceCode={}, count={}",
                 command.getAppCode(), command.getServiceCode(), declarations.size());
         return Boolean.TRUE;

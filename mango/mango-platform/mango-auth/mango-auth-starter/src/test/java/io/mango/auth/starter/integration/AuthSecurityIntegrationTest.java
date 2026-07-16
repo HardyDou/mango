@@ -5,6 +5,8 @@ import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.result.R;
 import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.web.api.Inner;
+import io.mango.infra.web.util.InternalCallSignature;
 import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.vo.SecurityPrincipalVO;
@@ -43,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         classes = AuthSecurityIntegrationTest.TestApp.class,
         properties = {
                 "mango.access.auth-enabled=true",
+                "mango.web.inner.secret=auth-internal-e2e-secret",
                 "mango.security.jwt.secret=mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits",
                 "spring.flyway.enabled=false",
                 "spring.autoconfigure.exclude="
@@ -58,6 +61,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @DisplayName("Auth security integration tests")
 class AuthSecurityIntegrationTest {
+
+    private static final String INTERNAL_SECRET = "auth-internal-e2e-secret";
 
     @Resource
     private MockMvc mockMvc;
@@ -103,6 +108,31 @@ class AuthSecurityIntegrationTest {
         mockMvc.perform(get("/integration/secured"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().json("{\"code\":401,\"message\":\"Unauthorized\"}"));
+    }
+
+    @Test
+    @DisplayName("verified internal call should pass security without a user token")
+    void verifiedInternalCallShouldPassSecurityWithoutUserToken() throws Exception {
+        String path = "/integration/inner";
+        String timestamp = Long.toString(System.currentTimeMillis());
+        String nonce = "auth-internal-nonce";
+        String signature = InternalCallSignature.sign(
+                timestamp, nonce, "GET", path, "", INTERNAL_SECRET);
+
+        mockMvc.perform(get(path)
+                        .header("X-Internal-Call", "true")
+                        .header("X-Internal-Timestamp", timestamp)
+                        .header("X-Internal-Nonce", nonce)
+                        .header("X-Internal-Signature", signature))
+                .andExpect(status().isOk())
+                .andExpect(content().string("internal"));
+    }
+
+    @Test
+    @DisplayName("unverified internal header must not bypass security")
+    void unverifiedInternalHeaderMustNotBypassSecurity() throws Exception {
+        mockMvc.perform(get("/integration/secured").header("X-Internal-Call", "true"))
+                .andExpect(status().isUnauthorized());
     }
 
     @SpringBootConfiguration
@@ -164,6 +194,12 @@ class AuthSecurityIntegrationTest {
         public R<String> secured() {
             var context = securityContextProvider.currentContext();
             return R.ok(context.userId() + ":" + context.principalName());
+        }
+
+        @Inner
+        @GetMapping("/integration/inner")
+        public String inner() {
+            return "internal";
         }
     }
 

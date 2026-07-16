@@ -41,7 +41,11 @@
 - `mango-infra` 的 `*-starter` 只承载自动配置、Spring Boot 装配、扫描器、运行时实现、Flyway/MyBatis 等具体基础设施。
 - `core` 可依赖 infra/platform/business `*-api` 和 `*-support`，禁止为了使用轻量契约或复用能力依赖 `*-core`、`*-starter` 或 `starter-*`。
 - 已存在的 `core -> *-starter` 历史依赖必须通过拆分契约到 `*-api` 后逐模块迁移，禁止放松 checker 规则。
-- Resource Registry 是平台能力注册边界；非 `mango-resource` 模块默认只能依赖 `mango-resource-api`，禁止直接依赖 `mango-resource-core`、`mango-resource-support`、`mango-resource-starter`、`mango-resource-sync-starter` 或 `mango-resource-starter-remote`。确需例外时，必须人工明确确认并通过 `mango:check` 参数 `-Dmango.check.resourceStarterDependencyExceptions=<artifactId>=<reason>` 记录充分理由。
+- Resource Registry 是平台能力注册边界；非 `mango-resource` 模块可依赖 `mango-resource-support`
+  实现纯 Java `ResourceProvider` / `ResourceHandler` SPI，也可依赖 `mango-resource-api` 使用 HTTP 协议模型；
+  禁止库模块直接依赖 `mango-resource-core`、`mango-resource-starter`、`mango-resource-sync-starter`
+  或 `mango-resource-starter-remote`。确需例外时，必须人工明确确认并通过 `mango:check` 参数
+  `-Dmango.check.resourceStarterDependencyExceptions=<artifactId>=<reason>` 记录充分理由。
 
 ## 5. 边界规则
 
