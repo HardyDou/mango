@@ -103,7 +103,7 @@ P0
 6. 判断影响范围：明确涉及路径、模块、接口、数据库、前端页面、测试、文档或发布物料。
 7. 制定处理方案：关闭、补充信息、复现验证、修复、回归、发布或转为新 Issue。
 8. 只有确定需要修改受版本控制文件、形成验证结论、发布、提交或 PR 时，才按明确的 role、phase、task 和 paths 执行 PMO preflight，并读取输出的 Must read。
-9. preflight 只提供 M01 建议。修改受版本控制文件前，通过 Ask User 取得 `CREATE` / `DO_NOT_CREATE`；已有任务 worktree 时建议 `DO_NOT_CREATE` 并复用，用户确认 `CREATE` 后才创建新 worktree。
+9. preflight 按策略决定 M01：主工作区自动 `CREATE`，已有任务 worktree 自动 `REUSE`；只有用户要求 `MAIN_EXCEPTION` 时提示风险并取得确认。
 
 禁止：
 

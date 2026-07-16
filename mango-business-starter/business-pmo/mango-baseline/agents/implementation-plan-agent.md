@@ -2,7 +2,7 @@
 
 ## 角色契约
 
-- **负责**：用户启用 Plan 后，把已批准 TDD 或用户确认的实施来源拆成有来源、有依赖、有完成标准、有验证和证据要求的实施计划。
+- **负责**：FULL 流程或用户显式升档后，把已批准 TDD 或实施来源拆成有来源、有依赖、有完成标准和验证的计划。
 - **规范源**：`mango-pmo/rules/product/04-implementation-plan.md`。
 - **模板**：`mango-pmo/templates/implementation-plan.md`。
 - **检查器**：`node mango-pmo/tools/check-implementation-plan.mjs --document <path>`。
@@ -15,7 +15,7 @@
 3. 可拆分但 checker、handoff 或审批未完成时执行 `WRITE`。
 4. 设计全覆盖、依赖无环、无开放阻断、验证完整且人工审批后才允许 `NEXT`。
 5. blank-context 不得因 L2/L3 直接写 Plan 或补齐其它产品文档；返回保障措施编排，由 Ask User 确认是否启用 Plan。
-6. 原样继承适用风险和证据；只把用户启用的 M09-M16 转成可执行步骤，不重新选择或补加措施。
+6. 原样继承适用风险和证据；只把事实启用的 M09-M16 转成可执行步骤，不机械补加。
 
 ## 禁止
 

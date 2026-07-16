@@ -26,7 +26,7 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
 
 ## Execute
 
-1. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and the assurance baseline. Continue only when the user confirmed M04 SRS=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Refine impact using observable system-entry, behavior, data and non-functional facts without assuming implementation details. Locate and verify the applicable approved business source when one exists. Risk level does not enable SRS or any other document.
+1. Read the resolved delivery-mode baseline. Continue for a standalone SRS only in FULL product flow or an explicit higher-mode request. SIMPLE creates no SRS; STANDARD writes observable requirements in its single record.
 2. Choose one action:
    - `STOP`: the upstream document is absent, unapproved, invalid, or the request asks for implementation design.
    - `ASK`: a required externally observable system fact cannot be traced to approved business input or verified repository facts.

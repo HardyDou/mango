@@ -6,7 +6,7 @@
 
 ### 2026-07-16 组织初始化边界
 
-Org 的 `V1__init_org.sql` 只创建 `sys_org`、`org_post` 及索引约束。运行必需的默认根组织和岗位由 `META-INF/mango/resources/org-required-bootstrap.yml` 默认登记；A/B/C 公司、演示组织树和演示岗位位于 `META-INF/mango/demo/org-demo-structure.yml`，仅在 `mango.resource.registry.demo-enabled=true` 时加载。资源声明即使提供固定 `targetId`，首次同步也必须执行插入；空库验收应同时核对 Flyway、目标表行数和 Resource Registry 状态，不能只看注册记录显示成功。
+Org 的 `V1__init_org.sql` 只创建 `sys_org`、`org_post` 及索引约束。运行所需的默认根组织和岗位由 `META-INF/mango/resources/org-required-bootstrap.yml` 默认登记；A/B/C 公司、演示组织树和演示岗位位于 `META-INF/mango/demo/org-demo-structure.yml`，仅在 `mango.resource.registry.demo-enabled=true` 时加载。资源声明提供固定 `targetId` 时，首次同步仍执行插入。空库验收覆盖 Flyway、目标表行数和 Resource Registry 三项状态，单独的注册成功记录不足以证明数据已经形成。
 
 ## 2. 阅读顺序
 
@@ -77,7 +77,7 @@ pnpm -F @mango/admin-shell build
 
 - PR #541 的 Auth 历史债务修复不新增数据库表、Flyway migration、租户字典或系统配置初始化数据，也不改变租户隔离和资源同步协议。Fresh DB 验收中的演示授权数据仅通过显式 demo 开关启用；业务环境基础数据为空仍按本指南检查资源同步、租户上下文和角色绑定。
 
-- PR #540 加固 Access 入口身份边界：不新增或修改租户字典、组织、用户或系统配置数据，不改变这些能力的公开查询 API、权限和资源同步方式；外部请求自行注入的租户、用户或主体身份会先被清理，当前租户只从已验证 token 和服务端校验结果重建。升级后页面数据为空时，应确认 token 携带正确租户且 Access 上下文校验成功，不应通过自定义身份请求头补写 tenantId；策略、认证或授权依赖不可用会明确返回 503。
+- PR #540 加固 Access 入口身份边界：不新增或修改租户字典、组织、用户或系统配置数据，不改变这些能力的公开查询 API、权限和资源同步方式；外部请求自行注入的租户、用户或主体身份会先被清理，当前租户只从已验证 token 和服务端校验结果重建。升级后页面数据为空时，可确认 token 携带正确租户且 Access 上下文校验成功；自定义身份请求头不会用于补写 tenantId，策略、认证或授权依赖不可用会明确返回 503。
 
 - v2026.07.14-maven-1.0.21-platform-debt-release 仅同步 Payment、CMS、Workflow、Notice 修复及配套前端版本锁，不新增或修改租户、字典、组织、用户或系统配置数据，也不改变本指南排查步骤。
 

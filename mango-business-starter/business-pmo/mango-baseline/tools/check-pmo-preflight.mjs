@@ -8,14 +8,14 @@ const preflightPath = path.join(__dirname, 'pmo-preflight.mjs');
 
 const cases = [
   {
-    name: 'pmo governance can use main workspace',
+    name: 'pmo governance uses an isolated worktree',
     args: ['--role', 'pmo', '--phase', 'governance', '--task', '优化 preflight 工作区策略', '--paths', 'mango-pmo/tools,mango-pmo/rules'],
-    mode: 'main-direct-allowed'
+    mode: 'worktree-required'
   },
   {
-    name: 'pmo test process governance can use main workspace and loads test automation',
+    name: 'pmo test process governance uses an isolated worktree and loads test automation',
     args: ['--role', 'pmo', '--phase', 'governance', '--task', '完善测试用例自动化测试流程规范', '--paths', 'mango-pmo/rules/09-test-case-automation-flow.md,mango-pmo/templates/delivery-contract.md'],
-    mode: 'main-direct-allowed',
+    mode: 'worktree-required',
     mustRead: ['rules/09-test-case-automation-flow.md']
   },
   {
@@ -35,9 +35,9 @@ const cases = [
     mode: 'worktree-required'
   },
   {
-    name: 'unknown scope needs human check',
+    name: 'declared unknown tracked path still requires isolation',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '处理问题', '--paths', 'unknown/path'],
-    mode: 'needs-human-check'
+    mode: 'worktree-required'
   },
   {
     name: 'pr review loads delivery contract',
@@ -54,13 +54,13 @@ const cases = [
   {
     name: 'capability map governance loads capability docs',
     args: ['--role', 'pmo', '--phase', 'governance', '--task', '优化 Mango 能力地图', '--paths', 'mango-docs/capabilities/README.md'],
-    mode: 'main-direct-allowed',
+    mode: 'worktree-required',
     mustRead: ['rules/08-capability-docs.md', 'rules/06-document-assets.md']
   },
   {
     name: 'agent entry governance loads PMO docs',
     args: ['--role', 'pmo', '--phase', 'governance', '--task', '优化 Agent 入口 PMO 触发边界', '--paths', 'AGENTS.md'],
-    mode: 'main-direct-allowed',
+    mode: 'worktree-required',
     mustRead: ['agents/05-pmo-agent.md', 'rules/06-document-assets.md']
   },
   {
@@ -84,13 +84,13 @@ const cases = [
   {
     name: 'current plans path loads delivery contract',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '按 Sprint 计划开发', '--paths', 'mango-docs/plans/2026-07-03-plan.md'],
-    mode: 'main-direct-allowed',
+    mode: 'worktree-required',
     mustRead: ['rules/01-delivery-contract.md']
   },
   {
     name: 'current evidence path loads delivery contract',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '按交付记录验证', '--paths', 'mango-docs/evidence/2026-07-03-issue-372-home-management/report.md'],
-    mode: 'main-direct-allowed',
+    mode: 'worktree-required',
     mustRead: ['rules/01-delivery-contract.md']
   },
   {
@@ -98,6 +98,18 @@ const cases = [
     args: ['--role', 'qa', '--phase', 'verify', '--task', '验证 Playwright E2E 自动化测试', '--paths', 'mango-ui/apps/mango-admin/e2e/specs/menu-management.spec.ts'],
     mode: 'worktree-required',
     mustRead: ['rules/09-test-case-automation-flow.md']
+  },
+  {
+    name: 'negative unchanged facts do not activate unrelated backend bundles',
+    args: ['--role', 'pm', '--phase', 'requirement', '--task', '只修改内部页面按钮文案，行为、API、数据库、数据、菜单、权限都不变', '--paths', ''],
+    mode: 'worktree-required',
+    mustNotRead: ['rules/backend/04-db.md', 'rules/backend/07-persistence.md', 'rules/backend/11-module-menu.md']
+  },
+  {
+    name: 'a changed API is not negated by later unchanged data facts',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '修改 API，数据和权限不变', '--paths', ''],
+    mode: 'worktree-required',
+    mustRead: ['rules/backend/03-api.md']
   }
 ];
 
@@ -120,6 +132,12 @@ for (const item of cases) {
     const hasPath = (output.mustRead || []).some((entry) => entry.path === expectedPath);
     if (!hasPath) {
       failures.push(`${item.name}: expected mustRead ${expectedPath}`);
+    }
+  }
+  for (const unexpectedPath of item.mustNotRead || []) {
+    const hasPath = (output.mustRead || []).some((entry) => entry.path === unexpectedPath);
+    if (hasPath) {
+      failures.push(`${item.name}: unexpected mustRead ${unexpectedPath}`);
     }
   }
   for (const expectedCommand of item.requiredChecks || []) {

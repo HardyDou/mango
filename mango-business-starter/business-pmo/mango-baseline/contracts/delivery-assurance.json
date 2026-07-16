@@ -1,128 +1,88 @@
 {
-  "contractSchema": 1,
+  "contractSchema": 2,
   "contractId": "delivery-assurance",
-  "schemaRevision": 1,
+  "schemaRevision": 3,
   "ruleSource": "mango-pmo/rules/11-delivery-assurance.md",
-  "selectionAuthority": "human",
+  "selectionAuthority": "policy-with-human-exceptions",
   "releaseIncluded": false,
+  "workspacePolicy": {
+    "readOnly": "NO_WORKTREE",
+    "trackedChangeOnPrimary": "CREATE",
+    "existingTaskWorktree": "REUSE",
+    "mainException": "MAIN_EXCEPTION",
+    "mainExceptionRequiresHumanConfirmation": true,
+    "defaultHumanConfirmationRequired": false
+  },
+  "riskToMode": {
+    "L0": "SIMPLE",
+    "L1": "SIMPLE",
+    "L2": "STANDARD",
+    "L3": "FULL"
+  },
+  "downwardModeOverride": {
+    "confirmationToken": "MODE_DOWNGRADE_CONFIRMED",
+    "mainExceptionToken": "MAIN_EXCEPTION_CONFIRMED",
+    "nonDowngradableFacts": [
+      {"id":"SECURITY","keywords":["security","安全"]},
+      {"id":"TENANT","keywords":["tenant","租户","跨租户"]},
+      {"id":"AUTHORIZATION","keywords":["authorization","permission","权限","授权","越权"]},
+      {"id":"FUNDS","keywords":["funds","payment","资金","支付","结算"]},
+      {"id":"DESTRUCTIVE_DATA","keywords":["destructive data","drop table","truncate","数据破坏","清空数据","删库"]},
+      {"id":"IRREVERSIBLE_RELEASE","keywords":["irreversible release","不可逆发布","不可回滚发布"]}
+    ]
+  },
+  "deliveryModes": [
+    {
+      "id": "SIMPLE",
+      "riskLevels": ["L0", "L1"],
+      "artifactPolicy": "NONE",
+      "executionPolicy": "DIRECT",
+      "validationPolicy": "MINIMUM_SUFFICIENT_BY_OBSERVABLE_OUTCOME"
+    },
+    {
+      "id": "STANDARD",
+      "riskLevels": ["L2"],
+      "artifactPolicy": "SINGLE_DELIVERY_RECORD",
+      "template": "mango-pmo/templates/standard-delivery-record.md",
+      "executionPolicy": "RECORDED",
+      "validationPolicy": "MAPPED_BY_OBSERVABLE_OUTCOME"
+    },
+    {
+      "id": "FULL",
+      "riskLevels": ["L3"],
+      "artifactPolicy": "APPLICABLE_FULL_LIFECYCLE",
+      "executionPolicy": "GATED",
+      "validationPolicy": "FULL_REAL_ENTRY_EVIDENCE"
+    }
+  ],
   "questionPolicy": {
-    "nativeAskRequiredWhenAvailable": true,
-    "triggeredMeasuresOnly": true,
-    "maxMeasuresPerBatch": 3,
+    "fixedMeasureQuestionnaire": false,
+    "askOnlyFor": [
+      "MATERIAL_UNKNOWN",
+      "MAIN_EXCEPTION",
+      "DOWNWARD_MODE_OVERRIDE",
+      "DESTRUCTIVE_DATABASE_ACTION",
+      "EXTERNAL_WRITE_AUTHORIZATION",
+      "MATERIAL_SCOPE_OR_RISK_CHANGE"
+    ],
     "autoResolutionAllowed": false
   },
   "measures": [
-    {
-      "id": "M01",
-      "name": "Worktree 隔离",
-      "allowedValues": ["CREATE", "DO_NOT_CREATE"],
-      "triggerFact": "需要修改受版本控制文件",
-      "value": "隔离任务改动，避免污染错误分支或其它并行工作。"
-    },
-    {
-      "id": "M02",
-      "name": "数据库重建",
-      "allowedValues": ["REBUILD", "DO_NOT_REBUILD"],
-      "triggerFact": "涉及数据库结构、初始化数据、空库启动或数据库验收",
-      "value": "证明目标数据库可从受管输入形成预期状态。"
-    },
-    {
-      "id": "M03",
-      "name": "BRD",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "业务目标/范围/参与者责任/业务规则/业务验收变化",
-      "value": "固化业务承诺和验收边界。"
-    },
-    {
-      "id": "M04",
-      "name": "SRS",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "用户或外部系统可观察行为/状态/输入输出/失败语义变化",
-      "value": "固化可观察系统行为。"
-    },
-    {
-      "id": "M05",
-      "name": "TDD",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "接口/数据/安全/架构/兼容性/关键技术取舍",
-      "value": "保存关键技术决定、边界和恢复依据。"
-    },
-    {
-      "id": "M06",
-      "name": "实施计划",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "实施顺序/多人协作/跨模块依赖/复杂步骤",
-      "value": "协调任务依赖、责任和完成顺序。"
-    },
-    {
-      "id": "M07",
-      "name": "治理决策记录",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "长期PR/CI/权限/审批责任/仓库治理语义变化",
-      "value": "保存治理意图、适用条件和责任边界。"
-    },
-    {
-      "id": "M08",
-      "name": "能力说明",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "公开能力/配置/接入/使用方式变化",
-      "value": "让能力消费者获得与实现一致的使用、配置和接入事实。"
-    },
-    {
-      "id": "M09",
-      "name": "静态验证",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "目标可由结构/格式/配置/代码规则/编译证明",
-      "value": "以最低成本证明可静态观察的约束。"
-    },
-    {
-      "id": "M10",
-      "name": "单元测试",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "独立规则/算法/状态转换/函数行为变化",
-      "value": "隔离验证局部决策和边界分支。"
-    },
-    {
-      "id": "M11",
-      "name": "集成测试",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "结果依赖模块/数据库/框架装配/组件协作",
-      "value": "证明真实协作、装配和持久化边界。"
-    },
-    {
-      "id": "M12",
-      "name": "API 验证",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "API或服务入口行为变化",
-      "value": "从服务入口证明契约、权限、数据和失败行为。"
-    },
-    {
-      "id": "M13",
-      "name": "UI 验证",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "用户界面/交互变化",
-      "value": "从用户入口证明可见结果、交互和浏览器运行态。"
-    },
-    {
-      "id": "M14",
-      "name": "专家复核",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "专业不确定性/高影响决定/治理系统修改自身",
-      "value": "使用独立相关视角发现知识盲区和自证偏差。"
-    },
-    {
-      "id": "M15",
-      "name": "外部状态回读",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "目标涉及GitHub/Gitea等外部平台配置或运行状态",
-      "value": "证明真实外部状态已生效并发现配置漂移。"
-    },
-    {
-      "id": "M16",
-      "name": "人工验收",
-      "allowedValues": ["ENABLE", "DISABLE"],
-      "triggerFact": "自动化不足以证明实际目标",
-      "value": "由责任人确认自动化无法覆盖的实际结果。"
-    }
+    {"id":"M01","name":"Worktree 隔离","allowedValues":["CREATE","REUSE","MAIN_EXCEPTION","DO_NOT_CREATE"],"activation":"WORKSPACE_POLICY","triggerFact":"需要修改受版本控制文件","value":"默认隔离主工作区；复用同一任务 worktree。"},
+    {"id":"M02","name":"数据库重建","allowedValues":["REBUILD","DO_NOT_REBUILD"],"activation":"FACT_AND_DESTRUCTIVE_CONFIRMATION","triggerFact":"涉及数据库结构、初始化数据、空库启动或数据库验收","value":"证明数据库可从受管输入形成预期状态。"},
+    {"id":"M03","name":"BRD","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_MODE","triggerFact":"业务目标、范围、责任、规则或业务验收变化","value":"FULL 模式固化业务承诺；STANDARD 合并登记。"},
+    {"id":"M04","name":"SRS","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_MODE","triggerFact":"可观察行为、状态、输入输出或失败语义变化","value":"FULL 模式固化系统行为；STANDARD 合并登记。"},
+    {"id":"M05","name":"TDD","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_MODE","triggerFact":"接口、数据、安全、架构、兼容性或关键技术取舍","value":"FULL 模式保存设计；STANDARD 合并登记。"},
+    {"id":"M06","name":"实施计划","allowedValues":["ENABLE","DISABLE"],"activation":"DELIVERY_MODE","triggerFact":"实施顺序、多人协作、跨模块依赖或复杂步骤","value":"FULL 模式保存计划；STANDARD 合并登记。"},
+    {"id":"M07","name":"治理决策记录","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"长期 PR、CI、权限、审批责任或仓库治理语义变化","value":"保存治理意图和责任边界。"},
+    {"id":"M08","name":"能力说明","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"公开能力、配置、接入、使用或验收方式变化","value":"保持消费者说明与实现一致。"},
+    {"id":"M09","name":"静态验证","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"目标可由结构、格式、配置、代码规则或编译证明","value":"低成本证明静态约束。"},
+    {"id":"M10","name":"单元测试","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"独立规则、算法、状态转换或函数行为变化","value":"隔离验证局部决策和边界。"},
+    {"id":"M11","name":"集成测试","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"结果依赖模块、数据库、框架装配或组件协作","value":"证明真实协作和持久化边界。"},
+    {"id":"M12","name":"API 验证","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"API 或服务入口行为变化","value":"从服务入口证明契约、权限、数据和失败行为。"},
+    {"id":"M13","name":"UI 验证","allowedValues":["ENABLE","DISABLE"],"activation":"OBSERVABLE_FACT","triggerFact":"用户界面或浏览器交互变化","value":"从用户入口证明可见结果和交互。"},
+    {"id":"M14","name":"专家复核","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"专业不确定性、高影响决定或治理系统修改自身","value":"使用独立视角发现盲区和自证偏差。"},
+    {"id":"M15","name":"外部状态回读","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"当前目标涉及 GitHub、Gitea 等外部平台状态","value":"证明真实外部状态并发现漂移。"},
+    {"id":"M16","name":"人工验收","allowedValues":["ENABLE","DISABLE"],"activation":"FACT","triggerFact":"自动化不足以证明实际目标","value":"由责任人确认自动化无法覆盖的结果。"}
   ]
 }

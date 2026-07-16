@@ -324,17 +324,17 @@ test('业务文档集合阻断失效或越界的历史文档基线项', (t) => {
   assert.ok(result.findings.some((item) => item.message.includes('历史文档基线项已失效')));
 });
 
-test('L2/L3 支持按当前阶段执行连续 handoff，不要求未来文档提前存在', () => {
-  const documents = hydrateLifecycle();
+test('FULL 产品流程按当前阶段连续 handoff，不要求未来文档提前存在', () => {
+  const documents = hydrateLifecycle({ brd: 'L3', srs: 'L3', tdd: 'L3', plan: 'L3' });
   const staged = validateLifecycle(
     { brd: documents.brd, srs: documents.srs },
-    { riskLevel: 'L2', throughStage: 'srs', requiredStages: ['brd', 'srs'] }
+    { riskLevel: 'L3', deliveryMode: 'FULL', throughStage: 'srs' }
   );
   assert.deepEqual(staged.findings, []);
 
   const missingUpstream = validateLifecycle(
     { srs: documents.srs },
-    { riskLevel: 'L2', throughStage: 'srs', requiredStages: ['brd', 'srs'] }
+    { riskLevel: 'L3', deliveryMode: 'FULL', throughStage: 'srs' }
   );
   assert.ok(missingUpstream.findings.some((finding) => finding.ruleId === 'LIFE-ORDER-010'));
 });
@@ -346,21 +346,37 @@ test('上游内容变化会使下游摘要立即失效', () => {
   assert.ok(result.findings.some((finding) => finding.ruleId === 'LIFE-HASH-020'));
 });
 
-test('L3 未选择生命周期文档时不会按风险自动要求四阶段', () => {
-  const result = validateLifecycle({}, { riskLevel: 'L3', requiredStages: [] });
-  assert.deepEqual(result.findings, []);
+test('FULL 产品流程禁止用空文档集合绕过适用阶段', () => {
+  const result = validateLifecycle({}, { riskLevel: 'L3', deliveryMode: 'FULL', requiredStages: [] });
+  assert.ok(result.findings.some((finding) =>
+    finding.ruleId === 'LIFE-ORDER-010' && finding.message.includes('至少一个适用生命周期阶段')));
 });
 
-test('L3 可以只选择并校验独立 TDD', () => {
+test('FULL 技术型产品任务可按模式基线声明仅 TDD 适用', () => {
   const documents = hydrateLifecycle({ tdd: 'L3' });
   documents.tdd.source = documents.tdd.source
     .replace(/^upstreamDocumentId: .*$/mu, 'upstreamDocumentId: NONE')
     .replace(/^upstreamDocumentHash: .*$/mu, 'upstreamDocumentHash: NONE');
   const result = validateLifecycle(
     { tdd: documents.tdd },
-    { riskLevel: 'L3', requiredStages: ['tdd'] },
+    {
+      riskLevel: 'L3',
+      deliveryMode: 'FULL',
+      requiredStages: ['tdd'],
+      applicabilityEvidence: path.join(FIXTURES, 'valid/review/BRD-ANN-001.md'),
+    },
   );
   assert.deepEqual(result.findings, []);
+});
+
+test('FULL 产品流程缩减阶段但缺少外部适用性证据时失败', () => {
+  const documents = hydrateLifecycle({ tdd: 'L3' });
+  const result = validateLifecycle(
+    { tdd: documents.tdd },
+    { riskLevel: 'L3', deliveryMode: 'FULL', requiredStages: ['tdd'] },
+  );
+  assert.ok(result.findings.some((finding) =>
+    finding.ruleId === 'LIFE-ORDER-010' && finding.message.includes('外部适用性证据文件')));
 });
 
 test('生命周期只对显式引用且实际存在的相邻上游做摘要和追踪检查', () => {
@@ -381,7 +397,12 @@ test('显式选择的生命周期文档缺失时失败', () => {
     finding.ruleId === 'LIFE-ORDER-010' && finding.message.includes('technical-design')));
 });
 
-test('CLI 解析显式 required stages，并允许空集合', () => {
+test('CLI 解析交付模式和显式 required stages', () => {
+  assert.equal(parseLifecycleArgs(['--risk', 'L3', '--mode', 'FULL']).deliveryMode, 'FULL');
+  assert.equal(
+    parseLifecycleArgs(['--applicability-evidence', 'decisions/task.md']).applicabilityEvidence,
+    'decisions/task.md',
+  );
   assert.deepEqual(
     parseLifecycleArgs(['--risk', 'L3', '--required-stages', 'brd,tdd']).requiredStages,
     ['brd', 'tdd'],
@@ -390,6 +411,18 @@ test('CLI 解析显式 required stages，并允许空集合', () => {
     parseLifecycleArgs(['--risk', 'L3', '--required-stages', '']).requiredStages,
     [],
   );
+});
+
+test('SIMPLE 和 STANDARD 禁止携带四阶段产品文档', () => {
+  const documents = hydrateLifecycle();
+  for (const deliveryMode of ['SIMPLE', 'STANDARD']) {
+    const result = validateLifecycle(
+      { brd: documents.brd },
+      { riskLevel: deliveryMode === 'SIMPLE' ? 'L1' : 'L2', deliveryMode, requiredStages: [] },
+    );
+    assert.ok(result.findings.some((finding) =>
+      finding.ruleId === 'LIFE-ORDER-010' && finding.message.includes('不使用 BRD/SRS/TDD/Plan')));
+  }
 });
 
 test('L0 非行为任务不会被强制套用四阶段文档', () => {

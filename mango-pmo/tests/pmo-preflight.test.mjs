@@ -24,63 +24,114 @@ function createRepository() {
   return root;
 }
 
-function runPreflight(cwd, task, paths) {
-  return runPreflightAs(cwd, 'dev', 'develop', task, paths);
+function runPreflight(cwd, task, paths, extraArgs = []) {
+  return runPreflightAs(cwd, 'dev', 'develop', task, paths, extraArgs);
 }
 
-function runPreflightAs(cwd, role, phase, task, paths) {
+function runPreflightAs(cwd, role, phase, task, paths, extraArgs = []) {
   const output = execFileSync(process.execPath, [
     preflight,
     '--role', role,
     '--phase', phase,
     '--task', task,
     '--paths', paths,
-    '--json'
+    '--json',
+    ...extraArgs,
   ], { cwd, encoding: 'utf8' });
   return JSON.parse(output);
 }
 
-test('main branch recommends a task worktree for code changes and leaves M01 to human confirmation', () => {
+test('main branch automatically selects a task worktree for tracked changes', () => {
   const root = createRepository();
   try {
-    const result = runPreflight(root, '修复后端 API', 'mango/**');
+    const result = runPreflight(root, '修复后端 API', 'mango/**', ['--reuseCurrentTask', 'true']);
     assert.equal(result.currentWorkspace.isMainBranch, true);
     assert.equal(result.classifiedWorkspacePolicy.mode, 'worktree-required');
     assert.equal(result.workspacePolicy.mode, 'worktree-required');
     assert.equal(result.assuranceRecommendation.measureId, 'M01');
     assert.equal(result.assuranceRecommendation.recommendedValue, 'CREATE');
-    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, true);
+    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, false);
+    assert.equal(result.assuranceRecommendation.decisionSource, 'policy');
     assert.match(result.assuranceRecommendation.reason, /path mango\/\*\*/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('non-main branch recommends reusing the current workspace without creating another worktree', () => {
+test('non-main worktree is not reused without an explicit same-task fact', () => {
   const root = createRepository();
   try {
-    git(root, 'switch', '-c', 'fix/api-contract');
-    const result = runPreflight(root, '修复后端 API', 'mango/**');
+    git(root, 'switch', '-c', 'fix/previous-task');
+    const result = runPreflight(root, '实现新的独立 API', 'mango/**');
     assert.equal(result.currentWorkspace.reusableTaskWorkspace, true);
-    assert.equal(result.classifiedWorkspacePolicy.mode, 'worktree-required');
-    assert.equal(result.workspacePolicy.mode, 'reuse-current-worktree');
-    assert.match(result.workspacePolicy.summary, /建议复用.*不再创建/);
-    assert.equal(result.assuranceRecommendation.recommendedValue, 'DO_NOT_CREATE');
-    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, true);
+    assert.equal(result.workspacePolicy.mode, 'worktree-required');
+    assert.equal(result.assuranceRecommendation.recommendedValue, 'CREATE');
+    assert.match(result.workspacePolicy.reason, /same-task reuse not declared/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('unclear scope still requires confirmation on a non-main branch', () => {
+test('non-main branch automatically reuses the current task workspace', () => {
+  const root = createRepository();
+  try {
+    git(root, 'switch', '-c', 'fix/api-contract');
+    const result = runPreflight(root, '修复后端 API', 'mango/**', ['--reuseCurrentTask', 'true']);
+    assert.equal(result.currentWorkspace.reusableTaskWorkspace, true);
+    assert.equal(result.classifiedWorkspacePolicy.mode, 'worktree-required');
+    assert.equal(result.workspacePolicy.mode, 'reuse-current-worktree');
+    assert.match(result.workspacePolicy.summary, /建议复用.*不再创建/);
+    assert.equal(result.assuranceRecommendation.recommendedValue, 'REUSE');
+    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('declared unknown tracked path still defaults to worktree isolation', () => {
   const root = createRepository();
   try {
     git(root, 'switch', '-c', 'fix/unknown-scope');
-    const result = runPreflight(root, '帮我看看并处理', 'unknown-area');
-    assert.equal(result.classifiedWorkspacePolicy.mode, 'needs-human-check');
-    assert.equal(result.workspacePolicy.mode, 'needs-human-check');
-    assert.equal(result.assuranceRecommendation.recommendedValue, null);
+    const result = runPreflight(root, '帮我看看并处理', 'unknown-area', ['--reuseCurrentTask', 'true']);
+    assert.equal(result.classifiedWorkspacePolicy.mode, 'worktree-required');
+    assert.equal(result.workspacePolicy.mode, 'reuse-current-worktree');
+    assert.equal(result.assuranceRecommendation.recommendedValue, 'REUSE');
+    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, false);
+    assert.equal(result.assuranceRecommendation.requiresScopeClarification, false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('governance files no longer receive an implicit main-worktree exception', () => {
+  const root = createRepository();
+  try {
+    const result = runPreflightAs(root, 'pmo', 'governance', '调整 PMO 规范', 'mango-pmo/rules/00-dev-flow.md');
+    assert.equal(result.workspacePolicy.mode, 'worktree-required');
+    assert.equal(result.assuranceRecommendation.recommendedValue, 'CREATE');
+    assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('main exception is accepted only through an explicit confirmed argument', () => {
+  const root = createRepository();
+  try {
+    const output = execFileSync(process.execPath, [
+      preflight,
+      '--role', 'dev',
+      '--phase', 'develop',
+      '--task', '按用户确认直接在 main 修复',
+      '--paths', 'mango/**',
+      '--mainExceptionConfirmed', 'true',
+      '--json',
+    ], { cwd: root, encoding: 'utf8' });
+    const result = JSON.parse(output);
+    assert.equal(result.workspacePolicy.mode, 'main-exception-authorized');
+    assert.equal(result.assuranceRecommendation.recommendedValue, 'MAIN_EXCEPTION');
     assert.equal(result.assuranceRecommendation.requiresHumanConfirmation, true);
+    assert.equal(result.assuranceRecommendation.decisionSource, 'human-exception');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -117,6 +168,37 @@ test('CLI and Skill release paths load artifact version synchronization during g
     );
     const mustRead = new Set(result.mustRead.map(item => item.path));
     assert.equal(mustRead.has('rules/10-release-artifacts.md'), true);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('negative unchanged facts do not load unrelated domain bundles', () => {
+  const root = createRepository();
+  try {
+    const result = runPreflightAs(
+      root,
+      'pm',
+      'requirement',
+      '只修改内部页面按钮文案，行为、API、数据库、数据、菜单、权限都不变',
+      '',
+    );
+    const mustRead = new Set(result.mustRead.map(item => item.path));
+    assert.equal(mustRead.has('rules/11-delivery-assurance.md'), true);
+    assert.equal(mustRead.has('rules/backend/04-db.md'), false);
+    assert.equal(mustRead.has('rules/backend/07-persistence.md'), false);
+    assert.equal(mustRead.has('rules/backend/11-module-menu.md'), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('an API change before a comma is not negated by later unchanged facts', () => {
+  const root = createRepository();
+  try {
+    const result = runPreflightAs(root, 'dev', 'develop', '修改 API，数据和权限不变', '');
+    const mustRead = new Set(result.mustRead.map(item => item.path));
+    assert.equal(mustRead.has('rules/backend/03-api.md'), true);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

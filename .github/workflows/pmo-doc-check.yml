@@ -42,7 +42,7 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Read human-confirmed assurance selections
+      - name: Read policy-resolved assurance selections
         id: assurance
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
@@ -86,7 +86,7 @@ jobs:
           node-version: '22'
 
       - name: Test document contracts, lifecycle routing, and Skills
-        if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m10 == 'true'
+        if: needs.preflight_scope.outputs.pmo == 'true'
         run: |
           node --test \
             mango-pmo/tests/architecture-debt-budget.test.mjs \
@@ -95,12 +95,14 @@ jobs:
             mango-pmo/tests/pmo-check-scope.test.mjs \
             mango-pmo/tests/pmo-preflight.test.mjs \
             mango-pmo/tests/risk-verification.test.mjs \
+            mango-pmo/tests/standard-delivery-record.test.mjs \
             mango-pmo/tests/test-quality-check.test.mjs \
             mango-pmo/tests/workspace-layout-check.test.mjs
           node mango-pmo/tests/skills/check-skill-evals.mjs
+          node mango-pmo/tests/skills/check-delivery-mode-history-cases.mjs
 
       - name: Run selected static PMO checks
-        if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m09 == 'true'
+        if: needs.preflight_scope.outputs.pmo == 'true'
         run: |
           node mango-pmo/tools/check-pmo-preflight.mjs
           node mango-pmo/tools/check-governance-intent.mjs

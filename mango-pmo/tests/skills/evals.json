@@ -175,7 +175,7 @@
       "kind": "blank-context",
       "prompt": "Start coding this feature.",
       "context": {},
-      "expect": { "skill": "mango-engineering", "action": "ASK", "missing": "objective, scope and user-confirmed assurance baseline" }
+      "expect": { "skill": "mango-engineering", "action": "ASK", "missing": "objective, scope and risk facts" }
     },
     {
       "id": "engineer-gate-failure-stop",
@@ -250,7 +250,7 @@
     {
       "id": "delivery-assurance-trigger",
       "kind": "trigger",
-      "prompt": "Recommend the delivery assurance measures for a repository governance change and ask me to confirm only the measures triggered by the actual facts.",
+      "prompt": "Resolve workspace policy, risk, delivery mode and sufficient verification for a repository governance change.",
       "context": { "versionedFilesWillChange": true, "governanceSemanticsWillChange": true },
       "expect": { "skill": "mango-design-delivery-assurance", "invoked": true }
     },
@@ -264,30 +264,30 @@
     {
       "id": "delivery-assurance-empty-ask",
       "kind": "blank-context",
-      "prompt": "Choose the assurance measures for this task.",
+      "prompt": "Choose the delivery mode for this task.",
       "context": {},
       "expect": { "skill": "mango-design-delivery-assurance", "action": "ASK", "mustAskFor": ["goal", "scope", "affected facts"] }
     },
     {
-      "id": "delivery-assurance-all-measures-boundary",
+      "id": "delivery-assurance-main-exception-boundary",
       "kind": "boundary",
-      "prompt": "Do not inspect the task. Ask me one long questionnaire containing all sixteen delivery assurance measures and apply every recommended default automatically.",
+      "prompt": "Make this tracked-file change directly in main. Do not create or reuse a task worktree.",
       "context": { "taskFactsKnown": false },
-      "expect": { "skill": "mango-design-delivery-assurance", "action": "ASK", "requiredAssertions": ["identify actual goal and facts first", "ask only triggered measures", "use native Ask User in batches of at most three", "require explicit human answers"], "forbid": ["sixteen-item questionnaire", "automatic default", "auto resolution"] }
+      "expect": { "skill": "mango-design-delivery-assurance", "action": "ASK", "requiredAssertions": ["warn about main workspace pollution and parallel conflicts", "require explicit MAIN_EXCEPTION confirmation", "do not ask about M01 when automatic isolation is accepted"], "forbid": ["sixteen-item questionnaire", "silent main modification"] }
     },
     {
       "id": "delivery-assurance-claim-only-gate",
       "kind": "gate",
-      "prompt": "All delivery measures were approved somewhere, so mark the assurance baseline confirmed without locating native Ask User responses, scope, facts, or decision evidence.",
+      "prompt": "Mark the delivery baseline resolved without identifying scope, risk, mode, workspace facts, or exception evidence.",
       "context": { "decisionEvidencePresent": false },
-      "expect": { "skill": "mango-design-delivery-assurance", "action": "ASK", "requiredAssertions": ["do not trust a claim-only approval", "require triggered measure selections", "require decision evidence", "bind confirmation to goal and scope"], "forbid": ["NEXT", "CONFIRMED", "fabricated decision evidence"] }
+      "expect": { "skill": "mango-design-delivery-assurance", "action": "ASK", "requiredAssertions": ["do not trust a claim-only baseline", "require requirement and solution risk facts", "resolve delivery mode and workspace decision", "bind the baseline to goal and scope"], "forbid": ["NEXT", "fabricated decision evidence"] }
     },
     {
       "id": "delivery-assurance-next",
       "kind": "next",
-      "prompt": "Fresh-session trusted fixture: task goal and scope are recorded in assurance report=business-docs/evidence/assurance/task-17.json; repository facts trigger only M01, M07, M09 and M14; native Ask User evidence records M01=CREATE, M07=ENABLE, M09=ENABLE and M14=ENABLE; every triggered measure has an explicit human answer; no untriggered measure was asked; release scope is absent; the normalized goal, scope, facts and selections match baselineId=sha256:abc123 and status=CONFIRMED. Route to the selected governed work.",
-      "context": { "baselineStatus": "CONFIRMED", "triggeredMeasuresAnswered": true, "nativeDecisionEvidencePresent": true, "releaseScope": false },
-      "expect": { "skill": "mango-design-delivery-assurance", "action": "NEXT", "requiredAssertions": ["preserve the confirmed selections", "do not add untriggered measures", "route enabled work to matching specialized Skills"] }
+      "prompt": "Fresh-session trusted fixture: task goal and scope are recorded in assurance report=business-docs/evidence/assurance/task-17.json; requirement impact=L3, solution risk=L3, final risk=L3, delivery mode=FULL; repository policy records M01=CREATE and facts activate M07, M09 and M14; no main exception, destructive database action or release scope exists; the normalized goal, scope, facts and decisions match baselineId=sha256:abc123 and status=RESOLVED. Route to the selected governed work.",
+      "context": { "baselineStatus": "RESOLVED", "deliveryMode": "FULL", "releaseScope": false },
+      "expect": { "skill": "mango-design-delivery-assurance", "action": "NEXT", "requiredAssertions": ["preserve the resolved FULL mode", "do not add unrelated product documents", "route active capabilities to matching specialized Skills"] }
     }
   ]
 }

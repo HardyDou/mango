@@ -26,13 +26,13 @@ Run PMO preflight with role `tech-lead` and phase `design`, then read every `Mus
 
 ## Execute
 
-1. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and the assurance baseline. Continue only when the user confirmed M06 Implementation Plan=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Inherit the applicable approved design's final L0-L3 and evidence without reassessing or lowering it. Risk level does not enable Plan or any other document.
+1. Read the resolved delivery-mode baseline. Continue for a standalone Plan only in FULL flow or an explicit higher-mode request. SIMPLE executes directly; STANDARD keeps ordered implementation items in its single record. Inherit the approved final risk without lowering it.
 2. Choose one action:
    - `STOP`: the design is absent, unapproved, invalid, or the request asks the plan to decide unresolved requirements or architecture.
    - `ASK`: ownership, dependency, sequencing, target path, verification, or rollout facts cannot be established.
    - `WRITE`: inputs satisfy the rule; fill the official template with executable, traceable work items only.
 3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-implementation-plan.mjs" --document <document-path>`.
-4. Turn only user-enabled M09-M16 measures into executable commands or steps. Do not add omitted measures or demand skip reasons for untriggered measures. Fix failures without weakening the checker or silently redesigning the approved solution. Any new endpoint, schema, technology choice or architecture decision requires a TDD revision and renewed approval when M05 is enabled; otherwise reconfirm the affected assurance measures.
+4. Turn only fact-enabled M09-M16 capabilities into executable commands or steps. Do not add tests without an observation target. Fix failures without weakening the checker or silently redesigning the approved solution. Any new endpoint, schema, technology choice or architecture decision requires a FULL TDD revision or a STANDARD record update and mode reassessment.
 5. Run the lifecycle checker for the user-enabled Plan and applicable upstream; require valid hashes and trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
 6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, dependency graph, gate table and human approval all pass. Let the coordinator choose the next enabled measure or engineering.
 

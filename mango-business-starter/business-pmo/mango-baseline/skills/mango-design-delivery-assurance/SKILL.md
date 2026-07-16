@@ -1,98 +1,48 @@
 ---
 name: mango-design-delivery-assurance
-description: Design and obtain human confirmation for a Mango task's delivery-assurance measures from the fixed v1 catalog. Use before work that may change version-controlled files, databases, product documents, governance, capability guidance, verification, external platform state, or human acceptance, and use again when the goal, scope, facts, or confirmed measure set materially changes. Excludes release and publishing work.
+description: Resolve a Mango task's workspace policy, L0-L3 risk, SIMPLE/STANDARD/FULL delivery mode, artifacts, and observable verification capabilities before implementation or when material facts change. Excludes release and publishing work.
 ---
 
-# Mango Delivery Assurance
+# Mango Delivery Mode
 
 ## Resolve Sources
 
-Set `PMO_ROOT` to the first existing directory:
+Set `PMO_ROOT` to the first existing directory: `<repo>/business-pmo/mango-baseline`, `<repo>/mango-pmo`, or `<plugin-root>/dist/baseline`. If none exists, `STOP`. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and `$PMO_ROOT/contracts/delivery-assurance.json`, run PMO preflight for the actual task and paths, then read every `Must read` file.
 
-1. `<repo>/business-pmo/mango-baseline` in a Mango business project.
-2. `<repo>/mango-pmo` in the Mango source repository.
-3. `<plugin-root>/dist/baseline` in an installed `@mango/pmo` package.
+## Keep Release Separate
 
-If none exists, `STOP` and ask for PMO installation or synchronization. Never reconstruct the catalog from memory.
+Do not authorize or execute publishing, versions, registries, tags, releases, or release recovery. Route those actions to `$mango-release`.
 
-Read `$PMO_ROOT/rules/11-delivery-assurance.md` and `$PMO_ROOT/contracts/delivery-assurance.json`. Run PMO preflight for the actual role, phase, task, and affected paths, then read every `Must read` file it returns.
+## Resolve Workspace
 
-## Keep Release Out
+1. Read-only inspection and pure fast-forward synchronization use `NO_WORKTREE`.
+2. Reuse an existing non-main worktree for the same task and record `M01=REUSE`.
+3. On main or the primary worktree, a tracked-file change records `M01=CREATE` and creates an external sibling task worktree without asking the user.
+4. Never create a second worktree for the same task.
+5. Use `M01=MAIN_EXCEPTION` only after the user explicitly requests main/primary worktree changes and confirms the warned pollution, parallel-conflict, and accidental-commit risks.
 
-Do not recommend, ask about, authorize, execute, or verify publishing, version bumps, registries, release batches, tags, or release recovery through this Skill. Route release work to `$mango-release` and the release rules. A task that contains both implementation and release work must confirm only the non-release measures here; keep release authorization separate.
+## Select The Delivery Mode
 
-## Build The Recommendation
+1. Establish the actual goal, success conditions, scope, exclusions, affected paths, observable behavior, data/security boundaries, coupling, rollback, existing artifacts, and material unknowns.
+2. Assess requirement impact and solution risk separately. Final risk is their maximum.
+3. Apply the contract mapping exactly: `L0/L1=SIMPLE`, `L2=STANDARD`, `L3=FULL`.
+4. `SIMPLE`: implement directly, create no delivery document, and choose only minimum sufficient verification for the observable result.
+5. `STANDARD`: create or update one file from `$PMO_ROOT/templates/standard-delivery-record.md`; do not create separate BRD/SRS/TDD/Plan files.
+6. `FULL`: route the applicable complete lifecycle. Product changes use the applicable BRD/SRS/TDD/Plan chain; governance, release, migration, or other specialist work uses its complete dedicated record without fabricated product documents.
+7. A user may raise the mode. Lowering below the default requires explicit confirmation and residual-risk evidence; security, tenant, money, destructive data, and irreversible release facts cannot be waived.
 
-1. Establish the actual goal, success conditions, scope, exclusions, affected paths and systems, existing artifacts, external state, and material unknowns from repository evidence and user input.
-2. Trigger measures only for facts the current task will change, decide, or prove. A verification-only task for an already deployed change does not retroactively trigger BRD, SRS, or TDD. A simple list/status/log view with no configuration or delivery conclusion does not trigger this Skill; M15 applies only when external readback is evidence for the current configuration or goal.
-3. Evaluate exactly `M01` through `M16` from the loaded contract. Do not add, rename, merge, split, or infer a seventeenth measure.
-4. Mark a measure as triggered only when its contract `triggerFact` is present in the current task facts. Do not put untriggered measures in the questionnaire.
-   - For M01, implementation verbs such as create, change, fix, refactor, or update repository content are sufficient tracked-file facts unless the request explicitly says read-only or no file write. Recommend `CREATE` when the current workspace is main/primary and no reusable task worktree exists; recommend `DO_NOT_CREATE` when the same task is already isolated. If workspace facts are missing, inspect them or ask instead of guessing the value.
-   - For M02, recommend `REBUILD` for disposable empty-database formation/startup proof and `DO_NOT_REBUILD` for production-history or compatibility acceptance that cannot clear data. Evaluate M11 separately; database acceptance does not merge the two measures.
-   - For M11, a refactor that changes dependency direction or collaboration across modules still counts as a module-integration fact even when the promised external behavior is unchanged; static dependency checks cover M09, but do not by themselves prove runtime assembly.
-5. For each triggered measure, recommend one of its exact `allowedValues`. Explain:
-   - the facts that triggered it;
-   - the goal or failure mode it helps protect;
-   - the value, cost, and execution consequence;
-   - the residual risk of the non-recommended value.
-6. Treat risk level as context for recommendation strength, not as a document or verification package selector. Do not select BRD, SRS, TDD, Plan, or all verification types merely because a task is L2/L3.
-7. Reuse existing valid artifacts when they already provide the selected assurance. Enabling a document measure does not require creating a duplicate document.
+## Resolve Execution Capabilities
 
-## Ask The User Natively
+Treat M01-M16 as execution capabilities, not a questionnaire. M03-M06 follow the delivery mode. Activate M07-M16 only when their contract facts are present and they can protect or observe the actual goal. An L3 backend-only task does not activate UI verification. M02 requires human confirmation before destructive database work.
 
-Use the host Agent's native structured user-input capability. In Codex, call `request_user_input` when it is available; in hosts that expose `AskUserQuestion`, use it. Do not replace a native prompt with a prose-only confirmation.
+Ask only for a material unknown, main exception, downward mode override, destructive database action, external write authorization, or material scope/risk change. Do not ask users to approve a fixed M01-M16 list.
 
-- Ask about one measure per question and no more than three measures per tool call.
-- Omit `autoResolutionMs` or any default timeout; explicit confirmation is required.
-- Put the recommended exact value first and suffix its label with `(Recommended)`.
-- Offer only the measure's exact allowed values. The host may add a free-form alternative; do not add another `Other` option.
-- State the measure's value and the residual risk of declining it in the question or option descriptions.
-- Ask prerequisite choices first: `M01`, then `M02`. Recompute the remaining triggered measures after every batch, because an answer can change the facts or implementation boundary.
-- Then ask triggered document and guidance measures `M03` through `M08`, followed by triggered verification and review measures `M09` through `M16`.
-- Do not repeat a measure already explicitly decided by the user for the same unchanged goal and scope; record that decision in the baseline instead.
+## Record The Baseline
 
-`M01` accepts only `CREATE` or `DO_NOT_CREATE`. `M02` accepts only `REBUILD` or `DO_NOT_REBUILD`. Every other measure accepts only `ENABLE` or `DISABLE`.
+Record goal, scope, requirement impact, solution risk, final risk, delivery mode, workspace decision, fact evidence, active capabilities, artifact paths, verification evidence, exceptions, and residual risks. Use `RESOLVED` when policy and facts determine the baseline; record human evidence only for actual exceptions.
 
-If a free-form answer proposes a substitute, map it to an execution variant of the same measure or to another existing catalog measure. Record the original measure's exact value and the substitute detail. If it would create a genuinely new measure, do not invent an ID; ask for a separate catalog-governance change.
+## Re-evaluate
 
-## Record The Confirmation Baseline
+Recalculate the affected portion when scope, solution coupling, failure impact, rollback, database/external state, or observable acceptance changes. Escalate `SIMPLE -> STANDARD -> FULL` immediately when new facts require it. Preserve still-valid evidence and do not reconfirm equivalent implementation details or a retry.
 
-After all triggered measures are answered, record one confirmation baseline in the current conversation, PR body, task record, or ignored runtime state. Do not create a version-controlled document solely to store the baseline unless the user selected a document measure or explicitly requests one.
-
-Use this shape:
-
-```json
-{
-  "contractId": "delivery-assurance",
-  "schemaRevision": 1,
-  "goal": "...",
-  "scope": ["..."],
-  "factEvidence": ["..."],
-  "triggeredMeasures": ["M01"],
-  "selections": {"M01": "CREATE"},
-  "recommendations": {"M01": "CREATE"},
-  "decisionEvidence": {"M01": "native Ask User response"},
-  "acceptedResidualRisks": [],
-  "substitutions": [],
-  "baselineId": "sha256 of the normalized goal, scope, facts, and selections",
-  "status": "CONFIRMED"
-}
-```
-
-The user's confirmed values override the AI recommendation. Explain the resulting residual risk without silently re-enabling a declined measure. System or platform safety restrictions that are not user-waivable remain outside this catalog.
-
-## Execute And Reconfirm
-
-Route enabled document, engineering, QA, expert-review, external-readback, and acceptance work to the matching specialized Skill or Agent. This Skill designs and confirms the combination; it does not draft every selected artifact or claim that a selected check passed.
-
-Re-run fact detection and ask only the affected measure questions when any of these materially changes:
-
-- the goal, success condition, scope, or affected system;
-- the actual diff crosses the confirmed path or behavior boundary;
-- a selected measure cannot be executed or must be replaced with materially different assurance;
-- database, external-state, document, verification, expert-review, or human-acceptance facts newly appear or disappear;
-- the cost, authority, environment impact, or accepted residual risk materially changes.
-
-Do not reconfirm command syntax, equivalent implementation details, read-only diagnostics, or a retry of the same confirmed measure. Preserve the unaffected selections and record a new baseline linked to the previous one.
-
-With insufficient facts to identify the goal or triggered measures, return `ASK`; do not present all sixteen measures as a fallback questionnaire.
+With insufficient facts to determine the goal or risk, return `ASK` for the missing fact. Never fall back to a sixteen-item questionnaire.
