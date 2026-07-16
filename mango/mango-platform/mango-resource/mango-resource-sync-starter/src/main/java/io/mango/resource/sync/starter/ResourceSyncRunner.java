@@ -1,10 +1,13 @@
 package io.mango.resource.sync.starter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.resource.api.ResourceRegistryApi;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.api.enums.ResourceCode;
+import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +26,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResourceSyncRunner implements ApplicationRunner, Ordered {
 
+    private static final int RESOURCE_SYNC_ORDER_OFFSET = 50;
+
     private final ResourceRegistryProperties properties;
     private final ResourceDeclarationCollector collector;
     private final ResourceRegistryApi resourceRegistryApi;
+    private final ObjectMapper objectMapper;
     private final String applicationName;
 
     @Override
@@ -44,17 +50,17 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
         command.setAppCode(resolveAppCode());
         command.setServiceCode(resolveServiceCode());
         command.setModuleCodes(moduleCodes);
-        command.setDeclarations(declarations);
+        command.setDeclarations(serializeDeclarations(declarations));
         R<Boolean> response = resourceRegistryApi.registerDeclarations(command);
-        Require.notNull(response, "资源注册中心无响应");
-        Require.isTrue(response.isSuccess(), response.getMsg());
+        Require.notNull(response, ResourceCode.RESOURCE_SYNC_FAILED, "资源注册中心无响应");
+        Require.isTrue(response.isSuccess(), ResourceCode.RESOURCE_SYNC_FAILED, response.getMsg());
         log.info("Mango resource declaration sync complete: appCode={}, serviceCode={}, declarations={}",
                 command.getAppCode(), command.getServiceCode(), declarations.size());
     }
 
     @Override
     public int getOrder() {
-        return Ordered.LOWEST_PRECEDENCE - 50;
+        return Ordered.LOWEST_PRECEDENCE - RESOURCE_SYNC_ORDER_OFFSET;
     }
 
     private String resolveAppCode() {
@@ -62,7 +68,7 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
         if (StringUtils.hasText(appCode)) {
             return appCode;
         }
-        Require.notBlank(applicationName, "资源注册 appCode 不能为空");
+        Require.notBlank(applicationName, ResourceCode.RESOURCE_INVALID, "资源注册 appCode 不能为空");
         return applicationName;
     }
 
@@ -72,5 +78,15 @@ public class ResourceSyncRunner implements ApplicationRunner, Ordered {
             return serviceCode;
         }
         return applicationName;
+    }
+
+    private String serializeDeclarations(List<ResourceDeclaration> declarations) {
+        try {
+            return objectMapper.writeValueAsString(declarations);
+        } catch (JsonProcessingException exception) {
+            log.warn("Mango resource declarations serialization failed: {}", exception.getOriginalMessage());
+            Require.isTrue(false, ResourceCode.RESOURCE_INVALID, "资源声明序列化失败");
+            return "[]";
+        }
     }
 }

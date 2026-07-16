@@ -1,10 +1,8 @@
 package io.mango.resource.api.command;
 
-import io.mango.resource.api.model.ResourceDeclaration;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -30,10 +28,23 @@ public class RegisterResourceDeclarationsCommand implements Serializable {
     @Schema(description = "来源服务")
     private String serviceCode;
 
+    @NotNull(message = "管理模块列表不能为空")
     @Schema(description = "本次上报服务管理的模块编码列表；声明为空时用于判定缺失资源")
     private List<String> moduleCodes = new ArrayList<>();
 
-    @Valid
-    @Schema(description = "资源声明列表", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<ResourceDeclaration> declarations = new ArrayList<>();
+    @NotBlank(message = "资源声明JSON不能为空")
+    @Schema(description = "资源声明JSON数组", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String declarations;
+
+    public List<String> getModuleCodes() {
+        return List.copyOf(moduleCodes);
+    }
+
+    public void setModuleCodes(List<String> moduleCodes) {
+        if (moduleCodes == null) {
+            this.moduleCodes = new ArrayList<>();
+            return;
+        }
+        this.moduleCodes = new ArrayList<>(moduleCodes);
+    }
 }

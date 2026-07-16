@@ -1,11 +1,17 @@
 package io.mango.resource.starter.remote;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
+import io.mango.common.result.Require;
 import io.mango.infra.feign.starter.ModuleTargetResolver;
-import io.mango.resource.api.ResourceTargetDispatcher;
 import io.mango.resource.api.command.ExecuteResourceTargetCommand;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.api.enums.ResourceCode;
+import io.mango.resource.api.vo.ResourceBatchResultVO;
+import io.mango.resource.api.vo.ResourceSyncResultVO;
+import io.mango.resource.support.ResourceTargetDispatcher;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
@@ -24,7 +30,8 @@ import java.util.stream.Collectors;
 public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher {
 
     private final ModuleTargetResolver moduleTargetResolver;
-    private final ResourceTargetFeignClient targetFeignClient;
+    private final ResourceTargetClient targetClient;
+    private final ObjectMapper objectMapper;
 
     @Override
     public boolean supports(String targetModule) {
@@ -39,26 +46,33 @@ public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher 
                 .collect(Collectors.groupingBy(ResourceDeclaration::getTargetModule));
         for (Map.Entry<String, List<ResourceDeclaration>> entry : declarationsByTarget.entrySet()) {
             ExecuteResourceTargetCommand command = new ExecuteResourceTargetCommand();
-            command.setDeclarations(entry.getValue());
-            command.setCompleteBatch(completeBatchForTarget(completeBatch, entry.getKey()));
-            results.putAll(requireSuccess(targetFeignClient.upsertBatch(targetUri(entry.getKey()), command)));
+            command.setDeclarations(toJson(entry.getValue()));
+            command.setCompleteBatch(toJson(completeBatchForTarget(completeBatch, entry.getKey())));
+            ResourceBatchResultVO response = requireSuccess(
+                    targetClient.upsertBatch(targetUri(entry.getKey()), command));
+            response.getEntries().forEach(result ->
+                    results.put(result.getResourceId(), toResult(result.getResult())));
         }
         return results;
     }
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration declaration) {
-        return requireSuccess(targetFeignClient.disable(targetUri(declaration.getTargetModule()), command(declaration)));
+        return toResult(requireSuccess(targetClient.disable(
+                targetUri(declaration.getTargetModule()), command(declaration))));
     }
 
     @Override
     public ResourceSyncResult delete(ResourceDeclaration declaration) {
-        return requireSuccess(targetFeignClient.delete(targetUri(declaration.getTargetModule()), command(declaration)));
+        return toResult(requireSuccess(targetClient.delete(
+                targetUri(declaration.getTargetModule()), command(declaration))));
     }
 
     private URI targetUri(String targetModule) {
-        return resolve(targetModule)
-                .orElseThrow(() -> new IllegalStateException("No module info found: " + targetModule));
+        URI targetUri = resolve(targetModule).orElse(null);
+        Require.notNull(targetUri, ResourceCode.RESOURCE_NOT_FOUND,
+                "未找到目标模块地址: " + targetModule);
+        return targetUri;
     }
 
     private Optional<URI> resolve(String targetModule) {
@@ -88,16 +102,35 @@ public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher 
 
     private ExecuteResourceTargetCommand command(ResourceDeclaration declaration) {
         ExecuteResourceTargetCommand command = new ExecuteResourceTargetCommand();
-        command.setDeclarations(List.of(declaration));
-        command.setCompleteBatch(List.of(declaration));
+        command.setDeclarations(toJson(List.of(declaration)));
+        command.setCompleteBatch(toJson(List.of(declaration)));
         return command;
     }
 
     private <T> T requireSuccess(R<T> response) {
-        if (response == null || !response.isSuccess()) {
-            String message = response == null ? "empty response" : response.getMsg();
-            throw new IllegalStateException("Remote resource target execution failed: " + message);
+        if (response == null) {
+            Require.isTrue(false, ResourceCode.RESOURCE_SYNC_FAILED,
+                    "远程资源目标执行失败: empty response");
+            return null;
+        }
+        if (!response.isSuccess()) {
+            Require.isTrue(false, ResourceCode.RESOURCE_SYNC_FAILED,
+                    "远程资源目标执行失败: " + response.getMsg());
         }
         return response.getData();
+    }
+
+    private String toJson(List<ResourceDeclaration> declarations) {
+        try {
+            return objectMapper.writeValueAsString(declarations);
+        } catch (JsonProcessingException exception) {
+            Require.isTrue(false, ResourceCode.RESOURCE_INVALID, "资源声明序列化失败");
+            return "[]";
+        }
+    }
+
+    private ResourceSyncResult toResult(ResourceSyncResultVO result) {
+        Require.notNull(result, ResourceCode.RESOURCE_SYNC_FAILED, "远程资源目标未返回同步结果");
+        return ResourceSyncResult.of(result.getTargetId(), result.getTargetTable(), result.getMessage());
     }
 }

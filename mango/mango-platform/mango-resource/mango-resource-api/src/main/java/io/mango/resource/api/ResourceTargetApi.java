@@ -3,11 +3,10 @@ package io.mango.resource.api;
 import io.mango.common.result.R;
 import io.mango.infra.web.api.Inner;
 import io.mango.resource.api.command.ExecuteResourceTargetCommand;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.api.vo.ResourceBatchResultVO;
+import io.mango.resource.api.vo.ResourceSyncResultVO;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
-
-import java.util.Map;
 
 /**
  * 资源目标模块内部执行 API。
@@ -22,7 +21,7 @@ public interface ResourceTargetApi {
      * @return 按资源 ID 返回的同步结果。
      */
     @Inner
-    R<Map<String, ResourceSyncResult>> upsertBatch(@Valid ExecuteResourceTargetCommand command);
+    R<ResourceBatchResultVO> upsertBatch(@Valid ExecuteResourceTargetCommand command);
 
     /**
      * 在目标模块本地执行资源逻辑禁用。
@@ -31,7 +30,7 @@ public interface ResourceTargetApi {
      * @return 同步结果。
      */
     @Inner
-    R<ResourceSyncResult> disable(@Valid ExecuteResourceTargetCommand command);
+    R<ResourceSyncResultVO> disable(@Valid ExecuteResourceTargetCommand command);
 
     /**
      * 在目标模块本地执行资源删除。
@@ -40,5 +39,5 @@ public interface ResourceTargetApi {
      * @return 同步结果。
      */
     @Inner
-    R<ResourceSyncResult> delete(@Valid ExecuteResourceTargetCommand command);
+    R<ResourceSyncResultVO> delete(@Valid ExecuteResourceTargetCommand command);
 }

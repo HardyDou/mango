@@ -1,8 +1,8 @@
 package io.mango.payment.starter.resource;
 
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

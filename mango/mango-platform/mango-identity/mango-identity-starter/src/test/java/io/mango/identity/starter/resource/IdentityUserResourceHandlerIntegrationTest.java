@@ -6,12 +6,12 @@ import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -237,7 +237,7 @@ class IdentityUserResourceHandlerIntegrationTest {
     }
 
     private void put(ResourceDeclaration resource, String name, ResourceFieldType type, Object value) {
-        resource.getFields().put(name, field(type, value));
+        resource.putField(name, field(type, value));
     }
 
     private ResourceField field(ResourceFieldType type, Object value) {

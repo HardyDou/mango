@@ -21,7 +21,7 @@ import io.mango.cms.core.mapper.CmsNavigationMapper;
 import io.mango.cms.core.mapper.CmsSiteCategoryMapper;
 import io.mango.cms.core.mapper.CmsSiteMapper;
 import io.mango.cms.core.mapper.CmsSiteSettingMapper;
-import io.mango.resource.api.ResourceHandler;
+import io.mango.resource.support.ResourceHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

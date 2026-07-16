@@ -3,10 +3,10 @@ package io.mango.domain.core.resource;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.domain.core.mapper.DomainMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -119,7 +119,7 @@ class DomainResourceHandlerIntegrationTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        declaration.getFields().put(name, field);
+        declaration.putField(name, field);
     }
 
     private void rebuildTables() {

@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Bean;
 public class GatewayRouteResourceSyncAutoConfiguration {
 
     @Bean
-    @ConditionalOnClass(name = "io.mango.resource.api.ResourceProvider")
+    @ConditionalOnClass(name = "io.mango.resource.support.ResourceProvider")
     @ConditionalOnMissingBean
     public ApiResourceDeclarationConverter apiResourceDeclarationConverter() {
         return new ApiResourceDeclarationConverter();
@@ -39,7 +39,7 @@ public class GatewayRouteResourceSyncAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnClass(name = "io.mango.resource.api.ResourceProvider")
+    @ConditionalOnClass(name = "io.mango.resource.support.ResourceProvider")
     @ConditionalOnBean(ApiResourceDeclarationConverter.class)
     @ConditionalOnProperty(name = "mango.authorization.resource-sync.gateway.mode", havingValue = "write")
     @ConditionalOnMissingBean

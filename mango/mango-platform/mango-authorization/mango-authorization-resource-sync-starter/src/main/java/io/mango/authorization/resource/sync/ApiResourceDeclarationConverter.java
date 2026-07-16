@@ -1,9 +1,9 @@
 package io.mango.authorization.resource.sync;
 
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
-import io.mango.resource.api.ResourceTypes;
-import io.mango.resource.api.builder.ResourceDeclarationBuilder;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.builder.ResourceDeclarationBuilder;
+import io.mango.resource.support.model.ResourceDeclaration;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

@@ -7,12 +7,12 @@ import io.mango.authorization.api.command.AppLoginContextCommand;
 import io.mango.authorization.api.vo.AppLoginContextVO;
 import io.mango.authorization.api.vo.AppVO;
 import io.mango.authorization.core.service.IAuthorizationAppService;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceStatus;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceHandlerSpec;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

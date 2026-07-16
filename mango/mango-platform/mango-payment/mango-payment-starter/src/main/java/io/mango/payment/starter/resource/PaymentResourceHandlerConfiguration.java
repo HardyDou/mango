@@ -39,8 +39,8 @@ import io.mango.payment.core.mapper.PaymentRiskRuleMapper;
 import io.mango.payment.core.mapper.PaymentSubjectBankAccountMapper;
 import io.mango.payment.core.mapper.PaymentTenantMapper;
 import io.mango.payment.core.service.PaymentSensitiveValueCodec;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.model.ResourceDeclaration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

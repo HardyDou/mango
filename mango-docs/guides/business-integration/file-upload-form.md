@@ -252,3 +252,5 @@ pnpm -F @mango/file test
   校验决定；列表、归档、删除、目录、存储配置和文件设置仍使用既有细粒度权限。`FilePreviewPanel` 不再支持
   `downloadPermission` prop，业务页面应移除该 prop。文件 ID 持久化、上传/下载/预览 API、租户边界、页面入口和
   启动方式不变。
+
+- Resource 历史债务治理仅迁移 File 资源 Handler 的本地 SPI 依赖，不改变上传、下载、预览 API、文件 ID 持久化、访问权限、租户边界、页面入口、启动方式和本场景验收步骤。

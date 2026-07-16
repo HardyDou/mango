@@ -3,10 +3,10 @@ package io.mango.authorization.starter.resource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.core.service.IAuthorizationAppService;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -65,6 +65,6 @@ class AuthAppResourceHandlerTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        resource.getFields().put(name, field);
+        resource.putField(name, field);
     }
 }

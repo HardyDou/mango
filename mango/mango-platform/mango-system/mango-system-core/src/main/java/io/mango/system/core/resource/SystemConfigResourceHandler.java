@@ -1,12 +1,12 @@
 package io.mango.system.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.ResourceTypes;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceHandlerSpec;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.system.api.enums.ConfigOptionSourceEnum;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import io.mango.system.api.enums.ConfigValueTypeEnum;

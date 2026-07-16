@@ -7,12 +7,12 @@ import io.mango.authorization.core.entity.RoleDataScopeEntity;
 import io.mango.authorization.core.mapper.RoleDataScopeMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -122,7 +122,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
         seedOrg(10L, 1L, "HQ");
         seedOrg(20L, 1L, "BRANCH");
         ResourceDeclaration resource = resource();
-        resource.getFields().remove("scopeValues");
+        resource.removeField("scopeValues");
         put(resource, "orgCodes", ResourceFieldType.JSON, List.of("HQ", "BRANCH"));
 
         ResourceSyncResult result = handler.upsert(resource);
@@ -135,7 +135,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
     void upsertRejectsMissingOrgCodeThroughRealMapper() {
         seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
         ResourceDeclaration resource = resource();
-        resource.getFields().remove("scopeValues");
+        resource.removeField("scopeValues");
         put(resource, "orgCodes", ResourceFieldType.JSON, List.of("UNKNOWN"));
 
         assertThatThrownBy(() -> handler.upsert(resource))
@@ -251,7 +251,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
     }
 
     private void put(ResourceDeclaration resource, String name, ResourceFieldType type, Object value) {
-        resource.getFields().put(name, field(type, value));
+        resource.putField(name, field(type, value));
     }
 
     private ResourceField field(ResourceFieldType type, Object value) {

@@ -2,7 +2,7 @@ package io.mango.resource.support.declaration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -118,6 +118,11 @@ public class ResourceDeclarationLoader {
             invalid(source, "mango.resource is required");
         }
         ResourceDeclarationFile.Resource resource = file.getMango().getResource();
+        validateResourceMetadata(resource, source);
+        validateDeclarationGroups(resource, source);
+    }
+
+    private void validateResourceMetadata(ResourceDeclarationFile.Resource resource, String source) {
         if (resource.getSchemaVersion() == null) {
             invalid(source, "mango.resource.schemaVersion is required");
         }
@@ -126,6 +131,9 @@ public class ResourceDeclarationLoader {
         }
         requireText(resource.getModuleCode(), source, "mango.resource.moduleCode is required");
         requireText(resource.getModuleName(), source, "mango.resource.moduleName is required");
+    }
+
+    private void validateDeclarationGroups(ResourceDeclarationFile.Resource resource, String source) {
         if (resource.getDeclarations() == null || resource.getDeclarations().isEmpty()) {
             invalid(source, "mango.resource.declarations is required");
         }

@@ -1,13 +1,13 @@
 package io.mango.authorization.starter.resource;
 
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.authorization.core.entity.FrontendAppRegistryEntity;
 import io.mango.authorization.core.service.IAuthorizationAppService;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -54,7 +54,7 @@ class FrontendAppRegistryResourceHandlerTest {
     @Test
     void upsertRequiresAppCode() {
         ResourceDeclaration resource = resource();
-        resource.getFields().remove("appCode");
+        resource.removeField("appCode");
 
         assertThatThrownBy(() -> handler.upsert(resource))
                 .isInstanceOf(IllegalStateException.class)
@@ -75,7 +75,7 @@ class FrontendAppRegistryResourceHandlerTest {
     @Test
     void disableCanUseTargetIdFromRegistryRow() {
         ResourceDeclaration resource = resource();
-        resource.getFields().clear();
+        resource.clearFields();
         put(resource, "targetId", ResourceFieldType.LONG, 7001L);
         when(appService.deleteFrontendAppRegistry(7001L)).thenReturn(true);
 
@@ -101,7 +101,7 @@ class FrontendAppRegistryResourceHandlerTest {
     @Test
     void deleteCanUseTargetIdFromRegistryRow() {
         ResourceDeclaration resource = resource();
-        resource.getFields().clear();
+        resource.clearFields();
         put(resource, "targetId", ResourceFieldType.LONG, 7001L);
         when(appService.deleteFrontendAppRegistry(7001L)).thenReturn(true);
 
@@ -140,6 +140,6 @@ class FrontendAppRegistryResourceHandlerTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        resource.getFields().put(name, field);
+        resource.putField(name, field);
     }
 }

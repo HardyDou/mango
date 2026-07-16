@@ -1,7 +1,7 @@
 package io.mango.authorization.resource.sync;
 
-import io.mango.resource.api.ResourceProvider;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.ResourceProvider;
+import io.mango.resource.support.model.ResourceDeclaration;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;

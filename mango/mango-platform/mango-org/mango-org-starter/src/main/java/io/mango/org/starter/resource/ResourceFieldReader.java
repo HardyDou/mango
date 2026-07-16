@@ -1,7 +1,7 @@
 package io.mango.org.starter.resource;
 
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.springframework.util.StringUtils;
 
 final class ResourceFieldReader {

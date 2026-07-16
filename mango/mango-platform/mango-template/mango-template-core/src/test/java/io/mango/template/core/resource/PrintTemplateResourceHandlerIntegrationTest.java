@@ -2,10 +2,10 @@ package io.mango.template.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import io.mango.template.core.mapper.TemplateCategoryMapper;
 import io.mango.template.core.mapper.TemplateMapper;
 import io.mango.template.core.mapper.TemplateRenderRecordMapper;
@@ -90,7 +90,7 @@ class PrintTemplateResourceHandlerIntegrationTest {
         declaration.getFields().get("templateName").setValue("合同通知模板V2");
         declaration.getFields().get("content").setValue("合同名称：{{contractName}}");
         declaration.getFields().get("versionId").setValue(3000100000000000004L);
-        declaration.getFields().put("versionNo", field(ResourceFieldType.INT, 2));
+        declaration.putField("versionNo", field(ResourceFieldType.INT, 2));
         handler.upsert(declaration);
 
         assertThat(count("template")).isOne();
@@ -139,20 +139,20 @@ class PrintTemplateResourceHandlerIntegrationTest {
         declaration.setTargetModule("template");
         declaration.setSource("PrintTemplateResourceHandlerIntegrationTest");
         declaration.setFields(new LinkedHashMap<>());
-        declaration.getFields().put("templateId", field(ResourceFieldType.LONG, 3000100000000000001L));
-        declaration.getFields().put("categoryId", field(ResourceFieldType.LONG, 3000100000000000002L));
-        declaration.getFields().put("versionId", field(ResourceFieldType.LONG, 3000100000000000003L));
-        declaration.getFields().put("tenantId", field(ResourceFieldType.LONG, 1L));
-        declaration.getFields().put("templateCode", field(ResourceFieldType.STRING, "contract.notice.default"));
-        declaration.getFields().put("templateName", field(ResourceFieldType.STRING, "合同通知模板"));
-        declaration.getFields().put("categoryCode", field(ResourceFieldType.STRING, "CONTRACT"));
-        declaration.getFields().put("categoryName", field(ResourceFieldType.STRING, "合同模板"));
-        declaration.getFields().put("domainCode", field(ResourceFieldType.STRING, "CONTRACT"));
-        declaration.getFields().put("sourceFormat", field(ResourceFieldType.STRING, "TEXT"));
-        declaration.getFields().put("content", field(ResourceFieldType.STRING, "合同编号：{{contractNo}}"));
-        declaration.getFields().put("variableSchema", field(ResourceFieldType.JSON, "[{\"name\":\"contractNo\"}]"));
-        declaration.getFields().put("versionNo", field(ResourceFieldType.INT, 1));
-        declaration.getFields().put("status", field(ResourceFieldType.INT, 1));
+        declaration.putField("templateId", field(ResourceFieldType.LONG, 3000100000000000001L));
+        declaration.putField("categoryId", field(ResourceFieldType.LONG, 3000100000000000002L));
+        declaration.putField("versionId", field(ResourceFieldType.LONG, 3000100000000000003L));
+        declaration.putField("tenantId", field(ResourceFieldType.LONG, 1L));
+        declaration.putField("templateCode", field(ResourceFieldType.STRING, "contract.notice.default"));
+        declaration.putField("templateName", field(ResourceFieldType.STRING, "合同通知模板"));
+        declaration.putField("categoryCode", field(ResourceFieldType.STRING, "CONTRACT"));
+        declaration.putField("categoryName", field(ResourceFieldType.STRING, "合同模板"));
+        declaration.putField("domainCode", field(ResourceFieldType.STRING, "CONTRACT"));
+        declaration.putField("sourceFormat", field(ResourceFieldType.STRING, "TEXT"));
+        declaration.putField("content", field(ResourceFieldType.STRING, "合同编号：{{contractNo}}"));
+        declaration.putField("variableSchema", field(ResourceFieldType.JSON, "[{\"name\":\"contractNo\"}]"));
+        declaration.putField("versionNo", field(ResourceFieldType.INT, 1));
+        declaration.putField("status", field(ResourceFieldType.INT, 1));
         return declaration;
     }
 

@@ -16,7 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  */
 @AutoConfiguration
 @ConditionalOnClass(name = {
-        "io.mango.resource.api.ResourceProvider",
+        "io.mango.resource.support.ResourceProvider",
         "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"
 })
 @ConditionalOnProperty(name = "mango.authorization.resource-sync.resource-provider.enabled",

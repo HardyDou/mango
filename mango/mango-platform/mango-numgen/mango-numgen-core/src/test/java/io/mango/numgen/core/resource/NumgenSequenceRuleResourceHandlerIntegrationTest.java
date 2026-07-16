@@ -5,10 +5,10 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.numgen.core.mapper.NumgenGeneratorMapper;
 import io.mango.numgen.core.mapper.NumgenRuleMapper;
 import io.mango.numgen.core.mapper.NumgenRuleSegmentMapper;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -287,7 +287,7 @@ class NumgenSequenceRuleResourceHandlerIntegrationTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        declaration.getFields().put(name, field);
+        declaration.putField(name, field);
     }
 
     private void rebuildTables() throws Exception {

@@ -3,8 +3,8 @@ package io.mango.resource.core.sync;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -77,9 +77,10 @@ public class ResourceContentHasher {
         if (!resource.exists() || !resource.isReadable()) {
             throw new IllegalStateException("Classpath file resource is not readable: " + field.getLocation());
         }
-        Charset charset = StringUtils.hasText(field.getEncoding())
-                ? Charset.forName(field.getEncoding())
-                : StandardCharsets.UTF_8;
+        Charset charset = StandardCharsets.UTF_8;
+        if (StringUtils.hasText(field.getEncoding())) {
+            charset = Charset.forName(field.getEncoding());
+        }
         try (InputStream inputStream = resource.getInputStream()) {
             return new String(inputStream.readAllBytes(), charset);
         } catch (IOException e) {

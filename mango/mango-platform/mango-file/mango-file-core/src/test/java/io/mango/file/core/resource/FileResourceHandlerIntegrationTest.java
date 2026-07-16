@@ -8,9 +8,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.mango.file.core.mapper.FileSettingsMapper;
 import io.mango.file.core.mapper.FileStorageConfigMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceSyncMode;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -107,7 +107,7 @@ class FileResourceHandlerIntegrationTest {
     @Test
     void settingsDefaultsDuplicateNameStrategyToAutoRename() throws Exception {
         ResourceDeclaration settings = declarations(loadFileStorageResource(), ResourceTypes.FILE_SETTINGS).getFirst();
-        settings.getFields().remove("duplicateNameStrategy");
+        settings.removeField("duplicateNameStrategy");
 
         settingsHandler.upsert(settings);
 
@@ -117,11 +117,11 @@ class FileResourceHandlerIntegrationTest {
     @Test
     void settingsDefaultsAccessBaselineToDirectSignedUrls() throws Exception {
         ResourceDeclaration settings = declarations(loadFileStorageResource(), ResourceTypes.FILE_SETTINGS).getFirst();
-        settings.getFields().remove("accessTokenEnabled");
-        settings.getFields().remove("publicReadRequiresToken");
-        settings.getFields().remove("accessMode");
-        settings.getFields().remove("accessTokenExpireSeconds");
-        settings.getFields().remove("previewExpireSeconds");
+        settings.removeField("accessTokenEnabled");
+        settings.removeField("publicReadRequiresToken");
+        settings.removeField("accessMode");
+        settings.removeField("accessTokenExpireSeconds");
+        settings.removeField("previewExpireSeconds");
 
         settingsHandler.upsert(settings);
 

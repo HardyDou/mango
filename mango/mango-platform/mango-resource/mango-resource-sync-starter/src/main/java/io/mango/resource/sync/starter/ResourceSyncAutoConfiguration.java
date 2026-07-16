@@ -1,7 +1,7 @@
 package io.mango.resource.sync.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.resource.api.ResourceProvider;
+import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.api.ResourceRegistryApi;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.FileResourceProvider;
@@ -47,7 +47,8 @@ public class ResourceSyncAutoConfiguration {
     public ResourceSyncRunner resourceSyncRunner(ResourceRegistryProperties properties,
                                                  ResourceDeclarationCollector collector,
                                                  ResourceRegistryApi resourceRegistryApi,
+                                                 ObjectMapper objectMapper,
                                                  @Value("${spring.application.name:}") String applicationName) {
-        return new ResourceSyncRunner(properties, collector, resourceRegistryApi, applicationName);
+        return new ResourceSyncRunner(properties, collector, resourceRegistryApi, objectMapper, applicationName);
     }
 }

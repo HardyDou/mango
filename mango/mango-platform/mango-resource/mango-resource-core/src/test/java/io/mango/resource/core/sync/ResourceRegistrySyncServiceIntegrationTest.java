@@ -1,28 +1,32 @@
-package io.mango.resource.core.sync;
+package io.mango.resource.core.service.impl;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.kv.core.capability.KvStoreLocker;
 import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.ResourceProvider;
-import io.mango.resource.api.ResourceTargetDispatcher;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceProvider;
+import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationLoader;
 import io.mango.resource.core.entity.ResourceRegistryEntity;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
+import io.mango.resource.core.sync.ResourceContentHasher;
+import io.mango.resource.core.sync.ResourceRegistryLock;
+import io.mango.resource.core.sync.ResourceRegistryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.apache.ibatis.annotations.Mapper;
@@ -71,7 +75,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private ResourceRegistrySyncService syncService;
+    private ResourceRegistryService syncService;
 
     @Autowired
     private ResourceRegistryMapper registryMapper;
@@ -179,8 +183,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
         provider.setDeclarations(List.of(cycleA, cycleB));
 
         assertThatThrownBy(() -> syncService.sync())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Resource type dependency cycle detected: CYCLE_A -> CYCLE_B -> CYCLE_A");
+                .isInstanceOf(BizException.class)
+                .hasMessage("资源类型依赖存在循环: CYCLE_A -> CYCLE_B -> CYCLE_A");
 
         assertThat(count("resource_registry")).isZero();
         assertThat(syncOrderRecorder.resourceTypes()).isEmpty();
@@ -294,8 +298,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
         provider.setDeclaration(activeDeclaration(1, "回退版本"));
 
         assertThatThrownBy(() -> syncService.sync())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("version rollback is not allowed");
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("资源声明版本不允许回退");
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getResourceVersion()).isEqualTo(2);
@@ -393,8 +397,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         assertThatThrownBy(() -> syncService.syncRemote(
                 "platform-admin", "orphan-service", List.of("guarantee"), List.of()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No resource handler found for missing resource disable")
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("缺失资源禁用时未找到处理器")
                 .hasMessageContaining("UNSUPPORTED_TEMPLATE")
                 .hasMessageContaining("unsupported-notice");
     }
@@ -480,7 +484,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         ResourceField title = new ResourceField();
         title.setType(ResourceFieldType.STRING);
         title.setValue(titleValue);
-        declaration.getFields().put("title", title);
+        declaration.putField("title", title);
         return declaration;
     }
 
@@ -539,6 +543,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     sync_mode varchar(32) not null,
                     status varchar(32) not null,
                     last_sync_time timestamp,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
@@ -554,7 +560,12 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     sync_type varchar(32) not null,
                     result varchar(32) not null,
                     message clob,
-                    created_at timestamp
+                    tenant_id varchar(64),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
         jdbcTemplate.execute("""
@@ -565,7 +576,12 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     operator_id bigint,
                     before_content clob,
                     after_content clob,
-                    created_at timestamp
+                    tenant_id varchar(64),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
         jdbcTemplate.execute("""
@@ -635,7 +651,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
             ResourceRegistryMapper.class,
             TestMessageTemplateMapper.class
     })
-    @Import({ResourceRegistryRepository.class, ResourceRegistryLock.class, ResourceRegistrySyncService.class})
+    @Import({ResourceRegistryRepository.class, ResourceRegistryLock.class, ResourceRegistryService.class})
     static class TestConfig {
 
         @Bean

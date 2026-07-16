@@ -58,19 +58,13 @@ async function login(request: APIRequestContext): Promise<LoginData> {
   return body.data as LoginData;
 }
 
-async function installSession(page: Page, loginData: LoginData) {
+async function loginPage(page: Page) {
   await page.goto('/#/login');
-  await page.evaluate((data) => {
-    sessionStorage.setItem('MANGO_TOKEN', data.accessToken);
-    sessionStorage.setItem('MANGO_REFRESH_TOKEN', data.refreshToken || '');
-    sessionStorage.setItem(
-      'MANGO_TOKEN_EXPIRES_AT',
-      String(Date.now() + Number(data.expiresIn || 7200) * 1000),
-    );
-    sessionStorage.setItem('tenantId', String(data.tenantId || 1));
-    sessionStorage.setItem('userInfo', JSON.stringify(data));
-    document.cookie = `MANGO_TOKEN=${encodeURIComponent(data.accessToken)}; path=/; SameSite=Lax`;
-  }, loginData);
+  await expect(page.locator('.tenant-select')).toContainText('芒果集团');
+  await page.getByPlaceholder('用户名').fill('admin');
+  await page.getByPlaceholder('密码').fill('admin123');
+  await page.locator('.login-btn').click();
+  await page.waitForURL('**/#/home', { timeout: 10_000 });
 }
 
 function recordsOf<T>(body: ApiResponse<PageResult<T>>): T[] {
@@ -108,10 +102,11 @@ function captureRuntimeErrors(page: Page): RuntimeErrors {
 }
 
 test('@p0 @infra-kv JDBC KV 支撑资源注册同步，并通过真实管理接口和页面验收', async ({ page, request }, testInfo) => {
+  test.setTimeout(90_000);
   const runtimeErrors = captureRuntimeErrors(page);
   const loginData = await login(request);
   const headers = { Authorization: `Bearer ${loginData.accessToken}` };
-  await installSession(page, loginData);
+  await loginPage(page);
 
   const menuResponsePromise = page.waitForResponse(response =>
     response.url().includes('/api/authorization/menus')
@@ -148,6 +143,21 @@ test('@p0 @infra-kv JDBC KV 支撑资源注册同步，并通过真实管理接�
   expect(handlerResponse.status()).toBe(200);
   expect(handlerBody.success || handlerBody.code === 200).toBeTruthy();
   expect(handlerBody.data?.length).toBeGreaterThan(0);
+
+  const invalidDeleteResponse = await request.delete(
+    e2eApi('/resource/registries?physical=false'),
+    { headers },
+  );
+  const invalidDeleteBody = await invalidDeleteResponse.json() as ApiResponse<unknown>;
+  expect(invalidDeleteResponse.status()).toBe(400);
+  expect(invalidDeleteBody.success).toBeFalsy();
+  expect(invalidDeleteBody.code).toBe(400);
+
+  const forceSyncResponse = await request.post(e2eApi('/resource/sync/force'), { headers });
+  const forceSyncBody = await forceSyncResponse.json() as ApiResponse<boolean>;
+  expect(forceSyncResponse.status()).toBe(200);
+  expect(forceSyncBody.success || forceSyncBody.code === 200).toBeTruthy();
+  expect(forceSyncBody.data).toBe(true);
 
   await testInfo.attach('resource-menu', {
     body: await page.screenshot({ fullPage: true }),

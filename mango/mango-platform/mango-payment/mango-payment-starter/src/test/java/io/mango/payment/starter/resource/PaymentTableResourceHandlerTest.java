@@ -7,10 +7,10 @@ import io.mango.payment.core.entity.PaymentChannelContractValueEntity;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractValueMapper;
 import io.mango.payment.core.service.PaymentSensitiveValueCodec;
-import io.mango.resource.api.ResourceHandler;
+import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 

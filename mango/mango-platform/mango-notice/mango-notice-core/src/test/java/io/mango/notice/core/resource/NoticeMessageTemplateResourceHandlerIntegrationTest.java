@@ -3,10 +3,10 @@ package io.mango.notice.core.resource;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
@@ -194,7 +194,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        declaration.getFields().put(name, field);
+        declaration.putField(name, field);
     }
 
     private void rebuildTables() throws Exception {

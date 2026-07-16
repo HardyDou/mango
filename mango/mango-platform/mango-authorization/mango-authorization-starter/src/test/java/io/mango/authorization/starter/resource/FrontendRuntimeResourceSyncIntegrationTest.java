@@ -3,7 +3,8 @@ package io.mango.authorization.starter.resource;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.AuthorizationQuery;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.command.AppLoginContextCommand;
 import io.mango.authorization.api.command.TenantAppBindingCommand;
@@ -22,19 +23,20 @@ import io.mango.authorization.core.service.impl.AuthorizationAppService;
 import io.mango.authorization.core.service.impl.FrontendRuntimeStrategyService;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
-import io.mango.resource.api.ResourceHandler;
-import io.mango.resource.api.ResourceProvider;
-import io.mango.resource.api.ResourceTargetDispatcher;
+import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceProvider;
+import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
-import io.mango.resource.core.sync.ResourceRegistrySyncService;
+import io.mango.resource.core.service.IResourceRegistryService;
+import io.mango.resource.core.service.impl.ResourceRegistryService;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.declaration.ResourceDeclarationLoader;
@@ -84,7 +86,10 @@ class FrontendRuntimeResourceSyncIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private ResourceRegistrySyncService syncService;
+    private IResourceRegistryService registryService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private AuthorizationAppService appService;
@@ -103,11 +108,16 @@ class FrontendRuntimeResourceSyncIntegrationTest {
     }
 
     @Test
-    void resourceSyncWritesFrontendRuntimeTablesAndFeedsRuntimeDescriptor() {
+    void resourceSyncWritesFrontendRuntimeTablesAndFeedsRuntimeDescriptor() throws Exception {
         ResourceDeclaration runtimeUnit = frontendAppDeclaration();
         ResourceDeclaration strategy = runtimeStrategyDeclaration();
 
-        syncService.syncRemote("platform-admin", "frontend-manifest", List.of(runtimeUnit, strategy));
+        RegisterResourceDeclarationsCommand command = new RegisterResourceDeclarationsCommand();
+        command.setAppCode("platform-admin");
+        command.setServiceCode("frontend-manifest");
+        command.setModuleCodes(List.of("authorization"));
+        command.setDeclarations(objectMapper.writeValueAsString(List.of(runtimeUnit, strategy)));
+        registryService.registerDeclarations(command);
 
         assertThat(stringValue("authorization_frontend_app_registry", "app_code")).isEqualTo("guarantee-remote");
         assertThat(stringValue("authorization_frontend_app_registry", "app_type")).isEqualTo("MICRO_APP");
@@ -181,16 +191,16 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                 "frontend.guarantee.remote",
                 "Guarantee remote runtime");
         declaration.setTargetModule("authorization");
-        declaration.getFields().put("appCode", field("guarantee-remote"));
-        declaration.getFields().put("appType", field("MICRO_APP"));
-        declaration.getFields().put("deployMode", field("REMOTE"));
-        declaration.getFields().put("entryUrl", field("https://cdn.example.com/guarantee/entry.js"));
-        declaration.getFields().put("mountPath", field("/guarantee"));
-        declaration.getFields().put("activeRule", field("/guarantee/**"));
-        declaration.getFields().put("framework", field("vue3"));
-        declaration.getFields().put("version", field("1.0.0"));
-        declaration.getFields().put("sandboxEnabled", field(Boolean.TRUE));
-        declaration.getFields().put("styleIsolation", field("SCOPED"));
+        declaration.putField("appCode", field("guarantee-remote"));
+        declaration.putField("appType", field("MICRO_APP"));
+        declaration.putField("deployMode", field("REMOTE"));
+        declaration.putField("entryUrl", field("https://cdn.example.com/guarantee/entry.js"));
+        declaration.putField("mountPath", field("/guarantee"));
+        declaration.putField("activeRule", field("/guarantee/**"));
+        declaration.putField("framework", field("vue3"));
+        declaration.putField("version", field("1.0.0"));
+        declaration.putField("sandboxEnabled", field(Boolean.TRUE));
+        declaration.putField("styleIsolation", field("SCOPED"));
         return declaration;
     }
 
@@ -201,13 +211,13 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                 "frontend.guarantee.strategy",
                 "Guarantee runtime strategy");
         declaration.setTargetModule("authorization");
-        declaration.getFields().put("appCode", field("internal-admin"));
-        declaration.getFields().put("moduleCode", field("mango-guarantee"));
-        declaration.getFields().put("deployProfile", field("hybrid"));
-        declaration.getFields().put("pageType", field("MICRO_ROUTE"));
-        declaration.getFields().put("runtimeCode", field("guarantee-remote"));
-        declaration.getFields().put("status", field(1));
-        declaration.getFields().put("sort", field(2));
+        declaration.putField("appCode", field("internal-admin"));
+        declaration.putField("moduleCode", field("mango-guarantee"));
+        declaration.putField("deployProfile", field("hybrid"));
+        declaration.putField("pageType", field("MICRO_ROUTE"));
+        declaration.putField("runtimeCode", field("guarantee-remote"));
+        declaration.putField("status", field(1));
+        declaration.putField("sort", field(2));
         return declaration;
     }
 
@@ -320,6 +330,8 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     sync_mode varchar(32) not null,
                     status varchar(32) not null,
                     last_sync_time timestamp,
+                    tenant_id varchar(64),
+                    org_id bigint,
                     created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
@@ -335,7 +347,12 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     sync_type varchar(32) not null,
                     result varchar(32) not null,
                     message clob,
-                    created_at timestamp
+                    tenant_id varchar(64),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
         jdbcTemplate.execute("""
@@ -346,7 +363,12 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     operator_id bigint,
                     before_content clob,
                     after_content clob,
-                    created_at timestamp
+                    tenant_id varchar(64),
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
                 )
                 """);
     }
@@ -376,7 +398,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
             FrontendModuleRuntimeStrategyResourceHandler.class,
             ResourceRegistryRepository.class,
             ResourceRegistryLock.class,
-            ResourceRegistrySyncService.class
+            ResourceRegistryService.class
     })
     static class TestConfig {
 
@@ -461,19 +483,19 @@ class FrontendRuntimeResourceSyncIntegrationTest {
         }
 
         @Override
-        public Map<String, io.mango.resource.api.model.ResourceSyncResult> upsertBatch(
+        public Map<String, io.mango.resource.support.model.ResourceSyncResult> upsertBatch(
                 List<ResourceDeclaration> declarations,
                 List<ResourceDeclaration> completeBatch) {
             return Map.of();
         }
 
         @Override
-        public io.mango.resource.api.model.ResourceSyncResult disable(ResourceDeclaration declaration) {
+        public io.mango.resource.support.model.ResourceSyncResult disable(ResourceDeclaration declaration) {
             return null;
         }
 
         @Override
-        public io.mango.resource.api.model.ResourceSyncResult delete(ResourceDeclaration declaration) {
+        public io.mango.resource.support.model.ResourceSyncResult delete(ResourceDeclaration declaration) {
             return null;
         }
     }

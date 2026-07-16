@@ -2,9 +2,9 @@ package io.mango.notice.support.resource;
 
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticePriority;
-import io.mango.resource.api.ResourceTypes;
-import io.mango.resource.api.builder.ResourceDeclarationBuilder;
-import io.mango.resource.api.model.ResourceDeclaration;
+import io.mango.resource.support.ResourceTypes;
+import io.mango.resource.support.builder.ResourceDeclarationBuilder;
+import io.mango.resource.support.model.ResourceDeclaration;
 
 import java.util.ArrayList;
 import java.util.List;

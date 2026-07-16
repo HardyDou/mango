@@ -3,12 +3,12 @@ package io.mango.authorization.starter.resource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.core.service.IAppModuleService;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceSyncMode;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -69,7 +69,7 @@ class AuthMenuResourceHandlerTest {
     @Test
     void upsertRequiresMenusField() {
         ResourceDeclaration resource = menuResource();
-        resource.getFields().remove("menus");
+        resource.removeField("menus");
 
         assertThatThrownBy(() -> handler.upsert(resource))
                 .isInstanceOf(IllegalStateException.class)
@@ -91,7 +91,7 @@ class AuthMenuResourceHandlerTest {
     void disableUsesRegistryTargetIdWhenDeclarationFieldsAreMissing() {
         ResourceDeclaration resource = new ResourceDeclaration();
         resource.setResourceType(ResourceTypes.AUTH_MENU);
-        resource.getFields().put("targetId", field(ResourceFieldType.LONG, 9001L));
+        resource.putField("targetId", field(ResourceFieldType.LONG, 9001L));
         when(appModuleService.disableByBindingId(9001L)).thenReturn(true);
 
         ResourceSyncResult result = handler.disable(resource);
@@ -269,7 +269,7 @@ class AuthMenuResourceHandlerTest {
     }
 
     private void put(ResourceDeclaration resource, String name, ResourceFieldType type, Object value) {
-        resource.getFields().put(name, field(type, value));
+        resource.putField(name, field(type, value));
     }
 
     private ResourceField field(ResourceFieldType type, Object value) {

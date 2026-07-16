@@ -1,14 +1,14 @@
 package io.mango.authorization.starter.resource;
 
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.query.FrontendModuleRuntimeStrategyQuery;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
-import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
-import io.mango.resource.api.model.ResourceDeclaration;
-import io.mango.resource.api.model.ResourceField;
-import io.mango.resource.api.model.ResourceSyncResult;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncResult;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -55,7 +55,7 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void upsertFallsBackToDeclarationModuleCode() {
         ResourceDeclaration resource = resource();
-        resource.getFields().remove("moduleCode");
+        resource.removeField("moduleCode");
         when(runtimeStrategyService.save(org.mockito.ArgumentMatchers.any())).thenReturn(8001L);
 
         handler.upsert(resource);
@@ -69,7 +69,7 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void upsertRequiresRuntimeCode() {
         ResourceDeclaration resource = resource();
-        resource.getFields().remove("runtimeCode");
+        resource.removeField("runtimeCode");
 
         assertThatThrownBy(() -> handler.upsert(resource))
                 .isInstanceOf(IllegalStateException.class)
@@ -90,8 +90,8 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void disableOnlyRequiresStrategyKeyFields() {
         ResourceDeclaration resource = resource();
-        resource.getFields().remove("pageType");
-        resource.getFields().remove("runtimeCode");
+        resource.removeField("pageType");
+        resource.removeField("runtimeCode");
         when(runtimeStrategyService.disable(any(FrontendModuleRuntimeStrategyQuery.class))).thenReturn(true);
 
         ResourceSyncResult result = handler.disable(resource);
@@ -103,7 +103,7 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void disableCanUseTargetIdFromRegistryRow() {
         ResourceDeclaration resource = resource();
-        resource.getFields().clear();
+        resource.clearFields();
         put(resource, "targetId", ResourceFieldType.LONG, 8001L);
         when(runtimeStrategyService.disable(8001L)).thenReturn(true);
 
@@ -129,7 +129,7 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void deleteCanUseTargetIdFromRegistryRow() {
         ResourceDeclaration resource = resource();
-        resource.getFields().clear();
+        resource.clearFields();
         put(resource, "targetId", ResourceFieldType.LONG, 8001L);
         when(runtimeStrategyService.delete(8001L)).thenReturn(true);
 
@@ -143,8 +143,8 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
     @Test
     void deleteOnlyRequiresStrategyKeyFields() {
         ResourceDeclaration resource = resource();
-        resource.getFields().remove("pageType");
-        resource.getFields().remove("runtimeCode");
+        resource.removeField("pageType");
+        resource.removeField("runtimeCode");
         when(runtimeStrategyService.delete(any(FrontendModuleRuntimeStrategyQuery.class))).thenReturn(true);
 
         ResourceSyncResult result = handler.delete(resource);
@@ -198,6 +198,6 @@ class FrontendModuleRuntimeStrategyResourceHandlerTest {
         ResourceField field = new ResourceField();
         field.setType(type);
         field.setValue(value);
-        resource.getFields().put(name, field);
+        resource.putField(name, field);
     }
 }
