@@ -666,6 +666,7 @@ onMounted(() => {
   --mango-file-preview-panel-min-height: 0;
   --mango-file-preview-stage-min-height: 0;
   --mango-file-preview-content-height: 100%;
+  --mango-file-preview-content-min-height: 0;
 }
 
 :deep(.file-preview-dialog.el-dialog) {
