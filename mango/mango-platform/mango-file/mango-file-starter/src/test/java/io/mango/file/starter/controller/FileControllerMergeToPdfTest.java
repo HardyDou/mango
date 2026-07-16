@@ -1,6 +1,5 @@
 package io.mango.file.starter.controller;
 
-import io.mango.common.result.R;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.core.service.IFileService;
@@ -28,7 +27,7 @@ class FileControllerMergeToPdfTest {
         record.setId(9001L);
         record.setFileName("材料合集.pdf");
         record.setContentType("application/pdf");
-        when(fileService.mergeToPdf(any(FileMergePdfCommand.class))).thenReturn(R.ok(record));
+        when(fileService.mergeToPdf(any(FileMergePdfCommand.class))).thenReturn(record);
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService)).build();
 
         mockMvc.perform(post("/file/files/merge-pdf")

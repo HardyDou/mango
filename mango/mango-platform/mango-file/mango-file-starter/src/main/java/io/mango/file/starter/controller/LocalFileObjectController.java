@@ -2,9 +2,9 @@ package io.mango.file.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.service.ILocalFileObjectService;
 import io.mango.file.core.storage.FileObject;
-import io.mango.file.core.storage.FileStorageRouter;
+import io.mango.common.contract.BinaryHttpAdapter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.util.UriUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -27,12 +28,14 @@ import java.nio.charset.StandardCharsets;
  * 本地磁盘对象访问接口。
  */
 @RestController
+@BinaryHttpAdapter
 @RequestMapping("/file/local-objects")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "本地文件对象", description = "本地磁盘存储对象公开读取接口")
 public class LocalFileObjectController {
 
-    private final FileStorageRouter fileStorageRouter;
+    private final ILocalFileObjectService localFileObjectService;
 
     @GetMapping("/{bucket}/**")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "本地磁盘存储对象读取")
@@ -43,8 +46,7 @@ public class LocalFileObjectController {
             @RequestParam(required = false, defaultValue = "false") boolean download,
             jakarta.servlet.http.HttpServletRequest request) {
         String objectName = objectName(request, bucket);
-        FileStorageConfig config = localConfig(bucket);
-        FileObject object = fileStorageRouter.getObject(config, objectName);
+        FileObject object = localFileObjectService.get(bucket, objectName);
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (object.contentType() != null && !object.contentType().isBlank()) {
             mediaType = MediaType.parseMediaType(object.contentType());
@@ -57,13 +59,6 @@ public class LocalFileObjectController {
                 .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(new InputStreamResource(object.inputStream()));
-    }
-
-    private FileStorageConfig localConfig(String bucket) {
-        FileStorageConfig config = new FileStorageConfig();
-        config.setStorageType("LOCAL");
-        config.setBucketName(bucket);
-        return config;
     }
 
     private String objectName(jakarta.servlet.http.HttpServletRequest request, String bucket) {

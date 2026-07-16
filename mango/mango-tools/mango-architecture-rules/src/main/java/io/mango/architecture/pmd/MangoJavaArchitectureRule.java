@@ -39,6 +39,8 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     private static final String BIZ_CODE = "io.mango.common.result.BizCode";
     private static final String LOCAL_CAPABILITY_CONTRACT =
             "io.mango.common.contract.LocalCapabilityContract";
+    private static final String BINARY_HTTP_ADAPTER =
+            "io.mango.common.contract.BinaryHttpAdapter";
     private static final String MANGO_INFRA_PACKAGE_PREFIX = "io.mango.infra.";
     private static final String MANGO_CRUD_SERVICE =
             "io.mango.infra.persistence.api.crud.MangoCrudService";
@@ -212,7 +214,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     public Object visit(ASTCompilationUnit node, Object data) {
         RuleContext context = asCtx(data);
         for (ASTTypeDeclaration type : node.descendants(ASTTypeDeclaration.class)) {
-            inspectPathRules(type, context);
+            if (!isBinaryHttpAdapter(type)) {
+                inspectPathRules(type, context);
+            }
             inspectProtocolModel(type, context);
             if (hasAnnotation(type, REST_CONTROLLER)) {
                 inspectController(type, context);
@@ -239,9 +243,11 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         inspectControllerAnnotations(type, context);
         inspectControllerFields(type, context);
         for (ASTMethodDeclaration method : type.getDeclarations(ASTMethodDeclaration.class)) {
-            inspectControllerMethod(type, method, context);
+            inspectControllerMethod(type, method, isBinaryHttpAdapter(type), context);
         }
-        inspectControllerResultFactories(type, context);
+        if (!isBinaryHttpAdapter(type)) {
+            inspectControllerResultFactories(type, context);
+        }
     }
 
     private void inspectControllerAnnotations(ASTTypeDeclaration type, RuleContext context) {
@@ -273,8 +279,13 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectControllerMethod(
-            ASTTypeDeclaration type, ASTMethodDeclaration method, RuleContext context) {
-        inspectHttpReturn(method, context);
+            ASTTypeDeclaration type,
+            ASTMethodDeclaration method,
+            boolean binaryAdapter,
+            RuleContext context) {
+        if (!binaryAdapter) {
+            inspectHttpReturn(method, context);
+        }
         if (hasAnnotation(method, REQUEST_MAPPING)) {
             violation(
                     context,
@@ -284,10 +295,12 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         }
         inspectControllerOperation(method, context);
         if (isHttpMethod(method)) {
-            inspectControllerHttpBehavior(type, method, context);
+            inspectControllerHttpBehavior(type, method, binaryAdapter, context);
         }
-        for (ASTFormalParameter parameter : method.descendants(ASTFormalParameter.class)) {
-            inspectControllerParameter(method, parameter, context);
+        if (!binaryAdapter) {
+            for (ASTFormalParameter parameter : method.descendants(ASTFormalParameter.class)) {
+                inspectControllerParameter(method, parameter, context);
+            }
         }
     }
 
@@ -310,16 +323,21 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectControllerHttpBehavior(
-            ASTTypeDeclaration type, ASTMethodDeclaration method, RuleContext context) {
-        method.descendants(ASTReturnStatement.class)
-                .filter(statement -> !isHandledControllerReturn(statement))
-                .forEach(
-                        statement ->
-                                violation(
-                                        context,
-                                        statement,
-                                        "MANGO-ARCH-CTRL-004 HTTP Controller must directly return"
-                                                + " canonical R.ok(...)"));
+            ASTTypeDeclaration type,
+            ASTMethodDeclaration method,
+            boolean binaryAdapter,
+            RuleContext context) {
+        if (!binaryAdapter) {
+            method.descendants(ASTReturnStatement.class)
+                    .filter(statement -> !isHandledControllerReturn(statement))
+                    .forEach(
+                            statement ->
+                                    violation(
+                                            context,
+                                            statement,
+                                            "MANGO-ARCH-CTRL-004 HTTP Controller must directly return"
+                                                    + " canonical R.ok(...)"));
+        }
         method.descendants(ASTThrowStatement.class)
                 .forEach(
                         statement ->
@@ -328,7 +346,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                                         statement,
                                         "MANGO-ARCH-CTRL-010 Controller must delegate business"
                                                 + " failures to Service Require"));
-        if (implementsApiContract(type) && !hasValidServiceDelegation(type, method)) {
+        if (!binaryAdapter
+                && implementsApiContract(type)
+                && !hasValidServiceDelegation(type, method)) {
             violation(
                     context,
                     method,
@@ -1389,6 +1409,10 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     private boolean isLocalCapabilityContract(ASTTypeDeclaration type) {
         return canonicalName(type.getTypeMirror()).startsWith(MANGO_INFRA_PACKAGE_PREFIX)
                 && hasAnnotation(type, LOCAL_CAPABILITY_CONTRACT);
+    }
+
+    private boolean isBinaryHttpAdapter(ASTTypeDeclaration type) {
+        return hasAnnotation(type, BINARY_HTTP_ADAPTER);
     }
 
     private boolean hasChineseAttribute(

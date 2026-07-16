@@ -43,7 +43,7 @@ import io.mango.cms.core.mapper.CmsSiteMapper;
 import io.mango.cms.core.service.ICmsSiteService;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.file.api.FileApi;
+import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -77,7 +77,7 @@ public class CmsSiteService implements ICmsSiteService {
     private final CmsAdDeliveryMapper adDeliveryMapper;
     private final CmsContentMapper contentMapper;
     private final CmsContentPublishMapper publishMapper;
-    private final ObjectProvider<FileApi> fileApiProvider;
+    private final ObjectProvider<IFileContentProvider> fileContentProvider;
     @Override
     public SiteResolveVO resolveSite(SiteResolveQuery query) {
         return toResolveVO(resolveSiteEntity(query == null ? new SiteResolveQuery() : query));
@@ -235,9 +235,9 @@ public class CmsSiteService implements ICmsSiteService {
         Require.notNull(id, CmsCode.CMS_BUSINESS_ERROR, "文件ID不能为空");
         CmsSiteEntity site = resolveSiteEntity(query == null ? new SiteResolveQuery() : query);
         Require.isTrue(isPublicSiteFile(site, String.valueOf(id)), CmsCode.CMS_BUSINESS_ERROR, "文件不存在");
-        FileApi fileApi = fileApiProvider.getIfAvailable();
-        Require.notNull(fileApi, CmsCode.CMS_BUSINESS_ERROR, "文件服务不可用");
-        return withTenantContext(site.getTenantId(), () -> fileApi.downloadForService(id));
+        IFileContentProvider provider = fileContentProvider.getIfAvailable();
+        Require.notNull(provider, CmsCode.CMS_BUSINESS_ERROR, "文件服务不可用");
+        return withTenantContext(site.getTenantId(), () -> provider.downloadForService(id));
     }
 
     private CmsSiteEntity resolveSiteEntity(SiteResolveQuery query) {

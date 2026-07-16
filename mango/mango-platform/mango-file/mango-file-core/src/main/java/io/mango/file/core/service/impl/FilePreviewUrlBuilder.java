@@ -1,6 +1,6 @@
 package io.mango.file.core.service.impl;
 
-import io.mango.file.core.entity.FileRecord;
+import io.mango.file.core.entity.FileRecordEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriUtils;
 
@@ -21,7 +21,7 @@ final class FilePreviewUrlBuilder {
     private FilePreviewUrlBuilder() {
     }
 
-    static String build(String providerUrl, FileRecord record, String fileUrl, long expireSeconds) {
+    static String build(String providerUrl, FileRecordEntity record, String fileUrl, long expireSeconds) {
         if (!StringUtils.hasText(providerUrl)) {
             return fileUrl;
         }
@@ -55,7 +55,7 @@ final class FilePreviewUrlBuilder {
         return builder.toString();
     }
 
-    private static Map<String, String> values(FileRecord record, String fileUrl, long expireSeconds, boolean includeFileUrl) {
+    private static Map<String, String> values(FileRecordEntity record, String fileUrl, long expireSeconds, boolean includeFileUrl) {
         Map<String, String> values = new LinkedHashMap<>();
         String fileId = record.getId() == null ? "" : String.valueOf(record.getId());
         values.put(FILE_ID, fileId);

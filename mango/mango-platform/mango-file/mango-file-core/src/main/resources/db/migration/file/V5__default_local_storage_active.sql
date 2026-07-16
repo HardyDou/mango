@@ -1,1 +1,0 @@
--- File storage default data is managed by mango-resource FILE_STORAGE_CONFIG.

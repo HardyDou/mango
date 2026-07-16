@@ -1,7 +1,7 @@
 package io.mango.file.core.storage;
 
 import io.mango.file.api.enums.FileCode;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.common.result.Require;
 import org.springframework.util.StringUtils;
 
@@ -14,20 +14,20 @@ import java.util.Optional;
  */
 abstract class AbstractCloudFileStorage implements FileStorage {
 
-    protected void requireBucket(FileStorageConfig config) {
+    protected void requireBucket(FileStorageConfigEntity config) {
         Require.notBlank(config.getBucketName(), FileCode.STORAGE_CONFIG_INVALID);
     }
 
-    protected void requireEndpoint(FileStorageConfig config) {
+    protected void requireEndpoint(FileStorageConfigEntity config) {
         Require.notBlank(config.getEndpoint(), FileCode.STORAGE_CONFIG_INVALID);
     }
 
-    protected void requireAccessSecret(FileStorageConfig config) {
+    protected void requireAccessSecret(FileStorageConfigEntity config) {
         Require.notBlank(config.getAccessKey(), FileCode.STORAGE_CONFIG_INVALID);
         Require.notBlank(config.getSecretKey(), FileCode.STORAGE_CONFIG_INVALID);
     }
 
-    protected String regionOrDefault(FileStorageConfig config, String defaultRegion) {
+    protected String regionOrDefault(FileStorageConfigEntity config, String defaultRegion) {
         return StringUtils.hasText(config.getRegion()) ? config.getRegion().trim() : defaultRegion;
     }
 
@@ -35,7 +35,7 @@ abstract class AbstractCloudFileStorage implements FileStorage {
         return Integer.valueOf(1).equals(value);
     }
 
-    protected Optional<String> publicObjectUrl(FileStorageConfig config, String objectName) {
+    protected Optional<String> publicObjectUrl(FileStorageConfigEntity config, String objectName) {
         if (!StringUtils.hasText(objectName)) {
             return Optional.empty();
         }
@@ -50,7 +50,7 @@ abstract class AbstractCloudFileStorage implements FileStorage {
         return Optional.of(endpoint + "/" + path);
     }
 
-    protected String publicAccessEndpoint(FileStorageConfig config) {
+    protected String publicAccessEndpoint(FileStorageConfigEntity config) {
         String endpoint = StringUtils.hasText(config.getPublicEndpoint())
                 ? config.getPublicEndpoint().trim()
                 : config.getEndpoint();

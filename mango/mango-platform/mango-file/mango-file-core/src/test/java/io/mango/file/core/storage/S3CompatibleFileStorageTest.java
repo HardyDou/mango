@@ -1,6 +1,6 @@
 package io.mango.file.core.storage;
 
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,7 +10,7 @@ class S3CompatibleFileStorageTest {
     @Test
     void publicGetUrl_withPublicEndpointAndPathStyle_usesConfiguredStorageEndpoint() {
         S3CompatibleFileStorage storage = new S3CompatibleFileStorage();
-        FileStorageConfig config = minioConfig();
+        FileStorageConfigEntity config = minioConfig();
         config.setPublicEndpoint("http://file.mango.io:9000");
         config.setPathStyleAccess(1);
 
@@ -22,7 +22,7 @@ class S3CompatibleFileStorageTest {
     @Test
     void publicGetUrl_withoutPublicEndpoint_usesEndpointAndSslConfig() {
         S3CompatibleFileStorage storage = new S3CompatibleFileStorage();
-        FileStorageConfig config = minioConfig();
+        FileStorageConfigEntity config = minioConfig();
         config.setEndpoint("minio.example.com:9000");
         config.setPathStyleAccess(1);
         config.setSslEnabled(1);
@@ -35,7 +35,7 @@ class S3CompatibleFileStorageTest {
     @Test
     void publicGetUrl_withoutPathStyle_keepsObjectNameUnderConfiguredEndpoint() {
         S3CompatibleFileStorage storage = new S3CompatibleFileStorage();
-        FileStorageConfig config = minioConfig();
+        FileStorageConfigEntity config = minioConfig();
         config.setPublicEndpoint("https://cdn.example.com");
         config.setPathStyleAccess(0);
 
@@ -44,8 +44,8 @@ class S3CompatibleFileStorageTest {
         assertThat(url).isEqualTo("https://cdn.example.com/tenant-1/2026/06/test.txt");
     }
 
-    private FileStorageConfig minioConfig() {
-        FileStorageConfig config = new FileStorageConfig();
+    private FileStorageConfigEntity minioConfig() {
+        FileStorageConfigEntity config = new FileStorageConfigEntity();
         config.setStorageType("MINIO");
         config.setEndpoint("http://127.0.0.1:9000");
         config.setBucketName("mango-file");

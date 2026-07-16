@@ -6,9 +6,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
@@ -37,11 +37,11 @@ import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.file.api.vo.FileUploadInitVO;
 import io.mango.file.api.vo.FileUploadPartSignVO;
-import io.mango.file.core.entity.FileDirectory;
+import io.mango.file.core.entity.FileDirectoryEntity;
 import io.mango.file.core.entity.FileHashMappingEntity;
 import io.mango.file.core.entity.FileObjectEntity;
-import io.mango.file.core.entity.FileRecord;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileRecordEntity;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.entity.FileUploadPartEntity;
 import io.mango.file.core.entity.FileUploadSessionEntity;
 import io.mango.file.core.mapper.FileDirectoryMapper;
@@ -54,6 +54,9 @@ import io.mango.file.core.service.IFileDirectoryService;
 import io.mango.file.core.service.IFileService;
 import io.mango.file.core.service.IFileSettingsService;
 import io.mango.file.core.service.IFileStorageConfigService;
+import io.mango.file.core.service.model.EnabledFileStorageKey;
+import io.mango.file.core.service.model.FileDownloadOptions;
+import io.mango.file.core.service.model.ServerFilePart;
 import io.mango.file.core.storage.CompletedUploadPart;
 import io.mango.file.core.storage.FileObject;
 import io.mango.file.core.storage.FileStorageRouter;
@@ -115,7 +118,7 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "Spring collaborators are container-managed shared services; defensive copies are not applicable.")
-public class FileServiceImpl implements IFileService {
+public class FileService implements IFileService, IFileContentProvider {
 
     private static final DateTimeFormatter DATE_PATH = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final int BIZ_META_MAX_LENGTH = 4000;
@@ -151,38 +154,28 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<FileRecordVO> upload(MultipartFile file,
-                                  String purpose,
-                                  String accessLevel,
-                                  String bizType,
-                                  String bizId,
-                                  String bizMeta,
-                                  Long directoryId) {
+    public FileRecordVO upload(MultipartFile file, SaveFileCommand command) {
         Require.notNull(file, FileCode.FILE_EMPTY);
+        Require.notNull(command, FileCode.FILE_EMPTY);
         FileInput input = FileInput.fromMultipart(file);
-        return save(input, purpose, accessLevel, bizType, bizId, bizMeta, directoryId);
+        return save(input, command);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<FileRecordVO> save(SaveFileCommand command) {
+    public FileRecordVO save(SaveFileCommand command) {
         Require.notNull(command, FileCode.FILE_EMPTY);
         try (FileInput input = FileInput.fromCommand(command)) {
-            return save(input,
-                    command.getPurpose(),
-                    command.getAccessLevel(),
-                    command.getBizType(),
-                    command.getBizId(),
-                    command.getBizMeta(),
-                    command.getDirectoryId());
+            return save(input, command);
         } catch (IOException e) {
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
     }
 
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<FileRecordVO> packageFiles(FilePackageCommand command) {
+    public FileRecordVO packageFiles(FilePackageCommand command) {
         Require.notNull(command, FileCode.FILE_EMPTY);
         Require.notEmpty(command.getEntries(), FileCode.FILE_EMPTY);
         String zipFileName = normalizeZipFileName(command.getFileName());
@@ -203,7 +196,7 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<FileRecordVO> mergeToPdf(FileMergePdfCommand command) {
+    public FileRecordVO mergeToPdf(FileMergePdfCommand command) {
         Require.notNull(command, FileCode.FILE_EMPTY);
         Require.notEmpty(command.getEntries(), FileCode.FILE_EMPTY);
         FileMergeTargetFormat targetFormat = resolveMergeTargetFormat(command.getTargetFormat());
@@ -337,26 +330,20 @@ public class FileServiceImpl implements IFileService {
         }
     }
 
-    private R<FileRecordVO> save(FileInput input,
-                                 String purpose,
-                                 String accessLevel,
-                                 String bizType,
-                                 String bizId,
-                                 String bizMeta,
-                                 Long directoryId) {
+    private FileRecordVO save(FileInput input, SaveFileCommand command) {
         validateUpload(input);
         Long tenantId = requireTenantId();
         Long userId = MangoContextHolder.userId();
-        Long resolvedDirectoryId = normalizeDirectoryId(directoryId);
+        Long resolvedDirectoryId = normalizeDirectoryId(command.getDirectoryId());
         directoryService.selectVisible(resolvedDirectoryId);
         FileSettingsVO settings = settingsService.current();
         String originalFilename = resolveFileName(tenantId, resolvedDirectoryId, normalizeFileName(input.fileName), settings);
         String fileExt = fileExt(originalFilename);
         validateExtension(fileExt, settings);
         validateContentType(input.contentType, settings);
-        String normalizedBizMeta = normalizeBizMeta(bizMeta);
+        String normalizedBizMeta = normalizeBizMeta(command.getBizMeta());
         String hash = sha256(input);
-        FileStorageConfig storageConfig = activeStorageConfig();
+        FileStorageConfigEntity storageConfig = activeStorageConfig();
         FileObjectEntity fileObject = findInstantUploadObject(tenantId, storageConfig, hash, input.fileSize, settings);
         if (fileObject == null) {
             String objectName = generateObjectName(storageConfig, tenantId, resolvedDirectoryId, originalFilename, fileExt, hash, settings);
@@ -370,7 +357,7 @@ public class FileServiceImpl implements IFileService {
             createHashMapping(tenantId, storageConfig, hash, input.fileSize, fileObject, settings);
         }
 
-        FileRecord entity = createFileRecord(tenantId,
+        FileRecordEntity entity = createFileRecord(tenantId,
                 userId,
                 fileObject,
                 originalFilename,
@@ -378,52 +365,43 @@ public class FileServiceImpl implements IFileService {
                 input.fileSize,
                 input.contentType,
                 hash,
-                purpose,
-                accessLevel,
-                bizType,
-                bizId,
+                command.getPurpose(),
+                command.getAccessLevel(),
+                command.getBizType(),
+                command.getBizId(),
                 normalizedBizMeta,
                 resolvedDirectoryId,
                 settings);
         fileRecordMapper.insert(entity);
         incrementObjectRefCount(fileObject.getId());
-        return R.ok(toVO(entity));
+        return toVO(entity);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<List<FileRecordVO>> uploadBatch(MultipartFile[] files,
-                                             String purpose,
-                                             String accessLevel,
-                                             String bizType,
-                                             String bizId,
-                                             String bizMeta,
-                                             Long directoryId) {
+    public List<FileRecordVO> uploadBatch(MultipartFile[] files, SaveFileCommand command) {
+        Require.notNull(command, FileCode.FILE_EMPTY);
         Require.notEmpty(files == null ? List.of() : List.of(files), FileCode.FILE_EMPTY);
         List<FileRecordVO> result = List.of(files).stream()
                 .filter(item -> item != null && !item.isEmpty())
-                .map(item -> upload(item, purpose, accessLevel, bizType, bizId, bizMeta, directoryId).getData())
+                .map(item -> upload(item, command))
                 .collect(Collectors.toList());
-        return R.ok(result);
+        return result;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<FileRecordVO> saveGenerated(byte[] content,
-                                         String fileName,
-                                         String contentType,
-                                         String purpose,
-                                         String bizType,
-                                         String bizId) {
+    public FileRecordVO saveGenerated(byte[] content, SaveFileCommand command) {
         Require.notNull(content, FileCode.FILE_EMPTY);
+        Require.notNull(command, FileCode.FILE_EMPTY);
         Long tenantId = requireTenantId();
         Long userId = MangoContextHolder.userId();
-        String originalFilename = normalizeFileName(fileName);
+        String originalFilename = normalizeFileName(command.getFileName());
         String fileExt = fileExt(originalFilename);
         FileSettingsVO settings = settingsService.current();
         validateExtension(fileExt, settings);
-        validateContentType(contentType, settings);
-        FileStorageConfig storageConfig = activeStorageConfig();
+        validateContentType(command.getContentType(), settings);
+        FileStorageConfigEntity storageConfig = activeStorageConfig();
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             String hash = HexFormat.of().formatHex(digest.digest(content));
@@ -434,54 +412,54 @@ public class FileServiceImpl implements IFileService {
             }
             if (fileObject == null) {
                 String objectName = generateObjectName(storageConfig, tenantId, 0L, originalFilename, fileExt, hash, settings);
-                fileStorageRouter.putObject(storageConfig, objectName, new ByteArrayInputStream(content), content.length, contentType);
+                fileStorageRouter.putObject(storageConfig, objectName, new ByteArrayInputStream(content), content.length, command.getContentType());
                 fileObject = createOrReuseFileObject(tenantId, storageConfig, objectName, hash,
-                        fileSize, contentType, 0L);
+                        fileSize, command.getContentType(), 0L);
                 createHashMapping(tenantId, storageConfig, hash, fileSize, fileObject, settings);
             }
-            FileRecord entity = createFileRecord(tenantId,
+            FileRecordEntity entity = createFileRecord(tenantId,
                     userId,
                     fileObject,
                     originalFilename,
                     fileExt,
                     fileSize,
-                    contentType,
+                    command.getContentType(),
                     hash,
-                    purpose,
+                    command.getPurpose(),
                     FileAccessLevel.PRIVATE.name(),
-                    bizType,
-                    bizId,
+                    command.getBizType(),
+                    command.getBizId(),
                     null,
                     0L,
                     settings);
             fileRecordMapper.insert(entity);
             incrementObjectRefCount(fileObject.getId());
-            return R.ok(toVO(entity));
+            return toVO(entity);
         } catch (Exception e) {
             return Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
 
     @Override
-    public R<PageResult<FileRecordVO>> page(FileRecordPageQuery query) {
+    public PageResult<FileRecordVO> page(FileRecordPageQuery query) {
         FileRecordPageQuery resolved = query == null ? new FileRecordPageQuery() : query;
-        IPage<FileRecord> page = fileRecordMapper.selectPage(
+        IPage<FileRecordEntity> page = fileRecordMapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 wrapper(resolved));
         List<FileRecordVO> records = page.getRecords().stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
-        return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
+        return PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
     @Override
-    public R<FileRecordVO> get(Long id) {
-        return R.ok(toVO(selectVisible(id)));
+    public FileRecordVO get(Long id) {
+        return toVO(selectVisible(id));
     }
 
     @Override
-    public R<FilePreviewVO> preview(Long id) {
-        FileRecord record = selectVisible(id);
+    public FilePreviewVO preview(Long id) {
+        FileRecordEntity record = selectVisible(id);
         FileSettingsVO settings = settingsService.current();
         FilePreviewVO vo = new FilePreviewVO();
         vo.setId(record.getId());
@@ -491,7 +469,7 @@ public class FileServiceImpl implements IFileService {
         vo.setContentType(record.getContentType());
         vo.setPreviewable(isPreviewable(record));
         fillDirectAccess(vo, record, settings);
-        return R.ok(vo);
+        return vo;
     }
 
     @Override
@@ -500,13 +478,14 @@ public class FileServiceImpl implements IFileService {
     }
 
     @Override
-    public FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes) {
-        return compressDownload(downloadForService(id), compression, perFileTargetSizeBytes);
+    public FileDownloadVO download(FileDownloadOptions options) {
+        Require.notNull(options, FileCode.FILE_NOT_FOUND);
+        return compressDownload(downloadForService(options.getId()), options.getCompression(), options.getPerFileTargetSizeBytes());
     }
 
     @Override
     public FileDownloadVO downloadForService(Long id) {
-        FileRecord record = selectVisible(id);
+        FileRecordEntity record = selectVisible(id);
         Require.isTrue(FileRecordStatus.COMPLETED.value() == record.getStatus(), FileCode.FILE_STATUS_INVALID);
         StoredObject storedObject = resolveStoredObject(record);
         FileObject object = fileStorageRouter.getObject(storedObject.storageConfig(), storedObject.objectName());
@@ -567,9 +546,9 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> archive(FileArchiveCommand command) {
+    public Boolean archive(FileArchiveCommand command) {
         Require.notNull(command, FileCode.FILE_STATUS_INVALID);
-        FileRecord record = selectVisible(command.getId());
+        FileRecordEntity record = selectVisible(command.getId());
         record.setStatus(FileRecordStatus.ARCHIVED.value());
         record.setArchived(1);
         record.setUpdatedBy(MangoContextHolder.userId());
@@ -581,12 +560,12 @@ public class FileServiceImpl implements IFileService {
         if (updated && Boolean.TRUE.equals(settingsService.current().getPhysicalDeleteEnabled())) {
             removePhysicalObjectIfUnreferenced(record);
         }
-        return R.ok(updated);
+        return updated;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> delete(FileDeleteCommand command) {
+    public Boolean delete(FileDeleteCommand command) {
         Require.notNull(command, FileCode.FILE_STATUS_INVALID);
         Require.notEmpty(command.getIds(), FileCode.FILE_NOT_FOUND);
         List<Long> ids = command.getIds().stream()
@@ -594,11 +573,11 @@ public class FileServiceImpl implements IFileService {
                 .distinct()
                 .collect(Collectors.toList());
         Require.notEmpty(ids, FileCode.FILE_NOT_FOUND);
-        List<FileRecord> records = selectVisible(ids);
+        List<FileRecordEntity> records = selectVisible(ids);
         Require.isTrue(records.size() == ids.size(), FileCode.FILE_NOT_FOUND);
         LocalDateTime now = LocalDateTime.now();
         Long userId = MangoContextHolder.userId();
-        for (FileRecord record : records) {
+        for (FileRecordEntity record : records) {
             record.setStatus(FileRecordStatus.DELETED.value());
             record.setArchived(1);
             record.setUpdatedBy(userId);
@@ -611,12 +590,12 @@ public class FileServiceImpl implements IFileService {
         if (Boolean.TRUE.equals(settingsService.current().getPhysicalDeleteEnabled())) {
             records.forEach(this::removePhysicalObjectIfUnreferenced);
         }
-        return R.ok(true);
+        return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<FileUploadInitVO> createUploadSession(CreateFileUploadSessionCommand command) {
+    public FileUploadInitVO createUploadSession(CreateFileUploadSessionCommand command) {
         Require.notNull(command, FileCode.FILE_EMPTY);
         Long tenantId = requireTenantId();
         Long userId = MangoContextHolder.userId();
@@ -631,10 +610,10 @@ public class FileServiceImpl implements IFileService {
         String fileHash = trimToNull(command.getFileHash());
         Require.notBlank(fileHash, FileCode.FILE_UPLOAD_PART_INVALID);
         String normalizedBizMeta = normalizeBizMeta(command.getBizMeta());
-        FileStorageConfig storageConfig = activeStorageConfig();
+        FileStorageConfigEntity storageConfig = activeStorageConfig();
         FileObjectEntity instantObject = findInstantUploadObject(tenantId, storageConfig, fileHash, command.getFileSize(), settings);
         if (instantObject != null) {
-            FileRecord record = createFileRecord(tenantId,
+            FileRecordEntity record = createFileRecord(tenantId,
                     userId,
                     instantObject,
                     fileName,
@@ -654,7 +633,7 @@ public class FileServiceImpl implements IFileService {
             FileUploadInitVO vo = new FileUploadInitVO();
             vo.setInstant(true);
             vo.setFileRecord(toVO(record));
-            return R.ok(vo);
+            return vo;
         }
 
         long chunkSize = resolveChunkSize(command.getChunkSize());
@@ -706,20 +685,17 @@ public class FileServiceImpl implements IFileService {
         vo.setChunkSize(session.getChunkSize());
         vo.setTotalParts(session.getTotalParts());
         vo.setExpiresAt(session.getExpiresAt());
-        return R.ok(vo);
+        return vo;
     }
 
     @Override
-    public R<FileUploadPartSignVO> createUploadPartSign(Long sessionId, CreateFileUploadPartSignCommand command) {
+    public FileUploadPartSignVO createUploadPartSign(Long sessionId, CreateFileUploadPartSignCommand command) {
         Require.notNull(command, FileCode.FILE_UPLOAD_PART_INVALID);
         FileUploadSessionEntity session = selectUploadSession(sessionId);
         requireUploadSessionActive(session);
         Require.isTrue(command.getPartNumber() <= session.getTotalParts(), FileCode.FILE_UPLOAD_PART_INVALID);
         Require.isTrue(FileUploadMode.S3_MULTIPART.name().equals(session.getUploadMode()), FileCode.FILE_UPLOAD_SESSION_INVALID);
-        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                session.getStorageConfigId(),
-                session.getStorageType(),
-                session.getBucketName());
+        FileStorageConfigEntity storageConfig = storageConfigService.getEnabledConfig(storageQuery(session));
         long expireSeconds = positiveOrDefault(settingsService.current().getDirectUploadExpireSeconds(), 900L);
         UploadPartSign sign = fileStorageRouter.presignedUploadPartUrl(storageConfig,
                 session.getObjectName(),
@@ -731,12 +707,16 @@ public class FileServiceImpl implements IFileService {
         vo.setUploadUrl(sign.uploadUrl());
         vo.setMethod(sign.method());
         vo.setExpireSeconds(sign.expireSeconds());
-        return R.ok(vo);
+        return vo;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> uploadServerPart(Long sessionId, Integer partNumber, MultipartFile file) {
+    public Boolean uploadServerPart(ServerFilePart part) {
+        Require.notNull(part, FileCode.FILE_UPLOAD_PART_INVALID);
+        Long sessionId = part.getSessionId();
+        Integer partNumber = part.getPartNumber();
+        MultipartFile file = part.getFile();
         Require.notNull(file, FileCode.FILE_EMPTY);
         Require.notNull(partNumber, FileCode.FILE_UPLOAD_PART_INVALID);
         FileUploadSessionEntity session = selectUploadSession(sessionId);
@@ -752,23 +732,23 @@ public class FileServiceImpl implements IFileService {
             return Require.fail(FileCode.FILE_STORE_FAILED);
         }
         upsertUploadPart(session, partNumber, file.getSize(), null, "server-" + partNumber);
-        return R.ok(true);
+        return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> completeUploadPart(Long sessionId, CompleteFileUploadPartCommand command) {
+    public Boolean completeUploadPart(Long sessionId, CompleteFileUploadPartCommand command) {
         Require.notNull(command, FileCode.FILE_UPLOAD_PART_INVALID);
         FileUploadSessionEntity session = selectUploadSession(sessionId);
         requireUploadSessionActive(session);
         Require.isTrue(command.getPartNumber() <= session.getTotalParts(), FileCode.FILE_UPLOAD_PART_INVALID);
         upsertUploadPart(session, command.getPartNumber(), command.getPartSize(), command.getPartHash(), command.getEtag());
-        return R.ok(true);
+        return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<FileRecordVO> completeUploadSession(Long sessionId) {
+    public FileRecordVO completeUploadSession(Long sessionId) {
         FileUploadSessionEntity session = selectUploadSession(sessionId);
         requireUploadSessionActive(session);
         List<FileUploadPartEntity> parts = fileUploadPartMapper.selectList(new LambdaQueryWrapper<FileUploadPartEntity>()
@@ -780,20 +760,17 @@ public class FileServiceImpl implements IFileService {
         session.setUpdatedBy(MangoContextHolder.userId());
         session.setUpdatedTime(LocalDateTime.now());
         fileUploadSessionMapper.updateById(session);
-        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                session.getStorageConfigId(),
-                session.getStorageType(),
-                session.getBucketName());
+        FileStorageConfigEntity storageConfig = storageConfigService.getEnabledConfig(storageQuery(session));
         completePhysicalUpload(session, storageConfig, parts);
-        FileObjectEntity fileObject = createOrReuseFileObject(session.getTenantId(),
+        FileObjectEntity fileObject = createOrReuseFileObject(session.getTenantIdAsLong(),
                 storageConfig,
                 session.getObjectName(),
                 session.getFileHash(),
                 session.getFileSize(),
                 session.getContentType(),
                 0L);
-        createHashMapping(session.getTenantId(), storageConfig, session.getFileHash(), session.getFileSize(), fileObject, settingsService.current());
-        FileRecord record = createFileRecord(session.getTenantId(),
+        createHashMapping(session.getTenantIdAsLong(), storageConfig, session.getFileHash(), session.getFileSize(), fileObject, settingsService.current());
+        FileRecordEntity record = createFileRecord(session.getTenantIdAsLong(),
                 MangoContextHolder.userId(),
                 fileObject,
                 session.getFileName(),
@@ -815,19 +792,16 @@ public class FileServiceImpl implements IFileService {
         session.setStatus(FileUploadSessionStatus.COMPLETED.name());
         session.setUpdatedTime(LocalDateTime.now());
         fileUploadSessionMapper.updateById(session);
-        return R.ok(toVO(record));
+        return toVO(record);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> abortUploadSession(Long sessionId) {
+    public Boolean abortUploadSession(Long sessionId) {
         FileUploadSessionEntity session = selectUploadSession(sessionId);
         if (FileUploadMode.S3_MULTIPART.name().equals(session.getUploadMode())
                 && StringUtils.hasText(session.getStorageUploadId())) {
-            FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                    session.getStorageConfigId(),
-                    session.getStorageType(),
-                    session.getBucketName());
+            FileStorageConfigEntity storageConfig = storageConfigService.getEnabledConfig(storageQuery(session));
             fileStorageRouter.abortMultipartUpload(storageConfig, session.getObjectName(), session.getStorageUploadId());
         }
         if (FileUploadMode.SERVER_CHUNK.name().equals(session.getUploadMode())) {
@@ -836,40 +810,40 @@ public class FileServiceImpl implements IFileService {
         session.setStatus(FileUploadSessionStatus.ABORTED.name());
         session.setUpdatedBy(MangoContextHolder.userId());
         session.setUpdatedTime(LocalDateTime.now());
-        return R.ok(fileUploadSessionMapper.updateById(session) > 0);
+        return fileUploadSessionMapper.updateById(session) > 0;
     }
 
-    private LambdaQueryWrapper<FileRecord> wrapper(FileRecordPageQuery query) {
-        LambdaQueryWrapper<FileRecord> wrapper = tenantVisibleWrapper();
+    private LambdaQueryWrapper<FileRecordEntity> wrapper(FileRecordPageQuery query) {
+        LambdaQueryWrapper<FileRecordEntity> wrapper = tenantVisibleWrapper();
         String keyword = trimToNull(query.getKeyword());
         wrapper.and(StringUtils.hasText(keyword), nested -> nested
-                .like(FileRecord::getFileName, keyword)
+                .like(FileRecordEntity::getFileName, keyword)
                 .or()
-                .like(FileRecord::getBizType, keyword)
+                .like(FileRecordEntity::getBizType, keyword)
                 .or()
-                .like(FileRecord::getBizId, keyword));
-        wrapper.eq(StringUtils.hasText(query.getBizType()), FileRecord::getBizType, query.getBizType());
-        wrapper.eq(StringUtils.hasText(query.getBizId()), FileRecord::getBizId, query.getBizId());
-        wrapper.eq(StringUtils.hasText(query.getPurpose()), FileRecord::getPurpose, query.getPurpose());
-        wrapper.eq(query.getDirectoryId() != null, FileRecord::getDirectoryId, normalizeDirectoryId(query.getDirectoryId()));
-        wrapper.eq(StringUtils.hasText(query.getAccessLevel()), FileRecord::getAccessLevel, query.getAccessLevel());
-        wrapper.eq(query.getStatus() != null, FileRecord::getStatus, query.getStatus());
+                .like(FileRecordEntity::getBizId, keyword));
+        wrapper.eq(StringUtils.hasText(query.getBizType()), FileRecordEntity::getBizType, query.getBizType());
+        wrapper.eq(StringUtils.hasText(query.getBizId()), FileRecordEntity::getBizId, query.getBizId());
+        wrapper.eq(StringUtils.hasText(query.getPurpose()), FileRecordEntity::getPurpose, query.getPurpose());
+        wrapper.eq(query.getDirectoryId() != null, FileRecordEntity::getDirectoryId, normalizeDirectoryId(query.getDirectoryId()));
+        wrapper.eq(StringUtils.hasText(query.getAccessLevel()), FileRecordEntity::getAccessLevel, query.getAccessLevel());
+        wrapper.eq(query.getStatus() != null, FileRecordEntity::getStatus, query.getStatus());
         if (!Boolean.TRUE.equals(query.getIncludeArchived())) {
-            wrapper.eq(FileRecord::getArchived, 0);
+            wrapper.eq(FileRecordEntity::getArchived, 0);
         }
-        wrapper.orderByDesc(FileRecord::getId);
+        wrapper.orderByDesc(FileRecordEntity::getId);
         return wrapper;
     }
 
-    private LambdaQueryWrapper<FileRecord> tenantVisibleWrapper() {
-        LambdaQueryWrapper<FileRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(FileRecord::getTenantId, requireTenantId());
+    private LambdaQueryWrapper<FileRecordEntity> tenantVisibleWrapper() {
+        LambdaQueryWrapper<FileRecordEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FileRecordEntity::getTenantId, requireTenantId());
         return wrapper;
     }
 
-    private FileRecord selectVisible(Long id) {
+    private FileRecordEntity selectVisible(Long id) {
         Require.notNull(id, FileCode.FILE_NOT_FOUND);
-        FileRecord record = fileRecordMapper.selectOne(tenantVisibleWrapper().eq(FileRecord::getId, id).last("LIMIT 1"));
+        FileRecordEntity record = fileRecordMapper.selectOne(tenantVisibleWrapper().eq(FileRecordEntity::getId, id).last("LIMIT 1"));
         Require.notNull(record, FileCode.FILE_NOT_FOUND);
         Require.isFalse(FileRecordStatus.ARCHIVED.value() == record.getStatus()
                 || FileRecordStatus.DELETED.value() == record.getStatus()
@@ -877,11 +851,11 @@ public class FileServiceImpl implements IFileService {
         return record;
     }
 
-    private List<FileRecord> selectVisible(List<Long> ids) {
-        List<FileRecord> records = fileRecordMapper.selectList(tenantVisibleWrapper()
-                .in(FileRecord::getId, ids)
-                .eq(FileRecord::getArchived, 0)
-                .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value()));
+    private List<FileRecordEntity> selectVisible(List<Long> ids) {
+        List<FileRecordEntity> records = fileRecordMapper.selectList(tenantVisibleWrapper()
+                .in(FileRecordEntity::getId, ids)
+                .eq(FileRecordEntity::getArchived, 0)
+                .eq(FileRecordEntity::getStatus, FileRecordStatus.COMPLETED.value()));
         Require.notEmpty(records, FileCode.FILE_NOT_FOUND);
         return records;
     }
@@ -938,11 +912,11 @@ public class FileServiceImpl implements IFileService {
         }
     }
 
-    private boolean isPreviewable(FileRecord record) {
+    private boolean isPreviewable(FileRecordEntity record) {
         return record != null && record.getId() != null;
     }
 
-    private void fillDirectAccess(FilePreviewVO vo, FileRecord record, FileSettingsVO settings) {
+    private void fillDirectAccess(FilePreviewVO vo, FileRecordEntity record, FileSettingsVO settings) {
         vo.setDirectAccess(false);
         vo.setPreviewUrl(fileAccessUrlAssembler.previewContentUrl(record.getId()));
         vo.setDownloadUrl(fileAccessUrlAssembler.downloadUrl(record.getId()));
@@ -951,7 +925,7 @@ public class FileServiceImpl implements IFileService {
             return;
         }
         StoredObject storedObject = resolveStoredObject(record);
-        FileStorageConfig storageConfig = storedObject.storageConfig();
+        FileStorageConfigEntity storageConfig = storedObject.storageConfig();
         String objectName = storedObject.objectName();
         if (!shouldUsePresignedUrl(record, settings)) {
             fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
@@ -996,7 +970,7 @@ public class FileServiceImpl implements IFileService {
         fillConfiguredPreviewUrl(vo, record, settings);
     }
 
-    private void fillConfiguredPreviewUrl(FilePreviewVO vo, FileRecord record, FileSettingsVO settings) {
+    private void fillConfiguredPreviewUrl(FilePreviewVO vo, FileRecordEntity record, FileSettingsVO settings) {
         if (!requiresPreviewProvider(record, settings)) {
             return;
         }
@@ -1007,11 +981,11 @@ public class FileServiceImpl implements IFileService {
         vo.setDocumentPreviewUrl(fileAccessUrlAssembler.externalize(previewUrl));
     }
 
-    private boolean requiresPreviewProvider(FileRecord record, FileSettingsVO settings) {
+    private boolean requiresPreviewProvider(FileRecordEntity record, FileSettingsVO settings) {
         return record != null && settings != null && StringUtils.hasText(settings.getPreviewProviderUrl());
     }
 
-    private void fillDirectAccess(FileRecordVO vo, FileRecord record, FileSettingsVO settings) {
+    private void fillDirectAccess(FileRecordVO vo, FileRecordEntity record, FileSettingsVO settings) {
         String previewUrl = fileAccessUrlAssembler.previewContentUrl(record.getId());
         vo.setUrl(previewUrl);
         vo.setPreviewUrl(previewUrl);
@@ -1021,7 +995,7 @@ public class FileServiceImpl implements IFileService {
             return;
         }
         StoredObject storedObject = resolveStoredObject(record);
-        FileStorageConfig storageConfig = storedObject.storageConfig();
+        FileStorageConfigEntity storageConfig = storedObject.storageConfig();
         String objectName = storedObject.objectName();
         if (!shouldUsePresignedUrl(record, settings)) {
             fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
@@ -1066,7 +1040,7 @@ public class FileServiceImpl implements IFileService {
                 });
     }
 
-    private boolean shouldUsePresignedUrl(FileRecord record, FileSettingsVO settings) {
+    private boolean shouldUsePresignedUrl(FileRecordEntity record, FileSettingsVO settings) {
         if (Boolean.TRUE.equals(settings.getAccessTokenEnabled())) {
             return true;
         }
@@ -1081,11 +1055,11 @@ public class FileServiceImpl implements IFileService {
     }
 
     private void requireUniqueFileName(Long tenantId, Long directoryId, String fileName) {
-        LambdaQueryWrapper<FileRecord> wrapper = new LambdaQueryWrapper<FileRecord>()
-                .eq(FileRecord::getTenantId, tenantId)
-                .eq(FileRecord::getFileName, fileName)
-                .eq(FileRecord::getArchived, 0);
-        wrapper.eq(directoryId != null, FileRecord::getDirectoryId, directoryId);
+        LambdaQueryWrapper<FileRecordEntity> wrapper = new LambdaQueryWrapper<FileRecordEntity>()
+                .eq(FileRecordEntity::getTenantId, tenantId)
+                .eq(FileRecordEntity::getFileName, fileName)
+                .eq(FileRecordEntity::getArchived, 0);
+        wrapper.eq(directoryId != null, FileRecordEntity::getDirectoryId, directoryId);
         Long count = fileRecordMapper.selectCount(wrapper);
         Require.isTrue(count == 0, FileCode.FILE_NAME_DUPLICATED);
     }
@@ -1123,11 +1097,11 @@ public class FileServiceImpl implements IFileService {
     }
 
     private boolean fileNameExists(Long tenantId, Long directoryId, String fileName) {
-        LambdaQueryWrapper<FileRecord> wrapper = new LambdaQueryWrapper<FileRecord>()
-                .eq(FileRecord::getTenantId, tenantId)
-                .eq(FileRecord::getFileName, fileName)
-                .eq(FileRecord::getArchived, 0);
-        wrapper.eq(directoryId != null, FileRecord::getDirectoryId, directoryId);
+        LambdaQueryWrapper<FileRecordEntity> wrapper = new LambdaQueryWrapper<FileRecordEntity>()
+                .eq(FileRecordEntity::getTenantId, tenantId)
+                .eq(FileRecordEntity::getFileName, fileName)
+                .eq(FileRecordEntity::getArchived, 0);
+        wrapper.eq(directoryId != null, FileRecordEntity::getDirectoryId, directoryId);
         return fileRecordMapper.selectCount(wrapper) > 0;
     }
 
@@ -1146,7 +1120,7 @@ public class FileServiceImpl implements IFileService {
         return value == null || value < 0 ? 0L : value;
     }
 
-    private String generateObjectName(FileStorageConfig storageConfig,
+    private String generateObjectName(FileStorageConfigEntity storageConfig,
                                       Long tenantId,
                                       Long directoryId,
                                       String fileName,
@@ -1181,8 +1155,8 @@ public class FileServiceImpl implements IFileService {
         }
     }
 
-    private FileStorageConfig activeStorageConfig() {
-        FileStorageConfig storageConfig = storageConfigService.activeConfig();
+    private FileStorageConfigEntity activeStorageConfig() {
+        FileStorageConfigEntity storageConfig = storageConfigService.activeConfig();
         Require.isTrue(Integer.valueOf(1).equals(storageConfig.getStatus()), FileCode.STORAGE_CONFIG_DISABLED);
         return storageConfig;
     }
@@ -1257,7 +1231,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     private void completePhysicalUpload(FileUploadSessionEntity session,
-                                        FileStorageConfig storageConfig,
+                                        FileStorageConfigEntity storageConfig,
                                         List<FileUploadPartEntity> parts) {
         if (FileUploadMode.S3_MULTIPART.name().equals(session.getUploadMode())) {
             List<CompletedUploadPart> completedParts = parts.stream()
@@ -1331,12 +1305,12 @@ public class FileServiceImpl implements IFileService {
         }
     }
 
-    private Long normalizedStorageConfigId(FileStorageConfig storageConfig) {
+    private Long normalizedStorageConfigId(FileStorageConfigEntity storageConfig) {
         return storageConfig.getId() == null || storageConfig.getId() <= 0 ? 0L : storageConfig.getId();
     }
 
     private FileObjectEntity findInstantUploadObject(Long tenantId,
-                                                     FileStorageConfig storageConfig,
+                                                     FileStorageConfigEntity storageConfig,
                                                      String hash,
                                                      Long fileSize,
                                                      FileSettingsVO settings) {
@@ -1361,7 +1335,7 @@ public class FileServiceImpl implements IFileService {
         return fileObject;
     }
 
-    private FileObjectEntity findCompletedObject(FileStorageConfig storageConfig,
+    private FileObjectEntity findCompletedObject(FileStorageConfigEntity storageConfig,
                                                  String hash,
                                                  Long fileSize) {
         if (!StringUtils.hasText(hash) || fileSize == null) {
@@ -1376,7 +1350,7 @@ public class FileServiceImpl implements IFileService {
                 .last("LIMIT 1"));
     }
 
-    private FileObjectEntity findCompletedObjectForUpdate(FileStorageConfig storageConfig,
+    private FileObjectEntity findCompletedObjectForUpdate(FileStorageConfigEntity storageConfig,
                                                           String hash,
                                                           Long fileSize) {
         if (!StringUtils.hasText(hash) || fileSize == null) {
@@ -1391,7 +1365,7 @@ public class FileServiceImpl implements IFileService {
                 .last("LIMIT 1 FOR UPDATE"));
     }
 
-    private void cleanupRedundantStoredObject(FileStorageConfig storageConfig,
+    private void cleanupRedundantStoredObject(FileStorageConfigEntity storageConfig,
                                               String uploadedObjectName,
                                               FileObjectEntity concurrentObject,
                                               String hash,
@@ -1416,7 +1390,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     private FileObjectEntity createOrReuseFileObject(Long tenantId,
-                                                     FileStorageConfig storageConfig,
+                                                     FileStorageConfigEntity storageConfig,
                                                      String objectName,
                                                      String hash,
                                                      Long fileSize,
@@ -1451,7 +1425,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     private void createHashMapping(Long tenantId,
-                                   FileStorageConfig storageConfig,
+                                   FileStorageConfigEntity storageConfig,
                                    String hash,
                                    Long fileSize,
                                    FileObjectEntity fileObject,
@@ -1489,7 +1463,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     private FileHashMappingEntity findHashMapping(Long tenantId,
-                                                  FileStorageConfig storageConfig,
+                                                  FileStorageConfigEntity storageConfig,
                                                   String hash,
                                                   Long fileSize,
                                                   FileSettingsVO settings,
@@ -1524,7 +1498,7 @@ public class FileServiceImpl implements IFileService {
         return hashScope(settings) == FileInstantUploadScope.GLOBAL ? 0L : tenantId;
     }
 
-    private FileRecord createFileRecord(Long tenantId,
+    private FileRecordEntity createFileRecord(Long tenantId,
                                         Long userId,
                                         FileObjectEntity fileObject,
                                         String fileName,
@@ -1539,7 +1513,7 @@ public class FileServiceImpl implements IFileService {
                                         String bizMeta,
                                         Long directoryId,
                                         FileSettingsVO settings) {
-        FileRecord entity = new FileRecord();
+        FileRecordEntity entity = new FileRecordEntity();
         entity.setTenantId(tenantId);
         entity.setBizType(trimToNull(bizType));
         entity.setBizId(trimToNull(bizId));
@@ -1605,42 +1579,43 @@ public class FileServiceImpl implements IFileService {
                 .set(FileHashMappingEntity::getUpdatedTime, LocalDateTime.now()));
     }
 
-    private StoredObject resolveStoredObject(FileRecord record) {
+    private StoredObject resolveStoredObject(FileRecordEntity record) {
         if (record.getObjectId() != null) {
             FileObjectEntity fileObject = fileObjectMapper.selectById(record.getObjectId());
             Require.notNull(fileObject, FileCode.FILE_NOT_FOUND);
-            FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                    fileObject.getStorageConfigId(),
-                    fileObject.getStorageType(),
-                    fileObject.getBucketName());
+            FileStorageConfigEntity storageConfig = storageConfigService.getEnabledConfig(new EnabledFileStorageKey(
+                    fileObject.getStorageConfigId(), fileObject.getStorageType(), fileObject.getBucketName()));
             return new StoredObject(fileObject, storageConfig, fileObject.getObjectName());
         }
-        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                record.getStorageConfigId(),
-                record.getStorageType(),
-                record.getBucketName());
+        FileStorageConfigEntity storageConfig = storageConfigService.getEnabledConfig(new EnabledFileStorageKey(
+                record.getStorageConfigId(), record.getStorageType(), record.getBucketName()));
         return new StoredObject(null, storageConfig, record.getObjectName());
     }
 
-    private void removePhysicalObjectIfUnreferenced(FileRecord record) {
+    private EnabledFileStorageKey storageQuery(FileUploadSessionEntity session) {
+        return new EnabledFileStorageKey(
+                session.getStorageConfigId(), session.getStorageType(), session.getBucketName());
+    }
+
+    private void removePhysicalObjectIfUnreferenced(FileRecordEntity record) {
         StoredObject storedObject = resolveStoredObject(record);
         if (record.getObjectId() != null) {
-            Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecord>()
-                    .eq(FileRecord::getObjectId, record.getObjectId())
-                    .eq(FileRecord::getArchived, 0)
-                    .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value()));
+            Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecordEntity>()
+                    .eq(FileRecordEntity::getObjectId, record.getObjectId())
+                    .eq(FileRecordEntity::getArchived, 0)
+                    .eq(FileRecordEntity::getStatus, FileRecordStatus.COMPLETED.value()));
             if (activeRefs > 0) {
                 return;
             }
             markObjectUnreferenced(record.getObjectId());
         } else {
-            Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecord>()
-                    .eq(FileRecord::getStorageType, record.getStorageType())
-                    .eq(FileRecord::getBucketName, record.getBucketName())
-                    .eq(FileRecord::getObjectName, record.getObjectName())
-                    .eq(record.getStorageConfigId() != null, FileRecord::getStorageConfigId, record.getStorageConfigId())
-                    .eq(FileRecord::getArchived, 0)
-                    .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value()));
+            Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecordEntity>()
+                    .eq(FileRecordEntity::getStorageType, record.getStorageType())
+                    .eq(FileRecordEntity::getBucketName, record.getBucketName())
+                    .eq(FileRecordEntity::getObjectName, record.getObjectName())
+                    .eq(record.getStorageConfigId() != null, FileRecordEntity::getStorageConfigId, record.getStorageConfigId())
+                    .eq(FileRecordEntity::getArchived, 0)
+                    .eq(FileRecordEntity::getStatus, FileRecordStatus.COMPLETED.value()));
             if (activeRefs > 0) {
                 return;
             }
@@ -1747,10 +1722,10 @@ public class FileServiceImpl implements IFileService {
         }
     }
 
-    private FileRecordVO toVO(FileRecord entity) {
+    private FileRecordVO toVO(FileRecordEntity entity) {
         FileRecordVO vo = new FileRecordVO();
         vo.setId(entity.getId());
-        vo.setTenantId(entity.getTenantId());
+        vo.setTenantId(entity.getTenantIdAsLong());
         vo.setBizType(entity.getBizType());
         vo.setBizId(entity.getBizId());
         vo.setPurpose(entity.getPurpose());
@@ -1842,14 +1817,14 @@ public class FileServiceImpl implements IFileService {
         }
     }
 
-    private record StoredObject(FileObjectEntity fileObject, FileStorageConfig storageConfig, String objectName) {
+    private record StoredObject(FileObjectEntity fileObject, FileStorageConfigEntity storageConfig, String objectName) {
     }
 
     private String directoryName(Long directoryId) {
         if (directoryId == null || directoryId <= 0) {
             return "根目录";
         }
-        FileDirectory directory = fileDirectoryMapper.selectById(directoryId);
+        FileDirectoryEntity directory = fileDirectoryMapper.selectById(directoryId);
         if (directory == null) {
             return "";
         }

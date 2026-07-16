@@ -3,6 +3,8 @@ package io.mango.file.preview.core.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.file.api.FileApi;
+import io.mango.file.api.IFileContentProvider;
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
@@ -60,7 +62,7 @@ class FilePreviewServiceImplTest {
 
     private FilePreviewServiceImpl service() {
         FilePreviewProperties properties = new FilePreviewProperties();
-        return new FilePreviewServiceImpl(new StubFileApi(), properties, new StubTokenStore(),
+        return new FilePreviewServiceImpl(new StubFileApi(), new StubFileContentProvider(), properties, new StubTokenStore(),
                 new ObjectMapper(), Clock.systemUTC());
     }
 
@@ -105,6 +107,34 @@ class FilePreviewServiceImplTest {
         }
 
         @Override
+        public R<FileRecordVO> packageFiles(io.mango.file.api.command.FilePackageCommand command) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public R<FileRecordVO> mergeToPdf(io.mango.file.api.command.FileMergePdfCommand command) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public R<Boolean> archive(Long id, String reason) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public R<Boolean> delete(io.mango.file.api.command.FileDeleteCommand command) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class StubFileContentProvider implements IFileContentProvider {
+
+        @Override
+        public FileRecordVO save(SaveFileCommand command) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public FileDownloadVO download(Long id) {
             throw new UnsupportedOperationException();
         }
@@ -113,11 +143,6 @@ class FilePreviewServiceImplTest {
         public FileDownloadVO downloadForService(Long id) {
             return new FileDownloadVO(new ByteArrayInputStream(new byte[]{1}), "demo.pptx",
                     "application/vnd.openxmlformats-officedocument.presentationml.presentation", 1L);
-        }
-
-        @Override
-        public R<Boolean> archive(io.mango.file.api.command.FileArchiveCommand command) {
-            throw new UnsupportedOperationException();
         }
     }
 }

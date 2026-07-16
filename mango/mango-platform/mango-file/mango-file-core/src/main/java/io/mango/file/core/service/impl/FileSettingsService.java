@@ -2,7 +2,6 @@ package io.mango.file.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.command.SaveFileSettingsCommand;
@@ -13,7 +12,7 @@ import io.mango.file.api.enums.FileInstantUploadScope;
 import io.mango.file.api.enums.FileObjectNameStrategy;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.file.core.config.FileProperties;
-import io.mango.file.core.entity.FileSettings;
+import io.mango.file.core.entity.FileSettingsEntity;
 import io.mango.file.core.mapper.FileSettingsMapper;
 import io.mango.file.core.service.IFileSettingsService;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -38,20 +37,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "FileProperties is a Spring-managed configuration collaborator")
-public class FileSettingsServiceImpl implements IFileSettingsService {
+public class FileSettingsService implements IFileSettingsService {
 
     private final FileSettingsMapper mapper;
     private final FileProperties properties;
     private final Map<Long, FileSettingsVO> settingsCache = new ConcurrentHashMap<>();
 
     @Override
-    public R<FileSettingsVO> get() {
-        return R.ok(current());
+    public FileSettingsVO get() {
+        return current();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Boolean> save(SaveFileSettingsCommand command) {
+    public Boolean save(SaveFileSettingsCommand command) {
         Require.notNull(command, FileCode.STORAGE_SETTINGS_INVALID);
         Require.notNull(command.getMaxSize(), FileCode.STORAGE_SETTINGS_INVALID);
         Require.isTrue(command.getMaxSize() > 0, FileCode.STORAGE_SETTINGS_INVALID);
@@ -63,10 +62,10 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         }
 
         Long tenantId = currentTenantId();
-        FileSettings entity = selectByTenant(tenantId);
+        FileSettingsEntity entity = selectByTenant(tenantId);
         LocalDateTime now = LocalDateTime.now();
         if (entity == null) {
-            entity = new FileSettings();
+            entity = new FileSettingsEntity();
             entity.setTenantId(tenantId);
             entity.setCreatedBy(MangoContextHolder.userId());
             entity.setCreatedTime(now);
@@ -76,7 +75,7 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         entity.setUpdatedTime(now);
         persist(tenantId, entity);
         settingsCache.remove(tenantId);
-        return R.ok(true);
+        return true;
     }
 
     @Override
@@ -86,7 +85,7 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         if (cached != null) {
             return cached;
         }
-        FileSettings entity = selectByTenant(tenantId);
+        FileSettingsEntity entity = selectByTenant(tenantId);
         if (entity == null) {
             FileSettingsVO defaults = defaultVO(tenantId);
             settingsCache.put(tenantId, defaults);
@@ -98,13 +97,13 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         return vo;
     }
 
-    private FileSettings selectByTenant(Long tenantId) {
-        return mapper.selectOne(new LambdaQueryWrapper<FileSettings>()
-                .eq(FileSettings::getTenantId, tenantId)
+    private FileSettingsEntity selectByTenant(Long tenantId) {
+        return mapper.selectOne(new LambdaQueryWrapper<FileSettingsEntity>()
+                .eq(FileSettingsEntity::getTenantId, tenantId)
                 .last("LIMIT 1"));
     }
 
-    private void persist(Long tenantId, FileSettings entity) {
+    private void persist(Long tenantId, FileSettingsEntity entity) {
         if (entity.getId() != null) {
             mapper.updateById(entity);
             return;
@@ -112,7 +111,7 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         try {
             mapper.insert(entity);
         } catch (DuplicateKeyException e) {
-            FileSettings existing = selectByTenant(tenantId);
+            FileSettingsEntity existing = selectByTenant(tenantId);
             Require.notNull(existing, FileCode.STORAGE_SETTINGS_SAVE_CONFLICT);
             entity.setId(existing.getId());
             entity.setCreatedBy(existing.getCreatedBy());
@@ -121,7 +120,7 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         }
     }
 
-    private void copy(SaveFileSettingsCommand command, FileSettings entity) {
+    private void copy(SaveFileSettingsCommand command, FileSettingsEntity entity) {
         FileSettingsVO defaults = defaultVO();
         entity.setMaxSize(command.getMaxSize());
         entity.setAllowedExtensions(joinExtensions(command.getAllowedExtensions()));
@@ -155,10 +154,10 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         entity.setPhysicalDeleteEnabled(Boolean.TRUE.equals(command.getPhysicalDeleteEnabled()) ? 1 : 0);
     }
 
-    private FileSettingsVO toVO(FileSettings entity) {
+    private FileSettingsVO toVO(FileSettingsEntity entity) {
         FileSettingsVO vo = new FileSettingsVO();
         vo.setId(entity.getId());
-        vo.setTenantId(entity.getTenantId());
+        vo.setTenantId(entity.getTenantIdAsLong());
         vo.setMaxSize(entity.getMaxSize());
         vo.setAllowedExtensions(splitExtensions(entity.getAllowedExtensions()));
         vo.setBlockedExtensions(splitExtensions(entity.getBlockedExtensions()));
@@ -178,7 +177,7 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         vo.setAccessMode(FileAccessMode.of(entity.getAccessMode()).name());
         vo.setAccessTokenExpireSeconds(entity.getAccessTokenExpireSeconds());
         vo.setPreviewProviderUrl(StringUtils.hasText(entity.getPreviewProviderUrl())
-                ? entity.getPreviewProviderUrl() : defaultVO(entity.getTenantId()).getPreviewProviderUrl());
+                ? entity.getPreviewProviderUrl() : defaultVO(entity.getTenantIdAsLong()).getPreviewProviderUrl());
         vo.setPreviewExpireSeconds(entity.getPreviewExpireSeconds());
         vo.setPreviewExternalExtensions(splitExtensions(entity.getPreviewExternalExtensions()));
         vo.setArchiveRetainEnabled(!Integer.valueOf(0).equals(entity.getArchiveRetainEnabled()));

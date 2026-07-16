@@ -41,6 +41,7 @@ import io.mango.infra.persistence.api.entity.BaseEntity;
 import io.mango.infra.persistence.api.entity.TenantEntity;
 import io.mango.common.result.R;
 import io.mango.common.contract.LocalCapabilityContract;
+import io.mango.common.contract.BinaryHttpAdapter;
 import io.mango.infra.fileproc.fixture.LocalFileProcessCommand;
 import io.mango.infra.fileproc.fixture.LocalFileProcessorApi;
 import io.mango.infra.fileproc.fixture.LocalFileProcessorController;
@@ -200,6 +201,15 @@ class MangoArchUnitCheckerTest {
         assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.STARTER)))
                 .extracting(ArchitectureIssue::ruleId)
                 .containsExactly("MANGO-ARCH-TYPE-002");
+    }
+
+    @Test
+    void explicitlyMarkedBinaryAdaptersMayKeepBinaryWireContracts() {
+        JavaClasses classes = importClasses(BinaryObjectController.class, BinaryObjectFeignClient.class);
+
+        assertThat(checker.check(classes, javaClass -> javaClass.isInterface()
+                ? ModuleRole.STARTER_REMOTE
+                : ModuleRole.STARTER)).isEmpty();
     }
 
     @Test
@@ -1263,6 +1273,23 @@ class MangoArchUnitCheckerTest {
 
     @FeignClient(name = "order", contextId = "orderFeignClient", path = "/internal/orders")
     interface OrderFeignClient extends OrderApi {
+    }
+
+    @BinaryHttpAdapter
+    @RestController
+    @RequestMapping("/file/binary")
+    static final class BinaryObjectController {
+        @GetMapping("/{objectName}")
+        byte[] download() {
+            return new byte[0];
+        }
+    }
+
+    @BinaryHttpAdapter
+    @FeignClient(name = "file", contextId = "binaryObjectFeignClient", path = "/file/binary")
+    interface BinaryObjectFeignClient {
+        @GetMapping("/{objectName}")
+        byte[] download();
     }
 
     @FeignClient(name = "order", contextId = "statefulFeignClient", path = "/orders")

@@ -13,7 +13,7 @@ import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.ResponseHeaderOverrides;
 import com.qcloud.cos.region.Region;
 import io.mango.file.api.enums.FileCode;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.common.result.Require;
 import org.springframework.util.StringUtils;
 
@@ -37,7 +37,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void putObject(FileStorageConfig config, String objectName, InputStream inputStream, long contentLength, String contentType) {
+    public void putObject(FileStorageConfigEntity config, String objectName, InputStream inputStream, long contentLength, String contentType) {
         requireConfig(config);
         COSClient client = client(config);
         try {
@@ -55,7 +55,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public FileObject getObject(FileStorageConfig config, String objectName) {
+    public FileObject getObject(FileStorageConfigEntity config, String objectName) {
         requireConfig(config);
         COSClient client = client(config);
         try {
@@ -69,7 +69,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void removeObject(FileStorageConfig config, String objectName) {
+    public void removeObject(FileStorageConfigEntity config, String objectName) {
         requireConfig(config);
         COSClient client = client(config);
         try {
@@ -82,7 +82,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public void test(FileStorageConfig config) {
+    public void test(FileStorageConfigEntity config) {
         requireConfig(config);
         COSClient client = client(config);
         String objectName = ".mango-storage-test";
@@ -99,21 +99,21 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
     }
 
     @Override
-    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedGetUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return presignedUrl(config, objectName, fileName, expires, false);
     }
 
     @Override
-    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedDownloadUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return presignedUrl(config, objectName, fileName, expires, true);
     }
 
     @Override
-    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+    public Optional<String> publicGetUrl(FileStorageConfigEntity config, String objectName, String fileName) {
         return publicObjectUrl(config, objectName);
     }
 
-    private Optional<String> presignedUrl(FileStorageConfig config,
+    private Optional<String> presignedUrl(FileStorageConfigEntity config,
                                           String objectName,
                                           String fileName,
                                           Duration expires,
@@ -142,13 +142,13 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
         }
     }
 
-    private void requireConfig(FileStorageConfig config) {
+    private void requireConfig(FileStorageConfigEntity config) {
         requireBucket(config);
         requireAccessSecret(config);
         Require.notBlank(config.getRegion(), FileCode.STORAGE_CONFIG_INVALID);
     }
 
-    private COSClient client(FileStorageConfig config) {
+    private COSClient client(FileStorageConfigEntity config) {
         COSCredentials credentials = new BasicCOSCredentials(config.getAccessKey(), config.getSecretKey());
         ClientConfig clientConfig = new ClientConfig(new Region(config.getRegion()));
         clientConfig.setHttpProtocol(enabled(config.getSslEnabled()) ? HttpProtocol.https : HttpProtocol.http);

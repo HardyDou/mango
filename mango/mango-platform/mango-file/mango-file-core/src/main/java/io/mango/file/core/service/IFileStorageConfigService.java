@@ -1,34 +1,34 @@
 package io.mango.file.core.service;
 
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.SaveFileStorageConfigCommand;
 import io.mango.file.api.command.TestFileStorageConfigCommand;
 import io.mango.file.api.query.FileStorageConfigPageQuery;
 import io.mango.file.api.vo.FileStorageConfigTestVO;
 import io.mango.file.api.vo.FileStorageConfigVO;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
+import io.mango.file.core.service.model.EnabledFileStorageKey;
 
 /**
  * 文件存储配置服务。
  */
 public interface IFileStorageConfigService {
 
-    R<PageResult<FileStorageConfigVO>> page(FileStorageConfigPageQuery query);
+    PageResult<FileStorageConfigVO> page(FileStorageConfigPageQuery query);
 
-    R<FileStorageConfigVO> get(Long id);
+    FileStorageConfigVO get(Long id);
 
-    R<Long> create(SaveFileStorageConfigCommand command);
+    Long create(SaveFileStorageConfigCommand command);
 
-    R<Boolean> update(SaveFileStorageConfigCommand command);
+    Boolean update(SaveFileStorageConfigCommand command);
 
-    R<Boolean> delete(Long id);
+    Boolean delete(Long id);
 
-    R<Boolean> activate(Long id);
+    Boolean activate(Long id);
 
-    R<FileStorageConfigTestVO> test(TestFileStorageConfigCommand command);
+    FileStorageConfigTestVO test(TestFileStorageConfigCommand command);
 
-    FileStorageConfig activeConfig();
+    FileStorageConfigEntity activeConfig();
 
-    FileStorageConfig getEnabledConfig(Long id, String storageType, String bucketName);
+    FileStorageConfigEntity getEnabledConfig(EnabledFileStorageKey key);
 }

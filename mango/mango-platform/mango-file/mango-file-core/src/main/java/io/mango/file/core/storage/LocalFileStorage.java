@@ -3,7 +3,7 @@ package io.mango.file.core.storage;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.core.config.FileProperties;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.common.result.Require;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -34,14 +34,14 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
-    public void putObject(FileStorageConfig config, String objectName, InputStream inputStream, long contentLength, String contentType) throws IOException {
+    public void putObject(FileStorageConfigEntity config, String objectName, InputStream inputStream, long contentLength, String contentType) throws IOException {
         Path target = resolvePath(config.getBucketName(), objectName);
         Files.createDirectories(target.getParent());
         Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Override
-    public FileObject getObject(FileStorageConfig config, String objectName) {
+    public FileObject getObject(FileStorageConfigEntity config, String objectName) {
         Path target = resolvePath(config.getBucketName(), objectName);
         Require.isTrue(Files.exists(target) && Files.isRegularFile(target), FileCode.FILE_NOT_FOUND);
         try {
@@ -53,7 +53,7 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
-    public void removeObject(FileStorageConfig config, String objectName) {
+    public void removeObject(FileStorageConfigEntity config, String objectName) {
         Path target = resolvePath(config.getBucketName(), objectName);
         try {
             Files.deleteIfExists(target);
@@ -63,23 +63,23 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
-    public void test(FileStorageConfig config) throws IOException {
+    public void test(FileStorageConfigEntity config) throws IOException {
         Path target = resolvePath(config.getBucketName(), ".mango-storage-test");
         Files.createDirectories(target.getParent());
     }
 
     @Override
-    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedGetUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return publicGetUrl(config, objectName, fileName);
     }
 
     @Override
-    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+    public Optional<String> presignedDownloadUrl(FileStorageConfigEntity config, String objectName, String fileName, Duration expires) {
         return publicDownloadUrl(config, objectName, fileName);
     }
 
     @Override
-    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+    public Optional<String> publicGetUrl(FileStorageConfigEntity config, String objectName, String fileName) {
         if (!StringUtils.hasText(objectName)) {
             return Optional.empty();
         }
@@ -97,12 +97,12 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
-    public Optional<String> publicDownloadUrl(FileStorageConfig config, String objectName, String fileName) {
+    public Optional<String> publicDownloadUrl(FileStorageConfigEntity config, String objectName, String fileName) {
         return publicGetUrl(config, objectName, fileName)
                 .map(this::withDownloadDisposition);
     }
 
-    private String publicEndpoint(FileStorageConfig config) {
+    private String publicEndpoint(FileStorageConfigEntity config) {
         String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
         if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
             return endpoint;

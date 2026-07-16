@@ -23,7 +23,7 @@ import io.mango.cms.core.mapper.CmsSiteCategoryMapper;
 import io.mango.cms.core.mapper.CmsSiteMapper;
 import io.mango.common.exception.BizException;
 import io.mango.common.vo.PageResult;
-import io.mango.file.api.FileApi;
+import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -171,7 +171,7 @@ class CmsSiteServiceBehaviorTest {
         CmsSiteEntity site = site(10L, "site-tenant", "main", "www.example.test");
         site.setLogoFileId("99");
         when(siteMapper.selectList(any())).thenReturn(List.of(site));
-        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider fileApi = mock(IFileContentProvider.class);
         AtomicReference<String> tenantDuringDownload = new AtomicReference<>();
         FileDownloadVO download = new FileDownloadVO(
                 new ByteArrayInputStream(new byte[]{1, 2, 3}), "logo.png", "image/png", 3L);
@@ -196,7 +196,7 @@ class CmsSiteServiceBehaviorTest {
         when(bannerMapper.selectList(any())).thenReturn(List.of());
         when(contentMapper.selectList(any())).thenReturn(List.of());
         when(advertisementMapper.selectList(any())).thenReturn(List.of());
-        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider fileApi = mock(IFileContentProvider.class);
         CmsSiteService service = service(fileApi);
 
         assertThatThrownBy(() -> service.publicFile(777L, siteCodeQuery("main")))
@@ -237,7 +237,7 @@ class CmsSiteServiceBehaviorTest {
                 .containsExactly("Visible article");
     }
 
-    private CmsSiteService service(FileApi fileApi) {
+    private CmsSiteService service(IFileContentProvider fileApi) {
         return new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper, bannerMapper,
                 advertisementMapper, adDeliveryMapper, contentMapper, publishMapper, provider(fileApi));
     }

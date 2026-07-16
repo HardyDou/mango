@@ -1,6 +1,5 @@
 package io.mango.file.starter.controller;
 
-import io.mango.common.result.R;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.core.service.IFileService;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,7 @@ class FileControllerRecordSerializationTest {
         record.setDirectDownloadUrl("https://storage.example.com/private/1001-download.png");
         record.setDirectPreviewExpireSeconds(300L);
         record.setDirectDownloadExpireSeconds(300L);
-        when(fileService.get(1001L)).thenReturn(R.ok(record));
+        when(fileService.get(1001L)).thenReturn(record);
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService)).build();
 
         mockMvc.perform(get("/file/files/detail").param("id", "1001"))

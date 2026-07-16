@@ -93,14 +93,10 @@ public class FileAutoConfiguration {
             command.setAccessLevel("PRIVATE");
             command.setBizType("EXCEL_IMPORT");
             var result = fileService.save(command);
-            if (result == null || !result.isSuccess() || result.getData() == null) {
-                String message = "文件服务无响应";
-                if (result != null) {
-                    message = result.getMsg();
-                }
-                throw new IllegalStateException("保存 Excel 失败工作簿失败: " + message);
+            if (result == null) {
+                throw new IllegalStateException("保存 Excel 失败工作簿失败: 文件服务无响应");
             }
-            return result.getData().getId();
+            return result.getId();
         };
     }
 }

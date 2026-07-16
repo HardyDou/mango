@@ -1,6 +1,5 @@
 package io.mango.file.core.service;
 
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
@@ -10,6 +9,8 @@ import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.SaveFileCommand;
+import io.mango.file.core.service.model.FileDownloadOptions;
+import io.mango.file.core.service.model.ServerFilePart;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -25,48 +26,43 @@ import java.util.List;
  */
 public interface IFileService {
 
-    R<FileRecordVO> upload(MultipartFile file, String purpose, String accessLevel, String bizType, String bizId, String bizMeta, Long directoryId);
+    FileRecordVO upload(MultipartFile file, SaveFileCommand command);
 
-    R<List<FileRecordVO>> uploadBatch(MultipartFile[] files, String purpose, String accessLevel, String bizType, String bizId, String bizMeta, Long directoryId);
+    List<FileRecordVO> uploadBatch(MultipartFile[] files, SaveFileCommand command);
 
-    R<FileRecordVO> save(SaveFileCommand command);
+    FileRecordVO save(SaveFileCommand command);
 
-    R<FileRecordVO> packageFiles(FilePackageCommand command);
+    FileRecordVO packageFiles(FilePackageCommand command);
 
-    R<FileRecordVO> mergeToPdf(FileMergePdfCommand command);
+    FileRecordVO mergeToPdf(FileMergePdfCommand command);
 
-    R<FileRecordVO> saveGenerated(byte[] content,
-                                  String fileName,
-                                  String contentType,
-                                  String purpose,
-                                  String bizType,
-                                  String bizId);
+    FileRecordVO saveGenerated(byte[] content, SaveFileCommand command);
 
-    R<PageResult<FileRecordVO>> page(FileRecordPageQuery query);
+    PageResult<FileRecordVO> page(FileRecordPageQuery query);
 
-    R<FileRecordVO> get(Long id);
+    FileRecordVO get(Long id);
 
-    R<FilePreviewVO> preview(Long id);
+    FilePreviewVO preview(Long id);
 
     FileDownloadVO download(Long id);
 
-    FileDownloadVO download(Long id, String compression, Long perFileTargetSizeBytes);
+    FileDownloadVO download(FileDownloadOptions options);
 
     FileDownloadVO downloadForService(Long id);
 
-    R<Boolean> archive(FileArchiveCommand command);
+    Boolean archive(FileArchiveCommand command);
 
-    R<Boolean> delete(FileDeleteCommand command);
+    Boolean delete(FileDeleteCommand command);
 
-    R<FileUploadInitVO> createUploadSession(CreateFileUploadSessionCommand command);
+    FileUploadInitVO createUploadSession(CreateFileUploadSessionCommand command);
 
-    R<FileUploadPartSignVO> createUploadPartSign(Long sessionId, CreateFileUploadPartSignCommand command);
+    FileUploadPartSignVO createUploadPartSign(Long sessionId, CreateFileUploadPartSignCommand command);
 
-    R<Boolean> uploadServerPart(Long sessionId, Integer partNumber, MultipartFile file);
+    Boolean uploadServerPart(ServerFilePart part);
 
-    R<Boolean> completeUploadPart(Long sessionId, CompleteFileUploadPartCommand command);
+    Boolean completeUploadPart(Long sessionId, CompleteFileUploadPartCommand command);
 
-    R<FileRecordVO> completeUploadSession(Long sessionId);
+    FileRecordVO completeUploadSession(Long sessionId);
 
-    R<Boolean> abortUploadSession(Long sessionId);
+    Boolean abortUploadSession(Long sessionId);
 }

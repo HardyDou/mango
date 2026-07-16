@@ -13,7 +13,7 @@ class FileControllerAccessModeTest {
     @Test
     void basicFileEndpointsUseLoginBaseline() throws NoSuchMethodException {
         assertLogin("get", Long.class);
-        assertLogin("upload",
+        assertLogin(FileBinaryController.class, "upload",
                 org.springframework.web.multipart.MultipartFile.class,
                 String.class,
                 String.class,
@@ -22,14 +22,19 @@ class FileControllerAccessModeTest {
                 String.class,
                 Long.class);
         assertLogin("preview", Long.class);
-        assertLogin("downloadResponse", Long.class, String.class, Long.class);
-        assertLogin("previewContentResponse", Long.class);
+        assertLogin(FileBinaryController.class, "download", Long.class, String.class, Long.class);
+        assertLogin(FileBinaryController.class, "previewContent", Long.class);
         Method settings = FileSettingsController.class.getMethod("get");
         assertThat(settings.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
     }
 
     private void assertLogin(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
-        Method method = FileController.class.getMethod(methodName, parameterTypes);
+        assertLogin(FileController.class, methodName, parameterTypes);
+    }
+
+    private void assertLogin(Class<?> controllerClass, String methodName, Class<?>... parameterTypes)
+            throws NoSuchMethodException {
+        Method method = controllerClass.getMethod(methodName, parameterTypes);
         ApiAccess apiAccess = method.getAnnotation(ApiAccess.class);
         assertThat(apiAccess).isNotNull();
         assertThat(apiAccess.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);

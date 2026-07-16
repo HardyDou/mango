@@ -9,6 +9,7 @@ import io.mango.file.core.mapper.FileSettingsMapper;
 import io.mango.file.core.mapper.FileStorageConfigMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.api.ResourceTypes;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.model.ResourceDeclaration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,15 +75,13 @@ class FileResourceHandlerIntegrationTest {
             settingsHandler.upsert(declaration);
         }
 
-        assertThat(storageConfigs).hasSize(2);
+        assertThat(storageConfigs).hasSize(1);
         assertThat(settings).hasSize(1);
         assertThat(settings.getFirst().getVersion()).isEqualTo(3);
-        assertThat(count("file_storage_config")).isEqualTo(2);
+        assertThat(count("file_storage_config")).isOne();
         assertThat(count("file_settings")).isOne();
         assertThat(stringValue("file_storage_config", "storage_type", "id = 1")).isEqualTo("LOCAL");
         assertThat(stringValue("file_storage_config", "storage_path", "id = 1")).isEqualTo("mango-file");
-        assertThat(stringValue("file_storage_config", "endpoint", "id = 2")).isEqualTo("http://127.0.0.1:9000");
-        assertThat(intValue("file_storage_config", "path_style_access", "id = 2")).isOne();
         assertThat(stringValue("file_settings", "default_access_level", "id = 1")).isEqualTo("PRIVATE");
         assertThat(stringValue("file_settings", "duplicate_name_strategy", "id = 1")).isEqualTo("AUTO_RENAME");
         assertThat(stringValue("file_settings", "access_mode", "id = 1")).isEqualTo("DIRECT");
@@ -91,6 +90,18 @@ class FileResourceHandlerIntegrationTest {
         assertThat(intValue("file_settings", "access_token_expire_seconds", "id = 1")).isEqualTo(86400);
         assertThat(intValue("file_settings", "preview_expire_seconds", "id = 1")).isEqualTo(86400);
         assertThat(intValue("file_settings", "archive_retain_days", "id = 1")).isEqualTo(180);
+    }
+
+    @Test
+    void minioExampleIsIsolatedAsInitOnlyDemoResource() throws Exception {
+        ResourceNode resource = loadResource("META-INF/mango/demo/file-demo-storage.yml");
+        List<ResourceDeclaration> storageConfigs = declarations(resource, ResourceTypes.FILE_STORAGE_CONFIG);
+
+        assertThat(storageConfigs).singleElement().satisfies(declaration -> {
+            assertThat(declaration.getBizKey()).isEqualTo("file.storage.minio-local-dev");
+            assertThat(declaration.getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+            assertThat(declaration.getFields().get("storageType").getValue()).isEqualTo("MINIO");
+        });
     }
 
     @Test
@@ -173,7 +184,11 @@ class FileResourceHandlerIntegrationTest {
     }
 
     private ResourceNode loadFileStorageResource() throws Exception {
-        Path path = Path.of("../mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-storage.yml");
+        return loadResource("META-INF/mango/resources/file-common-storage.yml");
+    }
+
+    private ResourceNode loadResource(String resourcePath) throws Exception {
+        Path path = Path.of("../mango-file-starter/src/main/resources").resolve(resourcePath);
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         MapNode root = objectMapper.readValue(path.toFile(), MapNode.class);
         return root.mango().resource();
@@ -186,6 +201,7 @@ class FileResourceHandlerIntegrationTest {
                 create table file_storage_config (
                     id bigint not null,
                     tenant_id bigint not null default 1,
+                    org_id bigint,
                     config_name varchar(64) not null,
                     storage_type varchar(32) not null,
                     endpoint varchar(255),
@@ -214,6 +230,7 @@ class FileResourceHandlerIntegrationTest {
                 create table file_settings (
                     id bigint not null,
                     tenant_id bigint not null default 1,
+                    org_id bigint,
                     max_size bigint not null default 104857600,
                     allowed_extensions varchar(1000),
                     blocked_extensions varchar(1000) default 'exe,bat,cmd,sh,jar',

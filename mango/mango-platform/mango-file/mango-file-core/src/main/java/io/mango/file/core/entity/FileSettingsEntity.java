@@ -1,23 +1,17 @@
 package io.mango.file.core.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 /**
  * 文件中心运行时配置实体。
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("file_settings")
-public class FileSettings {
+public class FileSettingsEntity extends FileTenantEntity {
 
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
-
-    private Long tenantId;
     private Long maxSize;
     private String allowedExtensions;
     private String blockedExtensions;
@@ -43,10 +37,4 @@ public class FileSettings {
     private Integer archiveRetainDays;
     private Integer archiveRestoreEnabled;
     private Integer physicalDeleteEnabled;
-    private Long createdBy;
-    private LocalDateTime createdTime;
-    private LocalDateTime createdAt;
-    private Long updatedBy;
-    private LocalDateTime updatedTime;
-    private LocalDateTime updatedAt;
 }

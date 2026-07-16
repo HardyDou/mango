@@ -1,7 +1,7 @@
 package io.mango.file.core.service.impl;
 
 import io.mango.file.core.config.FileProperties;
-import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileStorageConfigEntity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.junit.jupiter.api.AfterEach;
@@ -123,7 +123,7 @@ class FileAccessUrlAssemblerTest {
         request.header("X-Forwarded-Port", "443");
         request.header("X-Forwarded-Prefix", "/api");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        FileStorageConfig config = storageConfig("LOCAL");
+        FileStorageConfigEntity config = storageConfig("LOCAL");
 
         String url = assembler.directAccessUrl(config, "/file/local-objects/local/mango-file/a.txt");
 
@@ -139,7 +139,7 @@ class FileAccessUrlAssemblerTest {
         request.header("X-Forwarded-Port", "443");
         request.header("X-Forwarded-Prefix", "/api");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        FileStorageConfig config = storageConfig("MINIO");
+        FileStorageConfigEntity config = storageConfig("MINIO");
 
         String url = assembler.directAccessUrl(config, "/mango-file/a.txt");
 
@@ -151,15 +151,15 @@ class FileAccessUrlAssemblerTest {
         FileProperties properties = new FileProperties();
         properties.setPublicBaseUrl("https://files.example.com/api/");
         FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(properties);
-        FileStorageConfig config = storageConfig("MINIO");
+        FileStorageConfigEntity config = storageConfig("MINIO");
 
         String url = assembler.directAccessUrl(config, "http://file.mango.io:9000/mango-file/a.txt");
 
         assertThat(url).isEqualTo("http://file.mango.io:9000/mango-file/a.txt");
     }
 
-    private FileStorageConfig storageConfig(String storageType) {
-        FileStorageConfig config = new FileStorageConfig();
+    private FileStorageConfigEntity storageConfig(String storageType) {
+        FileStorageConfigEntity config = new FileStorageConfigEntity();
         config.setStorageType(storageType);
         return config;
     }
