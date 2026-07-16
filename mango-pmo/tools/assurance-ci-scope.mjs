@@ -11,7 +11,7 @@ export function assuranceCiScope(markdown) {
   const outputs = {};
   for (let number = 1; number <= 16; number += 1) {
     const id = `M${String(number).padStart(2, '0')}`;
-    outputs[id.toLowerCase()] = ['CREATE', 'REBUILD', 'ENABLE'].includes(selections[id]);
+    outputs[id.toLowerCase()] = ['CREATE', 'REUSE', 'REBUILD', 'ENABLE'].includes(selections[id]);
   }
   return { failures: [], outputs };
 }

@@ -28,7 +28,7 @@ Run PMO preflight with role `tech-lead` and phase `design`, then read every `Mus
 
 ## Execute
 
-1. Read `$PMO_ROOT/rules/11-delivery-assurance.md` and the assurance baseline. Continue only when the user confirmed M05 TDD=`ENABLE`; otherwise return `ASK` to `$mango-design-delivery-assurance`. Read the applicable approved requirement/system source, assess solution blast radius, coupling, failure consequences, recovery effort and uncertainty, and set final L0-L3 to the maximum without lowering the source. Risk changes do not enable TDD or complete a document chain.
+1. Read the resolved delivery-mode baseline. Continue for a standalone TDD only in FULL flow or an explicit higher-mode request. SIMPLE keeps design in the implementation reasoning; STANDARD writes technical decisions in its single record. Reassess solution risk and escalate mode when needed.
 2. Choose one action:
    - `STOP`: upstream requirements are absent, unapproved, invalid, or the request asks this stage to invent business scope.
    - `ASK`: a design decision cannot be derived from approved requirements, repository facts, or loaded Mango rules.

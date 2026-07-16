@@ -16,7 +16,10 @@
     </description>
 
     <!-- 命名规范 -->
-    <rule ref="rulesets/java/ali-naming.xml"/>
+    <rule ref="rulesets/java/ali-naming.xml">
+        <!-- Mango internal service implementations intentionally use XxxService, not XxxServiceImpl. -->
+        <exclude name="ServiceOrDaoClassShouldEndWithImplRule"/>
+    </rule>
 
     <!--
         注释规范采用契约优先策略：

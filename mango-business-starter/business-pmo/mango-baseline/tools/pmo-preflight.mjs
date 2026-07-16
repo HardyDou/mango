@@ -47,15 +47,12 @@ function splitPaths(value) {
     .filter(Boolean);
 }
 
-const directMainPathPatterns = [
+const worktreeRequiredPathPatterns = [
   'mango-pmo/**',
   'mango-docs/**',
   'AGENTS.md',
   'CLAUDE.md',
-  'GEMINI.md'
-];
-
-const worktreeRequiredPathPatterns = [
+  'GEMINI.md',
   'mango/**',
   'mango-ui/**',
   'mango-business-starter/**',
@@ -74,20 +71,16 @@ const worktreeRequiredPathPatterns = [
   '**/db/migration/**'
 ];
 
-const directMainKeywords = [
-  '规范',
-  '规则',
-  '流程治理',
-  '规范治理',
-  'agent 入口',
-  'agent入口',
-  '文档资产',
-  '归档边界',
-  '交付记录',
-  '复盘'
-];
-
 const worktreeRequiredKeywords = [
+  '实现',
+  '修改',
+  '修复',
+  '调整',
+  '优化',
+  '新增',
+  '删除',
+  '重构',
+  '更新',
   '代码',
   '接口',
   '数据库',
@@ -124,6 +117,25 @@ function pathMatches(inputPath, pattern) {
 function anyKeywordMatches(task, keywords) {
   const normalizedTask = normalizeText(task);
   return keywords.some((keyword) => normalizedTask.includes(normalizeText(keyword)));
+}
+
+function taskKeywordMatches(task, keyword) {
+  const normalizedTask = normalizeText(task);
+  const normalizedKeyword = normalizeText(keyword);
+  let offset = 0;
+  while (offset < normalizedTask.length) {
+    const index = normalizedTask.indexOf(normalizedKeyword, offset);
+    if (index < 0) return false;
+    const before = normalizedTask.slice(Math.max(0, index - 16), index);
+    const after = normalizedTask.slice(index + normalizedKeyword.length, index + normalizedKeyword.length + 40);
+    const directlyNegated = /(?:不|未|无需|禁止)(?:再|会|要|需要)?(?:涉及|改变|修改|影响|包含|使用|新增|删除|调整|触及|变更)?[：:\s]*$/u.test(before);
+    const unchangedClause = /^([^，,。；;\n]{0,32}?)(?:(?:均|都|保持|仍)?不变|无变化|不受影响)/u.exec(after);
+    const hasPositiveActionBeforeUnchanged = unchangedClause
+      && /(?:修改|改变|调整|新增|删除|重构|变化|影响)/u.test(unchangedClause[1]);
+    if (!directlyNegated && (!unchangedClause || hasPositiveActionBeforeUnchanged)) return true;
+    offset = index + normalizedKeyword.length;
+  }
+  return false;
 }
 
 function runGit(args) {
@@ -167,9 +179,16 @@ function inspectCurrentWorkspace() {
   }
 }
 
-function applyCurrentWorkspacePolicy(policy, workspace) {
+function applyCurrentWorkspacePolicy(policy, workspace, args) {
   if (!workspace.reusableTaskWorkspace || policy.mode === 'needs-human-check') {
     return policy;
+  }
+  if (args.reuseCurrentTask !== 'true') {
+    return {
+      ...policy,
+      summary: '当前虽位于非 main worktree，但未声明属于同一任务；按新任务继续使用隔离策略。',
+      reason: `${policy.reason}; current=${workspace.root}; branch=${workspace.branch}; same-task reuse not declared`,
+    };
   }
   return {
     mode: 'reuse-current-worktree',
@@ -179,19 +198,27 @@ function applyCurrentWorkspacePolicy(policy, workspace) {
 }
 
 function workspaceMeasureRecommendation(policy) {
+  const values = {
+    'worktree-required': 'CREATE',
+    'reuse-current-worktree': 'REUSE',
+    'main-exception-authorized': 'MAIN_EXCEPTION'
+  };
   if (policy.mode === 'needs-human-check') {
     return {
       measureId: 'M01',
       recommendedValue: null,
-      requiresHumanConfirmation: true,
-      reason: '影响范围不足，先补充路径事实再推荐 CREATE 或 DO_NOT_CREATE。'
+      requiresHumanConfirmation: false,
+      requiresScopeClarification: true,
+      decisionSource: 'policy',
+      reason: '影响范围不足，先补充目标或路径事实；不要展示 M01 问卷。'
     };
   }
-  const recommendedValue = policy.mode === 'worktree-required' ? 'CREATE' : 'DO_NOT_CREATE';
   return {
     measureId: 'M01',
-    recommendedValue,
-    requiresHumanConfirmation: true,
+    recommendedValue: values[policy.mode],
+    requiresHumanConfirmation: policy.mode === 'main-exception-authorized',
+    requiresScopeClarification: false,
+    decisionSource: policy.mode === 'main-exception-authorized' ? 'human-exception' : 'policy',
     reason: policy.reason
   };
 }
@@ -199,66 +226,36 @@ function workspaceMeasureRecommendation(policy) {
 function classifyWorkspacePolicy(args) {
   const inputPaths = splitPaths(args.paths);
   const requiredHits = [];
-  const directHits = [];
 
-  if (args.role === 'pmo' || args.phase === 'governance') {
-    directHits.push('role/phase is PMO governance');
-  }
-  if (anyKeywordMatches(args.task, directMainKeywords)) {
-    directHits.push('task matches governance/document keywords');
+  if (args.mainExceptionConfirmed === 'true') {
+    return {
+      mode: 'main-exception-authorized',
+      summary: '用户已明确确认 main/主 worktree 例外；记录风险后允许本次任务使用当前工作区。',
+      reason: 'explicit --mainExceptionConfirmed true'
+    };
   }
   for (const inputPath of inputPaths) {
     if (worktreeRequiredPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) {
       requiredHits.push(`path ${inputPath}`);
-    }
-    if (directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) {
-      directHits.push(`path ${inputPath}`);
+    } else {
+      requiredHits.push(`tracked path ${inputPath}`);
     }
   }
   if (anyKeywordMatches(args.task, worktreeRequiredKeywords)) {
     requiredHits.push('task matches service/code/build keywords');
   }
 
-  if (
-    requiredHits.length > 0 &&
-    inputPaths.length > 0 &&
-    inputPaths.every((inputPath) => directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) &&
-    requiredHits.every((hit) => hit === 'task matches service/code/build keywords')
-  ) {
-    return {
-      mode: 'main-direct-allowed',
-      summary: '从路径事实看无需新建 worktree，建议 M01=DO_NOT_CREATE；最终值由用户确认。',
-      reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
-    };
-  }
-
   if (requiredHits.length > 0) {
     return {
       mode: 'worktree-required',
-      summary: '从路径事实看建议创建任务专用 worktree；必须通过 Ask User 确认 M01 后执行。',
+      summary: '任务会修改受版本控制文件；策略决定 M01=CREATE，不逐次询问。',
       reason: unique(requiredHits).join('; ')
-    };
-  }
-
-  if (inputPaths.length > 0 && inputPaths.every((inputPath) => directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern)))) {
-    return {
-      mode: 'main-direct-allowed',
-      summary: '从路径事实看无需新建 worktree，建议 M01=DO_NOT_CREATE；最终值由用户确认。',
-      reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
-    };
-  }
-
-  if (directHits.length > 0 && inputPaths.length === 0) {
-    return {
-      mode: 'main-direct-allowed',
-      summary: '当前事实建议 M01=DO_NOT_CREATE；若影响范围变化，重新推荐并只询问受影响措施。',
-      reason: unique(directHits).join('; ')
     };
   }
 
   return {
     mode: 'needs-human-check',
-    summary: '影响范围不足，先确认路径，再向用户提出 M01 的明确建议。',
+    summary: '影响范围不足，先确认目标或路径；不要展示 M01 问卷。',
     reason: 'no decisive path or keyword match'
   };
 }
@@ -304,7 +301,7 @@ function bundleMatches(bundle, args) {
   if (Array.isArray(bundle.phases) && bundle.phases.length > 0 && !bundle.phases.includes(args.phase)) {
     return false;
   }
-  const keywordHit = (bundle.keywords || []).some((keyword) => task.includes(normalizeText(keyword)));
+  const keywordHit = (bundle.keywords || []).some((keyword) => taskKeywordMatches(task, keyword));
   const pathHit = inputPaths.some((inputPath) => (bundle.paths || []).some((pattern) => pathMatches(inputPath, pattern)));
   return keywordHit || pathHit;
 }
@@ -380,7 +377,7 @@ function collectRequiredChecks(args) {
   const adminStylePathHit = inputPaths.some((inputPath) =>
     frontendAdminModuleStylePaths.some((pattern) => pathMatches(inputPath, pattern)),
   );
-  const adminStyleKeywordHit = frontendAdminModuleStyleKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+  const adminStyleKeywordHit = frontendAdminModuleStyleKeywords.some((keyword) => taskKeywordMatches(task, keyword));
 
   if (adminStylePathHit || adminStyleKeywordHit) {
     checks.push(frontendAdminModuleStyleCheck);
@@ -389,7 +386,7 @@ function collectRequiredChecks(args) {
   const testPathHit = inputPaths.some((inputPath) =>
     testQualityPaths.some((pattern) => pathMatches(inputPath, pattern)),
   );
-  const testKeywordHit = testQualityKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+  const testKeywordHit = testQualityKeywords.some((keyword) => taskKeywordMatches(task, keyword));
   if (testPathHit || testKeywordHit) {
     checks.push({
       id: 'test-quality',
@@ -398,7 +395,7 @@ function collectRequiredChecks(args) {
     });
   }
 
-  const workspaceKeywordHit = workspaceLayoutKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+  const workspaceKeywordHit = workspaceLayoutKeywords.some((keyword) => taskKeywordMatches(task, keyword));
   const workspacePathHit = inputPaths.some((inputPath) =>
     ['mango-pmo/**', '.github/**', 'mango-business-starter/**'].some((pattern) => pathMatches(inputPath, pattern)),
   );
@@ -432,7 +429,7 @@ function addRule(result, index, key, source) {
 function buildResult(index, args) {
   const currentWorkspace = inspectCurrentWorkspace();
   const classifiedWorkspacePolicy = classifyWorkspacePolicy(args);
-  const workspacePolicy = applyCurrentWorkspacePolicy(classifiedWorkspacePolicy, currentWorkspace);
+  const workspacePolicy = applyCurrentWorkspacePolicy(classifiedWorkspacePolicy, currentWorkspace, args);
   const result = {
     role: args.role || 'auto',
     phase: args.phase || 'auto',
@@ -498,7 +495,7 @@ function printText(result) {
   }
   console.log(`Workspace: ${result.workspacePolicy.mode} - ${result.workspacePolicy.summary}`);
   console.log(`Workspace reason: ${result.workspacePolicy.reason}`);
-  console.log(`M01 recommendation: ${result.assuranceRecommendation.recommendedValue ?? 'PENDING_FACTS'}; human confirmation required.`);
+  console.log(`M01 decision: ${result.assuranceRecommendation.recommendedValue ?? 'PENDING_FACTS'}; source=${result.assuranceRecommendation.decisionSource}.`);
   console.log('');
   console.log('Must read:');
   result.mustRead.forEach((item, index) => {

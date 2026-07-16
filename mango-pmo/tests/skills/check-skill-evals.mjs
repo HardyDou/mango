@@ -145,16 +145,22 @@ assert(
   'missing L0 lightweight lifecycle eval',
 );
 assert(
+  cases.some(item => item.id === 'lifecycle-l2-standard-single-record'
+    && item.expect.action === 'NEXT'
+    && item.expect.requiredAssertions?.some(assertion => assertion.includes('exactly one standard delivery record'))),
+  'missing L2 STANDARD single-record eval',
+);
+assert(
   cases.some(item => item.id === 'lifecycle-cross-tenant-measures-ask'
-    && item.expect.action === 'ASK'
-    && item.expect.requiredAssertions?.some(assertion => assertion.includes('native Ask User'))),
-  'missing cross-tenant fact-triggered assurance confirmation eval',
+    && item.expect.action === 'SELECT_FULL'
+    && item.expect.requiredAssertions?.some(assertion => assertion.includes('FULL'))),
+  'missing cross-tenant FULL-mode eval',
 );
 assert(
   cases.some(item => item.id === 'lifecycle-l3-governance-no-four-docs'
-    && item.expect.action === 'ASK'
-    && item.expect.requiredAssertions?.some(assertion => assertion.includes('does not automatically require BRD'))),
-  'missing L3 governance no-four-document-package eval',
+    && item.expect.action === 'SELECT_FULL'
+    && item.expect.requiredAssertions?.some(assertion => assertion.includes('without fabricated product documents'))),
+  'missing L3 FULL governance eval',
 );
 assert(
   cases.some(item => item.id === 'technical-same-requirement-different-solution-risk'

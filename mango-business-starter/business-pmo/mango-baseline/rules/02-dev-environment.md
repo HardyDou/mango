@@ -10,17 +10,17 @@
 
 - 每个工作区必须使用 `mango workspace init` 初始化本地配置。
 - `scripts/dev-workspace.sh` 只保留为历史兼容入口，正式开发、验证和交付命令必须使用 Mango CLI。
-- 代码、接口、数据库、测试、前端页面或构建配置改动会触发 M01 询问；AI 通常建议任务专用 Git worktree，但最终按用户确认的 `CREATE` / `DO_NOT_CREATE` 执行。
-- 用户确认 `M01=CREATE` 时，任务 worktree 从最新 `main` 新建并使用独立任务分支。
+- 任何受版本控制文件改动都触发 M01 工作区策略；主工作区自动 `CREATE`，同一任务非 main worktree 自动 `REUSE`，不逐次询问。
+- `M01=CREATE` 时，任务 worktree 从最新 `main` 新建并使用独立任务分支。
 - 一个任务或一个 PR 在本地只能对应一个开发 worktree。
 - 当前已位于非 `main` 分支或非主工作区时，用户明确要求解决的问题必须在当前工作区处理，禁止为该问题再次创建 worktree。
 - 验收返工、Review 修改、CI 修复和 PR 门禁修复必须复用该任务或 PR 的既有 worktree。
 - 新建 worktree 前，Agent 必须先执行 `git worktree list`，确认是否已有同一任务分支或 PR 分支对应的 worktree。
-- 只有当前位于主工作区、属于新独立任务、没有可复用任务 worktree，并且用户明确拆分任务或 preflight 判定需要时，才允许创建新的 worktree。
+- 当前位于主工作区、属于新独立任务且没有可复用任务 worktree时，preflight 自动决定创建新的 worktree。
 - 用户表达无法确定为“当前解决”还是“登记 Issue”时，必须先询问，不得用新 worktree 代替确认。
 - 原 worktree 丢失或损坏时，必须基于原任务分支重建 worktree，不得另起无关联分支。
-- 用户确认 `M01=CREATE` 时，主工作区只用于拉取 `main`、创建 worktree、查看状态和执行清理；确认 `DO_NOT_CREATE` 时必须记录当前工作区承载任务改动的影响。
-- 只修改 PMO 规范、流程、Agent 入口、设计文档、Sprint 计划、交付记录或历史材料，且不影响服务代码、接口、数据库、测试、前端页面或构建配置时，可按 preflight 的 `main-direct-allowed` 结果在主工作区直接提交。
+- `M01=CREATE` 时，主工作区只用于拉取 `main`、创建 worktree、查看状态和执行清理；`M01=REUSE` 时继续使用同一任务工作区。
+- 只有用户明确要求并在风险提示后确认 `M01=MAIN_EXCEPTION`，才允许在 `main` 或主 worktree 修改；必须记录污染、并行冲突和误提交风险。
 - 本地工作区配置文件固定为 `.mango/workspace.json` 和 `.mango/dev-workspace.env`。
 - `.mango/workspace.json` 记录当前 worktree 的稳定 slot、端口、数据库名和 workspace id，禁止提交到 Git。
 - `.mango/dev-workspace.env` 只属于当前工作区，禁止提交到 Git。

@@ -42,6 +42,7 @@ CLI 负责：
 - 根据 `release-versions.json` 锁定 Mango 后端 Maven 版本和 NPM 包版本。
 - 根据随包发布的 `admin-modules.json`、preset 和 module code 生成前端依赖、页面注册、样式入口、运行时模块配置和后端 Maven 依赖。
 - 为生成项目写入最后执行的 `backend/architecture-verification` 模块和后端 CI；`mvn verify` 在完整 Reactor、完整代码范围内同时执行 Mango 架构规则、P3C/PMD、Checkstyle 和 SpotBugs，并拒绝缩小检查范围的命令行覆盖。
+- 生成项目的 `backend/config/quality/pmd-p3c.xml` 与 `mango-maven-plugin` canonical 规则保持一致；Mango Service 实现类允许使用 `XxxService` 或 `XxxServiceImpl`，不强制 `Impl` 后缀。
 - 读取 `mango.dev.json`、`.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/dev-workspace.local.json`，启动本地开发应用。
 - 维护受 `mango-cli` marker 保护的代码块，例如 `backend/pom.xml`、`backend/app/pom.xml`、`frontend/src/main.ts`、`application.yml` 中的 managed block。
 - 同步业务 PMO baseline、项目级 Skill、兼容脚本和 Agent 入口。

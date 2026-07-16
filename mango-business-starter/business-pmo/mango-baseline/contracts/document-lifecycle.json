@@ -1,7 +1,7 @@
 {
   "contractSchema": 1,
   "contractId": "document-lifecycle",
-  "schemaRevision": 3,
+  "schemaRevision": 5,
   "ruleSource": "mango-pmo/rules/product/05-document-lifecycle.md",
   "rules": {
     "risk": {"ruleId": "LIFE-RISK-001"},
@@ -16,5 +16,12 @@
     {"key": "tdd", "documentType": "technical-design", "contract": "mango-pmo/contracts/technical-design.json"},
     {"key": "plan", "documentType": "implementation-plan", "contract": "mango-pmo/contracts/implementation-plan.json"}
   ],
-  "riskLevels": ["L0", "L1", "L2", "L3"]
+  "riskLevels": ["L0", "L1", "L2", "L3"],
+  "deliveryModes": ["SIMPLE", "STANDARD", "FULL"],
+  "riskToMode": {"L0": "SIMPLE", "L1": "SIMPLE", "L2": "STANDARD", "L3": "FULL"},
+  "applicabilityEvidence": {
+    "requiredForExplicitStageReduction": true,
+    "mustBeExistingRegularFile": true,
+    "symbolicLinksAllowed": false
+  }
 }

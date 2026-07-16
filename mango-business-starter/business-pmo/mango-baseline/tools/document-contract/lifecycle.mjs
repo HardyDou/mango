@@ -12,6 +12,8 @@ const STAGES = LIFECYCLE_CONTRACT.stages.map((stage) => ({
 }));
 const STAGE_KEYS = new Set(STAGES.map((stage) => stage.key));
 const RISK_LEVELS = LIFECYCLE_CONTRACT.riskLevels;
+const DELIVERY_MODES = LIFECYCLE_CONTRACT.deliveryModes;
+const RISK_TO_MODE = new Map(Object.entries(LIFECYCLE_CONTRACT.riskToMode));
 const RULES = Object.fromEntries(Object.entries(LIFECYCLE_CONTRACT.rules).map(([key, value]) => [key, value.ruleId]));
 
 function addFinding(findings, ruleId, message) {
@@ -29,13 +31,23 @@ export function parseLifecycleArgs(argv) {
     tdd: '',
     plan: '',
     riskLevel: '',
+    deliveryMode: '',
+    applicabilityEvidence: '',
     throughStage: '',
     requiredStages: null,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
-    if (['--brd', '--srs', '--tdd', '--plan', '--risk', '--through'].includes(value)) {
-      const key = value === '--risk' ? 'riskLevel' : value === '--through' ? 'throughStage' : value.slice(2);
+    if (['--brd', '--srs', '--tdd', '--plan', '--risk', '--mode', '--through', '--applicability-evidence'].includes(value)) {
+      const key = value === '--risk'
+        ? 'riskLevel'
+        : value === '--mode'
+          ? 'deliveryMode'
+          : value === '--applicability-evidence'
+            ? 'applicabilityEvidence'
+          : value === '--through'
+            ? 'throughStage'
+            : value.slice(2);
       args[key] = argv[index + 1] ?? '';
       index += 1;
     } else if (value === '--required-stages') {
@@ -70,9 +82,20 @@ export function validateLifecycle(documents, options = {}) {
   const findings = [...validateContractRuleLinks(LIFECYCLE_CONTRACT)];
   const results = {};
   const riskLevel = options.riskLevel ?? '';
+  const deliveryMode = options.deliveryMode ?? '';
   const throughStage = options.throughStage ?? '';
+  const applicabilityEvidence = options.applicabilityEvidence ?? '';
   if (riskLevel && !RISK_LEVELS.includes(riskLevel)) {
     addFinding(findings, RULES.risk, `未知风险等级：${riskLevel}`);
+  }
+  if (deliveryMode && !DELIVERY_MODES.includes(deliveryMode)) {
+    addFinding(findings, RULES.risk, `未知交付模式：${deliveryMode}`);
+  }
+  if (riskLevel && deliveryMode && RISK_LEVELS.includes(riskLevel) && DELIVERY_MODES.includes(deliveryMode)) {
+    const minimumMode = RISK_TO_MODE.get(riskLevel);
+    if (DELIVERY_MODES.indexOf(deliveryMode) < DELIVERY_MODES.indexOf(minimumMode)) {
+      addFinding(findings, RULES.risk, `${riskLevel} 的交付模式不得低于 ${minimumMode}：实际 ${deliveryMode}`);
+    }
   }
   const throughIndex = throughStage ? STAGES.findIndex((stage) => stage.key === throughStage) : -1;
   if (throughStage && throughIndex < 0) {
@@ -80,10 +103,34 @@ export function validateLifecycle(documents, options = {}) {
   }
 
   const requestedStageKeys = options.requiredStages == null
-    ? STAGES.filter((stage) => documents[stage.key]).map((stage) => stage.key)
+    ? deliveryMode === 'FULL'
+      ? STAGES.slice(0, throughIndex >= 0 ? throughIndex + 1 : STAGES.length).map((stage) => stage.key)
+      : STAGES.filter((stage) => documents[stage.key]).map((stage) => stage.key)
     : Array.isArray(options.requiredStages)
       ? options.requiredStages
       : String(options.requiredStages).split(',').map((item) => item.trim()).filter(Boolean);
+  const defaultFullStageKeys = STAGES.slice(0, throughIndex >= 0 ? throughIndex + 1 : STAGES.length).map((stage) => stage.key);
+  const explicitlyReducedFullStages = deliveryMode === 'FULL'
+    && options.requiredStages != null
+    && defaultFullStageKeys.some(key => !requestedStageKeys.includes(key));
+  if (explicitlyReducedFullStages) {
+    const resolvedEvidence = applicabilityEvidence ? path.resolve(applicabilityEvidence) : '';
+    let validEvidence = false;
+    if (resolvedEvidence && fs.existsSync(resolvedEvidence)) {
+      const stat = fs.lstatSync(resolvedEvidence);
+      validEvidence = stat.isFile() && !stat.isSymbolicLink();
+    }
+    if (!validEvidence) {
+      addFinding(findings, RULES.order, 'FULL 产品流程缩减适用阶段时必须提供存在且非符号链接的外部适用性证据文件');
+    }
+  }
+  const providedStageKeys = STAGES.filter((stage) => documents[stage.key]).map((stage) => stage.key);
+  if (deliveryMode === 'FULL' && requestedStageKeys.length === 0) {
+    addFinding(findings, RULES.order, 'FULL 产品流程必须声明至少一个适用生命周期阶段');
+  }
+  if (['SIMPLE', 'STANDARD'].includes(deliveryMode) && providedStageKeys.length > 0) {
+    addFinding(findings, RULES.order, `${deliveryMode} 不使用 BRD/SRS/TDD/Plan 产品文档链`);
+  }
   const seenStageKeys = new Set();
   for (const key of requestedStageKeys) {
     if (!STAGE_KEYS.has(key)) {
@@ -206,6 +253,8 @@ export function runLifecycleCli(argv = process.argv.slice(2)) {
   const documents = loadLifecycleDocuments(args);
   const checked = validateLifecycle(documents, {
     riskLevel: args.riskLevel,
+    deliveryMode: args.deliveryMode || RISK_TO_MODE.get(args.riskLevel) || '',
+    applicabilityEvidence: args.applicabilityEvidence,
     throughStage: args.throughStage,
     requiredStages: args.requiredStages,
   });

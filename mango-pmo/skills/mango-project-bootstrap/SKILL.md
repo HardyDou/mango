@@ -12,7 +12,7 @@ Resolve `PMO_ROOT` from the installed business baseline, Mango source repository
 ## Execute
 
 1. Return `ASK` until project identity, topology, target directory, package coordinates, required modules, and release versions are explicit.
-2. Read the user-confirmed assurance baseline. For each enabled BRD, SRS, TDD or Plan, require its approved artifact and run the dedicated checker and applicable lifecycle handoff before generation. Return `ASK` when the new project's triggered measures are not confirmed; do not derive a four-document chain from L2/L3.
+2. Read the resolved delivery-mode baseline. A new project is normally FULL; require its applicable approved requirements, design and plan artifacts and lifecycle handoff. Use STANDARD only when facts prove a bounded L2 extension rather than project bootstrap.
 3. Use the released Mango CLI and its canonical project-generation entry; do not hand-copy starter files.
 4. Run the PMO baseline, workspace, dependency, startup, documentation, acceptance, Maven architecture, and generated-backend gates required by the loaded rules and generated project.
 5. Return `STOP` on version drift, baseline drift, workspace collision, failed startup, missing real data path, failed architecture verification, or failed acceptance evidence. Do not replace failed commands with a hand-built shortcut.

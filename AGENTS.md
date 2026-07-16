@@ -18,10 +18,11 @@ node mango-pmo/tools/pmo-preflight.mjs \
   --role <pm|tech-lead|dev|qa|pmo> \
   --phase <requirement|design|develop|verify|release|governance> \
   --task "<用户任务>" \
-  --paths "<可能影响的路径，逗号分隔>"
+  --paths "<可能影响的路径，逗号分隔>" \
+  --reuseCurrentTask <true|false>
 ```
 
-执行后读取输出中 `Must read` 的每一个文件原文。
+只有当前非 main worktree 明确属于同一任务或同一 PR 时传 `true`；新任务传 `false`。该事实由 Agent 根据会话和任务分支直接判断，不逐次询问。执行后读取输出中 `Must read` 的每一个文件原文。
 
 ## 3. 角色路由
 

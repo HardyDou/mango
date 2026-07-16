@@ -12,7 +12,7 @@ Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baselin
 ## Load Before Testing
 
 1. Read `$PMO_ROOT/agents/04-qa-agent.md`, `$PMO_ROOT/rules/04-test-assets.md`, `$PMO_ROOT/rules/05-ai-delivery-quality.md`, `$PMO_ROOT/rules/09-test-case-automation-flow.md`, `$PMO_ROOT/rules/backend/08-test.md`, and `$PMO_ROOT/rules/frontend/04-test.md`.
-2. Read `$PMO_ROOT/rules/11-delivery-assurance.md`, the user-confirmed assurance baseline, recorded requirement impact, solution risk and final maximum. Read only enabled requirements, design, plan, delivery contract, acceptance mapping and implementation evidence; do not infer artifacts or test types from L0-L3.
+2. Read the resolved mode baseline, requirement impact, solution risk and final maximum. SIMPLE uses direct acceptance facts, STANDARD uses its single record, and FULL uses applicable lifecycle artifacts.
 3. Read `$PMO_ROOT/templates/acceptance-evidence.md`, `$PMO_ROOT/tools/acceptance-evidence-check.mjs`, and `$PMO_ROOT/tools/delivery-contract-check.mjs`.
 4. Run PMO preflight with role `qa`, phase `verify`, and the actual affected paths. Read every `Must read` file.
 
@@ -20,13 +20,13 @@ Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baselin
 
 ## Verify
 
-1. For each acceptance outcome execute only the user-enabled M09-M16 measures and verify that each can observe its claimed result. Do not add another measure, merge M11 into M12, or use a cheaper check that cannot prove the outcome.
+1. For each acceptance outcome execute the applicable M09-M16 capabilities and verify that each can observe its claimed result. Do not use a cheaper check that cannot prove the outcome or add UI when no browser result exists.
 2. Record actual commands, environment and version, data identifiers, account and tenant boundaries, results, and evidence paths in the official evidence template.
 3. Map every required acceptance criterion to a test result and evidence item. Record untested items as `BLOCKED` or an explicitly approved `EXCEPTION`, never as pass.
-4. Run acceptance-evidence, delivery-contract and targeted validators only when their corresponding measures and facts are enabled. Record disabled triggered measures and the user's accepted residual risk; never fabricate heavyweight evidence to satisfy a checker.
+4. Run acceptance-evidence, mode artifact and targeted validators required by the resolved facts. Record exceptions and residual risk; never fabricate heavyweight evidence.
 5. If a checker or required test fails, report `STOP` with reproducible evidence and do not declare acceptance.
 6. Return `NEXT: $mango-pmo-lifecycle` for release or closure routing only when all required mappings and evidence pass.
 
-Do not accept a prompt that only states tests or checkers passed. Before `NEXT`, verify every enabled measure's evidence, tested version, environment or explicit non-applicability, command arguments, exit results and acceptance mapping from the workspace. Risk level alone never adds a delivery contract, document or test.
+Do not accept a prompt that only states tests passed. Before `NEXT`, verify evidence, tested version, environment, command arguments, exit results and acceptance mapping. Risk selects process intensity; observable outcomes select test types.
 
 With an empty context or no acceptance mapping, return `STOP` and identify the missing prerequisite.
