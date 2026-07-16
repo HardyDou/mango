@@ -82,6 +82,8 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #557 将 Resource 收敛为六个发布物，并补强微服务乱序启动、锁竞争重试和内部调用验签；不改变菜单树 API、`component` key、菜单权限码、角色授权、租户应用绑定或页面注册协议。菜单缺失时仍按资源同步日志、角色菜单关系、租户绑定和前端页面 key 链路排查。
+
 - PR #541 的 Auth 历史债务修复不改变菜单树接口、`component` key、角色菜单授权、租户应用绑定或页面注册协议。Admin Shell 退出登录现在会先调用服务端 `/auth/logout` 撤销令牌并清除 HttpOnly Cookie，再清理本地会话；退出后出现的 401 属于已撤销会话的预期结果，重新登录后的菜单问题仍按本指南排查。
 
 - v2026.07.14-maven-1.0.21-platform-debt-release 仅同步 Payment、CMS、Workflow、Notice 修复及配套前端版本锁，不改变 RBAC 菜单接口、页面 component key、角色授权或本指南排查步骤。
