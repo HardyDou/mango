@@ -108,7 +108,7 @@
 - Controller 的基础字段校验由 Bean Validation 完成；业务存在性、状态、归属、权限、重复和前后置条件必须在 Service 使用 `Require` 校验。
 - Service 的业务失败必须使用模块 `XxxCode implements BizCode`（即统一 ErrorCode 契约）；禁止裸数字错误码和临时错误字符串作为新增业务错误契约。
 - Controller 只返回成功 `R<T>`；业务失败由 Service 抛出带 `BizCode` 的业务异常，再由统一异常处理器转换为失败 `R<T>`。
-- Service 实现类统一命名 `XxxService implements IXxxService`；禁止新增 `XxxServiceImpl`。
+- Service 实现类默认命名 `XxxService implements IXxxService`；`XxxServiceImpl` 允许存在但不作为新增强制约束。
 - `IXxxService` 只位于 `core`，只允许继承 canonical `MangoCrudService` / `MangoTypedCrudService`；实现类除 canonical `MangoCrudServiceImpl` 外不得继承业务基类或 MyBatis `ServiceImpl`。
 - 以上为不可降级结构红线：新增文件或被修改文件命中时，即使历史基线存在也必须失败，不允许普通例外。
 
@@ -199,7 +199,7 @@
 
 ### 8.3 Service、Mapper 与 Entity
 
-- `MANGO-ARCH-SVC-001`：Service 禁止返回 R；`MANGO-ARCH-SVC-002`：禁止调用或构造 R；`MANGO-ARCH-SVC-003`：Require 使用模块 `XxxCode implements BizCode`；`MANGO-ARCH-SVC-004`：写业务动作要求 Require；`MANGO-ARCH-SVC-005`：实现类命名 `XxxService`；`MANGO-ARCH-SVC-006`：禁止直接 throw；`MANGO-ARCH-SVC-007`：CRUD 继承 canonical `MangoCrudServiceImpl`；`MANGO-ARCH-SVC-008`：CRUD 实现 `MangoTypedCrudService`；`MANGO-ARCH-SVC-009`：禁止同名伪造 Mango CRUD 类型；`MANGO-ARCH-SVC-010`：公共方法最多两个业务入参；`MANGO-ARCH-SVC-011`：Typed CRUD 六类泛型与 Mapper/Entity 聚合对齐；`MANGO-ARCH-SVC-012`：Service interface 只声明 abstract 契约；`MANGO-ARCH-SVC-013`：Service interface 传输无关；`MANGO-ARCH-SVC-014`：禁止直接继承 MyBatis ServiceImpl；`MANGO-ARCH-SVC-015`：只允许直接继承 canonical MangoCrudServiceImpl，否则直接继承 Object；`MANGO-ARCH-SVC-016`：`IXxxService` 只继承 canonical Mango CRUD contract。
+- `MANGO-ARCH-SVC-001`：Service 禁止返回 R；`MANGO-ARCH-SVC-002`：禁止调用或构造 R；`MANGO-ARCH-SVC-003`：Require 使用模块 `XxxCode implements BizCode`；`MANGO-ARCH-SVC-004`：写业务动作要求 Require；`MANGO-ARCH-SVC-005`：实现类默认命名 `XxxService`（`XxxServiceImpl` 兼容）；`MANGO-ARCH-SVC-006`：禁止直接 throw；`MANGO-ARCH-SVC-007`：CRUD 继承 canonical `MangoCrudServiceImpl`；`MANGO-ARCH-SVC-008`：CRUD 实现 `MangoTypedCrudService`；`MANGO-ARCH-SVC-009`：禁止同名伪造 Mango CRUD 类型；`MANGO-ARCH-SVC-010`：公共方法最多两个业务入参；`MANGO-ARCH-SVC-011`：Typed CRUD 六类泛型与 Mapper/Entity 聚合对齐；`MANGO-ARCH-SVC-012`：Service interface 只声明 abstract 契约；`MANGO-ARCH-SVC-013`：Service interface 传输无关；`MANGO-ARCH-SVC-014`：禁止直接继承 MyBatis ServiceImpl；`MANGO-ARCH-SVC-015`：只允许直接继承 canonical MangoCrudServiceImpl，否则直接继承 Object；`MANGO-ARCH-SVC-016`：`IXxxService` 只继承 canonical Mango CRUD contract。
 - `MANGO-ARCH-BEAN-001`：业务 `IXxxService` 实现要求 `@Service`；`MANGO-ARCH-BEAN-002`：普通框架 `XxxService` 要求 starter `@Bean + @ConditionalOnMissingBean`；`MANGO-ARCH-BEAN-003`：禁止 `@Service` 与 `@Bean` 双重注册；`MANGO-ARCH-BEAN-004`：Controller/业务 Service 禁止直接构造托管 Service；`MANGO-ARCH-BEAN-005`：事务、异步、调度和缓存注解要求 Spring Bean 注册证明；`MANGO-ARCH-BEAN-006`：禁止可变 static Service Locator。
 - `MANGO-ARCH-MAPPER-001`：禁止注解/Provider SQL；`MANGO-ARCH-MAPPER-002`：入参禁止 API model；`MANGO-ARCH-MAPPER-003`：返回禁止 API model；`MANGO-ARCH-MAPPER-004`：必须是 `@Mapper` interface；`MANGO-ARCH-MAPPER-005`：直接继承 `BaseMapper<XxxEntity>`；`MANGO-ARCH-MAPPER-006`：Mapper/Entity 聚合名一致；`MANGO-ARCH-MAPPER-007`：入参与返回禁止 Object、Map、transport、Controller、FeignClient、Service 等非类型化边界。
 - `MANGO-ARCH-ENTITY-001`：持久化类命名 `XxxEntity`；`MANGO-ARCH-ENTITY-002`：要求非空 `@TableName`；`MANGO-ARCH-ENTITY-003`：普通 Entity 继承 canonical `TenantEntity`；`MANGO-ARCH-ENTITY-004`：全局 Entity manifest 表名与 `@TableName` 一致。

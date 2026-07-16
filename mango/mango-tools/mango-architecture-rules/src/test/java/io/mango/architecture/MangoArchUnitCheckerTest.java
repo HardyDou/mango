@@ -103,7 +103,7 @@ class MangoArchUnitCheckerTest {
 
         assertThat(checker.check(classes, javaClass -> role(javaClass, ModuleRole.CORE)))
                 .extracting(ArchitectureIssue::ruleId)
-                .containsExactly("MANGO-ARCH-SVC-005", "MANGO-ARCH-TYPE-005", "MANGO-ARCH-TYPE-008");
+                .containsExactly("MANGO-ARCH-TYPE-005", "MANGO-ARCH-TYPE-008");
     }
 
     @Test
@@ -535,6 +535,13 @@ class MangoArchUnitCheckerTest {
     }
 
     @Test
+    void serviceImplNamingIsAllowedForServiceImplementation() {
+        JavaClasses classes = importClasses(OrderServiceImpl.class, IOrderService.class);
+
+        assertThat(checker.check(classes, ignored -> ModuleRole.CORE)).isEmpty();
+    }
+
+    @Test
     void baseMapperImplementationCannotHideAsStore() {
         JavaClasses classes = importClasses(OrderStore.class, OrderEntity.class);
 
@@ -945,6 +952,10 @@ class MangoArchUnitCheckerTest {
 
     @Service
     static final class OrderService implements IOrderService {
+    }
+
+    @Service
+    static final class OrderServiceImpl implements IOrderService {
     }
 
     static final class OrderManager {

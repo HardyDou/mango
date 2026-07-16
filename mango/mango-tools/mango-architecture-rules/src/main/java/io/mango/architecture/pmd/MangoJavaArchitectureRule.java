@@ -519,13 +519,6 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectService(ASTTypeDeclaration type, RuleContext context) {
-        if (type.getSimpleName().endsWith(SERVICE_IMPL_SUFFIX)) {
-            violation(
-                    context,
-                    type,
-                    "MANGO-ARCH-SVC-005 Service implementation must be named XxxService, not"
-                            + " XxxServiceImpl");
-        }
         for (ASTMethodDeclaration method : type.getDeclarations(ASTMethodDeclaration.class)) {
             inspectServiceMethod(method, context);
         }
